@@ -462,6 +462,7 @@ level_metadata_scan_view make_view(test_level &level)
 	view.wall_type_open = 13;
 	view.wall_flag_door_locked = 1;
 	view.wall_flag_door_opened = 4;
+	view.wall_flag_buddy_proof = 8;
 	view.wall_clip_hidden = 2;
 	view.wall_key_none = 20;
 	view.wall_key_blue = 21;
@@ -662,13 +663,49 @@ int main()
 	       destroyed_snapshot.topology.segments[1].sides[0].center.value);
 	assert(destroyed_plan.steps[1].activation_position.value !=
 	       destroyed_plan.steps[1].aim_position.value);
-	auto key_gated_exit_snapshot = first;
-	key_gated_exit_snapshot.state.segments[0].sides[0].flyable = true;
-	key_gated_exit_snapshot.state.walls[1].key =
+	auto buddy_proof_boss_snapshot = first;
+	buddy_proof_boss_snapshot.state.control_center_destroyed = false;
+	buddy_proof_boss_snapshot.state.segments[0].sides[0].control_center_link =
+	    false;
+	buddy_proof_boss_snapshot.state.segments[1].sides[0].control_center_link =
+	    false;
+	buddy_proof_boss_snapshot.state.segments[1].sides[0].exit_trigger = false;
+	buddy_proof_boss_snapshot.state.segments[0].sides[1].exit_trigger = true;
+	buddy_proof_boss_snapshot.topology.segments[0].sides[1].center =
+	    buddy_proof_boss_snapshot.topology.segments[0].center;
+	for (auto &wall : buddy_proof_boss_snapshot.state.walls) {
+		wall.kind = dxx_route::route_wall_kind::other;
+		wall.buddy_proof = true;
+		wall.trigger = -1;
+	}
+	const auto buddy_proof_boss_plan = dxx_route::plan_route(
+	    buddy_proof_boss_snapshot, destroyed_query);
+	assert(buddy_proof_boss_plan.status ==
+	       dxx_route::route_plan_status::ok);
+	assert(buddy_proof_boss_plan.steps.size() == 3);
+	assert(buddy_proof_boss_plan.steps[1].kind ==
+	       dxx_route::route_semantic_step_kind::boss);
+	assert(buddy_proof_boss_plan.steps[1].path.terminal_segment == 0);
+	assert(buddy_proof_boss_plan.note ==
+	       "Guide-Bot waits at the buddy-proof wall outside the boss");
+	auto trigger_opened_exit_snapshot = first;
+	trigger_opened_exit_snapshot.state.segments[0].sides[0].flyable = true;
+	trigger_opened_exit_snapshot.state.walls[1].key =
 	    dxx_route::route_key_requirement::red;
-	key_gated_exit_snapshot.state.objects[0].kind =
+	trigger_opened_exit_snapshot.state.objects[0].kind =
 	    dxx_route::route_object_kind::control_center;
-	key_gated_exit_snapshot.state.objects[0].boss = false;
+	trigger_opened_exit_snapshot.state.objects[0].boss = false;
+	const auto trigger_opened_exit_plan = dxx_route::plan_route(
+	    trigger_opened_exit_snapshot, destroyed_query);
+	assert(trigger_opened_exit_plan.status ==
+	       dxx_route::route_plan_status::ok);
+	assert(trigger_opened_exit_plan.steps.size() == 3);
+	assert(trigger_opened_exit_plan.steps[1].kind ==
+	       dxx_route::route_semantic_step_kind::reactor);
+	assert(trigger_opened_exit_plan.steps[2].kind ==
+	       dxx_route::route_semantic_step_kind::exit);
+	auto key_gated_exit_snapshot = trigger_opened_exit_snapshot;
+	key_gated_exit_snapshot.topology.segments[1].sides[0].opener_walls.clear();
 	dxx_route::route_state_object red_key;
 	red_key.segment = 1;
 	red_key.kind = dxx_route::route_object_kind::powerup;

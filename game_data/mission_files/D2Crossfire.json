@@ -131,13 +131,13 @@
         "mine_volume": 45235888.44138487,
         "mine_volume_normalized": 9.892160466242292,
         "mine_volume_text": "9.9x",
-        "travel_distance": 6473.6892373922965,
-        "travel_time_seconds": 129,
-        "travel_time_text": "2M:09S",
+        "travel_distance": 9329.074640054596,
+        "travel_time_seconds": 187,
+        "travel_time_text": "3M:07S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -244,10 +244,40 @@
             },
             "distance": 2946.910621498788,
             "key": "red"
+          },
+          {
+            "index": 6,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 202,
+            "label_pos": {
+              "x": -637.9073638916016,
+              "y": -8.819900512695312,
+              "z": -100.5477294921875
+            },
+            "distance": 1458.6903603646276
+          },
+          {
+            "index": 7,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 191,
+            "side": 2,
+            "wall": 39,
+            "label_pos": {
+              "x": 150.0,
+              "y": 30.0,
+              "z": 320.0
+            },
+            "distance": 1396.6950422976709,
+            "trigger": 2,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "route target unreachable",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -265,13 +295,13 @@
         "mine_volume": 49848785.511845306,
         "mine_volume_normalized": 10.900906389169867,
         "mine_volume_text": "11x",
-        "travel_distance": 10954.48284361273,
-        "travel_time_seconds": 219,
-        "travel_time_text": "3M:39S",
+        "travel_distance": 17237.667300245157,
+        "travel_time_seconds": 345,
+        "travel_time_text": "5M:45S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -372,10 +402,70 @@
             },
             "distance": 2423.9053847676005,
             "key": "red"
+          },
+          {
+            "index": 6,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 5",
+            "seg": 415,
+            "side": 4,
+            "wall": 65,
+            "label_pos": {
+              "x": 29.111358642578125,
+              "y": 66.11836242675781,
+              "z": 349.84930419921875
+            },
+            "distance": 2044.0617531237401,
+            "trigger": 5,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 423,
+                "side": 0,
+                "wall": 31
+              },
+              {
+                "seg": 422,
+                "side": 5,
+                "wall": 29
+              }
+            ]
+          },
+          {
+            "index": 7,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 269,
+            "label_pos": {
+              "x": 240.92422485351562,
+              "y": -94.81558227539062,
+              "z": 371.7655792236328
+            },
+            "distance": 485.2995608335514
+          },
+          {
+            "index": 8,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 475,
+            "side": 1,
+            "wall": 59,
+            "label_pos": {
+              "x": 506.10528564453125,
+              "y": 833.6405944824219,
+              "z": 92.21340942382812
+            },
+            "distance": 3753.8231426751368,
+            "trigger": 4,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "route target unreachable",
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",
@@ -490,9 +580,9 @@
         "mine_volume": 12777621.55138978,
         "mine_volume_normalized": 2.794203609531094,
         "mine_volume_text": "2.8x",
-        "travel_distance": 3614.254415067031,
-        "travel_time_seconds": 72,
-        "travel_time_text": "1M:12S",
+        "travel_distance": 8276.959867659141,
+        "travel_time_seconds": 166,
+        "travel_time_text": "2M:46S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -575,6 +665,69 @@
           },
           {
             "index": 4,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 218,
+            "label_pos": {
+              "x": 499.50669860839844,
+              "y": -126.6981201171875,
+              "z": 117.99201965332031
+            },
+            "distance": 2107.4614157200467,
+            "key": "gold"
+          },
+          {
+            "index": 5,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 5",
+            "seg": 309,
+            "side": 4,
+            "wall": 31,
+            "label_pos": {
+              "x": -39.998870849609375,
+              "y": 223.06173706054688,
+              "z": 507.56163024902344
+            },
+            "distance": 2047.6896832260143,
+            "trigger": 5,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 311,
+                "side": 4,
+                "wall": 24
+              },
+              {
+                "seg": 312,
+                "side": 4,
+                "wall": 26
+              },
+              {
+                "seg": 313,
+                "side": 4,
+                "wall": 28
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 356,
+            "label_pos": {
+              "x": -39.97990417480469,
+              "y": 90.54042053222656,
+              "z": 697.5832214355469
+            },
+            "distance": 288.66299729425555,
+            "key": "red"
+          },
+          {
+            "index": 7,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -586,7 +739,7 @@
               "y": -137.37307739257812,
               "z": -17.185821533203125
             },
-            "distance": 2019.4373644265925,
+            "distance": 2238.3287207783856,
             "trigger": 3,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -596,8 +749,6 @@
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",
-          "red key not necessary",
-          "gold key not necessary",
           "no guidebot or guidebot start cage placed in this level"
         ]
       },
@@ -727,9 +878,9 @@
         "mine_volume": 23218848.071516406,
         "mine_volume_normalized": 5.077485573481289,
         "mine_volume_text": "5.1x",
-        "travel_distance": 14127.411949812678,
-        "travel_time_seconds": 283,
-        "travel_time_text": "4M:43S",
+        "travel_distance": 14209.912671349764,
+        "travel_time_seconds": 284,
+        "travel_time_text": "4M:44S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -805,14 +956,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 3",
-            "seg": 845,
+            "seg": 848,
+            "side": 3,
             "wall": 104,
             "label_pos": {
               "x": 638.8236694335938,
               "y": -482.7332763671875,
               "z": -495.8506164550781
             },
-            "distance": 2226.728761112042,
+            "distance": 2267.9791218805867,
             "trigger": 3,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -837,7 +989,7 @@
               "y": -584.7370452880859,
               "z": 372.19561767578125
             },
-            "distance": 1663.7594796382477,
+            "distance": 1705.0098404067924,
             "trigger": 2,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1362,9 +1514,9 @@
         "mine_volume": 10900639.930653125,
         "mine_volume_normalized": 2.3837462486996928,
         "mine_volume_text": "2.4x",
-        "travel_distance": 5522.198769363695,
-        "travel_time_seconds": 110,
-        "travel_time_text": "1M:50S",
+        "travel_distance": 5773.838570335855,
+        "travel_time_seconds": 115,
+        "travel_time_text": "1M:55S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1410,29 +1562,29 @@
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
-            "seg": 361,
+            "seg": 356,
             "label_pos": {
-              "x": -287.4005584716797,
-              "y": 67.92019653320312,
-              "z": 50.001495361328125
+              "x": -431.82203674316406,
+              "y": -18.931503295898438,
+              "z": 70.68763732910156
             },
-            "distance": 941.1572585801458
+            "distance": 1105.9837574753556
           },
           {
             "index": 4,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
-            "seg": 361,
-            "side": 0,
-            "wall": 82,
+            "seg": 359,
+            "side": 2,
+            "wall": 84,
             "label_pos": {
-              "x": -324.8592071533203,
-              "y": 62.38397216796875,
-              "z": 59.41456604003906
+              "x": -363.82623291015625,
+              "y": 60.198272705078125,
+              "z": 68.15266418457031
             },
-            "distance": 35.03656066316889,
-            "trigger": 0,
+            "distance": 121.84986274011986,
+            "trigger": 1,
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
@@ -1457,9 +1609,9 @@
         "mine_volume": 19125771.271223586,
         "mine_volume_normalized": 4.1824136758304915,
         "mine_volume_text": "4.2x",
-        "travel_distance": 5807.548115109315,
-        "travel_time_seconds": 116,
-        "travel_time_text": "1M:56S",
+        "travel_distance": 7837.900595436485,
+        "travel_time_seconds": 157,
+        "travel_time_text": "2M:37S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1474,19 +1626,6 @@
           },
           {
             "index": 1,
-            "kind": "boss",
-            "activation_kind": "destroy_boss",
-            "label": "Boss robot",
-            "seg": 291,
-            "label_pos": {
-              "x": 218.9670867919922,
-              "y": -134.82763671875,
-              "z": 250.01625061035156
-            },
-            "distance": 1423.863241216326
-          },
-          {
-            "index": 2,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "blue key",
@@ -1496,11 +1635,11 @@
               "y": -84.88227844238281,
               "z": 134.7613525390625
             },
-            "distance": 222.05081766023392,
+            "distance": 1420.274142309794,
             "key": "blue"
           },
           {
-            "index": 3,
+            "index": 2,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -1514,7 +1653,34 @@
             "key": "gold"
           },
           {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 386,
+            "label_pos": {
+              "x": -56.6705322265625,
+              "y": -54.849578857421875,
+              "z": 116.67060852050781
+            },
+            "distance": 3079.4099051239323,
+            "key": "red"
+          },
+          {
             "index": 4,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 428,
+            "label_pos": {
+              "x": 99.95335388183594,
+              "y": -355.27496337890625,
+              "z": -39.950347900390625
+            },
+            "distance": 817.4291899754263
+          },
+          {
+            "index": 5,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -1526,7 +1692,7 @@
               "y": -44.85032653808594,
               "z": 81.20985412597656
             },
-            "distance": 2489.9186716492222,
+            "distance": 849.0719734437982,
             "trigger": 4,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -1534,7 +1700,6 @@
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
-          "red key not necessary",
           "no guidebot or guidebot start cage placed in this level"
         ]
       },
@@ -1966,9 +2131,9 @@
         "mine_volume": 10301725.438143265,
         "mine_volume_normalized": 2.252775940177015,
         "mine_volume_text": "2.3x",
-        "travel_distance": 4824.886877977284,
-        "travel_time_seconds": 96,
-        "travel_time_text": "1M:36S",
+        "travel_distance": 4164.118116650335,
+        "travel_time_seconds": 83,
+        "travel_time_text": "1M:23S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2008,30 +2173,55 @@
           },
           {
             "index": 2,
-            "kind": "boss",
-            "activation_kind": "destroy_boss",
-            "label": "Boss robot",
-            "seg": 236,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 7",
+            "seg": 53,
+            "side": 4,
+            "wall": 4,
             "label_pos": {
-              "x": -728.0,
-              "y": 133.06228637695312,
-              "z": 217.06295776367188
+              "x": 0.0,
+              "y": 80.0,
+              "z": 10.0
             },
-            "distance": 2096.582745332609
+            "distance": 90.0,
+            "trigger": 7,
+            "trigger_type_id": 11,
+            "trigger_type": "illusory_wall",
+            "opens": [
+              {
+                "seg": 53,
+                "side": 3,
+                "wall": 12
+              }
+            ]
           },
           {
             "index": 3,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 54,
+            "label_pos": {
+              "x": 0.0,
+              "y": 56.0,
+              "z": 0.0
+            },
+            "distance": 34.0
+          },
+          {
+            "index": 4,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 12",
-            "seg": 216,
+            "seg": 187,
             "wall": 44,
             "label_pos": {
               "x": -748.0,
               "y": 173.06243896484375,
               "z": 417.0629119873047
             },
-            "distance": 374.38438066347436,
+            "distance": 1622.0097529699706,
             "trigger": 12,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -2044,7 +2234,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 11",
@@ -2056,7 +2246,7 @@
               "y": 133.062255859375,
               "z": 167.06295776367188
             },
-            "distance": 544.384380663486,
+            "distance": 608.57299236265,
             "trigger": 11,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -2069,7 +2259,7 @@
             ]
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 10",
@@ -2094,7 +2284,7 @@
             ]
           },
           {
-            "index": 6,
+            "index": 7,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 13",
@@ -2118,7 +2308,7 @@
             ]
           },
           {
-            "index": 7,
+            "index": 8,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 9",
@@ -2143,7 +2333,7 @@
             ]
           },
           {
-            "index": 8,
+            "index": 9,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

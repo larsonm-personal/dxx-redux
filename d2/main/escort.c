@@ -468,6 +468,16 @@ int escort_get_route_goal_objective_trigger(void)
 	return Escort_route_goal.active ? Escort_route_goal.objective_trigger : -1;
 }
 
+int escort_get_route_goal_objective_object(void)
+{
+	return Escort_route_goal.active ? Escort_route_goal.objective_object : -1;
+}
+
+int escort_get_route_goal_objective_key_index(void)
+{
+	return Escort_route_goal.active ? Escort_route_goal.objective_key_index : -1;
+}
+
 int escort_get_route_goal_guidance_mode(void)
 {
 	return Escort_route_goal.active ? Escort_route_goal.guidance_mode : ESCORT_ROUTE_GUIDANCE_NONE;

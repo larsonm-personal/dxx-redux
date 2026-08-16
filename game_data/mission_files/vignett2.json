@@ -3,7 +3,7 @@
     "status": "ok",
     "source": "Descent 2: Enemy Vignettes",
     "game": "d2",
-    "mission_name": "Descent 2: Enemy Vignettes",
+    "mission_name": "Descent 2: Enemy Vignette",
     "mission_filename": "vignett2.mn2",
     "coop_starts": "1-4",
     "level_count": 30,
@@ -1454,7 +1454,7 @@
         "mine_volume": 17190541.094616305,
         "mine_volume_normalized": 3.759218551213469,
         "mine_volume_text": "3.8x",
-        "travel_distance": 3925.026666357102,
+        "travel_distance": 3974.5250559538217,
         "travel_time_seconds": 79,
         "travel_time_text": "1M:19S",
         "guidebot_count": 0,
@@ -1516,14 +1516,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 10",
-            "seg": 297,
+            "seg": 309,
+            "side": 0,
             "wall": 143,
             "label_pos": {
               "x": 14.122085571289062,
               "y": -51.35990905761719,
               "z": 319.01971435546875
             },
-            "distance": 853.50711668136,
+            "distance": 893.5001818418556,
             "trigger": 10,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1581,7 +1582,7 @@
               "y": -38.871307373046875,
               "z": 301.64080810546875
             },
-            "distance": 42.64745140781634
+            "distance": 52.15277584404037
           },
           {
             "index": 6,

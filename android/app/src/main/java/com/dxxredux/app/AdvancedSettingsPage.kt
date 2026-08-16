@@ -564,6 +564,13 @@ fun AdvancedSettingsPage(
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(16.dp))
 
+                        // -- Route metadata precompute --
+                        RouteMetadataPrecomputeSection(filesDir)
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(16.dp))
+
                         // -- Debug Logging --
                         DebugLoggingSection(loadedLists.logFiles)
 
@@ -827,6 +834,114 @@ fun AdvancedSettingsPage(
                 ScrollArrows(scrollState)
             }
         }
+    }
+}
+
+@Composable
+private fun RouteMetadataPrecomputeSection(filesDir: File) {
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val monitor = remember(filesDir) { RouteMetadataPrecomputeMonitor(filesDir) }
+    var snapshot by remember { mutableStateOf(RouteMetadataPrecomputeSnapshot()) }
+    var recentLines by remember { mutableStateOf(emptyList<String>()) }
+
+    suspend fun refresh() {
+        val refreshed =
+            withContext(Dispatchers.IO) {
+                monitor.readSnapshot() to monitor.readRecentLines()
+            }
+        snapshot = refreshed.first
+        recentLines = refreshed.second
+    }
+
+    LaunchedEffect(monitor) {
+        while (isActive) {
+            refresh()
+            delay(1_000L)
+        }
+    }
+
+    val total = snapshot.totalLevels
+    val finished = snapshot.finishedLevels.coerceIn(0, total.coerceAtLeast(0))
+    val progress = if (total == 0) 0f else finished.toFloat() / total.toFloat()
+    Text("Route Metadata Precompute", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    Spacer(modifier = Modifier.height(6.dp))
+    Text(
+        if (total == 0) "Discovering levels" else "$finished / $total levels (${(progress * 100).toInt()}%)",
+        fontSize = 12.sp,
+    )
+    LinearProgressIndicator(
+        progress = { progress.coerceIn(0f, 1f) },
+        modifier = Modifier.fillMaxWidth().height(5.dp),
+    )
+    if (snapshot.currentMission.isNotBlank()) {
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            "Analyzing ${snapshot.currentMission} ${snapshot.currentLevel} (${snapshot.currentPriority})",
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    } else if (total > 0 && finished == total) {
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            "All discovered levels have been analyzed" +
+                if (snapshot.failedLevels > 0) " (${snapshot.failedLevels} failed)" else "",
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+    Spacer(modifier = Modifier.height(8.dp))
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        OutlinedButton(
+            onClick = { scope.launch { refresh() } },
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+            modifier = Modifier.height(28.dp),
+        ) {
+            Text("Refresh", fontSize = 11.sp)
+        }
+        if (monitor.logFile.isFile) {
+            OutlinedButton(
+                onClick = {
+                    scope.launch {
+                        val uri =
+                            withContext(Dispatchers.IO) {
+                                copyFileToCache(ctx, monitor.logFile, FileProviderGrantStore.FILE_VIEW)
+                            }
+                        openTextFile(ctx, uri)
+                    }
+                },
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                modifier = Modifier.height(28.dp),
+            ) {
+                Text("Open Full Log", fontSize = 11.sp)
+            }
+            OutlinedButton(
+                onClick = {
+                    scope.launch {
+                        val ok = withContext(Dispatchers.IO) { saveToDownloads(ctx, monitor.logFile) }
+                        Toast
+                            .makeText(
+                                ctx,
+                                if (ok) "Saved to Downloads/${monitor.logFile.name}" else "Save failed",
+                                Toast.LENGTH_SHORT,
+                            ).show()
+                    }
+                },
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                modifier = Modifier.height(28.dp),
+            ) {
+                Text("Export", fontSize = 11.sp)
+            }
+        }
+    }
+    if (recentLines.isNotEmpty()) {
+        Spacer(modifier = Modifier.height(8.dp))
+        Text("Recent activity", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+        Text(
+            recentLines.joinToString("\n"),
+            fontSize = 9.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

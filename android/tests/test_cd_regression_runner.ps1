@@ -33,6 +33,12 @@ Assert-True ($refreshStages.Count -eq 5) 'Oracle refresh workflow should contain
 Assert-True ($refreshStages[2].Name -eq 'Refresh regression specs') 'Oracle refresh stage should be explicit'
 Assert-True ($refreshStages[2].Arguments -contains '-Force') 'Explicit oracle refresh should regenerate all specs'
 
+$extractSuiteText = Get-Content -LiteralPath (Join-Path $repoRoot 'android\tests\test_all_extracts.ps1') -Raw
+Assert-True ($extractSuiteText.Contains("Join-Path `$ReportDir 'summary.json'")) `
+    'Extraction suite should save a machine-readable result summary'
+Assert-True ($extractSuiteText.Contains("'logcat', '-d', '-v', 'time'")) `
+    'Extraction suite should preserve logcat for failed sources'
+
 $tempRoot = Join-Path $repoRoot 'android\temp\cd_regression_runner_test'
 if (Test-Path -LiteralPath $tempRoot) {
     Remove-Item -LiteralPath $tempRoot -Recurse -Force

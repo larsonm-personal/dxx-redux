@@ -21,9 +21,9 @@
         "mine_volume": 21755207.03697115,
         "mine_volume_normalized": 4.757417316228879,
         "mine_volume_text": "4.8x",
-        "travel_distance": 8423.278792865342,
-        "travel_time_seconds": 168,
-        "travel_time_text": "2M:48S",
+        "travel_distance": 9033.962239294726,
+        "travel_time_seconds": 181,
+        "travel_time_text": "3M:01S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -109,16 +109,16 @@
           },
           {
             "index": 5,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 231,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 242,
             "label_pos": {
               "x": 0.0,
-              "y": -60.0,
-              "z": 719.0
+              "y": -80.0,
+              "z": 859.0
             },
-            "distance": 1550.8928909660513
+            "distance": 1856.2346141807432
           },
           {
             "index": 6,
@@ -133,7 +133,7 @@
               "y": 190.0,
               "z": 220.0
             },
-            "distance": 681.8588516413798,
+            "distance": 987.2005748560717,
             "trigger": 2,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -264,9 +264,9 @@
         "mine_volume": 27769414.75301192,
         "mine_volume_normalized": 6.072601119493348,
         "mine_volume_text": "6.1x",
-        "travel_distance": 11248.449978428456,
-        "travel_time_seconds": 225,
-        "travel_time_text": "3M:45S",
+        "travel_distance": 11074.778093165245,
+        "travel_time_seconds": 221,
+        "travel_time_text": "3M:41S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -421,16 +421,16 @@
           },
           {
             "index": 6,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 292,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 295,
             "label_pos": {
-              "x": 250.02142333984375,
-              "y": -300.0,
-              "z": 239.60418701171875
+              "x": 300.0,
+              "y": -262.5,
+              "z": 580.0
             },
-            "distance": 2916.3304974395696
+            "distance": 2829.4945548079645
           },
           {
             "index": 7,
@@ -445,7 +445,7 @@
               "y": 160.0,
               "z": 0.0
             },
-            "distance": 1630.695527877449,
+            "distance": 1543.8595852458438,
             "trigger": 2,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -469,9 +469,9 @@
         "mine_volume": 35557141.28548069,
         "mine_volume_normalized": 7.775617091561992,
         "mine_volume_text": "7.8x",
-        "travel_distance": 6684.113657964297,
-        "travel_time_seconds": 134,
-        "travel_time_text": "2M:14S",
+        "travel_distance": 4894.1466758500055,
+        "travel_time_seconds": 98,
+        "travel_time_text": "1M:38S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -517,13 +517,13 @@
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
-            "seg": 325,
+            "seg": 369,
             "label_pos": {
               "x": 0.0,
-              "y": -80.0,
-              "z": 1079.0
+              "y": 84.0,
+              "z": 370.0
             },
-            "distance": 2064.743185169531
+            "distance": 282.0443226114742
           },
           {
             "index": 4,
@@ -538,14 +538,16 @@
               "y": 70.0,
               "z": 300.0
             },
-            "distance": 950.9834910571465,
+            "distance": 943.7153715009106,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_note": "Guide-Bot waits at the buddy-proof wall outside the boss",
         "notes": [
+          "Guide-Bot waits at the buddy-proof wall outside the boss",
           "no guidebot or guidebot start cage placed in this level"
         ]
       },

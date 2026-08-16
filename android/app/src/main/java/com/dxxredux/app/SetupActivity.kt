@@ -721,6 +721,18 @@ class SetupActivity : ComponentActivity() {
                         }
                     }
 
+                    "pause_route_metadata_precompute" -> {
+                        val pendingResult = goAsync()
+                        this@SetupActivity.lifecycleScope.launch {
+                            try {
+                                routeMetadataCoordinator.stopAndAwait()
+                                Log.i("DXX-Setup", "pause_route_metadata_precompute: stopped")
+                            } finally {
+                                pendingResult.finish()
+                            }
+                        }
+                    }
+
                     "clear_crash_reports" -> {
                         runIo {
                             val deleted = CrashLog.listCrashFiles(this@SetupActivity).size

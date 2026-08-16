@@ -1,6 +1,6 @@
 #!/usr/bin/env pwsh
 
-function Get-TestSuiteRemainingEstimate {
+function Get-RemainingRuntimeEstimate {
     param(
         [Parameter(Mandatory)][object[]]$Tests,
         [Parameter(Mandatory)][int]$CurrentProgressIndex
@@ -26,4 +26,20 @@ function Get-TestSuiteRemainingEstimate {
         Seconds = $remainingSeconds
         Percent = $remainingPercent
     }
+}
+
+function Get-TestSuiteRemainingEstimate {
+    param(
+        [Parameter(Mandatory)][object[]]$Tests,
+        [Parameter(Mandatory)][int]$CurrentProgressIndex
+    )
+
+    return Get-RemainingRuntimeEstimate -Tests $Tests -CurrentProgressIndex $CurrentProgressIndex
+}
+
+function Format-RunnerDurationEstimate {
+    param([Parameter(Mandatory)][double]$Seconds)
+
+    $minutes = [int][Math]::Ceiling([Math]::Max(0, $Seconds) / 60.0)
+    return ("{0:00}:{1:00}" -f [Math]::Floor($minutes / 60), ($minutes % 60))
 }

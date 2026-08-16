@@ -18,6 +18,7 @@ MISSION_METADATA_FLOAT_FIELDS = {
     "travel_distance",
 }
 MISSION_METADATA_POSITION_FIELDS = {"activation_pos", "aim_pos", "label_pos"}
+MISSION_METADATA_EXCLUDED_FIELDS = {"replacements", "replacement_groups"}
 
 
 def reject_json_constant(token: str) -> object:
@@ -59,6 +60,8 @@ def canonicalize_mission_metadata(value: object, parent_key: str = "") -> object
 
     result: dict[str, object] = {}
     for key, item in value.items():
+        if key in MISSION_METADATA_EXCLUDED_FIELDS:
+            continue
         normalized = canonicalize_mission_metadata(item, key)
         is_number = isinstance(normalized, (int, float)) and not isinstance(normalized, bool)
         if is_number and (

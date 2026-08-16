@@ -415,6 +415,7 @@
     "game": "d1",
     "mission_name": "Duality",
     "mission_filename": "DUALITY.MSN",
+    "coop_starts": "1",
     "level_count": 1,
     "levels": [
       {

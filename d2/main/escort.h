@@ -57,6 +57,8 @@ extern int escort_get_route_goal_objective_seg(void);
 extern int escort_get_route_goal_objective_side(void);
 extern int escort_get_route_goal_objective_wall(void);
 extern int escort_get_route_goal_objective_trigger(void);
+extern int escort_get_route_goal_objective_object(void);
+extern int escort_get_route_goal_objective_key_index(void);
 extern int escort_get_route_goal_guidance_mode(void);
 extern int escort_get_route_goal_guidance_seg(void);
 extern int escort_get_route_goal_guidance_side(void);

@@ -28,6 +28,9 @@ try {
         $extractSource -notmatch "(?s)function Send-SetupIsoImport.*?'am', 'broadcast', '--async'.*?'import_iso'") {
         throw 'Long-running direct imports no longer return host broadcast delivery promptly'
     }
+    if ($extractSource -notmatch '(?s)function Get-ExtractAutomationScriptText.*?"command": "write_music_prefs".*?"source": "midi".*?"action": "enter_game"') {
+        throw 'Extraction launch automation no longer isolates itself from external CD-audio preferences'
+    }
     if ($allExtractsSource -notmatch '(?s)\$exitCode -ne 98.*?\$attempt -gt 1.*?Confirm-EmulatorHealthWithAdbRecovery.*?Invoke-LauncherStartupRecovery.*?Ensure-LauncherTestDeviceReady') {
         throw 'Extraction suite no longer recovers ADB/device infrastructure before its one complete-spec retry'
     }

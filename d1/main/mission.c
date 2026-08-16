@@ -747,6 +747,20 @@ int load_mission_by_name(char *mission_name)
 	return found;
 }
 
+int load_mission_by_name_from_current_dir(char *mission_name)
+{
+	char descriptor[FILENAME_LEN];
+	mle mission = { 0 };
+	int loaded;
+
+	snprintf(descriptor, sizeof(descriptor), "%s.msn", mission_name);
+	if (!read_mission_file(&mission, descriptor, ML_CURDIR))
+		return 0;
+	loaded = load_mission(&mission);
+	d_free(mission.path);
+	return loaded;
+}
+
 typedef struct mission_menu
 {
 	mle *mission_list;

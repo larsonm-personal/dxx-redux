@@ -394,9 +394,9 @@
         "mine_volume": 6762005.553904716,
         "mine_volume_normalized": 1.4787118440156632,
         "mine_volume_text": "1.5x",
-        "travel_distance": 4585.845944084815,
-        "travel_time_seconds": 92,
-        "travel_time_text": "1M:32S",
+        "travel_distance": 4745.847326645404,
+        "travel_time_seconds": 95,
+        "travel_time_text": "1M:35S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -467,14 +467,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 2",
-            "seg": 469,
+            "seg": 473,
+            "side": 5,
             "wall": 220,
             "label_pos": {
               "x": 409.26783752441406,
               "y": -343.2049560546875,
               "z": 389.5272674560547
             },
-            "distance": 994.7193263117246,
+            "distance": 1074.7200175920195,
             "trigger": 2,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -497,7 +498,7 @@
               "y": -212.4707489013672,
               "z": 298.3492126464844
             },
-            "distance": 240.00267220323238,
+            "distance": 320.0033634835274,
             "key": "red"
           },
           {
@@ -1112,9 +1113,9 @@
         "mine_volume": 7756744.824420056,
         "mine_volume_normalized": 1.6962409083284167,
         "mine_volume_text": "1.7x",
-        "travel_distance": 2875.6848644531674,
-        "travel_time_seconds": 58,
-        "travel_time_text": "0M:58S",
+        "travel_distance": 4641.684864453167,
+        "travel_time_seconds": 93,
+        "travel_time_text": "1M:33S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -1171,6 +1172,44 @@
           },
           {
             "index": 4,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 7",
+            "seg": 898,
+            "side": 2,
+            "wall": 252,
+            "label_pos": {
+              "x": 130.0,
+              "y": 166.0,
+              "z": 154.0
+            },
+            "distance": 394.01753446130573,
+            "trigger": 7,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 75,
+                "side": 4,
+                "wall": 158
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 778,
+            "label_pos": {
+              "x": -40.0,
+              "y": 20.0,
+              "z": 441.0
+            },
+            "distance": 883.0
+          },
+          {
+            "index": 6,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -1182,7 +1221,7 @@
               "y": 266.0,
               "z": 154.0
             },
-            "distance": 1010.0175039438325,
+            "distance": 1498.9999694825267,
             "trigger": 1,
             "trigger_type_id": 3,
             "trigger_type": "exit"

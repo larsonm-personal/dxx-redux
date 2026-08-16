@@ -231,9 +231,9 @@
         "mine_volume": 22721924.91191068,
         "mine_volume_normalized": 4.96881867638737,
         "mine_volume_text": "5.0x",
-        "travel_distance": 12305.297739061927,
-        "travel_time_seconds": 246,
-        "travel_time_text": "4M:06S",
+        "travel_distance": 13237.828701194521,
+        "travel_time_seconds": 265,
+        "travel_time_text": "4M:25S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -378,14 +378,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 4",
-            "seg": 514,
+            "seg": 512,
+            "side": 0,
             "wall": 108,
             "label_pos": {
               "x": 489.0404968261719,
               "y": 13.080642700195312,
               "z": 12.5770263671875
             },
-            "distance": 331.84832824377213,
+            "distance": 426.8481991176752,
             "trigger": 4,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -409,19 +410,111 @@
           },
           {
             "index": 7,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
             "seg": 509,
+            "side": 4,
+            "wall": 119,
             "label_pos": {
-              "x": 608.5730285644531,
-              "y": 83.99235534667969,
-              "z": -234.30909729003906
+              "x": 610.1013641357422,
+              "y": 84.00808715820312,
+              "z": -239.06979370117188
             },
-            "distance": 375.2792793306782
+            "distance": 360.2791917383199,
+            "opens": [
+              {
+                "seg": 509,
+                "side": 4,
+                "wall": 119
+              },
+              {
+                "seg": 518,
+                "side": 5,
+                "wall": 120
+              }
+            ]
           },
           {
             "index": 8,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 9",
+            "seg": 518,
+            "side": 0,
+            "wall": 127,
+            "label_pos": {
+              "x": 622.6793518066406,
+              "y": 84.0540771484375,
+              "z": -245.53443908691406
+            },
+            "distance": 25.00000819016671,
+            "trigger": 9,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 261,
+                "side": 3,
+                "wall": 122
+              },
+              {
+                "seg": 316,
+                "side": 2,
+                "wall": 134
+              },
+              {
+                "seg": 732,
+                "side": 1,
+                "wall": 180
+              },
+              {
+                "seg": 672,
+                "side": 3,
+                "wall": 176
+              },
+              {
+                "seg": 690,
+                "side": 3,
+                "wall": 179
+              },
+              {
+                "seg": 155,
+                "side": 4,
+                "wall": 212
+              },
+              {
+                "seg": 156,
+                "side": 4,
+                "wall": 214
+              },
+              {
+                "seg": 157,
+                "side": 4,
+                "wall": 210
+              },
+              {
+                "seg": 633,
+                "side": 2,
+                "wall": 223
+              }
+            ]
+          },
+          {
+            "index": 9,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 347,
+            "label_pos": {
+              "x": -341.3658447265625,
+              "y": 2.7515716552734375,
+              "z": -309.80421447753906
+            },
+            "distance": 1578.4879990047004
+          },
+          {
+            "index": 10,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -433,7 +526,7 @@
               "y": 21.996444702148438,
               "z": -110.10293579101562
             },
-            "distance": 2388.6679158649063,
+            "distance": 1637.711087521086,
             "trigger": 18,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -848,9 +941,9 @@
         "mine_volume": 40339883.23183347,
         "mine_volume_normalized": 8.82150460327196,
         "mine_volume_text": "8.8x",
-        "travel_distance": 20012.936635605623,
-        "travel_time_seconds": 400,
-        "travel_time_text": "6M:40S",
+        "travel_distance": 20207.273681443516,
+        "travel_time_seconds": 404,
+        "travel_time_text": "6M:44S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -882,14 +975,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 6",
-            "seg": 414,
+            "seg": 763,
+            "side": 5,
             "wall": 150,
             "label_pos": {
               "x": -5.0,
               "y": -340.0,
               "z": 310.0
             },
-            "distance": 1748.7828368161715,
+            "distance": 1944.784995269873,
             "trigger": 6,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -912,7 +1006,7 @@
               "y": -485.0,
               "z": 600.0
             },
-            "distance": 765.2642092482614,
+            "distance": 763.5990966324478,
             "key": "gold"
           },
           {
@@ -1039,14 +1133,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 2",
-            "seg": 474,
+            "seg": 497,
+            "side": 2,
             "wall": 112,
             "label_pos": {
               "x": 16.628631591796875,
               "y": -119.99990844726562,
               "z": 935.8026123046875
             },
-            "distance": 1893.9297141825639,
+            "distance": 1973.9297141826585,
             "trigger": 2,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1074,7 +1169,7 @@
               "y": -320.00062561035156,
               "z": 1206.7006072998047
             },
-            "distance": 1237.4565517778083,
+            "distance": 1157.4565517777137,
             "key": "gold"
           },
           {
@@ -1873,9 +1968,9 @@
         "mine_volume": 21688564.11605893,
         "mine_volume_normalized": 4.742843877078744,
         "mine_volume_text": "4.7x",
-        "travel_distance": 6541.008207396901,
-        "travel_time_seconds": 131,
-        "travel_time_text": "2M:11S",
+        "travel_distance": 6884.536664680652,
+        "travel_time_seconds": 138,
+        "travel_time_text": "2M:18S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1907,14 +2002,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 0",
-            "seg": 466,
+            "seg": 470,
+            "side": 5,
             "wall": 38,
             "label_pos": {
               "x": 186.4869842529297,
               "y": -388.26458740234375,
               "z": 46.607147216796875
             },
-            "distance": 1732.453458580307,
+            "distance": 1904.2176872221826,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1937,7 +2033,7 @@
               "y": -305.0,
               "z": -20.0
             },
-            "distance": 369.5674496294195,
+            "distance": 541.3316782712953,
             "key": "gold"
           },
           {

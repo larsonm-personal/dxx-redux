@@ -466,15 +466,23 @@ object GameFileFormats {
                 remainingSecrets--
                 val secretLine = cleanMissionListLine(line)
                 val secret = secretLine.substringBefore(',').trim()
-                val origin = secretLine.substringAfter(',', "").trim().toIntOrNull()
+                val origins =
+                    secretLine
+                        .substringAfter(',', "")
+                        .split(',')
+                        .mapNotNull { it.trim().toIntOrNull() }
                 if (line.isBlank() || line.startsWith(";") || line.startsWith("#") ||
                     '=' in line || ',' !in secretLine || secret.isBlank() ||
-                    secret.length > maxMissionFilenameLength || origin == null || origin !in 1..levels.size
+                    secret.length > maxMissionFilenameLength || origins.isEmpty() ||
+                    origins.any { it !in 1..levels.size }
                 ) {
                     problem = problem ?: "Invalid secret level list"
                 } else {
                     secrets += secret
-                    secretOrigins += requireNotNull(origin)
+                    // D2 accepts several ordinary-level entry points for one
+                    // secret level. Keep the first as the canonical origin used
+                    // by launcher ordering while validating every listed entry.
+                    secretOrigins += origins.first()
                 }
                 continue
             }

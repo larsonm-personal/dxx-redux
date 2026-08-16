@@ -55,14 +55,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 12",
-            "seg": 422,
+            "seg": 429,
+            "side": 4,
             "wall": 178,
             "label_pos": {
               "x": 80.0,
               "y": 117.99998474121094,
               "z": 99.0
             },
-            "distance": 1137.6354136346856,
+            "distance": 1305.869718033777,
             "trigger": 12,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -90,7 +91,7 @@
               "y": 202.99998474121094,
               "z": -31.5625
             },
-            "distance": 637.2693947145455,
+            "distance": 469.0350903154541,
             "key": "gold"
           },
           {

@@ -594,6 +594,24 @@ extern int control_center_triggers_read_n(control_center_triggers *cct, int n, P
 				return 0;
 			cct->side[j] = INTEL_SHORT(value);
 		}
+		/* Some released missions contain stale reactor links outside the mine.
+		 * Ignore those links while retaining every valid one.  This keeps all
+		 * downstream users bounded without rejecting an otherwise playable
+		 * level. */
+		if (cct->num_links < 0 || cct->num_links > MAX_CONTROLCEN_LINKS) {
+			cct->num_links = 0;
+		} else {
+			int valid_links = 0;
+			for (int j = 0; j < cct->num_links; ++j) {
+				if (cct->seg[j] < 0 || cct->seg[j] > Highest_segment_index ||
+				    cct->side[j] < 0 || cct->side[j] >= MAX_SIDES_PER_SEGMENT)
+					continue;
+				cct->seg[valid_links] = cct->seg[j];
+				cct->side[valid_links] = cct->side[j];
+				++valid_links;
+			}
+			cct->num_links = valid_links;
+		}
 		if (!control_center_triggers_are_valid(cct, Highest_segment_index))
 			return 0;
 		cct++;

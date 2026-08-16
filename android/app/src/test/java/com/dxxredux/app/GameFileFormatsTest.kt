@@ -100,6 +100,29 @@ class GameFileFormatsTest {
     }
 
     @Test
+    fun acceptsSeveralEntryLevelsForOneSecretLevel() {
+        val mission =
+            GameFileFormats.parseMissionDescriptor(
+                "KKR.MN2",
+                """
+                name = Kryllidian Krusade
+                num_levels = 5
+                kk1.rl2
+                kk2.rl2
+                kk3.rl2
+                kk4.rl2
+                kk5.rl2
+                num_secrets = 1
+                secret1.rl2,2,4
+                """.trimIndent(),
+            )
+
+        assertTrue(mission.valid)
+        assertEquals(listOf("secret1.rl2"), mission.secretLevelNames)
+        assertEquals(listOf(2), mission.secretLevelOrigins)
+    }
+
+    @Test
     fun classifiesMissionZipAndModRoles() {
         assertEquals(GameFileFormats.MISSION_ZIP_DESCRIPTOR, GameFileFormats.missionZipRoleForFile("custom.mn2"))
         assertEquals(GameFileFormats.MISSION_ZIP_HOG, GameFileFormats.missionZipRoleForFile("custom.hog"))

@@ -3,7 +3,7 @@
     "status": "ok",
     "source": "Descent: The Countdown demo2",
     "game": "d2",
-    "mission_name": "Descent: The Countdown demo2",
+    "mission_name": "Descent: The Countdown de",
     "mission_filename": "Countd2.mn2",
     "coop_starts": "4",
     "level_count": 7,
@@ -596,13 +596,13 @@
         "mine_volume": 23133154.725437667,
         "mine_volume_normalized": 5.058746197302163,
         "mine_volume_text": "5.1x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 9663.321337331809,
+        "travel_time_seconds": 193,
+        "travel_time_text": "3M:13S",
         "guidebot_count": 1,
         "guidebot_placed": true,
-        "guidebot_accessible": false,
-        "route_status": "failed",
+        "guidebot_accessible": true,
+        "route_status": "ok",
         "route_steps": [
           {
             "index": 0,
@@ -610,14 +610,110 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 1
+          },
+          {
+            "index": 1,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 825,
+            "label_pos": {
+              "x": -127.72616577148438,
+              "y": 303.9271697998047,
+              "z": 269.1107635498047
+            },
+            "distance": 791.9411173696292
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 170,
+            "label_pos": {
+              "x": -143.7073211669922,
+              "y": 41.594696044921875,
+              "z": 598.2748107910156
+            },
+            "distance": 1974.3824556611555,
+            "key": "blue"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 696,
+            "label_pos": {
+              "x": -286.2073211669922,
+              "y": -108.40531921386719,
+              "z": 408.2748107910156
+            },
+            "distance": 1226.4337059264337,
+            "key": "gold"
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 7",
+            "seg": 350,
+            "side": 3,
+            "wall": 167,
+            "label_pos": {
+              "x": -104.52572631835938,
+              "y": 75.5120849609375,
+              "z": -300.9896545410156
+            },
+            "distance": 3036.2800656136046,
+            "trigger": 7,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 594,
+                "side": 4,
+                "wall": 40
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying red key",
+            "seg": 719,
+            "label_pos": {
+              "x": 71.21000671386719,
+              "y": -210.61000061035156,
+              "z": -691.4900054931641
+            },
+            "distance": 2368.0038835945247,
+            "key": "red",
+            "key_carrier_objnum": 229
+          },
+          {
+            "index": 6,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 456,
+            "side": 4,
+            "wall": 84,
+            "label_pos": {
+              "x": 267.6850128173828,
+              "y": -210.77658081054688,
+              "z": -557.7380218505859
+            },
+            "distance": 266.2801091664612,
+            "trigger": 0,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "guidebot_note": "guidebot is present but not reachable from the start",
-        "route_problem": "blue key unreachable",
         "notes": [
-          "guidebot or guidebot start cage placed in this level",
-          "guidebot is present but not reachable from the start"
+          "guidebot or guidebot start cage placed in this level"
         ]
       }
     ],

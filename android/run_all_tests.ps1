@@ -1399,8 +1399,7 @@ function Invoke-SingleTest {
         -CurrentProgressIndex $Test.ProgressIndex
     $remainingEstimatedRuntime = $remaining.Seconds
     $remainingPercent = $remaining.Percent
-    $remainingMinutesTotal = [int][Math]::Ceiling($remainingEstimatedRuntime / 60.0)
-    $remainingEstimate = "{0:00}:{1:00}" -f [Math]::Floor($remainingMinutesTotal / 60), ($remainingMinutesTotal % 60)
+    $remainingEstimate = Format-RunnerDurationEstimate -Seconds $remainingEstimatedRuntime
     $suiteElapsed = $totalSw.Elapsed.ToString("hh\:mm\:ss")
     Write-Host "  Test $($Test.ProgressIndex)/$($executionTests.Count), $suiteElapsed elapsed, estimated $remainingEstimate remaining ($remainingPercent%)" -ForegroundColor Cyan
     Write-Host "------------------------------------------------------------" -ForegroundColor DarkGray

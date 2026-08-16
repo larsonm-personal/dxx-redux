@@ -21,9 +21,9 @@
         "mine_volume": 13444234.663020857,
         "mine_volume_normalized": 2.939978216737058,
         "mine_volume_text": "2.9x",
-        "travel_distance": 2297.4615183301567,
-        "travel_time_seconds": 46,
-        "travel_time_text": "0M:46S",
+        "travel_distance": 2348.7115183301567,
+        "travel_time_seconds": 47,
+        "travel_time_text": "0M:47S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -154,14 +154,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 1",
-            "seg": 78,
+            "seg": 86,
+            "side": 5,
             "wall": 39,
             "label_pos": {
               "x": 0.0,
               "y": 60.0,
               "z": 90.0
             },
-            "distance": 473.64101968743375,
+            "distance": 524.2660196874338,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -184,7 +185,7 @@
               "y": 80.0,
               "z": 25.763565063476562
             },
-            "distance": 225.18366549169167,
+            "distance": 225.80866549169167,
             "key": "red"
           }
         ],
@@ -461,9 +462,9 @@
         "mine_volume": 18824927.46859691,
         "mine_volume_normalized": 4.116625310145714,
         "mine_volume_text": "4.1x",
-        "travel_distance": 9546.426356880611,
-        "travel_time_seconds": 191,
-        "travel_time_text": "3M:11S",
+        "travel_distance": 7149.521337588259,
+        "travel_time_seconds": 143,
+        "travel_time_text": "2M:23S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -595,19 +596,49 @@
           },
           {
             "index": 6,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 476,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 19",
+            "seg": 455,
+            "side": 4,
+            "wall": 143,
             "label_pos": {
               "x": 0.0,
               "y": 280.0,
-              "z": 130.0
+              "z": 302.5
             },
-            "distance": 3053.9247092181135
+            "distance": 440.9275398103935,
+            "trigger": 19,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 482,
+                "side": 1,
+                "wall": 234
+              },
+              {
+                "seg": 461,
+                "side": 1,
+                "wall": 237
+              }
+            ]
           },
           {
             "index": 7,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 483,
+            "label_pos": {
+              "x": 0.0,
+              "y": 304.7117156982422,
+              "z": -12.0736083984375
+            },
+            "distance": 433.5256645445158
+          },
+          {
+            "index": 8,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -619,7 +650,7 @@
               "y": 302.29864501953125,
               "z": 100.0
             },
-            "distance": 827.7227564388384,
+            "distance": 610.289242009689,
             "trigger": 10,
             "trigger_type_id": 3,
             "trigger_type": "exit"

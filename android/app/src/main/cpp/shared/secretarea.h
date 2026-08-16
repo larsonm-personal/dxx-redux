@@ -56,6 +56,11 @@ void level_metadata_set_analysis_fvi_limit(unsigned int limit);
 unsigned int level_metadata_get_analysis_fvi_count(void);
 void level_metadata_set_persistent_cache_enabled(int enabled);
 void level_metadata_set_defer_guidebot_accessibility(int defer);
+int level_metadata_get_switch_projectile_radius(void);
+void level_metadata_set_switch_projectile_radius_override(int radius);
+void level_metadata_choose_level_display_name(
+    const char *level_file, const char *current_level_name,
+    char *display_name, int display_name_capacity);
 unsigned int level_metadata_get_visibility_checkpoint_sequence(void);
 unsigned int level_metadata_get_route_revision(void);
 

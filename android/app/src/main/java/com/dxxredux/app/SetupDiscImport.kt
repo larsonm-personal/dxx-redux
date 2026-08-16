@@ -6,6 +6,7 @@ import android.os.ParcelFileDescriptor
 import android.util.Log
 import java.io.File
 import java.io.IOException
+import java.security.MessageDigest
 import java.util.Locale
 
 internal data class SetupImportSnapshot(
@@ -312,13 +313,28 @@ internal fun hoistNestedImportedGameFiles(setDir: File): Int {
             .walkTopDown()
             .filter { it.isFile && isDirectGameDataImportName(it.name.lowercase(Locale.US)) }
             .toList()
-    if (candidates.groupBy { it.name.lowercase(Locale.US) }.values.any { it.size > 1 }) {
+    val candidateGroups = candidates.groupBy { it.name.lowercase(Locale.US) }
+    val conflictingGroup =
+        candidateGroups.values.firstOrNull { group ->
+            group.drop(1).any { duplicate -> !filesHaveSameContent(group.first(), duplicate) }
+        }
+    if (conflictingGroup != null) {
         runCatching { Log.w("DXX-DiscImport", "Refusing to hoist ambiguous case-folded game filenames") }
         return -1
     }
+    val retainedCandidates =
+        candidateGroups.values.map { group ->
+            group
+                .sortedWith(
+                    compareBy<File> { it.parentFile != setDir }
+                        .thenBy { it.relativeTo(setDir).invariantSeparatorsPath.lowercase(Locale.US) }
+                        .thenBy { it.relativeTo(setDir).invariantSeparatorsPath },
+                ).first()
+        }
+    val duplicateCandidates = candidates.toSet() - retainedCandidates.toSet()
     var hoisted = 0
 
-    candidates
+    retainedCandidates
         .filter { it.parentFile != setDir && it.length() > 1L }
         .forEach { file ->
             val dest = File(setDir, file.name)
@@ -330,6 +346,8 @@ internal fun hoistNestedImportedGameFiles(setDir: File): Int {
                 }
             }
         }
+
+    duplicateCandidates.forEach { it.delete() }
 
     setDir
         .walkBottomUp()
@@ -344,6 +362,27 @@ internal fun hoistNestedImportedGameFiles(setDir: File): Int {
         }
     }
     return hoisted
+}
+
+private fun filesHaveSameContent(
+    first: File,
+    second: File,
+): Boolean {
+    if (first.length() != second.length()) return false
+
+    fun digest(file: File): ByteArray {
+        val result = MessageDigest.getInstance("SHA-256")
+        file.inputStream().buffered().use { input ->
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            while (true) {
+                val count = input.read(buffer)
+                if (count < 0) break
+                if (count > 0) result.update(buffer, 0, count)
+            }
+        }
+        return result.digest()
+    }
+    return MessageDigest.isEqual(digest(first), digest(second))
 }
 
 private val CUE_FILE_LINE_REGEX = Regex("^\\s*FILE\\s+\"([^\"]+)\"", RegexOption.IGNORE_CASE)

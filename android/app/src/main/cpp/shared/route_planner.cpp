@@ -1624,10 +1624,53 @@ class dependency_planner
 		}
 		const auto &target = targets_.exits[selected.selected_index];
 		const auto activation = exit_activation_position(snapshot_, target);
-		if (!acquire_exit_key(target) ||
-		    !move_to_target(target.segment, activation, 0) ||
-		    !append_target_step(
-		        route_semantic_step_kind::exit, target, "Exit"))
+		const auto exit_prefix = state_;
+		auto post_primary_key_steps = [&](const dependency_state &candidate) {
+			return static_cast<int>(std::count_if(
+			    candidate.steps.begin() + exit_prefix.steps.size(),
+			    candidate.steps.end(), [](const route_semantic_step &step) {
+				    return step.kind == route_semantic_step_kind::key;
+			    }));
+		};
+
+		const bool conventional_ok =
+		    acquire_exit_key(target) &&
+		    move_to_target(target.segment, activation, 0) &&
+		    append_target_step(
+		        route_semantic_step_kind::exit, target, "Exit");
+		const auto conventional = state_;
+		bool uncollected_key_exists = false;
+		for (int key = 0; key < 3; ++key)
+			if (!targets_.keys[key].empty() &&
+			    !(conventional.progress.key_mask & (1 << key))) {
+				uncollected_key_exists = true;
+				break;
+			}
+		if (conventional_ok && !uncollected_key_exists)
+			return make_plan_result(route_plan_status::ok);
+
+		/* Some exits hide their key dependency behind post-reactor doors, so
+		 * the exit wall alone cannot identify the required key. Probe the exit
+		 * from the post-reactor state to discover those dependencies. Keep the
+		 * conventional route unless the probe finds additional required keys,
+		 * which prevents ordinary routes from accumulating speculative travel. */
+		state_ = exit_prefix;
+		state_.problem.clear();
+		const bool discovered_ok =
+		    move_to_target(target.segment, activation, 0) &&
+		    acquire_exit_key(target) &&
+		    move_to_target(target.segment, activation, 0) &&
+		    append_target_step(
+		        route_semantic_step_kind::exit, target, "Exit");
+		const auto discovered = state_;
+		if (conventional_ok &&
+		    (!discovered_ok ||
+		     post_primary_key_steps(conventional) >=
+		         post_primary_key_steps(discovered)))
+			state_ = conventional;
+		else if (discovered_ok)
+			state_ = discovered;
+		else
 			return finish_partial("route incomplete");
 		return make_plan_result(route_plan_status::ok);
 	}
@@ -1844,6 +1887,49 @@ class dependency_planner
 			report_progress(
 			    visibility_, "route_target_visibility", total, total);
 			return path;
+		}
+		/* D2 bosses can engage or teleport from a room sealed by a
+		 * buddy-proof wall.  Route the Guide-Bot to the player handoff point
+		 * instead of treating the boss, and therefore the exit, as unreachable. */
+		if (target.kind == route_target_kind::boss) {
+			route_path_result best;
+			for (const int segment : search.visit_order) {
+				const auto &topology_segment =
+				    snapshot_.topology.segments[segment];
+				for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+					const auto &topology_side = topology_segment.sides[side];
+					if (topology_side.child != target.segment)
+						continue;
+					const int reverse_side = topology_side.reverse_side;
+					const int reverse_wall =
+					    reverse_side >= 0 &&
+					            reverse_side < LEVEL_METADATA_MAX_SIDES
+					        ? snapshot_.topology.segments[target.segment]
+					              .sides[reverse_side]
+					              .wall
+					        : -1;
+					const bool buddy_proof =
+					    (valid_wall(snapshot_, topology_side.wall) &&
+					     snapshot_.state.walls[topology_side.wall].buddy_proof) ||
+					    (valid_wall(snapshot_, reverse_wall) &&
+					     snapshot_.state.walls[reverse_wall].buddy_proof);
+					if (!buddy_proof || !topology_segment.center.valid)
+						continue;
+					auto candidate = build_route_path(search, segment);
+					if (!candidate.reached ||
+					    (best.reached && candidate.distance >= best.distance))
+						continue;
+					candidate.terminal_segment = segment;
+					candidate.terminal_position = topology_segment.center;
+					candidate.waits_for_player = true;
+					best = std::move(candidate);
+				}
+			}
+			if (best.reached) {
+				report_progress(
+				    visibility_, "route_target_visibility", total, total);
+				return best;
+			}
 		}
 		report_progress(
 		    visibility_, "route_target_visibility", total, total);
@@ -2251,6 +2337,16 @@ class dependency_planner
 		const auto &exit_wall = snapshot_.state.walls[wall];
 		if (exit_wall.opened || exit_wall.kind != route_wall_kind::door)
 			return true;
+		const auto &exit_side =
+		    snapshot_.topology.segments[target.segment].sides[target.side];
+		for (const int source_wall : exit_side.opener_walls) {
+			if (!valid_wall(snapshot_, source_wall))
+				continue;
+			const int trigger = snapshot_.state.walls[source_wall].trigger;
+			if (valid_trigger(snapshot_, trigger) &&
+			    state_flag(state_.progress.fired_triggers, trigger))
+				return true;
+		}
 		const int required_key = key_index(exit_wall.key);
 		return required_key < 0 || acquire_key(required_key, 0);
 	}
@@ -2292,6 +2388,9 @@ class dependency_planner
 			return false;
 		}
 		accumulate_path(visible);
+		if (visible.waits_for_player)
+			state_.note =
+			    "Guide-Bot waits at the buddy-proof wall outside the boss";
 		state_.progress.current_segment = visible.terminal_segment;
 		state_.progress.current_position = visible.terminal_position;
 		return true;

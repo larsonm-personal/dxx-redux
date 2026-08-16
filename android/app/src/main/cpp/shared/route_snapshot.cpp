@@ -235,6 +235,7 @@ route_state_fingerprints fingerprint_state(const route_state &state)
 		navigation.add_bool(wall.locked);
 		navigation.add_bool(wall.opened);
 		navigation.add_bool(wall.hidden);
+		navigation.add_bool(wall.buddy_proof);
 	}
 	result.navigation = navigation.value();
 
@@ -544,6 +545,9 @@ bool build_route_snapshot(const level_metadata_scan_view &view,
 		     view.wall_is_opening(view.user, wall_index));
 		state_wall.hidden = view.wall_clip_hidden != 0 &&
 		                    (state_wall.clip_flags & view.wall_clip_hidden) != 0;
+		state_wall.buddy_proof = view.wall_flag_buddy_proof != 0 &&
+		                         (state_wall.flags &
+		                          view.wall_flag_buddy_proof) != 0;
 	}
 
 	next.topology.hash = hash_topology(next.topology);

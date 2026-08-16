@@ -161,6 +161,8 @@ internal class RouteMetadataLedger(
 
     fun read(jobId: String): RouteMetadataLedgerEntry? = withEntries { it[jobId] }
 
+    fun entries(): Map<String, RouteMetadataLedgerEntry> = withEntries { it.toMap() }
+
     fun update(
         jobId: String,
         transform: (RouteMetadataLedgerEntry?) -> RouteMetadataLedgerEntry?,

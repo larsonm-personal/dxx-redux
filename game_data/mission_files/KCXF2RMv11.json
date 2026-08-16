@@ -181,9 +181,9 @@
         "mine_volume": 24128618.165080205,
         "mine_volume_normalized": 5.276433622541555,
         "mine_volume_text": "5.3x",
-        "travel_distance": 12385.69897867608,
-        "travel_time_seconds": 248,
-        "travel_time_text": "4M:08S",
+        "travel_distance": 12663.122033374095,
+        "travel_time_seconds": 253,
+        "travel_time_text": "4M:13S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -405,14 +405,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 19",
-            "seg": 162,
+            "seg": 182,
+            "side": 0,
             "wall": 159,
             "label_pos": {
               "x": 750.85595703125,
               "y": 32.266204833984375,
               "z": 479.5157470703125
             },
-            "distance": 2529.6903264698176,
+            "distance": 2668.3825873235255,
             "trigger": 19,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -472,7 +473,7 @@
               "y": 32.266204833984375,
               "z": 240.5157470703125
             },
-            "distance": 183.61616158354056,
+            "distance": 322.3469554278479,
             "trigger": 18,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -578,9 +579,9 @@
         "mine_volume": 36523516.054369174,
         "mine_volume_normalized": 7.98694342146838,
         "mine_volume_text": "8.0x",
-        "travel_distance": 15078.554344836499,
-        "travel_time_seconds": 302,
-        "travel_time_text": "5M:02S",
+        "travel_distance": 15166.06278929301,
+        "travel_time_seconds": 303,
+        "travel_time_text": "5M:03S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -954,14 +955,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 22",
-            "seg": 67,
+            "seg": 115,
+            "side": 0,
             "wall": 25,
             "label_pos": {
               "x": -291.7672424316406,
               "y": 367.5187683105469,
               "z": -546.9440765380859
             },
-            "distance": 333.07712378936895,
+            "distance": 383.077123109621,
             "trigger": 22,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1003,14 +1005,13 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 21",
-            "seg": 67,
+            "seg": 115,
             "wall": 156,
             "label_pos": {
               "x": -351.1686248779297,
               "y": 337.3336181640625,
               "z": -615.8014221191406
             },
-            "distance": 4.999995227970699,
             "trigger": 21,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -1035,7 +1036,7 @@
               "y": 190.1476287841797,
               "z": -685.9364624023438
             },
-            "distance": 340.80017430702935,
+            "distance": 383.30861467125897,
             "trigger": 24,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -1469,9 +1470,9 @@
         "mine_volume": 35458736.98203823,
         "mine_volume_normalized": 7.754098089863088,
         "mine_volume_text": "7.8x",
-        "travel_distance": 3237.0161877615815,
-        "travel_time_seconds": 65,
-        "travel_time_text": "1M:05S",
+        "travel_distance": 5935.160568287166,
+        "travel_time_seconds": 119,
+        "travel_time_text": "1M:59S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1658,6 +1659,47 @@
           },
           {
             "index": 6,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 100,
+            "side": 4,
+            "wall": 2,
+            "label_pos": {
+              "x": 3.0517578125e-05,
+              "y": -438.75,
+              "z": 172.54925537109375
+            },
+            "distance": 1349.0419722816691,
+            "opens": [
+              {
+                "seg": 100,
+                "side": 4,
+                "wall": 2
+              },
+              {
+                "seg": 101,
+                "side": 5,
+                "wall": 3
+              }
+            ]
+          },
+          {
+            "index": 7,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 134,
+            "label_pos": {
+              "x": -0.0001068115234375,
+              "y": -445.75,
+              "z": 72.54925537109375
+            },
+            "distance": 117.41074805019274,
+            "key": "red"
+          },
+          {
+            "index": 8,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -1669,7 +1711,7 @@
               "y": 228.75,
               "z": 242.5493621826172
             },
-            "distance": 260.90497900549826,
+            "distance": 1492.5966391992208,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -1677,7 +1719,6 @@
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
-          "red key not necessary",
           "no guidebot or guidebot start cage placed in this level"
         ]
       },
@@ -1703,9 +1744,7 @@
         "route_status": "failed",
         "route_steps": [],
         "route_problem": "level file is missing",
-        "problems": [
-          "level file is missing"
-        ],
+        "problems": "level file is missing",
         "status": "failed"
       },
       {
@@ -1763,9 +1802,7 @@
         ]
       }
     ],
-    "problems": [
-      "one or more secret levels are referenced but missing"
-    ],
+    "problems": "one or more secret levels are referenced but missing",
     "target_index": 0
   }
 ]

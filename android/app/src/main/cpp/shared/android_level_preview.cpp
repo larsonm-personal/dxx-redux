@@ -141,8 +141,6 @@ static unsigned long long Robot_preview_projectile_sequence;
 static fix Robot_preview_normal_view_radius;
 static fix Robot_preview_large_view_radius;
 static fix Robot_preview_view_radius;
-static int Robot_preview_scale_reference_robot = -1;
-static fix Robot_preview_camera_scale = F1_0;
 static const char *Robot_preview_camera_tier = "normal";
 static fix Robot_preview_last_projectile_render_size;
 static fix Robot_preview_last_projectile_render_scale = F1_0;
@@ -173,10 +171,7 @@ static const fix ROBOT_PREVIEW_FRAME_TIME = F1_0 / 60;
 static const fix ROBOT_PREVIEW_PHYSICS_TIME = F1_0 / 64;
 static const fix ROBOT_PREVIEW_PROJECTILE_DISPLAY_DISTANCE = i2f(40);
 static const int ROBOT_PREVIEW_MAX_ACTIVE_MINES = 2;
-static const int ROBOT_PREVIEW_SUPER_HULK = 16;
-#ifdef DXX_BUILD_DESCENT_II
-static const int ROBOT_PREVIEW_MINI_REACTOR = 65;
-#endif
+static const fix ROBOT_PREVIEW_NORMAL_VIEW_RADIUS = F1_0 * 13 / 2;
 // RUN_FROM is stored on level objects, not in the original D1/D2 robot records.
 static const int ROBOT_PREVIEW_BASE_MINE_DROPPER = 10;
 
@@ -1317,47 +1312,14 @@ static int robot_preview_uses_large_camera(int number)
 {
 	if (number < 0 || number >= N_robot_types)
 		return 0;
-#ifdef DXX_BUILD_DESCENT_II
-	if (number == ROBOT_PREVIEW_MINI_REACTOR)
-		return 1;
-#endif
-	return Robot_info[number].boss_flag != 0;
-}
-
-static int robot_preview_scale_reference(int number)
-{
-#ifdef DXX_BUILD_DESCENT_II
-	switch (number) {
-		case 5:
-		case 19:
-			return 19;
-		case 6:
-			return 0;
-		case 18:
-			return 1;
-		case 54:
-			return 40;
-		case 55:
-			return 25;
-	}
-#else
-	(void) number;
-#endif
-	return -1;
+	return Robot_info[number].boss_flag != 0 ||
+	       robot_preview_model_radius(number) > ROBOT_PREVIEW_NORMAL_VIEW_RADIUS;
 }
 
 static void robot_preview_configure_camera_tiers(void)
 {
-	Robot_preview_normal_view_radius = robot_preview_model_radius(ROBOT_PREVIEW_SUPER_HULK);
-	if (Robot_preview_normal_view_radius <= 0)
-		Robot_preview_normal_view_radius = i2f(3);
-	Robot_preview_large_view_radius = Robot_preview_normal_view_radius;
-	for (int number = 0; number < N_robot_types; ++number) {
-		const fix radius = robot_preview_model_radius(number);
-		if (robot_preview_uses_large_camera(number) &&
-		    radius > Robot_preview_large_view_radius)
-			Robot_preview_large_view_radius = radius;
-	}
+	Robot_preview_normal_view_radius = ROBOT_PREVIEW_NORMAL_VIEW_RADIUS;
+	Robot_preview_large_view_radius = ROBOT_PREVIEW_NORMAL_VIEW_RADIUS;
 }
 
 static int robot_preview_configure_robot(int number)
@@ -1371,22 +1333,12 @@ static int robot_preview_configure_robot(int number)
 	Robot_preview_model = model;
 	if (robot_preview_uses_large_camera(number)) {
 		Robot_preview_camera_tier = "large";
+		Robot_preview_large_view_radius =
+		    (std::max) (Robot_preview_normal_view_radius, Polygon_models[model].rad);
 		Robot_preview_view_radius = Robot_preview_large_view_radius;
 	} else {
 		Robot_preview_camera_tier = "normal";
 		Robot_preview_view_radius = Robot_preview_normal_view_radius;
-	}
-	Robot_preview_scale_reference_robot = robot_preview_scale_reference(number);
-	Robot_preview_camera_scale = F1_0;
-	if (Robot_preview_scale_reference_robot >= 0) {
-		const fix reference_radius = robot_preview_model_radius(Robot_preview_scale_reference_robot);
-		const fix model_radius = robot_preview_model_radius(number);
-		if (reference_radius > 0 && model_radius > 0)
-			Robot_preview_view_radius =
-			    fixmuldiv(Robot_preview_view_radius, model_radius, reference_radius);
-		if (Robot_preview_scale_reference_robot == 19)
-			Robot_preview_camera_scale = F1_0 * 4 / 3;
-		Robot_preview_view_radius = fixmul(Robot_preview_view_radius, Robot_preview_camera_scale);
 	}
 	Robot_preview_behavior = robot_preview_find_behavior(number, &Robot_preview_behavior_from_level);
 	Robot_preview_target_distance = (std::max) (i2f(40), Robot_info[number].circle_distance[Robot_preview_difficulty]);
@@ -1587,8 +1539,6 @@ static int run_robot_preview(
 	Robot_preview_normal_view_radius = 0;
 	Robot_preview_large_view_radius = 0;
 	Robot_preview_view_radius = 0;
-	Robot_preview_scale_reference_robot = -1;
-	Robot_preview_camera_scale = F1_0;
 	Robot_preview_camera_tier = "normal";
 	Robot_preview_navigation_numbers.clear();
 	Robot_preview_attack_was_enabled = Robot_preview_attack_enabled.load(std::memory_order_relaxed);
@@ -1930,10 +1880,6 @@ extern "C" const char *android_level_preview_introspection_json(void)
 			{ "boss", robot->boss_flag != 0 },
 			{ "camera_tier", Robot_preview_camera_tier },
 			{ "camera_view_radius", f2fl(Robot_preview_view_radius) },
-			{ "scale_reference_robot", Robot_preview_scale_reference_robot },
-			{ "scale_reference_radius", f2fl(robot_preview_model_radius(
-			                                Robot_preview_scale_reference_robot)) },
-			{ "camera_scale", f2fl(Robot_preview_camera_scale) },
 			{ "display_radius_ratio", f2fl(fixdiv(
 			                              Polygon_models[Robot_preview_model].rad,
 			                              Robot_preview_view_radius)) },

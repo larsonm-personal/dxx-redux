@@ -37,6 +37,9 @@
 .PARAMETER RestartDevice
   Force a clean emulator restart before device preflight.
 
+.PARAMETER ReportDir
+  Directory for per-source output, failed-import logcat, and summary.json.
+
 .EXAMPLE
   .\test_all_extracts.ps1                          # one random spec
   .\test_all_extracts.ps1 -All                     # all specs
@@ -54,7 +57,8 @@ param(
     [int]$MaxFailures = 0,
     [string[]]$SpecPaths,
     [switch]$BuildAndInstall,
-    [switch]$RestartDevice
+    [switch]$RestartDevice,
+    [string]$ReportDir
 )
 
 $ErrorActionPreference = 'Stop'
@@ -62,6 +66,11 @@ $SCRIPT_DIR = $PSScriptRoot
 $REPO_ROOT = Split-Path (Split-Path $SCRIPT_DIR)
 $GAME_DATA = Join-Path $REPO_ROOT 'game_data'
 $TEST_SCRIPT = Join-Path $SCRIPT_DIR 'test_extract.ps1'
+$suiteStartedAt = Get-Date
+if (-not $ReportDir) {
+    $ReportDir = Join-Path $REPO_ROOT "temp\extract_regression_reports\run_$($suiteStartedAt.ToString('yyyyMMdd_HHmmss'))"
+}
+New-Item -ItemType Directory -Path $ReportDir -Force | Out-Null
 
 Write-Host "test_all_extracts.ps1 starting"
 
@@ -171,6 +180,36 @@ function Read-Json5 {
     return Read-Json5File $Path
 }
 
+function Write-ExtractRegressionSummary {
+    param([Parameter(Mandatory)][object[]]$Results)
+
+    $summary = [ordered]@{
+        started_at = $suiteStartedAt.ToString('o')
+        completed_at = (Get-Date).ToString('o')
+        status = if (@($Results | Where-Object Status -eq 'FAIL').Count -eq 0) { 'pass' } else { 'fail' }
+        results = @($Results | ForEach-Object {
+                [ordered]@{
+                    source = $_.Source
+                    status = $_.Status.ToLowerInvariant()
+                    prior_status = $_.Prior
+                    saved_status = $_.Saved
+                    failure_step = $_.FailureStep
+                    attempts = $_.Attempts
+                    elapsed = $_.Time
+                    exit_code = $_.ExitCode
+                    log_file = $_.LogFile
+                    logcat_file = $_.LogcatFile
+                }
+            })
+    }
+    $json = ($summary | ConvertTo-Json -Depth 6) -replace "`r`n", "`n"
+    [System.IO.File]::WriteAllText(
+        (Join-Path $ReportDir 'summary.json'),
+        $json + "`n",
+        [System.Text.UTF8Encoding]::new($false)
+    )
+}
+
 if ($BuildAndInstall) {
     $gradle = Join-Path (Join-Path $REPO_ROOT 'android') 'gradlew.bat'
     Write-Host 'Building current debug APK for extraction regressions...' -ForegroundColor Cyan
@@ -219,7 +258,12 @@ foreach ($specPath in $specs) {
         $sourceName = [System.IO.Path]::GetFileNameWithoutExtension($specPath) -replace '_regression$', ''
     }
 
-    Write-Host "--- [$($results.Count + 1)/$($specs.Count)] $sourceName ---" -ForegroundColor Cyan
+    $resultIndex = $results.Count + 1
+    $artifactName = (([regex]::Replace($sourceName.ToLowerInvariant(), '[^a-z0-9]+', '_')).Trim('_'))
+    $testLogPath = Join-Path $ReportDir ("{0:00}_{1}.log" -f $resultIndex, $artifactName)
+    $logcatPath = ''
+    Write-Host "--- [$resultIndex/$($specs.Count)] $sourceName ---" -ForegroundColor Cyan
+    Write-Host "  Log: $testLogPath" -ForegroundColor DarkGray
 
     # Read prior test result from spec file (if any)
     $priorStatus = $null
@@ -244,6 +288,7 @@ foreach ($specPath in $specs) {
 
     # Force-stop app between tests to ensure clean state
     Adb -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
+    Adb -AdbArgs @('logcat', '-c') | Out-Null
     Start-Sleep -Seconds 1
 
     $testStart = Get-Date
@@ -256,7 +301,8 @@ foreach ($specPath in $specs) {
     while ($true) {
         $attempt++
         try {
-            pwsh @testArgs
+            "=== Attempt $attempt ===" | Tee-Object -FilePath $testLogPath -Append
+            pwsh @testArgs 2>&1 | Tee-Object -FilePath $testLogPath -Append
             $exitCode = $LASTEXITCODE
         } catch {
             Write-Host "  EXCEPTION: $_" -ForegroundColor Red
@@ -288,9 +334,13 @@ foreach ($specPath in $specs) {
 
     # Read new result from spec file (written by Exit-Test)
     $newStatus = $null
+    $failureStep = ''
     try {
         $specData = Read-Json5 $specPath
-        if ($specData.last_test_result) { $newStatus = $specData.last_test_result.status }
+        if ($specData.last_test_result) {
+            $newStatus = $specData.last_test_result.status
+            $failureStep = [string]$specData.last_test_result.failure_step
+        }
     } catch {}
     $status = if ($exitCode -ne 0) {
         'FAIL'
@@ -301,6 +351,17 @@ foreach ($specPath in $specs) {
     }
     $changed = ($priorStatus -ne $newStatus)
 
+    if ($status -eq 'FAIL') {
+        $logcatPath = Join-Path $ReportDir ("{0:00}_{1}.logcat.txt" -f $resultIndex, $artifactName)
+        try {
+            $logcat = @(Adb -AdbArgs @('logcat', '-d', '-v', 'time')) -join "`n"
+            [System.IO.File]::WriteAllText($logcatPath, $logcat + "`n", [System.Text.UTF8Encoding]::new($false))
+        } catch {
+            Add-Content -LiteralPath $testLogPath -Value "Could not save failed-test logcat: $_" -Encoding utf8
+            $logcatPath = ''
+        }
+    }
+
     $results += [PSCustomObject]@{
         Source   = $sourceName
         Status   = $status
@@ -310,7 +371,11 @@ foreach ($specPath in $specs) {
         Saved    = if ($newStatus) { $newStatus } else { '-' }
         Changed  = if ($changed -and $priorStatus) { '*' } else { '' }
         Attempts = $attempt
+        FailureStep = $failureStep
+        LogFile = $testLogPath
+        LogcatFile = $logcatPath
     }
+    Write-ExtractRegressionSummary -Results $results
 
     if ($status -eq 'FAIL') {
         $failures++
@@ -345,7 +410,9 @@ Write-Host "  Total time: $( '{0:hh\:mm\:ss}' -f $totalElapsed )" -ForegroundCol
 Write-Host "============================================================" -ForegroundColor White
 Write-Host ""
 
+Write-ExtractRegressionSummary -Results $results
 $results | Format-Table Source, Status, Prior, Saved, Changed, Attempts, Time, ExitCode -AutoSize
+Write-Host "Detailed results: $(Join-Path $ReportDir 'summary.json')" -ForegroundColor Cyan
 
 # Final cleanup: ensure app is stopped
 Adb -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null

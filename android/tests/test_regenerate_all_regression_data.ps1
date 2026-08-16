@@ -32,6 +32,27 @@ Assert-True (($stages[1].Arguments -join ',') -eq '-Force') `
     'The fingerprint stage should force a complete refresh'
 Assert-True ($stages[2].Script -eq (Join-Path $repoRoot 'android\helpers\regenerate_all_mission_metadata.ps1')) `
     'The third stage should use the canonical Android mission metadata wrapper'
+Assert-True (@(Get-RegressionDataStages -RepoRoot $repoRoot -Category Cd).Count -eq 1) `
+    'CD-only selection should contain one stage'
+Assert-True ((Get-RegressionDataStages -RepoRoot $repoRoot -Category Fingerprints)[0].Key -eq 'Fingerprints') `
+    'Fingerprint-only selection should select the fingerprint stage'
+Assert-True ((Get-RegressionDataStages -RepoRoot $repoRoot -Category Metadata)[0].Key -eq 'Metadata') `
+    'Metadata-only selection should select the metadata stage'
+
+foreach ($templateName in @(
+        'test_mission_zip_batch_import_metadata.json5',
+        'test_mission_zip_batch_import_metadata_launch.json5'
+    )) {
+    $templatePath = Join-Path $repoRoot "android\game_scripts\$templateName"
+    $template = Get-Content -LiteralPath $templatePath -Raw
+    $routeCacheClear = $template.IndexOf('"command": "clear_route_metadata_cache"')
+    $resultCacheClear = $template.IndexOf('"command": "clear_level_metadata_result_cache"')
+    $metadataAnalysis = $template.IndexOf('"action": "analyze_level_metadata_all"')
+    Assert-True ($routeCacheClear -ge 0 -and $routeCacheClear -lt $metadataAnalysis) `
+        "$templateName should clear the native route cache before metadata analysis"
+    Assert-True ($resultCacheClear -ge 0 -and $resultCacheClear -lt $metadataAnalysis) `
+        "$templateName should clear the full-result cache before metadata analysis"
+}
 
 $tempRoot = Join-Path $repoRoot 'android\temp\regression_data_runner_test'
 if (Test-Path -LiteralPath $tempRoot) {
@@ -61,16 +82,36 @@ exit $($definition.ExitCode)
         }
     }
 
-    $failed = $false
-    try {
-        Invoke-RegressionDataStages -Stages $testStages
-    } catch {
-        $failed = $_.Exception.Message -match "stage 'second' failed with exit code 7"
-    }
-    Assert-True $failed 'Master regeneration should report the failing stage and exit code'
+    $reportDir = Join-Path $tempRoot 'reports'
+    $results = @(Invoke-RegressionDataStages -Stages $testStages -ReportDir $reportDir -Category All -RecordTiming)
+    Assert-True ($results.Count -eq 3) `
+        "Master regeneration should return every stage result, got $($results.Count): $($results.GetType().FullName)"
+    Assert-True (($results.Status -join ',') -eq 'PASS,FAIL,PASS') `
+        'Master regeneration should preserve each stage status'
     $executed = @(Get-Content -LiteralPath $logPath)
-    Assert-True (($executed -join ',') -eq 'first,second') `
-        'Master regeneration should stop before the stage after a failure'
+    Assert-True (($executed -join ',') -eq 'first,second,third') `
+        'Master regeneration should continue after a stage failure'
+
+    $runDir = @(Get-ChildItem -LiteralPath $reportDir -Directory -Filter 'run_*')
+    Assert-True ($runDir.Count -eq 1) 'Full regeneration should create one durable run directory'
+    $summaryPath = Join-Path $runDir[0].FullName 'summary.json'
+    Assert-True (Test-Path -LiteralPath $summaryPath -PathType Leaf) `
+        'Full regeneration should save a machine-readable summary'
+    $summary = Get-Content -LiteralPath $summaryPath -Raw | ConvertFrom-Json
+    Assert-True ($summary.status -eq 'fail' -and $summary.stages.Count -eq 3) `
+        'Durable summary should contain the complete failed run'
+    Assert-True (@(Get-ChildItem -LiteralPath $runDir[0].FullName -Filter '*.log').Count -eq 3) `
+        'Full regeneration should save one log per stage'
+    Assert-True (@(Get-ChildItem -LiteralPath $reportDir -File -Filter 'report_*.md').Count -eq 1) `
+        'Complete full regeneration should save timing history even when a stage fails'
+
+    $partialReportDir = Join-Path $tempRoot 'partial_reports'
+    $partial = @($testStages | Select-Object -First 1)
+    $partialResults = @(Invoke-RegressionDataStages -Stages $partial -ReportDir $partialReportDir -Category Cd)
+    Assert-True ($partialResults.Count -eq 1 -and $partialResults[0].Status -eq 'PASS') `
+        'Partial regeneration should run its selected stage'
+    Assert-True (@(Get-ChildItem -LiteralPath $partialReportDir -File -Filter 'report_*.md').Count -eq 0) `
+        'Partial regeneration should not write timing history'
 } finally {
     Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
 }

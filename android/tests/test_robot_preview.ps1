@@ -10,7 +10,6 @@ param(
     [int]$ExpectedWeapon = -1,
     [ValidateSet("", "normal", "large")]
     [string]$ExpectedCameraTier = "",
-    [int]$ExpectedScaleReference = -2,
     [double]$ExpectedMinProjectileRenderScale = 0,
     [double]$ExpectedMaxProjectileRenderScale = 0,
     [int]$Seed = 6042,
@@ -159,7 +158,7 @@ try {
         }
     }
     if ([double]$initial.level_preview.model_radius -le 0 -or
-        [double]$initial.level_preview.camera_view_radius -lt [double]$initial.level_preview.model_radius -or
+        [double]$initial.level_preview.camera_view_radius -le 0 -or
         [double]$initial.level_preview.normal_camera_view_radius -le 0 -or
         [double]$initial.level_preview.large_camera_view_radius -lt
         [double]$initial.level_preview.normal_camera_view_radius -or
@@ -169,16 +168,10 @@ try {
     if ($ExpectedCameraTier -and $initial.level_preview.camera_tier -ne $ExpectedCameraTier) {
         throw "Expected camera tier '$ExpectedCameraTier', got '$($initial.level_preview.camera_tier)'"
     }
-    if ($ExpectedScaleReference -ge -1 -and
-        [int]$initial.level_preview.scale_reference_robot -ne $ExpectedScaleReference) {
-        throw "Expected scale reference $ExpectedScaleReference, got $($initial.level_preview.scale_reference_robot)"
-    }
-    if ($ExpectedScaleReference -ge 0) {
-        $expectedDisplayRatio = [double]$initial.level_preview.scale_reference_radius /
-        ([double]$initial.level_preview.normal_camera_view_radius * [double]$initial.level_preview.camera_scale)
-        Assert-Near -Actual ([double]$initial.level_preview.display_radius_ratio) `
-            -Expected $expectedDisplayRatio -Description "Canonical robot display ratio"
-    }
+    $expectedDisplayRatio = [double]$initial.level_preview.model_radius /
+    [double]$initial.level_preview.camera_view_radius
+    Assert-Near -Actual ([double]$initial.level_preview.display_radius_ratio) `
+        -Expected $expectedDisplayRatio -Description "World-scale robot display ratio"
 
     $robotCount = [int]$initial.level_preview.robot_count
     $currentNavigationIndex = 0
@@ -200,14 +193,13 @@ try {
     if (-not $navigated -or [int]$navigated.level_preview.robot_number -ne $nextRobot) {
         throw "Robot preview did not advance to the next robot"
     }
-    if ([int]$navigated.level_preview.scale_reference_robot -lt 0 -and
-        [int]$initial.level_preview.scale_reference_robot -lt 0 -and
-        $navigated.level_preview.camera_tier -eq $initial.level_preview.camera_tier -and
+    if ($initial.level_preview.camera_tier -eq "normal" -and
+        $navigated.level_preview.camera_tier -eq "normal" -and
         [Math]::Abs(
             [double]$navigated.level_preview.camera_view_radius -
             [double]$initial.level_preview.camera_view_radius
         ) -gt 0.001) {
-        throw "Robots in the same camera tier used different zoom levels"
+        throw "Ordinary robots used different zoom levels"
     }
     Adb -AdbArgs @(
         "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_COMMAND", "-p", $script:PACKAGE,

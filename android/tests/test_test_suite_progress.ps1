@@ -27,4 +27,12 @@ if ($atLastTest.Seconds -ne 30 -or $atLastTest.Percent -ne 50) {
     throw "Last-test estimate was $($atLastTest.Seconds)s/$($atLastTest.Percent)%, expected 30s/50%"
 }
 
+$generic = Get-RemainingRuntimeEstimate -Tests $tests -CurrentProgressIndex 2
+if ($generic.Seconds -ne $afterOverrun.Seconds -or $generic.Percent -ne $afterOverrun.Percent) {
+    throw 'Generic and test-suite remaining runtime estimates diverged'
+}
+if ((Format-RunnerDurationEstimate -Seconds 3661) -ne '01:02') {
+    throw 'Shared runner duration formatter did not round 3661 seconds to 01:02'
+}
+
 Write-Host "PASS"

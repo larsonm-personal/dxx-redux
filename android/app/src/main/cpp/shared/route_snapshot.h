@@ -147,6 +147,7 @@ struct route_state_wall {
 	bool locked = false;
 	bool opened = false;
 	bool hidden = false;
+	bool buddy_proof = false;
 };
 
 struct route_state_trigger {

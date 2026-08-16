@@ -89,6 +89,23 @@ class DiscImportHoistTest {
     }
 
     @Test
+    fun deduplicatesIdenticalNestedMissionFiles() {
+        val setDir = createTempDirectory("disc-import-identical").toFile()
+        val firstDir = File(setDir, "dlotw").apply { mkdirs() }
+        val secondDir = File(setDir, "levels").apply { mkdirs() }
+        val content = byteArrayOf(1, 2, 3, 4)
+        File(firstDir, "RATRACE.HOG").writeBytes(content)
+        File(secondDir, "ratrace.hog").writeBytes(content)
+
+        val hoisted = hoistNestedImportedGameFiles(setDir)
+
+        assertEquals(1, hoisted)
+        assertTrue(File(setDir, "RATRACE.HOG").isFile)
+        assertFalse(firstDir.exists())
+        assertFalse(secondDir.exists())
+    }
+
+    @Test
     fun tracksImportCompletionAndFailure() {
         SetupImportTracker.reset()
         assertEquals("idle", SetupImportTracker.snapshot().status)

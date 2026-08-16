@@ -26,8 +26,8 @@ function Invoke-MetadataNormalizer {
     return (($result -join "`n") + "`n")
 }
 
-$androidStyle = '{"levels":[{"mine_volume":24904610,"travel_distance":0,"route_steps":[{"distance":580,"label_pos":{"x":514,"y":-22,"z":0}}]}]}'
-$hostStyle = '{"levels":[{"mine_volume":24904610.0,"travel_distance":0.0,"route_steps":[{"distance":580.0,"label_pos":{"x":514.0,"y":-22.0,"z":0.0}}]}]}'
+$androidStyle = '{"levels":[{"mine_volume":24904610,"travel_distance":0,"route_steps":[{"distance":580,"label_pos":{"x":514,"y":-22,"z":0}}],"replacements":[{"kind":"robot"}],"replacement_groups":[{"kind":"robot_changes"}]}]}'
+$hostStyle = '{"levels":[{"mine_volume":24904610.0,"travel_distance":0.0,"route_steps":[{"distance":580.0,"label_pos":{"x":514.0,"y":-22.0,"z":0.0}}],"replacements":[{"kind":"robot"}],"replacement_groups":[{"kind":"robot_changes"}]}]}'
 
 $androidNormalized = Invoke-MetadataNormalizer -Text $androidStyle
 $hostNormalized = Invoke-MetadataNormalizer -Text $hostStyle
@@ -37,6 +37,11 @@ if ($androidNormalized -cne $hostNormalized) {
 foreach ($expected in @('"mine_volume": 24904610.0', '"travel_distance": 0.0', '"distance": 580.0', '"x": 514.0')) {
     if (-not $androidNormalized.Contains($expected)) {
         throw "Canonical mission metadata output is missing $expected"
+    }
+}
+foreach ($excluded in @('"replacements"', '"replacement_groups"')) {
+    if ($androidNormalized.Contains($excluded)) {
+        throw "Canonical mission metadata output should exclude $excluded"
     }
 }
 

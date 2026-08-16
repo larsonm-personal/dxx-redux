@@ -348,6 +348,7 @@ function Get-ExtractAutomationScriptText {
     {"action": "enter_launcher"},
     {"action": "setup_command", "command": "switch_set", "args": {"name": $setJson}, "post_delay_ms": 500},
     {"action": "setup_command", "command": "write_bool_pref", "args": {"key": "skip_intro_movie", "value": true}, "post_delay_ms": 250},
+    {"action": "setup_command", "command": "write_music_prefs", "args": {"source": "midi", "prefer_mission_soundtrack": false, "play_order": 0, "volume": 8}, "post_delay_ms": 500},
     {"action": "enter_game", "game": $gameJson},
 $body
 ]

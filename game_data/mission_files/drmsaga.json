@@ -3,7 +3,7 @@
     "status": "ok",
     "source": "Dr. Moreau's Saga of Death",
     "game": "d2",
-    "mission_name": "Dr. Moreau's Saga of Death",
+    "mission_name": "Dr. Moreau's Saga of Deat",
     "mission_filename": "Drmsaga.mn2",
     "coop_starts": "4",
     "level_count": 5,
@@ -21,9 +21,9 @@
         "mine_volume": 102698408.24901417,
         "mine_volume_normalized": 22.458034296005703,
         "mine_volume_text": "22x",
-        "travel_distance": 11537.874210436485,
-        "travel_time_seconds": 231,
-        "travel_time_text": "3M:51S",
+        "travel_distance": 11042.789554018222,
+        "travel_time_seconds": 221,
+        "travel_time_text": "3M:41S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -38,69 +38,6 @@
           },
           {
             "index": 1,
-            "kind": "trigger",
-            "activation_kind": "fly_through_trigger",
-            "label": "Fly-through trigger 6",
-            "seg": 0,
-            "side": 4,
-            "wall": 67,
-            "label_pos": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 20.0
-            },
-            "distance": 10.591360160199844,
-            "trigger": 6,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 39,
-                "side": 0,
-                "wall": 57
-              },
-              {
-                "seg": 39,
-                "side": 1,
-                "wall": 59
-              },
-              {
-                "seg": 39,
-                "side": 2,
-                "wall": 61
-              },
-              {
-                "seg": 39,
-                "side": 3,
-                "wall": 63
-              },
-              {
-                "seg": 487,
-                "side": 1,
-                "wall": 170
-              },
-              {
-                "seg": 487,
-                "side": 3,
-                "wall": 169
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "boss",
-            "activation_kind": "destroy_boss",
-            "label": "Boss robot",
-            "seg": 77,
-            "label_pos": {
-              "x": -205.63209533691406,
-              "y": -79.99996948242188,
-              "z": 355.44456481933594
-            },
-            "distance": 577.3067038208096
-          },
-          {
-            "index": 3,
             "kind": "blastable_wall",
             "activation_kind": "destroy_blastable_wall",
             "label": "Destroy blastable wall",
@@ -112,7 +49,7 @@
               "y": -10.348892211914062,
               "z": 504.80540466308594
             },
-            "distance": 734.1888822440682,
+            "distance": 733.9356510958116,
             "opens": [
               {
                 "seg": 167,
@@ -127,7 +64,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 2,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "blue key",
@@ -141,7 +78,7 @@
             "key": "blue"
           },
           {
-            "index": 5,
+            "index": 3,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -155,7 +92,7 @@
             "key": "gold"
           },
           {
-            "index": 6,
+            "index": 4,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -169,7 +106,20 @@
             "key": "red"
           },
           {
-            "index": 7,
+            "index": 5,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 486,
+            "label_pos": {
+              "x": 0.0,
+              "y": -318.0,
+              "z": 0.0
+            },
+            "distance": 692.3157899819538
+          },
+          {
+            "index": 6,
             "kind": "trigger",
             "activation_kind": "pass_through_trigger",
             "label": "Pass through trigger 27",
@@ -181,7 +131,7 @@
               "y": -10.0,
               "z": 20.0
             },
-            "distance": 1134.13780968578,
+            "distance": 534.8886584148286,
             "trigger": 27,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -194,7 +144,7 @@
             ]
           },
           {
-            "index": 8,
+            "index": 7,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

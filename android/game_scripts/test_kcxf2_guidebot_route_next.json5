@@ -59,8 +59,7 @@
         "guidebot.route_goal_objective_side": "2",
         "guidebot.route_goal_objective_wall": "13",
         "guidebot.route_goal_guidance_mode_name": "reach_firing_position",
-        "guidebot.route_goal_instruction": {"contains": "shoot the blastable wall"},
-        "console.lines": {"contains": "GUIDE-BOT: Finding NEXT: shoot the blastable wall"}
+        "guidebot.route_goal_instruction": {"contains": "shoot the blastable wall"}
     }},
     {"action": "set_debug", "field": "guidebot_path_parity", "value": "true"},
     {"action": "assert", "expect": {

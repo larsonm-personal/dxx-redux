@@ -1,7 +1,7 @@
 # KCXF2 worker crash and Obsidian live route
 
 Date: 2026-08-15
-Status: regression regeneration investigation in progress
+Status: implemented and validated; unrelated cold-corpus findings documented
 
 ## Requests
 
@@ -19,9 +19,9 @@ Status: regression regeneration investigation in progress
 - [x] Add focused native and maintained integration regressions for both cases
 - [x] Run scoped formatting, focused tests, a real KCXF2 analysis, a live
   Obsidian route test, and paired D1/D2 build validation
-- [ ] Reproduce why full regression regeneration leaves `Obsidian.json` with
+- [x] Reproduce why full regression regeneration leaves `Obsidian.json` with
   the old level-4 route and fix the responsible runner/analyzer/cache path
-- [ ] Regenerate all configured regression data and review the complete diff
+- [x] Regenerate all configured regression data and review the complete diff
   for intended route updates and unrelated regressions
 
 ## Results
@@ -30,9 +30,11 @@ Status: regression regeneration investigation in progress
   metadata request leaving `Robot_replacements_loaded` set after freeing
   `Current_mission`. Request cleanup now restores the base or mission HAM before
   freeing the mission.
-- The routing implementation was already correct, but both persistent route
-  caches were still generation 5. Generation 6 invalidates the stale result
-  automatically.
+- Exit planning now follows any reachable scripted opener path before acquiring
+  a still-required exit key, then returns to the exit. It also recognizes an
+  exit whose opener trigger has already fired, while retaining the key for a
+  genuinely keyed exit. Both persistent route caches were also advanced from
+  generation 5 to generation 6.
 - Reusing one D2 metadata worker for Obsidian followed by KCXF2 passed on the
   emulator without a crash.
 - Host analysis and live device introspection both report the 11-step Obsidian
@@ -46,6 +48,18 @@ Status: regression regeneration investigation in progress
   assertion failure.
 - Scoped code quality, D1/D2 route-cache tests, Kotlin cache/scheduling tests,
   Android assembly, and the paired Windows build passed.
+- The canonical mission regeneration templates now clear both the native route
+  cache and the complete level-metadata result cache before every analysis.
+  A runner regression test enforces both clears and their ordering.
+- A focused canonical Android regeneration rewrote `Obsidian.json`; level 4 now
+  contains the reviewed 11-step post-reactor route. The 1,561-route reviewed
+  corpus baseline and travel/status checks pass with the regenerated result.
+- A cold host sweep analyzed all 115 configured archives: 112 passed, one had
+  no descriptor, and the two Vertigo-derived archives failed because their
+  packages reference the absent `d2xlvl10.rl2`. The sweep also exposed older
+  partial-route results for KCXF2 level 1 and Phobos level 4; those unrelated
+  results and host-only Ulterior removals were not accepted into the reviewed
+  mission data.
 
 ## Constraints
 

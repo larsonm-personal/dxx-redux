@@ -2885,6 +2885,12 @@ private fun LevelMetadataDialog(
         RouteMetadataDiagnostics.log(
             "Level metadata dialog analyze id=$dialogIdentity source=${target.displayName}",
         )
+        RouteMetadataPrecomputeMonitor(context.filesDir).prioritySwitch(
+            mission = target.displayName,
+            level = target.levelFile.orEmpty().ifBlank { "all levels" },
+            reason = "user opened metadata viewer",
+            priority = RouteMetadataPriority.ACTIVE,
+        )
         loading = true
         result = null
         progress =

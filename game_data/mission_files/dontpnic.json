@@ -1944,9 +1944,9 @@
         "mine_volume": 2339257.8420015057,
         "mine_volume_normalized": 0.5115476835384584,
         "mine_volume_text": "0.51x",
-        "travel_distance": 1361.712700038122,
-        "travel_time_seconds": 27,
-        "travel_time_text": "0M:27S",
+        "travel_distance": 1665.621752019294,
+        "travel_time_seconds": 33,
+        "travel_time_text": "0M:33S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1976,6 +1976,20 @@
             "index": 2,
             "kind": "key",
             "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 4,
+            "label_pos": {
+              "x": 115.0,
+              "y": -71.09770202636719,
+              "z": -28.901382446289062
+            },
+            "distance": 481.18501069550854,
+            "key": "red"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 5,
             "label_pos": {
@@ -1983,11 +1997,11 @@
               "y": -71.09770202636719,
               "z": -28.901382446289062
             },
-            "distance": 481.18501069550854,
+            "distance": 303.90905198117196,
             "key": "blue"
           },
           {
-            "index": 3,
+            "index": 4,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -2001,7 +2015,7 @@
             "key": "gold"
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -2018,9 +2032,6 @@
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ],
-        "notes": [
-          "red key not necessary"
         ]
       },
       {

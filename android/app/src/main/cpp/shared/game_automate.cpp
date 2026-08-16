@@ -1984,6 +1984,30 @@ static int complete_route_objective(char *reason, size_t reason_size)
 		         "complete_route_objective: key object not found");
 		return 0;
 	}
+	if (activation == LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_KEY_CARRIER) {
+		const int objnum = escort_get_route_goal_objective_object();
+		const int key_index = escort_get_route_goal_objective_key_index();
+		const int key_flag = key_index == 0   ? PLAYER_FLAGS_BLUE_KEY
+		                     : key_index == 1 ? PLAYER_FLAGS_RED_KEY
+		                     : key_index == 2 ? PLAYER_FLAGS_GOLD_KEY
+		                                      : 0;
+		if (objnum < 0 || objnum > Highest_object_index ||
+		    Objects[objnum].type != OBJ_ROBOT ||
+		    (Objects[objnum].flags & OF_SHOULD_BE_DEAD) || !key_flag) {
+			snprintf(reason, reason_size,
+			         "complete_route_objective: key carrier not found");
+			return 0;
+		}
+		apply_damage_to_robot(
+		    &Objects[objnum], Objects[objnum].shields + F1_0,
+		    ConsoleObject - Objects);
+		const int old_flags = Players[Player_num].flags;
+		Players[Player_num].flags |= key_flag;
+		escort_note_player_key_flags(old_flags, Players[Player_num].flags);
+		LOGI("complete_route_objective: key carrier=%d key_index=%d target_seg=%d",
+		     objnum, key_index, target_seg);
+		return 1;
+	}
 	for (int objnum = 0; objnum <= Highest_object_index; ++objnum) {
 		object *objp = &Objects[objnum];
 		int matches = 0;

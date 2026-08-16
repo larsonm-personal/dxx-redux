@@ -54,6 +54,7 @@ struct route_path_result {
 	int terminal_segment = -1;
 	route_position terminal_position;
 	bool has_obstruction = false;
+	bool waits_for_player = false;
 	int first_obstruction_segment = -1;
 	int first_obstruction_side = -1;
 	route_edge_decision first_obstruction;

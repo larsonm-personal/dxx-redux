@@ -345,7 +345,6 @@ class LauncherScriptExecutor(
                         fail("import_mission_zip: import failed for $label")
                         return
                     }
-                    activity.notifyRouteMetadataContentImportedForAutomation()
                     writeMissionZipImportAutomationResult(label, importResult.first, importResult.second)
                     Log.i(TAG, "ASSERT_PASS: imported mission ZIP ${importResult.first.filename}")
                     currentStep++

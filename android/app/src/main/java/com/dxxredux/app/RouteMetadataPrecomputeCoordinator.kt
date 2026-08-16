@@ -80,6 +80,7 @@ internal class RouteMetadataPrecomputeCoordinator(
 ) {
     private val appContext = context.applicationContext
     private val ledger = RouteMetadataLedger(appContext.filesDir)
+    private val monitor = RouteMetadataPrecomputeMonitor(appContext.filesDir)
     private val wakeups = Channel<Unit>(Channel.CONFLATED)
     private var runner: Job? = null
 
@@ -87,6 +88,7 @@ internal class RouteMetadataPrecomputeCoordinator(
 
     @Volatile private var runningPriority: RouteMetadataPriority? = null
     private var focusedSourceIdentity: String? = null
+    private var lastSourceIdentity: String? = null
 
     @Synchronized
     fun notifyContentImported() {
@@ -141,6 +143,7 @@ internal class RouteMetadataPrecomputeCoordinator(
                             .firstOrNull {
                                 !isCompleted(it) && ledger.read(it.id)?.status != RouteMetadataLedgerStatus.FAILED
                             }
+                    monitor.update(jobs, ledger.entries())
                     if (next == null) {
                         focusedSourceIdentity = null
                         awaitWake(30_000L)
@@ -156,6 +159,30 @@ internal class RouteMetadataPrecomputeCoordinator(
                                 RouteMetadataPriority.FILL
                             }
                         runningPriority = priority
+                        if (lastSourceIdentity != next.sourceIdentity) {
+                            val reason =
+                                when {
+                                    next.sourceIdentity == focusedSourceIdentity -> "newly imported content"
+
+                                    RouteMetadataPrecomputeOrdering.matchesRecentLevel(
+                                        next,
+                                        recent,
+                                    ) -> "most recent level"
+
+                                    lastSourceIdentity != null -> "next highest priority analysis"
+
+                                    else -> "background analysis started"
+                                }
+                            monitor.prioritySwitch(
+                                next.target.displayName,
+                                "${next.target.levelNum}:${next.target.levelFile.orEmpty()}",
+                                reason,
+                                priority,
+                            )
+                            lastSourceIdentity = next.sourceIdentity
+                        }
+                        monitor.update(jobs, ledger.entries(), next, priority)
+                        val analysisStartedAt = System.currentTimeMillis()
                         val result =
                             try {
                                 LevelMetadataAnalyzer.analyze(
@@ -179,7 +206,16 @@ internal class RouteMetadataPrecomputeCoordinator(
                                 cacheFile.isNotBlank() && cacheArtifact(next.target.game, cacheFile).isFile,
                                 ledger.read(next.id),
                             )
-                        ledger.record(next.id, assessment)
+                        val recorded = ledger.record(next.id, assessment)
+                        val entries = ledger.entries()
+                        monitor.levelFinished(
+                            next,
+                            recorded.status,
+                            System.currentTimeMillis() - analysisStartedAt,
+                            jobs,
+                            entries,
+                        )
+                        monitor.update(jobs, entries)
                         RouteMetadataDiagnostics.log(
                             "Route metadata precompute level=${next.target.levelNum} " +
                                 "priority=${priority.wireName} status=${assessment.status.wireName} " +

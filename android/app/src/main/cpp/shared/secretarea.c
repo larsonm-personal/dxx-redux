@@ -73,6 +73,148 @@ static route_analysis_cache_summary Level_metadata_analysis_cache_summary;
 static unsigned char
     Level_metadata_completed_canonical_steps[LEVEL_METADATA_MAX_ROUTE_STEPS];
 
+static int level_metadata_read_bytes(
+    PHYSFS_file *file, unsigned char *buffer, PHYSFS_uint64 count)
+{
+	return PHYSFS_readBytes(file, buffer, count) == (PHYSFS_sint64) count;
+}
+
+static int level_metadata_skip_bytes(PHYSFS_file *file, PHYSFS_uint64 count)
+{
+	const PHYSFS_sint64 pos = PHYSFS_tell(file);
+
+	return pos >= 0 && PHYSFS_seek(file, (PHYSFS_uint64) pos + count);
+}
+
+static int level_metadata_read_le16(PHYSFS_file *file, int *value)
+{
+	unsigned char bytes[2];
+
+	if (!level_metadata_read_bytes(file, bytes, sizeof(bytes)))
+		return 0;
+	*value = bytes[0] | (bytes[1] << 8);
+	return 1;
+}
+
+static int level_metadata_read_le32(PHYSFS_file *file, int *value)
+{
+	unsigned char bytes[4];
+
+	if (!level_metadata_read_bytes(file, bytes, sizeof(bytes)))
+		return 0;
+	*value = bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) |
+	         (bytes[3] << 24);
+	return 1;
+}
+
+static void level_metadata_read_raw_level_name(
+    const char *level_file, char name[256])
+{
+	const int compatible_version = 22;
+	const int plvl_signature = 0x504c564c;
+	PHYSFS_file *file;
+	int first_signature;
+	int wrapper_version;
+	int minedata_offset;
+	int gamedata_offset;
+	int signature;
+	int version;
+	int length = 0;
+	int newline_terminated;
+
+	name[0] = '\0';
+	if (!level_file || !level_file[0] || !(file = PHYSFS_openRead(level_file)))
+		return;
+	if (!level_metadata_read_le32(file, &first_signature))
+		goto done;
+	if (first_signature == plvl_signature) {
+		if (!level_metadata_read_le32(file, &wrapper_version) ||
+		    !level_metadata_read_le32(file, &minedata_offset) ||
+		    !level_metadata_read_le32(file, &gamedata_offset) ||
+		    !PHYSFS_seek(file, (PHYSFS_uint64) gamedata_offset))
+			goto done;
+	} else if (!PHYSFS_seek(file, 0))
+		goto done;
+	if (!level_metadata_read_le16(file, &signature) || signature != 0x6705 ||
+	    !level_metadata_read_le16(file, &version) ||
+	    version < compatible_version || !level_metadata_skip_bytes(file, 115))
+		goto done;
+#ifdef DXX_BUILD_DESCENT_II
+	if (version >= 29 && !level_metadata_skip_bytes(file, 24))
+		goto done;
+#endif
+	if (version < 14)
+		goto done;
+	newline_terminated = version >= 31;
+	while (length < 255) {
+		const int c = PHYSFSX_fgetc(file);
+		if (c == EOF || c == 0 ||
+		    (newline_terminated && (c == '\n' || c == '\r')))
+			break;
+		name[length++] = (char) c;
+	}
+	name[length] = '\0';
+done:
+	PHYSFS_close(file);
+}
+
+static int level_metadata_level_name_is_usable(const char *name)
+{
+	int saw_text = 0;
+	const unsigned char *p;
+
+	if (!name)
+		return 0;
+	for (p = (const unsigned char *) name; *p; ++p) {
+		if (*p < 32 || *p >= 127)
+			return 0;
+		if (*p != ' ')
+			saw_text = 1;
+	}
+	return saw_text;
+}
+
+void level_metadata_choose_level_display_name(
+    const char *level_file, const char *current_level_name,
+    char *display_name, int display_name_capacity)
+{
+	char raw_name[256];
+	const char *selected;
+	const char *stem;
+	const char *slash;
+	char file_stem[256];
+	char *dot;
+	int raw_usable;
+	int current_usable;
+
+	if (!display_name || display_name_capacity <= 0)
+		return;
+	level_metadata_read_raw_level_name(level_file, raw_name);
+	raw_usable = level_metadata_level_name_is_usable(raw_name);
+	current_usable = level_metadata_level_name_is_usable(current_level_name);
+	if (raw_usable &&
+	    (!current_usable || strlen(raw_name) > strlen(current_level_name)))
+		selected = raw_name;
+	else if (current_usable)
+		selected = current_level_name;
+	else if (raw_usable)
+		selected = raw_name;
+	else {
+		stem = level_file ? level_file : "";
+		slash = strrchr(stem, '/');
+		if (!slash || (strrchr(stem, '\\') && strrchr(stem, '\\') > slash))
+			slash = strrchr(stem, '\\');
+		if (slash)
+			stem = slash + 1;
+		snprintf(file_stem, sizeof(file_stem), "%s", stem);
+		dot = strrchr(file_stem, '.');
+		if (dot)
+			*dot = '\0';
+		selected = file_stem;
+	}
+	snprintf(display_name, (size_t) display_name_capacity, "%s", selected);
+}
+
 static void level_metadata_apply_planned_route(
     level_metadata_state *destination,
     const level_metadata_state *route)
@@ -180,7 +322,9 @@ void level_metadata_set_defer_guidebot_accessibility(int defer)
 	Level_metadata_defer_guidebot_accessibility = defer != 0;
 }
 
-static fix level_metadata_switch_projectile_radius(void)
+static fix Level_metadata_switch_projectile_radius_override;
+
+int level_metadata_get_switch_projectile_radius(void)
 {
 	const weapon_info *weapon = &Weapon_info[LASER_ID_L1];
 
@@ -195,6 +339,18 @@ static fix level_metadata_switch_projectile_radius(void)
 	if (weapon->render_type == WEAPON_RENDER_NONE)
 		return F1_0;
 	return 0;
+}
+
+void level_metadata_set_switch_projectile_radius_override(int radius)
+{
+	Level_metadata_switch_projectile_radius_override = radius;
+}
+
+static fix level_metadata_switch_projectile_radius(void)
+{
+	return Level_metadata_switch_projectile_radius_override > 0
+	           ? Level_metadata_switch_projectile_radius_override
+	           : level_metadata_get_switch_projectile_radius();
 }
 
 enum level_metadata_visibility_target_kind {
@@ -1914,6 +2070,9 @@ static void level_metadata_initialize_scan_view(void)
 	view->wall_type_open = WALL_OPEN;
 	view->wall_flag_door_locked = WALL_DOOR_LOCKED;
 	view->wall_flag_door_opened = WALL_DOOR_OPENED;
+#ifdef DXX_BUILD_DESCENT_II
+	view->wall_flag_buddy_proof = WALL_BUDDY_PROOF;
+#endif
 	view->wall_key_none = KEY_NONE;
 	view->wall_key_blue = KEY_BLUE;
 	view->wall_key_red = KEY_RED;

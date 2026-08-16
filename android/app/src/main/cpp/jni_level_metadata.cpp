@@ -545,7 +545,8 @@ static int load_requested_mission(const json &request, LevelMetadataRequestMount
 	write_checkpoint(request, "mission", mission.c_str());
 	std::vector<char> mission_name(mission.begin(), mission.end());
 	mission_name.push_back('\0');
-	if (load_mission_by_name(mission_name.data())) {
+	if (load_mission_by_name(mission_name.data()) ||
+	    load_mission_by_name_from_current_dir(mission_name.data())) {
 		mounts.set_mission_loaded(1);
 		return 1;
 	}
@@ -557,16 +558,17 @@ static int load_requested_mission(const json &request, LevelMetadataRequestMount
 static int mission_descriptor_available(const json &request)
 {
 	const std::string mission = request.value("mission_name", "");
-	std::string descriptor;
+	std::string filename;
 
 	if (mission.empty())
 		return 0;
 #ifdef DXX_BUILD_DESCENT_II
-	descriptor = MISSION_DIR + mission + ".mn2";
+	filename = mission + ".mn2";
 #else
-	descriptor = MISSION_DIR + mission + ".msn";
+	filename = mission + ".msn";
 #endif
-	return PHYSFSX_exists(descriptor.c_str(), 1);
+	return PHYSFSX_exists((MISSION_DIR + filename).c_str(), 1) ||
+	       PHYSFSX_exists(filename.c_str(), 1);
 }
 
 static int load_mission_if_descriptor_available(const json &request,
@@ -661,150 +663,6 @@ static std::string format_levelmeta_time(int seconds)
 	seconds %= 60;
 	snprintf(buffer, sizeof(buffer), "%dM:%02dS", minutes, seconds);
 	return buffer;
-}
-
-static int levelmeta_read_bytes(PHYSFS_file *file, unsigned char *buffer, PHYSFS_uint64 count)
-{
-	return PHYSFS_readBytes(file, buffer, count) == (PHYSFS_sint64) count;
-}
-
-static int levelmeta_skip_bytes(PHYSFS_file *file, PHYSFS_uint64 count)
-{
-	const PHYSFS_sint64 pos = PHYSFS_tell(file);
-
-	return pos >= 0 && PHYSFS_seek(file, (PHYSFS_uint64) pos + count);
-}
-
-static int levelmeta_read_le16(PHYSFS_file *file, int *value)
-{
-	unsigned char bytes[2];
-
-	if (!levelmeta_read_bytes(file, bytes, sizeof(bytes)))
-		return 0;
-	*value = bytes[0] | (bytes[1] << 8);
-	return 1;
-}
-
-static int levelmeta_read_le32(PHYSFS_file *file, int *value)
-{
-	unsigned char bytes[4];
-
-	if (!levelmeta_read_bytes(file, bytes, sizeof(bytes)))
-		return 0;
-	*value = bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24);
-	return 1;
-}
-
-static std::string levelmeta_read_terminated_level_name(PHYSFS_file *file, int newline_terminated)
-{
-	std::string name;
-
-	for (;;) {
-		const int c = PHYSFSX_fgetc(file);
-		if (c == EOF || c == 0)
-			break;
-		if (newline_terminated && (c == '\n' || c == '\r'))
-			break;
-		if (name.size() < 255)
-			name.push_back((char) c);
-	}
-	return name;
-}
-
-static std::string read_level_display_name(const char *level_file)
-{
-	const int compatible_version = 22;
-	const int plvl_signature = 0x504c564c;
-	PHYSFS_file *file;
-	int first_signature;
-	int wrapper_version;
-	int minedata_offset;
-	int gamedata_offset;
-	int signature;
-	int version;
-	std::string name;
-
-	if (!level_file || !level_file[0])
-		return "";
-	file = PHYSFS_openRead(level_file);
-	if (!file)
-		return "";
-	if (!levelmeta_read_le32(file, &first_signature)) {
-		PHYSFS_close(file);
-		return "";
-	}
-	if (first_signature == plvl_signature) {
-		if (!levelmeta_read_le32(file, &wrapper_version) || !levelmeta_read_le32(file, &minedata_offset) ||
-		    !levelmeta_read_le32(file, &gamedata_offset) || !PHYSFS_seek(file, (PHYSFS_uint64) gamedata_offset)) {
-			PHYSFS_close(file);
-			return "";
-		}
-	} else if (!PHYSFS_seek(file, 0)) {
-		PHYSFS_close(file);
-		return "";
-	}
-	if (!levelmeta_read_le16(file, &signature) || signature != 0x6705 ||
-	    !levelmeta_read_le16(file, &version) || version < compatible_version || !levelmeta_skip_bytes(file, 115)) {
-		PHYSFS_close(file);
-		return "";
-	}
-#ifdef DXX_BUILD_DESCENT_II
-	if (version >= 29 && !levelmeta_skip_bytes(file, 24)) {
-		PHYSFS_close(file);
-		return "";
-	}
-#endif
-	if (version >= 31)
-		name = levelmeta_read_terminated_level_name(file, 1);
-	else if (version >= 14)
-		name = levelmeta_read_terminated_level_name(file, 0);
-	PHYSFS_close(file);
-	return name;
-}
-
-static int level_name_text_is_usable(const char *name)
-{
-	int saw_text = 0;
-
-	if (!name)
-		return 0;
-	for (const unsigned char *p = (const unsigned char *) name; *p; ++p) {
-		if (*p < 32 || *p >= 127)
-			return 0;
-		if (*p != ' ')
-			saw_text = 1;
-	}
-	return saw_text;
-}
-
-static std::string level_file_stem(const char *level_file)
-{
-	std::string stem = level_file ? level_file : "";
-	size_t slash = stem.find_last_of("/\\");
-	size_t dot;
-
-	if (slash != std::string::npos)
-		stem.erase(0, slash + 1);
-	dot = stem.find_last_of('.');
-	if (dot != std::string::npos)
-		stem.erase(dot);
-	return stem;
-}
-
-static std::string choose_level_display_name(const std::string &display_level_name,
-                                             const char *current_level_name,
-                                             const char *level_file)
-{
-	const int display_usable = level_name_text_is_usable(display_level_name.c_str());
-	const int current_usable = level_name_text_is_usable(current_level_name);
-
-	if (display_usable && (!current_usable || display_level_name.size() > strlen(current_level_name)))
-		return display_level_name;
-	if (current_usable)
-		return current_level_name;
-	if (display_usable)
-		return display_level_name;
-	return level_file_stem(level_file);
 }
 
 static const char *levelmeta_key_name(int key_index)
@@ -919,7 +777,7 @@ static json serialize_current_level_row(int level_num, const char *level_file,
 {
 	const secret_area_state *secret_state = secret_area_get_state();
 	const level_metadata_state *metadata = level_metadata_get_canonical_state();
-	const std::string display_level_name = read_level_display_name(level_file);
+	char display_level_name[256];
 	int robots = 0;
 	int hostages = 0;
 	json row;
@@ -929,7 +787,10 @@ static json serialize_current_level_row(int level_num, const char *level_file,
 	count_level_objects(&robots, &hostages);
 	row["level_num"] = level_num;
 	row["secret"] = level_num < 0;
-	row["level_name"] = choose_level_display_name(display_level_name, Current_level_name, level_file);
+	level_metadata_choose_level_display_name(
+	    level_file, Current_level_name, display_level_name,
+	    sizeof(display_level_name));
+	row["level_name"] = display_level_name;
 	row["level_file"] = level_file ? level_file : "";
 	row["robots"] = robots;
 	row["hostages"] = hostages;
@@ -1108,6 +969,12 @@ static LevelScanStatus scan_level(const json &request, json &levels,
 		    level_num, level_file, "level file is missing", "missing"));
 		return LEVEL_SCAN_MISSING;
 	}
+#ifdef DXX_BUILD_DESCENT_II
+	level_metadata_set_switch_projectile_radius_override(0);
+	reset_level_robots_file();
+	const int base_switch_projectile_radius =
+	    level_metadata_get_switch_projectile_radius();
+#endif
 	if (load_level(level_file)) {
 		levels.push_back(failed_level_row(
 		    level_num, level_file, "could not load level", "invalid_input"));
@@ -1116,6 +983,8 @@ static LevelScanStatus scan_level(const json &request, json &levels,
 	Current_level_num = level_num;
 #ifdef DXX_BUILD_DESCENT_II
 	base_player_ship_radius = load_level_robots_file(level_file);
+	level_metadata_set_switch_projectile_radius_override(
+	    base_switch_projectile_radius);
 #endif
 	if (coop_starts)
 		*coop_starts = count_current_level_coop_starts();
