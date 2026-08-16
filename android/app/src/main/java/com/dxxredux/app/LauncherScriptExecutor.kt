@@ -1121,6 +1121,45 @@ class LauncherScriptExecutor(
                 .put("mission_filename", result.missionFilename)
                 .apply {
                     if (result.coopStarts.isNotBlank()) put("coop_starts", result.coopStarts)
+                    if (result.musicTracks.isNotEmpty()) {
+                        put(
+                            "music_tracks",
+                            JSONArray().apply {
+                                result.musicTracks.forEach { track ->
+                                    put(
+                                        JSONObject()
+                                            .put("slot_index", track.slotIndex)
+                                            .put("slot_kind", track.slotKind)
+                                            .put("filename", track.filename)
+                                            .put("format", track.format)
+                                            .put("metadata_source_filename", track.metadata.metadata_source_filename)
+                                            .put("inherited_from_midi", track.metadata.inherited_from_midi)
+                                            .put("parse_status", track.metadata.parse_status)
+                                            .put("smf_format", track.metadata.smf_format)
+                                            .put("track_count", track.metadata.track_count)
+                                            .put("time_division", track.metadata.time_division)
+                                            .put("title", track.metadata.title)
+                                            .put("composer", track.metadata.composer)
+                                            .put("display_name", track.metadata.display_name)
+                                            .put("metadata_truncated", track.metadata.metadata_truncated)
+                                            .put(
+                                                "text_events",
+                                                JSONArray().apply {
+                                                    track.metadata.text_events.forEach { event ->
+                                                        put(
+                                                            JSONObject()
+                                                                .put("track_index", event.track_index)
+                                                                .put("type", event.type)
+                                                                .put("text", event.text),
+                                                        )
+                                                    }
+                                                },
+                                            ),
+                                    )
+                                }
+                            },
+                        )
+                    }
                 }.put("level_count", result.levels.size)
                 .put("levels", levels)
         if (result.problems.isNotEmpty()) json.put("problems", JSONArray(result.problems))

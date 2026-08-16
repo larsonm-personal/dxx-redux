@@ -329,6 +329,22 @@ object MissionZipMusic {
         }
     }
 
+    internal fun midiMetadataPeer(
+        catalog: MissionZipMusicCatalog,
+        track: MissionZipMusicTrack,
+    ): MissionZipMusicTrack? {
+        if (!track.extension.equals("hmp", ignoreCase = true)) return null
+        val source = catalog.sources.singleOrNull { candidate -> candidate.tracks.any { it.id == track.id } } ?: return null
+        val normalizedName = normalizePath(track.sourceRelativeName)
+        val stem = normalizedName.substringBeforeLast('.', normalizedName)
+        return source.tracks.filter { candidate ->
+            candidate.extension.equals("mid", ignoreCase = true) &&
+                normalizePath(candidate.sourceRelativeName)
+                    .substringBeforeLast('.', candidate.sourceRelativeName)
+                    .equals(stem, ignoreCase = true)
+        }.singleOrNull()
+    }
+
     private fun contentIdentity(
         root: File,
         sources: List<MissionZipMusicSource>,

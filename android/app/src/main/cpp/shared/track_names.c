@@ -21,7 +21,11 @@
 
 #include "android_jni_overlay.h"
 #include "music_name_table.h"
+#include "midi_metadata_physfs.h"
 #include "overlay_ringbuf.h"
+
+extern bim_song_info *BIMSongs;
+extern int Num_bim_songs;
 
 /* -- CUE-parsed / fingerprint-matched titles ------------------------- */
 /* Populated by rbaudio_bin.c when loading audio_playlist.json.
@@ -64,6 +68,38 @@ const char *track_names_lookup(int track, unsigned long disc_id)
  * Maps absolute file paths to chromaprint-decoded track names. */
 
 #define MISSION_MUSIC_NAMES_FILE "mission_music_names.json"
+#define MAX_MISSION_MIDI_NAMES 256
+
+static struct {
+	char filename[16];
+	char display_name[MIDI_METADATA_DISPLAY_BYTES];
+} s_mission_midi_names[MAX_MISSION_MIDI_NAMES];
+static int s_mission_midi_name_count;
+
+static void mission_midi_names_load(void)
+{
+	int index;
+	s_mission_midi_name_count = 0;
+	for (index = 0; BIMSongs && index < Num_bim_songs &&
+	                s_mission_midi_name_count < MAX_MISSION_MIDI_NAMES; ++index) {
+		midi_metadata metadata;
+		char source[MIDI_METADATA_SOURCE_FILENAME_BYTES];
+		int inherited;
+		midi_metadata_init(&metadata);
+		midi_metadata_resolve_physfs(BIMSongs[index].filename, &metadata,
+		                             source, sizeof(source), &inherited);
+		if (midi_metadata_has_useful_summary(&metadata)) {
+			strncpy(s_mission_midi_names[s_mission_midi_name_count].filename,
+			        BIMSongs[index].filename,
+			        sizeof(s_mission_midi_names[s_mission_midi_name_count].filename) - 1);
+			strncpy(s_mission_midi_names[s_mission_midi_name_count].display_name,
+			        metadata.display_name,
+			        sizeof(s_mission_midi_names[s_mission_midi_name_count].display_name) - 1);
+			++s_mission_midi_name_count;
+		}
+		midi_metadata_free(&metadata);
+	}
+}
 
 void jukebox_names_load(const char *json_path)
 {
@@ -163,6 +199,7 @@ void mission_music_names_load(void)
 	char *buf;
 
 	music_name_table_clear_mission();
+	mission_midi_names_load();
 
 	f = PHYSFS_openRead(MISSION_MUSIC_NAMES_FILE);
 	if (!f) return;
@@ -190,7 +227,14 @@ void mission_music_names_load(void)
 
 const char *mission_music_names_lookup(const char *filename)
 {
-	return music_name_table_lookup_mission(filename);
+	const char *sidecar = music_name_table_lookup_mission(filename);
+	int index;
+	if (sidecar && sidecar[0])
+		return sidecar;
+	for (index = 0; filename && index < s_mission_midi_name_count; ++index)
+		if (!strcasecmp(filename, s_mission_midi_names[index].filename))
+			return s_mission_midi_names[index].display_name;
+	return NULL;
 }
 
 /* -- Overlay formatting ---------------------------------------------- */

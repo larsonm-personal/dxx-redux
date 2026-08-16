@@ -560,6 +560,8 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_fingerprint.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_preview.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_seek_timeline.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_metadata.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_metadata_physfs.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_enumeration.c
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_midi_preview.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/pngfile.c)
@@ -735,6 +737,8 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_fingerprint.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_preview.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_seek_timeline.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_metadata.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_metadata_physfs.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_enumeration.c
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_midi_preview.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/pngfile.c)

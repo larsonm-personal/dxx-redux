@@ -20,6 +20,9 @@ function(dxx_add_headless_target target main_source)
         ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../android/app/src/main/cpp/shared/input_demo_recorder.cpp
         ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../android/app/src/main/cpp/shared/input_demo_replay.cpp
         ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../android/app/src/main/cpp/shared/input_demo_direct_command_policy.c
+        ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../android/app/src/main/cpp/shared/hmp_android_shared.c
+        ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../android/app/src/main/cpp/shared/midi_metadata.c
+        ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../android/app/src/main/cpp/shared/midi_metadata_physfs.c
     )
 
     target_compile_features(${target} PRIVATE cxx_std_11)

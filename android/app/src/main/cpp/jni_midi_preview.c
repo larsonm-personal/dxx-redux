@@ -14,6 +14,7 @@
 #include "jni_string.h"
 #include "midi_preview.h"
 #include "midi_enumeration.h"
+#include "midi_metadata.h"
 
 #define TAG "DXX-MidiPreviewJNI"
 
@@ -98,6 +99,42 @@ Java_com_dxxredux_app_MidiEnumerationBridge_nativeEnumerateTracks(
 
 	jstring result = dxx_jni_string_from_utf8(env, json ? json : "{\"sources\":[]}");
 	free(json);
+	return result;
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_dxxredux_app_MidiMetadataBridge_nativeParse(
+    JNIEnv *env, jclass clazz, jbyteArray jdata, jboolean isHmp,
+    jstring jsourceFilename, jboolean inheritedFromMidi)
+{
+	jsize length;
+	jbyte *data;
+	char *source_filename = NULL;
+	char *json;
+	jstring result;
+	midi_metadata metadata;
+	if (!jdata || !dxx_jni_string_to_utf8(env, jsourceFilename, &source_filename))
+		return NULL;
+	length = (*env)->GetArrayLength(env, jdata);
+	if ((*env)->ExceptionCheck(env)) {
+		free(source_filename);
+		return NULL;
+	}
+	data = (*env)->GetByteArrayElements(env, jdata, NULL);
+	if (!data || (*env)->ExceptionCheck(env)) {
+		free(source_filename);
+		return NULL;
+	}
+	midi_metadata_init(&metadata);
+	midi_metadata_parse((const unsigned char *) data, (size_t) length,
+	                    isHmp ? 1 : 0, &metadata);
+	(*env)->ReleaseByteArrayElements(env, jdata, data, JNI_ABORT);
+	json = midi_metadata_to_json(&metadata, source_filename,
+	                             inheritedFromMidi ? 1 : 0);
+	result = dxx_jni_string_from_utf8(env, json ? json : "{\"parse_status\":\"allocation_error\"}");
+	free(json);
+	free(source_filename);
+	midi_metadata_free(&metadata);
 	return result;
 }
 

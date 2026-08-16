@@ -47,6 +47,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 private data class StorageFileEntry(
     val file: File,
@@ -73,6 +74,7 @@ private data class SafEntry(
     val label: String,
     val uri: String,
     val accessible: Boolean,
+    val referencedUris: List<SafUriStatus>,
     val customSetId: String? = null,
     val customFilename: String? = null,
     val cdSourceId: String? = null,
@@ -87,6 +89,12 @@ private data class SafEntry(
                 else -> uri
             }
 }
+
+private data class SafUriStatus(
+    val uri: String,
+    val accessMethod: String,
+    val accessible: Boolean,
+)
 
 private data class SafProbeKey(
     val uri: String,
@@ -199,6 +207,14 @@ private suspend fun loadSafEntries(
                         label = draft.label,
                         uri = draft.uri,
                         accessible = draft.probes.all { probeResults[it] == true },
+                        referencedUris =
+                            draft.probes.distinct().map { probe ->
+                                SafUriStatus(
+                                    uri = probe.uri,
+                                    accessMethod = if (probe.useFileDescriptor) "file_descriptor" else "stream",
+                                    accessible = probeResults[probe] == true,
+                                )
+                            },
                         customSetId = draft.customSetId,
                         customFilename = draft.customFilename,
                         cdSourceId = draft.cdSourceId,
@@ -213,6 +229,14 @@ private suspend fun loadSafEntries(
                             label = "Permission",
                             uri = uri,
                             accessible = permission.isReadPermission,
+                            referencedUris =
+                                listOf(
+                                    SafUriStatus(
+                                        uri = uri,
+                                        accessMethod = "persisted_permission",
+                                        accessible = permission.isReadPermission,
+                                    ),
+                                ),
                             isPermissionEntry = true,
                         ),
                     )
@@ -410,6 +434,95 @@ private fun scanStorageFiles(filesDir: File): StorageFileScanResult {
     )
 }
 
+private suspend fun createStorageInspectorDiagnostic(
+    context: android.content.Context,
+    filesDir: File,
+): StorageInspectorDiagnosticSnapshot {
+    val scan = withContext(Dispatchers.IO) { scanStorageFiles(filesDir) }
+    val safEntries = loadSafEntries(context, filesDir)
+    return withContext(Dispatchers.IO) {
+        val importManager = ImportLocationManager(filesDir)
+        val timestamp =
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+                .apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                }.format(Date())
+        StorageInspectorDiagnosticSnapshot(
+            generatedAtUtc = timestamp,
+            build =
+                StorageInspectorBuildDiagnostic(
+                    commitCount = BuildInfo.GIT_COMMIT_COUNT,
+                    shortHash = BuildInfo.GIT_SHORT_HASH,
+                    type = BuildInfo.BUILD_TYPE,
+                ),
+            device =
+                StorageInspectorDeviceDiagnostic(
+                    manufacturer = Build.MANUFACTURER,
+                    model = Build.MODEL,
+                    sdkInt = Build.VERSION.SDK_INT,
+                    supportedAbis = Build.SUPPORTED_ABIS.toList(),
+                ),
+            filesDir = filesDir.absolutePath,
+            activeImportRoot = importManager.getActiveRoot().absolutePath,
+            importRootOverrideActive = importManager.isOverrideActive(),
+            fileCount = scan.entries.size,
+            totalSizeBytes = scan.totalSize,
+            files =
+                scan.entries.sortedWith(storageFileNameComparator()).map { entry ->
+                    StorageInspectorFileDiagnostic(
+                        location = entry.location,
+                        relativePath = entry.relativePath,
+                        absolutePath = entry.absolutePath,
+                        purpose = entry.purpose,
+                        sizeBytes = entry.size,
+                        lastModifiedUnixMs = entry.file.lastModified(),
+                        helperSymlinkTargetName = entry.helperSymlinkTargetName,
+                        linkedMissionZipOwner = entry.linkedMissionZipOwner,
+                        linkedMissionZipSourceExists = entry.linkedMissionZipSourceExists,
+                        isLinkedMissionZipOwner = entry.isLinkedMissionZipOwner,
+                    )
+                },
+            safEntries =
+                safEntries.sortedBy { it.key }.map { entry ->
+                    StorageInspectorSafDiagnostic(
+                        key = entry.key,
+                        label = entry.label,
+                        displayUri = entry.uri,
+                        accessible = entry.accessible,
+                        referencedUris =
+                            entry.referencedUris.map { reference ->
+                                StorageInspectorSafUriDiagnostic(
+                                    uri = reference.uri,
+                                    accessMethod = reference.accessMethod,
+                                    accessible = reference.accessible,
+                                )
+                            },
+                        kind =
+                            when {
+                                entry.customSetId != null -> "custom_audio_file"
+                                entry.cdSourceId != null -> "cd_audio_source"
+                                entry.isPermissionEntry -> "untracked_persisted_permission"
+                                else -> "unknown"
+                            },
+                        customSetId = entry.customSetId,
+                        customFilename = entry.customFilename,
+                        cdSourceId = entry.cdSourceId,
+                    )
+                },
+            persistedUriPermissions =
+                context.contentResolver.persistedUriPermissions
+                    .sortedBy { it.uri.toString() }
+                    .map { permission ->
+                        StorageInspectorPermissionDiagnostic(
+                            uri = permission.uri.toString(),
+                            readPermission = permission.isReadPermission,
+                            writePermission = permission.isWritePermission,
+                        )
+                    },
+        )
+    }
+}
+
 @Composable
 fun AdvancedSettingsPage(
     filesDir: File,
@@ -418,6 +531,7 @@ fun AdvancedSettingsPage(
     refreshTrigger: Int = 0,
     controllerFocusActive: Boolean = true,
     onPlayInputDemo: (StagedInputDemo) -> Unit,
+    onClearRouteMetadataCache: suspend () -> Int,
     onBack: () -> Unit,
 ) {
     BackHandler(onBack = onBack)
@@ -565,7 +679,7 @@ fun AdvancedSettingsPage(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         // -- Route metadata precompute --
-                        RouteMetadataPrecomputeSection(filesDir)
+                        RouteMetadataPrecomputeSection(filesDir, onClearRouteMetadataCache)
 
                         Spacer(modifier = Modifier.height(16.dp))
                         HorizontalDivider()
@@ -838,12 +952,17 @@ fun AdvancedSettingsPage(
 }
 
 @Composable
-private fun RouteMetadataPrecomputeSection(filesDir: File) {
+private fun RouteMetadataPrecomputeSection(
+    filesDir: File,
+    onClearCache: suspend () -> Int,
+) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val monitor = remember(filesDir) { RouteMetadataPrecomputeMonitor(filesDir) }
     var snapshot by remember { mutableStateOf(RouteMetadataPrecomputeSnapshot()) }
     var recentLines by remember { mutableStateOf(emptyList<String>()) }
+    var confirmClear by remember { mutableStateOf(false) }
+    var clearing by remember { mutableStateOf(false) }
 
     suspend fun refresh() {
         val refreshed =
@@ -981,6 +1100,49 @@ private fun RouteMetadataPrecomputeSection(filesDir: File) {
                 Text("Export", fontSize = 11.sp)
             }
         }
+    }
+    TextButton(
+        enabled = !clearing,
+        onClick = { confirmClear = true },
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+    ) {
+        Text(if (clearing) "Clearing cache..." else "Clear route analysis cache", fontSize = 11.sp)
+    }
+    if (confirmClear) {
+        AlertDialog(
+            onDismissRequest = { confirmClear = false },
+            title = { Text("Clear Route Analysis Cache?") },
+            text = {
+                Text(
+                    "Completed routes and resumable checkpoints will be removed and rebuilt in the background.",
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmClear = false
+                        clearing = true
+                        scope.launch {
+                            val result = runCatching { onClearCache() }
+                            clearing = false
+                            refresh()
+                            Toast
+                                .makeText(
+                                    ctx,
+                                    result.fold(
+                                        onSuccess = { "Removed $it route cache files" },
+                                        onFailure = { "Could not clear route cache: ${it.message}" },
+                                    ),
+                                    if (result.isSuccess) Toast.LENGTH_SHORT else Toast.LENGTH_LONG,
+                                ).show()
+                        }
+                    },
+                ) { Text("Clear") }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmClear = false }) { Text("Cancel") }
+            },
+        )
     }
     if (recentLines.isNotEmpty()) {
         Spacer(modifier = Modifier.height(8.dp))
@@ -1863,6 +2025,7 @@ private fun StorageInspectorSection(
     val scope = rememberCoroutineScope()
     var showFilesDialog by remember { mutableStateOf(false) }
     var showSafDialog by remember { mutableStateOf(false) }
+    var exportingLists by remember { mutableStateOf(false) }
 
     Text("Storage Inspector", fontWeight = FontWeight.Bold, fontSize = 14.sp)
     Spacer(modifier = Modifier.height(4.dp))
@@ -1888,6 +2051,37 @@ private fun StorageInspectorSection(
         ) {
             Text("View SAF Links", fontSize = 12.sp)
         }
+    }
+    Spacer(modifier = Modifier.height(6.dp))
+    OutlinedButton(
+        onClick = {
+            scope.launch {
+                exportingLists = true
+                runCatching {
+                    val snapshot = createStorageInspectorDiagnostic(ctx.applicationContext, filesDir)
+                    val json = withContext(Dispatchers.Default) { StorageInspectorDiagnostics.encode(snapshot) }
+                    val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+                    withContext(Dispatchers.IO) {
+                        FileProviderGrantStore.writeUtf8(
+                            ctx.applicationContext,
+                            FileProviderGrantStore.STORAGE_INSPECTOR_EXPORTS,
+                            "storage_inspector_$stamp.json",
+                            json,
+                        )
+                    }
+                }.onSuccess { uri ->
+                    shareFile(ctx, uri, "Share Storage Inspector Diagnostic", "application/json")
+                }.onFailure { failure ->
+                    Toast.makeText(ctx, "Storage export failed: ${failure.message}", Toast.LENGTH_LONG).show()
+                }
+                exportingLists = false
+            }
+        },
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+        modifier = Modifier.height(32.dp),
+        enabled = !exportingLists,
+    ) {
+        Text(if (exportingLists) "Preparing Export..." else "Export File and SAF Lists", fontSize = 12.sp)
     }
 
     if (showFilesDialog) {

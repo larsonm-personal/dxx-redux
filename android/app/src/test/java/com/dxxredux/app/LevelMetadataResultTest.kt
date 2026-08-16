@@ -27,6 +27,43 @@ class LevelMetadataResultTest {
     }
 
     @Test
+    fun fromJsonReadsInheritedMidiMetadata() {
+        val result =
+            LevelMetadataResult.fromJson(
+                """
+                {
+                  "status": "ok",
+                  "music_tracks": [{
+                    "slot_index": 9,
+                    "slot_kind": "level",
+                    "filename": "game05.hmp",
+                    "format": "hmp",
+                    "metadata_source_filename": "game05.mid",
+                    "inherited_from_midi": true,
+                    "parse_status": "ok",
+                    "smf_format": 1,
+                    "track_count": 12,
+                    "time_division": 480,
+                    "title": "Created for Final Insertion Levels; Descent 2",
+                    "composer": "Verran Eventide",
+                    "display_name": "Created for Final Insertion Levels... (Verran Eventide)",
+                    "metadata_truncated": false,
+                    "text_events": [{"track_index":0,"type":"Copyright","text":"Copyright by Verran Eventide"}]
+                  }],
+                  "levels": []
+                }
+                """.trimIndent(),
+            )
+
+        val track = result.musicTracks.single()
+        assertEquals("game05.hmp", track.filename)
+        assertEquals("game05.mid", track.metadata.metadata_source_filename)
+        assertTrue(track.metadata.inherited_from_midi)
+        assertEquals("Verran Eventide", track.metadata.composer)
+        assertEquals("Copyright", track.metadata.text_events.single().type)
+    }
+
+    @Test
     fun fromJsonReadsObjectiveLabelPosition() {
         val result =
             LevelMetadataResult.fromJson(

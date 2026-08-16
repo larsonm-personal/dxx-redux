@@ -11,6 +11,7 @@
 
 #include "hmp_android_shared.h"
 #include "midi_enumeration.h"
+#include "midi_metadata.h"
 #include "hog_midi_catalog.h"
 #include "u_mem.h"
 
@@ -173,6 +174,23 @@ static void append_catalog_error(strbuf_t *errors, int *first_error,
 	sb_append(errors, "}");
 }
 
+static int find_midi_peer_index(const struct hog_midi_catalog *catalog,
+                                const char *hmp_name)
+{
+	const size_t length = strlen(hmp_name);
+	size_t index;
+	if (length < 4 || strcasecmp(hmp_name + length - 4, ".hmp"))
+		return -1;
+	for (index = 0; index < catalog->count; ++index) {
+		const char *candidate = catalog->entries[index].name;
+		if (strlen(candidate) == length &&
+		    !strncasecmp(candidate, hmp_name, length - 4) &&
+		    !strcasecmp(candidate + length - 4, ".mid"))
+			return (int) index;
+	}
+	return -1;
+}
+
 static void enumerate_hog_tracks(const char *hog_path, const char *source_id,
                                  const char *label, const char *game,
                                  strbuf_t *sb, int *first_source,
@@ -205,6 +223,10 @@ static void enumerate_hog_tracks(const char *hog_path, const char *source_id,
 	sb_append(sb, ",\"tracks\":[");
 
 	for (i = 0; i < catalog.count; i++) {
+		midi_metadata metadata;
+		const char *metadata_source = catalog.entries[i].name;
+		int inherited = 0;
+		char *metadata_json = NULL;
 		if (i > 0) sb_append(sb, ",");
 		sb_append(sb, "{\"filename\":");
 		sb_append_json_str(sb, catalog.entries[i].name);
@@ -213,11 +235,13 @@ static void enumerate_hog_tracks(const char *hog_path, const char *source_id,
 		unsigned char *data = NULL;
 		int data_len = 0;
 		int dur_ms = -1;
+		midi_metadata_init(&metadata);
 		if (hog_midi_catalog_read(hog_path, &catalog, i, &data, &data_len)) {
 			/* Check extension for format */
 			int nlen = (int) strlen(catalog.entries[i].name);
 			int is_hmp = (nlen >= 4 &&
-			              strncasecmp(catalog.entries[i].name + nlen - 4, ".hmp", 4) == 0);
+			              (!strncasecmp(catalog.entries[i].name + nlen - 4, ".hmp", 4) ||
+			               !strncasecmp(catalog.entries[i].name + nlen - 4, ".hmq", 4)));
 			if (is_hmp) {
 				dur_ms = compute_hmp_duration(data, data_len);
 			} else {
@@ -231,9 +255,36 @@ static void enumerate_hog_tracks(const char *hog_path, const char *source_id,
 					tml_free(msg);
 				}
 			}
+			midi_metadata_parse(data, (size_t) data_len, is_hmp, &metadata);
 			free(data);
 		}
-		sb_appendf(sb, ",\"duration_ms\":%d}", dur_ms);
+		if (!midi_metadata_has_text(&metadata)) {
+			const int peer_index = find_midi_peer_index(&catalog, catalog.entries[i].name);
+			unsigned char *peer_data = NULL;
+			int peer_length = 0;
+			if (peer_index >= 0 &&
+			    hog_midi_catalog_read(hog_path, &catalog, (size_t) peer_index,
+			                           &peer_data, &peer_length)) {
+				midi_metadata peer_metadata;
+				midi_metadata_init(&peer_metadata);
+				midi_metadata_parse(peer_data, (size_t) peer_length, 0, &peer_metadata);
+				free(peer_data);
+				if (peer_metadata.status == MIDI_METADATA_OK && midi_metadata_has_text(&peer_metadata)) {
+					midi_metadata_free(&metadata);
+					metadata = peer_metadata;
+					metadata_source = catalog.entries[peer_index].name;
+					inherited = 1;
+				} else {
+					midi_metadata_free(&peer_metadata);
+				}
+			}
+		}
+		metadata_json = midi_metadata_to_json(&metadata, metadata_source, inherited);
+		sb_appendf(sb, ",\"duration_ms\":%d,\"metadata\":", dur_ms);
+		sb_append(sb, metadata_json ? metadata_json : "null");
+		sb_append(sb, "}");
+		free(metadata_json);
+		midi_metadata_free(&metadata);
 	}
 	sb_append(sb, "]}");
 	hog_midi_catalog_free(&catalog);

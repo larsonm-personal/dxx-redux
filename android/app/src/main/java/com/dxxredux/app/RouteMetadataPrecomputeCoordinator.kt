@@ -13,6 +13,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 
@@ -168,6 +169,16 @@ internal class RouteMetadataPrecomputeCoordinator(
         )
         runner =
             scope.launch {
+                val cleanup =
+                    withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        RouteMetadataCacheMaintenance.prune(appContext.filesDir)
+                    }
+                if (cleanup.removedFiles > 0 || cleanup.removedDirectories > 0) {
+                    monitor.coordinatorEvent(
+                        "cache_pruned",
+                        "files=${cleanup.removedFiles} directories=${cleanup.removedDirectories}",
+                    )
+                }
                 var discoveryFinished = false
                 monitor.discoveryStarted()
                 while (isActive) {
@@ -338,6 +349,17 @@ internal class RouteMetadataPrecomputeCoordinator(
                 }
             }
         listOfNotNull(previous).joinAll()
+    }
+
+    suspend fun clearCache(): RouteMetadataCacheCleanupResult {
+        stopAndAwait()
+        return try {
+            withContext(kotlinx.coroutines.Dispatchers.IO) {
+                RouteMetadataCacheMaintenance.clear(appContext.filesDir)
+            }
+        } finally {
+            start()
+        }
     }
 
     suspend fun stopForGameLaunch(timeoutMs: Long = 8_000L): Boolean {

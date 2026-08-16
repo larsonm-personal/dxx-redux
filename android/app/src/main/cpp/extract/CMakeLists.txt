@@ -488,6 +488,20 @@ else()
     target_compile_options(test_hmp_android_shared PRIVATE -Wall -Wextra)
 endif()
 add_test(NAME hmp_android_shared_tests COMMAND test_hmp_android_shared)
+add_executable(
+    test_midi_metadata
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_midi_metadata.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/midi_metadata.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/hmp_android_shared.c)
+target_include_directories(
+    test_midi_metadata PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_hmp_stubs
+                               ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
+if(MSVC)
+    target_compile_options(test_midi_metadata PRIVATE /W4)
+else()
+    target_compile_options(test_midi_metadata PRIVATE -Wall -Wextra -Werror)
+endif()
+add_test(NAME midi_metadata_tests COMMAND test_midi_metadata)
 add_executable(test_utf8_codec ${CMAKE_CURRENT_SOURCE_DIR}/test_utf8_codec.c
                                ${CMAKE_CURRENT_SOURCE_DIR}/../shared/utf8_codec.c)
 target_include_directories(test_utf8_codec PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)

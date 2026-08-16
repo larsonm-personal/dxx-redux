@@ -48,4 +48,24 @@ class LauncherFileLabelsTest {
             launcherStorageFilePurpose(cueFile, cueFile.name, importedRootFile = false),
         )
     }
+
+    @Test
+    fun storagePurposeLabelsRouteAnalysisArtifactsSpecifically() {
+        assertEquals(
+            "Route analysis cache",
+            launcherStorageFilePurpose(
+                File("abc.bin"),
+                "d2x-redux/route-cache/g6/abc.bin",
+                importedRootFile = false,
+            ),
+        )
+        assertEquals(
+            "Route analysis checkpoint",
+            launcherStorageFilePurpose(
+                File("abc.bin.samples-000042"),
+                "d2x-redux/route-cache/g6/abc.bin.samples-000042",
+                importedRootFile = false,
+            ),
+        )
+    }
 }

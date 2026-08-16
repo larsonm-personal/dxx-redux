@@ -2319,6 +2319,34 @@ static void level_metadata_visibility_checkpoint_flush(void)
 #endif
 }
 
+static void level_metadata_visibility_checkpoint_discard_completed(void)
+{
+#ifdef __ANDROID__
+	unsigned int sequence;
+
+	if (!Level_metadata_visibility_checkpoint_key_valid ||
+	    !Level_metadata_analysis_cache_summary.filename[0] ||
+	    !PHYSFS_exists(Level_metadata_analysis_cache_summary.filename))
+		return;
+	for (sequence = 0;
+	     sequence < Level_metadata_visibility_checkpoint_sequence;
+	     ++sequence) {
+		char filename[224];
+
+		if (!level_metadata_visibility_chunk_filename(
+		        &Level_metadata_visibility_checkpoint_key,
+		        sequence, filename, sizeof(filename)))
+			break;
+		PHYSFS_delete(filename);
+	}
+	Level_metadata_visibility_checkpoint_key_valid = 0;
+	Level_metadata_visibility_checkpoint_sequence = 0;
+	memset(
+	    &Level_metadata_visibility_pending_chunk, 0,
+	    sizeof(Level_metadata_visibility_pending_chunk));
+#endif
+}
+
 static void level_metadata_visibility_checkpoint_store(
     const level_metadata_visibility_entry *entry)
 {
@@ -2457,7 +2485,7 @@ static int level_metadata_analysis_cache_load(
 	return 0;
 }
 
-static void level_metadata_analysis_cache_save(
+static int level_metadata_analysis_cache_save(
     const level_metadata_state *state,
     const route_planner_plan_summary *summary)
 {
@@ -2475,13 +2503,13 @@ static void level_metadata_analysis_cache_save(
 	    !route_analysis_cache_filename(
 	        &key, Level_metadata_analysis_cache_summary.filename,
 	        sizeof(Level_metadata_analysis_cache_summary.filename)))
-		return;
+		return 0;
 	record = malloc(size);
 	if (!record ||
 	    !route_analysis_cache_encode(&key, state, summary, record, size)) {
 		free(record);
 		Level_metadata_analysis_cache_summary.io_errors++;
-		return;
+		return 0;
 	}
 	PHYSFS_mkdir("route-cache");
 	snprintf(generation_dir, sizeof(generation_dir),
@@ -2489,14 +2517,14 @@ static void level_metadata_analysis_cache_save(
 	if (!PHYSFS_mkdir(generation_dir) && !PHYSFS_exists(generation_dir)) {
 		free(record);
 		Level_metadata_analysis_cache_summary.io_errors++;
-		return;
+		return 0;
 	}
 	if (snprintf(temporary_filename, sizeof(temporary_filename), "%s.tmp-%ld",
 	             Level_metadata_analysis_cache_summary.filename,
 	             (long) getpid()) >= (int) sizeof(temporary_filename)) {
 		free(record);
 		Level_metadata_analysis_cache_summary.io_errors++;
-		return;
+		return 0;
 	}
 	file = PHYSFS_openWrite(temporary_filename);
 	if (file) {
@@ -2515,9 +2543,11 @@ static void level_metadata_analysis_cache_save(
 	} else
 		Level_metadata_analysis_cache_summary.writes++;
 	free(record);
+	return write_ok;
 #else
 	(void) state;
 	(void) summary;
+	return 0;
 #endif
 }
 
@@ -2660,6 +2690,7 @@ static void level_metadata_rescan_current_level_internal(
 	if (!route_only) {
 		level_metadata_state shared_route;
 		char problem[128];
+		int route_cache_saved = 0;
 
 		memset(&Level_metadata_wall_shot_diagnostics, 0,
 		       sizeof(Level_metadata_wall_shot_diagnostics));
@@ -2693,7 +2724,7 @@ static void level_metadata_rescan_current_level_internal(
 			    problem,
 			    sizeof(problem));
 			if (Level_metadata_canonical_plan_summary_valid)
-				level_metadata_analysis_cache_save(
+				route_cache_saved = level_metadata_analysis_cache_save(
 				    &shared_route,
 				    &Level_metadata_canonical_plan_summary);
 		}
@@ -2734,6 +2765,10 @@ static void level_metadata_rescan_current_level_internal(
 			Level_metadata_route_revision++;
 		level_metadata_report_progress("route_planning", 1, 1);
 		level_metadata_visibility_checkpoint_flush();
+		if (route_cache_saved &&
+		    Level_metadata_canonical_plan_summary_valid &&
+		    shared_route.route_status == LEVEL_METADATA_ROUTE_OK)
+			level_metadata_visibility_checkpoint_discard_completed();
 		level_metadata_trace_wall_shot_diagnostics();
 #ifdef __ANDROID__
 		planning_finished_us = android_profile_monotonic_us();

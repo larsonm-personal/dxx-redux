@@ -19,6 +19,7 @@ object MidiEnumerationBridge {
     data class TrackInfo(
         val filename: String,
         val duration_ms: Int = -1,
+        val metadata: MidiMetadata? = null,
     )
 
     @Serializable

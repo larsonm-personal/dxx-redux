@@ -633,7 +633,11 @@ private fun MidiSection(filesDir: File) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.width(28.dp),
                     )
-                    Text(track.filename, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                    Text(
+                        track.metadata?.display_name?.takeIf { it.isNotBlank() } ?: track.filename,
+                        fontSize = 13.sp,
+                        modifier = Modifier.weight(1f),
+                    )
                     if (track.duration_ms > 0) {
                         val s = track.duration_ms / 1000
                         Text(
@@ -683,6 +687,7 @@ private fun MidiTrackPreviewDialog(
         detailLines = detailLines,
         isHmp = track.filename.lowercase().endsWith(".hmp") || track.filename.lowercase().endsWith(".hmq"),
         loadBytes = { MidiPreviewBridge.readHogEntry(source.hog, track.filename) },
+        loadMetadata = { track.metadata },
         onDismiss = onDismiss,
     )
 }

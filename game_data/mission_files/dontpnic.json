@@ -6,6 +6,983 @@
     "mission_name": "Don't Panic!",
     "mission_filename": "dontpnic.msn",
     "coop_starts": "1-4",
+    "music_tracks": [
+      {
+        "slot_index": 0,
+        "slot_kind": "title",
+        "filename": "descent.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 15,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 1,
+        "slot_kind": "briefing",
+        "filename": "briefing.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 13,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 2,
+        "slot_kind": "endlevel",
+        "filename": "endlevel.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 17,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 3,
+        "slot_kind": "endgame",
+        "filename": "endgame.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 17,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 4,
+        "slot_kind": "credits",
+        "filename": "credits.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 13,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 5,
+        "slot_kind": "level",
+        "filename": "e1m1.mid",
+        "format": "mid",
+        "metadata_source_filename": "e1m1.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 5,
+        "time_division": 89,
+        "title": "QMUS2MID (C) S.BACQUET",
+        "composer": "",
+        "display_name": "QMUS2MID (C) S.BACQUET",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 0,
+            "type": "Copyright",
+            "text": "QMUS2MID (C) S.BACQUET"
+          },
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "Quick MUS->MID ! for WinTex"
+          }
+        ]
+      },
+      {
+        "slot_index": 6,
+        "slot_kind": "level",
+        "filename": "t_map05.mid",
+        "format": "mid",
+        "metadata_source_filename": "t_map05.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 6,
+        "time_division": 89,
+        "title": "QMUS2MID (C) S.BACQUET",
+        "composer": "",
+        "display_name": "QMUS2MID (C) S.BACQUET",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 0,
+            "type": "Copyright",
+            "text": "QMUS2MID (C) S.BACQUET"
+          },
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "Quick MUS->MID ! for WinTex"
+          }
+        ]
+      },
+      {
+        "slot_index": 7,
+        "slot_kind": "level",
+        "filename": "map01.mid",
+        "format": "mid",
+        "metadata_source_filename": "map01.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 10,
+        "time_division": 120,
+        "title": "DOOM (c) 1993,1994 by id software",
+        "composer": "",
+        "display_name": "DOOM (c) 1993,1994 by id software",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "(c) 1994 by <IRC:#doom:just_joe> Productions."
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "MUS2MIDI v0.9 - joakim.erdfelt@swsbbs.com"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "prelim DEU Music/Sound project for 'DOOM'"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "DEU (c) 1993,1994 by RaphaΓÇ░l Quinet"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "DOOM (c) 1993,1994 by id software"
+          }
+        ]
+      },
+      {
+        "slot_index": 8,
+        "slot_kind": "level",
+        "filename": "e3m2.mid",
+        "format": "mid",
+        "metadata_source_filename": "e3m2.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 7,
+        "time_division": 96,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "MUS2MIDI v0.82 - joakim.erdfelt@swsbbs.com"
+          }
+        ]
+      },
+      {
+        "slot_index": 9,
+        "slot_kind": "level",
+        "filename": "e1m3.mid",
+        "format": "mid",
+        "metadata_source_filename": "e1m3.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 4,
+        "time_division": 96,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "MUS2MIDI v0.82 - joakim.erdfelt@swsbbs.com"
+          }
+        ]
+      },
+      {
+        "slot_index": 10,
+        "slot_kind": "level",
+        "filename": "e1m5.mid",
+        "format": "mid",
+        "metadata_source_filename": "e1m5.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 9,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "MUS2MIDI v0.82 - joakim.erdfelt@swsbbs.com"
+          }
+        ]
+      },
+      {
+        "slot_index": 11,
+        "slot_kind": "level",
+        "filename": "e1m7.mid",
+        "format": "mid",
+        "metadata_source_filename": "e1m7.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 12,
+        "time_division": 96,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "MUS2MIDI v0.82 - joakim.erdfelt@swsbbs.com"
+          }
+        ]
+      },
+      {
+        "slot_index": 12,
+        "slot_kind": "level",
+        "filename": "e1m4.mid",
+        "format": "mid",
+        "metadata_source_filename": "e1m4.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 8,
+        "time_division": 96,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "MUS2MIDI v0.82 - joakim.erdfelt@swsbbs.com"
+          }
+        ]
+      },
+      {
+        "slot_index": 13,
+        "slot_kind": "level",
+        "filename": "e2m1.mid",
+        "format": "mid",
+        "metadata_source_filename": "e2m1.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 8,
+        "time_division": 96,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "MUS2MIDI v0.82 - joakim.erdfelt@swsbbs.com"
+          }
+        ]
+      },
+      {
+        "slot_index": 14,
+        "slot_kind": "level",
+        "filename": "e2m7.mid",
+        "format": "mid",
+        "metadata_source_filename": "e2m7.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 9,
+        "time_division": 96,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "MUS2MIDI v0.82 - joakim.erdfelt@swsbbs.com"
+          }
+        ]
+      },
+      {
+        "slot_index": 15,
+        "slot_kind": "level",
+        "filename": "e2m3.mid",
+        "format": "mid",
+        "metadata_source_filename": "e2m3.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 7,
+        "time_division": 96,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "MUS2MIDI v0.82 - joakim.erdfelt@swsbbs.com"
+          }
+        ]
+      },
+      {
+        "slot_index": 16,
+        "slot_kind": "level",
+        "filename": "e3m3.mid",
+        "format": "mid",
+        "metadata_source_filename": "e3m3.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 5,
+        "time_division": 96,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "MUS2MIDI v0.82 - joakim.erdfelt@swsbbs.com"
+          }
+        ]
+      },
+      {
+        "slot_index": 17,
+        "slot_kind": "level",
+        "filename": "e1m6.mid",
+        "format": "mid",
+        "metadata_source_filename": "e1m6.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 10,
+        "time_division": 96,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "MUS2MIDI v0.82 - joakim.erdfelt@swsbbs.com"
+          }
+        ]
+      },
+      {
+        "slot_index": 18,
+        "slot_kind": "level",
+        "filename": "e2m6.mid",
+        "format": "mid",
+        "metadata_source_filename": "e2m6.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 8,
+        "time_division": 96,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "MUS2MIDI v0.82 - joakim.erdfelt@swsbbs.com"
+          }
+        ]
+      },
+      {
+        "slot_index": 19,
+        "slot_kind": "level",
+        "filename": "read_m.mid",
+        "format": "mid",
+        "metadata_source_filename": "read_m.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 9,
+        "time_division": 120,
+        "title": "DOOM (c) 1993,1994 by id software",
+        "composer": "",
+        "display_name": "DOOM (c) 1993,1994 by id software",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "(c) 1994 by <IRC:#doom:just_joe> Productions."
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "MUS2MIDI v0.9 - joakim.erdfelt@swsbbs.com"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "prelim DEU Music/Sound project for 'DOOM'"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "DEU (c) 1993,1994 by RaphaΓÇ░l Quinet"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "DOOM (c) 1993,1994 by id software"
+          }
+        ]
+      },
+      {
+        "slot_index": 20,
+        "slot_kind": "level",
+        "filename": "map04.mid",
+        "format": "mid",
+        "metadata_source_filename": "map04.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 5,
+        "time_division": 120,
+        "title": "DOOM (c) 1993,1994 by id software",
+        "composer": "",
+        "display_name": "DOOM (c) 1993,1994 by id software",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "(c) 1994 by <IRC:#doom:just_joe> Productions."
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "MUS2MIDI v0.9 - joakim.erdfelt@swsbbs.com"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "prelim DEU Music/Sound project for 'DOOM'"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "DEU (c) 1993,1994 by RaphaΓÇ░l Quinet"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "DOOM (c) 1993,1994 by id software"
+          }
+        ]
+      },
+      {
+        "slot_index": 21,
+        "slot_kind": "level",
+        "filename": "t_map10.mid",
+        "format": "mid",
+        "metadata_source_filename": "t_map10.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 6,
+        "time_division": 89,
+        "title": "QMUS2MID (C) S.BACQUET",
+        "composer": "",
+        "display_name": "QMUS2MID (C) S.BACQUET",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 0,
+            "type": "Copyright",
+            "text": "QMUS2MID (C) S.BACQUET"
+          },
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "Quick MUS->MID ! for WinTex"
+          }
+        ]
+      },
+      {
+        "slot_index": 22,
+        "slot_kind": "level",
+        "filename": "t_map11.mid",
+        "format": "mid",
+        "metadata_source_filename": "t_map11.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 6,
+        "time_division": 89,
+        "title": "QMUS2MID (C) S.BACQUET",
+        "composer": "",
+        "display_name": "QMUS2MID (C) S.BACQUET",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 0,
+            "type": "Copyright",
+            "text": "QMUS2MID (C) S.BACQUET"
+          },
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "Quick MUS->MID ! for WinTex"
+          }
+        ]
+      },
+      {
+        "slot_index": 23,
+        "slot_kind": "level",
+        "filename": "t_map08.mid",
+        "format": "mid",
+        "metadata_source_filename": "t_map08.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 10,
+        "time_division": 89,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 0,
+            "type": "Copyright",
+            "text": "QMUS2MID (C) S.BACQUET"
+          },
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "Quick MUS->MID ! for WinTex"
+          }
+        ]
+      },
+      {
+        "slot_index": 24,
+        "slot_kind": "level",
+        "filename": "dm2int.mid",
+        "format": "mid",
+        "metadata_source_filename": "dm2int.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 9,
+        "time_division": 120,
+        "title": "DOOM (c) 1993,1994 by id software",
+        "composer": "",
+        "display_name": "DOOM (c) 1993,1994 by id software",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "(c) 1994 by <IRC:#doom:just_joe> Productions."
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "MUS2MIDI v0.9 - joakim.erdfelt@swsbbs.com"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "prelim DEU Music/Sound project for 'DOOM'"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "DEU (c) 1993,1994 by RaphaΓÇ░l Quinet"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "DOOM (c) 1993,1994 by id software"
+          }
+        ]
+      },
+      {
+        "slot_index": 25,
+        "slot_kind": "level",
+        "filename": "map07.mid",
+        "format": "mid",
+        "metadata_source_filename": "map07.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 9,
+        "time_division": 120,
+        "title": "DOOM (c) 1993,1994 by id software",
+        "composer": "",
+        "display_name": "DOOM (c) 1993,1994 by id software",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "(c) 1994 by <IRC:#doom:just_joe> Productions."
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "MUS2MIDI v0.9 - joakim.erdfelt@swsbbs.com"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "prelim DEU Music/Sound project for 'DOOM'"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "DEU (c) 1993,1994 by RaphaΓÇ░l Quinet"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "DOOM (c) 1993,1994 by id software"
+          }
+        ]
+      },
+      {
+        "slot_index": 26,
+        "slot_kind": "level",
+        "filename": "map23.mid",
+        "format": "mid",
+        "metadata_source_filename": "map23.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 6,
+        "time_division": 120,
+        "title": "DOOM (c) 1993,1994 by id software",
+        "composer": "",
+        "display_name": "DOOM (c) 1993,1994 by id software",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "(c) 1994 by <IRC:#doom:just_joe> Productions."
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "MUS2MIDI v0.9 - joakim.erdfelt@swsbbs.com"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "prelim DEU Music/Sound project for 'DOOM'"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "DEU (c) 1993,1994 by RaphaΓÇ░l Quinet"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "DOOM (c) 1993,1994 by id software"
+          }
+        ]
+      },
+      {
+        "slot_index": 27,
+        "slot_kind": "level",
+        "filename": "t_map22.mid",
+        "format": "mid",
+        "metadata_source_filename": "t_map22.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 6,
+        "time_division": 89,
+        "title": "QMUS2MID (C) S.BACQUET",
+        "composer": "",
+        "display_name": "QMUS2MID (C) S.BACQUET",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 0,
+            "type": "Copyright",
+            "text": "QMUS2MID (C) S.BACQUET"
+          },
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "Quick MUS->MID ! for WinTex"
+          }
+        ]
+      },
+      {
+        "slot_index": 28,
+        "slot_kind": "level",
+        "filename": "map08.mid",
+        "format": "mid",
+        "metadata_source_filename": "map08.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 9,
+        "time_division": 120,
+        "title": "DOOM (c) 1993,1994 by id software",
+        "composer": "",
+        "display_name": "DOOM (c) 1993,1994 by id software",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "(c) 1994 by <IRC:#doom:just_joe> Productions."
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "MUS2MIDI v0.9 - joakim.erdfelt@swsbbs.com"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "prelim DEU Music/Sound project for 'DOOM'"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "DEU (c) 1993,1994 by RaphaΓÇ░l Quinet"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "DOOM (c) 1993,1994 by id software"
+          }
+        ]
+      },
+      {
+        "slot_index": 29,
+        "slot_kind": "level",
+        "filename": "map09.mid",
+        "format": "mid",
+        "metadata_source_filename": "map09.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 11,
+        "time_division": 120,
+        "title": "DOOM (c) 1993,1994 by id software",
+        "composer": "",
+        "display_name": "DOOM (c) 1993,1994 by id software",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "(c) 1994 by <IRC:#doom:just_joe> Productions."
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "MUS2MIDI v0.9 - joakim.erdfelt@swsbbs.com"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "prelim DEU Music/Sound project for 'DOOM'"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "DEU (c) 1993,1994 by RaphaΓÇ░l Quinet"
+          },
+          {
+            "track_index": 0,
+            "type": "Marker",
+            "text": "DOOM (c) 1993,1994 by id software"
+          }
+        ]
+      },
+      {
+        "slot_index": 30,
+        "slot_kind": "level",
+        "filename": "t_inter.mid",
+        "format": "mid",
+        "metadata_source_filename": "t_inter.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 15,
+        "time_division": 89,
+        "title": "QMUS2MID (C) S.BACQUET",
+        "composer": "",
+        "display_name": "QMUS2MID (C) S.BACQUET",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 0,
+            "type": "Copyright",
+            "text": "QMUS2MID (C) S.BACQUET"
+          },
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "Quick MUS->MID ! for WinTex"
+          }
+        ]
+      },
+      {
+        "slot_index": 31,
+        "slot_kind": "level",
+        "filename": "e3m8.mid",
+        "format": "mid",
+        "metadata_source_filename": "e3m8.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 6,
+        "time_division": 96,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "MUS2MIDI v0.82 - joakim.erdfelt@swsbbs.com"
+          }
+        ]
+      },
+      {
+        "slot_index": 32,
+        "slot_kind": "level",
+        "filename": "e1m9.mid",
+        "format": "mid",
+        "metadata_source_filename": "e1m9.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 12,
+        "time_division": 96,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "MUS2MIDI v0.82 - joakim.erdfelt@swsbbs.com"
+          }
+        ]
+      },
+      {
+        "slot_index": 33,
+        "slot_kind": "level",
+        "filename": "e2m9.mid",
+        "format": "mid",
+        "metadata_source_filename": "e2m9.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 10,
+        "time_division": 96,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "MUS2MIDI v0.82 - joakim.erdfelt@swsbbs.com"
+          }
+        ]
+      },
+      {
+        "slot_index": 34,
+        "slot_kind": "level",
+        "filename": "t_map01.mid",
+        "format": "mid",
+        "metadata_source_filename": "t_map01.mid",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 6,
+        "time_division": 89,
+        "title": "QMUS2MID (C) S.BACQUET",
+        "composer": "",
+        "display_name": "QMUS2MID (C) S.BACQUET",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 0,
+            "type": "Copyright",
+            "text": "QMUS2MID (C) S.BACQUET"
+          },
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "Quick MUS->MID ! for WinTex"
+          }
+        ]
+      }
+    ],
     "level_count": 30,
     "levels": [
       {

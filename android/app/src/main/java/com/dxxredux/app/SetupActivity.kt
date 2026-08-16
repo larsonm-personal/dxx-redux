@@ -690,27 +690,13 @@ class SetupActivity : ComponentActivity() {
                         val pendingResult = goAsync()
                         this@SetupActivity.lifecycleScope.launch {
                             try {
-                                routeMetadataCoordinator.stopAndAwait()
-                                val deleted =
-                                    withContext(Dispatchers.IO) {
-                                        var count = 0
-                                        listOf(
-                                            File(filesDir, "d1x-redux/route-cache"),
-                                            File(filesDir, "d2x-redux/route-cache"),
-                                        ).forEach { cacheDir ->
-                                            if (cacheDir.exists() && cacheDir.deleteRecursively()) count++
-                                        }
-                                        listOf(
-                                            File(filesDir, "route_metadata_precompute.json"),
-                                            File(filesDir, "route_metadata_precompute.lock"),
-                                        ).forEach { stateFile ->
-                                            if (stateFile.delete()) count++
-                                        }
-                                        count
-                                    }
-                                Log.i("DXX-Setup", "clear_route_metadata_cache: deleted $deleted path(s)")
+                                val result = routeMetadataCoordinator.clearCache()
+                                Log.i(
+                                    "DXX-Setup",
+                                    "clear_route_metadata_cache: deleted ${result.removedFiles} file(s) " +
+                                        "and ${result.removedDirectories} cache root(s)",
+                                )
                             } finally {
-                                routeMetadataCoordinator.start()
                                 pendingResult.finish()
                             }
                         }
@@ -2174,6 +2160,10 @@ class SetupActivity : ComponentActivity() {
                     launchMultiplayerGame(info)
                 },
                 onContentImported = { routeMetadataCoordinator.notifyContentImported() },
+                onClearRouteMetadataCache = {
+                    val result = routeMetadataCoordinator.clearCache()
+                    result.removedFiles
+                },
                 onRefresh = {
                     routeMetadataCoordinator.wake()
                     refreshTrigger.intValue++
@@ -2503,6 +2493,7 @@ private fun SetupScreen(
     onPlayInputDemo: (StagedInputDemo) -> Unit,
     onMultiplayerLaunch: (com.dxxredux.app.multiplayer.GameLaunchInfo) -> Unit,
     onContentImported: () -> Unit,
+    onClearRouteMetadataCache: suspend () -> Int,
     onRefresh: () -> Unit,
     onDownloadStateChanged: (String, Int) -> Unit = { _, _ -> },
 ) {
@@ -2531,6 +2522,10 @@ private fun SetupScreen(
     }
     var activeSetName by remember { mutableStateOf(fileSetManager.getActive()) }
     val setDir = remember(activeSetName) { fileSetManager.getSetDir(activeSetName) }
+    val includedMissions by
+        produceState(initialValue = emptyList<FileSetMissionEntry>(), refreshTrigger, activeSetName) {
+            value = withContext(Dispatchers.IO) { FileSetMissionInventory.scan(setDir) }
+        }
     val manifest = remember(activeSetName) { AssetManifest(setDir) }
     val safManifest = remember(activeSetName) { fileSetManager.safManifestForSet(activeSetName) }
     val d2FileList = remember(refreshTrigger, activeSetName) { detectD2FileList(setDir, safManifest) }
@@ -3344,6 +3339,7 @@ private fun SetupScreen(
                 refreshTrigger = refreshTrigger,
                 controllerFocusActive = shouldSeedLauncherFocus,
                 onPlayInputDemo = onPlayInputDemo,
+                onClearRouteMetadataCache = onClearRouteMetadataCache,
                 onBack = { showAdvancedPage = false },
             )
             return@MaterialTheme
@@ -3591,6 +3587,10 @@ private fun SetupScreen(
                             fileSetManager.setActive(newSet)
                             activeSetName = newSet
                             showSetDialog = false
+                            onRefresh()
+                        },
+                        onContentChanged = {
+                            onClearRouteMetadataCache()
                             onRefresh()
                         },
                         onDismiss = { showSetDialog = false },
@@ -3963,6 +3963,18 @@ private fun SetupScreen(
                         ) {
                             Text("Change", fontSize = 12.sp)
                         }
+                    }
+                    if (includedMissions.isNotEmpty()) {
+                        Text(
+                            text =
+                                "Included missions: " +
+                                    includedMissions.joinToString { mission ->
+                                        mission.versionName ?: mission.displayName
+                                    },
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 6.dp),
+                        )
                     }
 
                     // -- Missing-files help ----------------------

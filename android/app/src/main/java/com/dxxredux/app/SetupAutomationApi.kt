@@ -482,15 +482,15 @@ internal fun SetupActivity.writeControllerOperationResult(
 
 /** Write a distinct controller layout used by the real-pilot JNI roundtrip test. */
 internal fun SetupActivity.writeControllerPatchFixture(game: String) {
-	val defaults = loadDefaultControllerConfig(applicationContext)
-	val bindings = defaults.bindings.toMutableMap()
-	bindings["RS_X"] = "Slide L/R"
-	bindings["LS_X"] = "Turn L/R"
-	ControllerConfigSlotRepository.saveActiveConfig(
-		applicationContext,
-		defaults.copy(bindings = bindings, inverts = setOf("RS_X")),
-		game,
-	)
+    val defaults = loadDefaultControllerConfig(applicationContext)
+    val bindings = defaults.bindings.toMutableMap()
+    bindings["RS_X"] = "Slide L/R"
+    bindings["LS_X"] = "Turn L/R"
+    ControllerConfigSlotRepository.saveActiveConfig(
+        applicationContext,
+        defaults.copy(bindings = bindings, inverts = setOf("RS_X")),
+        game,
+    )
 }
 
 private data class KcMeta(
@@ -808,6 +808,18 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
                 .toList()
         root.put("set_files_recursive", JSONArray(recursiveSetFiles))
         root.put("active_set_path", setDir.absolutePath)
+        val includedMissions =
+            FileSetMissionInventory.scan(setDir).map { mission ->
+                JSONObject()
+                    .put("name", mission.displayName)
+                    .put("game", mission.game)
+                    .put("version", mission.versionName)
+                    .put("source_set", activeSet)
+                    .put("source_uri", mission.sourceUri)
+                    .put("size_bytes", mission.totalBytes)
+                    .put("files", JSONArray(mission.files.map { it.name }))
+            }
+        root.put("included_missions", JSONArray(includedMissions))
         val importState = SetupImportTracker.snapshot()
         root.put(
             "import_state",

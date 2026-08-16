@@ -6,6 +6,1857 @@
     "mission_name": "Plutonian Shores",
     "mission_filename": "plutonia.mn2",
     "coop_starts": "4",
+    "music_tracks": [
+      {
+        "slot_index": 0,
+        "slot_kind": "title",
+        "filename": "descent.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "descent.mid",
+        "inherited_from_midi": true,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 22,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "[G]Loop"
+          },
+          {
+            "track_index": 2,
+            "type": "Sequence/track name",
+            "text": "[G]Strings"
+          },
+          {
+            "track_index": 3,
+            "type": "Sequence/track name",
+            "text": "[G]Bass"
+          },
+          {
+            "track_index": 4,
+            "type": "Sequence/track name",
+            "text": "[G]Pluck"
+          },
+          {
+            "track_index": 5,
+            "type": "Sequence/track name",
+            "text": "[G]Pluck 2"
+          },
+          {
+            "track_index": 6,
+            "type": "Sequence/track name",
+            "text": "Sequence"
+          },
+          {
+            "track_index": 7,
+            "type": "Sequence/track name",
+            "text": "[G]Voice"
+          },
+          {
+            "track_index": 8,
+            "type": "Sequence/track name",
+            "text": "Sequence"
+          },
+          {
+            "track_index": 9,
+            "type": "Sequence/track name",
+            "text": "[G]Strings"
+          },
+          {
+            "track_index": 10,
+            "type": "Sequence/track name",
+            "text": "Sequence"
+          },
+          {
+            "track_index": 11,
+            "type": "Sequence/track name",
+            "text": "[G]Mute"
+          },
+          {
+            "track_index": 12,
+            "type": "Sequence/track name",
+            "text": "Sequence"
+          },
+          {
+            "track_index": 13,
+            "type": "Sequence/track name",
+            "text": "[G]Low Tom"
+          },
+          {
+            "track_index": 14,
+            "type": "Sequence/track name",
+            "text": "[G]Pluck"
+          },
+          {
+            "track_index": 15,
+            "type": "Sequence/track name",
+            "text": "[G]Drums"
+          },
+          {
+            "track_index": 16,
+            "type": "Sequence/track name",
+            "text": "Sequence"
+          },
+          {
+            "track_index": 17,
+            "type": "Sequence/track name",
+            "text": "Sequence"
+          },
+          {
+            "track_index": 18,
+            "type": "Sequence/track name",
+            "text": "Sequence"
+          },
+          {
+            "track_index": 19,
+            "type": "Sequence/track name",
+            "text": "Sequence"
+          },
+          {
+            "track_index": 20,
+            "type": "Sequence/track name",
+            "text": "Sequence"
+          },
+          {
+            "track_index": 21,
+            "type": "Sequence/track name",
+            "text": "Sequence"
+          }
+        ]
+      },
+      {
+        "slot_index": 1,
+        "slot_kind": "briefing",
+        "filename": "briefing.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "briefing.mid",
+        "inherited_from_midi": true,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 12,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "Loop"
+          },
+          {
+            "track_index": 2,
+            "type": "Sequence/track name",
+            "text": "[G]Choir"
+          },
+          {
+            "track_index": 3,
+            "type": "Sequence/track name",
+            "text": "[G]Bass"
+          },
+          {
+            "track_index": 4,
+            "type": "Sequence/track name",
+            "text": "[G]Bass 8vb"
+          },
+          {
+            "track_index": 5,
+            "type": "Sequence/track name",
+            "text": "[G]Syn 1"
+          },
+          {
+            "track_index": 6,
+            "type": "Sequence/track name",
+            "text": "[G]Syn 2"
+          },
+          {
+            "track_index": 7,
+            "type": "Sequence/track name",
+            "text": "[G]Strings"
+          },
+          {
+            "track_index": 8,
+            "type": "Sequence/track name",
+            "text": "[G]Timp rolls"
+          },
+          {
+            "track_index": 9,
+            "type": "Sequence/track name",
+            "text": "[G]Taiko rolls"
+          },
+          {
+            "track_index": 10,
+            "type": "Sequence/track name",
+            "text": "[G]Perc"
+          },
+          {
+            "track_index": 11,
+            "type": "Sequence/track name",
+            "text": "[G]Soundtrack"
+          }
+        ]
+      },
+      {
+        "slot_index": 2,
+        "slot_kind": "endlevel",
+        "filename": "endlevel.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "invalid_midi",
+        "smf_format": 0,
+        "track_count": 0,
+        "time_division": 0,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 3,
+        "slot_kind": "endgame",
+        "filename": "endgame.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "invalid_midi",
+        "smf_format": 0,
+        "track_count": 0,
+        "time_division": 0,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 4,
+        "slot_kind": "credits",
+        "filename": "credits.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "credits.mid",
+        "inherited_from_midi": true,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 15,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "loop"
+          },
+          {
+            "track_index": 2,
+            "type": "Sequence/track name",
+            "text": "[GUF] slap bass"
+          },
+          {
+            "track_index": 3,
+            "type": "Sequence/track name",
+            "text": "[GUF] slap bass"
+          },
+          {
+            "track_index": 4,
+            "type": "Sequence/track name",
+            "text": "[GUF] slap bass"
+          },
+          {
+            "track_index": 5,
+            "type": "Sequence/track name",
+            "text": "[GUF] muted guitar 1"
+          },
+          {
+            "track_index": 6,
+            "type": "Sequence/track name",
+            "text": "[GUF] muted guitar 2"
+          },
+          {
+            "track_index": 7,
+            "type": "Sequence/track name",
+            "text": "[GUF] synth pad"
+          },
+          {
+            "track_index": 8,
+            "type": "Sequence/track name",
+            "text": "[GUF] synth pad"
+          },
+          {
+            "track_index": 9,
+            "type": "Sequence/track name",
+            "text": "[GUF] sawtooth synth"
+          },
+          {
+            "track_index": 10,
+            "type": "Sequence/track name",
+            "text": "[GUF] sawtooth synth"
+          },
+          {
+            "track_index": 11,
+            "type": "Sequence/track name",
+            "text": "[GUF] sawtooth synth"
+          },
+          {
+            "track_index": 12,
+            "type": "Sequence/track name",
+            "text": "[GUF] drums"
+          },
+          {
+            "track_index": 13,
+            "type": "Sequence/track name",
+            "text": "[GUF] sawtooth synth"
+          },
+          {
+            "track_index": 14,
+            "type": "Sequence/track name",
+            "text": "[GUF] sawtooth synth"
+          }
+        ]
+      },
+      {
+        "slot_index": 5,
+        "slot_kind": "level",
+        "filename": "game02.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "game02.mid",
+        "inherited_from_midi": true,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 18,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "Loop"
+          },
+          {
+            "track_index": 2,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 3,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 4,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 5,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 6,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 7,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 8,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 9,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 10,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 11,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 12,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 13,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 14,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 15,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 16,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 17,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          }
+        ]
+      },
+      {
+        "slot_index": 6,
+        "slot_kind": "level",
+        "filename": "game03.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "game03.mid",
+        "inherited_from_midi": true,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 15,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "Loop"
+          },
+          {
+            "track_index": 2,
+            "type": "Sequence/track name",
+            "text": "[G]Perc"
+          },
+          {
+            "track_index": 3,
+            "type": "Sequence/track name",
+            "text": "[G]Organ"
+          },
+          {
+            "track_index": 4,
+            "type": "Sequence/track name",
+            "text": "[G]Organ"
+          },
+          {
+            "track_index": 5,
+            "type": "Sequence/track name",
+            "text": "[G]Synth bass hi"
+          },
+          {
+            "track_index": 6,
+            "type": "Sequence/track name",
+            "text": "[G]Synth bass lo"
+          },
+          {
+            "track_index": 7,
+            "type": "Sequence/track name",
+            "text": "[G]Choir"
+          },
+          {
+            "track_index": 8,
+            "type": "Sequence/track name",
+            "text": "[G]Elec Gtr"
+          },
+          {
+            "track_index": 9,
+            "type": "Sequence/track name",
+            "text": "[G]Distorted Gtr"
+          },
+          {
+            "track_index": 10,
+            "type": "Sequence/track name",
+            "text": "[G]Choir"
+          },
+          {
+            "track_index": 11,
+            "type": "Sequence/track name",
+            "text": "[G]Piano up"
+          },
+          {
+            "track_index": 12,
+            "type": "Sequence/track name",
+            "text": "[G]Wierd perc"
+          },
+          {
+            "track_index": 13,
+            "type": "Sequence/track name",
+            "text": "[G]Tom L"
+          },
+          {
+            "track_index": 14,
+            "type": "Sequence/track name",
+            "text": "[G]Tom R"
+          }
+        ]
+      },
+      {
+        "slot_index": 7,
+        "slot_kind": "level",
+        "filename": "d2game01.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "d2game01.mid",
+        "inherited_from_midi": true,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 18,
+        "time_division": 480,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "loop"
+          },
+          {
+            "track_index": 1,
+            "type": "Instrument name",
+            "text": "M Cha 1"
+          },
+          {
+            "track_index": 2,
+            "type": "Sequence/track name",
+            "text": "[G]orch hi"
+          },
+          {
+            "track_index": 2,
+            "type": "Instrument name",
+            "text": "M Cha 1"
+          },
+          {
+            "track_index": 3,
+            "type": "Sequence/track name",
+            "text": "[G]square"
+          },
+          {
+            "track_index": 3,
+            "type": "Instrument name",
+            "text": "M Cha 2"
+          },
+          {
+            "track_index": 4,
+            "type": "Sequence/track name",
+            "text": "[G]square/"
+          },
+          {
+            "track_index": 4,
+            "type": "Instrument name",
+            "text": "M Cha 3"
+          },
+          {
+            "track_index": 5,
+            "type": "Sequence/track name",
+            "text": "[G]harpsi/"
+          },
+          {
+            "track_index": 5,
+            "type": "Instrument name",
+            "text": "M Cha 4"
+          },
+          {
+            "track_index": 6,
+            "type": "Sequence/track name",
+            "text": "[G]choiris"
+          },
+          {
+            "track_index": 6,
+            "type": "Instrument name",
+            "text": "M Cha 5"
+          },
+          {
+            "track_index": 7,
+            "type": "Sequence/track name",
+            "text": "[G]choiris"
+          },
+          {
+            "track_index": 7,
+            "type": "Instrument name",
+            "text": "M Cha 6"
+          },
+          {
+            "track_index": 8,
+            "type": "Sequence/track name",
+            "text": "[G]synbass"
+          },
+          {
+            "track_index": 8,
+            "type": "Instrument name",
+            "text": "M Cha 7"
+          },
+          {
+            "track_index": 9,
+            "type": "Sequence/track name",
+            "text": "[G]pulsarp"
+          },
+          {
+            "track_index": 9,
+            "type": "Instrument name",
+            "text": "M Cha 8"
+          },
+          {
+            "track_index": 10,
+            "type": "Sequence/track name",
+            "text": "[G]pick ba"
+          },
+          {
+            "track_index": 10,
+            "type": "Instrument name",
+            "text": "M Cha 9"
+          },
+          {
+            "track_index": 11,
+            "type": "Sequence/track name",
+            "text": "[G]drums"
+          },
+          {
+            "track_index": 11,
+            "type": "Instrument name",
+            "text": "M Cha10"
+          },
+          {
+            "track_index": 12,
+            "type": "Sequence/track name",
+            "text": "[G]guitar"
+          },
+          {
+            "track_index": 12,
+            "type": "Instrument name",
+            "text": "M Cha11"
+          },
+          {
+            "track_index": 13,
+            "type": "Sequence/track name",
+            "text": "[G]choiris"
+          },
+          {
+            "track_index": 13,
+            "type": "Instrument name",
+            "text": "M Cha12"
+          },
+          {
+            "track_index": 14,
+            "type": "Sequence/track name",
+            "text": "[G]bass"
+          },
+          {
+            "track_index": 14,
+            "type": "Instrument name",
+            "text": "M Cha13"
+          },
+          {
+            "track_index": 15,
+            "type": "Sequence/track name",
+            "text": "[G]synth b"
+          },
+          {
+            "track_index": 15,
+            "type": "Instrument name",
+            "text": "M Cha14"
+          },
+          {
+            "track_index": 16,
+            "type": "Sequence/track name",
+            "text": "[G]synth b"
+          },
+          {
+            "track_index": 16,
+            "type": "Instrument name",
+            "text": "M Cha15"
+          },
+          {
+            "track_index": 17,
+            "type": "Sequence/track name",
+            "text": "[G]choir"
+          },
+          {
+            "track_index": 17,
+            "type": "Instrument name",
+            "text": "M Cha16"
+          }
+        ]
+      },
+      {
+        "slot_index": 8,
+        "slot_kind": "level",
+        "filename": "game10.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 12,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 9,
+        "slot_kind": "level",
+        "filename": "game15.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 17,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 10,
+        "slot_kind": "level",
+        "filename": "game06.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 18,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 11,
+        "slot_kind": "level",
+        "filename": "game07.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 14,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 12,
+        "slot_kind": "level",
+        "filename": "game08.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 16,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 13,
+        "slot_kind": "level",
+        "filename": "game05.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 12,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 14,
+        "slot_kind": "level",
+        "filename": "game20.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 8,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 15,
+        "slot_kind": "level",
+        "filename": "game14.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 15,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 16,
+        "slot_kind": "level",
+        "filename": "game11.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 18,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 17,
+        "slot_kind": "level",
+        "filename": "d2game02.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "d2game02.mid",
+        "inherited_from_midi": true,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 18,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "Loop"
+          },
+          {
+            "track_index": 2,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 3,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 4,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 5,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 6,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 7,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 8,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 9,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 10,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 11,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 12,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 13,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 14,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 15,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 16,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 17,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          }
+        ]
+      },
+      {
+        "slot_index": 18,
+        "slot_kind": "level",
+        "filename": "game12.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 14,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 19,
+        "slot_kind": "level",
+        "filename": "game13.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 16,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 20,
+        "slot_kind": "level",
+        "filename": "game16.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 18,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 21,
+        "slot_kind": "level",
+        "filename": "game17.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 13,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 22,
+        "slot_kind": "level",
+        "filename": "game18.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 19,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 23,
+        "slot_kind": "level",
+        "filename": "game19.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 12,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 24,
+        "slot_kind": "level",
+        "filename": "game22.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 32,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 25,
+        "slot_kind": "level",
+        "filename": "game21.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 19,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 26,
+        "slot_kind": "level",
+        "filename": "game09.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 20,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 27,
+        "slot_kind": "level",
+        "filename": "game01.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "game01.mid",
+        "inherited_from_midi": true,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 18,
+        "time_division": 480,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "loop"
+          },
+          {
+            "track_index": 1,
+            "type": "Instrument name",
+            "text": "M Cha 1"
+          },
+          {
+            "track_index": 2,
+            "type": "Sequence/track name",
+            "text": "[G]orch hi"
+          },
+          {
+            "track_index": 2,
+            "type": "Instrument name",
+            "text": "M Cha 1"
+          },
+          {
+            "track_index": 3,
+            "type": "Sequence/track name",
+            "text": "[G]square"
+          },
+          {
+            "track_index": 3,
+            "type": "Instrument name",
+            "text": "M Cha 2"
+          },
+          {
+            "track_index": 4,
+            "type": "Sequence/track name",
+            "text": "[G]square/"
+          },
+          {
+            "track_index": 4,
+            "type": "Instrument name",
+            "text": "M Cha 3"
+          },
+          {
+            "track_index": 5,
+            "type": "Sequence/track name",
+            "text": "[G]harpsi/"
+          },
+          {
+            "track_index": 5,
+            "type": "Instrument name",
+            "text": "M Cha 4"
+          },
+          {
+            "track_index": 6,
+            "type": "Sequence/track name",
+            "text": "[G]choiris"
+          },
+          {
+            "track_index": 6,
+            "type": "Instrument name",
+            "text": "M Cha 5"
+          },
+          {
+            "track_index": 7,
+            "type": "Sequence/track name",
+            "text": "[G]choiris"
+          },
+          {
+            "track_index": 7,
+            "type": "Instrument name",
+            "text": "M Cha 6"
+          },
+          {
+            "track_index": 8,
+            "type": "Sequence/track name",
+            "text": "[G]synbass"
+          },
+          {
+            "track_index": 8,
+            "type": "Instrument name",
+            "text": "M Cha 7"
+          },
+          {
+            "track_index": 9,
+            "type": "Sequence/track name",
+            "text": "[G]pulsarp"
+          },
+          {
+            "track_index": 9,
+            "type": "Instrument name",
+            "text": "M Cha 8"
+          },
+          {
+            "track_index": 10,
+            "type": "Sequence/track name",
+            "text": "[G]pick ba"
+          },
+          {
+            "track_index": 10,
+            "type": "Instrument name",
+            "text": "M Cha 9"
+          },
+          {
+            "track_index": 11,
+            "type": "Sequence/track name",
+            "text": "[G]drums"
+          },
+          {
+            "track_index": 11,
+            "type": "Instrument name",
+            "text": "M Cha10"
+          },
+          {
+            "track_index": 12,
+            "type": "Sequence/track name",
+            "text": "[G]guitar"
+          },
+          {
+            "track_index": 12,
+            "type": "Instrument name",
+            "text": "M Cha11"
+          },
+          {
+            "track_index": 13,
+            "type": "Sequence/track name",
+            "text": "[G]choiris"
+          },
+          {
+            "track_index": 13,
+            "type": "Instrument name",
+            "text": "M Cha12"
+          },
+          {
+            "track_index": 14,
+            "type": "Sequence/track name",
+            "text": "[G]bass"
+          },
+          {
+            "track_index": 14,
+            "type": "Instrument name",
+            "text": "M Cha13"
+          },
+          {
+            "track_index": 15,
+            "type": "Sequence/track name",
+            "text": "[G]synth b"
+          },
+          {
+            "track_index": 15,
+            "type": "Instrument name",
+            "text": "M Cha14"
+          },
+          {
+            "track_index": 16,
+            "type": "Sequence/track name",
+            "text": "[G]synth b"
+          },
+          {
+            "track_index": 16,
+            "type": "Instrument name",
+            "text": "M Cha15"
+          },
+          {
+            "track_index": 17,
+            "type": "Sequence/track name",
+            "text": "[G]choir"
+          },
+          {
+            "track_index": 17,
+            "type": "Instrument name",
+            "text": "M Cha16"
+          }
+        ]
+      },
+      {
+        "slot_index": 28,
+        "slot_kind": "level",
+        "filename": "game02.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "game02.mid",
+        "inherited_from_midi": true,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 18,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "Loop"
+          },
+          {
+            "track_index": 2,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 3,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 4,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 5,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 6,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 7,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 8,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 9,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 10,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 11,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 12,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 13,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 14,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 15,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 16,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 17,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          }
+        ]
+      },
+      {
+        "slot_index": 29,
+        "slot_kind": "level",
+        "filename": "game03.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "game03.mid",
+        "inherited_from_midi": true,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 15,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "Loop"
+          },
+          {
+            "track_index": 2,
+            "type": "Sequence/track name",
+            "text": "[G]Perc"
+          },
+          {
+            "track_index": 3,
+            "type": "Sequence/track name",
+            "text": "[G]Organ"
+          },
+          {
+            "track_index": 4,
+            "type": "Sequence/track name",
+            "text": "[G]Organ"
+          },
+          {
+            "track_index": 5,
+            "type": "Sequence/track name",
+            "text": "[G]Synth bass hi"
+          },
+          {
+            "track_index": 6,
+            "type": "Sequence/track name",
+            "text": "[G]Synth bass lo"
+          },
+          {
+            "track_index": 7,
+            "type": "Sequence/track name",
+            "text": "[G]Choir"
+          },
+          {
+            "track_index": 8,
+            "type": "Sequence/track name",
+            "text": "[G]Elec Gtr"
+          },
+          {
+            "track_index": 9,
+            "type": "Sequence/track name",
+            "text": "[G]Distorted Gtr"
+          },
+          {
+            "track_index": 10,
+            "type": "Sequence/track name",
+            "text": "[G]Choir"
+          },
+          {
+            "track_index": 11,
+            "type": "Sequence/track name",
+            "text": "[G]Piano up"
+          },
+          {
+            "track_index": 12,
+            "type": "Sequence/track name",
+            "text": "[G]Wierd perc"
+          },
+          {
+            "track_index": 13,
+            "type": "Sequence/track name",
+            "text": "[G]Tom L"
+          },
+          {
+            "track_index": 14,
+            "type": "Sequence/track name",
+            "text": "[G]Tom R"
+          }
+        ]
+      },
+      {
+        "slot_index": 30,
+        "slot_kind": "level",
+        "filename": "game04.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "game04.mid",
+        "inherited_from_midi": true,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 14,
+        "time_division": 120,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 2,
+            "type": "Sequence/track name",
+            "text": "[GUF] Melody"
+          },
+          {
+            "track_index": 3,
+            "type": "Sequence/track name",
+            "text": "[GUF] Synth Bass"
+          },
+          {
+            "track_index": 4,
+            "type": "Sequence/track name",
+            "text": "[GUF] Bowed String"
+          },
+          {
+            "track_index": 5,
+            "type": "Sequence/track name",
+            "text": "[GUF] Arpeggio"
+          },
+          {
+            "track_index": 6,
+            "type": "Sequence/track name",
+            "text": "[GUF] Pizzacato Strings / Bo"
+          },
+          {
+            "track_index": 7,
+            "type": "Sequence/track name",
+            "text": "[GUF] Synth 2"
+          },
+          {
+            "track_index": 8,
+            "type": "Sequence/track name",
+            "text": "[GUF] Crystal"
+          },
+          {
+            "track_index": 9,
+            "type": "Sequence/track name",
+            "text": "[GUF] Reverse Cymbal"
+          },
+          {
+            "track_index": 10,
+            "type": "Sequence/track name",
+            "text": "[GUF] Drums I&II"
+          },
+          {
+            "track_index": 11,
+            "type": "Sequence/track name",
+            "text": "[GUF] Drum Highhat"
+          },
+          {
+            "track_index": 12,
+            "type": "Sequence/track name",
+            "text": "[GUF] Drum Punch-in's"
+          },
+          {
+            "track_index": 13,
+            "type": "Sequence/track name",
+            "text": "[GUF] SFX2"
+          }
+        ]
+      },
+      {
+        "slot_index": 31,
+        "slot_kind": "level",
+        "filename": "game21.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "",
+        "inherited_from_midi": false,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 19,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": []
+      },
+      {
+        "slot_index": 32,
+        "slot_kind": "level",
+        "filename": "d2game02.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "d2game02.mid",
+        "inherited_from_midi": true,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 18,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "Loop"
+          },
+          {
+            "track_index": 2,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 3,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 4,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 5,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 6,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 7,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 8,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 9,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 10,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 11,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 12,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 13,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 14,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 15,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 16,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          },
+          {
+            "track_index": 17,
+            "type": "Sequence/track name",
+            "text": "[G]"
+          }
+        ]
+      },
+      {
+        "slot_index": 33,
+        "slot_kind": "level",
+        "filename": "d2game03.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "d2game03.mid",
+        "inherited_from_midi": true,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 15,
+        "time_division": 192,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 1,
+            "type": "Sequence/track name",
+            "text": "Loop"
+          },
+          {
+            "track_index": 2,
+            "type": "Sequence/track name",
+            "text": "[G]Perc"
+          },
+          {
+            "track_index": 3,
+            "type": "Sequence/track name",
+            "text": "[G]Organ"
+          },
+          {
+            "track_index": 4,
+            "type": "Sequence/track name",
+            "text": "[G]Organ"
+          },
+          {
+            "track_index": 5,
+            "type": "Sequence/track name",
+            "text": "[G]Synth bass hi"
+          },
+          {
+            "track_index": 6,
+            "type": "Sequence/track name",
+            "text": "[G]Synth bass lo"
+          },
+          {
+            "track_index": 7,
+            "type": "Sequence/track name",
+            "text": "[G]Choir"
+          },
+          {
+            "track_index": 8,
+            "type": "Sequence/track name",
+            "text": "[G]Elec Gtr"
+          },
+          {
+            "track_index": 9,
+            "type": "Sequence/track name",
+            "text": "[G]Distorted Gtr"
+          },
+          {
+            "track_index": 10,
+            "type": "Sequence/track name",
+            "text": "[G]Choir"
+          },
+          {
+            "track_index": 11,
+            "type": "Sequence/track name",
+            "text": "[G]Piano up"
+          },
+          {
+            "track_index": 12,
+            "type": "Sequence/track name",
+            "text": "[G]Wierd perc"
+          },
+          {
+            "track_index": 13,
+            "type": "Sequence/track name",
+            "text": "[G]Tom L"
+          },
+          {
+            "track_index": 14,
+            "type": "Sequence/track name",
+            "text": "[G]Tom R"
+          }
+        ]
+      },
+      {
+        "slot_index": 34,
+        "slot_kind": "level",
+        "filename": "d2game04.hmp",
+        "format": "hmp",
+        "metadata_source_filename": "d2game04.mid",
+        "inherited_from_midi": true,
+        "parse_status": "ok",
+        "smf_format": 1,
+        "track_count": 14,
+        "time_division": 120,
+        "title": "",
+        "composer": "",
+        "display_name": "",
+        "metadata_truncated": false,
+        "text_events": [
+          {
+            "track_index": 2,
+            "type": "Sequence/track name",
+            "text": "[GUF] Melody"
+          },
+          {
+            "track_index": 3,
+            "type": "Sequence/track name",
+            "text": "[GUF] Synth Bass"
+          },
+          {
+            "track_index": 4,
+            "type": "Sequence/track name",
+            "text": "[GUF] Bowed String"
+          },
+          {
+            "track_index": 5,
+            "type": "Sequence/track name",
+            "text": "[GUF] Arpeggio"
+          },
+          {
+            "track_index": 6,
+            "type": "Sequence/track name",
+            "text": "[GUF] Pizzacato Strings / Bo"
+          },
+          {
+            "track_index": 7,
+            "type": "Sequence/track name",
+            "text": "[GUF] Synth 2"
+          },
+          {
+            "track_index": 8,
+            "type": "Sequence/track name",
+            "text": "[GUF] Crystal"
+          },
+          {
+            "track_index": 9,
+            "type": "Sequence/track name",
+            "text": "[GUF] Reverse Cymbal"
+          },
+          {
+            "track_index": 10,
+            "type": "Sequence/track name",
+            "text": "[GUF] Drums I&II"
+          },
+          {
+            "track_index": 11,
+            "type": "Sequence/track name",
+            "text": "[GUF] Drum Highhat"
+          },
+          {
+            "track_index": 12,
+            "type": "Sequence/track name",
+            "text": "[GUF] Drum Punch-in's"
+          },
+          {
+            "track_index": 13,
+            "type": "Sequence/track name",
+            "text": "[GUF] SFX2"
+          }
+        ]
+      }
+    ],
     "level_count": 32,
     "levels": [
       {
@@ -2487,7 +4338,6 @@
             "index": 4,
             "kind": "trigger",
             "activation_kind": "unresolved_trigger",
-            "calculated": false,
             "label": "Locate and activate switch trigger 15",
             "seg": 319,
             "wall": 81,
@@ -2496,6 +4346,7 @@
               "y": 90.7769775390625,
               "z": -201.16514587402344
             },
+            "calculated": false,
             "trigger": 15,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -3826,7 +5677,6 @@
             "index": 7,
             "kind": "trigger",
             "activation_kind": "unresolved_trigger",
-            "calculated": false,
             "label": "Locate and activate switch trigger 3",
             "seg": 697,
             "wall": 47,
@@ -3835,6 +5685,7 @@
               "y": 230.0,
               "z": 318.68218994140625
             },
+            "calculated": false,
             "trigger": 3,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",

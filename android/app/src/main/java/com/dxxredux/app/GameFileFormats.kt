@@ -330,6 +330,9 @@ object GameFileFormats {
         val importedPath = importedRootFile || path.startsWith("imported/") || path.startsWith("sets/")
         return when {
             isGeneratedMergedStorageArtifact(file) -> "Imported (merged) CD audio"
+            "/route-cache/" in "/$path" && ".samples-" in name -> "Route analysis checkpoint"
+            "/route-cache/" in "/$path" && name.endsWith(".bin") -> "Route analysis cache"
+            "/route-cache/" in "/$path" && ".tmp-" in name -> "Temporary route analysis file"
             importedPath -> typeLabel(name)
             path.startsWith("d1x-redux/") || path.startsWith("d2x-redux/") -> typeLabel(name)
             path.startsWith("mods/") -> typeLabel(name)

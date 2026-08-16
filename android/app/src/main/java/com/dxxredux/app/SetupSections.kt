@@ -943,6 +943,26 @@ private fun MissionZipMusicDialog(
         }
     val busy = stagingTrackId != null
 
+    suspend fun loadMidiMetadata(track: MissionZipMusicTrack): MidiMetadata? =
+        withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val directBytes = stageManager.readMidiTrackBytes(catalog, track) ?: return@withContext null
+            val direct =
+                MidiMetadataBridge.parse(
+                    directBytes,
+                    track.extension == "hmp" || track.extension == "hmq",
+                    track.sourceRelativeName,
+                ) ?: return@withContext null
+            if (direct.text_events.isNotEmpty() || track.extension != "hmp") return@withContext direct
+            val peer = MissionZipMusic.midiMetadataPeer(catalog, track) ?: return@withContext direct
+            val peerBytes = stageManager.readMidiTrackBytes(catalog, peer) ?: return@withContext direct
+            MidiMetadataBridge.parse(
+                peerBytes,
+                isHmp = false,
+                sourceFilename = peer.sourceRelativeName,
+                inheritedFromMidi = true,
+            )?.takeIf { it.text_events.isNotEmpty() } ?: direct
+        }
+
     suspend fun identifyTrack(track: MissionZipMusicTrack): MissionZipAudioFingerprintCache.Entry? =
         withContext(kotlinx.coroutines.Dispatchers.IO) {
             try {
@@ -1057,6 +1077,7 @@ private fun MissionZipMusicDialog(
                 ),
             isHmp = track.extension == "hmp" || track.extension == "hmq",
             loadBytes = { stageManager.readMidiTrackBytes(catalog, track) },
+            loadMetadata = { loadMidiMetadata(track) },
             onDismiss = { midiPreviewTarget = null },
         )
     }
@@ -3020,6 +3041,7 @@ private fun LevelMetadataResultContent(
     onPreview: (LevelMetadataLevelRow) -> Unit,
     onRobotPreview: (LevelMetadataLevelRow, LevelMetadataReplacementItem, String) -> Unit,
 ) {
+    var showMusicMetadata by remember(result) { mutableStateOf(false) }
     if (result == null) {
         ModDetailLine("No analysis result", color = MaterialTheme.colorScheme.error)
         return
@@ -3039,6 +3061,14 @@ private fun LevelMetadataResultContent(
     }
     result.diagnostics.forEach { diagnostic ->
         ModDetailLine(diagnostic)
+    }
+    if (result.musicTracks.isNotEmpty()) {
+        TextButton(onClick = { showMusicMetadata = true }) {
+            Text("Music metadata (${result.musicTracks.size})")
+        }
+        if (showMusicMetadata) {
+            LevelMetadataMusicDialog(result.musicTracks) { showMusicMetadata = false }
+        }
     }
     val context = LocalContext.current
     val robotNames =
@@ -3076,6 +3106,44 @@ private fun LevelMetadataResultContent(
     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
     ModDetailSectionTitle("Levels")
     LevelMetadataTable(result.levels, target, previewPreparing, previewError, onPreview)
+}
+
+@Composable
+private fun LevelMetadataMusicDialog(
+    tracks: List<LevelMetadataMusicTrack>,
+    onDismiss: () -> Unit,
+) {
+    val scroll = rememberScrollState()
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Mission music metadata") },
+        text = {
+            Box(modifier = Modifier.heightIn(max = 420.dp)) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().verticalScroll(scroll),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    tracks.forEach { track ->
+                        Text(
+                            track.metadata.display_name.ifBlank { track.filename },
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            "${missionZipMusicSongSlotLabel(track.slotIndex)}: ${track.filename}",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        midiMetadataPrintout(track.metadata).forEach { line ->
+                            Text(line, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+                SetupScrollArrows(scroll)
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+    )
 }
 
 @Composable

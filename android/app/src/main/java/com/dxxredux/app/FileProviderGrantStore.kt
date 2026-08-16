@@ -15,12 +15,21 @@ internal object FileProviderGrantStore {
     const val DEBUG_LOG_EXPORTS = "debuglog_exports"
     const val CRASH_LOG_EXPORTS = "crashlog_exports"
     const val INPUT_DEMO_EXPORTS = "inputdemo_exports"
+    const val STORAGE_INSPECTOR_EXPORTS = "storage_inspector_exports"
     const val FILE_VIEW = "file_view"
     internal const val RETENTION_MS = 24L * 60L * 60L * 1000L
     internal const val MAX_ROOT_BYTES = 64L * 1024L * 1024L
 
     private val lock = Any()
-    private val roots = setOf(CONFIG_EXPORTS, DEBUG_LOG_EXPORTS, CRASH_LOG_EXPORTS, INPUT_DEMO_EXPORTS, FILE_VIEW)
+    private val roots =
+        setOf(
+            CONFIG_EXPORTS,
+            DEBUG_LOG_EXPORTS,
+            CRASH_LOG_EXPORTS,
+            INPUT_DEMO_EXPORTS,
+            STORAGE_INSPECTOR_EXPORTS,
+            FILE_VIEW,
+        )
 
     fun copy(
         context: Context,

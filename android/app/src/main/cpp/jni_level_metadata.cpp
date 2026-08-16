@@ -45,6 +45,8 @@ extern "C" {
 #include "u_mem.h"
 }
 
+#include "midi_metadata_json.hpp"
+
 #ifdef DXX_BUILD_DESCENT_II
 extern "C" void piggy_init_pigfile(char *filename);
 #include "level_metadata_replacements.hpp"
@@ -1082,6 +1084,9 @@ static json analyze_hog_entries(const json &request)
 	root["mission_name"] = request_mission_display_name(request);
 	root["mission_filename"] = request.value("mission_filename", request.value("hog_path", ""));
 	set_coop_start_header(root, request, coop_start_range);
+	root["music_tracks"] = request.value("mission_filename", "").empty()
+	                           ? json::array()
+	                           : serialize_active_midi_metadata<json>();
 	root["levels"] = levels;
 	root["problems"] = json::array();
 	if (failed)
@@ -1127,6 +1132,7 @@ static json analyze_loaded_mission(const json &request)
 	root["mission_name"] = Current_mission ? Current_mission_longname : "";
 	root["mission_filename"] = Current_mission ? Current_mission_filename : "";
 	set_coop_start_header(root, request, coop_start_range);
+	root["music_tracks"] = serialize_active_midi_metadata<json>();
 	root["levels"] = levels;
 	root["problems"] = json::array();
 	return root;
@@ -1237,6 +1243,7 @@ static json analyze_request(JNIEnv *env, jobject context, const json &request)
 		root["mission_name"] = Current_mission ? Current_mission_longname : "";
 		root["mission_filename"] = Current_mission ? Current_mission_filename : "";
 		set_coop_start_header(root, request, coop_start_range);
+		root["music_tracks"] = serialize_active_midi_metadata<json>();
 		root["levels"] = levels;
 		root["problems"] = json::array();
 		return finish_levelmeta_request(mounts, request, root, error, sizeof(error));

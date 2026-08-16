@@ -393,6 +393,7 @@ internal data class LevelMetadataResult(
     val missionName: String,
     val missionFilename: String,
     val coopStarts: String,
+    val musicTracks: List<LevelMetadataMusicTrack>,
     val levels: List<LevelMetadataLevelRow>,
     val problems: List<String>,
     val diagnostics: List<String> = emptyList(),
@@ -402,6 +403,48 @@ internal data class LevelMetadataResult(
         fun fromJson(text: String): LevelMetadataResult {
             val obj = JSONObject(text)
             val levels = obj.optJSONArray("levels") ?: JSONArray()
+            val musicTracksJson = obj.optJSONArray("music_tracks") ?: JSONArray()
+            val musicTracks =
+                buildList {
+                    for (index in 0 until musicTracksJson.length()) {
+                        val row = musicTracksJson.optJSONObject(index) ?: continue
+                        val events = row.optJSONArray("text_events") ?: JSONArray()
+                        add(
+                            LevelMetadataMusicTrack(
+                                slotIndex = row.optInt("slot_index"),
+                                slotKind = row.optString("slot_kind"),
+                                filename = row.optString("filename"),
+                                format = row.optString("format"),
+                                metadata =
+                                    MidiMetadata(
+                                        parse_status = row.optString("parse_status", "invalid"),
+                                        smf_format = row.optInt("smf_format"),
+                                        track_count = row.optInt("track_count"),
+                                        time_division = row.optInt("time_division"),
+                                        title = row.optString("title"),
+                                        composer = row.optString("composer"),
+                                        display_name = row.optString("display_name"),
+                                        metadata_source_filename = row.optString("metadata_source_filename"),
+                                        inherited_from_midi = row.optBoolean("inherited_from_midi"),
+                                        metadata_truncated = row.optBoolean("metadata_truncated"),
+                                        text_events =
+                                            buildList {
+                                                for (eventIndex in 0 until events.length()) {
+                                                    val event = events.optJSONObject(eventIndex) ?: continue
+                                                    add(
+                                                        MidiTextEvent(
+                                                            track_index = event.optInt("track_index"),
+                                                            type = event.optString("type"),
+                                                            text = event.optString("text"),
+                                                        ),
+                                                    )
+                                                }
+                                            },
+                                    ),
+                            ),
+                        )
+                    }
+                }
             val rows =
                 buildList {
                     for (index in 0 until levels.length()) {
@@ -453,6 +496,7 @@ internal data class LevelMetadataResult(
                 missionName = obj.optString("mission_name"),
                 missionFilename = obj.optString("mission_filename"),
                 coopStarts = obj.optString("coop_starts"),
+                musicTracks = musicTracks,
                 levels = rows,
                 problems = obj.optStringList("problems"),
                 diagnostics = obj.optStringList("diagnostics"),
@@ -475,6 +519,7 @@ internal data class LevelMetadataResult(
                 missionName = "",
                 missionFilename = "",
                 coopStarts = "",
+                musicTracks = emptyList(),
                 levels = emptyList(),
                 problems = listOf(problem),
                 diagnostics = diagnostics,
@@ -482,6 +527,14 @@ internal data class LevelMetadataResult(
             )
     }
 }
+
+internal data class LevelMetadataMusicTrack(
+    val slotIndex: Int,
+    val slotKind: String,
+    val filename: String,
+    val format: String,
+    val metadata: MidiMetadata,
+)
 
 internal object LevelMetadataTargets {
     private val directExtensions = setOf("hog", "msn", "mn2", "rdl", "rl2", "sdl", "sl2")

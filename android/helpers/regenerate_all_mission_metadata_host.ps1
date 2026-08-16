@@ -2,7 +2,8 @@
 
 param(
     [switch]$NoRegressionCopy,
-    [switch]$CdSourcesOnly
+    [switch]$CdSourcesOnly,
+    [string]$ArchiveName = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -338,6 +339,8 @@ function ConvertTo-CheckedInMissionJson {
         mission_filename = $filename
     }
     Add-IfString -Target $result -Name "coop_starts" -Value (Get-StringProp $Raw "coop_starts")
+    $musicTracks = @(Get-ArrayValue (Get-Prop $Raw "music_tracks" @()))
+    if ($musicTracks.Count -gt 0) { $result["music_tracks"] = $musicTracks }
     $result["level_count"] = $levels.Count
     $result["levels"] = $levels
     $problems = @(Get-ArrayValue (Get-Prop $Raw "problems" @())) | Where-Object { $_ }
@@ -394,6 +397,15 @@ function Copy-RawMissionFileSet {
             Copy-StageAlias -Source $target -Target (Join-Path (Join-Path $StageDir "missions") $leaf)
             Copy-StageAlias -Source $target -Target (Join-Path (Join-Path $StageDir "missions") $lower)
         }
+    }
+    $engineSongList = Get-ChildItem -LiteralPath $StageDir -File | Where-Object {
+        $_.Name.ToLowerInvariant() -in @("descent.sng", "dxx-r.sng")
+    }
+    $legacySongLists = @(Get-ChildItem -LiteralPath $StageDir -File -Filter "*.sng" | Where-Object {
+        $_.Name.ToLowerInvariant() -notin @("descent.sng", "dxx-r.sng")
+    })
+    if (-not $engineSongList -and $legacySongLists.Count -eq 1) {
+        Copy-StageAlias -Source $legacySongLists[0].FullName -Target (Join-Path $StageDir "descent.sng")
     }
 }
 
@@ -671,7 +683,12 @@ $results = @()
 $batchStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 $seenCdDescriptorHashes = @{}
 
-$cdSources = @(Resolve-CdLevelMetadataSources -RepoRoot $repoRoot -ManifestPath $cdSourceManifest -OutputDir $zipDir)
+$cdSources =
+    if ($ArchiveName) {
+        @()
+    } else {
+        @(Resolve-CdLevelMetadataSources -RepoRoot $repoRoot -ManifestPath $cdSourceManifest -OutputDir $zipDir)
+    }
 foreach ($source in $cdSources) {
     $runStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $label = "cd_$($source.Id)"
@@ -752,26 +769,35 @@ foreach ($source in $cdSources) {
 }
 
 if (-not $CdSourcesOnly) {
-    $counterstrikeRawPath = Join-Path $rawDir "Counterstrike.metadata.json"
-    $counterstrikeLogPath = Join-Path $logsDir "Counterstrike.log"
-    $counterstrikeMetadataPath = Join-Path $metadataDir "Counterstrike.json"
-    $counterstrikeRegressionPath = Join-Path $zipDir "Counterstrike.json"
-    Write-Status "Host metadata: built-in Counterstrike"
-    $counterstrikeRaw = Invoke-BuiltinHeadlessScan -Game d2 -Executables $executables -DataDirs $dataDirs -RawOutputPath $counterstrikeRawPath -LogPath $counterstrikeLogPath
-    $counterstrike = ConvertTo-CheckedInMissionJson -Raw $counterstrikeRaw -TargetIndex 0 -SourceName "descent2.hog" -MissionFilename "d2"
-    Write-JsonValue -Path $counterstrikeMetadataPath -Value $counterstrike -MissionMetadata
-    if (-not $NoRegressionCopy) {
-        Write-Utf8NoBomTextAtomically -Path $counterstrikeRegressionPath -Text ([System.IO.File]::ReadAllText($counterstrikeMetadataPath))
+    if (-not $ArchiveName) {
+        $counterstrikeRawPath = Join-Path $rawDir "Counterstrike.metadata.json"
+        $counterstrikeLogPath = Join-Path $logsDir "Counterstrike.log"
+        $counterstrikeMetadataPath = Join-Path $metadataDir "Counterstrike.json"
+        $counterstrikeRegressionPath = Join-Path $zipDir "Counterstrike.json"
+        Write-Status "Host metadata: built-in Counterstrike"
+        $counterstrikeRaw = Invoke-BuiltinHeadlessScan -Game d2 -Executables $executables -DataDirs $dataDirs -RawOutputPath $counterstrikeRawPath -LogPath $counterstrikeLogPath
+        $counterstrike = ConvertTo-CheckedInMissionJson -Raw $counterstrikeRaw -TargetIndex 0 -SourceName "descent2.hog" -MissionFilename "d2"
+        Write-JsonValue -Path $counterstrikeMetadataPath -Value $counterstrike -MissionMetadata
+        if (-not $NoRegressionCopy) {
+            Write-Utf8NoBomTextAtomically -Path $counterstrikeRegressionPath -Text ([System.IO.File]::ReadAllText($counterstrikeMetadataPath))
+        }
+        Write-Status "PASSED: built-in Counterstrike" "Green"
     }
-    Write-Status "PASSED: built-in Counterstrike" "Green"
 
     $archives = @(
         Get-ChildItem -LiteralPath $zipDir -File |
             Where-Object { $_.Extension.ToLowerInvariant() -in @(".zip", ".7z") } |
             Sort-Object Name
     )
+    if ($ArchiveName) {
+        $archives = @(
+            $archives | Where-Object {
+                $_.Name.Equals($ArchiveName, [StringComparison]::OrdinalIgnoreCase)
+            }
+        )
+    }
     if ($archives.Count -eq 0) {
-        throw "No mission archives found in $zipDir"
+        throw $(if ($ArchiveName) { "Mission archive not found: $ArchiveName" } else { "No mission archives found in $zipDir" })
     }
 
     $index = 0

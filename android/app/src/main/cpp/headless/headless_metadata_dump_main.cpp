@@ -51,6 +51,7 @@ extern "C" {
 }
 
 #include "route_planner.h"
+#include "midi_metadata_json.hpp"
 
 #ifdef DXX_BUILD_DESCENT_II
 extern "C" void piggy_init_pigfile(char *filename);
@@ -1176,6 +1177,7 @@ static nlohmann::ordered_json build_dump(int *total_secrets)
 		secret_total += dump_level(levels, level, Secret_level_names[-level - 1], &coop_start_range);
 	if (!coop_start_range.text().empty())
 		root["coop_starts"] = coop_start_range.text();
+	root["music_tracks"] = serialize_active_midi_metadata<nlohmann::ordered_json>();
 	root["levels"] = levels;
 	root["problems"] = nlohmann::ordered_json::array();
 	if (secret_area_missing_secret_levels)
