@@ -3,6 +3,7 @@ package com.dxxredux.app
 import android.content.Context
 import android.os.Build
 import android.os.PowerManager
+import android.os.SystemClock
 import android.util.Log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -86,6 +87,8 @@ internal class RouteMetadataPrecomputeCoordinator(
 
     @Volatile private var focusNewestSource = false
 
+    @Volatile private var gameLaunchPending = false
+
     @Volatile private var runningPriority: RouteMetadataPriority? = null
     private var focusedSourceIdentity: String? = null
     private var lastSourceIdentity: String? = null
@@ -123,16 +126,34 @@ internal class RouteMetadataPrecomputeCoordinator(
 
     @Synchronized
     fun start() {
+        if (gameLaunchPending) return
         if (runner?.isActive == true) return
         runner =
             scope.launch {
+                var discoveryFinished = false
+                monitor.discoveryStarted()
                 while (isActive) {
                     if (shouldPause()) {
                         awaitWake(2_000L)
                         continue
                     }
-                    val recent = ResumeSaveBridge.findOptions(appContext.filesDir)?.latestOverall
-                    val jobs = discoverJobs()
+                    val discovered =
+                        try {
+                            ResumeSaveBridge.findOptions(appContext.filesDir)?.latestOverall to discoverJobs()
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            monitor.discoveryFailed(e)
+                            Log.e(TAG, "Route metadata job discovery failed", e)
+                            awaitWake(10_000L)
+                            continue
+                        }
+                    val recent = discovered.first
+                    val jobs = discovered.second
+                    if (!discoveryFinished) {
+                        monitor.discoveryFinished(jobs.size)
+                        discoveryFinished = true
+                    }
                     if (focusNewestSource) {
                         focusedSourceIdentity = jobs.maxByOrNull { it.sourceModifiedMs }?.sourceIdentity
                         focusNewestSource = false
@@ -183,6 +204,8 @@ internal class RouteMetadataPrecomputeCoordinator(
                         }
                         monitor.update(jobs, ledger.entries(), next, priority)
                         val analysisStartedAt = System.currentTimeMillis()
+                        var lastProgressWriteAt = 0L
+                        var lastProgressLabel = ""
                         val result =
                             try {
                                 LevelMetadataAnalyzer.analyze(
@@ -191,6 +214,15 @@ internal class RouteMetadataPrecomputeCoordinator(
                                     background = true,
                                     priority = priority,
                                     totalTimeoutMs = 10L * 60L * 1_000L,
+                                    onProgress = { progress ->
+                                        val now = SystemClock.elapsedRealtime()
+                                        val label = progress.currentLevel?.label ?: progress.overall.label
+                                        if (label != lastProgressLabel || now - lastProgressWriteAt >= 1_000L) {
+                                            monitor.analysisProgress(next, priority, progress)
+                                            lastProgressWriteAt = now
+                                            lastProgressLabel = label
+                                        }
+                                    },
                                 )
                             } finally {
                                 runningPriority = null
@@ -257,6 +289,30 @@ internal class RouteMetadataPrecomputeCoordinator(
                 }
             }
         listOfNotNull(previous).joinAll()
+    }
+
+    suspend fun stopForGameLaunch(timeoutMs: Long = 8_000L): Boolean {
+        gameLaunchPending = true
+        monitor.launchHandoff("started")
+        val startedAt = SystemClock.elapsedRealtime()
+        val stopped =
+            withTimeoutOrNull(timeoutMs) {
+                stopAndAwait()
+                true
+            } ?: false
+        val terminatedProcesses = LevelMetadataAnalyzer.terminateWorkerProcessesForGameLaunch(appContext)
+        monitor.launchHandoff(
+            if (stopped) "complete" else "timeout",
+            SystemClock.elapsedRealtime() - startedAt,
+            terminatedProcesses,
+        )
+        return stopped
+    }
+
+    @Synchronized
+    fun resumeAfterGame() {
+        gameLaunchPending = false
+        start()
     }
 
     private suspend fun awaitWake(timeoutMs: Long) {

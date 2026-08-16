@@ -31,6 +31,49 @@ class RouteMetadataPrecomputeMonitorTest {
         assertTrue(lines.any { "duration_ms=15" in it })
     }
 
+    @Test
+    fun publishesDiscoveryFailureInsteadOfLeavingAnEmptyUnknownState() {
+        val filesDir = temporaryFolder.newFolder("discovery-failure")
+        val monitor = RouteMetadataPrecomputeMonitor(filesDir)
+
+        monitor.discoveryStarted()
+        monitor.discoveryFailed(IllegalStateException("broken mission index"))
+
+        val snapshot = monitor.readSnapshot()
+        assertEquals("discovery_failed", snapshot.phase)
+        assertEquals("broken mission index", snapshot.statusMessage)
+        assertTrue(monitor.readRecentLines().any { "DISCOVERY status=failed" in it })
+    }
+
+    @Test
+    fun persistsCurrentLevelProgressAndLaunchHandoff() {
+        val filesDir = temporaryFolder.newFolder("live-progress")
+        val monitor = RouteMetadataPrecomputeMonitor(filesDir)
+        val job = job(4)
+        monitor.update(listOf(job), emptyMap(), job, RouteMetadataPriority.FILL)
+
+        monitor.analysisProgress(
+            job,
+            RouteMetadataPriority.FILL,
+            LevelMetadataAnalysisProgress(
+                overall = MetadataLoadProgress("Overall analysis", 0, 1),
+                currentLevel = MetadataLoadProgress("Planning completion route", 2, 5),
+                estimatedLevel = MetadataLoadProgress("Estimated level progress", 420, 1_000),
+            ),
+        )
+
+        val active = monitor.readSnapshot()
+        assertEquals("Planning completion route", active.currentDetail)
+        assertEquals(420, active.currentProgressCompleted)
+        assertEquals(1_000, active.currentProgressTotal)
+
+        monitor.launchHandoff("timeout", 8_000L)
+        val paused = monitor.readSnapshot()
+        assertEquals("paused_for_game", paused.phase)
+        assertTrue(paused.statusMessage.contains("timed out"))
+        assertTrue(monitor.readRecentLines().any { "GAME_HANDOFF status=timeout" in it })
+    }
+
     private fun job(level: Int) =
         RouteMetadataPrecomputeJob(
             target =

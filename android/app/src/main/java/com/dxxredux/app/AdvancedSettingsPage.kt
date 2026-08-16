@@ -864,10 +864,23 @@ private fun RouteMetadataPrecomputeSection(filesDir: File) {
     val total = snapshot.totalLevels
     val finished = snapshot.finishedLevels.coerceIn(0, total.coerceAtLeast(0))
     val progress = if (total == 0) 0f else finished.toFloat() / total.toFloat()
+    val secondsSinceUpdate =
+        if (snapshot.updatedAtMs <=
+            0L
+        ) {
+            0L
+        } else {
+            ((System.currentTimeMillis() - snapshot.updatedAtMs) / 1_000L).coerceAtLeast(0L)
+        }
     Text("Route Metadata Precompute", fontWeight = FontWeight.Bold, fontSize = 14.sp)
     Spacer(modifier = Modifier.height(6.dp))
     Text(
-        if (total == 0) "Discovering levels" else "$finished / $total levels (${(progress * 100).toInt()}%)",
+        when {
+            snapshot.phase == "discovery_failed" -> "Level discovery failed"
+            total == 0 && snapshot.phase == "discovering" -> "Discovering levels"
+            total == 0 -> "No levels discovered"
+            else -> "$finished / $total levels (${(progress * 100).toInt()}%)"
+        },
         fontSize = 12.sp,
     )
     LinearProgressIndicator(
@@ -881,6 +894,26 @@ private fun RouteMetadataPrecomputeSection(filesDir: File) {
             fontSize = 11.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        if (snapshot.currentDetail.isNotBlank()) {
+            val detailProgress =
+                if (snapshot.currentProgressTotal > 0) {
+                    " (${snapshot.currentProgressCompleted} / ${snapshot.currentProgressTotal})"
+                } else {
+                    ""
+                }
+            Text(
+                snapshot.currentDetail + detailProgress,
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (secondsSinceUpdate >= 15L) {
+            Text(
+                "No worker update for ${secondsSinceUpdate}s",
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
     } else if (total > 0 && finished == total) {
         Spacer(modifier = Modifier.height(4.dp))
         Text(
@@ -888,6 +921,21 @@ private fun RouteMetadataPrecomputeSection(filesDir: File) {
                 if (snapshot.failedLevels > 0) " (${snapshot.failedLevels} failed)" else "",
             fontSize = 11.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+    if (snapshot.statusMessage.isNotBlank()) {
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            snapshot.statusMessage,
+            fontSize = 11.sp,
+            color =
+                if (snapshot.phase ==
+                    "discovery_failed"
+                ) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
         )
     }
     Spacer(modifier = Modifier.height(8.dp))

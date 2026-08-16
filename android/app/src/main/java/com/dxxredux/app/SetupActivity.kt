@@ -343,10 +343,10 @@ class SetupActivity : ComponentActivity() {
             routeMetadataScope.launch {
                 val startedAt = SystemClock.elapsedRealtime()
                 RouteMetadataDiagnostics.log("Route metadata launcher-to-game handoff started")
-                routeMetadataCoordinator.stopAndAwait()
+                val metadataStopped = routeMetadataCoordinator.stopForGameLaunch()
                 RouteMetadataDiagnostics.log(
                     "Route metadata launcher-to-game handoff finished " +
-                        "elapsed_ms=${SystemClock.elapsedRealtime() - startedAt}",
+                        "elapsed_ms=${SystemClock.elapsedRealtime() - startedAt} stopped=$metadataStopped",
                 )
                 withContext(Dispatchers.Main.immediate) {
                     if (!isFinishing && !isDestroyed) startActivity(intent)
@@ -2318,7 +2318,7 @@ class SetupActivity : ComponentActivity() {
         if (gameRunningFlag) {
             routeMetadataCoordinator.stop()
         } else {
-            routeMetadataCoordinator.start()
+            routeMetadataCoordinator.resumeAfterGame()
         }
         // If a LAN host was broadcasting in-game, stop now
         com.dxxredux.app.lobby.LobbyService

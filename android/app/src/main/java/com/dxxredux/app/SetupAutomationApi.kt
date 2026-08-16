@@ -776,6 +776,23 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
         root.put("game_running", hasReturnableGameActivity || runningGamePid != null)
         root.put("has_returnable_game_activity", hasReturnableGameActivity)
         root.put("running_game_pid", runningGamePid ?: -1)
+        val routeMetadata = RouteMetadataPrecomputeMonitor(dir).readSnapshot()
+        root.put(
+            "route_metadata_precompute",
+            JSONObject()
+                .put("phase", routeMetadata.phase)
+                .put("status_message", routeMetadata.statusMessage)
+                .put("total_levels", routeMetadata.totalLevels)
+                .put("finished_levels", routeMetadata.finishedLevels)
+                .put("failed_levels", routeMetadata.failedLevels)
+                .put("current_mission", routeMetadata.currentMission)
+                .put("current_level", routeMetadata.currentLevel)
+                .put("current_priority", routeMetadata.currentPriority)
+                .put("current_detail", routeMetadata.currentDetail)
+                .put("current_progress_completed", routeMetadata.currentProgressCompleted)
+                .put("current_progress_total", routeMetadata.currentProgressTotal)
+                .put("updated_at_ms", routeMetadata.updatedAtMs),
+        )
 
         val allFiles = dir.listFiles()?.map { it.name }?.sorted() ?: emptyList()
         root.put("files_on_disk", JSONArray(allFiles))

@@ -1038,6 +1038,23 @@ internal object LevelMetadataTargets {
 }
 
 internal object LevelMetadataAnalyzer {
+    internal fun terminateWorkerProcessesForGameLaunch(context: Context): Int {
+        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager ?: return 0
+        val processNames =
+            setOf(
+                context.packageName + LEVEL_METADATA_D1_PROCESS_SUFFIX,
+                context.packageName + LEVEL_METADATA_D2_PROCESS_SUFFIX,
+            )
+        return activityManager.runningAppProcesses
+            ?.filter { it.processName in processNames }
+            ?.count { process ->
+                runCatching {
+                    Log.w("DXX-LevelMetadata", "Terminating metadata process ${process.processName} for game launch")
+                    Process.killProcess(process.pid)
+                }.isSuccess
+            } ?: 0
+    }
+
     suspend fun analyze(
         context: Context,
         target: LevelMetadataTarget,
