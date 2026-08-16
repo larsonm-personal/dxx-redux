@@ -23,8 +23,12 @@ internal enum class RouteMetadataPriority(
     val fviLimit: Int,
 ) {
     ACTIVE("active", 10, 10, 250_000),
-    NEXT("next", 15, 5, 100_000),
-    FILL("fill", 19, 1, 25_000),
+    NEXT("next", 15, 10, 100_000),
+    FILL("fill", 19, 2, 25_000),
+}
+
+internal object RouteMetadataCpuPolicy {
+    const val LAUNCHER_VISIBLE_DUTY_PERCENT = 20
 }
 
 internal object RouteMetadataPreemption {

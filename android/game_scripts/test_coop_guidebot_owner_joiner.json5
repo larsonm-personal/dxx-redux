@@ -9,7 +9,7 @@
         "is_network": "true",
         "multiplayer.my_player_num": "1",
         "multiplayer.num_connected": "2",
-        "guidebot.route_analysis.background_request_generation": {"gte": 1}
+        "level_metadata_route.background_request_generation": {"gte": 1}
     }},
 
     {"action": "wait_for", "timeout_ms": 45000, "expect": {

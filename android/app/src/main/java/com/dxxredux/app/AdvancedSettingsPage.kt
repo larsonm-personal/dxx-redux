@@ -848,7 +848,7 @@ private fun RouteMetadataPrecomputeSection(filesDir: File) {
     suspend fun refresh() {
         val refreshed =
             withContext(Dispatchers.IO) {
-                monitor.readSnapshot() to monitor.readRecentLines()
+                monitor.readSnapshot() to monitor.readRecentLines(limit = 10)
             }
         snapshot = refreshed.first
         recentLines = refreshed.second

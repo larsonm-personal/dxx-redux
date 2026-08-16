@@ -26,6 +26,7 @@ internal object RouteMetadataBackground {
         val fileSets = FileSetManager(context.filesDir)
         val dataDir = fileSets.getSetDir(fileSets.getActive()).absolutePath
         val ledger = RouteMetadataLedger(context.filesDir)
+        val monitor = RouteMetadataPrecomputeMonitor(context.filesDir)
         val sourceIdentity =
             listOf(
                 game,
@@ -104,6 +105,8 @@ internal object RouteMetadataBackground {
                     if (level.levelNum == currentLevelNum) currentWork.priority else level.priority
                 var attempt = 0
                 while (true) {
+                    val analysisStartedAt = System.currentTimeMillis()
+                    var lastHeartbeatAt = android.os.SystemClock.elapsedRealtime()
                     val result =
                         LevelMetadataAnalyzer.analyze(
                             context,
@@ -112,6 +115,15 @@ internal object RouteMetadataBackground {
                             priority = priority,
                             totalTimeoutMs = TOTAL_TIMEOUT_MS,
                             onProgress = { progress ->
+                                val now = android.os.SystemClock.elapsedRealtime()
+                                if (now - lastHeartbeatAt >= 30_000L) {
+                                    monitor.heartbeat(
+                                        RouteMetadataPrecomputeJob(target, sourceIdentity, enabled = true),
+                                        priority,
+                                        progress.currentLevel?.label ?: progress.overall.label,
+                                    )
+                                    lastHeartbeatAt = now
+                                }
                                 progressTracker.onAnalysisProgress(level.levelNum, progress)?.let {
                                     onCurrentProgress(it.permille, it.state)
                                 }
@@ -127,6 +139,14 @@ internal object RouteMetadataBackground {
                             ledger.read(jobId),
                         )
                     val recorded = ledger.record(jobId, assessment)
+                    monitor.inGameLevelFinished(
+                        mission,
+                        level.levelNum,
+                        level.levelFile,
+                        recorded.status,
+                        priority,
+                        System.currentTimeMillis() - analysisStartedAt,
+                    )
                     RouteMetadataDiagnostics.log(
                         "Route metadata in-game level=${level.levelNum} " +
                             "priority=${priority.wireName} status=${recorded.status.wireName} " +
@@ -164,6 +184,7 @@ internal object RouteMetadataBackground {
                     delay(minOf(attempt * RETRY_DELAY_MS, 10_000L))
                 }
             }
+            monitor.inGameMissionFinished(mission, levels.size)
         } catch (e: CancellationException) {
             throw e
         } finally {

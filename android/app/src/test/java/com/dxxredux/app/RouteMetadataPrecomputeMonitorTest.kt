@@ -74,6 +74,33 @@ class RouteMetadataPrecomputeMonitorTest {
         assertTrue(monitor.readRecentLines().any { "GAME_HANDOFF status=timeout" in it })
     }
 
+    @Test
+    fun persistsLifecycleRetryHeartbeatAndInGameIdleEvents() {
+        val filesDir = temporaryFolder.newFolder("scheduler-events")
+        val monitor = RouteMetadataPrecomputeMonitor(filesDir)
+        val job = job(2)
+
+        monitor.coordinatorEvent("stopped", "launcher paused")
+        monitor.retryDeferred(job)
+        monitor.heartbeat(job, RouteMetadataPriority.FILL, "Planning route")
+        monitor.inGameLevelFinished(
+            "Obsidian",
+            2,
+            "level2.rl2",
+            RouteMetadataLedgerStatus.COMPLETE,
+            RouteMetadataPriority.NEXT,
+            50L,
+        )
+        monitor.inGameMissionFinished("Obsidian", 4)
+
+        val lines = monitor.readRecentLines()
+        assertTrue(lines.any { "STATE status=stopped reason=launcher paused" in it })
+        assertTrue(lines.any { "RETRY mission=Obsidian" in it })
+        assertTrue(lines.any { "HEARTBEAT mission=Obsidian" in it })
+        assertTrue(lines.any { "context=in_game priority=next cpu_duty_percent=10" in it })
+        assertTrue(lines.any { "cpu_duty_percent=0" in it })
+    }
+
     private fun job(level: Int) =
         RouteMetadataPrecomputeJob(
             target =

@@ -9,7 +9,7 @@
         "is_network": "true",
         "multiplayer.my_player_num": "0",
         "multiplayer.num_connected": "2",
-        "guidebot.route_analysis.background_request_generation": {"gte": 1},
+        "level_metadata_route.background_request_generation": {"gte": 1},
         "guidebot.released": "false",
         "guidebot.owner_player": "-1",
         "guidebot.buddy_objnum": {"gte": 0}

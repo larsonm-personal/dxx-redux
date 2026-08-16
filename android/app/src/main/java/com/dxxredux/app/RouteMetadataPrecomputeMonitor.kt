@@ -181,6 +181,57 @@ internal class RouteMetadataPrecomputeMonitor(
         append("SWITCH mission=$mission level=$level priority=${priority.wireName} reason=$reason")
     }
 
+    fun coordinatorEvent(
+        status: String,
+        reason: String,
+        mission: String = "",
+    ) = synchronized(FILE_LOCK) {
+        append(
+            "STATE status=$status reason=${singleLine(reason)}" +
+                mission.takeIf { it.isNotBlank() }?.let { " mission=${singleLine(it)}" }.orEmpty(),
+        )
+    }
+
+    fun retryDeferred(job: RouteMetadataPrecomputeJob) =
+        synchronized(FILE_LOCK) {
+            append("RETRY mission=${job.target.displayName} level=${levelLabel(job)} action=deferred")
+        }
+
+    fun heartbeat(
+        job: RouteMetadataPrecomputeJob,
+        priority: RouteMetadataPriority,
+        detail: String,
+    ) = synchronized(FILE_LOCK) {
+        append(
+            "HEARTBEAT mission=${job.target.displayName} level=${levelLabel(job)} " +
+                "priority=${priority.wireName} detail=${singleLine(detail)}",
+        )
+    }
+
+    fun inGameLevelFinished(
+        mission: String,
+        levelNum: Int,
+        levelFile: String,
+        status: RouteMetadataLedgerStatus,
+        priority: RouteMetadataPriority,
+        elapsedMs: Long,
+    ) = synchronized(FILE_LOCK) {
+        append(
+            "LEVEL mission=${singleLine(mission)} level=$levelNum:$levelFile " +
+                "status=${status.wireName} duration_ms=$elapsedMs context=in_game " +
+                "priority=${priority.wireName} cpu_duty_percent=${priority.cpuDutyPercent}",
+        )
+    }
+
+    fun inGameMissionFinished(
+        mission: String,
+        levelCount: Int,
+    ) = synchronized(FILE_LOCK) {
+        append(
+            "MISSION mission=${singleLine(mission)} levels=$levelCount status=idle context=in_game cpu_duty_percent=0",
+        )
+    }
+
     fun readSnapshot(): RouteMetadataPrecomputeSnapshot = synchronized(FILE_LOCK) { readState().first }
 
     fun readRecentLines(limit: Int = 80): List<String> =

@@ -38,10 +38,12 @@ internal object RouteMetadataPrecomputeOrdering {
         jobs: List<RouteMetadataPrecomputeJob>,
         recent: ResumeSaveBridge.ResumeSaveCandidate?,
         focusedSourceIdentity: String? = null,
+        attemptedAtMs: (RouteMetadataPrecomputeJob) -> Long = { 0L },
     ): List<RouteMetadataPrecomputeJob> =
         jobs.sortedWith(
             compareBy<RouteMetadataPrecomputeJob>(
                 { if (it.sourceIdentity == focusedSourceIdentity) 0 else 1 },
+                { attemptedAtMs(it) },
                 { if (matchesRecentLevel(it, recent)) 0 else 1 },
                 { if (it.target.game == recent?.game) 0 else 1 },
                 { if (it.enabled) 0 else 1 },
@@ -75,6 +77,24 @@ internal object RouteMetadataPrecomputeOrdering {
     }
 }
 
+internal object RouteMetadataPrecomputeFocusBroker {
+    @Volatile private var handler: ((LevelMetadataTarget?) -> Unit)? = null
+
+    @Synchronized
+    fun attach(value: (LevelMetadataTarget?) -> Unit) {
+        handler = value
+    }
+
+    @Synchronized
+    fun detach(value: (LevelMetadataTarget?) -> Unit) {
+        if (handler === value) handler = null
+    }
+
+    fun focus(target: LevelMetadataTarget?) {
+        handler?.invoke(target)
+    }
+}
+
 internal class RouteMetadataPrecomputeCoordinator(
     context: Context,
     private val scope: CoroutineScope,
@@ -88,6 +108,8 @@ internal class RouteMetadataPrecomputeCoordinator(
     @Volatile private var focusNewestSource = false
 
     @Volatile private var gameLaunchPending = false
+
+    @Volatile private var metadataViewerFocused = false
 
     @Volatile private var runningPriority: RouteMetadataPriority? = null
     private var focusedSourceIdentity: String? = null
@@ -109,6 +131,7 @@ internal class RouteMetadataPrecomputeCoordinator(
             )
         ) {
             previous.cancel()
+            monitor.coordinatorEvent("preempted", "new content imported")
             previous.invokeOnCompletion {
                 synchronized(this) {
                     if (runner === previous) {
@@ -124,10 +147,25 @@ internal class RouteMetadataPrecomputeCoordinator(
         wakeups.trySend(Unit)
     }
 
+    fun setMetadataViewerFocus(target: LevelMetadataTarget?) {
+        if (target != null) {
+            metadataViewerFocused = true
+            stop("metadata viewer opened: ${target.displayName}")
+        } else {
+            metadataViewerFocused = false
+            monitor.coordinatorEvent("resuming", "metadata viewer closed")
+            start()
+        }
+    }
+
     @Synchronized
     fun start() {
-        if (gameLaunchPending) return
+        if (gameLaunchPending || metadataViewerFocused) return
         if (runner?.isActive == true) return
+        monitor.coordinatorEvent(
+            "started",
+            "launcher visible cpu_duty_percent=${RouteMetadataCpuPolicy.LAUNCHER_VISIBLE_DUTY_PERCENT}",
+        )
         runner =
             scope.launch {
                 var discoveryFinished = false
@@ -150,6 +188,7 @@ internal class RouteMetadataPrecomputeCoordinator(
                         }
                     val recent = discovered.first
                     val jobs = discovered.second
+                    val entries = ledger.entries()
                     if (!discoveryFinished) {
                         monitor.discoveryFinished(jobs.size)
                         discoveryFinished = true
@@ -160,11 +199,11 @@ internal class RouteMetadataPrecomputeCoordinator(
                     }
                     val next =
                         RouteMetadataPrecomputeOrdering
-                            .order(jobs, recent, focusedSourceIdentity)
+                            .order(jobs, recent, focusedSourceIdentity) { entries[it.id]?.updatedAtMs ?: 0L }
                             .firstOrNull {
-                                !isCompleted(it) && ledger.read(it.id)?.status != RouteMetadataLedgerStatus.FAILED
+                                !isCompleted(it) && entries[it.id]?.status != RouteMetadataLedgerStatus.FAILED
                             }
-                    monitor.update(jobs, ledger.entries())
+                    monitor.update(jobs, entries)
                     if (next == null) {
                         focusedSourceIdentity = null
                         awaitWake(30_000L)
@@ -205,6 +244,7 @@ internal class RouteMetadataPrecomputeCoordinator(
                         monitor.update(jobs, ledger.entries(), next, priority)
                         val analysisStartedAt = System.currentTimeMillis()
                         var lastProgressWriteAt = 0L
+                        var lastHeartbeatAt = SystemClock.elapsedRealtime()
                         var lastProgressLabel = ""
                         val result =
                             try {
@@ -213,6 +253,7 @@ internal class RouteMetadataPrecomputeCoordinator(
                                     next.target,
                                     background = true,
                                     priority = priority,
+                                    cpuDutyPercent = RouteMetadataCpuPolicy.LAUNCHER_VISIBLE_DUTY_PERCENT,
                                     totalTimeoutMs = 10L * 60L * 1_000L,
                                     onProgress = { progress ->
                                         val now = SystemClock.elapsedRealtime()
@@ -221,6 +262,10 @@ internal class RouteMetadataPrecomputeCoordinator(
                                             monitor.analysisProgress(next, priority, progress)
                                             lastProgressWriteAt = now
                                             lastProgressLabel = label
+                                        }
+                                        if (now - lastHeartbeatAt >= 30_000L) {
+                                            monitor.heartbeat(next, priority, label)
+                                            lastHeartbeatAt = now
                                         }
                                     },
                                 )
@@ -248,6 +293,9 @@ internal class RouteMetadataPrecomputeCoordinator(
                             entries,
                         )
                         monitor.update(jobs, entries)
+                        if (recorded.status == RouteMetadataLedgerStatus.PARTIAL) {
+                            monitor.retryDeferred(next)
+                        }
                         RouteMetadataDiagnostics.log(
                             "Route metadata precompute level=${next.target.levelNum} " +
                                 "priority=${priority.wireName} status=${assessment.status.wireName} " +
@@ -273,7 +321,8 @@ internal class RouteMetadataPrecomputeCoordinator(
     }
 
     @Synchronized
-    fun stop() {
+    fun stop(reason: String = "requested") {
+        if (runner != null) monitor.coordinatorEvent("stopped", reason)
         runner?.cancel()
         runner = null
         runningPriority = null
@@ -311,7 +360,9 @@ internal class RouteMetadataPrecomputeCoordinator(
 
     @Synchronized
     fun resumeAfterGame() {
+        val returningFromGame = gameLaunchPending
         gameLaunchPending = false
+        if (returningFromGame) monitor.coordinatorEvent("resuming", "game ended")
         start()
     }
 

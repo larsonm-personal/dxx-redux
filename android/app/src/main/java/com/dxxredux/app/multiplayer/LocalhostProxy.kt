@@ -17,8 +17,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 private const val TAG = "LocalhostProxy"
 
 // Constants shared between LocalhostProxy and PeerProxy
-// Must be >= UPID_MAX_SIZE (2048) in d1/main/net_udp.h and d2/main/net_udp.h
-private const val MAX_PACKET_SIZE = 2048
+// Must be >= UPID_MAX_SIZE (4096) in d1/main/net_udp.h and d2/main/net_udp.h
+private const val MAX_PACKET_SIZE = 4096
 private const val ENGINE_PORT = 42424
 private const val RELAY_HEADER_LEN = 5
 private const val KEEPALIVE_INTERVAL_MS = 15_000L

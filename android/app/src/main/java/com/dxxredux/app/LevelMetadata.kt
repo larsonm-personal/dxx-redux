@@ -1060,6 +1060,7 @@ internal object LevelMetadataAnalyzer {
         target: LevelMetadataTarget,
         background: Boolean = false,
         priority: RouteMetadataPriority = if (background) RouteMetadataPriority.FILL else RouteMetadataPriority.ACTIVE,
+        cpuDutyPercent: Int = priority.cpuDutyPercent,
         totalTimeoutMs: Long = Long.MAX_VALUE,
         onProgress: suspend (LevelMetadataAnalysisProgress) -> Unit = {},
     ): LevelMetadataResult =
@@ -1135,6 +1136,7 @@ internal object LevelMetadataAnalyzer {
                             checkpointFile,
                             background,
                             priority,
+                            cpuDutyPercent,
                             totalTimeoutMs,
                         )
                     } catch (e: CancellationException) {
@@ -1425,6 +1427,7 @@ internal object LevelMetadataAnalyzer {
         checkpointFile: File,
         background: Boolean,
         priority: RouteMetadataPriority,
+        cpuDutyPercent: Int,
         totalTimeoutMs: Long,
     ): JSONObject =
         buildPreparedRequestJson(target, requestId, workDir, "dxx-level-metadata-request-v1")
@@ -1433,7 +1436,7 @@ internal object LevelMetadataAnalyzer {
             .put("cancellation_path", File(workDir, LEVEL_METADATA_CANCELLATION_FILE).absolutePath)
             .put("background", background)
             .put("priority", priority.wireName)
-            .put("cpu_duty_percent", priority.cpuDutyPercent)
+            .put("cpu_duty_percent", cpuDutyPercent.coerceIn(1, 100))
             .put("fvi_limit", priority.fviLimit)
             .put("defer_guidebot_accessibility", target.sourceType == "active_level")
             .put("total_timeout_ms", totalTimeoutMs)
@@ -2018,7 +2021,7 @@ open class LevelMetadataAnalysisService : Service() {
         val requestId = request.optString("request_id")
         RouteMetadataDiagnostics.log(
             "Level metadata worker starting request=$requestId source=${request.optString("source_name")} " +
-                "priority=${priority.wireName}",
+                "priority=${priority.wireName} cpu_duty_percent=${request.optInt("cpu_duty_percent")}",
         )
         val workDir = requestFile.parentFile ?: error("Level metadata request directory is missing")
         require(requestId.isNotBlank() && requestId == workDir.name) { "Invalid level metadata request identity" }

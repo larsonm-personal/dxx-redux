@@ -727,6 +727,11 @@ int udp_receive_packet(int socknum, ubyte *text, int len, struct _sockaddr *send
 		if (msglen < 0)
 			return 0;
 
+#ifdef __ANDROID__
+		if (msglen == len)
+			debug_log(DLOG_NETWORK, "[MPDIAG] UDP packet filled receive buffer size=%d upid=%u; possible truncation", len, (unsigned)text[0]);
+#endif
+
 		if ((msglen >= 0) && (msglen < len))
 			text[msglen] = 0;
 	}

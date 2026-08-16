@@ -12,6 +12,14 @@ class RouteMetadataSchedulingTest {
     val temporaryFolder = TemporaryFolder()
 
     @Test
+    fun cpuDutyPolicyDistinguishesLauncherNextAndLaterWork() {
+        assertEquals(20, RouteMetadataCpuPolicy.LAUNCHER_VISIBLE_DUTY_PERCENT)
+        assertEquals(10, RouteMetadataPriority.ACTIVE.cpuDutyPercent)
+        assertEquals(10, RouteMetadataPriority.NEXT.cpuDutyPercent)
+        assertEquals(2, RouteMetadataPriority.FILL.cpuDutyPercent)
+    }
+
+    @Test
     fun completeCurrentLevelSkipsDirectlyToNextWork() {
         val complete = RouteMetadataCurrentWork.forReadiness("complete")
         val partial = RouteMetadataCurrentWork.forReadiness("next_ready")

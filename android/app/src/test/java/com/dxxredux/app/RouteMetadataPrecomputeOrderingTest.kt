@@ -94,4 +94,48 @@ class RouteMetadataPrecomputeOrderingTest {
 
         assertEquals(imported, ordered.first())
     }
+
+    @Test
+    fun partialLevelYieldsToUnattemptedPeerAtTheSamePriority() {
+        val partial = job("d2", "d2", 2)
+        val unattempted = job("d2", "d2", 3)
+
+        val ordered =
+            RouteMetadataPrecomputeOrdering.order(listOf(partial, unattempted), null) {
+                if (it == partial) 100L else 0L
+            }
+
+        assertEquals(unattempted, ordered.first())
+    }
+
+    @Test
+    fun partialBaseLevelYieldsToUnattemptedMission() {
+        val partialBase =
+            job("d2", "d2", 2).copy(
+                target = job("d2", "d2", 2).target.copy(sourcePath = "/game/descent2.hog"),
+            )
+        val unattemptedMission = job("d2", "custom", 1)
+
+        val ordered =
+            RouteMetadataPrecomputeOrdering.order(listOf(partialBase, unattemptedMission), null) {
+                if (it == partialBase) 100L else 0L
+            }
+
+        assertEquals(unattemptedMission, ordered.first())
+    }
+
+    @Test
+    fun metadataViewerFocusBrokerDispatchesOnlyWhileAttached() {
+        var focused: LevelMetadataTarget? = null
+        val handler: (LevelMetadataTarget?) -> Unit = { focused = it }
+        val target = job("d2", "focused", 1).target
+
+        RouteMetadataPrecomputeFocusBroker.attach(handler)
+        RouteMetadataPrecomputeFocusBroker.focus(target)
+        assertEquals(target, focused)
+
+        RouteMetadataPrecomputeFocusBroker.detach(handler)
+        RouteMetadataPrecomputeFocusBroker.focus(null)
+        assertEquals(target, focused)
+    }
 }

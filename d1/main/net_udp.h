@@ -103,7 +103,10 @@ void net_udp_request_resync_from_host(const char *reason);
 #define UPID_MDATA_PNORM			 17 // Packet containing multi buffer from a player. Priority 0,1 - no ACK needed.
 #define UPID_MDATA_PNEEDACK			 18 // Packet containing multi buffer from a player. Priority 2 - ACK needed. Also contains pkt_num
 #define UPID_MDATA_ACK				 19 // ACK packet for UPID_MDATA_P1.
-#define UPID_MAX_SIZE			       2048 // Max size for a packet
+#define UPID_MAX_SIZE			       4096 // Max size for a packet; must fit Android reconnect-auth game info
+#if UPID_GAME_INFO_SIZE > UPID_MAX_SIZE
+#error UPID_MAX_SIZE must fit UPID_GAME_INFO_SIZE
+#endif
 #define UPID_MDATA_BUF_SIZE			454
 #ifdef USE_TRACKER
 #  define UPID_TRACKER_VERIFY			 21 // The tracker has successfully gotten a hold of us

@@ -2844,11 +2844,13 @@ private fun LevelMetadataDialog(
     var robotPreviewRequestPath by remember(target) { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     DisposableEffect(target) {
+        RouteMetadataPrecomputeFocusBroker.focus(target)
         RouteMetadataDiagnostics.log(
             "Level metadata dialog open id=$dialogIdentity source=${target.displayName} " +
                 "source_type=${target.sourceType}",
         )
         onDispose {
+            RouteMetadataPrecomputeFocusBroker.focus(null)
             RouteMetadataDiagnostics.log(
                 "Level metadata dialog close id=$dialogIdentity source=${target.displayName}",
             )

@@ -99,6 +99,9 @@ class SetupActivity : ComponentActivity() {
     private val routeMetadataScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private lateinit var routeMetadataCoordinator: RouteMetadataPrecomputeCoordinator
     private var routeMetadataLaunchJob: Job? = null
+    private val routeMetadataFocusHandler: (LevelMetadataTarget?) -> Unit = { target ->
+        routeMetadataCoordinator.setMetadataViewerFocus(target)
+    }
 
     /** Incremented in onResume so Compose re-checks file status. */
     private val refreshTrigger = mutableIntStateOf(0)
@@ -1958,7 +1961,7 @@ class SetupActivity : ComponentActivity() {
             mpIntent.putExtra("mp_mode", "join")
             if (info.lanHostAddr != null) {
                 // LAN joiner: route through proxy for packet stats
-                com.dxxredux.app.multiplayer.MatchmakingService.createProxy(
+                MatchmakingService.createProxy(
                     peerAddr = info.lanHostAddr,
                     peerPort = info.lanHostPort,
                 )
@@ -2060,6 +2063,7 @@ class SetupActivity : ComponentActivity() {
 
         gameRunningFlag = hasReturnableGameActivity()
         routeMetadataCoordinator = RouteMetadataPrecomputeCoordinator(this, routeMetadataScope)
+        RouteMetadataPrecomputeFocusBroker.attach(routeMetadataFocusHandler)
         val filesDir = filesDir
 
         setContent {
@@ -2445,12 +2449,13 @@ class SetupActivity : ComponentActivity() {
     }
 
     override fun onPause() {
-        routeMetadataCoordinator.stop()
+        routeMetadataCoordinator.stop("launcher paused")
         super.onPause()
     }
 
     override fun onDestroy() {
-        routeMetadataCoordinator.stop()
+        RouteMetadataPrecomputeFocusBroker.detach(routeMetadataFocusHandler)
+        routeMetadataCoordinator.stop("launcher destroyed")
         routeMetadataScope.cancel()
         resumeOfferRefreshHandler.removeCallbacks(resumeOfferRefreshRunnable)
         try {

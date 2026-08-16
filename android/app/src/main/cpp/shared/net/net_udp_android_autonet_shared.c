@@ -119,6 +119,8 @@ int net_udp_auto_join(const char *host_addr, int host_port, int my_port)
 		if (timer_query() >= last_req + F1_0) {
 			net_udp_request_game_info(host, 0);
 			req_count++;
+			if (req_count == 1 || req_count % 5 == 0)
+				net_udp_android_mpdiag("auto_join: waiting for host reply (sent %d reqs)", req_count);
 			last_req = timer_query();
 		}
 
@@ -132,6 +134,7 @@ int net_udp_auto_join(const char *host_addr, int host_port, int my_port)
 		}
 
 		if (Netgame.protocol.udp.valid == 1) {
+			net_udp_android_mpdiag("auto_join: received game info after %d reqs", req_count);
 			/* net_udp_process_game_info overwrites the chosen host slot's
 			 * address with the GAME_INFO reply sender. Inside emulator and
 			 * relay setups this is a NAT-mapped address, not the relay/proxy
