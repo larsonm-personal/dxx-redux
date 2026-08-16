@@ -1185,7 +1185,9 @@ static void escort_route_poll_pending_cache(void)
 	    readiness == LEVEL_METADATA_READINESS_FAILED)
 		return;
 #ifdef NETWORK
-	if (Game_mode & GM_MULTI)
+	if (!escort_route_cache_poll_allowed(
+	        (Game_mode & GM_MULTI) != 0,
+	        (Game_mode & GM_MULTI_COOP) != 0))
 		return;
 #endif
 	if (input_demo_recorder_is_active() || input_demo_replay_is_loaded())

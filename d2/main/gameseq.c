@@ -75,6 +75,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gamefont.h"
 #include "newmenu.h"
 #include "endlevel.h"
+#include "escort_owner_policy.h"
 #ifdef NETWORK
 #  include "multi.h"
 #endif
@@ -956,8 +957,11 @@ void LoadLevel(int level_num,int page_in_textures)
 		d1_in_d2_apply_robot_assets(1);
 #ifdef __ANDROID__
 	secret_area_prepare_current_level();
-	if (!(Game_mode & GM_MULTI) && !input_demo_recorder_is_active() &&
-	    !input_demo_replay_is_loaded()) {
+	if (escort_route_metadata_request_allowed(
+	        (Game_mode & GM_MULTI) != 0,
+	        (Game_mode & GM_MULTI_COOP) != 0,
+	        input_demo_recorder_is_active(),
+	        input_demo_replay_is_loaded())) {
 		const char *normal_level_files[MAX_LEVELS_PER_MISSION];
 		const char *secret_level_files[MAX_SECRET_LEVELS_PER_MISSION];
 		int secret_entry_levels[MAX_SECRET_LEVELS_PER_MISSION];

@@ -121,6 +121,19 @@ static int test_retry_recovery_allows_only_authoritative_coop_companion(void)
 	return 1;
 }
 
+static int test_route_metadata_runs_for_single_player_and_coop_only(void)
+{
+	CHECK(escort_route_metadata_request_allowed(0, 0, 0, 0));
+	CHECK(escort_route_metadata_request_allowed(1, 1, 0, 0));
+	CHECK(!escort_route_metadata_request_allowed(1, 0, 0, 0));
+	CHECK(!escort_route_metadata_request_allowed(1, 1, 1, 0));
+	CHECK(!escort_route_metadata_request_allowed(1, 1, 0, 1));
+	CHECK(escort_route_cache_poll_allowed(0, 0));
+	CHECK(escort_route_cache_poll_allowed(1, 1));
+	CHECK(!escort_route_cache_poll_allowed(1, 0));
+	return 1;
+}
+
 static int test_route_events_dirty_only_authoritative_relevant_work(void)
 {
 	CHECK(escort_route_event_should_dirty(
@@ -150,6 +163,7 @@ int main(void)
 	    !test_only_effective_owner_key_changes_are_relevant() ||
 	    !test_key_change_only_completes_matching_objective() ||
 	    !test_retry_recovery_allows_only_authoritative_coop_companion() ||
+	    !test_route_metadata_runs_for_single_player_and_coop_only() ||
 	    !test_route_events_dirty_only_authoritative_relevant_work())
 		return 1;
 	puts("escort owner policy tests passed");

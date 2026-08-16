@@ -97,6 +97,21 @@ int escort_retry_recovery_allowed(
 	return !multiplayer || (cooperative && companion && local_authority);
 }
 
+int escort_route_metadata_request_allowed(
+    int multiplayer,
+    int cooperative,
+    int input_demo_recording,
+    int input_demo_replaying)
+{
+	return (!multiplayer || cooperative) &&
+	       !input_demo_recording && !input_demo_replaying;
+}
+
+int escort_route_cache_poll_allowed(int multiplayer, int cooperative)
+{
+	return !multiplayer || cooperative;
+}
+
 int escort_route_event_should_dirty(
     int local_authority,
     int route_active,
