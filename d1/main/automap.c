@@ -70,6 +70,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "playsave.h"
 #include "args.h"
 #ifdef __ANDROID__
+#include "android_meta_actions.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 #endif
@@ -707,6 +708,9 @@ int automap_handler(window *wind, d_event *event, automap *am)
 			break;
 
 		case EVENT_IDLE:
+		#ifdef __ANDROID__
+			android_matcen_mode_apply_pending();
+		#endif
 		case EVENT_JOYSTICK_BUTTON_UP:
 		case EVENT_JOYSTICK_BUTTON_DOWN:
 		case EVENT_JOYSTICK_MOVED:

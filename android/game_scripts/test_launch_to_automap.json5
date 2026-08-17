@@ -112,6 +112,16 @@
     }},
     {"action": "log", "message": "=== Automap opened successfully ==="},
 
+    // Automap owns idle events while open, so queued tray actions must be
+    // consumed by its handler rather than waiting for the gameplay window.
+    {"action": "assert", "expect": {"matcen_mode": "0"}},
+    {"action": "set_debug", "field": "matcen_mode_cycle_pending", "value": "true"},
+    {"action": "wait_for", "field": "matcen_mode", "value": "1", "timeout_ms": 3000},
+    {"action": "set_debug", "field": "matcen_mode_cycle_pending", "value": "true"},
+    {"action": "wait_for", "field": "matcen_mode", "value": "2", "timeout_ms": 3000},
+    {"action": "set_debug", "field": "matcen_mode_cycle_pending", "value": "true"},
+    {"action": "wait_for", "field": "matcen_mode", "value": "0", "timeout_ms": 3000},
+
     // Enable the numbered objective overlay and verify native rendering state.
     {"action": "set_objective_overlay", "mode": "all", "post_delay_ms": 100},
     {"action": "wait_ms", "ms": 300},

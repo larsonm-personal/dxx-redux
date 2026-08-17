@@ -114,6 +114,7 @@ extern volatile int g_android_autosave_request_kind;
 /* Consume Android save/load and related game-thread requests. */
 int android_handle_pause_saveload_request(struct window *wind);
 int android_handle_ingame_saveload_request(void);
+int android_matcen_mode_apply_pending(void);
 int android_weapon_select_apply_pending(void);
 
 /*

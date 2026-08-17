@@ -3676,6 +3676,10 @@ extern "C" void game_automate_tick(void)
 					stop_script_fail("reactor_countdown_paused: countdown inactive");
 					break;
 				}
+			} else if (s.field == "matcen_mode_cycle_pending") {
+				if (strcasecmp(s.value.c_str(), "true") == 0 ||
+				    strtol(s.value.c_str(), NULL, 10) != 0)
+					android_matcen_mode_cycle_pending = 1;
 			} else if (s.field == "damage_boss") {
 				char reason[128];
 				if (!damage_first_boss(s.value, reason, sizeof(reason))) {

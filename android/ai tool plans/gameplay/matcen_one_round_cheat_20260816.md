@@ -38,6 +38,13 @@ Status: complete
 - [x] Run scoped formatting, focused tests, Android assembly, and paired D1/D2
   build validation
 
+## Live tap regression
+
+- [x] Reproduce the automap tray tap and inspect the JNI/game-thread handoff
+- [x] Fix the mode cycle without weakening multiplayer authority or save state
+- [x] Add regression coverage for the failed live path
+- [x] Run the focused test on an emulator and repeat paired build validation
+
 ## Constraints
 
 - Do not set the cheater game-engine flag
@@ -67,3 +74,8 @@ Status: complete
   same state is sent directly to late joiners
 - Scoped code quality, D1 and D2 Windows builds, paired tri-state mode and save
   metadata tests, the admin-tray UI test, and debug APK assembly passed
+- The live tap regression was caused by consuming the queued mode action only
+  from the gameplay window while the automap owned idle events; both D1 and D2
+  automap handlers now consume the same game-thread action
+- The 94-step D2 launch-to-automap emulator test passed while verifying mode
+  transitions 0 to 1 to 2 to 0 without closing the automap

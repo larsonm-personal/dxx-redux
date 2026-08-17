@@ -57,6 +57,7 @@ extern "C" {
 #include "hud_counts_shared.h"
 #include "hudmsg.h"
 #include "multi.h"
+#include "matcen_mode.h"
 #include "songs.h"
 #include "songs_android_shared.h"
 #ifdef OGL
@@ -1333,6 +1334,7 @@ extern "C" char *game_introspect_get_state(void)
 	j["difficulty_changed"] = Difficulty_level_changed != 0;
 	j["difficulty_min"] = Difficulty_level_min_seen;
 	j["difficulty_max"] = Difficulty_level_max_seen;
+	j["matcen_mode"] = matcen_mode_get();
 	j["reactor_countdown"] = {
 		{ "active", reactor_countdown_is_active() != 0 },
 		{ "paused", Reactor_countdown_paused != 0 },
