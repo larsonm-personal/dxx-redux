@@ -33,6 +33,21 @@ Assert-True ($refreshStages.Count -eq 5) 'Oracle refresh workflow should contain
 Assert-True ($refreshStages[2].Name -eq 'Refresh regression specs') 'Oracle refresh stage should be explicit'
 Assert-True ($refreshStages[2].Arguments -contains '-Force') 'Explicit oracle refresh should regenerate all specs'
 
+$sampleListPath = Join-Path $repoRoot 'android\temp\cd_sample_specs.txt'
+$sampleStages = @(Get-CdRegressionStages -RepoRoot $repoRoot -RefreshOracle -SpecListPath $sampleListPath)
+Assert-True ($sampleStages[0].Arguments -contains $sampleListPath -and
+    $sampleStages[1].Arguments -contains $sampleListPath -and
+    $sampleStages[2].Arguments -contains $sampleListPath -and
+    $sampleStages[4].Arguments -contains $sampleListPath) `
+    'Sampled CD workflow should use one spec list for extraction, oracle refresh, and tests'
+$sampledSpecs = @(New-CdRegressionSampleList -RepoRoot $repoRoot -Fraction 0.1 -Seed 123)
+$sampledTypes = @($sampledSpecs | ForEach-Object { (Read-Json5File $_).source_type } | Sort-Object -Unique)
+Assert-True ($sampledTypes -contains 'cd' -and $sampledTypes -contains 'gog' -and $sampledTypes -contains 'combined') `
+    'CD sampling should preserve every source type'
+Assert-True (($sampledSpecs -join ',') -eq ((New-CdRegressionSampleList `
+                -RepoRoot $repoRoot -Fraction 0.1 -Seed 123) -join ',')) `
+    'CD sampling should be reproducible'
+
 $extractSuiteText = Get-Content -LiteralPath (Join-Path $repoRoot 'android\tests\test_all_extracts.ps1') -Raw
 Assert-True ($extractSuiteText.Contains("Join-Path `$ReportDir 'summary.json'")) `
     'Extraction suite should save a machine-readable result summary'

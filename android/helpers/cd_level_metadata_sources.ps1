@@ -111,3 +111,45 @@ function Resolve-CdLevelMetadataSources {
     }
     return $resolved
 }
+
+function Get-CdLevelMetadataSourceDescriptors {
+    param([Parameter(Mandatory = $true)]$Source)
+
+    if (-not $Source.Discover) { return @($Source.Descriptor) }
+    $seenNames = @{}
+    return @(
+        Get-ChildItem -LiteralPath $Source.SourceDir -Recurse -File |
+            Where-Object { $_.Extension.ToLowerInvariant() -in @('.msn', '.mn2') } |
+            Sort-Object FullName |
+            Where-Object {
+                $key = $_.Name.ToLowerInvariant()
+                if ($seenNames.ContainsKey($key)) { return $false }
+                $seenNames[$key] = $true
+                return $true
+            }
+    )
+}
+
+function Get-CdLevelMetadataDescriptorHash {
+    param([Parameter(Mandatory = $true)][System.IO.FileInfo]$Descriptor)
+
+    $text = [IO.File]::ReadAllText($Descriptor.FullName).Replace(([char]0x1a).ToString(), '')
+    $bytes = [Text.UTF8Encoding]::new($false).GetBytes($text)
+    $sha256 = [Security.Cryptography.SHA256]::Create()
+    try {
+        return ([BitConverter]::ToString($sha256.ComputeHash($bytes))).Replace('-', '').ToLowerInvariant()
+    } finally {
+        $sha256.Dispose()
+    }
+}
+
+function Add-CdLevelMetadataSourceDescriptorHashes {
+    param(
+        [Parameter(Mandatory = $true)]$Source,
+        [Parameter(Mandatory = $true)][hashtable]$SeenHashes
+    )
+
+    foreach ($descriptor in @(Get-CdLevelMetadataSourceDescriptors -Source $Source)) {
+        $SeenHashes[(Get-CdLevelMetadataDescriptorHash -Descriptor $descriptor)] = $true
+    }
+}

@@ -142,7 +142,8 @@ fun MusicPickerPage(
     RequestLauncherControllerFocus(initialFocus, controllerFocusActive)
 
     var musicMode by remember {
-        mutableStateOf(prefs.getString("music_mode", MUSIC_MODE_CD) ?: MUSIC_MODE_CD)
+        val stored = prefs.getString("music_mode", MUSIC_MODE_CD) ?: MUSIC_MODE_CD
+        mutableStateOf(if (stored == "mission") MUSIC_MODE_MIDI else stored)
     }
 
     // Redbook source management
@@ -183,7 +184,7 @@ fun MusicPickerPage(
         NativePilotPreferences.writeMusicPrefsToAll(
             filesDir.absolutePath,
             mode,
-            prefs.getBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, existing.preferMissionSoundtrack),
+            mode == "mission",
             existing.playOrder,
             existing.volume,
         )

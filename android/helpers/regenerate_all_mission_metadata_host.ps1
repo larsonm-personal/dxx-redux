@@ -3,7 +3,8 @@
 param(
     [switch]$NoRegressionCopy,
     [switch]$CdSourcesOnly,
-    [string]$ArchiveName = ""
+    [string]$ArchiveName = "",
+    [string[]]$CdSourceIds
 )
 
 $ErrorActionPreference = "Stop"
@@ -402,8 +403,8 @@ function Copy-RawMissionFileSet {
         $_.Name.ToLowerInvariant() -in @("descent.sng", "dxx-r.sng")
     }
     $legacySongLists = @(Get-ChildItem -LiteralPath $StageDir -File -Filter "*.sng" | Where-Object {
-        $_.Name.ToLowerInvariant() -notin @("descent.sng", "dxx-r.sng")
-    })
+            $_.Name.ToLowerInvariant() -notin @("descent.sng", "dxx-r.sng")
+        })
     if (-not $engineSongList -and $legacySongLists.Count -eq 1) {
         Copy-StageAlias -Source $legacySongLists[0].FullName -Target (Join-Path $StageDir "descent.sng")
     }
@@ -683,13 +684,20 @@ $results = @()
 $batchStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 $seenCdDescriptorHashes = @{}
 
-$cdSources =
-    if ($ArchiveName) {
-        @()
-    } else {
-        @(Resolve-CdLevelMetadataSources -RepoRoot $repoRoot -ManifestPath $cdSourceManifest -OutputDir $zipDir)
+$allCdSources =
+if ($ArchiveName) {
+    @()
+} else {
+    @(Resolve-CdLevelMetadataSources -RepoRoot $repoRoot -ManifestPath $cdSourceManifest -OutputDir $zipDir)
+}
+$selectedCdSourceIds = if ($CdSourceIds) {
+    [Collections.Generic.HashSet[string]]::new([string[]]$CdSourceIds, [StringComparer]::OrdinalIgnoreCase)
+} else { $null }
+foreach ($source in $allCdSources) {
+    if ($selectedCdSourceIds -and -not $selectedCdSourceIds.Contains([string]$source.Id)) {
+        Add-CdLevelMetadataSourceDescriptorHashes -Source $source -SeenHashes $seenCdDescriptorHashes
+        continue
     }
-foreach ($source in $cdSources) {
     $runStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $label = "cd_$($source.Id)"
     $metadataPath = Join-Path $metadataDir ([IO.Path]::GetFileName($source.OutputPath))
@@ -712,7 +720,7 @@ foreach ($source in $cdSources) {
         $missions = @()
         $descriptorFailures = @()
         foreach ($descriptor in $descriptors) {
-            $descriptorHash = (Get-FileHash -LiteralPath $descriptor.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            $descriptorHash = Get-CdLevelMetadataDescriptorHash -Descriptor $descriptor
             if ($seenCdDescriptorHashes.ContainsKey($descriptorHash)) {
                 continue
             }

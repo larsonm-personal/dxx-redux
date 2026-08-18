@@ -56,6 +56,7 @@ param(
     [switch]$RandomOrder,
     [int]$MaxFailures = 0,
     [string[]]$SpecPaths,
+    [string]$SpecListPath,
     [switch]$BuildAndInstall,
     [switch]$RestartDevice,
     [string]$ReportDir
@@ -86,6 +87,10 @@ if (-not (Ensure-ExtractRegressionOracles -RepoRoot $REPO_ROOT -Context "test_al
 }
 
 # -- Discover specs -------------------------------------------
+
+if ($SpecListPath) {
+    $SpecPaths = @(Get-Content -LiteralPath $SpecListPath | Where-Object { $_ })
+}
 
 if ($SpecPaths -and $SpecPaths.Count -gt 0) {
     $specs = @()

@@ -41,7 +41,6 @@ object ConfigImportExport {
             ExportedPreference("game_orientation", ExportedPreferenceType.STRING),
             ExportedPreference("music_mode", ExportedPreferenceType.STRING),
             ExportedPreference("touch_overlay_enabled", ExportedPreferenceType.BOOLEAN),
-            ExportedPreference(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, ExportedPreferenceType.BOOLEAN),
             ExportedPreference(PREF_ALLOW_ACOUSTID_WEB_LOOKUPS, ExportedPreferenceType.BOOLEAN),
             ExportedPreference(PREF_SHOW_RESUME_OFFER, ExportedPreferenceType.BOOLEAN),
             ExportedPreference(PREF_SHOW_DEMO_INSTALLER_OFFER, ExportedPreferenceType.BOOLEAN),

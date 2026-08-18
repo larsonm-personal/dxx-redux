@@ -15,7 +15,8 @@
 # Usage: .\extract_all_cds.ps1 [-Force] [-SkipBuild]
 param(
     [switch]$Force,
-    [switch]$SkipBuild
+    [switch]$SkipBuild,
+    [string]$SpecListPath
 )
 
 $ErrorActionPreference = "Stop"
@@ -75,6 +76,12 @@ if (-not (Test-Path $CdImgDir)) {
 }
 
 $folders = Get-ChildItem -Path $CdImgDir -Directory | Sort-Object Name
+if ($SpecListPath) {
+    $selectedSpecs = @(Get-Content -LiteralPath $SpecListPath | ForEach-Object { [IO.Path]::GetFullPath($_) })
+    $folders = @($folders | Where-Object {
+            $selectedSpecs -contains [IO.Path]::GetFullPath((Join-Path $_.FullName 'extract_regression.json5'))
+        })
+}
 $successes = @()
 $failures = @()
 $skipped = @()

@@ -62,7 +62,7 @@ int main(void)
 	memset(&params, 0, sizeof(params));
 	params.game_id = ANDROID_SAVE_META_GAME_D1;
 	params.save_kind = ANDROID_SAVE_META_KIND_MANUAL;
-	params.music_type = 1;
+	params.music_type = ANDROID_SAVE_META_MUSIC_MISSION;
 	params.wall_clock_unix_seconds = 100;
 	params.callsign = "ace";
 	params.description = "AUTO SAVE";
@@ -151,8 +151,8 @@ int main(void)
 	failures += expect_string("level name", "Lunar Outpost", parsed.level_name);
 	if (parsed.game_id != ANDROID_SAVE_META_GAME_D1)
 		failures += report_failure("parsed wrong game id for D1 trailer");
-	if (parsed.music_type != 1)
-		failures += report_failure("music type did not round-trip");
+	if (parsed.music_type != ANDROID_SAVE_META_MUSIC_MISSION)
+		failures += report_failure("mission music source did not round-trip");
 	if (parsed.matcen_mode != MATCEN_MODE_PAUSED)
 		failures += report_failure("matcen mode did not round-trip");
 	if (parsed.matcen_activation_counts[2] != 1)

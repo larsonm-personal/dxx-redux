@@ -126,7 +126,7 @@ static int load_db(const char *data, int len)
 			uint32_t *raw = NULL;
 			int raw_len = 0, alg = 0;
 
-			if (name.empty() || name.size() >= MAX_NAME || disc_id.size() >= MAX_DISC_ID ||
+			if (name.size() >= MAX_NAME || disc_id.size() >= MAX_DISC_ID ||
 			    fp_b64.empty() || fp_b64.size() > MAX_FINGERPRINT || dur <= 0 ||
 			    chromaprint_decode_fingerprint(fp_b64.data(), (int) fp_b64.size(),
 			                                   &raw, &raw_len, &alg, 1) != 1 ||

@@ -50,6 +50,7 @@ try {
             'ADB timeout (30s): shell get-state',
             'ADB failed (shell get-state): * daemon still not running',
             'ADB failed (shell get-state): adb.exe: cannot connect to daemon at tcp:5037',
+            'App-private staging failed after copy error: ADB staging failed: ADB failed (shell chmod): * daemon still not running',
             'ADB failed (shell get-state): error: device offline',
             'ADB failed (shell get-state): error: protocol fault (could not read status)'
         )) {

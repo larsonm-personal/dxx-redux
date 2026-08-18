@@ -283,6 +283,7 @@ class ModManager(
         filename: String,
         enabled: Boolean,
     ) {
+        val previous = mods.firstOrNull { it.filename == filename }
         if (enabled) {
             val scan = DxaTextureScanner.scan(File(modsDir, filename))
             if (scan?.canEnable != true) {
@@ -297,6 +298,11 @@ class ModManager(
                         if (it.filename == filename) it.copy(enabled = enabled) else it
                     }.toMutableList()
             save()
+        }
+        if (enabled && previous?.enabled == false && previous.kind == MOD_KIND_MISSION_ZIP &&
+            modHasMissionSoundtrack(previous)
+        ) {
+            context?.let { selectBundledMusicForNewMission(filesDir, it, previous.game) }
         }
     }
 
@@ -870,19 +876,15 @@ class ModManager(
         game: String,
         includeD1MissionZipsForD2: Boolean,
     ): Boolean =
-        MissionZipExtractionStore(filesDir).let { extractionStore ->
-            mods
-                .filter { it.enabledForLaunch(game, includeD1MissionZipsForD2) && it.kind == MOD_KIND_MISSION_ZIP }
-                .any {
-                    val modFile = File(modsDir, it.filename)
-                    val record = extractionStore.freshRecord(it.filename, modFile)
-                    if (record != null) {
-                        missionZipHasSoundtrack(record)
-                    } else {
-                        missionZipHasSoundtrack(modFile)
-                    }
-                }
-        }
+        mods
+            .filter { it.enabledForLaunch(game, includeD1MissionZipsForD2) && it.kind == MOD_KIND_MISSION_ZIP }
+            .any(::modHasMissionSoundtrack)
+
+    private fun modHasMissionSoundtrack(mod: ModInfo): Boolean {
+        val modFile = File(modsDir, mod.filename)
+        val record = MissionZipExtractionStore(filesDir).freshRecord(mod.filename, modFile)
+        return if (record != null) missionZipHasSoundtrack(record) else missionZipHasSoundtrack(modFile)
+    }
 
     fun hasEnabledD1MissionZipForD2(): Boolean =
         mods.any { it.enabled && it.kind == MOD_KIND_MISSION_ZIP && it.game == "d1" }
@@ -926,6 +928,9 @@ class ModManager(
             )
         mods.add(mod)
         save()
+        if (modHasMissionSoundtrack(mod)) {
+            context?.let { selectBundledMusicForNewMission(filesDir, it, mod.game) }
+        }
         logInfo("Imported mission zip: ${mod.displayName} (${mod.sizeBytes / 1024 / 1024} MB)")
         return mod
     }

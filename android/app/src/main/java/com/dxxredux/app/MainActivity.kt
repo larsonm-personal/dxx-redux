@@ -553,8 +553,6 @@ class MainActivity :
 
     external fun nativeIsMusicSourceChangePending(): Boolean
 
-    external fun nativeSetMissionSoundtrackPreference(enabled: Boolean)
-
     external fun nativeSetMusicSource(source: String): Boolean
 
     external fun nativeSetMusicOneTrackPerLevel(enabled: Boolean): Boolean
@@ -925,7 +923,6 @@ class MainActivity :
         applySkipIntroPref(prefs)
         applyCoopIndicatorPrefs(prefs)
         applyHeadlightDefaultPrefs(prefs)
-        applyMusicPolicyPrefs(prefs)
         applyDemoRecordingPref()
 
         // Allow rendering into the display cutout (notch) area
@@ -2075,7 +2072,6 @@ class MainActivity :
         applySkipIntroPref(prefs)
         applyCoopIndicatorPrefs(prefs)
         applyHeadlightDefaultPrefs(prefs)
-        applyMusicPolicyPrefs(prefs)
         applyDemoRecordingPref()
         applyGraphicsDebugPrefs(prefs)
         applyGraphicsSettingsPrefs(prefs)
@@ -2213,16 +2209,6 @@ class MainActivity :
         try {
             nativeSetHeadlightOffByDefaultQol(
                 prefs.getBoolean(PREF_HEADLIGHT_OFF_BY_DEFAULT, true),
-            )
-        } catch (_: Exception) {
-            // JNI may not be ready yet when the activity is first coming up
-        }
-    }
-
-    private fun applyMusicPolicyPrefs(prefs: android.content.SharedPreferences) {
-        try {
-            nativeSetMissionSoundtrackPreference(
-                prefs.getBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, true),
             )
         } catch (_: Exception) {
             // JNI may not be ready yet when the activity is first coming up

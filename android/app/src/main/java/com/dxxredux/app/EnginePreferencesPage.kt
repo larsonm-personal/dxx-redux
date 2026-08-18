@@ -49,7 +49,6 @@ internal const val PREF_HEADLIGHT_OFF_BY_DEFAULT = "headlight_off_by_default"
 internal const val PREF_SHOW_RESUME_OFFER = "show_resume_offer"
 internal const val PREF_SAVE_EXPLORER_PANEL_EXPANDED = "save_explorer_panel_expanded"
 internal const val PREF_SHOW_DEMO_INSTALLER_OFFER = "show_demo_installer_offer"
-internal const val PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE = "use_mission_soundtrack_when_available"
 
 // Keep in sync with android_rewind_policy.h.
 internal const val DEFAULT_REWIND_TARGET_SECONDS = 10
@@ -124,10 +123,6 @@ fun EnginePreferencesPage(
     var showDemoInstallerOffer by remember {
         mutableStateOf(prefs.getBoolean(PREF_SHOW_DEMO_INSTALLER_OFFER, true))
     }
-    var useMissionSoundtrackWhenAvailable by remember {
-        mutableStateOf(prefs.getBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, true))
-    }
-
     val hasChanges =
         cockpitMode != savedCockpitMode ||
             autoLeveling != savedAutoLeveling ||
@@ -139,7 +134,6 @@ fun EnginePreferencesPage(
     fun loadPrefs() {
         val data = NativePilotPreferences.readEnginePrefsForAll(gameVariant, filesDir.absolutePath)
         val homingData = NativePilotPreferences.readOriginalHomingPrefsForAll(gameVariant, filesDir.absolutePath)
-        val musicData = NativePilotPreferences.readMusicPrefsForAll(gameVariant, filesDir.absolutePath)
         cockpitMode = data.cockpitMode
         savedCockpitMode = data.cockpitMode
         autoLeveling = data.autoLeveling
@@ -152,13 +146,6 @@ fun EnginePreferencesPage(
         savedMapCheatsAccessible = data.mapCheatsAccessible
         originalHoming = homingData.enabled
         savedOriginalHoming = homingData.enabled
-        if (musicData.hasPilotFile) {
-            useMissionSoundtrackWhenAvailable = musicData.preferMissionSoundtrack
-            prefs
-                .edit()
-                .putBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, musicData.preferMissionSoundtrack)
-                .apply()
-        }
         hasPilotFile = data.hasPilotFile
         statusMessage =
             when {
@@ -485,76 +472,6 @@ fun EnginePreferencesPage(
                         Text("Skip intro movie on launch", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                         Text(
                             "Skips the D1/D2 startup intro sequence, but leaves other movies skippable by tap",
-                            fontSize = 9.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text("Music", fontWeight = FontWeight.Bold, fontSize = 11.sp)
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    "Launch policy for mission-provided soundtracks",
-                    fontSize = 10.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Switch(
-                        checked = useMissionSoundtrackWhenAvailable,
-                        onCheckedChange = { checked ->
-                            useMissionSoundtrackWhenAvailable = checked
-                            val musicData =
-                                NativePilotPreferences.readMusicPrefsForAll(
-                                    gameVariant,
-                                    filesDir.absolutePath,
-                                )
-                            val source =
-                                when (musicData.source) {
-                                    "files",
-                                    "cd",
-                                    "midi",
-                                    -> musicData.source
-
-                                    else -> prefs.getString("music_mode", "midi") ?: "midi"
-                                }
-                            val count =
-                                NativePilotPreferences.writeMusicPrefsToAll(
-                                    filesDir.absolutePath,
-                                    source,
-                                    checked,
-                                    musicData.playOrder,
-                                    musicData.volume,
-                                )
-                            if (count >= 0) {
-                                prefs
-                                    .edit()
-                                    .putBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, checked)
-                                    .apply()
-                            } else {
-                                useMissionSoundtrackWhenAvailable = !checked
-                                statusMessage = "Could not save music preference; original files were restored"
-                            }
-                        },
-                        modifier = Modifier.tvFocusBorder(),
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
-                        Text(
-                            "Use mission soundtrack when available",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                        Text(
-                            "Mission packs with their own music play it instead of the global music mode",
                             fontSize = 9.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

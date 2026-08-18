@@ -12,6 +12,7 @@
 - any changes that are made should keep the existing windows/linux/mac builds intact, using #defines or separate files or similar
 - any changes should be accompanied y a successful cmake build and test run
 - before the first release (as in, currently), do *not* code for backwards compatibility within the launcher or android-specific code. do maintain compatibility in the d1/d2 dirs because it will help upstreaming. virtually every build will be a full apk rebuild with a data reset
+  - treat Android save, config, and data formats as disposable: replace them directly without compatibility readers, migrations, branches, or tests unless explicitly requested
 - long term, the android launcher will be extracted to a library to support multiple 90s era games (using the same controls picker, CD extraction, and so on). try to plan for clean separation between the game code and launcher code, as well as details like the multiplayer packet format having a game type tag so the server can support multiple games
 
 # dependencies

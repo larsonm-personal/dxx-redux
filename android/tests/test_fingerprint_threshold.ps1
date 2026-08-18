@@ -89,6 +89,27 @@ try {
         }
     }
 
+    $discDbPath = Join-Path $repoRoot 'android\app\src\main\assets\known_discs.json5'
+    $discDbText = Get-Content -LiteralPath $discDbPath -Raw
+    $discDb = ($discDbText -replace '//[^\n]*', '' -replace '/\*[\s\S]*?\*/', '') | ConvertFrom-Json
+    $fixtureTrack = $discDb.discs.tracks | Where-Object {
+        $_.type -eq 'audio' -and $_.chromaprint -and $_.duration_ms
+    } | Select-Object -First 1
+    if (-not $fixtureTrack) { throw 'No checked-in audio fingerprint is available for matcher validation' }
+    $emptyNameFixture = @([ordered]@{
+            name = ''
+            disc_id = 'unnamed-disc'
+            track = 1
+            duration_ms = $fixtureTrack.duration_ms
+            chromaprint = $fixtureTrack.chromaprint
+        })
+    $emptyNameDb = Write-Config -Name 'empty_name.json' `
+        -Content (ConvertTo-Json -InputObject $emptyNameFixture -Depth 3)
+    $emptyNameResult = Invoke-Matcher -MatcherArguments @($emptyNameDb, '0.65', '0.10')
+    if ($emptyNameResult.ExitCode -ne 0 -or $emptyNameResult.Output -notmatch 'Loaded 1 entries') {
+        throw "Matcher rejected an unnamed physical CD track: $($emptyNameResult.Output)"
+    }
+
     Write-Host 'fingerprint threshold tests passed'
 } finally {
     Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue

@@ -25,12 +25,45 @@ param(
     [switch]$Force,
     [switch]$SkipAcoustId,
     [switch]$DryRun,
+    [ValidateRange(0.000001, 1.0)][double]$SampleFraction = 1.0,
+    [ValidateRange(0, [int]::MaxValue)][int]$SampleSeed = 0,
     [ValidateSet("all", "discs", "packs", "mission-zips", "merge")]
     [string]$Step = "all"
 )
 
 $ErrorActionPreference = "Stop"
 $ScriptDir = $PSScriptRoot
+$RepoRoot = Split-Path $ScriptDir -Parent
+. (Join-Path $RepoRoot 'android\helpers\runtime_targeted_sampling.ps1')
+
+function Select-FingerprintSampleNames {
+    param([object[]]$Items, [double]$Fraction, [int]$Seed)
+    if ($Items.Count -eq 0) { return @() }
+    return @(Select-RuntimeFractionItems -Items $Items -Fraction $Fraction -Seed $Seed |
+            Select-Object -ExpandProperty Name)
+}
+
+$discNames = $null
+$albumNames = $null
+$missionZipNames = $null
+if ($SampleFraction -lt 1.0) {
+    if ($SampleSeed -eq 0) { $SampleSeed = Get-Random -Minimum 1 -Maximum ([int]::MaxValue) }
+    $discItems = @(Get-ChildItem (Join-Path $ScriptDir 'CD images') -Directory | Sort-Object Name)
+    $albumItems = @(Get-ChildItem (Join-Path $ScriptDir 'music') -File | Where-Object Extension -Match '^\.(zip|7z|DXA)$' |
+            ForEach-Object {
+                $name = $_.BaseName
+                if ($name -match '^(.+?) - ') { $name = $Matches[1] }
+                [pscustomobject]@{ Name = $name }
+            } | Sort-Object Name -Unique)
+    $missionItems = @(Get-ChildItem (Join-Path $ScriptDir 'mission_files') -File |
+            Where-Object Extension -Match '^\.(zip|7z|rar)$' | Sort-Object Name)
+    $discNames = Select-FingerprintSampleNames $discItems $SampleFraction ($SampleSeed -bxor 101)
+    $albumNames = Select-FingerprintSampleNames $albumItems $SampleFraction ($SampleSeed -bxor 202)
+    $missionZipNames = Select-FingerprintSampleNames $missionItems $SampleFraction ($SampleSeed -bxor 303)
+    Write-Host ("Fingerprint sample: discs {0}/{1}, packs {2}/{3}, mission archives {4}/{5} ({6:P1}), seed {7}" -f
+        $discNames.Count, $discItems.Count, $albumNames.Count, $albumItems.Count,
+        $missionZipNames.Count, $missionItems.Count, $SampleFraction, $SampleSeed)
+}
 
 function Run-Step {
     param([string]$Label, [string]$Script, [hashtable]$Params = @{})
@@ -52,6 +85,7 @@ $runMerge = $Step -eq "merge"
 if ($runDiscs) {
     $args1 = @{}
     if ($Force) { $args1["Force"] = $true }
+    if ($null -ne $discNames) { $args1['FolderNames'] = $discNames }
     Run-Step "Step 1/5: Fingerprint CD disc tracks" "fingerprint_disc_tracks.ps1" $args1
 }
 
@@ -67,6 +101,7 @@ if ($runPacks) {
     $args3 = @{}
     if ($Force) { $args3["Force"] = $true }
     if ($SkipAcoustId) { $args3["SkipAcoustId"] = $true }
+    if ($null -ne $albumNames) { $args3['Albums'] = $albumNames }
     Run-Step "Step 3/5: Extract + fingerprint music packs" "fingerprint_music_packs.ps1" $args3
 }
 
@@ -75,6 +110,7 @@ if ($runMissionZips) {
     $argsMission = @{}
     if ($Force) { $argsMission["Force"] = $true }
     if ($SkipAcoustId) { $argsMission["SkipAcoustId"] = $true }
+    if ($null -ne $missionZipNames) { $argsMission['Zips'] = $missionZipNames }
     Run-Step "Step 4/5: Extract + fingerprint mission ZIP soundtracks" "fingerprint_mission_zip_music.ps1" $argsMission
 }
 

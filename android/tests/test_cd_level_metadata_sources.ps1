@@ -54,6 +54,20 @@ try {
     Assert-True ($sources[1].ExcludeDescriptors.Count -eq 1 -and $sources[1].ExcludeDescriptors[0] -eq 'broken.mn2') `
         'Descriptor exclusions should resolve as normalized leaf filenames'
 
+    $firstDescriptor = Get-CdLevelMetadataSourceDescriptors -Source $sources[0] | Select-Object -First 1
+    $duplicateDir = Join-Path $tempRoot 'source2'
+    New-Item -ItemType Directory -Path $duplicateDir | Out-Null
+    Copy-Item -LiteralPath $firstDescriptor.FullName -Destination (Join-Path $duplicateDir $firstDescriptor.Name)
+    $duplicateSource = [pscustomobject]@{ Discover = $true; SourceDir = $duplicateDir }
+    $duplicateDescriptor = Get-CdLevelMetadataSourceDescriptors -Source $duplicateSource | Select-Object -First 1
+    Assert-True ((Get-CdLevelMetadataDescriptorHash -Descriptor $firstDescriptor) -eq
+        (Get-CdLevelMetadataDescriptorHash -Descriptor $duplicateDescriptor)) `
+        'Descriptor hashing should preserve cross-source duplicate detection'
+    $seenHashes = @{}
+    Add-CdLevelMetadataSourceDescriptorHashes -Source $sources[0] -SeenHashes $seenHashes
+    Assert-True $seenHashes.ContainsKey((Get-CdLevelMetadataDescriptorHash -Descriptor $duplicateDescriptor)) `
+        'An earlier unselected source should seed duplicate detection for a later sampled source'
+
     $badManifest = $manifest | ConvertFrom-Json
     $badManifest.sources[0].output = '..\escaped.json'
     [IO.File]::WriteAllText($manifestPath, ($badManifest | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))

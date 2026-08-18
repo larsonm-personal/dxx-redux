@@ -16,7 +16,8 @@ param(
     [switch]$SkipBuild,
     [switch]$SkipAcoustId,
     [string]$CdImageDir,
-    [string]$FingerprintExePath
+    [string]$FingerprintExePath,
+    [string[]]$FolderNames
 )
 
 $ErrorActionPreference = "Stop"
@@ -232,6 +233,7 @@ if (-not (Test-Path $CdImgDir)) {
 }
 
 $folders   = Get-ChildItem -Path $CdImgDir -Directory | Sort-Object Name
+if ($FolderNames) { $folders = @($folders | Where-Object Name -in $FolderNames) }
 $successes = @()
 $failures  = @()
 $skipped   = @()

@@ -1,5 +1,10 @@
 #!/usr/bin/env pwsh
 
+param(
+    [ValidateRange(0.000001, 1.0)][double]$SampleFraction = 1.0,
+    [ValidateRange(0, [int]::MaxValue)][int]$SampleSeed = 0
+)
+
 $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $PSCommandPath
@@ -12,6 +17,8 @@ $outDir = Join-Path $androidRoot "temp\mission_zip_batch\regen_all_metadata_only
 $gradle = Join-Path $androidRoot "gradlew.bat"
 $batch = Join-Path $scriptDir "run_mission_zip_batch.ps1"
 $hostBatch = Join-Path $scriptDir "regenerate_all_mission_metadata_host.ps1"
+. (Join-Path $scriptDir 'runtime_targeted_sampling.ps1')
+. (Join-Path $scriptDir 'cd_level_metadata_sources.ps1')
 
 function Write-Status {
     param([string]$Message, [string]$Color = "Cyan")
@@ -47,7 +54,30 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Status "Regenerating mission metadata JSON"
 Write-Status "Output: $outDir"
-& $batch -MetadataOnly -Install -ZipDir $zipDir -OutDir $outDir -TimeoutSeconds 900
+$batchArgs = @{
+    MetadataOnly = $true
+    Install = $true
+    ZipDir = $zipDir
+    OutDir = $outDir
+    TimeoutSeconds = 900
+}
+$selectedCdSourceIds = $null
+if ($SampleFraction -lt 1.0) {
+    if ($SampleSeed -eq 0) { $SampleSeed = Get-Random -Minimum 1 -Maximum ([int]::MaxValue) }
+    $zipItems = @(Get-ChildItem -LiteralPath $zipDir -File | Where-Object Extension -in '.zip', '.7z' | Sort-Object Name)
+    $cdManifest = Join-Path $zipDir 'cd_level_metadata_sources.json5'
+    $cdItems = @(Resolve-CdLevelMetadataSources -RepoRoot $repoRoot -ManifestPath $cdManifest -OutputDir $zipDir |
+            ForEach-Object { [pscustomobject]@{ Name = $_.Id } })
+    $selectedZips = @(Select-RuntimeFractionItems -Items $zipItems -Fraction $SampleFraction `
+            -Seed ($SampleSeed -bxor 401) | Select-Object -ExpandProperty Name)
+    $selectedCdSourceIds = @(Select-RuntimeFractionItems -Items $cdItems -Fraction $SampleFraction `
+            -Seed ($SampleSeed -bxor 402) | Select-Object -ExpandProperty Name)
+    $batchArgs.Pattern = $selectedZips
+    Write-Status ("Metadata sample: archives {0}/{1}, CD sources {2}/{3} ({4:P1}), seed {5}" -f
+        $selectedZips.Count, $zipItems.Count, $selectedCdSourceIds.Count, $cdItems.Count,
+        $SampleFraction, $SampleSeed)
+}
+& $batch @batchArgs
 $batchExit = $LASTEXITCODE
 if ($batchExit -ne 0) {
     Write-Status "Mission metadata regeneration failed with exit code $batchExit" "Red"
@@ -55,7 +85,9 @@ if ($batchExit -ne 0) {
 }
 
 Write-Status "Regenerating CD mission metadata JSON"
-& $hostBatch -CdSourcesOnly
+$hostArgs = @{ CdSourcesOnly = $true }
+if ($null -ne $selectedCdSourceIds) { $hostArgs.CdSourceIds = $selectedCdSourceIds }
+& $hostBatch @hostArgs
 $cdBatchExit = $LASTEXITCODE
 if ($cdBatchExit -ne 0) {
     Write-Status "CD mission metadata regeneration failed with exit code $cdBatchExit" "Red"

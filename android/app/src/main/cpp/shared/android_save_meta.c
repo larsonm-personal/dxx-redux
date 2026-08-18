@@ -166,7 +166,7 @@ int android_save_meta_is_valid(const android_save_meta_disk *meta)
 		return 0;
 	if (meta->save_kind > ANDROID_SAVE_META_KIND_AUTO_PERIODIC)
 		return 0;
-	if (meta->music_type > 3)
+	if (meta->music_type > ANDROID_SAVE_META_MUSIC_MISSION)
 		return 0;
 	if (meta->difficulty_changed > 1)
 		return 0;

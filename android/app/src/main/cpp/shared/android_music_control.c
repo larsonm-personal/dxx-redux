@@ -35,7 +35,6 @@ typedef enum android_music_command_type {
 	MUSIC_COMMAND_NEXT,
 	MUSIC_COMMAND_PREVIOUS,
 	MUSIC_COMMAND_TRACK,
-	MUSIC_COMMAND_PREFER_MISSION,
 	MUSIC_COMMAND_PLAY_ORDER,
 	MUSIC_COMMAND_VOLUME,
 	MUSIC_COMMAND_PAUSE
@@ -182,7 +181,7 @@ static int music_is_paused(void)
 	return 0;
 }
 
-static void music_replay_current(void)
+void android_music_replay_current(void)
 {
 	crash_breadcrumb_v("music replay current: type=%d prefer=%d game_wind=%d level=%d",
 	                   GameCfg.MusicType,
@@ -214,21 +213,18 @@ int android_music_control_apply_pending(void)
 				GameCfg.MusicType = command.value;
 				android_music_set_prefer_mission_soundtrack(command.auxiliary);
 				music_save_config();
-				music_replay_current();
+				android_music_replay_current();
 				break;
 			case MUSIC_COMMAND_NEXT: songs_next_track(); break;
 			case MUSIC_COMMAND_PREVIOUS: songs_prev_track(); break;
 			case MUSIC_COMMAND_TRACK: songs_play_specific_track(command.value); break;
-			case MUSIC_COMMAND_PREFER_MISSION:
-				android_music_set_prefer_mission_soundtrack(command.value);
-				break;
 			case MUSIC_COMMAND_PLAY_ORDER: {
 				const int old_order = GameCfg.CMLevelMusicPlayOrder;
 				GameCfg.CMLevelMusicPlayOrder = command.value;
 				music_save_config();
 				if (Game_wind && old_order != command.value &&
 				    command.value == MUSIC_CM_PLAYORDER_LEVEL)
-					music_replay_current();
+					android_music_replay_current();
 				break;
 			}
 			case MUSIC_COMMAND_VOLUME:
@@ -493,13 +489,33 @@ Java_com_dxxredux_app_MainActivity_nativeIsMusicSourceChangePending(JNIEnv *env,
 	return pending ? JNI_TRUE : JNI_FALSE;
 }
 
-JNIEXPORT void JNICALL
-Java_com_dxxredux_app_MainActivity_nativeSetMissionSoundtrackPreference(
-    JNIEnv *env, jobject thiz, jboolean enabled)
+int android_music_set_source(const char *source)
 {
-	(void) env;
-	(void) thiz;
-	music_enqueue(MUSIC_COMMAND_PREFER_MISSION, enabled ? 1 : 0, 0);
+	int new_type;
+	int prefer_mission;
+
+	new_type = GameCfg.MusicType;
+	prefer_mission = 0;
+	if (!source)
+		return 0;
+	if (!strcmp(source, "mission")) {
+		new_type = MUSIC_TYPE_BUILTIN;
+		prefer_mission = 1;
+	} else if (!strcmp(source, "midi")) {
+		new_type = MUSIC_TYPE_BUILTIN;
+	} else if (!strcmp(source, "cd")) {
+		new_type = MUSIC_TYPE_REDBOOK;
+	} else if (!strcmp(source, "files")) {
+		new_type = MUSIC_TYPE_CUSTOM;
+	} else
+		return 0;
+
+	if (!music_enqueue(MUSIC_COMMAND_SOURCE, new_type, prefer_mission))
+		return 0;
+	crash_breadcrumb_v("music source queued: source=%s type=%d prefer=%d", source, new_type, prefer_mission);
+	LOGI("music source queued: source=%s type=%d prefer=%d", source, new_type, prefer_mission);
+	debug_log(DLOG_GAME, "music source queued: source=%s type=%d prefer=%d", source, new_type, prefer_mission);
+	return 1;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -507,38 +523,14 @@ Java_com_dxxredux_app_MainActivity_nativeSetMusicSource(
     JNIEnv *env, jobject thiz, jstring source)
 {
 	char *src;
-	char src_copy[16];
-	int new_type;
-	int prefer_mission;
+	int result;
 	(void) thiz;
 
 	if (!source || !dxx_jni_string_to_utf8(env, source, &src))
 		return JNI_FALSE;
-
-	new_type = GameCfg.MusicType;
-	prefer_mission = 0;
-	if (!strcmp(src, "mission")) {
-		new_type = MUSIC_TYPE_BUILTIN;
-		prefer_mission = 1;
-	} else if (!strcmp(src, "midi")) {
-		new_type = MUSIC_TYPE_BUILTIN;
-	} else if (!strcmp(src, "cd")) {
-		new_type = MUSIC_TYPE_REDBOOK;
-	} else if (!strcmp(src, "files")) {
-		new_type = MUSIC_TYPE_CUSTOM;
-	} else {
-		free(src);
-		return JNI_FALSE;
-	}
-	snprintf(src_copy, sizeof(src_copy), "%s", src);
+	result = android_music_set_source(src);
 	free(src);
-
-	if (!music_enqueue(MUSIC_COMMAND_SOURCE, new_type, prefer_mission))
-		return JNI_FALSE;
-	crash_breadcrumb_v("music source queued: source=%s type=%d prefer=%d", src_copy, new_type, prefer_mission);
-	LOGI("music source queued: source=%s type=%d prefer=%d", src_copy, new_type, prefer_mission);
-	debug_log(DLOG_GAME, "music source queued: source=%s type=%d prefer=%d", src_copy, new_type, prefer_mission);
-	return JNI_TRUE;
+	return result ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jboolean JNICALL

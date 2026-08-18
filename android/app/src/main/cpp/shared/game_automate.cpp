@@ -48,6 +48,7 @@ extern "C" {
 #include "android_screen_advance.h"
 #include "android_graphics_options.h"
 #include "android_log.h"
+#include "android_music_control.h"
 #include "android_texture_debug.h"
 #include "android_meta_actions.h"
 #include "debug_tex_overlay.h"
@@ -426,6 +427,7 @@ struct auto_step {
 	int button_pressed = 1;                /* STEP_SEND_BUTTON: 0 = release only */
 	int meta_action_id = -1;               /* STEP_META_ACTION: action ID */
 	std::string music_operation;           /* STEP_MUSIC_CONTROL operation */
+	std::string music_source;              /* STEP_MUSIC_CONTROL: source name */
 	int music_track = -1;                  /* STEP_MUSIC_CONTROL: index for play */
 	int music_last_track = -1;             /* STEP_MUSIC_CONTROL: range end */
 	bool music_expect_success = true;      /* STEP_MUSIC_CONTROL: expected result */
@@ -2259,6 +2261,7 @@ static int parse_script(const char *json_text)
 			s.button_pressed = step_json.value("pressed", 1);
 			s.meta_action_id = step_json.value("id", -1);
 			s.music_operation = step_json.value("operation", "");
+			s.music_source = step_json.value("source", "");
 			s.music_track = step_json.value("track", -1);
 			s.music_last_track = step_json.value("last_track", -1);
 			s.music_expect_success = step_json.value("expect_success", true);
@@ -3590,6 +3593,8 @@ extern "C" void game_automate_tick(void)
 				result = songs_next_track();
 			else if (s.music_operation == "previous")
 				result = songs_prev_track();
+			else if (s.music_operation == "source")
+				result = android_music_set_source(s.music_source.c_str());
 			else if (s.music_operation == "play")
 				result = songs_play_specific_track(s.music_track);
 			else if (s.music_operation == "play_range")

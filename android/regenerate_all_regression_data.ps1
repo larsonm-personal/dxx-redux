@@ -17,23 +17,35 @@
 .PARAMETER ReportDir
   Directory for durable run artifacts and full-run timing reports.
 
+.PARAMETER Target45Minutes
+  Runs the same randomized percentage of items in every regeneration category,
+  using prior full-run timings to target approximately 45 minutes.
+
+.PARAMETER SampleSeed
+  Optional nonzero random seed for reproducing a targeted sample.
+
 .EXAMPLE
   .\android\regenerate_all_regression_data.ps1
   .\android\regenerate_all_regression_data.ps1 -Category All
   .\android\regenerate_all_regression_data.ps1 -Category Metadata
+  .\android\regenerate_all_regression_data.ps1 -Target45Minutes
 #>
 
 [CmdletBinding()]
 param(
     [ValidateSet('Menu', 'All', 'Cd', 'Fingerprints', 'Metadata')]
     [string]$Category = 'Menu',
-    [string]$ReportDir
+    [string]$ReportDir,
+    [switch]$Target45Minutes,
+    [ValidateRange(0, [int]::MaxValue)]
+    [int]$SampleSeed = 0
 )
 
 $ErrorActionPreference = 'Stop'
 $script:RepoRoot = Split-Path $PSScriptRoot -Parent
 $script:HelpersDir = Join-Path $PSScriptRoot 'helpers'
 . (Join-Path $script:HelpersDir 'test_suite_progress.ps1')
+. (Join-Path $script:HelpersDir 'runtime_targeted_sampling.ps1')
 
 function Get-RegressionDataStages {
     param(
@@ -49,7 +61,7 @@ function Get-RegressionDataStages {
             Description = 'Host extraction, oracle validation, Android import, and launch checks'
             Script = Join-Path $RepoRoot 'game_data\run_all_cd_regressions.ps1'
             Arguments = @('-RefreshOracle')
-            DefaultEstimatedRuntime = 7200
+            DefaultEstimatedRuntime = 5558
         },
         [pscustomobject]@{
             Key = 'Fingerprints'
@@ -57,7 +69,7 @@ function Get-RegressionDataStages {
             Description = 'Disc hashes, CD audio fingerprints, tags, and AcoustID data'
             Script = Join-Path $RepoRoot 'game_data\update_all_fingerprints.ps1'
             Arguments = @('-Force')
-            DefaultEstimatedRuntime = 1800
+            DefaultEstimatedRuntime = 667
         },
         [pscustomobject]@{
             Key = 'Metadata'
@@ -65,7 +77,7 @@ function Get-RegressionDataStages {
             Description = 'Mission archive and extracted-CD level metadata'
             Script = Join-Path $RepoRoot 'android\helpers\regenerate_all_mission_metadata.ps1'
             Arguments = @()
-            DefaultEstimatedRuntime = 7200
+            DefaultEstimatedRuntime = 3312
         }
     )
     if ($Category -eq 'All') {
@@ -81,6 +93,7 @@ function Select-RegressionDataCategory {
     Write-Host '  2. CD extraction, Android import, and launch regressions'
     Write-Host '  3. Disc and music fingerprints, hashes, tags, and AcoustID data'
     Write-Host '  4. Mission level metadata'
+    Write-Host '  T. Randomized approximately 45-minute sample'
     Write-Host '  Q. Cancel'
     while ($true) {
         switch ((Read-Host 'Choose a category').Trim().ToLowerInvariant()) {
@@ -92,9 +105,11 @@ function Select-RegressionDataCategory {
             'fingerprints' { return 'Fingerprints' }
             '4' { return 'Metadata' }
             'metadata' { return 'Metadata' }
+            't' { return 'Target45' }
+            'target' { return 'Target45' }
             'q' { return $null }
             'quit' { return $null }
-            default { Write-Host 'Enter 1, 2, 3, 4, or Q' -ForegroundColor Yellow }
+            default { Write-Host 'Enter 1, 2, 3, 4, T, or Q' -ForegroundColor Yellow }
         }
     }
 }
@@ -108,7 +123,9 @@ function Set-RegressionDataStageEstimates {
     $history = @{}
     $runtimeReader = Join-Path $script:HelpersDir 'get-test-report-runtimes.ps1'
     try {
-        foreach ($record in @(& $runtimeReader -ReportDir $ReportDir)) {
+        # Failed stages often stop early and are not representative runtime
+        # samples for target selection
+        foreach ($record in @(& $runtimeReader -ReportDir $ReportDir -IncludeStatuses PASS)) {
             $history[$record.Name] = [Math]::Max(1, [int]$record.Seconds)
         }
     } catch {
@@ -128,10 +145,78 @@ function Set-RegressionDataStageEstimates {
     return $Stages
 }
 
+function Set-RegressionDataTargetSample {
+    param(
+        [Parameter(Mandatory)][object[]]$Stages,
+        [ValidateRange(0, [int]::MaxValue)][int]$Seed = 0,
+        [ValidateRange(1, [int]::MaxValue)][int]$TargetSeconds = 2700
+    )
+
+    if ($Seed -eq 0) { $Seed = Get-Random -Minimum 1 -Maximum ([int]::MaxValue) }
+    $fullSeconds = @($Stages | Measure-Object -Property EstimatedRuntime -Sum).Sum
+    $fraction = [Math]::Min(1.0, $TargetSeconds / [Math]::Max(1, [double]$fullSeconds))
+    $fractionArgument = $fraction.ToString('R', [Globalization.CultureInfo]::InvariantCulture)
+    foreach ($stage in $Stages) {
+        $stage.Arguments = @($stage.Arguments) + @('-SampleFraction', $fractionArgument, '-SampleSeed', [string]$Seed)
+        $stage.EstimatedRuntime = [Math]::Max(1, [int][Math]::Round(
+                [double]$stage.EstimatedRuntime * $fraction, [MidpointRounding]::AwayFromZero))
+    }
+    return [pscustomobject]@{
+        Stages = $Stages
+        Seed = $Seed
+        Fraction = $fraction
+        EstimatedSeconds = @($Stages | Measure-Object -Property EstimatedRuntime -Sum).Sum
+    }
+}
+
 function ConvertTo-RegressionArtifactName {
     param([Parameter(Mandatory)][string]$Name)
 
     return (([regex]::Replace($Name.ToLowerInvariant(), '[^a-z0-9]+', '_')).Trim('_'))
+}
+
+function Invoke-RegressionDataStageProcess {
+    param(
+        [Parameter(Mandatory)][string]$PowerShellPath,
+        [Parameter(Mandatory)][string]$ScriptPath,
+        [string[]]$Arguments = @(),
+        [Parameter(Mandatory)][string]$LogPath,
+        [int]$PollMilliseconds = 200
+    )
+
+    # Poll files instead of piping child output. A daemon can inherit and keep a
+    # pipe or file handle open, but it cannot keep the direct process alive.
+    $stderrPath = "$LogPath.stderr"
+    [System.IO.File]::WriteAllText($LogPath, '', [System.Text.UTF8Encoding]::new($false))
+    [System.IO.File]::WriteAllText($stderrPath, '', [System.Text.UTF8Encoding]::new($false))
+    $processArguments = @('-NoProfile', '-NonInteractive', '-File', $ScriptPath) + @($Arguments)
+    $process = Start-Process -FilePath $PowerShellPath -ArgumentList $processArguments -NoNewWindow -PassThru `
+        -RedirectStandardOutput $LogPath -RedirectStandardError $stderrPath
+    $stdoutReader = $null
+    $stderrReader = $null
+    try {
+        $stdoutReader = [System.IO.StreamReader]::new([System.IO.FileStream]::new(
+                $LogPath, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read,
+                [System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete
+            ))
+        $stderrReader = [System.IO.StreamReader]::new([System.IO.FileStream]::new(
+                $stderrPath, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read,
+                [System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete
+            ))
+        while (-not $process.HasExited) {
+            while (-not $stdoutReader.EndOfStream) { Write-Host $stdoutReader.ReadLine() }
+            while (-not $stderrReader.EndOfStream) { Write-Host $stderrReader.ReadLine() -ForegroundColor Red }
+            Start-Sleep -Milliseconds $PollMilliseconds
+        }
+        $process.WaitForExit()
+        while (-not $stdoutReader.EndOfStream) { Write-Host $stdoutReader.ReadLine() }
+        while (-not $stderrReader.EndOfStream) { Write-Host $stderrReader.ReadLine() -ForegroundColor Red }
+        return $process.ExitCode
+    } finally {
+        if ($stdoutReader) { $stdoutReader.Dispose() }
+        if ($stderrReader) { $stderrReader.Dispose() }
+        $process.Dispose()
+    }
 }
 
 function Write-RegressionDataJsonSummary {
@@ -246,14 +331,12 @@ function Invoke-RegressionDataStages {
         } else {
             try {
                 if ($logPath) {
-                    [System.IO.File]::WriteAllText($logPath, '', [System.Text.UTF8Encoding]::new($false))
-                    & $PowerShellPath -NoProfile -NonInteractive -File $stage.Script @($stage.Arguments) 2>&1 |
-                        Tee-Object -FilePath $logPath |
-                        Out-Host
+                    $exitCode = Invoke-RegressionDataStageProcess -PowerShellPath $PowerShellPath `
+                        -ScriptPath $stage.Script -Arguments @($stage.Arguments) -LogPath $logPath
                 } else {
                     & $PowerShellPath -NoProfile -NonInteractive -File $stage.Script @($stage.Arguments)
+                    $exitCode = $LASTEXITCODE
                 }
-                $exitCode = $LASTEXITCODE
             } catch {
                 $message = "Stage runner exception: $_"
                 Write-Host $message -ForegroundColor Red
@@ -284,7 +367,8 @@ function Invoke-RegressionDataStages {
         }
     }
 
-    if ($RecordTiming -and $ReportDir -and $results.Count -eq $Stages.Count) {
+    if ($RecordTiming -and $ReportDir -and $results.Count -eq $Stages.Count -and
+        @($results | Where-Object Status -ne 'PASS').Count -eq 0) {
         Write-RegressionDataTimingReport -Path (Join-Path $ReportDir "report_$runStamp.md") -Results $results
     }
     return $results
@@ -296,14 +380,24 @@ if ($MyInvocation.InvocationName -ne '.') {
     }
     New-Item -ItemType Directory -Path $ReportDir -Force | Out-Null
 
-    $selectedCategory = if ($Category -eq 'Menu') { Select-RegressionDataCategory } else { $Category }
+    $selectedCategory = if ($Category -eq 'Menu' -and -not $Target45Minutes) { Select-RegressionDataCategory } else { $Category }
     if (-not $selectedCategory) {
         Write-Host 'Regression data regeneration cancelled' -ForegroundColor Yellow
         exit 0
     }
 
-    $stages = @(Get-RegressionDataStages -RepoRoot $script:RepoRoot -Category $selectedCategory)
+    $targetedSample = $Target45Minutes -or $selectedCategory -eq 'Target45'
+    $stageCategory = if ($selectedCategory -eq 'Target45' -or $selectedCategory -eq 'Menu') { 'All' } else { $selectedCategory }
+    $stages = @(Get-RegressionDataStages -RepoRoot $script:RepoRoot -Category $stageCategory)
     $stages = @(Set-RegressionDataStageEstimates -Stages $stages -ReportDir $ReportDir)
+    if ($targetedSample) {
+        $sample = Set-RegressionDataTargetSample -Stages $stages -Seed $SampleSeed
+        $stages = @($sample.Stages)
+        $estimate = Format-RunnerDurationEstimate -Seconds $sample.EstimatedSeconds
+        Write-Host "45-minute sample seed: $($sample.Seed)" -ForegroundColor Cyan
+        Write-Host ("Sampling {0:P1} from each of $($stages.Count) regeneration stages, estimated $estimate" -f $sample.Fraction) -ForegroundColor Cyan
+        $selectedCategory = 'Target45'
+    }
     $results = @(Invoke-RegressionDataStages -Stages $stages -ReportDir $ReportDir `
             -Category $selectedCategory -RecordTiming:($selectedCategory -eq 'All'))
     $failures = @($results | Where-Object Status -eq 'FAIL')
@@ -311,7 +405,12 @@ if ($MyInvocation.InvocationName -ne '.') {
     Write-Host ''
     $results | Format-Table Name, Status, Elapsed, ExitCode, LogFile -AutoSize
     if ($failures.Count -gt 0) {
-        Write-Host "$($failures.Count) regression data stage(s) failed; later stages were still attempted" -ForegroundColor Red
+        $failureMessage = if ($results.Count -gt 1) {
+            "$($failures.Count) regression data stage(s) failed; later stages were still attempted"
+        } else {
+            'Selected regression data stage failed'
+        }
+        Write-Host $failureMessage -ForegroundColor Red
         exit 1
     }
     Write-Host 'Selected regression data regenerated successfully' -ForegroundColor Green

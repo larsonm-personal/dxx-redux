@@ -15,6 +15,7 @@ param(
     [switch]$Force,         # Re-extract and re-fingerprint everything
     [switch]$SkipAcoustId,  # Skip AcoustID lookups
     [string]$Album,         # Process only this album (by name)
+    [string[]]$Albums,
     [switch]$SkipExtract    # Skip extraction, just fingerprint+lookup
 )
 
@@ -181,14 +182,15 @@ $archives = Get-ChildItem $musicDir -File | Where-Object {
     $_.Extension -match '^\.(zip|7z|DXA)$'
 }
 
-if ($Album) {
+$requestedAlbums = @($Albums) + @($Album) | Where-Object { $_ }
+if ($requestedAlbums.Count -gt 0) {
     $archives = $archives | Where-Object {
         $name = $_.BaseName
         if ($name -match '^(.+?) - ') { $name = $Matches[1] }
-        $name -eq $Album
+        $name -in $requestedAlbums
     }
     if ($archives.Count -eq 0) {
-        Write-Error "No archive found matching album: $Album"
+        Write-Error "No archive found matching album selection: $($requestedAlbums -join ', ')"
     }
 }
 

@@ -28,6 +28,8 @@
 #include "android_save_set.h"
 #include "coop_save.h"
 #include "android_log.h"
+#include "android_music_control.h"
+#include "songs_android_shared.h"
 #include "state_android_shared.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "escort.h"
@@ -703,7 +705,11 @@ int state_android_write_save_metadata(rewind_file *fp, const char *desc,
 	android_desc[STATE_ANDROID_DESC_LENGTH] = '\0';
 	android_params.game_id = state_android_save_meta_game_id();
 	android_params.save_kind = g_android_save_meta_kind;
-	android_params.music_type = GameCfg.MusicType;
+	android_params.music_type =
+	    GameCfg.MusicType == MUSIC_TYPE_BUILTIN &&
+	            android_music_get_prefer_mission_soundtrack()
+	        ? ANDROID_SAVE_META_MUSIC_MISSION
+	        : GameCfg.MusicType;
 	android_params.callsign = Players[Player_num].callsign;
 	android_params.description = android_desc;
 	android_params.mission_name = mission_filename;
@@ -728,15 +734,30 @@ int state_android_write_save_metadata(rewind_file *fp, const char *desc,
 	return 1;
 }
 
-void state_android_restore_music_type_from_meta(const android_save_meta_disk *meta)
+void state_android_restore_music_source_from_meta(const android_save_meta_disk *meta)
 {
-	if (!meta || meta->music_type > MUSIC_TYPE_CUSTOM)
+	int music_type;
+	int prefer_mission;
+
+	if (!meta || meta->music_type > ANDROID_SAVE_META_MUSIC_MISSION)
 		return;
-	if (GameCfg.MusicType == meta->music_type)
+	music_type = meta->music_type;
+	prefer_mission = 0;
+	if (music_type == ANDROID_SAVE_META_MUSIC_MISSION) {
+		music_type = MUSIC_TYPE_BUILTIN;
+		prefer_mission = 1;
+	}
+	if (GameCfg.MusicType == music_type &&
+	    android_music_get_prefer_mission_soundtrack() == prefer_mission)
 		return;
-	debug_log(DLOG_GAME, "restore applying saved music type: game=%s old=%d new=%d",
-	          state_android_game_label(), GameCfg.MusicType, meta->music_type);
-	GameCfg.MusicType = meta->music_type;
+	debug_log(DLOG_GAME,
+	          "restore applying saved music source: game=%s old=%d/%d new=%d/%d",
+	          state_android_game_label(), GameCfg.MusicType,
+	          android_music_get_prefer_mission_soundtrack(), music_type,
+	          prefer_mission);
+	GameCfg.MusicType = music_type;
+	android_music_set_prefer_mission_soundtrack(prefer_mission);
+	android_music_replay_current();
 }
 
 void state_android_restore_matcen_mode_from_meta(const android_save_meta_disk *meta)

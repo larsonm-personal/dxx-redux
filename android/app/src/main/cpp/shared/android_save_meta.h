@@ -7,7 +7,10 @@
 #include "matcen_mode.h"
 
 #define ANDROID_SAVE_META_TAG     0x44584153u /* "DXAS" */
-#define ANDROID_SAVE_META_VERSION 5
+#define ANDROID_SAVE_META_VERSION 6
+
+/* Values 0-3 match MUSIC_TYPE_*; 4 distinguishes mission MIDI from base MIDI. */
+#define ANDROID_SAVE_META_MUSIC_MISSION 4
 
 #define ANDROID_SAVE_META_CALLSIGN_LEN     8
 #define ANDROID_SAVE_META_DESC_LEN         20

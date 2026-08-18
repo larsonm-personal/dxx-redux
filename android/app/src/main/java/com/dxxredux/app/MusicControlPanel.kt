@@ -756,28 +756,7 @@ class MusicControlPanel(
         state = state.copy(source = source)
         invalidate()
         val prefs = a.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
-        val edit = prefs.edit()
-        when (source) {
-            "mission" -> {
-                edit.putBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, true)
-            }
-
-            "files" -> {
-                edit.putBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, false)
-                edit.putString("music_mode", "files")
-            }
-
-            "cd" -> {
-                edit.putBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, false)
-                edit.putString("music_mode", "cd")
-            }
-
-            "midi" -> {
-                edit.putBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, false)
-                edit.putString("music_mode", "midi")
-            }
-        }
-        edit.apply()
+        prefs.edit().putString("music_mode", source).apply()
         if (a.nativeSetMusicSource(source)) {
             onStateChanged()
         }

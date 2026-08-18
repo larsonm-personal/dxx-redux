@@ -5,6 +5,7 @@ internal const val MUSIC_TYPE_NONE = 0
 internal const val MUSIC_TYPE_BUILTIN = 1
 internal const val MUSIC_TYPE_REDBOOK = 2
 internal const val MUSIC_TYPE_CUSTOM = 3
+internal const val MUSIC_SOURCE_MISSION = 4
 
 internal fun saveMetadataMusicTypeLabel(musicType: Int): String =
     when (musicType) {
@@ -12,6 +13,7 @@ internal fun saveMetadataMusicTypeLabel(musicType: Int): String =
         MUSIC_TYPE_BUILTIN -> "Base game MIDI"
         MUSIC_TYPE_REDBOOK -> "CD"
         MUSIC_TYPE_CUSTOM -> "Files"
+        MUSIC_SOURCE_MISSION -> "Mission soundtrack"
         else -> "Unknown"
     }
 

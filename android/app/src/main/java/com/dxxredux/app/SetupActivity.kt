@@ -289,7 +289,7 @@ class SetupActivity : ComponentActivity() {
             return
         }
         val launchGame = resumeCandidate?.game ?: game
-        prepareGameLaunchFiles(launchGame, resumeCandidate?.musicType)?.let { message ->
+        prepareGameLaunchFiles(launchGame)?.let { message ->
             showLaunchPreflightFailure(message)
             return
         }
@@ -430,10 +430,7 @@ class SetupActivity : ComponentActivity() {
         return intent
     }
 
-    private fun prepareGameLaunchFiles(
-        game: String,
-        musicTypeOverride: Int? = null,
-    ): String? {
+    private fun prepareGameLaunchFiles(game: String): String? {
         val fileSetManager = FileSetManager(filesDir)
         val activeSet = fileSetManager.getActive()
         val activeSetDir = fileSetManager.getSetDir(activeSet)
@@ -465,7 +462,7 @@ class SetupActivity : ComponentActivity() {
             modManager.writeEnabledModPaths(game, includeD1MissionZipsForD2)
             writeInitialGameConfig()
             migrateLegacyHalfRenderResolution()
-            if (!writeMusicConfigForLaunch(game, musicTypeOverride, includeD1MissionZipsForD2)) {
+            if (!writeMusicConfigForLaunch(game, includeD1MissionZipsForD2)) {
                 return "Audio Files is selected, but no enabled readable custom track is available"
             }
         } catch (e: InsufficientStorageException) {
@@ -654,9 +651,10 @@ class SetupActivity : ComponentActivity() {
                                 )
                             getSharedPreferences("dxx_prefs", MODE_PRIVATE)
                                 .edit()
-                                .putString("music_mode", if (source in listOf("files", "midi")) source else "cd")
-                                .putBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, preferMissionSoundtrack)
-                                .commit()
+                                .putString(
+                                    "music_mode",
+                                    source.takeIf { it in listOf("mission", "files", "midi", "cd") } ?: "cd",
+                                ).commit()
                             Log.i(
                                 "DXX-Setup",
                                 "write_music_prefs: patched $n file(s) " +
@@ -2106,7 +2104,7 @@ class SetupActivity : ComponentActivity() {
                             ).show()
                     } else {
                         val launchGame = resumeCandidate?.game ?: game
-                        prepareGameLaunchFiles(launchGame, resumeCandidate?.musicType)?.let { message ->
+                        prepareGameLaunchFiles(launchGame)?.let { message ->
                             launchPreflightMessage = message
                             return@launch
                         }

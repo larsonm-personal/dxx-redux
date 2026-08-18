@@ -27,24 +27,59 @@
 param(
     [switch]$NoForce,
     [switch]$RefreshOracle,
-    [switch]$SkipLaunch
+    [switch]$SkipLaunch,
+    [ValidateRange(0.000001, 1.0)][double]$SampleFraction = 1.0,
+    [ValidateRange(0, [int]::MaxValue)][int]$SampleSeed = 0
 )
 
 $ErrorActionPreference = 'Stop'
 $script:RepoRoot = Split-Path $PSScriptRoot -Parent
+. (Join-Path $script:RepoRoot 'android\helpers\runtime_targeted_sampling.ps1')
+. (Join-Path $script:RepoRoot 'android\helpers\json5.ps1')
+
+function New-CdRegressionSampleList {
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [Parameter(Mandatory)][ValidateRange(0.000001, 1.0)][double]$Fraction,
+        [Parameter(Mandatory)][int]$Seed
+    )
+
+    $specs = @(Get-ChildItem (Join-Path $RepoRoot 'game_data') -Recurse -Filter '*_regression.json5' -File |
+            Sort-Object FullName | ForEach-Object {
+                $spec = Read-Json5File $_.FullName
+                [pscustomobject]@{
+                    Name = $_.FullName
+                    Path = $_.FullName
+                    Type = if ($spec.source_type) { [string]$spec.source_type } else { 'unknown' }
+                }
+            })
+    $selected = @()
+    $groups = @($specs | Group-Object Type | Sort-Object Name)
+    for ($index = 0; $index -lt $groups.Count; $index++) {
+        $selected += Select-RuntimeFractionItems -Items @($groups[$index].Group) `
+            -Fraction $Fraction -Seed ($Seed -bxor (501 + $index))
+    }
+    return @($selected | Select-Object -ExpandProperty Path -Unique)
+}
 
 function Get-CdRegressionStages {
     param(
         [string]$RepoRoot,
         [switch]$NoForce,
         [switch]$RefreshOracle,
-        [switch]$SkipLaunch
+        [switch]$SkipLaunch,
+        [string]$SpecListPath
     )
 
-    $forceArgs = if ($NoForce) { @() } else { @('-Force') }
+    [string[]]$forceArgs = if ($NoForce) { @() } else { @('-Force') }
     $testArgs = @('-All', '-BuildAndInstall', '-RestartDevice')
     if ($SkipLaunch) {
         $testArgs += '-SkipLaunch'
+    }
+    if ($SpecListPath) {
+        $forceArgs += @('-SpecListPath', $SpecListPath)
+        $testArgs = @('-SpecListPath', $SpecListPath, '-BuildAndInstall', '-RestartDevice')
+        if ($SkipLaunch) { $testArgs += '-SkipLaunch' }
     }
 
     $stages = @(
@@ -63,7 +98,7 @@ function Get-CdRegressionStages {
         $stages += [pscustomobject]@{
             Name = 'Refresh regression specs'
             Script = Join-Path $RepoRoot 'game_data\generate_regression_specs.ps1'
-            Arguments = @('-Force')
+            Arguments = @('-Force') + $(if ($SpecListPath) { @('-SpecListPath', $SpecListPath) } else { @() })
         }
     }
     $stages += @(
@@ -107,16 +142,28 @@ function Invoke-CdRegressionStages {
 }
 
 if ($MyInvocation.InvocationName -ne '.') {
-    $stages = @(
-        Get-CdRegressionStages -RepoRoot $script:RepoRoot -NoForce:$NoForce `
-            -RefreshOracle:$RefreshOracle -SkipLaunch:$SkipLaunch
-    )
+    $sampleListPath = $null
     try {
+        if ($SampleFraction -lt 1.0) {
+            if ($SampleSeed -eq 0) { $SampleSeed = Get-Random -Minimum 1 -Maximum ([int]::MaxValue) }
+            $selectedSpecs = @(New-CdRegressionSampleList -RepoRoot $script:RepoRoot `
+                    -Fraction $SampleFraction -Seed $SampleSeed)
+            $sampleListPath = Join-Path $script:RepoRoot "temp\cd_regression_sample_$PID.txt"
+            [IO.Directory]::CreateDirectory((Split-Path $sampleListPath -Parent)) | Out-Null
+            [IO.File]::WriteAllLines($sampleListPath, $selectedSpecs, [Text.UTF8Encoding]::new($false))
+            Write-Host ("CD sample: {0}/{1} specs ({2:P1}), seed {3}" -f $selectedSpecs.Count,
+                @(Get-ChildItem (Join-Path $script:RepoRoot 'game_data') -Recurse -Filter '*_regression.json5' -File).Count,
+                $SampleFraction, $SampleSeed)
+        }
+        $stages = @(Get-CdRegressionStages -RepoRoot $script:RepoRoot -NoForce:$NoForce `
+                -RefreshOracle:$RefreshOracle -SkipLaunch:$SkipLaunch -SpecListPath $sampleListPath)
         Invoke-CdRegressionStages -Stages $stages
     } catch {
         Write-Host ''
         Write-Host "FAILED: $($_.Exception.Message)" -ForegroundColor Red
         exit 1
+    } finally {
+        if ($sampleListPath) { Remove-Item -LiteralPath $sampleListPath -Force -ErrorAction SilentlyContinue }
     }
 
     Write-Host ''

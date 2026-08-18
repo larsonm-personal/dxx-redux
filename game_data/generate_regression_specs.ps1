@@ -9,7 +9,10 @@
 .PARAMETER Force
   Overwrite existing extract_regression.json5 files.
 #>
-param([switch]$Force)
+param(
+    [switch]$Force,
+    [string]$SpecListPath
+)
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent  # dxx-redux root
@@ -224,11 +227,15 @@ $cdDir = Join-Path $gameDataDir 'CD images'
 $gogDir = Join-Path $gameDataDir 'gog installers'
 $specCount = 0
 $skipped = 0
+$selectedSpecs = if ($SpecListPath) {
+    @(Get-Content -LiteralPath $SpecListPath | ForEach-Object { [IO.Path]::GetFullPath($_) })
+} else { @() }
 
 Write-Host "=== Generating extract_regression.json5 specs ===" -ForegroundColor Cyan
 
 foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
     $specPath = Join-Path $dir.FullName 'extract_regression.json5'
+    if ($selectedSpecs.Count -gt 0 -and $selectedSpecs -notcontains [IO.Path]::GetFullPath($specPath)) { continue }
     if ((Test-Path $specPath) -and -not $Force) {
         $skipped++
         continue
@@ -336,6 +343,7 @@ if (Test-Path -LiteralPath $combinedLaunchDir) {
     foreach ($helperFile in (Get-ChildItem -LiteralPath $combinedLaunchDir -Recurse -Filter 'combined_launch.json5' -File | Sort-Object FullName)) {
         $dir = $helperFile.Directory
         $specPath = Join-Path $dir.FullName 'extract_regression.json5'
+        if ($selectedSpecs.Count -gt 0 -and $selectedSpecs -notcontains [IO.Path]::GetFullPath($specPath)) { continue }
         if ((Test-Path -LiteralPath $specPath) -and -not $Force) {
             $skipped++
             continue
@@ -436,6 +444,7 @@ foreach ($gog in $gogInstallers) {
 
     # Output spec goes next to the installer
     $specPath = Join-Path $gogDir "$([System.IO.Path]::GetFileNameWithoutExtension($gog.file))_regression.json5"
+    if ($selectedSpecs.Count -gt 0 -and $selectedSpecs -notcontains [IO.Path]::GetFullPath($specPath)) { continue }
     if ((Test-Path $specPath) -and -not $Force) {
         $skipped++
         continue

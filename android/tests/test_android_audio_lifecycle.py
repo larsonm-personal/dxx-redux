@@ -16,6 +16,24 @@ MAIN_ACTIVITY = (
 MUSIC_PANEL = (
     REPO_ROOT / "android/app/src/main/java/com/dxxredux/app/MusicControlPanel.kt"
 ).read_text(encoding="utf-8")
+SETUP_ACTIVITY = (
+    REPO_ROOT / "android/app/src/main/java/com/dxxredux/app/SetupActivity.kt"
+).read_text(encoding="utf-8")
+SETUP_CONFIG = (
+    REPO_ROOT / "android/app/src/main/java/com/dxxredux/app/SetupConfigFiles.kt"
+).read_text(encoding="utf-8")
+MOD_MANAGER = (
+    REPO_ROOT / "android/app/src/main/java/com/dxxredux/app/ModManager.kt"
+).read_text(encoding="utf-8")
+SETUP_SECTIONS = (
+    REPO_ROOT / "android/app/src/main/java/com/dxxredux/app/SetupSections.kt"
+).read_text(encoding="utf-8")
+STATE_SHARED = (
+    REPO_ROOT / "android/app/src/main/cpp/shared/state_android_shared.c"
+).read_text(encoding="utf-8")
+SAVE_META = (REPO_ROOT / "android/app/src/main/cpp/shared/android_save_meta.h").read_text(
+    encoding="utf-8"
+)
 
 
 def function_body(source: str, name: str) -> str:
@@ -212,6 +230,29 @@ class AndroidAudioLifecycleTest(unittest.TestCase):
             MAIN_ACTIVITY,
             r"nativeNextTrack\(\) != 0\) scheduleMusicStateRefresh\(\)",
         )
+
+    def test_save_music_source_overrides_pilot_and_replays_matching_source(self) -> None:
+        for game in ("d1", "d2"):
+            state = (REPO_ROOT / game / "main/state.c").read_text(encoding="utf-8")
+            self.assertIn("state_android_restore_music_source_from_meta", state)
+
+        self.assertNotIn("resumeCandidate?.musicType", SETUP_ACTIVITY)
+        self.assertIn("ANDROID_SAVE_META_MUSIC_MISSION 4", SAVE_META)
+        self.assertIn("android_music_get_prefer_mission_soundtrack()", STATE_SHARED)
+        restore = function_body(STATE_SHARED, "state_android_restore_music_source_from_meta")
+        require_order(
+            self,
+            restore,
+            "GameCfg.MusicType = music_type",
+            "android_music_set_prefer_mission_soundtrack(prefer_mission)",
+            "android_music_replay_current()",
+        )
+        self.assertIn('"mission",', SETUP_CONFIG)
+        self.assertIn('source == "mission" && missionHasSoundtrack', SETUP_CONFIG)
+        self.assertIn("selectBundledMusicForNewMission", MOD_MANAGER)
+        self.assertIn("ModManager(filesDir, context)", SETUP_SECTIONS)
+        self.assertNotIn("PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE", MAIN_ACTIVITY)
+        self.assertNotIn("PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE", MUSIC_PANEL)
 
 
 if __name__ == "__main__":

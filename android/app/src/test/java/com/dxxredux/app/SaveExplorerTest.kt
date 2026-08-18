@@ -197,8 +197,8 @@ class SaveExplorerTest {
     @Test
     fun saveMetadataLabelsCoverEveryNativeValueAndStayConsistent() {
         assertEquals(
-            listOf("None", "Base game MIDI", "CD", "Files", "Unknown"),
-            (0..4).map(::saveMetadataMusicTypeLabel),
+            listOf("None", "Base game MIDI", "CD", "Files", "Mission soundtrack", "Unknown"),
+            (0..5).map(::saveMetadataMusicTypeLabel),
         )
         val kindLabels =
             listOf("manual", "auto_minimize", "auto_exit", "auto_progress", "auto_abort", "auto_periodic", "unknown")

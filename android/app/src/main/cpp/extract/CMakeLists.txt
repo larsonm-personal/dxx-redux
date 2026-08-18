@@ -348,7 +348,8 @@ set(FINGERPRINT_AUDIO_SOURCES
 add_executable(fingerprint_audio ${FINGERPRINT_AUDIO_SOURCES})
 target_include_directories(fingerprint_audio PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${SHARED_DIR}
                                                      ${_DECODERS_DIR})
-target_compile_definitions(fingerprint_audio PRIVATE CHROMAPRINT_NODLL)
+target_compile_definitions(fingerprint_audio PRIVATE CHROMAPRINT_NODLL
+                                                     MUSIC_PCM_DECODED_MAX_BYTES=1073741824u)
 target_link_libraries(fingerprint_audio PRIVATE chromaprint)
 if(MSVC)
     target_compile_options(fingerprint_audio PRIVATE /W3)
@@ -359,8 +360,9 @@ endif()
 add_executable(test_fingerprint_audio_enumeration ${FINGERPRINT_AUDIO_SOURCES})
 target_include_directories(test_fingerprint_audio_enumeration
                            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${SHARED_DIR} ${_DECODERS_DIR})
-target_compile_definitions(test_fingerprint_audio_enumeration PRIVATE CHROMAPRINT_NODLL
-                                                                      FINGERPRINT_AUDIO_TESTING)
+target_compile_definitions(
+    test_fingerprint_audio_enumeration PRIVATE CHROMAPRINT_NODLL FINGERPRINT_AUDIO_TESTING
+                                               MUSIC_PCM_DECODED_MAX_BYTES=1073741824u)
 target_link_libraries(test_fingerprint_audio_enumeration PRIVATE chromaprint)
 if(MSVC)
     target_compile_options(test_fingerprint_audio_enumeration PRIVATE /W3)

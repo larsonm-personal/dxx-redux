@@ -4,10 +4,18 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define MUSIC_PCM_ENCODED_MAX_BYTES  (64u * 1024u * 1024u)
+#ifndef MUSIC_PCM_ENCODED_MAX_BYTES
+#define MUSIC_PCM_ENCODED_MAX_BYTES (64u * 1024u * 1024u)
+#endif
+#ifndef MUSIC_MIDI_ENCODED_MAX_BYTES
 #define MUSIC_MIDI_ENCODED_MAX_BYTES (16u * 1024u * 1024u)
-#define MUSIC_PCM_DECODED_MAX_BYTES  (128u * 1024u * 1024u)
-#define MUSIC_PCM_MAX_EXPANSION      1024u
+#endif
+#ifndef MUSIC_PCM_DECODED_MAX_BYTES
+#define MUSIC_PCM_DECODED_MAX_BYTES (128u * 1024u * 1024u)
+#endif
+#ifndef MUSIC_PCM_MAX_EXPANSION
+#define MUSIC_PCM_MAX_EXPANSION 1024u
+#endif
 
 static inline int music_encoded_size_allowed(int64_t declared_size,
                                              size_t maximum, size_t *size)

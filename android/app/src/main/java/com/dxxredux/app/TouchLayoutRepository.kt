@@ -201,7 +201,7 @@ object TouchLayoutRepository {
         val nextIndex = segments.indexOfFirst { it.binding == TouchBindings.META_GUIDE_NEXT_GOAL }
         segments.add(
             if (nextIndex >= 0) nextIndex else segments.size,
-            RadialSegment("Warp Me", TouchBindings.META_GUIDE_WARP_TO_ME),
+            RadialSegment("Warp to Me", TouchBindings.META_GUIDE_WARP_TO_ME),
         )
         return radial.copy(segments = segments)
     }

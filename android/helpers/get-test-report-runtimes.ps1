@@ -13,7 +13,9 @@ param(
     [string]$ReportDir = (Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) 'temp\test_reports'),
     [string]$ExcludeReportPath,
     [ValidateRange(1, 20)]
-    [int]$MaxReports = 4
+    [int]$MaxReports = 4,
+    [ValidateSet('PASS', 'FAIL', 'TIMEOUT')]
+    [string[]]$IncludeStatuses = @('PASS', 'FAIL', 'TIMEOUT')
 )
 
 $ErrorActionPreference = 'Stop'
@@ -35,7 +37,8 @@ if ($reports.Count -eq 0) {
     return
 }
 
-$resultPattern = '^\|\s*(?:PASS|FAIL|TIMEOUT)\s*\|\s*(?<time>\d+:\d{2}(?::\d{2})?)\s*\|\s*(?<name>[^|]+?)\s*\|'
+$statusPattern = ($IncludeStatuses | ForEach-Object { [regex]::Escape($_) }) -join '|'
+$resultPattern = "^\|\s*(?:$statusPattern)\s*\|\s*(?<time>\d+:\d{2}(?::\d{2})?)\s*\|\s*(?<name>[^|]+?)\s*\|"
 $samplesByName = @{}
 foreach ($report in $reports) {
     foreach ($line in Get-Content -LiteralPath $report.FullName) {

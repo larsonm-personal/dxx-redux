@@ -54,11 +54,19 @@
     two-player lobby, launch, and in-game assertions. The default profile keeps
     the complete multiplayer smoke but omits the soak hold.
 
+.PARAMETER Target45Minutes
+    Select the same randomized percentage from every infrastructure and script
+    type group, using recent report timings to target approximately 45 minutes.
+
+.PARAMETER SampleSeed
+    Optional nonzero seed for reproducing a targeted sample.
+
 .EXAMPLE
     .\run_all_tests.ps1
     .\run_all_tests.ps1 -Filter "test_death*"
     .\run_all_tests.ps1 -StopOnFail
     .\run_all_tests.ps1 -SkipDocker
+    .\run_all_tests.ps1 -Target45Minutes
 #>
 
 param(
@@ -71,7 +79,10 @@ param(
     [switch]$FullExtracts,
     [int]$ExtractSampleCount = 1,
     [switch]$ExtendedGraphics,
-    [switch]$ExtendedMultiplayer
+    [switch]$ExtendedMultiplayer,
+    [switch]$Target45Minutes,
+    [ValidateRange(0, [int]::MaxValue)]
+    [int]$SampleSeed = 0
 )
 
 $ErrorActionPreference = "Stop"
@@ -81,6 +92,7 @@ $repoRoot = Split-Path $scriptDir
 
 . "$helpersDir\test_helpers.ps1"
 . "$helpersDir\test_suite_progress.ps1"
+. "$helpersDir\runtime_targeted_sampling.ps1"
 . (Join-Path (Join-Path $scriptDir "tests") "extract_regression_spec_helpers.ps1")
 . (Join-Path (Join-Path $scriptDir "tests") "input_demo_host_build_guard.ps1")
 . (Join-Path (Join-Path $scriptDir "tests") "input_demo_graphics_canary_helpers.ps1")
@@ -738,7 +750,7 @@ $knownSelectedRuntimes = @(
         ForEach-Object { [int]$historicalRuntimeByName[$_.Name] } |
         Sort-Object
 )
-$fallbackRuntime = 1
+$fallbackRuntime = if ($Target45Minutes) { 60 } else { 1 }
 if ($knownSelectedRuntimes.Count -gt 0) {
     $middle = [int][Math]::Floor($knownSelectedRuntimes.Count / 2)
     $fallbackRuntime = if (($knownSelectedRuntimes.Count % 2) -eq 0) {
@@ -760,6 +772,40 @@ for ($index = 0; $index -lt $executionTests.Count; $index++) {
     }
     $test["ProgressIndex"] = $index + 1
     $test["EstimatedRuntime"] = $estimatedRuntime
+}
+
+$runtimeSample = $null
+if ($Target45Minutes -and $executionTests.Count -gt 0) {
+    $runtimeSample = Select-RuntimeProportionalItems -Items $executionTests -TargetSeconds 2700 `
+        -GroupProperties Requires, Type -Seed $SampleSeed
+    $sampledTests = @($runtimeSample.Items)
+    $sampledNames = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach ($test in $sampledTests) { [void]$sampledNames.Add([string]$test.Name) }
+
+    # Graphics comparisons consume the matching headless result from this run.
+    foreach ($test in @($sampledTests | Where-Object { $_.Name -match '_graphics(?:_canary)?$' })) {
+        $headlessName = $test.Name -replace '_graphics(?:_canary)?$', ''
+        $headless = $executionTests | Where-Object Name -eq $headlessName | Select-Object -First 1
+        if ($headless -and $sampledNames.Add([string]$headless.Name)) {
+            $sampledTests += $headless
+            $runtimeSample.EstimatedSeconds += [int]$headless.EstimatedRuntime
+        }
+    }
+    foreach ($test in $executionTests) {
+        if (-not $sampledNames.Contains([string]$test.Name)) {
+            $profileSkipped += @{ Name = $test.Name; Reason = 'not selected by 45-minute sample'; Type = $test.Type }
+        }
+    }
+    $runnableTests = @($sampledTests)
+    $tierNone = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq 'none' })
+    $tierServer = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq 'server' })
+    $tierSingleEmu = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq 'emulator' })
+    $tierDualEmu = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq 'two_emulators' })
+    $tierExtract = Sort-TestsForExecution @($runnableTests | Where-Object { $_.Requires -eq 'extract' })
+    $executionTests = @($tierNone) + @($tierServer) + @($tierSingleEmu) + @($tierExtract) + @($tierDualEmu)
+    for ($index = 0; $index -lt $executionTests.Count; $index++) {
+        $executionTests[$index]['ProgressIndex'] = $index + 1
+    }
 }
 $selectedRegressionDemoTests = @($runnableTests | Where-Object { $_.BaseName -eq "test_input_demo_regressions" })
 $selectedRegressionDemoSections = @($selectedRegressionDemoTests | ForEach-Object { $_.DemoSection } | Where-Object { $_ } | Sort-Object -Unique)
@@ -1318,6 +1364,14 @@ Write-Host "  Tier 1 (server only):    $($tierServer.Count)"
 Write-Host "  Tier 2 (single emu):     $($tierSingleEmu.Count)"
 Write-Host "  Tier 3 (extract):        $($tierExtract.Count)"
 Write-Host "  Tier 4 (dual emu):       $($tierDualEmu.Count)"
+if ($runtimeSample) {
+    $sampleEstimate = Format-RunnerDurationEstimate -Seconds $runtimeSample.EstimatedSeconds
+    Write-Host "  45-minute sample:       seed $($runtimeSample.Seed), $($executionTests.Count) tests, estimated $sampleEstimate"
+    foreach ($group in $runtimeSample.Groups) {
+        Write-Host ("    {0}: {1}/{2} ({3:P0}, before required dependencies)" -f `
+                $group.Name, $group.Selected, $group.Available, $group.Fraction)
+    }
+}
 $historicalTimingCount = @($executionTests | Where-Object { $historicalRuntimeByName.ContainsKey($_.Name) }).Count
 if ($historicalReportPath) {
     Write-Host "  Historical timings:    $historicalTimingCount/$($executionTests.Count) from $historicalReportCount recent report(s), newest $(Split-Path $historicalReportPath -Leaf)"
@@ -1873,6 +1927,13 @@ $md += "- Skipped: $totalSkipped"
 $md += "- Not run: $($notRun.Count)"
 $md += "- Total time: $totalElapsed"
 $md += "- Per-test timeout: ${TestTimeoutSeconds}s"
+if ($runtimeSample) {
+    $md += "- 45-minute sample: seed $($runtimeSample.Seed), $($executionTests.Count) tests, estimated $(Format-RunnerDurationEstimate -Seconds $runtimeSample.EstimatedSeconds)"
+    foreach ($group in $runtimeSample.Groups) {
+        $md += ("  - {0}: {1}/{2} ({3:P0}, before required dependencies)" -f `
+                $group.Name, $group.Selected, $group.Available, $group.Fraction)
+    }
+}
 $md += "- Auto-provisioned: emu1=$($script:startedEmu1) emu2=$($script:startedEmu2) server=$(($null -ne $script:autoServerProc)) docker=$($script:startedDocker)"
 if ($selectedRegressionDemoSections.Count -gt 0) {
     $md += "- Demo profile: full headless corpus + $demoGraphicsProfile; $selectedRegressionDemoReplayCount replay runs; graphics results compared with their primary headless result"

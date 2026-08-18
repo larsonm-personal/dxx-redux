@@ -548,6 +548,11 @@ function Clear-DirectImportScratch {
     try {
         Clear-AppPrivateDirectoryContents "/data/data/$PACKAGE/files/tmp_import"
     } catch { }
+    try {
+        # This cache is reproducible and can consume hundreds of MiB during a
+        # long extraction run, leaving too little room to stage a full CD
+        Clear-AppPrivateDirectoryContents "/data/data/$PACKAGE/cache/mission_zip_music"
+    } catch { }
 }
 
 function Ensure-AppPrivateFile {
@@ -1207,7 +1212,9 @@ if ($useDirectCdImport) {
     }
 
     Write-Status "Triggering setup-command CD import..."
-    Send-SetupCdImport -CuePath $deviceCuePath -BinPaths $deviceImagePaths -IncludeAudio $true
+    # Audio fingerprint coverage is regenerated separately, so keeping it off here
+    # avoids duplicate work and preserves space for data-track extraction
+    Send-SetupCdImport -CuePath $deviceCuePath -BinPaths $deviceImagePaths -IncludeAudio $false
 
     $importReady = $false
     $importTimeoutSeconds = 300

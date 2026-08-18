@@ -39,6 +39,22 @@ Assert-True ((Get-RegressionDataStages -RepoRoot $repoRoot -Category Fingerprint
 Assert-True ((Get-RegressionDataStages -RepoRoot $repoRoot -Category Metadata)[0].Key -eq 'Metadata') `
     'Metadata-only selection should select the metadata stage'
 
+$sampleStages = @(Get-RegressionDataStages -RepoRoot $repoRoot)
+$sampleEstimates = @(600, 1200, 1800)
+for ($index = 0; $index -lt $sampleStages.Count; $index++) {
+    $sampleStages[$index] | Add-Member -NotePropertyName EstimatedRuntime -NotePropertyValue $sampleEstimates[$index]
+}
+$targetedSample = Set-RegressionDataTargetSample -Stages $sampleStages -TargetSeconds 1800 -Seed 12
+Assert-True ($targetedSample.Stages.Count -eq 3 -and $targetedSample.EstimatedSeconds -eq 1800) `
+    'Targeted regeneration should apply its runtime budget across every category'
+Assert-True ($targetedSample.Seed -eq 12) 'Targeted regeneration should preserve the requested seed'
+Assert-True ([Math]::Abs($targetedSample.Fraction - 0.5) -lt 0.0001) `
+    'Targeted regeneration should derive one common percentage from full-run history'
+foreach ($stage in $targetedSample.Stages) {
+    Assert-True (($stage.Arguments -join ' ') -match '-SampleFraction 0.5 -SampleSeed 12') `
+        'Every regeneration stage should receive the same sample percentage and seed'
+}
+
 foreach ($templateName in @(
         'test_mission_zip_batch_import_metadata.json5',
         'test_mission_zip_batch_import_metadata_launch.json5'
@@ -102,8 +118,20 @@ exit $($definition.ExitCode)
         'Durable summary should contain the complete failed run'
     Assert-True (@(Get-ChildItem -LiteralPath $runDir[0].FullName -Filter '*.log').Count -eq 3) `
         'Full regeneration should save one log per stage'
-    Assert-True (@(Get-ChildItem -LiteralPath $reportDir -File -Filter 'report_*.md').Count -eq 1) `
-        'Complete full regeneration should save timing history even when a stage fails'
+    Assert-True (@(Get-ChildItem -LiteralPath $reportDir -File -Filter 'report_*.md').Count -eq 0) `
+        'Failed regeneration should not save misleading short timing history'
+
+    $historyPath = Join-Path $reportDir 'report_history.md'
+    [System.IO.File]::WriteAllText(
+        $historyPath,
+        "| FAIL | 00:01 | Disc and music fingerprint data | regeneration |`n" +
+        "| PASS | 25:00 | Disc and music fingerprint data | regeneration |`n",
+        [System.Text.UTF8Encoding]::new($false)
+    )
+    $historyStage = @(Get-RegressionDataStages -RepoRoot $repoRoot -Category Fingerprints)
+    $historyStage = @(Set-RegressionDataStageEstimates -Stages $historyStage -ReportDir $reportDir)
+    Assert-True ($historyStage[0].EstimatedRuntime -eq 1500) `
+        'Targeted regeneration estimates should ignore shortened failed runs'
 
     $partialReportDir = Join-Path $tempRoot 'partial_reports'
     $partial = @($testStages | Select-Object -First 1)
@@ -112,6 +140,33 @@ exit $($definition.ExitCode)
         'Partial regeneration should run its selected stage'
     Assert-True (@(Get-ChildItem -LiteralPath $partialReportDir -File -Filter 'report_*.md').Count -eq 0) `
         'Partial regeneration should not write timing history'
+
+    $backgroundPidPath = Join-Path $tempRoot 'background.pid'
+    $inheritedHandleScript = Join-Path $tempRoot 'inherited_handle.ps1'
+    $inheritedHandleContent = @"
+param([string]`$PidPath)
+`$child = Start-Process -FilePath (Get-Process -Id `$PID).Path -ArgumentList '-NoProfile', '-Command', 'Start-Sleep -Seconds 30' -NoNewWindow -PassThru
+[System.IO.File]::WriteAllText(`$PidPath, `$child.Id.ToString())
+Write-Output 'stage complete'
+exit 7
+"@
+    [System.IO.File]::WriteAllText($inheritedHandleScript, $inheritedHandleContent, [System.Text.UTF8Encoding]::new($false))
+    $hangLogPath = Join-Path $tempRoot 'inherited_handle.log'
+    try {
+        $hangStopwatch = [Diagnostics.Stopwatch]::StartNew()
+        $hangExitCode = Invoke-RegressionDataStageProcess -PowerShellPath (Get-Process -Id $PID).Path `
+            -ScriptPath $inheritedHandleScript -Arguments @($backgroundPidPath) -LogPath $hangLogPath -PollMilliseconds 20
+        $hangStopwatch.Stop()
+        Assert-True ($hangExitCode -eq 7) 'Detached-child stage should preserve the direct child exit code'
+        Assert-True ($hangStopwatch.Elapsed.TotalSeconds -lt 10) `
+            'Detached child inheriting output handles should not keep the stage runner open'
+        Assert-True ((Get-Content -LiteralPath $hangLogPath -Raw) -match 'stage complete') `
+            'Non-pipelined stage runner should retain child output'
+    } finally {
+        if (Test-Path -LiteralPath $backgroundPidPath) {
+            Stop-Process -Id ([int](Get-Content -LiteralPath $backgroundPidPath -Raw)) -Force -ErrorAction SilentlyContinue
+        }
+    }
 } finally {
     Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
 }

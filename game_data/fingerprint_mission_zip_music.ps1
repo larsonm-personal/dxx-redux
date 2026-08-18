@@ -12,6 +12,7 @@ param(
     [switch]$UpdateDatabase,
     [switch]$BudgetTestOnly,
     [string]$Zip,
+    [string[]]$Zips,
     [string]$MissionDir = (Join-Path $PSScriptRoot "mission_files"),
     [string]$OutputRoot = (Join-Path $PSScriptRoot "music"),
     [string]$FingerprintExePath
@@ -810,9 +811,10 @@ $script:minDelayMs = 350
 $zipFiles = @(Get-ChildItem $MissionDir -File |
         Where-Object { $_.Extension -match '^\.(zip|7z|rar)$' } |
         Sort-Object Name)
-if ($Zip) {
-    $zipFiles = @($zipFiles | Where-Object { $_.Name -eq $Zip -or $_.BaseName -eq $Zip })
-    if ($zipFiles.Count -eq 0) { Write-Error "No mission ZIP found matching: $Zip" }
+$requestedZips = @($Zips) + @($Zip) | Where-Object { $_ }
+if ($requestedZips.Count -gt 0) {
+    $zipFiles = @($zipFiles | Where-Object { $_.Name -in $requestedZips -or $_.BaseName -in $requestedZips })
+    if ($zipFiles.Count -eq 0) { Write-Error "No mission ZIP found matching selection: $($requestedZips -join ', ')" }
 }
 
 Write-Host "Found $($zipFiles.Count) mission ZIP(s) to process"

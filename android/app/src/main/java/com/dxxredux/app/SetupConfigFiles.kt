@@ -195,41 +195,29 @@ internal data class MusicLaunchPolicy(
 )
 
 internal fun resolveMusicLaunchPolicy(
-    musicMode: String?,
-    musicTypeOverride: Int?,
+    musicSource: String?,
     missionHasSoundtrack: Boolean,
-    useMissionSoundtrackWhenAvailable: Boolean,
 ): MusicLaunchPolicy {
-    val mode = musicMode ?: "midi"
-    val useMissionZipSoundtrack =
-        musicTypeOverride == null &&
-            useMissionSoundtrackWhenAvailable &&
-            missionHasSoundtrack
+    val source = musicSource?.takeIf { it in setOf("mission", "midi", "cd", "files") } ?: "midi"
+    val useMissionZipSoundtrack = source == "mission" && missionHasSoundtrack
     val musicType =
-        when {
-            musicTypeOverride != null -> musicTypeOverride.coerceIn(MUSIC_TYPE_NONE, MUSIC_TYPE_CUSTOM).toString()
-            useMissionZipSoundtrack -> MUSIC_TYPE_BUILTIN.toString()
-            mode == "midi" -> MUSIC_TYPE_BUILTIN.toString()
-            mode == "cd" -> MUSIC_TYPE_REDBOOK.toString()
-            mode == "files" -> MUSIC_TYPE_CUSTOM.toString()
+        when (source) {
+            "mission", "midi" -> MUSIC_TYPE_BUILTIN.toString()
+            "cd" -> MUSIC_TYPE_REDBOOK.toString()
+            "files" -> MUSIC_TYPE_CUSTOM.toString()
             else -> MUSIC_TYPE_BUILTIN.toString()
         }
 
     return MusicLaunchPolicy(
         musicType = musicType,
         useMissionZipSoundtrack = useMissionZipSoundtrack,
-        useCdTrackOrder =
-            musicTypeOverride == MUSIC_TYPE_REDBOOK ||
-                (!useMissionZipSoundtrack && musicTypeOverride == null && mode == "cd"),
-        useCustomAudioFiles =
-            musicTypeOverride == MUSIC_TYPE_CUSTOM ||
-                (!useMissionZipSoundtrack && musicTypeOverride == null && mode == "files"),
+        useCdTrackOrder = source == "cd",
+        useCustomAudioFiles = source == "files",
     )
 }
 
 internal fun SetupActivity.writeMusicConfigForLaunch(
     game: String? = null,
-    musicTypeOverride: Int? = null,
     includeD1MissionZipsForD2: Boolean = true,
 ): Boolean {
     val prefs = getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
@@ -238,9 +226,10 @@ internal fun SetupActivity.writeMusicConfigForLaunch(
             preferredGame = game ?: "d2",
             filesDir = filesDir.absolutePath,
         )
-    val mode =
+    val source =
         if (pilotMusic.hasPilotFile) {
             when (pilotMusic.source) {
+                "mission",
                 "files",
                 "cd",
                 "midi",
@@ -251,20 +240,12 @@ internal fun SetupActivity.writeMusicConfigForLaunch(
         } else {
             prefs.getString("music_mode", "midi") ?: "midi"
         }
-    val useMissionSoundtrack =
-        if (pilotMusic.hasPilotFile) {
-            pilotMusic.preferMissionSoundtrack
-        } else {
-            prefs.getBoolean(PREF_USE_MISSION_SOUNDTRACK_WHEN_AVAILABLE, true)
-        }
     val policy =
         resolveMusicLaunchPolicy(
-            musicMode = mode,
-            musicTypeOverride = musicTypeOverride,
+            musicSource = source,
             missionHasSoundtrack =
                 game != null &&
                     ModManager(filesDir).hasEnabledMissionZipSoundtrack(game, includeD1MissionZipsForD2),
-            useMissionSoundtrackWhenAvailable = useMissionSoundtrack,
         )
 
     if (policy.useMissionZipSoundtrack) {
@@ -294,4 +275,28 @@ internal fun SetupActivity.writeMusicConfigForLaunch(
         updateConfigFilesForGame(filesDir, game, settings)
     }
     return true
+}
+
+internal fun selectBundledMusicForNewMission(
+    filesDir: File,
+    context: Context,
+    game: String,
+): Int {
+    val existing = NativePilotPreferences.readMusicPrefsForAll(game, filesDir.absolutePath)
+    val count =
+        NativePilotPreferences.writeMusicPrefsToAll(
+            filesDir.absolutePath,
+            "mission",
+            true,
+            existing.playOrder,
+            existing.volume,
+        )
+    if (count >= 0) {
+        context
+            .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
+            .edit()
+            .putString("music_mode", "mission")
+            .apply()
+    }
+    return count
 }

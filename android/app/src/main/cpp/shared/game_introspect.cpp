@@ -1840,6 +1840,7 @@ extern "C" char *game_introspect_get_state(void)
 		const int have_track = songs_get_track_info(&type, &track, &total, name, sizeof(name));
 		json music = {
 			{ "active", song_playing >= 0 },
+			{ "prefer_mission", android_music_get_prefer_mission_soundtrack() != 0 },
 			{ "song_playing", song_playing },
 			{ "startup_title_requested", g_startup_title_song_requested != 0 },
 			{ "type", type },

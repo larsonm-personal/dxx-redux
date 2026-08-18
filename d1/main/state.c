@@ -2740,7 +2740,7 @@ RetryObjectLoading:
 		int have_coop_meta = state_android_read_coop_metadata_trailer(fp, &coop_meta);
 		state_android_restore_matcen_mode_from_meta(have_android_meta ? &android_meta : NULL);
 		if (have_android_meta)
-			state_android_restore_music_type_from_meta(&android_meta);
+			state_android_restore_music_source_from_meta(&android_meta);
 		if (have_coop_meta) {
 			COOPLOG("coop_save: restored metadata (%d active, %d absent)",
 				coop_meta.num_active_players, coop_meta.num_absent_players);

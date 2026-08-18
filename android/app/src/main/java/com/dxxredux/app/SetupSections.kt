@@ -194,7 +194,7 @@ internal fun ModsSection(
     refreshTrigger: Int,
 ) {
     val context = LocalContext.current
-    val modManager = remember { ModManager(filesDir) }
+    val modManager = remember { ModManager(filesDir, context) }
     var mods by remember { mutableStateOf(modManager.listMods()) }
     var expanded by remember { mutableStateOf(false) }
     var deleteTarget by remember { mutableStateOf<String?>(null) }

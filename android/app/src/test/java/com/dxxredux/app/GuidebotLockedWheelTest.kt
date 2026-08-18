@@ -79,16 +79,16 @@ class GuidebotLockedWheelTest {
             listOf(
                 RadialSegment("Secret", TouchBindings.META_GUIDE_FIND_SECRET),
                 RadialSegment("Release", TouchBindings.META_GUIDE_RELEASE_CONTROL),
-                RadialSegment("Warp Me", TouchBindings.META_GUIDE_WARP_TO_ME),
+                RadialSegment("Warp to Me", TouchBindings.META_GUIDE_WARP_TO_ME),
                 RadialSegment("Next", TouchBindings.META_GUIDE_NEXT_GOAL),
             )
 
         assertEquals(
-            listOf("Warp Me", "Next"),
+            listOf("Warp to Me", "Next"),
             guideWheelVisibleSegments(segments, secretAreaRevealed = false).map { it.label },
         )
         assertEquals(
-            listOf("Secret", "Warp Me", "Next"),
+            listOf("Secret", "Warp to Me", "Next"),
             guideWheelVisibleSegments(segments, secretAreaRevealed = true).map { it.label },
         )
     }

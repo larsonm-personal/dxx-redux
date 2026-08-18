@@ -11,7 +11,8 @@
 # Usage: .\extract_all_gog.ps1 [-Force] [-SkipBuild]
 param(
     [switch]$Force,
-    [switch]$SkipBuild
+    [switch]$SkipBuild,
+    [string]$SpecListPath
 )
 
 $ErrorActionPreference = "Stop"
@@ -108,6 +109,14 @@ if (-not (Test-Path $GogDir)) {
 $installers = Get-ChildItem -Path $GogDir -File | Where-Object {
     $_.Extension -in '.exe', '.pkg'
 } | Sort-Object Name
+
+if ($SpecListPath) {
+    $selectedSpecs = @(Get-Content -LiteralPath $SpecListPath | ForEach-Object { [IO.Path]::GetFullPath($_) })
+    $installers = @($installers | Where-Object {
+            $specName = "$($_.BaseName)_regression.json5"
+            $selectedSpecs -contains [IO.Path]::GetFullPath((Join-Path $GogDir $specName))
+        })
+}
 
 if ($installers.Count -eq 0) {
     Write-Error "No .exe or .pkg files found in $GogDir"

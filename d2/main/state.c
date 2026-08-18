@@ -3568,7 +3568,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		int have_coop_meta = state_android_read_coop_metadata_trailer(fp, &coop_meta);
 		state_android_restore_matcen_mode_from_meta(have_android_meta ? &android_meta : NULL);
 		if (have_android_meta) {
-			state_android_restore_music_type_from_meta(&android_meta);
+			state_android_restore_music_source_from_meta(&android_meta);
 			escort_restore_route_target_mode(android_meta.guidebot_route_target_mode);
 		}
 		if (have_coop_meta) {

@@ -1,10 +1,10 @@
 function Test-ExtractRegressionAdbTransportFailure {
     param([AllowEmptyString()][string]$Reason)
 
-    if ($Reason -match '^ADB timeout \(\d+s\):') {
+    if ($Reason -match '(?i)ADB timeout \(\d+s\):') {
         return $true
     }
-    if ($Reason -notmatch '^ADB failed \(') {
+    if ($Reason -notmatch '(?i)ADB failed \(') {
         return $false
     }
 
