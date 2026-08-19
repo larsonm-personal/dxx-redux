@@ -791,6 +791,8 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
                 .put("current_detail", routeMetadata.currentDetail)
                 .put("current_progress_completed", routeMetadata.currentProgressCompleted)
                 .put("current_progress_total", routeMetadata.currentProgressTotal)
+                .put("last_finished_mission", routeMetadata.lastFinishedMission)
+                .put("last_finished_level", routeMetadata.lastFinishedLevel)
                 .put("updated_at_ms", routeMetadata.updatedAtMs),
         )
 

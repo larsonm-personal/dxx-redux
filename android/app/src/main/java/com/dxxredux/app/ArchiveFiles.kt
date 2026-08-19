@@ -335,7 +335,9 @@ private fun nativeRarCapabilityFailure(error: Throwable): RarNativeCapabilityExc
         }
 
         else -> {
-            null
+            error.cause
+                ?.takeIf { it !== error }
+                ?.let(::nativeRarCapabilityFailure)
         }
     }
 

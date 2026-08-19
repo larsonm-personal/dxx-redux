@@ -227,9 +227,11 @@ $cdDir = Join-Path $gameDataDir 'CD images'
 $gogDir = Join-Path $gameDataDir 'gog installers'
 $specCount = 0
 $skipped = 0
-$selectedSpecs = if ($SpecListPath) {
-    @(Get-Content -LiteralPath $SpecListPath | ForEach-Object { [IO.Path]::GetFullPath($_) })
-} else { @() }
+$selectedSpecs = @(
+    if ($SpecListPath) {
+        Get-Content -LiteralPath $SpecListPath | ForEach-Object { [IO.Path]::GetFullPath($_) }
+    }
+)
 
 Write-Host "=== Generating extract_regression.json5 specs ===" -ForegroundColor Cyan
 

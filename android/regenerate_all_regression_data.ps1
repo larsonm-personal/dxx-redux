@@ -18,11 +18,12 @@
   Directory for durable run artifacts and full-run timing reports.
 
 .PARAMETER Target45Minutes
-  Runs the same randomized percentage of items in every regeneration category,
-  using prior full-run timings to target approximately 45 minutes.
+  Runs the same percentage of each regeneration target type in resumable hash
+  order, using prior full-run timings to cross approximately 45 minutes.
 
 .PARAMETER SampleSeed
-  Optional nonzero random seed for reproducing a targeted sample.
+  Optional seed for reproducing the initial fallback position when no prior
+  targeted run cursor can be recovered.
 
 .EXAMPLE
   .\android\regenerate_all_regression_data.ps1
@@ -93,7 +94,7 @@ function Select-RegressionDataCategory {
     Write-Host '  2. CD extraction, Android import, and launch regressions'
     Write-Host '  3. Disc and music fingerprints, hashes, tags, and AcoustID data'
     Write-Host '  4. Mission level metadata'
-    Write-Host '  T. Randomized approximately 45-minute sample'
+    Write-Host '  T. Resumable hash-ring sample targeting 45 minutes'
     Write-Host '  Q. Cancel'
     while ($true) {
         switch ((Read-Host 'Choose a category').Trim().ToLowerInvariant()) {
@@ -149,7 +150,8 @@ function Set-RegressionDataTargetSample {
     param(
         [Parameter(Mandatory)][object[]]$Stages,
         [ValidateRange(0, [int]::MaxValue)][int]$Seed = 0,
-        [ValidateRange(1, [int]::MaxValue)][int]$TargetSeconds = 2700
+        [ValidateRange(1, [int]::MaxValue)][int]$TargetSeconds = 2700,
+        [string]$StatePath
     )
 
     if ($Seed -eq 0) { $Seed = Get-Random -Minimum 1 -Maximum ([int]::MaxValue) }
@@ -157,15 +159,20 @@ function Set-RegressionDataTargetSample {
     $fraction = [Math]::Min(1.0, $TargetSeconds / [Math]::Max(1, [double]$fullSeconds))
     $fractionArgument = $fraction.ToString('R', [Globalization.CultureInfo]::InvariantCulture)
     foreach ($stage in $Stages) {
-        $stage.Arguments = @($stage.Arguments) + @('-SampleFraction', $fractionArgument, '-SampleSeed', [string]$Seed)
-        $stage.EstimatedRuntime = [Math]::Max(1, [int][Math]::Round(
-                [double]$stage.EstimatedRuntime * $fraction, [MidpointRounding]::AwayFromZero))
+        $stage.Arguments = @($stage.Arguments) + @('-SampleFraction', $fractionArgument, '-SampleSeed', [string]$Seed,
+            '-SampleStatePath', $StatePath)
+        $stage.EstimatedRuntime = [Math]::Max(1, [int][Math]::Ceiling([double]$stage.EstimatedRuntime * $fraction))
+    }
+    $estimatedSeconds = @($Stages | Measure-Object -Property EstimatedRuntime -Sum).Sum
+    if ($fraction -lt 1.0 -and $estimatedSeconds -le $TargetSeconds) {
+        $Stages[-1].EstimatedRuntime += $TargetSeconds + 1 - $estimatedSeconds
+        $estimatedSeconds = $TargetSeconds + 1
     }
     return [pscustomobject]@{
         Stages = $Stages
         Seed = $Seed
         Fraction = $fraction
-        EstimatedSeconds = @($Stages | Measure-Object -Property EstimatedRuntime -Sum).Sum
+        EstimatedSeconds = $estimatedSeconds
     }
 }
 
@@ -391,11 +398,12 @@ if ($MyInvocation.InvocationName -ne '.') {
     $stages = @(Get-RegressionDataStages -RepoRoot $script:RepoRoot -Category $stageCategory)
     $stages = @(Set-RegressionDataStageEstimates -Stages $stages -ReportDir $ReportDir)
     if ($targetedSample) {
-        $sample = Set-RegressionDataTargetSample -Stages $stages -Seed $SampleSeed
+        $sampleStatePath = Join-Path $ReportDir 'runtime_sample_state.json'
+        $sample = Set-RegressionDataTargetSample -Stages $stages -Seed $SampleSeed -StatePath $sampleStatePath
         $stages = @($sample.Stages)
         $estimate = Format-RunnerDurationEstimate -Seconds $sample.EstimatedSeconds
-        Write-Host "45-minute sample seed: $($sample.Seed)" -ForegroundColor Cyan
-        Write-Host ("Sampling {0:P1} from each of $($stages.Count) regeneration stages, estimated $estimate" -f $sample.Fraction) -ForegroundColor Cyan
+        Write-Host "45-minute hash-ring fallback seed: $($sample.Seed)" -ForegroundColor Cyan
+        Write-Host ("Sampling {0:P1} from every regeneration target type, estimated $estimate" -f $sample.Fraction) -ForegroundColor Cyan
         $selectedCategory = 'Target45'
     }
     $results = @(Invoke-RegressionDataStages -Stages $stages -ReportDir $ReportDir `

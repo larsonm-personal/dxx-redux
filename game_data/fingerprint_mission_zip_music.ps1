@@ -811,7 +811,7 @@ $script:minDelayMs = 350
 $zipFiles = @(Get-ChildItem $MissionDir -File |
         Where-Object { $_.Extension -match '^\.(zip|7z|rar)$' } |
         Sort-Object Name)
-$requestedZips = @($Zips) + @($Zip) | Where-Object { $_ }
+$requestedZips = @(@($Zips) + @($Zip) | Where-Object { $_ })
 if ($requestedZips.Count -gt 0) {
     $zipFiles = @($zipFiles | Where-Object { $_.Name -in $requestedZips -or $_.BaseName -in $requestedZips })
     if ($zipFiles.Count -eq 0) { Write-Error "No mission ZIP found matching selection: $($requestedZips -join ', ')" }

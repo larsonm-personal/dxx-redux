@@ -45,14 +45,16 @@ for ($index = 0; $index -lt $sampleStages.Count; $index++) {
     $sampleStages[$index] | Add-Member -NotePropertyName EstimatedRuntime -NotePropertyValue $sampleEstimates[$index]
 }
 $targetedSample = Set-RegressionDataTargetSample -Stages $sampleStages -TargetSeconds 1800 -Seed 12
-Assert-True ($targetedSample.Stages.Count -eq 3 -and $targetedSample.EstimatedSeconds -eq 1800) `
-    'Targeted regeneration should apply its runtime budget across every category'
+Assert-True ($targetedSample.Stages.Count -eq 3 -and $targetedSample.EstimatedSeconds -eq 1801) `
+    'Targeted regeneration should use the first predicted completion past its budget across every category'
 Assert-True ($targetedSample.Seed -eq 12) 'Targeted regeneration should preserve the requested seed'
 Assert-True ([Math]::Abs($targetedSample.Fraction - 0.5) -lt 0.0001) `
     'Targeted regeneration should derive one common percentage from full-run history'
 foreach ($stage in $targetedSample.Stages) {
     Assert-True (($stage.Arguments -join ' ') -match '-SampleFraction 0.5 -SampleSeed 12') `
         'Every regeneration stage should receive the same sample percentage and seed'
+    Assert-True (($stage.Arguments -join ' ') -match '-SampleStatePath') `
+        'Every regeneration stage should receive the shared hash-ring cursor path'
 }
 
 foreach ($templateName in @(

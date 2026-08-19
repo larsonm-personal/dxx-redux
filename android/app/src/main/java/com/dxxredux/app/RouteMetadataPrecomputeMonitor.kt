@@ -17,6 +17,8 @@ internal data class RouteMetadataPrecomputeSnapshot(
     val currentDetail: String = "",
     val currentProgressCompleted: Int = 0,
     val currentProgressTotal: Int = 0,
+    val lastFinishedMission: String = "",
+    val lastFinishedLevel: String = "",
     val phase: String = "discovering",
     val statusMessage: String = "",
     val updatedAtMs: Long = 0L,
@@ -45,6 +47,16 @@ internal class RouteMetadataPrecomputeMonitor(
     fun discoveryFinished(levelCount: Int) =
         synchronized(FILE_LOCK) {
             append("DISCOVERY status=complete levels=$levelCount")
+        }
+
+    fun contentImported() =
+        synchronized(FILE_LOCK) {
+            val state = readState()
+            writeState(
+                state.first.copy(lastFinishedMission = "", lastFinishedLevel = ""),
+                state.second,
+            )
+            append("IMPORT status=queued")
         }
 
     fun discoveryFailed(error: Throwable) =
@@ -87,6 +99,8 @@ internal class RouteMetadataPrecomputeMonitor(
                     currentDetail = if (sameCurrent) previous.first.currentDetail else "",
                     currentProgressCompleted = if (sameCurrent) previous.first.currentProgressCompleted else 0,
                     currentProgressTotal = if (sameCurrent) previous.first.currentProgressTotal else 0,
+                    lastFinishedMission = previous.first.lastFinishedMission,
+                    lastFinishedLevel = previous.first.lastFinishedLevel,
                     phase =
                         when {
                             current != null -> "analyzing"
@@ -159,6 +173,7 @@ internal class RouteMetadataPrecomputeMonitor(
         )
         val missionJobs = jobs.filter { it.sourceIdentity == job.sourceIdentity }
         val state = readState()
+        var loggedMissions = state.second
         if (missionJobs.isNotEmpty() &&
             job.sourceIdentity !in state.second &&
             missionJobs.all { entries[it.id]?.status in TERMINAL_STATUSES }
@@ -168,8 +183,15 @@ internal class RouteMetadataPrecomputeMonitor(
                 "MISSION mission=${job.target.displayName} levels=${missionJobs.size} " +
                     "failed=$failed status=${if (failed == 0) "complete" else "complete_with_failures"}",
             )
-            writeState(state.first, state.second + job.sourceIdentity)
+            loggedMissions += job.sourceIdentity
         }
+        writeState(
+            state.first.copy(
+                lastFinishedMission = job.target.displayName,
+                lastFinishedLevel = levelLabel(job),
+            ),
+            loggedMissions,
+        )
     }
 
     fun prioritySwitch(
@@ -260,6 +282,8 @@ internal class RouteMetadataPrecomputeMonitor(
                 currentDetail = root.optString("current_detail"),
                 currentProgressCompleted = root.optInt("current_progress_completed"),
                 currentProgressTotal = root.optInt("current_progress_total"),
+                lastFinishedMission = root.optString("last_finished_mission"),
+                lastFinishedLevel = root.optString("last_finished_level"),
                 phase =
                     root.optString("phase").ifBlank {
                         if (root.optInt("total_levels") == 0) "discovering" else "idle"
@@ -289,6 +313,8 @@ internal class RouteMetadataPrecomputeMonitor(
                 .put("current_detail", snapshot.currentDetail)
                 .put("current_progress_completed", snapshot.currentProgressCompleted)
                 .put("current_progress_total", snapshot.currentProgressTotal)
+                .put("last_finished_mission", snapshot.lastFinishedMission)
+                .put("last_finished_level", snapshot.lastFinishedLevel)
                 .put("phase", snapshot.phase)
                 .put("status_message", snapshot.statusMessage)
                 .put("updated_at_ms", snapshot.updatedAtMs)

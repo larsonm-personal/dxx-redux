@@ -182,7 +182,7 @@ $archives = Get-ChildItem $musicDir -File | Where-Object {
     $_.Extension -match '^\.(zip|7z|DXA)$'
 }
 
-$requestedAlbums = @($Albums) + @($Album) | Where-Object { $_ }
+$requestedAlbums = @(@($Albums) + @($Album) | Where-Object { $_ })
 if ($requestedAlbums.Count -gt 0) {
     $archives = $archives | Where-Object {
         $name = $_.BaseName

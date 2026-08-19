@@ -6,7 +6,9 @@
 .DESCRIPTION
     Discovers all json5 and ps1 tests, automatically provisions required
     infrastructure (emulators, matchmaking server, Docker NAT containers),
-    runs tests sequentially, and produces a summary report.
+    runs tests sequentially, and produces a summary report. Interactive runs
+    without parameters show a profile menu. Redirected or parameterized runs
+    remain unattended.
 
         Infrastructure is brought up on demand and torn down at the end:
             1. No-infra tests (host-side comparisons, unit tests, server integration)
@@ -55,11 +57,13 @@
     the complete multiplayer smoke but omits the soak hold.
 
 .PARAMETER Target45Minutes
-    Select the same randomized percentage from every infrastructure and script
-    type group, using recent report timings to target approximately 45 minutes.
+    Traverse a hash-ordered ring spread across infrastructure and script types,
+    resuming after the prior run and stopping on the first predicted completion
+    at or past 45 minutes.
 
 .PARAMETER SampleSeed
-    Optional nonzero seed for reproducing a targeted sample.
+    Optional seed for reproducing the initial fallback position when no prior
+    targeted run cursor can be recovered.
 
 .EXAMPLE
     .\run_all_tests.ps1
@@ -85,17 +89,31 @@ param(
     [int]$SampleSeed = 0
 )
 
+$explicitParameterCount = $PSBoundParameters.Count
 $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $PSCommandPath
 $helpersDir = Join-Path $scriptDir "helpers"
 $repoRoot = Split-Path $scriptDir
 
+. "$helpersDir\run_all_tests_profile_menu.ps1"
 . "$helpersDir\test_helpers.ps1"
 . "$helpersDir\test_suite_progress.ps1"
 . "$helpersDir\runtime_targeted_sampling.ps1"
 . (Join-Path (Join-Path $scriptDir "tests") "extract_regression_spec_helpers.ps1")
 . (Join-Path (Join-Path $scriptDir "tests") "input_demo_host_build_guard.ps1")
 . (Join-Path (Join-Path $scriptDir "tests") "input_demo_graphics_canary_helpers.ps1")
+
+$inputRedirected = try { [Console]::IsInputRedirected } catch { $true }
+if (Test-RunAllTestsProfileMenuEnabled -ExplicitParameterCount $explicitParameterCount `
+        -UserInteractive ([Environment]::UserInteractive) -InputRedirected $inputRedirected) {
+    switch (Select-RunAllTestsProfile) {
+        'Target45' { $Target45Minutes = $true }
+        'Cancel' {
+            Write-Host 'Test suite cancelled' -ForegroundColor Yellow
+            exit 0
+        }
+    }
+}
 
 # -- Report directory --
 
@@ -776,21 +794,44 @@ for ($index = 0; $index -lt $executionTests.Count; $index++) {
 
 $runtimeSample = $null
 if ($Target45Minutes -and $executionTests.Count -gt 0) {
-    $runtimeSample = Select-RuntimeProportionalItems -Items $executionTests -TargetSeconds 2700 `
-        -GroupProperties Requires, Type -Seed $SampleSeed
-    $sampledTests = @($runtimeSample.Items)
-    $sampledNames = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
-    foreach ($test in $sampledTests) { [void]$sampledNames.Add([string]$test.Name) }
-
-    # Graphics comparisons consume the matching headless result from this run.
-    foreach ($test in @($sampledTests | Where-Object { $_.Name -match '_graphics(?:_canary)?$' })) {
+    # A graphics comparison and its required headless producer are one ring
+    # target so successive batches do not overlap to satisfy the dependency
+    $graphicsByHeadless = @{}
+    foreach ($test in @($executionTests | Where-Object { $_.Name -match '_graphics(?:_canary)?$' })) {
         $headlessName = $test.Name -replace '_graphics(?:_canary)?$', ''
-        $headless = $executionTests | Where-Object Name -eq $headlessName | Select-Object -First 1
-        if ($headless -and $sampledNames.Add([string]$headless.Name)) {
-            $sampledTests += $headless
-            $runtimeSample.EstimatedSeconds += [int]$headless.EstimatedRuntime
+        if (-not $graphicsByHeadless.ContainsKey($headlessName)) { $graphicsByHeadless[$headlessName] = @() }
+        $graphicsByHeadless[$headlessName] += $test
+    }
+    $sampleUnits = @()
+    foreach ($test in @($executionTests | Where-Object { $_.Name -notmatch '_graphics(?:_canary)?$' })) {
+        $members = @(Join-RuntimeSampleMembers -Primary $test `
+                -Dependencies @($graphicsByHeadless[[string]$test.Name]))
+        $sampleUnits += @{
+            Name = [string]$test.Name
+            Requires = [string]$test.Requires
+            Type = [string]$test.Type
+            EstimatedRuntime = @($members | Measure-Object -Property EstimatedRuntime -Sum).Sum
+            Members = $members
+        }
+        $graphicsByHeadless.Remove([string]$test.Name)
+    }
+    foreach ($headlessName in $graphicsByHeadless.Keys) {
+        foreach ($test in @($graphicsByHeadless[$headlessName])) {
+            $sampleUnits += @{
+                Name = [string]$test.Name
+                Requires = [string]$test.Requires
+                Type = [string]$test.Type
+                EstimatedRuntime = [int]$test.EstimatedRuntime
+                Members = @($test)
+            }
         }
     }
+    $runtimeSample = Select-RuntimeHashRingItems -Items $sampleUnits -TargetSeconds 2700 `
+        -GroupProperties Requires, Type -StatePath (Join-Path $ReportDir 'runtime_sample_state.json') `
+        -RingName 'run-all-tests' -Seed $SampleSeed
+    $sampledTests = @($runtimeSample.Items | ForEach-Object { @($_.Members) } | Where-Object { $null -ne $_ })
+    $sampledNames = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach ($test in $sampledTests) { [void]$sampledNames.Add([string]$test.Name) }
     foreach ($test in $executionTests) {
         if (-not $sampledNames.Contains([string]$test.Name)) {
             $profileSkipped += @{ Name = $test.Name; Reason = 'not selected by 45-minute sample'; Type = $test.Type }
@@ -1366,11 +1407,9 @@ Write-Host "  Tier 3 (extract):        $($tierExtract.Count)"
 Write-Host "  Tier 4 (dual emu):       $($tierDualEmu.Count)"
 if ($runtimeSample) {
     $sampleEstimate = Format-RunnerDurationEstimate -Seconds $runtimeSample.EstimatedSeconds
-    Write-Host "  45-minute sample:       seed $($runtimeSample.Seed), $($executionTests.Count) tests, estimated $sampleEstimate"
-    foreach ($group in $runtimeSample.Groups) {
-        Write-Host ("    {0}: {1}/{2} ({3:P0}, before required dependencies)" -f `
-                $group.Name, $group.Selected, $group.Available, $group.Fraction)
-    }
+    Write-Host "  45-minute hash ring:    $($executionTests.Count) tests, estimated $sampleEstimate"
+    Write-Host "    start: $($runtimeSample.StartTarget)"
+    Write-Host "    last:  $($runtimeSample.LastTarget)"
 }
 $historicalTimingCount = @($executionTests | Where-Object { $historicalRuntimeByName.ContainsKey($_.Name) }).Count
 if ($historicalReportPath) {
@@ -1928,11 +1967,9 @@ $md += "- Not run: $($notRun.Count)"
 $md += "- Total time: $totalElapsed"
 $md += "- Per-test timeout: ${TestTimeoutSeconds}s"
 if ($runtimeSample) {
-    $md += "- 45-minute sample: seed $($runtimeSample.Seed), $($executionTests.Count) tests, estimated $(Format-RunnerDurationEstimate -Seconds $runtimeSample.EstimatedSeconds)"
-    foreach ($group in $runtimeSample.Groups) {
-        $md += ("  - {0}: {1}/{2} ({3:P0}, before required dependencies)" -f `
-                $group.Name, $group.Selected, $group.Available, $group.Fraction)
-    }
+    $md += "- 45-minute hash ring: $($executionTests.Count) tests, estimated $(Format-RunnerDurationEstimate -Seconds $runtimeSample.EstimatedSeconds)"
+    $md += "  - Start target: $($runtimeSample.StartTarget)"
+    $md += "  - Last target: $($runtimeSample.LastTarget)"
 }
 $md += "- Auto-provisioned: emu1=$($script:startedEmu1) emu2=$($script:startedEmu2) server=$(($null -ne $script:autoServerProc)) docker=$($script:startedDocker)"
 if ($selectedRegressionDemoSections.Count -gt 0) {

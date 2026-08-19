@@ -68,12 +68,16 @@ try {
     } 'extracted tree mutation is rejected'
 
     $cmake = Join-Path $repoRoot 'android\app\src\main\cpp\extract\CMakeLists.txt'
-    Assert-Contains $cmake 'URL_HASH\s+"SHA256=\$\{CHROMAPRINT_SHA256\}"' `
-        'Chromaprint archive has a pinned hash'
-    Assert-Contains $cmake 'EXPECTED_HASH\s+"SHA256=\$\{sha256\}"' `
+    Assert-Contains $cmake 'dxx_verified_fetchcontent_declare\(chromaprint\s+CHROMAPRINT\)' `
+        'Chromaprint uses the centralized verified dependency declaration'
+    Assert-Contains (Join-Path $repoRoot 'cmake\dxx-verified-dependencies.cmake') `
+        'FetchContent_Declare\([^\)]*URL_HASH\s+"SHA256=\$\{dependency_sha256\}"' `
+        'centralized dependency archives have pinned hashes'
+    $cmakeVerifier = Join-Path $repoRoot 'cmake\dxx-verified-dependencies.cmake'
+    Assert-Contains $cmakeVerifier 'EXPECTED_HASH\s+"SHA256=\$\{dependency_sha256\}"' `
         'single-file downloads have pinned hashes'
-    Assert-Contains $cmake 'TLS_VERIFY\s+ON' 'CMake downloads explicitly verify TLS'
-    Assert-Contains $cmake 'file\(SHA256\s+"\$\{destination\}"' `
+    Assert-Contains $cmakeVerifier 'TLS_VERIFY\s+ON' 'CMake downloads explicitly verify TLS'
+    Assert-Contains $cmakeVerifier 'file\(SHA256\s+"\$\{cached_file\}"' `
         'cached decoder sources are reverified'
     Assert-Contains (Join-Path $repoRoot 'android\helpers\run_verified_python.py') `
         'sys\.dont_write_bytecode\s*=\s*True' `

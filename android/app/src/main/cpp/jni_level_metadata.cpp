@@ -974,8 +974,6 @@ static LevelScanStatus scan_level(const json &request, json &levels,
 #ifdef DXX_BUILD_DESCENT_II
 	level_metadata_set_switch_projectile_radius_override(0);
 	reset_level_robots_file();
-	const int base_switch_projectile_radius =
-	    level_metadata_get_switch_projectile_radius();
 #endif
 	if (load_level(level_file)) {
 		levels.push_back(failed_level_row(
@@ -985,8 +983,6 @@ static LevelScanStatus scan_level(const json &request, json &levels,
 	Current_level_num = level_num;
 #ifdef DXX_BUILD_DESCENT_II
 	base_player_ship_radius = load_level_robots_file(level_file);
-	level_metadata_set_switch_projectile_radius_override(
-	    base_switch_projectile_radius);
 #endif
 	if (coop_starts)
 		*coop_starts = count_current_level_coop_starts();

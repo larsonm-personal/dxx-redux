@@ -46,42 +46,14 @@ function Send-FileToApp {
         [int]$Seconds = 180
     )
 
-    $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
-    $startInfo.FileName = $script:ADB
-    foreach ($argument in @(
-        "exec-in", "run-as", $script:PACKAGE, "sh", "-c",
-        "cat > '$RemotePath'"
-    )) {
-        $startInfo.ArgumentList.Add($argument)
-    }
-    $startInfo.RedirectStandardInput = $true
-    $startInfo.RedirectStandardOutput = $true
-    $startInfo.RedirectStandardError = $true
-    $startInfo.UseShellExecute = $false
-    $startInfo.CreateNoWindow = $true
-
-    $process = [System.Diagnostics.Process]::Start($startInfo)
-    $stdoutTask = $process.StandardOutput.ReadToEndAsync()
-    $stderrTask = $process.StandardError.ReadToEndAsync()
+    $temporaryName = [IO.Path]::GetFileName($RemotePath) -replace '[^A-Za-z0-9._-]', '_'
+    $temporaryPath = "/data/local/tmp/dxx_saf_${PID}_$temporaryName"
     try {
-        $inputStream = [System.IO.File]::OpenRead($LocalPath)
-        try {
-            $inputStream.CopyTo($process.StandardInput.BaseStream)
-        } finally {
-            $inputStream.Dispose()
-            $process.StandardInput.Close()
-        }
-        if (-not $process.WaitForExit($Seconds * 1000)) {
-            try { $process.Kill() } catch {}
-            throw "ADB app-file staging timed out after ${Seconds}s: $LocalPath"
-        }
-        $stdout = $stdoutTask.GetAwaiter().GetResult()
-        $stderr = $stderrTask.GetAwaiter().GetResult()
-        if ($process.ExitCode -ne 0) {
-            throw "ADB app-file staging failed for ${LocalPath}: $stderr $stdout"
-        }
+        Adb -AdbArgs @('push', $LocalPath, $temporaryPath) -Seconds $Seconds | Out-Null
+        Adb-Timeout -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cp', $temporaryPath, $RemotePath) `
+            -Seconds $Seconds | Out-Null
     } finally {
-        $process.Dispose()
+        try { Adb-Timeout -AdbArgs @('shell', 'rm', '-f', $temporaryPath) -Seconds 10 | Out-Null } catch {}
     }
 }
 

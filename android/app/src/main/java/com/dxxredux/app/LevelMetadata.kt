@@ -1209,11 +1209,11 @@ internal object LevelMetadataAnalyzer {
                 )
 
                 progress("Writing analysis request", 1)
+                val workerIntent =
+                    Intent(appContext, serviceClassForGame(target.game))
+                        .putExtra(LevelMetadataAnalysisService.EXTRA_REQUEST_PATH, requestFile.absolutePath)
                 try {
                     OwnedCacheDirectories.writeUtf8Atomically(workDir, requestFile.name, request.toString(2) + "\n")
-                    val intent =
-                        Intent(appContext, serviceClassForGame(target.game))
-                            .putExtra(LevelMetadataAnalysisService.EXTRA_REQUEST_PATH, requestFile.absolutePath)
                     if (preemptLowerPriorityWorker(appContext, cacheRoot, target.game, priority)) {
                         progress("Switching from background analysis", 2)
                     }
@@ -1222,7 +1222,7 @@ internal object LevelMetadataAnalyzer {
                         "Level metadata submit request=$requestId source=${target.displayName} " +
                             "priority=${priority.wireName} background=$background",
                     )
-                    appContext.startService(intent)
+                    appContext.startService(workerIntent)
                     workerStarted = true
                 } catch (e: CancellationException) {
                     throw e
@@ -1246,14 +1246,25 @@ internal object LevelMetadataAnalyzer {
                     progress("Scanning levels", 3)
                 }
                 var lastCheckpoint = ""
+                var busyRetries = 0
 
                 while (true) {
                     if (resultFile.isFile) {
-                        completedLevelCount = expectedLevelCount
                         progress("Reading analysis result", 4)
                         val parseStartedAt = SystemClock.elapsedRealtime()
                         val resultText = runCatching { resultFile.readText(Charsets.UTF_8) }.getOrDefault("")
                         val parsed = parseResultText(target, resultText)
+                        if (parsed.failureKind == "busy" && resultFile.delete()) {
+                            busyRetries++
+                            RouteMetadataDiagnostics.log(
+                                "Level metadata resubmit busy request=$requestId source=${target.displayName} " +
+                                    "retry=$busyRetries",
+                            )
+                            delay(LEVEL_METADATA_POLL_MS)
+                            appContext.startService(workerIntent)
+                            continue
+                        }
+                        completedLevelCount = expectedLevelCount
                         val cachePublished =
                             resultCacheIdentity?.let { identity ->
                                 runCatching {

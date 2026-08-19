@@ -118,6 +118,7 @@ internal class RouteMetadataPrecomputeCoordinator(
 
     @Synchronized
     fun notifyContentImported() {
+        monitor.contentImported()
         focusNewestSource = true
         wakeups.trySend(Unit)
         val previous = runner

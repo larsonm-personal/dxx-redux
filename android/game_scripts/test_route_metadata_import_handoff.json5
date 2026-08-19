@@ -24,6 +24,8 @@
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "dlog_game logs_enabled", "value": true}},
     {"action": "import_mission_zip", "file": "kcxf2rmv11.7z", "label": "route_handoff", "display_name": "KCXF2RMv11.7z"},
+    {"action": "wait_for", "field": "route_metadata_precompute.last_finished_mission",
+     "value": "Project KCX-F2 (2026)", "timeout_ms": 120000},
     {"action": "enter_game", "game": "d2"},
     {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},

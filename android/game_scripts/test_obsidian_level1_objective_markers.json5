@@ -77,7 +77,7 @@
     }},
     {"action": "pose_route_guidance", "post_delay_ms": 250},
     {"action": "send_button", "button": 100, "held": 1},
-    {"action": "wait_ms", "ms": 300},
+    {"action": "wait_ms", "ms": 1000},
     {"action": "send_button", "button": 100, "pressed": 0},
     {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
@@ -200,7 +200,7 @@
         "guidebot.route_goal_guidance_seg": "215"
     }},
     {"action": "assert", "expect": {
-        "level_metadata_route.analysis_cache.build_number": {"ne": 0},
+        "level_metadata_route.analysis_cache.generation": {"ne": 0},
         "level_metadata_route.analysis_cache.io_errors": "0",
         "level_metadata_route.analysis_cache.live_fallbacks": "0",
         "level_metadata_route.analysis_cache.live_reuses": {"ne": 0}

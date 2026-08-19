@@ -67,15 +67,17 @@ extern struct player_config PlayerCfg;
 
 static std::string controller_config_path()
 {
-#ifdef DXX_BUILD_DESCENT_II
-	static const char game_dir[] = "d2x-redux";
-#else
-	static const char game_dir[] = "d1x-redux";
-#endif
-	const char *pref = PHYSFS_getPrefDir("com.dxxredux", game_dir);
-	if (!pref || !pref[0])
+	const char *write_dir = PHYSFS_getWriteDir();
+	if (!write_dir || !write_dir[0])
 		return std::string();
-	return std::string(pref) + "../controller_config.json";
+	std::string root(write_dir);
+	while (!root.empty() && (root.back() == '/' || root.back() == '\\'))
+		root.pop_back();
+	const size_t slash = root.find_last_of("/\\");
+	if (slash == std::string::npos)
+		return std::string();
+	root.resize(slash + 1);
+	return root + "controller_config.json";
 }
 
 static int clamp_threshold_pct(int pct)

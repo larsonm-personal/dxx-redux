@@ -346,6 +346,7 @@ class LauncherScriptExecutor(
                         return
                     }
                     writeMissionZipImportAutomationResult(label, importResult.first, importResult.second)
+                    activity.notifyRouteMetadataContentImportedForAutomation()
                     Log.i(TAG, "ASSERT_PASS: imported mission ZIP ${importResult.first.filename}")
                     currentStep++
                 }

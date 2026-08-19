@@ -29,7 +29,8 @@ param(
     [switch]$RefreshOracle,
     [switch]$SkipLaunch,
     [ValidateRange(0.000001, 1.0)][double]$SampleFraction = 1.0,
-    [ValidateRange(0, [int]::MaxValue)][int]$SampleSeed = 0
+    [ValidateRange(0, [int]::MaxValue)][int]$SampleSeed = 0,
+    [string]$SampleStatePath
 )
 
 $ErrorActionPreference = 'Stop'
@@ -41,14 +42,15 @@ function New-CdRegressionSampleList {
     param(
         [Parameter(Mandatory)][string]$RepoRoot,
         [Parameter(Mandatory)][ValidateRange(0.000001, 1.0)][double]$Fraction,
-        [Parameter(Mandatory)][int]$Seed
+        [Parameter(Mandatory)][int]$Seed,
+        [string]$StatePath
     )
 
     $specs = @(Get-ChildItem (Join-Path $RepoRoot 'game_data') -Recurse -Filter '*_regression.json5' -File |
             Sort-Object FullName | ForEach-Object {
                 $spec = Read-Json5File $_.FullName
                 [pscustomobject]@{
-                    Name = $_.FullName
+                    Name = [IO.Path]::GetRelativePath($RepoRoot, $_.FullName).Replace('\', '/')
                     Path = $_.FullName
                     Type = if ($spec.source_type) { [string]$spec.source_type } else { 'unknown' }
                 }
@@ -56,8 +58,9 @@ function New-CdRegressionSampleList {
     $selected = @()
     $groups = @($specs | Group-Object Type | Sort-Object Name)
     for ($index = 0; $index -lt $groups.Count; $index++) {
-        $selected += Select-RuntimeFractionItems -Items @($groups[$index].Group) `
-            -Fraction $Fraction -Seed ($Seed -bxor (501 + $index))
+        $selected += Select-RuntimeHashRingFractionItems -Items @($groups[$index].Group) `
+            -Fraction $Fraction -Seed ($Seed -bxor (501 + $index)) -StatePath $StatePath `
+            -RingName "regenerate:cd:$($groups[$index].Name)"
     }
     return @($selected | Select-Object -ExpandProperty Path -Unique)
 }
@@ -147,7 +150,7 @@ if ($MyInvocation.InvocationName -ne '.') {
         if ($SampleFraction -lt 1.0) {
             if ($SampleSeed -eq 0) { $SampleSeed = Get-Random -Minimum 1 -Maximum ([int]::MaxValue) }
             $selectedSpecs = @(New-CdRegressionSampleList -RepoRoot $script:RepoRoot `
-                    -Fraction $SampleFraction -Seed $SampleSeed)
+                    -Fraction $SampleFraction -Seed $SampleSeed -StatePath $SampleStatePath)
             $sampleListPath = Join-Path $script:RepoRoot "temp\cd_regression_sample_$PID.txt"
             [IO.Directory]::CreateDirectory((Split-Path $sampleListPath -Parent)) | Out-Null
             [IO.File]::WriteAllLines($sampleListPath, $selectedSpecs, [Text.UTF8Encoding]::new($false))

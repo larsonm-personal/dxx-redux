@@ -73,16 +73,17 @@
     {"action": "wait_for", "field": "can_launch", "value": "true", "timeout_ms": 120000},
     {"action": "log", "message": "Import complete, can_launch=true"},
 
-    // Verify D1 readiness and the expected 7-file GOG import set.
+    // Verify D1 readiness, the seven extracted files, and the generated manifest.
     {"action": "assert", "expect": {
         "d1.ready": "true",
         "set_files[0]": "CHAOS.HOG",
         "set_files[1]": "CHAOS.MSN",
         "set_files[2]": "DESCENT.DEM",
-        "set_files[3]": "DESCENT.HOG",
-        "set_files[4]": "DESCENT.PIG",
-        "set_files[5]": "LEVEL18.DEM",
-        "set_files[6]": "MINIBOSS.DEM"
+        "set_files[3]": "LEVEL18.DEM",
+        "set_files[4]": "MINIBOSS.DEM",
+        "set_files[5]": "assets.json",
+        "set_files[6]": "descent.hog",
+        "set_files[7]": "descent.pig"
     }},
 
     // The launcher should auto-switch to D1 when only D1 data is present.

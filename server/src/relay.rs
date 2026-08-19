@@ -59,6 +59,7 @@ pub fn cleanup_sessions_older_than(state: &ServerState, cutoff: std::time::Durat
 /// Forwarded as:
 ///   [session_token: 4 bytes LE][from_player: 1 byte][payload...]
 const RELAY_HEADER_LEN: usize = 5;
+const MAX_UDP_DATAGRAM_LEN: usize = 65_535;
 
 /// Run the UDP relay listener.
 pub async fn run(
@@ -68,7 +69,8 @@ pub async fn run(
     let socket = UdpSocket::bind(addr).await?;
     tracing::info!(%addr, "UDP relay listening");
 
-    let mut buf = [0u8; 2048];
+    // Descent's initial multiplayer sync packets can exceed 2 KiB
+    let mut buf = vec![0u8; MAX_UDP_DATAGRAM_LEN];
     loop {
         let (len, src) = match socket.recv_from(&mut buf).await {
             Ok(v) => v,
@@ -123,7 +125,9 @@ pub async fn run(
                         .find(|s| !registered.contains(s) && *s != dest_player);
                     if let Some(slot) = free_slot {
                         // D12: only learn addresses from allowed IPs
-                        if !session.allowed_ips.is_empty() && !session.allowed_ips.contains(&src.ip()) {
+                        if !session.allowed_ips.is_empty()
+                            && !session.allowed_ips.contains(&src.ip())
+                        {
                             warn!(%src, token, "relay address learning rejected: IP not allowed");
                             continue;
                         }
@@ -140,7 +144,10 @@ pub async fn run(
 
         // Look up destination address
         let Some(dest_addr) = session.player_addrs.get(&dest_player).map(|r| *r.value()) else {
-            debug!(token, dest_player, from_player, "relay dest slot not yet known, dropping");
+            debug!(
+                token,
+                dest_player, from_player, "relay dest slot not yet known, dropping"
+            );
             continue;
         };
 

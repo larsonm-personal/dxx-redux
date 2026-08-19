@@ -24,7 +24,7 @@
     {"action": "setup_command", "command": "clear_level_metadata_result_cache", "post_delay_ms": 250},
     {"action": "import_mission_zip", "file": "obsidian.zip", "label": "obsidian_level4", "display_name": "Obsidian.zip"},
     {"action": "analyze_level_metadata_all", "label": "obsidian_level4", "mod_file": "Obsidian.zip", "game": "d2", "status": "ok", "min_total_levels": 18},
-    {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
+    {"action": "enter_game", "game": "d2"},
 
     {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},

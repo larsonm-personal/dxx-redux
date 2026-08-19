@@ -48,8 +48,9 @@
     {"action": "meta_action", "id": 1042, "post_delay_ms": 500},
     {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 30000, "expect": {
-        "level_metadata_route.status": "ok",
+        "level_metadata_route.status": "partial",
         "level_metadata_route.planner_source": "shared_cpp",
+        "guidebot.route_status": "ok",
         "guidebot.route_goal_active": "true",
         "guidebot.route_goal_label": {"contains": "Destroy blastable wall"},
         "guidebot.route_goal_objective_kind": "9",
@@ -389,7 +390,7 @@
     {"action": "assert", "expect": {
         "current_level_num": "6",
         "level_metadata_route.status": "ok",
-        "level_metadata_route.step_count": "7",
+        "level_metadata_route.step_count": "9",
         "level_metadata_route.steps[4].kind": "key",
         "level_metadata_route.steps[4].activation_kind": "destroy_key_carrier",
         "level_metadata_route.steps[4].label": "Destroy robot carrying blue key",
@@ -404,8 +405,8 @@
     {"action": "set_objective_overlay", "mode": "cycle", "post_delay_ms": 300},
     {"action": "wait_for", "timeout_ms": 5000, "expect": {
         "automap.objective_overlay_mode_name": "all",
-        "automap.objective_visible_step_count": "6",
-        "automap.objective_label_candidate_count": {"gte": 6},
+        "automap.objective_visible_step_count": "8",
+        "automap.objective_label_candidate_count": {"gte": 8},
         "automap.objective_label_projected_count": {"gt": 0},
         "automap.key_carrier_marker_count": "1",
         "automap.key_carrier_marker_objnum": {"gte": 0},
@@ -416,7 +417,7 @@
     {"action": "set_objective_overlay", "mode": "cycle", "post_delay_ms": 300},
     {"action": "wait_for", "timeout_ms": 5000, "expect": {
         "automap.objective_overlay_mode_name": "remaining",
-        "automap.objective_visible_step_count": "6",
+        "automap.objective_visible_step_count": "8",
         "automap.next_objective_count": "3"
     }},
     {"action": "set_objective_overlay", "mode": "cycle", "post_delay_ms": 300},

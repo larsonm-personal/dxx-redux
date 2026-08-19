@@ -1022,6 +1022,22 @@ try {
     }
     Write-Status "SetupActivity ready on both emulators" "Green"
 
+    # Other tests intentionally exercise CD audio and can leave that pilot
+    # preference behind after removing their temporary source. LAN startup is
+    # unrelated to audio-source coverage, so normalize both devices to MIDI.
+    foreach ($serial in @($EMU1, $EMU2)) {
+        Adb-Dev-Timeout -Serial $serial -AdbArgs @(
+            "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND",
+            "--es", "command", "write_music_prefs",
+            "--es", "source", "midi",
+            "--ez", "prefer_mission_soundtrack", "false",
+            "--ei", "play_order", "0",
+            "--ei", "volume", "8"
+        ) -Seconds 10 | Out-Null
+    }
+    Start-Sleep -Seconds 1
+    Write-Status "Normalized music preferences for LAN launch" "Green"
+
     if ($GuidebotSlotRemapRestore) {
         Write-Status "Clearing prior coop saves before slot-remap coverage"
         foreach ($emu in @($EMU1, $EMU2)) {

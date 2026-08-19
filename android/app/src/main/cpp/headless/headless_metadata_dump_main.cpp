@@ -1095,8 +1095,6 @@ static int dump_level(nlohmann::ordered_json &levels, int level_num, const char 
 #ifdef DXX_BUILD_DESCENT_II
 	level_metadata_set_switch_projectile_radius_override(0);
 	reset_level_robots_file();
-	const int base_switch_projectile_radius =
-	    level_metadata_get_switch_projectile_radius();
 #endif
 	if (load_level(level_file)) {
 		if (timing)
@@ -1112,8 +1110,6 @@ static int dump_level(nlohmann::ordered_json &levels, int level_num, const char 
 	Current_level_num = level_num;
 #ifdef DXX_BUILD_DESCENT_II
 	base_player_ship_radius = load_level_robots_file(level_file);
-	level_metadata_set_switch_projectile_radius_override(
-	    base_switch_projectile_radius);
 #endif
 	if (coop_start_range)
 		coop_start_range->add(count_loaded_coop_start_objects());

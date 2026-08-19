@@ -2,7 +2,8 @@
 
 param(
     [ValidateRange(0.000001, 1.0)][double]$SampleFraction = 1.0,
-    [ValidateRange(0, [int]::MaxValue)][int]$SampleSeed = 0
+    [ValidateRange(0, [int]::MaxValue)][int]$SampleSeed = 0,
+    [string]$SampleStatePath
 )
 
 $ErrorActionPreference = "Stop"
@@ -68,10 +69,12 @@ if ($SampleFraction -lt 1.0) {
     $cdManifest = Join-Path $zipDir 'cd_level_metadata_sources.json5'
     $cdItems = @(Resolve-CdLevelMetadataSources -RepoRoot $repoRoot -ManifestPath $cdManifest -OutputDir $zipDir |
             ForEach-Object { [pscustomobject]@{ Name = $_.Id } })
-    $selectedZips = @(Select-RuntimeFractionItems -Items $zipItems -Fraction $SampleFraction `
-            -Seed ($SampleSeed -bxor 401) | Select-Object -ExpandProperty Name)
-    $selectedCdSourceIds = @(Select-RuntimeFractionItems -Items $cdItems -Fraction $SampleFraction `
-            -Seed ($SampleSeed -bxor 402) | Select-Object -ExpandProperty Name)
+    $selectedZips = @(Select-RuntimeHashRingFractionItems -Items $zipItems -Fraction $SampleFraction `
+            -Seed ($SampleSeed -bxor 401) -StatePath $SampleStatePath `
+            -RingName 'regenerate:metadata:archives' | Select-Object -ExpandProperty Name)
+    $selectedCdSourceIds = @(Select-RuntimeHashRingFractionItems -Items $cdItems -Fraction $SampleFraction `
+            -Seed ($SampleSeed -bxor 402) -StatePath $SampleStatePath `
+            -RingName 'regenerate:metadata:cd-sources' | Select-Object -ExpandProperty Name)
     $batchArgs.Pattern = $selectedZips
     Write-Status ("Metadata sample: archives {0}/{1}, CD sources {2}/{3} ({4:P1}), seed {5}" -f
         $selectedZips.Count, $zipItems.Count, $selectedCdSourceIds.Count, $cdItems.Count,

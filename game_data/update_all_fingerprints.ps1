@@ -27,6 +27,7 @@ param(
     [switch]$DryRun,
     [ValidateRange(0.000001, 1.0)][double]$SampleFraction = 1.0,
     [ValidateRange(0, [int]::MaxValue)][int]$SampleSeed = 0,
+    [string]$SampleStatePath,
     [ValidateSet("all", "discs", "packs", "mission-zips", "merge")]
     [string]$Step = "all"
 )
@@ -37,9 +38,10 @@ $RepoRoot = Split-Path $ScriptDir -Parent
 . (Join-Path $RepoRoot 'android\helpers\runtime_targeted_sampling.ps1')
 
 function Select-FingerprintSampleNames {
-    param([object[]]$Items, [double]$Fraction, [int]$Seed)
+    param([object[]]$Items, [double]$Fraction, [int]$Seed, [string]$RingName)
     if ($Items.Count -eq 0) { return @() }
-    return @(Select-RuntimeFractionItems -Items $Items -Fraction $Fraction -Seed $Seed |
+    return @(Select-RuntimeHashRingFractionItems -Items $Items -Fraction $Fraction -Seed $Seed `
+            -StatePath $SampleStatePath -RingName $RingName |
             Select-Object -ExpandProperty Name)
 }
 
@@ -57,9 +59,9 @@ if ($SampleFraction -lt 1.0) {
             } | Sort-Object Name -Unique)
     $missionItems = @(Get-ChildItem (Join-Path $ScriptDir 'mission_files') -File |
             Where-Object Extension -Match '^\.(zip|7z|rar)$' | Sort-Object Name)
-    $discNames = Select-FingerprintSampleNames $discItems $SampleFraction ($SampleSeed -bxor 101)
-    $albumNames = Select-FingerprintSampleNames $albumItems $SampleFraction ($SampleSeed -bxor 202)
-    $missionZipNames = Select-FingerprintSampleNames $missionItems $SampleFraction ($SampleSeed -bxor 303)
+    $discNames = Select-FingerprintSampleNames $discItems $SampleFraction ($SampleSeed -bxor 101) 'regenerate:fingerprints:discs'
+    $albumNames = Select-FingerprintSampleNames $albumItems $SampleFraction ($SampleSeed -bxor 202) 'regenerate:fingerprints:packs'
+    $missionZipNames = Select-FingerprintSampleNames $missionItems $SampleFraction ($SampleSeed -bxor 303) 'regenerate:fingerprints:missions'
     Write-Host ("Fingerprint sample: discs {0}/{1}, packs {2}/{3}, mission archives {4}/{5} ({6:P1}), seed {7}" -f
         $discNames.Count, $discItems.Count, $albumNames.Count, $albumItems.Count,
         $missionZipNames.Count, $missionItems.Count, $SampleFraction, $SampleSeed)
