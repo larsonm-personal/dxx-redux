@@ -39,16 +39,24 @@
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000},
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000},
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
+    {"action": "set_debug", "field": "guidebot_nav_trace", "value": "true"},
     // Resolve the two earlier switch dependencies through the test adapter so
     // this fixture can focus on the ordinary player-damage wall transition.
     {"action": "set_debug", "field": "fire_trigger", "value": "1", "post_delay_ms": 500},
     {"action": "set_debug", "field": "fire_trigger", "value": "2", "post_delay_ms": 500},
     {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
     {"action": "meta_action", "id": 1042, "post_delay_ms": 500},
+    {"action": "meta_action", "id": 1005, "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "guidebot.special_goal": "7",
+        "guidebot.goal_object": "7",
+        "guidebot.path_length": {"gte": 2}
+    }},
     {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 30000, "expect": {
         "level_metadata_route.status": "ok",
         "level_metadata_route.planner_source": "shared_cpp",
+        "guidebot.nav_trace_enabled": "true",
         "guidebot.route_status": "ok",
         "guidebot.route_goal_active": "true",
         "guidebot.route_goal_label": {"contains": "Destroy blastable wall"},

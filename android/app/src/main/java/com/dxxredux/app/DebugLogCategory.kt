@@ -13,7 +13,8 @@ object DebugLogCategory {
     const val PROFILING = 5
     const val COOP_DESYNC = 6
     const val DORMANCY = 7
-    const val COUNT = 8
+    const val GUIDEBOT = 8
+    const val COUNT = 9
 
     /** Human-readable labels for UI checkboxes, indexed by category ID. */
     val labels =
@@ -26,6 +27,7 @@ object DebugLogCategory {
             "Profiling",
             "Coop Desync",
             "Dormancy",
+            "Guide-Bot",
         )
 
     /** SharedPreferences key for each category toggle. */

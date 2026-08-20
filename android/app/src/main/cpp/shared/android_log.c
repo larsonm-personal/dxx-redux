@@ -31,6 +31,7 @@ static const char *category_tags[DLOG_COUNT] = {
 	"PROFILING",
 	"COOP_DESYNC",
 	"DORMANCY",
+	"GUIDEBOT",
 };
 
 static int debug_log_get_env(JNIEnv **env_out)

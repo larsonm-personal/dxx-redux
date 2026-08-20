@@ -26,6 +26,7 @@ extern "C" {
 #include "game_introspect.h"
 #include "game_automate.h"
 #include "android_axis_mailbox.h"
+#include "android_log.h"
 #include "android_lifecycle_diagnostics.h"
 #include "android_level_preview.h"
 #include "android_route_metadata.h"
@@ -856,6 +857,7 @@ static json serialize_guidebot()
 	result["goal_index"] = Escort_goal_index;
 	result["looking_for_marker"] = escort_get_looking_for_marker();
 	result["last_buddy_key"] = escort_get_last_buddy_key();
+	result["nav_trace_enabled"] = debug_log_enabled[DLOG_GUIDEBOT] != 0;
 #ifdef NETWORK
 	result["owner_player"] = Escort_owner_player;
 	result["owner_is_local"] = Escort_owner_player == Player_num;

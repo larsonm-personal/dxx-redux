@@ -3733,6 +3733,11 @@ extern "C" void game_automate_tick(void)
 					stop_script_fail(reason);
 					break;
 				}
+			} else if (s.field == "guidebot_nav_trace") {
+				debug_log_set_enabled(
+				    DLOG_GUIDEBOT,
+				    strcasecmp(s.value.c_str(), "true") == 0 ||
+				        strtol(s.value.c_str(), NULL, 10) != 0);
 			} else if (s.field == "guidebot_path_parity") {
 #ifdef DXX_BUILD_DESCENT_II
 				if ((strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) &&

@@ -8,5 +8,6 @@ class DebugLogCategoryTest {
     fun categoryCountMatchesLabels() {
         assertEquals(DebugLogCategory.COUNT, DebugLogCategory.labels.size)
         assertEquals("Dormancy", DebugLogCategory.labels[DebugLogCategory.DORMANCY])
+        assertEquals("Guide-Bot", DebugLogCategory.labels[DebugLogCategory.GUIDEBOT])
     }
 }

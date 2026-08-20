@@ -255,6 +255,12 @@ static unsigned int Escort_route_event_coalesced_rescan_count;
 static unsigned int Escort_route_ignored_nonowner_event_count;
 static fix64 Escort_route_completion_check_time;
 static const char *Escort_route_last_replan_reason = "level_start";
+static fix64 Escort_nav_trace_next_time;
+static vms_vector Escort_nav_trace_last_pos;
+static int Escort_nav_trace_last_signature = -1;
+static int Escort_nav_trace_last_goal = ESCORT_GOAL_UNSPECIFIED;
+static int Escort_nav_trace_last_path_index = -1;
+static int Escort_nav_trace_stall_samples;
 #ifdef INTROSPECT_ON
 static escort_path_parity_result Escort_path_parity_result;
 static point_seg Escort_path_parity_ordinary[MAX_SEGMENTS * 2];
@@ -269,6 +275,109 @@ static void escort_unexplored_route_target_clear(escort_unexplored_route_target 
 	memset(target, 0, sizeof(*target));
 	target->target_seg = -1;
 	target->waypoint_seg = -1;
+}
+
+static void escort_trace_path(const char *reason, object *objp, ai_local *ailp,
+                              ai_static *aip, int goal_seg)
+{
+	char segments[512];
+	int i;
+	int offset = 0;
+
+	if (!debug_log_enabled[DLOG_GUIDEBOT])
+		return;
+	segments[0] = 0;
+	if (aip->hide_index >= 0)
+		for (i = 0; i < aip->path_length && i < 32; ++i) {
+			const int written = snprintf(
+			    segments + offset, sizeof(segments) - offset,
+			    "%s%d", i ? "," : "", Point_segs[aip->hide_index + i].segnum);
+			if (written < 0 || written >= (int) sizeof(segments) - offset)
+				break;
+			offset += written;
+		}
+	debug_log(DLOG_GUIDEBOT,
+	          "path reason=%s obj=%d seg=%d goal=%d special=%d goal_index=%d "
+	          "route_active=%d route_target=%d mode=%d len=%d index=%d dir=%d "
+	          "hide=%d segments=[%s]%s",
+	          reason, (int) (objp - Objects), objp->segnum, goal_seg,
+	          Escort_special_goal, Escort_goal_index, Escort_route_goal.active,
+	          Escort_route_goal.target_seg, ailp->mode, aip->path_length,
+	          aip->cur_path_index, aip->PATH_DIR, aip->hide_index, segments,
+	          aip->path_length > 32 ? " truncated" : "");
+}
+
+static void escort_trace_navigation(object *objp, ai_local *ailp, ai_static *aip,
+                                    fix dist_to_player, int player_visibility)
+{
+	int path_point_index = -1;
+	int path_seg = -1;
+	fix target_distance = -1;
+	fix movement = -1;
+	fix velocity;
+	fix rotvel;
+
+	if (!debug_log_enabled[DLOG_GUIDEBOT])
+		return;
+	if (Escort_special_goal == -1 && !Escort_route_goal.active &&
+	    ailp->mode != AIM_GOTO_OBJECT && ailp->mode != AIM_GOTO_PLAYER)
+		return;
+	if (GameTime64 < Escort_nav_trace_next_time &&
+	    Escort_nav_trace_next_time - GameTime64 < F1_0 * 2)
+		return;
+	Escort_nav_trace_next_time = GameTime64 + F1_0;
+
+	if (aip->hide_index >= 0 && aip->cur_path_index >= 0 &&
+	    aip->cur_path_index < aip->path_length) {
+		path_point_index = aip->hide_index + aip->cur_path_index;
+		path_seg = Point_segs[path_point_index].segnum;
+		target_distance = vm_vec_dist_quick(
+		    &objp->pos, &Point_segs[path_point_index].point);
+	}
+	if (Escort_nav_trace_last_signature == objp->signature)
+		movement = vm_vec_dist_quick(&objp->pos, &Escort_nav_trace_last_pos);
+	velocity = vm_vec_mag_quick(&objp->mtype.phys_info.velocity);
+	rotvel = vm_vec_mag_quick(&objp->mtype.phys_info.rotvel);
+
+	if (Escort_nav_trace_last_signature == objp->signature &&
+	    Escort_nav_trace_last_goal == Escort_goal_object &&
+	    Escort_nav_trace_last_path_index == aip->cur_path_index &&
+	    movement >= 0 && movement < F1_0 / 2 &&
+	    ailp->mode == AIM_GOTO_OBJECT)
+		Escort_nav_trace_stall_samples++;
+	else
+		Escort_nav_trace_stall_samples = 0;
+
+	debug_log(DLOG_GUIDEBOT,
+	          "nav t=%lld obj=%d seg=%d pos=(%d,%d,%d) move=%d vel=%d rotvel=%d "
+	          "mode=%d goal=%d special=%d goal_index=%d route_active=%d "
+	          "route_target=%d path_len=%d path_index=%d path_dir=%d path_seg=%d "
+	          "target_dist=%d retries=%d consecutive_retries=%d player_dist=%d "
+	          "visible=%d stall_samples=%d",
+	          (long long) GameTime64, (int) (objp - Objects), objp->segnum,
+	          objp->pos.x, objp->pos.y, objp->pos.z, movement, velocity, rotvel,
+	          ailp->mode, Escort_goal_object, Escort_special_goal,
+	          Escort_goal_index, Escort_route_goal.active,
+	          Escort_route_goal.target_seg, aip->path_length,
+	          aip->cur_path_index, aip->PATH_DIR, path_seg, target_distance,
+	          ailp->retry_count, ailp->consecutive_retries, dist_to_player,
+	          player_visibility, Escort_nav_trace_stall_samples);
+	if (Escort_nav_trace_stall_samples == 3 ||
+	    (Escort_nav_trace_stall_samples > 3 &&
+	     Escort_nav_trace_stall_samples % 5 == 0))
+		debug_log(DLOG_GUIDEBOT,
+		          "suspected_spin obj=%d seg=%d goal=%d special=%d path_len=%d "
+		          "path_index=%d path_seg=%d target_dist=%d move=%d vel=%d "
+		          "rotvel=%d samples=%d",
+		          (int) (objp - Objects), objp->segnum, Escort_goal_object,
+		          Escort_special_goal, aip->path_length, aip->cur_path_index,
+		          path_seg, target_distance, movement, velocity, rotvel,
+		          Escort_nav_trace_stall_samples);
+
+	Escort_nav_trace_last_pos = objp->pos;
+	Escort_nav_trace_last_signature = objp->signature;
+	Escort_nav_trace_last_goal = Escort_goal_object;
+	Escort_nav_trace_last_path_index = aip->cur_path_index;
 }
 
 static void escort_route_set_target_mode(int target_mode)
@@ -2196,6 +2305,13 @@ void escort_find_unexplored_goal(void)
 
 void input_demo_apply_recorded_guidebot_goal(int special_key, int from_menu)
 {
+#ifdef __ANDROID__
+	debug_log(DLOG_GUIDEBOT,
+	          "command key=%d from_menu=%d previous_goal=%d previous_special=%d "
+	          "marker=%d last_key=%d",
+	          special_key, from_menu, Escort_goal_object, Escort_special_goal,
+	          Looking_for_marker, Last_buddy_key);
+#endif
 	if (special_key == KEY_0) {
 		escort_resume_default_goal();
 		return;
@@ -2815,6 +2931,9 @@ void escort_create_path_to_goal(object *objp)
 		}
 #endif
 		ailp->mode = AIM_GOTO_OBJECT;
+#ifdef __ANDROID__
+		escort_trace_path("created", objp, ailp, aip, goal_seg);
+#endif
 
 #ifdef __ANDROID__
 		if (using_route_goal)
@@ -3255,6 +3374,9 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 		replay_rng_call_count = d_rand_get_call_count();
 
 	Buddy_objnum = objp-Objects;
+#ifdef __ANDROID__
+	escort_trace_navigation(objp, ailp, aip, dist_to_player, player_visibility);
+#endif
 
 	if (player_visibility) {
 		Buddy_last_seen_player = GameTime64;
@@ -3366,7 +3488,7 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 		(dist_to_player < MIN_ESCORT_DISTANCE - F1_0/4)) {
 		Escort_goal_object = escort_set_goal_object();
 #ifdef __ANDROID__
-		if (!escort_goal_is_pathable(Escort_goal_object))
+		if (!escort_goal_request_is_pathable(Escort_goal_object, Escort_special_goal))
 			return;
 #endif
 		ailp->mode = AIM_GOTO_OBJECT;		//	May look stupid to be before path creation, but ai_door_is_openable uses mode to determine what doors can be got through
@@ -3381,6 +3503,10 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 		if (aip->path_length < 3) {
 #endif
 			create_n_segment_path(objp, 5, Believed_player_seg);
+#ifdef __ANDROID__
+			escort_trace_path("short_path_fallback", objp, ailp, aip,
+			                  Escort_goal_index);
+#endif
 				input_demo_log_escort_path_state("AIM_GOTO_PLAYER fallback", objp);
 			if (replay_rng_probe_active)
 				input_demo_log_escort_rng_progress("after AIM_GOTO_PLAYER fallback create_n_segment_path", &replay_rng_state, &replay_rng_call_count);
@@ -3392,7 +3518,7 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 			 (dist_to_player < MIN_ESCORT_DISTANCE - F1_0/4))) {
 			Escort_goal_object = escort_set_goal_object();
 #ifdef __ANDROID__
-			if (!escort_goal_is_pathable(Escort_goal_object))
+			if (!escort_goal_request_is_pathable(Escort_goal_object, Escort_special_goal))
 				return;
 #endif
 			ailp->mode = AIM_GOTO_OBJECT;		//	May look stupid to be before path creation, but ai_door_is_openable uses mode to determine what doors can be got through
@@ -3407,6 +3533,10 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 			if (aip->path_length < 3) {
 #endif
 				create_n_segment_path(objp, 5, Believed_player_seg);
+#ifdef __ANDROID__
+				escort_trace_path("short_path_fallback", objp, ailp, aip,
+				                  Escort_goal_index);
+#endif
 				input_demo_log_escort_path_state("unspecified fallback", objp);
 				if (replay_rng_probe_active)
 					input_demo_log_escort_rng_progress("after unspecified fallback create_n_segment_path", &replay_rng_state, &replay_rng_call_count);
