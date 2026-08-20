@@ -72,6 +72,10 @@ extern volatile int android_force_quit;
  * in gamecntl.c to call escort_release_control() */
 extern volatile int android_escort_release_pending;
 
+/* Set to a META_GUIDE_FIND_* action on the UI thread and consumed as a
+ * menu-style goal command on the game thread. -1 means no pending command. */
+extern volatile int android_escort_goal_pending;
+
 /* Set on UI thread by META_GUIDE_SPAWN, consumed on the game thread in
  * gamecntl.c to spawn or release the guide-bot at the local player. */
 extern volatile int android_escort_spawn_pending;

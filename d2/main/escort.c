@@ -2354,6 +2354,18 @@ int escort_get_secret_goal_side(void)
 	return (Escort_goal_object == ESCORT_GOAL_SECRET) ? Escort_goal_secret_side : -1;
 }
 
+#ifdef __ANDROID__
+int escort_get_looking_for_marker(void)
+{
+	return Looking_for_marker;
+}
+
+int escort_get_last_buddy_key(void)
+{
+	return Last_buddy_key;
+}
+#endif
+
 static int escort_secret_goal_is_better(const escort_secret_goal_info *candidate,
                                         const escort_secret_goal_info *best)
 {
@@ -3363,7 +3375,11 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 			input_demo_log_escort_rng_progress("after AIM_GOTO_PLAYER escort_create_path_to_goal", &replay_rng_state, &replay_rng_call_count);
 		aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
 			input_demo_log_escort_path_state("AIM_GOTO_PLAYER final", objp);
+#ifdef __ANDROID__
+		if (escort_path_needs_fallback(aip->path_length)) {
+#else
 		if (aip->path_length < 3) {
+#endif
 			create_n_segment_path(objp, 5, Believed_player_seg);
 				input_demo_log_escort_path_state("AIM_GOTO_PLAYER fallback", objp);
 			if (replay_rng_probe_active)
@@ -3385,7 +3401,11 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 				input_demo_log_escort_rng_progress("after unspecified escort_create_path_to_goal", &replay_rng_state, &replay_rng_call_count);
 			aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
 			input_demo_log_escort_path_state("unspecified goal final", objp);
+#ifdef __ANDROID__
+			if (escort_path_needs_fallback(aip->path_length)) {
+#else
 			if (aip->path_length < 3) {
+#endif
 				create_n_segment_path(objp, 5, Believed_player_seg);
 				input_demo_log_escort_path_state("unspecified fallback", objp);
 				if (replay_rng_probe_active)

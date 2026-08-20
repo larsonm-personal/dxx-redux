@@ -26,6 +26,8 @@ extern int escort_get_secret_goal_display_index(void);
 extern int escort_get_secret_goal_seg(void);
 extern int escort_get_secret_goal_side(void);
 #ifdef __ANDROID__
+extern int escort_get_looking_for_marker(void);
+extern int escort_get_last_buddy_key(void);
 #ifdef INTROSPECT_ON
 typedef struct escort_path_parity_result {
 	int valid;

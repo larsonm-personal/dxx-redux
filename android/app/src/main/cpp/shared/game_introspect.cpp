@@ -854,6 +854,8 @@ static json serialize_guidebot()
 	result["goal_object"] = Escort_goal_object;
 	result["special_goal"] = Escort_special_goal;
 	result["goal_index"] = Escort_goal_index;
+	result["looking_for_marker"] = escort_get_looking_for_marker();
+	result["last_buddy_key"] = escort_get_last_buddy_key();
 #ifdef NETWORK
 	result["owner_player"] = Escort_owner_player;
 	result["owner_is_local"] = Escort_owner_player == Player_num;

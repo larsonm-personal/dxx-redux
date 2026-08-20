@@ -847,6 +847,9 @@ int load_level_robots_file(const char *level_name)
 void load_level_robots(int level_num)
 {
 	char *level_name;
+#ifdef __ANDROID__
+	int base_switch_projectile_radius;
+#endif
 
 	Assert(level_num <= Last_level  && level_num >= Last_secret_level  && level_num != 0);
 
@@ -855,7 +858,17 @@ void load_level_robots(int level_num)
 	else					//normal level
 		level_name = Level_names[level_num-1];
 
+#ifdef __ANDROID__
+	level_metadata_set_switch_projectile_radius_override(0);
+	reset_level_robots_file();
+	base_switch_projectile_radius =
+		level_metadata_get_switch_projectile_radius();
+#endif
 	load_level_robots_file(level_name);
+#ifdef __ANDROID__
+	level_metadata_set_switch_projectile_radius_override(
+		base_switch_projectile_radius);
+#endif
 }
 
 //load a level off disk. level numbers start at 1.  Secret levels are -1,-2,-3

@@ -9,6 +9,11 @@ int main(void)
 	assert(!escort_goal_is_pathable(0));
 	assert(escort_goal_is_pathable(1));
 	assert(escort_goal_is_pathable(25));
+	assert(escort_path_needs_fallback(-1));
+	assert(escort_path_needs_fallback(0));
+	assert(!escort_path_needs_fallback(1));
+	assert(!escort_path_needs_fallback(2));
+	assert(!escort_path_needs_fallback(3));
 	puts("escort goal policy tests passed");
 	return 0;
 }

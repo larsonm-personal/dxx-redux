@@ -2165,6 +2165,22 @@ int ReadControls(d_event *event)
 			return 1;
 		if (android_music_control_apply_pending())
 			return 1;
+		if (android_escort_goal_pending != -1) {
+			int action = android_escort_goal_pending;
+			int guide_key = action == META_GUIDE_CLEAR_GOAL ? KEY_0 :
+			                KEY_1 + action - META_GUIDE_FIND_ENERGY;
+
+			android_escort_goal_pending = -1;
+			if (!(Game_mode & GM_MULTI) ||
+			    ((Game_mode & GM_MULTI_COOP) && Escort_owner_player == Player_num)) {
+				input_demo_record_direct_command_guidebot_goal(guide_key, 1);
+				input_demo_apply_recorded_guidebot_goal(guide_key, 1);
+			} else if (Game_mode & GM_MULTI_COOP)
+				HUD_init_message_literal(HM_DEFAULT, "Guide-Bot is controlled by another player");
+			else
+				HUD_init_message_literal(HM_DEFAULT, "No Guide-Bot in Multiplayer!");
+			return 1;
+		}
 		if (android_escort_release_pending) {
 			android_escort_release_pending = 0;
 			input_demo_record_direct_command_escort_release_control();
