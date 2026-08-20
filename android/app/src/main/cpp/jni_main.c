@@ -1653,12 +1653,12 @@ Java_com_dxxredux_app_MainActivity_nativeGetEscortOwnerCallsign(JNIEnv *env, job
 	return (*env)->NewStringUTF(env, "");
 }
 
-/* Returns true when the guidebot has been released (cage walls destroyed) */
+/* Returns true when a live guidebot has been released or deployed */
 JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_MainActivity_nativeIsBuddyReleased(JNIEnv *env, jobject thiz)
 {
 #ifdef DXX_BUILD_DESCENT_II
-	return Buddy_allowed_to_talk ? JNI_TRUE : JNI_FALSE;
+	return Buddy_allowed_to_talk && escort_buddy_is_active() ? JNI_TRUE : JNI_FALSE;
 #else
 	return JNI_FALSE;
 #endif

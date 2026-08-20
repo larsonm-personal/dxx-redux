@@ -8,7 +8,7 @@ import java.io.File
 internal const val DEFAULT_TOUCH_PRESET_NAME = "Advanced"
 internal const val CONTROLLER_MENU_TOUCH_PRESET_NAME = "Controller Menus"
 internal const val MIN_SUPPORTED_TOUCH_LAYOUT_VERSION = 1
-internal const val CURRENT_TOUCH_LAYOUT_VERSION = 10
+internal const val CURRENT_TOUCH_LAYOUT_VERSION = 11
 
 internal fun defaultTouchPresetName(hasTouchscreen: Boolean): String =
     if (hasTouchscreen) DEFAULT_TOUCH_PRESET_NAME else CONTROLLER_MENU_TOUCH_PRESET_NAME
@@ -126,6 +126,13 @@ object TouchLayoutRepository {
                     radialMenus = migrated.radialMenus.map { migrateGuideWheelUnexploredSlice(it) },
                 )
         }
+        if (migrated.version < 11) {
+            migrated =
+                migrated.copy(
+                    version = 11,
+                    radialMenus = migrated.radialMenus.map { migrateGuideWheelWarpToMeLabel(it) },
+                )
+        }
         if (migrated.version >= CURRENT_TOUCH_LAYOUT_VERSION) return migrated
         return migrated.copy(version = CURRENT_TOUCH_LAYOUT_VERSION)
     }
@@ -204,6 +211,20 @@ object TouchLayoutRepository {
             RadialSegment("Warp to Me", TouchBindings.META_GUIDE_WARP_TO_ME),
         )
         return radial.copy(segments = segments)
+    }
+
+    private fun migrateGuideWheelWarpToMeLabel(radial: RadialMenuControl): RadialMenuControl {
+        if (radial.id != "Guide") return radial
+        return radial.copy(
+            segments =
+                radial.segments.map { segment ->
+                    if (segment.binding == TouchBindings.META_GUIDE_WARP_TO_ME) {
+                        segment.copy(label = "Warp to Me")
+                    } else {
+                        segment
+                    }
+                },
+        )
     }
 
     private fun migrateGuideWheelUnexploredAction(radial: RadialMenuControl): RadialMenuControl {

@@ -162,7 +162,7 @@ class TouchOverlayView
         /** Returns owning player's callsign for Guide wheel non-owner display. */
         var escortOwnerCallsignProvider: (() -> String)? = null
 
-        /** Returns true when guidebot has been released (cage walls destroyed). */
+        /** Returns true when a live guidebot has been released or deployed. */
         var isBuddyReleasedProvider: (() -> Boolean)? = null
 
         /** Returns current weapon state for weapon wheels. Set by MainActivity. */

@@ -180,6 +180,14 @@ static int escort_refresh_buddy_objnum(void)
 	return Buddy_objnum != -1;
 }
 
+int escort_buddy_is_active(void)
+{
+	if (!escort_is_companion_object(Buddy_objnum))
+		return 0;
+	return Objects[Buddy_objnum].shields >= 0 &&
+	       !(Objects[Buddy_objnum].flags & (OF_EXPLODING | OF_SHOULD_BE_DEAD));
+}
+
 static int escort_reactor_exists(void);
 static int escort_goal_command_allowed(void);
 int find_exit_segment(void);

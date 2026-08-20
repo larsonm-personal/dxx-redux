@@ -129,6 +129,31 @@ class GuidebotLockedWheelTest {
     }
 
     @Test
+    fun guideWheelVersionElevenMigrationRenamesWarpToMe() {
+        val layout =
+            TouchLayout(
+                version = 10,
+                radialMenus =
+                    listOf(
+                        RadialMenuControl(
+                            id = "Guide",
+                            xPct = 50f,
+                            yPct = 50f,
+                            segments =
+                                listOf(
+                                    RadialSegment("Warp Me", TouchBindings.META_GUIDE_WARP_TO_ME),
+                                ),
+                        ),
+                    ),
+            )
+
+        val migrated = TouchLayoutRepository.migrateForCurrentVersion(layout)
+
+        assertEquals(11, migrated.version)
+        assertEquals("Warp to Me", migrated.radialMenus.single().segments.single().label)
+    }
+
+    @Test
     fun guideWheelMigrationPreservesCustomCenterAction() {
         val customBinding = TouchBindings.META_GUIDE_FIND_SECRET
         val layout =
@@ -180,7 +205,7 @@ class GuidebotLockedWheelTest {
         val migrated = TouchLayoutRepository.migrateForCurrentVersion(layout)
         val guide = migrated.radialMenus.single()
 
-        assertEquals(10, migrated.version)
+        assertEquals(11, migrated.version)
         assertEquals("", guide.centerLabel)
         assertEquals(-1, guide.centerBinding)
         assertTrue(guide.segments.any { it.binding == TouchBindings.META_GUIDE_FIND_UNEXPLORED })
