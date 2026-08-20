@@ -138,7 +138,7 @@ if (-not (Test-Path $ExePath)) {
 
 $acoustIdKey = $null
 if (-not $SkipAcoustId) {
-    $configPath = "$RepoRoot/android/acoustid_config.json5"
+    $configPath = "$RepoRoot/android/acoustid_config.jsonc"
     if (Test-Path $configPath) {
         $raw = Get-Content $configPath -Raw
         $stripped = $raw -replace '//[^\n]*', '' -replace '/\*[\s\S]*?\*/', ''
@@ -146,7 +146,7 @@ if (-not $SkipAcoustId) {
             $cfg = $stripped | ConvertFrom-Json
             $acoustIdKey = $cfg.api_key
         } catch {
-            Write-Warning "Failed to parse acoustid_config.json5: $_"
+            Write-Warning "Failed to parse acoustid_config.jsonc: $_"
         }
     }
     if (-not $acoustIdKey) {

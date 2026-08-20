@@ -13,7 +13,7 @@ internal enum class AcoustIdConfigurationStatus(
 
 internal object AcoustIdConfiguration {
     fun parseApiKey(raw: String): String? {
-        val cfg = JSONObject(Json5.strip(raw))
+        val cfg = JSONObject(Jsonc.strip(raw))
         val value = cfg.opt("api_key") as? String ?: return null
         return value.takeIf {
             it.matches(Regex("[A-Za-z0-9]{8,64}")) &&

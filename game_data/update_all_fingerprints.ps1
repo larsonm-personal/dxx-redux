@@ -91,7 +91,7 @@ if ($runDiscs) {
     Run-Step "Step 1/5: Fingerprint CD disc tracks" "fingerprint_disc_tracks.ps1" $args1
 }
 
-# Step 2: Merge disc fingerprints into known_discs.json5
+# Step 2: Merge disc fingerprints into known_discs.jsonc
 if ($runDiscs -or $runMerge) {
     $args2 = @{}
     if ($DryRun) { $args2["DryRun"] = $true }
@@ -116,7 +116,7 @@ if ($runMissionZips) {
     Run-Step "Step 4/5: Extract + fingerprint mission ZIP soundtracks" "fingerprint_mission_zip_music.ps1" $argsMission
 }
 
-# Step 5: Generate known_albums.json5 from album sidecars
+# Step 5: Generate known_albums.jsonc from album sidecars
 if ($runPacks -or $runMissionZips -or $runMerge) {
     $args4 = @{}
     if ($DryRun) { $args4["DryRun"] = $true }

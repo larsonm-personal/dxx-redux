@@ -1,8 +1,8 @@
 #!/usr/bin/env pwsh
-# update_known_discs_fingerprints.ps1 -- Merge chromaprint fingerprints into known_discs.json5.
+# update_known_discs_fingerprints.ps1 -- Merge chromaprint fingerprints into known_discs.jsonc.
 #
 # Reads track_fingerprints.json from each CD image folder, matches tracks to
-# existing known_discs.json5 entries by SHA-1, and adds "chromaprint",
+# existing known_discs.jsonc entries by SHA-1, and adds "chromaprint",
 # "duration_ms", "acoustid_name", and "acoustid_album" fields to audio tracks.
 #
 # The merge is done via text manipulation to preserve comments and formatting.
@@ -14,10 +14,10 @@ $ErrorActionPreference = "Stop"
 
 $ScriptDir = $PSScriptRoot
 $CdImgDir  = Join-Path $ScriptDir "CD images"
-$Json5Path = Join-Path $ScriptDir "..\android\app\src\main\assets\known_discs.json5"
+$JsoncPath = Join-Path $ScriptDir "..\android\app\src\main\assets\known_discs.jsonc"
 
-if (-not (Test-Path $Json5Path)) {
-    Write-Error "known_discs.json5 not found: $Json5Path"
+if (-not (Test-Path $JsoncPath)) {
+    Write-Error "known_discs.jsonc not found: $JsoncPath"
     exit 1
 }
 
@@ -73,11 +73,11 @@ function Get-FpFieldsString {
     return $parts -join ", "
 }
 
-# -- Process known_discs.json5 line by line ----------------------------
+# -- Process known_discs.jsonc line by line ----------------------------
 # For each audio track line that has a sha1 we have a fingerprint for,
 # add/update chromaprint, duration_ms, acoustid_name, acoustid_album.
 
-$content = Get-Content $Json5Path -Raw -Encoding UTF8
+$content = Get-Content $JsoncPath -Raw -Encoding UTF8
 $lines = $content -split "`n"
 $modified = 0
 $alreadyPresent = 0
@@ -137,5 +137,5 @@ if ($DryRun) {
 }
 
 $result = $newLines -join "`n"
-$result | Set-Content -NoNewline $Json5Path -Encoding UTF8
-Write-Host "Wrote $Json5Path"
+$result | Set-Content -NoNewline $JsoncPath -Encoding UTF8
+Write-Host "Wrote $JsoncPath"

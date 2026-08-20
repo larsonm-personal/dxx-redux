@@ -13,14 +13,14 @@ import java.io.IOException
 
 class LauncherFileCopyTest {
     @Test
-    fun json5CleanerPreservesQuotedSyntaxAndRemovesOnlyStructuralExtras() {
-        val quoted = JSONObject(stripLauncherJson5("""{"content":"marker,}","url":"https://x//y",}"""))
+    fun jsoncCleanerPreservesQuotedSyntaxAndRemovesOnlyStructuralExtras() {
+        val quoted = JSONObject(stripLauncherJsonc("""{"content":"marker,}","url":"https://x//y",}"""))
         assertEquals("marker,}", quoted.getString("content"))
         assertEquals("https://x//y", quoted.getString("url"))
 
         val commented =
             JSONObject(
-                stripLauncherJson5(
+                stripLauncherJsonc(
                     """
                     {
                       // comment

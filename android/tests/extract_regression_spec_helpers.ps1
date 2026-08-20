@@ -1,4 +1,4 @@
-. (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers\json5.ps1')
+. (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers\jsonc.ps1')
 
 function Test-JsonProperty($value, $name) {
     if ($null -eq $value) {
@@ -196,7 +196,7 @@ function Write-CanonicalRegressionSpec($path, $spec, $sourceName = $null, $gener
     $json = ($canonical | ConvertTo-Json -Depth 10) -replace "`r`n", "`n"
     if (Test-Path -LiteralPath $path -PathType Leaf) {
         try {
-            $existingCanonical = ConvertTo-CanonicalRegressionSpec (Read-Json5File $path)
+            $existingCanonical = ConvertTo-CanonicalRegressionSpec (Read-JsoncFile $path)
             $existingJson = ($existingCanonical | ConvertTo-Json -Depth 10) -replace "`r`n", "`n"
             if ($existingJson -ceq $json -and $header.SourceName -ceq $sourceName) {
                 return
@@ -218,7 +218,7 @@ function Write-CanonicalRegressionSpec($path, $spec, $sourceName = $null, $gener
 }
 
 function Set-RegressionSpecLastTestResult($path, $lastTestResult) {
-    $spec = Read-Json5File $path
+    $spec = Read-JsoncFile $path
     $existing = Get-JsonPropertyValue $spec 'last_test_result'
     if (-not (Test-ExtractRegressionResultShouldReplace $existing $lastTestResult)) {
         return $false
@@ -250,10 +250,10 @@ function Get-ExtractRegressionOracleStatus {
                             Where-Object { $_.Extension.ToLowerInvariant() -in @('.cue', '.iso') }).Count -gt 0
                     } |
                     Sort-Object FullName)
-        $specPaths = @(Get-ChildItem -LiteralPath $cdRoot -Recurse -Filter 'extract_regression.json5' -File -ErrorAction SilentlyContinue |
+        $specPaths = @(Get-ChildItem -LiteralPath $cdRoot -Recurse -Filter 'extract_regression.jsonc' -File -ErrorAction SilentlyContinue |
                 Sort-Object FullName)
         foreach ($dir in $sourceDirs) {
-            $specPath = Join-Path $dir.FullName 'extract_regression.json5'
+            $specPath = Join-Path $dir.FullName 'extract_regression.jsonc'
             if (-not (Test-Path -LiteralPath $specPath -PathType Leaf)) {
                 $missingSpecDirs += $dir.FullName
             }
@@ -341,7 +341,7 @@ function Ensure-ExtractRegressionOracles {
 
     Write-Host "CD extraction regression oracles are missing or incomplete" -ForegroundColor Yellow
     Write-Host "  Source CD folders: $($status.SourceDirs.Count)" -ForegroundColor Yellow
-    Write-Host "  Existing extract_regression.json5 files: $($status.SpecPaths.Count)" -ForegroundColor Yellow
+    Write-Host "  Existing extract_regression.jsonc files: $($status.SpecPaths.Count)" -ForegroundColor Yellow
     Write-Host "  Missing specs: $($status.MissingSpecDirs.Count)" -ForegroundColor Yellow
     foreach ($dir in ($status.MissingSpecDirs | Select-Object -First 8)) {
         Write-Host "    $dir" -ForegroundColor Yellow

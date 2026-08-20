@@ -13,7 +13,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 $androidRoot = Join-Path $repoRoot 'android'
-$manifestPath = Join-Path $androidRoot 'benchmarks\level_metadata_analysis_manifest.json5'
+$manifestPath = Join-Path $androidRoot 'benchmarks\level_metadata_analysis_manifest.jsonc'
 $historyPath = Join-Path $androidRoot 'benchmarks\level_metadata_analysis_history.json'
 $detailPath = Join-Path $androidRoot 'temp\level_metadata_analysis_current.json'
 

@@ -8,7 +8,7 @@ import java.security.MessageDigest
 
 /**
  * Identifies BIN/CUE disc images by matching per-track SHA1 hashes against
- * the known_discs.json5 database bundled in APK assets.
+ * the known_discs.jsonc database bundled in APK assets.
  *
  * Matching algorithm: for each known disc, compare SHA1s in order starting
  * from track 1. The disc with the most consecutive in-order matches from
@@ -74,7 +74,7 @@ class DiscIdentifier(
         try {
             val raw =
                 context.assets
-                    .open("known_discs.json5")
+                    .open("known_discs.jsonc")
                     .bufferedReader()
                     .readText()
             parseDatabase(raw)
@@ -135,12 +135,12 @@ class DiscIdentifier(
 
     companion object {
         internal fun parseDatabase(raw: String): List<KnownDisc> {
-            val discsArray = JSONObject(Json5.strip(raw)).getJSONArray("discs")
+            val discsArray = JSONObject(Jsonc.strip(raw)).getJSONArray("discs")
             return (0 until discsArray.length()).map { index ->
                 try {
                     val disc = discsArray.getJSONObject(index)
                     require(disc.optString("type") != "album") {
-                        "album records belong in known_albums.json5"
+                        "album records belong in known_albums.jsonc"
                     }
                     val id = disc.getString("id").also { require(it.isNotBlank()) { "id is blank" } }
                     val label = disc.getString("label").also { require(it.isNotBlank()) { "label is blank" } }

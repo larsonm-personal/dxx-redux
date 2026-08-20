@@ -14,13 +14,13 @@ try {
 | Status | Time | Test | Type |
 |--------|------|------|------|
 | PASS | 09:59 | stale_test | ps1 |
-| PASS | 00:59 | minute_test | json5 |
+| PASS | 00:59 | minute_test | jsonc |
 '@ | Set-Content -LiteralPath $olderReport -Encoding utf8
     @'
 | Status | Time | Test | Type |
 |--------|------|------|------|
 | PASS | 00:09 | short_test | ps1 |
-| FAIL | 01:09 | minute_test | json5 |
+| FAIL | 01:09 | minute_test | jsonc |
 | TIMEOUT | 01:02:03 | hour_test | ps1 |
 | SKIP | -- | skipped_test | ps1 |
 '@ | Set-Content -LiteralPath $newerReport -Encoding utf8
@@ -28,7 +28,7 @@ try {
 | Status | Time | Test | Type |
 |--------|------|------|------|
 | PASS | 00:19 | short_test | ps1 |
-| PASS | 20:09 | minute_test | json5 |
+| PASS | 20:09 | minute_test | jsonc |
 '@ | Set-Content -LiteralPath $newestReport -Encoding utf8
     (Get-Item -LiteralPath $olderReport).LastWriteTimeUtc = (Get-Date).AddMinutes(-2).ToUniversalTime()
     (Get-Item -LiteralPath $newerReport).LastWriteTimeUtc = (Get-Date).AddMinutes(-1).ToUniversalTime()

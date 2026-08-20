@@ -73,7 +73,7 @@ try {
         throw 'Automation staging failures are no longer verified and classified as retryable infrastructure failures'
     }
 
-    $stablePath = Join-Path $tempRoot 'stable.json5'
+    $stablePath = Join-Path $tempRoot 'stable.jsonc'
     $spec = [ordered]@{
         source_type = 'cd'
         expected_files = @('descent.hog')
@@ -91,7 +91,7 @@ try {
     Write-CanonicalRegressionSpec -path $stablePath -spec $spec -sourceName 'stable' -generated '2099-01-01 00:00:00'
     $changed = [System.IO.File]::ReadAllText($stablePath)
     if ($changed -ceq $initial -or $changed -notmatch 'Generated: 2099-01-01 00:00:00' -or
-        (Read-Json5File $stablePath).total_extracted -ne 2) {
+        (Read-JsoncFile $stablePath).total_extracted -ne 2) {
         throw 'Semantic spec change was not written with the new generated time'
     }
 
@@ -112,7 +112,7 @@ try {
         throw 'Optional JSON string arrays are not normalized safely for GOG specs'
     }
 
-    $evidencePath = Join-Path $tempRoot 'evidence.json5'
+    $evidencePath = Join-Path $tempRoot 'evidence.jsonc'
     $fullPass = [ordered]@{
         status = 'pass'
         failure_step = ''
@@ -140,7 +140,7 @@ try {
     if (Set-RegressionSpecLastTestResult $evidencePath $fileOnlyPass) {
         throw 'File-only evidence unexpectedly replaced a full result'
     }
-    $preserved = (Read-Json5File $evidencePath).last_test_result
+    $preserved = (Read-JsoncFile $evidencePath).last_test_result
     if ($preserved.test_mode -ne 'full' -or $preserved.level_reached -ne 'Lunar Outpost') {
         throw 'Full result was not preserved'
     }
@@ -153,7 +153,7 @@ try {
         test_mode = 'full'
     }
     if (-not (Set-RegressionSpecLastTestResult $evidencePath $fullFail) -or
-        (Read-Json5File $evidencePath).last_test_result.status -ne 'fail') {
+        (Read-JsoncFile $evidencePath).last_test_result.status -ne 'fail') {
         throw 'Equal-strength full evidence did not replace the prior result'
     }
     if ((Get-RegressionSpecHeader $evidencePath).Generated -ne '2000-01-01 00:00:00') {
@@ -162,7 +162,7 @@ try {
     if (-not (Set-RegressionSpecLastTestResult $evidencePath $fileOnlyPass)) {
         throw 'Successful file-only evidence did not clear a stale full failure'
     }
-    $recovered = (Read-Json5File $evidencePath).last_test_result
+    $recovered = (Read-JsoncFile $evidencePath).last_test_result
     if ($recovered.status -ne 'pass' -or $recovered.test_mode -ne 'file_only') {
         throw 'Successful file-only recovery result was not saved'
     }
@@ -182,7 +182,7 @@ try {
         total_extracted = 0
         import_mode = 'setup_iso'
     }
-    Write-CanonicalRegressionSpec -path (Join-Path $emptyDisc 'extract_regression.json5') `
+    Write-CanonicalRegressionSpec -path (Join-Path $emptyDisc 'extract_regression.jsonc') `
         -spec $emptySpec -sourceName 'empty-oracle' -generated '2000-01-01 00:00:00'
 
     $pwsh = Get-ExtractRegressionPwshPath

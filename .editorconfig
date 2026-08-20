@@ -35,7 +35,7 @@ indent_size = 4
 indent_style = space
 indent_size = 4
 
-[*.{xml,json,json5}]
+[*.{xml,json,jsonc}]
 indent_style = space
 indent_size = 4
 

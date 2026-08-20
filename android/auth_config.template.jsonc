@@ -1,0 +1,26 @@
+// auth_config.jsonc -- Google Play Games authentication configuration
+// Copy this file to auth_config.jsonc and fill in your values.
+// DO NOT commit auth_config.jsonc to version control.
+//
+// How to obtain these values:
+//   1. Go to Google Play Console > Play Games Services > Setup and management > Configuration
+//   2. Create or select your Play Games project
+//   3. Add your Android app (link to your game's Play Console listing)
+//   4. Under "Credentials", note the auto-created Android OAuth client
+//   5. Go to Google Cloud Console > APIs and Credentials > OAuth 2.0 Client IDs
+//   6. Create a "Web application" client ID (if one doesn't exist)
+//   7. Copy the Web client ID below as "server_client_id"
+//   8. Copy the Play Games app ID (numeric, from Play Console) as "games_app_id"
+//
+// The Android client ID is auto-linked by the SDK via your app's signing key
+// SHA-1 fingerprint -- you do NOT need to put it here. Only the web/server
+// client ID is needed for requestServerSideAccess().
+{
+    // Web application OAuth 2.0 client ID (from Google Cloud Console)
+    // Used by requestServerSideAccess() to get a server auth code
+    "server_client_id": "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com",
+
+    // Play Games app ID (numeric, from Play Console > Play Games Services)
+    // Used in AndroidManifest.xml as com.google.android.gms.games.APP_ID
+    "games_app_id": "000000000000"
+}

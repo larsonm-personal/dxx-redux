@@ -28,7 +28,7 @@ if (-not $BaseGame -and -not $MissionZip) {
 }
 $MissionZip = if ($BaseGame) { "" } else { (Resolve-Path -LiteralPath $MissionZip).Path }
 $deviceZip = "robot_preview_smoke_$Seed.zip"
-$deviceScript = "robot_preview_smoke_$Seed.json5"
+$deviceScript = "robot_preview_smoke_$Seed.jsonc"
 $localScript = Join-Path $androidRoot "temp\robot_preview_smoke\$deviceScript"
 $selectionFile = "files/robot_preview_smoke_selection.json"
 $introspectionFile = "files/robot_preview_introspect.json"
@@ -65,12 +65,12 @@ try {
         Adb -AdbArgs @("shell", "rm", "-f", $temporaryZip) | Out-Null
     }
 
-    $templateName = if ($BaseGame) { "test_base_robot_preview.json5" } else { "test_robot_preview.json5" }
+    $templateName = if ($BaseGame) { "test_base_robot_preview.jsonc" } else { "test_robot_preview.jsonc" }
     $template = Get-Content -LiteralPath (Join-Path $androidRoot "game_scripts\$templateName") -Raw
     $body = $template.Replace('${MISSION_ZIP}', $deviceZip)
     $body = $body.Replace('${GAME}', $Game)
-    $body = $body.Replace('${ROBOT_NUMBER}', "$RobotNumber")
-    $body = $body.Replace('${SEED}', "$Seed")
+    $body = $body.Replace('"${ROBOT_NUMBER}"', "$RobotNumber")
+    $body = $body.Replace('"${SEED}"', "$Seed")
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $localScript) | Out-Null
     [IO.File]::WriteAllText($localScript, $body + "`n", [Text.UTF8Encoding]::new($false))
     $temporaryScript = "/data/local/tmp/$deviceScript"

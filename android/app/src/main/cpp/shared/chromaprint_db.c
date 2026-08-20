@@ -25,7 +25,7 @@
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
-/* Single source of truth for the match threshold is fingerprint_config.json5.
+/* Single source of truth for the match threshold is fingerprint_config.jsonc.
  * Database loading fails until Kotlin supplies its validated value. */
 #define DEFAULT_DURATION_TOLERANCE 0.10f
 

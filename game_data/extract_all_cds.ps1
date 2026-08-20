@@ -79,7 +79,7 @@ $folders = Get-ChildItem -Path $CdImgDir -Directory | Sort-Object Name
 if ($SpecListPath) {
     $selectedSpecs = @(Get-Content -LiteralPath $SpecListPath | ForEach-Object { [IO.Path]::GetFullPath($_) })
     $folders = @($folders | Where-Object {
-            $selectedSpecs -contains [IO.Path]::GetFullPath((Join-Path $_.FullName 'extract_regression.json5'))
+            $selectedSpecs -contains [IO.Path]::GetFullPath((Join-Path $_.FullName 'extract_regression.jsonc'))
         })
 }
 $successes = @()

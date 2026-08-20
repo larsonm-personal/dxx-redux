@@ -44,7 +44,7 @@ internal data class AcoustIdHttpResponse(
 /**
  * Optional AcoustID web lookup for tracks not matched by the local
  * fingerprint database.  Off by default -- requires an API key in
- * acoustid_config.json5.
+ * acoustid_config.jsonc.
  *
  * Rate limited to 3 requests/second (350ms minimum between calls)
  * with exponential backoff on HTTP 429 or server errors.
@@ -67,13 +67,13 @@ object AcoustIdClient {
             .build()
     }
 
-    /** Load the generated acoustid_config.json5 asset and report why it is unavailable. */
+    /** Load the generated acoustid_config.jsonc asset and report why it is unavailable. */
     internal fun configure(context: Context): AcoustIdConfigurationStatus {
         if (apiKey != null) return AcoustIdConfigurationStatus.AVAILABLE
         return try {
             val raw =
                 context.assets
-                    .open("acoustid_config.json5")
+                    .open("acoustid_config.jsonc")
                     .bufferedReader()
                     .use { it.readText() }
             apiKey = AcoustIdConfiguration.parseApiKey(raw)

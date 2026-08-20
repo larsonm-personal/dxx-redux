@@ -35,14 +35,14 @@ try {
         -Destination (Join-Path $gameDataDir 'generate_regression_specs.ps1')
     Copy-Item -LiteralPath (Join-Path $repoRoot 'android\tests\extract_regression_spec_helpers.ps1') `
         -Destination (Join-Path $testsDir 'extract_regression_spec_helpers.ps1')
-    Copy-Item -LiteralPath (Join-Path $repoRoot 'android\helpers\json5.ps1') `
-        -Destination (Join-Path $helpersDir 'json5.ps1')
+    Copy-Item -LiteralPath (Join-Path $repoRoot 'android\helpers\jsonc.ps1') `
+        -Destination (Join-Path $helpersDir 'jsonc.ps1')
     Copy-Item -LiteralPath (Join-Path $repoRoot 'android\helpers\bounded_extraction.ps1') `
         -Destination (Join-Path $helpersDir 'bounded_extraction.ps1')
     Copy-Item -LiteralPath (Join-Path $repoRoot 'game_data\extract_all_cds.ps1') `
         -Destination (Join-Path $gameDataDir 'extract_all_cds.ps1')
     [System.IO.File]::WriteAllText(
-        (Join-Path $assetsDir 'known_discs.json5'),
+        (Join-Path $assetsDir 'known_discs.jsonc'),
         '{"discs":[{"id":"descent-test-flight","game":"d1","tracks":' +
         '[{"track":1,"type":"data","sha1":"test-flight-sha1"}]}]}',
         [System.Text.UTF8Encoding]::new($false)
@@ -102,9 +102,9 @@ try {
         [System.Text.UTF8Encoding]::new($false)
     )
     [System.IO.File]::WriteAllText(
-        (Join-Path $combinedDir 'combined_launch.json5'),
-        '{"source_specs":["../../CD images/d2-base/extract_regression.json5",' +
-        '"../../CD images/vertigo-expansion-only/extract_regression.json5"],' +
+        (Join-Path $combinedDir 'combined_launch.jsonc'),
+        '{"source_specs":["../../CD images/d2-base/extract_regression.jsonc",' +
+        '"../../CD images/vertigo-expansion-only/extract_regression.jsonc"],' +
         '"game":"d2","classification":"d2_vertigo_combined",' +
         '"expected_mission":"Descent 2: Vertigo","expected_level1":"deep kraeg tunnel system",' +
         '"mission_files":["d2x.hog","d2x.mn2"]}',
@@ -131,7 +131,7 @@ try {
     Assert-True ($LASTEXITCODE -eq 0) "Regression spec generation failed: $($output -join "`n")"
 
     . (Join-Path $testsDir 'extract_regression_spec_helpers.ps1')
-    $spec = Read-Json5File (Join-Path $discDir 'extract_regression.json5')
+    $spec = Read-JsoncFile (Join-Path $discDir 'extract_regression.jsonc')
     Assert-True ($spec.disc_image_type -eq 'iso') `
         'Regression spec generation should use an ISO referenced by its fingerprint CUE'
     Assert-True ($spec.import_mode -eq 'setup_iso') `
@@ -141,17 +141,17 @@ try {
         @($spec.source_files.name) -contains 'disc.iso') `
         'An ISO fingerprint CUE source set should bind both descriptor files'
 
-    $vertigoSpec = Read-Json5File (Join-Path $vertigoDir 'extract_regression.json5')
+    $vertigoSpec = Read-JsoncFile (Join-Path $vertigoDir 'extract_regression.jsonc')
     Assert-True ($vertigoSpec.classification -eq 'd2_vertigo' -and
         $null -eq $vertigoSpec.expected_mission -and $null -eq $vertigoSpec.expected_level1) `
         'A Vertigo-only disc should be a non-launchable file-only regression'
 
-    $testFlightSpec = Read-Json5File (Join-Path $testFlightDir 'extract_regression.json5')
+    $testFlightSpec = Read-JsoncFile (Join-Path $testFlightDir 'extract_regression.jsonc')
     Assert-True ($testFlightSpec.classification -eq 'd1_demo' -and
         $null -eq $testFlightSpec.expected_mission -and $null -eq $testFlightSpec.expected_level1) `
         'The unsupported Test Flight demo should be a non-launchable file-only regression'
 
-    $combinedSpec = Read-Json5File (Join-Path $combinedDir 'extract_regression.json5')
+    $combinedSpec = Read-JsoncFile (Join-Path $combinedDir 'extract_regression.jsonc')
     Assert-True ($combinedSpec.source_type -eq 'combined' -and
         @($combinedSpec.source_specs).Count -eq 2 -and
         $combinedSpec.expected_mission -eq 'Descent 2: Vertigo' -and

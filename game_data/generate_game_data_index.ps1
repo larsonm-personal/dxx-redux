@@ -43,7 +43,7 @@ function Add-RequiredHash {
     }
 }
 
-function Get-Json5Object {
+function Get-JsoncObject {
     param([Parameter(Mandatory = $true)][string]$Path)
 
     $raw = Get-Content -LiteralPath $Path -Raw
@@ -57,7 +57,7 @@ function Get-DeclaredGameDataHash {
     param([Parameter(Mandatory = $true)][string]$Path)
 
     try {
-        $document = Get-Json5Object -Path $Path
+        $document = Get-JsoncObject -Path $Path
     } catch {
         return @()
     }
@@ -118,7 +118,7 @@ function Get-RequiredGameDataHash {
 
     $gameScriptDir = Join-RepoPath "android" "game_scripts"
     if (Test-Path -LiteralPath $gameScriptDir -PathType Container) {
-        foreach ($script in Get-ChildItem -LiteralPath $gameScriptDir -Recurse -File -Filter "*.json5" -ErrorAction SilentlyContinue) {
+        foreach ($script in Get-ChildItem -LiteralPath $gameScriptDir -Recurse -File -Filter "*.jsonc" -ErrorAction SilentlyContinue) {
             foreach ($hash in Get-DeclaredGameDataHash -Path $script.FullName) {
                 Add-RequiredHash -HashSet $hashes -Hash $hash
             }

@@ -25,7 +25,7 @@ try {
     [System.IO.File]::WriteAllBytes($bar, [byte[]](4, 5, 6))
     $fooHash = (Get-FileHash -LiteralPath $foo -Algorithm SHA256).Hash.ToLowerInvariant()
     $barHash = (Get-FileHash -LiteralPath $bar -Algorithm SHA256).Hash.ToLowerInvariant()
-    $knownVersions = Join-Path $assetDir.FullName 'known_versions.json5'
+    $knownVersions = Join-Path $assetDir.FullName 'known_versions.jsonc'
     $baseline = @"
 {
   "versions": [

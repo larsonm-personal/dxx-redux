@@ -11,7 +11,7 @@
 #   - fpcalc.exe via android/get_deps/helpers/get_fpcalc.ps1
 #   - D2 redbook MP3 files in game_data/music/D2 infinite abyss redbook mp3/
 #     or game_data/music/D2 redbook mp3 rips/; skips when only metadata is present
-#   - AcoustID API key in android/acoustid_config.json5
+#   - AcoustID API key in android/acoustid_config.jsonc
 
 param(
     [switch]$SkipAcoustId  # Skip online AcoustID tests
@@ -188,7 +188,7 @@ if (-not $SkipAcoustId) {
     Write-Host "=== Test 2: AcoustID lookup ==="
 
     # Load API key
-    $configPath = Resolve-RepoPath "android/acoustid_config.json5"
+    $configPath = Resolve-RepoPath "android/acoustid_config.jsonc"
     $apiKey = $null
     if (Test-Path $configPath) {
         $raw = Get-Content -LiteralPath $configPath -Raw

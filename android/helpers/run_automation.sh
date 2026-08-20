@@ -3,9 +3,9 @@
 # run_automation.sh - Push and execute automation test scripts on Android.
 #
 # Usage:
-#   ./android/helpers/run_automation.sh [script.json5]          # run a single test
+#   ./android/helpers/run_automation.sh [script.jsonc]          # run a single test
 #   ./android/helpers/run_automation.sh                         # run default test
-#   ./android/helpers/run_automation.sh --all                   # run all game_scripts/test_*.json5
+#   ./android/helpers/run_automation.sh --all                   # run all game_scripts/test_*.jsonc
 #   ./android/helpers/run_automation.sh --watch script.json     # run + keep tailing logcat
 #
 # The script is pushed to the app's files directory, then a broadcast
@@ -36,7 +36,7 @@ else
     exit 1
 fi
 GAME_SCRIPTS_DIR="$ANDROID_DIR/game_scripts"
-DEFAULT_SCRIPT="$GAME_SCRIPTS_DIR/test_launch_to_automap.json5"
+DEFAULT_SCRIPT="$GAME_SCRIPTS_DIR/test_launch_to_automap.jsonc"
 TIMEOUT_SEC=120 # max time to wait for a single test
 
 WATCH=false
@@ -55,11 +55,11 @@ done
 
 if $RUN_ALL; then
     SCRIPTS=()
-    for f in "$GAME_SCRIPTS_DIR"/test_*.json5; do
+    for f in "$GAME_SCRIPTS_DIR"/test_*.jsonc; do
         [ -f "$f" ] && SCRIPTS+=("$f")
     done
     if [ ${#SCRIPTS[@]} -eq 0 ]; then
-        echo "ERROR: No test_*.json5 files found in $GAME_SCRIPTS_DIR" >&2
+        echo "ERROR: No test_*.jsonc files found in $GAME_SCRIPTS_DIR" >&2
         exit 1
     fi
 elif [ ${#SCRIPTS[@]} -eq 0 ]; then

@@ -4,7 +4,7 @@
 # For each .exe/.pkg in game_data/gog installers/:
 #   1. Run extract_gog.exe to extract game files
 #   2. SHA-256 hash each extracted file
-#   3. Cross-reference against known_versions.json5
+#   3. Cross-reference against known_versions.jsonc
 #
 # Idempotent: skips installers with existing extracted/ unless -Force.
 #
@@ -28,7 +28,7 @@ $SrcDir       = Join-Path $RepoRoot "android\app\src\main\cpp\extract"
 $BuildDir     = Join-Path $RepoRoot "android\tests\build"
 $GogDir       = Join-Path $ScriptDir "gog installers"
 $ExePath      = $null
-$KnownVerFile = Join-Path $RepoRoot "android\app\src\main\assets\known_versions.json5"
+$KnownVerFile = Join-Path $RepoRoot "android\app\src\main\assets\known_versions.jsonc"
 
 function Resolve-ExtractTool {
     param([string]$ToolName)
@@ -68,7 +68,7 @@ if (-not (Test-Path $ExePath)) {
     exit 1
 }
 
-# -- Load known_versions.json5 ------------------------------------------------
+# -- Load known_versions.jsonc ------------------------------------------------
 
 function Load-KnownVersions {
     param([string]$Path)
@@ -113,7 +113,7 @@ $installers = Get-ChildItem -Path $GogDir -File | Where-Object {
 if ($SpecListPath) {
     $selectedSpecs = @(Get-Content -LiteralPath $SpecListPath | ForEach-Object { [IO.Path]::GetFullPath($_) })
     $installers = @($installers | Where-Object {
-            $specName = "$($_.BaseName)_regression.json5"
+            $specName = "$($_.BaseName)_regression.jsonc"
             $selectedSpecs -contains [IO.Path]::GetFullPath((Join-Path $GogDir $specName))
         })
 }
@@ -233,7 +233,7 @@ Write-Host "  Unknown files:        $totalUnknown"
 Write-Host "  Errors:               $totalErrors"
 
 if ($totalUnknown -gt 0) {
-    Write-Host "`n  Unknown files (not in known_versions.json5):" -ForegroundColor Yellow
+    Write-Host "`n  Unknown files (not in known_versions.jsonc):" -ForegroundColor Yellow
     $allResults | Where-Object { $_.Version -eq "UNKNOWN" } | ForEach-Object {
         Write-Host ("    {0}: {1}  sha256={2}" -f $_.Installer, $_.File, $_.SHA256) -ForegroundColor Yellow
     }

@@ -2,9 +2,9 @@
 # run_test.ps1 -- Run an automation test script on the Android emulator with health checks.
 #
 # Usage:
-#   .\android\helpers\run_test.ps1 test_death.json5
-#   .\android\helpers\run_test.ps1 test_death.json5 -Install   # also install APK first
-#   .\android\helpers\run_test.ps1 test_axis_mapping.json5 -Game d1  # force a specific game
+#   .\android\helpers\run_test.ps1 test_death.jsonc
+#   .\android\helpers\run_test.ps1 test_death.jsonc -Install   # also install APK first
+#   .\android\helpers\run_test.ps1 test_axis_mapping.jsonc -Game d1  # force a specific game
 #
 # The script will:
 #   1. Verify emulator is healthy (restart if needed)
@@ -36,10 +36,10 @@ function Push-TestScriptToDevice {
     )
 
     Write-Status "Pushing test script: $DeviceName"
-    $devicePrefix = $DeviceName -replace '\.run-[^.]+\.json5$', ''
+    $devicePrefix = $DeviceName -replace '\.run-[^.]+\.jsonc$', ''
     Adb -AdbArgs @(
         "shell", "run-as", $script:PACKAGE, "find", "files", "-maxdepth", "1",
-        "-name", "'$devicePrefix.run-*.json5'", "-delete"
+        "-name", "'$devicePrefix.run-*.jsonc'", "-delete"
     ) | Out-Null
     Adb -AdbArgs @("push", $SourcePath, "/data/local/tmp/$DeviceName") | Out-Null
     for ($stageAttempt = 1; $stageAttempt -le 3; $stageAttempt++) {
@@ -202,7 +202,7 @@ foreach ($gameId in $gameList) {
     $resolvedPath = Resolve-TestScript -ScriptPath $scriptPath -GameId $gameId -Params $resolvedParams
     $runId = [guid]::NewGuid().ToString("N")
     $scriptStem = [System.IO.Path]::GetFileNameWithoutExtension($ScriptName)
-    $pushName = "$scriptStem.run-$runId.json5"
+    $pushName = "$scriptStem.run-$runId.jsonc"
     if ($resolvedPath -ne $scriptPath) {
         # Push the resolved file instead, but keep the original name on device
         $pushSrc = $resolvedPath

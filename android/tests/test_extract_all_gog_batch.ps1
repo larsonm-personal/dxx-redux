@@ -25,7 +25,7 @@ try {
     Set-Content -LiteralPath (Join-Path $gogDir 'same.exe') -Value 'exe' -NoNewline
     Set-Content -LiteralPath (Join-Path $gogDir 'same.pkg') -Value 'pkg' -NoNewline
     Set-Content -LiteralPath (Join-Path $buildDir 'fixture-extract-gog') -Value 'tool' -NoNewline
-    Set-Content -LiteralPath (Join-Path $assetsDir 'known_versions.json5') `
+    Set-Content -LiteralPath (Join-Path $assetsDir 'known_versions.jsonc') `
         -Value '{"versions":[]}' -NoNewline
 
     @'

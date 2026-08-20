@@ -50,14 +50,14 @@ if ($publisher -notmatch 'IsAmbiguous' -or $publisher -notmatch 'ambiguousLookup
     throw 'Album publication does not exclude ambiguous fingerprint identities'
 }
 
-$discRaw = Get-Content (Join-Path $repoRoot 'android\app\src\main\assets\known_discs.json5') -Raw
-$albumRaw = Get-Content (Join-Path $repoRoot 'android\app\src\main\assets\known_albums.json5') -Raw
-$stripJson5 = {
+$discRaw = Get-Content (Join-Path $repoRoot 'android\app\src\main\assets\known_discs.jsonc') -Raw
+$albumRaw = Get-Content (Join-Path $repoRoot 'android\app\src\main\assets\known_albums.jsonc') -Raw
+$stripJsonc = {
     param([string]$Raw)
     return ($Raw -replace '//[^\r\n]*', '' -replace '/\*[\s\S]*?\*/', '' -replace ',(\s*[}\]])', '$1')
 }
-$discDb = (& $stripJson5 $discRaw) | ConvertFrom-Json
-$albumDb = (& $stripJson5 $albumRaw) | ConvertFrom-Json
+$discDb = (& $stripJsonc $discRaw) | ConvertFrom-Json
+$albumDb = (& $stripJsonc $albumRaw) | ConvertFrom-Json
 $discSources = @($discDb.discs | ForEach-Object {
         [PSCustomObject]@{ Id = [string]$_.id; Label = [string]$_.label }
     })

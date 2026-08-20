@@ -16,7 +16,7 @@ import java.io.FileWriter
 import java.util.Locale
 import java.util.Random
 
-internal fun stripLauncherJson5(text: String): String {
+internal fun stripLauncherJsonc(text: String): String {
     val withoutComments = StringBuilder(text.length)
     var inString = false
     var i = 0
@@ -69,7 +69,7 @@ internal fun stripLauncherJson5(text: String): String {
 }
 
 /**
- * Executes JSON5 automation scripts in the launcher (SetupActivity) process.
+ * Executes JSONC automation scripts in the launcher (SetupActivity) process.
  *
  * Steps like log, wait_ms, wait_for, assert, setup_command, reset_state,
  * write_config, install_staged_demo, and enter_launcher are handled here. When an enter_game
@@ -128,7 +128,7 @@ class LauncherScriptExecutor(
         startTimeMs = System.currentTimeMillis()
 
         val text = withContext(Dispatchers.IO) { File(path).readText() }
-        val cleaned = stripLauncherJson5(text)
+        val cleaned = stripLauncherJsonc(text)
         steps = JSONArray(cleaned)
 
         // Build flat step list skipping _info blocks

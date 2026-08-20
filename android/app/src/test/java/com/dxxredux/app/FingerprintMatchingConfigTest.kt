@@ -45,11 +45,11 @@ class FingerprintMatchingConfigTest {
     private fun assetFile(): File {
         val candidates =
             listOf(
-                File("src/main/assets/fingerprint_config.json5"),
-                File("app/src/main/assets/fingerprint_config.json5"),
-                File("android/app/src/main/assets/fingerprint_config.json5"),
+                File("src/main/assets/fingerprint_config.jsonc"),
+                File("app/src/main/assets/fingerprint_config.jsonc"),
+                File("android/app/src/main/assets/fingerprint_config.jsonc"),
             )
         return candidates.firstOrNull(File::isFile)
-            ?: error("fingerprint_config.json5 not found from ${File(".").absolutePath}")
+            ?: error("fingerprint_config.jsonc not found from ${File(".").absolutePath}")
     }
 }

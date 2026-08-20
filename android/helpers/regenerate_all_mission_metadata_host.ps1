@@ -15,7 +15,7 @@ $repoRoot = Split-Path -Parent $androidRoot
 . (Join-Path $scriptDir "standard_game_data.ps1")
 . (Join-Path $scriptDir "cd_level_metadata_sources.ps1")
 $zipDir = Join-Path $repoRoot "game_data\mission_files"
-$cdSourceManifest = Join-Path $zipDir "cd_level_metadata_sources.json5"
+$cdSourceManifest = Join-Path $zipDir "cd_level_metadata_sources.jsonc"
 $stamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $outDir = Join-Path $androidRoot "temp\mission_zip_host_metadata\$stamp"
 $metadataDir = Join-Path $outDir "metadata"

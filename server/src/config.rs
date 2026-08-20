@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use serde::Deserialize;
 
-/// Server configuration, loaded from JSON5 config file + environment variable overrides.
+/// Server configuration, loaded from a JSONC file plus environment variable overrides.
 #[derive(Clone)]
 pub struct ServerConfig {
     /// Address for the WebSocket listener (e.g. "0.0.0.0:9000")
@@ -59,7 +59,7 @@ pub struct ServerConfig {
     pub force_relay: bool,
 }
 
-/// JSON5 config file schema. All fields optional; env vars override file values.
+/// JSONC config file schema. All fields optional; env vars override file values.
 #[derive(Deserialize, Default)]
 #[serde(default)]
 struct ConfigFile {
@@ -88,13 +88,15 @@ struct ConfigFile {
 }
 
 impl ServerConfig {
-    /// Load config: read JSON5 file (if present), then overlay environment variables.
-    /// File path comes from `CONFIG_FILE` env var (default: `server_config.json5`).
+    /// Load config: read a JSONC file (if present), then overlay environment variables.
+    /// File path comes from `CONFIG_FILE` env var (default: `server_config.jsonc`).
     pub fn load() -> Self {
         let config_path =
-            std::env::var("CONFIG_FILE").unwrap_or_else(|_| "server_config.json5".into());
+            std::env::var("CONFIG_FILE").unwrap_or_else(|_| "server_config.jsonc".into());
         let file_cfg = match std::fs::read_to_string(&config_path) {
-            Ok(contents) => match json5::from_str::<ConfigFile>(&contents) {
+            Ok(contents) => match strip_jsonc_comments(&contents).and_then(|json| {
+                serde_json::from_str::<ConfigFile>(&json).map_err(|e| e.to_string())
+            }) {
                 Ok(cfg) => {
                     eprintln!("loaded config from {config_path}");
                     cfg
@@ -216,5 +218,91 @@ impl ServerConfig {
     /// Load config from environment variables only (backwards-compatible alias).
     pub fn from_env() -> Self {
         Self::load()
+    }
+}
+
+fn strip_jsonc_comments(input: &str) -> Result<String, String> {
+    let bytes = input.as_bytes();
+    let mut output = Vec::with_capacity(input.len());
+    let mut index = 0;
+    let mut in_string = false;
+    let mut escaped = false;
+
+    while index < bytes.len() {
+        let current = bytes[index];
+        if in_string {
+            output.push(current);
+            if escaped {
+                escaped = false;
+            } else if current == b'\\' {
+                escaped = true;
+            } else if current == b'"' {
+                in_string = false;
+            }
+            index += 1;
+            continue;
+        }
+
+        if current == b'"' {
+            in_string = true;
+            output.push(b'"');
+            index += 1;
+        } else if current == b'/' && bytes.get(index + 1) == Some(&b'/') {
+            index += 2;
+            while index < bytes.len() && bytes[index] != b'\n' && bytes[index] != b'\r' {
+                index += 1;
+            }
+        } else if current == b'/' && bytes.get(index + 1) == Some(&b'*') {
+            index += 2;
+            let mut closed = false;
+            while index < bytes.len() {
+                if bytes[index] == b'*' && bytes.get(index + 1) == Some(&b'/') {
+                    index += 2;
+                    closed = true;
+                    break;
+                }
+                if bytes[index] == b'\n' || bytes[index] == b'\r' {
+                    output.push(bytes[index]);
+                }
+                index += 1;
+            }
+            if !closed {
+                return Err("unterminated JSONC block comment".into());
+            }
+        } else {
+            output.push(current);
+            index += 1;
+        }
+    }
+
+    String::from_utf8(output).map_err(|e| e.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{strip_jsonc_comments, ConfigFile};
+
+    #[test]
+    fn jsonc_comments_preserve_string_contents() {
+        let input = r#"{
+            // comment
+            "update_url": "https://example.invalid/a//b",
+            "motd": "/* literal */"
+        }"#;
+        let clean = strip_jsonc_comments(input).expect("valid JSONC");
+        let config: ConfigFile = serde_json::from_str(&clean).expect("valid JSON");
+        assert_eq!(
+            config.update_url.as_deref(),
+            Some("https://example.invalid/a//b")
+        );
+        assert_eq!(config.motd.as_deref(), Some("/* literal */"));
+    }
+
+    #[test]
+    fn jsonc_block_comments_preserve_line_numbers_and_require_termination() {
+        let clean = strip_jsonc_comments("{\n/* one\ntwo */\n\"motd\": \"ok\"\n}")
+            .expect("valid JSONC block comment");
+        assert_eq!(clean.lines().count(), 5);
+        assert!(strip_jsonc_comments("{ /* unterminated").is_err());
     }
 }

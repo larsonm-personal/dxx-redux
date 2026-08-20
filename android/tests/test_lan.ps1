@@ -232,8 +232,8 @@ function Write-DeviceAutomationDiagnostics {
 }
 
 function Invoke-GuidebotOwnershipScenario {
-    $hostScript = "test_coop_guidebot_owner_host.json5"
-    $joinScript = "test_coop_guidebot_owner_joiner.json5"
+    $hostScript = "test_coop_guidebot_owner_host.jsonc"
+    $joinScript = "test_coop_guidebot_owner_joiner.jsonc"
 
     Write-Status ""
     Write-Status "--- Guide-Bot ownership and route-intent scenario ---" "White"
@@ -345,8 +345,8 @@ function Invoke-GuidebotOwnershipScenario {
 }
 
 function Invoke-GuidebotHostObserverScenario {
-    $hostScript = "test_coop_guidebot_observer_host.json5"
-    $joinScript = "test_coop_guidebot_observer_joiner.json5"
+    $hostScript = "test_coop_guidebot_observer_host.jsonc"
+    $joinScript = "test_coop_guidebot_observer_joiner.jsonc"
 
     Write-Status ""
     Write-Status "--- Guide-Bot observer-host exclusion scenario ---" "White"
@@ -617,9 +617,9 @@ function Invoke-HostMigrationScenario {
     if ($checkGuidebot) {
         if (-not (Invoke-PairedGameAutomation `
                     -PrimarySerial $EMU1 `
-                    -PrimaryScript "test_coop_host_migration_prepare_host.json5" `
+                    -PrimaryScript "test_coop_host_migration_prepare_host.jsonc" `
                     -SecondarySerial $EMU2 `
-                    -SecondaryScript "test_coop_host_migration_prepare_joiner.json5" `
+                    -SecondaryScript "test_coop_host_migration_prepare_joiner.jsonc" `
                     -Description "paired host-migration preparation" `
                     -TimeoutSec $TimeoutSeconds)) {
             return $false
@@ -813,9 +813,9 @@ function Invoke-GuidebotSlotRemapRestoreScenario {
     Write-Status "--- Guide-Bot slot-remapped coop restore scenario ---" "White"
     if (-not (Invoke-PairedGameAutomation `
                 -PrimarySerial $EMU1 `
-                -PrimaryScript "test_coop_guidebot_restore_save_host.json5" `
+                -PrimaryScript "test_coop_guidebot_restore_save_host.jsonc" `
                 -SecondarySerial $EMU2 `
-                -SecondaryScript "test_coop_guidebot_restore_save_joiner.json5" `
+                -SecondaryScript "test_coop_guidebot_restore_save_joiner.jsonc" `
                 -Description "paired Guide-Bot pre-restore save automation")) {
         return $false
     }
@@ -926,9 +926,9 @@ function Invoke-GuidebotSlotRemapRestoreScenario {
 
     if (-not (Invoke-PairedGameAutomation `
                 -PrimarySerial $EMU2 `
-                -PrimaryScript "test_coop_guidebot_restore_remap_host.json5" `
+                -PrimaryScript "test_coop_guidebot_restore_remap_host.jsonc" `
                 -SecondarySerial $EMU1 `
-                -SecondaryScript "test_coop_guidebot_restore_remap_joiner.json5" `
+                -SecondaryScript "test_coop_guidebot_restore_remap_joiner.jsonc" `
                 -Description "paired slot-remapped Guide-Bot restore automation" `
                 -TimeoutSec 105)) {
         return $false

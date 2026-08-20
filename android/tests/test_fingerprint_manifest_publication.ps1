@@ -5,7 +5,7 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $testRoot = Join-Path $repoRoot 'android\temp\fingerprint_manifest_publication_test'
 $workflow = Join-Path $repoRoot 'game_data\fingerprint_disc_tracks.ps1'
 $missionWorkflow = Join-Path $repoRoot 'game_data\fingerprint_mission_zip_music.ps1'
-. (Join-Path $repoRoot 'android\helpers\json5.ps1')
+. (Join-Path $repoRoot 'android\helpers\jsonc.ps1')
 . (Join-Path $repoRoot 'android\helpers\atomic_text_file.ps1')
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
@@ -190,21 +190,21 @@ exit 0
     [IO.File]::WriteAllText($fakeAudio, $fakeAudioCommand, [Text.ASCIIEncoding]::new())
 
     $missionAlbum = Join-Path $missionOutput 'Mission ZIP - partial'
-    $missionInfo = Join-Path $missionAlbum 'chromaprint_info.json5'
+    $missionInfo = Join-Path $missionAlbum 'chromaprint_info.jsonc'
     Assert-True ((Invoke-MissionWorkflow -Mode 'mission_partial') -ne 0) `
         'A mission CLI partial result with nonzero status should fail'
     Assert-True (-not (Test-Path -LiteralPath $missionInfo)) `
         'A failed mission fingerprint batch should not publish a sidecar'
     Assert-True ((Invoke-MissionWorkflow -Mode 'mission_success') -eq 0) `
         'A complete mission fingerprint batch should succeed'
-    $missionMetadata = Read-Json5File $missionInfo
+    $missionMetadata = Read-JsoncFile $missionInfo
     Assert-True ($missionMetadata.complete -ceq $true -and @($missionMetadata.tracks).Count -eq 2) `
         'A complete mission batch should publish every track with a completeness marker'
     $incompleteText = [IO.File]::ReadAllText($missionInfo).Replace('"complete": true', '"complete": false')
     [IO.File]::WriteAllText($missionInfo, $incompleteText, [Text.UTF8Encoding]::new($false))
     Assert-True ((Invoke-MissionWorkflow -Mode 'mission_success') -eq 0) `
         'A matching mission sidecar without completeness should be regenerated'
-    Assert-True ((Read-Json5File $missionInfo).complete -ceq $true) `
+    Assert-True ((Read-JsoncFile $missionInfo).complete -ceq $true) `
         'Mission regeneration should restore the completeness marker'
     Assert-True ((Invoke-MissionWorkflow -Mode 'mission_must_not_run') -eq 0) `
         'A complete mission sidecar should be safely skipped'

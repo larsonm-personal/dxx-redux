@@ -115,7 +115,7 @@ try {
         $refreshed[0].name_source -eq "acoustid") `
         "A failed forced lookup should preserve existing AcoustID metadata"
 
-    $outputPath = Join-Path $tempDir "chromaprint_info.json5"
+    $outputPath = Join-Path $tempDir "chromaprint_info.jsonc"
     Write-ChromaprintInfo -Path $outputPath -AlbumName "Test" -SourceZip "sample.zip" `
         -SourceSha1 ('1' * 40) -SourceSha256 ('2' * 64) -Tracks @([PSCustomObject]@{
             filename = "plain.ogg"
@@ -124,7 +124,7 @@ try {
         })
     Assert-True (Test-Path -LiteralPath $outputPath) `
         "Tracks without optional label fields should serialize"
-    $written = Read-Json5File $outputPath
+    $written = Read-JsoncFile $outputPath
     Assert-True ($written.complete -ceq $true) `
         "Published mission fingerprint metadata should declare completeness"
 } finally {

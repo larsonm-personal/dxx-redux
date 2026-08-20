@@ -1,13 +1,13 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-    Generates extract_regression.json5 specs for each CD image, ISO image, and GOG installer.
+    Generates extract_regression.jsonc specs for each CD image, ISO image, and GOG installer.
 .DESCRIPTION
   Walks game_data/CD images/ and game_data/gog installers/ to create regression
-    test specs. Uses known_discs.json5 for disc identification and tracks extracted
+    test specs. Uses known_discs.jsonc for disc identification and tracks extracted
     files to populate expected_files lists.
 .PARAMETER Force
-  Overwrite existing extract_regression.json5 files.
+  Overwrite existing extract_regression.jsonc files.
 #>
 param(
     [switch]$Force,
@@ -18,7 +18,7 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent  # dxx-redux root
 $gameDataDir = $PSScriptRoot              # game_data/
 $androidDir = Join-Path $root 'android'
-$knownDiscsPath = Join-Path (Join-Path (Join-Path (Join-Path (Join-Path $androidDir 'app') 'src') 'main') 'assets') 'known_discs.json5'
+$knownDiscsPath = Join-Path (Join-Path (Join-Path (Join-Path (Join-Path $androidDir 'app') 'src') 'main') 'assets') 'known_discs.jsonc'
 $regressionSpecHelpersPath = Join-Path (Join-Path $androidDir 'tests') 'extract_regression_spec_helpers.ps1'
 . $regressionSpecHelpersPath
 . (Join-Path $androidDir 'helpers\bounded_extraction.ps1')
@@ -29,7 +29,7 @@ function Get-ExistingLastTestResult($path) {
     }
 
     try {
-        $existingSpec = Read-Json5File $path
+        $existingSpec = Read-JsoncFile $path
         return $existingSpec.last_test_result
     } catch {
         Write-Host "  WARN $([System.IO.Path]::GetFileName((Split-Path $path -Parent))): could not preserve last_test_result: $($_.Exception.Message)" -ForegroundColor Yellow
@@ -50,8 +50,8 @@ function Resolve-GameForSpec($game, $classification) {
     return 'unknown'
 }
 
-# --- Parse known_discs.json5 ---
-$knownDiscs = (Read-Json5File $knownDiscsPath).discs
+# --- Parse known_discs.jsonc ---
+$knownDiscs = (Read-JsoncFile $knownDiscsPath).discs
 
 # Build SHA1->disc lookup (keyed by data track 1 SHA1)
 $sha1ToDisc = @{}
@@ -233,10 +233,10 @@ $selectedSpecs = @(
     }
 )
 
-Write-Host "=== Generating extract_regression.json5 specs ===" -ForegroundColor Cyan
+Write-Host "=== Generating extract_regression.jsonc specs ===" -ForegroundColor Cyan
 
 foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
-    $specPath = Join-Path $dir.FullName 'extract_regression.json5'
+    $specPath = Join-Path $dir.FullName 'extract_regression.jsonc'
     if ($selectedSpecs.Count -gt 0 -and $selectedSpecs -notcontains [IO.Path]::GetFullPath($specPath)) { continue }
     if ((Test-Path $specPath) -and -not $Force) {
         $skipped++
@@ -342,16 +342,16 @@ if (Test-Path -LiteralPath $combinedLaunchDir) {
     Write-Host ""
     Write-Host "=== Combined launches ===" -ForegroundColor Cyan
 
-    foreach ($helperFile in (Get-ChildItem -LiteralPath $combinedLaunchDir -Recurse -Filter 'combined_launch.json5' -File | Sort-Object FullName)) {
+    foreach ($helperFile in (Get-ChildItem -LiteralPath $combinedLaunchDir -Recurse -Filter 'combined_launch.jsonc' -File | Sort-Object FullName)) {
         $dir = $helperFile.Directory
-        $specPath = Join-Path $dir.FullName 'extract_regression.json5'
+        $specPath = Join-Path $dir.FullName 'extract_regression.jsonc'
         if ($selectedSpecs.Count -gt 0 -and $selectedSpecs -notcontains [IO.Path]::GetFullPath($specPath)) { continue }
         if ((Test-Path -LiteralPath $specPath) -and -not $Force) {
             $skipped++
             continue
         }
 
-        $helper = Read-Json5File $helperFile.FullName
+        $helper = Read-JsoncFile $helperFile.FullName
         $sourceSpecs = @($helper.source_specs | Where-Object { $_ })
         $missionFiles = @($helper.mission_files | Where-Object { $_ } | ForEach-Object { $_.ToLowerInvariant() })
         if ($sourceSpecs.Count -lt 2) {
@@ -368,7 +368,7 @@ if (Test-Path -LiteralPath $combinedLaunchDir) {
             if (-not (Test-Path -LiteralPath $sourceSpecPath -PathType Leaf)) {
                 throw "$($helperFile.FullName): source spec not found: $relativeSourceSpec"
             }
-            $sourceSpec = Read-Json5File $sourceSpecPath
+            $sourceSpec = Read-JsoncFile $sourceSpecPath
             if ($sourceSpec.game -ne $helper.game) {
                 throw "$($helperFile.FullName): source spec game '$($sourceSpec.game)' does not match '$($helper.game)': $relativeSourceSpec"
             }
@@ -445,7 +445,7 @@ foreach ($gog in $gogInstallers) {
     }
 
     # Output spec goes next to the installer
-    $specPath = Join-Path $gogDir "$([System.IO.Path]::GetFileNameWithoutExtension($gog.file))_regression.json5"
+    $specPath = Join-Path $gogDir "$([System.IO.Path]::GetFileNameWithoutExtension($gog.file))_regression.jsonc"
     if ($selectedSpecs.Count -gt 0 -and $selectedSpecs -notcontains [IO.Path]::GetFullPath($specPath)) { continue }
     if ((Test-Path $specPath) -and -not $Force) {
         $skipped++

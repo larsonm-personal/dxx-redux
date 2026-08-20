@@ -94,7 +94,7 @@
 
 ## automated testing
 - use the introspection API (added specifically for AI tool debug access) to find out the current game state such as menu items, current level, ship position, etc. - do *not* rely on printing things to PNG and analyzing images. if you get stuck having to do that, extend the introspection API instead and re-run
-- use the automation api to drive the game into a desired state for testing. when using the automation api, save new automation scripts to android/game_scripts/*.json5 so they can be maintained and committed to git. eventually they'll be used for regression testing
+- use the automation api to drive the game into a desired state for testing. when using the automation api, save new automation scripts to android/game_scripts/*.jsonc so they can be maintained and committed to git. eventually they'll be used for regression testing
 - all json output files or other text files used for regression checks should be pretty-printed and normalized (having keys/items in a regular order that is stable across changes, if possible). this *should not* be done by a post-run formatter pass; instead, find settings within the language/scripting system that produces the files, and have pretty-printing+normalizing be part of the output
 - mission metadata regeneration script choices:
   - Current default full regeneration: run the zero-parameter emulator wrapper from the repo root:
@@ -107,7 +107,7 @@
   - Host regeneration does not exercise the Android import and automation path. Use the emulator wrapper or configurable emulator batch when validating launcher parity, Android storage behavior, resume/retry behavior, or any issue that may depend on app-side staging.
   - The emulator batch logs a processing order, shows `[current/total]` progress with elapsed time and pass/skip/fail counts, and writes detailed artifacts under `android\temp\mission_zip_batch\...`.
 - place automated test files into "temp" within this repo so that the file writes don't need to be approved
-- when testing with the android emulator, the game will initially load to the main menu. there are helper script bits to choose a player, mission, level and skip briefings. see the regression test .json5 files and their attendant scripts
+- when testing with the android emulator, the game will initially load to the main menu. there are helper script bits to choose a player, mission, level and skip briefings. see the regression test .jsonc files and their attendant scripts
 - note that the D1 level set (the base game, not an expansion) is referred to as "first strike" and the d2 level set (the base game, not an expansion) is "counterstrike!". these are used in mission selection during automated tests
 
 ## running integration tests from an AI tool session
@@ -121,7 +121,7 @@
 ```powershell
 # clear logcat first, then pipe output to a file to avoid terminal buffer issues
 cd d:\local\dxx-redux
-adb logcat -c; .\android\helpers\run_test.ps1 -ScriptName test_launch_to_automap.json5 -Game d2 2>&1 | Out-File temp\test_output.txt -Encoding utf8; Write-Output "EXIT: $LASTEXITCODE"
+adb logcat -c; .\android\helpers\run_test.ps1 -ScriptName test_launch_to_automap.jsonc -Game d2 2>&1 | Out-File temp\test_output.txt -Encoding utf8; Write-Output "EXIT: $LASTEXITCODE"
 # then read the tail of the output file
 Get-Content temp\test_output.txt | Select-Object -Last 30
 ```

@@ -1,8 +1,8 @@
 #!/usr/bin/env pwsh
-# hash_disc_tracks.ps1 -- Collect track hashes from all CD images and update known_discs.json5.
+# hash_disc_tracks.ps1 -- Collect track hashes from all CD images and update known_discs.jsonc.
 #
 # Reads track_hashes.json from each subfolder in game_data/CD images/,
-# generates disc entries (id + label + tracks), and merges into known_discs.json5.
+# generates disc entries (id + label + tracks), and merges into known_discs.jsonc.
 # Skips discs already present (by id). Idempotent.
 #
 # Usage: .\hash_disc_tracks.ps1 [-Force]
@@ -12,21 +12,21 @@ $ErrorActionPreference = "Stop"
 
 $ScriptDir = $PSScriptRoot
 $CdImgDir  = Join-Path $ScriptDir "CD images"
-$Json5Path = Join-Path $ScriptDir "..\android\app\src\main\assets\known_discs.json5"
+$JsoncPath = Join-Path $ScriptDir "..\android\app\src\main\assets\known_discs.jsonc"
 . (Join-Path $ScriptDir "..\android\helpers\fingerprint_source_identity.ps1")
 . (Join-Path $ScriptDir "disc_track_manifest.ps1")
 
-if (-not (Test-Path $Json5Path)) {
-    Write-Error "known_discs.json5 not found: $Json5Path"
+if (-not (Test-Path $JsoncPath)) {
+    Write-Error "known_discs.jsonc not found: $JsoncPath"
     exit 1
 }
 
-# -- Read existing known_discs.json5 ----------------------------------
+# -- Read existing known_discs.jsonc ----------------------------------
 
-$json5Raw = Get-Content $Json5Path -Raw -Encoding UTF8
+$jsoncRaw = Get-Content $JsoncPath -Raw -Encoding UTF8
 
 # Strip comments for JSON parsing
-$stripped = $json5Raw -replace '//[^\r\n]*', '' -replace '/\*[\s\S]*?\*/', ''
+$stripped = $jsoncRaw -replace '//[^\r\n]*', '' -replace '/\*[\s\S]*?\*/', ''
 # Remove trailing commas before } or ]
 $stripped = $stripped -replace ',(\s*[}\]])', '$1'
 $existing = $stripped | ConvertFrom-Json
@@ -110,7 +110,7 @@ if ($newDiscs.Count -eq 0) {
     exit 0
 }
 
-# -- Regenerate known_discs.json5 -------------------------------------
+# -- Regenerate known_discs.jsonc -------------------------------------
 # Strategy: preserve the hand-crafted header and existing entries verbatim,
 # then append new entries with proper JSON commas.
 
@@ -120,7 +120,7 @@ if ($replaced.Count -gt 0) {
     foreach ($rid in $replaced) { $replacedSet[$rid] = $true }
 
     # Parse the file into: header + array of entry blocks + footer
-    $lines = $json5Raw -split "`n"
+    $lines = $jsoncRaw -split "`n"
 
     # Find the "discs": [ line
     $arrayStartLine = -1
@@ -181,32 +181,32 @@ if ($replaced.Count -gt 0) {
         }
     }
 
-    # Rebuild json5Raw from header + kept blocks + footer
+    # Rebuild jsoncRaw from header + kept blocks + footer
     $header = ($lines[0..$arrayStartLine] -join "`n")
     $body = ""
     for ($bi = 0; $bi -lt $blocks.Count; $bi++) {
         if ($bi -gt 0) { $body += "," }
         $body += "`n" + ($blocks[$bi] -join "`n")
     }
-    $json5Raw = $header + $body
+    $jsoncRaw = $header + $body
     # Will be closed by the append logic below
 }
 
 # Find the insertion point.
-# After -Force removal, json5Raw may not end with ]\n}\n (it's been truncated).
+# After -Force removal, jsoncRaw may not end with ]\n}\n (it's been truncated).
 # Normal case: find the last } before the ]\n}\n closing.
 $forceMode = ($replaced.Count -gt 0)
 if ($forceMode) {
-    # json5Raw was already truncated to header + kept blocks
-    $beforeClosing = $json5Raw
-} elseif ($json5Raw -match '(?s)^(.*\})\s*\]\s*\}\s*$') {
+    # jsoncRaw was already truncated to header + kept blocks
+    $beforeClosing = $jsoncRaw
+} elseif ($jsoncRaw -match '(?s)^(.*\})\s*\]\s*\}\s*$') {
     $beforeClosing = $Matches[1]  # everything up to and including last entry's }
 } else {
-    Write-Error "Cannot find disc array structure in known_discs.json5"
+    Write-Error "Cannot find disc array structure in known_discs.jsonc"
     exit 1
 }
 
-# Format a single disc entry as JSON5
+# Format a single disc entry as JSONC
 function Format-DiscEntry($disc) {
     $lines = @()
     $lines += "    {"
@@ -247,8 +247,8 @@ foreach ($disc in $newDiscs) {
 }
 
 $newContent = ($beforeClosing + $newBlock + "`n  ]`n}`n") -replace "`r`n", "`n"
-$newContent | Set-Content -NoNewline $Json5Path -Encoding UTF8
-Write-Host "`nAdded $($newDiscs.Count) new disc entries to known_discs.json5"
+$newContent | Set-Content -NoNewline $JsoncPath -Encoding UTF8
+Write-Host "`nAdded $($newDiscs.Count) new disc entries to known_discs.jsonc"
 
 # -- Report -----------------------------------------------------------
 

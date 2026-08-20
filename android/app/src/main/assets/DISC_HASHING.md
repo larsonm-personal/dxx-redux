@@ -16,7 +16,7 @@ Each track in a BIN/CUE image is hashed independently:
 
 Standalone ISO images are handled as a special data-only case:
 - The whole `.iso` file is hashed as a single synthetic `track: 1` data track.
-- These entries may include `source_format: "iso"` in `track_hashes.json` and `known_discs.json5`.
+- These entries may include `source_format: "iso"` in `track_hashes.json` and `known_discs.jsonc`.
 - They identify data extraction sources only. Redbook audio still requires BIN/CUE input.
 
 ## Per-track vs. whole-disc hashing

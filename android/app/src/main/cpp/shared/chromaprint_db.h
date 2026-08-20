@@ -57,7 +57,7 @@ int chromaprint_db_match(const uint32_t *raw_fp, int fp_len, int duration_ms,
 void chromaprint_db_match_free(chromaprint_db_match_t *match);
 
 /* Set match confidence threshold (0.0-1.0).
- * Loaded from fingerprint_config.json5 at startup.
+ * Loaded from fingerprint_config.jsonc at startup.
  * Returns 1 when accepted, or 0 and leaves the DB unconfigured on failure. */
 int chromaprint_db_set_threshold(float threshold);
 

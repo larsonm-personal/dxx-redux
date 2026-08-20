@@ -5,7 +5,7 @@
 
 .DESCRIPTION
   Pushes the selected D2 GOG installer variant to the emulator, then invokes
-  run_test.ps1 with the unified JSON5 script that handles both launcher setup
+  run_test.ps1 with the unified JSONC script that handles both launcher setup
   and in-game verification.
 
   D2 variants covered by this wrapper:
@@ -51,7 +51,7 @@ if (-not $env:ANDROID_SERIAL) {
     $env:ANDROID_SERIAL = $script:PRIMARY_EMULATOR_SERIAL
 }
 
-$SCRIPT_NAME = 'test_gog_installer_redbook_unified.json5'
+$SCRIPT_NAME = 'test_gog_installer_redbook_unified.jsonc'
 
 $installerVariants = @{
     d2_windows_exe = @{

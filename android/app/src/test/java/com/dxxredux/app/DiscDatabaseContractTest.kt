@@ -54,7 +54,7 @@ class DiscDatabaseContractTest {
             assertThrows(IllegalArgumentException::class.java) {
                 DiscIdentifier.parseDatabase(albumInDiscArray)
             }
-        assertEquals(true, albumError.message?.contains("known_albums.json5"))
+        assertEquals(true, albumError.message?.contains("known_albums.jsonc"))
         assertThrows(IllegalArgumentException::class.java) {
             DiscIdentifier.parseDatabase(malformedPhysical)
         }

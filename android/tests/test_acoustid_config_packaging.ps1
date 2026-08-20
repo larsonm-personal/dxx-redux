@@ -4,7 +4,7 @@ $androidRoot = Split-Path $PSScriptRoot -Parent
 $repoRoot = Split-Path $androidRoot -Parent
 $gradle = Join-Path $androidRoot "gradlew.bat"
 $tempRoot = Join-Path $androidRoot "temp/acoustid_config_packaging"
-$generatedAsset = Join-Path $androidRoot "app/build/generated/acoustid-assets/main/acoustid_config.json5"
+$generatedAsset = Join-Path $androidRoot "app/build/generated/acoustid-assets/main/acoustid_config.jsonc"
 
 New-Item -ItemType Directory -Force -Path $tempRoot | Out-Null
 
@@ -26,10 +26,10 @@ function Invoke-ConfigGeneration {
     }
 }
 
-$validConfig = Join-Path $tempRoot "valid.json5"
-$placeholderConfig = Join-Path $tempRoot "placeholder.json5"
-$malformedConfig = Join-Path $tempRoot "malformed.json5"
-$missingConfig = Join-Path $tempRoot "missing.json5"
+$validConfig = Join-Path $tempRoot "valid.jsonc"
+$placeholderConfig = Join-Path $tempRoot "placeholder.jsonc"
+$malformedConfig = Join-Path $tempRoot "malformed.jsonc"
+$missingConfig = Join-Path $tempRoot "missing.jsonc"
 
 Set-Content -Path $validConfig -Encoding utf8NoBOM -Value @'
 {
@@ -57,7 +57,7 @@ if (Test-Path $generatedAsset) {
     throw "Unconfigured generation left a stale AcoustID asset"
 }
 
-$maintainedConfig = Join-Path $androidRoot "acoustid_config.json5"
+$maintainedConfig = Join-Path $androidRoot "acoustid_config.jsonc"
 Invoke-ConfigGeneration -ConfigPath $maintainedConfig -ShouldSucceed $true
 
 Write-Host "AcoustID configuration packaging tests passed"

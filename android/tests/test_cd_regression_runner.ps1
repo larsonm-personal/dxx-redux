@@ -41,7 +41,7 @@ Assert-True ($sampleStages[0].Arguments -contains $sampleListPath -and
     $sampleStages[4].Arguments -contains $sampleListPath) `
     'Sampled CD workflow should use one spec list for extraction, oracle refresh, and tests'
 $sampledSpecs = @(New-CdRegressionSampleList -RepoRoot $repoRoot -Fraction 0.1 -Seed 123)
-$sampledTypes = @($sampledSpecs | ForEach-Object { (Read-Json5File $_).source_type } | Sort-Object -Unique)
+$sampledTypes = @($sampledSpecs | ForEach-Object { (Read-JsoncFile $_).source_type } | Sort-Object -Unique)
 Assert-True ($sampledTypes -contains 'cd' -and $sampledTypes -contains 'gog' -and $sampledTypes -contains 'combined') `
     'CD sampling should preserve every source type'
 Assert-True (($sampledSpecs -join ',') -eq ((New-CdRegressionSampleList `

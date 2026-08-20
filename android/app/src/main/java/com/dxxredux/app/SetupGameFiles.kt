@@ -157,7 +157,7 @@ internal fun d1InD2Readiness(
     )
 }
 
-// Duplicates known_versions.json5 so readiness can reject this old demo before native launch.
+// Duplicates known_versions.jsonc so readiness can reject this old demo before native launch.
 private const val D1_TEST_FLIGHT_HOG_SHA256 =
     "40c5754bb1e4cc0b0e176d50154568cb754d689df434511e0d8bdc1053f4de4a"
 private const val D1_TEST_FLIGHT_PIG_SHA256 =

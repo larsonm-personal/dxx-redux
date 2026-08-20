@@ -34,7 +34,7 @@ function Invoke-Matcher {
 }
 
 try {
-    $canonicalPath = Join-Path $repoRoot 'android\app\src\main\assets\fingerprint_config.json5'
+    $canonicalPath = Join-Path $repoRoot 'android\app\src\main\assets\fingerprint_config.jsonc'
     $canonical = Get-DxxFingerprintMatchingConfig -Path $canonicalPath
     if ($canonical.MatchThreshold -ne 0.65) { throw 'Canonical match threshold is not 0.65' }
 
@@ -89,7 +89,7 @@ try {
         }
     }
 
-    $discDbPath = Join-Path $repoRoot 'android\app\src\main\assets\known_discs.json5'
+    $discDbPath = Join-Path $repoRoot 'android\app\src\main\assets\known_discs.jsonc'
     $discDbText = Get-Content -LiteralPath $discDbPath -Raw
     $discDb = ($discDbText -replace '//[^\n]*', '' -replace '/\*[\s\S]*?\*/', '') | ConvertFrom-Json
     $fixtureTrack = $discDb.discs.tracks | Where-Object {

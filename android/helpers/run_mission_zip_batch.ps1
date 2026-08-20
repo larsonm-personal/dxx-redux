@@ -520,7 +520,7 @@ function Resolve-MissionZipTemplate {
         [Parameter(Mandatory = $true)][string]$OutputPath,
         [switch]$MetadataOnly
     )
-    $templateName = if ($MetadataOnly) { "test_mission_zip_batch_import_metadata.json5" } else { "test_mission_zip_batch_import_metadata_launch.json5" }
+    $templateName = if ($MetadataOnly) { "test_mission_zip_batch_import_metadata.jsonc" } else { "test_mission_zip_batch_import_metadata_launch.jsonc" }
     $templatePath = Join-Path $androidRoot "game_scripts\$templateName"
     $text = Get-Content -Path $templatePath -Raw
     $text = $text.Replace('${ZIP_FILE}', (ConvertTo-JsonStringContent $DeviceZipName))
@@ -683,8 +683,8 @@ foreach ($zip in $zips) {
     $metadataPath = Join-Path $metadataDir "$($zip.BaseName).json"
     $importPath = Join-Path $importsDir "$($zip.BaseName).import.json"
     $artifactPrefix = Join-Path $artifactsDir $label
-    $resolvedScript = Join-Path $resolvedScriptDir "$label.json5"
-    $deviceScriptName = "mission_zip_batch_current.json5"
+    $resolvedScript = Join-Path $resolvedScriptDir "$label.jsonc"
+    $deviceScriptName = "mission_zip_batch_current.jsonc"
     $regressionJsonPath = Get-MissionZipRegressionJsonPath -Zip $zip
 
     $record = [ordered]@{

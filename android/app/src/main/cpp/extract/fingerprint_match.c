@@ -10,7 +10,7 @@
  * Output: one JSON line per duplicate pair:
  *   {"a_disc":"...","a_track":N,"b_disc":"...","b_track":N,"score":0.XX}
  *
- * The caller must pass the validated value from fingerprint_config.json5.
+ * The caller must pass the validated value from fingerprint_config.jsonc.
  */
 
 #include <errno.h>

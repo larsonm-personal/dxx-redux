@@ -4,7 +4,7 @@
     Interactive menu for running DXX-Redux regression tests
 
 .DESCRIPTION
-    Discovers .json5 game-automation scripts (run via run_test.ps1) from
+    Discovers .jsonc game-automation scripts (run via run_test.ps1) from
     game_scripts/ and test_*.ps1 PowerShell integration tests (in tests/ dir),
     and presents a unified menu.
 
@@ -63,14 +63,14 @@ Write-Host ""
 # Build unified list: each entry is @{Name; Type; Path; Games}
 $allTests = @()
 
-# json5 game-automation scripts
-$json5Tests = @(Get-ChildItem -Path $GameScriptsDir -Filter "*.json5" -File -ErrorAction SilentlyContinue |
+# jsonc game-automation scripts
+$jsoncTests = @(Get-ChildItem -Path $GameScriptsDir -Filter "*.jsonc" -File -ErrorAction SilentlyContinue |
         Where-Object { Get-ScriptStandalone -ScriptPath $_.FullName } |
         Sort-Object Name)
-foreach ($t in $json5Tests) {
+foreach ($t in $jsoncTests) {
     $games = Get-ScriptGameInfo -ScriptPath $t.FullName
     $tag = if ($games) { "[" + ($games -join ",") + "]" } else { "" }
-    $allTests += @{ Name = $t.BaseName; Type = "json5"; Path = $t.FullName; Games = $games; Tag = $tag }
+    $allTests += @{ Name = $t.BaseName; Type = "jsonc"; Path = $t.FullName; Games = $games; Tag = $tag }
 }
 
 # ps1 integration tests
@@ -89,10 +89,10 @@ if ($allTests.Count -eq 0) {
 Write-Host "Available tests:" -ForegroundColor White
 Write-Host ""
 
-# Show json5 tests first, then ps1 tests, with a separator
-$json5Count = $json5Tests.Count
+# Show jsonc tests first, then ps1 tests, with a separator
+$jsoncCount = $jsoncTests.Count
 for ($i = 0; $i -lt $allTests.Count; $i++) {
-    if ($i -eq $json5Count -and $json5Count -gt 0) {
+    if ($i -eq $jsoncCount -and $jsoncCount -gt 0) {
         Write-Host ""
         Write-Host "  --- PowerShell integration tests ---" -ForegroundColor DarkGray
     }
@@ -125,8 +125,8 @@ if (-not $NoBuild) {
 
 # -- Run the selected test ---------------------------------------------------
 
-if ($selected.Type -eq "json5") {
-    # json5: delegate to run_test.ps1 with optional game choice and params
+if ($selected.Type -eq "jsonc") {
+    # jsonc: delegate to run_test.ps1 with optional game choice and params
     $gameArg = @{}
     $games = $selected.Games
     if ($games -and $games.Count -gt 1) {

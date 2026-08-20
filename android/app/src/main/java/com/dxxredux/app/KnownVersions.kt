@@ -8,7 +8,7 @@ import java.util.Locale
 /**
  * SHA-256 → version-name table for identifying known game asset versions.
  *
- * Loads from known_versions.json5 in APK assets. Call [init] once from
+ * Loads from known_versions.jsonc in APK assets. Call [init] once from
  * an Activity before first use (e.g. in SetupActivity.onCreate).
  */
 object KnownVersions {
@@ -26,10 +26,10 @@ object KnownVersions {
         try {
             val raw =
                 context.assets
-                    .open("known_versions.json5")
+                    .open("known_versions.jsonc")
                     .bufferedReader()
                     .readText()
-            val json = JSONObject(Json5.strip(raw))
+            val json = JSONObject(Jsonc.strip(raw))
             val arr = json.getJSONArray("versions")
             val t = mutableMapOf<String, MutableList<VersionEntry>>()
             val pkgs = mutableSetOf<String>()
@@ -44,7 +44,7 @@ object KnownVersions {
             table = t
             packages = pkgs.toList()
         } catch (e: Exception) {
-            Log.e("KnownVersions", "Failed to load known_versions.json5: ${e.message}")
+            Log.e("KnownVersions", "Failed to load known_versions.jsonc: ${e.message}")
         }
     }
 

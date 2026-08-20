@@ -98,7 +98,7 @@ function Get-ReviewKind {
         }
         return "authored-source"
     }
-    if ($extension -in @(".json", ".json5", ".conf", ".ini", ".cfg", ".template", ".default", ".example")) {
+    if ($extension -in @(".json", ".jsonc", ".conf", ".ini", ".cfg", ".template", ".default", ".example")) {
         if ($normalized -match '(?i)(^|/)(test|tests|game_scripts)(/|_)') {
             return "test-source"
         }

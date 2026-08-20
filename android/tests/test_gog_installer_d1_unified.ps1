@@ -5,7 +5,7 @@
 
 .DESCRIPTION
   Pushes the selected D1 GOG installer variant to the emulator, then invokes
-  run_test.ps1 with the unified JSON5 script that handles both launcher import
+  run_test.ps1 with the unified JSONC script that handles both launcher import
   verification and the in-game D1 level-load checks.
 
   D1 variants covered by this wrapper:
@@ -47,7 +47,7 @@ param(
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot\..\helpers\test_helpers.ps1"
 
-$SCRIPT_NAME = 'test_gog_installer_d1_unified.json5'
+$SCRIPT_NAME = 'test_gog_installer_d1_unified.jsonc'
 
 $installerVariants = @{
     d1_windows_exe = @{

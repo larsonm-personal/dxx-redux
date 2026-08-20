@@ -8,7 +8,7 @@ import org.junit.Test
 
 class AcoustIdConfigurationTest {
     @Test
-    fun parsesDocumentedJson5Configuration() {
+    fun parsesDocumentedJsoncConfiguration() {
         val key =
             AcoustIdConfiguration.parseApiKey(
                 """

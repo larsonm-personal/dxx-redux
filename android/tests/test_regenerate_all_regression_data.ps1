@@ -58,8 +58,8 @@ foreach ($stage in $targetedSample.Stages) {
 }
 
 foreach ($templateName in @(
-        'test_mission_zip_batch_import_metadata.json5',
-        'test_mission_zip_batch_import_metadata_launch.json5'
+        'test_mission_zip_batch_import_metadata.jsonc',
+        'test_mission_zip_batch_import_metadata_launch.jsonc'
     )) {
     $templatePath = Join-Path $repoRoot "android\game_scripts\$templateName"
     $template = Get-Content -LiteralPath $templatePath -Raw

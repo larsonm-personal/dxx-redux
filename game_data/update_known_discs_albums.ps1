@@ -1,8 +1,8 @@
 #!/usr/bin/env pwsh
-# update_known_discs_albums.ps1 -- Merge per-album chromaprint_info.json5 files
-# into the standalone known_albums.json5 fingerprint database.
+# update_known_discs_albums.ps1 -- Merge per-album chromaprint_info.jsonc files
+# into the standalone known_albums.jsonc fingerprint database.
 #
-# Reads all game_data/music/*/chromaprint_info.json5 files, creates album entries,
+# Reads all game_data/music/*/chromaprint_info.jsonc files, creates album entries,
 # and deduplicates against physical CD tracks using chromaprint similarity.
 #
 # Physical CD entries are the deduplication authority. Albums are emitted alphabetically.
@@ -17,9 +17,9 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 $musicDir = Join-Path $PSScriptRoot "music"
-$dbPath = "$repoRoot/android/app/src/main/assets/known_discs.json5"
-$albumDbPath = "$repoRoot/android/app/src/main/assets/known_albums.json5"
-$configPath = "$repoRoot/android/app/src/main/assets/fingerprint_config.json5"
+$dbPath = "$repoRoot/android/app/src/main/assets/known_discs.jsonc"
+$albumDbPath = "$repoRoot/android/app/src/main/assets/known_albums.jsonc"
+$configPath = "$repoRoot/android/app/src/main/assets/fingerprint_config.jsonc"
 . "$repoRoot/android/helpers/fingerprint_config.ps1"
 . "$repoRoot/android/helpers/acoustid_title_match.ps1"
 . "$repoRoot/android/helpers/fingerprint_source_identity.ps1"
@@ -29,7 +29,7 @@ if ((Test-Path -LiteralPath $albumDbPath) -and -not $Force -and -not $DryRun) {
     exit 0
 }
 
-# Load match threshold from fingerprint_config.json5
+# Load match threshold from fingerprint_config.jsonc
 
 $fingerprintConfig = Get-DxxFingerprintMatchingConfig -Path $configPath
 $matchThreshold = $fingerprintConfig.MatchThreshold
@@ -56,7 +56,7 @@ if (-not (Test-Path $matchExe)) {
     }
 }
 
-# Load existing known_discs.json5
+# Load existing known_discs.jsonc
 
 Write-Host "Loading $dbPath"
 $dbRaw = Get-Content $dbPath -Raw
@@ -82,11 +82,11 @@ foreach ($disc in $db.discs) {
 }
 Write-Host "Loaded $($cdFingerprints.Count) CD audio track fingerprints"
 
-# Discover album .json5 files
+# Discover album .jsonc files
 
-$albumFiles = Get-ChildItem "$musicDir/*/chromaprint_info.json5" -ErrorAction SilentlyContinue
+$albumFiles = Get-ChildItem "$musicDir/*/chromaprint_info.jsonc" -ErrorAction SilentlyContinue
 if ($albumFiles.Count -eq 0) {
-    Write-Host "No album chromaprint_info.json5 files found. Run fingerprint_music_packs.ps1 first"
+    Write-Host "No album chromaprint_info.jsonc files found. Run fingerprint_music_packs.ps1 first"
     exit 0
 }
 Write-Host "Found $($albumFiles.Count) album info files"
@@ -388,10 +388,10 @@ foreach ($albumInfo in $albumInfos) {
 Write-Host "`nSummary: $($albumEntries.Count) albums, $totalTracks tracks, $totalDuplicates duplicates"
 
 # Generate the album-only database. Physical-disc records remain maintained in
-# known_discs.json5 and are never rewritten by this generator.
+# known_discs.jsonc and are never rewritten by this generator.
 $output = @(
-    "// Generated fingerprint albums from game_data/music/*/chromaprint_info.json5"
-    "// Physical-disc hashes are maintained separately in known_discs.json5"
+    "// Generated fingerprint albums from game_data/music/*/chromaprint_info.jsonc"
+    "// Physical-disc hashes are maintained separately in known_discs.jsonc"
     "{"
     "  `"albums`": ["
 )

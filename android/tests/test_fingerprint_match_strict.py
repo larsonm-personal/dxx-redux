@@ -10,7 +10,7 @@ from pathlib import Path
 
 REPO = Path(__file__).parents[2]
 MATCHER = REPO / "android/tests/build/Debug/fingerprint_match.exe"
-KNOWN_DISCS = REPO / "android/app/src/main/assets/known_albums.json5"
+KNOWN_DISCS = REPO / "android/app/src/main/assets/known_albums.jsonc"
 
 
 def run_matcher(

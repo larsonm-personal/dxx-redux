@@ -66,7 +66,7 @@ $selectedCdSourceIds = $null
 if ($SampleFraction -lt 1.0) {
     if ($SampleSeed -eq 0) { $SampleSeed = Get-Random -Minimum 1 -Maximum ([int]::MaxValue) }
     $zipItems = @(Get-ChildItem -LiteralPath $zipDir -File | Where-Object Extension -in '.zip', '.7z' | Sort-Object Name)
-    $cdManifest = Join-Path $zipDir 'cd_level_metadata_sources.json5'
+    $cdManifest = Join-Path $zipDir 'cd_level_metadata_sources.jsonc'
     $cdItems = @(Resolve-CdLevelMetadataSources -RepoRoot $repoRoot -ManifestPath $cdManifest -OutputDir $zipDir |
             ForEach-Object { [pscustomobject]@{ Name = $_.Id } })
     $selectedZips = @(Select-RuntimeHashRingFractionItems -Items $zipItems -Fraction $SampleFraction `

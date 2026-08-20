@@ -30,7 +30,7 @@
 
 /*
  * Set match confidence threshold (0.0-1.0).
- * Called before loading DB, from fingerprint_config.json5 values.
+ * Called before loading DB, from fingerprint_config.jsonc values.
  */
 JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_FingerprintBridge_nativeSetMatchThreshold(

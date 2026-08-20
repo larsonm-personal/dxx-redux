@@ -23,7 +23,7 @@ try {
     [IO.File]::WriteAllText((Join-Path $sourceDir 'mission.hog'), 'hog', [Text.UTF8Encoding]::new($false))
     [IO.File]::WriteAllText((Join-Path $sourceDir 'mission.mn2'), 'name = Test', [Text.UTF8Encoding]::new($false))
 
-    $manifestPath = Join-Path $tempRoot 'sources.json5'
+    $manifestPath = Join-Path $tempRoot 'sources.jsonc'
     $manifest = @{
         sources = @(
             @{

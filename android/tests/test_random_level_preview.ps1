@@ -25,7 +25,7 @@ if ($Seed -eq 0) {
 $previousSerial = $env:ANDROID_SERIAL
 $env:ANDROID_SERIAL = $Serial
 $deviceZip = "level_preview_smoke_$Seed.zip"
-$deviceScript = "level_preview_smoke_$Seed.json5"
+$deviceScript = "level_preview_smoke_$Seed.jsonc"
 $localScript = Join-Path $androidRoot "temp\level_preview_smoke\$deviceScript"
 $selectionFile = "files/level_preview_smoke_selection.json"
 $introspectionFile = "files/level_preview_introspect.json"
@@ -82,7 +82,7 @@ try {
     ) | Out-Null
     Adb -AdbArgs @("shell", "rm", "-f", $deviceTemporaryZip) | Out-Null
 
-    $templatePath = Join-Path $androidRoot "game_scripts\test_random_level_preview.json5"
+    $templatePath = Join-Path $androidRoot "game_scripts\test_random_level_preview.jsonc"
     $scriptBody = Get-Content -LiteralPath $templatePath -Raw
     $scriptBody = $scriptBody.Replace('${MISSION_ZIP}', $deviceZip)
     $scriptBody = $scriptBody.Replace('${GAME}', $selectedGame)

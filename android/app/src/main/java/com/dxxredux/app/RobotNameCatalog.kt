@@ -39,7 +39,7 @@ internal object RobotNameCatalog {
         text: String,
         expectedCount: Int,
     ): List<RobotNameEntry> {
-        val array = JSONArray(Json5.strip(text))
+        val array = JSONArray(Jsonc.strip(text))
         require(array.length() == expectedCount) { "Expected $expectedCount robot-name entries" }
         return buildList {
             for (index in 0 until array.length()) {

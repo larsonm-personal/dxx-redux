@@ -20,7 +20,7 @@ internal data class FingerprintMatchingConfig(
 )
 
 internal fun parseFingerprintMatchingConfig(raw: String): FingerprintMatchingConfig {
-    val tokener = JSONTokener(Json5.strip(raw))
+    val tokener = JSONTokener(Jsonc.strip(raw))
     val config = tokener.nextValue()
     require(config is JSONObject && tokener.nextClean().code == 0) {
         "Fingerprint configuration must contain exactly one object"
@@ -47,8 +47,8 @@ internal fun flattenFingerprintDatabase(
     discRaw: String,
     albumRaw: String,
 ): String {
-    val physicalDiscs = JSONObject(Json5.strip(discRaw)).getJSONArray("discs")
-    val albums = JSONObject(Json5.strip(albumRaw)).getJSONArray("albums")
+    val physicalDiscs = JSONObject(Jsonc.strip(discRaw)).getJSONArray("discs")
+    val albums = JSONObject(Jsonc.strip(albumRaw)).getJSONArray("albums")
     val flattened = JSONArray()
 
     fun append(records: JSONArray) {
@@ -143,7 +143,7 @@ object FingerprintBridge {
         MessageDigest
             .getInstance("SHA-256")
             .also { digest ->
-                listOf("known_discs.json5", "known_albums.json5", "fingerprint_config.json5").forEach { assetName ->
+                listOf("known_discs.jsonc", "known_albums.jsonc", "fingerprint_config.jsonc").forEach { assetName ->
                     digest.update(assetName.toByteArray(Charsets.UTF_8))
                     runCatching {
                         context.assets.open(assetName).use { input ->
@@ -162,13 +162,13 @@ object FingerprintBridge {
             .joinToString("") { "%02x".format(it) }
 
     /**
-     * Load match_threshold and duration_tolerance from fingerprint_config.json5
+     * Load match_threshold and duration_tolerance from fingerprint_config.jsonc
      * and push them to the native DB matcher.
      */
     private fun loadFingerprintConfig(context: Context) {
         val raw =
             context.assets
-                .open("fingerprint_config.json5")
+                .open("fingerprint_config.jsonc")
                 .bufferedReader()
                 .use { it.readText() }
         val config = parseFingerprintMatchingConfig(raw)
@@ -184,7 +184,7 @@ object FingerprintBridge {
 
     /**
      * Look up track names for a known disc by disc ID, directly from
-     * known_discs.json5 without fingerprinting.
+     * known_discs.jsonc without fingerprinting.
      * Returns map of 1-based track number -> name, or empty map.
      */
     fun lookupTrackNames(
@@ -195,10 +195,10 @@ object FingerprintBridge {
         try {
             val raw =
                 context.assets
-                    .open("known_discs.json5")
+                    .open("known_discs.jsonc")
                     .bufferedReader()
                     .readText()
-            val root = JSONObject(Json5.strip(raw))
+            val root = JSONObject(Jsonc.strip(raw))
             val discs = root.getJSONArray("discs")
             for (i in 0 until discs.length()) {
                 val disc = discs.getJSONObject(i)
@@ -469,12 +469,12 @@ object FingerprintBridge {
         try {
             val discRaw =
                 context.assets
-                    .open("known_discs.json5")
+                    .open("known_discs.jsonc")
                     .bufferedReader()
                     .use { it.readText() }
             val albumRaw =
                 context.assets
-                    .open("known_albums.json5")
+                    .open("known_albums.jsonc")
                     .bufferedReader()
                     .use { it.readText() }
             flattenFingerprintDatabase(discRaw, albumRaw)

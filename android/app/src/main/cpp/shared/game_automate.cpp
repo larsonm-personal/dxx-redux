@@ -2158,7 +2158,7 @@ static int check_condition(const std::string &field, const std::string &value)
 	return 0;
 }
 
-/* -- Parse script JSON/JSON5 with nlohmann ---------------------------- */
+/* -- Parse script JSON/JSONC with nlohmann ---------------------------- */
 
 static int parse_script(const char *json_text)
 {

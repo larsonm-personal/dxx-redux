@@ -36,7 +36,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $script:RepoRoot = Split-Path $PSScriptRoot -Parent
 . (Join-Path $script:RepoRoot 'android\helpers\runtime_targeted_sampling.ps1')
-. (Join-Path $script:RepoRoot 'android\helpers\json5.ps1')
+. (Join-Path $script:RepoRoot 'android\helpers\jsonc.ps1')
 
 function New-CdRegressionSampleList {
     param(
@@ -46,9 +46,9 @@ function New-CdRegressionSampleList {
         [string]$StatePath
     )
 
-    $specs = @(Get-ChildItem (Join-Path $RepoRoot 'game_data') -Recurse -Filter '*_regression.json5' -File |
+    $specs = @(Get-ChildItem (Join-Path $RepoRoot 'game_data') -Recurse -Filter '*_regression.jsonc' -File |
             Sort-Object FullName | ForEach-Object {
-                $spec = Read-Json5File $_.FullName
+                $spec = Read-JsoncFile $_.FullName
                 [pscustomobject]@{
                     Name = [IO.Path]::GetRelativePath($RepoRoot, $_.FullName).Replace('\', '/')
                     Path = $_.FullName
@@ -155,7 +155,7 @@ if ($MyInvocation.InvocationName -ne '.') {
             [IO.Directory]::CreateDirectory((Split-Path $sampleListPath -Parent)) | Out-Null
             [IO.File]::WriteAllLines($sampleListPath, $selectedSpecs, [Text.UTF8Encoding]::new($false))
             Write-Host ("CD sample: {0}/{1} specs ({2:P1}), seed {3}" -f $selectedSpecs.Count,
-                @(Get-ChildItem (Join-Path $script:RepoRoot 'game_data') -Recurse -Filter '*_regression.json5' -File).Count,
+                @(Get-ChildItem (Join-Path $script:RepoRoot 'game_data') -Recurse -Filter '*_regression.jsonc' -File).Count,
                 $SampleFraction, $SampleSeed)
         }
         $stages = @(Get-CdRegressionStages -RepoRoot $script:RepoRoot -NoForce:$NoForce `

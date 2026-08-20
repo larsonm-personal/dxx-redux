@@ -58,11 +58,11 @@ echo "Binary built: $BINARY"
 echo ""
 
 # --- 4. Config file ---
-CONFIG_FILE="$SCRIPT_DIR/server_config.json5"
+CONFIG_FILE="$SCRIPT_DIR/server_config.jsonc"
 if [ "$DEPLOY_MODE" = "lan" ]; then
-    TEMPLATE_CONFIG="$SCRIPT_DIR/config.json5.lan"
+    TEMPLATE_CONFIG="$SCRIPT_DIR/config.lan.jsonc"
 else
-    TEMPLATE_CONFIG="$SCRIPT_DIR/config.json5.default"
+    TEMPLATE_CONFIG="$SCRIPT_DIR/config.default.jsonc"
 fi
 
 if [ ! -f "$TEMPLATE_CONFIG" ]; then

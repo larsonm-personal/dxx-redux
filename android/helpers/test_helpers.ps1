@@ -22,7 +22,7 @@
 . (Join-Path $PSScriptRoot "test_env.ps1")
 . (Join-Path $PSScriptRoot "test_host_platform.ps1")
 . (Join-Path $PSScriptRoot "standard_game_data.ps1")
-. (Join-Path $PSScriptRoot "json5.ps1")
+. (Join-Path $PSScriptRoot "jsonc.ps1")
 
 $script:ANDROID_ROOT = Split-Path $PSScriptRoot
 $script:REPO_ROOT = Split-Path $script:ANDROID_ROOT
@@ -991,7 +991,7 @@ function Try-ExtractLocalGameDataSources {
 }
 
 function Get-ScriptDeps {
-    # Read a .json5 test script and return the _deps array from its _info element.
+    # Read a .jsonc test script and return the _deps array from its _info element.
     # Returns array of dep objects ({file, sha256, target?}) or $null.
     # When -Vars is provided, ${VAR} placeholders in file and sha256 fields are replaced.
     param(
@@ -1989,7 +1989,7 @@ function Get-TestScriptInfo {
             if ($depth -eq 0) {
                 try {
                     $firstText = $raw.Substring($objectStart, $i - $objectStart + 1)
-                    $first = ConvertFrom-Json5Text -Text $firstText -SourceName $ScriptPath |
+                    $first = ConvertFrom-JsoncText -Text $firstText -SourceName $ScriptPath |
                         ConvertFrom-Json -ErrorAction Stop
                     if ($first._info) { return $first._info }
                 } catch {}
@@ -2001,7 +2001,7 @@ function Get-TestScriptInfo {
 }
 
 function Get-ScriptParams {
-    # Read a .json5 test script and return the params dict from its _info element.
+    # Read a .jsonc test script and return the params dict from its _info element.
     # Returns hashtable of {ParamName -> {label, options -> {value -> {var_overrides}}}}
     # or $null if no params defined.
     param([Parameter(Mandatory = $true)][string]$ScriptPath)
@@ -2011,7 +2011,7 @@ function Get-ScriptParams {
 }
 
 function Get-ScriptGameInfo {
-    # Read a .json5 test script and return the games array from its _info element.
+    # Read a .jsonc test script and return the games array from its _info element.
     # Returns @("d1","d2"), @("d1"), @("d2"), or $null if no _info element.
     param(
         [Parameter(Mandatory = $true)]
@@ -2037,7 +2037,7 @@ function Get-ScriptIsLauncher {
     if (-not (Test-Path $ScriptPath)) { return $false }
     $raw = Get-Content $ScriptPath -Raw
     try {
-        $arr = ConvertFrom-Json5Text -Text $raw -SourceName $ScriptPath |
+        $arr = ConvertFrom-JsoncText -Text $raw -SourceName $ScriptPath |
             ConvertFrom-Json -ErrorAction Stop
         foreach ($step in $arr) {
             if ($step._info) { continue }
@@ -2048,7 +2048,7 @@ function Get-ScriptIsLauncher {
 }
 
 function Resolve-TestScript {
-    # Preprocess a .json5 test script for a specific game:
+    # Preprocess a .jsonc test script for a specific game:
     #   1. Read _info.vars.$GameId for variable substitution
     #   2. Merge -Params option vars (from _info.params) into the vars dict
     #   3. Filter out steps where "when" (after param substitution) doesn't
@@ -2068,7 +2068,7 @@ function Resolve-TestScript {
     $raw = Get-Content $ScriptPath -Raw
 
     try {
-        $arr = ConvertFrom-Json5Text -Text $raw -SourceName $ScriptPath |
+        $arr = ConvertFrom-JsoncText -Text $raw -SourceName $ScriptPath |
             ConvertFrom-Json -ErrorAction Stop
     } catch {
         return $ScriptPath
@@ -2139,7 +2139,7 @@ function Resolve-TestScript {
 }
 
 function Get-ScriptTimeoutSeconds {
-    # Calculate a timeout from the sum of all timing fields in a .json5 script.
+    # Calculate a timeout from the sum of all timing fields in a .jsonc script.
     # Sums ms, timeout_ms, and post_delay_ms from every step, converts to
     # seconds, and adds a buffer. Returns an integer.
     param(
@@ -2150,7 +2150,7 @@ function Get-ScriptTimeoutSeconds {
     if (-not (Test-Path $ScriptPath)) { return 60 + $BufferSeconds }
     $raw = Get-Content $ScriptPath -Raw
     $totalMs = 0
-    # Match all numeric values for timing keys (works on raw json5 text)
+    # Match all numeric values for timing keys (works on raw jsonc text)
     foreach ($m in [regex]::Matches($raw, '"(?:ms|timeout_ms|post_delay_ms)"\s*:\s*(\d+)')) {
         $totalMs += [int]$m.Groups[1].Value
     }

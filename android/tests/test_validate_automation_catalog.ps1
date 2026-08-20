@@ -6,7 +6,7 @@ $androidDir = Split-Path -Parent $PSScriptRoot
 $gameScriptsDir = Join-Path $androidDir "game_scripts"
 . (Join-Path (Join-Path $androidDir "helpers") "test_helpers.ps1")
 
-$jsonFiles = @(Get-ChildItem -LiteralPath $gameScriptsDir -Filter "test_*.json5" -File | Sort-Object Name)
+$jsonFiles = @(Get-ChildItem -LiteralPath $gameScriptsDir -Filter "test_*.jsonc" -File | Sort-Object Name)
 $ps1Files = @(Get-ChildItem -LiteralPath $PSScriptRoot -Filter "test_*.ps1" -File | Sort-Object Name)
 $allPowerShellFiles = @(
     Get-ChildItem -LiteralPath $androidDir -Filter "*.ps1" -File
@@ -24,26 +24,26 @@ $infoByPath = @{}
 $ownerClosureByName = @{}
 $failures = [System.Collections.Generic.List[string]]::new()
 
-$json5Probe = Join-Path ([IO.Path]::GetTempPath()) ("dxx-json5-catalog-" + [guid]::NewGuid().ToString('N') + '.json5')
+$jsoncProbe = Join-Path ([IO.Path]::GetTempPath()) ("dxx-jsonc-catalog-" + [guid]::NewGuid().ToString('N') + '.jsonc')
 try {
     @'
 [
   { "_info": { "games": ["d1"], "marker": "marker,}", "vars": { "d1": { "URL": "https://example.invalid/a" } } } },
   { "action": "write_config", "value": "https://example.invalid/a", }, // retained URL
 ]
-'@ | Set-Content -LiteralPath $json5Probe -Encoding UTF8
-    $probeInfo = Get-TestScriptInfo -ScriptPath $json5Probe
-    $probeResolved = Resolve-TestScript -ScriptPath $json5Probe -GameId 'd1'
-    $probeParsed = Read-Json5File -Path $probeResolved
+'@ | Set-Content -LiteralPath $jsoncProbe -Encoding UTF8
+    $probeInfo = Get-TestScriptInfo -ScriptPath $jsoncProbe
+    $probeResolved = Resolve-TestScript -ScriptPath $jsoncProbe -GameId 'd1'
+    $probeParsed = Read-JsoncFile -Path $probeResolved
     if ($probeInfo.marker -cne 'marker,}' -or
         $probeParsed[0].value -cne 'https://example.invalid/a') {
-        $failures.Add('shared JSON5 catalog parsing rewrote quoted comment or trailing-comma text')
+        $failures.Add('shared JSONC catalog parsing rewrote quoted comment or trailing-comma text')
     }
 } catch {
-    $failures.Add("shared JSON5 catalog parsing probe failed: $($_.Exception.Message)")
+    $failures.Add("shared JSONC catalog parsing probe failed: $($_.Exception.Message)")
 } finally {
-    Remove-Item -LiteralPath $json5Probe -Force -ErrorAction SilentlyContinue
-    if ($probeResolved -and $probeResolved -ne $json5Probe) {
+    Remove-Item -LiteralPath $jsoncProbe -Force -ErrorAction SilentlyContinue
+    if ($probeResolved -and $probeResolved -ne $jsoncProbe) {
         Remove-Item -LiteralPath $probeResolved -Force -ErrorAction SilentlyContinue
     }
 }

@@ -94,11 +94,11 @@ $quickTests = @(
     @{ Name = "test_input_demo_state_trace_compare"; Type = "ps1"; RelativePath = "tests\test_input_demo_state_trace_compare.ps1"; HistoricalSeconds = 0 },
     @{ Name = "test_input_demo_regressions_headless_quick"; Type = "ps1"; RelativePath = "tests\test_input_demo_regressions.ps1"; Arguments = @("-DemoRoot", $quickDemoRoot, "-Game", "d2", "-TimeoutSeconds", "120", "-StopOnFirstFailure", "-ResultArchiveRoot", $quickPrimaryResultRoot); HistoricalSeconds = $headlessHistoricalSeconds },
     @{ Name = "test_input_demo_regressions_graphics_quick"; Type = "ps1"; RelativePath = "tests\test_input_demo_regressions_graphics.ps1"; Arguments = @("-DemoRoot", $quickDemoRoot, "-Game", "d2", "-TimeoutSeconds", "120", "-StopOnFirstFailure", "-ReferenceResultRoot", $quickPrimaryResultRoot); HistoricalSeconds = 10 },
-    @{ Name = "test_quick_record_classic_sidecar"; Type = "json5"; RelativePath = "game_scripts\test_quick_record_classic_sidecar.json5"; HistoricalSeconds = 35 },
-    @{ Name = "test_mod_loading"; Type = "json5"; RelativePath = "game_scripts\test_mod_loading.json5"; HistoricalSeconds = 25 },
-    @{ Name = "test_launcher_graphics_debug_prefs"; Type = "json5"; RelativePath = "game_scripts\test_launcher_graphics_debug_prefs.json5"; HistoricalSeconds = 27 },
-    @{ Name = "test_menu_scale_d2"; Type = "json5"; RelativePath = "game_scripts\test_menu_scale_d2.json5"; HistoricalSeconds = 20 },
-    @{ Name = "test_levelcomplete_touch_skip"; Type = "json5"; RelativePath = "game_scripts\test_levelcomplete_touch_skip.json5"; HistoricalSeconds = 18 }
+    @{ Name = "test_quick_record_classic_sidecar"; Type = "jsonc"; RelativePath = "game_scripts\test_quick_record_classic_sidecar.jsonc"; HistoricalSeconds = 35 },
+    @{ Name = "test_mod_loading"; Type = "jsonc"; RelativePath = "game_scripts\test_mod_loading.jsonc"; HistoricalSeconds = 25 },
+    @{ Name = "test_launcher_graphics_debug_prefs"; Type = "jsonc"; RelativePath = "game_scripts\test_launcher_graphics_debug_prefs.jsonc"; HistoricalSeconds = 27 },
+    @{ Name = "test_menu_scale_d2"; Type = "jsonc"; RelativePath = "game_scripts\test_menu_scale_d2.jsonc"; HistoricalSeconds = 20 },
+    @{ Name = "test_levelcomplete_touch_skip"; Type = "jsonc"; RelativePath = "game_scripts\test_levelcomplete_touch_skip.jsonc"; HistoricalSeconds = 18 }
 )
 
 function ConvertTo-ArgumentText {
@@ -201,7 +201,7 @@ function Invoke-QuickTest {
     $psScript = $null
     $psArguments = @()
 
-    if ($Test.Type -eq "json5") {
+    if ($Test.Type -eq "jsonc") {
         $psScript = $runTestScript
         $psArguments = @("-ScriptName", [System.IO.Path]::GetFileName($Test.RelativePath))
         if ($Test.ContainsKey("Arguments")) {

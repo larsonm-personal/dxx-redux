@@ -88,8 +88,8 @@ local.properties
 dependency_base.txt
 keystore.properties
 play-store-credentials.json
-auth_config.json5
-acoustid_config.json5
+auth_config.jsonc
+acoustid_config.jsonc
 *.keystore
 *.jks
 .gradle/
@@ -113,13 +113,13 @@ android/app/src/main/assets/gm.sf2
 # original game data for testing (large binaries ignored, but track regression specs)
 game_data/**
 !game_data/**/
-!game_data/**/*_regression.json5
-!game_data/**/combined_launch.json5
+!game_data/**/*_regression.jsonc
+!game_data/**/combined_launch.jsonc
 !game_data/**/track_fingerprints.json
 !game_data/CD images/Descent Anniversary (ISO)/descent_anniversary.cue
 !game_data/mission_files/*.json
-!game_data/mission_files/cd_level_metadata_sources.json5
-!game_data/music/**/chromaprint_info.json5
+!game_data/mission_files/cd_level_metadata_sources.jsonc
+!game_data/music/**/chromaprint_info.jsonc
 !game_data/manage_data.ps1
 !game_data/run_all_cd_regressions.ps1
 !game_data/fingerprint_mission_zip_music.ps1

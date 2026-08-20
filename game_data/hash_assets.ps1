@@ -1,10 +1,10 @@
 #!/usr/bin/env pwsh
-# hash_assets.ps1 -- Hash game asset files and update known_versions.json5
+# hash_assets.ps1 -- Hash game asset files and update known_versions.jsonc
 #
 # Scans game_data_to_copy_to_emulator/, game_data/extracted/, and
 # game_data/CD images/*/data_tracks/ for game assets. It also scans
 # game_data/demo installers/*_extracted/ for demo helper outputs. Computes
-# SHA-256 and merges into known_versions.json5.
+# SHA-256 and merges into known_versions.jsonc.
 #
 # Version labels use game release versions (D1 v1.0, D2 v1.2, etc.)
 # rather than disc names. Files < 2 bytes are skipped (extraction stubs).
@@ -17,7 +17,7 @@ $ErrorActionPreference = "Stop"
 
 $ScriptDir = $PSScriptRoot
 $RepoRoot = Split-Path $ScriptDir
-$Json5File = Join-Path $RepoRoot "android\app\src\main\assets\known_versions.json5"
+$JsoncFile = Join-Path $RepoRoot "android\app\src\main\assets\known_versions.jsonc"
 $ExtractDir = Join-Path $ScriptDir "extracted"
 $CdImgDir = Join-Path $ScriptDir "CD images"
 $DemoDir = Join-Path $ScriptDir "demo installers"
@@ -98,9 +98,9 @@ function Get-GogVersion([string]$filename) {
     return "D2 v1.2"
 }
 
-# -- JSON5 helpers ----------------------------------------------------
+# -- JSONC helpers ----------------------------------------------------
 
-function ConvertFrom-Json5WithComments([string]$text) {
+function ConvertFrom-JsoncWithComments([string]$text) {
     $sb = [System.Text.StringBuilder]::new($text.Length)
     $i = 0
     while ($i -lt $text.Length) {
@@ -119,15 +119,15 @@ function ConvertFrom-Json5WithComments([string]$text) {
     return $sb.ToString()
 }
 
-function Read-Json5Versions([string]$path) {
+function Read-JsoncVersions([string]$path) {
     if (-not (Test-Path $path)) { return @() }
     $raw = Get-Content -Raw $path
-    $clean = ConvertFrom-Json5WithComments $raw
+    $clean = ConvertFrom-JsoncWithComments $raw
     $obj = $clean | ConvertFrom-Json
     return @($obj.versions)
 }
 
-function Write-Json5Versions([string]$path, $versions) {
+function Write-JsoncVersions([string]$path, $versions) {
     # Group by version for section comments
     $groups = [ordered]@{}
     foreach ($v in $versions) {
@@ -161,7 +161,7 @@ function Write-Json5Versions([string]$path, $versions) {
     $lines += "  ]"
     $lines += "}"
     $text = $lines -join "`n"
-    $null = (ConvertFrom-Json5WithComments $text | ConvertFrom-Json -ErrorAction Stop)
+    $null = (ConvertFrom-JsoncWithComments $text | ConvertFrom-Json -ErrorAction Stop)
     Write-Utf8NoBomTextAtomically -Path $path -Text $text
 }
 
@@ -192,14 +192,14 @@ function Resolve-Version([string]$folderName, [string]$filename, [string]$source
 
 # -- Main -------------------------------------------------------------
 
-$baseline = Read-Json5Versions $Json5File
+$baseline = Read-JsoncVersions $JsoncFile
 if ($Force) {
     if ($baseline.Count -eq 0) { throw "Force regeneration requires a nonempty maintained known_versions baseline" }
     Write-Host "Force mode: clearing existing entries, will regenerate all"
     $existing = @()
     $existingSet = @{}
 } else {
-    Write-Host "Loading existing known_versions.json5..."
+    Write-Host "Loading existing known_versions.jsonc..."
     $existing = $baseline
     $existingSet = @{}
     foreach ($e in $existing) {
@@ -365,8 +365,8 @@ if ($newEntries.Count -gt 0) {
             throw "Force regeneration source set is incomplete; missing $($missing.Count) maintained identities: $preview"
         }
     }
-    Write-Json5Versions $Json5File $merged
-    Write-Host "`nWrote $($merged.Count) entries to known_versions.json5"
+    Write-JsoncVersions $JsoncFile $merged
+    Write-Host "`nWrote $($merged.Count) entries to known_versions.jsonc"
 } else {
     Write-Host "`nNo new entries to add"
 }

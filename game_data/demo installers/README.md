@@ -17,7 +17,7 @@ The Android launcher follows these models:
 5. For Mac packages, stage the `.sit` file and extract it with `DiscImportBridge.extractStuffitFiles()`, including any nested STi installer
 6. Hash the final game data files and import them through the normal asset manifest path
 
-The PC-side helpers are `game_data/extract_dos_demos.ps1` and `game_data/extract_mac_demos.ps1`. The DOS helper uses DOSBox-X to run the DOS installers and produce reference extracted trees. The Mac helper uses the pinned `unar` tool to extract StuffIt and nested STi payloads. Run the Mac helper with `-WriteOracle` to refresh `mac_stuffit_oracles.json`, which records the external-tool oracle hashes used by the native regression test. `game_data/hash_assets.ps1` records extracted file hashes in `android/app/src/main/assets/known_versions.json5`, including helper outputs under `game_data/demo installers/*_extracted`.
+The PC-side helpers are `game_data/extract_dos_demos.ps1` and `game_data/extract_mac_demos.ps1`. The DOS helper uses DOSBox-X to run the DOS installers and produce reference extracted trees. The Mac helper uses the pinned `unar` tool to extract StuffIt and nested STi payloads. Run the Mac helper with `-WriteOracle` to refresh `mac_stuffit_oracles.json`, which records the external-tool oracle hashes used by the native regression test. `game_data/hash_assets.ps1` records extracted file hashes in `android/app/src/main/assets/known_versions.jsonc`, including helper outputs under `game_data/demo installers/*_extracted`.
 
 ## PC-Side StuffIt Transition Plan
 
@@ -116,4 +116,4 @@ The PC-side helpers are `game_data/extract_dos_demos.ps1` and `game_data/extract
 | `DESCENT2.S11` | `d444c6f93476f8941936164d2981387a26b0a25e3f9d5e930ef96bfbb86c1e68` | 2602492 | D2 Demo (Mac), byte-identical to D2 v1.2 |
 | `EXIT.HAM` | `c2f1fbc0e39a53d1d92336c45e59e8d79c50bb36c008a4c2bf9bf80f235226b7` | 31932 | D2 Demo (Mac) |
 
-The Android launcher imports lowercase canonical filenames. Version labels are resolved by SHA-256 through `known_versions.json5`, so copied or renamed demo files still identify as demo data when their content hash matches a known entry.
+The Android launcher imports lowercase canonical filenames. Version labels are resolved by SHA-256 through `known_versions.jsonc`, so copied or renamed demo files still identify as demo data when their content hash matches a known entry.

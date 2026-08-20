@@ -4,7 +4,7 @@
   Run extraction regression tests across all or selected sources.
 
 .DESCRIPTION
-  Finds extract_regression.json5 specs under game_data/ and runs each through
+  Finds extract_regression.jsonc specs under game_data/ and runs each through
   test_extract.ps1. Produces a summary table of results.
 
 .PARAMETER Filter
@@ -100,7 +100,7 @@ if ($SpecPaths -and $SpecPaths.Count -gt 0) {
         else { Write-Warning "Spec not found: $sp" }
     }
 } else {
-    $specs = Get-ChildItem $GAME_DATA -Recurse -Filter '*_regression.json5' |
+    $specs = Get-ChildItem $GAME_DATA -Recurse -Filter '*_regression.jsonc' |
         Sort-Object FullName |
         ForEach-Object { $_.FullName }
 
@@ -180,9 +180,9 @@ Write-Host ""
 
 # -- Helpers --------------------------------------------------
 
-function Read-Json5 {
+function Read-Jsonc {
     param([string]$Path)
-    return Read-Json5File $Path
+    return Read-JsoncFile $Path
 }
 
 function Write-ExtractRegressionSummary {
@@ -259,7 +259,7 @@ foreach ($specPath in $specs) {
     $specDir = Split-Path $specPath -Parent
     $sourceName = Split-Path $specDir -Leaf
     # For GOG specs, use the spec filename as the source name
-    if ($specPath -match '_regression\.json5$' -and $specPath -notmatch 'extract_regression\.json5$') {
+    if ($specPath -match '_regression\.jsonc$' -and $specPath -notmatch 'extract_regression\.jsonc$') {
         $sourceName = [System.IO.Path]::GetFileNameWithoutExtension($specPath) -replace '_regression$', ''
     }
 
@@ -273,7 +273,7 @@ foreach ($specPath in $specs) {
     # Read prior test result from spec file (if any)
     $priorStatus = $null
     try {
-        $specData = Read-Json5 $specPath
+        $specData = Read-Jsonc $specPath
         if ($specData.last_test_result) { $priorStatus = $specData.last_test_result.status }
     } catch {}
 
@@ -341,7 +341,7 @@ foreach ($specPath in $specs) {
     $newStatus = $null
     $failureStep = ''
     try {
-        $specData = Read-Json5 $specPath
+        $specData = Read-Jsonc $specPath
         if ($specData.last_test_result) {
             $newStatus = $specData.last_test_result.status
             $failureStep = [string]$specData.last_test_result.failure_step

@@ -60,7 +60,7 @@ function Write-Progress-Flush {
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $androidDir = Join-RegressionPath $repoRoot "android"
 $apkPath = Join-RegressionPath $androidDir "app" "build" "outputs" "apk" "debug" "app-debug.apk"
-$scriptSource = Join-RegressionPath $androidDir "game_scripts" "test_saf_basic.json5"
+$scriptSource = Join-RegressionPath $androidDir "game_scripts" "test_saf_basic.jsonc"
 $_depBaseFile = Join-Path $repoRoot "dependency_base.txt"
 if (-not (Test-Path $_depBaseFile)) {
     Write-Host "FAIL: dependency_base.txt not found at $_depBaseFile" -ForegroundColor Red
@@ -574,7 +574,7 @@ if ($DescriptorOnly -or $ProviderStaleSizeOnly) {
 Write-Host ""
 Write-Progress-Flush "Step 8: Running test_saf_basic automation..." Yellow
 
-$scriptBasename = "test_saf_basic.json5"
+$scriptBasename = "test_saf_basic.jsonc"
 $deviceTmp = "/data/local/tmp/$scriptBasename"
 
 Adb push $scriptSource $deviceTmp | Out-Null

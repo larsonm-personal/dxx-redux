@@ -192,9 +192,9 @@ class SetupActivity : ComponentActivity() {
 
     // -- Launcher script automation (debug builds only) ------------------
     //   adb shell am broadcast -a com.dxxredux.SETUP_AUTOMATE \
-    //     --es script files/test.json5
+    //     --es script files/test.jsonc
     // Scripts can alternate between launcher and game phases via
-    // enter_launcher / enter_game steps in a single JSON5 array.
+    // enter_launcher / enter_game steps in a single JSONC array.
     private var launcherExecutor: LauncherScriptExecutor? = null
     private val automationStatePreferences
         get() = getSharedPreferences("automation_state", Context.MODE_PRIVATE)

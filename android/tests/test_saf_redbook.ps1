@@ -4,7 +4,7 @@
     Runs the SAF redbook audio regression script with its required test disc.
 
 .DESCRIPTION
-    test_saf_redbook.json5 is a launcher/game automation script, but it needs a
+    test_saf_redbook.jsonc is a launcher/game automation script, but it needs a
     tiny BIN/CUE fixture staged in two places before the launcher registers the
     audio source.  The seed BIN is repeated on-device so playback cannot finish
     while the producer is still filling its ring buffer.  This wrapper makes
@@ -22,7 +22,7 @@ $androidRoot = Join-Path $repoRoot "android"
 $fixtureDir = Join-Path $PSScriptRoot "test_redbook_data"
 $binPath = Join-Path $fixtureDir "test_disc.bin"
 $cuePath = Join-Path $fixtureDir "test_disc.cue"
-$scriptName = "test_saf_redbook.json5"
+$scriptName = "test_saf_redbook.jsonc"
 $fixtureCopies = 40
 
 if (-not (Test-Path -LiteralPath $binPath -PathType Leaf)) {

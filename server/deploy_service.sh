@@ -33,7 +33,7 @@ ExecStart=${BINARY}
 Restart=on-failure
 RestartSec=5
 
-# Logging: stdout/stderr go to journald; file logging is configured in server_config.json5
+# Logging: stdout/stderr go to journald; file logging is configured in server_config.jsonc
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=${SERVICE_NAME}

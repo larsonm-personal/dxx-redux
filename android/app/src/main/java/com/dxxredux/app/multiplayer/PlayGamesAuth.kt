@@ -24,7 +24,7 @@ private const val TAG = "PlayGamesAuth"
 object PlayGamesAuth {
     private var initialized = false
 
-    /** The web client ID from auth_config.json5 (injected via BuildConfig). */
+    /** The web client ID from auth_config.jsonc (injected via BuildConfig). */
     private val serverClientId: String = BuildConfig.GPGS_SERVER_CLIENT_ID
 
     /** True if a real client ID is configured (not empty/placeholder). */

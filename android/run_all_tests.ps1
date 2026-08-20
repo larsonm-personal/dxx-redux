@@ -4,7 +4,7 @@
     Unattended sequential test runner with automatic infrastructure setup.
 
 .DESCRIPTION
-    Discovers all json5 and ps1 tests, automatically provisions required
+    Discovers all jsonc and ps1 tests, automatically provisions required
     infrastructure (emulators, matchmaking server, Docker NAT containers),
     runs tests sequentially, and produces a summary report. Interactive runs
     without parameters show a profile menu. Redirected or parameterized runs
@@ -14,7 +14,7 @@
             1. No-infra tests (host-side comparisons, unit tests, server integration)
             2. Server-only tests (matchmaking bot/client checks)
             3. Single emulator started, APK installed, game data pushed
-            4. Single-emulator tests (json5 automation + ps1 emulator tests)
+            4. Single-emulator tests (jsonc automation + ps1 emulator tests)
             5. Extract regressions (single emulator + source import checks)
             6. Second emulator started, APK installed, game data pushed
             7. Matchmaking server started for dual-emulator tests that request it
@@ -365,7 +365,7 @@ $testTimeouts = @{
     "test_validate_automation_catalog"    = 60
 }
 
-function Get-RunTestJson5ChildTimeoutSeconds {
+function Get-RunTestJsoncChildTimeoutSeconds {
     param(
         [string]$ScriptPath,
         [string]$TestName
@@ -384,7 +384,7 @@ function Get-RunTestJson5ChildTimeoutSeconds {
     return [int]$scriptTimeout
 }
 
-function Get-RunAllJson5TimeoutSeconds {
+function Get-RunAllJsoncTimeoutSeconds {
     param(
         [string]$ScriptPath,
         [int]$ChildTimeoutSeconds
@@ -452,10 +452,10 @@ foreach ($supportName in $ps1SupportOwners.Keys) {
     }
 }
 
-# json5 game-automation scripts (run via run_test.ps1)
+# jsonc game-automation scripts (run via run_test.ps1)
 $gameScriptsDir = Join-Path $scriptDir "game_scripts"
-$json5Files = @(Get-ChildItem -Path $gameScriptsDir -Filter "test_*.json5" -File -ErrorAction SilentlyContinue | Sort-Object Name)
-foreach ($t in $json5Files) {
+$jsoncFiles = @(Get-ChildItem -Path $gameScriptsDir -Filter "test_*.jsonc" -File -ErrorAction SilentlyContinue | Sort-Object Name)
+foreach ($t in $jsoncFiles) {
     $info = Get-TestScriptInfo -ScriptPath $t.FullName
     if ($null -eq $info) {
         $catalogErrors += "$($t.Name): missing or unparseable first _info object"
@@ -469,7 +469,7 @@ foreach ($t in $json5Files) {
         } elseif (-not $ps1TestNames.ContainsKey($owner)) {
             $catalogErrors += "$($t.Name): owner '$owner' is not a top-level PowerShell test"
         } else {
-            $supportScripts += @{ Name = $t.BaseName; Owner = $owner; Type = "json5" }
+            $supportScripts += @{ Name = $t.BaseName; Owner = $owner; Type = "jsonc" }
         }
         continue
     }
@@ -480,12 +480,12 @@ foreach ($t in $json5Files) {
         $catalogErrors += "$($t.Name): duplicate top-level test name '$($t.BaseName)'"
     }
     $name = $t.BaseName
-    $childTimeoutSeconds = Get-RunTestJson5ChildTimeoutSeconds -ScriptPath $t.FullName -TestName $name
-    $timeoutSeconds = Get-RunAllJson5TimeoutSeconds -ScriptPath $t.FullName -ChildTimeoutSeconds $childTimeoutSeconds
+    $childTimeoutSeconds = Get-RunTestJsoncChildTimeoutSeconds -ScriptPath $t.FullName -TestName $name
+    $timeoutSeconds = Get-RunAllJsoncTimeoutSeconds -ScriptPath $t.FullName -ChildTimeoutSeconds $childTimeoutSeconds
     $allTests += @{
         Name = $name
         BaseName = $name
-        Type = "json5"
+        Type = "jsonc"
         Path = $t.FullName
         Requires = "emulator"
         TimeoutSeconds = $timeoutSeconds
@@ -1504,7 +1504,7 @@ function Invoke-SingleTest {
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     $startedAt = Get-Date
 
-    if ($Test.Type -eq "json5") {
+    if ($Test.Type -eq "jsonc") {
         $psScript = $runTestScript
         $psArguments = @("-ScriptName", [System.IO.Path]::GetFileName($Test.Path))
     } elseif ($Test.Name -eq "test_saf_archiver") {

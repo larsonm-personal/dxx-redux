@@ -4,7 +4,7 @@
  *
  * Shared between D1 and D2 android builds.  Track names are populated
  * at load time from audio_playlist.json (written by AudioSourceManager
- * with fingerprint-matched or known_discs.json5-sourced names).
+ * with fingerprint-matched or known_discs.jsonc-sourced names).
  *
  * Jukebox (custom music) names come from custom_music_names.json,
  * a sidecar written by CustomAudioSetManager alongside the M3U playlist.
@@ -68,7 +68,7 @@ const char *track_names_lookup(int track, unsigned long disc_id)
  * Maps absolute file paths to chromaprint-decoded track names. */
 
 #define MISSION_MUSIC_NAMES_FILE "mission_music_names.json"
-#define MAX_MISSION_MIDI_NAMES 256
+#define MAX_MISSION_MIDI_NAMES   256
 
 static struct {
 	char filename[16];
@@ -81,7 +81,8 @@ static void mission_midi_names_load(void)
 	int index;
 	s_mission_midi_name_count = 0;
 	for (index = 0; BIMSongs && index < Num_bim_songs &&
-	                s_mission_midi_name_count < MAX_MISSION_MIDI_NAMES; ++index) {
+	                s_mission_midi_name_count < MAX_MISSION_MIDI_NAMES;
+	     ++index) {
 		midi_metadata metadata;
 		char source[MIDI_METADATA_SOURCE_FILENAME_BYTES];
 		int inherited;

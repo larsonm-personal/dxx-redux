@@ -1,0 +1,15 @@
+// TEST: Launch a base-game robot through the engine-rendered robot preview
+[
+    {"_info": {
+        "description": "Launch a selected robot from the installed base-game data",
+        "games": ["d1", "d2"],
+        "_standalone": false,
+        "_owner": "test_robot_preview"
+    }},
+    {"action": "enter_launcher"},
+    {
+        "action": "launch_base_robot_preview",
+        "game": "${GAME}",
+        "robot_number": "${ROBOT_NUMBER}"
+    }
+]

@@ -15,29 +15,29 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
-// Load auth_config.json5 if it exists (for GPGS sign-in)
+// Load auth_config.jsonc if it exists (for GPGS sign-in)
 // Strip // comments and trailing commas to make it valid JSON, then parse.
-def authConfigFile = rootProject.file("auth_config.json5")
+def authConfigFile = rootProject.file("auth_config.jsonc")
 def authServerClientId = ""
 def authGamesAppId = "000000000000"
 if (authConfigFile.exists()) {
-    def json5Text = authConfigFile.text
-    def jsonText = json5Text
+    def jsoncText = authConfigFile.text
+    def jsonText = jsoncText
         .replaceAll('(?m)//.*$', '')       // strip line comments
         .replaceAll(',\\s*([}\\]])', '$1') // strip trailing commas
     def parsed = new groovy.json.JsonSlurper().parseText(jsonText)
     authServerClientId = parsed.server_client_id ?: ""
     authGamesAppId = parsed.games_app_id ?: "000000000000"
-    logger.lifecycle("auth_config.json5: server_client_id=${authServerClientId.take(20)}..., games_app_id=$authGamesAppId")
+    logger.lifecycle("auth_config.jsonc: server_client_id=${authServerClientId.take(20)}..., games_app_id=$authGamesAppId")
 } else {
-    logger.lifecycle("auth_config.json5 not found — GPGS sign-in will be disabled (dev token fallback)")
+    logger.lifecycle("auth_config.jsonc not found — GPGS sign-in will be disabled (dev token fallback)")
 }
 
 // The ignored root file is also consumed by repository maintenance scripts.
 // Generate a build-only asset so Android uses that same reviewed configuration.
 def acoustIdConfigFile = project.findProperty('acoustIdConfigFile') ?
     file(project.property('acoustIdConfigFile')) :
-    rootProject.file("acoustid_config.json5")
+    rootProject.file("acoustid_config.jsonc")
 def generatedAcoustIdAssetsDir = file("$buildDir/generated/acoustid-assets/main")
 
 tasks.register('generateAcoustIdConfigAsset') {
@@ -53,7 +53,7 @@ tasks.register('generateAcoustIdConfigAsset') {
         project.delete(outputDir)
         outputDir.mkdirs()
         if (!acoustIdConfigFile.exists()) {
-            logger.lifecycle("acoustid_config.json5 not found; AcoustID web lookups will be unavailable")
+            logger.lifecycle("acoustid_config.jsonc not found; AcoustID web lookups will be unavailable")
             return
         }
 
@@ -64,17 +64,17 @@ tasks.register('generateAcoustIdConfigAsset') {
         try {
             parsed = new groovy.json.JsonSlurper().parseText(jsonText)
         } catch (Exception e) {
-            throw new GradleException("Invalid acoustid_config.json5: ${e.message}", e)
+            throw new GradleException("Invalid acoustid_config.jsonc: ${e.message}", e)
         }
         def apiKey = parsed.api_key
         if (!(apiKey instanceof String) || !(apiKey ==~ /[A-Za-z0-9]{8,64}/) ||
             apiKey == 'YOUR_ACOUSTID_API_KEY_HERE') {
             throw new GradleException(
-                'Invalid acoustid_config.json5: api_key must be an 8-64 character alphanumeric key, not a placeholder'
+                'Invalid acoustid_config.jsonc: api_key must be an 8-64 character alphanumeric key, not a placeholder'
             )
         }
 
-        new File(outputDir, 'acoustid_config.json5').text =
+        new File(outputDir, 'acoustid_config.jsonc').text =
             groovy.json.JsonOutput.toJson([api_key: apiKey]) + System.lineSeparator()
         logger.lifecycle("Generated configured AcoustID Android asset")
     }

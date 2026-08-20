@@ -6,7 +6,7 @@
   installer produces the correct game files and that the game can load from them.
 
 .DESCRIPTION
-  Given a path to an extract_regression.json5 spec file:
+  Given a path to an extract_regression.jsonc spec file:
   1. Sanitizes device state (clears file sets, removes legacy files)
   2. Verifies the device is CLEAN (canary: game must NOT be launchable)
   3. Pushes extracted game files into a "regression_test" set
@@ -14,7 +14,7 @@
   5. Launches the game and verifies in-game state via introspection
 
 .PARAMETER SpecPath
-  Path to an extract_regression.json5 file.
+  Path to an extract_regression.jsonc file.
 
 .PARAMETER SkipLaunch
   Only verify file extraction -- don't launch the game.
@@ -23,7 +23,7 @@
   Don't clean up the regression_test set after running.
 
 .EXAMPLE
-  .\test_extract.ps1 "..\game_data\CD images\Descent II (USA)\extract_regression.json5"
+  .\test_extract.ps1 "..\game_data\CD images\Descent II (USA)\extract_regression.jsonc"
   .\test_extract.ps1                # auto-discovers first available spec
 #>
 param(
@@ -54,25 +54,25 @@ Write-Host "test_extract.ps1 starting (PSScriptRoot=$PSScriptRoot)"
 # -- Auto-discover SpecPath if not provided -------------------
 if (-not $SpecPath) {
     $gameDataDir = Join-Path (Split-Path (Split-Path $PSScriptRoot)) "game_data"
-    $specs = Get-ChildItem -Path $gameDataDir -Recurse -Filter "extract_regression.json5" -ErrorAction SilentlyContinue
+    $specs = Get-ChildItem -Path $gameDataDir -Recurse -Filter "extract_regression.jsonc" -ErrorAction SilentlyContinue
     if (-not $specs -or $specs.Count -eq 0) {
         $repoRootForOracles = Split-Path (Split-Path $PSScriptRoot)
         if (Ensure-ExtractRegressionOracles -RepoRoot $repoRootForOracles -Context "test_extract.ps1") {
-            $specs = Get-ChildItem -Path $gameDataDir -Recurse -Filter "extract_regression.json5" -ErrorAction SilentlyContinue
+            $specs = Get-ChildItem -Path $gameDataDir -Recurse -Filter "extract_regression.jsonc" -ErrorAction SilentlyContinue
         }
     }
     if ($specs -and $specs.Count -gt 0) {
         $SpecPath = $specs[0].FullName
         Write-Host "Auto-selected spec: $SpecPath" -ForegroundColor Cyan
     } else {
-        Write-Host "FAIL: No SpecPath provided and no extract_regression.json5 found under $gameDataDir" -ForegroundColor Red
+        Write-Host "FAIL: No SpecPath provided and no extract_regression.jsonc found under $gameDataDir" -ForegroundColor Red
         exit 1
     }
 }
 
 if ($SpecPath -and -not (Test-Path -LiteralPath $SpecPath -PathType Leaf)) {
     $repoRootForOracles = Split-Path (Split-Path $PSScriptRoot)
-    if ((Split-Path $SpecPath -Leaf) -eq 'extract_regression.json5' -and
+    if ((Split-Path $SpecPath -Leaf) -eq 'extract_regression.jsonc' -and
         (Test-Path -LiteralPath (Split-Path $SpecPath -Parent) -PathType Container) -and
         (Ensure-ExtractRegressionOracles -RepoRoot $repoRootForOracles -Context "test_extract.ps1")) {
         if (-not (Test-Path -LiteralPath $SpecPath -PathType Leaf)) {
@@ -191,10 +191,10 @@ function Invoke-Cleanup {
 }
 Register-EngineEvent PowerShell.Exiting -Action { Invoke-Cleanup } | Out-Null
 
-function Read-Json5 {
-    # Parse JSON5 file (strip // comments and trailing commas)
+function Read-Jsonc {
+    # Parse JSONC file (strip // comments and trailing commas)
     param([string]$Path)
-    return Read-Json5File $Path
+    return Read-JsoncFile $Path
 }
 
 function Get-SetupIntrospection {
@@ -328,11 +328,11 @@ function Get-ExtractAutomationScriptText {
         [bool]$MissionSelectionRequired = $false
     )
 
-    $templatePath = Join-Path (Split-Path $PSScriptRoot) 'game_scripts\test_extract_regression_template.json5'
+    $templatePath = Join-Path (Split-Path $PSScriptRoot) 'game_scripts\test_extract_regression_template.jsonc'
     $text = Get-Content -LiteralPath $templatePath -Raw
     $text = $text.Replace('"MISSION_NAME"', (ConvertTo-Json ([string]$MissionName) -Compress))
     $text = $text.Replace('"LEVEL_NAME"', (ConvertTo-Json ([string]$LevelName) -Compress))
-    $text = $text.Replace('MISSION_OPTIONAL', $(if ($MissionSelectionRequired) { 'false' } else { 'true' }))
+    $text = $text.Replace('"MISSION_OPTIONAL"', $(if ($MissionSelectionRequired) { 'false' } else { 'true' }))
     $body = ($text -replace "`r`n", "`n").Trim()
     $start = $body.IndexOf('[')
     $end = $body.LastIndexOf(']')
@@ -388,7 +388,7 @@ function Invoke-GameAutomationScript {
         New-Item -ItemType Directory -Path $tempDir | Out-Null
     }
 
-    $scriptName = "extract_regression_$([Guid]::NewGuid().ToString('N')).json5"
+    $scriptName = "extract_regression_$([Guid]::NewGuid().ToString('N')).jsonc"
     $localPath = Join-Path $tempDir $scriptName
     [System.IO.File]::WriteAllText($localPath, $ScriptText, [System.Text.UTF8Encoding]::new($false))
 
@@ -781,7 +781,7 @@ if (-not (Test-Path -LiteralPath $SpecPath)) {
     exit 1
 }
 
-$spec = Read-Json5 $SpecPath
+$spec = Read-Jsonc $SpecPath
 $specDir = Split-Path (Resolve-Path $SpecPath) -Parent
 $sourceName = (Split-Path $specDir -Leaf)
 $useDirectCdImport = $spec.import_mode -eq 'setup_cd'
@@ -804,7 +804,7 @@ $script:testClassConfirmed = $false
 $script:testMode = if ($SkipLaunch) { 'file_only' } else { 'full' }
 
 function Write-TestResult {
-    # Persist last_test_result into the spec json5 file.
+    # Persist last_test_result into the spec jsonc file.
     if (-not $SpecPath -or -not (Test-Path $SpecPath)) { return }
     if ($SkipLaunch) { return }
     if (Test-ExtractRegressionInfrastructureFailure $script:testFailureStep) { return }

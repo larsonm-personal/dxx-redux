@@ -41,9 +41,9 @@ function Get-CueReferencedFiles($cuePath) {
     return $references
 }
 
-$specPaths = Get-ChildItem -LiteralPath $CdRoot -Recurse -Filter 'extract_regression.json5' -File | Sort-Object FullName
+$specPaths = Get-ChildItem -LiteralPath $CdRoot -Recurse -Filter 'extract_regression.jsonc' -File | Sort-Object FullName
 foreach ($specFile in $specPaths) {
-    $spec = Read-Json5File $specFile.FullName
+    $spec = Read-JsoncFile $specFile.FullName
     if ($spec.source_type -ne 'cd') {
         continue
     }
