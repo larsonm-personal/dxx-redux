@@ -95,7 +95,7 @@ extern void init_robots_for_level(void);
 extern int ai_behavior_to_mode(int behavior);
 extern void create_path_to_segment(object *objp, int goalseg, int max_length, int safety_flag);
 #ifdef __ANDROID__
-extern int create_path_to_segment_avoiding(object *objp, int goalseg, int max_length, int safety_flag, int avoid_seg);
+extern int create_path_to_segment_avoiding(object *objp, int goalseg, int max_length, int safety_flag, int avoid_seg, int avoid_seg2);
 #endif
 extern int ready_to_fire(robot_info *robptr, ai_local *ailp);
 extern int polish_path(object *objp, point_seg *psegs, int num_points);

@@ -41,6 +41,16 @@ class AutoselectOrderValidationTest(unittest.TestCase):
         self.assertIn("st.st_mtim.tv_nsec", source)
         self.assertIn("strcmp(path, rc->newest_path) < 0", source)
 
+    def test_gameplay_stops_autoselect_at_separator(self) -> None:
+        for game in ("d1", "d2"):
+            source = (REPO_ROOT / game / "main/weapon.c").read_text(
+                encoding="utf-8"
+            )
+            function = source[source.index("void auto_select_weapon") :]
+
+            self.assertIn("if(next_weapon == 255) { break; }", function)
+            self.assertNotIn("if(next_weapon == 255) { continue; }", function)
+
 
 if __name__ == "__main__":
     unittest.main()

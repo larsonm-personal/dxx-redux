@@ -76,6 +76,7 @@ extern unsigned int escort_get_route_metadata_rescan_count(void);
 extern int escort_get_route_cache_improvement_pending(void);
 extern unsigned int escort_get_route_guidance_full_search_count(void);
 extern int escort_get_route_avoid_seg(void);
+extern int escort_get_route_avoid_seg2(void);
 extern unsigned int escort_get_route_stall_recovery_count(void);
 extern unsigned int escort_get_route_ignored_nonowner_key_change_count(void);
 extern unsigned int escort_get_route_boss_move_invalidation_count(void);

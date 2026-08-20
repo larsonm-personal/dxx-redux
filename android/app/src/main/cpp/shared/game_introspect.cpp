@@ -927,6 +927,7 @@ static json serialize_guidebot()
 	    (bool) escort_get_route_cache_improvement_pending();
 	result["route_guidance_full_search_count"] = escort_get_route_guidance_full_search_count();
 	result["route_avoid_seg"] = escort_get_route_avoid_seg();
+	result["route_avoid_seg2"] = escort_get_route_avoid_seg2();
 	result["route_stall_recovery_count"] = escort_get_route_stall_recovery_count();
 	result["route_ignored_nonowner_key_change_count"] =
 	    escort_get_route_ignored_nonowner_key_change_count();

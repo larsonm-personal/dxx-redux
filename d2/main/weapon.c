@@ -597,7 +597,7 @@ void auto_select_weapon(int weapon_type)
 	for(int i = 0; i < max_weapons; i++) {
 		int next_weapon = weapon_type == 0 ? PlayerCfg.PrimaryOrder[i] : PlayerCfg.SecondaryOrder[i];
 
-		if(next_weapon == 255) { continue; } // Breakpoint in list
+		if(next_weapon == 255) { break; } // Breakpoint in list
 		if(next_weapon == PROXIMITY_INDEX && weapon_type == 1) { continue; } // Don't autoselect proxies.  Ever.
 		if(player_has_weapon(Player_num, next_weapon, weapon_type) != HAS_ALL) { continue; } // Missing weapon or ammo
 

@@ -287,7 +287,7 @@ if (vm_vec_mag_quick(&e) < F1_0/2)
 //	like to say that it ensures that the object can move between the points, but that would require knowing what
 //	the object is (which isn't passed, right?) and making fvi calls (slow, right?).  So, consider it the more_or_less_safe_flag.
 //	If end_seg == -2, then end seg will never be found and this routine will drop out due to depth (probably called by create_n_segment_path).
-int create_path_points(object *objp, int start_seg, int end_seg, point_seg *psegs, short *num_points, int max_depth, int random_flag, int safety_flag, int avoid_seg)
+static int create_path_points_avoiding(object *objp, int start_seg, int end_seg, point_seg *psegs, short *num_points, int max_depth, int random_flag, int safety_flag, int avoid_seg, int avoid_seg2)
 {
 	int		cur_seg;
 	int		sidenum;
@@ -316,6 +316,7 @@ int create_path_points(object *objp, int start_seg, int end_seg, point_seg *pseg
 if ((objp->type == OBJ_ROBOT) && (objp->ctype.ai_info.behavior == AIB_RUN_FROM)) {
 	random_flag = 1;
 	avoid_seg = ConsoleObject->segnum;
+	avoid_seg2 = -1;
 	// Int3();
 }
 
@@ -342,6 +343,13 @@ if ((objp->type == OBJ_ROBOT) && (objp->ctype.ai_info.behavior == AIB_RUN_FROM))
 		if ((start_seg != avoid_seg) && (end_seg != avoid_seg)) {
 			visited[avoid_seg] = 1;
 			depth[avoid_seg] = 0;
+		}
+	}
+	if (avoid_seg2 != -1) {
+		Assert(avoid_seg2 <= Highest_segment_index);
+		if ((start_seg != avoid_seg2) && (end_seg != avoid_seg2)) {
+			visited[avoid_seg2] = 1;
+			depth[avoid_seg2] = 0;
 		}
 	}
 
@@ -568,6 +576,13 @@ cpp_done1: ;
 	return 0;
 }
 
+int create_path_points(object *objp, int start_seg, int end_seg, point_seg *psegs, short *num_points, int max_depth, int random_flag, int safety_flag, int avoid_seg)
+{
+	return create_path_points_avoiding(objp, start_seg, end_seg, psegs, num_points,
+	                                   max_depth, random_flag, safety_flag,
+	                                   avoid_seg, -1);
+}
+
 int	Last_buddy_polish_path_tick;
 
 //	-------------------------------------------------------------------------------------------------------
@@ -762,7 +777,7 @@ void create_path_to_player(object *objp, int max_length, int safety_flag)
 
 //	-------------------------------------------------------------------------------------------------------
 //	Creates a path from the object's current segment (objp->segnum) to segment goalseg.
-static int create_path_to_segment_internal(object *objp, int goalseg, int max_length, int safety_flag, int avoid_seg)
+static int create_path_to_segment_internal(object *objp, int goalseg, int max_length, int safety_flag, int avoid_seg, int avoid_seg2)
 {
 	ai_static	*aip = &objp->ctype.ai_info;
 	ai_local		*ailp = &Ai_local_info[objp-Objects];
@@ -784,7 +799,9 @@ static int create_path_to_segment_internal(object *objp, int goalseg, int max_le
 	if (end_seg == -1) {
 		;
 	} else {
-		create_path_points(objp, start_seg, end_seg, Point_segs_free_ptr, &aip->path_length, max_length, 1, safety_flag, avoid_seg);
+		create_path_points_avoiding(objp, start_seg, end_seg, Point_segs_free_ptr,
+		                            &aip->path_length, max_length, 1, safety_flag,
+		                            avoid_seg, avoid_seg2);
 		aip->hide_index = Point_segs_free_ptr - Point_segs;
 		aip->cur_path_index = 0;
 		Point_segs_free_ptr += aip->path_length;
@@ -811,14 +828,15 @@ static int create_path_to_segment_internal(object *objp, int goalseg, int max_le
 
 void create_path_to_segment(object *objp, int goalseg, int max_length, int safety_flag)
 {
-	create_path_to_segment_internal(objp, goalseg, max_length, safety_flag, -1);
+	create_path_to_segment_internal(objp, goalseg, max_length, safety_flag, -1, -1);
 
 }
 
 #ifdef __ANDROID__
-int create_path_to_segment_avoiding(object *objp, int goalseg, int max_length, int safety_flag, int avoid_seg)
+int create_path_to_segment_avoiding(object *objp, int goalseg, int max_length, int safety_flag, int avoid_seg, int avoid_seg2)
 {
-	return create_path_to_segment_internal(objp, goalseg, max_length, safety_flag, avoid_seg);
+	return create_path_to_segment_internal(objp, goalseg, max_length, safety_flag,
+	                                       avoid_seg, avoid_seg2);
 
 }
 #endif

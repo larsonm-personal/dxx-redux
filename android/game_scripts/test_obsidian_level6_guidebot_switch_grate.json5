@@ -78,5 +78,15 @@
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
         "guidebot.segment": {"ne": 540}
     }},
+    {"action": "pose_view", "segment": 541, "x": -87.503891, "y": 172.280426, "z": 417.697983, "post_delay_ms": 250},
+    {"action": "meta_action", "id": 1042, "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "guidebot.route_stall_recovery_count": {"gte": 2},
+        "guidebot.route_avoid_seg": "607",
+        "guidebot.route_avoid_seg2": "606"
+    }},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "guidebot.segment": {"ne": 541}
+    }},
     {"action": "log", "message": "=== TEST: Obsidian level 6 Guide-Bot switch and grate routing -- PASS ==="}
 ]
