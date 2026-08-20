@@ -42,6 +42,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "deterministic_math.h"
 #include "d1_in_d2.h"
 #include "input_demo_hooks.h"
+#ifdef __ANDROID__
+#include "escort.h"
+#endif
 
 #define	PARALLAX	0		//	If !0, then special debugging for Parallax eyes enabled.
 
@@ -759,7 +762,7 @@ void create_path_to_player(object *objp, int max_length, int safety_flag)
 
 //	-------------------------------------------------------------------------------------------------------
 //	Creates a path from the object's current segment (objp->segnum) to segment goalseg.
-void create_path_to_segment(object *objp, int goalseg, int max_length, int safety_flag)
+static int create_path_to_segment_internal(object *objp, int goalseg, int max_length, int safety_flag, int avoid_seg)
 {
 	ai_static	*aip = &objp->ctype.ai_info;
 	ai_local		*ailp = &Ai_local_info[objp-Objects];
@@ -776,18 +779,18 @@ void create_path_to_segment(object *objp, int goalseg, int max_length, int safet
 	end_seg = ailp->goal_segment;
 	replay_path_request_probe_active = input_demo_replay_path_request_probe_active(objp);
 	if (replay_path_request_probe_active)
-		input_demo_log_path_request("create_path_to_segment begin", objp, start_seg, end_seg, max_length, safety_flag, -1);
+		input_demo_log_path_request("create_path_to_segment begin", objp, start_seg, end_seg, max_length, safety_flag, avoid_seg);
 
 	if (end_seg == -1) {
 		;
 	} else {
-		create_path_points(objp, start_seg, end_seg, Point_segs_free_ptr, &aip->path_length, max_length, 1, safety_flag, -1);
+		create_path_points(objp, start_seg, end_seg, Point_segs_free_ptr, &aip->path_length, max_length, 1, safety_flag, avoid_seg);
 		aip->hide_index = Point_segs_free_ptr - Point_segs;
 		aip->cur_path_index = 0;
 		Point_segs_free_ptr += aip->path_length;
 		if (Point_segs_free_ptr - Point_segs + MAX_PATH_LENGTH*2 > MAX_POINT_SEGS) {
 			ai_reset_all_paths();
-			return;
+			return 0;
 		}
 
 		aip->PATH_DIR = 1;		//	Initialize to moving forward.
@@ -799,9 +802,26 @@ void create_path_to_segment(object *objp, int goalseg, int max_length, int safet
 	if (replay_path_request_probe_active && (end_seg != -1) && (aip->path_length > 0))
 		input_demo_log_path_points("create_path_to_segment final", objp, &Point_segs[aip->hide_index], aip->path_length);
 	if (replay_path_request_probe_active)
-		input_demo_log_path_request(end_seg == -1 ? "create_path_to_segment skipped" : "create_path_to_segment done", objp, start_seg, end_seg, max_length, safety_flag, -1);
+		input_demo_log_path_request(end_seg == -1 ? "create_path_to_segment skipped" : "create_path_to_segment done", objp, start_seg, end_seg, max_length, safety_flag, avoid_seg);
+
+	return aip->path_length > 0 && aip->hide_index >= 0 &&
+	       Point_segs[aip->hide_index + aip->path_length - 1].segnum == end_seg;
 
 }
+
+void create_path_to_segment(object *objp, int goalseg, int max_length, int safety_flag)
+{
+	create_path_to_segment_internal(objp, goalseg, max_length, safety_flag, -1);
+
+}
+
+#ifdef __ANDROID__
+int create_path_to_segment_avoiding(object *objp, int goalseg, int max_length, int safety_flag, int avoid_seg)
+{
+	return create_path_to_segment_internal(objp, goalseg, max_length, safety_flag, avoid_seg);
+
+}
+#endif
 
 //	-------------------------------------------------------------------------------------------------------
 //	Creates a path from the objects current segment (objp->segnum) to the specified segment for the object to
@@ -1134,6 +1154,20 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 	//--Int3_if(((aip->cur_path_index >= 0) && (aip->cur_path_index < aip->path_length)));
 
 	while ((dist_to_goal < threshold_distance) && !forced_break) {
+
+#ifdef __ANDROID__
+		/* Android semantic guidance can legitimately end at the robot's current
+		 * point.  The classic path follower treats a one-point path as circular
+		 * and replaces it with a route back to the player, pulling Guide-Bot away
+		 * from the switch it just reached. */
+		if (robptr->companion && aip->path_length == 1 &&
+		    escort_get_route_goal_active()) {
+			aip->cur_path_index = 0;
+			vm_vec_zero(&objp->mtype.phys_info.velocity);
+			vm_vec_zero(&objp->mtype.phys_info.rotvel);
+			return;
+		}
+#endif
 
 		//	Advance to next point on path.
 		aip->cur_path_index += aip->PATH_DIR;

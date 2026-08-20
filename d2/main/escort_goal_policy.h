@@ -14,9 +14,9 @@ static inline int escort_goal_request_is_pathable(int goal_object, int special_g
 }
 
 /* A short path can be the complete route to a nearby door or objective. */
-static inline int escort_path_needs_fallback(int path_length)
+static inline int escort_path_needs_fallback(int path_length, int semantic_route_active)
 {
-	return path_length < 2;
+	return path_length < (semantic_route_active ? 1 : 2);
 }
 
 #endif
