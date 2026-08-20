@@ -177,20 +177,74 @@ function Test-AppPackageInstalled {
     return ($path -and $path -match '^package:')
 }
 
+function Test-AppPrivateStorageReady {
+    $appDataDir = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "pwd") -Seconds 5 -IncludeStandardError
+    if (-not $appDataDir -or $appDataDir.Trim() -notmatch '^/data/(?:data|user/\d+)/[A-Za-z0-9._]+$') {
+        return $false
+    }
+
+    $marker = "files/.test_ready_$([guid]::NewGuid().ToString('N'))"
+    try {
+        Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", "files") -Seconds 5 -IncludeStandardError | Out-Null
+        Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "touch", $marker) -Seconds 5 -IncludeStandardError | Out-Null
+        $published = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "ls", $marker) -Seconds 5 -IncludeStandardError
+        return ($published -and $published.Trim() -ceq $marker)
+    } finally {
+        Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", $marker) -Seconds 5 -IncludeStandardError | Out-Null
+    }
+}
+
+function Test-EmulatorReadyForTests {
+    if (-not (Test-EmulatorHealthy)) { return $false }
+    if (-not (Test-AppPackageInstalled)) { return $true }
+    return (Test-AppPrivateStorageReady)
+}
+
+function Wait-EmulatorReadyForTests {
+    param([int]$TimeoutSeconds = 30, [int]$RetryDelayMilliseconds = 2000)
+
+    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    do {
+        if (Test-EmulatorReadyForTests) { return $true }
+        if ($stopwatch.Elapsed.TotalSeconds -ge $TimeoutSeconds) { break }
+        Start-Sleep -Milliseconds $RetryDelayMilliseconds
+    } while ($true)
+    return $false
+}
+
 function Ensure-EmulatorHealthy {
     # Check emulator health; restart via emu_health.ps1 if needed.
     # Returns $true on success, exits on unrecoverable failure.
     Write-Status "Checking emulator health..."
-    if (Test-EmulatorHealthy) {
+    if (Test-EmulatorReadyForTests) {
         Write-Status "Emulator healthy" "Green"
         return $true
     }
     Write-Status "Emulator unhealthy -- attempting restart..." "Yellow"
+    $forceRestart = $false
+    if (Test-EmulatorHealthy -and (Test-AppPackageInstalled)) {
+        Write-Status "App-private storage is not ready, retrying ADB transport..." "Yellow"
+        Start-Sleep -Seconds 2
+        if (Test-EmulatorReadyForTests) {
+            Write-Status "Emulator healthy" "Green"
+            return $true
+        }
+        Restart-AdbServer
+        if (Test-EmulatorReadyForTests) {
+            Write-Status "Emulator healthy" "Green"
+            return $true
+        }
+        $forceRestart = $true
+    }
     $healthScript = Join-Path $PSScriptRoot "emu_health.ps1"
-    & $healthScript -Restart -Wait -TimeoutSeconds 120
+    & $healthScript -Restart -Wait -ForceRestart:$forceRestart -TimeoutSeconds 120
     $emuExit = $LASTEXITCODE
     if ($emuExit -ne 0 -and $emuExit -ne 2) {
         Write-Status "FAIL: Emulator could not be restored (exit $emuExit)" "Red"
+        exit 1
+    }
+    if (-not (Wait-EmulatorReadyForTests -TimeoutSeconds 30)) {
+        Write-Status "FAIL: Emulator recovered but app-private storage is not ready" "Red"
         exit 1
     }
     Write-Status "Emulator healthy" "Green"
@@ -654,7 +708,11 @@ function Reset-GameState {
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
         "rm", "-f", "files/file_sets.json") | Out-Null
     if (-not (Publish-DefaultActiveFileSet)) {
-        throw "could not publish the default active game-data set"
+        Write-Status "Default active game-data publication failed, recovering emulator before retry..." "Yellow"
+        Ensure-EmulatorHealthy | Out-Null
+        if (-not (Publish-DefaultActiveFileSet)) {
+            throw "could not publish the default active game-data set after emulator recovery"
+        }
     }
 }
 
@@ -679,21 +737,31 @@ function Publish-DefaultActiveFileSet {
 
     $hostTemporary = [System.IO.Path]::GetTempFileName()
     $deviceTemporary = "/data/local/tmp/dxx_active_set_$([guid]::NewGuid().ToString('N'))"
+    $diagnostics = @()
     try {
         [System.IO.File]::WriteAllText($hostTemporary, $defaultPath, [System.Text.UTF8Encoding]::new($false))
-        Adb-Timeout -AdbArgs @("push", $hostTemporary, $deviceTemporary) -Seconds 10 -IncludeStandardError | Out-Null
+        $output = Adb-Timeout -AdbArgs @("push", $hostTemporary, $deviceTemporary) -Seconds 10 -IncludeStandardError
+        if ($output) { $diagnostics += "push: $output" }
 
         foreach ($gameDir in @("d1x-redux", "d2x-redux")) {
             $markerDir = "files/$gameDir"
             $marker = "$markerDir/.active_set_path"
             $temporary = "$marker.tmp"
-            Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", $markerDir) -Seconds 5 -IncludeStandardError | Out-Null
-            Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cp", $deviceTemporary, $temporary) -Seconds 5 -IncludeStandardError | Out-Null
-            Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "chmod", "600", $temporary) -Seconds 5 -IncludeStandardError | Out-Null
-            Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "mv", "-f", $temporary, $marker) -Seconds 5 -IncludeStandardError | Out-Null
+            foreach ($command in @(
+                    @{ Label = "$gameDir mkdir"; Args = @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", $markerDir) }
+                    @{ Label = "$gameDir copy"; Args = @("shell", "run-as", $script:PACKAGE, "cp", $deviceTemporary, $temporary) }
+                    @{ Label = "$gameDir chmod"; Args = @("shell", "run-as", $script:PACKAGE, "chmod", "600", $temporary) }
+                    @{ Label = "$gameDir rename"; Args = @("shell", "run-as", $script:PACKAGE, "mv", "-f", $temporary, $marker) }
+                )) {
+                $output = Adb-Timeout -AdbArgs $command.Args -Seconds 5 -IncludeStandardError
+                if ($output) { $diagnostics += "$($command.Label): $output" }
+            }
             $published = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", $marker) -Seconds 5
             if (-not $published -or $published.Trim() -cne $defaultPath) {
                 Write-Status "FAIL: could not activate the default file set for $gameDir" "Red"
+                Write-Status "Expected marker: $defaultPath" "Red"
+                Write-Status "Actual marker: $(if ($published) { $published.Trim() } else { '<empty or timed out>' })" "Red"
+                foreach ($diagnostic in $diagnostics) { Write-Status "ADB: $diagnostic" "Red" }
                 return $false
             }
         }

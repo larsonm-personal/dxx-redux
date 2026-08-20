@@ -5,6 +5,7 @@ $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot\..\helpers\test_helpers.ps1"
 
 $helperSource = Get-Content "$PSScriptRoot\..\helpers\test_helpers.ps1" -Raw
+$runnerSource = Get-Content "$PSScriptRoot\..\run_all_tests.ps1" -Raw
 if ($helperSource -notmatch '\$devices\s*=\s*Adb-Timeout\s+-AdbArgs\s+"devices"\s+-Seconds\s+5') {
     throw 'Emulator health device-list probe is not bounded'
 }
@@ -23,6 +24,13 @@ if ($helperSource -notmatch '\$proc\.Kill\(\$true\)' -or
 }
 if ($helperSource -notmatch 'PASS \(file-based after process exit') {
     throw 'Launcher monitoring does not consume a terminal result before process-exit failure'
+}
+if ($helperSource -notmatch 'function Test-AppPrivateStorageReady' -or
+    $helperSource -notmatch 'Wait-EmulatorReadyForTests -TimeoutSeconds 30') {
+    throw 'Emulator recovery does not validate app-private storage readiness'
+}
+if ($runnerSource -notmatch '"test_launcher_dpad"\s*=\s*180') {
+    throw 'Launcher DPAD test does not have its required timeout override'
 }
 
 $matchingResult = '{"result":"PASS","run_id":"run-a"}' | ConvertFrom-Json
@@ -100,6 +108,7 @@ if ($script:AdbRestarts -ne 2) {
 
 $script:TimeoutCalls = 0
 $script:GameProcessAlive = $true
+$script:AppPrivateStorageReady = $true
 
 function Adb-Timeout {
     param([string[]]$AdbArgs, [int]$Seconds = 8, [switch]$IncludeStandardError)
@@ -107,6 +116,10 @@ function Adb-Timeout {
     $name = $AdbArgs[-1]
     if ($name -eq 'pwd') {
         return '/data/user/0/com.dxxredux.app'
+    }
+    if ($AdbArgs -contains 'ls' -and $name -like 'files/.test_ready_*') {
+        if ($script:AppPrivateStorageReady) { return $name }
+        return ''
     }
     if ($AdbArgs -contains 'cat' -and $name -eq 'files/d1x-redux/.active_set_path') {
         return '/data/user/0/com.dxxredux.app/files/imported/sets/default'
@@ -119,6 +132,17 @@ function Adb-Timeout {
     }
     return ''
 }
+
+function Test-EmulatorHealthy { return $true }
+function Test-AppPackageInstalled { return $true }
+if (-not (Test-EmulatorReadyForTests)) {
+    throw 'Writable app-private storage was rejected by emulator readiness'
+}
+$script:AppPrivateStorageReady = $false
+if (Test-EmulatorReadyForTests) {
+    throw 'Unwritable app-private storage was accepted by emulator readiness'
+}
+$script:AppPrivateStorageReady = $true
 
 if (Wait-ProcessDead -TimeoutMs 250) {
     throw 'Wait-ProcessDead returned true while the game process was still alive'

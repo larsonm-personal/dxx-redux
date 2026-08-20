@@ -97,6 +97,7 @@ $repoRoot = Split-Path $scriptDir
 
 . "$helpersDir\run_all_tests_profile_menu.ps1"
 . "$helpersDir\test_helpers.ps1"
+. "$helpersDir\test_process_output.ps1"
 . "$helpersDir\test_suite_progress.ps1"
 . "$helpersDir\runtime_targeted_sampling.ps1"
 . (Join-Path (Join-Path $scriptDir "tests") "extract_regression_spec_helpers.ps1")
@@ -346,6 +347,7 @@ $testTimeouts = @{
     "test_input_demo_regressions"         = 900
     "test_input_demo_regressions_graphics" = 900
     "test_level_metadata_benchmark"       = 180
+    "test_launcher_dpad"                  = 180
     "test_mission_zip_batch"              = 3600
     "test_mod_loading"                    = 360
     "test_saf_archiver"                   = 360
@@ -358,6 +360,7 @@ $testTimeouts = @{
     "test_server_integration"             = 600
     "test_secret_area_baseline_diff"      = 60
     "test_test_helpers_process_wait"      = 60
+    "test_test_process_output_capture"    = 60
     "test_validate_extract_regression_specs" = 60
     "test_validate_automation_catalog"    = 60
 }
@@ -418,6 +421,7 @@ $noInfraTests = @(
     "test_input_demo_rng_trace_compare",
     "test_test_report_runtimes",
     "test_test_helpers_process_wait",
+    "test_test_process_output_capture",
     "test_test_suite_progress",
     "test_validate_extract_regression_specs",
     "test_validate_automation_catalog"
@@ -1522,29 +1526,32 @@ function Invoke-SingleTest {
         $psArguments += $extraArguments
     }
 
-    $psi = New-Object System.Diagnostics.ProcessStartInfo
-    $psi.FileName = "pwsh"
     $quotedScript = if ($psScript -match '[\s"]') {
         '"' + ($psScript -replace '"', '\"') + '"'
     } else {
         $psScript
     }
     $argumentText = ConvertTo-ArgumentText -Arguments $psArguments
-    $psi.Arguments = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File $quotedScript $argumentText"
-    $psi.WorkingDirectory = $scriptDir
-    $psi.RedirectStandardOutput = $true
-    $psi.RedirectStandardError = $true
-    $psi.UseShellExecute = $false
-    $psi.CreateNoWindow = $true
+    $processArguments = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File $quotedScript $argumentText"
+    $stderrFile = "$logFile.stderr.tmp"
+    Remove-Item -LiteralPath $logFile, $stderrFile -Force -ErrorAction SilentlyContinue
 
     $timedOut = $false
     $exitCode = 1
     $stdout = ""
     $stderr = ""
     try {
-        $proc = [System.Diagnostics.Process]::Start($psi)
-        $stdoutTask = $proc.StandardOutput.ReadToEndAsync()
-        $stderrTask = $proc.StandardError.ReadToEndAsync()
+        $startArguments = @{
+            FilePath = "pwsh"
+            ArgumentList = $processArguments
+            WorkingDirectory = $scriptDir
+            RedirectStandardOutput = $logFile
+            RedirectStandardError = $stderrFile
+            PassThru = $true
+        }
+        if (Test-RegressionWindowsHost) { $startArguments.WindowStyle = "Hidden" }
+        else { $startArguments.NoNewWindow = $true }
+        $proc = Start-Process @startArguments
 
         if (-not $proc.WaitForExit($testTimeout * 1000)) {
             $timedOut = $true
@@ -1555,19 +1562,18 @@ function Invoke-SingleTest {
             $exitCode = $proc.ExitCode
         }
 
-        $stdoutTask.Wait(5000) | Out-Null
-        $stderrTask.Wait(5000) | Out-Null
-        $stdout = if ($stdoutTask.IsCompleted) { $stdoutTask.Result } else { "" }
-        $stderr = if ($stderrTask.IsCompleted) { $stderrTask.Result } else { "" }
         $proc.Dispose()
-
-        $stdout | Out-File -FilePath $logFile -Encoding utf8
-        if ($stderr) { $stderr | Out-File -FilePath $logFile -Append -Encoding utf8 }
+        $stdout = Read-SharedProcessOutput -Path $logFile
+        $stderr = Read-SharedProcessOutput -Path $stderrFile
+        $stderrMerged = -not $stderr -or (Add-SharedProcessOutput -Path $logFile -Text $stderr)
+        if ($stderrMerged) {
+            Remove-Item -LiteralPath $stderrFile -Force -ErrorAction SilentlyContinue
+        }
         if (-not ("$stdout$stderr").Trim()) {
             Add-ReportSidecarLog -TestName $name -LogFile $logFile -StartedAt $startedAt | Out-Null
         }
         if ($timedOut) {
-            "TIMEOUT: Test killed after ${testTimeout}s" | Out-File -FilePath $logFile -Append -Encoding utf8
+            Add-SharedProcessOutput -Path $logFile -Text "TIMEOUT: Test killed after ${testTimeout}s" | Out-Null
         }
 
         $lines = ($stdout -split "`n" | Where-Object { $_.Trim() })
@@ -1577,7 +1583,7 @@ function Invoke-SingleTest {
         }
     } catch {
         $exitCode = 1
-        "EXCEPTION: $_" | Out-File -FilePath $logFile -Encoding utf8
+        Add-SharedProcessOutput -Path $logFile -Text "EXCEPTION: $_" | Out-Null
         Write-Host "  EXCEPTION: $_" -ForegroundColor Red
     }
 

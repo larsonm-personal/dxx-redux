@@ -72,10 +72,26 @@ $script:presentHogs["descent2.hog"] = $true
 $script:markers["files/d2x-redux/.active_set_path"] = "/stale/set"
 $script:ignorePublishFor = "d2x-redux"
 Assert-True (-not (Publish-DefaultActiveFileSet)) "Publication must fail when a marker cannot be verified"
+Assert-True (($script:statusMessages -join "`n") -match 'Expected marker:' -and
+    ($script:statusMessages -join "`n") -match 'Actual marker:') "Publication failure did not retain marker diagnostics"
 
 Assert-True (Test-StandardGameDataFailureReason -Reason "could not find descent.hog") "D1 base-data failures should be recognized"
 Assert-True (Test-StandardGameDataFailureReason -Reason "problems=could not find descent2.hog or d2demo.hog") "D2 base-data failures should be recognized"
 Assert-True (-not (Test-StandardGameDataFailureReason -Reason "metadata output file was not created")) "Unrelated failures must not trigger the base-data circuit breaker"
+
+$script:publishAttempts = 0
+$script:recoveryAttempts = 0
+function Publish-DefaultActiveFileSet {
+    $script:publishAttempts++
+    return ($script:publishAttempts -ge 2)
+}
+function Ensure-EmulatorHealthy {
+    $script:recoveryAttempts++
+    return $true
+}
+Reset-GameState
+Assert-True ($script:publishAttempts -eq 2) "Reset did not retry active-set publication"
+Assert-True ($script:recoveryAttempts -eq 1) "Reset did not recover the emulator before retrying publication"
 
 Write-Host "Active game-data reset tests passed" -ForegroundColor Green
 exit 0
