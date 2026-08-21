@@ -93,6 +93,38 @@ class DiscDatabaseContractTest {
     }
 
     @Test
+    fun fingerprintProjectionCollapsesDuplicateProvenanceAndUsesKnownAcoustIdName() {
+        val physical =
+            """
+            {"discs":[{
+              "id":"physical", "label":"Physical", "game":"d1",
+              "tracks":[{
+                "track":2, "type":"audio",
+                "sha1":"89abcdef0123456789abcdef0123456789abcdef",
+                "chromaprint":"same-recording", "duration_ms":1000,
+                "acoustid_name":"Artist - Title"
+              }]
+            }]}
+            """.trimIndent()
+        val album =
+            """
+            {"albums":[{
+              "id":"album", "label":"Album",
+              "tracks":[{
+                "track":7, "type":"audio", "name":"Album title",
+                "chromaprint":"same-recording", "duration_ms":1000
+              }]
+            }]}
+            """.trimIndent()
+
+        val flattened = JSONArray(flattenFingerprintDatabase(physical, album))
+
+        assertEquals(1, flattened.length())
+        assertEquals("physical", flattened.getJSONObject(0).getString("disc_id"))
+        assertEquals("Artist - Title", flattened.getJSONObject(0).getString("name"))
+    }
+
+    @Test
     fun fingerprintProjectionAcceptsAlbumsWithoutPhysicalDiscs() {
         val flattened =
             JSONArray(
@@ -133,7 +165,7 @@ class DiscDatabaseContractTest {
 
     @Test
     fun kcxf2AssetProjectsEveryCheckedInTracklistTitle() {
-        val workingDir = File(System.getProperty("user.dir"))
+        val workingDir = File(System.getProperty("user.dir") ?: ".")
         val repoDir =
             generateSequence(workingDir) { it.parentFile }
                 .first { File(it, "android").isDirectory && File(it, "game_data").isDirectory }
@@ -155,5 +187,26 @@ class DiscDatabaseContractTest {
             }
 
         assertEquals(expected, projected)
+    }
+
+    @Test
+    fun macPlayPhysicalFingerprintsProjectOnceWithUsefulNames() {
+        val workingDir = File(System.getProperty("user.dir") ?: ".")
+        val repoDir =
+            generateSequence(workingDir) { it.parentFile }
+                .first { File(it, "android").isDirectory && File(it, "game_data").isDirectory }
+        val assets = File(repoDir, "android/app/src/main/assets")
+        val projected =
+            JSONArray(
+                flattenFingerprintDatabase(
+                    File(assets, "known_discs.jsonc").readText(),
+                    File(assets, "known_albums.jsonc").readText(),
+                ),
+            ).let { tracks -> (0 until tracks.length()).map { tracks.getJSONObject(it) } }
+        val macPlay = projected.filter { it.getString("disc_id") == "descent-mac-macplay" }
+
+        assertEquals(13, macPlay.size)
+        assertEquals((2..14).toList(), macPlay.map { it.getInt("track") })
+        assertEquals(true, macPlay.all { !it.getString("name").startsWith("Track ") })
     }
 }

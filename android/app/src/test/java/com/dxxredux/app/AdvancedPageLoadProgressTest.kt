@@ -53,4 +53,16 @@ class AdvancedPageLoadProgressTest {
             ),
         )
     }
+
+    @Test
+    fun formatChromaprintProgressUsesUnifiedAudioWording() {
+        assertEquals(
+            "No audio discovered",
+            formatChromaprintPrecomputeProgress(RouteMetadataPrecomputeSnapshot(musicPhase = "empty")),
+        )
+        assertEquals(
+            "Discovering audio",
+            formatChromaprintPrecomputeProgress(RouteMetadataPrecomputeSnapshot(musicPhase = "discovering")),
+        )
+    }
 }

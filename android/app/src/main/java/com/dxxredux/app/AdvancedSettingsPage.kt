@@ -309,11 +309,11 @@ internal fun formatChromaprintPrecomputeProgress(snapshot: RouteMetadataPrecompu
     val finished = snapshot.musicFinishedTracks.coerceIn(0, total)
     return when {
         snapshot.musicPhase == "discovering" -> {
-            "Discovering mission audio"
+            "Discovering audio"
         }
 
         total == 0 -> {
-            "No mission audio discovered"
+            "No audio discovered"
         }
 
         snapshot.musicPhase == "waiting_for_metadata" -> {

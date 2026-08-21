@@ -23,14 +23,11 @@ internal fun fingerprintTrackName(track: JSONObject): String? {
             .optString("tracklist_name")
             .trim()
             .takeIf { track.optString("name_source") == "tracklist" && it.isNotEmpty() }
+    val acoustidCandidate = track.optString("acoustid_name").trim().takeIf { it.isNotEmpty() }
     val acoustidName =
         maintainedName?.let { sourceName ->
-            track
-                .optString("acoustid_name")
-                .trim()
-                .takeIf { it.isNotEmpty() }
-                ?.takeIf { AcoustIdLabelPolicy.labelsAgree(sourceName, it) }
-        }
+            acoustidCandidate?.takeIf { AcoustIdLabelPolicy.labelsAgree(sourceName, it) }
+        } ?: acoustidCandidate.takeIf { maintainedName == null }
     return (tracklistName ?: acoustidName ?: maintainedName ?: fallback)
         ?.takeUnless(::isPlaceholderName)
         ?: fallback
@@ -72,6 +69,7 @@ internal fun flattenFingerprintDatabase(
     val physicalDiscs = JSONObject(Jsonc.strip(discRaw)).getJSONArray("discs")
     val albums = JSONObject(Jsonc.strip(albumRaw)).getJSONArray("albums")
     val flattened = JSONArray()
+    val emittedFingerprints = mutableSetOf<Pair<String, Int>>()
 
     fun append(records: JSONArray) {
         for (i in 0 until records.length()) {
@@ -84,6 +82,9 @@ internal fun flattenFingerprintDatabase(
                 val chromaprint = track.optString("chromaprint").takeIf { it.isNotEmpty() } ?: continue
                 val durationMs = track.optInt("duration_ms", 0)
                 if (durationMs <= 0) continue
+                // More than one physical edition or album can publish the exact same
+                // recording. Keep the first provenance so an exact match is unambiguous.
+                if (!emittedFingerprints.add(chromaprint to durationMs)) continue
                 val entry = JSONObject()
                 entry.put("name", fingerprintTrackName(track) ?: continue)
                 entry.put("disc_id", discId)

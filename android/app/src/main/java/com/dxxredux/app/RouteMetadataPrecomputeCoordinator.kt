@@ -68,7 +68,11 @@ internal object MissionMusicPrecomputeScheduling {
 private data class DiscoveredPrecomputeJobs(
     val routes: List<RouteMetadataPrecomputeJob>,
     val music: List<MissionMusicPrecomputeJob>,
+    val importedCdAudioTracks: Int,
 )
+
+internal fun countImportedCdAudioTracks(sources: List<AudioSourceManager.AudioSource>): Int =
+    sources.sumOf { it.audioTrackCount.coerceAtLeast(0) }
 
 internal object RouteMetadataPrecomputeOrdering {
     fun order(
@@ -245,10 +249,11 @@ internal class RouteMetadataPrecomputeCoordinator(
                     val recent = discovered.first
                     val jobs = discovered.second.routes
                     val musicJobs = discovered.second.music
+                    val importedCdAudioTracks = discovered.second.importedCdAudioTracks
                     val entries = ledger.entries()
                     if (!discoveryFinished) {
                         monitor.discoveryFinished(jobs.size)
-                        monitor.musicDiscovery(musicJobs.sumOf { it.tracks.size })
+                        monitor.musicDiscovery(musicJobs.sumOf { it.tracks.size } + importedCdAudioTracks)
                         discoveryFinished = true
                     }
                     if (focusNewestSource) {
@@ -302,18 +307,19 @@ internal class RouteMetadataPrecomputeCoordinator(
                                     )
                                 }
                             }
-                    val totalMusicTracks = musicJobs.sumOf { it.tracks.size }
+                    val totalMusicTracks = musicJobs.sumOf { it.tracks.size } + importedCdAudioTracks
                     val finishedMusicTracks =
-                        musicJobs.sumOf { job ->
-                            job.tracks.count { track ->
-                                isMusicTrackTerminal(
-                                    job,
-                                    track,
-                                    musicEntries[job].orEmpty(),
-                                    fingerprintDbIdentity,
-                                )
+                        importedCdAudioTracks +
+                            musicJobs.sumOf { job ->
+                                job.tracks.count { track ->
+                                    isMusicTrackTerminal(
+                                        job,
+                                        track,
+                                        musicEntries[job].orEmpty(),
+                                        fingerprintDbIdentity,
+                                    )
+                                }
                             }
-                        }
                     val failedMusicTracks = musicFailures.size
                     val waitingMusicTracks =
                         musicJobs
@@ -658,6 +664,8 @@ internal class RouteMetadataPrecomputeCoordinator(
         return DiscoveredPrecomputeJobs(
             routes = targets.flatMap { (target, enabled) -> splitTarget(target, enabled) },
             music = musicJobs.filter { it.tracks.isNotEmpty() },
+            importedCdAudioTracks =
+                countImportedCdAudioTracks(AudioSourceManager(appContext.filesDir, setDir).getSources()),
         )
     }
 

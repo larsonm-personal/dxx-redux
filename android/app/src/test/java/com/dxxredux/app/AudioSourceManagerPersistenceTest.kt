@@ -9,6 +9,26 @@ import java.io.File
 
 class AudioSourceManagerPersistenceTest {
     @Test
+    fun importedCdAudioTracksContributeToFingerprintInventory() {
+        fun source(
+            id: String,
+            audioTracks: Int,
+        ) = AudioSourceManager.AudioSource(
+            id = id,
+            cuePath = "$id.cue",
+            binPaths = listOf("$id.bin"),
+            discLabel = id,
+            discId = "unknown",
+            trackCount = audioTracks + 1,
+            audioTrackCount = audioTracks,
+            legacyDiscId = 0L,
+        )
+
+        assertEquals(13, countImportedCdAudioTracks(listOf(source("macplay", 13))))
+        assertEquals(15, countImportedCdAudioTracks(listOf(source("macplay", 13), source("other", 2))))
+    }
+
+    @Test
     fun fileSetScopedRegistriesKeepSourcesIsolated() {
         val filesDir = File("build/test-audiosrc-file-set-isolation").absoluteFile
         filesDir.deleteRecursively()
