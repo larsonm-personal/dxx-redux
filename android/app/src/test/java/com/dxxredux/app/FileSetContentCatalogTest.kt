@@ -116,4 +116,41 @@ class FileSetContentCatalogTest {
         assertEquals(FileSetContentCatalog.KIND_MUSIC, entry.kind)
         assertEquals(setOf("disc.cue", "disc one.bin", "disc-two.bin"), entry.files.map { it.name }.toSet())
     }
+
+    @Test
+    fun groupsInputDemoSidecarsAsOneDemo() {
+        val setDir = temporaryFolder.newFolder("input-demo")
+        File(setDir, "demos/run.dximdemo").apply {
+            parentFile?.mkdirs()
+            writeText("input")
+        }
+        File(setDir, "demos/run.dximdemo.rngtrace.jsonl").writeText("trace")
+        File(setDir, "demos/run.dem").writeText("classic")
+
+        val entry = FileSetContentCatalog.scan(setDir).single()
+
+        assertEquals(FileSetContentCatalog.KIND_DEMO, entry.kind)
+        assertEquals(setOf("run.dximdemo", "run.dximdemo.rngtrace.jsonl", "run.dem"), entry.files.map { it.name }.toSet())
+    }
+
+    @Test
+    fun registeredGogAudioIsExcludedButUnregisteredFilesRemainVisible() {
+        val setDir = temporaryFolder.newFolder("registered-gog")
+        File(setDir, "DESCENT_II.gog").writeText("audio")
+        File(setDir, "DESCENT_II.inst").writeText("cue")
+        File(setDir, ".content/audio").mkdirs()
+        val registry = File(setDir, ".content/audio/audio_sources.json")
+        registry.writeText(
+            """{"sources":[{"cue":"sets/default/DESCENT_II.inst","bins":["sets/default/DESCENT_II.gog"]}]}""",
+        )
+
+        assertEquals(
+            setOf("descent_ii.gog", "descent_ii.inst"),
+            FileSetContentCatalog.registeredCdAudioPaths(setDir),
+        )
+        assertEquals(emptyList<String>(), FileSetContentCatalog.scan(setDir).flatMap { it.files }.map { it.name })
+
+        registry.delete()
+        assertEquals(2, FileSetContentCatalog.scan(setDir).flatMap { it.files }.size)
+    }
 }

@@ -209,6 +209,7 @@ internal fun ModsSection(
     var customAudioDeleteTarget by remember { mutableStateOf<CustomAudioSetManager.AudioSet?>(null) }
     var detailTarget by remember { mutableStateOf<ModManager.ModInfo?>(null) }
     var contentDetailTarget by remember { mutableStateOf<FileSetContentEntry?>(null) }
+    var showDemos by remember(setDir.absolutePath) { mutableStateOf(false) }
     var detailInfo by remember { mutableStateOf<ModManager.ModDetails?>(null) }
     var detailLoading by remember { mutableStateOf(false) }
     var detailProgress by remember { mutableStateOf<MetadataLoadProgress?>(null) }
@@ -285,6 +286,8 @@ internal fun ModsSection(
         }
     }
 
+    val demoEntries = contentEntries.filter { it.kind == FileSetContentCatalog.KIND_DEMO }
+    val regularContentEntries = contentEntries.filter { it.kind != FileSetContentCatalog.KIND_DEMO }
     val enabledCount =
         mods.count { it.enabled } + contentEntries.count { it.enabled } + customAudioSets.count { it.enabled }
     val totalCount = mods.size + contentEntries.size + customAudioSets.size
@@ -344,14 +347,29 @@ internal fun ModsSection(
                     onDelete = { deleteTarget = mod.filename },
                 )
             }
-            if (contentEntries.isNotEmpty()) {
+            if (regularContentEntries.isNotEmpty() || demoEntries.isNotEmpty()) {
                 Text("Levels and file-set content", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
             }
-            contentEntries.forEachIndexed { index, entry ->
+            if (demoEntries.isNotEmpty()) {
+                DemoGroupRow(
+                    demos = demoEntries,
+                    onToggle = { enabled ->
+                        scope.launch {
+                            contentEntries =
+                                withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                    contentManager.setKindEnabled(FileSetContentCatalog.KIND_DEMO, enabled)
+                                    contentManager.listEntries()
+                                }
+                        }
+                    },
+                    onOpen = { showDemos = true },
+                )
+            }
+            regularContentEntries.forEachIndexed { index, entry ->
                 ContentEntryRow(
                     entry = entry,
                     isFirst = index == 0,
-                    isLast = index == contentEntries.size - 1,
+                    isLast = index == regularContentEntries.size - 1,
                     onToggle = { enabled ->
                         scope.launch {
                             contentEntries =
@@ -365,7 +383,8 @@ internal fun ModsSection(
                         scope.launch {
                             contentEntries =
                                 withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                    contentManager.move(entry.id, index - 1)
+                                    val target = regularContentEntries[index - 1]
+                                    contentManager.move(entry.id, contentEntries.indexOfFirst { it.id == target.id })
                                     contentManager.listEntries()
                                 }
                         }
@@ -374,7 +393,8 @@ internal fun ModsSection(
                         scope.launch {
                             contentEntries =
                                 withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                    contentManager.move(entry.id, index + 1)
+                                    val target = regularContentEntries[index + 1]
+                                    contentManager.move(entry.id, contentEntries.indexOfFirst { it.id == target.id })
                                     contentManager.listEntries()
                                 }
                         }
@@ -474,6 +494,74 @@ internal fun ModsSection(
                 )
             }
         }
+    }
+
+    if (showDemos) {
+        AlertDialog(
+            onDismissRequest = { showDemos = false },
+            confirmButton = { TextButton(onClick = { showDemos = false }) { Text("Close") } },
+            title = { Text("Demos", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(modifier = Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState())) {
+                    demoEntries.forEachIndexed { index, entry ->
+                        ContentEntryRow(
+                            entry = entry,
+                            isFirst = index == 0,
+                            isLast = index == demoEntries.size - 1,
+                            onToggle = { enabled ->
+                                scope.launch {
+                                    contentEntries =
+                                        withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                            contentManager.setEnabled(entry.id, enabled)
+                                            contentManager.listEntries()
+                                        }
+                                }
+                            },
+                            onMoveUp = {
+                                scope.launch {
+                                    contentEntries =
+                                        withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                            val target = demoEntries[index - 1]
+                                            contentManager.move(
+                                                entry.id,
+                                                contentEntries.indexOfFirst {
+                                                    it.id ==
+                                                        target.id
+                                                },
+                                            )
+                                            contentManager.listEntries()
+                                        }
+                                }
+                            },
+                            onMoveDown = {
+                                scope.launch {
+                                    contentEntries =
+                                        withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                            val target = demoEntries[index + 1]
+                                            contentManager.move(
+                                                entry.id,
+                                                contentEntries.indexOfFirst {
+                                                    it.id ==
+                                                        target.id
+                                                },
+                                            )
+                                            contentManager.listEntries()
+                                        }
+                                }
+                            },
+                            onDetails = {
+                                showDemos = false
+                                contentDetailTarget = entry
+                            },
+                            onDelete = {
+                                showDemos = false
+                                contentDeleteTarget = entry
+                            },
+                        )
+                    }
+                }
+            },
+        )
     }
 
     deleteTarget?.let { filename ->
@@ -2309,6 +2397,41 @@ private fun ContentEntryRow(
             modifier = Modifier.height(24.dp),
         ) {
             Text("\u2717", fontSize = 12.sp, color = Color(0xFFFF5252))
+        }
+    }
+}
+
+@Composable
+private fun DemoGroupRow(
+    demos: List<FileSetContentEntry>,
+    onToggle: (Boolean) -> Unit,
+    onOpen: () -> Unit,
+) {
+    val enabledCount = demos.count { it.enabled }
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(start = 8.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(
+            checked = enabledCount == demos.size,
+            onCheckedChange = onToggle,
+            modifier = Modifier.size(20.dp).tvFocusBorder(),
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Column(modifier = Modifier.weight(1f).clickable(onClick = onOpen).padding(vertical = 2.dp)) {
+            Text("Demos", fontSize = 12.sp)
+            Text(
+                "$enabledCount of ${demos.size} enabled",
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        TextButton(
+            onClick = onOpen,
+            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
+            modifier = Modifier.height(24.dp),
+        ) {
+            Text("Open", fontSize = 10.sp)
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.dxxredux.app
 
+import org.json.JSONObject
 import java.io.File
 import java.security.MessageDigest
 import java.util.Locale
@@ -86,6 +87,7 @@ internal object FileSetContentCatalog {
 
     fun scan(setDir: File): List<FileSetContentEntry> {
         val root = setDir.canonicalFile
+        val registeredCdAudioPaths = registeredCdAudioPaths(setDir)
         val managedFiles =
             setDir
                 .walkTopDown()
@@ -97,6 +99,7 @@ internal object FileSetContentCatalog {
                         classify(file.relativeTo(setDir).invariantSeparatorsPath) == FileSetFileClass.MANAGED_CONTENT
                 }.map { it.canonicalFile }
                 .filter { it.toPath().startsWith(root.toPath()) }
+                .filter { relativeIdentity(root, it) !in registeredCdAudioPaths }
                 .sortedBy { relativeIdentity(root, it) }
                 .toList()
         if (managedFiles.isEmpty()) return emptyList()
@@ -130,6 +133,20 @@ internal object FileSetContentCatalog {
                 val referenced = siblings[portableGameFilenameIdentity(GameFileFormats.leafName(name))] ?: continue
                 adjacency.getValue(cue).add(referenced)
                 adjacency.getValue(referenced).add(cue)
+            }
+        }
+        for (demo in managedFiles.filter { it.name.endsWith(InputDemoManager.INPUT_DEMO_EXTENSION, true) }) {
+            val siblings = filesByDirectory[demo.parentFile?.canonicalFile].orEmpty()
+            val referencedNames =
+                listOf(
+                    demo.name + InputDemoManager.INPUT_DEMO_RNG_TRACE_SUFFIX,
+                    demo.name.dropLast(InputDemoManager.INPUT_DEMO_EXTENSION.length) +
+                        InputDemoManager.CLASSIC_DEMO_EXTENSION,
+                )
+            for (name in referencedNames) {
+                val referenced = siblings[portableGameFilenameIdentity(name)] ?: continue
+                adjacency.getValue(demo).add(referenced)
+                adjacency.getValue(referenced).add(demo)
             }
         }
 
@@ -209,7 +226,10 @@ internal object FileSetContentCatalog {
                 GameFileFormats.isMusicFile(it.name) || GameFileFormats.extensionOf(it.name) == "cue"
             } -> KIND_MUSIC
 
-            files.any { GameFileFormats.extensionOf(it.name) == "dem" } -> KIND_DEMO
+            files.any {
+                GameFileFormats.extensionOf(it.name) == "dem" ||
+                    it.name.endsWith(InputDemoManager.INPUT_DEMO_EXTENSION, ignoreCase = true)
+            } -> KIND_DEMO
 
             else -> KIND_OTHER
         }
@@ -247,6 +267,29 @@ internal object FileSetContentCatalog {
     ): String = normalizePath(file.relativeTo(root).invariantSeparatorsPath)
 
     private fun normalizePath(path: String): String = path.replace('\\', '/').trim('/')
+
+    internal fun registeredCdAudioPaths(setDir: File): Set<String> {
+        val registry = File(setDir, ".content/audio/audio_sources.json")
+        if (!registry.isFile) return emptySet()
+        return runCatching {
+            val sources = JSONObject(registry.readText()).getJSONArray("sources")
+            val references = mutableListOf<String>()
+            for (index in 0 until sources.length()) {
+                val source = sources.getJSONObject(index)
+                references += source.getString("cue")
+                source.optJSONArray("bins")?.let { bins ->
+                    for (binIndex in 0 until bins.length()) references += bins.getString(binIndex)
+                }
+                source.optJSONArray("bin_content_uris")?.let { bins ->
+                    for (binIndex in 0 until bins.length()) references += bins.getString(binIndex)
+                }
+            }
+            references
+                .filter { it.isNotBlank() && "://" !in it }
+                .map { GameFileFormats.leafName(it).lowercase(Locale.US) }
+                .toSet()
+        }.getOrDefault(emptySet())
+    }
 
     private val CUE_FILE_PATTERN = Regex("(?i)^\\s*FILE\\s+(?:\"([^\"]+)\"|(\\S+)).*$")
 }

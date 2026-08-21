@@ -1,0 +1,47 @@
+// TEST: Demo grouping in file-set content
+//
+// Verifies that classic and input demos appear behind the Mods/Levels Demos
+// submenu, and that input demo sidecars remain under one logical owner.
+[
+    {"_info": {
+        "games": ["d2"],
+        "_standalone": true,
+        "_owner": "test_demo_group_file_set_content"
+    }},
+
+    {"action": "enter_launcher"},
+    {"action": "setup_command", "command": "delete_set",
+     "args": {"name": "automation-demo-group"}, "post_delay_ms": 250},
+    {"action": "setup_command", "command": "create_set",
+     "args": {"name": "automation-demo-group"}, "post_delay_ms": 250},
+    {"action": "setup_command", "command": "switch_set",
+     "args": {"name": "automation-demo-group"}, "post_delay_ms": 250},
+
+    {"action": "write_set_file", "file": "demos/automation_classic.dem",
+     "content": "classic-demo\n"},
+    {"action": "write_set_file", "file": "demos/automation_input.dximdemo",
+     "content": "input-demo\n"},
+    {"action": "write_set_file", "file": "demos/automation_input.dximdemo.rngtrace.jsonl",
+     "content": "{}\n"},
+    {"action": "write_set_file", "file": "demos/automation_input.dem",
+     "content": "classic-sidecar\n"},
+    {"action": "setup_command", "command": "switch_set",
+     "args": {"name": "automation-demo-group"}, "post_delay_ms": 750},
+    {"action": "wait_for", "field": "content_entry_count", "value": "2", "timeout_ms": 10000},
+    {"action": "assert", "expect": {
+        "active_set": "automation-demo-group",
+        "content_entries[0].kind": "demo",
+        "content_entries[1].kind": "demo"
+    }},
+
+    // Expand the three file sections in screen order. Their compact controls
+    // intentionally share the Show Files label.
+    {"action": "tap_button", "text": "Show Files", "exact": true, "post_delay_ms": 200},
+    {"action": "tap_button", "text": "Show Files", "exact": true, "post_delay_ms": 200},
+    {"action": "tap_button", "text": "Show Files", "exact": true, "post_delay_ms": 300},
+    {"action": "assert_button", "text": "Demos"},
+
+    {"action": "setup_command", "command": "delete_set",
+     "args": {"name": "automation-demo-group"}, "post_delay_ms": 500},
+    {"action": "assert", "expect": {"active_set": "default"}}
+]

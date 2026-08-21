@@ -103,6 +103,17 @@ internal class FileSetContentManager(
         writeState(state)
     }
 
+    fun setKindEnabled(
+        kind: String,
+        enabled: Boolean,
+    ) = synchronized(CONTENT_LOCK) {
+        val stored = readStoredEntries(mutableListOf())
+        val matchingIds = stored.values.filter { it.kind == kind }.mapTo(mutableSetOf(), StoredEntry::id)
+        val state = repairState(stored.keys).toMutableMap()
+        matchingIds.forEach { id -> state[id] = state.getValue(id).copy(enabled = enabled) }
+        writeState(state)
+    }
+
     fun move(
         id: String,
         newIndex: Int,

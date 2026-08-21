@@ -156,6 +156,32 @@ class AudioSourceManagerArtifactPathsTest {
     }
 
     @Test
+    fun removesRegisteredGogPairWithItsCdAudioSource() {
+        val filesDir = createTempDirectory("test-audiosrc-remove-gog").toFile()
+        val setDir = File(filesDir, "imported/sets/default").also { it.mkdirs() }
+        val instFile = File(setDir, "DESCENT_II.inst").apply { writeText("cue") }
+        val gogFile = File(setDir, "DESCENT_II.gog").apply { writeText("audio") }
+        val manager = AudioSourceManager(filesDir, setDir)
+        manager.installTestSource(
+            AudioSourceManager.AudioSource(
+                id = "gog",
+                cuePath = instFile.relativeTo(filesDir).path,
+                binPaths = listOf(gogFile.relativeTo(filesDir).path),
+                discLabel = "GOG",
+                discId = "gog",
+                trackCount = 2,
+                audioTrackCount = 1,
+                legacyDiscId = 0L,
+            ),
+        )
+
+        manager.removeSource("gog") { _, _ -> }
+
+        assertFalse(instFile.exists())
+        assertFalse(gogFile.exists())
+    }
+
+    @Test
     fun reportsOnlySafHelperArtifactsForSafBackedSources() {
         val filesDir = File("build/test-audiosrc-helper-artifacts").absoluteFile
         val sources =

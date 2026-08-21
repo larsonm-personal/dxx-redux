@@ -84,6 +84,26 @@ class FileSetContentManagerTest {
     }
 
     @Test
+    fun demoGroupToggleResetsEveryDemoWithoutChangingOtherContent() {
+        val setDir = temporaryFolder.newFolder("demo-toggle")
+        File(setDir, "demos/one.dem").apply {
+            parentFile?.mkdirs()
+            writeText("one")
+        }
+        File(setDir, "demos/two.dem").writeText("two")
+        File(setDir, "extra.hog").writeText("other")
+        val manager = FileSetContentManager(setDir)
+        manager.reconcile()
+
+        manager.setKindEnabled(FileSetContentCatalog.KIND_DEMO, false)
+        assertTrue(manager.listEntries().filter { it.kind == FileSetContentCatalog.KIND_DEMO }.none { it.enabled })
+        assertTrue(manager.listEntries().single { it.kind != FileSetContentCatalog.KIND_DEMO }.enabled)
+
+        manager.setKindEnabled(FileSetContentCatalog.KIND_DEMO, true)
+        assertTrue(manager.listEntries().filter { it.kind == FileSetContentCatalog.KIND_DEMO }.all { it.enabled })
+    }
+
+    @Test
     fun reconciliationRemovesMatchingDuplicateButPreservesConflict() {
         val setDir = temporaryFolder.newFolder("duplicates")
         File(setDir, "extra.hog").writeText("owned")

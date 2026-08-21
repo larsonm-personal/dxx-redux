@@ -103,11 +103,19 @@ private fun isManagedCdArtifactFile(
     file: File,
     filesDir: File,
 ): Boolean {
-    if (!file.name.endsWith(".cue", ignoreCase = true) && !file.name.endsWith(".bin", ignoreCase = true)) {
+    val isGogArtifact = GameFileFormats.isGogAudioFile(file.name)
+    if (!file.name.endsWith(".cue", ignoreCase = true) &&
+        !file.name.endsWith(".bin", ignoreCase = true) &&
+        !isGogArtifact
+    ) {
         return false
     }
     val generatedRoot = File(ImportLocationManager(filesDir).getActiveRoot(), GENERATED_CD_AUDIO_ARTIFACT_DIR)
     if (isUnderDirectory(file, generatedRoot)) return true
+    if (isGogArtifact) {
+        return isUnderDirectory(file, filesDir) ||
+            isUnderDirectory(file, ImportLocationManager(filesDir).getActiveRoot())
+    }
     if (!isUnderDirectory(file, filesDir)) return false
     if (file.name.endsWith(".cue", ignoreCase = true)) return true
     return isGeneratedMergedStorageArtifact(file) || isLegacyGeneratedMergedStorageArtifact(file)
