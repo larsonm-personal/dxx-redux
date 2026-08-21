@@ -45,12 +45,16 @@ internal object MissionZipMusicNames {
         outputFile: File,
         onProgress: (Int, Int, String) -> Unit = { _, _, _ -> },
     ): Int {
+        val allowAcoustIdLookups =
+            context
+                .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
+                .getBoolean(PREF_ALLOW_ACOUSTID_WEB_LOOKUPS, false)
         val tracks =
             catalog.sources
                 .flatMap { it.tracks }
                 .filter(MissionZipAudioFingerprintCache::isFingerprintSupported)
         val entries = MissionZipAudioFingerprintCache(filesDir).cachedEntries(catalog).toMutableMap()
-        if (tracks.isEmpty()) return writeSidecar(outputFile, catalog, entries)
+        if (tracks.isEmpty()) return writeSidecar(outputFile, catalog, entries, allowAcoustIdLookups)
 
         val stageManager = MissionZipMusicStageManager(context.cacheDir)
         val cache = MissionZipAudioFingerprintCache(filesDir)
@@ -64,17 +68,18 @@ internal object MissionZipMusicNames {
             if (entry != null) entries[track.id] = entry
             onProgress(index + 1, tracks.size, track.displayName)
         }
-        return writeSidecar(outputFile, catalog, entries)
+        return writeSidecar(outputFile, catalog, entries, allowAcoustIdLookups)
     }
 
     fun writeSidecar(
         outputFile: File,
         catalog: MissionZipMusicCatalog,
         entries: Map<String, MissionZipAudioFingerprintCache.Entry>,
+        allowAcoustIdLookups: Boolean = false,
         beforePublish: (File, File) -> Unit = { _, _ -> },
     ): Int =
         AtomicFilePublication.transaction {
-            val records = records(catalog, entries)
+            val records = records(catalog, entries, allowAcoustIdLookups)
             if (records.isEmpty()) {
                 outputFile.delete()
                 identityFile(outputFile).delete()
@@ -92,20 +97,22 @@ internal object MissionZipMusicNames {
     private fun records(
         catalog: MissionZipMusicCatalog,
         entries: Map<String, MissionZipAudioFingerprintCache.Entry>,
+        allowAcoustIdLookups: Boolean,
     ): List<MusicNameSidecar.Record> =
         buildList {
             for (track in catalog.sources.flatMap { it.tracks }) {
-                val name = entries[track.id]?.bestName() ?: continue
+                val name = entries[track.id]?.bestName(allowAcoustIdLookups) ?: continue
                 val paths = track.exactPaths()
                 if (paths.isEmpty()) continue
                 add(MusicNameSidecar.Record(paths, paths.map(::leafName), name))
             }
         }
 
-    private fun MissionZipAudioFingerprintCache.Entry.bestName(): String? =
-        (localMatchName ?: acoustIdName)
+    private fun MissionZipAudioFingerprintCache.Entry.bestName(allowAcoustIdLookups: Boolean): String? =
+        (localMatchName ?: acoustIdName.takeIf { allowAcoustIdLookups })
             ?.trim()
             ?.takeIf { it.isNotBlank() && it != PLACEHOLDER_NAME }
+            ?: embeddedDisplayName.trim().takeIf { it.isNotBlank() }
 
     private fun MissionZipMusicTrack.exactPaths(): List<String> =
         listOf(

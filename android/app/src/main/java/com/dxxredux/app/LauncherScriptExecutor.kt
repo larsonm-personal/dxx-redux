@@ -1155,7 +1155,31 @@ class LauncherScriptExecutor(
                                                         )
                                                     }
                                                 },
-                                            ),
+                                            ).apply {
+                                                track.audioMetadata?.let { audio ->
+                                                    put("artist", audio.artist)
+                                                    put("album_artist", audio.album_artist)
+                                                    put("album", audio.album)
+                                                    put("date", audio.date)
+                                                    put("genre", audio.genre)
+                                                    put("comment", audio.comment)
+                                                    put("copyright", audio.copyright)
+                                                    put("track_number", audio.track_number)
+                                                    put("disc_number", audio.disc_number)
+                                                    put(
+                                                        "properties",
+                                                        JSONArray().apply {
+                                                            audio.properties.forEach { property ->
+                                                                put(
+                                                                    JSONObject()
+                                                                        .put("key", property.key)
+                                                                        .put("values", JSONArray(property.values)),
+                                                                )
+                                                            }
+                                                        },
+                                                    )
+                                                }
+                                            },
                                     )
                                 }
                             },

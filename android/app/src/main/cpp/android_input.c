@@ -922,24 +922,32 @@ static int is_pause_window_front(void)
 	return callback == (int (*)(window *, d_event *, void *)) pause_handler;
 }
 
-static jboolean queue_android_saveload_request(int save_request)
+static volatile int g_android_overlay_time_paused = 0;
+
+int android_queue_saveload_request(int save_request)
 {
 	window *front;
 
 	if (!Game_wind) {
 		LOGI("nativeOpen%sMenuIfSafe: not in gameplay", save_request ? "Save" : "Load");
-		return JNI_FALSE;
+		return 0;
 	}
 
 	front = window_get_front();
 	if (front != Game_wind && !is_pause_window_front()) {
 		LOGI("nativeOpen%sMenuIfSafe: unsupported front window", save_request ? "Save" : "Load");
-		return JNI_FALSE;
+		return 0;
 	}
 
 	g_android_open_save_menu = save_request ? 1 : 0;
 	g_android_open_load_menu = save_request ? 0 : 1;
-	return JNI_TRUE;
+	/* The save/load menu owns its own engine pause; transfer the Kotlin
+	 * overlay's pause instead of leaving an unmatched stop_time() behind */
+	if (g_android_overlay_time_paused) {
+		start_time();
+		g_android_overlay_time_paused = 0;
+	}
+	return 1;
 }
 
 static void android_log_autosave_gate(const char *event)
@@ -1171,28 +1179,33 @@ Java_com_dxxredux_app_MainActivity_nativeOpenSinglePlayerPauseIfSafe(JNIEnv *env
 	return JNI_TRUE;
 }
 
-static int g_android_overlay_time_paused = 0;
-
 JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_MainActivity_nativeOpenOverlayPauseIfSafe(JNIEnv *env, jobject thiz)
 {
+	(void) env;
+	(void) thiz;
+	return android_open_overlay_pause_if_safe() ? JNI_TRUE : JNI_FALSE;
+}
+
+int android_open_overlay_pause_if_safe(void)
+{
 	if (g_android_overlay_time_paused)
-		return JNI_TRUE;
+		return 1;
 	if (!Game_wind || Screen_mode != SCREEN_GAME) {
 		LOGI("nativeOpenOverlayPauseIfSafe: not in live gameplay");
-		return JNI_FALSE;
+		return 0;
 	}
 	if (Game_mode & GM_MULTI) {
 		LOGI("nativeOpenOverlayPauseIfSafe: multiplayer active");
-		return JNI_FALSE;
+		return 0;
 	}
 	if (window_get_front() != Game_wind) {
 		LOGI("nativeOpenOverlayPauseIfSafe: menu already open");
-		return JNI_FALSE;
+		return 0;
 	}
 	stop_time();
 	g_android_overlay_time_paused = 1;
-	return JNI_TRUE;
+	return 1;
 }
 
 JNIEXPORT jboolean JNICALL
@@ -1216,15 +1229,25 @@ Java_com_dxxredux_app_MainActivity_nativeClosePauseIfFront(JNIEnv *env, jobject 
 }
 
 JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeIsGamePaused(JNIEnv *env, jobject thiz)
+{
+	(void) env;
+	(void) thiz;
+	if (!Game_wind || (Game_mode & GM_MULTI))
+		return JNI_FALSE;
+	return (g_android_overlay_time_paused || is_pause_window_front()) ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_MainActivity_nativeOpenSaveMenuIfSafe(JNIEnv *env, jobject thiz)
 {
-	return queue_android_saveload_request(1);
+	return android_queue_saveload_request(1) ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_MainActivity_nativeOpenLoadMenuIfSafe(JNIEnv *env, jobject thiz)
 {
-	return queue_android_saveload_request(0);
+	return android_queue_saveload_request(0) ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jboolean JNICALL

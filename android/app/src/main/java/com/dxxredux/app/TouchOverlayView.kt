@@ -137,10 +137,20 @@ class TouchOverlayView
         private var gyroConfigured = false
         private var gyroActiveInGame = false
         private var demoRecordingActive = false
+        private var gamePaused = false
+        private var pauseResumePointerId = -1
+        private var pauseResumeRect = RectF()
 
         fun updateDemoRecordingState(active: Boolean) {
             if (demoRecordingActive == active) return
             demoRecordingActive = active
+            invalidate()
+        }
+
+        fun updateGamePausedState(paused: Boolean) {
+            if (gamePaused == paused) return
+            gamePaused = paused
+            if (!paused) pauseResumePointerId = -1
             invalidate()
         }
 
@@ -170,6 +180,9 @@ class TouchOverlayView
 
         /** Called when a tap lands outside all overlay controls (pass-through for "press any key" screens). */
         var tapPassthroughCallback: (() -> Unit)? = null
+
+        /** Called when the paused status is tapped */
+        var pauseResumeCallback: (() -> Unit)? = null
 
         /** Optional gyro manager - set by MainActivity to enable TOUCH_STICK activation. */
         var gyroManager: GyroInputManager? = null
@@ -1743,6 +1756,46 @@ class TouchOverlayView
             } else if (adminTrayTabVisible(gamepadOnlyMode, hasSettingsDiag)) {
                 drawAdminTrayTab(canvas)
             }
+            if (gamePaused) drawPausedIndicator(canvas)
+        }
+
+        private fun drawPausedIndicator(canvas: Canvas) {
+            val bannerW = width * 0.44f
+            val bannerH = height * 0.15f
+            val left = (width - bannerW) / 2f
+            val top = height * 0.08f
+            pauseResumeRect.set(left, top, left + bannerW, top + bannerH)
+
+            val corner = bannerH * 0.2f
+            val background =
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = 0xE6222222.toInt()
+                    style = Paint.Style.FILL
+                }
+            val border =
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = 0xEEFFFFFF.toInt()
+                    style = Paint.Style.STROKE
+                    strokeWidth = maxOf(3f, bannerH * 0.025f)
+                }
+            val title =
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = 0xFFFFFFFF.toInt()
+                    textAlign = Paint.Align.CENTER
+                    textSize = bannerH * 0.4f
+                    typeface = Typeface.DEFAULT_BOLD
+                }
+            val hint =
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = 0xDDFFFFFF.toInt()
+                    textAlign = Paint.Align.CENTER
+                    textSize = bannerH * 0.2f
+                }
+
+            canvas.drawRoundRect(pauseResumeRect, corner, corner, background)
+            canvas.drawRoundRect(pauseResumeRect, corner, corner, border)
+            canvas.drawText("PAUSED", pauseResumeRect.centerX(), top + bannerH * 0.48f, title)
+            canvas.drawText("Tap to resume", pauseResumeRect.centerX(), top + bannerH * 0.78f, hint)
         }
 
         private fun drawStick(
@@ -2632,8 +2685,45 @@ class TouchOverlayView
         // When the overlay is active we consume ALL touches so that nothing
         // leaks through to the game SurfaceView (where it would be
         // interpreted as a mouse click -> fire primary).
+        private fun handlePausedIndicatorTouch(event: MotionEvent): Boolean {
+            val idx = event.actionIndex
+            val px = event.getX(idx)
+            val py = event.getY(idx)
+            val pid = event.getPointerId(idx)
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                    if (!pauseResumeRect.contains(px, py)) return false
+                    pauseResumePointerId = pid
+                    return true
+                }
+
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
+                    if (pid != pauseResumePointerId) return false
+                    pauseResumePointerId = -1
+                    if (pauseResumeRect.contains(px, py)) {
+                        performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                        pauseResumeCallback?.invoke()
+                    }
+                    return true
+                }
+
+                MotionEvent.ACTION_CANCEL -> {
+                    if (pauseResumePointerId < 0) return false
+                    pauseResumePointerId = -1
+                    return true
+                }
+
+                MotionEvent.ACTION_MOVE -> {
+                    return pauseResumePointerId >= 0
+                }
+            }
+            return false
+        }
+
         override fun onTouchEvent(event: MotionEvent): Boolean {
             if (!isActive) return false
+
+            if (gamePaused && handlePausedIndicatorTouch(event)) return true
 
             // When admin tray panel is open, a visible settings button may close it;
             // otherwise the tray consumes all touches.

@@ -26,6 +26,34 @@ class MissionZipMusicAnalysisSkipTest {
         assertEquals(emptyList<MissionZipMusicTrack>(), missionZipMusicTracksNeedingLocalAnalysis(tracks, cached))
     }
 
+    @Test
+    fun metadataAnalysisRematchesTracksFromAnOlderBundledDatabase() {
+        val cached = track("game01.ogg")
+
+        val pending =
+            missionZipMusicTracksNeedingLocalAnalysis(
+                listOf(cached),
+                mapOf(cached.id to entry(cached)),
+                fingerprintDbIdentity = "new-db",
+            )
+
+        assertEquals(listOf(cached), pending)
+    }
+
+    @Test
+    fun metadataAnalysisDoesNotRetryCachedFingerprintFailures() {
+        val cached = track("game01.ogg")
+
+        val pending =
+            missionZipMusicTracksNeedingLocalAnalysis(
+                listOf(cached),
+                mapOf(cached.id to entry(cached).copy(chromaprint = "")),
+                fingerprintDbIdentity = "db",
+            )
+
+        assertEquals(emptyList<MissionZipMusicTrack>(), pending)
+    }
+
     private fun track(name: String): MissionZipMusicTrack =
         MissionZipMusicTrack(
             id = "archive:$name",

@@ -1,7 +1,9 @@
 include_guard(GLOBAL)
 
+include(${CMAKE_CURRENT_LIST_DIR}/audio-tag-metadata-deps.cmake)
+
 function(dxx_add_headless_target target main_source)
-    set(options INCLUDE_GAME_DIR)
+    set(options AUDIO_TAG_METADATA INCLUDE_GAME_DIR)
     set(multi_value_args GAME_SOURCES PRIVATE_DEFINITIONS PRIVATE_LIBRARIES)
     cmake_parse_arguments(PARSE_ARGV 2 arg "${options}" "" "${multi_value_args}")
 
@@ -55,6 +57,9 @@ function(dxx_add_headless_target target main_source)
                 ${DXX_TARGET_PREFIX}texmap
                 nlohmann_json::nlohmann_json
                 ZLIB::ZLIB)
+    if(arg_AUDIO_TAG_METADATA)
+        dxx_audio_tag_apply(${target})
+    endif()
     if(OPENGL)
         target_link_libraries(${target} PRIVATE ${DXX_TARGET_PREFIX}arch_ogl
                                                 ${DXX_TARGET_PREFIX}xmodel)

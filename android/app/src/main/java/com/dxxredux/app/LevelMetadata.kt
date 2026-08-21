@@ -441,6 +441,7 @@ internal data class LevelMetadataResult(
                                                 }
                                             },
                                     ),
+                                audioMetadata = audioTagMetadataFromJson(row),
                             ),
                         )
                     }
@@ -534,7 +535,45 @@ internal data class LevelMetadataMusicTrack(
     val filename: String,
     val format: String,
     val metadata: MidiMetadata,
+    val audioMetadata: AudioTagMetadata? = null,
 )
+
+private fun audioTagMetadataFromJson(row: JSONObject): AudioTagMetadata? {
+    val format = row.optString("format")
+    if (format !in setOf("mp3", "ogg", "flac")) return null
+    val propertiesJson = row.optJSONArray("properties") ?: JSONArray()
+    val properties =
+        buildList {
+            for (propertyIndex in 0 until propertiesJson.length()) {
+                val property = propertiesJson.optJSONObject(propertyIndex) ?: continue
+                val valuesJson = property.optJSONArray("values") ?: JSONArray()
+                add(
+                    AudioTagProperty(
+                        key = property.optString("key"),
+                        values = (0 until valuesJson.length()).map { valuesJson.optString(it) },
+                    ),
+                )
+            }
+        }
+    return AudioTagMetadata(
+        parse_status = row.optString("parse_status", "invalid"),
+        format = format,
+        title = row.optString("title"),
+        composer = row.optString("composer"),
+        artist = row.optString("artist"),
+        album_artist = row.optString("album_artist"),
+        album = row.optString("album"),
+        date = row.optString("date"),
+        genre = row.optString("genre"),
+        comment = row.optString("comment"),
+        copyright = row.optString("copyright"),
+        track_number = row.optString("track_number"),
+        disc_number = row.optString("disc_number"),
+        display_name = row.optString("display_name"),
+        metadata_truncated = row.optBoolean("metadata_truncated"),
+        properties = properties,
+    )
+}
 
 internal object LevelMetadataTargets {
     private val directExtensions = setOf("hog", "msn", "mn2", "rdl", "rl2", "sdl", "sl2")

@@ -304,6 +304,33 @@ internal fun formatAdvancedPageLoadProgress(progress: AdvancedPageLoadProgress):
     return "${progress.label} $completed/$total"
 }
 
+internal fun formatChromaprintPrecomputeProgress(snapshot: RouteMetadataPrecomputeSnapshot): String {
+    val total = snapshot.musicTotalTracks.coerceAtLeast(0)
+    val finished = snapshot.musicFinishedTracks.coerceIn(0, total)
+    return when {
+        snapshot.musicPhase == "discovering" -> {
+            "Discovering mission audio"
+        }
+
+        total == 0 -> {
+            "No mission audio discovered"
+        }
+
+        snapshot.musicPhase == "waiting_for_metadata" -> {
+            "$finished / $total tracks, waiting for level metadata"
+        }
+
+        finished == total -> {
+            "$finished / $total tracks" +
+                if (snapshot.musicFailedTracks > 0) " (${snapshot.musicFailedTracks} failed)" else ""
+        }
+
+        else -> {
+            "$finished / $total tracks (${finished * 100 / total}%)"
+        }
+    }
+}
+
 internal data class DebugLogFileFingerprint(
     val path: String,
     val length: Long,
@@ -1055,6 +1082,45 @@ private fun RouteMetadataPrecomputeSection(
                 } else {
                     MaterialTheme.colorScheme.onSurfaceVariant
                 },
+        )
+    }
+    val musicTotal = snapshot.musicTotalTracks.coerceAtLeast(0)
+    val musicFinished = snapshot.musicFinishedTracks.coerceIn(0, musicTotal)
+    val musicProgress = if (musicTotal == 0) 0f else musicFinished.toFloat() / musicTotal.toFloat()
+    val musicSecondsSinceUpdate =
+        if (snapshot.musicUpdatedAtMs <= 0L) {
+            0L
+        } else {
+            ((System.currentTimeMillis() - snapshot.musicUpdatedAtMs) / 1_000L).coerceAtLeast(0L)
+        }
+    Spacer(modifier = Modifier.height(12.dp))
+    Text("Chromaprint Hashing", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    Spacer(modifier = Modifier.height(6.dp))
+    Text(formatChromaprintPrecomputeProgress(snapshot), fontSize = 12.sp)
+    LinearProgressIndicator(
+        progress = { musicProgress.coerceIn(0f, 1f) },
+        modifier = Modifier.fillMaxWidth().height(5.dp),
+    )
+    if (snapshot.musicCurrentMission.isNotBlank()) {
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            "Hashing ${snapshot.musicCurrentMission}: ${snapshot.musicCurrentTrack}",
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (musicSecondsSinceUpdate >= 15L) {
+            Text(
+                "No hashing update for ${musicSecondsSinceUpdate}s",
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+    } else if (snapshot.musicWaitingTracks > 0) {
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            "${snapshot.musicWaitingTracks} tracks will start after their mission metadata completes",
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
     Spacer(modifier = Modifier.height(8.dp))

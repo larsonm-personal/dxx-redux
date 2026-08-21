@@ -1302,6 +1302,7 @@ extern "C" char *game_introspect_get_state(void)
 	/* -- General state -------------------------------------------- */
 	j["screen_mode"] = screen_mode_name(Screen_mode);
 	j["game_mode"] = Game_mode;
+	j["time_paused"] = game_is_time_paused() != 0;
 	j["coop_level_restart_state"] = coop_level_restart_get_state();
 	{
 		int is_error = 0;

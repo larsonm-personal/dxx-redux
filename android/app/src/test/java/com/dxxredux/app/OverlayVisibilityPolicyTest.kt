@@ -116,6 +116,7 @@ class OverlayVisibilityPolicyTest {
                 automap = false,
                 controllerMenuOpen = false,
                 settingsTrayVisible = true,
+                gamePaused = true,
             ),
         )
     }
@@ -131,6 +132,7 @@ class OverlayVisibilityPolicyTest {
                 automap = false,
                 controllerMenuOpen = true,
                 settingsTrayVisible = false,
+                gamePaused = false,
             ),
         )
     }
@@ -146,6 +148,7 @@ class OverlayVisibilityPolicyTest {
                 automap = false,
                 controllerMenuOpen = false,
                 settingsTrayVisible = true,
+                gamePaused = true,
             ),
         )
     }
@@ -161,6 +164,23 @@ class OverlayVisibilityPolicyTest {
                 automap = false,
                 controllerMenuOpen = false,
                 settingsTrayVisible = false,
+                gamePaused = false,
+            ),
+        )
+    }
+
+    @Test
+    fun pausedStatusKeepsOverlayVisibleWhenGameplayControlsAreDisabled() {
+        assertTrue(
+            shouldShowTouchOverlay(
+                inGame = false,
+                overlayEnabled = false,
+                playerDead = false,
+                endlevel = false,
+                automap = false,
+                controllerMenuOpen = false,
+                settingsTrayVisible = false,
+                gamePaused = true,
             ),
         )
     }

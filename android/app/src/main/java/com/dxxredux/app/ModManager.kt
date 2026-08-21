@@ -503,20 +503,14 @@ class ModManager(
             }
         }
         try {
-            val extractionRecord =
-                if (scan.importMode == "extracted_bundle") {
-                    val extractLabel = "Extracting level pack cache for faster launches: $displayName"
-                    onProgress(LauncherCopyProgress(extractLabel, 0L, 0L))
-                    val record =
-                        extractionStore.ensureExtracted(safeName, dest, scan) { done, total, path ->
-                            onProgress(LauncherCopyProgress(extractionProgressLabel(extractLabel, path), done, total))
-                        }
-                    onProgress(LauncherCopyProgress("Cached level pack for faster launches: $displayName", 1L, 1L))
-                    record
-                } else {
-                    null
+            if (scan.importMode == "extracted_bundle") {
+                val extractLabel = "Extracting level pack cache for faster launches: $displayName"
+                onProgress(LauncherCopyProgress(extractLabel, 0L, 0L))
+                extractionStore.ensureExtracted(safeName, dest, scan) { done, total, path ->
+                    onProgress(LauncherCopyProgress(extractionProgressLabel(extractLabel, path), done, total))
                 }
-            writeMissionZipMusicNames(safeName, dest, extractionRecord, displayName, onProgress)
+                onProgress(LauncherCopyProgress("Cached level pack for faster launches: $displayName", 1L, 1L))
+            }
             if (scan.importMode != "extracted_bundle") {
                 onProgress(LauncherCopyProgress("Finalizing level pack: $displayName", 0L, 0L))
             }
@@ -562,24 +556,18 @@ class ModManager(
                         }
                 val extractionStore = MissionZipExtractionStore(filesDir)
                 extractionStore.removeOwner(safeName)
-                val extractionRecord =
-                    if (scan.importMode == "extracted_bundle") {
-                        val extractLabel = "Extracting level pack cache for faster launches: $safeName"
-                        onProgress(LauncherCopyProgress(extractLabel, 0L, 0L))
-                        val record =
-                            extractionStore.ensureExtracted(safeName, dest, scan) { done, total, path ->
-                                onProgress(
-                                    LauncherCopyProgress(extractionProgressLabel(extractLabel, path), done, total),
-                                )
-                            }
+                if (scan.importMode == "extracted_bundle") {
+                    val extractLabel = "Extracting level pack cache for faster launches: $safeName"
+                    onProgress(LauncherCopyProgress(extractLabel, 0L, 0L))
+                    extractionStore.ensureExtracted(safeName, dest, scan) { done, total, path ->
                         onProgress(
-                            LauncherCopyProgress("Cached level pack for faster launches: $safeName", 1L, 1L),
+                            LauncherCopyProgress(extractionProgressLabel(extractLabel, path), done, total),
                         )
-                        record
-                    } else {
-                        null
                     }
-                writeMissionZipMusicNames(safeName, dest, extractionRecord, safeName, onProgress)
+                    onProgress(
+                        LauncherCopyProgress("Cached level pack for faster launches: $safeName", 1L, 1L),
+                    )
+                }
                 registerMissionZip(safeName, dest.length(), scan)
             }
         } catch (e: Exception) {

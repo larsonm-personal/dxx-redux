@@ -274,9 +274,22 @@ void track_overlay_notify_mission_music(const char *filename, int song_index)
 	if (name && name[0] && !is_placeholder_name(name)) {
 		snprintf(s_overlay_text, OVERLAY_TEXT_LEN, "%s", name);
 	} else {
-		int display_num = song_index - SONG_FIRST_LEVEL_SONG + 1;
-		if (display_num < 1) display_num = song_index;
-		snprintf(s_overlay_text, OVERLAY_TEXT_LEN, "MIDI Track %d", display_num);
+		const char *extension = filename ? strrchr(filename, '.') : NULL;
+		if (extension && (!strcasecmp(extension, ".mp3") ||
+		                  !strcasecmp(extension, ".ogg") ||
+		                  !strcasecmp(extension, ".flac"))) {
+			const char *filename_base = base_name(filename);
+			char *output_extension;
+			strncpy(s_overlay_text, filename_base ? filename_base : filename,
+			        OVERLAY_TEXT_LEN - 1);
+			s_overlay_text[OVERLAY_TEXT_LEN - 1] = '\0';
+			output_extension = strrchr(s_overlay_text, '.');
+			if (output_extension) *output_extension = '\0';
+		} else {
+			int display_num = song_index - SONG_FIRST_LEVEL_SONG + 1;
+			if (display_num < 1) display_num = song_index;
+			snprintf(s_overlay_text, OVERLAY_TEXT_LEN, "MIDI Track %d", display_num);
+		}
 	}
 
 	android_send_track_name(s_overlay_text);

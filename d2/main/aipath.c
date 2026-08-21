@@ -287,7 +287,7 @@ if (vm_vec_mag_quick(&e) < F1_0/2)
 //	like to say that it ensures that the object can move between the points, but that would require knowing what
 //	the object is (which isn't passed, right?) and making fvi calls (slow, right?).  So, consider it the more_or_less_safe_flag.
 //	If end_seg == -2, then end seg will never be found and this routine will drop out due to depth (probably called by create_n_segment_path).
-static int create_path_points_avoiding(object *objp, int start_seg, int end_seg, point_seg *psegs, short *num_points, int max_depth, int random_flag, int safety_flag, int avoid_seg, int avoid_seg2)
+static int create_path_points_avoiding(object *objp, int start_seg, int end_seg, point_seg *psegs, short *num_points, int max_depth, int random_flag, int safety_flag, int avoid_seg, int avoid_seg2, int avoid_edge_from, int avoid_edge_to, int avoid_edge_from2, int avoid_edge_to2)
 {
 	int		cur_seg;
 	int		sidenum;
@@ -381,7 +381,12 @@ if ((objp->type == OBJ_ROBOT) && (objp->ctype.ai_info.behavior == AIB_RUN_FROM))
 			if (random_flag)
 				snum = random_xlate[sidenum];
 
-			if (IS_CHILD(segp->children[snum]) && ((WALL_IS_DOORWAY(segp, snum) & WID_FLY_FLAG) || (ai_door_is_openable(objp, segp, snum)))) {
+			if (IS_CHILD(segp->children[snum]) &&
+			    !(((cur_seg == avoid_edge_from) && (segp->children[snum] == avoid_edge_to)) ||
+			      ((cur_seg == avoid_edge_to) && (segp->children[snum] == avoid_edge_from)) ||
+			      ((cur_seg == avoid_edge_from2) && (segp->children[snum] == avoid_edge_to2)) ||
+			      ((cur_seg == avoid_edge_to2) && (segp->children[snum] == avoid_edge_from2))) &&
+			    ((WALL_IS_DOORWAY(segp, snum) & WID_FLY_FLAG) || (ai_door_is_openable(objp, segp, snum)))) {
 				int			this_seg = segp->children[snum];
 				Assert(this_seg != -1);
 				if (((cur_seg == avoid_seg) || (this_seg == avoid_seg)) && (ConsoleObject->segnum == avoid_seg)) {
@@ -580,7 +585,7 @@ int create_path_points(object *objp, int start_seg, int end_seg, point_seg *pseg
 {
 	return create_path_points_avoiding(objp, start_seg, end_seg, psegs, num_points,
 	                                   max_depth, random_flag, safety_flag,
-	                                   avoid_seg, -1);
+	                                   avoid_seg, -1, -1, -1, -1, -1);
 }
 
 int	Last_buddy_polish_path_tick;
@@ -777,7 +782,7 @@ void create_path_to_player(object *objp, int max_length, int safety_flag)
 
 //	-------------------------------------------------------------------------------------------------------
 //	Creates a path from the object's current segment (objp->segnum) to segment goalseg.
-static int create_path_to_segment_internal(object *objp, int goalseg, int max_length, int safety_flag, int avoid_seg, int avoid_seg2)
+static int create_path_to_segment_internal(object *objp, int goalseg, int max_length, int safety_flag, int avoid_seg, int avoid_seg2, int avoid_edge_from, int avoid_edge_to, int avoid_edge_from2, int avoid_edge_to2)
 {
 	ai_static	*aip = &objp->ctype.ai_info;
 	ai_local		*ailp = &Ai_local_info[objp-Objects];
@@ -801,7 +806,8 @@ static int create_path_to_segment_internal(object *objp, int goalseg, int max_le
 	} else {
 		create_path_points_avoiding(objp, start_seg, end_seg, Point_segs_free_ptr,
 		                            &aip->path_length, max_length, 1, safety_flag,
-		                            avoid_seg, avoid_seg2);
+		                            avoid_seg, avoid_seg2, avoid_edge_from,
+		                            avoid_edge_to, avoid_edge_from2, avoid_edge_to2);
 		aip->hide_index = Point_segs_free_ptr - Point_segs;
 		aip->cur_path_index = 0;
 		Point_segs_free_ptr += aip->path_length;
@@ -828,7 +834,8 @@ static int create_path_to_segment_internal(object *objp, int goalseg, int max_le
 
 void create_path_to_segment(object *objp, int goalseg, int max_length, int safety_flag)
 {
-	create_path_to_segment_internal(objp, goalseg, max_length, safety_flag, -1, -1);
+	create_path_to_segment_internal(objp, goalseg, max_length, safety_flag,
+	                                -1, -1, -1, -1, -1, -1);
 
 }
 
@@ -836,7 +843,15 @@ void create_path_to_segment(object *objp, int goalseg, int max_length, int safet
 int create_path_to_segment_avoiding(object *objp, int goalseg, int max_length, int safety_flag, int avoid_seg, int avoid_seg2)
 {
 	return create_path_to_segment_internal(objp, goalseg, max_length, safety_flag,
-	                                       avoid_seg, avoid_seg2);
+	                                       avoid_seg, avoid_seg2, -1, -1, -1, -1);
+
+}
+
+int create_path_to_segment_avoiding_edges(object *objp, int goalseg, int max_length, int safety_flag, int avoid_from, int avoid_to, int avoid_from2, int avoid_to2)
+{
+	return create_path_to_segment_internal(objp, goalseg, max_length, safety_flag,
+	                                       -1, -1, avoid_from, avoid_to,
+	                                       avoid_from2, avoid_to2);
 
 }
 #endif

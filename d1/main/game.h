@@ -166,6 +166,7 @@ extern int last_drawn_cockpit;
 
 extern void stop_time(void);
 extern void start_time(void);
+extern int game_is_time_paused(void);
 extern void reset_time(void);       // called when starting level
 
 // If automap_flag == 1, then call automap routine to write message.

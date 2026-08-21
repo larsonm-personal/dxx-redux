@@ -96,6 +96,7 @@ extern int ai_behavior_to_mode(int behavior);
 extern void create_path_to_segment(object *objp, int goalseg, int max_length, int safety_flag);
 #ifdef __ANDROID__
 extern int create_path_to_segment_avoiding(object *objp, int goalseg, int max_length, int safety_flag, int avoid_seg, int avoid_seg2);
+extern int create_path_to_segment_avoiding_edges(object *objp, int goalseg, int max_length, int safety_flag, int avoid_from, int avoid_to, int avoid_from2, int avoid_to2);
 #endif
 extern int ready_to_fire(robot_info *robptr, ai_local *ailp);
 extern int polish_path(object *objp, point_seg *psegs, int num_points);

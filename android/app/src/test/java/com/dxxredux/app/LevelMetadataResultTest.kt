@@ -64,6 +64,39 @@ class LevelMetadataResultTest {
     }
 
     @Test
+    fun fromJsonRetainsCompressedAudioMetadata() {
+        val result =
+            LevelMetadataResult.fromJson(
+                """
+                {
+                  "status": "ok",
+                  "music_tracks": [{
+                    "slot_index": 4,
+                    "slot_kind": "credits",
+                    "filename": "credits.flac",
+                    "format": "flac",
+                    "parse_status": "ok",
+                    "title": "Reactor Core",
+                    "composer": "Jane Doe",
+                    "artist": "Test Performer",
+                    "album": "DXX Test Album",
+                    "genre": "Game",
+                    "display_name": "Reactor Core (Jane Doe)",
+                    "properties": [{"key":"CUSTOM","values":["First","Second"]}]
+                  }],
+                  "levels": []
+                }
+                """.trimIndent(),
+            )
+
+        val metadata = result.musicTracks.single().audioMetadata!!
+        assertEquals("Jane Doe", metadata.composer)
+        assertEquals("Test Performer", metadata.artist)
+        assertEquals("DXX Test Album", metadata.album)
+        assertEquals(listOf("First", "Second"), metadata.properties.single().values)
+    }
+
+    @Test
     fun fromJsonReadsObjectiveLabelPosition() {
         val result =
             LevelMetadataResult.fromJson(

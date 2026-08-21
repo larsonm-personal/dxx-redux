@@ -5,6 +5,8 @@
 #include <cctype>
 #include <string>
 
+#include "audio_tag_metadata.h"
+
 extern "C" {
 #include "midi_metadata_physfs.h"
 #include "songs.h"
@@ -39,7 +41,7 @@ static inline const char *midi_metadata_slot_kind(int index)
 }
 
 template <typename Json>
-static Json serialize_active_midi_metadata()
+static Json serialize_active_music_metadata()
 {
 	Json tracks = Json::array();
 	songs_init();
@@ -51,8 +53,44 @@ static Json serialize_active_midi_metadata()
 		int inherited = 0;
 		Json row;
 		Json events = Json::array();
-		if (format != "mid" && format != "midi" && format != "hmp" && format != "hmq")
+		const bool is_midi = format == "mid" || format == "midi" || format == "hmp" || format == "hmq";
+		const bool is_audio = format == "mp3" || format == "ogg" || format == "flac";
+		if (!is_midi && !is_audio) continue;
+		if (is_audio) {
+			audio_tag_metadata audio_metadata;
+			Json properties = Json::array();
+			audio_tag_metadata_init(&audio_metadata);
+			audio_tag_metadata_parse_physfs(filename, &audio_metadata);
+			row["slot_index"] = index;
+			row["slot_kind"] = midi_metadata_slot_kind(index);
+			row["filename"] = filename;
+			row["format"] = format;
+			row["parse_status"] = audio_tag_status_name(audio_metadata.status);
+			row["title"] = audio_metadata.title;
+			row["composer"] = audio_metadata.composer;
+			row["artist"] = audio_metadata.artist;
+			row["album_artist"] = audio_metadata.album_artist;
+			row["album"] = audio_metadata.album;
+			row["date"] = audio_metadata.date;
+			row["genre"] = audio_metadata.genre;
+			row["comment"] = audio_metadata.comment;
+			row["copyright"] = audio_metadata.copyright;
+			row["track_number"] = audio_metadata.track_number;
+			row["disc_number"] = audio_metadata.disc_number;
+			row["display_name"] = audio_metadata.display_name;
+			row["metadata_truncated"] = audio_metadata.metadata_truncated != 0;
+			for (unsigned int property_index = 0; property_index < audio_metadata.property_count; ++property_index) {
+				const audio_tag_property &property = audio_metadata.properties[property_index];
+				Json values = Json::array();
+				for (unsigned int value_index = 0; value_index < property.value_count; ++value_index)
+					values.push_back(property.values[value_index] ? property.values[value_index] : "");
+				properties.push_back({ { "key", property.key ? property.key : "" }, { "values", values } });
+			}
+			row["properties"] = properties;
+			tracks.push_back(row);
+			audio_tag_metadata_free(&audio_metadata);
 			continue;
+		}
 		midi_metadata_init(&metadata);
 		midi_metadata_resolve_physfs(filename, &metadata, source_filename,
 		                             sizeof(source_filename), &inherited);

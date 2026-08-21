@@ -101,6 +101,35 @@ class RouteMetadataPrecomputeMonitorTest {
         assertTrue(lines.any { "cpu_duty_percent=0" in it })
     }
 
+    @Test
+    fun persistsIndependentMusicProgressInTheSharedLog() {
+        val filesDir = temporaryFolder.newFolder("music-progress")
+        val monitor = RouteMetadataPrecomputeMonitor(filesDir)
+        monitor.musicDiscovery(8)
+        monitor.updateMusic(
+            MissionMusicPrecomputeProgress(
+                totalTracks = 8,
+                finishedTracks = 2,
+                failedTracks = 0,
+                waitingTracks = 0,
+                currentMission = "KCXF2",
+                currentTrack = "game03.ogg",
+                phase = "hashing",
+            ),
+        )
+        monitor.musicTrackStarted("KCXF2", "game03.ogg")
+        monitor.musicTrackFinished("KCXF2", "game03.ogg", matched = true, elapsedMs = 25L)
+        monitor.musicMissionFinished("KCXF2", 8, 0)
+
+        val snapshot = monitor.readSnapshot()
+        val lines = monitor.readRecentLines()
+        assertEquals(8, snapshot.musicTotalTracks)
+        assertEquals(2, snapshot.musicFinishedTracks)
+        assertEquals("KCXF2", snapshot.musicCurrentMission)
+        assertTrue(lines.any { "MUSIC TRACK" in it && "matched=true" in it })
+        assertTrue(lines.any { "MUSIC MISSION" in it })
+    }
+
     private fun job(level: Int) =
         RouteMetadataPrecomputeJob(
             target =

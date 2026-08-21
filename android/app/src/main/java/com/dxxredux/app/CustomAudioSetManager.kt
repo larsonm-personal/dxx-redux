@@ -48,6 +48,8 @@ class CustomAudioSetManager(
         val order: Int = 0,
         // fingerprint-matched track names: filename -> track name
         val trackNames: Map<String, String> = emptyMap(),
+        // embedded Title (Composer) fallback names: filename -> display name
+        val embeddedTrackNames: Map<String, String> = emptyMap(),
         // fingerprint match confidence: filename -> confidence (0.0-1.0)
         val trackConfidences: Map<String, Float> = emptyMap(),
         // fingerprint match CD track number: filename -> 1-based track number
@@ -87,6 +89,7 @@ class CustomAudioSetManager(
         newFiles: List<String>,
         newRefs: Map<String, String> = emptyMap(),
         newTrackNames: Map<String, String> = emptyMap(),
+        newEmbeddedTrackNames: Map<String, String> = emptyMap(),
         newConfidences: Map<String, Float> = emptyMap(),
         newTrackNumbers: Map<String, Int> = emptyMap(),
     ) {
@@ -95,6 +98,7 @@ class CustomAudioSetManager(
             existing.copy(
                 files = existing.files + newFiles,
                 trackNames = existing.trackNames + newTrackNames,
+                embeddedTrackNames = existing.embeddedTrackNames + newEmbeddedTrackNames,
                 trackConfidences = existing.trackConfidences + newConfidences,
                 trackNumbers = existing.trackNumbers + newTrackNumbers,
                 referencedUris = existing.referencedUris + newRefs,
@@ -169,6 +173,7 @@ class CustomAudioSetManager(
     ): String? {
         val enabled = getEnabledSets()
         val allFiles = mutableListOf<Pair<String, String>>() // (sortKey, absolutePath)
+        val embeddedNameUpdates = mutableMapOf<Pair<String, String>, String>()
         val stageDir = File(filesDir, "custom_music_stage")
         for (set in enabled) {
             val dir = setDir(set.id)
@@ -183,6 +188,11 @@ class CustomAudioSetManager(
                             onProgress(progress.label, progress.bytesDone, progress.bytesTotal)
                         }
                         allFiles.add(f.lowercase() to staged.absolutePath)
+                        AudioTagMetadataBridge
+                            .parsePath(staged, f.substringAfterLast('.', ""))
+                            ?.display_name
+                            ?.takeIf { it.isNotBlank() }
+                            ?.let { embeddedNameUpdates[set.id to f] = it }
                     } catch (e: InsufficientStorageException) {
                         throw e
                     } catch (e: Exception) {
@@ -209,7 +219,8 @@ class CustomAudioSetManager(
         for (set in enabled) {
             val dir = setDir(set.id)
             for (f in set.files) {
-                val name = set.trackNames[f] ?: continue
+                val name =
+                    set.trackNames[f] ?: embeddedNameUpdates[set.id to f] ?: set.embeddedTrackNames[f] ?: continue
                 val refUri = set.referencedUris[f]
                 val absPath =
                     if (refUri != null) {
@@ -227,6 +238,13 @@ class CustomAudioSetManager(
         } else {
             File(filesDir, NAMES_FILE).delete()
         }
+        if (embeddedNameUpdates.isNotEmpty()) {
+            sets.replaceAll { set ->
+                val additions = embeddedNameUpdates.filterKeys { it.first == set.id }.mapKeys { it.key.second }
+                if (additions.isEmpty()) set else set.copy(embeddedTrackNames = set.embeddedTrackNames + additions)
+            }
+            save()
+        }
         logInfo("Wrote $PLAYLIST_FILE with ${allFiles.size} tracks, ${nameRecords.size} names")
         return File(filesDir, PLAYLIST_FILE).absolutePath
     }
@@ -236,6 +254,7 @@ class CustomAudioSetManager(
         val setId: String,
         val setLabel: String,
         val matchedName: String?,
+        val embeddedName: String? = null,
         val confidence: Float? = null,
         val trackNum: Int? = null,
     )
@@ -252,6 +271,7 @@ class CustomAudioSetManager(
                         set.id,
                         set.label,
                         set.trackNames[f],
+                        set.embeddedTrackNames[f],
                         set.trackConfidences[f],
                         set.trackNumbers[f],
                     ),
@@ -286,6 +306,13 @@ class CustomAudioSetManager(
                             } else {
                                 emptyMap()
                             }
+                        val embeddedNamesObj = obj.optJSONObject("embeddedTrackNames")
+                        val embeddedNames =
+                            if (embeddedNamesObj != null) {
+                                embeddedNamesObj.keys().asSequence().associateWith { embeddedNamesObj.getString(it) }
+                            } else {
+                                emptyMap()
+                            }
                         val confObj = obj.optJSONObject("trackConfidences")
                         val confidences =
                             if (confObj != null) {
@@ -314,6 +341,7 @@ class CustomAudioSetManager(
                             enabled = obj.optBoolean("enabled", true),
                             order = obj.optInt("order", 0),
                             trackNames = names,
+                            embeddedTrackNames = embeddedNames,
                             trackConfidences = confidences,
                             trackNumbers = trackNums,
                             referencedUris = refs,
@@ -342,6 +370,11 @@ class CustomAudioSetManager(
                 val namesObj = JSONObject()
                 set.trackNames.forEach { (k, v) -> namesObj.put(k, v) }
                 obj.put("trackNames", namesObj)
+            }
+            if (set.embeddedTrackNames.isNotEmpty()) {
+                val namesObj = JSONObject()
+                set.embeddedTrackNames.forEach { (k, v) -> namesObj.put(k, v) }
+                obj.put("embeddedTrackNames", namesObj)
             }
             if (set.trackConfidences.isNotEmpty()) {
                 val confObj = JSONObject()
@@ -373,6 +406,7 @@ internal fun removeReferencedFileFromSet(
         set.copy(
             files = set.files.filter { it != filename },
             trackNames = set.trackNames - filename,
+            embeddedTrackNames = set.embeddedTrackNames - filename,
             trackConfidences = set.trackConfidences - filename,
             trackNumbers = set.trackNumbers - filename,
             referencedUris = set.referencedUris - filename,

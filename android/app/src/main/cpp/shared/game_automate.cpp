@@ -3810,15 +3810,24 @@ extern "C" void game_automate_tick(void)
 			} else if (s.field == "android_game_request") {
 #ifdef ANDROID
 				if (s.value == "save") {
-					g_android_open_save_menu = 1;
-					g_android_open_load_menu = 0;
+					if (!android_queue_saveload_request(1)) {
+						stop_script_fail("android_game_request: save request rejected");
+						break;
+					}
 				} else if (s.value == "load") {
-					g_android_open_save_menu = 0;
-					g_android_open_load_menu = 1;
+					if (!android_queue_saveload_request(0)) {
+						stop_script_fail("android_game_request: load request rejected");
+						break;
+					}
 				} else if (s.value == "game_menu") {
 					g_android_open_game_menu = 1;
 				} else if (s.value == "pause") {
 					do_game_pause();
+				} else if (s.value == "overlay_pause") {
+					if (!android_open_overlay_pause_if_safe()) {
+						stop_script_fail("android_game_request: overlay pause rejected");
+						break;
+					}
 				} else if (s.value == "auto_minimize") {
 					g_android_autosave_request_kind = ANDROID_SAVE_META_KIND_AUTO_MINIMIZE;
 				} else if (s.value.rfind("difficulty:", 0) == 0) {

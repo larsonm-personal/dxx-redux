@@ -31,4 +31,18 @@ class AcoustIdConfigurationTest {
             AcoustIdConfiguration.parseApiKey("""{"api_key":""")
         }
     }
+
+    @Test
+    fun disabledLookupsSkipConfiguration() {
+        var configureCalls = 0
+
+        val status =
+            configureAcoustIdIfEnabled(false) {
+                configureCalls++
+                AcoustIdConfigurationStatus.AVAILABLE
+            }
+
+        assertEquals(AcoustIdConfigurationStatus.NOT_PACKAGED, status)
+        assertEquals(0, configureCalls)
+    }
 }

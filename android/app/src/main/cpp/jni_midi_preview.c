@@ -15,6 +15,7 @@
 #include "midi_preview.h"
 #include "midi_enumeration.h"
 #include "midi_metadata.h"
+#include "audio_tag_metadata.h"
 
 #define TAG "DXX-MidiPreviewJNI"
 
@@ -135,6 +136,31 @@ Java_com_dxxredux_app_MidiMetadataBridge_nativeParse(
 	free(json);
 	free(source_filename);
 	midi_metadata_free(&metadata);
+	return result;
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_dxxredux_app_AudioTagMetadataBridge_nativeParsePath(
+    JNIEnv *env, jclass clazz, jstring jpath, jstring jextension)
+{
+	char *path = NULL;
+	char *extension = NULL;
+	char *json;
+	jstring result;
+	audio_tag_metadata metadata;
+	if (!dxx_jni_string_to_utf8(env, jpath, &path)) return NULL;
+	if (!dxx_jni_string_to_utf8(env, jextension, &extension)) {
+		free(path);
+		return NULL;
+	}
+	audio_tag_metadata_init(&metadata);
+	audio_tag_metadata_parse_path(path, extension, &metadata);
+	json = audio_tag_metadata_to_json(&metadata);
+	result = dxx_jni_string_from_utf8(env, json ? json : "{\"parse_status\":\"io_error\"}");
+	free(json);
+	audio_tag_metadata_free(&metadata);
+	free(extension);
+	free(path);
 	return result;
 }
 

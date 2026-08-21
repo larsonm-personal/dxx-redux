@@ -914,6 +914,7 @@ private fun MissionZipMusicDialog(
     val scope = rememberCoroutineScope()
     val stageManager = remember(context.cacheDir) { MissionZipMusicStageManager(context.cacheDir) }
     val fingerprintCache = remember(context.filesDir) { MissionZipAudioFingerprintCache(context.filesDir) }
+    val fingerprintDbIdentity = remember(context) { FingerprintBridge.databaseIdentity(context) }
     val prefs =
         remember(context) {
             context.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE)
@@ -922,7 +923,10 @@ private fun MissionZipMusicDialog(
         remember(context) {
             prefs.getBoolean(PREF_ALLOW_ACOUSTID_WEB_LOOKUPS, false)
         }
-    val acoustIdConfiguration = remember(context) { AcoustIdClient.configure(context) }
+    val acoustIdConfiguration =
+        remember(context, allowAcoustIdLookups) {
+            configureAcoustIdIfEnabled(allowAcoustIdLookups) { AcoustIdClient.configure(context) }
+        }
     val acoustIdAvailable = allowAcoustIdLookups && acoustIdConfiguration.isAvailable
     var cachedFingerprints by remember(catalog.archivePath) {
         mutableStateOf(fingerprintCache.cachedEntries(catalog))
@@ -955,12 +959,13 @@ private fun MissionZipMusicDialog(
             if (direct.text_events.isNotEmpty() || track.extension != "hmp") return@withContext direct
             val peer = MissionZipMusic.midiMetadataPeer(catalog, track) ?: return@withContext direct
             val peerBytes = stageManager.readMidiTrackBytes(catalog, peer) ?: return@withContext direct
-            MidiMetadataBridge.parse(
-                peerBytes,
-                isHmp = false,
-                sourceFilename = peer.sourceRelativeName,
-                inheritedFromMidi = true,
-            )?.takeIf { it.text_events.isNotEmpty() } ?: direct
+            MidiMetadataBridge
+                .parse(
+                    peerBytes,
+                    isHmp = false,
+                    sourceFilename = peer.sourceRelativeName,
+                    inheritedFromMidi = true,
+                )?.takeIf { it.text_events.isNotEmpty() } ?: direct
         }
 
     suspend fun identifyTrack(track: MissionZipMusicTrack): MissionZipAudioFingerprintCache.Entry? =
@@ -987,6 +992,7 @@ private fun MissionZipMusicDialog(
         withContext(kotlinx.coroutines.Dispatchers.IO) {
             if (!acoustIdAvailable) return@withContext null
             val cached = identifyTrack(track) ?: return@withContext null
+            if (cached.chromaprint.isBlank()) return@withContext null
             try {
                 if (cached.hasAuthoritativeAcoustIdLookup) {
                     cached
@@ -1012,7 +1018,12 @@ private fun MissionZipMusicDialog(
         }
 
     LaunchedEffect(catalog.archivePath, fingerprintableTracks.joinToString("|") { it.id }) {
-        val pendingTracks = missionZipMusicTracksNeedingLocalAnalysis(fingerprintableTracks, cachedFingerprints)
+        val pendingTracks =
+            missionZipMusicTracksNeedingLocalAnalysis(
+                fingerprintableTracks,
+                cachedFingerprints,
+                fingerprintDbIdentity,
+            )
         if (pendingTracks.isEmpty()) return@LaunchedEffect
         stagingProblem = null
         musicProgress =
@@ -1052,7 +1063,7 @@ private fun MissionZipMusicDialog(
     }
 
     previewTarget?.let { (track, file) ->
-        val matchLine = cachedFingerprints[track.id]?.let { missionZipMusicFingerprintLine(it) }
+        val matchLine = cachedFingerprints[track.id]?.let { missionZipMusicFingerprintLine(it, allowAcoustIdLookups) }
         AudioFilePreviewDialog(
             title = "Track Preview",
             audioFile = file,
@@ -1063,6 +1074,13 @@ private fun MissionZipMusicDialog(
                     if (matchLine != null) add(AudioFilePreviewLine(matchLine, primary = true))
                     add(AudioFilePreviewLine("Staged: ${file.absolutePath}", small = true))
                 },
+            loadMetadata = {
+                AudioTagMetadataBridge
+                    .parsePath(file, track.extension)
+                    ?.let(::audioTagMetadataPrintout)
+                    ?.map { AudioFilePreviewLine(it) }
+                    ?: emptyList()
+            },
             onDismiss = { previewTarget = null },
         )
     }
@@ -1214,7 +1232,8 @@ private fun MissionZipMusicDialog(
                     source.tracks.forEach { displayTrack ->
                         val track = displayTrack.track
                         val cachedFingerprint = cachedFingerprints[track.id]
-                        val decodedName = cachedFingerprint?.let(::missionZipMusicDecodedName)
+                        val decodedName =
+                            cachedFingerprint?.let { missionZipMusicDecodedName(it, allowAcoustIdLookups) }
                         Row(
                             modifier =
                                 Modifier
@@ -1318,7 +1337,7 @@ private fun MissionZipMusicDialog(
                         }
                         ModDetailLine(missionZipMusicTrackSubtitle(displayTrack))
                         if (cachedFingerprint != null) {
-                            ModDetailLine(missionZipMusicFingerprintLine(cachedFingerprint))
+                            ModDetailLine(missionZipMusicFingerprintLine(cachedFingerprint, allowAcoustIdLookups))
                         }
                     }
                 }
@@ -1358,19 +1377,39 @@ private fun missionZipMusicTrackSubtitle(track: MissionZipMusicTrack): String =
 internal fun missionZipMusicTracksNeedingLocalAnalysis(
     tracks: List<MissionZipMusicTrack>,
     cachedFingerprints: Map<String, MissionZipAudioFingerprintCache.Entry>,
-): List<MissionZipMusicTrack> = tracks.filter { it.id !in cachedFingerprints }
+    fingerprintDbIdentity: String? = null,
+): List<MissionZipMusicTrack> =
+    tracks.filter { track ->
+        val cached = cachedFingerprints[track.id]
+        cached == null ||
+            (
+                cached.chromaprint.isNotBlank() &&
+                    fingerprintDbIdentity != null &&
+                    cached.localMatchDbIdentity != fingerprintDbIdentity
+            )
+    }
 
-internal fun missionZipMusicDecodedName(entry: MissionZipAudioFingerprintCache.Entry): String? =
+internal fun missionZipMusicDecodedName(
+    entry: MissionZipAudioFingerprintCache.Entry,
+    allowAcoustIdLookups: Boolean = false,
+): String? =
     entry.localMatchName
         ?.trim()
         ?.takeIf { it.isNotBlank() && it != "[unknown] - [untitled]" }
         ?: entry.acoustIdName
+            .takeIf { allowAcoustIdLookups }
             ?.trim()
             ?.takeIf { it.isNotBlank() && it != "[unknown] - [untitled]" }
+        ?: entry.embeddedDisplayName.trim().takeIf { it.isNotBlank() }
 
-private fun missionZipMusicFingerprintLine(entry: MissionZipAudioFingerprintCache.Entry): String =
+private fun missionZipMusicFingerprintLine(
+    entry: MissionZipAudioFingerprintCache.Entry,
+    allowAcoustIdLookups: Boolean,
+): String =
     buildString {
-        if (entry.localMatchName.isNullOrBlank()) {
+        if (entry.chromaprint.isBlank()) {
+            append("Fingerprint unavailable")
+        } else if (entry.localMatchName.isNullOrBlank()) {
             append("Fingerprint cached; not in bundled database")
         } else {
             append("Matched: ${entry.localMatchName}")
@@ -1380,7 +1419,12 @@ private fun missionZipMusicFingerprintLine(entry: MissionZipAudioFingerprintCach
         if (entry.durationMs > 0) {
             append(" - ${formatMissionZipMusicDuration(entry.durationMs)}")
         }
-        when (entry.acoustIdLookupStatus) {
+        if (entry.localMatchName.isNullOrBlank() && entry.acoustIdName.isNullOrBlank() &&
+            entry.embeddedDisplayName.isNotBlank()
+        ) {
+            append(" - Embedded: ${entry.embeddedDisplayName}")
+        }
+        when (entry.acoustIdLookupStatus.takeIf { allowAcoustIdLookups }) {
             MissionZipAudioFingerprintCache.ACOUSTID_STATUS_OK -> {
                 val name = entry.acoustIdName.orEmpty().ifBlank { "matched" }
                 append(" - AcoustID: $name")
@@ -3134,7 +3178,10 @@ private fun LevelMetadataMusicDialog(
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        midiMetadataPrintout(track.metadata).forEach { line ->
+                        val printout =
+                            track.audioMetadata?.let(::audioTagMetadataPrintout)
+                                ?: midiMetadataPrintout(track.metadata)
+                        printout.forEach { line ->
                             Text(line, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }

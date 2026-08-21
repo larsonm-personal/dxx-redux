@@ -1,7 +1,10 @@
 package com.dxxredux.app
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 class RouteMetadataPrecomputeOrderingTest {
     private fun job(
@@ -138,4 +141,31 @@ class RouteMetadataPrecomputeOrderingTest {
         RouteMetadataPrecomputeFocusBroker.focus(null)
         assertEquals(target, focused)
     }
+
+    @Test
+    fun missionMusicWaitsForEveryRouteInTheSameMission() {
+        val routes = listOf(job("d2", "kcxf2", 1), job("d2", "kcxf2", 2))
+        val music = musicJob(routes.first().sourceIdentity)
+
+        assertFalse(
+            MissionMusicPrecomputeScheduling.isEligible(music, routes) { it.target.levelNum == 1 },
+        )
+        assertTrue(MissionMusicPrecomputeScheduling.isEligible(music, routes) { true })
+    }
+
+    @Test
+    fun missionMusicYieldsToNextPriorityRoutesButPrecedesFillWork() {
+        assertFalse(MissionMusicPrecomputeScheduling.shouldRunBeforeRoute(RouteMetadataPriority.NEXT))
+        assertTrue(MissionMusicPrecomputeScheduling.shouldRunBeforeRoute(RouteMetadataPriority.FILL))
+        assertTrue(MissionMusicPrecomputeScheduling.shouldRunBeforeRoute(null))
+    }
+
+    private fun musicJob(routeSourceIdentity: String): MissionMusicPrecomputeJob =
+        MissionMusicPrecomputeJob(
+            displayName = "KCXF2",
+            routeSourceIdentity = routeSourceIdentity,
+            catalog = MissionZipMusicCatalog("kcxf2.7z", emptyList(), "music-source"),
+            outputFile = File("mission_music_names.json"),
+            enabled = true,
+        )
 }

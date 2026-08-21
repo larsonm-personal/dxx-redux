@@ -1,9 +1,11 @@
 package com.dxxredux.app
 
 import org.json.JSONArray
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
+import java.io.File
 
 class DiscDatabaseContractTest {
     private val physicalDisc =
@@ -101,5 +103,57 @@ class DiscDatabaseContractTest {
             )
 
         assertEquals(0, flattened.length())
+    }
+
+    @Test
+    fun fingerprintProjectionPrefersCuratedTracklistName() {
+        val albums =
+            """
+            {
+              "albums": [{
+                "id": "mission-zip-kcxf2rmv11",
+                "label": "Mission ZIP - KCXF2RMv11",
+                "tracks": [{
+                  "track": 3,
+                  "type": "audio",
+                  "name": "KCXF2RMv11.7z_KCXF2RM.hog_game01",
+                  "chromaprint": "kcxf2-fingerprint",
+                  "duration_ms": 222222,
+                  "tracklist_name": "Birth of the Manul (ft. Ocelot Spirit)",
+                  "name_source": "tracklist"
+                }]
+              }]
+            }
+            """.trimIndent()
+
+        val flattened = JSONArray(flattenFingerprintDatabase("""{"discs":[]}""", albums))
+
+        assertEquals("Birth of the Manul (ft. Ocelot Spirit)", flattened.getJSONObject(0).getString("name"))
+    }
+
+    @Test
+    fun kcxf2AssetProjectsEveryCheckedInTracklistTitle() {
+        val workingDir = File(System.getProperty("user.dir"))
+        val repoDir =
+            generateSequence(workingDir) { it.parentFile }
+                .first { File(it, "android").isDirectory && File(it, "game_data").isDirectory }
+        val androidDir = File(repoDir, "android")
+        val albums = File(androidDir, "app/src/main/assets/known_albums.jsonc").readText()
+        val tracklist =
+            JSONObject(File(repoDir, "game_data/mission_files/KCXF2RMv11.tracklist.json").readText())
+        val expected =
+            tracklist.getJSONArray("tracks").let { tracks ->
+                (0 until tracks.length()).map { tracks.getJSONObject(it).getString("title") }.toSet()
+            }
+        val projected =
+            JSONArray(flattenFingerprintDatabase("""{"discs":[]}""", Jsonc.strip(albums))).let { tracks ->
+                (0 until tracks.length())
+                    .map { tracks.getJSONObject(it) }
+                    .filter { it.getString("disc_id") == "mission-zip-kcxf2rmv11" }
+                    .map { it.getString("name") }
+                    .toSet()
+            }
+
+        assertEquals(expected, projected)
     }
 }

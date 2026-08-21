@@ -64,10 +64,13 @@
     {"action": "key", "key": "escape", "post_delay_ms": 200},
     {"action": "wait_for", "field": "screen_mode", "value": "game", "timeout_ms": 5000},
 
+    {"action": "set_debug", "field": "android_game_request", "value": "overlay_pause", "post_delay_ms": 300},
+    {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "time_paused": "true"}},
     {"action": "set_debug", "field": "android_game_request", "value": "save", "post_delay_ms": 300},
     {"action": "wait_for", "field": "menu_subtitle", "value": "Save Game", "timeout_ms": 5000},
     {"action": "key", "key": "enter", "post_delay_ms": 200},
     {"action": "wait_for", "field": "screen_mode", "value": "game", "timeout_ms": 5000},
+    {"action": "assert", "expect": {"in_game": "true", "game_window_is_front": "true", "time_paused": "false"}},
 
     {"action": "set_debug", "field": "android_game_request", "value": "load", "post_delay_ms": 300},
     {"action": "wait_for", "field": "menu_subtitle", "value": "Select Game to Restore", "timeout_ms": 5000},

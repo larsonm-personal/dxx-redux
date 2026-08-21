@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -33,6 +34,39 @@ internal data class RouteMetadataPrecomputeJob(
             ROUTE_METADATA_CACHE_GENERATION.toString(),
         ).joinToString("|")
 }
+
+internal data class MissionMusicPrecomputeJob(
+    val displayName: String,
+    val routeSourceIdentity: String,
+    val catalog: MissionZipMusicCatalog,
+    val outputFile: File,
+    val enabled: Boolean,
+) {
+    val tracks: List<MissionZipMusicTrack> =
+        catalog.sources
+            .flatMap { it.tracks }
+            .filter(MissionZipAudioFingerprintCache::isFingerprintSupported)
+            .distinctBy { it.id }
+}
+
+internal object MissionMusicPrecomputeScheduling {
+    fun isEligible(
+        job: MissionMusicPrecomputeJob,
+        routeJobs: List<RouteMetadataPrecomputeJob>,
+        isRouteTerminal: (RouteMetadataPrecomputeJob) -> Boolean,
+    ): Boolean {
+        val missionRoutes = routeJobs.filter { it.sourceIdentity == job.routeSourceIdentity }
+        return missionRoutes.isNotEmpty() && missionRoutes.all(isRouteTerminal)
+    }
+
+    fun shouldRunBeforeRoute(routePriority: RouteMetadataPriority?): Boolean =
+        routePriority != RouteMetadataPriority.NEXT
+}
+
+private data class DiscoveredPrecomputeJobs(
+    val routes: List<RouteMetadataPrecomputeJob>,
+    val music: List<MissionMusicPrecomputeJob>,
+)
 
 internal object RouteMetadataPrecomputeOrdering {
     fun order(
@@ -115,6 +149,8 @@ internal class RouteMetadataPrecomputeCoordinator(
     @Volatile private var runningPriority: RouteMetadataPriority? = null
     private var focusedSourceIdentity: String? = null
     private var lastSourceIdentity: String? = null
+    private val musicFailures = mutableSetOf<String>()
+    private val loggedMusicMissions = mutableSetOf<String>()
 
     @Synchronized
     fun notifyContentImported() {
@@ -180,6 +216,12 @@ internal class RouteMetadataPrecomputeCoordinator(
                         "files=${cleanup.removedFiles} directories=${cleanup.removedDirectories}",
                     )
                 }
+                val fingerprintCache = MissionZipAudioFingerprintCache(appContext.filesDir)
+                val musicStageManager = MissionZipMusicStageManager(appContext.cacheDir)
+                val fingerprintDbIdentity =
+                    withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        FingerprintBridge.databaseIdentity(appContext)
+                    }
                 var discoveryFinished = false
                 monitor.discoveryStarted()
                 while (isActive) {
@@ -199,37 +241,144 @@ internal class RouteMetadataPrecomputeCoordinator(
                             continue
                         }
                     val recent = discovered.first
-                    val jobs = discovered.second
+                    val jobs = discovered.second.routes
+                    val musicJobs = discovered.second.music
                     val entries = ledger.entries()
                     if (!discoveryFinished) {
                         monitor.discoveryFinished(jobs.size)
+                        monitor.musicDiscovery(musicJobs.sumOf { it.tracks.size })
                         discoveryFinished = true
                     }
                     if (focusNewestSource) {
                         focusedSourceIdentity = jobs.maxByOrNull { it.sourceModifiedMs }?.sourceIdentity
                         focusNewestSource = false
                     }
-                    val next =
+                    val nextRoute =
                         RouteMetadataPrecomputeOrdering
                             .order(jobs, recent, focusedSourceIdentity) { entries[it.id]?.updatedAtMs ?: 0L }
                             .firstOrNull {
                                 !isCompleted(it) && entries[it.id]?.status != RouteMetadataLedgerStatus.FAILED
                             }
-                    monitor.update(jobs, entries)
-                    if (next == null) {
-                        focusedSourceIdentity = null
-                        awaitWake(30_000L)
-                        continue
-                    }
-                    try {
-                        val priority =
-                            if (next.sourceIdentity == focusedSourceIdentity ||
-                                RouteMetadataPrecomputeOrdering.matchesRecentLevel(next, recent)
+                    val routePriority =
+                        nextRoute?.let {
+                            if (it.sourceIdentity == focusedSourceIdentity ||
+                                RouteMetadataPrecomputeOrdering.matchesRecentLevel(it, recent)
                             ) {
                                 RouteMetadataPriority.NEXT
                             } else {
                                 RouteMetadataPriority.FILL
                             }
+                        }
+                    val musicEntries =
+                        withContext(kotlinx.coroutines.Dispatchers.IO) {
+                            musicJobs.associateWith { fingerprintCache.cachedEntries(it.catalog) }
+                        }
+                    val currentMusicIds =
+                        musicJobs.flatMap { job -> job.tracks.map { musicTrackId(job, it) } }.toSet()
+                    musicFailures.retainAll(currentMusicIds)
+                    loggedMusicMissions.retainAll(musicJobs.map { it.catalog.sourceIdentity }.toSet())
+                    val eligibleMusic =
+                        musicJobs.filter { job ->
+                            MissionMusicPrecomputeScheduling.isEligible(job, jobs) { route ->
+                                isRouteTerminal(route, entries)
+                            }
+                        }
+                    val nextMusic =
+                        eligibleMusic
+                            .sortedWith(
+                                compareByDescending<MissionMusicPrecomputeJob> {
+                                    it.routeSourceIdentity == focusedSourceIdentity
+                                }.thenByDescending { it.enabled }
+                                    .thenBy { it.displayName.lowercase() },
+                            ).firstOrNull { job ->
+                                job.tracks.any { track ->
+                                    !isMusicTrackTerminal(
+                                        job,
+                                        track,
+                                        musicEntries[job].orEmpty(),
+                                        fingerprintDbIdentity,
+                                    )
+                                }
+                            }
+                    val totalMusicTracks = musicJobs.sumOf { it.tracks.size }
+                    val finishedMusicTracks =
+                        musicJobs.sumOf { job ->
+                            job.tracks.count { track ->
+                                isMusicTrackTerminal(
+                                    job,
+                                    track,
+                                    musicEntries[job].orEmpty(),
+                                    fingerprintDbIdentity,
+                                )
+                            }
+                        }
+                    val failedMusicTracks = musicFailures.size
+                    val waitingMusicTracks =
+                        musicJobs
+                            .filterNot { it in eligibleMusic }
+                            .sumOf { job ->
+                                job.tracks.count { track ->
+                                    !isMusicTrackTerminal(
+                                        job,
+                                        track,
+                                        musicEntries[job].orEmpty(),
+                                        fingerprintDbIdentity,
+                                    )
+                                }
+                            }
+                    monitor.update(jobs, entries)
+                    monitor.updateMusic(
+                        MissionMusicPrecomputeProgress(
+                            totalTracks = totalMusicTracks,
+                            finishedTracks = finishedMusicTracks,
+                            failedTracks = failedMusicTracks,
+                            waitingTracks = waitingMusicTracks,
+                            phase =
+                                when {
+                                    totalMusicTracks == 0 -> "empty"
+                                    finishedMusicTracks == totalMusicTracks -> "complete"
+                                    nextMusic == null -> "waiting_for_metadata"
+                                    else -> "queued"
+                                },
+                        ),
+                    )
+                    if (nextMusic != null && MissionMusicPrecomputeScheduling.shouldRunBeforeRoute(routePriority)) {
+                        val track =
+                            nextMusic.tracks.first { candidate ->
+                                !isMusicTrackTerminal(
+                                    nextMusic,
+                                    candidate,
+                                    musicEntries[nextMusic].orEmpty(),
+                                    fingerprintDbIdentity,
+                                )
+                            }
+                        runningPriority = RouteMetadataPriority.FILL
+                        try {
+                            processMusicTrack(
+                                nextMusic,
+                                track,
+                                fingerprintCache,
+                                musicStageManager,
+                                fingerprintDbIdentity,
+                                totalMusicTracks,
+                                finishedMusicTracks,
+                                failedMusicTracks,
+                                waitingMusicTracks,
+                            )
+                        } finally {
+                            runningPriority = null
+                        }
+                        awaitWake(750L)
+                        continue
+                    }
+                    if (nextRoute == null) {
+                        focusedSourceIdentity = null
+                        awaitWake(30_000L)
+                        continue
+                    }
+                    try {
+                        val next = nextRoute
+                        val priority = checkNotNull(routePriority)
                         runningPriority = priority
                         if (lastSourceIdentity != next.sourceIdentity) {
                             val reason =
@@ -403,10 +552,11 @@ internal class RouteMetadataPrecomputeCoordinator(
         return gameRunning || power?.isPowerSaveMode == true || thermalPressure
     }
 
-    private fun discoverJobs(): List<RouteMetadataPrecomputeJob> {
+    private fun discoverJobs(): DiscoveredPrecomputeJobs {
         val fileSets = FileSetManager(appContext.filesDir)
         val setDir = fileSets.getSetDir(fileSets.getActive())
         val targets = mutableListOf<Pair<LevelMetadataTarget, Boolean>>()
+        val musicJobs = mutableListOf<MissionMusicPrecomputeJob>()
         setDir
             .walkTopDown()
             .maxDepth(2)
@@ -421,6 +571,7 @@ internal class RouteMetadataPrecomputeCoordinator(
                 }.getOrNull()?.let { targets += it to true }
             }
         val modManager = ModManager(appContext.filesDir, appContext)
+        val extractionStore = MissionZipExtractionStore(appContext.filesDir)
         modManager
             .listMods()
             .forEach { mod ->
@@ -428,6 +579,25 @@ internal class RouteMetadataPrecomputeCoordinator(
                 val modTargets =
                     if (mod.kind == ModManager.MOD_KIND_MISSION_ZIP) {
                         val scan = runCatching { MissionZip.inspect(archive) }.getOrNull()
+                        val extractionRecord = extractionStore.freshRecord(mod.filename, archive)
+                        val musicCatalog =
+                            runCatching {
+                                extractionRecord?.let { MissionZipMusic.inspectExtracted(it) }
+                                    ?: MissionZipMusic.inspect(archive)
+                            }.getOrNull()
+                        musicCatalog?.let { catalog ->
+                            val outputFile =
+                                extractionRecord?.let { File(it.rootDir, MISSION_ZIP_MUSIC_NAMES_FILE) }
+                                    ?: MissionZipMusicNames.cacheFile(appContext.filesDir, mod.filename)
+                            musicJobs +=
+                                MissionMusicPrecomputeJob(
+                                    displayName = mod.displayName,
+                                    routeSourceIdentity = sourceIdentity(archive),
+                                    catalog = catalog,
+                                    outputFile = outputFile,
+                                    enabled = mod.enabled,
+                                )
+                        }
                         scan
                             ?.let {
                                 runCatching {
@@ -448,7 +618,10 @@ internal class RouteMetadataPrecomputeCoordinator(
                     }
                 modTargets.forEach { targets += it to mod.enabled }
             }
-        return targets.flatMap { (target, enabled) -> splitTarget(target, enabled) }
+        return DiscoveredPrecomputeJobs(
+            routes = targets.flatMap { (target, enabled) -> splitTarget(target, enabled) },
+            music = musicJobs.filter { it.tracks.isNotEmpty() },
+        )
     }
 
     private fun splitTarget(
@@ -456,9 +629,7 @@ internal class RouteMetadataPrecomputeCoordinator(
         enabled: Boolean,
     ): List<RouteMetadataPrecomputeJob> {
         val source = target.archivePath?.let(::File) ?: target.sourcePath?.let(::File)
-        val sourceIdentity =
-            source?.let { "${it.absolutePath}|${it.length()}|${it.lastModified()}" }
-                ?: target.displayName
+        val sourceIdentity = source?.let(::sourceIdentity) ?: target.displayName
         val normal =
             target.normalLevelFiles.mapIndexed { index, level ->
                 RouteMetadataPrecomputeJob(
@@ -488,6 +659,111 @@ internal class RouteMetadataPrecomputeCoordinator(
                 )
             }
         return normal + secret
+    }
+
+    private fun sourceIdentity(source: File): String =
+        "${source.absolutePath}|${source.length()}|${source.lastModified()}"
+
+    private fun isRouteTerminal(
+        job: RouteMetadataPrecomputeJob,
+        entries: Map<String, RouteMetadataLedgerEntry>,
+    ): Boolean = entries[job.id]?.status == RouteMetadataLedgerStatus.FAILED || isCompleted(job)
+
+    private fun musicTrackId(
+        job: MissionMusicPrecomputeJob,
+        track: MissionZipMusicTrack,
+    ): String = "${job.catalog.sourceIdentity}|${track.id}"
+
+    private fun isMusicTrackTerminal(
+        job: MissionMusicPrecomputeJob,
+        track: MissionZipMusicTrack,
+        entries: Map<String, MissionZipAudioFingerprintCache.Entry>,
+        fingerprintDbIdentity: String,
+    ): Boolean =
+        musicTrackId(job, track) in musicFailures ||
+            entries[track.id]?.let {
+                it.chromaprint.isNotBlank() && it.localMatchDbIdentity == fingerprintDbIdentity
+            } == true
+
+    private suspend fun processMusicTrack(
+        job: MissionMusicPrecomputeJob,
+        track: MissionZipMusicTrack,
+        fingerprintCache: MissionZipAudioFingerprintCache,
+        stageManager: MissionZipMusicStageManager,
+        fingerprintDbIdentity: String,
+        totalTracks: Int,
+        finishedTracks: Int,
+        failedTracks: Int,
+        waitingTracks: Int,
+    ) {
+        monitor.updateMusic(
+            MissionMusicPrecomputeProgress(
+                totalTracks = totalTracks,
+                finishedTracks = finishedTracks,
+                failedTracks = failedTracks,
+                waitingTracks = waitingTracks,
+                currentMission = job.displayName,
+                currentTrack = track.displayName,
+                phase = "hashing",
+            ),
+        )
+        monitor.musicTrackStarted(job.displayName, track.displayName)
+        val startedAt = System.currentTimeMillis()
+        val trackId = musicTrackId(job, track)
+        try {
+            val result =
+                withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    kotlinx.coroutines.currentCoroutineContext().ensureActive()
+                    stageManager.cleanupOldFiles()
+                    val staged =
+                        stageManager.stageCompressedAudioTrack(job.catalog, track)
+                            ?: error("Could not stage audio track")
+                    val entry =
+                        fingerprintCache.identifyLocal(appContext, job.catalog, track, staged)
+                            ?: error("Could not analyze audio track")
+                    kotlinx.coroutines.currentCoroutineContext().ensureActive()
+                    MissionZipMusicNames.writeSidecar(
+                        job.outputFile,
+                        job.catalog,
+                        fingerprintCache.cachedEntries(job.catalog),
+                        allowAcoustIdLookups =
+                            appContext
+                                .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
+                                .getBoolean(PREF_ALLOW_ACOUSTID_WEB_LOOKUPS, false),
+                    )
+                    entry
+                }
+            musicFailures.remove(trackId)
+            monitor.musicTrackFinished(
+                job.displayName,
+                track.displayName,
+                result.hasLocalMatch,
+                System.currentTimeMillis() - startedAt,
+            )
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            musicFailures += trackId
+            monitor.musicTrackFailed(
+                job.displayName,
+                track.displayName,
+                e.message.orEmpty().ifBlank { e.javaClass.simpleName },
+            )
+            Log.w(TAG, "Music fingerprint failed ${job.displayName} track=${track.displayName}", e)
+        }
+        val refreshed =
+            withContext(kotlinx.coroutines.Dispatchers.IO) {
+                fingerprintCache.cachedEntries(job.catalog)
+            }
+        if (job.tracks.all { isMusicTrackTerminal(job, it, refreshed, fingerprintDbIdentity) } &&
+            loggedMusicMissions.add(job.catalog.sourceIdentity)
+        ) {
+            monitor.musicMissionFinished(
+                job.displayName,
+                job.tracks.size,
+                job.tracks.count { musicTrackId(job, it) in musicFailures },
+            )
+        }
     }
 
     private fun isCompleted(job: RouteMetadataPrecomputeJob): Boolean {

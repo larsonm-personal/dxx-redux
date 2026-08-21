@@ -27,4 +27,30 @@ class AdvancedPageLoadProgressTest {
 
         assertEquals("Preparing Advanced Settings 0/1", formatAdvancedPageLoadProgress(progress))
     }
+
+    @Test
+    fun formatChromaprintProgressReportsMetadataWaitAndFailures() {
+        assertEquals(
+            "2 / 8 tracks, waiting for level metadata",
+            formatChromaprintPrecomputeProgress(
+                RouteMetadataPrecomputeSnapshot(
+                    musicTotalTracks = 8,
+                    musicFinishedTracks = 2,
+                    musicWaitingTracks = 6,
+                    musicPhase = "waiting_for_metadata",
+                ),
+            ),
+        )
+        assertEquals(
+            "8 / 8 tracks (1 failed)",
+            formatChromaprintPrecomputeProgress(
+                RouteMetadataPrecomputeSnapshot(
+                    musicTotalTracks = 8,
+                    musicFinishedTracks = 8,
+                    musicFailedTracks = 1,
+                    musicPhase = "complete",
+                ),
+            ),
+        )
+    }
 }

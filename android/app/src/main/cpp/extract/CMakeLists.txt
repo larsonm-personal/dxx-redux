@@ -10,6 +10,7 @@ cmake_minimum_required(VERSION 3.16)
 project(dxx-extract-tests C CXX)
 
 include(${CMAKE_CURRENT_LIST_DIR}/../../../../../../cmake/dxx-verified-dependencies.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../../../../../../cmake/audio-tag-metadata-deps.cmake)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 set(DXX_DEPENDENCY_MANIFEST
@@ -402,6 +403,17 @@ endif()
 set(_CP_TEST_DATA "${chromaprint_SOURCE_DIR}/tests/data")
 add_test(NAME fingerprint_tests COMMAND test_fingerprint "${_CP_TEST_DATA}")
 
+# Audio tag metadata parser. TagLib's compact upstream media fixtures provide valid MP3, OGG, and
+# FLAC containers; the test writes controlled tags into temporary copies.
+dxx_audio_tag_prepare_deps()
+FetchContent_GetProperties(taglib)
+add_executable(test_audio_tag_metadata ${SHARED_DIR}/test_audio_tag_metadata.cpp)
+target_compile_definitions(test_audio_tag_metadata PRIVATE AUDIO_TAG_NO_PHYSFS)
+dxx_audio_tag_apply(test_audio_tag_metadata)
+add_test(NAME audio_tag_metadata_tests
+         COMMAND test_audio_tag_metadata "${taglib_SOURCE_DIR}/tests/data"
+                 "${CMAKE_CURRENT_BINARY_DIR}/audio_tag_metadata_temp")
+
 add_executable(test_chromaprint_db_config ${CMAKE_CURRENT_SOURCE_DIR}/test_chromaprint_db_config.c
                                           ${SHARED_DIR}/chromaprint_db.c)
 set_source_files_properties(${SHARED_DIR}/chromaprint_db.c PROPERTIES LANGUAGE CXX)
@@ -495,9 +507,8 @@ add_executable(
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_midi_metadata.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/midi_metadata.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../shared/hmp_android_shared.c)
-target_include_directories(
-    test_midi_metadata PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_hmp_stubs
-                               ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
+target_include_directories(test_midi_metadata PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_hmp_stubs
+                                                      ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
 if(MSVC)
     target_compile_options(test_midi_metadata PRIVATE /W4)
 else()

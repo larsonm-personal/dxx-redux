@@ -14,6 +14,28 @@ import java.security.MessageDigest
 // Filter AcoustID placeholder names where both artist and title are unknown
 private fun isPlaceholderName(name: String): Boolean = name == "[unknown] - [untitled]"
 
+internal fun fingerprintTrackName(track: JSONObject): String? {
+    val trackNumber = track.optInt("track", 0)
+    val fallback = trackNumber.takeIf { it > 0 }?.let { "Track $it" }
+    val maintainedName = track.optString("name").trim().takeIf { it.isNotEmpty() }
+    val tracklistName =
+        track
+            .optString("tracklist_name")
+            .trim()
+            .takeIf { track.optString("name_source") == "tracklist" && it.isNotEmpty() }
+    val acoustidName =
+        maintainedName?.let { sourceName ->
+            track
+                .optString("acoustid_name")
+                .trim()
+                .takeIf { it.isNotEmpty() }
+                ?.takeIf { AcoustIdLabelPolicy.labelsAgree(sourceName, it) }
+        }
+    return (tracklistName ?: acoustidName ?: maintainedName ?: fallback)
+        ?.takeUnless(::isPlaceholderName)
+        ?: fallback
+}
+
 internal data class FingerprintMatchingConfig(
     val matchThreshold: Float,
     val durationTolerance: Float,
@@ -63,16 +85,7 @@ internal fun flattenFingerprintDatabase(
                 val durationMs = track.optInt("duration_ms", 0)
                 if (durationMs <= 0) continue
                 val entry = JSONObject()
-                val maintainedName = track.optString("name", "Track ${track.getInt("track")}")
-                val acoustidName =
-                    track
-                        .optString("acoustid_name")
-                        .takeIf { it.isNotEmpty() }
-                        ?.takeIf { AcoustIdLabelPolicy.labelsAgree(maintainedName, it) }
-                val rawName = acoustidName ?: maintainedName
-                val trackName =
-                    if (isPlaceholderName(rawName)) "Track ${track.getInt("track")}" else rawName
-                entry.put("name", trackName)
+                entry.put("name", fingerprintTrackName(track) ?: continue)
                 entry.put("disc_id", discId)
                 entry.put("track", track.getInt("track"))
                 entry.put("duration_ms", durationMs)
@@ -206,21 +219,7 @@ object FingerprintBridge {
                 val tracks = disc.getJSONArray("tracks")
                 for (j in 0 until tracks.length()) {
                     val t = tracks.getJSONObject(j)
-                    val maintainedName = t.optString("name").takeIf { it.isNotEmpty() }
-                    val acoustidName =
-                        maintainedName?.let { sourceName ->
-                            t
-                                .optString("acoustid_name")
-                                .takeIf { it.isNotEmpty() }
-                                ?.takeIf { AcoustIdLabelPolicy.labelsAgree(sourceName, it) }
-                        }
-                    val name =
-                        acoustidName
-                            ?: maintainedName
-                            ?: continue
-                    if (!isPlaceholderName(name)) {
-                        names[t.getInt("track")] = name
-                    }
+                    fingerprintTrackName(t)?.let { names[t.getInt("track")] = it }
                 }
                 break
             }

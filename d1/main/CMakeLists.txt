@@ -284,6 +284,7 @@ if(NOT ANDROID)
         dxx-redux-d1-headless-metadata
         ../../android/app/src/main/cpp/headless/headless_metadata_dump_main.cpp
         GAME_SOURCES ${D1X_SECRET_AREA_SOURCES}
+        AUDIO_TAG_METADATA
         INCLUDE_GAME_DIR)
 endif()
 

@@ -95,6 +95,41 @@ class MissionZipMusicNamesTest {
     }
 
     @Test
+    fun writesEmbeddedNameWhenRecognitionHasNoMatch() {
+        val output = testFile("embedded/mission_music_names.json")
+        val track =
+            MissionZipMusicTrack(
+                id = "track-a",
+                displayName = "game01.ogg",
+                archiveEntryPath = "game01.ogg",
+                kind = MissionZipMusic.KIND_COMPRESSED_AUDIO,
+                extension = "ogg",
+                sizeBytes = 12,
+                playable = true,
+            )
+        val catalog =
+            MissionZipMusicCatalog(
+                "mission.zip",
+                listOf(MissionZipMusicSource("archive", "Archive music", "", listOf(track))),
+                "source-a",
+            )
+        val embeddedOnly =
+            entry(track, null).copy(
+                chromaprint = "",
+                fingerprintStatus = MissionZipAudioFingerprintCache.FINGERPRINT_STATUS_FAILED,
+                embeddedTitle = "Reactor Core",
+                embeddedComposer = "Jane Doe",
+                embeddedDisplayName = "Reactor Core (Jane Doe)",
+            )
+
+        assertEquals(1, MissionZipMusicNames.writeSidecar(output, catalog, mapOf(track.id to embeddedOnly)))
+        assertEquals(
+            "Reactor Core (Jane Doe)",
+            JSONObject(output.readText()).getJSONArray("records").getJSONObject(0).getString("name"),
+        )
+    }
+
+    @Test
     fun publicationFailurePreservesThePreviousCompleteSidecar() {
         val output = testFile("failure/mission_music_names.json")
         val track =

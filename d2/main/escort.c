@@ -269,7 +269,9 @@ static int Escort_nav_trace_last_signature = -1;
 static int Escort_nav_trace_last_goal = ESCORT_GOAL_UNSPECIFIED;
 static int Escort_nav_trace_last_path_index = -1;
 static int Escort_nav_trace_stall_samples;
+static int Escort_route_avoid_from_seg = -1;
 static int Escort_route_avoid_seg = -1;
+static int Escort_route_avoid_from_seg2 = -1;
 static int Escort_route_avoid_seg2 = -1;
 static int Escort_route_avoid_trigger = -1;
 static int Escort_route_avoid_wall = -1;
@@ -1163,7 +1165,9 @@ static void escort_route_set_step_goal(const level_metadata_route_step *step, in
 	if (Escort_route_avoid_seg >= 0 &&
 	    (Escort_route_avoid_trigger != step->trigger_num ||
 	     Escort_route_avoid_wall != step->wall_num)) {
+		Escort_route_avoid_from_seg = -1;
 		Escort_route_avoid_seg = -1;
+		Escort_route_avoid_from_seg2 = -1;
 		Escort_route_avoid_seg2 = -1;
 		Escort_route_avoid_trigger = -1;
 		Escort_route_avoid_wall = -1;
@@ -1572,7 +1576,9 @@ void init_buddy_for_level(void)
 	escort_route_set_target_mode(ESCORT_ROUTE_TARGET_END_OF_LEVEL);
 	Escort_route_metadata_rescan_count = 0;
 	Escort_route_guidance_full_search_count = 0;
+	Escort_route_avoid_from_seg = -1;
 	Escort_route_avoid_seg = -1;
+	Escort_route_avoid_from_seg2 = -1;
 	Escort_route_avoid_seg2 = -1;
 	Escort_route_avoid_trigger = -1;
 	Escort_route_avoid_wall = -1;
@@ -2948,14 +2954,18 @@ void escort_create_path_to_goal(object *objp)
 			if (using_route_goal && Escort_route_avoid_seg >= 0 &&
 			    Escort_route_avoid_trigger == Escort_route_goal.objective_trigger &&
 			    Escort_route_avoid_wall == Escort_route_goal.objective_wall) {
-				if (!create_path_to_segment_avoiding(
+				if (!create_path_to_segment_avoiding_edges(
 				        objp, goal_seg, Max_escort_length, 1,
-				        Escort_route_avoid_seg, Escort_route_avoid_seg2)) {
+				        Escort_route_avoid_from_seg, Escort_route_avoid_seg,
+				        Escort_route_avoid_from_seg2, Escort_route_avoid_seg2)) {
 					debug_log(DLOG_GUIDEBOT,
-					          "recovery avoid_failed obj=%d seg=%d avoid_seg=%d avoid_seg2=%d goal_seg=%d",
-					          objnum, objp->segnum, Escort_route_avoid_seg,
+					          "recovery avoid_failed obj=%d seg=%d avoid_edge=%d>%d avoid_edge2=%d>%d goal_seg=%d",
+					          objnum, objp->segnum, Escort_route_avoid_from_seg,
+					          Escort_route_avoid_seg, Escort_route_avoid_from_seg2,
 					          Escort_route_avoid_seg2, goal_seg);
+					Escort_route_avoid_from_seg = -1;
 					Escort_route_avoid_seg = -1;
+					Escort_route_avoid_from_seg2 = -1;
 					Escort_route_avoid_seg2 = -1;
 					Escort_route_avoid_trigger = -1;
 					Escort_route_avoid_wall = -1;
@@ -3021,7 +3031,11 @@ void escort_create_path_to_goal(object *objp)
 static void escort_route_monitor_path_progress(object *objp, ai_local *ailp,
                                                ai_static *aip)
 {
+	int doorway = -1;
+	int openable = -1;
+	int side = -1;
 	int target_seg;
+	int wall_num = -1;
 	fix target_distance;
 
 	if (!Escort_route_goal.active || ailp->mode != AIM_GOTO_OBJECT ||
@@ -3053,20 +3067,40 @@ static void escort_route_monitor_path_progress(object *objp, ai_local *ailp,
 	if (Escort_route_progress_stall_samples < 7)
 		return;
 
-	if (Escort_route_avoid_seg < 0)
+	if (Escort_route_avoid_seg < 0) {
+		Escort_route_avoid_from_seg = objp->segnum;
 		Escort_route_avoid_seg = target_seg;
-	else if (target_seg != Escort_route_avoid_seg)
+	} else if (objp->segnum != Escort_route_avoid_from_seg ||
+	           target_seg != Escort_route_avoid_seg) {
+		Escort_route_avoid_from_seg2 = objp->segnum;
 		Escort_route_avoid_seg2 = target_seg;
+	}
 	Escort_route_avoid_trigger = Escort_route_goal.objective_trigger;
 	Escort_route_avoid_wall = Escort_route_goal.objective_wall;
 	Escort_route_progress_stall_samples = 0;
 	Escort_route_stall_recovery_count++;
+	if (target_seg >= 0 && target_seg <= Highest_segment_index) {
+		side = find_connect_side(&Segments[target_seg], &Segments[objp->segnum]);
+		if (side >= 0) {
+			wall_num = Segments[objp->segnum].sides[side].wall_num;
+			doorway = WALL_IS_DOORWAY(&Segments[objp->segnum], side);
+			openable = ai_door_is_openable(objp, &Segments[objp->segnum], side);
+		}
+	}
 	debug_log(DLOG_GUIDEBOT,
-	          "recovery stalled_edge obj=%d seg=%d avoid_seg=%d avoid_seg2=%d goal_seg=%d "
-	          "path_index=%d target_dist=%d count=%u",
-	          (int) (objp - Objects), objp->segnum, Escort_route_avoid_seg,
-	          Escort_route_avoid_seg2, Escort_route_goal.target_seg,
-	          aip->cur_path_index, target_distance,
+	          "recovery stalled_edge obj=%d seg=%d avoid_edge=%d>%d avoid_edge2=%d>%d goal_seg=%d "
+	          "path_index=%d target_dist=%d side=%d wall=%d doorway=0x%x openable=%d "
+	          "wall_type=%d wall_state=%d wall_flags=0x%x wall_trigger=%d size=%d count=%u",
+	          (int) (objp - Objects), objp->segnum,
+	          Escort_route_avoid_from_seg, Escort_route_avoid_seg,
+	          Escort_route_avoid_from_seg2, Escort_route_avoid_seg2,
+	          Escort_route_goal.target_seg, aip->cur_path_index, target_distance,
+	          side, wall_num, doorway, openable,
+	          wall_num >= 0 && wall_num < Num_walls ? Walls[wall_num].type : -1,
+	          wall_num >= 0 && wall_num < Num_walls ? Walls[wall_num].state : -1,
+	          wall_num >= 0 && wall_num < Num_walls ? Walls[wall_num].flags : 0,
+	          wall_num >= 0 && wall_num < Num_walls ? Walls[wall_num].controlling_trigger : -1,
+	          objp->size,
 	          Escort_route_stall_recovery_count);
 	Escort_last_path_created = GameTime64;
 	escort_create_path_to_goal(objp);

@@ -22,6 +22,24 @@ internal data class RouteMetadataPrecomputeSnapshot(
     val phase: String = "discovering",
     val statusMessage: String = "",
     val updatedAtMs: Long = 0L,
+    val musicTotalTracks: Int = 0,
+    val musicFinishedTracks: Int = 0,
+    val musicFailedTracks: Int = 0,
+    val musicWaitingTracks: Int = 0,
+    val musicCurrentMission: String = "",
+    val musicCurrentTrack: String = "",
+    val musicPhase: String = "discovering",
+    val musicUpdatedAtMs: Long = 0L,
+)
+
+internal data class MissionMusicPrecomputeProgress(
+    val totalTracks: Int,
+    val finishedTracks: Int,
+    val failedTracks: Int,
+    val waitingTracks: Int,
+    val currentMission: String = "",
+    val currentTrack: String = "",
+    val phase: String,
 )
 
 internal class RouteMetadataPrecomputeMonitor(
@@ -109,6 +127,14 @@ internal class RouteMetadataPrecomputeMonitor(
                         },
                     statusMessage = "",
                     updatedAtMs = System.currentTimeMillis(),
+                    musicTotalTracks = previous.first.musicTotalTracks,
+                    musicFinishedTracks = previous.first.musicFinishedTracks,
+                    musicFailedTracks = previous.first.musicFailedTracks,
+                    musicWaitingTracks = previous.first.musicWaitingTracks,
+                    musicCurrentMission = previous.first.musicCurrentMission,
+                    musicCurrentTrack = previous.first.musicCurrentTrack,
+                    musicPhase = previous.first.musicPhase,
+                    musicUpdatedAtMs = previous.first.musicUpdatedAtMs,
                 ),
             loggedMissions = previous.second,
         )
@@ -137,6 +163,70 @@ internal class RouteMetadataPrecomputeMonitor(
         )
     }
 
+    fun musicDiscovery(trackCount: Int) =
+        synchronized(FILE_LOCK) {
+            append("MUSIC DISCOVERY status=complete tracks=$trackCount")
+        }
+
+    fun updateMusic(progress: MissionMusicPrecomputeProgress) =
+        synchronized(FILE_LOCK) {
+            val state = readState()
+            writeState(
+                state.first.copy(
+                    musicTotalTracks = progress.totalTracks,
+                    musicFinishedTracks = progress.finishedTracks,
+                    musicFailedTracks = progress.failedTracks,
+                    musicWaitingTracks = progress.waitingTracks,
+                    musicCurrentMission = progress.currentMission,
+                    musicCurrentTrack = progress.currentTrack,
+                    musicPhase = progress.phase,
+                    musicUpdatedAtMs = System.currentTimeMillis(),
+                ),
+                state.second,
+            )
+        }
+
+    fun musicTrackStarted(
+        mission: String,
+        track: String,
+    ) = synchronized(FILE_LOCK) {
+        append("MUSIC TRACK mission=${singleLine(mission)} track=${singleLine(track)} status=started")
+    }
+
+    fun musicTrackFinished(
+        mission: String,
+        track: String,
+        matched: Boolean,
+        elapsedMs: Long,
+    ) = synchronized(FILE_LOCK) {
+        append(
+            "MUSIC TRACK mission=${singleLine(mission)} track=${singleLine(track)} " +
+                "status=complete matched=$matched duration_ms=$elapsedMs",
+        )
+    }
+
+    fun musicTrackFailed(
+        mission: String,
+        track: String,
+        detail: String,
+    ) = synchronized(FILE_LOCK) {
+        append(
+            "MUSIC TRACK mission=${singleLine(mission)} track=${singleLine(track)} " +
+                "status=failed problem=${singleLine(detail)}",
+        )
+    }
+
+    fun musicMissionFinished(
+        mission: String,
+        trackCount: Int,
+        failedCount: Int,
+    ) = synchronized(FILE_LOCK) {
+        append(
+            "MUSIC MISSION mission=${singleLine(mission)} tracks=$trackCount failed=$failedCount " +
+                "status=${if (failedCount == 0) "complete" else "complete_with_failures"}",
+        )
+    }
+
     fun launchHandoff(
         status: String,
         elapsedMs: Long = 0L,
@@ -154,6 +244,10 @@ internal class RouteMetadataPrecomputeMonitor(
                 phase = if (status == "started") "pausing_for_game" else "paused_for_game",
                 statusMessage = if (status == "timeout") "Metadata shutdown timed out; game launch continued" else "",
                 updatedAtMs = System.currentTimeMillis(),
+                musicCurrentMission = "",
+                musicCurrentTrack = "",
+                musicPhase = if (status == "started") "pausing_for_game" else "paused_for_game",
+                musicUpdatedAtMs = System.currentTimeMillis(),
             ),
             state.second,
         )
@@ -290,6 +384,14 @@ internal class RouteMetadataPrecomputeMonitor(
                     },
                 statusMessage = root.optString("status_message"),
                 updatedAtMs = root.optLong("updated_at_ms"),
+                musicTotalTracks = root.optInt("music_total_tracks"),
+                musicFinishedTracks = root.optInt("music_finished_tracks"),
+                musicFailedTracks = root.optInt("music_failed_tracks"),
+                musicWaitingTracks = root.optInt("music_waiting_tracks"),
+                musicCurrentMission = root.optString("music_current_mission"),
+                musicCurrentTrack = root.optString("music_current_track"),
+                musicPhase = root.optString("music_phase").ifBlank { "discovering" },
+                musicUpdatedAtMs = root.optLong("music_updated_at_ms"),
             ) to
                 buildSet {
                     repeat(missions.length()) { index -> add(missions.optString(index)) }
@@ -318,6 +420,14 @@ internal class RouteMetadataPrecomputeMonitor(
                 .put("phase", snapshot.phase)
                 .put("status_message", snapshot.statusMessage)
                 .put("updated_at_ms", snapshot.updatedAtMs)
+                .put("music_total_tracks", snapshot.musicTotalTracks)
+                .put("music_finished_tracks", snapshot.musicFinishedTracks)
+                .put("music_failed_tracks", snapshot.musicFailedTracks)
+                .put("music_waiting_tracks", snapshot.musicWaitingTracks)
+                .put("music_current_mission", snapshot.musicCurrentMission)
+                .put("music_current_track", snapshot.musicCurrentTrack)
+                .put("music_phase", snapshot.musicPhase)
+                .put("music_updated_at_ms", snapshot.musicUpdatedAtMs)
                 .put("logged_missions", JSONArray(loggedMissions.sorted()))
                 .toString(2) + "\n",
         )

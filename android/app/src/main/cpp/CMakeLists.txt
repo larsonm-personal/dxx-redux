@@ -17,6 +17,7 @@ set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "" FORCE) # PhysFS 3.2 compat
 
 set(DXX_DEPENDENCY_CACHE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../../.cxx/dependency-cache")
 include(${CMAKE_CURRENT_LIST_DIR}/../../../../../cmake/dxx-verified-dependencies.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../../../../../cmake/audio-tag-metadata-deps.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../../../../../cmake/input-demo-codec-deps.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../../../../../cmake/input-demo-build-metadata.cmake)
 
@@ -622,6 +623,7 @@ endif() # OPENGL
 
 target_link_libraries(dxx-redux-d1 PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(dxx-redux-d1 PRIVATE lzma_sdk_c z dxx_fingerprint chromaprint ktx)
+dxx_audio_tag_apply(dxx-redux-d1)
 dxx_input_demo_apply_codec_deps(dxx-redux-d1)
 dxx_input_demo_apply_build_metadata(dxx-redux-d1)
 target_compile_definitions(dxx-redux-d1 PRIVATE KHRONOS_STATIC)
@@ -813,6 +815,7 @@ endif()
 # nlohmann/json — used by the introspection/automation C++ files
 target_link_libraries(dxx-redux-d2 PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(dxx-redux-d2 PRIVATE lzma_sdk_c z dxx_fingerprint chromaprint ktx)
+dxx_audio_tag_apply(dxx-redux-d2)
 dxx_input_demo_apply_codec_deps(dxx-redux-d2)
 dxx_input_demo_apply_build_metadata(dxx-redux-d2)
 target_compile_definitions(dxx-redux-d2 PRIVATE KHRONOS_STATIC)

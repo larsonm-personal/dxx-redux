@@ -1040,7 +1040,7 @@ private fun AudioFilesSection(
                         Spacer(modifier = Modifier.height(4.dp))
                         Text("Files:", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                         set.files.sorted().forEach { f ->
-                            val name = set.trackNames[f]
+                            val name = set.trackNames[f] ?: set.embeddedTrackNames[f]
                             val label = if (name != null && !isPlaceholderName(name)) "$f - $name" else f
                             Text(label, fontSize = 10.sp)
                         }
@@ -1226,7 +1226,7 @@ private fun TrackPreviewDialog(
                 listOf(TrackRow("(no files)", "", null))
             } else {
                 detailed.map { d ->
-                    TrackRow(d.matchedName ?: d.filename, d.setLabel, d)
+                    TrackRow(d.matchedName ?: d.embeddedName ?: d.filename, d.setLabel, d)
                 }
             }
         }
@@ -1573,6 +1573,8 @@ private fun AudioFileDetailDialog(
                         if (track.confidence != null) append(" [${"%d".format((track.confidence * 100).toInt())}%]")
                     }
                 add(AudioFilePreviewLine(detail, primary = true))
+            } else if (track.embeddedName != null) {
+                add(AudioFilePreviewLine("Embedded: ${track.embeddedName}", primary = true))
             } else {
                 add(AudioFilePreviewLine("No fingerprint match", small = true))
             }
@@ -1581,6 +1583,13 @@ private fun AudioFileDetailDialog(
         title = "Track Info",
         audioFile = audioFile,
         lines = lines,
+        loadMetadata = {
+            AudioTagMetadataBridge
+                .parsePath(audioFile, track.filename.substringAfterLast('.', ""))
+                ?.let(::audioTagMetadataPrintout)
+                ?.map { AudioFilePreviewLine(it) }
+                ?: emptyList()
+        },
         onDismiss = onDismiss,
     )
 }
@@ -1759,6 +1768,7 @@ internal suspend fun importAudioFiles(
                 }
                 // Run chromaprint matching on imported files
                 val trackNames = mutableMapOf<String, String>()
+                val embeddedTrackNames = mutableMapOf<String, String>()
                 val trackConfidences = mutableMapOf<String, Float>()
                 val trackNumbers = mutableMapOf<String, Int>()
 
@@ -1769,6 +1779,15 @@ internal suspend fun importAudioFiles(
                     trackNames[f] = match.name
                     trackConfidences[f] = match.confidence
                     trackNumbers[f] = match.trackNum
+                }
+                if (copyToStorage) {
+                    for (f in imported) {
+                        AudioTagMetadataBridge
+                            .parsePath(File(importDir, f), f.substringAfterLast('.', ""))
+                            ?.display_name
+                            ?.takeIf { it.isNotBlank() }
+                            ?.let { embeddedTrackNames[f] = it }
+                    }
                 }
                 try {
                     FingerprintBridge.ensureDbLoaded(ctx)
@@ -1807,6 +1826,7 @@ internal suspend fun importAudioFiles(
                         imported,
                         referencedUris,
                         trackNames,
+                        embeddedTrackNames,
                         trackConfidences,
                         trackNumbers,
                     )
@@ -1820,6 +1840,7 @@ internal suspend fun importAudioFiles(
                             enabled = true,
                             order = customMgr.getSets().size,
                             trackNames = trackNames,
+                            embeddedTrackNames = embeddedTrackNames,
                             trackConfidences = trackConfidences,
                             trackNumbers = trackNumbers,
                             referencedUris = referencedUris,

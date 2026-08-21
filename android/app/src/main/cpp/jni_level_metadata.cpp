@@ -1086,7 +1086,7 @@ static json analyze_hog_entries(const json &request)
 	set_coop_start_header(root, request, coop_start_range);
 	root["music_tracks"] = request.value("mission_filename", "").empty()
 	                           ? json::array()
-	                           : serialize_active_midi_metadata<json>();
+	                           : serialize_active_music_metadata<json>();
 	root["levels"] = levels;
 	root["problems"] = json::array();
 	if (failed)
@@ -1132,7 +1132,7 @@ static json analyze_loaded_mission(const json &request)
 	root["mission_name"] = Current_mission ? Current_mission_longname : "";
 	root["mission_filename"] = Current_mission ? Current_mission_filename : "";
 	set_coop_start_header(root, request, coop_start_range);
-	root["music_tracks"] = serialize_active_midi_metadata<json>();
+	root["music_tracks"] = serialize_active_music_metadata<json>();
 	root["levels"] = levels;
 	root["problems"] = json::array();
 	return root;
@@ -1243,7 +1243,7 @@ static json analyze_request(JNIEnv *env, jobject context, const json &request)
 		root["mission_name"] = Current_mission ? Current_mission_longname : "";
 		root["mission_filename"] = Current_mission ? Current_mission_filename : "";
 		set_coop_start_header(root, request, coop_start_range);
-		root["music_tracks"] = serialize_active_midi_metadata<json>();
+		root["music_tracks"] = serialize_active_music_metadata<json>();
 		root["levels"] = levels;
 		root["problems"] = json::array();
 		return finish_levelmeta_request(mounts, request, root, error, sizeof(error));

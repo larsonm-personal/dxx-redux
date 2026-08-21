@@ -32,7 +32,18 @@ class MissionZipMusicDisplayTest {
                 acoustIdName = "Web Track",
             )
 
-        assertEquals("Web Track", missionZipMusicDecodedName(entry))
+        assertEquals("Web Track", missionZipMusicDecodedName(entry, allowAcoustIdLookups = true))
+    }
+
+    @Test
+    fun decodedNameSkipsCachedAcoustIdWhenLookupsAreDisabled() {
+        val entry =
+            entry(
+                localName = null,
+                acoustIdName = "Web Track",
+            ).copy(embeddedDisplayName = "Embedded Track")
+
+        assertEquals("Embedded Track", missionZipMusicDecodedName(entry))
     }
 
     @Test

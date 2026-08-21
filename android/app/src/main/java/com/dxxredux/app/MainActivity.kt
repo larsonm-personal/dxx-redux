@@ -68,11 +68,12 @@ internal fun shouldShowTouchOverlay(
     automap: Boolean,
     controllerMenuOpen: Boolean,
     settingsTrayVisible: Boolean,
+    gamePaused: Boolean,
 ): Boolean {
     val gameplayOverlayVisible = overlayEnabled && !playerDead && !endlevel && inGame
     val controllerOwnedOverlayVisible = controllerMenuOpen || settingsTrayVisible
     val gameplayOverlay = gameplayOverlayVisible || controllerOwnedOverlayVisible
-    return gameplayOverlay || automap
+    return gameplayOverlay || automap || gamePaused
 }
 
 internal fun defaultTouchOverlayEnabled(
@@ -456,6 +457,8 @@ class MainActivity :
     external fun nativeCloseOverlayPauseIfOwned(): Boolean
 
     external fun nativeClosePauseIfFront(): Boolean
+
+    external fun nativeIsGamePaused(): Boolean
 
     external fun nativeOpenSaveMenuIfSafe(): Boolean
 
@@ -1048,6 +1051,7 @@ class MainActivity :
         }
         touchOverlay.adminTrayOpenedCallback = { syncAdminTrayPause(open = true) }
         touchOverlay.adminTrayClosedCallback = { syncAdminTrayPause(open = false) }
+        touchOverlay.pauseResumeCallback = { resumePausedGameFromOverlay() }
         touchOverlay.adminTrayBrightnessProvider = {
             try {
                 nativeGetGammaLevel()
@@ -2246,6 +2250,21 @@ class MainActivity :
         adminTrayCloseGraceUntilMs = android.os.SystemClock.uptimeMillis() + ADMIN_TRAY_CLOSE_GRACE_MS
     }
 
+    private fun resumePausedGameFromOverlay() {
+        if (touchOverlay.isAdminTrayOpen()) {
+            touchOverlay.closeAdminTray()
+            return
+        }
+        try {
+            if (nativeCloseOverlayPauseIfOwned()) {
+                adminTrayPausedGame = false
+                return
+            }
+            nativeClosePauseIfFront()
+        } catch (_: Exception) {
+        }
+    }
+
     private fun isAdminTrayCloseGraceActive(nowMs: Long = android.os.SystemClock.uptimeMillis()): Boolean =
         nowMs < adminTrayCloseGraceUntilMs
 
@@ -2364,6 +2383,12 @@ class MainActivity :
                                 } catch (_: Exception) {
                                     false
                                 }
+                            val gamePaused =
+                                try {
+                                    nativeIsGamePaused()
+                                } catch (_: Exception) {
+                                    false
+                                }
                             val demoRecording =
                                 try {
                                     nativeIsDemoRecordingActive()
@@ -2391,8 +2416,10 @@ class MainActivity :
                                     automap = automap,
                                     controllerMenuOpen = controllerMenuOpen,
                                     settingsTrayVisible = settingsTrayVisible,
+                                    gamePaused = gamePaused,
                                 )
                             val wasActive = touchOverlay.isActive
+                            touchOverlay.updateGamePausedState(gamePaused)
                             touchOverlay.isActive = shouldShow
                             touchOverlay.automapActive = automap
                             touchOverlay.updateDemoRecordingState(demoRecording)

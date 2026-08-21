@@ -1,0 +1,51 @@
+// TEST: Counterstrike level 20 Guide-Bot routes around the stalled segment 33 to 30 edge
+[
+    {"_info": {
+        "games": ["d2"],
+        "_deps": [
+            {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
+            {"file": "descent2.ham", "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"},
+            {"file": "groupa.pig", "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"},
+            {"file": "descent2.s22", "sha256": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728"},
+            {"file": "alien1.pig", "sha256": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233"}
+        ]
+    }},
+    {"action": "enter_launcher"},
+    {"action": "reset_state"},
+    {"action": "clear_mods"},
+    {"action": "enter_game", "game": "d2"},
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "select", "text": "Ok", "optional": true},
+    {"action": "select", "text": "New game", "timeout_ms": 10000},
+    {"action": "select_mission", "text": "Counterstrike", "timeout_ms": 10000},
+    {"action": "wait_ms", "ms": 300},
+    {"action": "key", "key": "backspace"},
+    {"action": "key", "key": "2"},
+    {"action": "key", "key": "0"},
+    {"action": "select", "text": "Ok", "timeout_ms": 5000},
+    {"action": "select", "text": "Trainee", "optional": true},
+    {"action": "skip_briefing", "timeout_ms": 60000},
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "current_level_num": "20",
+        "level_metadata_route.status": "ok"
+    }},
+    {"action": "set_debug", "field": "clear_robots", "value": "true", "post_delay_ms": 100},
+    {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
+    {"action": "set_debug", "field": "player_keys", "value": "blue", "post_delay_ms": 100},
+    {"action": "set_debug", "field": "fire_trigger", "value": "18", "post_delay_ms": 100},
+    {"action": "wait_ms", "ms": 3000},
+    {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {
+        "guidebot.route_goal_active": "true",
+        "guidebot.route_goal_trigger": "12",
+        "guidebot.route_goal_seg": "44"
+    }},
+    {"action": "pose_view", "segment": 33, "x": 248.111328, "y": -10.158432, "z": -104.249619, "post_delay_ms": 250},
+    {"action": "meta_action", "id": 1042, "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "guidebot.segment": {"ne": 33}
+    }},
+    {"action": "log", "message": "=== TEST: Counterstrike level 20 Guide-Bot trigger 3 routing -- PASS ==="}
+]

@@ -32,6 +32,11 @@ class MissionZipAudioFingerprintCache private constructor(
         val contentSha256: String,
         val durationMs: Int,
         val chromaprint: String,
+        val fingerprintStatus: String = if (chromaprint.isBlank()) FINGERPRINT_STATUS_FAILED else FINGERPRINT_STATUS_OK,
+        val embeddedParseStatus: String = "",
+        val embeddedTitle: String = "",
+        val embeddedComposer: String = "",
+        val embeddedDisplayName: String = "",
         val localMatchName: String?,
         val localMatchConfidence: Float?,
         val localMatchDiscId: String?,
@@ -77,9 +82,10 @@ class MissionZipAudioFingerprintCache private constructor(
         catalog: MissionZipMusicCatalog,
         track: MissionZipMusicTrack,
         stagedAudio: File,
-        fingerprint: FingerprintBridge.FingerprintResult,
+        fingerprint: FingerprintBridge.FingerprintResult?,
         match: FingerprintBridge.MatchResult?,
         localMatchDbIdentity: String? = null,
+        embedded: AudioTagMetadata? = null,
     ): Entry =
         AtomicFilePublication.transaction {
             val archive = File(catalog.archivePath)
@@ -95,8 +101,13 @@ class MissionZipAudioFingerprintCache private constructor(
                     nestedPath = track.nestedEntryPath.orEmpty(),
                     hogEntryName = track.hogEntryName.orEmpty(),
                     contentSha256 = contentSha256,
-                    durationMs = fingerprint.durationMs,
-                    chromaprint = fingerprint.encoded,
+                    durationMs = fingerprint?.durationMs ?: 0,
+                    chromaprint = fingerprint?.encoded.orEmpty(),
+                    fingerprintStatus = if (fingerprint == null) FINGERPRINT_STATUS_FAILED else FINGERPRINT_STATUS_OK,
+                    embeddedParseStatus = embedded?.parse_status.orEmpty(),
+                    embeddedTitle = embedded?.title.orEmpty(),
+                    embeddedComposer = embedded?.composer.orEmpty(),
+                    embeddedDisplayName = embedded?.display_name.orEmpty(),
                     localMatchName = match?.name,
                     localMatchConfidence = match?.confidence,
                     localMatchDiscId = match?.discId,
@@ -128,16 +139,45 @@ class MissionZipAudioFingerprintCache private constructor(
     ): Entry? {
         if (!isFingerprintSupported(track)) return null
         val contentSha256 = sha256(stagedAudio)
-        FingerprintBridge.ensureDbLoaded(context)
-        val dbIdentity = FingerprintBridge.databaseIdentity(context)
         get(catalog, track, contentSha256)?.let { cached ->
+            if (cached.chromaprint.isBlank()) return cached
+            val dbIdentity =
+                runCatching {
+                    FingerprintBridge.ensureDbLoaded(context)
+                    FingerprintBridge.databaseIdentity(context)
+                }.getOrNull() ?: return cached
             if (cached.localMatchDbIdentity == dbIdentity) return cached
-            val match = FingerprintBridge.matchFingerprint(cached.chromaprint, cached.durationMs)
+            val match =
+                runCatching {
+                    FingerprintBridge.matchFingerprint(
+                        cached.chromaprint,
+                        cached.durationMs,
+                    )
+                }.getOrNull()
             return recordLocalMatchResult(cached, match, dbIdentity)
         }
-        val fingerprint = FingerprintBridge.fingerprintAudioFile(stagedAudio.absolutePath) ?: return null
-        val match = FingerprintBridge.matchFingerprint(fingerprint.encoded, fingerprint.durationMs)
-        return record(catalog, track, stagedAudio, fingerprint, match, dbIdentity)
+        val embedded = AudioTagMetadataBridge.parsePath(stagedAudio, track.extension)
+        val fingerprint = runCatching { FingerprintBridge.fingerprintAudioFile(stagedAudio.absolutePath) }.getOrNull()
+        val dbIdentity =
+            fingerprint?.let {
+                runCatching {
+                    FingerprintBridge.ensureDbLoaded(context)
+                    FingerprintBridge.databaseIdentity(context)
+                }.getOrNull()
+            }
+        val match =
+            fingerprint?.let {
+                runCatching { FingerprintBridge.matchFingerprint(it.encoded, it.durationMs) }.getOrNull()
+            }
+        return record(
+            catalog,
+            track,
+            stagedAudio,
+            fingerprint,
+            match,
+            localMatchDbIdentity = dbIdentity,
+            embedded = embedded,
+        )
     }
 
     fun recordLocalMatchResult(
@@ -264,6 +304,11 @@ class MissionZipAudioFingerprintCache private constructor(
             .put("sha256", contentSha256)
             .put("duration_ms", durationMs)
             .put("chromaprint", chromaprint)
+            .put("fingerprint_status", fingerprintStatus)
+            .put("embedded_parse_status", embeddedParseStatus)
+            .put("embedded_title", embeddedTitle)
+            .put("embedded_composer", embeddedComposer)
+            .put("embedded_display_name", embeddedDisplayName)
             .put("lookup_at", lookupAt)
             .apply {
                 localMatchName?.let { put("local_match_name", it) }
@@ -292,6 +337,11 @@ class MissionZipAudioFingerprintCache private constructor(
                 contentSha256 = getString("sha256"),
                 durationMs = getInt("duration_ms"),
                 chromaprint = getString("chromaprint"),
+                fingerprintStatus = getString("fingerprint_status"),
+                embeddedParseStatus = getString("embedded_parse_status"),
+                embeddedTitle = getString("embedded_title"),
+                embeddedComposer = getString("embedded_composer"),
+                embeddedDisplayName = getString("embedded_display_name"),
                 localMatchName = optString("local_match_name").takeIf { it.isNotBlank() },
                 localMatchConfidence =
                     if (has("local_match_confidence")) {
@@ -336,7 +386,9 @@ class MissionZipAudioFingerprintCache private constructor(
 
     companion object {
         private const val CACHE_FILE = "mission_zip_audio_fingerprints.json"
-        private const val SCHEMA = "dxx-mission-zip-audio-fingerprints-v2"
+        private const val SCHEMA = "dxx-mission-zip-audio-analysis-v3"
+        const val FINGERPRINT_STATUS_OK = "ok"
+        const val FINGERPRINT_STATUS_FAILED = "failed"
         const val ACOUSTID_STATUS_OK = "ok"
         const val ACOUSTID_STATUS_NO_MATCH = "no_match"
         const val ACOUSTID_STATUS_RETRYABLE_FAILURE = "retryable_failure"

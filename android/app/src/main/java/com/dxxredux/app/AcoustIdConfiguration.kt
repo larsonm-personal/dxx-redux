@@ -21,3 +21,8 @@ internal object AcoustIdConfiguration {
         }
     }
 }
+
+internal inline fun configureAcoustIdIfEnabled(
+    enabled: Boolean,
+    configure: () -> AcoustIdConfigurationStatus,
+): AcoustIdConfigurationStatus = if (enabled) configure() else AcoustIdConfigurationStatus.NOT_PACKAGED
