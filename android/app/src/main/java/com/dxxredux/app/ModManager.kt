@@ -68,7 +68,10 @@ class ModManager(
         val category: String? = null,
         val missionTitle: String? = null,
         val importMode: String? = null,
-    )
+    ) {
+        val isLevel: Boolean
+            get() = kind == MOD_KIND_MISSION_ZIP || category == MissionZip.CATEGORY_LEVELS
+    }
 
     data class ModCompatibilityFailure(
         val modDisplayName: String,
@@ -669,6 +672,28 @@ class ModManager(
                             sorted[index].filename -> m.copy(order = orderB)
                             sorted[index + 1].filename -> m.copy(order = orderA)
                             else -> m
+                        }
+                    }.toMutableList()
+            save()
+        }
+    }
+
+    /** Swap two entries while preserving the relative order of every other mod. */
+    fun swapOrder(
+        firstFilename: String,
+        secondFilename: String,
+    ) {
+        if (firstFilename == secondFilename) return
+        updateManifest {
+            val first = mods.firstOrNull { it.filename == firstFilename } ?: return@updateManifest
+            val second = mods.firstOrNull { it.filename == secondFilename } ?: return@updateManifest
+            mods =
+                mods
+                    .map { mod ->
+                        when (mod.filename) {
+                            firstFilename -> mod.copy(order = second.order)
+                            secondFilename -> mod.copy(order = first.order)
+                            else -> mod
                         }
                     }.toMutableList()
             save()

@@ -288,6 +288,8 @@ internal fun ModsSection(
 
     val demoEntries = contentEntries.filter { it.kind == FileSetContentCatalog.KIND_DEMO }
     val regularContentEntries = contentEntries.filter { it.kind != FileSetContentCatalog.KIND_DEMO }
+    val levelMods = mods.filter { it.isLevel }
+    val regularMods = mods.filterNot { it.isLevel }
     val enabledCount =
         mods.count { it.enabled } + contentEntries.count { it.enabled } + customAudioSets.count { it.enabled }
     val totalCount = mods.size + contentEntries.size + customAudioSets.size
@@ -322,33 +324,55 @@ internal fun ModsSection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 4.dp, bottom = 6.dp),
             )
-            if (mods.isNotEmpty()) {
+            if (regularMods.isNotEmpty()) {
                 Text("Mods", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
             }
-            mods.forEachIndexed { index, mod ->
+            regularMods.forEachIndexed { index, mod ->
                 ModRow(
                     mod = mod,
                     isFirst = index == 0,
-                    isLast = index == mods.size - 1,
+                    isLast = index == regularMods.size - 1,
                     scanResult = scanCache[mod.filename],
                     onToggle = { enabled ->
                         modManager.setEnabled(mod.filename, enabled)
                         mods = modManager.listMods()
                     },
                     onMoveUp = {
-                        modManager.moveUp(index)
+                        modManager.swapOrder(mod.filename, regularMods[index - 1].filename)
                         mods = modManager.listMods()
                     },
                     onMoveDown = {
-                        modManager.moveDown(index)
+                        modManager.swapOrder(mod.filename, regularMods[index + 1].filename)
                         mods = modManager.listMods()
                     },
                     onDetails = { detailTarget = mod },
                     onDelete = { deleteTarget = mod.filename },
                 )
             }
-            if (regularContentEntries.isNotEmpty() || demoEntries.isNotEmpty()) {
+            if (levelMods.isNotEmpty() || regularContentEntries.isNotEmpty() || demoEntries.isNotEmpty()) {
                 Text("Levels and file-set content", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            }
+            levelMods.forEachIndexed { index, mod ->
+                ModRow(
+                    mod = mod,
+                    isFirst = index == 0,
+                    isLast = index == levelMods.size - 1,
+                    scanResult = scanCache[mod.filename],
+                    onToggle = { enabled ->
+                        modManager.setEnabled(mod.filename, enabled)
+                        mods = modManager.listMods()
+                    },
+                    onMoveUp = {
+                        modManager.swapOrder(mod.filename, levelMods[index - 1].filename)
+                        mods = modManager.listMods()
+                    },
+                    onMoveDown = {
+                        modManager.swapOrder(mod.filename, levelMods[index + 1].filename)
+                        mods = modManager.listMods()
+                    },
+                    onDetails = { detailTarget = mod },
+                    onDelete = { deleteTarget = mod.filename },
+                )
             }
             if (demoEntries.isNotEmpty()) {
                 DemoGroupRow(

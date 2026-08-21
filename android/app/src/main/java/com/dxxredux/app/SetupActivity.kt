@@ -3053,10 +3053,21 @@ private fun SetupScreen(
                         }
 
                         ext == "zip" -> {
+                            val declaredSize = ImportStorageGuard.queryUriSizeBytes(context.contentResolver, uri)
+                            val probeLimit =
+                                declaredSize
+                                    ?.coerceAtLeast(ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES)
+                                    ?.coerceAtMost(ExtractionLimits.MAX_TOTAL_BYTES)
+                                    ?: ExtractionLimits.MAX_TOTAL_BYTES
                             val missionZip =
                                 try {
+                                    ImportStorageGuard.requireFreeSpace(
+                                        context.cacheDir,
+                                        declaredSize ?: 0L,
+                                        "inspect archive $name",
+                                    )
                                     context.contentResolver.openInputStream(uri)?.use { input ->
-                                        MissionZip.isImportCandidate(input)
+                                        MissionZip.isImportCandidate(input, context.cacheDir, probeLimit)
                                     }
                                 } catch (e: Exception) {
                                     Log.w("DXX-Setup", "Mission ZIP probe failed for $name: ${e.message}")

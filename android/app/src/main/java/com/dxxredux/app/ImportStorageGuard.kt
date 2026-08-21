@@ -54,9 +54,19 @@ internal object ImportStorageGuard {
         target: String,
     ) {
         val requiredFreeBytes = bytesToWrite.coerceAtLeast(0L) + HEADROOM_BYTES
-        val availableBytes = availableBytes(targetDir)
-        if (availableBytes < requiredFreeBytes) {
-            throw InsufficientStorageException(requiredFreeBytes, availableBytes, target)
+        val measurement = measureAvailableBytes(targetDir)
+        if (bytesToWrite > 0L || measurement.availableBytes <= 0L || measurement.availableBytes < requiredFreeBytes) {
+            logStorageCheck(
+                "storage-check target=$target path=${measurement.path.absolutePath} " +
+                    "write_bytes=$bytesToWrite required_bytes=$requiredFreeBytes " +
+                    "available_bytes=${measurement.availableBytes}",
+            )
+        }
+        // A zero result also represents a failed or unsupported filesystem
+        // query. Let the transactional writer try in that case; it will still
+        // roll back its temporary output if the volume is genuinely full.
+        if (shouldReject(measurement.availableBytes, requiredFreeBytes)) {
+            throw InsufficientStorageException(requiredFreeBytes, measurement.availableBytes, target)
         }
     }
 
@@ -99,16 +109,36 @@ internal object ImportStorageGuard {
         return total
     }
 
-    private fun availableBytes(dir: File): Long {
+    internal data class StorageMeasurement(
+        val path: File,
+        val availableBytes: Long,
+    )
+
+    internal fun shouldReject(
+        availableBytes: Long,
+        requiredFreeBytes: Long,
+    ): Boolean = availableBytes > 0L && availableBytes < requiredFreeBytes
+
+    private fun logStorageCheck(message: String) {
+        try {
+            LauncherDebugLog.log(message)
+        } catch (_: Throwable) {
+            println(message)
+        }
+    }
+
+    internal fun measureAvailableBytes(dir: File): StorageMeasurement {
         var current: File? = dir
         while (current != null && !current.exists()) {
             current = current.parentFile
         }
         val statPath = current ?: dir
-        return try {
-            StatFs(statPath.absolutePath).availableBytes
-        } catch (_: Throwable) {
-            statPath.usableSpace
-        }
+        val available =
+            try {
+                StatFs(statPath.absolutePath).availableBytes
+            } catch (_: Throwable) {
+                statPath.usableSpace
+            }
+        return StorageMeasurement(statPath, available)
     }
 }

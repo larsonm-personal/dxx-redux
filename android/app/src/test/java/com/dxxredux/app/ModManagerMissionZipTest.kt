@@ -69,6 +69,7 @@ class ModManagerMissionZipTest {
         assertEquals("d2", imported.game)
         assertEquals("levels", imported.category)
         assertEquals("stored_zip", imported.importMode)
+        assertTrue(imported.isLevel)
 
         val reloaded = ModManager(filesDir).listMods().single()
         assertEquals(ModManager.MOD_KIND_MISSION_ZIP, reloaded.kind)
@@ -81,6 +82,22 @@ class ModManagerMissionZipTest {
         assertTrue(details.categories.any { it.label == "Mission descriptor" })
         assertTrue(details.categories.any { it.label == "Mission assets" })
         assertTrue(details.categories.any { it.label == "Bundled mod archive" })
+    }
+
+    @Test
+    fun levelAndModOrderingCanBeChangedWithinSeparateChooserGroups() {
+        val filesDir = File("build/test-mod-manager-group-order").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+        val manager = ModManager(filesDir)
+        val firstLevel = requireNotNull(manager.importMissionZipFile(createMissionZip(), "First.zip"))
+        val secondLevel = requireNotNull(manager.importMissionZipFile(createMissionZip(), "Second.zip"))
+
+        manager.swapOrder(secondLevel.filename, firstLevel.filename)
+
+        val reordered = manager.listMods()
+        assertEquals(listOf("Second.zip", "First.zip"), reordered.map { it.filename })
+        assertTrue(reordered.all { it.isLevel })
     }
 
     @Test
@@ -470,6 +487,23 @@ class ModManagerMissionZipTest {
         manager.deleteMod(imported.filename)
         assertFalse(File(filesDir, "mods/LargeMission.zip").exists())
         assertFalse(extractedRoot.exists())
+    }
+
+    @Test
+    fun fileSetMissionMetadataUsesItsDurableExtraction() {
+        val filesDir = File("build/test-mod-manager-file-set-extracted-metadata").absoluteFile
+        filesDir.deleteRecursively()
+        val setDir = File(filesDir, "sets/default").apply { mkdirs() }
+        val manager = ModManager(filesDir, setDir = setDir)
+        val imported = requireNotNull(manager.importMissionZipFile(createLargePreambleMissionZip(), "Large.zip"))
+        val modFile = manager.modFile(imported.filename)
+        val scan = requireNotNull(MissionZip.inspect(modFile))
+
+        val target = LevelMetadataTargets.missionZipTargets(modFile.absolutePath, setDir, scan).single()
+
+        val extractedRoot = File(setDir, ".content/mod_support/mods/.extracted_mission_zips/Large.zip")
+        assertEquals(File(extractedRoot, "missions").absolutePath, target.sourcePath)
+        assertEquals(null, target.archivePath)
     }
 
     @Test

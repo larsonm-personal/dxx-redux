@@ -11,6 +11,7 @@ import org.junit.Test
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.InputStream
+import java.util.zip.CRC32
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -347,6 +348,50 @@ class MissionZipTest {
         }
 
         assertFalse(zipFile.inputStream().use { MissionZip.isImportCandidate(it) })
+    }
+
+    @Test
+    fun importCandidateAcceptsArchiveLargerThanPreambleLimitWhenCallerSuppliesItsSize() {
+        val zipFile = File.createTempFile("large-candidate", ".zip")
+        zipFile.deleteOnExit()
+        val fillerBytes = ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES + 1L
+        val buffer = ByteArray(64 * 1024)
+        val crc = CRC32()
+        var remaining = fillerBytes
+        while (remaining > 0L) {
+            val count = minOf(buffer.size.toLong(), remaining).toInt()
+            crc.update(buffer, 0, count)
+            remaining -= count
+        }
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("pack.mn2"))
+            zip.write("name = Pack\nnum_levels = 1\nlevel01.rl2\n".toByteArray())
+            zip.closeEntry()
+            zip.putNextEntry(ZipEntry("pack.hog"))
+            zip.write(hogBytes("level01.rl2"))
+            zip.closeEntry()
+            val filler =
+                ZipEntry("padding.bin").apply {
+                    method = ZipEntry.STORED
+                    size = fillerBytes
+                    compressedSize = fillerBytes
+                    this.crc = crc.value
+                }
+            zip.putNextEntry(filler)
+            remaining = fillerBytes
+            while (remaining > 0L) {
+                val count = minOf(buffer.size.toLong(), remaining).toInt()
+                zip.write(buffer, 0, count)
+                remaining -= count
+            }
+            zip.closeEntry()
+        }
+
+        assertTrue(
+            zipFile.inputStream().use {
+                MissionZip.isImportCandidate(it, zipFile.parentFile, zipFile.length())
+            },
+        )
     }
 
     @Test

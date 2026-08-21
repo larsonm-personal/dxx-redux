@@ -6,6 +6,12 @@ import org.junit.Test
 
 class ImportStorageGuardTest {
     @Test
+    fun unknownFilesystemCapacityDoesNotProduceFalseNoSpaceFailure() {
+        assertTrue(!ImportStorageGuard.shouldReject(0L, 100L))
+        assertTrue(ImportStorageGuard.shouldReject(99L, 100L))
+    }
+
+    @Test
     fun archiveEntryBytesIgnoresUnknownSizes() {
         val total = ImportStorageGuard.archiveEntryBytes(listOf(10L, -1L, 0L, 25L))
 

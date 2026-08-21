@@ -21,10 +21,11 @@ private const val ZIP_SUPPORTED_FLAGS = 0x080e
 internal fun openZipInputStreamSkippingPreamble(
     input: InputStream,
     stagingDirectory: File? = null,
+    maxSourceBytes: Long = ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES,
 ): ZipInputStream {
     val staged = File.createTempFile("dxx-zip-", ".tmp", stagingDirectory)
     try {
-        stageBoundedZip(input, staged)
+        stageBoundedZip(input, staged, maxSourceBytes)
         val firstLocalHeader = validateZipAndFindFirstLocalHeader(staged)
         val stagedInput = FileInputStream(staged)
         return try {
@@ -43,9 +44,10 @@ internal fun openZipInputStreamSkippingPreamble(
 private fun stageBoundedZip(
     input: InputStream,
     staged: File,
+    maxSourceBytes: Long,
 ) {
     // A one-shot stream cannot prove its trailing central directory before it is staged
-    val maxSourceBytes = ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES
+    require(maxSourceBytes > 0L) { "ZIP source limit must be positive" }
     val buffer = ByteArray(64 * 1024)
     var total = 0L
     input.use { source ->

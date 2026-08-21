@@ -213,13 +213,17 @@ object MissionZip {
         )?.copy(importMode = record.importMode.ifBlank { "extracted_bundle" })
     }
 
-    fun isImportCandidate(input: InputStream): Boolean {
+    fun isImportCandidate(
+        input: InputStream,
+        stagingDirectory: File? = null,
+        maxSourceBytes: Long = ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES,
+    ): Boolean {
         val budget = ExtractionBudget()
         val metadataBudget = descriptorBudget()
         val constituents = mutableListOf<Constituent>()
         val missions = mutableListOf<GameFileFormats.MissionDescriptor>()
         var hasRebirthChildZip = false
-        openZipInputStreamSkippingPreamble(input).use { zip ->
+        openZipInputStreamSkippingPreamble(input, stagingDirectory, maxSourceBytes).use { zip ->
             var entry = zip.nextEntry
             while (entry != null) {
                 budget.registerEntry(

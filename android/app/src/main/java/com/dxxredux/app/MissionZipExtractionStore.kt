@@ -444,8 +444,14 @@ private fun String.isSha256(): Boolean = length == 64 && all { it in '0'..'9' ||
 
 internal fun missionZipExtractedStoreForArchivePath(archivePath: String): MissionZipExtractionStore? {
     val modsDir = File(archivePath).parentFile ?: return null
-    val filesDir = modsDir.parentFile ?: return null
-    return MissionZipExtractionStore(filesDir)
+    val parent = modsDir.parentFile ?: return null
+    val supportDir =
+        if (modsDir.name == "mods" && parent.name == ".content") {
+            File(parent, "mod_support")
+        } else {
+            parent
+        }
+    return MissionZipExtractionStore(supportDir)
 }
 
 internal fun missionZipLaunchStageBytes(entries: List<ArchiveFileEntry>): Long =
