@@ -432,6 +432,21 @@ internal fun buildDiscImageTrackSummary(
         ignoredSuffix
 }
 
+internal data class AudioTrackIdentificationProgress(
+    val current: Int,
+    val total: Int,
+) {
+    val status: String = "Identifying audio track $current of $total..."
+}
+
+internal fun audioTrackIdentificationProgress(
+    current: Int,
+    total: Int,
+): AudioTrackIdentificationProgress {
+    require(total > 0) { "Audio track count must be positive" }
+    return AudioTrackIdentificationProgress(current.coerceIn(1, total), total)
+}
+
 private fun parseCueReferencedFilenames(cueFile: File): List<String> {
     if (!cueFile.isFile) return emptyList()
     return runCatching {

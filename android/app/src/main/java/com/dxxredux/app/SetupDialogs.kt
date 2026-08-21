@@ -1547,6 +1547,8 @@ internal fun DiscImportDialog(
                                                     if (trackNames.isEmpty()) {
                                                         withContext(Dispatchers.Main) {
                                                             status = "Identifying audio tracks..."
+                                                            progressBytes = 0L
+                                                            progressTotal = audioCount.toLong()
                                                         }
                                                         trackNames =
                                                             FingerprintBridge.fingerprintAndMatchDisc(
@@ -1554,7 +1556,15 @@ internal fun DiscImportDialog(
                                                                 context.contentResolver,
                                                                 orderedBinUris.map { it.second },
                                                                 parsedTracks,
-                                                            )
+                                                            ) { current, total ->
+                                                                val update =
+                                                                    audioTrackIdentificationProgress(current, total)
+                                                                mainHandler.post {
+                                                                    status = update.status
+                                                                    progressBytes = update.current.toLong()
+                                                                    progressTotal = update.total.toLong()
+                                                                }
+                                                            }
                                                         Log.i(
                                                             "DXX-DiscImport",
                                                             "Fingerprinted ${trackNames.size} track names via SAF descriptors",
