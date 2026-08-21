@@ -36,15 +36,19 @@ extern "C" {
 #include "physfsx.h"
 #include "player.h"
 #include "screens.h"
+#include "segment.h"
 #include "secret_area_scan.h"
 #include "secretarea.h"
 #include "songs.h"
 #include "strutil.h"
+#include "switch.h"
 #include "texmerge.h"
 #include "text.h"
 #include "u_mem.h"
+#include "wall.h"
 }
 
+#include "level_statistics.hpp"
 #include "midi_metadata_json.hpp"
 
 #ifdef DXX_BUILD_DESCENT_II
@@ -775,7 +779,8 @@ static json serialize_metadata_notes(const level_metadata_state *metadata)
 }
 
 static json serialize_current_level_row(int level_num, const char *level_file,
-                                        int base_player_ship_radius)
+                                        int base_player_ship_radius,
+                                        const level_statistics &statistics)
 {
 	const secret_area_state *secret_state = secret_area_get_state();
 	const level_metadata_state *metadata = level_metadata_get_canonical_state();
@@ -794,6 +799,11 @@ static json serialize_current_level_row(int level_num, const char *level_file,
 	    sizeof(display_level_name));
 	row["level_name"] = display_level_name;
 	row["level_file"] = level_file ? level_file : "";
+	row["segment_count"] = statistics.segment_count;
+	row["wall_count"] = statistics.wall_count;
+	row["trigger_count"] = statistics.trigger_count;
+	row["object_count"] = statistics.object_count;
+	row["texture_count"] = statistics.texture_count;
 	row["robots"] = robots;
 	row["hostages"] = hostages;
 	row["secrets"] = secret_area_total(secret_state);
@@ -926,6 +936,11 @@ static json failed_level_row(int level_num, const char *level_file,
 	row["secret"] = level_num < 0;
 	row["level_name"] = "";
 	row["level_file"] = level_file ? level_file : "";
+	row["segment_count"] = 0;
+	row["wall_count"] = 0;
+	row["trigger_count"] = 0;
+	row["object_count"] = 0;
+	row["texture_count"] = 0;
 	row["robots"] = 0;
 	row["hostages"] = 0;
 	row["secrets"] = 0;
@@ -960,6 +975,7 @@ static LevelScanStatus scan_level(const json &request, json &levels,
                                   int *coop_starts)
 {
 	int base_player_ship_radius = 0;
+	level_statistics statistics = {};
 
 	write_checkpoint_progress(request, "level", level_file ? level_file : "",
 	                          completed, total);
@@ -988,6 +1004,9 @@ static LevelScanStatus scan_level(const json &request, json &levels,
 	level_metadata_set_switch_projectile_radius_override(
 	    base_switch_projectile_radius);
 #endif
+	statistics = collect_level_statistics(
+	    Segments, Num_segments, Num_walls, Num_triggers, num_objects,
+	    LEVEL_STATISTICS_TEXTURE_LIMIT);
 	if (coop_starts)
 		*coop_starts = count_current_level_coop_starts();
 	levelmeta_progress_context progress_context = {
@@ -1019,7 +1038,7 @@ static LevelScanStatus scan_level(const json &request, json &levels,
 	level_metadata_set_cancel_callback(NULL, NULL);
 	level_metadata_set_progress_callback(NULL, NULL);
 	levels.push_back(serialize_current_level_row(
-	    level_num, level_file, base_player_ship_radius));
+	    level_num, level_file, base_player_ship_radius, statistics));
 	write_checkpoint_progress(request, "level_done",
 	                          level_file ? level_file : "",
 	                          completed + 1, total);

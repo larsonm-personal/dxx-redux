@@ -7,6 +7,43 @@ import org.junit.Test
 
 class LevelMetadataResultTest {
     @Test
+    fun fromJsonReadsAndFormatsLevelStatistics() {
+        val result =
+            LevelMetadataResult.fromJson(
+                """
+                {
+                  "status": "ok",
+                  "levels": [{
+                    "level_num": 2,
+                    "segment_count": 518,
+                    "wall_count": 115,
+                    "trigger_count": 16,
+                    "object_count": 229,
+                    "texture_count": 53
+                  }]
+                }
+                """.trimIndent(),
+            )
+
+        val level = result.levels.single()
+        assertEquals(518, level.segmentCount)
+        assertEquals(115, level.wallCount)
+        assertEquals(16, level.triggerCount)
+        assertEquals(229, level.objectCount)
+        assertEquals(53, level.textureCount)
+        assertEquals(
+            "Statistics: 518 cubes, 115 walls, 16 triggers, 229 objects, 53 textures",
+            formatLevelMetadataStatistics(
+                level.segmentCount,
+                level.wallCount,
+                level.triggerCount,
+                level.objectCount,
+                level.textureCount,
+            ),
+        )
+    }
+
+    @Test
     fun fromJsonReadsCoopStartsHeader() {
         val result =
             LevelMetadataResult.fromJson(

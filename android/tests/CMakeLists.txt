@@ -153,6 +153,10 @@ add_executable(test_android_axis_mailbox test_android_axis_mailbox.cpp
 target_compile_features(test_android_axis_mailbox PRIVATE cxx_std_11)
 target_include_directories(test_android_axis_mailbox PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
 
+add_executable(test_level_statistics test_level_statistics.cpp)
+target_compile_features(test_level_statistics PRIVATE cxx_std_11)
+target_include_directories(test_level_statistics PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
+
 add_executable(
     test_level_metadata_scan
     test_level_metadata_scan.c
@@ -306,6 +310,7 @@ set(DXX_HOST_TEST_TARGETS
     test_multi_save_transfer_policy
     test_input_demo_rng_mode
     test_android_axis_mailbox
+    test_level_statistics
     test_level_metadata_scan
     test_route_snapshot
     test_route_analysis_cache

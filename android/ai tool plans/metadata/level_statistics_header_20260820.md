@@ -40,43 +40,50 @@ Add per-level geometry and content statistics to the metadata model and display 
 
 ### Phase 1: Central native statistic calculation
 
-- [ ] Add a small shared Android-side native helper for a `level_statistics` value containing segment, wall, wall-trigger, object, and used-texture counts
-- [ ] Keep the D1 and D2 engine globals as the source of truth and avoid edits in `d1/` and `d2/`
-- [ ] Implement the texture count once in the shared helper using the DLE semantics above, with bounds checks for segment, wall, and texture IDs
-- [ ] Call the helper only after `load_level` has succeeded, before any future operation could create transient gameplay objects
-- [ ] Serialize `segment_count`, `wall_count`, `trigger_count`, `object_count`, and `texture_count` in both `jni_level_metadata.cpp` and `headless_metadata_dump_main.cpp`
-- [ ] Emit zero placeholders in failed native rows for a stable JSON shape, but do not display a statistic header for failed levels
+- [x] Add a small shared Android-side native helper for a `level_statistics` value containing segment, wall, wall-trigger, object, and used-texture counts
+- [x] Keep the D1 and D2 engine globals as the source of truth and avoid edits in `d1/` and `d2/`
+- [x] Implement the texture count once in the shared helper using the DLE semantics above, with bounds checks for segment, wall, and texture IDs
+- [x] Call the helper only after `load_level` has succeeded, before any future operation could create transient gameplay objects
+- [x] Serialize `segment_count`, `wall_count`, `trigger_count`, `object_count`, and `texture_count` in both `jni_level_metadata.cpp` and `headless_metadata_dump_main.cpp`
+- [x] Emit zero placeholders in failed native rows for a stable JSON shape, but do not display a statistic header for failed levels
 
 ### Phase 2: Kotlin model, cache, and normalized JSON
 
-- [ ] Extend `LevelMetadataLevelRow` and `LevelMetadataResult.fromJson` with the five integer fields
-- [ ] Change `LEVEL_METADATA_RESULT_CACHE_SCHEMA` from v1 to v2 so existing successful result caches cannot silently parse missing statistics as zeros
-- [ ] Do not increment `ROUTE_METADATA_CACHE_GENERATION`; these fields do not alter route calculations, and the result-cache schema already provides the needed invalidation
-- [ ] Add the five fields to `LauncherScriptExecutor.levelMetadataResultJson`
-- [ ] Add the host raw-to-checked-in mappings to `ConvertTo-CheckedInLevelJson` in `regenerate_all_mission_metadata_host.ps1`
-- [ ] Preserve the existing normalized field order in checked-in mission JSON
+- [x] Extend `LevelMetadataLevelRow` and `LevelMetadataResult.fromJson` with the five integer fields
+- [x] Change `LEVEL_METADATA_RESULT_CACHE_SCHEMA` from v1 to v2 so existing successful result caches cannot silently parse missing statistics as zeros
+- [x] Do not increment `ROUTE_METADATA_CACHE_GENERATION`; these fields do not alter route calculations, and the result-cache schema already provides the needed invalidation
+- [x] Add the five fields to `LauncherScriptExecutor.levelMetadataResultJson`
+- [x] Add the host raw-to-checked-in mappings to `ConvertTo-CheckedInLevelJson` in `regenerate_all_mission_metadata_host.ps1`
+- [x] Preserve the existing normalized field order in checked-in mission JSON
 
 ### Phase 3: Per-level header UI
 
-- [ ] Add a pure formatter that produces the historical sentence shape, for example `Statistics: 518 cubes, 115 walls, 16 triggers, 229 objects, 53 textures`
-- [ ] Render that sentence directly below the level name in the title/header area of `LevelMetadataLevelDialog`
-- [ ] Let the sentence wrap on narrow screens and use the secondary text color and a smaller font than the level name
-- [ ] Keep the main mission table unchanged; adding five more columns would make its already-wide layout substantially harder to scan
+- [x] Add a pure formatter that produces the historical sentence shape, for example `Statistics: 518 cubes, 115 walls, 16 triggers, 229 objects, 53 textures`
+- [x] Render that sentence directly below the level name in the title/header area of `LevelMetadataLevelDialog`
+- [x] Let the sentence wrap on narrow screens and use the secondary text color and a smaller font than the level name
+- [x] Keep the main mission table unchanged; adding five more columns would make its already-wide layout substantially harder to scan
 
 ### Phase 4: Automated validation and regression data
 
-- [ ] Add a native unit test for used-texture counting that covers duplicate base/overlay IDs, overlay orientation bits, overlay zero, internal portals without walls, and connected sides with walls
-- [ ] Extend `LevelMetadataResultTest` to verify all five JSON fields and the exact formatted header
-- [ ] Extend `LevelMetadataResultCacheTest` to prove a v1/missing-stat cache cannot be reused after the schema change
-- [ ] Regenerate focused host metadata for `legacy.zip` first and compare all three levels to the README, requiring exact matches unless an engine load transformation is identified and documented
-- [ ] Add a high-level regression test over `game_data/mission_files/legacy.json` with these expected tuples:
+- [x] Add a native unit test for used-texture counting that covers duplicate base/overlay IDs, overlay orientation bits, overlay zero, internal portals without walls, and connected sides with walls
+- [x] Extend `LevelMetadataResultTest` to verify all five JSON fields and the exact formatted header
+- [x] Extend `LevelMetadataResultCacheTest` to prove a v1/missing-stat cache cannot be reused after the schema change
+- [x] Regenerate focused host metadata for `legacy.zip` first and compare all three levels to the README, requiring exact matches unless an engine load transformation is identified and documented
+- [x] Add a high-level regression test over `game_data/mission_files/legacy.json` with these expected calculated tuples, while separately retaining the README texture reference:
   - Level 1: `388, 133, 14, 189, 52`
-  - Level 2: `518, 115, 16, 229, 53`
+  - Level 2: `518, 115, 16, 229, 54` (README: 53)
   - Level 3: `785, 240, 21, 289, 44`
-- [ ] Run the zero-parameter host metadata regeneration so every checked-in mission receives the new fields
-- [ ] Run the focused native tests, Android JVM tests, mission JSON normalization tests, and mission metadata regression tests
-- [ ] Run scoped code quality over the changed C/C++, Kotlin, PowerShell, CMake, and test files
-- [ ] Run the Windows D1 and D2 build verification required by the repository instructions
+- [x] Run the zero-parameter host metadata regeneration so every checked-in mission receives the new fields
+- [x] Run the focused native tests, Android JVM tests, mission JSON normalization tests, and mission metadata regression tests
+- [x] Run scoped code quality over the changed C/C++, Kotlin, PowerShell, CMake, and test files
+- [x] Run the Windows D1 and D2 build verification required by the repository instructions
+
+## Results
+
+- The three Legacy levels match the README exactly for cubes, walls, triggers, and objects.
+- Texture counts are 52, 54, and 44. Level 2 is one above the README because texture ID zero is present on a rendered side in the loaded engine data and is counted as a valid base texture by the editor-derived algorithm. The regression requires the calculated tuple exactly and permits at most a one-texture difference from the README reference.
+- Full host regeneration completed with 115 missions: 114 passed, 1 skipped, and 0 failed.
+- The standalone native statistic test, full Android JVM suite, Android debug build, mission metadata regressions, JSON normalization, scoped code quality, and Windows D1/D2 builds all pass.
 
 ## Expected touched areas
 

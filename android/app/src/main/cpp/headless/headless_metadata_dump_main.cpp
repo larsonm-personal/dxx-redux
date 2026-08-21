@@ -37,19 +37,19 @@ extern "C" {
 #include "player.h"
 #include "powerup.h"
 #include "screens.h"
+#include "segment.h"
 #include "secret_area_scan.h"
 #include "secretarea.h"
 #include "songs.h"
 #include "strutil.h"
-#ifdef DXX_BUILD_DESCENT_II
 #include "switch.h"
-#endif
 #include "texmerge.h"
 #include "text.h"
 #include "u_mem.h"
 #include "wall.h"
 }
 
+#include "level_statistics.hpp"
 #include "route_planner.h"
 #include "midi_metadata_json.hpp"
 
@@ -958,7 +958,8 @@ static void count_level_objects(int *robots, int *hostages)
 }
 
 static nlohmann::ordered_json serialize_current_level(
-    int level_num, const char *level_file, int base_player_ship_radius)
+    int level_num, const char *level_file, int base_player_ship_radius,
+    const level_statistics &statistics)
 {
 	const level_metadata_state *metadata = level_metadata_get_canonical_state();
 	const secret_area_state *state = secret_area_get_state();
@@ -977,6 +978,11 @@ static nlohmann::ordered_json serialize_current_level(
 	    sizeof(display_level_name));
 	result["level_name"] = display_level_name;
 	result["level_file"] = level_file ? level_file : "";
+	result["segment_count"] = statistics.segment_count;
+	result["wall_count"] = statistics.wall_count;
+	result["trigger_count"] = statistics.trigger_count;
+	result["object_count"] = statistics.object_count;
+	result["texture_count"] = statistics.texture_count;
 	result["robot_count"] = robots;
 	result["hostage_count"] = hostages;
 	result["scanner_enabled"] = state->enabled ? true : false;
@@ -1035,6 +1041,11 @@ static nlohmann::ordered_json serialize_failed_level(int level_num, const char *
 	result["secret"] = level_num < 0;
 	result["level_name"] = "";
 	result["level_file"] = level_file ? level_file : "";
+	result["segment_count"] = 0;
+	result["wall_count"] = 0;
+	result["trigger_count"] = 0;
+	result["object_count"] = 0;
+	result["texture_count"] = 0;
 	result["robot_count"] = 0;
 	result["hostage_count"] = 0;
 	result["scanner_enabled"] = false;
@@ -1077,6 +1088,7 @@ static int dump_level(nlohmann::ordered_json &levels, int level_num, const char 
 	const secret_area_state *state;
 	int total;
 	int base_player_ship_radius = 0;
+	level_statistics statistics = {};
 
 	if (timing) {
 		timing->begin_total();
@@ -1115,6 +1127,9 @@ static int dump_level(nlohmann::ordered_json &levels, int level_num, const char 
 	level_metadata_set_switch_projectile_radius_override(
 	    base_switch_projectile_radius);
 #endif
+	statistics = collect_level_statistics(
+	    Segments, Num_segments, Num_walls, Num_triggers, num_objects,
+	    LEVEL_STATISTICS_TEXTURE_LIMIT);
 	if (coop_start_range)
 		coop_start_range->add(count_loaded_coop_start_objects());
 	trace_dump_init("rescan_level");
@@ -1146,7 +1161,7 @@ static int dump_level(nlohmann::ordered_json &levels, int level_num, const char 
 	if (timing)
 		timing->begin("serialize_output");
 	levels.push_back(serialize_current_level(
-	    level_num, level_file, base_player_ship_radius));
+	    level_num, level_file, base_player_ship_radius, statistics));
 	if (timing) {
 		timing->finish("serialize_output");
 		timing->finish_total();

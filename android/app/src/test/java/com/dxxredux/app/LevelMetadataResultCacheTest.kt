@@ -1,5 +1,6 @@
 package com.dxxredux.app
 
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
@@ -93,6 +94,34 @@ class LevelMetadataResultCacheTest {
                 LevelMetadataResult.fromJson(resultJson("d2")),
             ),
         )
+    }
+
+    @Test
+    fun `v1 result cache envelope is rejected`() {
+        val root = temporaryFolder.newFolder("cache-v1")
+        val source = temporaryFolder.newFile("legacy.hog").apply { writeText("level") }
+        val target =
+            LevelMetadataTarget(
+                displayName = "Legacy",
+                game = "d2",
+                sourceType = "hog",
+                sourcePath = source.absolutePath,
+                normalLevelFiles = listOf("legacy.rl2"),
+            )
+        val identity = checkNotNull(LevelMetadataResultCache.identify(target))
+        val cacheFile = LevelMetadataResultCache.cacheFile(root, identity)
+        checkNotNull(cacheFile.parentFile).mkdirs()
+        cacheFile.writeText(
+            JSONObject()
+                .put("schema", "dxx-level-metadata-result-cache-v1")
+                .put("route_cache_generation", ROUTE_METADATA_CACHE_GENERATION)
+                .put("identity", identity.key)
+                .put("result", JSONObject(resultJson("d2")))
+                .toString(),
+        )
+
+        assertNull(LevelMetadataResultCache.read(root, identity, target, 1))
+        assertEquals(false, cacheFile.exists())
     }
 
     private fun resultJson(game: String): String =

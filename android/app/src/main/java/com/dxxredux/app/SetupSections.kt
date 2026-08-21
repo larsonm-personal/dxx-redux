@@ -3475,7 +3475,22 @@ private fun LevelMetadataLevelDialog(
             }
         },
         title = {
-            Text(row.levelName.ifBlank { row.levelFile }, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Column {
+                Text(row.levelName.ifBlank { row.levelFile }, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                if (row.status.equals("ok", ignoreCase = true)) {
+                    Text(
+                        formatLevelMetadataStatistics(
+                            row.segmentCount,
+                            row.wallCount,
+                            row.triggerCount,
+                            row.objectCount,
+                            row.textureCount,
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp,
+                    )
+                }
+            }
         },
         text = {
             Box(
@@ -3548,6 +3563,14 @@ private fun LevelMetadataLevelDialog(
         },
     )
 }
+
+internal fun formatLevelMetadataStatistics(
+    segments: Int,
+    walls: Int,
+    triggers: Int,
+    objects: Int,
+    textures: Int,
+): String = "Statistics: $segments cubes, $walls walls, $triggers triggers, $objects objects, $textures textures"
 
 private fun formatLevelMetadataLevelNumber(row: LevelMetadataLevelRow): String =
     if (row.secret) {

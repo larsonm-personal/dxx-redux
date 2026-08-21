@@ -6,7 +6,7 @@ import java.io.File
 import java.security.MessageDigest
 import java.util.Locale
 
-private const val LEVEL_METADATA_RESULT_CACHE_SCHEMA = "dxx-level-metadata-result-cache-v1"
+private const val LEVEL_METADATA_RESULT_CACHE_SCHEMA = "dxx-level-metadata-result-cache-v2"
 private const val LEVEL_METADATA_RESULT_CACHE_MAX_FILES = 512
 private const val LEVEL_METADATA_RESULT_CACHE_MAX_BYTES = 256L * 1024L * 1024L
 private const val LEVEL_METADATA_RESULT_CACHE_FILE_MAX_BYTES = 32L * 1024L * 1024L

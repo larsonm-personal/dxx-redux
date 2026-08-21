@@ -296,6 +296,11 @@ function ConvertTo-CheckedInLevelJson {
         secret = [bool](Get-Prop $Level "secret" ($levelNum -lt 0))
         level_name = Get-StringProp $Level "level_name"
         level_file = Get-StringProp $Level "level_file"
+        segment_count = [int](Get-Prop $Level "segment_count" 0)
+        wall_count = [int](Get-Prop $Level "wall_count" 0)
+        trigger_count = [int](Get-Prop $Level "trigger_count" 0)
+        object_count = [int](Get-Prop $Level "object_count" 0)
+        texture_count = [int](Get-Prop $Level "texture_count" 0)
         robots = [int](Get-Prop $Level "robot_count" 0)
         hostages = [int](Get-Prop $Level "hostage_count" 0)
         secrets = [int](Get-Prop $Level "secret_count" 0)
