@@ -67,12 +67,20 @@ class RouteMetadataPrecomputeMonitorTest {
         assertEquals(420, active.currentProgressCompleted)
         assertEquals(1_000, active.currentProgressTotal)
 
-        monitor.launchHandoff("timeout", 8_000L, 1, workerWasActive = true, graceMs = 100L)
+        monitor.launchHandoff(
+            "timeout",
+            8_000L,
+            1,
+            workerWasActive = true,
+            graceMs = 100L,
+            cleanupPending = true,
+        )
         val paused = monitor.readSnapshot()
         assertEquals("paused_for_game", paused.phase)
         assertTrue(paused.statusMessage.contains("timed out"))
         assertTrue(monitor.readRecentLines().any { "GAME_HANDOFF status=timeout" in it })
         assertTrue(monitor.readRecentLines().any { "worker_was_active=true grace_ms=100" in it })
+        assertTrue(monitor.readRecentLines().any { "cleanup_pending=true" in it })
     }
 
     @Test

@@ -3,6 +3,31 @@
 Date: 2026-08-19
 Status: implementation complete, device verification deferred
 
+## Follow-up: popup duration and theme
+
+Date: 2026-08-20
+Status: implementation complete, device verification requested
+
+- [x] Stop awaiting the canceled coordinator after the 100 ms explicit-launch
+  worker grace and process termination
+- [x] End launcher preparation feedback before requesting the game activity
+- [x] Limit the modal popup to the 100 ms metadata-handoff phase rather than
+  holding it open throughout filesystem preflight
+- [x] Put launcher dialogs and the setup screen under one shared dark launcher
+  Material theme
+- [x] Extend focused timing diagnostics and monitor coverage
+- [x] Run scoped quality, unit tests, and the Android debug build
+
+Follow-up verification:
+
+- Scoped Kotlin formatting and lint passed
+- A fresh non-incremental Kotlin compilation passed after stopping stale Gradle
+  daemons
+- Focused preparation, scheduling, and handoff-monitor tests passed
+- Full `:app:testDebugUnitTest` passed
+- `:app:assembleDebug` passed for arm64-v8a, armeabi-v7a, and x86_64
+- No emulator or connected device was used
+
 ## Goal
 
 Reduce or explain the silent delay between selecting `Load Last Save` in the

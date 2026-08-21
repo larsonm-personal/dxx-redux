@@ -116,6 +116,9 @@ internal fun launcherPreparationLabel(state: LauncherPreparationState): String =
         }
     }
 
+internal fun launcherPreparationShowsDialog(state: LauncherPreparationState): Boolean =
+    state.phase == LauncherPreparationPhase.PAUSING_METADATA
+
 /**
  * Pre-game setup screen built with Jetpack Compose.
  *
@@ -421,7 +424,7 @@ class SetupActivity : ComponentActivity() {
                 )
                 withContext(Dispatchers.Main.immediate) {
                     if (!isFinishing && !isDestroyed) {
-                        updateLaunchPreparation(LauncherPreparationPhase.STARTING_GAME)
+                        finishLaunchPreparation("handoff_complete")
                         try {
                             startActivity(intent)
                         } catch (e: Exception) {
@@ -2158,24 +2161,26 @@ class SetupActivity : ComponentActivity() {
 
         setContent {
             var launchPreflightMessage by launchFailureMessage
-            launchPreflightMessage?.let { message ->
-                AlertDialog(
-                    onDismissRequest = { launchPreflightMessage = null },
-                    title = { Text("Launch Blocked") },
-                    text = {
-                        SelectionContainer {
-                            Text(message, fontSize = 12.sp)
-                        }
-                    },
-                    confirmButton = {
-                        TextButton(onClick = { launchPreflightMessage = null }) {
-                            Text("OK")
-                        }
-                    },
-                )
-            }
-            launchPreparation.value?.let { preparation ->
-                LauncherPreparationDialog(preparation)
+            LauncherTheme {
+                launchPreflightMessage?.let { message ->
+                    AlertDialog(
+                        onDismissRequest = { launchPreflightMessage = null },
+                        title = { Text("Launch Blocked") },
+                        text = {
+                            SelectionContainer {
+                                Text(message, fontSize = 12.sp)
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = { launchPreflightMessage = null }) {
+                                Text("OK")
+                            }
+                        },
+                    )
+                }
+                launchPreparation.value?.takeIf(::launcherPreparationShowsDialog)?.let { preparation ->
+                    LauncherPreparationDialog(preparation)
+                }
             }
             SetupScreen(
                 filesDir = filesDir,
@@ -2560,9 +2565,6 @@ class SetupActivity : ComponentActivity() {
     }
 
     override fun onPause() {
-        if (launchPreparation.value?.phase == LauncherPreparationPhase.STARTING_GAME) {
-            finishLaunchPreparation("activity_started")
-        }
         routeMetadataCoordinator.stop("launcher paused")
         super.onPause()
     }
@@ -2599,6 +2601,11 @@ class SetupActivity : ComponentActivity() {
 }
 
 // -- Composables -------------------------------------------------------------
+
+@Composable
+private fun LauncherTheme(content: @Composable () -> Unit) {
+    MaterialTheme(colorScheme = darkColorScheme(), content = content)
+}
 
 @Composable
 private fun LauncherPreparationDialog(preparation: LauncherPreparationState) {
@@ -3439,7 +3446,7 @@ private fun SetupScreen(
         }
     }
 
-    MaterialTheme(colorScheme = darkColorScheme()) {
+    LauncherTheme {
         if (showControllerPage) {
             val activity = LocalContext.current as SetupActivity
             DisposableEffect(Unit) {
@@ -3459,7 +3466,7 @@ private fun SetupScreen(
                 onPickerOpenChanged = { activity.controllerConfigDialogOpen = it },
                 onBack = { showControllerPage = false },
             )
-            return@MaterialTheme
+            return@LauncherTheme
         }
         if (showTouchEditorPage) {
             BackHandler { showTouchEditorPage = false }
@@ -3467,7 +3474,7 @@ private fun SetupScreen(
                 gameVariant = selectedGame,
                 onBack = { showTouchEditorPage = false },
             )
-            return@MaterialTheme
+            return@LauncherTheme
         }
         if (showAdvancedPage) {
             BackHandler { showAdvancedPage = false }
@@ -3481,7 +3488,7 @@ private fun SetupScreen(
                 onClearRouteMetadataCache = onClearRouteMetadataCache,
                 onBack = { showAdvancedPage = false },
             )
-            return@MaterialTheme
+            return@LauncherTheme
         }
         if (showGraphicsPage) {
             BackHandler { showGraphicsPage = false }
@@ -3491,7 +3498,7 @@ private fun SetupScreen(
                 controllerFocusActive = shouldSeedLauncherFocus,
                 onBack = { showGraphicsPage = false },
             )
-            return@MaterialTheme
+            return@LauncherTheme
         }
         if (showEnginePrefsPage) {
             BackHandler { closeEnginePrefsPage() }
@@ -3501,7 +3508,7 @@ private fun SetupScreen(
                 controllerFocusActive = shouldSeedLauncherFocus,
                 onBack = { closeEnginePrefsPage() },
             )
-            return@MaterialTheme
+            return@LauncherTheme
         }
         if (showMultiplayerPage) {
             BackHandler { showMultiplayerPage = false }
@@ -3509,7 +3516,7 @@ private fun SetupScreen(
                 onBack = { showMultiplayerPage = false },
                 onLaunchGame = onMultiplayerLaunch,
             )
-            return@MaterialTheme
+            return@LauncherTheme
         }
         if (showAutoselectPage) {
             BackHandler { showAutoselectPage = false }
@@ -3518,7 +3525,7 @@ private fun SetupScreen(
                 filesDir = filesDir.absolutePath,
                 onBack = { showAutoselectPage = false },
             )
-            return@MaterialTheme
+            return@LauncherTheme
         }
         if (showMusicPage) {
             BackHandler { showMusicPage = false }
@@ -3527,7 +3534,7 @@ private fun SetupScreen(
                 controllerFocusActive = shouldSeedLauncherFocus,
                 onBack = { showMusicPage = false },
             )
-            return@MaterialTheme
+            return@LauncherTheme
         }
         Surface(
             modifier = Modifier.fillMaxSize(),

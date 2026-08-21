@@ -1,7 +1,9 @@
 package com.dxxredux.app
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
@@ -26,6 +28,17 @@ class ResumeSavePanelTest {
             "Starting Descent 1",
             launcherPreparationLabel(
                 preparing.copy(game = "d1", phase = LauncherPreparationPhase.STARTING_GAME),
+            ),
+        )
+        assertFalse(launcherPreparationShowsDialog(preparing))
+        assertTrue(
+            launcherPreparationShowsDialog(
+                preparing.copy(phase = LauncherPreparationPhase.PAUSING_METADATA),
+            ),
+        )
+        assertFalse(
+            launcherPreparationShowsDialog(
+                preparing.copy(phase = LauncherPreparationPhase.STARTING_GAME),
             ),
         )
     }

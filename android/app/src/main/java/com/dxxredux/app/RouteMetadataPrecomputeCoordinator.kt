@@ -507,7 +507,7 @@ internal class RouteMetadataPrecomputeCoordinator(
         }
     }
 
-    suspend fun stopForGameLaunch(timeoutMs: Long = 8_000L): Boolean {
+    suspend fun stopForGameLaunch(): Boolean {
         gameLaunchPending = true
         monitor.launchHandoff("started")
         val startedAt = SystemClock.elapsedRealtime()
@@ -518,19 +518,16 @@ internal class RouteMetadataPrecomputeCoordinator(
         // An explicit game launch waits only one poll before forcing the isolated worker down.
         if (graceApplied) delay(ROUTE_METADATA_GAME_LAUNCH_GRACE_MS)
         val terminatedProcesses = LevelMetadataAnalyzer.terminateWorkerProcessesForGameLaunch(appContext)
-        val stopped =
-            withTimeoutOrNull(timeoutMs) {
-                listOfNotNull(previous).joinAll()
-                true
-            } ?: false
+        val cleanupPending = previous?.isCompleted == false
         monitor.launchHandoff(
-            if (stopped) "complete" else "timeout",
+            "complete",
             SystemClock.elapsedRealtime() - startedAt,
             terminatedProcesses,
             workerWasActive,
             if (graceApplied) ROUTE_METADATA_GAME_LAUNCH_GRACE_MS else 0L,
+            cleanupPending,
         )
-        return stopped
+        return true
     }
 
     private fun cancelRunner(): Job? =
