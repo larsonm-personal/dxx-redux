@@ -9,6 +9,34 @@ Date: 2026-08-19
 - Keep one parser and one naming policy across the launcher, Android game runtime, and host/emulator mission metadata generators
 - Preserve existing D1 and D2 desktop behavior by keeping game integration in shared Android sources and Android build wiring
 
+## Regression projection correction (2026-08-20)
+
+- [x] Confirm the regenerated regression files incorrectly contain full MIDI/audio metadata rows
+- [x] Replace `music_tracks` in regression output with `track_names: [{"track": N, "name": "..."}]`
+- [x] Resolve each name from embedded metadata first and use the same mechanical filename/slot fallback when metadata has no useful name
+- [x] Keep detailed MIDI/audio metadata available to the launcher browser and runtime caches, but out of checked-in regression JSON
+- [x] Update the host and Android regression writers from one shared native projection
+- [x] Update focused tests and automation assertions for the compact contract
+- [x] Regenerate checked-in mission metadata and confirm no `music_tracks` keys remain
+- [x] Verify host/emulator parity, Android build, native/JVM tests, scoped code quality, and `git diff --check`
+
+## Compact track details extension (2026-08-20)
+
+- [x] Determine one duration source for HMP, MIDI, MP3, OGG, and FLAC in the shared native analyzer
+- [x] Add `filename`, normalized `format`, and `length_s` to every regression `track_names` row
+- [x] Include `parse_status` only when the underlying metadata or duration parse is not successful
+- [x] Update the Kotlin model, Android projection, host projection, and focused contract tests
+- [x] Rebuild the native analyzers and Android app, then regenerate the checked-in mission metadata
+- [x] Verify all supported formats, host/emulator parity, scoped code quality, and `git diff --check`
+
+## MIDI sequence-name fallback survey (2026-08-20)
+
+- [x] Inspect unresolved Disint Beta 3 tracks and their native MIDI text events
+- [x] Survey unresolved MIDI/HMP rows across the mission corpus for reusable sequence-name patterns
+- [x] Define concise conservative fallback rules and add focused native fixtures
+- [x] Implement the shared native inference change and regenerate regression metadata
+- [x] Audit changed names for false positives and verify host/emulator parity, builds, tests, and code quality
+
 ## Investigation completed
 
 - [x] Read `.github/copilot-instructions.md`
@@ -168,7 +196,7 @@ Compressed rows add artist/album and the normalized property list. MIDI rows ret
 - [x] Add a shared CMake helper that configures a static, read-only-oriented TagLib build with only MPEG/ID3 and Vorbis/FLAC enabled
 - [x] Add the bounded path and PhysFS parser plus plain C result ownership API
 - [x] Add normalized property extraction and the shared `Title (Composer)` policy
-- [ ] Add native fixtures for ID3v1, ID3v2.3/v2.4 UTF-8/UTF-16, Vorbis comments, FLAC comments, multiple composers, no tags, malformed lengths, oversized values, and invalid UTF-8
+- [x] Add native fixtures for ID3v1, ID3v2.3/v2.4 UTF-8/UTF-16, Vorbis comments, FLAC comments, multiple composers, no tags, malformed lengths, oversized values, and invalid UTF-8
 
 Exit gate: native tests pass under MSVC and the Android toolchain, malformed fixtures do not crash, and parser output is byte-stable
 
@@ -176,7 +204,7 @@ Exit gate: native tests pass under MSVC and the Android toolchain, malformed fix
 
 - [x] Add `AudioTagMetadataBridge.kt` and JNI path parsing to the existing D2 launcher library
 - [x] Add serializable Kotlin models matching the native JSON contract
-- [ ] Extract a small reusable metadata-lines/printout component shared in presentation with MIDI preview
+- [x] Extract a small reusable metadata-lines/printout component shared in presentation with MIDI preview
 - [x] Load compressed tags lazily from the already staged preview file on IO
 - [x] Show normalized fields and ordered raw textual properties in the mission music dialog/preview
 
@@ -197,8 +225,8 @@ Exit gate: a tagged fixture with forced fingerprint failure appears as `Title (C
 
 - [x] Generalize `midi_metadata_json.hpp` to serialize active MIDI and compressed audio metadata from one shared implementation
 - [x] Update Android JNI and headless analyzer call sites
-- [ ] Extend host/emulator parity tests and normalized checked-in JSON expectations
-- [ ] Regenerate affected mission metadata through the standard generator only after schema and ordering tests pass
+- [x] Extend host/emulator parity tests and normalized checked-in JSON expectations
+- [x] Regenerate affected mission metadata through the standard generator only after schema and ordering tests pass
 
 Exit gate: host and emulator `music_tracks` output is identical and stable for mixed MIDI/OGG mission song lists
 
@@ -208,7 +236,7 @@ Exit gate: host and emulator `music_tracks` output is identical and stable for m
 - [x] Parse copied and SAF-staged custom tracks without duplicate staging
 - [x] Show full tags in custom track info
 - [x] Resolve `custom_music_names.json` as fingerprint, then embedded summary
-- [ ] Add import, persistence, playlist regeneration, SAF staging, and name-precedence tests
+- [x] Add import, persistence, playlist regeneration, SAF staging, and name-precedence tests
 
 Exit gate: copied and SAF-referenced files use embedded fallback in picker and in-game jukebox list/overlay when fingerprint matching is unavailable
 
@@ -220,7 +248,7 @@ Exit gate: copied and SAF-referenced files use embedded fallback in picker and i
 - [x] Run scoped code quality across every touched C, C++, CMake, Kotlin, test, and plan path
 - [x] Run D1 and D2 Windows host builds with `run-windows-build.ps1`
 - [x] Set JDK 21 and assemble the Android debug APK
-- [ ] Run the emulator integration test and inspect automation/introspection JSON
+- [x] Run the emulator integration test and inspect automation/introspection JSON
 - [x] Run `git diff --check`
 
 Exit gate: tests, D1/D2 host builds, Android build, lint, and emulator verification pass

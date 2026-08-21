@@ -440,6 +440,44 @@ class LauncherScriptExecutor(
                         )
                         return
                     }
+                    val minMusicTracks = step.optInt("min_music_tracks", 0)
+                    val musicTracks = results.flatMap { it.musicTracks }
+                    if (musicTracks.size < minMusicTracks) {
+                        fail(
+                            "analyze_level_metadata_all: music tracks=${musicTracks.size} " +
+                                "expected at least $minMusicTracks",
+                        )
+                        return
+                    }
+                    val expectedMusicFormat = step.optString("expect_music_format")
+                    val expectedMusicTitle = step.optString("expect_music_title")
+                    val expectedMusicComposer = step.optString("expect_music_composer")
+                    val expectedMusicDisplayName = step.optString("expect_music_display_name")
+                    if (
+                        listOf(
+                            expectedMusicFormat,
+                            expectedMusicTitle,
+                            expectedMusicComposer,
+                            expectedMusicDisplayName,
+                        ).any { it.isNotBlank() } &&
+                        musicTracks.none { track ->
+                            (expectedMusicFormat.isBlank() || track.format == expectedMusicFormat) &&
+                                (expectedMusicTitle.isBlank() || track.metadata.title == expectedMusicTitle) &&
+                                (expectedMusicComposer.isBlank() || track.metadata.composer == expectedMusicComposer) &&
+                                (
+                                    expectedMusicDisplayName.isBlank() ||
+                                        track.metadata.display_name == expectedMusicDisplayName
+                                )
+                        }
+                    ) {
+                        fail(
+                            "analyze_level_metadata_all: expected music metadata " +
+                                "format=$expectedMusicFormat title=$expectedMusicTitle " +
+                                "composer=$expectedMusicComposer " +
+                                "display_name=$expectedMusicDisplayName",
+                        )
+                        return
+                    }
                     Log.i(
                         TAG,
                         "ASSERT_PASS: level metadata targets=${results.size} total_levels=$totalLevels",
@@ -1124,65 +1162,8 @@ class LauncherScriptExecutor(
                     if (result.coopStarts.isNotBlank()) put("coop_starts", result.coopStarts)
                     if (result.musicTracks.isNotEmpty()) {
                         put(
-                            "music_tracks",
-                            JSONArray().apply {
-                                result.musicTracks.forEach { track ->
-                                    put(
-                                        JSONObject()
-                                            .put("slot_index", track.slotIndex)
-                                            .put("slot_kind", track.slotKind)
-                                            .put("filename", track.filename)
-                                            .put("format", track.format)
-                                            .put("metadata_source_filename", track.metadata.metadata_source_filename)
-                                            .put("inherited_from_midi", track.metadata.inherited_from_midi)
-                                            .put("parse_status", track.metadata.parse_status)
-                                            .put("smf_format", track.metadata.smf_format)
-                                            .put("track_count", track.metadata.track_count)
-                                            .put("time_division", track.metadata.time_division)
-                                            .put("title", track.metadata.title)
-                                            .put("composer", track.metadata.composer)
-                                            .put("display_name", track.metadata.display_name)
-                                            .put("metadata_truncated", track.metadata.metadata_truncated)
-                                            .put(
-                                                "text_events",
-                                                JSONArray().apply {
-                                                    track.metadata.text_events.forEach { event ->
-                                                        put(
-                                                            JSONObject()
-                                                                .put("track_index", event.track_index)
-                                                                .put("type", event.type)
-                                                                .put("text", event.text),
-                                                        )
-                                                    }
-                                                },
-                                            ).apply {
-                                                track.audioMetadata?.let { audio ->
-                                                    put("artist", audio.artist)
-                                                    put("album_artist", audio.album_artist)
-                                                    put("album", audio.album)
-                                                    put("date", audio.date)
-                                                    put("genre", audio.genre)
-                                                    put("comment", audio.comment)
-                                                    put("copyright", audio.copyright)
-                                                    put("track_number", audio.track_number)
-                                                    put("disc_number", audio.disc_number)
-                                                    put(
-                                                        "properties",
-                                                        JSONArray().apply {
-                                                            audio.properties.forEach { property ->
-                                                                put(
-                                                                    JSONObject()
-                                                                        .put("key", property.key)
-                                                                        .put("values", JSONArray(property.values)),
-                                                                )
-                                                            }
-                                                        },
-                                                    )
-                                                }
-                                            },
-                                    )
-                                }
-                            },
+                            "track_names",
+                            levelMetadataTrackNamesJson(result.musicTracks),
                         )
                     }
                 }.put("level_count", result.levels.size)
@@ -1522,3 +1503,33 @@ class LauncherScriptExecutor(
         File(context.filesDir, "automation_result.json.tmp").delete()
     }
 }
+
+internal fun levelMetadataTrackNamesJson(tracks: List<LevelMetadataMusicTrack>): JSONArray =
+    JSONArray().apply {
+        tracks.forEach { track ->
+            val parseStatus = track.metadata.parse_status
+            put(
+                JSONObject()
+                    .put("track", track.slotIndex)
+                    .put("name", track.resolvedName)
+                    .put("filename", track.filename)
+                    .put("format", track.format)
+                    .put(
+                        "length_s",
+                        if (track.durationMs >
+                            0
+                        ) {
+                            ((track.durationMs.toLong() + 500) / 1000).toInt()
+                        } else {
+                            0
+                        },
+                    ).apply {
+                        if (parseStatus != "ok" && parseStatus != "no_tags") {
+                            put("parse_status", parseStatus)
+                        } else if (track.durationMs <= 0) {
+                            put("parse_status", "duration_unavailable")
+                        }
+                    },
+            )
+        }
+    }

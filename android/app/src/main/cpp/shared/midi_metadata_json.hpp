@@ -40,6 +40,21 @@ static inline const char *midi_metadata_slot_kind(int index)
 	}
 }
 
+static inline std::string active_music_fallback_name(const char *filename, int index, bool is_audio)
+{
+	if (is_audio) {
+		std::string name = filename ? filename : "";
+		const std::string::size_type slash = name.find_last_of("/\\");
+		if (slash != std::string::npos) name.erase(0, slash + 1);
+		const std::string::size_type dot = name.find_last_of('.');
+		if (dot != std::string::npos) name.erase(dot);
+		return name;
+	}
+	int display_number = index - SONG_FIRST_LEVEL_SONG + 1;
+	if (display_number < 1) display_number = index;
+	return "MIDI Track " + std::to_string(display_number);
+}
+
 template <typename Json>
 static Json serialize_active_music_metadata()
 {
@@ -66,6 +81,7 @@ static Json serialize_active_music_metadata()
 			row["filename"] = filename;
 			row["format"] = format;
 			row["parse_status"] = audio_tag_status_name(audio_metadata.status);
+			row["duration_ms"] = audio_metadata.duration_ms;
 			row["title"] = audio_metadata.title;
 			row["composer"] = audio_metadata.composer;
 			row["artist"] = audio_metadata.artist;
@@ -78,6 +94,9 @@ static Json serialize_active_music_metadata()
 			row["track_number"] = audio_metadata.track_number;
 			row["disc_number"] = audio_metadata.disc_number;
 			row["display_name"] = audio_metadata.display_name;
+			row["resolved_name"] = audio_metadata.display_name[0]
+			                           ? audio_metadata.display_name
+			                           : active_music_fallback_name(filename, index, true);
 			row["metadata_truncated"] = audio_metadata.metadata_truncated != 0;
 			for (unsigned int property_index = 0; property_index < audio_metadata.property_count; ++property_index) {
 				const audio_tag_property &property = audio_metadata.properties[property_index];
@@ -101,12 +120,16 @@ static Json serialize_active_music_metadata()
 		row["metadata_source_filename"] = source_filename;
 		row["inherited_from_midi"] = inherited != 0;
 		row["parse_status"] = midi_metadata_status_name(metadata.status);
+		row["duration_ms"] = metadata.duration_ms;
 		row["smf_format"] = metadata.smf_format;
 		row["track_count"] = metadata.track_count;
 		row["time_division"] = metadata.time_division;
 		row["title"] = metadata.title;
 		row["composer"] = metadata.composer;
 		row["display_name"] = metadata.display_name;
+		row["resolved_name"] = metadata.display_name[0]
+		                           ? metadata.display_name
+		                           : active_music_fallback_name(filename, index, false);
 		row["metadata_truncated"] = metadata.metadata_truncated != 0;
 		for (unsigned int event_index = 0; event_index < metadata.event_count; ++event_index) {
 			const midi_metadata_text_event &event = metadata.events[event_index];

@@ -47,6 +47,38 @@ data class AudioFilePreviewLine(
 )
 
 @Composable
+internal fun MetadataPrintout(
+    lines: List<AudioFilePreviewLine>?,
+    loading: Boolean,
+    emptyMessage: String,
+) {
+    when {
+        loading -> {
+            Text("Reading metadata...", fontSize = 12.sp)
+        }
+
+        lines.isNullOrEmpty() -> {
+            Text(emptyMessage, fontSize = 12.sp)
+        }
+
+        else -> {
+            lines.forEach { line ->
+                Text(
+                    line.text,
+                    fontSize = if (line.small) 10.sp else 11.sp,
+                    color =
+                        if (line.primary) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun AudioFilePreviewDialog(
     title: String,
     audioFile: File,
@@ -181,30 +213,7 @@ fun AudioFilePreviewDialog(
                     )
                 }
                 if (showMetadata) {
-                    when {
-                        metadataLoading -> {
-                            Text("Reading metadata...", fontSize = 12.sp)
-                        }
-
-                        metadataLines.isNullOrEmpty() -> {
-                            Text("No readable embedded metadata.", fontSize = 12.sp)
-                        }
-
-                        else -> {
-                            metadataLines.orEmpty().forEach { line ->
-                                Text(
-                                    line.text,
-                                    fontSize = if (line.small) 10.sp else 11.sp,
-                                    color =
-                                        if (line.primary) {
-                                            MaterialTheme.colorScheme.primary
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurfaceVariant
-                                        },
-                                )
-                            }
-                        }
-                    }
+                    MetadataPrintout(metadataLines, metadataLoading, "No readable embedded metadata.")
                 }
 
                 if (audioFile.exists()) {

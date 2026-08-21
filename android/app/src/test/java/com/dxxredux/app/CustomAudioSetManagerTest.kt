@@ -98,4 +98,46 @@ class CustomAudioSetManagerTest {
         val names = (0 until records.length()).map { records.getJSONObject(it).getString("name") }
         assertEquals(listOf("Embedded Fallback (Composer)", "Database Match"), names)
     }
+
+    @Test
+    fun referencedTrackIsStagedParsedPersistedAndUsesMatchFirst() {
+        val filesDir = File("build/test-custom-audio-referenced").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+        val manager = CustomAudioSetManager(filesDir)
+        manager.addSet(
+            CustomAudioSetManager.AudioSet(
+                id = "linked",
+                label = "Linked",
+                files = listOf("fallback.flac", "matched.ogg"),
+                trackNames = mapOf("matched.ogg" to "Database Match"),
+                referencedUris =
+                    mapOf(
+                        "fallback.flac" to "content://test/fallback",
+                        "matched.ogg" to "content://test/matched",
+                    ),
+            ),
+        )
+        val stagedUris = mutableListOf<String>()
+
+        manager.writeM3UWith(
+            referenceStager = { uri, target, _ ->
+                stagedUris += uri
+                target.writeText("staged")
+            },
+            embeddedNameReader = { _, extension -> "Embedded ${extension.uppercase()}" },
+        )
+
+        assertEquals(listOf("content://test/fallback", "content://test/matched"), stagedUris)
+        assertEquals(
+            mapOf("fallback.flac" to "Embedded FLAC", "matched.ogg" to "Embedded OGG"),
+            CustomAudioSetManager(filesDir).getSets().single().embeddedTrackNames,
+        )
+        val records = JSONObject(File(filesDir, CustomAudioSetManager.NAMES_FILE).readText()).getJSONArray("records")
+        val names = (0 until records.length()).map { records.getJSONObject(it).getString("name") }
+        assertEquals(listOf("Embedded FLAC", "Database Match"), names)
+        val playlist = File(filesDir, CustomAudioSetManager.PLAYLIST_FILE).readLines()
+        assertTrue(playlist.any { it.endsWith("linked_fallback.flac") })
+        assertTrue(playlist.any { it.endsWith("linked_matched.ogg") })
+    }
 }

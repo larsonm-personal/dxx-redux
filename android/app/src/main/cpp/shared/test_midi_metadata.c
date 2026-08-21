@@ -6,10 +6,22 @@
 #include "hmp.h"
 #include "midi_metadata.h"
 
-void *test_hmp_calloc(size_t count, size_t size) { return calloc(count, size); }
-void *test_hmp_malloc(size_t size) { return malloc(size); }
-void *test_hmp_realloc(void *ptr, size_t size) { return realloc(ptr, size); }
-void test_hmp_free(void *ptr) { free(ptr); }
+void *test_hmp_calloc(size_t count, size_t size)
+{
+	return calloc(count, size);
+}
+void *test_hmp_malloc(size_t size)
+{
+	return malloc(size);
+}
+void *test_hmp_realloc(void *ptr, size_t size)
+{
+	return realloc(ptr, size);
+}
+void test_hmp_free(void *ptr)
+{
+	free(ptr);
+}
 
 void hmp_close(hmp_file *hmp)
 {
@@ -83,6 +95,15 @@ static void put_text(byte_buffer *buffer, unsigned int type, const char *text)
 	put_bytes(buffer, text, length);
 }
 
+static void put_vlq(byte_buffer *buffer, uint32_t value)
+{
+	unsigned char bytes[4];
+	unsigned int count = 0;
+	bytes[count++] = (unsigned char) (value & 0x7f);
+	while ((value >>= 7) != 0) bytes[count++] = (unsigned char) ((value & 0x7f) | 0x80);
+	while (count) put_byte(buffer, bytes[--count]);
+}
+
 static void put_end(byte_buffer *buffer)
 {
 	static const unsigned char end[] = { 0, 0xff, 0x2f, 0 };
@@ -112,7 +133,10 @@ static int test_obsidian_style(void)
 	finish_track(&buffer, track);
 	track = begin_track(&buffer);
 	put_text(&buffer, 3, "bass 1");
-	put_byte(&buffer, 0); put_byte(&buffer, 0x90); put_byte(&buffer, 60); put_byte(&buffer, 100);
+	put_byte(&buffer, 0);
+	put_byte(&buffer, 0x90);
+	put_byte(&buffer, 60);
+	put_byte(&buffer, 100);
 	put_end(&buffer);
 	finish_track(&buffer, track);
 	track = begin_track(&buffer);
@@ -151,13 +175,15 @@ static int test_copyright_and_cp1252(void)
 	midi_metadata metadata;
 	size_t track;
 	static const unsigned char copyright_text[] = {
-		'C','o','p','y','r','i','g','h','t',' ',0xa9,' ','1','9','9','8',' ',
-		'b','y',' ','V','e','r','r','a','n',' ','E','v','e','n','t','i','d','e'
+		'C', 'o', 'p', 'y', 'r', 'i', 'g', 'h', 't', ' ', 0xa9, ' ', '1', '9', '9', '8', ' ',
+		'b', 'y', ' ', 'V', 'e', 'r', 'r', 'a', 'n', ' ', 'E', 'v', 'e', 'n', 't', 'i', 'd', 'e'
 	};
 	begin_midi(&buffer, 1);
 	track = begin_track(&buffer);
 	put_text(&buffer, 3, "untitled");
-	put_byte(&buffer, 0); put_byte(&buffer, 0xff); put_byte(&buffer, 2);
+	put_byte(&buffer, 0);
+	put_byte(&buffer, 0xff);
+	put_byte(&buffer, 2);
 	put_byte(&buffer, sizeof(copyright_text));
 	put_bytes(&buffer, copyright_text, sizeof(copyright_text));
 	put_end(&buffer);
@@ -179,7 +205,7 @@ static int test_hmp_metadata(void)
 {
 	static const unsigned char first_track[] = { 0x80, 0xff, 0x2f, 0 };
 	static const unsigned char text_track[] = {
-		0x80, 0xff, 0x03, 0x08, 'H','M','P',' ','S','o','n','g',
+		0x80, 0xff, 0x03, 0x08, 'H', 'M', 'P', ' ', 'S', 'o', 'n', 'g',
 		0x80, 0xff, 0x2f, 0
 	};
 	const size_t total = 0x308 + 12 + sizeof(first_track) + 12 + sizeof(text_track);
@@ -211,8 +237,8 @@ static int test_hmp_metadata(void)
 static int test_rejections(void)
 {
 	static const unsigned char truncated[] = {
-		'M','T','h','d',0,0,0,6,0,1,0,1,1,0xe0,
-		'M','T','r','k',0,0,0,5,0,0xff,3,8,'x'
+		'M', 'T', 'h', 'd', 0, 0, 0, 6, 0, 1, 0, 1, 1, 0xe0,
+		'M', 'T', 'r', 'k', 0, 0, 0, 5, 0, 0xff, 3, 8, 'x'
 	};
 	midi_metadata metadata;
 	midi_metadata_init(&metadata);
@@ -226,10 +252,121 @@ static int test_rejections(void)
 	return 1;
 }
 
+static int test_duration(void)
+{
+	byte_buffer buffer;
+	midi_metadata metadata;
+	size_t track;
+	begin_midi(&buffer, 1);
+	track = begin_track(&buffer);
+	put_byte(&buffer, 0);
+	put_byte(&buffer, 0x90);
+	put_byte(&buffer, 60);
+	put_byte(&buffer, 100);
+	put_vlq(&buffer, 960);
+	put_byte(&buffer, 0x80);
+	put_byte(&buffer, 60);
+	put_byte(&buffer, 0);
+	put_end(&buffer);
+	finish_track(&buffer, track);
+	midi_metadata_init(&metadata);
+	if (midi_metadata_parse(buffer.data, buffer.length, 0, &metadata) != MIDI_METADATA_OK ||
+	    metadata.duration_ms != 1000) {
+		fprintf(stderr, "MIDI duration failed: %dms\n", metadata.duration_ms);
+		midi_metadata_free(&metadata);
+		return 0;
+	}
+	midi_metadata_free(&metadata);
+	return 1;
+}
+
+static int test_sequence_title_fallbacks(void)
+{
+	byte_buffer buffer;
+	midi_metadata metadata;
+	size_t track;
+	begin_midi(&buffer, 4);
+	track = begin_track(&buffer);
+	put_text(&buffer, 1, "DTX 1.02");
+	put_text(&buffer, 6, "<nZero_X@yahoo.com>");
+	put_text(&buffer, 6, "<http://listen.to/voidaudio>");
+	put_text(&buffer, 6, "<Loop>");
+	put_text(&buffer, 6, "<Fade>");
+	put_end(&buffer);
+	finish_track(&buffer, track);
+	track = begin_track(&buffer);
+	put_text(&buffer, 3, "[Twin Cobra] - Gen/TG16");
+	put_end(&buffer);
+	finish_track(&buffer, track);
+	track = begin_track(&buffer);
+	put_text(&buffer, 3, "Tsugaru - Stages 4 & 9");
+	put_end(&buffer);
+	finish_track(&buffer, track);
+	track = begin_track(&buffer);
+	put_text(&buffer, 3, "Sequenced by nZero/Prion");
+	put_end(&buffer);
+	finish_track(&buffer, track);
+	midi_metadata_init(&metadata);
+	if (midi_metadata_parse(buffer.data, buffer.length, 0, &metadata) != MIDI_METADATA_OK ||
+	    strcmp(metadata.display_name, "Tsugaru - Stages 4 & 9")) {
+		fprintf(stderr, "credited sequence title fallback failed: '%s'\n", metadata.display_name);
+		midi_metadata_free(&metadata);
+		return 0;
+	}
+	midi_metadata_free(&metadata);
+
+	begin_midi(&buffer, 2);
+	track = begin_track(&buffer);
+	put_text(&buffer, 3, "Track 0");
+	put_end(&buffer);
+	finish_track(&buffer, track);
+	track = begin_track(&buffer);
+	put_text(&buffer, 3, "\"Cyclone\"");
+	put_end(&buffer);
+	finish_track(&buffer, track);
+	midi_metadata_init(&metadata);
+	if (midi_metadata_parse(buffer.data, buffer.length, 0, &metadata) != MIDI_METADATA_OK ||
+	    strcmp(metadata.display_name, "Cyclone")) {
+		fprintf(stderr, "quoted sequence title fallback failed: '%s'\n", metadata.display_name);
+		midi_metadata_free(&metadata);
+		return 0;
+	}
+	midi_metadata_free(&metadata);
+
+	begin_midi(&buffer, 8);
+	track = begin_track(&buffer);
+	put_end(&buffer);
+	finish_track(&buffer, track);
+	{
+		const char *instruments[] = { "Flute", "Strings 1", "Strings 2", "Basses", "Cellos", "Flute echo" };
+		unsigned int i;
+		for (i = 0; i < sizeof(instruments) / sizeof(instruments[0]); ++i) {
+			track = begin_track(&buffer);
+			put_text(&buffer, 3, instruments[i]);
+			put_end(&buffer);
+			finish_track(&buffer, track);
+		}
+	}
+	track = begin_track(&buffer);
+	put_text(&buffer, 3, "sequenced by");
+	put_end(&buffer);
+	finish_track(&buffer, track);
+	midi_metadata_init(&metadata);
+	if (midi_metadata_parse(buffer.data, buffer.length, 0, &metadata) != MIDI_METADATA_OK ||
+	    metadata.display_name[0]) {
+		fprintf(stderr, "instrument-list credit fallback was not rejected: '%s'\n", metadata.display_name);
+		midi_metadata_free(&metadata);
+		return 0;
+	}
+	midi_metadata_free(&metadata);
+	return 1;
+}
+
 int main(void)
 {
 	if (!test_obsidian_style() || !test_copyright_and_cp1252() ||
-	    !test_hmp_metadata() || !test_rejections())
+	    !test_hmp_metadata() || !test_rejections() || !test_duration() ||
+	    !test_sequence_title_fallbacks())
 		return 1;
 	printf("MIDI metadata tests passed\n");
 	return 0;

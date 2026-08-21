@@ -15,6 +15,12 @@ typedef struct midi_json_buffer {
 	size_t capacity;
 } midi_json_buffer;
 
+typedef struct midi_tempo_event {
+	uint64_t tick;
+	uint32_t tempo_us;
+	unsigned int track;
+} midi_tempo_event;
+
 static uint16_t read_be16(const unsigned char *p)
 {
 	return (uint16_t) (((uint16_t) p[0] << 8) | p[1]);
@@ -56,7 +62,7 @@ static const char *ascii_find_ci(const char *value, const char *needle)
 		size_t i;
 		for (i = 0; i < needle_length; ++i)
 			if (!value[i] || tolower((unsigned char) value[i]) !=
-			                 tolower((unsigned char) needle[i]))
+			                     tolower((unsigned char) needle[i]))
 				break;
 		if (i == needle_length) return value;
 	}
@@ -64,7 +70,7 @@ static const char *ascii_find_ci(const char *value, const char *needle)
 }
 
 static int utf8_sequence_length(const unsigned char *data, size_t length,
-	                            size_t offset)
+                                size_t offset)
 {
 	unsigned char first = data[offset];
 	if (first <= 0x7f)
@@ -112,7 +118,7 @@ static uint16_t cp1252_codepoint(unsigned char value)
 }
 
 static size_t append_utf8_codepoint(char *output, size_t capacity,
-	                                size_t written, uint16_t codepoint)
+                                    size_t written, uint16_t codepoint)
 {
 	if (codepoint <= 0x7f) {
 		if (written + 1 >= capacity) return written;
@@ -131,7 +137,7 @@ static size_t append_utf8_codepoint(char *output, size_t capacity,
 }
 
 static char *decode_text(const unsigned char *data, size_t length,
-	                     unsigned int *truncated)
+                         unsigned int *truncated)
 {
 	size_t limit = length;
 	size_t start, end, i, written = 0;
@@ -172,7 +178,7 @@ static char *decode_text(const unsigned char *data, size_t length,
 }
 
 static int read_vlq(const unsigned char **cursor, const unsigned char *end,
-	                uint32_t *value)
+                    uint32_t *value)
 {
 	unsigned int count = 0;
 	uint32_t result = 0;
@@ -193,8 +199,8 @@ static int read_vlq(const unsigned char **cursor, const unsigned char *end,
 }
 
 static int add_text_event(midi_metadata *metadata, unsigned int track,
-	                      unsigned int type, const unsigned char *data,
-	                      size_t length)
+                          unsigned int type, const unsigned char *data,
+                          size_t length)
 {
 	char *text;
 	if (metadata->event_count == MIDI_METADATA_MAX_EVENTS ||
@@ -224,17 +230,22 @@ static int add_text_event(midi_metadata *metadata, unsigned int track,
 }
 
 static int parse_track(const unsigned char *data, size_t length,
-	                   unsigned int track_index, midi_metadata *metadata,
-	                   unsigned char *has_channel_events)
+                       unsigned int track_index, midi_metadata *metadata,
+                       unsigned char *has_channel_events, uint64_t *track_ticks,
+                       midi_tempo_event **tempo_events, size_t *tempo_count,
+                       size_t *tempo_capacity)
 {
 	const unsigned char *cursor = data;
 	const unsigned char *end = data + length;
 	unsigned char running_status = 0;
+	uint64_t absolute_tick = 0;
 	while (cursor < end) {
-		uint32_t ignored_delta;
+		uint32_t delta;
 		unsigned char status;
-		if (!read_vlq(&cursor, end, &ignored_delta) || cursor == end)
+		if (!read_vlq(&cursor, end, &delta) || cursor == end ||
+		    absolute_tick > UINT64_MAX - delta)
 			return 0;
+		absolute_tick += delta;
 		status = *cursor++;
 		if (status < 0x80) {
 			if (!running_status)
@@ -254,6 +265,22 @@ static int parse_track(const unsigned char *data, size_t length,
 			if (type >= 0x01 && type <= 0x09 &&
 			    !add_text_event(metadata, track_index, type, cursor, meta_length))
 				return -1;
+			if (type == 0x51 && meta_length == 3) {
+				midi_tempo_event *grown;
+				if (*tempo_count == *tempo_capacity) {
+					size_t capacity = *tempo_capacity ? *tempo_capacity * 2u : 16u;
+					if (capacity > SIZE_MAX / sizeof(**tempo_events)) return -1;
+					grown = (midi_tempo_event *) realloc(*tempo_events, capacity * sizeof(**tempo_events));
+					if (!grown) return -1;
+					*tempo_events = grown;
+					*tempo_capacity = capacity;
+				}
+				(*tempo_events)[*tempo_count].tick = absolute_tick;
+				(*tempo_events)[*tempo_count].tempo_us =
+				    ((uint32_t) cursor[0] << 16) | ((uint32_t) cursor[1] << 8) | cursor[2];
+				(*tempo_events)[*tempo_count].track = track_index;
+				++*tempo_count;
+			}
 			cursor += meta_length;
 			running_status = 0;
 			continue;
@@ -278,13 +305,79 @@ static int parse_track(const unsigned char *data, size_t length,
 			cursor += payload;
 		}
 	}
+	*track_ticks = absolute_tick;
 	return 1;
+}
+
+static int compare_tempo_events(const void *left, const void *right)
+{
+	const midi_tempo_event *a = (const midi_tempo_event *) left;
+	const midi_tempo_event *b = (const midi_tempo_event *) right;
+	if (a->tick != b->tick) return a->tick < b->tick ? -1 : 1;
+	if (a->track != b->track) return a->track < b->track ? -1 : 1;
+	return 0;
+}
+
+static int duration_for_ticks(uint64_t end_tick, unsigned int division,
+                              const midi_tempo_event *events, size_t count,
+                              int track_filter)
+{
+	uint64_t elapsed_us = 0, previous_tick = 0;
+	uint32_t tempo_us = 500000;
+	size_t i;
+	if (!division || !end_tick) return 0;
+	for (i = 0; i < count; ++i) {
+		uint64_t delta;
+		if (track_filter >= 0 && events[i].track != (unsigned int) track_filter) continue;
+		if (events[i].tick > end_tick) break;
+		delta = events[i].tick - previous_tick;
+		if (delta > (UINT64_MAX - elapsed_us) / tempo_us) return 0;
+		elapsed_us += delta * tempo_us / division;
+		previous_tick = events[i].tick;
+		if (events[i].tempo_us) tempo_us = events[i].tempo_us;
+	}
+	if (end_tick - previous_tick > (UINT64_MAX - elapsed_us) / tempo_us) return 0;
+	elapsed_us += (end_tick - previous_tick) * tempo_us / division;
+	if (elapsed_us > (uint64_t) INT32_MAX * 1000u) return 0;
+	return (int) ((elapsed_us + 500u) / 1000u);
+}
+
+static int midi_duration_ms(const midi_metadata *metadata, const uint64_t *track_ticks,
+                            const midi_tempo_event *events, size_t count)
+{
+	uint64_t max_tick = 0;
+	unsigned int i;
+	if (metadata->time_division & 0x8000u) {
+		const int fps = -(int) (int8_t) (metadata->time_division >> 8);
+		const int ticks_per_frame = metadata->time_division & 0xffu;
+		for (i = 0; i < metadata->track_count; ++i)
+			if (track_ticks[i] > max_tick) max_tick = track_ticks[i];
+		if (fps <= 0 || ticks_per_frame <= 0 || max_tick > (uint64_t) INT32_MAX * fps * ticks_per_frame / 1000u)
+			return 0;
+		return (int) ((max_tick * 1000u + (uint64_t) fps * ticks_per_frame / 2u) /
+		              ((uint64_t) fps * ticks_per_frame));
+	}
+	if (metadata->smf_format == 2) {
+		int maximum_ms = 0;
+		for (i = 0; i < metadata->track_count; ++i) {
+			const int track_ms = duration_for_ticks(track_ticks[i], metadata->time_division,
+			                                        events, count, (int) i);
+			if (track_ms > maximum_ms) maximum_ms = track_ms;
+		}
+		return maximum_ms;
+	}
+	for (i = 0; i < metadata->track_count; ++i)
+		if (track_ticks[i] > max_tick) max_tick = track_ticks[i];
+	return duration_for_ticks(max_tick, metadata->time_division, events, count, -1);
 }
 
 static int generic_title(const char *text)
 {
 	return ascii_equal_ci(text, "untitled") || ascii_equal_ci(text, "sequence") ||
-	       ascii_equal_ci(text, "track") || ascii_equal_ci(text, "song");
+	       ascii_equal_ci(text, "track") || ascii_equal_ci(text, "song") ||
+	       ascii_equal_ci(text, "loop") || ascii_equal_ci(text, "loopend") ||
+	       ascii_equal_ci(text, "fade") || ascii_equal_ci(text, "<fade>") ||
+	       ascii_equal_ci(text, "new track");
 }
 
 static int plausible_title(const char *text)
@@ -300,6 +393,52 @@ static int plausible_title(const char *text)
 	for (i = 0; i < length; ++i)
 		if (isalpha((unsigned char) text[i])) letters++;
 	return letters >= 2;
+}
+
+static int sequence_title_candidate(const char *text)
+{
+	const char *number;
+	if (!plausible_title(text) || generic_title(text) || strchr(text, '@') ||
+	    ascii_starts_ci(text, "[g]") || ascii_starts_ci(text, "[guf]") ||
+	    ascii_starts_ci(text, "dtx ") || ascii_starts_ci(text, "device=") ||
+	    ascii_starts_ci(text, "qmus") || ascii_starts_ci(text, "mus2midi") ||
+	    ascii_starts_ci(text, "quick mus") || ascii_starts_ci(text, "piste ") ||
+	    ascii_starts_ci(text, "midi ch.") || ascii_starts_ci(text, "midi out") ||
+	    ascii_starts_ci(text, "sequenced by") || ascii_starts_ci(text, "sequence by") ||
+	    ascii_starts_ci(text, "midi sequenced by") || ascii_starts_ci(text, "composed by") ||
+	    ascii_starts_ci(text, "original composer") || ascii_starts_ci(text, "written for") ||
+	    ascii_starts_ci(text, "general midi") || ascii_starts_ci(text, "unified gm") ||
+	    ascii_starts_ci(text, "optimized for") || ascii_starts_ci(text, "known as") ||
+	    ascii_starts_ci(text, "only for use") || ascii_starts_ci(text, "http") ||
+	    ascii_find_ci(text, "copyright") || ascii_find_ci(text, "vgmusic.com"))
+		return 0;
+	if (ascii_starts_ci(text, "track ")) {
+		number = text + 6;
+		if (*number) {
+			while (*number && isdigit((unsigned char) *number)) ++number;
+			if (!*number) return 0;
+		}
+	}
+	return 1;
+}
+
+static int sequence_credit(const char *text)
+{
+	return ascii_find_ci(text, "sequenced by") || ascii_find_ci(text, "sequence by") ||
+	       ascii_find_ci(text, "composed by");
+}
+
+static int copy_quoted_title(char *destination, size_t capacity, const char *text)
+{
+	const char *begin = strchr(text, '"');
+	const char *end = begin ? strchr(begin + 1, '"') : NULL;
+	size_t length;
+	if (!begin || !end || end == begin + 1) return 0;
+	length = (size_t) (end - begin - 1);
+	if (length >= capacity) length = capacity - 1u;
+	memcpy(destination, begin + 1, length);
+	destination[length] = '\0';
+	return sequence_title_candidate(destination);
 }
 
 static int useful_composer(const char *text)
@@ -320,18 +459,45 @@ static void copy_trimmed(char *destination, size_t capacity, const char *source)
 }
 
 static void infer_summary(midi_metadata *metadata,
-	                      const unsigned char *track_has_channel)
+                          const unsigned char *track_has_channel)
 {
 	const char *generic = NULL;
-	unsigned int i;
+	unsigned int credit_index = 0, i, sequence_before_credit = 0;
+	int have_credit = 0;
 	for (i = 0; i < metadata->event_count; ++i) {
 		const midi_metadata_text_event *event = &metadata->events[i];
 		if (event->track_index == 0 && event->type == 0x03) {
-			if (!generic_title(event->text)) {
+			if (sequence_title_candidate(event->text)) {
 				copy_trimmed(metadata->title, sizeof(metadata->title), event->text);
 				break;
 			}
-			generic = event->text;
+			if (generic_title(event->text)) generic = event->text;
+		}
+	}
+	if (!metadata->title[0]) {
+		for (i = 0; i < metadata->event_count; ++i) {
+			const midi_metadata_text_event *event = &metadata->events[i];
+			if (event->type == 0x03 &&
+			    copy_quoted_title(metadata->title, sizeof(metadata->title), event->text))
+				break;
+			metadata->title[0] = '\0';
+		}
+	}
+	if (!metadata->title[0]) {
+		for (i = 0; i < metadata->event_count; ++i)
+			if (metadata->events[i].type == 0x03 && sequence_credit(metadata->events[i].text)) {
+				credit_index = i;
+				have_credit = 1;
+				break;
+			} else if (metadata->events[i].type == 0x03)
+				++sequence_before_credit;
+		while (have_credit && credit_index > 0) {
+			const midi_metadata_text_event *event = &metadata->events[--credit_index];
+			if (event->type == 0x03 && sequence_title_candidate(event->text) &&
+			    (sequence_before_credit <= 4 || ascii_find_ci(event->text, "theme"))) {
+				copy_trimmed(metadata->title, sizeof(metadata->title), event->text);
+				break;
+			}
 		}
 	}
 	for (i = 0; i < metadata->event_count && !metadata->composer[0]; ++i) {
@@ -346,12 +512,12 @@ static void infer_summary(midi_metadata *metadata,
 		if (candidate && useful_composer(candidate))
 			copy_trimmed(metadata->composer, sizeof(metadata->composer), candidate);
 	}
-	if (!metadata->title[0]) {
+	if (!metadata->title[0] && !have_credit) {
 		for (i = 0; i < metadata->event_count; ++i) {
 			const midi_metadata_text_event *event = &metadata->events[i];
-			if (event->track_index < metadata->track_count &&
-			    !track_has_channel[event->track_index] && plausible_title(event->text) &&
-			    !generic_title(event->text) &&
+			if ((event->type == 0x01 || event->type == 0x03) &&
+			    event->track_index < metadata->track_count &&
+			    !track_has_channel[event->track_index] && sequence_title_candidate(event->text) &&
 			    (!metadata->composer[0] || !ascii_equal_ci(event->text, metadata->composer)))
 				copy_trimmed(metadata->title, sizeof(metadata->title), event->text);
 		}
@@ -398,12 +564,15 @@ void midi_metadata_free(midi_metadata *metadata)
 }
 
 int midi_metadata_parse(const unsigned char *data, size_t length, int is_hmp,
-	                    midi_metadata *metadata)
+                        midi_metadata *metadata)
 {
 	const unsigned char *midi = data;
 	size_t midi_length = length, offset;
 	unsigned char *converted = NULL;
 	unsigned char *track_has_channel = NULL;
+	uint64_t *track_ticks = NULL;
+	midi_tempo_event *tempo_events = NULL;
+	size_t tempo_count = 0, tempo_capacity = 0;
 	unsigned int parsed_tracks = 0;
 	int converted_length = 0;
 	int status = MIDI_METADATA_INVALID;
@@ -433,7 +602,8 @@ int midi_metadata_parse(const unsigned char *data, size_t length, int is_hmp,
 	metadata->events = (midi_metadata_text_event *) calloc(
 	    MIDI_METADATA_MAX_EVENTS, sizeof(*metadata->events));
 	track_has_channel = (unsigned char *) calloc(metadata->track_count, 1);
-	if (!metadata->events || !track_has_channel) {
+	track_ticks = (uint64_t *) calloc(metadata->track_count, sizeof(*track_ticks));
+	if (!metadata->events || !track_has_channel || !track_ticks) {
 		status = MIDI_METADATA_ALLOCATION;
 		goto done;
 	}
@@ -448,7 +618,8 @@ int midi_metadata_parse(const unsigned char *data, size_t length, int is_hmp,
 		if (track_length > midi_length - offset)
 			goto done;
 		parsed = parse_track(midi + offset, track_length, parsed_tracks, metadata,
-		                     &track_has_channel[parsed_tracks]);
+		                     &track_has_channel[parsed_tracks], &track_ticks[parsed_tracks],
+		                     &tempo_events, &tempo_count, &tempo_capacity);
 		if (parsed < 0) {
 			status = MIDI_METADATA_ALLOCATION;
 			goto done;
@@ -458,11 +629,15 @@ int midi_metadata_parse(const unsigned char *data, size_t length, int is_hmp,
 		offset += track_length;
 		++parsed_tracks;
 	}
+	qsort(tempo_events, tempo_count, sizeof(*tempo_events), compare_tempo_events);
+	metadata->duration_ms = midi_duration_ms(metadata, track_ticks, tempo_events, tempo_count);
 	infer_summary(metadata, track_has_channel);
 	status = MIDI_METADATA_OK;
 
 done:
 	free(track_has_channel);
+	free(track_ticks);
+	free(tempo_events);
 	if (converted) d_free(converted);
 	metadata->status = status;
 	if (status != MIDI_METADATA_OK) {
@@ -550,10 +725,13 @@ static int json_string(midi_json_buffer *buffer, const char *text)
 	if (!json_append(buffer, "\"")) return 0;
 	for (; *p; ++p) {
 		if (*p == '"' || *p == '\\') {
-			escape[0] = '\\'; escape[1] = (char) *p; escape[2] = '\0';
+			escape[0] = '\\';
+			escape[1] = (char) *p;
+			escape[2] = '\0';
 			if (!json_append(buffer, escape)) return 0;
 		} else if (*p == '\n' || *p == '\r' || *p == '\t') {
-			escape[0] = '\\'; escape[1] = *p == '\n' ? 'n' : (*p == '\r' ? 'r' : 't');
+			escape[0] = '\\';
+			escape[1] = *p == '\n' ? 'n' : (*p == '\r' ? 'r' : 't');
 			escape[2] = '\0';
 			if (!json_append(buffer, escape)) return 0;
 		} else if (*p < 0x20) {
@@ -568,8 +746,8 @@ static int json_string(midi_json_buffer *buffer, const char *text)
 }
 
 char *midi_metadata_to_json(const midi_metadata *metadata,
-	                        const char *metadata_source_filename,
-	                        int inherited_from_midi)
+                            const char *metadata_source_filename,
+                            int inherited_from_midi)
 {
 	midi_json_buffer buffer = { 0 };
 	char number[128];
@@ -578,19 +756,17 @@ char *midi_metadata_to_json(const midi_metadata *metadata,
 	if (!json_append(&buffer, "{\"parse_status\":")) goto fail;
 	if (!json_string(&buffer, midi_metadata_status_name(metadata->status))) goto fail;
 	snprintf(number, sizeof(number),
-	         ",\"smf_format\":%u,\"track_count\":%u,\"time_division\":%u,",
-	         metadata->smf_format, metadata->track_count, metadata->time_division);
+	         ",\"smf_format\":%u,\"track_count\":%u,\"time_division\":%u,\"duration_ms\":%d,",
+	         metadata->smf_format, metadata->track_count, metadata->time_division,
+	         metadata->duration_ms);
 	if (!json_append(&buffer, number) || !json_append(&buffer, "\"title\":")) goto fail;
 	if (!json_string(&buffer, metadata->title) || !json_append(&buffer, ",\"composer\":")) goto fail;
 	if (!json_string(&buffer, metadata->composer) || !json_append(&buffer, ",\"display_name\":")) goto fail;
 	if (!json_string(&buffer, metadata->display_name) ||
 	    !json_append(&buffer, ",\"metadata_source_filename\":")) goto fail;
 	if (!json_string(&buffer, metadata_source_filename) ||
-	    !json_append(&buffer, inherited_from_midi ?
-	        ",\"inherited_from_midi\":true" : ",\"inherited_from_midi\":false")) goto fail;
-	if (!json_append(&buffer, metadata->metadata_truncated ?
-	        ",\"metadata_truncated\":true,\"text_events\":[" :
-	        ",\"metadata_truncated\":false,\"text_events\":[")) goto fail;
+	    !json_append(&buffer, inherited_from_midi ? ",\"inherited_from_midi\":true" : ",\"inherited_from_midi\":false")) goto fail;
+	if (!json_append(&buffer, metadata->metadata_truncated ? ",\"metadata_truncated\":true,\"text_events\":[" : ",\"metadata_truncated\":false,\"text_events\":[")) goto fail;
 	for (i = 0; i < metadata->event_count; ++i) {
 		if (i && !json_append(&buffer, ",")) goto fail;
 		snprintf(number, sizeof(number), "{\"track_index\":%u,\"type\":",

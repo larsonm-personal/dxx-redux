@@ -5,6 +5,73 @@
   "mission_name": "Descent 2: Counterstrike!",
   "mission_filename": "d2",
   "coop_starts": "1-5",
+  "track_names": [
+    {
+      "track": 0,
+      "name": "MIDI Track 0",
+      "filename": "descent.hmp",
+      "format": "hmp",
+      "length_s": 183
+    },
+    {
+      "track": 1,
+      "name": "MIDI Track 1",
+      "filename": "briefing.hmp",
+      "format": "hmp",
+      "length_s": 95
+    },
+    {
+      "track": 2,
+      "name": "MIDI Track 2",
+      "filename": "endlevel.hmp",
+      "format": "hmp",
+      "length_s": 0,
+      "parse_status": "invalid_midi"
+    },
+    {
+      "track": 3,
+      "name": "MIDI Track 3",
+      "filename": "endgame.hmp",
+      "format": "hmp",
+      "length_s": 0,
+      "parse_status": "invalid_midi"
+    },
+    {
+      "track": 4,
+      "name": "MIDI Track 4",
+      "filename": "credits.hmp",
+      "format": "hmp",
+      "length_s": 145
+    },
+    {
+      "track": 5,
+      "name": "MIDI Track 1",
+      "filename": "game01.hmp",
+      "format": "hmp",
+      "length_s": 157
+    },
+    {
+      "track": 6,
+      "name": "MIDI Track 2",
+      "filename": "game02.hmp",
+      "format": "hmp",
+      "length_s": 282
+    },
+    {
+      "track": 7,
+      "name": "MIDI Track 3",
+      "filename": "game03.hmp",
+      "format": "hmp",
+      "length_s": 278
+    },
+    {
+      "track": 8,
+      "name": "MIDI Track 4",
+      "filename": "game04.hmp",
+      "format": "hmp",
+      "length_s": 188
+    }
+  ],
   "level_count": 30,
   "levels": [
     {

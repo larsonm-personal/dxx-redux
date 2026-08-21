@@ -45,6 +45,7 @@ typedef struct audio_tag_metadata {
 	char track_number[32];
 	char disc_number[32];
 	char display_name[AUDIO_TAG_DISPLAY_BYTES];
+	int duration_ms;
 	audio_tag_property *properties;
 	unsigned int property_count;
 	int metadata_truncated;

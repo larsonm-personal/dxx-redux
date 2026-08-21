@@ -776,6 +776,22 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
         root.put("game_running", hasReturnableGameActivity || runningGamePid != null)
         root.put("has_returnable_game_activity", hasReturnableGameActivity)
         root.put("running_game_pid", runningGamePid ?: -1)
+        val launchPreparation = launchPreparationSnapshot()
+        root.put(
+            "launch_preparation",
+            JSONObject()
+                .put("active", launchPreparation != null)
+                .put("game", launchPreparation?.game.orEmpty())
+                .put("kind", launchPreparation?.launchKind.orEmpty())
+                .put("phase", launchPreparation?.phase?.wireName.orEmpty())
+                .put("label", launchPreparation?.let(::launcherPreparationLabel).orEmpty())
+                .put(
+                    "elapsed_ms",
+                    launchPreparation
+                        ?.let { SystemClock.elapsedRealtime() - it.startedAtMs }
+                        ?.coerceAtLeast(0L) ?: 0L,
+                ),
+        )
         val routeMetadata = RouteMetadataPrecomputeMonitor(dir).readSnapshot()
         root.put(
             "route_metadata_precompute",

@@ -23,7 +23,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
 private const val LEVEL_METADATA_TIMEOUT_MS = 120_000L
-private const val LEVEL_METADATA_POLL_MS = 200L
+internal const val LEVEL_METADATA_POLL_MS = 100L
 private const val LEVEL_METADATA_WORKER_START_TIMEOUT_MS = 5_000L
 private const val LEVEL_METADATA_CANCELLATION_GRACE_MS = 2_000L
 private const val LEVEL_METADATA_PROGRESS_EXTENSION_MS = 120_000L
@@ -415,6 +415,8 @@ internal data class LevelMetadataResult(
                                 slotKind = row.optString("slot_kind"),
                                 filename = row.optString("filename"),
                                 format = row.optString("format"),
+                                resolvedName = row.optString("resolved_name"),
+                                durationMs = row.optInt("duration_ms"),
                                 metadata =
                                     MidiMetadata(
                                         parse_status = row.optString("parse_status", "invalid"),
@@ -534,6 +536,8 @@ internal data class LevelMetadataMusicTrack(
     val slotKind: String,
     val filename: String,
     val format: String,
+    val resolvedName: String,
+    val durationMs: Int,
     val metadata: MidiMetadata,
     val audioMetadata: AudioTagMetadata? = null,
 )
@@ -1130,21 +1134,26 @@ internal object LevelMetadataTargets {
 }
 
 internal object LevelMetadataAnalyzer {
-    internal fun terminateWorkerProcessesForGameLaunch(context: Context): Int {
-        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager ?: return 0
+    internal fun hasWorkerProcessForGameLaunch(context: Context): Boolean =
+        workerProcessesForGameLaunch(context).isNotEmpty()
+
+    internal fun terminateWorkerProcessesForGameLaunch(context: Context): Int =
+        workerProcessesForGameLaunch(context).count { process ->
+            runCatching {
+                Log.w("DXX-LevelMetadata", "Terminating metadata process ${process.processName} for game launch")
+                Process.killProcess(process.pid)
+            }.isSuccess
+        }
+
+    private fun workerProcessesForGameLaunch(context: Context): List<ActivityManager.RunningAppProcessInfo> {
+        val activityManager =
+            context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager ?: return emptyList()
         val processNames =
             setOf(
                 context.packageName + LEVEL_METADATA_D1_PROCESS_SUFFIX,
                 context.packageName + LEVEL_METADATA_D2_PROCESS_SUFFIX,
             )
-        return activityManager.runningAppProcesses
-            ?.filter { it.processName in processNames }
-            ?.count { process ->
-                runCatching {
-                    Log.w("DXX-LevelMetadata", "Terminating metadata process ${process.processName} for game launch")
-                    Process.killProcess(process.pid)
-                }.isSuccess
-            } ?: 0
+        return activityManager.runningAppProcesses?.filter { it.processName in processNames }.orEmpty()
     }
 
     suspend fun analyze(

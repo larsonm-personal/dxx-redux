@@ -170,6 +170,29 @@ class CustomAudioSetManager(
     fun writeM3U(
         context: android.content.Context? = null,
         onProgress: (String, Long, Long) -> Unit = { _, _, _ -> },
+    ): String? =
+        writeM3UWith(
+            referenceStager =
+                context?.let {
+                    { uri, staged, filename ->
+                        LauncherFileCopy.copyUriToFile(
+                            context,
+                            android.net.Uri.parse(uri),
+                            staged,
+                            filename,
+                        ) { progress ->
+                            onProgress(progress.label, progress.bytesDone, progress.bytesTotal)
+                        }
+                    }
+                },
+            embeddedNameReader = { file, extension ->
+                AudioTagMetadataBridge.parsePath(file, extension)?.display_name?.takeIf { it.isNotBlank() }
+            },
+        )
+
+    internal fun writeM3UWith(
+        referenceStager: ((String, File, String) -> Unit)?,
+        embeddedNameReader: (File, String) -> String?,
     ): String? {
         val enabled = getEnabledSets()
         val allFiles = mutableListOf<Pair<String, String>>() // (sortKey, absolutePath)
@@ -179,18 +202,14 @@ class CustomAudioSetManager(
             val dir = setDir(set.id)
             for (f in set.files.sorted()) {
                 val refUri = set.referencedUris[f]
-                if (refUri != null && context != null) {
+                if (refUri != null && referenceStager != null) {
                     // Stage referenced file to temp dir
                     stageDir.mkdirs()
                     val staged = File(stageDir, "${set.id}_$f")
                     try {
-                        LauncherFileCopy.copyUriToFile(context, android.net.Uri.parse(refUri), staged, f) { progress ->
-                            onProgress(progress.label, progress.bytesDone, progress.bytesTotal)
-                        }
+                        referenceStager(refUri, staged, f)
                         allFiles.add(f.lowercase() to staged.absolutePath)
-                        AudioTagMetadataBridge
-                            .parsePath(staged, f.substringAfterLast('.', ""))
-                            ?.display_name
+                        embeddedNameReader(staged, f.substringAfterLast('.', ""))
                             ?.takeIf { it.isNotBlank() }
                             ?.let { embeddedNameUpdates[set.id to f] = it }
                     } catch (e: InsufficientStorageException) {

@@ -1,7 +1,7 @@
 # Launcher resume handoff delay
 
 Date: 2026-08-19
-Status: research complete, implementation not started
+Status: implementation complete, device verification deferred
 
 ## Goal
 
@@ -12,7 +12,6 @@ semantics or duplicating save parsing in Kotlin.
 
 ## Constraints
 
-- Planning and code research only in this tranche
 - Do not use the emulator because another task may own it
 - Keep save parsing and restoration in the existing native engine code
 - Preserve D1 and D2 behavior through shared Android launcher code
@@ -75,6 +74,15 @@ Compose state. `ResumeSavePanel` therefore leaves `Load Last Save` looking
 enabled and unchanged while preparation runs. The route monitor writes a
 `pausing_for_game` phase to its diagnostic file, but the main launcher screen
 does not render that state.
+
+## Implementation checklist
+
+- [x] Add launch preparation state, timing, feedback, and duplicate-launch gating
+- [x] Reduce metadata polling to 100 ms and bound explicit-launch grace to 100 ms
+- [x] Move ordinary and resume launcher file preflight to the IO dispatcher
+- [x] Add unit and introspection coverage
+- [x] Run scoped formatting, unit tests, and the Android build
+- [deferred] Run emulator integration coverage when the shared emulator is available
 
 ## Recommended implementation
 
@@ -184,3 +192,13 @@ normal file preflight and Android activity startup.
 - `android/game_scripts/test_autosave_resume_unified.jsonc`
 
 No D1 or D2 engine source change is expected.
+
+## Verification
+
+- Scoped code quality passed for all changed Kotlin and plan files
+- Focused `ResumeSavePanelTest` and `RouteMetadataSchedulingTest` passed
+- Full `:app:testDebugUnitTest` passed
+- `:app:assembleDebug` passed for arm64-v8a, armeabi-v7a, and x86_64
+- The APK build fell back from an unavailable Kotlin daemon to in-process
+  compilation and completed successfully
+- No emulator or connected device was used

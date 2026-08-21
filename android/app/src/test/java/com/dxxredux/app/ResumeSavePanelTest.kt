@@ -7,6 +7,30 @@ import java.io.File
 
 class ResumeSavePanelTest {
     @Test
+    fun launcherPreparationLabelsDescribeRealLaunchPhases() {
+        val startedAt = 42L
+        val preparing =
+            LauncherPreparationState(
+                game = "d2",
+                launchKind = "resume",
+                phase = LauncherPreparationPhase.PREPARING,
+                startedAtMs = startedAt,
+            )
+
+        assertEquals("Preparing saved game", launcherPreparationLabel(preparing))
+        assertEquals(
+            "Pausing background analysis",
+            launcherPreparationLabel(preparing.copy(phase = LauncherPreparationPhase.PAUSING_METADATA)),
+        )
+        assertEquals(
+            "Starting Descent 1",
+            launcherPreparationLabel(
+                preparing.copy(game = "d1", phase = LauncherPreparationPhase.STARTING_GAME),
+            ),
+        )
+    }
+
+    @Test
     fun rgb6ThumbnailChannelsExpandToFullEightBitRange() {
         assertEquals(0, resumeSaveRgb6ChannelToRgb8(0))
         assertEquals(125, resumeSaveRgb6ChannelToRgb8(31))

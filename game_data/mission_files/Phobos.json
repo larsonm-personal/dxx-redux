@@ -6,549 +6,71 @@
     "mission_name": "Phobos Encounter",
     "mission_filename": "phobos-e.mn2",
     "coop_starts": "4",
-    "music_tracks": [
+    "track_names": [
       {
-        "slot_index": 0,
-        "slot_kind": "title",
+        "track": 0,
+        "name": "MIDI Track 0",
         "filename": "descent.hmp",
         "format": "hmp",
-        "metadata_source_filename": "descent.mid",
-        "inherited_from_midi": true,
-        "parse_status": "ok",
-        "smf_format": 1,
-        "track_count": 22,
-        "time_division": 192,
-        "title": "",
-        "composer": "",
-        "display_name": "",
-        "metadata_truncated": false,
-        "text_events": [
-          {
-            "track_index": 1,
-            "type": "Sequence/track name",
-            "text": "[G]Loop"
-          },
-          {
-            "track_index": 2,
-            "type": "Sequence/track name",
-            "text": "[G]Strings"
-          },
-          {
-            "track_index": 3,
-            "type": "Sequence/track name",
-            "text": "[G]Bass"
-          },
-          {
-            "track_index": 4,
-            "type": "Sequence/track name",
-            "text": "[G]Pluck"
-          },
-          {
-            "track_index": 5,
-            "type": "Sequence/track name",
-            "text": "[G]Pluck 2"
-          },
-          {
-            "track_index": 6,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 7,
-            "type": "Sequence/track name",
-            "text": "[G]Voice"
-          },
-          {
-            "track_index": 8,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 9,
-            "type": "Sequence/track name",
-            "text": "[G]Strings"
-          },
-          {
-            "track_index": 10,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 11,
-            "type": "Sequence/track name",
-            "text": "[G]Mute"
-          },
-          {
-            "track_index": 12,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 13,
-            "type": "Sequence/track name",
-            "text": "[G]Low Tom"
-          },
-          {
-            "track_index": 14,
-            "type": "Sequence/track name",
-            "text": "[G]Pluck"
-          },
-          {
-            "track_index": 15,
-            "type": "Sequence/track name",
-            "text": "[G]Drums"
-          },
-          {
-            "track_index": 16,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 17,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 18,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 19,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 20,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 21,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          }
-        ]
+        "length_s": 183
       },
       {
-        "slot_index": 1,
-        "slot_kind": "briefing",
+        "track": 1,
+        "name": "MIDI Track 1",
         "filename": "briefing.hmp",
         "format": "hmp",
-        "metadata_source_filename": "briefing.mid",
-        "inherited_from_midi": true,
-        "parse_status": "ok",
-        "smf_format": 1,
-        "track_count": 12,
-        "time_division": 192,
-        "title": "",
-        "composer": "",
-        "display_name": "",
-        "metadata_truncated": false,
-        "text_events": [
-          {
-            "track_index": 1,
-            "type": "Sequence/track name",
-            "text": "Loop"
-          },
-          {
-            "track_index": 2,
-            "type": "Sequence/track name",
-            "text": "[G]Choir"
-          },
-          {
-            "track_index": 3,
-            "type": "Sequence/track name",
-            "text": "[G]Bass"
-          },
-          {
-            "track_index": 4,
-            "type": "Sequence/track name",
-            "text": "[G]Bass 8vb"
-          },
-          {
-            "track_index": 5,
-            "type": "Sequence/track name",
-            "text": "[G]Syn 1"
-          },
-          {
-            "track_index": 6,
-            "type": "Sequence/track name",
-            "text": "[G]Syn 2"
-          },
-          {
-            "track_index": 7,
-            "type": "Sequence/track name",
-            "text": "[G]Strings"
-          },
-          {
-            "track_index": 8,
-            "type": "Sequence/track name",
-            "text": "[G]Timp rolls"
-          },
-          {
-            "track_index": 9,
-            "type": "Sequence/track name",
-            "text": "[G]Taiko rolls"
-          },
-          {
-            "track_index": 10,
-            "type": "Sequence/track name",
-            "text": "[G]Perc"
-          },
-          {
-            "track_index": 11,
-            "type": "Sequence/track name",
-            "text": "[G]Soundtrack"
-          }
-        ]
+        "length_s": 95
       },
       {
-        "slot_index": 2,
-        "slot_kind": "endlevel",
+        "track": 2,
+        "name": "MIDI Track 2",
         "filename": "endlevel.hmp",
         "format": "hmp",
-        "metadata_source_filename": "",
-        "inherited_from_midi": false,
-        "parse_status": "invalid_midi",
-        "smf_format": 0,
-        "track_count": 0,
-        "time_division": 0,
-        "title": "",
-        "composer": "",
-        "display_name": "",
-        "metadata_truncated": false,
-        "text_events": []
+        "length_s": 0,
+        "parse_status": "invalid_midi"
       },
       {
-        "slot_index": 3,
-        "slot_kind": "endgame",
+        "track": 3,
+        "name": "MIDI Track 3",
         "filename": "endgame.hmp",
         "format": "hmp",
-        "metadata_source_filename": "",
-        "inherited_from_midi": false,
-        "parse_status": "invalid_midi",
-        "smf_format": 0,
-        "track_count": 0,
-        "time_division": 0,
-        "title": "",
-        "composer": "",
-        "display_name": "",
-        "metadata_truncated": false,
-        "text_events": []
+        "length_s": 0,
+        "parse_status": "invalid_midi"
       },
       {
-        "slot_index": 4,
-        "slot_kind": "credits",
+        "track": 4,
+        "name": "Robot Zone",
         "filename": "credits.hmp",
         "format": "hmp",
-        "metadata_source_filename": "credits.mid",
-        "inherited_from_midi": true,
-        "parse_status": "ok",
-        "smf_format": 1,
-        "track_count": 14,
-        "time_division": 96,
-        "title": "Robot Zone",
-        "composer": "",
-        "display_name": "Robot Zone",
-        "metadata_truncated": false,
-        "text_events": [
-          {
-            "track_index": 0,
-            "type": "Sequence/track name",
-            "text": "Robot Zone"
-          },
-          {
-            "track_index": 0,
-            "type": "Text",
-            "text": "P. Tarabbia / mercure@mygale.org"
-          },
-          {
-            "track_index": 0,
-            "type": "Marker",
-            "text": "Robot Zone  (Phobos Encounter credits remix)   (c) 1997 P. Tarabbia        http://www.mygale.org/00/mercure"
-          },
-          {
-            "track_index": 13,
-            "type": "Sequence/track name",
-            "text": "HH closed"
-          }
-        ]
+        "length_s": 133
       },
       {
-        "slot_index": 5,
-        "slot_kind": "level",
+        "track": 5,
+        "name": "Get Ya !!!",
         "filename": "game01.hmp",
         "format": "hmp",
-        "metadata_source_filename": "game01.mid",
-        "inherited_from_midi": true,
-        "parse_status": "ok",
-        "smf_format": 1,
-        "track_count": 17,
-        "time_division": 96,
-        "title": "Get Ya !!!",
-        "composer": "",
-        "display_name": "Get Ya !!!",
-        "metadata_truncated": false,
-        "text_events": [
-          {
-            "track_index": 0,
-            "type": "Sequence/track name",
-            "text": "Get Ya !!!"
-          },
-          {
-            "track_index": 0,
-            "type": "Copyright",
-            "text": "(c) 1997 Patrice Tarabbia"
-          },
-          {
-            "track_index": 0,
-            "type": "Text",
-            "text": "mercure@mygale.org"
-          },
-          {
-            "track_index": 0,
-            "type": "Text",
-            "text": "Want more ?  -> http://www.mygale.org/00/mercure"
-          },
-          {
-            "track_index": 0,
-            "type": "Marker",
-            "text": "Get Ya !!!     (c) 1997 P. Tarabbia     http://www.mygale.org/00/mercure"
-          },
-          {
-            "track_index": 1,
-            "type": "Sequence/track name",
-            "text": "Bass"
-          },
-          {
-            "track_index": 2,
-            "type": "Sequence/track name",
-            "text": "Timpani 1"
-          },
-          {
-            "track_index": 3,
-            "type": "Sequence/track name",
-            "text": "Timpani 2"
-          },
-          {
-            "track_index": 4,
-            "type": "Sequence/track name",
-            "text": "Synth Bass"
-          },
-          {
-            "track_index": 5,
-            "type": "Sequence/track name",
-            "text": "WoodBlock"
-          },
-          {
-            "track_index": 6,
-            "type": "Sequence/track name",
-            "text": "Big Saw Lead"
-          },
-          {
-            "track_index": 7,
-            "type": "Sequence/track name",
-            "text": "Square Pattern"
-          },
-          {
-            "track_index": 8,
-            "type": "Sequence/track name",
-            "text": "Square Echo"
-          },
-          {
-            "track_index": 9,
-            "type": "Sequence/track name",
-            "text": "WoodBLock"
-          },
-          {
-            "track_index": 10,
-            "type": "Sequence/track name",
-            "text": "Drums (HH)"
-          },
-          {
-            "track_index": 11,
-            "type": "Sequence/track name",
-            "text": "Drums (other)"
-          },
-          {
-            "track_index": 12,
-            "type": "Sequence/track name",
-            "text": "Synth Drum"
-          },
-          {
-            "track_index": 13,
-            "type": "Sequence/track name",
-            "text": "Piano"
-          },
-          {
-            "track_index": 14,
-            "type": "Sequence/track name",
-            "text": "Sweep Pad"
-          },
-          {
-            "track_index": 15,
-            "type": "Sequence/track name",
-            "text": "Fantasia"
-          },
-          {
-            "track_index": 16,
-            "type": "Sequence/track name",
-            "text": "Dist Guitar"
-          }
-        ]
+        "length_s": 96
       },
       {
-        "slot_index": 6,
-        "slot_kind": "level",
+        "track": 6,
+        "name": "MIDI Track 2",
         "filename": "game02.hmp",
         "format": "hmp",
-        "metadata_source_filename": "",
-        "inherited_from_midi": false,
-        "parse_status": "ok",
-        "smf_format": 1,
-        "track_count": 11,
-        "time_division": 192,
-        "title": "",
-        "composer": "",
-        "display_name": "",
-        "metadata_truncated": false,
-        "text_events": []
+        "length_s": 253
       },
       {
-        "slot_index": 7,
-        "slot_kind": "level",
+        "track": 7,
+        "name": "Runner",
         "filename": "game03.hmp",
         "format": "hmp",
-        "metadata_source_filename": "game03.mid",
-        "inherited_from_midi": true,
-        "parse_status": "ok",
-        "smf_format": 1,
-        "track_count": 17,
-        "time_division": 96,
-        "title": "Runner",
-        "composer": "",
-        "display_name": "Runner",
-        "metadata_truncated": false,
-        "text_events": [
-          {
-            "track_index": 0,
-            "type": "Sequence/track name",
-            "text": "Runner"
-          },
-          {
-            "track_index": 0,
-            "type": "Copyright",
-            "text": "(c)1997 P. Tarabbia"
-          },
-          {
-            "track_index": 0,
-            "type": "Text",
-            "text": "mercure @mygale.org / http://www.mygale.org/00/mercure"
-          },
-          {
-            "track_index": 0,
-            "type": "Marker",
-            "text": "Runner        (c) 1997 P. Tarabbia      http://www.mygale.org/00/mercure"
-          },
-          {
-            "track_index": 1,
-            "type": "Sequence/track name",
-            "text": "SynthBass"
-          },
-          {
-            "track_index": 2,
-            "type": "Sequence/track name",
-            "text": "BigBass"
-          },
-          {
-            "track_index": 3,
-            "type": "Sequence/track name",
-            "text": "Lead (Atmo)"
-          },
-          {
-            "track_index": 4,
-            "type": "Sequence/track name",
-            "text": "Lead Echo"
-          },
-          {
-            "track_index": 5,
-            "type": "Sequence/track name",
-            "text": "Spice chords 2"
-          },
-          {
-            "track_index": 6,
-            "type": "Sequence/track name",
-            "text": "Dist. chords"
-          },
-          {
-            "track_index": 7,
-            "type": "Sequence/track name",
-            "text": "Guitar lick"
-          },
-          {
-            "track_index": 8,
-            "type": "Sequence/track name",
-            "text": "Guitar lick echo"
-          },
-          {
-            "track_index": 9,
-            "type": "Sequence/track name",
-            "text": "Timpani"
-          },
-          {
-            "track_index": 10,
-            "type": "Sequence/track name",
-            "text": "All Drums"
-          },
-          {
-            "track_index": 11,
-            "type": "Sequence/track name",
-            "text": "Spice chords 1"
-          },
-          {
-            "track_index": 12,
-            "type": "Sequence/track name",
-            "text": "Spice 3"
-          },
-          {
-            "track_index": 13,
-            "type": "Sequence/track name",
-            "text": "Synth Drums"
-          },
-          {
-            "track_index": 14,
-            "type": "Sequence/track name",
-            "text": "Glocken"
-          },
-          {
-            "track_index": 15,
-            "type": "Sequence/track name",
-            "text": "P. Gabriel Nod"
-          },
-          {
-            "track_index": 16,
-            "type": "Sequence/track name",
-            "text": "P. Gabriel Echo"
-          }
-        ]
+        "length_s": 106
       },
       {
-        "slot_index": 8,
-        "slot_kind": "level",
+        "track": 8,
+        "name": "MIDI Track 4",
         "filename": "game04.hmp",
         "format": "hmp",
-        "metadata_source_filename": "",
-        "inherited_from_midi": false,
-        "parse_status": "ok",
-        "smf_format": 1,
-        "track_count": 12,
-        "time_division": 192,
-        "title": "",
-        "composer": "",
-        "display_name": "",
-        "metadata_truncated": false,
-        "text_events": []
+        "length_s": 252
       }
     ],
     "level_count": 6,

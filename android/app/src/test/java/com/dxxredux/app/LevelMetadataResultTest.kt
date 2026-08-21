@@ -1,6 +1,7 @@
 package com.dxxredux.app
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -38,6 +39,8 @@ class LevelMetadataResultTest {
                     "slot_kind": "level",
                     "filename": "game05.hmp",
                     "format": "hmp",
+                    "resolved_name": "Created for Final Insertion Levels... (Verran Eventide)",
+					"duration_ms": 123456,
                     "metadata_source_filename": "game05.mid",
                     "inherited_from_midi": true,
                     "parse_status": "ok",
@@ -60,6 +63,8 @@ class LevelMetadataResultTest {
         assertEquals("game05.mid", track.metadata.metadata_source_filename)
         assertTrue(track.metadata.inherited_from_midi)
         assertEquals("Verran Eventide", track.metadata.composer)
+        assertEquals("Created for Final Insertion Levels... (Verran Eventide)", track.resolvedName)
+		assertEquals(123456, track.durationMs)
         assertEquals("Copyright", track.metadata.text_events.single().type)
     }
 
@@ -75,6 +80,8 @@ class LevelMetadataResultTest {
                     "slot_kind": "credits",
                     "filename": "credits.flac",
                     "format": "flac",
+                    "resolved_name": "Reactor Core (Jane Doe)",
+					"duration_ms": 65432,
                     "parse_status": "ok",
                     "title": "Reactor Core",
                     "composer": "Jane Doe",
@@ -90,10 +97,75 @@ class LevelMetadataResultTest {
             )
 
         val metadata = result.musicTracks.single().audioMetadata!!
+        assertEquals("Reactor Core (Jane Doe)", result.musicTracks.single().resolvedName)
         assertEquals("Jane Doe", metadata.composer)
         assertEquals("Test Performer", metadata.artist)
         assertEquals("DXX Test Album", metadata.album)
         assertEquals(listOf("First", "Second"), metadata.properties.single().values)
+    }
+
+    @Test
+    fun regressionProjectionContainsCompactTrackDetails() {
+        val result =
+            LevelMetadataResult.fromJson(
+                """
+                {
+                  "status": "ok",
+                  "music_tracks": [{
+                    "slot_index": 5,
+                    "slot_kind": "level",
+                    "filename": "level01.ogg",
+                    "format": "ogg",
+                    "resolved_name": "Reactor Core (Jane Doe)",
+					"duration_ms": 65432,
+                    "parse_status": "ok",
+                    "title": "Reactor Core",
+                    "composer": "Jane Doe",
+                    "display_name": "Reactor Core (Jane Doe)",
+                    "properties": [{"key":"ARTIST","values":["Test Performer"]}]
+                  }],
+                  "levels": []
+                }
+                """.trimIndent(),
+            )
+
+        val projection = levelMetadataTrackNamesJson(result.musicTracks)
+
+        val row = projection.getJSONObject(0)
+		assertEquals(setOf("track", "name", "filename", "format", "length_s"), row.keys().asSequence().toSet())
+        assertEquals(5, row.getInt("track"))
+        assertEquals("Reactor Core (Jane Doe)", row.getString("name"))
+		assertEquals("level01.ogg", row.getString("filename"))
+		assertEquals("ogg", row.getString("format"))
+		assertEquals(65, row.getInt("length_s"))
+		assertFalse(row.has("parse_status"))
+        assertFalse(row.has("title"))
+        assertFalse(row.has("properties"))
+    }
+
+    @Test
+    fun regressionProjectionIncludesOnlyFailedParseStatus() {
+        val result =
+            LevelMetadataResult.fromJson(
+                """
+                {
+                  "status": "ok",
+                  "music_tracks": [{
+                    "slot_index": 0,
+                    "filename": "broken.mp3",
+                    "format": "mp3",
+                    "resolved_name": "broken",
+                    "duration_ms": 0,
+                    "parse_status": "invalid"
+                  }],
+                  "levels": []
+                }
+                """.trimIndent(),
+            )
+
+        val row = levelMetadataTrackNamesJson(result.musicTracks).getJSONObject(0)
+        assertEquals(0, row.getInt("length_s"))
+        assertEquals("invalid", row.getString("parse_status"))
     }
 
     @Test

@@ -6,6 +6,106 @@
     "mission_name": "Trine - Episode 2",
     "mission_filename": "trine2.msn",
     "coop_starts": "4",
+    "track_names": [
+      {
+        "track": 0,
+        "name": "Descent 1 Menu Remix (Jonathan Vukovich (Verran))",
+        "filename": "descent.ogg",
+        "format": "ogg",
+        "length_s": 237
+      },
+      {
+        "track": 1,
+        "name": "briefing",
+        "filename": "briefing.ogg",
+        "format": "ogg",
+        "length_s": 10
+      },
+      {
+        "track": 2,
+        "name": "Gettin' Out",
+        "filename": "endlevel.ogg",
+        "format": "ogg",
+        "length_s": 41
+      },
+      {
+        "track": 3,
+        "name": "endgame",
+        "filename": "endgame.ogg",
+        "format": "ogg",
+        "length_s": 130
+      },
+      {
+        "track": 4,
+        "name": "credits",
+        "filename": "credits.ogg",
+        "format": "ogg",
+        "length_s": 10
+      },
+      {
+        "track": 5,
+        "name": "Infiltrator",
+        "filename": "game01.ogg",
+        "format": "ogg",
+        "length_s": 221
+      },
+      {
+        "track": 6,
+        "name": "Invective",
+        "filename": "game02.ogg",
+        "format": "ogg",
+        "length_s": 232
+      },
+      {
+        "track": 7,
+        "name": "Get Your Ass to Mars",
+        "filename": "game03.ogg",
+        "format": "ogg",
+        "length_s": 196
+      },
+      {
+        "track": 8,
+        "name": "Inward Journey (Verran)",
+        "filename": "game04.ogg",
+        "format": "ogg",
+        "length_s": 333
+      },
+      {
+        "track": 9,
+        "name": "Myriad (instrumental mix)",
+        "filename": "game05.ogg",
+        "format": "ogg",
+        "length_s": 290
+      },
+      {
+        "track": 10,
+        "name": "Robot Jungle (Extended Remix)",
+        "filename": "game06.ogg",
+        "format": "ogg",
+        "length_s": 271
+      },
+      {
+        "track": 11,
+        "name": "game07",
+        "filename": "game07.ogg",
+        "format": "ogg",
+        "length_s": 420
+      },
+      {
+        "track": 12,
+        "name": "Defier (instrumental mix)",
+        "filename": "game08.ogg",
+        "format": "ogg",
+        "length_s": 334
+      },
+      {
+        "track": 13,
+        "name": "Hunting Shadows",
+        "filename": "game09.ogg",
+        "format": "ogg",
+        "length_s": 215
+      }
+    ],
     "level_count": 10,
     "levels": [
       {

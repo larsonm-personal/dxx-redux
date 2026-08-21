@@ -6,541 +6,99 @@
     "mission_name": "Encounter 2: Dimensions",
     "mission_filename": "EAF2.MN2",
     "coop_starts": "4",
-    "music_tracks": [
+    "track_names": [
       {
-        "slot_index": 0,
-        "slot_kind": "title",
+        "track": 0,
+        "name": "MIDI Track 0",
         "filename": "descent.hmp",
         "format": "hmp",
-        "metadata_source_filename": "descent.mid",
-        "inherited_from_midi": true,
-        "parse_status": "ok",
-        "smf_format": 1,
-        "track_count": 22,
-        "time_division": 192,
-        "title": "",
-        "composer": "",
-        "display_name": "",
-        "metadata_truncated": false,
-        "text_events": [
-          {
-            "track_index": 1,
-            "type": "Sequence/track name",
-            "text": "[G]Loop"
-          },
-          {
-            "track_index": 2,
-            "type": "Sequence/track name",
-            "text": "[G]Strings"
-          },
-          {
-            "track_index": 3,
-            "type": "Sequence/track name",
-            "text": "[G]Bass"
-          },
-          {
-            "track_index": 4,
-            "type": "Sequence/track name",
-            "text": "[G]Pluck"
-          },
-          {
-            "track_index": 5,
-            "type": "Sequence/track name",
-            "text": "[G]Pluck 2"
-          },
-          {
-            "track_index": 6,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 7,
-            "type": "Sequence/track name",
-            "text": "[G]Voice"
-          },
-          {
-            "track_index": 8,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 9,
-            "type": "Sequence/track name",
-            "text": "[G]Strings"
-          },
-          {
-            "track_index": 10,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 11,
-            "type": "Sequence/track name",
-            "text": "[G]Mute"
-          },
-          {
-            "track_index": 12,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 13,
-            "type": "Sequence/track name",
-            "text": "[G]Low Tom"
-          },
-          {
-            "track_index": 14,
-            "type": "Sequence/track name",
-            "text": "[G]Pluck"
-          },
-          {
-            "track_index": 15,
-            "type": "Sequence/track name",
-            "text": "[G]Drums"
-          },
-          {
-            "track_index": 16,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 17,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 18,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 19,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 20,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 21,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          }
-        ]
+        "length_s": 183
       },
       {
-        "slot_index": 1,
-        "slot_kind": "briefing",
+        "track": 1,
+        "name": "MIDI Track 1",
         "filename": "briefing.hmp",
         "format": "hmp",
-        "metadata_source_filename": "briefing.mid",
-        "inherited_from_midi": true,
-        "parse_status": "ok",
-        "smf_format": 1,
-        "track_count": 12,
-        "time_division": 192,
-        "title": "",
-        "composer": "",
-        "display_name": "",
-        "metadata_truncated": false,
-        "text_events": [
-          {
-            "track_index": 1,
-            "type": "Sequence/track name",
-            "text": "Loop"
-          },
-          {
-            "track_index": 2,
-            "type": "Sequence/track name",
-            "text": "[G]Choir"
-          },
-          {
-            "track_index": 3,
-            "type": "Sequence/track name",
-            "text": "[G]Bass"
-          },
-          {
-            "track_index": 4,
-            "type": "Sequence/track name",
-            "text": "[G]Bass 8vb"
-          },
-          {
-            "track_index": 5,
-            "type": "Sequence/track name",
-            "text": "[G]Syn 1"
-          },
-          {
-            "track_index": 6,
-            "type": "Sequence/track name",
-            "text": "[G]Syn 2"
-          },
-          {
-            "track_index": 7,
-            "type": "Sequence/track name",
-            "text": "[G]Strings"
-          },
-          {
-            "track_index": 8,
-            "type": "Sequence/track name",
-            "text": "[G]Timp rolls"
-          },
-          {
-            "track_index": 9,
-            "type": "Sequence/track name",
-            "text": "[G]Taiko rolls"
-          },
-          {
-            "track_index": 10,
-            "type": "Sequence/track name",
-            "text": "[G]Perc"
-          },
-          {
-            "track_index": 11,
-            "type": "Sequence/track name",
-            "text": "[G]Soundtrack"
-          }
-        ]
+        "length_s": 95
       },
       {
-        "slot_index": 2,
-        "slot_kind": "endlevel",
+        "track": 2,
+        "name": "MIDI Track 2",
         "filename": "endlevel.hmp",
         "format": "hmp",
-        "metadata_source_filename": "",
-        "inherited_from_midi": false,
-        "parse_status": "invalid_midi",
-        "smf_format": 0,
-        "track_count": 0,
-        "time_division": 0,
-        "title": "",
-        "composer": "",
-        "display_name": "",
-        "metadata_truncated": false,
-        "text_events": []
+        "length_s": 0,
+        "parse_status": "invalid_midi"
       },
       {
-        "slot_index": 3,
-        "slot_kind": "endgame",
+        "track": 3,
+        "name": "MIDI Track 3",
         "filename": "endgame.hmp",
         "format": "hmp",
-        "metadata_source_filename": "",
-        "inherited_from_midi": false,
-        "parse_status": "invalid_midi",
-        "smf_format": 0,
-        "track_count": 0,
-        "time_division": 0,
-        "title": "",
-        "composer": "",
-        "display_name": "",
-        "metadata_truncated": false,
-        "text_events": []
+        "length_s": 0,
+        "parse_status": "invalid_midi"
       },
       {
-        "slot_index": 4,
-        "slot_kind": "credits",
+        "track": 4,
+        "name": "MIDI Track 4",
         "filename": "credits.hmp",
         "format": "hmp",
-        "metadata_source_filename": "Credits.mid",
-        "inherited_from_midi": true,
-        "parse_status": "ok",
-        "smf_format": 1,
-        "track_count": 10,
-        "time_division": 384,
-        "title": "",
-        "composer": "",
-        "display_name": "",
-        "metadata_truncated": false,
-        "text_events": [
-          {
-            "track_index": 1,
-            "type": "Sequence/track name",
-            "text": "lead"
-          },
-          {
-            "track_index": 2,
-            "type": "Sequence/track name",
-            "text": "timpani"
-          },
-          {
-            "track_index": 3,
-            "type": "Sequence/track name",
-            "text": "other noise"
-          },
-          {
-            "track_index": 4,
-            "type": "Sequence/track name",
-            "text": "booty"
-          },
-          {
-            "track_index": 5,
-            "type": "Sequence/track name",
-            "text": "Distortion guitar"
-          },
-          {
-            "track_index": 6,
-            "type": "Sequence/track name",
-            "text": "noise"
-          },
-          {
-            "track_index": 7,
-            "type": "Sequence/track name",
-            "text": "hit"
-          },
-          {
-            "track_index": 8,
-            "type": "Sequence/track name",
-            "text": "drums"
-          },
-          {
-            "track_index": 9,
-            "type": "Sequence/track name",
-            "text": "drum reverb"
-          }
-        ]
+        "length_s": 174
       },
       {
-        "slot_index": 5,
-        "slot_kind": "level",
+        "track": 5,
+        "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "metadata_source_filename": "Game01.mid",
-        "inherited_from_midi": true,
-        "parse_status": "ok",
-        "smf_format": 1,
-        "track_count": 8,
-        "time_division": 384,
-        "title": "",
-        "composer": "",
-        "display_name": "",
-        "metadata_truncated": false,
-        "text_events": [
-          {
-            "track_index": 1,
-            "type": "Sequence/track name",
-            "text": "[g]Rumble"
-          },
-          {
-            "track_index": 2,
-            "type": "Sequence/track name",
-            "text": "[g]Low Booty"
-          },
-          {
-            "track_index": 3,
-            "type": "Sequence/track name",
-            "text": "[g]Bass"
-          },
-          {
-            "track_index": 4,
-            "type": "Sequence/track name",
-            "text": "[g]More Bass"
-          },
-          {
-            "track_index": 5,
-            "type": "Sequence/track name",
-            "text": "[g]New Age"
-          },
-          {
-            "track_index": 6,
-            "type": "Sequence/track name",
-            "text": "[g]Set"
-          },
-          {
-            "track_index": 7,
-            "type": "Sequence/track name",
-            "text": "[g]Warmth"
-          }
-        ]
+        "length_s": 149
       },
       {
-        "slot_index": 6,
-        "slot_kind": "level",
+        "track": 6,
+        "name": "MIDI Track 2",
         "filename": "game02.hmp",
         "format": "hmp",
-        "metadata_source_filename": "Game02.mid",
-        "inherited_from_midi": true,
-        "parse_status": "ok",
-        "smf_format": 1,
-        "track_count": 13,
-        "time_division": 384,
-        "title": "",
-        "composer": "",
-        "display_name": "",
-        "metadata_truncated": false,
-        "text_events": [
-          {
-            "track_index": 1,
-            "type": "Sequence/track name",
-            "text": "[g]synth noise"
-          },
-          {
-            "track_index": 2,
-            "type": "Sequence/track name",
-            "text": "[g]another synth noise"
-          },
-          {
-            "track_index": 3,
-            "type": "Sequence/track name",
-            "text": "[g]brass and lead"
-          },
-          {
-            "track_index": 4,
-            "type": "Sequence/track name",
-            "text": "[g]lead"
-          },
-          {
-            "track_index": 5,
-            "type": "Sequence/track name",
-            "text": "[g]crazy timpani"
-          },
-          {
-            "track_index": 6,
-            "type": "Sequence/track name",
-            "text": "[g]bari sax"
-          },
-          {
-            "track_index": 7,
-            "type": "Sequence/track name",
-            "text": "[g]bone"
-          },
-          {
-            "track_index": 8,
-            "type": "Sequence/track name",
-            "text": "[g]low booty"
-          },
-          {
-            "track_index": 9,
-            "type": "Sequence/track name",
-            "text": "[g]dist guitar"
-          },
-          {
-            "track_index": 10,
-            "type": "Sequence/track name",
-            "text": "[g]set noise"
-          }
-        ]
+        "length_s": 177
       },
       {
-        "slot_index": 7,
-        "slot_kind": "level",
+        "track": 7,
+        "name": "MIDI Track 3",
         "filename": "game03.hmp",
         "format": "hmp",
-        "metadata_source_filename": "Game03.mid",
-        "inherited_from_midi": true,
-        "parse_status": "ok",
-        "smf_format": 1,
-        "track_count": 10,
-        "time_division": 384,
-        "title": "",
-        "composer": "",
-        "display_name": "",
-        "metadata_truncated": false,
-        "text_events": [
-          {
-            "track_index": 1,
-            "type": "Sequence/track name",
-            "text": "[g]panflute"
-          },
-          {
-            "track_index": 2,
-            "type": "Sequence/track name",
-            "text": "[g]Heartbeat"
-          },
-          {
-            "track_index": 3,
-            "type": "Sequence/track name",
-            "text": "[g]Trumpet"
-          },
-          {
-            "track_index": 4,
-            "type": "Sequence/track name",
-            "text": "[g]timpani"
-          },
-          {
-            "track_index": 5,
-            "type": "Sequence/track name",
-            "text": "[g]Orch Hit"
-          },
-          {
-            "track_index": 6,
-            "type": "Sequence/track name",
-            "text": "[g]SCHIEL 1998"
-          },
-          {
-            "track_index": 7,
-            "type": "Sequence/track name",
-            "text": "[g]noise"
-          },
-          {
-            "track_index": 8,
-            "type": "Sequence/track name",
-            "text": "[g]nnel formerly knownas"
-          },
-          {
-            "track_index": 9,
-            "type": "Sequence/track name",
-            "text": "[g]drum stuff"
-          }
-        ]
+        "length_s": 199
       },
       {
-        "slot_index": 8,
-        "slot_kind": "level",
+        "track": 8,
+        "name": "MIDI Track 4",
         "filename": "game04.hmp",
         "format": "hmp",
-        "metadata_source_filename": "Game04.mid",
-        "inherited_from_midi": true,
-        "parse_status": "ok",
-        "smf_format": 1,
-        "track_count": 9,
-        "time_division": 384,
-        "title": "",
-        "composer": "",
-        "display_name": "",
-        "metadata_truncated": false,
-        "text_events": [
-          {
-            "track_index": 1,
-            "type": "Sequence/track name",
-            "text": "[g]4 by"
-          },
-          {
-            "track_index": 2,
-            "type": "Sequence/track name",
-            "text": "[g]chris schiel"
-          },
-          {
-            "track_index": 3,
-            "type": "Sequence/track name",
-            "text": "[g]bass"
-          },
-          {
-            "track_index": 4,
-            "type": "Sequence/track name",
-            "text": "[g]guitar"
-          },
-          {
-            "track_index": 5,
-            "type": "Sequence/track name",
-            "text": "[g]Strings"
-          },
-          {
-            "track_index": 6,
-            "type": "Sequence/track name",
-            "text": "[g]Stringy"
-          },
-          {
-            "track_index": 7,
-            "type": "Sequence/track name",
-            "text": "[g]Harpies"
-          },
-          {
-            "track_index": 8,
-            "type": "Sequence/track name",
-            "text": "[g]Set"
-          }
-        ]
+        "length_s": 155
+      },
+      {
+        "track": 9,
+        "name": "MIDI Track 5",
+        "filename": "game05.hmp",
+        "format": "hmp",
+        "length_s": 130
+      },
+      {
+        "track": 10,
+        "name": "MIDI Track 6",
+        "filename": "game06.hmp",
+        "format": "hmp",
+        "length_s": 157
+      },
+      {
+        "track": 11,
+        "name": "MIDI Track 7",
+        "filename": "game07.hmp",
+        "format": "hmp",
+        "length_s": 150
+      },
+      {
+        "track": 12,
+        "name": "MIDI Track 8",
+        "filename": "game08.hmp",
+        "format": "hmp",
+        "length_s": 193
       }
     ],
     "level_count": 10,

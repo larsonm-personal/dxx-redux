@@ -231,6 +231,8 @@ internal class RouteMetadataPrecomputeMonitor(
         status: String,
         elapsedMs: Long = 0L,
         terminatedProcesses: Int = 0,
+        workerWasActive: Boolean = false,
+        graceMs: Long = 0L,
     ) = synchronized(FILE_LOCK) {
         val state = readState()
         writeState(
@@ -251,7 +253,11 @@ internal class RouteMetadataPrecomputeMonitor(
             ),
             state.second,
         )
-        append("GAME_HANDOFF status=$status elapsed_ms=$elapsedMs terminated_processes=$terminatedProcesses")
+        append(
+            "GAME_HANDOFF status=$status elapsed_ms=$elapsedMs " +
+                "worker_was_active=$workerWasActive grace_ms=$graceMs " +
+                "terminated_processes=$terminatedProcesses",
+        )
     }
 
     fun levelFinished(

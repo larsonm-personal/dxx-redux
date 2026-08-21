@@ -12,6 +12,12 @@ class RouteMetadataSchedulingTest {
     val temporaryFolder = TemporaryFolder()
 
     @Test
+    fun explicitGameLaunchUsesOneFastMetadataPollInterval() {
+        assertEquals(100L, LEVEL_METADATA_POLL_MS)
+        assertEquals(LEVEL_METADATA_POLL_MS, ROUTE_METADATA_GAME_LAUNCH_GRACE_MS)
+    }
+
+    @Test
     fun cpuDutyPolicyDistinguishesLauncherNextAndLaterWork() {
         assertEquals(20, RouteMetadataCpuPolicy.LAUNCHER_VISIBLE_DUTY_PERCENT)
         assertEquals(10, RouteMetadataPriority.ACTIVE.cpuDutyPercent)

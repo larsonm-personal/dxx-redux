@@ -6,6 +6,106 @@
     "mission_name": "Trine - Episode 1",
     "mission_filename": "trine1.msn",
     "coop_starts": "4",
+    "track_names": [
+      {
+        "track": 0,
+        "name": "Descent 1 Menu Remix (Jonathan Vukovich (Verran))",
+        "filename": "descent.ogg",
+        "format": "ogg",
+        "length_s": 237
+      },
+      {
+        "track": 1,
+        "name": "briefing",
+        "filename": "briefing.ogg",
+        "format": "ogg",
+        "length_s": 10
+      },
+      {
+        "track": 2,
+        "name": "Gettin' Out",
+        "filename": "endlevel.ogg",
+        "format": "ogg",
+        "length_s": 41
+      },
+      {
+        "track": 3,
+        "name": "endgame",
+        "filename": "endgame.ogg",
+        "format": "ogg",
+        "length_s": 130
+      },
+      {
+        "track": 4,
+        "name": "credits",
+        "filename": "credits.ogg",
+        "format": "ogg",
+        "length_s": 10
+      },
+      {
+        "track": 5,
+        "name": "Halcyon",
+        "filename": "game01.ogg",
+        "format": "ogg",
+        "length_s": 306
+      },
+      {
+        "track": 6,
+        "name": "Collider",
+        "filename": "game02.ogg",
+        "format": "ogg",
+        "length_s": 250
+      },
+      {
+        "track": 7,
+        "name": "The Chase",
+        "filename": "game03.ogg",
+        "format": "ogg",
+        "length_s": 219
+      },
+      {
+        "track": 8,
+        "name": "Nebula Outpost (Verran Eventide)",
+        "filename": "game04.ogg",
+        "format": "ogg",
+        "length_s": 504
+      },
+      {
+        "track": 9,
+        "name": "Wisps",
+        "filename": "game05.ogg",
+        "format": "ogg",
+        "length_s": 431
+      },
+      {
+        "track": 10,
+        "name": "Pain",
+        "filename": "game06.ogg",
+        "format": "ogg",
+        "length_s": 258
+      },
+      {
+        "track": 11,
+        "name": "Dilapidated Dark",
+        "filename": "game07.ogg",
+        "format": "ogg",
+        "length_s": 291
+      },
+      {
+        "track": 12,
+        "name": "game08",
+        "filename": "game08.ogg",
+        "format": "ogg",
+        "length_s": 489
+      },
+      {
+        "track": 13,
+        "name": "Black Lotus",
+        "filename": "game09.ogg",
+        "format": "ogg",
+        "length_s": 229
+      }
+    ],
     "level_count": 10,
     "levels": [
       {

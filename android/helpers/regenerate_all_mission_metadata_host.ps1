@@ -341,7 +341,30 @@ function ConvertTo-CheckedInMissionJson {
     }
     Add-IfString -Target $result -Name "coop_starts" -Value (Get-StringProp $Raw "coop_starts")
     $musicTracks = @(Get-ArrayValue (Get-Prop $Raw "music_tracks" @()))
-    if ($musicTracks.Count -gt 0) { $result["music_tracks"] = $musicTracks }
+    if ($musicTracks.Count -gt 0) {
+        $result["track_names"] = @($musicTracks | ForEach-Object {
+                $resolvedName = Get-StringProp $_ "resolved_name"
+                if ([string]::IsNullOrWhiteSpace($resolvedName)) {
+                    $slotIndex = [int](Get-Prop $_ "slot_index" 0)
+                    throw "Headless metadata track $slotIndex has no resolved_name. Rebuild the host metadata executables before regenerating regression files."
+                }
+                $durationMs = [int](Get-Prop $_ "duration_ms" 0)
+                $parseStatus = Get-StringProp $_ "parse_status"
+                $trackName = [ordered]@{
+                    track = [int](Get-Prop $_ "slot_index" 0)
+                    name = $resolvedName
+                    filename = Get-StringProp $_ "filename"
+                    format = Get-StringProp $_ "format"
+                    length_s = if ($durationMs -gt 0) { [int][Math]::Floor(($durationMs + 500) / 1000) } else { 0 }
+                }
+                if ($parseStatus -notin @("ok", "no_tags")) {
+                    $trackName["parse_status"] = $parseStatus
+                } elseif ($durationMs -le 0) {
+                    $trackName["parse_status"] = "duration_unavailable"
+                }
+                $trackName
+            })
+    }
     $result["level_count"] = $levels.Count
     $result["levels"] = $levels
     $problems = @(Get-ArrayValue (Get-Prop $Raw "problems" @())) | Where-Object { $_ }

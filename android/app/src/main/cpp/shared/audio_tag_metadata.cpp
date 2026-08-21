@@ -246,9 +246,9 @@ static char *copy_allocated(const std::string &value)
 
 static std::unique_ptr<TagLib::File> open_tag_file(TagLib::IOStream *stream, const std::string &format)
 {
-	if (format == "mp3") return std::make_unique<TagLib::MPEG::File>(stream, false, TagLib::AudioProperties::Fast);
-	if (format == "ogg") return std::make_unique<TagLib::Ogg::Vorbis::File>(stream, false, TagLib::AudioProperties::Fast);
-	if (format == "flac") return std::make_unique<TagLib::FLAC::File>(stream, false, TagLib::AudioProperties::Fast);
+	if (format == "mp3") return std::make_unique<TagLib::MPEG::File>(stream, true, TagLib::AudioProperties::Fast);
+	if (format == "ogg") return std::make_unique<TagLib::Ogg::Vorbis::File>(stream, true, TagLib::AudioProperties::Fast);
+	if (format == "flac") return std::make_unique<TagLib::FLAC::File>(stream, true, TagLib::AudioProperties::Fast);
 	return nullptr;
 }
 
@@ -257,12 +257,27 @@ static bool has_supported_signature(TagLib::IOStream *stream, const std::string 
 	stream->seek(0);
 	const TagLib::ByteVector header = stream->readBlock(10);
 	stream->seek(0);
+	const bool has_id3 = header.size() >= 10 && memcmp(header.data(), "ID3", 3) == 0;
+	bool valid_id3 = false;
+	if (has_id3) {
+		valid_id3 = static_cast<unsigned char>(header[3]) != 0xff &&
+		            static_cast<unsigned char>(header[4]) != 0xff;
+		TagLib::offset_t tag_size = 0;
+		for (size_t index = 6; valid_id3 && index < 10; ++index) {
+			const auto byte = static_cast<unsigned char>(header[index]);
+			if (byte & 0x80) valid_id3 = false;
+			else tag_size = (tag_size << 7) | byte;
+		}
+		const TagLib::offset_t footer_size =
+		    static_cast<unsigned char>(header[3]) == 4 && (static_cast<unsigned char>(header[5]) & 0x10) ? 10 : 0;
+		valid_id3 = valid_id3 && tag_size <= stream->length() - 10 - footer_size;
+	}
 	if (format == "ogg") return header.size() >= 4 && memcmp(header.data(), "OggS", 4) == 0;
 	if (format == "flac")
 		return (header.size() >= 4 && memcmp(header.data(), "fLaC", 4) == 0) ||
-		       (header.size() >= 3 && memcmp(header.data(), "ID3", 3) == 0);
+		       valid_id3;
 	if (format == "mp3")
-		return (header.size() >= 3 && memcmp(header.data(), "ID3", 3) == 0) ||
+		return valid_id3 ||
 		       (header.size() >= 2 && static_cast<unsigned char>(header[0]) == 0xff &&
 		        (static_cast<unsigned char>(header[1]) & 0xe0) == 0xe0);
 	return false;
@@ -290,6 +305,10 @@ static int parse_stream(TagLib::IOStream *stream, const std::string &format, aud
 	if (!file || !file->isValid()) {
 		metadata->status = AUDIO_TAG_STATUS_INVALID;
 		return 0;
+	}
+	if (const TagLib::AudioProperties *audio = file->audioProperties()) {
+		const long long duration = audio->lengthInMilliseconds();
+		if (duration > 0 && duration <= std::numeric_limits<int>::max()) metadata->duration_ms = static_cast<int>(duration);
 	}
 	const TagLib::PropertyMap properties = file->properties();
 	copy_truncated(metadata->title, sizeof(metadata->title), joined_values(properties, "TITLE"), &metadata->metadata_truncated);
@@ -477,6 +496,7 @@ extern "C" char *audio_tag_metadata_to_json(const audio_tag_metadata *metadata)
 	AUDIO_TAG_JSON_FIELD(disc_number);
 	AUDIO_TAG_JSON_FIELD(display_name);
 #undef AUDIO_TAG_JSON_FIELD
+	output << ",\"duration_ms\":" << metadata->duration_ms;
 	output << ",\"metadata_truncated\":" << (metadata->metadata_truncated ? "true" : "false") << ",\"properties\":[";
 	for (unsigned int property_index = 0; property_index < metadata->property_count; ++property_index) {
 		const audio_tag_property &property = metadata->properties[property_index];

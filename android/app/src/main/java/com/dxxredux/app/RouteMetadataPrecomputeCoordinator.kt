@@ -18,6 +18,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 
+internal const val ROUTE_METADATA_GAME_LAUNCH_GRACE_MS = 100L
+
 internal data class RouteMetadataPrecomputeJob(
     val target: LevelMetadataTarget,
     val sourceIdentity: String,
@@ -490,14 +492,7 @@ internal class RouteMetadataPrecomputeCoordinator(
     }
 
     suspend fun stopAndAwait() {
-        val previous =
-            synchronized(this) {
-                runner.also {
-                    it?.cancel()
-                    runner = null
-                    runningPriority = null
-                }
-            }
+        val previous = cancelRunner()
         listOfNotNull(previous).joinAll()
     }
 
@@ -516,19 +511,36 @@ internal class RouteMetadataPrecomputeCoordinator(
         gameLaunchPending = true
         monitor.launchHandoff("started")
         val startedAt = SystemClock.elapsedRealtime()
+        val previous = cancelRunner()
+        val workerWasActive = LevelMetadataAnalyzer.hasWorkerProcessForGameLaunch(appContext)
+        val graceApplied = previous != null && workerWasActive
+        // Ordinary analyzer preemption keeps its two-second checkpoint grace.
+        // An explicit game launch waits only one poll before forcing the isolated worker down.
+        if (graceApplied) delay(ROUTE_METADATA_GAME_LAUNCH_GRACE_MS)
+        val terminatedProcesses = LevelMetadataAnalyzer.terminateWorkerProcessesForGameLaunch(appContext)
         val stopped =
             withTimeoutOrNull(timeoutMs) {
-                stopAndAwait()
+                listOfNotNull(previous).joinAll()
                 true
             } ?: false
-        val terminatedProcesses = LevelMetadataAnalyzer.terminateWorkerProcessesForGameLaunch(appContext)
         monitor.launchHandoff(
             if (stopped) "complete" else "timeout",
             SystemClock.elapsedRealtime() - startedAt,
             terminatedProcesses,
+            workerWasActive,
+            if (graceApplied) ROUTE_METADATA_GAME_LAUNCH_GRACE_MS else 0L,
         )
         return stopped
     }
+
+    private fun cancelRunner(): Job? =
+        synchronized(this) {
+            runner.also {
+                it?.cancel()
+                runner = null
+                runningPriority = null
+            }
+        }
 
     @Synchronized
     fun resumeAfterGame() {

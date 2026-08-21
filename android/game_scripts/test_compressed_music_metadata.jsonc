@@ -1,0 +1,17 @@
+// TEST: Tagged compressed mission music is exposed by launcher metadata analysis
+[
+    {"_info": {
+        "description": "Import Castaway and verify stable OGG embedded metadata without screenshot analysis",
+        "games": ["d2"],
+        "_deps": [
+            {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
+            {"file": "descent2.ham", "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"},
+            {"file": "groupa.pig", "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"},
+            {"file": "castaway_redux.zip", "sha256": "8b00822dc291b76fdfd32f5543ea5657bd6bc4499e84c4fb37744518ce40e355", "target": "files/mods"}
+        ]
+    }},
+
+    {"action": "enter_launcher"},
+    {"action": "analyze_level_metadata_all", "label": "compressed_music_metadata", "mod_file": "castaway_redux.zip", "game": "d2", "status": "ok", "min_total_levels": 10, "min_music_tracks": 14, "expect_music_format": "ogg", "expect_music_title": "Choppy Seas", "expect_music_display_name": "Choppy Seas"},
+    {"action": "log", "message": "Tagged compressed mission music metadata passed"}
+]

@@ -110,14 +110,15 @@ int midi_metadata_read_physfs(const char *filename, midi_metadata *metadata)
 	}
 	status = midi_metadata_parse(bytes, (size_t) length,
 	                             has_extension_ci(filename, ".hmp") ||
-	                             has_extension_ci(filename, ".hmq"), metadata);
+	                                 has_extension_ci(filename, ".hmq"),
+	                             metadata);
 	free(bytes);
 	return status;
 }
 
 int midi_metadata_resolve_physfs(const char *filename, midi_metadata *metadata,
-	                             char *source_filename, size_t source_filename_size,
-	                             int *inherited_from_midi)
+                                 char *source_filename, size_t source_filename_size,
+                                 int *inherited_from_midi)
 {
 	char peer[MIDI_METADATA_SOURCE_FILENAME_BYTES];
 	midi_metadata peer_metadata;
@@ -142,8 +143,10 @@ int midi_metadata_resolve_physfs(const char *filename, midi_metadata *metadata,
 	midi_metadata_init(&peer_metadata);
 	if (midi_metadata_read_physfs(peer, &peer_metadata) == MIDI_METADATA_OK &&
 	    midi_metadata_has_text(&peer_metadata)) {
+		const int duration_ms = metadata->duration_ms;
 		midi_metadata_free(metadata);
 		*metadata = peer_metadata;
+		metadata->duration_ms = duration_ms;
 		snprintf(source_filename, source_filename_size, "%s", peer);
 		*inherited_from_midi = 1;
 		return MIDI_METADATA_OK;

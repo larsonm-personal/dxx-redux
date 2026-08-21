@@ -6,531 +6,211 @@
     "mission_name": "Descent 1:The Lost Levels",
     "mission_filename": "LOSTLVLS.MN2",
     "coop_starts": "4",
-    "music_tracks": [
+    "track_names": [
       {
-        "slot_index": 0,
-        "slot_kind": "title",
+        "track": 0,
+        "name": "MIDI Track 0",
         "filename": "descent.hmp",
         "format": "hmp",
-        "metadata_source_filename": "descent.mid",
-        "inherited_from_midi": true,
-        "parse_status": "ok",
-        "smf_format": 1,
-        "track_count": 22,
-        "time_division": 192,
-        "title": "",
-        "composer": "",
-        "display_name": "",
-        "metadata_truncated": false,
-        "text_events": [
-          {
-            "track_index": 1,
-            "type": "Sequence/track name",
-            "text": "[G]Loop"
-          },
-          {
-            "track_index": 2,
-            "type": "Sequence/track name",
-            "text": "[G]Strings"
-          },
-          {
-            "track_index": 3,
-            "type": "Sequence/track name",
-            "text": "[G]Bass"
-          },
-          {
-            "track_index": 4,
-            "type": "Sequence/track name",
-            "text": "[G]Pluck"
-          },
-          {
-            "track_index": 5,
-            "type": "Sequence/track name",
-            "text": "[G]Pluck 2"
-          },
-          {
-            "track_index": 6,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 7,
-            "type": "Sequence/track name",
-            "text": "[G]Voice"
-          },
-          {
-            "track_index": 8,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 9,
-            "type": "Sequence/track name",
-            "text": "[G]Strings"
-          },
-          {
-            "track_index": 10,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 11,
-            "type": "Sequence/track name",
-            "text": "[G]Mute"
-          },
-          {
-            "track_index": 12,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 13,
-            "type": "Sequence/track name",
-            "text": "[G]Low Tom"
-          },
-          {
-            "track_index": 14,
-            "type": "Sequence/track name",
-            "text": "[G]Pluck"
-          },
-          {
-            "track_index": 15,
-            "type": "Sequence/track name",
-            "text": "[G]Drums"
-          },
-          {
-            "track_index": 16,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 17,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 18,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 19,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 20,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          },
-          {
-            "track_index": 21,
-            "type": "Sequence/track name",
-            "text": "Sequence"
-          }
-        ]
+        "length_s": 183
       },
       {
-        "slot_index": 1,
-        "slot_kind": "briefing",
+        "track": 1,
+        "name": "MIDI Track 1",
         "filename": "briefing.hmp",
         "format": "hmp",
-        "metadata_source_filename": "briefing.mid",
-        "inherited_from_midi": true,
-        "parse_status": "ok",
-        "smf_format": 1,
-        "track_count": 12,
-        "time_division": 192,
-        "title": "",
-        "composer": "",
-        "display_name": "",
-        "metadata_truncated": false,
-        "text_events": [
-          {
-            "track_index": 1,
-            "type": "Sequence/track name",
-            "text": "Loop"
-          },
-          {
-            "track_index": 2,
-            "type": "Sequence/track name",
-            "text": "[G]Choir"
-          },
-          {
-            "track_index": 3,
-            "type": "Sequence/track name",
-            "text": "[G]Bass"
-          },
-          {
-            "track_index": 4,
-            "type": "Sequence/track name",
-            "text": "[G]Bass 8vb"
-          },
-          {
-            "track_index": 5,
-            "type": "Sequence/track name",
-            "text": "[G]Syn 1"
-          },
-          {
-            "track_index": 6,
-            "type": "Sequence/track name",
-            "text": "[G]Syn 2"
-          },
-          {
-            "track_index": 7,
-            "type": "Sequence/track name",
-            "text": "[G]Strings"
-          },
-          {
-            "track_index": 8,
-            "type": "Sequence/track name",
-            "text": "[G]Timp rolls"
-          },
-          {
-            "track_index": 9,
-            "type": "Sequence/track name",
-            "text": "[G]Taiko rolls"
-          },
-          {
-            "track_index": 10,
-            "type": "Sequence/track name",
-            "text": "[G]Perc"
-          },
-          {
-            "track_index": 11,
-            "type": "Sequence/track name",
-            "text": "[G]Soundtrack"
-          }
-        ]
+        "length_s": 95
       },
       {
-        "slot_index": 2,
-        "slot_kind": "endlevel",
+        "track": 2,
+        "name": "MIDI Track 2",
         "filename": "endlevel.hmp",
         "format": "hmp",
-        "metadata_source_filename": "",
-        "inherited_from_midi": false,
-        "parse_status": "invalid_midi",
-        "smf_format": 0,
-        "track_count": 0,
-        "time_division": 0,
-        "title": "",
-        "composer": "",
-        "display_name": "",
-        "metadata_truncated": false,
-        "text_events": []
+        "length_s": 0,
+        "parse_status": "invalid_midi"
       },
       {
-        "slot_index": 3,
-        "slot_kind": "endgame",
+        "track": 3,
+        "name": "MIDI Track 3",
         "filename": "endgame.hmp",
         "format": "hmp",
-        "metadata_source_filename": "",
-        "inherited_from_midi": false,
-        "parse_status": "invalid_midi",
-        "smf_format": 0,
-        "track_count": 0,
-        "time_division": 0,
-        "title": "",
-        "composer": "",
-        "display_name": "",
-        "metadata_truncated": false,
-        "text_events": []
+        "length_s": 0,
+        "parse_status": "invalid_midi"
       },
       {
-        "slot_index": 4,
-        "slot_kind": "credits",
+        "track": 4,
+        "name": "End theme",
         "filename": "credits.hmp",
         "format": "hmp",
-        "metadata_source_filename": "credits.mid",
-        "inherited_from_midi": true,
-        "parse_status": "ok",
-        "smf_format": 1,
-        "track_count": 19,
-        "time_division": 120,
-        "title": "composed by Yasunori Mitsuda",
-        "composer": "",
-        "display_name": "composed by Yasunori Mitsuda",
-        "metadata_truncated": false,
-        "text_events": [
-          {
-            "track_index": 1,
-            "type": "Sequence/track name",
-            "text": "Fingered Electric Bass"
-          },
-          {
-            "track_index": 2,
-            "type": "Sequence/track name",
-            "text": "Acoustic Grand Piano"
-          },
-          {
-            "track_index": 3,
-            "type": "Sequence/track name",
-            "text": "Slow Strings"
-          },
-          {
-            "track_index": 4,
-            "type": "Sequence/track name",
-            "text": "Slow Strings"
-          },
-          {
-            "track_index": 5,
-            "type": "Sequence/track name",
-            "text": "Slow Strings"
-          },
-          {
-            "track_index": 6,
-            "type": "Sequence/track name",
-            "text": "Harp"
-          },
-          {
-            "track_index": 7,
-            "type": "Sequence/track name",
-            "text": "Flute"
-          },
-          {
-            "track_index": 8,
-            "type": "Sequence/track name",
-            "text": "Choir Aahs"
-          },
-          {
-            "track_index": 9,
-            "type": "Sequence/track name",
-            "text": "Choir Aahs"
-          },
-          {
-            "track_index": 10,
-            "type": "Sequence/track name",
-            "text": "Standard Drums"
-          },
-          {
-            "track_index": 11,
-            "type": "Sequence/track name",
-            "text": "Choir Aahs"
-          },
-          {
-            "track_index": 12,
-            "type": "Sequence/track name",
-            "text": "Synth Strings 1"
-          },
-          {
-            "track_index": 13,
-            "type": "Sequence/track name",
-            "text": "French Horn"
-          },
-          {
-            "track_index": 15,
-            "type": "Sequence/track name",
-            "text": "Chrono Trigger"
-          },
-          {
-            "track_index": 16,
-            "type": "Sequence/track name",
-            "text": "End theme"
-          },
-          {
-            "track_index": 17,
-            "type": "Sequence/track name",
-            "text": "composed by Yasunori Mitsuda"
-          },
-          {
-            "track_index": 18,
-            "type": "Sequence/track name",
-            "text": "sequenced by Pokey <pokey@plex.nl>"
-          }
-        ]
+        "length_s": 145
       },
       {
-        "slot_index": 5,
-        "slot_kind": "level",
+        "track": 5,
+        "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "metadata_source_filename": "game01.mid",
-        "inherited_from_midi": true,
-        "parse_status": "ok",
-        "smf_format": 1,
-        "track_count": 13,
-        "time_division": 120,
-        "title": "DTX 1.0",
-        "composer": "",
-        "display_name": "DTX 1.0",
-        "metadata_truncated": false,
-        "text_events": [
-          {
-            "track_index": 0,
-            "type": "Text",
-            "text": "DTX 1.0"
-          }
-        ]
+        "length_s": 204
       },
       {
-        "slot_index": 6,
-        "slot_kind": "level",
+        "track": 6,
+        "name": "MIDI Track 2",
         "filename": "game02.hmp",
         "format": "hmp",
-        "metadata_source_filename": "game02.mid",
-        "inherited_from_midi": true,
-        "parse_status": "ok",
-        "smf_format": 1,
-        "track_count": 18,
-        "time_division": 120,
-        "title": "DTX 1.0",
-        "composer": "",
-        "display_name": "DTX 1.0",
-        "metadata_truncated": false,
-        "text_events": [
-          {
-            "track_index": 0,
-            "type": "Text",
-            "text": "DTX 1.0"
-          }
-        ]
+        "length_s": 226
       },
       {
-        "slot_index": 7,
-        "slot_kind": "level",
+        "track": 7,
+        "name": "MIDI Track 3",
         "filename": "game03.hmp",
         "format": "hmp",
-        "metadata_source_filename": "game03.mid",
-        "inherited_from_midi": true,
-        "parse_status": "ok",
-        "smf_format": 1,
-        "track_count": 18,
-        "time_division": 120,
-        "title": "DTX 1.0",
-        "composer": "",
-        "display_name": "DTX 1.0",
-        "metadata_truncated": false,
-        "text_events": [
-          {
-            "track_index": 0,
-            "type": "Text",
-            "text": "DTX 1.0"
-          }
-        ]
+        "length_s": 213
       },
       {
-        "slot_index": 8,
-        "slot_kind": "level",
+        "track": 8,
+        "name": "MIDI Track 4",
         "filename": "game04.hmp",
         "format": "hmp",
-        "metadata_source_filename": "game04.mid",
-        "inherited_from_midi": true,
-        "parse_status": "ok",
-        "smf_format": 1,
-        "track_count": 19,
-        "time_division": 480,
-        "title": "loopEnd",
-        "composer": "",
-        "display_name": "loopEnd",
-        "metadata_truncated": false,
-        "text_events": [
-          {
-            "track_index": 0,
-            "type": "Marker",
-            "text": "bat"
-          },
-          {
-            "track_index": 0,
-            "type": "Marker",
-            "text": "loopStart"
-          },
-          {
-            "track_index": 0,
-            "type": "Marker",
-            "text": "loopEnd"
-          },
-          {
-            "track_index": 1,
-            "type": "Sequence/track name",
-            "text": "ST1"
-          },
-          {
-            "track_index": 2,
-            "type": "Sequence/track name",
-            "text": "ST2"
-          },
-          {
-            "track_index": 3,
-            "type": "Sequence/track name",
-            "text": "HORN1"
-          },
-          {
-            "track_index": 4,
-            "type": "Sequence/track name",
-            "text": "FL1"
-          },
-          {
-            "track_index": 5,
-            "type": "Sequence/track name",
-            "text": "FL2"
-          },
-          {
-            "track_index": 6,
-            "type": "Sequence/track name",
-            "text": "TROMB"
-          },
-          {
-            "track_index": 7,
-            "type": "Sequence/track name",
-            "text": "TUBA"
-          },
-          {
-            "track_index": 8,
-            "type": "Sequence/track name",
-            "text": "BASS"
-          },
-          {
-            "track_index": 9,
-            "type": "Sequence/track name",
-            "text": "CYMBAL, SNARE"
-          },
-          {
-            "track_index": 10,
-            "type": "Sequence/track name",
-            "text": "TAMBA"
-          },
-          {
-            "track_index": 11,
-            "type": "Sequence/track name",
-            "text": "PERCUS"
-          },
-          {
-            "track_index": 12,
-            "type": "Sequence/track name",
-            "text": "TOM"
-          },
-          {
-            "track_index": 13,
-            "type": "Sequence/track name",
-            "text": "TIMPANI"
-          },
-          {
-            "track_index": 14,
-            "type": "Sequence/track name",
-            "text": "FLUTE"
-          },
-          {
-            "track_index": 15,
-            "type": "Sequence/track name",
-            "text": "MORE STRINGS"
-          },
-          {
-            "track_index": 16,
-            "type": "Sequence/track name",
-            "text": "PET1"
-          },
-          {
-            "track_index": 17,
-            "type": "Sequence/track name",
-            "text": "PET2"
-          },
-          {
-            "track_index": 18,
-            "type": "Sequence/track name",
-            "text": "iron"
-          }
-        ]
+        "length_s": 78
+      },
+      {
+        "track": 9,
+        "name": "MIDI Track 5",
+        "filename": "game05.hmp",
+        "format": "hmp",
+        "length_s": 206
+      },
+      {
+        "track": 10,
+        "name": "MIDI Track 6",
+        "filename": "game06.hmp",
+        "format": "hmp",
+        "length_s": 185
+      },
+      {
+        "track": 11,
+        "name": "MIDI Track 7",
+        "filename": "game07.hmp",
+        "format": "hmp",
+        "length_s": 151
+      },
+      {
+        "track": 12,
+        "name": "MIDI Track 8",
+        "filename": "game08.hmp",
+        "format": "hmp",
+        "length_s": 119
+      },
+      {
+        "track": 13,
+        "name": "MIDI Track 9",
+        "filename": "game09.hmp",
+        "format": "hmp",
+        "length_s": 176
+      },
+      {
+        "track": 14,
+        "name": "MIDI Track 10",
+        "filename": "game10.hmp",
+        "format": "hmp",
+        "length_s": 191
+      },
+      {
+        "track": 15,
+        "name": "MIDI Track 11",
+        "filename": "game11.hmp",
+        "format": "hmp",
+        "length_s": 244
+      },
+      {
+        "track": 16,
+        "name": "MIDI Track 12",
+        "filename": "game12.hmp",
+        "format": "hmp",
+        "length_s": 77
+      },
+      {
+        "track": 17,
+        "name": "MIDI Track 13",
+        "filename": "game13.hmp",
+        "format": "hmp",
+        "length_s": 179
+      },
+      {
+        "track": 18,
+        "name": "MIDI Track 14",
+        "filename": "game14.hmp",
+        "format": "hmp",
+        "length_s": 159
+      },
+      {
+        "track": 19,
+        "name": "MIDI Track 15",
+        "filename": "game15.hmp",
+        "format": "hmp",
+        "length_s": 235
+      },
+      {
+        "track": 20,
+        "name": "MIDI Track 16",
+        "filename": "game16.hmp",
+        "format": "hmp",
+        "length_s": 121
+      },
+      {
+        "track": 21,
+        "name": "MIDI Track 17",
+        "filename": "game17.hmp",
+        "format": "hmp",
+        "length_s": 184
+      },
+      {
+        "track": 22,
+        "name": "MIDI Track 18",
+        "filename": "game18.hmp",
+        "format": "hmp",
+        "length_s": 176
+      },
+      {
+        "track": 23,
+        "name": "MIDI Track 19",
+        "filename": "game19.hmp",
+        "format": "hmp",
+        "length_s": 77
+      },
+      {
+        "track": 24,
+        "name": "MIDI Track 20",
+        "filename": "game20.hmp",
+        "format": "hmp",
+        "length_s": 134
+      },
+      {
+        "track": 25,
+        "name": "MIDI Track 21",
+        "filename": "game21.hmp",
+        "format": "hmp",
+        "length_s": 163
+      },
+      {
+        "track": 26,
+        "name": "Boss the Boss",
+        "filename": "game22.hmp",
+        "format": "hmp",
+        "length_s": 267
+      },
+      {
+        "track": 27,
+        "name": "Ice Cap Zone -- Sonic The Hedgehog 3 (SynthRye -- CronoRye.Com)",
+        "filename": "game23.hmp",
+        "format": "hmp",
+        "length_s": 131
+      },
+      {
+        "track": 28,
+        "name": "MIDI Track 24",
+        "filename": "game24.hmp",
+        "format": "hmp",
+        "length_s": 243
       }
     ],
     "level_count": 25,
@@ -567,6 +247,7 @@
             "index": 1,
             "kind": "trigger",
             "activation_kind": "unresolved_trigger",
+            "calculated": false,
             "label": "Locate and activate switch trigger 2",
             "seg": 83,
             "wall": 34,
@@ -575,7 +256,6 @@
               "y": 0.0,
               "z": 316.98561096191406
             },
-            "calculated": false,
             "trigger": 2,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1981,6 +1661,7 @@
             "index": 1,
             "kind": "trigger",
             "activation_kind": "unresolved_trigger",
+            "calculated": false,
             "label": "Locate and activate switch trigger 7",
             "seg": 404,
             "wall": 103,
@@ -1989,7 +1670,6 @@
               "y": -30.637451171875,
               "z": 42.67964172363281
             },
-            "calculated": false,
             "trigger": 7,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -3396,6 +3076,7 @@
             "index": 2,
             "kind": "trigger",
             "activation_kind": "unresolved_trigger",
+            "calculated": false,
             "label": "Locate and activate switch trigger 29",
             "seg": 231,
             "wall": 129,
@@ -3404,7 +3085,6 @@
               "y": 10.0,
               "z": -244.0
             },
-            "calculated": false,
             "trigger": 29,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -3434,6 +3114,7 @@
             "index": 4,
             "kind": "trigger",
             "activation_kind": "unresolved_trigger",
+            "calculated": false,
             "label": "Locate and activate switch trigger 9",
             "seg": 150,
             "wall": 65,
@@ -3442,7 +3123,6 @@
               "y": 96.17304992675781,
               "z": -272.6424255371094
             },
-            "calculated": false,
             "trigger": 9,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",

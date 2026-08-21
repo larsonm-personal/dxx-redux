@@ -128,14 +128,8 @@ fun MidiBytesPreviewDialog(
                 }
 
                 if (showMetadata) {
-                    val value = metadata
-                    when {
-                        metadataLoading -> Text("Reading metadata...", fontSize = 12.sp)
-                        value == null -> Text("No readable MIDI metadata.", fontSize = 12.sp)
-                        else -> midiMetadataPrintout(value).forEach { line ->
-                            Text(line, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
+                    val lines = metadata?.let(::midiMetadataPrintout)?.map(::AudioFilePreviewLine)
+                    MetadataPrintout(lines, metadataLoading, "No readable MIDI metadata.")
                 }
 
                 loadError?.let {

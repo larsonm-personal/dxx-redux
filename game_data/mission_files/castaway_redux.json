@@ -6,6 +6,110 @@
     "mission_name": "ptmc: castaway",
     "mission_filename": "castaway.mn2",
     "coop_starts": "1-4",
+    "track_names": [
+      {
+        "track": 0,
+        "name": "descent2",
+        "filename": "descent2.ogg",
+        "format": "ogg",
+        "length_s": 0,
+        "parse_status": "io_error"
+      },
+      {
+        "track": 1,
+        "name": "Choppy Seas",
+        "filename": "briefing.ogg",
+        "format": "ogg",
+        "length_s": 181
+      },
+      {
+        "track": 2,
+        "name": "endlevel",
+        "filename": "endlevel.ogg",
+        "format": "ogg",
+        "length_s": 0,
+        "parse_status": "io_error"
+      },
+      {
+        "track": 3,
+        "name": "endgame",
+        "filename": "endgame.ogg",
+        "format": "ogg",
+        "length_s": 0,
+        "parse_status": "io_error"
+      },
+      {
+        "track": 4,
+        "name": "credits",
+        "filename": "credits.ogg",
+        "format": "ogg",
+        "length_s": 0,
+        "parse_status": "io_error"
+      },
+      {
+        "track": 5,
+        "name": "Crescent",
+        "filename": "bntrng01.ogg",
+        "format": "ogg",
+        "length_s": 327
+      },
+      {
+        "track": 6,
+        "name": "Emperor Unknown",
+        "filename": "sable01.ogg",
+        "format": "ogg",
+        "length_s": 307
+      },
+      {
+        "track": 7,
+        "name": "Terraform",
+        "filename": "bntrng02.ogg",
+        "format": "ogg",
+        "length_s": 353
+      },
+      {
+        "track": 8,
+        "name": "Vast Visions",
+        "filename": "sable02.ogg",
+        "format": "ogg",
+        "length_s": 273
+      },
+      {
+        "track": 9,
+        "name": "Quench",
+        "filename": "sable03.ogg",
+        "format": "ogg",
+        "length_s": 291
+      },
+      {
+        "track": 10,
+        "name": "Anomaly",
+        "filename": "sable04.ogg",
+        "format": "ogg",
+        "length_s": 288
+      },
+      {
+        "track": 11,
+        "name": "Tsunami Stones",
+        "filename": "bntrng03.ogg",
+        "format": "ogg",
+        "length_s": 471
+      },
+      {
+        "track": 12,
+        "name": "Taken Shape",
+        "filename": "sable05.ogg",
+        "format": "ogg",
+        "length_s": 288
+      },
+      {
+        "track": 13,
+        "name": "Eon Forged",
+        "filename": "sable06.ogg",
+        "format": "ogg",
+        "length_s": 280
+      }
+    ],
     "level_count": 10,
     "levels": [
       {
@@ -630,6 +734,7 @@
             "index": 7,
             "kind": "trigger",
             "activation_kind": "unresolved_trigger",
+            "calculated": false,
             "label": "Locate and activate switch trigger 13",
             "seg": 360,
             "wall": 122,
@@ -638,7 +743,6 @@
               "y": -22.5,
               "z": 132.47230529785156
             },
-            "calculated": false,
             "trigger": 13,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -659,6 +763,7 @@
             "index": 8,
             "kind": "trigger",
             "activation_kind": "unresolved_trigger",
+            "calculated": false,
             "label": "Locate and activate switch trigger 20",
             "seg": 45,
             "wall": 143,
@@ -667,7 +772,6 @@
               "y": 0.0,
               "z": -105.55479431152344
             },
-            "calculated": false,
             "trigger": 20,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1256,6 +1360,7 @@
             "index": 3,
             "kind": "trigger",
             "activation_kind": "unresolved_trigger",
+            "calculated": false,
             "label": "Locate and activate switch trigger 4",
             "seg": 182,
             "wall": 128,
@@ -1264,7 +1369,6 @@
               "y": -14.999786376953125,
               "z": -48.78678894042969
             },
-            "calculated": false,
             "trigger": 4,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",

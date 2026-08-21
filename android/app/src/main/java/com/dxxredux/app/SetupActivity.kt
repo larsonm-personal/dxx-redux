@@ -86,6 +86,36 @@ import org.json.JSONObject
 import java.io.File
 import java.util.Locale
 
+internal enum class LauncherPreparationPhase(
+    val wireName: String,
+) {
+    PREPARING("preparing"),
+    PAUSING_METADATA("pausing_metadata"),
+    STARTING_GAME("starting_game"),
+}
+
+internal data class LauncherPreparationState(
+    val game: String,
+    val launchKind: String,
+    val phase: LauncherPreparationPhase,
+    val startedAtMs: Long,
+)
+
+internal fun launcherPreparationLabel(state: LauncherPreparationState): String =
+    when (state.phase) {
+        LauncherPreparationPhase.PREPARING -> {
+            if (state.launchKind == "resume") "Preparing saved game" else "Preparing game"
+        }
+
+        LauncherPreparationPhase.PAUSING_METADATA -> {
+            "Pausing background analysis"
+        }
+
+        LauncherPreparationPhase.STARTING_GAME -> {
+            "Starting ${if (state.game == "d1") "Descent 1" else "Descent 2"}"
+        }
+    }
+
 /**
  * Pre-game setup screen built with Jetpack Compose.
  *
@@ -108,6 +138,7 @@ class SetupActivity : ComponentActivity() {
     private val focusResumeTrigger = mutableIntStateOf(0)
     private val launcherControllerNavigationActive = mutableStateOf(false)
     private val launchFailureMessage = mutableStateOf<String?>(null)
+    private val launchPreparation = mutableStateOf<LauncherPreparationState?>(null)
     private val pendingPickedImportUris = mutableStateOf<List<Uri>>(emptyList())
     private val resumeOfferRefreshHandler = Handler(Looper.getMainLooper())
     private val resumeOfferRefreshRunnable =
@@ -117,6 +148,40 @@ class SetupActivity : ComponentActivity() {
             )
             refreshTrigger.intValue++
         }
+
+    internal fun launchPreparationSnapshot(): LauncherPreparationState? = launchPreparation.value
+
+    private fun beginLaunchPreparation(
+        game: String,
+        launchKind: String,
+    ): Boolean {
+        if (launchPreparation.value != null) {
+            Log.w("DXX-Setup", "Ignoring duplicate game launch during launcher preparation")
+            return false
+        }
+        launchPreparation.value =
+            LauncherPreparationState(
+                game = game,
+                launchKind = launchKind,
+                phase = LauncherPreparationPhase.PREPARING,
+                startedAtMs = SystemClock.elapsedRealtime(),
+            )
+        RouteMetadataDiagnostics.log("Launcher game launch requested game=$game kind=$launchKind")
+        return true
+    }
+
+    private fun updateLaunchPreparation(phase: LauncherPreparationPhase) {
+        launchPreparation.value = launchPreparation.value?.copy(phase = phase)
+    }
+
+    private fun finishLaunchPreparation(reason: String) {
+        val state = launchPreparation.value ?: return
+        RouteMetadataDiagnostics.log(
+            "Launcher game launch finished game=${state.game} kind=${state.launchKind} " +
+                "reason=$reason elapsed_ms=${SystemClock.elapsedRealtime() - state.startedAtMs}",
+        )
+        launchPreparation.value = null
+    }
 
     // -- Setup-screen introspection --------------------------------------
     //   adb shell am broadcast -a com.dxxredux.SETUP_INTROSPECT
@@ -342,6 +407,9 @@ class SetupActivity : ComponentActivity() {
             Log.w("DXX-RouteMetadata", "Ignoring duplicate game launch during route metadata handoff")
             return
         }
+        val game = intent.getStringExtra("game") ?: "d2"
+        if (launchPreparation.value == null && !beginLaunchPreparation(game, "game")) return
+        updateLaunchPreparation(LauncherPreparationPhase.PAUSING_METADATA)
         routeMetadataLaunchJob =
             routeMetadataScope.launch {
                 val startedAt = SystemClock.elapsedRealtime()
@@ -352,7 +420,18 @@ class SetupActivity : ComponentActivity() {
                         "elapsed_ms=${SystemClock.elapsedRealtime() - startedAt} stopped=$metadataStopped",
                 )
                 withContext(Dispatchers.Main.immediate) {
-                    if (!isFinishing && !isDestroyed) startActivity(intent)
+                    if (!isFinishing && !isDestroyed) {
+                        updateLaunchPreparation(LauncherPreparationPhase.STARTING_GAME)
+                        try {
+                            startActivity(intent)
+                        } catch (e: Exception) {
+                            Log.e("DXX-Setup", "Could not start $game", e)
+                            finishLaunchPreparation("activity_start_failed")
+                            showLaunchPreflightFailure("Could not start ${gameDisplayName(game)}")
+                        }
+                    } else {
+                        finishLaunchPreparation("launcher_unavailable")
+                    }
                 }
             }
     }
@@ -431,6 +510,25 @@ class SetupActivity : ComponentActivity() {
     }
 
     private fun prepareGameLaunchFiles(game: String): String? {
+        val startedAt = SystemClock.elapsedRealtime()
+        var stepStartedAt = startedAt
+
+        fun recordStep(step: String) {
+            val now = SystemClock.elapsedRealtime()
+            RouteMetadataDiagnostics.log(
+                "Launcher preflight game=$game step=$step elapsed_ms=${now - stepStartedAt}",
+            )
+            stepStartedAt = now
+        }
+
+        fun complete(message: String?): String? {
+            RouteMetadataDiagnostics.log(
+                "Launcher preflight game=$game status=${if (message == null) "complete" else "blocked"} " +
+                    "elapsed_ms=${SystemClock.elapsedRealtime() - startedAt}",
+            )
+            return message
+        }
+
         val fileSetManager = FileSetManager(filesDir)
         val activeSet = fileSetManager.getActive()
         val activeSetDir = fileSetManager.getSetDir(activeSet)
@@ -439,43 +537,51 @@ class SetupActivity : ComponentActivity() {
         val includeD1MissionZipsForD2 =
             game != "d2" ||
                 d1InD2Readiness(filesDir, activeSetDir, AssetManifest(activeSetDir), safManifest).ready
+        recordStep("readiness")
         val compatibility = modManager.checkEnabledModCompatibility(game, activeSetDir, includeD1MissionZipsForD2)
+        recordStep("mod_compatibility")
         if (!compatibility.ok) {
             Log.e("DXX-Setup", "Mod compatibility check failed for $game: ${compatibility.toLogMessage()}")
             LauncherDebugLog.log("mod-compatibility-block game=$game ${compatibility.toLogMessage()}")
-            return compatibility.toUserMessage()
+            return complete(compatibility.toUserMessage())
         }
         if (game == "d2" && !includeD1MissionZipsForD2 && modManager.hasEnabledD1MissionZipForD2()) {
             LauncherDebugLog.log("d1-in-d2-hidden-missions reason=missing-d1-base-assets")
         }
         try {
             fileSetManager.writeActiveSetPath()
+            recordStep("active_set")
             val audioSourceManager = AudioSourceManager(filesDir)
             val pilotMusic = NativePilotPreferences.readMusicPrefsForAll(game, filesDir.absolutePath)
+            recordStep("pilot_music")
             val requestedMusicMode =
                 pilotMusic.source.takeIf { pilotMusic.hasPilotFile && it in setOf("cd", "files", "midi") }
                     ?: getSharedPreferences("dxx_prefs", MODE_PRIVATE).getString("music_mode", "midi")
             val cdPlaylistReady = audioSourceManager.writePlaylist(contentResolver)
+            recordStep("cd_playlist")
             if (requestedMusicMode == "cd" && !cdPlaylistReady) {
-                return "CD Audio is selected, but no enabled readable CD source is available"
+                return complete("CD Audio is selected, but no enabled readable CD source is available")
             }
             modManager.writeEnabledModPaths(game, includeD1MissionZipsForD2)
+            recordStep("mod_paths")
             writeInitialGameConfig()
             migrateLegacyHalfRenderResolution()
+            recordStep("game_config")
             if (!writeMusicConfigForLaunch(game, includeD1MissionZipsForD2)) {
-                return "Audio Files is selected, but no enabled readable custom track is available"
+                return complete("Audio Files is selected, but no enabled readable custom track is available")
             }
+            recordStep("music_config")
         } catch (e: InsufficientStorageException) {
             Log.e("DXX-Setup", "Launch storage preflight failed for $game", e)
             LauncherDebugLog.log("launch-storage-block game=$game message=${e.message ?: ""}")
             ImportStorageGuard.recordFailure(filesDir, "Launch preparation failed", e)
-            return ImportStorageGuard.messageForFailure(e)
+            return complete(ImportStorageGuard.messageForFailure(e))
         } catch (e: ActiveModPathCapacityException) {
             Log.e("DXX-Setup", "Launch mod-path preflight failed for $game", e)
             LauncherDebugLog.log("mod-path-capacity-block game=$game message=${e.message ?: ""}")
-            return e.message ?: "Too many enabled mod paths"
+            return complete(e.message ?: "Too many enabled mod paths")
         }
-        return null
+        return complete(null)
     }
 
     private fun showLaunchPreflightFailure(message: String) {
@@ -2068,6 +2174,9 @@ class SetupActivity : ComponentActivity() {
                     },
                 )
             }
+            launchPreparation.value?.let { preparation ->
+                LauncherPreparationDialog(preparation)
+            }
             SetupScreen(
                 filesDir = filesDir,
                 gameRunning = gameRunningFlag,
@@ -2080,7 +2189,7 @@ class SetupActivity : ComponentActivity() {
                 pressedButtons = pressedButtons,
                 pickedImportUris = pendingPickedImportUris.value,
                 onPickedImportConsumed = { pendingPickedImportUris.value = emptyList() },
-                onLaunchGame = launch@{ game, resumeCandidate ->
+                onLaunchGame = onLaunch@{ game, resumeCandidate ->
                     val pending = launcherExecutor?.consumePendingLaunch()
                     if (pending != null) {
                         launchGameForAutomation(
@@ -2104,10 +2213,6 @@ class SetupActivity : ComponentActivity() {
                             ).show()
                     } else {
                         val launchGame = resumeCandidate?.game ?: game
-                        prepareGameLaunchFiles(launchGame)?.let { message ->
-                            launchPreflightMessage = message
-                            return@launch
-                        }
                         val resolvedResumeSavePath =
                             resumeCandidate?.let { candidate ->
                                 resolveResumeSaveLaunchPath(filesDir, candidate)
@@ -2130,24 +2235,42 @@ class SetupActivity : ComponentActivity() {
                             )
                             Toast.makeText(this, "Could not read the save launch details", Toast.LENGTH_SHORT).show()
                         } else {
-                            if (resumeCandidate != null) {
-                                logResumeCandidateLaunch(
-                                    "setup-resume-candidate-selected",
-                                    resumeCandidate,
-                                    resolvedResumeSavePath,
-                                    resolvedResumeCallsign,
-                                )
+                            val launchKind = if (resumeCandidate != null) "resume" else "game"
+                            if (!beginLaunchPreparation(launchGame, launchKind)) {
+                                return@onLaunch
                             }
-                            val intent =
-                                createGameLaunchIntent(
-                                    game = launchGame,
-                                    inputDemoReplayPath = null,
-                                    resumeSavePath = resolvedResumeSavePath,
-                                    resumeCallsign = resolvedResumeCallsign,
-                                )
-                            startGameAfterRouteMetadataHandoff(intent)
-                            // Don't finish() -- stay in back stack so quitting
-                            // the game returns here instead of the launcher.
+                            lifecycleScope.launch {
+                                val preflightMessage =
+                                    try {
+                                        withContext(Dispatchers.IO) { prepareGameLaunchFiles(launchGame) }
+                                    } catch (e: Exception) {
+                                        Log.e("DXX-Setup", "Launch preflight failed for $launchGame", e)
+                                        "Could not prepare ${gameDisplayName(launchGame)}"
+                                    }
+                                if (preflightMessage != null) {
+                                    launchPreflightMessage = preflightMessage
+                                    finishLaunchPreparation("preflight_failed")
+                                    return@launch
+                                }
+                                if (resumeCandidate != null) {
+                                    logResumeCandidateLaunch(
+                                        "setup-resume-candidate-selected",
+                                        resumeCandidate,
+                                        resolvedResumeSavePath,
+                                        resolvedResumeCallsign,
+                                    )
+                                }
+                                val intent =
+                                    createGameLaunchIntent(
+                                        game = launchGame,
+                                        inputDemoReplayPath = null,
+                                        resumeSavePath = resolvedResumeSavePath,
+                                        resumeCallsign = resolvedResumeCallsign,
+                                    )
+                                startGameAfterRouteMetadataHandoff(intent)
+                                // Don't finish() -- stay in back stack so quitting
+                                // the game returns here instead of the launcher.
+                            }
                         }
                     }
                 },
@@ -2437,6 +2560,9 @@ class SetupActivity : ComponentActivity() {
     }
 
     override fun onPause() {
+        if (launchPreparation.value?.phase == LauncherPreparationPhase.STARTING_GAME) {
+            finishLaunchPreparation("activity_started")
+        }
         routeMetadataCoordinator.stop("launcher paused")
         super.onPause()
     }
@@ -2473,6 +2599,21 @@ class SetupActivity : ComponentActivity() {
 }
 
 // -- Composables -------------------------------------------------------------
+
+@Composable
+private fun LauncherPreparationDialog(preparation: LauncherPreparationState) {
+    AlertDialog(
+        onDismissRequest = {},
+        title = { Text("Launching game") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(launcherPreparationLabel(preparation), fontSize = 12.sp)
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
+        },
+        confirmButton = {},
+    )
+}
 
 @Composable
 private fun SetupScreen(
