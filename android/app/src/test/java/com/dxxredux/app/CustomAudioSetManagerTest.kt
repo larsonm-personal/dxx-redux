@@ -9,6 +9,25 @@ import java.io.File
 
 class CustomAudioSetManagerTest {
     @Test
+    fun fileSetScopedCustomMusicStateAndPayloadsAreIsolated() {
+        val filesDir = File("build/test-custom-audio-file-set-isolation").absoluteFile
+        filesDir.deleteRecursively()
+        val setA = File(filesDir, "sets/a").apply { mkdirs() }
+        val setB = File(filesDir, "sets/b").apply { mkdirs() }
+        val managerA = CustomAudioSetManager(filesDir, setA)
+        val managerB = CustomAudioSetManager(filesDir, setB)
+        managerA.setDir("album").mkdirs()
+        File(managerA.setDir("album"), "track.ogg").writeText("track")
+        managerA.addSet(CustomAudioSetManager.AudioSet("album", "Set A album", listOf("track.ogg")))
+
+        assertEquals(listOf("album"), CustomAudioSetManager(filesDir, setA).getSets().map { it.id })
+        assertTrue(managerB.getSets().isEmpty())
+        assertTrue(File(setA, ".content/custom_audio/custom_music/album/track.ogg").isFile)
+        assertTrue(File(setA, ".content/custom_audio/custom_audio_sets.json").isFile)
+        assertEquals(false, File(setB, ".content/custom_audio/custom_audio_sets.json").exists())
+    }
+
+    @Test
     fun removeReferencedFileFromSetDropsOnlyThatTrackMetadata() {
         val remaining =
             removeReferencedFileFromSet(

@@ -135,7 +135,7 @@ private suspend fun loadSafEntries(
         val drafts = mutableListOf<SafEntryDraft>()
         val trackedSafUris = mutableSetOf<String>()
         runCatching {
-            for (set in CustomAudioSetManager(filesDir).getSets()) {
+            for (set in CustomAudioSetManager.forActiveSet(filesDir).getSets()) {
                 for ((filename, uri) in set.referencedUris) {
                     trackedSafUris += uri
                     drafts +=
@@ -150,7 +150,7 @@ private suspend fun loadSafEntries(
             }
         }
         runCatching {
-            for (source in AudioSourceManager(filesDir).getSources()) {
+            for (source in AudioSourceManager.forActiveSet(filesDir).getSources()) {
                 if (!hasSafLinkedCdContent(source)) continue
                 val binUris = source.binContentUriList().filterNot(::isLocalCdContentPath)
                 val cueUri = source.cueContentUri?.takeUnless(::isLocalCdContentPath)
@@ -403,7 +403,8 @@ private fun buildCdSourceSafLabel(source: AudioSourceManager.AudioSource): Strin
 
 private fun scanStorageFiles(filesDir: File): StorageFileScanResult {
     val importRoot = ImportLocationManager(filesDir).getActiveRoot()
-    val helperArtifacts = getSafLinkedHelperArtifactPaths(filesDir, AudioSourceManager(filesDir).getSources())
+    val helperArtifacts =
+        getSafLinkedHelperArtifactPaths(filesDir, AudioSourceManager.forActiveSet(filesDir).getSources())
     val extractionStore = MissionZipExtractionStore(filesDir)
     val linkedFiles = extractionStore.linkedFilesByAbsolutePath()
     val linkedOwnerFiles = linkedFiles.values.associateBy { it.ownerFile.absolutePath }
@@ -2427,7 +2428,7 @@ private fun StorageInspectorSection(
                                         if (linkedOwner == null) {
                                             entry.file.delete()
                                         } else if (entry.linkedMissionZipSourceExists) {
-                                            ModManager(filesDir).deleteMod(linkedOwner)
+                                            ModManager.forActiveSet(filesDir).deleteMod(linkedOwner)
                                             true
                                         } else {
                                             MissionZipExtractionStore(filesDir).removeOwner(linkedOwner)
@@ -2610,7 +2611,8 @@ private fun StorageInspectorSection(
                                     withContext(Dispatchers.IO) {
                                         when {
                                             entry.customSetId != null && entry.customFilename != null -> {
-                                                CustomAudioSetManager(filesDir)
+                                                CustomAudioSetManager
+                                                    .forActiveSet(filesDir)
                                                     .removeReferencedFile(
                                                         entry.customSetId,
                                                         entry.customFilename,
@@ -2619,7 +2621,7 @@ private fun StorageInspectorSection(
                                             }
 
                                             entry.cdSourceId != null -> {
-                                                val manager = AudioSourceManager(filesDir)
+                                                val manager = AudioSourceManager.forActiveSet(filesDir)
                                                 val source =
                                                     manager.getSources().firstOrNull {
                                                         it.id == entry.cdSourceId

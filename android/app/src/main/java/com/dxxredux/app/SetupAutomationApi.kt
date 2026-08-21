@@ -826,18 +826,59 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
                 .toList()
         root.put("set_files_recursive", JSONArray(recursiveSetFiles))
         root.put("active_set_path", setDir.absolutePath)
-        val includedMissions =
-            FileSetMissionInventory.scan(setDir).map { mission ->
+        val managedContent = FileSetContentManager(setDir).listEntries()
+        val managedIds = managedContent.map { it.id }.toSet()
+        val contentEntries =
+            (managedContent + FileSetContentCatalog.scan(setDir).filter { it.id !in managedIds })
+                .map { entry ->
+                    JSONObject()
+                        .put("id", entry.id)
+                        .put("name", entry.displayName)
+                        .put("game", entry.game)
+                        .put("kind", entry.kind)
+                        .put("enabled", entry.enabled)
+                        .put("order", entry.order)
+                        .put("version", entry.versionName)
+                        .put("source_set", activeSet)
+                        .put("source_uri", entry.sourceUri)
+                        .put("size_bytes", entry.totalBytes)
+                        .put("managed", entry.id in managedIds)
+                        .put("problem", entry.problem)
+                        .put("files", JSONArray(entry.virtualPaths))
+                }.toMutableList()
+        ModManager(dir, this, setDir).listMods().forEach { mod ->
+            contentEntries +=
                 JSONObject()
-                    .put("name", mission.displayName)
-                    .put("game", mission.game)
-                    .put("version", mission.versionName)
+                    .put("id", "mod:${mod.filename}")
+                    .put("name", mod.displayName)
+                    .put("game", mod.game)
+                    .put("kind", mod.kind)
+                    .put("enabled", mod.enabled)
+                    .put("order", mod.order)
                     .put("source_set", activeSet)
-                    .put("source_uri", mission.sourceUri)
-                    .put("size_bytes", mission.totalBytes)
-                    .put("files", JSONArray(mission.files.map { it.name }))
-            }
-        root.put("included_missions", JSONArray(includedMissions))
+                    .put("size_bytes", mod.sizeBytes)
+                    .put("managed", true)
+                    .put("files", JSONArray(listOf(mod.filename)))
+        }
+        val customAudioManager = CustomAudioSetManager(dir, setDir)
+        customAudioManager.getSets().forEach { audioSet ->
+            contentEntries +=
+                JSONObject()
+                    .put("id", "custom-audio:${audioSet.id}")
+                    .put("name", audioSet.label)
+                    .put("game", GameFileFormats.GAME_BOTH)
+                    .put("kind", FileSetContentCatalog.KIND_MUSIC)
+                    .put("enabled", audioSet.enabled)
+                    .put("order", audioSet.order)
+                    .put("source_set", activeSet)
+                    .put(
+                        "size_bytes",
+                        audioSet.files.sumOf { File(customAudioManager.setDir(audioSet.id), it).length() },
+                    ).put("managed", true)
+                    .put("files", JSONArray(audioSet.files))
+        }
+        root.put("content_entries", JSONArray(contentEntries))
+        root.put("content_entry_count", contentEntries.size)
         val importState = SetupImportTracker.snapshot()
         root.put(
             "import_state",
@@ -950,10 +991,10 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
         }
         root.put("sets", setsArr)
 
-        val srcManager = AudioSourceManager(dir)
+        val srcManager = AudioSourceManager.forActiveSet(dir)
         val sources = srcManager.getSources()
         root.put("audio_source_count", sources.size)
-        root.put("audio_registry_present", File(dir, "audio_sources.json").isFile)
+        root.put("audio_registry_present", srcManager.registryFile().isFile)
         root.put("audio_playlist_present", File(dir, "audio_playlist.json").isFile)
         val audioArr = JSONArray()
         for (src in sources) {

@@ -1,0 +1,54 @@
+// TEST: Unified file-set content ownership
+//
+// Verifies that a Panic-style loose mission is adopted as one durable owner,
+// remains disabled across set switches, deletes every constituent, and leaves
+// no test set or payload behind.
+[
+    {"_info": {
+        "games": ["d2"],
+        "_standalone": true,
+        "_owner": "test_unified_file_set_content"
+    }},
+
+    {"action": "enter_launcher"},
+    {"action": "setup_command", "command": "delete_set",
+     "args": {"name": "automation-unified-content"}, "post_delay_ms": 250},
+    {"action": "setup_command", "command": "create_set",
+     "args": {"name": "automation-unified-content"}, "post_delay_ms": 250},
+    {"action": "setup_command", "command": "switch_set",
+     "args": {"name": "automation-unified-content"}, "post_delay_ms": 250},
+
+    {"action": "write_set_file", "file": "panic.mn2",
+     "content": "name = Automation Panic Test\nnum_levels = 1\npanic01.rl2\n"},
+    {"action": "write_set_file", "file": "panic.hog",
+     "content": "automation-test-payload\n"},
+    {"action": "setup_command", "command": "switch_set",
+     "args": {"name": "automation-unified-content"}, "post_delay_ms": 750},
+    {"action": "wait_for", "field": "content_entries[0].managed", "value": "true", "timeout_ms": 10000},
+    {"action": "assert", "expect": {
+        "active_set": "automation-unified-content",
+        "content_entry_count": "1",
+        "content_entries[0].id": "1b46f9d7a5eaf6db07e963a6",
+        "content_entries[0].kind": "loose_mission",
+        "content_entries[0].enabled": "true",
+        "content_entries[0].managed": "true",
+        "content_entries[0].files[0]": "panic.hog",
+        "content_entries[0].files[1]": "panic.mn2"
+    }},
+
+    {"action": "setup_command", "command": "set_content_enabled",
+     "args": {"id": "1b46f9d7a5eaf6db07e963a6", "enabled": false}, "post_delay_ms": 250},
+    {"action": "assert", "expect": {"content_entries[0].enabled": "false"}},
+    {"action": "setup_command", "command": "switch_set",
+     "args": {"name": "default"}, "post_delay_ms": 250},
+    {"action": "setup_command", "command": "switch_set",
+     "args": {"name": "automation-unified-content"}, "post_delay_ms": 500},
+    {"action": "assert", "expect": {"content_entries[0].enabled": "false"}},
+
+    {"action": "setup_command", "command": "delete_content",
+     "args": {"id": "1b46f9d7a5eaf6db07e963a6"}, "post_delay_ms": 500},
+    {"action": "assert", "expect": {"content_entry_count": "0"}},
+    {"action": "setup_command", "command": "delete_set",
+     "args": {"name": "automation-unified-content"}, "post_delay_ms": 500},
+    {"action": "assert", "expect": {"active_set": "default"}}
+]

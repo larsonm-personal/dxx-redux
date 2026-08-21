@@ -17,9 +17,10 @@ class FileSetMissionInventoryTest {
         File(setDir, "descent2.hog").writeText("base")
         val descriptor =
             File(setDir, "panic.mn2").apply {
-                writeText("name = Vertigo Series\nnum_levels = 1\nlevel01.rl2\n")
+                writeText("name = Vertigo Series\nbriefing = panic.tex\nnum_levels = 1\nlevel01.rl2\n")
             }
         val archive = File(setDir, "PANIC.HOG").apply { writeText("mission") }
+        val briefing = File(setDir, "panic.tex").apply { writeText("briefing") }
         AssetManifest(setDir).save(
             listOf(
                 AssetManifest.AssetEntry(
@@ -37,10 +38,27 @@ class FileSetMissionInventoryTest {
         assertEquals("Vertigo Series", entry.displayName)
         assertEquals("d2", entry.game)
         assertEquals("D2 Vertigo Series", entry.versionName)
-        assertEquals(2, entry.files.size)
-        assertEquals(2, FileSetMissionInventory.remove(setDir, entry))
+        assertEquals(3, entry.files.size)
+        assertEquals(3, FileSetMissionInventory.remove(setDir, entry))
         assertFalse(descriptor.exists())
         assertFalse(archive.exists())
+        assertFalse(briefing.exists())
+        assertTrue(File(setDir, "descent2.hog").isFile)
+    }
+
+    @Test
+    fun removesPersistedMissionThroughItsOwner() {
+        val setDir = temporaryFolder.newFolder("managed")
+        File(setDir, "descent2.hog").writeText("base")
+        File(setDir, "panic.mn2").writeText("name = Vertigo Series\nnum_levels = 1\nlevel01.rl2\n")
+        File(setDir, "panic.hog").writeText("mission")
+        FileSetContentManager(setDir).reconcile()
+
+        val entry = FileSetMissionInventory.scan(setDir).single()
+
+        assertTrue(entry.contentId != null)
+        assertEquals(2, FileSetMissionInventory.remove(setDir, entry))
+        assertTrue(FileSetContentManager(setDir).listEntries().isEmpty())
         assertTrue(File(setDir, "descent2.hog").isFile)
     }
 }

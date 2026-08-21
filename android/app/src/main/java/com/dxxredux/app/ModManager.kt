@@ -28,13 +28,14 @@ internal fun requireActiveModPathCapacity(paths: List<String>) {
 /**
  * Manages .dxa mod files: import, enable/disable, reorder, delete.
  *
- * Mods are stored in filesDir/mods/ with metadata in mod_manifest.json.
+ * Mods are stored under the owning file set when [setDir] is provided.
  * Before game launch, [writeEnabledModPaths] writes .active_mod_paths
  * which the C engine reads in physfsx.c to mount enabled mods via PhysFS.
  */
 class ModManager(
     private val filesDir: File,
     private val context: Context? = null,
+    private val setDir: File? = null,
 ) {
     companion object {
         private const val TAG = "DXX-Mods"
@@ -45,6 +46,14 @@ class ModManager(
         const val MOD_KIND_MISSION_ZIP = MissionZip.KIND
         private val MISSION_SOUNDTRACK_EXTENSIONS = setOf("flac", "hmp", "mid", "mp3", "ogg")
         private val MISSION_SONG_LIST_FILES = setOf("descent.sng", "dxx-r.sng")
+
+        fun forActiveSet(
+            filesDir: File,
+            context: Context? = null,
+        ): ModManager {
+            val fileSets = FileSetManager(filesDir)
+            return ModManager(filesDir, context, fileSets.getSetDir(fileSets.getActive()))
+        }
     }
 
     data class ModInfo(
@@ -263,7 +272,18 @@ class ModManager(
         val examples: MutableList<String> = mutableListOf(),
     )
 
-    private val modsDir get() = File(filesDir, "mods").also { it.mkdirs() }
+    private val modsDir
+        get() =
+            File(setDir?.let { File(it, ".content") } ?: filesDir, "mods").also {
+                if (setDir == null || setDir.isDirectory) it.mkdirs()
+            }
+    private val supportDir
+        get() =
+            setDir?.let { root ->
+                File(root, ".content/mod_support").also {
+                    if (root.isDirectory) it.mkdirs()
+                }
+            } ?: filesDir
     private val manifestFile get() = File(modsDir, MANIFEST_FILE)
 
     private var mods: MutableList<ModInfo> = mutableListOf()
@@ -273,6 +293,14 @@ class ModManager(
     }
 
     fun listMods(): List<ModInfo> = mods.sortedBy { it.order }
+
+    internal fun modFile(filename: String): File = File(modsDir, filename)
+
+    internal fun importDirectory(): File = modsDir
+
+    internal fun extractionStore(): MissionZipExtractionStore = MissionZipExtractionStore(supportDir)
+
+    internal fun musicNamesCacheFile(filename: String): File = MissionZipMusicNames.cacheFile(supportDir, filename)
 
     /** Re-read the manifest from disk, e.g. after another ModManager instance wrote it */
     fun reload() {
@@ -309,8 +337,8 @@ class ModManager(
     fun deleteMod(filename: String) {
         updateManifest {
             File(modsDir, filename).delete()
-            MissionZipMusicNames.deleteCacheFile(filesDir, filename)
-            MissionZipExtractionStore(filesDir).removeOwner(filename)
+            MissionZipMusicNames.deleteCacheFile(supportDir, filename)
+            MissionZipExtractionStore(supportDir).removeOwner(filename)
             mods.removeAll { it.filename == filename }
             save()
         }
@@ -321,6 +349,7 @@ class ModManager(
         val removedMods = (modsDir.listFiles() ?: emptyArray()).count { it.isFile && it.name != MANIFEST_FILE }
 
         if (modsDir.exists()) modsDir.deleteRecursively()
+        if (setDir != null && supportDir.exists()) supportDir.deleteRecursively()
         for (gameDir in arrayOf("d1x-redux", "d2x-redux")) {
             val dir = File(filesDir, gameDir)
             File(dir, ".active_mod_paths").delete()
@@ -493,7 +522,7 @@ class ModManager(
         if (scan == null) return importNestedRebirthMissionZip(source, onProgress)
         val safeName = displayName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
         val dest = File(modsDir, safeName)
-        val extractionStore = MissionZipExtractionStore(filesDir)
+        val extractionStore = MissionZipExtractionStore(supportDir)
         extractionStore.removeOwner(safeName)
         if (source.absoluteFile != dest.absoluteFile) {
             val moved = moveDirectSource && source.renameTo(dest)
@@ -554,7 +583,7 @@ class ModManager(
                             dest.delete()
                             return null
                         }
-                val extractionStore = MissionZipExtractionStore(filesDir)
+                val extractionStore = MissionZipExtractionStore(supportDir)
                 extractionStore.removeOwner(safeName)
                 if (scan.importMode == "extracted_bundle") {
                     val extractLabel = "Extracting level pack cache for faster launches: $safeName"
@@ -653,6 +682,7 @@ class ModManager(
     fun writeEnabledModPaths(
         game: String,
         includeD1MissionZipsForD2: Boolean = true,
+        contentPaths: List<String> = emptyList(),
     ) {
         val enabled =
             mods
@@ -665,7 +695,7 @@ class ModManager(
         generatedPatchDir.deleteRecursively()
         generatedMissionZipDir.deleteRecursively()
         pathFile.parentFile?.mkdirs()
-        if (enabled.isEmpty()) {
+        if (enabled.isEmpty() && contentPaths.isEmpty()) {
             pathFile.delete()
         } else {
             val validPaths = mutableListOf<String>()
@@ -678,6 +708,7 @@ class ModManager(
                     Log.e(TAG, "Mod file missing or empty: ${modFile.absolutePath} (${mod.displayName})")
                 }
             }
+            validPaths += contentPaths.filter { File(it).exists() }
             if (validPaths.isEmpty()) {
                 pathFile.delete()
                 Log.w(TAG, "All enabled mods missing on disk, removed .active_mod_paths")
@@ -691,7 +722,9 @@ class ModManager(
                 AtomicFilePublication.writeUtf8(pathFile, validPaths.joinToString("\n"))
             }
         }
-        logInfo("Wrote ${enabled.size} mod paths for $game to ${pathFile.absolutePath}")
+        logInfo(
+            "Wrote ${enabled.size} mods and ${contentPaths.size} content paths for $game to ${pathFile.absolutePath}",
+        )
         NativeTextureLookupCache.clear()
     }
 
@@ -711,7 +744,7 @@ class ModManager(
         mod: ModInfo,
         modFile: File,
     ): List<String> {
-        val extractionStore = MissionZipExtractionStore(filesDir)
+        val extractionStore = MissionZipExtractionStore(supportDir)
         if (mod.importMode == "extracted_bundle") {
             extractionStore.freshRecord(mod.filename, modFile)?.let { record ->
                 writeMissionZipMusicNames(
@@ -772,7 +805,7 @@ class ModManager(
             }
         val sidecar =
             extractionRecord?.let { File(it.rootDir, MISSION_ZIP_MUSIC_NAMES_FILE) }
-                ?: MissionZipMusicNames.cacheFile(filesDir, ownerFilename)
+                ?: MissionZipMusicNames.cacheFile(supportDir, ownerFilename)
         if (MissionZipMusicNames.isCurrent(sidecar, catalog)) return
         try {
             val count =
@@ -802,7 +835,7 @@ class ModManager(
         ownerFilename: String,
         stageDir: File,
     ) {
-        val sidecar = MissionZipMusicNames.cacheFile(filesDir, ownerFilename)
+        val sidecar = MissionZipMusicNames.cacheFile(supportDir, ownerFilename)
         if (!sidecar.isFile) return
         sidecar.copyTo(File(stageDir, MISSION_ZIP_MUSIC_NAMES_FILE), overwrite = true)
     }
@@ -870,7 +903,7 @@ class ModManager(
 
     private fun modHasMissionSoundtrack(mod: ModInfo): Boolean {
         val modFile = File(modsDir, mod.filename)
-        val record = MissionZipExtractionStore(filesDir).freshRecord(mod.filename, modFile)
+        val record = MissionZipExtractionStore(supportDir).freshRecord(mod.filename, modFile)
         return if (record != null) missionZipHasSoundtrack(record) else missionZipHasSoundtrack(modFile)
     }
 
@@ -994,7 +1027,7 @@ class ModManager(
 
     private fun getMissionZipDetails(modFile: File): ModDetails =
         try {
-            val extractionStore = MissionZipExtractionStore(filesDir)
+            val extractionStore = MissionZipExtractionStore(supportDir)
             var extractionRecord = extractionStore.freshRecord(modFile.name, modFile)
             var scan = extractionRecord?.let { MissionZip.inspectExtracted(it) } ?: MissionZip.inspect(modFile)
             val sourceScan = scan
@@ -1097,7 +1130,7 @@ class ModManager(
         extractionRecord: MissionZipExtractionRecord?,
     ): GameFileMetadata.Summary? =
         if (extractionRecord != null) {
-            MissionZipExtractionStore(filesDir).extractedSummaryForRecordEntry(extractionRecord, constituent.path)
+            MissionZipExtractionStore(supportDir).extractedSummaryForRecordEntry(extractionRecord, constituent.path)
         } else {
             GameFileMetadata.summarizeZipConstituent(modFile, constituent.path, constituent.name)
         }
@@ -1121,7 +1154,7 @@ class ModManager(
         if (mod.kind == MOD_KIND_MISSION_ZIP && GameFileFormats.extensionOf(mod.filename) != "zip") return emptyList()
         if (mod.kind == MOD_KIND_MISSION_ZIP &&
             mod.importMode == "extracted_bundle" &&
-            MissionZipExtractionStore(filesDir).freshRecord(mod.filename, modFile) != null
+            MissionZipExtractionStore(supportDir).freshRecord(mod.filename, modFile) != null
         ) {
             return emptyList()
         }

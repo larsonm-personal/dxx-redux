@@ -145,7 +145,7 @@ internal fun d1InD2Readiness(
 ): D1InD2Readiness {
     val d2Ready = launchDataReadyForGame("d2", setDir, manifest, safManifest)
     val d1Ready = launchDataReadyForGame("d1", setDir, manifest, safManifest)
-    val needed = ModManager(filesDir).hasEnabledD1MissionZipForD2()
+    val needed = ModManager(filesDir, setDir = setDir).hasEnabledD1MissionZipForD2()
     return D1InD2Readiness(
         needed = needed,
         ready = !needed || (d2Ready && d1Ready),

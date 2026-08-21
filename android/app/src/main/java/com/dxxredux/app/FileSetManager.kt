@@ -124,26 +124,37 @@ class FileSetManager(
      * Delete a named set. Cannot delete "default".
      * If the deleted set was active, switches to "default".
      */
-    fun deleteSet(name: String) {
+    fun deleteSet(
+        name: String,
+        context: Context? = null,
+        retainedTrackedUris: Collection<String> = emptyList(),
+    ) {
         if (name == DEFAULT_SET) {
             Log.w(TAG, "Cannot delete default set")
             return
         }
-        AtomicFilePublication.transaction {
-            val config = loadConfig()
-            val sets = config.optJSONArray("sets") ?: return@transaction
-            val newSets = JSONArray()
-            for (i in 0 until sets.length()) {
-                val obj = sets.getJSONObject(i)
-                if (obj.getString("name") != name) newSets.put(obj)
+        val permissions =
+            AtomicFilePublication.transaction {
+                val removed = trackedContentUrisForSet(name)
+                val retained =
+                    listSets().filter { it.name != name }.flatMap { trackedContentUrisForSet(it.name) } +
+                        retainedTrackedUris
+                val config = loadConfig()
+                val sets = config.optJSONArray("sets") ?: return@transaction removed to retained
+                val newSets = JSONArray()
+                for (i in 0 until sets.length()) {
+                    val obj = sets.getJSONObject(i)
+                    if (obj.getString("name") != name) newSets.put(obj)
+                }
+                config.put("sets", newSets)
+                if (config.optString("active") == name) config.put("active", DEFAULT_SET)
+                saveConfig(config)
+                val dir = File(setsDir, name)
+                if (dir.exists()) dir.deleteRecursively()
+                NativeTextureLookupCache.clear()
+                removed to retained
             }
-            config.put("sets", newSets)
-            if (config.optString("active") == name) config.put("active", DEFAULT_SET)
-            saveConfig(config)
-            val dir = File(setsDir, name)
-            if (dir.exists()) dir.deleteRecursively()
-            NativeTextureLookupCache.clear()
-        }
+        context?.let { revokeUnusedPersistedReadPermissions(it, permissions.first, permissions.second) }
     }
 
     /**
@@ -492,11 +503,19 @@ class FileSetManager(
      * Clear all files in a set without removing the set entry.
      * Works for default and non-default sets. Recreates the empty directory.
      */
-    fun clearSet(name: String) {
+    fun clearSet(
+        name: String,
+        context: Context? = null,
+        retainedTrackedUris: Collection<String> = emptyList(),
+    ) {
+        val removed = trackedContentUrisForSet(name)
+        val retained =
+            listSets().filter { it.name != name }.flatMap { trackedContentUrisForSet(it.name) } + retainedTrackedUris
         val dir = File(setsDir, name)
         if (dir.exists()) dir.deleteRecursively()
         dir.mkdirs()
         NativeTextureLookupCache.clear()
+        context?.let { revokeUnusedPersistedReadPermissions(it, removed, retained) }
         Log.i(TAG, "Cleared set '$name'")
     }
 
@@ -512,12 +531,12 @@ class FileSetManager(
     ): Int {
         val currentSets = listSets()
         val retainedSets = mutableListOf<FileSetInfo>()
-        val removedSafUris = mutableListOf<String>()
+        val removedTrackedUris = mutableListOf<String>()
         var activeSetName = getActive()
 
         for (set in currentSets) {
             val setDir = File(setsDir, set.name)
-            removedSafUris += SafManifest.forDir(setDir).read().map { it.contentUri }
+            removedTrackedUris += trackedContentUrisForSet(set.name)
             val hasPlayerData = clearSetDirectoryPreservingPlayers(setDir)
             val keepSet = set.name == DEFAULT_SET || hasPlayerData
 
@@ -548,10 +567,19 @@ class FileSetManager(
         writeActiveSetPath()
         NativeTextureLookupCache.clear()
         context?.let {
-            revokeUnusedPersistedReadPermissions(it, removedSafUris, retainedTrackedUris)
+            revokeUnusedPersistedReadPermissions(it, removedTrackedUris, retainedTrackedUris)
         }
         Log.i(TAG, "Cleared game data from ${currentSets.size} set(s)")
         return currentSets.size
+    }
+
+    internal fun trackedContentUrisForSet(name: String): List<String> {
+        val dir = File(setsDir, name)
+        return buildList {
+            addAll(SafManifest.forDir(dir).read().map { it.contentUri })
+            addAll(AudioSourceManager(filesDir, dir).trackedSafUris())
+            addAll(CustomAudioSetManager(filesDir, dir).trackedSafUris())
+        }.distinct()
     }
 
     private fun clearSetDirectoryPreservingPlayers(dir: File): Boolean {

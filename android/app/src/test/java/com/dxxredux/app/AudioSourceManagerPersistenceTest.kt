@@ -1,12 +1,85 @@
 package com.dxxredux.app
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.json.JSONObject
 import java.io.File
 
 class AudioSourceManagerPersistenceTest {
+    @Test
+    fun fileSetScopedRegistriesKeepSourcesIsolated() {
+        val filesDir = File("build/test-audiosrc-file-set-isolation").absoluteFile
+        filesDir.deleteRecursively()
+        val setA = File(filesDir, "sets/a").apply { mkdirs() }
+        val setB = File(filesDir, "sets/b").apply { mkdirs() }
+        val managerA = AudioSourceManager(filesDir, setA)
+        val managerB = AudioSourceManager(filesDir, setB)
+        val source =
+            AudioSourceManager.AudioSource(
+                id = "set-a-disc",
+                cuePath = "disc.cue",
+                binPaths = listOf("disc.bin"),
+                discLabel = "Set A",
+                discId = "unknown",
+                trackCount = 2,
+                audioTrackCount = 1,
+                legacyDiscId = 0L,
+            )
+        AudioSourceManager::class.java.getDeclaredField("sources").apply {
+            isAccessible = true
+            set(managerA, mutableListOf(source))
+        }
+        AudioSourceManager::class.java.getDeclaredMethod("save").apply {
+            isAccessible = true
+            invoke(managerA)
+        }
+
+        assertEquals(listOf("set-a-disc"), AudioSourceManager(filesDir, setA).getSources().map { it.id })
+        assertTrue(managerB.getSources().isEmpty())
+        assertTrue(File(setA, ".content/audio/audio_sources.json").isFile)
+        assertEquals(false, File(setB, ".content/audio/audio_sources.json").exists())
+        assertEquals(false, File(filesDir, "audio_sources.json").exists())
+    }
+
+    @Test
+    fun managedCueBundleRemainsRegisteredWhenItsContentEntryIsDisabled() {
+        val filesDir = File("build/test-audiosrc-managed-content-toggle").absoluteFile
+        filesDir.deleteRecursively()
+        val setDir = File(filesDir, "sets/default").apply { mkdirs() }
+        File(setDir, "disc.cue").writeText("FILE disc.bin BINARY\n  TRACK 01 MODE1/2352\n")
+        File(setDir, "disc.bin").writeText("disc")
+        val contentManager = FileSetContentManager(setDir)
+        val contentId = contentManager.reconcile().entries.single().id
+        val audioManager = AudioSourceManager(filesDir, setDir)
+        val source =
+            AudioSourceManager.AudioSource(
+                id = "managed-disc",
+                cuePath = "disc.cue",
+                binPaths = listOf("disc.bin"),
+                discLabel = "Managed disc",
+                discId = "unknown",
+                trackCount = 2,
+                audioTrackCount = 1,
+                legacyDiscId = 0L,
+            )
+        AudioSourceManager::class.java.getDeclaredField("sources").apply {
+            isAccessible = true
+            set(audioManager, mutableListOf(source))
+        }
+        AudioSourceManager::class.java.getDeclaredMethod("save").apply {
+            isAccessible = true
+            invoke(audioManager)
+        }
+
+        assertTrue(audioManager.writePlaylist())
+        contentManager.setEnabled(contentId, false)
+        assertTrue(audioManager.pruneMissingSources(setDir).isEmpty())
+        assertEquals(listOf("managed-disc"), audioManager.getSources().map { it.id })
+        assertFalse(audioManager.writePlaylist())
+    }
+
     @Test
     fun savesMultipleBinContentUris() {
         val filesDir = File("build/test-audiosrc-persistence-multibin").absoluteFile

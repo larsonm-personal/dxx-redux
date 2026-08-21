@@ -269,6 +269,26 @@ class LauncherScriptExecutor(
                     currentStep++
                 }
 
+                "write_set_file" -> {
+                    val fileName = step.optString("file", "")
+                    val content = step.optString("content", "")
+                    if (fileName.isEmpty()) {
+                        fail("write_set_file: missing 'file' field")
+                        return
+                    }
+                    withContext(Dispatchers.IO) {
+                        val fileSets = FileSetManager(context.filesDir)
+                        val setDir = fileSets.getSetDir(fileSets.getActive()).canonicalFile
+                        val output = File(setDir, fileName).canonicalFile
+                        require(output.toPath().startsWith(setDir.toPath()) && output != setDir) {
+                            "write_set_file path escapes active set"
+                        }
+                        output.parentFile?.mkdirs()
+                        output.writeText(content)
+                    }
+                    currentStep++
+                }
+
                 "install_staged_demo" -> {
                     val requestedName = step.optString("name", "")
                     val game = step.optString("game", "")
@@ -317,7 +337,10 @@ class LauncherScriptExecutor(
                 }
 
                 "clear_mods" -> {
-                    val removed = withContext(Dispatchers.IO) { ModManager(context.filesDir).clearAllMods() }
+                    val removed =
+                        withContext(Dispatchers.IO) {
+                            ModManager.forActiveSet(context.filesDir).clearAllMods()
+                        }
                     Log.i(TAG, "ASSERT_PASS: clear_mods removed $removed files")
                     currentStep++
                 }
@@ -329,7 +352,7 @@ class LauncherScriptExecutor(
                         return
                     }
                     withContext(Dispatchers.IO) {
-                        ModManager(context.filesDir).deleteMod(filename)
+                        ModManager.forActiveSet(context.filesDir).deleteMod(filename)
                     }
                     Log.i(TAG, "ASSERT_PASS: deleted mod $filename and its owned extraction cache")
                     currentStep++
@@ -1007,7 +1030,7 @@ class LauncherScriptExecutor(
         }
 
         if (modFileName.isNotBlank()) {
-            val modFile = File(File(context.filesDir, "mods"), modFileName)
+            val modFile = ModManager(context.filesDir, setDir = setDir).modFile(modFileName)
             MissionZip.inspect(modFile)?.let { scan ->
                 LevelMetadataTargets.missionZip(modFile.absolutePath, setDir, scan)?.let { return it }
             }
@@ -1031,7 +1054,7 @@ class LauncherScriptExecutor(
         }
 
         if (modFileName.isNotBlank()) {
-            val modFile = File(File(context.filesDir, "mods"), modFileName)
+            val modFile = ModManager(context.filesDir, setDir = setDir).modFile(modFileName)
             MissionZip.inspect(modFile)?.let { scan ->
                 return LevelMetadataTargets.missionZipTargets(modFile.absolutePath, setDir, scan)
             }
@@ -1048,7 +1071,7 @@ class LauncherScriptExecutor(
             return null
         }
         val displayName = step.optString("display_name", source.name).ifBlank { source.name }
-        val modManager = ModManager(context.filesDir, context)
+        val modManager = ModManager.forActiveSet(context.filesDir, context)
         val before = modManager.listMods().map { it.filename }.toSet()
         val shouldMoveSource = isInAutomationCache(source)
         val mod =
@@ -1062,7 +1085,7 @@ class LauncherScriptExecutor(
         if (imported.filename in before) {
             Log.w(TAG, "import_mission_zip: ${imported.filename} replaced an existing manifest entry")
         }
-        val scan = MissionZip.inspect(File(File(context.filesDir, "mods"), imported.filename))
+        val scan = MissionZip.inspect(modManager.modFile(imported.filename))
         return imported to scan
     }
 

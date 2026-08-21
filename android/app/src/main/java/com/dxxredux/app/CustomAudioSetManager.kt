@@ -9,12 +9,13 @@ import java.io.File
  * Manages custom audio file sets (MP3/OGG/FLAC) for jukebox music playback.
  *
  * Each "set" is a named group of audio files that were imported together.
- * Sets are persisted in `custom_audio_sets.json` in the app's files directory.
+ * Sets are persisted under the owning file set when [fileSetDir] is provided.
  * Before game launch, [writeM3U] generates an M3U playlist from all enabled
  * sets for the C engine's jukebox to read.
  */
 class CustomAudioSetManager(
     private val filesDir: File,
+    private val fileSetDir: File? = null,
 ) {
     companion object {
         private const val TAG = "DXX-CustomAudio"
@@ -22,7 +23,15 @@ class CustomAudioSetManager(
         const val MUSIC_DIR = "custom_music"
         const val PLAYLIST_FILE = "custom_music.m3u"
         const val NAMES_FILE = "custom_music_names.json"
+
+        fun forActiveSet(filesDir: File): CustomAudioSetManager {
+            val fileSets = FileSetManager(filesDir)
+            return CustomAudioSetManager(filesDir, fileSets.getSetDir(fileSets.getActive()))
+        }
     }
+
+    private val storageDir
+        get() = fileSetDir?.let { File(it, ".content/custom_audio") } ?: filesDir
 
     private fun logInfo(message: String) {
         runCatching { Log.i(TAG, message) }
@@ -67,6 +76,8 @@ class CustomAudioSetManager(
     fun getSets(): List<AudioSet> = sets.sortedBy { it.order }
 
     fun getEnabledSets(): List<AudioSet> = sets.filter { it.enabled }.sortedBy { it.order }
+
+    internal fun trackedSafUris(): List<String> = sets.flatMap { it.referencedUris.values }
 
     fun hasUsableTrack(canAccessUri: (String) -> Boolean = { false }): Boolean =
         getEnabledSets().any { set ->
@@ -115,7 +126,7 @@ class CustomAudioSetManager(
         val set = sets.firstOrNull { it.id == id }
         if (deleteFiles && set != null) {
             // Only delete the set directory (copied files). Referenced files stay
-            val dir = File(File(filesDir, MUSIC_DIR), id)
+            val dir = setDir(id)
             if (dir.exists()) dir.deleteRecursively()
         }
         sets.removeAll { it.id == id }
@@ -159,7 +170,7 @@ class CustomAudioSetManager(
     }
 
     /** Directory where a set's files are stored */
-    fun setDir(id: String): File = File(File(filesDir, MUSIC_DIR), id)
+    fun setDir(id: String): File = File(File(storageDir, MUSIC_DIR), id)
 
     /**
      * Write an M3U playlist from all enabled sets' files, sorted alphabetically.
@@ -305,7 +316,7 @@ class CustomAudioSetManager(
     // ── Persistence ───────────────────────────────────────────────
 
     private fun load() {
-        val file = File(filesDir, SETS_FILE)
+        val file = File(storageDir, SETS_FILE)
         if (!file.exists()) {
             sets = mutableListOf()
             return
@@ -374,6 +385,7 @@ class CustomAudioSetManager(
     }
 
     private fun save() {
+        storageDir.mkdirs()
         val json = JSONObject()
         val arr = JSONArray()
         for (set in sets) {
@@ -413,7 +425,7 @@ class CustomAudioSetManager(
             arr.put(obj)
         }
         json.put("sets", arr)
-        File(filesDir, SETS_FILE).writeText(json.toString(2))
+        AtomicFilePublication.writeUtf8(File(storageDir, SETS_FILE), json.toString(2) + "\n")
     }
 }
 

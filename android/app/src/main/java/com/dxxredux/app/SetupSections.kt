@@ -194,11 +194,21 @@ internal fun ModsSection(
     refreshTrigger: Int,
 ) {
     val context = LocalContext.current
-    val modManager = remember { ModManager(filesDir, context) }
+    val modManager = remember(setDir.absolutePath) { ModManager(filesDir, context, setDir) }
+    val contentManager = remember(setDir.absolutePath) { FileSetContentManager(setDir) }
+    val customAudioManager = remember(setDir.absolutePath, refreshTrigger) { CustomAudioSetManager(filesDir, setDir) }
     var mods by remember { mutableStateOf(modManager.listMods()) }
+    var contentEntries by remember(setDir.absolutePath) { mutableStateOf(emptyList<FileSetContentEntry>()) }
+    var customAudioSets by remember(setDir.absolutePath, refreshTrigger) {
+        mutableStateOf(customAudioManager.getSets())
+    }
+    var contentConflicts by remember(setDir.absolutePath) { mutableStateOf(emptyList<String>()) }
     var expanded by remember { mutableStateOf(false) }
     var deleteTarget by remember { mutableStateOf<String?>(null) }
+    var contentDeleteTarget by remember { mutableStateOf<FileSetContentEntry?>(null) }
+    var customAudioDeleteTarget by remember { mutableStateOf<CustomAudioSetManager.AudioSet?>(null) }
     var detailTarget by remember { mutableStateOf<ModManager.ModInfo?>(null) }
+    var contentDetailTarget by remember { mutableStateOf<FileSetContentEntry?>(null) }
     var detailInfo by remember { mutableStateOf<ModManager.ModDetails?>(null) }
     var detailLoading by remember { mutableStateOf(false) }
     var detailProgress by remember { mutableStateOf<MetadataLoadProgress?>(null) }
@@ -227,9 +237,13 @@ internal fun ModsSection(
         LauncherDebugLog.log("$summary entries=$details")
     }
 
-    LaunchedEffect(refreshTrigger) {
+    LaunchedEffect(refreshTrigger, setDir.absolutePath) {
         modManager.reload()
         mods = modManager.listMods()
+        val result = withContext(kotlinx.coroutines.Dispatchers.IO) { contentManager.reconcile() }
+        contentEntries = result.entries
+        contentConflicts = result.conflicts
+        customAudioSets = customAudioManager.getSets()
     }
 
     LaunchedEffect(detailTarget?.filename, setDir.absolutePath, refreshTrigger) {
@@ -257,7 +271,7 @@ internal fun ModsSection(
                 if (mod.filename !in scanCache &&
                     mod.filename.contains("textur", ignoreCase = true)
                 ) {
-                    val file = File(filesDir, "mods/${mod.filename}")
+                    val file = modManager.modFile(mod.filename)
                     val scanResult =
                         withContext(kotlinx.coroutines.Dispatchers.IO) {
                             DxaTextureScanner.scan(file)
@@ -271,12 +285,13 @@ internal fun ModsSection(
         }
     }
 
-    val enabledCount = mods.count { it.enabled }
-    val totalCount = mods.size
+    val enabledCount =
+        mods.count { it.enabled } + contentEntries.count { it.enabled } + customAudioSets.count { it.enabled }
+    val totalCount = mods.size + contentEntries.size + customAudioSets.size
     val summary = if (totalCount == 0) "none" else "$enabledCount of $totalCount enabled"
 
     GameSectionHeader(
-        title = "Mods",
+        title = "Mods/Levels",
         ready = true,
         expanded = expanded,
         onToggle = { expanded = !expanded },
@@ -284,9 +299,9 @@ internal fun ModsSection(
     )
 
     if (expanded) {
-        if (mods.isEmpty()) {
+        if (mods.isEmpty() && contentEntries.isEmpty() && customAudioSets.isEmpty()) {
             Text(
-                "No mods installed",
+                "No mods or levels installed",
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
@@ -299,11 +314,14 @@ internal fun ModsSection(
                 modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
             )
             Text(
-                "Load order is top to bottom; higher enabled mods take priority when files overlap",
+                "Load order is top to bottom within each group; mods load above file-set content",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 4.dp, bottom = 6.dp),
             )
+            if (mods.isNotEmpty()) {
+                Text("Mods", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            }
             mods.forEachIndexed { index, mod ->
                 ModRow(
                     mod = mod,
@@ -326,6 +344,82 @@ internal fun ModsSection(
                     onDelete = { deleteTarget = mod.filename },
                 )
             }
+            if (contentEntries.isNotEmpty()) {
+                Text("Levels and file-set content", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            }
+            contentEntries.forEachIndexed { index, entry ->
+                ContentEntryRow(
+                    entry = entry,
+                    isFirst = index == 0,
+                    isLast = index == contentEntries.size - 1,
+                    onToggle = { enabled ->
+                        scope.launch {
+                            contentEntries =
+                                withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                    contentManager.setEnabled(entry.id, enabled)
+                                    contentManager.listEntries()
+                                }
+                        }
+                    },
+                    onMoveUp = {
+                        scope.launch {
+                            contentEntries =
+                                withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                    contentManager.move(entry.id, index - 1)
+                                    contentManager.listEntries()
+                                }
+                        }
+                    },
+                    onMoveDown = {
+                        scope.launch {
+                            contentEntries =
+                                withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                    contentManager.move(entry.id, index + 1)
+                                    contentManager.listEntries()
+                                }
+                        }
+                    },
+                    onDetails = { contentDetailTarget = entry },
+                    onDelete = { contentDeleteTarget = entry },
+                )
+            }
+            if (customAudioSets.isNotEmpty()) {
+                Text("Custom music", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            }
+            customAudioSets.forEachIndexed { index, audioSet ->
+                val entry = customAudioSetEntry(customAudioManager, audioSet)
+                ContentEntryRow(
+                    entry = entry,
+                    isFirst = index == 0,
+                    isLast = index == customAudioSets.size - 1,
+                    onToggle = { enabled ->
+                        customAudioManager.setEnabled(audioSet.id, enabled)
+                        customAudioSets = customAudioManager.getSets()
+                    },
+                    onMoveUp = {
+                        val ids = customAudioSets.map { it.id }.toMutableList()
+                        ids.add(index - 1, ids.removeAt(index))
+                        customAudioManager.reorder(ids)
+                        customAudioSets = customAudioManager.getSets()
+                    },
+                    onMoveDown = {
+                        val ids = customAudioSets.map { it.id }.toMutableList()
+                        ids.add(index + 1, ids.removeAt(index))
+                        customAudioManager.reorder(ids)
+                        customAudioSets = customAudioManager.getSets()
+                    },
+                    onDetails = { contentDetailTarget = entry },
+                    onDelete = { customAudioDeleteTarget = audioSet },
+                )
+            }
+            contentConflicts.forEach { conflict ->
+                Text(
+                    conflict,
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(start = 8.dp, bottom = 2.dp),
+                )
+            }
         }
 
         val installedNames = mods.map { portableGameFilenameIdentity(it.filename) }.toSet()
@@ -344,7 +438,7 @@ internal fun ModsSection(
                     rec = rec,
                     progress = modDownloadProgress[rec.filename],
                     onDownload = {
-                        val modsDir = File(filesDir, "mods")
+                        val modsDir = modManager.importDirectory()
                         scope.launch {
                             setupDownloadFile(
                                 url = rec.downloadUrl,
@@ -404,6 +498,54 @@ internal fun ModsSection(
         )
     }
 
+    contentDeleteTarget?.let { entry ->
+        AlertDialog(
+            onDismissRequest = { contentDeleteTarget = null },
+            title = { Text("Delete ${entry.displayName}?") },
+            text = {
+                Text(
+                    "Remove ${entry.virtualPaths.joinToString()} from this file set? This cannot be undone",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    contentDeleteTarget = null
+                    scope.launch {
+                        contentEntries =
+                            withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                contentManager.deleteEntry(entry.id)
+                                AudioSourceManager(filesDir, setDir).pruneMissingSources(setDir)
+                                contentManager.listEntries()
+                            }
+                        if (contentDetailTarget?.id == entry.id) contentDetailTarget = null
+                    }
+                }) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { contentDeleteTarget = null }) { Text("Cancel") }
+            },
+        )
+    }
+
+    customAudioDeleteTarget?.let { audioSet ->
+        AlertDialog(
+            onDismissRequest = { customAudioDeleteTarget = null },
+            title = { Text("Delete ${audioSet.label}?") },
+            text = { Text("Remove this custom music set and its copied files? This cannot be undone") },
+            confirmButton = {
+                TextButton(onClick = {
+                    customAudioManager.removeSet(audioSet.id, deleteFiles = true)
+                    customAudioSets = customAudioManager.getSets()
+                    if (contentDetailTarget?.id == "custom-audio:${audioSet.id}") contentDetailTarget = null
+                    customAudioDeleteTarget = null
+                }) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { customAudioDeleteTarget = null }) { Text("Cancel") }
+            },
+        )
+    }
+
     detailTarget?.let { mod ->
         ModDetailsDialog(
             mod = mod,
@@ -418,7 +560,32 @@ internal fun ModsSection(
             },
         )
     }
+    contentDetailTarget?.let { entry ->
+        ContentEntryDetailsDialog(
+            entry = entry,
+            setDir = setDir,
+            onDismiss = { contentDetailTarget = null },
+        )
+    }
 }
+
+private fun customAudioSetEntry(
+    manager: CustomAudioSetManager,
+    audioSet: CustomAudioSetManager.AudioSet,
+): FileSetContentEntry =
+    FileSetContentEntry(
+        id = "custom-audio:${audioSet.id}",
+        displayName = audioSet.label,
+        game = GameFileFormats.GAME_BOTH,
+        kind = FileSetContentCatalog.KIND_MUSIC,
+        files = audioSet.files.map { File(manager.setDir(audioSet.id), it) },
+        versionName = null,
+        sourceUri = null,
+        problem = audioSet.referencedUris.takeIf { it.isNotEmpty() }?.let { "${it.size} referenced file(s)" },
+        enabled = audioSet.enabled,
+        order = audioSet.order,
+        virtualPaths = audioSet.files,
+    )
 
 @Composable
 private fun ModDetailsDialog(
@@ -2079,6 +2246,158 @@ private fun ModRow(
 }
 
 @Composable
+private fun ContentEntryRow(
+    entry: FileSetContentEntry,
+    isFirst: Boolean,
+    isLast: Boolean,
+    onToggle: (Boolean) -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
+    onDetails: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(start = 8.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(
+            checked = entry.enabled,
+            onCheckedChange = onToggle,
+            modifier = Modifier.size(20.dp).tvFocusBorder(),
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Column(
+            modifier = Modifier.weight(1f).clickable(onClick = onDetails).padding(vertical = 2.dp),
+        ) {
+            Text(
+                entry.displayName,
+                fontSize = 12.sp,
+                color =
+                    if (entry.enabled) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+            )
+            Text(
+                "${contentKindLabel(entry.kind)} - ${setupSectionFormatSize(entry.totalBytes)} - " +
+                    entry.game.uppercase(),
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        IconButton(onClick = onDetails, modifier = Modifier.size(24.dp)) {
+            Icon(Icons.Filled.Info, "Content details", modifier = Modifier.size(15.dp))
+        }
+        if (!isFirst) {
+            IconButton(onClick = onMoveUp, modifier = Modifier.size(24.dp)) {
+                Icon(Icons.Filled.KeyboardArrowUp, "Move up", modifier = Modifier.size(16.dp))
+            }
+        } else {
+            Spacer(modifier = Modifier.size(24.dp))
+        }
+        if (!isLast) {
+            IconButton(onClick = onMoveDown, modifier = Modifier.size(24.dp)) {
+                Icon(Icons.Filled.KeyboardArrowDown, "Move down", modifier = Modifier.size(16.dp))
+            }
+        } else {
+            Spacer(modifier = Modifier.size(24.dp))
+        }
+        TextButton(
+            onClick = onDelete,
+            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+            modifier = Modifier.height(24.dp),
+        ) {
+            Text("\u2717", fontSize = 12.sp, color = Color(0xFFFF5252))
+        }
+    }
+}
+
+@Composable
+private fun ContentEntryDetailsDialog(
+    entry: FileSetContentEntry,
+    setDir: File,
+    onDismiss: () -> Unit,
+) {
+    var levelTarget by remember(entry.id) { mutableStateOf<LevelMetadataTarget?>(null) }
+    var availableTarget by remember(entry.id) { mutableStateOf<LevelMetadataTarget?>(null) }
+    var loading by remember(entry.id) { mutableStateOf(true) }
+    LaunchedEffect(entry.id) {
+        loading = true
+        availableTarget =
+            withContext(kotlinx.coroutines.Dispatchers.IO) {
+                entry.files
+                    .firstOrNull {
+                        GameFileFormats.isMetadataInspectable(it.name) || LevelMetadataTargets.canAnalyzeFile(it.name)
+                    }?.let { file ->
+                        val metadata =
+                            if (GameFileFormats.isMetadataInspectable(file.name)) {
+                                runCatching { GameFileMetadata.summarizeLocalFile(file) }.getOrNull()
+                            } else {
+                                null
+                            }
+                        runCatching { LevelMetadataTargets.directFile(file, setDir, metadata) }.getOrNull()
+                    }
+            }
+        loading = false
+    }
+    levelTarget?.let { target ->
+        LevelMetadataDialog(target = target, onDismiss = { levelTarget = null })
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+        title = { Text(entry.displayName, fontWeight = FontWeight.Bold) },
+        text = {
+            Column(modifier = Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState())) {
+                DetailRow("Category", contentKindLabel(entry.kind))
+                DetailRow("Game", entry.game.uppercase())
+                DetailRow("State", if (entry.enabled) "Enabled" else "Disabled")
+                DetailRow("Size", setupSectionFormatSize(entry.totalBytes))
+                entry.versionName?.let { DetailRow("Version", it) }
+                entry.problem?.let { DetailRow("Problem", it) }
+                when {
+                    availableTarget != null -> {
+                        LevelMetadataButton(
+                            onClick = { levelTarget = availableTarget },
+                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+                        )
+                    }
+
+                    loading -> {
+                        MetadataLoadProgressView(
+                            MetadataLoadProgress("Reading level metadata", 0, 1),
+                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+                        )
+                    }
+                }
+                Text(
+                    "Files",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 2.dp),
+                )
+                entry.files.forEachIndexed { index, file ->
+                    DetailRow(
+                        entry.virtualPaths.getOrElse(index) { file.name },
+                        "${launcherFileTypeLabel(file.name)}, ${setupSectionFormatSize(file.length())}",
+                    )
+                }
+            }
+        },
+    )
+}
+
+private fun contentKindLabel(kind: String): String =
+    when (kind) {
+        FileSetContentCatalog.KIND_LOOSE_MISSION -> "Level set"
+        FileSetContentCatalog.KIND_MOD -> "Mod"
+        FileSetContentCatalog.KIND_MUSIC -> "Music"
+        FileSetContentCatalog.KIND_DEMO -> "Demo"
+        else -> "Other content"
+    }
+
+@Composable
 private fun RecommendedModRow(
     rec: RecommendedMod,
     progress: Int?,
@@ -2153,7 +2472,7 @@ internal fun MusicInfoSection(
     LaunchedEffect(filesDir.absolutePath, refreshTrigger) {
         val loaded =
             withContext(kotlinx.coroutines.Dispatchers.IO) {
-                val manager = AudioSourceManager(filesDir)
+                val manager = AudioSourceManager(filesDir, setDir)
                 manager to manager.getSources()
             }
         audioSrcManager = loaded.first
@@ -2161,7 +2480,7 @@ internal fun MusicInfoSection(
     }
     val hasCdAudio = audioSources.any { it.enabled }
     val hasCustomAudio =
-        CustomAudioSetManager(filesDir).hasUsableTrack { uri ->
+        CustomAudioSetManager(filesDir, setDir).hasUsableTrack { uri ->
             runCatching {
                 context.contentResolver.openFileDescriptor(android.net.Uri.parse(uri), "r")?.use { true } ?: false
             }.getOrDefault(false)

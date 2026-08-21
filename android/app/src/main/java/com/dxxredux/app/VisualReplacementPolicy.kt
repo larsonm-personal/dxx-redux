@@ -29,7 +29,7 @@ object VisualReplacementPolicy {
             if (mode == "coop") {
                 ModManager.VisualReplacementSummary()
             } else {
-                ModManager(context.filesDir, context).enabledVisualReplacementSummary(game)
+                ModManager.forActiveSet(context.filesDir, context).enabledVisualReplacementSummary(game)
             }
         }
 

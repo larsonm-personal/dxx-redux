@@ -1,0 +1,77 @@
+// TEST: Managed loose mission picker visibility
+//
+// Verifies that an enabled Panic-style loose mission appears in the D2 mission
+// picker, then disappears after it is disabled in Mods/Levels.
+[
+    {"_info": {
+        "games": ["d2"],
+        "_standalone": true,
+        "_owner": "test_unified_content_mission_picker",
+        "_deps": [
+            {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
+            {"file": "descent2.ham", "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"},
+            {"file": "groupa.pig", "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"},
+            {"file": "descent2.s22", "sha256": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728"},
+            {"file": "alien1.pig", "sha256": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233"},
+            {"file": "alien2.pig", "sha256": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055"},
+            {"file": "fire.pig", "sha256": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156"},
+            {"file": "ice.pig", "sha256": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1"},
+            {"file": "water.pig", "sha256": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"}
+        ]
+    }},
+
+    {"action": "enter_launcher"},
+    {"action": "setup_command", "command": "switch_set",
+     "args": {"name": "default"}, "post_delay_ms": 250},
+    {"action": "setup_command", "command": "delete_content",
+     "args": {"id": "040e270a999946bc7966396c"}, "post_delay_ms": 100},
+    {"action": "setup_command", "command": "delete_content",
+     "args": {"id": "9622123c8552f5bbc018b930"}, "post_delay_ms": 100},
+    {"action": "setup_command", "command": "delete_content",
+     "args": {"id": "1b46f9d7a5eaf6db07e963a6"}, "post_delay_ms": 250},
+    {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
+    {"action": "write_set_file", "file": "panic.mn2",
+     "content": "name = Automation Panic Test\nnum_levels = 1\npanic01.rl2\n"},
+    {"action": "write_set_file", "file": "panic.hog",
+     "content": "automation-test-payload\n"},
+    {"action": "setup_command", "command": "switch_set",
+     "args": {"name": "default"}, "post_delay_ms": 750},
+    {"action": "assert", "expect": {
+        "content_entries[0].id": "1b46f9d7a5eaf6db07e963a6",
+        "content_entries[0].enabled": "true"
+    }},
+
+    {"action": "enter_game", "game": "d2"},
+    {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "select", "text": "player", "optional": true, "post_delay_ms": 100, "timeout_ms": 1000},
+    {"action": "select", "text": "Ok", "optional": true, "post_delay_ms": 100, "timeout_ms": 1000},
+    {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "assert", "expect": {
+        "menu.items": {"contains": "Automation Panic Test"}
+    }},
+    {"action": "key", "key": "escape", "post_delay_ms": 100},
+
+    {"action": "enter_launcher"},
+    {"action": "setup_command", "command": "set_content_enabled",
+     "args": {"id": "1b46f9d7a5eaf6db07e963a6", "enabled": false}, "post_delay_ms": 500},
+    {"action": "assert", "expect": {"content_entries[0].enabled": "false"}},
+    {"action": "enter_game", "game": "d2"},
+    {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "select", "text": "player", "optional": true, "post_delay_ms": 100, "timeout_ms": 1000},
+    {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "assert", "expect": {
+        "menu.items": {"not_contains": "Automation Panic Test"}
+    }},
+
+    {"action": "enter_launcher"},
+    {"action": "setup_command", "command": "delete_content",
+     "args": {"id": "1b46f9d7a5eaf6db07e963a6"}, "post_delay_ms": 500},
+    {"action": "assert", "expect": {"content_entry_count": "0"}},
+    {"action": "log", "message": "Managed loose mission picker visibility passed"}
+]

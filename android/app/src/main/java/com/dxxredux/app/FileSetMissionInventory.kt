@@ -10,49 +10,49 @@ internal data class FileSetMissionEntry(
     val archive: File?,
     val versionName: String?,
     val sourceUri: String?,
+    val ownedFiles: List<File> = listOfNotNull(descriptor, archive),
+    val contentId: String? = null,
 ) {
-    val files: List<File> = listOfNotNull(descriptor, archive)
+    val files: List<File> = ownedFiles
     val totalBytes: Long = files.sumOf { it.length() }
 }
 
 internal object FileSetMissionInventory {
     fun scan(setDir: File): List<FileSetMissionEntry> {
-        val manifestEntries = AssetManifest(setDir).load().associateBy { portableGameFilenameIdentity(it.filename) }
-        return setDir
-            .walkTopDown()
-            .maxDepth(2)
-            .filter { it.isFile && GameFileFormats.isMissionDescriptor(it.name) }
-            .mapNotNull { descriptor ->
-                val mission =
-                    runCatching { MissionZip.parseMissionDescriptor(descriptor.name, descriptor.readBytes()) }
-                        .getOrNull() ?: return@mapNotNull null
+        val stored = FileSetContentManager(setDir).listEntries()
+        val storedIds = stored.map { it.id }.toSet()
+        return (stored + FileSetContentCatalog.scan(setDir).filter { it.id !in storedIds })
+            .filter { it.kind == FileSetContentCatalog.KIND_LOOSE_MISSION && it.problem == null }
+            .mapNotNull { content ->
+                val descriptor =
+                    content.files.firstOrNull { GameFileFormats.isMissionDescriptor(it.name) }
+                        ?: return@mapNotNull null
                 val archive =
-                    descriptor.parentFile
-                        ?.listFiles()
-                        ?.firstOrNull {
-                            it.isFile &&
-                                it.extension.equals("hog", ignoreCase = true) &&
-                                it.nameWithoutExtension.equals(descriptor.nameWithoutExtension, ignoreCase = true)
-                        }
-                val tracked =
-                    listOfNotNull(descriptor, archive)
-                        .mapNotNull { manifestEntries[portableGameFilenameIdentity(it.name)] }
+                    content.files.firstOrNull {
+                        it.extension.equals("hog", ignoreCase = true) &&
+                            it.nameWithoutExtension.equals(descriptor.nameWithoutExtension, ignoreCase = true)
+                    }
                 FileSetMissionEntry(
-                    displayName = mission.displayName,
-                    game = mission.game,
+                    displayName = content.displayName,
+                    game = content.game,
                     descriptor = descriptor,
                     archive = archive,
-                    versionName = tracked.mapNotNull { it.versionName }.distinct().singleOrNull(),
-                    sourceUri = tracked.mapNotNull { it.sourceUri }.distinct().singleOrNull(),
+                    versionName = content.versionName,
+                    sourceUri = content.sourceUri,
+                    ownedFiles = content.files,
+                    contentId = content.id.takeIf { it in storedIds },
                 )
             }.sortedWith(compareBy({ it.game }, { it.displayName.lowercase(Locale.US) }))
-            .toList()
     }
 
     fun remove(
         setDir: File,
         entry: FileSetMissionEntry,
     ): Int {
+        entry.contentId?.let { id ->
+            val removedFiles = entry.files.count { it.isFile }
+            return if (FileSetContentManager(setDir).deleteEntry(id)) removedFiles else 0
+        }
         val root = setDir.canonicalFile
         val files = entry.files.map { it.canonicalFile }
         require(files.all { it.toPath().startsWith(root.toPath()) }) { "Mission files are outside the active set" }

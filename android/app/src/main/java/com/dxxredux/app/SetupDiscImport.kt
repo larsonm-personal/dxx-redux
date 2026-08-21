@@ -1094,7 +1094,7 @@ internal fun importDiscImageFromPath(
 
     if (includeAudio && result.primaryExtracted > 0 && tracks.any { it.isAudio }) {
         registerDiscAudioSourceFromPath(
-            srcManager = AudioSourceManager(filesDir),
+            srcManager = AudioSourceManager.forActiveSet(filesDir),
             filesDir = filesDir,
             context = context,
             cuePath = cueFile.absolutePath,

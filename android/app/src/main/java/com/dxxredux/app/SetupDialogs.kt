@@ -17,6 +17,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -44,9 +45,9 @@ internal fun SetManagementDialog(
     fileSetManager: FileSetManager,
     activeSetName: String,
     onSwitchSet: (String) -> Unit,
-    onContentChanged: suspend () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var newSetName by remember { mutableStateOf("") }
     var showNewSetInput by remember { mutableStateOf(false) }
@@ -55,22 +56,18 @@ internal fun SetManagementDialog(
     var sets by remember { mutableStateOf(emptyList<FileSetManager.FileSetInfo>()) }
     var setUsages by remember { mutableStateOf<Map<String, Long>?>(null) }
     var mutating by remember { mutableStateOf(false) }
-    var missions by remember { mutableStateOf<List<FileSetMissionEntry>?>(null) }
-    var confirmMissionRemoval by remember { mutableStateOf<FileSetMissionEntry?>(null) }
 
     suspend fun refreshSets() {
         val result =
             withContext(Dispatchers.IO) {
                 val loadedSets = fileSetManager.listSets()
-                Triple(
+                Pair(
                     loadedSets,
                     loadedSets.associate { it.name to fileSetManager.diskUsage(it.name) },
-                    FileSetMissionInventory.scan(fileSetManager.getSetDir(activeSetName)),
                 )
             }
         sets = result.first
         setUsages = result.second
-        missions = result.third
     }
 
     LaunchedEffect(fileSetManager, activeSetName) {
@@ -97,64 +94,6 @@ internal fun SetManagementDialog(
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-
-                Spacer(modifier = Modifier.height(10.dp))
-                Text("Included missions and expansions", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                when (val listedMissions = missions) {
-                    null -> {
-                        Text("Checking...", fontSize = 12.sp)
-                    }
-
-                    else -> {
-                        if (listedMissions.isEmpty()) {
-                            Text(
-                                "No optional loose missions detected",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        } else {
-                            listedMissions.forEach { mission ->
-                                Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(mission.displayName, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                                            Text(
-                                                buildString {
-                                                    append(if (mission.game == "d1") "Descent" else "Descent 2")
-                                                    mission.versionName?.let { append(" | $it") }
-                                                    append(" | set: $activeSetName")
-                                                },
-                                                fontSize = 11.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            )
-                                            Text(
-                                                "${mission.files.joinToString { it.name }} (${formatSize(
-                                                    mission.totalBytes,
-                                                )})",
-                                                fontSize = 10.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            )
-                                            mission.sourceUri?.let { source ->
-                                                Text(
-                                                    "Imported source: ${Uri.parse(source).lastPathSegment ?: source}",
-                                                    fontSize = 10.sp,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                )
-                                            }
-                                        }
-                                        TextButton(
-                                            enabled = !mutating,
-                                            onClick = { confirmMissionRemoval = mission },
-                                        ) { Text("Remove", fontSize = 11.sp) }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                errorMessage?.let {
-                    Text(it, fontSize = 11.sp, color = MaterialTheme.colorScheme.error)
-                }
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
@@ -287,9 +226,9 @@ internal fun SetManagementDialog(
                                         scope.launch {
                                             withContext(Dispatchers.IO) {
                                                 if (activeSetName == FileSetManager.DEFAULT_SET) {
-                                                    fileSetManager.clearSet(activeSetName)
+                                                    fileSetManager.clearSet(activeSetName, context)
                                                 } else {
-                                                    fileSetManager.deleteSet(activeSetName)
+                                                    fileSetManager.deleteSet(activeSetName, context)
                                                 }
                                             }
                                             mutating = false
@@ -314,46 +253,6 @@ internal fun SetManagementDialog(
             }
         },
     )
-
-    confirmMissionRemoval?.let { mission ->
-        AlertDialog(
-            onDismissRequest = { confirmMissionRemoval = null },
-            title = { Text("Remove ${mission.displayName}?") },
-            text = {
-                Text(
-                    "Only ${mission.files.joinToString { it.name }} will be removed from set $activeSetName. " +
-                        "Base game files will be kept.",
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    enabled = !mutating,
-                    onClick = {
-                        mutating = true
-                        scope.launch {
-                            val failure =
-                                runCatching {
-                                    withContext(Dispatchers.IO) {
-                                        FileSetMissionInventory.remove(fileSetManager.getSetDir(activeSetName), mission)
-                                    }
-                                    onContentChanged()
-                                }.exceptionOrNull()
-                            if (failure == null) {
-                                confirmMissionRemoval = null
-                                refreshSets()
-                            } else {
-                                errorMessage = "Could not remove mission: ${failure.message ?: "unknown error"}"
-                            }
-                            mutating = false
-                        }
-                    },
-                ) { Text("Remove") }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmMissionRemoval = null }) { Text("Cancel") }
-            },
-        )
-    }
 }
 
 // -- Download helper ---------------------------------------------------------
@@ -909,7 +808,7 @@ internal fun GogImportDialog(
                                         } else if (count > 0) {
                                             publishStagedArchiveFiles(stagingDir, setDir)
                                         }
-                                        val srcManager = AudioSourceManager(filesDir)
+                                        val srcManager = AudioSourceManager.forActiveSet(filesDir)
                                         val hasGog =
                                             if (includeAudio && count > 0) {
                                                 registerGogAudioSource(
@@ -1613,7 +1512,7 @@ internal fun DiscImportDialog(
                                                     Log.w("DXX-DiscImport", "Disc identification failed", e)
                                                 }
 
-                                                val srcManager = AudioSourceManager(filesDir)
+                                                val srcManager = AudioSourceManager.forActiveSet(filesDir)
                                                 val id = discId ?: "custom-${System.currentTimeMillis()}"
                                                 val existingAudioFileNames = filesDir.list()?.toSet() ?: emptySet()
                                                 val sourceFileStem =

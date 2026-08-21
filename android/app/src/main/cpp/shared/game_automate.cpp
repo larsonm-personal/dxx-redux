@@ -389,11 +389,12 @@ enum step_type {
  * Comparison ops:  {"key": {"ne": 0}}, {"key": {"gt": 100}},
  *                  {"key": {"range": [10, 1000]}},
  *                  {"key": {"contains": "substring"}},
+ *                  {"key": {"not_contains": "substring"}},
  *                  {"array_key": {"contains_object": {"field": "value"}}} */
 struct assert_expect {
 	std::string key;
 	std::string value;     /* for simple equality (op=="eq") */
-	std::string op = "eq"; /* eq, ne, gt, lt, gte, lte, range, contains, contains_object */
+	std::string op = "eq"; /* eq, ne, gt, lt, gte, lte, range, contains, not_contains, contains_object */
 	double num_value = 0;  /* for gt/lt/gte/lte/ne */
 	double range_min = 0;
 	double range_max = 0;
@@ -2225,6 +2226,7 @@ static int parse_script(const char *json_text)
 			else if (action == "music_control") s.type = STEP_MUSIC_CONTROL;
 			else if (action == "redbook_invalidate_source") s.type = STEP_REDBOOK_INVALIDATE_SOURCE;
 			else if (action == "write_config") s.type = STEP_WRITE_CONFIG;
+			else if (action == "write_set_file") s.type = STEP_WRITE_CONFIG;
 			else if (action == "tap_button") s.type = STEP_TAP_BUTTON;
 			else if (action == "assert_button") s.type = STEP_ASSERT_BUTTON;
 			else if (action == "assert_controller_match") s.type = STEP_ASSERT_CONTROLLER_MATCH;
@@ -2595,6 +2597,21 @@ static std::string run_assertions(auto_step &s, bool log_success, bool log_failu
 				pass = icontains(actual_str.c_str(), ae.value.c_str());
 			}
 			snprintf(desc, sizeof(desc), "\"%s\" contains \"%s\" (got %s)",
+			         ae.key.c_str(), ae.value.c_str(), actual_str.c_str());
+		} else if (ae.op == "not_contains") {
+			pass = true;
+			if (val.is_array()) {
+				for (const auto &elem : val) {
+					std::string es = elem.is_string() ? elem.get<std::string>() : elem.dump();
+					if (icontains(es.c_str(), ae.value.c_str())) {
+						pass = false;
+						break;
+					}
+				}
+			} else {
+				pass = !icontains(actual_str.c_str(), ae.value.c_str());
+			}
+			snprintf(desc, sizeof(desc), "\"%s\" does not contain \"%s\" (got %s)",
 			         ae.key.c_str(), ae.value.c_str(), actual_str.c_str());
 		} else if (ae.op == "contains_object") {
 			pass = json_array_contains_object(val, ae.object_value);

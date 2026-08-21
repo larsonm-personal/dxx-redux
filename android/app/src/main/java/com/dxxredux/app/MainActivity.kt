@@ -834,7 +834,7 @@ class MainActivity :
         // :game.  PFDs opened there have fd numbers that don't exist here.
         playlistPreparation =
             startupScope.async(Dispatchers.IO) {
-                AudioSourceManager(filesDir).writePlaylist(contentResolver)
+                AudioSourceManager.forActiveSet(filesDir).writePlaylist(contentResolver)
             }
         // Check for multiplayer auto-join/host from the matchmaking lobby
         val mpMode = intent.getStringExtra("mp_mode")

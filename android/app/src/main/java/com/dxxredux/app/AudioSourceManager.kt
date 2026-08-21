@@ -137,11 +137,17 @@ private fun isUnderDirectory(
  */
 class AudioSourceManager(
     private val filesDir: File,
+    private val setDir: File? = null,
 ) {
     companion object {
         private const val TAG = "DXX-AudioSrc"
         private const val SOURCES_FILE = "audio_sources.json"
         private const val PLAYLIST_FILE = "audio_playlist.json"
+
+        fun forActiveSet(filesDir: File): AudioSourceManager {
+            val fileSets = FileSetManager(filesDir)
+            return AudioSourceManager(filesDir, fileSets.getSetDir(fileSets.getActive()))
+        }
 
         /** Open PFDs kept alive during game session for SAF sources */
         private val activePfds = mutableListOf<ParcelFileDescriptor>()
@@ -196,6 +202,8 @@ class AudioSourceManager(
 
     private var sources: MutableList<AudioSource> = mutableListOf()
     private var loadedRegistryBytes: ByteArray? = null
+    private val sourcesFile
+        get() = File(setDir?.let { File(it, ".content/audio") } ?: filesDir, SOURCES_FILE)
 
     init {
         load()
@@ -203,6 +211,10 @@ class AudioSourceManager(
 
     /** All registered audio sources, sorted by user order */
     fun getSources(): List<AudioSource> = sources.sortedBy { it.order }
+
+    internal fun registryFile(): File = sourcesFile
+
+    internal fun trackedSafUris(): List<String> = sources.flatMap { it.trackedSafUris() }
 
     /** Get only enabled sources, in order */
     fun getEnabledSources(): List<AudioSource> = sources.filter { it.enabled }.sortedBy { it.order }
@@ -262,7 +274,7 @@ class AudioSourceManager(
                 sources.forEach(::releaseSourceResources)
                 sources.clear()
                 pruneOrphanedGeneratedMergedFiles()
-                File(filesDir, SOURCES_FILE).delete()
+                sourcesFile.delete()
                 File(filesDir, PLAYLIST_FILE).delete()
                 removed
             }
@@ -365,7 +377,7 @@ class AudioSourceManager(
                             src.binPaths + src.cuePath
                         }
                     allFiles.any { name ->
-                        resolveExistingFile(name, activeSetDir) == null
+                        resolveExistingFile(name, activeSetDir, includeDisabledManaged = true) == null
                     }
                 }
             for (src in toRemove) {
@@ -418,12 +430,12 @@ class AudioSourceManager(
     fun writePlaylist(resolver: ContentResolver? = null): Boolean {
         closeActivePfds()
         val playlistFile = File(filesDir, PLAYLIST_FILE)
-        val enabled = getEnabledSources()
+        val activeSetDir = activeSetDirOrNull()
+        val enabled = getEnabledSources().filter { sourceFilesAvailable(it, activeSetDir) }
         if (enabled.isEmpty()) {
             return false
         }
         requireAudioPlaylistCapacity(enabled)
-        val activeSetDir = activeSetDirOrNull()
 
         val json = JSONObject()
         val arr = JSONArray()
@@ -449,16 +461,12 @@ class AudioSourceManager(
         json.put("sources", arr)
 
         AtomicFilePublication.writeUtf8(playlistFile, json.toString(2))
-        Log.i(TAG, "Wrote $PLAYLIST_FILE with ${enabled.size} sources (${activePfds.size} SAF fds)")
+        runCatching { Log.i(TAG, "Wrote $PLAYLIST_FILE with ${enabled.size} sources (${activePfds.size} SAF fds)") }
         return true
     }
 
     private fun activeSetDirOrNull(): File? =
-        try {
-            FileSetManager(filesDir).let { it.getSetDir(it.getActive()) }
-        } catch (_: Exception) {
-            null
-        }
+        setDir ?: runCatching { FileSetManager(filesDir).let { it.getSetDir(it.getActive()) } }.getOrNull()
 
     private fun resolvePlaylistBinPaths(
         src: AudioSource,
@@ -514,6 +522,7 @@ class AudioSourceManager(
     private fun resolveExistingFile(
         path: String,
         activeSetDir: File?,
+        includeDisabledManaged: Boolean = false,
     ): File? {
         val direct = File(path)
         if (direct.isAbsolute && direct.exists()) return direct
@@ -522,7 +531,22 @@ class AudioSourceManager(
         if (local.exists()) return local
 
         val name = direct.name.takeIf { it.isNotEmpty() } ?: return null
-        return activeSetDir?.let { findCaseInsensitive(it, name) }
+        return activeSetDir?.let { setDir ->
+            findCaseInsensitive(setDir, name)
+                ?: FileSetContentManager(setDir).resolveFile(path, !includeDisabledManaged)
+        }
+    }
+
+    private fun sourceFilesAvailable(
+        source: AudioSource,
+        activeSetDir: File?,
+    ): Boolean {
+        val externalCue = source.cueContentUri?.takeUnless(::isLocalCdContentPath)
+        if (externalCue == null && resolveExistingFile(source.cuePath, activeSetDir) == null) return false
+        val contentBins = source.binContentUriList()
+        val localBins =
+            if (contentBins.isEmpty()) source.binPaths else contentBins.filter(::isLocalCdContentPath)
+        return localBins.all { resolveExistingFile(it, activeSetDir) != null }
     }
 
     private fun findCaseInsensitive(
@@ -568,7 +592,7 @@ class AudioSourceManager(
     // ── Persistence ───────────────────────────────────────────────
 
     private fun load() {
-        val file = File(filesDir, SOURCES_FILE)
+        val file = sourcesFile
         loadedRegistryBytes = file.takeIf(File::isFile)?.readBytes()
         if (!file.exists()) {
             sources = mutableListOf()
@@ -621,6 +645,7 @@ class AudioSourceManager(
     }
 
     private fun save() {
+        sourcesFile.parentFile?.mkdirs()
         val json = JSONObject()
         val arr = JSONArray()
         for (src in sources) {
@@ -659,12 +684,12 @@ class AudioSourceManager(
         }
         json.put("sources", arr)
         val text = json.toString(2)
-        AtomicFilePublication.writeUtf8(File(filesDir, SOURCES_FILE), text)
+        AtomicFilePublication.writeUtf8(sourcesFile, text)
         loadedRegistryBytes = text.toByteArray(Charsets.UTF_8)
     }
 
     private fun reloadIfChanged() {
-        val current = File(filesDir, SOURCES_FILE).takeIf(File::isFile)?.readBytes()
+        val current = sourcesFile.takeIf(File::isFile)?.readBytes()
         if (!java.util.Arrays.equals(current, loadedRegistryBytes)) load()
     }
 }

@@ -245,7 +245,7 @@ internal fun SetupActivity.writeMusicConfigForLaunch(
             musicSource = source,
             missionHasSoundtrack =
                 game != null &&
-                    ModManager(filesDir).hasEnabledMissionZipSoundtrack(game, includeD1MissionZipsForD2),
+                    ModManager.forActiveSet(filesDir).hasEnabledMissionZipSoundtrack(game, includeD1MissionZipsForD2),
         )
 
     if (policy.useMissionZipSoundtrack) {
@@ -261,7 +261,7 @@ internal fun SetupActivity.writeMusicConfigForLaunch(
     if (policy.useCdTrackOrder) {
         settings.add("OrigTrackOrder" to "1")
     } else if (policy.useCustomAudioFiles) {
-        val m3uPath = CustomAudioSetManager(filesDir).writeM3U(this)
+        val m3uPath = CustomAudioSetManager.forActiveSet(filesDir).writeM3U(this)
         if (m3uPath == null) return false
         settings.add("CMLevelMusicPath" to m3uPath)
         if (!pilotMusic.hasPilotFile) {

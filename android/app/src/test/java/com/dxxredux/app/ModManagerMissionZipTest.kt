@@ -19,6 +19,31 @@ import java.util.zip.ZipOutputStream
 
 class ModManagerMissionZipTest {
     @Test
+    fun fileSetScopedManagersKeepArchivesStateAndLaunchPathsIsolated() {
+        val filesDir = File("build/test-mod-manager-file-set-isolation").absoluteFile
+        filesDir.deleteRecursively()
+        val setA = File(filesDir, "sets/a").apply { mkdirs() }
+        val setB = File(filesDir, "sets/b").apply { mkdirs() }
+        val managerA = ModManager(filesDir, setDir = setA)
+        val managerB = ModManager(filesDir, setDir = setB)
+
+        assertNotNull(managerA.importMissionZipFile(createMissionZip(), "SetA.zip"))
+        assertEquals(listOf("SetA.zip"), managerA.listMods().map { it.filename })
+        assertTrue(managerB.listMods().isEmpty())
+        assertTrue(File(setA, ".content/mods/SetA.zip").isFile)
+        assertFalse(File(setB, ".content/mods/SetA.zip").exists())
+
+        managerA.writeEnabledModPaths("d2")
+        assertTrue(File(filesDir, "d2x-redux/.active_mod_paths").isFile)
+        managerB.writeEnabledModPaths("d2")
+        assertFalse(File(filesDir, "d2x-redux/.active_mod_paths").exists())
+
+        assertNotNull(managerB.importMissionZipFile(createMissionZip(), "SetB.zip"))
+        assertEquals(listOf("SetA.zip"), ModManager(filesDir, setDir = setA).listMods().map { it.filename })
+        assertEquals(listOf("SetB.zip"), ModManager(filesDir, setDir = setB).listMods().map { it.filename })
+    }
+
+    @Test
     fun activeModPathCapacityRejectsTheCompleteOverLimitSet() {
         requireActiveModPathCapacity(List(ACTIVE_MOD_PATH_LIMIT) { "path-$it" })
         val failure =

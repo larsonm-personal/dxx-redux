@@ -147,11 +147,11 @@ fun MusicPickerPage(
     }
 
     // Redbook source management
-    val audioSrcManager = remember { AudioSourceManager(filesDir) }
+    val audioSrcManager = remember { AudioSourceManager.forActiveSet(filesDir) }
     var audioSources by remember { mutableStateOf(visibleCdAudioSources(ctx, audioSrcManager)) }
 
     // Custom audio set management
-    val customMgr = remember { CustomAudioSetManager(filesDir) }
+    val customMgr = remember { CustomAudioSetManager.forActiveSet(filesDir) }
     var customSets by remember { mutableStateOf(customMgr.getSets()) }
 
     // Track list preview dialog

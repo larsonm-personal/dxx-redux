@@ -579,12 +579,40 @@ internal class RouteMetadataPrecomputeCoordinator(
                     )
                 }.getOrNull()?.let { targets += it to true }
             }
-        val modManager = ModManager(appContext.filesDir, appContext)
-        val extractionStore = MissionZipExtractionStore(appContext.filesDir)
+        FileSetContentManager(setDir)
+            .listEntries()
+            .forEach { entry ->
+                entry.files.forEach { file ->
+                    val target =
+                        if (GameFileFormats.isDxa(file.name)) {
+                            runCatching {
+                                LevelMetadataTargets.genericZip(
+                                    file.absolutePath,
+                                    setDir,
+                                    entry.displayName,
+                                    entry.game,
+                                )
+                            }.getOrNull()
+                        } else if (file.extension.equals("hog", ignoreCase = true)) {
+                            runCatching {
+                                LevelMetadataTargets.directFile(
+                                    file,
+                                    setDir,
+                                    GameFileMetadata.summarizeLocalFile(file),
+                                )
+                            }.getOrNull()
+                        } else {
+                            null
+                        }
+                    target?.let { targets += it to entry.enabled }
+                }
+            }
+        val modManager = ModManager(appContext.filesDir, appContext, setDir)
+        val extractionStore = modManager.extractionStore()
         modManager
             .listMods()
             .forEach { mod ->
-                val archive = File(File(appContext.filesDir, "mods"), mod.filename)
+                val archive = modManager.modFile(mod.filename)
                 val modTargets =
                     if (mod.kind == ModManager.MOD_KIND_MISSION_ZIP) {
                         val scan = runCatching { MissionZip.inspect(archive) }.getOrNull()
@@ -597,7 +625,7 @@ internal class RouteMetadataPrecomputeCoordinator(
                         musicCatalog?.let { catalog ->
                             val outputFile =
                                 extractionRecord?.let { File(it.rootDir, MISSION_ZIP_MUSIC_NAMES_FILE) }
-                                    ?: MissionZipMusicNames.cacheFile(appContext.filesDir, mod.filename)
+                                    ?: modManager.musicNamesCacheFile(mod.filename)
                             musicJobs +=
                                 MissionMusicPrecomputeJob(
                                     displayName = mod.displayName,

@@ -735,7 +735,7 @@ class MusicControlPanel(
     private fun setSource(source: String) {
         val a = activity ?: return
         if (source == "files") {
-            if (CustomAudioSetManager(a.filesDir).writeM3U(a) == null) {
+            if (CustomAudioSetManager.forActiveSet(a.filesDir).writeM3U(a) == null) {
                 Toast.makeText(a, "No readable custom audio files", Toast.LENGTH_LONG).show()
                 refreshSourceOptions()
                 invalidate()
@@ -744,7 +744,7 @@ class MusicControlPanel(
         }
         if (source == "cd") {
             try {
-                AudioSourceManager(a.filesDir).writePlaylist(a.contentResolver)
+                AudioSourceManager.forActiveSet(a.filesDir).writePlaylist(a.contentResolver)
             } catch (e: Exception) {
                 Log.e("DXX-MusicPanel", "Could not select CD audio", e)
                 Toast.makeText(a, "Could not select CD audio: ${e.message}", Toast.LENGTH_LONG).show()

@@ -13,13 +13,13 @@ internal fun musicOverlaySourceOptions(
     canAccessUri: (uri: String, useFileDescriptor: Boolean) -> Boolean = { _, _ -> true },
 ): List<MusicOverlaySourceOption> =
     buildList {
-        if (ModManager(filesDir).hasEnabledMissionZipSoundtrack(game)) {
+        if (ModManager.forActiveSet(filesDir).hasEnabledMissionZipSoundtrack(game)) {
             add(MusicOverlaySourceOption("mission", "Mission zip"))
         }
-        if (CustomAudioSetManager(filesDir).hasUsableTrack { uri -> canAccessUri(uri, true) }) {
+        if (CustomAudioSetManager.forActiveSet(filesDir).hasUsableTrack { uri -> canAccessUri(uri, true) }) {
             add(MusicOverlaySourceOption("files", "Files"))
         }
-        val cdSources = AudioSourceManager(filesDir).getEnabledSources()
+        val cdSources = AudioSourceManager.forActiveSet(filesDir).getEnabledSources()
         val cdAvailable =
             runCatching {
                 requireAudioPlaylistCapacity(cdSources)

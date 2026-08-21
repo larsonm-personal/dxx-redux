@@ -536,7 +536,24 @@ class SetupActivity : ComponentActivity() {
         val activeSet = fileSetManager.getActive()
         val activeSetDir = fileSetManager.getSetDir(activeSet)
         val safManifest = fileSetManager.safManifestForSet(activeSet)
-        val modManager = ModManager(filesDir, this)
+        val modManager = ModManager(filesDir, this, activeSetDir)
+        val contentManager = FileSetContentManager(activeSetDir)
+        val contentResult =
+            try {
+                contentManager.reconcile()
+            } catch (e: Exception) {
+                Log.e("DXX-Setup", "File-set content reconciliation failed for $game", e)
+                LauncherDebugLog.log("content-reconcile-failed game=$game message=${e.message ?: ""}")
+                return complete("Could not prepare file-set content: ${e.message ?: "unknown error"}")
+            }
+        recordStep("content_reconcile")
+        if (contentResult.conflicts.isNotEmpty()) {
+            val details = contentResult.conflicts.take(3).joinToString("\n")
+            LauncherDebugLog.log(
+                "content-reconcile-block game=$game conflicts=${contentResult.conflicts.joinToString(" | ")}",
+            )
+            return complete("File-set content needs attention before launch:\n$details")
+        }
         val includeD1MissionZipsForD2 =
             game != "d2" ||
                 d1InD2Readiness(filesDir, activeSetDir, AssetManifest(activeSetDir), safManifest).ready
@@ -554,7 +571,7 @@ class SetupActivity : ComponentActivity() {
         try {
             fileSetManager.writeActiveSetPath()
             recordStep("active_set")
-            val audioSourceManager = AudioSourceManager(filesDir)
+            val audioSourceManager = AudioSourceManager(filesDir, activeSetDir)
             val pilotMusic = NativePilotPreferences.readMusicPrefsForAll(game, filesDir.absolutePath)
             recordStep("pilot_music")
             val requestedMusicMode =
@@ -565,7 +582,9 @@ class SetupActivity : ComponentActivity() {
             if (requestedMusicMode == "cd" && !cdPlaylistReady) {
                 return complete("CD Audio is selected, but no enabled readable CD source is available")
             }
-            modManager.writeEnabledModPaths(game, includeD1MissionZipsForD2)
+            val contentPaths = contentManager.buildLaunchPaths(game, includeD1MissionZipsForD2)
+            recordStep("content_projection")
+            modManager.writeEnabledModPaths(game, includeD1MissionZipsForD2, contentPaths)
             recordStep("mod_paths")
             writeInitialGameConfig()
             migrateLegacyHalfRenderResolution()
@@ -884,7 +903,12 @@ class SetupActivity : ComponentActivity() {
                             val fsm = FileSetManager(filesDir)
                             fsm.setActive(name)
                             fsm.writeActiveSetPath()
-                            Log.i("DXX-Setup", "switch_set '$name': ok")
+                            val content = FileSetContentManager(fsm.getSetDir(name)).reconcile()
+                            Log.i(
+                                "DXX-Setup",
+                                "switch_set '$name': ok adopted=${content.adoptedIds.size} " +
+                                    "conflicts=${content.conflicts.size}",
+                            )
                             requestSetupRefresh()
                         }
                     }
@@ -893,9 +917,43 @@ class SetupActivity : ComponentActivity() {
                         val name = intent.getStringExtra("name") ?: return
                         runIo {
                             val fsm = FileSetManager(filesDir)
-                            val dir = fsm.getSetDir(name)
-                            val count = dir.listFiles()?.count { it.isFile && it.delete() } ?: 0
-                            Log.i("DXX-Setup", "clear_set '$name': deleted $count file(s)")
+                            fsm.clearSet(name, this@SetupActivity)
+                            Log.i("DXX-Setup", "clear_set '$name': ok")
+                            requestSetupRefresh()
+                        }
+                    }
+
+                    "delete_set" -> {
+                        val name = intent.getStringExtra("name") ?: return
+                        runIo {
+                            val fsm = FileSetManager(filesDir)
+                            fsm.deleteSet(name, this@SetupActivity)
+                            fsm.writeActiveSetPath()
+                            Log.i("DXX-Setup", "delete_set '$name': ok")
+                            requestSetupRefresh()
+                        }
+                    }
+
+                    "set_content_enabled" -> {
+                        val id = intent.getStringExtra("id") ?: return
+                        val enabled = intent.getBooleanExtra("enabled", true)
+                        runIo {
+                            val fsm = FileSetManager(filesDir)
+                            val manager = FileSetContentManager(fsm.getSetDir(fsm.getActive()))
+                            manager.setEnabled(id, enabled)
+                            Log.i("DXX-Setup", "set_content_enabled '$id': $enabled")
+                            requestSetupRefresh()
+                        }
+                    }
+
+                    "delete_content" -> {
+                        val id = intent.getStringExtra("id") ?: return
+                        runIo {
+                            val fsm = FileSetManager(filesDir)
+                            val setDir = fsm.getSetDir(fsm.getActive())
+                            val deleted = FileSetContentManager(setDir).deleteEntry(id)
+                            AudioSourceManager(filesDir, setDir).pruneMissingSources(setDir)
+                            Log.i("DXX-Setup", "delete_content '$id': $deleted")
                             requestSetupRefresh()
                         }
                     }
@@ -907,7 +965,7 @@ class SetupActivity : ComponentActivity() {
                             val fsm = FileSetManager(filesDir)
                             val setDir = fsm.getSetDir(fsm.getActive())
                             val count = GogImportBridge.extractFiles(path, setDir.absolutePath, null, audio)
-                            val srcManager = AudioSourceManager(filesDir)
+                            val srcManager = AudioSourceManager(filesDir, setDir)
                             if (audio && count > 0 &&
                                 registerGogAudioSource(
                                     srcManager,
@@ -1121,7 +1179,7 @@ class SetupActivity : ComponentActivity() {
                         val trkIdx = intent.getIntExtra("track", 0)
                         val generation = CdPreviewBridge.reserveStart()
                         runIo cdPlay@{
-                            val srcManager = AudioSourceManager(filesDir)
+                            val srcManager = AudioSourceManager.forActiveSet(filesDir)
                             val sources = srcManager.getEnabledSources()
                             val src = sources.getOrNull(srcIdx)
                             if (src == null) {
@@ -1251,7 +1309,7 @@ class SetupActivity : ComponentActivity() {
                                 resolveCdAudioSourceFile(filesDir, cueName).absolutePath,
                                 orderedBinPaths.map { File(it).length() }.toLongArray(),
                             ) ?: return
-                        val srcManager = AudioSourceManager(filesDir)
+                        val srcManager = AudioSourceManager.forActiveSet(filesDir)
                         srcManager.addSource(
                             AudioSourceManager.AudioSource(
                                 id = id,
@@ -1272,9 +1330,10 @@ class SetupActivity : ComponentActivity() {
 
                     "clear_audio_sources" -> {
                         runIo {
-                            val srcManager = AudioSourceManager(filesDir)
+                            val srcManager = AudioSourceManager.forActiveSet(filesDir)
                             val retainedSafUris =
-                                CustomAudioSetManager(filesDir)
+                                CustomAudioSetManager
+                                    .forActiveSet(filesDir)
                                     .getSets()
                                     .flatMap { it.referencedUris.values }
                             srcManager.clearAll(this@SetupActivity, retainedSafUris)
@@ -2668,10 +2727,6 @@ private fun SetupScreen(
     }
     var activeSetName by remember { mutableStateOf(fileSetManager.getActive()) }
     val setDir = remember(activeSetName) { fileSetManager.getSetDir(activeSetName) }
-    val includedMissions by
-        produceState(initialValue = emptyList<FileSetMissionEntry>(), refreshTrigger, activeSetName) {
-            value = withContext(Dispatchers.IO) { FileSetMissionInventory.scan(setDir) }
-        }
     val manifest = remember(activeSetName) { AssetManifest(setDir) }
     val safManifest = remember(activeSetName) { fileSetManager.safManifestForSet(activeSetName) }
     val d2FileList = remember(refreshTrigger, activeSetName) { detectD2FileList(setDir, safManifest) }
@@ -2758,6 +2813,11 @@ private fun SetupScreen(
     var prunedSourceNames by remember { mutableStateOf<List<String>>(emptyList()) }
     var prunedDataFiles by remember { mutableStateOf<List<String>>(emptyList()) }
     LaunchedEffect(activeSetName, refreshTrigger) {
+        val persistedActiveSet = fileSetManager.getActive()
+        if (persistedActiveSet != activeSetName) {
+            activeSetName = persistedActiveSet
+            return@LaunchedEffect
+        }
         if (LauncherDebugLog.isEnabled(context)) {
             launcherDumpFileTable(
                 reason = "startup-before-prune",
@@ -2769,14 +2829,20 @@ private fun SetupScreen(
             )
         }
 
-        // 1. Prune audio sources
-        val srcManager = AudioSourceManager(filesDir)
+        // 1. Reconcile all non-base content before consumers inspect paths.
+        val contentResult = withContext(Dispatchers.IO) { FileSetContentManager(setDir).reconcile() }
+        contentResult.conflicts.forEach { conflict ->
+            LauncherDebugLog.log("content-reconcile-conflict active_set=$activeSetName detail=$conflict")
+        }
+
+        // 2. Prune audio sources
+        val srcManager = AudioSourceManager(filesDir, setDir)
         val prunedSrc = srcManager.pruneMissingSources(setDir)
         if (prunedSrc.isNotEmpty()) {
             prunedSourceNames = prunedSrc
         }
 
-        // 2. Prune stale manifest entries (before hashing, so hashing
+        // 3. Prune stale manifest entries (before hashing, so hashing
         //    doesn't race against pruning on the same manifest file)
         val prunedAssets = manifest.pruneStaleEntries()
         val prunedSaf = safManifest.pruneStaleEntries(context)
@@ -2810,7 +2876,7 @@ private fun SetupScreen(
             prunedDataFiles = allPruned
         }
 
-        // 3. Hash files on disk that are missing manifest entries (or size changed)
+        // 4. Hash files on disk that are missing manifest entries (or size changed)
         val allGameNames = ALL_GAME_FILENAMES
         val staleFiles = manifest.findStaleFiles(allGameNames)
         if (staleFiles.isNotEmpty()) {
@@ -2838,7 +2904,9 @@ private fun SetupScreen(
             hashingFile = null
         }
 
-        if (prunedSrc.isNotEmpty() || allPruned.isNotEmpty() || staleFiles.isNotEmpty()) {
+        if (contentResult.adoptedIds.isNotEmpty() || contentResult.removedDuplicatePaths.isNotEmpty() ||
+            prunedSrc.isNotEmpty() || allPruned.isNotEmpty() || staleFiles.isNotEmpty()
+        ) {
             onRefresh()
         }
     }
@@ -2942,7 +3010,7 @@ private fun SetupScreen(
     var audioImportBytes by remember { mutableLongStateOf(0L) }
     var audioImportTotal by remember { mutableLongStateOf(0L) }
     var zipArchiveUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
-    val audioCustomMgr = remember { CustomAudioSetManager(filesDir) }
+    val audioCustomMgr = remember(setDir.absolutePath) { CustomAudioSetManager(filesDir, setDir) }
 
     // -- DXA mod import state ----------------------------
     val dxaImportUris = remember { mutableListOf<Pair<String, Uri>>() }
@@ -3135,7 +3203,7 @@ private fun SetupScreen(
                 scanning = false
             }
             if (dxaImportUris.isNotEmpty()) {
-                val modMgr = ModManager(filesDir)
+                val modMgr = ModManager.forActiveSet(filesDir)
                 val dxaResults = mutableListOf<String>()
                 for ((name, uri) in dxaImportUris) {
                     try {
@@ -3167,7 +3235,7 @@ private fun SetupScreen(
                 }
             }
             if (missionZipImportUris.isNotEmpty()) {
-                val modMgr = ModManager(filesDir, context)
+                val modMgr = ModManager.forActiveSet(filesDir, context)
                 val results = mutableListOf<String>()
                 withContext(Dispatchers.Main) {
                     missionArchiveImporting = true
@@ -3735,10 +3803,6 @@ private fun SetupScreen(
                             showSetDialog = false
                             onRefresh()
                         },
-                        onContentChanged = {
-                            onClearRouteMetadataCache()
-                            onRefresh()
-                        },
                         onDismiss = { showSetDialog = false },
                     )
                 }
@@ -4110,19 +4174,6 @@ private fun SetupScreen(
                             Text("Change", fontSize = 12.sp)
                         }
                     }
-                    if (includedMissions.isNotEmpty()) {
-                        Text(
-                            text =
-                                "Included missions: " +
-                                    includedMissions.joinToString { mission ->
-                                        mission.versionName ?: mission.displayName
-                                    },
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 6.dp),
-                        )
-                    }
-
                     // -- Missing-files help ----------------------
                     if (!canLaunch && !gameRunning) {
                         MissingFilesHelp()
@@ -4980,12 +5031,6 @@ private fun SetupScreen(
                         filesDir = filesDir,
                         setDir = setDir,
                         refreshTrigger = refreshTrigger,
-                    )
-
-                    DemosSection(
-                        setDir = setDir,
-                        refreshTrigger = refreshTrigger,
-                        onRefresh = onRefresh,
                     )
                 }
 
