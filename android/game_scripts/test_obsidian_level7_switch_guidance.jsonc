@@ -1,4 +1,4 @@
-// TEST: Obsidian level 6 Guide-Bot stays at a nearby switch and routes around a blocked grate
+// TEST: Obsidian level 7 uses nearby switch guidance without a short connector
 [
     {"_info": {
         "games": ["d2"],
@@ -22,8 +22,8 @@
     {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
     {"action": "setup_command", "command": "clear_route_metadata_cache", "post_delay_ms": 250},
     {"action": "setup_command", "command": "clear_level_metadata_result_cache", "post_delay_ms": 250},
-    {"action": "import_mission_zip", "file": "obsidian.zip", "label": "obsidian_level6_guidebot", "display_name": "Obsidian.zip"},
-    {"action": "analyze_level_metadata_all", "label": "obsidian_level6_guidebot", "mod_file": "Obsidian.zip", "game": "d2", "status": "ok", "min_total_levels": 18},
+    {"action": "import_mission_zip", "file": "obsidian.zip", "label": "obsidian_level7_switch", "display_name": "Obsidian.zip"},
+    {"action": "analyze_level_metadata_all", "label": "obsidian_level7_switch", "mod_file": "Obsidian.zip", "game": "d2", "status": "ok", "min_total_levels": 18},
     {"action": "enter_game", "game": "d2"},
     {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
@@ -32,61 +32,64 @@
     {"action": "select_mission", "text": "Obsidian", "post_delay_ms": 100, "timeout_ms": 10000},
     {"action": "wait_ms", "ms": 300},
     {"action": "key", "key": "backspace", "post_delay_ms": 100},
-    {"action": "key", "key": "6", "post_delay_ms": 100},
+    {"action": "key", "key": "7", "post_delay_ms": 100},
     {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "select", "text": "Trainee", "post_delay_ms": 100, "timeout_ms": 10000, "optional": true},
     {"action": "skip_briefing", "timeout_ms": 60000, "post_delay_ms": 100},
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000},
     {"action": "wait_for", "timeout_ms": 30000, "expect": {
-        "current_level_num": "6",
+        "current_level_num": "7",
         "level_metadata_route.status": "ok",
-        "level_metadata_route.step_count": "9"
+        "level_metadata_route.step_count": "13"
     }},
 
     {"action": "set_debug", "field": "clear_robots", "value": "true", "post_delay_ms": 100},
+    {"action": "key", "key": "tab", "post_delay_ms": 100},
+    {"action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000},
+    {"action": "set_objective_overlay", "mode": "next", "post_delay_ms": 300},
+    {"action": "introspect"},
+    {"action": "assert", "expect": {
+        "automap.objective_connector_candidate_count": "1",
+        "automap.objective_connector_drawn_count": "1"
+    }},
+    {"action": "key", "key": "escape", "post_delay_ms": 100},
+    {"action": "wait_for", "field": "automap_active", "value": "false", "timeout_ms": 5000},
+    {"action": "set_debug", "field": "fire_trigger", "value": "5", "post_delay_ms": 100},
+    {"action": "set_debug", "field": "player_keys", "value": "blue", "post_delay_ms": 100},
     {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
     {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
-    {"action": "set_debug", "field": "fire_trigger", "value": "1", "post_delay_ms": 100},
-    {"action": "set_debug", "field": "fire_trigger", "value": "13", "post_delay_ms": 100},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
         "guidebot.route_goal_active": "true",
         "guidebot.route_goal_activation_kind_name": "shoot_switch",
-        "guidebot.route_goal_trigger": "15",
-        "guidebot.route_goal_seg": "257"
-    }},
-    {"action": "pose_route_guidance", "post_delay_ms": 250},
-    {"action": "meta_action", "id": 1042, "post_delay_ms": 500},
-    {"action": "wait_ms", "ms": 12000},
-    {"action": "assert", "expect": {
-        "guidebot.route_goal_trigger": "15",
-        "guidebot.segment": "257",
-        "guidebot.path_length": "1"
+        "guidebot.route_goal_trigger": "7",
+        "guidebot.route_goal_seg": "303",
+        "guidebot.route_goal_activation_matches_aim": "false",
+        "guidebot.route_goal_target_matches_activation": "true"
     }},
 
-    {"action": "set_debug", "field": "fire_trigger", "value": "15", "post_delay_ms": 100},
-    {"action": "set_debug", "field": "fire_trigger", "value": "16", "post_delay_ms": 100},
-    {"action": "wait_for", "timeout_ms": 20000, "expect": {
-        "guidebot.route_goal_trigger": "14",
-        "guidebot.route_goal_seg": "506"
+    {"action": "key", "key": "tab", "post_delay_ms": 100},
+    {"action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000},
+    {"action": "set_objective_overlay", "mode": "next", "post_delay_ms": 300},
+    {"action": "introspect"},
+    {"action": "assert", "expect": {
+        "automap.objective_overlay_mode_name": "next",
+        "automap.objective_connector_candidate_count": "0",
+        "automap.objective_connector_drawn_count": "0"
     }},
-    {"action": "pose_view", "segment": 540, "x": 86.679718, "y": 182.797989, "z": 413.188293, "post_delay_ms": 250},
+    {"action": "key", "key": "escape", "post_delay_ms": 100},
+    {"action": "wait_for", "field": "automap_active", "value": "false", "timeout_ms": 5000},
+
+    {"action": "pose_route_guidance", "post_delay_ms": 250},
     {"action": "meta_action", "id": 1042, "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
-        "guidebot.route_stall_recovery_count": {"gte": 1},
-        "guidebot.route_avoid_seg": "607"
-    }},
-    {"action": "wait_for", "timeout_ms": 20000, "expect": {
-        "guidebot.segment": {"ne": 540}
-    }},
-    {"action": "pose_view", "segment": 541, "x": -87.503891, "y": 172.280426, "z": 417.697983, "post_delay_ms": 250},
-    {"action": "meta_action", "id": 1042, "post_delay_ms": 500},
-    {"action": "wait_for", "timeout_ms": 30000, "expect": {
-        "guidebot.route_stall_recovery_count": {"gte": 2},
-        "guidebot.route_avoid_seg": "607",
-        "guidebot.route_avoid_seg2": "606"
+        "guidebot.route_goal_trigger": "7",
+        "guidebot.route_goal_path_endpoint_seg": "303",
+        "guidebot.route_goal_path_endpoint_matches_target": "true"
     }},
     {"action": "wait_for", "timeout_ms": 30000, "expect": {
-        "guidebot.segment": {"ne": 541}
+        "guidebot.segment": {"ne": "20"},
+        "guidebot.route_goal_trigger": "7",
+        "guidebot.route_goal_path_endpoint_seg": "303"
     }},
-    {"action": "log", "message": "=== TEST: Obsidian level 6 Guide-Bot switch and grate routing -- PASS ==="}
+    {"action": "log", "message": "=== TEST: Obsidian level 7 switch guidance -- PASS ==="}
 ]

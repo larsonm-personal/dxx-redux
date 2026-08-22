@@ -984,6 +984,35 @@ int state_android_save_to_slot(int slotnum, const char *desc, int save_kind)
 	return state_android_save_to_slot_internal(slotnum, desc, save_kind, 0);
 }
 
+int state_android_restore_slot(int slotnum)
+{
+	char filename[PATH_MAX];
+
+	if (slotnum < 0 || slotnum >= STATE_ANDROID_NUM_SAVES)
+		return -1;
+#ifdef DXX_BUILD_DESCENT_II
+	if (Current_level_num < 0) {
+		debug_log(DLOG_GAME, "quick load skipped: D2 secret level is active");
+		return 0;
+	}
+#endif
+	memset(filename, 0, sizeof(filename));
+	if (!state_android_build_save_filename(filename, sizeof(filename), slotnum, 0, 0)) {
+		debug_log(DLOG_GAME, "quick load skipped: failed to build %s slot %d path",
+		          state_android_game_label(), slotnum);
+		return 0;
+	}
+	if (!PHYSFSX_exists(filename, 0)) {
+		debug_log(DLOG_GAME, "quick load skipped: %s slot %d is missing",
+		          state_android_game_label(), slotnum);
+		return -1;
+	}
+	/* The Kotlin prompt already confirmed the restore.  Passing zero here skips
+	 * the engine's second confirmation dialog; the restore subroutine is the
+	 * same path used after an in-game confirmation. */
+	return state_restore_all_path(0, filename) ? 1 : 0;
+}
+
 int state_android_save_lifecycle_checkpoint(int slotnum, const char *desc,
                                             int save_kind)
 {

@@ -227,6 +227,8 @@ class AudioSourceManager(
     /** Get only enabled sources, in order */
     fun getEnabledSources(): List<AudioSource> = sources.filter { it.enabled }.sortedBy { it.order }
 
+    internal fun sourceFilesAvailable(source: AudioSource): Boolean = sourceFilesAvailable(source, activeSetDirOrNull())
+
     /** Add a new audio source */
     fun addSource(source: AudioSource) {
         AtomicFilePublication.transaction {

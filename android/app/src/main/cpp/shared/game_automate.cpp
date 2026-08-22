@@ -3836,6 +3836,10 @@ extern "C" void game_automate_tick(void)
 						stop_script_fail("android_game_request: load request rejected");
 						break;
 					}
+				} else if (s.value == "quick_save") {
+					meta_action_dispatch(META_QUICK_SAVE, 1);
+				} else if (s.value == "quick_load") {
+					meta_action_dispatch(META_QUICK_LOAD, 1);
 				} else if (s.value == "game_menu") {
 					g_android_open_game_menu = 1;
 				} else if (s.value == "pause") {

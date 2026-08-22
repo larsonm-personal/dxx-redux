@@ -100,6 +100,10 @@ extern volatile int android_escort_warp_to_me_pending;
  * in gamecntl.c to start or stop Android quick input-demo recording. */
 extern volatile int android_demo_record_toggle_pending;
 
+/* Fixed-slot quick save/load requests, consumed on the game thread. */
+extern volatile int android_quick_save_pending;
+extern volatile int android_quick_load_pending;
+
 /* Set on UI thread by META_REWIND, consumed on the game thread
  * in gamecntl.c to trigger Android rewind handling. */
 extern volatile int android_rewind_pending;

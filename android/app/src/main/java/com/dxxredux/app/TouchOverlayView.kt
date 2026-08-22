@@ -712,11 +712,11 @@ class TouchOverlayView
             const val ADMIN_INCREASE_VIEW = 0
             const val ADMIN_TOGGLE_AUTOLEVEL = 1
             const val ADMIN_NET_STATS = 2
-            const val ADMIN_QUICK_LOAD = 3
+            const val ADMIN_LOAD = 3
             const val ADMIN_OPEN_MENU = 4
             const val ADMIN_NET_EVENTS = 5
             const val ADMIN_EXIT_LAUNCHER = 6
-            const val ADMIN_QUICK_SAVE = 7
+            const val ADMIN_SAVE = 7
             const val ADMIN_VIDEO_INFO = 8
 
             // Gamepad-only items (appended when no touchscreen)
@@ -1766,28 +1766,28 @@ class TouchOverlayView
             val top = height * 0.08f
             pauseResumeRect.set(left, top, left + bannerW, top + bannerH)
 
-            val corner = bannerH * 0.2f
+            val corner = bannerH * PauseOverlayStyle.CORNER_RATIO
             val background =
                 Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = 0xE6222222.toInt()
+                    color = PauseOverlayStyle.BACKGROUND_COLOR
                     style = Paint.Style.FILL
                 }
             val border =
                 Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = 0xEEFFFFFF.toInt()
+                    color = PauseOverlayStyle.BORDER_COLOR
                     style = Paint.Style.STROKE
-                    strokeWidth = maxOf(3f, bannerH * 0.025f)
+                    strokeWidth = maxOf(3f, bannerH * PauseOverlayStyle.BORDER_RATIO)
                 }
             val title =
                 Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = 0xFFFFFFFF.toInt()
+                    color = PauseOverlayStyle.TEXT_COLOR
                     textAlign = Paint.Align.CENTER
                     textSize = bannerH * 0.4f
                     typeface = Typeface.DEFAULT_BOLD
                 }
             val hint =
                 Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = 0xDDFFFFFF.toInt()
+                    color = PauseOverlayStyle.SECONDARY_TEXT_COLOR
                     textAlign = Paint.Align.CENTER
                     textSize = bannerH * 0.2f
                 }
@@ -4293,11 +4293,11 @@ class TouchOverlayView
                     "Right View"
                 }
 
-                ADMIN_QUICK_SAVE -> {
+                ADMIN_SAVE -> {
                     "Save"
                 }
 
-                ADMIN_QUICK_LOAD -> {
+                ADMIN_LOAD -> {
                     "Load"
                 }
 

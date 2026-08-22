@@ -7,6 +7,14 @@ import org.junit.Test
 
 class AdminTrayUiTest {
     @Test
+    fun saveAndLoadAdminItemsOpenRegularSlotMenus() {
+        assertEquals(true, adminSaveLoadMenuIsSave(TouchOverlayView.ADMIN_SAVE))
+        assertEquals(false, adminSaveLoadMenuIsSave(TouchOverlayView.ADMIN_LOAD))
+        assertEquals(null, adminSaveLoadMenuIsSave(TouchBindings.META_QUICK_SAVE))
+        assertEquals(null, adminSaveLoadMenuIsSave(TouchBindings.META_QUICK_LOAD))
+    }
+
+    @Test
     fun previewAutomapExposesOnlyMetadataDisplaySettings() {
         assertEquals(
             listOf(
@@ -68,12 +76,12 @@ class AdminTrayUiTest {
                 TouchOverlayView.ADMIN_INCREASE_VIEW,
                 TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL,
                 TouchOverlayView.ADMIN_NET_STATS,
-                TouchOverlayView.ADMIN_QUICK_LOAD,
+                TouchOverlayView.ADMIN_LOAD,
                 TouchOverlayView.ADMIN_OPEN_MENU,
                 TouchOverlayView.ADMIN_NET_EVENTS,
                 TouchOverlayView.ADMIN_ABDICATE_GUIDEBOT,
                 TouchOverlayView.ADMIN_EXIT_LAUNCHER,
-                TouchOverlayView.ADMIN_QUICK_SAVE,
+                TouchOverlayView.ADMIN_SAVE,
                 TouchOverlayView.ADMIN_VIDEO_INFO,
                 TouchOverlayView.ADMIN_BRIGHTNESS,
                 TouchOverlayView.ADMIN_FOV,
@@ -151,8 +159,8 @@ class AdminTrayUiTest {
             )
 
         assertFalse(actions.contains(TouchOverlayView.ADMIN_OPEN_MENU))
-        assertFalse(actions.contains(TouchOverlayView.ADMIN_QUICK_LOAD))
-        assertFalse(actions.contains(TouchOverlayView.ADMIN_QUICK_SAVE))
+        assertFalse(actions.contains(TouchOverlayView.ADMIN_LOAD))
+        assertFalse(actions.contains(TouchOverlayView.ADMIN_SAVE))
         assertFalse(actions.contains(TouchOverlayView.ADMIN_EXIT_LAUNCHER))
         assertFalse(actions.contains(TouchOverlayView.ADMIN_CHEATS))
         assertTrue(actions.contains(TouchOverlayView.ADMIN_INCREASE_VIEW))
@@ -312,10 +320,10 @@ class AdminTrayUiTest {
     @Test
     fun oneShotActionsStillCloseTheTray() {
         assertFalse(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL))
-        assertFalse(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_QUICK_SAVE))
+        assertFalse(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_SAVE))
         assertFalse(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_OPEN_MENU))
 
-        assertTrue(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_QUICK_SAVE))
+        assertTrue(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_SAVE))
         assertTrue(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_OPEN_MENU))
     }
 

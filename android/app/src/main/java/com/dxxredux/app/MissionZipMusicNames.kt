@@ -98,15 +98,20 @@ internal object MissionZipMusicNames {
         catalog: MissionZipMusicCatalog,
         entries: Map<String, MissionZipAudioFingerprintCache.Entry>,
         allowAcoustIdLookups: Boolean,
-    ): List<MusicNameSidecar.Record> =
-        buildList {
+    ): List<MusicNameSidecar.Record> {
+        val claimedPaths = mutableSetOf<String>()
+        return buildList {
             for (track in catalog.sources.flatMap { it.tracks }) {
                 val name = entries[track.id]?.bestName(allowAcoustIdLookups) ?: continue
-                val paths = track.exactPaths()
+                val paths =
+                    track.exactPaths().filter {
+                        claimedPaths.add(it.lowercase(Locale.US))
+                    }
                 if (paths.isEmpty()) continue
                 add(MusicNameSidecar.Record(paths, paths.map(::leafName), name))
             }
         }
+    }
 
     private fun MissionZipAudioFingerprintCache.Entry.bestName(allowAcoustIdLookups: Boolean): String? =
         (localMatchName ?: acoustIdName.takeIf { allowAcoustIdLookups })
@@ -115,11 +120,12 @@ internal object MissionZipMusicNames {
             ?: embeddedDisplayName.trim().takeIf { it.isNotBlank() }
 
     private fun MissionZipMusicTrack.exactPaths(): List<String> =
-        listOf(
-            archiveEntryPath,
-            nestedEntryPath.orEmpty(),
-            hogEntryName.orEmpty(),
-            displayName.takeIf { '/' in it || '\\' in it }.orEmpty(),
+        (
+            when {
+                !hogEntryName.isNullOrBlank() -> listOf(hogEntryName)
+                !nestedEntryPath.isNullOrBlank() -> listOf(nestedEntryPath)
+                else -> listOf(archiveEntryPath)
+            } + displayName.takeIf { '/' in it || '\\' in it }.orEmpty()
         ).map { it.replace('\\', '/').trim('/') }
             .filter { it.isNotBlank() }
             .distinctBy { it.lowercase(Locale.US) }

@@ -144,10 +144,10 @@ internal fun adminTrayVisibleActions(
         mutableListOf(
             TouchOverlayView.ADMIN_INCREASE_VIEW,
             TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL,
-            TouchOverlayView.ADMIN_QUICK_LOAD,
+            TouchOverlayView.ADMIN_LOAD,
             TouchOverlayView.ADMIN_OPEN_MENU,
             TouchOverlayView.ADMIN_EXIT_LAUNCHER,
-            TouchOverlayView.ADMIN_QUICK_SAVE,
+            TouchOverlayView.ADMIN_SAVE,
             TouchOverlayView.ADMIN_VIDEO_INFO,
             TouchOverlayView.ADMIN_BRIGHTNESS,
             TouchOverlayView.ADMIN_FOV,
@@ -180,10 +180,10 @@ internal fun adminTrayVisibleActions(
     if (automapActive) {
         actions.removeAll(
             listOf(
-                TouchOverlayView.ADMIN_QUICK_LOAD,
+                TouchOverlayView.ADMIN_LOAD,
                 TouchOverlayView.ADMIN_OPEN_MENU,
                 TouchOverlayView.ADMIN_EXIT_LAUNCHER,
-                TouchOverlayView.ADMIN_QUICK_SAVE,
+                TouchOverlayView.ADMIN_SAVE,
             ),
         )
         if (mapCheatsAccessible) {

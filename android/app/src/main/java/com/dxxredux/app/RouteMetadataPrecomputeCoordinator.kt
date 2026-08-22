@@ -173,6 +173,7 @@ internal class RouteMetadataPrecomputeCoordinator(
     private var lastSourceIdentity: String? = null
     private val musicFailures = mutableSetOf<String>()
     private val loggedMusicMissions = mutableSetOf<String>()
+    private val publishedMusicSidecars = mutableSetOf<String>()
 
     @Synchronized
     fun notifyContentImported() {
@@ -323,11 +324,45 @@ internal class RouteMetadataPrecomputeCoordinator(
                     val currentMusicIds =
                         musicJobs.flatMap { job -> job.tracks.map { musicTrackId(job, it) } }.toSet()
                     musicFailures.retainAll(currentMusicIds)
-                    loggedMusicMissions.retainAll(musicJobs.map { it.catalog.sourceIdentity }.toSet())
+                    val currentMusicSources = musicJobs.map { it.catalog.sourceIdentity }.toSet()
+                    loggedMusicMissions.retainAll(currentMusicSources)
+                    publishedMusicSidecars.retainAll(currentMusicSources)
                     val eligibleMusic =
                         musicJobs.filter { job ->
                             MissionMusicPrecomputeScheduling.isEligible(job, jobs) { route ->
                                 isRouteTerminal(route, entries)
+                            }
+                        }
+                    eligibleMusic
+                        .filter { job ->
+                            job.catalog.sourceIdentity !in publishedMusicSidecars &&
+                                job.tracks.all { track ->
+                                    isMusicTrackTerminal(
+                                        job,
+                                        track,
+                                        musicEntries[job].orEmpty(),
+                                        fingerprintDbIdentity,
+                                    )
+                                }
+                        }.forEach { job ->
+                            try {
+                                val recordCount =
+                                    withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                        MissionZipMusicNames.writeSidecar(
+                                            job.outputFile,
+                                            job.catalog,
+                                            musicEntries[job].orEmpty(),
+                                            allowAcoustIdLookups = allowAcoustIdLookups(),
+                                        )
+                                    }
+                                publishedMusicSidecars += job.catalog.sourceIdentity
+                                monitor.musicSidecarFinished(job.displayName, recordCount)
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                publishedMusicSidecars += job.catalog.sourceIdentity
+                                monitor.musicSidecarFailed(job.displayName, e.message.orEmpty())
+                                Log.w(TAG, "Music sidecar refresh failed ${job.displayName}", e)
                             }
                         }
                     val nextMusic =
@@ -820,10 +855,7 @@ internal class RouteMetadataPrecomputeCoordinator(
                         job.outputFile,
                         job.catalog,
                         fingerprintCache.cachedEntries(job.catalog),
-                        allowAcoustIdLookups =
-                            appContext
-                                .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
-                                .getBoolean(PREF_ALLOW_ACOUSTID_WEB_LOOKUPS, false),
+                        allowAcoustIdLookups = allowAcoustIdLookups(),
                     )
                     entry
                 }
@@ -852,6 +884,7 @@ internal class RouteMetadataPrecomputeCoordinator(
         if (job.tracks.all { isMusicTrackTerminal(job, it, refreshed, fingerprintDbIdentity) } &&
             loggedMusicMissions.add(job.catalog.sourceIdentity)
         ) {
+            publishedMusicSidecars += job.catalog.sourceIdentity
             monitor.musicMissionFinished(
                 job.displayName,
                 job.tracks.size,
@@ -859,6 +892,11 @@ internal class RouteMetadataPrecomputeCoordinator(
             )
         }
     }
+
+    private fun allowAcoustIdLookups(): Boolean =
+        appContext
+            .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
+            .getBoolean(PREF_ALLOW_ACOUSTID_WEB_LOOKUPS, false)
 
     private fun isCompleted(job: RouteMetadataPrecomputeJob): Boolean {
         val filename = ledger.completedCache(job.id) ?: return false

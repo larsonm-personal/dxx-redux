@@ -14,6 +14,7 @@
 
 #include <jni.h>
 #include <SDL.h>
+#include <stdio.h>
 #include <string.h>
 #include <android/log.h>
 #include "android_meta_actions.h"
@@ -36,6 +37,7 @@
 #include "playsave.h"
 #include "screens.h"
 #include "state.h"
+#include "state_android_shared.h"
 #include "weapon.h"
 #include "window.h"
 
@@ -48,6 +50,8 @@ volatile int android_escort_find_unexplored_pending = 0;
 volatile int android_escort_next_goal_pending = 0;
 volatile int android_escort_warp_to_me_pending = 0;
 volatile int android_demo_record_toggle_pending = 0;
+volatile int android_quick_save_pending = 0;
+volatile int android_quick_load_pending = 0;
 volatile int android_rewind_pending = 0;
 volatile int android_coop_restart_level_pending = 0;
 volatile int android_reactor_pause_toggle_pending = 0;
@@ -89,10 +93,6 @@ typedef struct {
  * Instant actions inject a full down+up cycle on press and ignore release.
  */
 static const meta_action_entry_t dispatch_table[] = {
-	/* Quick save/load: instant (tap to trigger) */
-	{ META_QUICK_SAVE, META_FLAG_INSTANT, 2, { SDLK_LALT, SDLK_F2 } },
-	{ META_QUICK_LOAD, META_FLAG_INSTANT, 2, { SDLK_LALT, SDLK_F3 } },
-
 	/* Game menu: hold ESC */
 	{ META_GAME_MENU, 0, 1, { SDLK_ESCAPE } },
 
@@ -199,7 +199,8 @@ int android_handle_pause_saveload_request(window *wind)
 	}
 
 	if (!g_android_open_save_menu && !g_android_open_load_menu && !g_android_open_game_menu) {
-		if (g_android_autosave_request_kind) {
+		if (g_android_autosave_request_kind || android_quick_save_pending ||
+		    android_quick_load_pending) {
 			window_close(wind);
 			return 1;
 		}
@@ -227,6 +228,39 @@ int android_handle_pause_saveload_request(window *wind)
 
 int android_handle_ingame_saveload_request(void)
 {
+	if (android_quick_save_pending) {
+		char desc[21];
+		int saved;
+
+		android_quick_save_pending = 0;
+		if (Player_is_dead || (Game_mode & GM_MULTI)) {
+			HUD_init_message_literal(HM_DEFAULT, "Quick save unavailable");
+			return 1;
+		}
+		snprintf(desc, sizeof(desc), "[quick] level %d", Current_level_num);
+		saved = state_android_save_to_slot(ANDROID_SAVE_META_SLOT_QUICK, desc,
+		                                   ANDROID_SAVE_META_KIND_MANUAL);
+		HUD_init_message_literal(HM_DEFAULT,
+		                         saved ? "Quick save complete" : "Quick save unavailable");
+		return 1;
+	}
+
+	if (android_quick_load_pending) {
+		int restored;
+
+		android_quick_load_pending = 0;
+		if (Game_mode & GM_MULTI) {
+			HUD_init_message_literal(HM_DEFAULT, "Quick load unavailable");
+			return 1;
+		}
+		restored = state_android_restore_slot(ANDROID_SAVE_META_SLOT_QUICK);
+		if (restored < 0)
+			HUD_init_message_literal(HM_DEFAULT, "No quick save found");
+		else if (!restored)
+			HUD_init_message_literal(HM_DEFAULT, "Quick load failed");
+		return 1;
+	}
+
 	if (g_android_autosave_request_kind) {
 		int request_kind = g_android_autosave_request_kind;
 		int slotnum = request_kind == ANDROID_SAVE_META_KIND_AUTO_EXIT ? ANDROID_SAVE_META_SLOT_AUTO_EXIT : ANDROID_SAVE_META_SLOT_AUTO_MINIMIZE;
@@ -395,6 +429,14 @@ int meta_action_dispatch(int action_id, int pressed)
 		return 0;
 	}
 #endif
+
+	if (action_id == META_QUICK_SAVE || action_id == META_QUICK_LOAD) {
+		if (pressed) {
+			android_quick_save_pending = action_id == META_QUICK_SAVE;
+			android_quick_load_pending = action_id == META_QUICK_LOAD;
+		}
+		return 0;
+	}
 
 	/* Special case: release guide-bot control (no key equivalent).
 	 * Set a flag for the game thread to consume in gamecntl.c. */

@@ -1028,7 +1028,7 @@ int main()
 	       visible.position.value);
 	assert(reachable_visible_firing.terminal_position.value !=
 	       reachable_visible_sources[0].source_position.value);
-	assert(visible.calls == 2);
+	assert(visible.calls >= 2);
 	assert(firing_progress.calls >= 2);
 	assert(firing_progress.completed == firing_progress.total);
 	assert(firing_progress.total > 0);

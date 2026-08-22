@@ -130,6 +130,55 @@ class MissionZipMusicNamesTest {
     }
 
     @Test
+    fun hogTracksUseTheirSongFilenamesInsteadOfTheSharedContainerPath() {
+        val output = testFile("hog/mission_music_names.json")
+        val first = hogTrack("track-a", "sable03.ogg")
+        val second = hogTrack("track-b", "sable04.ogg")
+        val catalog =
+            MissionZipMusicCatalog(
+                "mission.zip",
+                listOf(MissionZipMusicSource("hog", "Castaway music", "missions/castaway.hog", listOf(first, second))),
+                "source-a",
+            )
+
+        val count =
+            MissionZipMusicNames.writeSidecar(
+                output,
+                catalog,
+                mapOf(first.id to entry(first, "Sable 3"), second.id to entry(second, "Sable 4")),
+            )
+
+        val records = JSONObject(output.readText()).getJSONArray("records")
+        assertEquals(2, count)
+        assertEquals(listOf("sable03.ogg"), records.getJSONObject(0).getJSONArray("paths").strings())
+        assertEquals(listOf("sable04.ogg"), records.getJSONObject(1).getJSONArray("paths").strings())
+    }
+
+    @Test
+    fun repeatedTrackLookupPathIsIgnoredWithoutFailingPublication() {
+        val output = testFile("duplicate/mission_music_names.json")
+        val first = hogTrack("track-a", "sable03.ogg")
+        val duplicate = hogTrack("track-b", "SABLE03.OGG")
+        val catalog =
+            MissionZipMusicCatalog(
+                "mission.zip",
+                listOf(MissionZipMusicSource("hog", "Castaway music", "missions/castaway.hog", listOf(first, duplicate))),
+                "source-a",
+            )
+
+        val count =
+            MissionZipMusicNames.writeSidecar(
+                output,
+                catalog,
+                mapOf(first.id to entry(first, "Sable 3"), duplicate.id to entry(duplicate, "Duplicate")),
+            )
+
+        val records = JSONObject(output.readText()).getJSONArray("records")
+        assertEquals(1, count)
+        assertEquals("Sable 3", records.getJSONObject(0).getString("name"))
+    }
+
+    @Test
     fun publicationFailurePreservesThePreviousCompleteSidecar() {
         val output = testFile("failure/mission_music_names.json")
         val track =
@@ -200,6 +249,21 @@ class MissionZipMusicNamesTest {
             acoustIdLookupStatus = null,
             acoustIdLookupAt = null,
             lookupAt = 3L,
+        )
+
+    private fun hogTrack(
+        id: String,
+        filename: String,
+    ): MissionZipMusicTrack =
+        MissionZipMusicTrack(
+            id = id,
+            displayName = filename,
+            archiveEntryPath = "missions/castaway.hog",
+            hogEntryName = filename,
+            kind = MissionZipMusic.KIND_COMPRESSED_AUDIO,
+            extension = "ogg",
+            sizeBytes = 12,
+            playable = true,
         )
 
     private fun testFile(path: String): File =

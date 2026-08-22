@@ -30,6 +30,7 @@
 #define K_OBJECTIVE_LABEL_RED             BM_XRGB(63, 5, 5)
 #define K_NEXT_OBJECTIVE_COLOR            BM_XRGB(63, 5, 5)
 #define K_NEXT_OBJECTIVE_COUNT            3
+#define K_OBJECTIVE_GUIDANCE_MIN_DISTANCE (64 * F1_0)
 #define K_OBJECTIVE_GUIDANCE_MAX_DISTANCE (200 * F1_0)
 #define K_READINESS_TEXT_COLOR            BM_XRGB(40, 40, 40)
 #define K_READINESS_BAR_COLOR             BM_XRGB(10, 50, 50)
@@ -307,17 +308,33 @@ static int objective_label_color(const level_metadata_route_step *step)
 static int objective_has_distinct_guidance_positions(
     const level_metadata_route_step *step)
 {
-	return step &&
-	       (step->activation_kind ==
-	            LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH ||
-	        step->activation_kind ==
-	            LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER ||
-	        step->activation_kind ==
-	            LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER) &&
-	       step->activation_pos_valid && step->aim_pos_valid &&
-	       (step->activation_pos[0] != step->aim_pos[0] ||
-	        step->activation_pos[1] != step->aim_pos[1] ||
-	        step->activation_pos[2] != step->aim_pos[2]);
+	vms_vector activation;
+	vms_vector aim;
+
+	if (!step ||
+	    (step->activation_kind !=
+	         LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH &&
+	     step->activation_kind !=
+	         LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER &&
+	     step->activation_kind !=
+	         LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER) ||
+	    !step->activation_pos_valid || !step->aim_pos_valid ||
+	    (step->activation_pos[0] == step->aim_pos[0] &&
+	     step->activation_pos[1] == step->aim_pos[1] &&
+	     step->activation_pos[2] == step->aim_pos[2]))
+		return 0;
+	if (step->activation_kind != LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH)
+		return 1;
+	if (step->side >= 0)
+		return 0;
+	activation.x = step->activation_pos[0];
+	activation.y = step->activation_pos[1];
+	activation.z = step->activation_pos[2];
+	aim.x = step->aim_pos[0];
+	aim.y = step->aim_pos[1];
+	aim.z = step->aim_pos[2];
+	return vm_vec_dist_quick(&activation, &aim) >
+	       K_OBJECTIVE_GUIDANCE_MIN_DISTANCE;
 }
 
 static int objective_guidance_positions_are_readable(

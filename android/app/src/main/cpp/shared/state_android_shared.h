@@ -43,6 +43,8 @@ int state_restore_from_memory(const rewind_memory_buffer *buffer);
 int state_restore_coop_from_memory(const rewind_memory_buffer *buffer);
 int state_android_coop_callsign_remap_allowed(void);
 int state_android_save_to_slot(int slotnum, const char *desc, int save_kind);
+/* Returns 1 when restored, 0 on restore failure, and -1 when the slot is absent. */
+int state_android_restore_slot(int slotnum);
 /* Returns 1 when committed, 0 when safely skipped, and -1 on failure. */
 int state_android_save_lifecycle_checkpoint(int slotnum, const char *desc,
                                             int save_kind);

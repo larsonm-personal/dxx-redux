@@ -18,6 +18,12 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
+internal fun shouldPollCurrentTrack(
+    touchOverlayVisible: Boolean,
+    automapVisible: Boolean,
+    musicPanelOpen: Boolean,
+): Boolean = (touchOverlayVisible && !automapVisible) || musicPanelOpen
+
 class MusicControlPanel(
     context: Context,
     private val onDismiss: () -> Unit,
@@ -151,12 +157,32 @@ class MusicControlPanel(
         invalidate()
     }
 
+    internal fun refreshCurrentTrack(currentTrack: Int) {
+        if (currentTrack == state.currentTrack) return
+        DebugLog.log(
+            DebugLogCategory.GAME,
+            "[music-panel] current track changed old=${state.currentTrack} new=$currentTrack",
+        )
+        state = state.copy(currentTrack = currentTrack)
+        invalidate()
+    }
+
     private fun refreshSourceOptions() {
         val a = activity ?: return
         sourceOptionsCache =
-            musicOverlaySourceOptions(a.filesDir, a.gameVariantForMusicOverlay()) { uri, useFileDescriptor ->
+            musicOverlaySourceOptions(
+                a.filesDir,
+                a.gameVariantForMusicOverlay(),
+                state.source,
+            ) { uri, useFileDescriptor ->
                 canAccessSafUri(a, android.net.Uri.parse(uri), useFileDescriptor)
             }
+        DebugLog.log(
+            DebugLogCategory.GAME,
+            "[music-panel] source options current=${state.source} " +
+                "options=${sourceOptionsCache.joinToString(",") { it.id }} " +
+                "enabled_cd=${AudioSourceManager.forActiveSet(a.filesDir).getEnabledSources().size}",
+        )
         sourceDropdownIndex = sourceDropdownIndex.coerceIn(0, sourceOptionsCache.lastIndex)
     }
 

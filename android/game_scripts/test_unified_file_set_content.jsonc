@@ -6,8 +6,7 @@
 [
     {"_info": {
         "games": ["d2"],
-        "_standalone": true,
-        "_owner": "test_unified_file_set_content"
+        "_standalone": true
     }},
 
     {"action": "enter_launcher"},

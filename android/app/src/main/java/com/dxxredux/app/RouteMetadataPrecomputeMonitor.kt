@@ -216,6 +216,20 @@ internal class RouteMetadataPrecomputeMonitor(
         )
     }
 
+    fun musicSidecarFinished(
+        mission: String,
+        recordCount: Int,
+    ) = synchronized(FILE_LOCK) {
+        append("MUSIC SIDECAR mission=${singleLine(mission)} records=$recordCount status=complete")
+    }
+
+    fun musicSidecarFailed(
+        mission: String,
+        detail: String,
+    ) = synchronized(FILE_LOCK) {
+        append("MUSIC SIDECAR mission=${singleLine(mission)} status=failed problem=${singleLine(detail)}")
+    }
+
     fun musicMissionFinished(
         mission: String,
         trackCount: Int,

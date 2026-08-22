@@ -10,6 +10,7 @@ internal data class MusicOverlaySourceOption(
 internal fun musicOverlaySourceOptions(
     filesDir: File,
     game: String,
+    activeSource: String? = null,
     canAccessUri: (uri: String, useFileDescriptor: Boolean) -> Boolean = { _, _ -> true },
 ): List<MusicOverlaySourceOption> =
     buildList {
@@ -19,29 +20,24 @@ internal fun musicOverlaySourceOptions(
         if (CustomAudioSetManager.forActiveSet(filesDir).hasUsableTrack { uri -> canAccessUri(uri, true) }) {
             add(MusicOverlaySourceOption("files", "Files"))
         }
-        val cdSources = AudioSourceManager.forActiveSet(filesDir).getEnabledSources()
+        val audioSourceManager = AudioSourceManager.forActiveSet(filesDir)
+        val cdSources = audioSourceManager.getEnabledSources()
         val cdAvailable =
             runCatching {
                 requireAudioPlaylistCapacity(cdSources)
                 cdSources.isNotEmpty() &&
                     cdSources.all { source ->
-                        val cueOk =
-                            source.cueContentUri?.let { uri ->
-                                if (isLocalCdContentPath(uri)) File(uri).isFile else canAccessUri(uri, false)
-                            } ?: resolveCdAudioSourceFile(filesDir, source.cuePath).isFile
-                        val binUris = source.binContentUriList()
-                        val binsOk =
-                            if (binUris.isNotEmpty()) {
-                                binUris.all { uri ->
-                                    if (isLocalCdContentPath(uri)) File(uri).isFile else canAccessUri(uri, true)
-                                }
-                            } else {
-                                source.binPaths.all { resolveCdAudioSourceFile(filesDir, it).isFile }
-                            }
-                        cueOk && binsOk
+                        audioSourceManager.sourceFilesAvailable(source) &&
+                            source.cueContentUri
+                                ?.takeUnless(::isLocalCdContentPath)
+                                ?.let { canAccessUri(it, false) } != false &&
+                            source
+                                .binContentUriList()
+                                .filterNot(::isLocalCdContentPath)
+                                .all { canAccessUri(it, true) }
                     }
             }.getOrDefault(false)
-        if (cdAvailable) {
+        if (cdAvailable || activeSource == "cd") {
             add(MusicOverlaySourceOption("cd", "CD"))
         }
         add(MusicOverlaySourceOption("midi", "Base game MIDI"))

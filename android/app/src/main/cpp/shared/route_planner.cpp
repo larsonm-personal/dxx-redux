@@ -1152,6 +1152,7 @@ route_trigger_path_selection select_trigger_firing_path(
 {
 	route_trigger_path_selection result;
 	route_trigger_path_selection keyed_result;
+	double result_score = std::numeric_limits<double>::infinity();
 	double result_shot_distance = std::numeric_limits<double>::infinity();
 	double keyed_shot_distance = std::numeric_limits<double>::infinity();
 	const auto search = search_routes(snapshot, query, progress, false);
@@ -1175,23 +1176,27 @@ route_trigger_path_selection select_trigger_firing_path(
 			continue;
 		}
 		route_trigger_path_selection candidate;
+		double candidate_score = std::numeric_limits<double>::infinity();
 		candidate.source = source;
 		const bool shootable = valid_wall(snapshot, source.source_wall) &&
 		                       snapshot.topology.walls[source.source_wall]
 		                           .shootable_trigger;
 		if (shootable) {
-			auto best_distance = [&]() {
+			auto best_score = [&]() {
 				return candidate.found
-				           ? candidate.path.distance
-				       : result.found ? result.path.distance
+				           ? candidate_score
+				       : result.found ? result_score
 				                      : std::numeric_limits<double>::infinity();
 			};
 			auto accept_position = [&](int segment, const route_position &terminal,
 			                           double extra_distance) {
 				auto path = build_route_path(search, segment);
 				path.distance += extra_distance;
-				if (candidate.found &&
-				    path.distance >= candidate.path.distance)
+				/* Rank by travel plus shot length, while preserving path.distance as
+				 * the distance the Guide-Bot must actually travel. */
+				const double score = path.distance +
+				                     point_distance(terminal, source.source_position);
+				if (candidate.found && score >= candidate_score)
 					return;
 				path.progress_weight = 0;
 				path.terminal_segment = segment;
@@ -1200,12 +1205,11 @@ route_trigger_path_selection select_trigger_firing_path(
 				candidate.terminal_segment = segment;
 				candidate.terminal_position = terminal;
 				candidate.found = true;
+				candidate_score = score;
 			};
 			/* A nearer route can still be a needlessly difficult long shot.  When
 			 * the player already owns a key, separately test the switch's own
-			 * segment if reaching it uses that keyed door.  This preserves normal
-			 * distance ranking unless the conventional keyed route also produces
-			 * a physically shorter shot. */
+			 * segment if reaching it uses that keyed door. */
 			if (progress.key_mask && valid_segment(snapshot, source.source_segment) &&
 			    search.nodes[source.source_segment].reachable) {
 				auto path = build_route_path(search, source.source_segment);
@@ -1242,7 +1246,7 @@ route_trigger_path_selection select_trigger_firing_path(
 				const int segment = search.visit_order[index];
 				double extra_distance = 0.0;
 				route_position terminal;
-				if (search.nodes[segment].distance >= best_distance())
+				if (search.nodes[segment].distance >= best_score())
 					break;
 				if (visible_source_center_position(
 				        snapshot, progress, source, visibility, segment,
@@ -1260,7 +1264,7 @@ route_trigger_path_selection select_trigger_firing_path(
 				const int segment = search.visit_order[index];
 				double extra_distance = 0.0;
 				route_position terminal;
-				if (search.nodes[segment].distance >= best_distance())
+				if (search.nodes[segment].distance >= best_score())
 					break;
 				if (visible_source_detailed_position(
 				        snapshot, source, visibility, segment, terminal,
@@ -1287,11 +1291,13 @@ route_trigger_path_selection select_trigger_firing_path(
 			candidate.path.terminal_segment = source.source_segment;
 			candidate.path.terminal_position = source.source_position;
 			candidate.found = true;
+			candidate_score = candidate.path.distance;
 		}
 		if (!candidate.found ||
-		    (result.found && candidate.path.distance >= result.path.distance))
+		    (result.found && candidate_score >= result_score))
 			continue;
 		result = std::move(candidate);
+		result_score = candidate_score;
 		result_shot_distance = point_distance(
 		    result.terminal_position, result.source.source_position);
 	}

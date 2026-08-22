@@ -128,6 +128,7 @@ class RouteMetadataPrecomputeMonitorTest {
         )
         monitor.musicTrackStarted("KCXF2", "game03.ogg")
         monitor.musicTrackFinished("KCXF2", "game03.ogg", matched = true, elapsedMs = 25L)
+        monitor.musicSidecarFinished("KCXF2", 8)
         monitor.musicMissionFinished("KCXF2", 8, 0)
 
         val snapshot = monitor.readSnapshot()
@@ -136,6 +137,7 @@ class RouteMetadataPrecomputeMonitorTest {
         assertEquals(2, snapshot.musicFinishedTracks)
         assertEquals("KCXF2", snapshot.musicCurrentMission)
         assertTrue(lines.any { "MUSIC TRACK" in it && "matched=true" in it })
+        assertTrue(lines.any { "MUSIC SIDECAR" in it && "records=8" in it && "status=complete" in it })
         assertTrue(lines.any { "MUSIC MISSION" in it })
     }
 

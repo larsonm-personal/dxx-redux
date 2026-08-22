@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter
 import android.animation.LayoutTransition
 import android.animation.ObjectAnimator
 import android.app.Activity
+import android.app.Dialog
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -12,6 +13,9 @@ import android.content.IntentFilter
 import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.Typeface
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.StateListDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -86,6 +90,29 @@ internal fun settingsTrayVisibleForOverlay(
     adminTrayPausedGame: Boolean,
     adminTrayCloseGraceActive: Boolean,
 ): Boolean = adminTrayOpen || adminTrayPausedGame || adminTrayCloseGraceActive
+
+internal fun shouldKeepOverlayPause(
+    adminTrayOpen: Boolean,
+    musicPanelVisible: Boolean,
+    quickLoadPromptVisible: Boolean,
+): Boolean = adminTrayOpen || musicPanelVisible || quickLoadPromptVisible
+
+internal fun isQuickSavePress(
+    actionId: Int,
+    pressed: Boolean,
+): Boolean = actionId == TouchBindings.META_QUICK_SAVE && pressed
+
+internal fun isQuickLoadPress(
+    actionId: Int,
+    pressed: Boolean,
+): Boolean = actionId == TouchBindings.META_QUICK_LOAD && pressed
+
+internal fun adminSaveLoadMenuIsSave(actionId: Int): Boolean? =
+    when (actionId) {
+        TouchOverlayView.ADMIN_SAVE -> true
+        TouchOverlayView.ADMIN_LOAD -> false
+        else -> null
+    }
 
 internal fun shouldHideStandaloneAdminOverlays(
     inGame: Boolean,
@@ -662,6 +689,7 @@ class MainActivity :
     private var overlayPollProfileSlowCount = 0
     private var overlayPollProfileErrorCount = 0
     private var musicPanel: MusicControlPanel? = null
+    private var quickLoadDialog: Dialog? = null
     private var netStatsOverlay: com.dxxredux.app.multiplayer.MultiplayerStatsOverlay? = null
     private var netEventsOverlay: com.dxxredux.app.multiplayer.NetworkEventsOverlay? = null
     private var videoInfoOverlay: VideoInfoOverlay? = null
@@ -1252,12 +1280,8 @@ class MainActivity :
                     nativeToggleAutoLeveling()
                 }
 
-                TouchOverlayView.ADMIN_QUICK_SAVE -> {
-                    openSaveLoadMenu(openSave = true)
-                }
-
-                TouchOverlayView.ADMIN_QUICK_LOAD -> {
-                    openSaveLoadMenu(openSave = false)
+                TouchOverlayView.ADMIN_SAVE, TouchOverlayView.ADMIN_LOAD -> {
+                    openSaveLoadMenu(openSave = adminSaveLoadMenuIsSave(action) == true)
                 }
 
                 TouchOverlayView.ADMIN_OPEN_MENU -> {
@@ -2229,7 +2253,14 @@ class MainActivity :
     }
 
     private fun syncAdminTrayPause(open: Boolean) {
-        if (open) {
+        val shouldPause =
+            open ||
+                shouldKeepOverlayPause(
+                    adminTrayOpen = touchOverlay.isAdminTrayOpen(),
+                    musicPanelVisible = musicPanel != null,
+                    quickLoadPromptVisible = quickLoadDialog != null,
+                )
+        if (shouldPause) {
             adminTrayCloseGraceUntilMs = 0L
             if (adminTrayPausedGame) return
             adminTrayPausedGame =
@@ -2303,6 +2334,134 @@ class MainActivity :
                 false
             }
         if (opened) adminTrayPausedGame = false
+    }
+
+    private fun requestQuickSave() {
+        NativeMetaActions.nativeMetaAction(TouchBindings.META_QUICK_SAVE, 1)
+    }
+
+    private fun showQuickLoadPrompt() {
+        if (quickLoadDialog?.isShowing == true) return
+        val alreadyPaused =
+            try {
+                nativeIsGamePaused()
+            } catch (_: Exception) {
+                false
+            }
+        if (!alreadyPaused) syncAdminTrayPause(open = true)
+        if (!alreadyPaused && !adminTrayPausedGame) return
+
+        val density = resources.displayMetrics.density
+        val card =
+            LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                val horizontalPadding = (28f * density).roundToInt()
+                val verticalPadding = (20f * density).roundToInt()
+                setPadding(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding)
+                background =
+                    GradientDrawable().apply {
+                        shape = GradientDrawable.RECTANGLE
+                        setColor(PauseOverlayStyle.BACKGROUND_COLOR)
+                        cornerRadius = 24f * density
+                        setStroke(maxOf(3, (3f * density).roundToInt()), PauseOverlayStyle.BORDER_COLOR)
+                    }
+            }
+        card.addView(
+            TextView(this).apply {
+                text = PauseOverlayStyle.QUICK_LOAD_QUESTION
+                setTextColor(PauseOverlayStyle.TEXT_COLOR)
+                textSize = 24f
+                gravity = Gravity.CENTER
+                typeface = Typeface.DEFAULT_BOLD
+            },
+        )
+        val choices =
+            LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER
+                setPadding(0, (18f * density).roundToInt(), 0, 0)
+            }
+
+        fun choice(label: String): TextView =
+            TextView(this).apply {
+                text = label
+                setTextColor(PauseOverlayStyle.TEXT_COLOR)
+                textSize = 20f
+                gravity = Gravity.CENTER
+                typeface = Typeface.DEFAULT_BOLD
+                isClickable = true
+                isFocusable = true
+                val normal =
+                    GradientDrawable().apply {
+                        setColor(Color.TRANSPARENT)
+                        cornerRadius = 12f * density
+                        setStroke(maxOf(2, (2f * density).roundToInt()), PauseOverlayStyle.BORDER_COLOR)
+                    }
+                val active =
+                    GradientDrawable().apply {
+                        setColor(0x55FFFFFF)
+                        cornerRadius = 12f * density
+                        setStroke(maxOf(2, (2f * density).roundToInt()), PauseOverlayStyle.BORDER_COLOR)
+                    }
+                background =
+                    StateListDrawable().apply {
+                        addState(intArrayOf(android.R.attr.state_pressed), active)
+                        addState(intArrayOf(android.R.attr.state_focused), active)
+                        addState(intArrayOf(), normal)
+                    }
+                setPadding(
+                    (24f * density).roundToInt(),
+                    (8f * density).roundToInt(),
+                    (24f * density).roundToInt(),
+                    (8f * density).roundToInt(),
+                )
+            }
+        val no = choice(PauseOverlayStyle.QUICK_LOAD_NO)
+        val yes = choice(PauseOverlayStyle.QUICK_LOAD_YES)
+        choices.addView(
+            no,
+            LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                marginEnd = (8f * density).roundToInt()
+            },
+        )
+        choices.addView(
+            yes,
+            LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                marginStart = (8f * density).roundToInt()
+            },
+        )
+        card.addView(
+            choices,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ),
+        )
+
+        val dialog = Dialog(this)
+        dialog.setContentView(card)
+        dialog.setCanceledOnTouchOutside(true)
+        no.setOnClickListener { dialog.dismiss() }
+        yes.setOnClickListener {
+            NativeMetaActions.nativeMetaAction(TouchBindings.META_QUICK_LOAD, 1)
+            dialog.dismiss()
+        }
+        dialog.setOnDismissListener {
+            if (quickLoadDialog === dialog) quickLoadDialog = null
+            syncAdminTrayPause(open = false)
+        }
+        quickLoadDialog = dialog
+        dialog.show()
+        dialog.window?.apply {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            setLayout(
+                (resources.displayMetrics.widthPixels * 0.44f).roundToInt(),
+                WindowManager.LayoutParams.WRAP_CONTENT,
+            )
+        }
+        no.requestFocus()
     }
 
     private fun openGameMenuFromControllerSettings() {
@@ -2462,8 +2621,8 @@ class MainActivity :
                             } else if (!shouldShow && wasActive) {
                                 nativeSetJoystickEnabled(false)
                             }
-                            // Poll current track to update overlay label
-                            if (shouldShow && !automap) pollTrackLabel()
+                            // Poll current track to update the overlay label and open music panel
+                            if (shouldPollCurrentTrack(shouldShow, automap, musicPanel != null)) pollCurrentTrack()
                             // Hide standalone exit when touch overlay is active (admin tray has Exit)
                             exitButton.visibility = if (shouldShow) View.GONE else View.VISIBLE
                             if (shouldHideStandaloneAdminOverlays(inGame, settingsTrayVisible)) {
@@ -2672,6 +2831,16 @@ class MainActivity :
     }
 
     override fun onDestroy() {
+        quickLoadDialog?.setOnDismissListener(null)
+        quickLoadDialog?.dismiss()
+        quickLoadDialog = null
+        if (adminTrayPausedGame) {
+            try {
+                nativeCloseOverlayPauseIfOwned()
+            } catch (_: Exception) {
+            }
+            adminTrayPausedGame = false
+        }
         window.decorView.removeCallbacks(musicStateRefreshRunnable)
         routeMetadataJob?.cancel()
         startupScope.cancel()
@@ -3049,6 +3218,14 @@ class MainActivity :
         actionId: Int,
         pressed: Boolean,
     ) {
+        if (actionId == TouchBindings.META_QUICK_SAVE) {
+            if (isQuickSavePress(actionId, pressed)) requestQuickSave()
+            return
+        }
+        if (actionId == TouchBindings.META_QUICK_LOAD) {
+            if (isQuickLoadPress(actionId, pressed)) showQuickLoadPrompt()
+            return
+        }
         if (actionId == TouchBindings.META_GYRO_TOGGLE) {
             if (pressed) toggleGyroInGame()
             return
@@ -3782,11 +3959,12 @@ class MainActivity :
         window.decorView.postDelayed(musicStateRefreshRunnable, 120L)
     }
 
-    private fun pollTrackLabel() {
+    private fun pollCurrentTrack() {
         try {
             val trackNum = nativeGetCurrentTrackNum()
             if (trackNum != lastTrackNum) {
                 lastTrackNum = trackNum
+                musicPanel?.refreshCurrentTrack(trackNum)
                 updateTrackLabel()
             }
         } catch (_: Exception) {
