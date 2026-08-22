@@ -796,6 +796,7 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
         root.put(
             "route_metadata_precompute",
             JSONObject()
+                .put("cache_generation", routeMetadata.cacheGeneration)
                 .put("phase", routeMetadata.phase)
                 .put("status_message", routeMetadata.statusMessage)
                 .put("total_levels", routeMetadata.totalLevels)
@@ -807,6 +808,8 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
                 .put("current_detail", routeMetadata.currentDetail)
                 .put("current_progress_completed", routeMetadata.currentProgressCompleted)
                 .put("current_progress_total", routeMetadata.currentProgressTotal)
+                .put("current_mission_finished_levels", routeMetadata.currentMissionFinishedLevels)
+                .put("current_mission_total_levels", routeMetadata.currentMissionTotalLevels)
                 .put("last_finished_mission", routeMetadata.lastFinishedMission)
                 .put("last_finished_level", routeMetadata.lastFinishedLevel)
                 .put("updated_at_ms", routeMetadata.updatedAtMs),

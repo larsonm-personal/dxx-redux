@@ -13,7 +13,7 @@ extern "C" {
 #define ROUTE_ANALYSIS_CACHE_GAME_D1 1
 #define ROUTE_ANALYSIS_CACHE_GAME_D2 2
 /* Keep in sync with ROUTE_METADATA_CACHE_GENERATION in RouteMetadataScheduling.kt. */
-#define ROUTE_ANALYSIS_CACHE_GENERATION       7
+#define ROUTE_ANALYSIS_CACHE_GENERATION       8
 #define ROUTE_ANALYSIS_TIMING_SAMPLE_CAPACITY 32
 
 typedef struct route_analysis_cache_key {
@@ -21,9 +21,6 @@ typedef struct route_analysis_cache_key {
 	unsigned int game;
 	unsigned long long analysis_profile_hash;
 	unsigned long long topology_hash;
-	unsigned long long progression_hash;
-	unsigned long long trigger_hash;
-	unsigned long long object_hash;
 } route_analysis_cache_key;
 
 typedef struct route_analysis_cache_summary {
@@ -33,6 +30,8 @@ typedef struct route_analysis_cache_summary {
 	unsigned int writes;
 	unsigned int rejections;
 	unsigned int io_errors;
+	unsigned int publication_adoption_attempts;
+	unsigned int publication_adoption_failures;
 	unsigned int live_reuse_attempts;
 	unsigned int live_reuses;
 	unsigned int live_fallbacks;

@@ -98,8 +98,9 @@ internal object RouteMetadataPrecomputeOrdering {
         jobs.sortedWith(
             compareBy<RouteMetadataPrecomputeJob>(
                 { if (it.sourceIdentity == focusedSourceIdentity) 0 else 1 },
-                { attemptedAtMs(it) },
                 { if (matchesRecentLevel(it, recent)) 0 else 1 },
+                { if (matchesRecentMission(it, recent)) 0 else 1 },
+                { attemptedAtMs(it) },
                 { if (it.target.game == recent?.game) 0 else 1 },
                 { if (it.enabled) 0 else 1 },
                 { if (isBaseGame(it)) 0 else 1 },
@@ -122,6 +123,17 @@ internal object RouteMetadataPrecomputeOrdering {
                         .orEmpty()
                         .equals(recent.missionName, ignoreCase = true)
             )
+
+    fun matchesRecentMission(
+        job: RouteMetadataPrecomputeJob,
+        recent: ResumeSaveBridge.ResumeSaveCandidate?,
+    ): Boolean =
+        recent != null &&
+            recent.missionName.isNotBlank() &&
+            job.target.game == recent.game &&
+            job.target.missionName
+                .orEmpty()
+                .equals(recent.missionName, ignoreCase = true)
 
     private fun isBaseGame(job: RouteMetadataPrecomputeJob): Boolean {
         val sourceName =
@@ -508,7 +520,11 @@ internal class RouteMetadataPrecomputeCoordinator(
                                             lastProgressLabel = label
                                         }
                                         if (now - lastHeartbeatAt >= 30_000L) {
-                                            monitor.heartbeat(next, priority, label)
+                                            monitor.heartbeat(
+                                                next,
+                                                priority,
+                                                routeMetadataProgressDetail(progress),
+                                            )
                                             lastHeartbeatAt = now
                                         }
                                     },

@@ -112,11 +112,11 @@
   "total_extracted": 88,
   "import_mode": "setup_cd",
   "last_test_result": {
-    "status": "pass",
-    "failure_step": "",
+    "status": "fail",
+    "failure_step": "import_incomplete",
     "level_reached": null,
-    "files_verified": 88,
-    "classification_confirmed": true,
-    "test_mode": "file_only"
+    "files_verified": 52,
+    "classification_confirmed": false,
+    "test_mode": "full"
   }
 }

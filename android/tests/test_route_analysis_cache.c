@@ -24,6 +24,7 @@ int main(void)
 	unsigned char *record;
 	size_t size = route_analysis_cache_record_size();
 	char filename[192];
+	char mutable_filename[192];
 	int failures = 0;
 
 	snapshot.topology_hash = 0x1234;
@@ -39,8 +40,20 @@ int main(void)
 	wrong_key.generation++;
 	failures += expect(
 	    route_analysis_cache_filename(&key, filename, sizeof(filename)) &&
-	        strstr(filename, "route-cache/g7/d2-0000000000005678-") == filename,
+	        strstr(filename, "route-cache/g8/d2-0000000000005678-") == filename,
 	    "generation and profile filename");
+	snapshot.progression_hash++;
+	snapshot.trigger_hash++;
+	snapshot.object_hash++;
+	failures += expect(
+	    route_analysis_cache_make_key(
+	        ROUTE_ANALYSIS_CACHE_GENERATION, ROUTE_ANALYSIS_CACHE_GAME_D2,
+	        0x5678, &snapshot, &wrong_key) &&
+	        route_analysis_cache_filename(
+	            &wrong_key, mutable_filename, sizeof(mutable_filename)) &&
+	        memcmp(&key, &wrong_key, sizeof(key)) == 0 &&
+	        strcmp(filename, mutable_filename) == 0,
+	    "mutable live state reuses prepared cache identity");
 
 	input.route_status = LEVEL_METADATA_ROUTE_OK;
 	input.route_step_count = 2;
@@ -96,6 +109,8 @@ int main(void)
 	            &key, record, size, &output, &output_summary) &&
 	        output.route_status == LEVEL_METADATA_ROUTE_FAILED,
 	    "round trip failed route");
+	wrong_key = key;
+	wrong_key.generation++;
 	failures += expect(
 	    !route_analysis_cache_decode(
 	        &wrong_key, record, size, &output, &output_summary),

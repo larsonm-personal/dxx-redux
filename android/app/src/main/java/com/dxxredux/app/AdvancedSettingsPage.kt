@@ -1155,7 +1155,11 @@ private fun RouteMetadataPrecomputeProgress(snapshot: RouteMetadataPrecomputeSna
         } else {
             ((System.currentTimeMillis() - snapshot.updatedAtMs) / 1_000L).coerceAtLeast(0L)
         }
-    Text("Route Metadata Precompute", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    Text(
+        "Route Metadata Precompute (cache generation ${snapshot.cacheGeneration})",
+        fontWeight = FontWeight.Bold,
+        fontSize = 14.sp,
+    )
     Spacer(modifier = Modifier.height(6.dp))
     Text(
         when {
@@ -1170,6 +1174,15 @@ private fun RouteMetadataPrecomputeProgress(snapshot: RouteMetadataPrecomputeSna
         progress = { progress.coerceIn(0f, 1f) },
         modifier = Modifier.fillMaxWidth().height(5.dp),
     )
+    if (snapshot.currentMissionTotalLevels > 0) {
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            "Current mission: ${snapshot.currentMissionFinishedLevels} / " +
+                "${snapshot.currentMissionTotalLevels} levels cached",
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
     if (snapshot.currentMission.isNotBlank()) {
         Spacer(modifier = Modifier.height(4.dp))
         Text(

@@ -27,6 +27,7 @@ class RouteMetadataPrecomputeMonitorTest {
         val lines = monitor.readRecentLines()
         assertEquals(2, snapshot.totalLevels)
         assertEquals(2, snapshot.finishedLevels)
+        assertEquals(ROUTE_METADATA_CACHE_GENERATION, snapshot.cacheGeneration)
         assertEquals(1, lines.count { " MISSION " in it })
         assertTrue(lines.any { "duration_ms=15" in it })
     }
@@ -66,6 +67,8 @@ class RouteMetadataPrecomputeMonitorTest {
         assertEquals("Planning completion route", active.currentDetail)
         assertEquals(420, active.currentProgressCompleted)
         assertEquals(1_000, active.currentProgressTotal)
+        assertEquals(0, active.currentMissionFinishedLevels)
+        assertEquals(1, active.currentMissionTotalLevels)
 
         monitor.launchHandoff(
             "timeout",
@@ -108,6 +111,20 @@ class RouteMetadataPrecomputeMonitorTest {
         assertTrue(lines.any { "HEARTBEAT mission=Obsidian" in it })
         assertTrue(lines.any { "context=in_game priority=next cpu_duty_percent=10" in it })
         assertTrue(lines.any { "cpu_duty_percent=0" in it })
+    }
+
+    @Test
+    fun heartbeatDetailIncludesMeasuredProgress() {
+        val detail =
+            routeMetadataProgressDetail(
+                LevelMetadataAnalysisProgress(
+                    overall = MetadataLoadProgress("Overall analysis", 0, 1),
+                    currentLevel = MetadataLoadProgress("Checking switch firing paths", 2, 5),
+                    estimatedLevel = MetadataLoadProgress("Estimated level progress", 431, 1_000),
+                ),
+            )
+
+        assertEquals("Checking switch firing paths 431/1000", detail)
     }
 
     @Test

@@ -36,7 +36,7 @@
     {"action": "set_objective_overlay", "mode": "all", "post_delay_ms": 100},
     {"action": "wait_for", "timeout_ms": 30000, "expect": {
         "automap.objective_readiness_note_visible": "true",
-        "automap.objective_readiness_text": {"contains": "calculating"},
+        "automap.objective_readiness_text": {"contains": "level objectives calculating"},
         "automap.objective_readiness_progress_permille": {"lt": 1000},
         "automap.objective_visible_step_count": "0"
     }},
@@ -49,7 +49,8 @@
     {"action": "wait_for", "timeout_ms": 240000, "expect": {
         "automap.objective_visible_step_count": {"gt": 0},
         "automap.objective_label_candidate_count": {"gt": 0},
-        "automap.route_refresh_count": {"gt": 0}
+        "automap.route_refresh_count": {"gt": 0},
+        "level_metadata_route.analysis_cache.publication_adoption_failures": "0"
     }},
     {"action": "assert", "expect": {
         "automap_active": "true",

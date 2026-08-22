@@ -49,7 +49,7 @@ static char first_next_objective_text[LEVEL_METADATA_ROUTE_LABEL_LEN + 16];
 static int long_guidance_suppressed_count;
 static int readiness_note_visible;
 static int readiness_progress_permille;
-static char readiness_text[48];
+static char readiness_text[80];
 static unsigned int route_refresh_count;
 static unsigned int displayed_route_revision;
 static fix64 route_cache_poll_time;
@@ -857,6 +857,9 @@ void automap_metadata_draw_readiness(
 	readiness_note_visible = 0;
 	readiness_progress_permille =
 	    automap_metadata_progress_permille();
+	readiness_progress_permille =
+	    readiness_progress_permille < 0 ? 0 : readiness_progress_permille > 999 ? 999
+	                                                                            : readiness_progress_permille;
 	readiness_text[0] = '\0';
 	if (mode == LEVEL_METADATA_OBJECTIVES_OFF ||
 	    readiness == LEVEL_METADATA_READINESS_COMPLETE)
@@ -871,8 +874,11 @@ void automap_metadata_draw_readiness(
 		snprintf(readiness_text, sizeof(readiness_text), "%s",
 		         usable ? "More objectives unavailable" : "Objectives unavailable");
 	else
-		snprintf(readiness_text, sizeof(readiness_text), "%s",
-		         usable ? "More objectives calculating" : "Objectives still calculating");
+		snprintf(
+		    readiness_text, sizeof(readiness_text), "%s (%d%%)",
+		    usable ? "More current-level objectives calculating"
+		           : "Current-level objectives calculating",
+		    readiness_progress_permille / 10);
 	readiness_note_visible = 1;
 	y = level_label_y + LINE_SPACING * (objective_count + 1);
 	gr_set_curfont(GAME_FONT);
@@ -885,9 +891,6 @@ void automap_metadata_draw_readiness(
 	bar_height = FSPACY(3);
 	if (bar_height < 2)
 		bar_height = 2;
-	readiness_progress_permille =
-	    readiness_progress_permille < 0 ? 0 : readiness_progress_permille > 999 ? 999
-	                                                                            : readiness_progress_permille;
 	fill_width = bar_width * readiness_progress_permille / 1000;
 	gr_setcolor(K_READINESS_BAR_BACKGROUND);
 	gr_rect(x, bar_y, x + bar_width - 1, bar_y + bar_height - 1);

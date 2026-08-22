@@ -91,9 +91,6 @@ int route_analysis_cache_make_key(
 	key->game = game;
 	key->analysis_profile_hash = analysis_profile_hash;
 	key->topology_hash = snapshot->topology_hash;
-	key->progression_hash = snapshot->progression_hash;
-	key->trigger_hash = snapshot->trigger_hash;
-	key->object_hash = snapshot->object_hash;
 	return 1;
 }
 
@@ -108,11 +105,10 @@ int route_analysis_cache_filename(
 		return 0;
 	written = snprintf(
 	    filename, capacity,
-	    "route-cache/g%u/%s-%016llx-%016llx-%016llx-%016llx-%016llx.bin",
+	    "route-cache/g%u/%s-%016llx-%016llx.bin",
 	    key->generation,
 	    key->game == ROUTE_ANALYSIS_CACHE_GAME_D2 ? "d2" : "d1",
-	    key->analysis_profile_hash, key->topology_hash, key->progression_hash,
-	    key->trigger_hash, key->object_hash);
+	    key->analysis_profile_hash, key->topology_hash);
 	return written > 0 && (size_t) written < capacity;
 }
 

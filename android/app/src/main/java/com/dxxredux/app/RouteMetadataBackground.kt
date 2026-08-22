@@ -120,7 +120,7 @@ internal object RouteMetadataBackground {
                                     monitor.heartbeat(
                                         RouteMetadataPrecomputeJob(target, sourceIdentity, enabled = true),
                                         priority,
-                                        progress.currentLevel?.label ?: progress.overall.label,
+                                        routeMetadataProgressDetail(progress),
                                     )
                                     lastHeartbeatAt = now
                                 }

@@ -62,6 +62,22 @@ class RouteMetadataPrecomputeOrderingTest {
     }
 
     @Test
+    fun recentMissionFinishesBeforeBaseGameFillWork() {
+        val recent = recentSave("obsidian", 9)
+        val base =
+            job("d2", "d2", 1).copy(
+                target = job("d2", "d2", 1).target.copy(sourcePath = "/game/descent2.hog"),
+            )
+        val obsidian9 = job("d2", "obsidian", 9)
+        val obsidian10 = job("d2", "obsidian", 10)
+
+        val ordered =
+            RouteMetadataPrecomputeOrdering.order(listOf(base, obsidian10, obsidian9), recent)
+
+        assertEquals(listOf(obsidian9, obsidian10, base), ordered)
+    }
+
+    @Test
     fun enabledModsWinWithinSameGamePriority() {
         val disabled = job("d2", "disabled", 1, enabled = false)
         val enabled = job("d2", "enabled", 2, enabled = true)
@@ -189,5 +205,31 @@ class RouteMetadataPrecomputeOrderingTest {
             catalog = MissionZipMusicCatalog("kcxf2.7z", emptyList(), "music-source"),
             outputFile = File("mission_music_names.json"),
             enabled = true,
+        )
+
+    private fun recentSave(mission: String, level: Int) =
+        ResumeSaveBridge.ResumeSaveCandidate(
+            path = "save.sg0",
+            relativePath = "save.sg0",
+            game = "d2",
+            saveKind = "manual",
+            saveTimeUnixSeconds = 1,
+            callsign = "pilot",
+            description = "save",
+            missionName = mission,
+            levelNum = level,
+            levelName = "Level $level",
+            levelSeconds = 0,
+            totalSeconds = 0,
+            difficultyChanged = false,
+            difficultyMin = 2,
+            difficultyMax = 2,
+            musicType = 0,
+            slot = 0,
+            hasThumbnail = false,
+            thumbnailWidth = 0,
+            thumbnailHeight = 0,
+            metadataBacked = true,
+            thumbnailRgb6 = null,
         )
 }

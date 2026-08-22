@@ -752,6 +752,8 @@ static json serialize_level_metadata_route()
 			{ "writes", analysis_cache.writes },
 			{ "rejections", analysis_cache.rejections },
 			{ "io_errors", analysis_cache.io_errors },
+			{ "publication_adoption_attempts", analysis_cache.publication_adoption_attempts },
+			{ "publication_adoption_failures", analysis_cache.publication_adoption_failures },
 			{ "live_reuse_attempts", analysis_cache.live_reuse_attempts },
 			{ "live_reuses", analysis_cache.live_reuses },
 			{ "live_fallbacks", analysis_cache.live_fallbacks },

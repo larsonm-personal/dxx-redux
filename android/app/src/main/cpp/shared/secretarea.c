@@ -74,6 +74,7 @@ static unsigned int Level_metadata_route_revision;
 #ifdef __ANDROID__
 static atomic_int Level_metadata_background_result;
 static int Level_metadata_pending_cache_miss_logged;
+#define LEVEL_METADATA_MAX_PUBLICATION_ADOPTION_ATTEMPTS 30
 #endif
 static route_analysis_cache_summary Level_metadata_analysis_cache_summary;
 static guidebot_route_shadow_summary Level_metadata_route_shadow_summary;
@@ -3206,6 +3207,35 @@ int level_metadata_try_load_pending_cache(void)
 	summary.partial_frontier_segment = -1;
 	if (!level_metadata_analysis_cache_load(&shared_route, &summary)) {
 #ifdef __ANDROID__
+		if (atomic_load(&Level_metadata_background_result) > 0) {
+			Level_metadata_analysis_cache_summary
+			    .publication_adoption_attempts++;
+			if (Level_metadata_analysis_cache_summary
+			        .publication_adoption_attempts >=
+			    LEVEL_METADATA_MAX_PUBLICATION_ADOPTION_ATTEMPTS) {
+				Level_metadata_analysis_cache_summary
+				    .publication_adoption_failures++;
+				Level_metadata_route_readiness =
+				    LEVEL_METADATA_READINESS_FAILED;
+				Level_metadata_canonical_state.route_status =
+				    LEVEL_METADATA_ROUTE_FAILED;
+				snprintf(
+				    Level_metadata_canonical_state.route_problem,
+				    sizeof(Level_metadata_canonical_state.route_problem), "%s",
+				    "published route metadata could not be adopted");
+				debug_log(
+				    DLOG_PROFILING,
+				    "route_metadata cache adoption failed attempts=%u file=%s misses=%u rejections=%u io_errors=%u physfs=%s",
+				    Level_metadata_analysis_cache_summary
+				        .publication_adoption_attempts,
+				    Level_metadata_analysis_cache_summary.filename,
+				    Level_metadata_analysis_cache_summary.misses,
+				    Level_metadata_analysis_cache_summary.rejections,
+				    Level_metadata_analysis_cache_summary.io_errors,
+				    PHYSFS_getLastError());
+				return 0;
+			}
+		}
 		if (atomic_load(&Level_metadata_background_result) > 0 &&
 		    !Level_metadata_pending_cache_miss_logged) {
 			debug_log(
@@ -3488,6 +3518,8 @@ void secret_area_prepare_current_level(void)
 	android_route_metadata_invalidate_pending();
 	atomic_store(&Level_metadata_background_result, 0);
 	Level_metadata_pending_cache_miss_logged = 0;
+	Level_metadata_analysis_cache_summary.publication_adoption_attempts = 0;
+	Level_metadata_analysis_cache_summary.publication_adoption_failures = 0;
 #endif
 	secret_area_scan_current_level(0);
 }

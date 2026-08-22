@@ -8,6 +8,7 @@ import java.util.Date
 import java.util.Locale
 
 internal data class RouteMetadataPrecomputeSnapshot(
+    val cacheGeneration: Int = ROUTE_METADATA_CACHE_GENERATION,
     val totalLevels: Int = 0,
     val finishedLevels: Int = 0,
     val failedLevels: Int = 0,
@@ -17,6 +18,8 @@ internal data class RouteMetadataPrecomputeSnapshot(
     val currentDetail: String = "",
     val currentProgressCompleted: Int = 0,
     val currentProgressTotal: Int = 0,
+    val currentMissionFinishedLevels: Int = 0,
+    val currentMissionTotalLevels: Int = 0,
     val lastFinishedMission: String = "",
     val lastFinishedLevel: String = "",
     val phase: String = "discovering",
@@ -41,6 +44,16 @@ internal data class MissionMusicPrecomputeProgress(
     val currentTrack: String = "",
     val phase: String,
 )
+
+internal fun routeMetadataProgressDetail(progress: LevelMetadataAnalysisProgress): String {
+    val label = progress.currentLevel?.label ?: progress.overall.label
+    val measured = progress.estimatedLevel ?: progress.currentLevel ?: progress.overall
+    return if (measured.total > 0) {
+        "$label ${measured.completed.coerceIn(0, measured.total)}/${measured.total}"
+    } else {
+        label
+    }
+}
 
 internal class RouteMetadataPrecomputeMonitor(
     private val filesDir: File,
@@ -100,6 +113,10 @@ internal class RouteMetadataPrecomputeMonitor(
     ) = synchronized(FILE_LOCK) {
         val finished = jobs.count { entries[it.id]?.status in TERMINAL_STATUSES }
         val failed = jobs.count { entries[it.id]?.status == RouteMetadataLedgerStatus.FAILED }
+        val currentMissionJobs =
+            current?.let { selected -> jobs.filter { it.sourceIdentity == selected.sourceIdentity } }.orEmpty()
+        val currentMissionFinished =
+            currentMissionJobs.count { entries[it.id]?.status in TERMINAL_STATUSES }
         val previous = readState()
         val sameCurrent =
             current != null &&
@@ -108,6 +125,7 @@ internal class RouteMetadataPrecomputeMonitor(
         writeState(
             snapshot =
                 RouteMetadataPrecomputeSnapshot(
+                    cacheGeneration = ROUTE_METADATA_CACHE_GENERATION,
                     totalLevels = jobs.size,
                     finishedLevels = finished,
                     failedLevels = failed,
@@ -117,6 +135,8 @@ internal class RouteMetadataPrecomputeMonitor(
                     currentDetail = if (sameCurrent) previous.first.currentDetail else "",
                     currentProgressCompleted = if (sameCurrent) previous.first.currentProgressCompleted else 0,
                     currentProgressTotal = if (sameCurrent) previous.first.currentProgressTotal else 0,
+                    currentMissionFinishedLevels = currentMissionFinished,
+                    currentMissionTotalLevels = currentMissionJobs.size,
                     lastFinishedMission = previous.first.lastFinishedMission,
                     lastFinishedLevel = previous.first.lastFinishedLevel,
                     phase =
@@ -388,6 +408,8 @@ internal class RouteMetadataPrecomputeMonitor(
             val root = JSONObject(stateFile.readText(Charsets.UTF_8))
             val missions = root.optJSONArray("logged_missions") ?: JSONArray()
             RouteMetadataPrecomputeSnapshot(
+                cacheGeneration =
+                    root.optInt("cache_generation", ROUTE_METADATA_CACHE_GENERATION),
                 totalLevels = root.optInt("total_levels"),
                 finishedLevels = root.optInt("finished_levels"),
                 failedLevels = root.optInt("failed_levels"),
@@ -397,6 +419,8 @@ internal class RouteMetadataPrecomputeMonitor(
                 currentDetail = root.optString("current_detail"),
                 currentProgressCompleted = root.optInt("current_progress_completed"),
                 currentProgressTotal = root.optInt("current_progress_total"),
+                currentMissionFinishedLevels = root.optInt("current_mission_finished_levels"),
+                currentMissionTotalLevels = root.optInt("current_mission_total_levels"),
                 lastFinishedMission = root.optString("last_finished_mission"),
                 lastFinishedLevel = root.optString("last_finished_level"),
                 phase =
@@ -427,6 +451,7 @@ internal class RouteMetadataPrecomputeMonitor(
             stateFile,
             JSONObject()
                 .put("schema", "dxx-route-precompute-status-v1")
+                .put("cache_generation", snapshot.cacheGeneration)
                 .put("total_levels", snapshot.totalLevels)
                 .put("finished_levels", snapshot.finishedLevels)
                 .put("failed_levels", snapshot.failedLevels)
@@ -436,6 +461,8 @@ internal class RouteMetadataPrecomputeMonitor(
                 .put("current_detail", snapshot.currentDetail)
                 .put("current_progress_completed", snapshot.currentProgressCompleted)
                 .put("current_progress_total", snapshot.currentProgressTotal)
+                .put("current_mission_finished_levels", snapshot.currentMissionFinishedLevels)
+                .put("current_mission_total_levels", snapshot.currentMissionTotalLevels)
                 .put("last_finished_mission", snapshot.lastFinishedMission)
                 .put("last_finished_level", snapshot.lastFinishedLevel)
                 .put("phase", snapshot.phase)

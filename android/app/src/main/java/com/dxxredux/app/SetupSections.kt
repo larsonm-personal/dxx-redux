@@ -3358,14 +3358,8 @@ private fun LevelMetadataDialog(
     var progress by remember(target) {
         mutableStateOf(
             LevelMetadataAnalysisProgress(
-                overall = MetadataLoadProgress("Overall analysis", 0, 0),
+                overall = MetadataLoadProgress("Checking saved whole-mission report", 0, 0),
                 currentLevel = MetadataLoadProgress("Preparing analysis files", 0, 5),
-                estimatedLevel =
-                    MetadataLoadProgress(
-                        "Estimated level progress",
-                        0,
-                        LevelMetadataLevelProgressEstimator.TOTAL,
-                    ),
             ),
         )
     }
@@ -3428,14 +3422,8 @@ private fun LevelMetadataDialog(
         result = null
         progress =
             LevelMetadataAnalysisProgress(
-                overall = MetadataLoadProgress("Overall analysis", 0, 0),
+                overall = MetadataLoadProgress("Checking saved whole-mission report", 0, 0),
                 currentLevel = MetadataLoadProgress("Preparing analysis files", 0, 5),
-                estimatedLevel =
-                    MetadataLoadProgress(
-                        "Estimated level progress",
-                        0,
-                        LevelMetadataLevelProgressEstimator.TOTAL,
-                    ),
             )
         result =
             LevelMetadataAnalyzer.analyze(context, target) { update ->
@@ -3474,6 +3462,12 @@ private fun LevelMetadataDialog(
                             .padding(end = 8.dp),
                 ) {
                     if (loading) {
+                        Text(
+                            "This is a separate whole-mission report. Existing Guide-Bot route " +
+                                "caches are reused when available.",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                         LevelMetadataAnalysisProgressView(progress)
                     } else {
                         LevelMetadataResultContent(
