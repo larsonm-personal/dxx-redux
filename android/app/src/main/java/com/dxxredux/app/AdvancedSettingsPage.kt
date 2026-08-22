@@ -560,6 +560,7 @@ fun AdvancedSettingsPage(
     controllerFocusActive: Boolean = true,
     onPlayInputDemo: (StagedInputDemo) -> Unit,
     onClearRouteMetadataCache: suspend () -> Int,
+    onSetRouteMetadataComputeFaster: (Boolean) -> Unit,
     onBack: () -> Unit,
 ) {
     BackHandler(onBack = onBack)
@@ -707,7 +708,11 @@ fun AdvancedSettingsPage(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         // -- Route metadata precompute --
-                        RouteMetadataPrecomputeSection(filesDir, onClearRouteMetadataCache)
+                        RouteMetadataPrecomputeSection(
+                            filesDir,
+                            onClearRouteMetadataCache,
+                            onSetRouteMetadataComputeFaster,
+                        )
 
                         Spacer(modifier = Modifier.height(16.dp))
                         HorizontalDivider()
@@ -983,6 +988,7 @@ fun AdvancedSettingsPage(
 private fun RouteMetadataPrecomputeSection(
     filesDir: File,
     onClearCache: suspend () -> Int,
+    onSetComputeFaster: (Boolean) -> Unit,
 ) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -991,11 +997,12 @@ private fun RouteMetadataPrecomputeSection(
     var recentLines by remember { mutableStateOf(emptyList<String>()) }
     var confirmClear by remember { mutableStateOf(false) }
     var clearing by remember { mutableStateOf(false) }
+    var showComputeFaster by remember { mutableStateOf(false) }
 
     suspend fun refresh() {
         val refreshed =
             withContext(Dispatchers.IO) {
-                monitor.readSnapshot() to monitor.readRecentLines(limit = 10)
+                monitor.readSnapshot() to monitor.readRecentLines(limit = 8)
             }
         snapshot = refreshed.first
         recentLines = refreshed.second
@@ -1008,130 +1015,15 @@ private fun RouteMetadataPrecomputeSection(
         }
     }
 
-    val total = snapshot.totalLevels
-    val finished = snapshot.finishedLevels.coerceIn(0, total.coerceAtLeast(0))
-    val progress = if (total == 0) 0f else finished.toFloat() / total.toFloat()
-    val secondsSinceUpdate =
-        if (snapshot.updatedAtMs <=
-            0L
-        ) {
-            0L
-        } else {
-            ((System.currentTimeMillis() - snapshot.updatedAtMs) / 1_000L).coerceAtLeast(0L)
-        }
-    Text("Route Metadata Precompute", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-    Spacer(modifier = Modifier.height(6.dp))
-    Text(
-        when {
-            snapshot.phase == "discovery_failed" -> "Level discovery failed"
-            total == 0 && snapshot.phase == "discovering" -> "Discovering levels"
-            total == 0 -> "No levels discovered"
-            else -> "$finished / $total levels (${(progress * 100).toInt()}%)"
-        },
-        fontSize = 12.sp,
-    )
-    LinearProgressIndicator(
-        progress = { progress.coerceIn(0f, 1f) },
-        modifier = Modifier.fillMaxWidth().height(5.dp),
-    )
-    if (snapshot.currentMission.isNotBlank()) {
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            "Analyzing ${snapshot.currentMission} ${snapshot.currentLevel} (${snapshot.currentPriority})",
-            fontSize = 11.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        if (snapshot.currentDetail.isNotBlank()) {
-            val detailProgress =
-                if (snapshot.currentProgressTotal > 0) {
-                    " (${snapshot.currentProgressCompleted} / ${snapshot.currentProgressTotal})"
-                } else {
-                    ""
-                }
-            Text(
-                snapshot.currentDetail + detailProgress,
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        if (secondsSinceUpdate >= 15L) {
-            Text(
-                "No worker update for ${secondsSinceUpdate}s",
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.error,
-            )
-        }
-    } else if (total > 0 && finished == total) {
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            "All discovered levels have been analyzed" +
-                if (snapshot.failedLevels > 0) " (${snapshot.failedLevels} failed)" else "",
-            fontSize = 11.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-    if (snapshot.statusMessage.isNotBlank()) {
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            snapshot.statusMessage,
-            fontSize = 11.sp,
-            color =
-                if (snapshot.phase ==
-                    "discovery_failed"
-                ) {
-                    MaterialTheme.colorScheme.error
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
-        )
-    }
-    val musicTotal = snapshot.musicTotalTracks.coerceAtLeast(0)
-    val musicFinished = snapshot.musicFinishedTracks.coerceIn(0, musicTotal)
-    val musicProgress = if (musicTotal == 0) 0f else musicFinished.toFloat() / musicTotal.toFloat()
-    val musicSecondsSinceUpdate =
-        if (snapshot.musicUpdatedAtMs <= 0L) {
-            0L
-        } else {
-            ((System.currentTimeMillis() - snapshot.musicUpdatedAtMs) / 1_000L).coerceAtLeast(0L)
-        }
-    Spacer(modifier = Modifier.height(12.dp))
-    Text("Chromaprint Hashing", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-    Spacer(modifier = Modifier.height(6.dp))
-    Text(formatChromaprintPrecomputeProgress(snapshot), fontSize = 12.sp)
-    LinearProgressIndicator(
-        progress = { musicProgress.coerceIn(0f, 1f) },
-        modifier = Modifier.fillMaxWidth().height(5.dp),
-    )
-    if (snapshot.musicCurrentMission.isNotBlank()) {
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            "Hashing ${snapshot.musicCurrentMission}: ${snapshot.musicCurrentTrack}",
-            fontSize = 11.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        if (musicSecondsSinceUpdate >= 15L) {
-            Text(
-                "No hashing update for ${musicSecondsSinceUpdate}s",
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.error,
-            )
-        }
-    } else if (snapshot.musicWaitingTracks > 0) {
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            "${snapshot.musicWaitingTracks} tracks will start after their mission metadata completes",
-            fontSize = 11.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
+    RouteMetadataPrecomputeProgress(snapshot)
     Spacer(modifier = Modifier.height(8.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        OutlinedButton(
-            onClick = { scope.launch { refresh() } },
+        Button(
+            onClick = { showComputeFaster = true },
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
             modifier = Modifier.height(28.dp),
         ) {
-            Text("Refresh", fontSize = 11.sp)
+            Text("Compute faster", fontSize = 11.sp)
         }
         if (monitor.logFile.isFile) {
             OutlinedButton(
@@ -1211,12 +1103,158 @@ private fun RouteMetadataPrecomputeSection(
             },
         )
     }
+    if (showComputeFaster) {
+        DisposableEffect(Unit) {
+            onSetComputeFaster(true)
+            onDispose { onSetComputeFaster(false) }
+        }
+        AlertDialog(
+            onDismissRequest = { showComputeFaster = false },
+            title = { Text("Compute Faster") },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 560.dp).verticalScroll(rememberScrollState()),
+                ) {
+                    Text("Runs at 100% CPU While Open", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Spacer(modifier = Modifier.height(10.dp))
+                    RouteMetadataPrecomputeProgress(snapshot)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text("Recent activity (latest 8)", fontWeight = FontWeight.Medium, fontSize = 12.sp)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        recentLines.ifEmpty { listOf("Waiting for precompute activity") }.joinToString("\n"),
+                        fontSize = 9.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showComputeFaster = false }) { Text("Close") }
+            },
+        )
+    }
     if (recentLines.isNotEmpty()) {
         Spacer(modifier = Modifier.height(8.dp))
         Text("Recent activity", fontSize = 12.sp, fontWeight = FontWeight.Medium)
         Text(
             recentLines.joinToString("\n"),
             fontSize = 9.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun RouteMetadataPrecomputeProgress(snapshot: RouteMetadataPrecomputeSnapshot) {
+    val total = snapshot.totalLevels
+    val finished = snapshot.finishedLevels.coerceIn(0, total.coerceAtLeast(0))
+    val progress = if (total == 0) 0f else finished.toFloat() / total.toFloat()
+    val secondsSinceUpdate =
+        if (snapshot.updatedAtMs <= 0L) {
+            0L
+        } else {
+            ((System.currentTimeMillis() - snapshot.updatedAtMs) / 1_000L).coerceAtLeast(0L)
+        }
+    Text("Route Metadata Precompute", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    Spacer(modifier = Modifier.height(6.dp))
+    Text(
+        when {
+            snapshot.phase == "discovery_failed" -> "Level discovery failed"
+            total == 0 && snapshot.phase == "discovering" -> "Discovering levels"
+            total == 0 -> "No levels discovered"
+            else -> "$finished / $total levels (${(progress * 100).toInt()}%)"
+        },
+        fontSize = 12.sp,
+    )
+    LinearProgressIndicator(
+        progress = { progress.coerceIn(0f, 1f) },
+        modifier = Modifier.fillMaxWidth().height(5.dp),
+    )
+    if (snapshot.currentMission.isNotBlank()) {
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            "Analyzing ${snapshot.currentMission} ${snapshot.currentLevel} (${snapshot.currentPriority})",
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (snapshot.currentDetail.isNotBlank()) {
+            val detailProgress =
+                if (snapshot.currentProgressTotal > 0) {
+                    " (${snapshot.currentProgressCompleted} / ${snapshot.currentProgressTotal})"
+                } else {
+                    ""
+                }
+            Text(
+                snapshot.currentDetail + detailProgress,
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (secondsSinceUpdate >= 15L) {
+            Text(
+                "No worker update for ${secondsSinceUpdate}s",
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+    } else if (total > 0 && finished == total) {
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            "All discovered levels have been analyzed" +
+                if (snapshot.failedLevels > 0) " (${snapshot.failedLevels} failed)" else "",
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+    if (snapshot.statusMessage.isNotBlank()) {
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            snapshot.statusMessage,
+            fontSize = 11.sp,
+            color =
+                if (snapshot.phase == "discovery_failed") {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+        )
+    }
+    val musicTotal = snapshot.musicTotalTracks.coerceAtLeast(0)
+    val musicFinished = snapshot.musicFinishedTracks.coerceIn(0, musicTotal)
+    val musicProgress = if (musicTotal == 0) 0f else musicFinished.toFloat() / musicTotal.toFloat()
+    val musicSecondsSinceUpdate =
+        if (snapshot.musicUpdatedAtMs <= 0L) {
+            0L
+        } else {
+            ((System.currentTimeMillis() - snapshot.musicUpdatedAtMs) / 1_000L).coerceAtLeast(0L)
+        }
+    Spacer(modifier = Modifier.height(12.dp))
+    Text("Chromaprint Hashing", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    Spacer(modifier = Modifier.height(6.dp))
+    Text(formatChromaprintPrecomputeProgress(snapshot), fontSize = 12.sp)
+    LinearProgressIndicator(
+        progress = { musicProgress.coerceIn(0f, 1f) },
+        modifier = Modifier.fillMaxWidth().height(5.dp),
+    )
+    if (snapshot.musicCurrentMission.isNotBlank()) {
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            "Hashing ${snapshot.musicCurrentMission}: ${snapshot.musicCurrentTrack}",
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (musicSecondsSinceUpdate >= 15L) {
+            Text(
+                "No hashing update for ${musicSecondsSinceUpdate}s",
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+    } else if (snapshot.musicWaitingTracks > 0) {
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            "${snapshot.musicWaitingTracks} tracks will start after their mission metadata completes",
+            fontSize = 11.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }

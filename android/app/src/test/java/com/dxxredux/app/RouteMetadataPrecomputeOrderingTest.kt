@@ -154,6 +154,28 @@ class RouteMetadataPrecomputeOrderingTest {
     }
 
     @Test
+    fun extractedMissionRoutesRetainTheArchiveIdentityUsedByMusic() {
+        val archive = File("mods/castaway_redux.zip")
+        val extracted = File("mission_extractions/castaway_redux/missions")
+        val target =
+            job("d2", "castaway", 1).target.copy(
+                archivePath = null,
+                sourcePath = extracted.absolutePath,
+            )
+
+        val routeSource = routeMetadataPrecomputeSource(target, ownerSource = archive)
+
+        assertEquals(
+            routeMetadataPrecomputeSourceIdentity(archive),
+            routeMetadataPrecomputeSourceIdentity(requireNotNull(routeSource)),
+        )
+        assertFalse(
+            routeMetadataPrecomputeSourceIdentity(archive) ==
+                routeMetadataPrecomputeSourceIdentity(requireNotNull(routeMetadataPrecomputeSource(target))),
+        )
+    }
+
+    @Test
     fun missionMusicYieldsToNextPriorityRoutesButPrecedesFillWork() {
         assertFalse(MissionMusicPrecomputeScheduling.shouldRunBeforeRoute(RouteMetadataPriority.NEXT))
         assertTrue(MissionMusicPrecomputeScheduling.shouldRunBeforeRoute(RouteMetadataPriority.FILL))

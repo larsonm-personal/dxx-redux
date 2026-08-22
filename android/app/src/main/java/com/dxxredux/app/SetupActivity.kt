@@ -2349,6 +2349,7 @@ class SetupActivity : ComponentActivity() {
                     val result = routeMetadataCoordinator.clearCache()
                     result.removedFiles
                 },
+                onSetRouteMetadataComputeFaster = routeMetadataCoordinator::setComputeFaster,
                 onRefresh = {
                     routeMetadataCoordinator.wake()
                     refreshTrigger.intValue++
@@ -2699,6 +2700,7 @@ private fun SetupScreen(
     onMultiplayerLaunch: (com.dxxredux.app.multiplayer.GameLaunchInfo) -> Unit,
     onContentImported: () -> Unit,
     onClearRouteMetadataCache: suspend () -> Int,
+    onSetRouteMetadataComputeFaster: (Boolean) -> Unit,
     onRefresh: () -> Unit,
     onDownloadStateChanged: (String, Int) -> Unit = { _, _ -> },
 ) {
@@ -3565,6 +3567,7 @@ private fun SetupScreen(
                 controllerFocusActive = shouldSeedLauncherFocus,
                 onPlayInputDemo = onPlayInputDemo,
                 onClearRouteMetadataCache = onClearRouteMetadataCache,
+                onSetRouteMetadataComputeFaster = onSetRouteMetadataComputeFaster,
                 onBack = { showAdvancedPage = false },
             )
             return@LauncherTheme

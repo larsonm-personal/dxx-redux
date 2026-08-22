@@ -139,6 +139,18 @@ class RouteMetadataPrecomputeMonitorTest {
         assertTrue(lines.any { "MUSIC MISSION" in it })
     }
 
+    @Test
+    fun recentActivityCanBeLimitedToTheLatestEightItems() {
+        val monitor = RouteMetadataPrecomputeMonitor(temporaryFolder.newFolder("recent-eight"))
+        repeat(10) { monitor.coordinatorEvent("item", "number=$it") }
+
+        val lines = monitor.readRecentLines(limit = 8)
+
+        assertEquals(8, lines.size)
+        assertTrue(lines.first().endsWith("reason=number=2"))
+        assertTrue(lines.last().endsWith("reason=number=9"))
+    }
+
     private fun job(level: Int) =
         RouteMetadataPrecomputeJob(
             target =

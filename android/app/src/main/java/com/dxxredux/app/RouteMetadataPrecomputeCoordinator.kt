@@ -71,6 +71,20 @@ private data class DiscoveredPrecomputeJobs(
     val importedCdAudioTracks: Int,
 )
 
+private data class DiscoveredRouteTarget(
+    val target: LevelMetadataTarget,
+    val enabled: Boolean,
+    val ownerSource: File? = null,
+)
+
+internal fun routeMetadataPrecomputeSource(
+    target: LevelMetadataTarget,
+    ownerSource: File? = null,
+): File? = ownerSource ?: target.archivePath?.let(::File) ?: target.sourcePath?.let(::File)
+
+internal fun routeMetadataPrecomputeSourceIdentity(source: File): String =
+    "${source.absolutePath}|${source.length()}|${source.lastModified()}"
+
 internal fun countImportedCdAudioTracks(sources: List<AudioSourceManager.AudioSource>): Int =
     sources.sumOf { it.audioTrackCount.coerceAtLeast(0) }
 
@@ -152,6 +166,8 @@ internal class RouteMetadataPrecomputeCoordinator(
 
     @Volatile private var metadataViewerFocused = false
 
+    @Volatile private var computeFaster = false
+
     @Volatile private var runningPriority: RouteMetadataPriority? = null
     private var focusedSourceIdentity: String? = null
     private var lastSourceIdentity: String? = null
@@ -191,6 +207,30 @@ internal class RouteMetadataPrecomputeCoordinator(
         wakeups.trySend(Unit)
     }
 
+    @Synchronized
+    fun setComputeFaster(enabled: Boolean) {
+        if (computeFaster == enabled) return
+        computeFaster = enabled
+        monitor.coordinatorEvent(
+            if (enabled) "accelerated" else "resuming",
+            "cpu_duty_percent=${RouteMetadataCpuPolicy.launcherDutyPercent(enabled)}",
+        )
+        val previous = runner
+        if (previous == null) {
+            start()
+            return
+        }
+        previous.cancel()
+        previous.invokeOnCompletion {
+            synchronized(this) {
+                if (runner === previous) {
+                    runner = null
+                    start()
+                }
+            }
+        }
+    }
+
     fun setMetadataViewerFocus(target: LevelMetadataTarget?) {
         if (target != null) {
             metadataViewerFocused = true
@@ -208,7 +248,7 @@ internal class RouteMetadataPrecomputeCoordinator(
         if (runner?.isActive == true) return
         monitor.coordinatorEvent(
             "started",
-            "launcher visible cpu_duty_percent=${RouteMetadataCpuPolicy.LAUNCHER_VISIBLE_DUTY_PERCENT}",
+            "launcher visible cpu_duty_percent=${RouteMetadataCpuPolicy.launcherDutyPercent(computeFaster)}",
         )
         runner =
             scope.launch {
@@ -376,7 +416,7 @@ internal class RouteMetadataPrecomputeCoordinator(
                         } finally {
                             runningPriority = null
                         }
-                        awaitWake(750L)
+                        awaitInterWorkDelay()
                         continue
                     }
                     if (nextRoute == null) {
@@ -422,7 +462,7 @@ internal class RouteMetadataPrecomputeCoordinator(
                                     next.target,
                                     background = true,
                                     priority = priority,
-                                    cpuDutyPercent = RouteMetadataCpuPolicy.LAUNCHER_VISIBLE_DUTY_PERCENT,
+                                    cpuDutyPercent = RouteMetadataCpuPolicy.launcherDutyPercent(computeFaster),
                                     totalTimeoutMs = 10L * 60L * 1_000L,
                                     onProgress = { progress ->
                                         val now = SystemClock.elapsedRealtime()
@@ -484,7 +524,7 @@ internal class RouteMetadataPrecomputeCoordinator(
                         Log.e(TAG, "Precompute worker failed", e)
                         delay(10_000L)
                     }
-                    awaitWake(750L)
+                    awaitInterWorkDelay()
                 }
             }
     }
@@ -557,6 +597,10 @@ internal class RouteMetadataPrecomputeCoordinator(
         withTimeoutOrNull(timeoutMs) { wakeups.receive() }
     }
 
+    private suspend fun awaitInterWorkDelay() {
+        if (!computeFaster) awaitWake(750L)
+    }
+
     private fun shouldPause(): Boolean {
         val power = appContext.getSystemService(Context.POWER_SERVICE) as? PowerManager
         val gameRunning = runCatching { MainActivity.nativeIsGameRunning() }.getOrDefault(false)
@@ -570,7 +614,7 @@ internal class RouteMetadataPrecomputeCoordinator(
     private fun discoverJobs(): DiscoveredPrecomputeJobs {
         val fileSets = FileSetManager(appContext.filesDir)
         val setDir = fileSets.getSetDir(fileSets.getActive())
-        val targets = mutableListOf<Pair<LevelMetadataTarget, Boolean>>()
+        val targets = mutableListOf<DiscoveredRouteTarget>()
         val musicJobs = mutableListOf<MissionMusicPrecomputeJob>()
         setDir
             .walkTopDown()
@@ -583,7 +627,7 @@ internal class RouteMetadataPrecomputeCoordinator(
                         setDir,
                         GameFileMetadata.summarizeLocalFile(file),
                     )
-                }.getOrNull()?.let { targets += it to true }
+                }.getOrNull()?.let { targets += DiscoveredRouteTarget(it, enabled = true) }
             }
         FileSetContentManager(setDir)
             .listEntries()
@@ -610,7 +654,7 @@ internal class RouteMetadataPrecomputeCoordinator(
                         } else {
                             null
                         }
-                    target?.let { targets += it to entry.enabled }
+                    target?.let { targets += DiscoveredRouteTarget(it, entry.enabled) }
                 }
             }
         val modManager = ModManager(appContext.filesDir, appContext, setDir)
@@ -635,7 +679,7 @@ internal class RouteMetadataPrecomputeCoordinator(
                             musicJobs +=
                                 MissionMusicPrecomputeJob(
                                     displayName = mod.displayName,
-                                    routeSourceIdentity = sourceIdentity(archive),
+                                    routeSourceIdentity = routeMetadataPrecomputeSourceIdentity(archive),
                                     catalog = catalog,
                                     outputFile = outputFile,
                                     enabled = mod.enabled,
@@ -659,10 +703,17 @@ internal class RouteMetadataPrecomputeCoordinator(
                             }.getOrNull(),
                         )
                     }
-                modTargets.forEach { targets += it to mod.enabled }
+                modTargets.forEach {
+                    targets +=
+                        DiscoveredRouteTarget(
+                            target = it,
+                            enabled = mod.enabled,
+                            ownerSource = archive,
+                        )
+                }
             }
         return DiscoveredPrecomputeJobs(
-            routes = targets.flatMap { (target, enabled) -> splitTarget(target, enabled) },
+            routes = targets.flatMap { splitTarget(it.target, it.enabled, it.ownerSource) },
             music = musicJobs.filter { it.tracks.isNotEmpty() },
             importedCdAudioTracks =
                 countImportedCdAudioTracks(AudioSourceManager(appContext.filesDir, setDir).getSources()),
@@ -672,9 +723,10 @@ internal class RouteMetadataPrecomputeCoordinator(
     private fun splitTarget(
         target: LevelMetadataTarget,
         enabled: Boolean,
+        ownerSource: File? = null,
     ): List<RouteMetadataPrecomputeJob> {
-        val source = target.archivePath?.let(::File) ?: target.sourcePath?.let(::File)
-        val sourceIdentity = source?.let(::sourceIdentity) ?: target.displayName
+        val source = routeMetadataPrecomputeSource(target, ownerSource)
+        val sourceIdentity = source?.let(::routeMetadataPrecomputeSourceIdentity) ?: target.displayName
         val normal =
             target.normalLevelFiles.mapIndexed { index, level ->
                 RouteMetadataPrecomputeJob(
@@ -705,9 +757,6 @@ internal class RouteMetadataPrecomputeCoordinator(
             }
         return normal + secret
     }
-
-    private fun sourceIdentity(source: File): String =
-        "${source.absolutePath}|${source.length()}|${source.lastModified()}"
 
     private fun isRouteTerminal(
         job: RouteMetadataPrecomputeJob,

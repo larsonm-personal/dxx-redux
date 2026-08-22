@@ -29,6 +29,10 @@ internal enum class RouteMetadataPriority(
 
 internal object RouteMetadataCpuPolicy {
     const val LAUNCHER_VISIBLE_DUTY_PERCENT = 20
+    const val COMPUTE_FASTER_DUTY_PERCENT = 100
+
+    fun launcherDutyPercent(computeFaster: Boolean): Int =
+        if (computeFaster) COMPUTE_FASTER_DUTY_PERCENT else LAUNCHER_VISIBLE_DUTY_PERCENT
 }
 
 internal object RouteMetadataPreemption {

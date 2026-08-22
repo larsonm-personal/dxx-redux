@@ -20,6 +20,9 @@ class RouteMetadataSchedulingTest {
     @Test
     fun cpuDutyPolicyDistinguishesLauncherNextAndLaterWork() {
         assertEquals(20, RouteMetadataCpuPolicy.LAUNCHER_VISIBLE_DUTY_PERCENT)
+        assertEquals(100, RouteMetadataCpuPolicy.COMPUTE_FASTER_DUTY_PERCENT)
+        assertEquals(20, RouteMetadataCpuPolicy.launcherDutyPercent(computeFaster = false))
+        assertEquals(100, RouteMetadataCpuPolicy.launcherDutyPercent(computeFaster = true))
         assertEquals(10, RouteMetadataPriority.ACTIVE.cpuDutyPercent)
         assertEquals(10, RouteMetadataPriority.NEXT.cpuDutyPercent)
         assertEquals(2, RouteMetadataPriority.FILL.cpuDutyPercent)
