@@ -38,6 +38,7 @@
 
     // Clear any previous audio sources and mods
     {"action": "setup_command", "command": "clear_audio_sources", "post_delay_ms": 500},
+    {"action": "setup_command", "command": "clear_pilot_files", "post_delay_ms": 500},
     {"action": "write_config", "file": "test_disc.cue",
      "content": "FILE \"test_disc.bin\" BINARY\n  TRACK 01 MODE1/2352\n    INDEX 01 00:00:00\n  TRACK 02 AUDIO\n    TITLE \"Test Track 2\"\n    INDEX 01 00:00:10\n  TRACK 03 AUDIO\n    TITLE \"Test Track 3\"\n    INDEX 01 00:00:20\n  TRACK 04 MODE1/2352\n    INDEX 01 00:02:00\n  TRACK 05 AUDIO\n    TITLE \"Test Track 5\"\n    INDEX 01 00:02:10\n"},
     // Write empty mod manifest so no mods are loaded
@@ -72,12 +73,12 @@
     {"action": "enter_game", "game": "d2"},
 
     // Skip intro, then handle either the direct pilot-name prompt or the
-    // select-pilot list.
+    // select-pilot list without partially matching Multiplayer.
     {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
     {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "select", "text": "Create New", "optional": true, "post_delay_ms": 100, "timeout_ms": 1000},
     {"action": "select", "text": "Ok", "optional": true, "post_delay_ms": 100, "timeout_ms": 5000},
-    {"action": "select", "text": "player", "optional": true, "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Confirm that the combined physical track table is ready before entering
     // the mission. Live reads and mixer delivery are proved at level start.
@@ -124,6 +125,7 @@
         "redbook.playback_generation": {"gte": 1},
         "redbook.playback_first_track": "5",
         "redbook.playback_source_index": "0",
+        "redbook.producer_nice": {"gte": 5},
         "redbook.generation_source_io_errors": "0",
         "redbook.proven_generation": {"gte": 1},
         "redbook.proven_first_track": "5",

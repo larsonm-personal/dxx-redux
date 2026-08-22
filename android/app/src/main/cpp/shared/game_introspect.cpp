@@ -213,6 +213,10 @@ void RBAGetPlaybackErrorDiagnostics(unsigned long long *source_io_errors_total,
 void RBAGetPlaybackTerminalDiagnostics(int *terminal_state, int *source_index,
                                        int *track, int *sector,
                                        int *operation, int *platform_code);
+void RBAGetPerformanceDiagnostics(int *producer_nice,
+                                  unsigned int *start_request_ms,
+                                  unsigned int *stop_wait_ms,
+                                  unsigned int *first_buffer_ms);
 extern int g_startup_title_song_requested;
 }
 
@@ -2083,6 +2087,10 @@ extern "C" char *game_introspect_get_state(void)
 			int error_sector;
 			int error_operation;
 			int error_platform_code;
+			int producer_nice;
+			unsigned int start_request_ms;
+			unsigned int stop_wait_ms;
+			unsigned int first_buffer_ms;
 			rb["enabled"] = true;
 			int status = RBAPeekPlayStatus();
 			RBAGetPlaybackDiagnostics(&generation, &first_track, &source_index,
@@ -2098,6 +2106,8 @@ extern "C" char *game_introspect_get_state(void)
 			RBAGetPlaybackTerminalDiagnostics(&terminal_state, &error_source_index,
 			                                  &error_track, &error_sector,
 			                                  &error_operation, &error_platform_code);
+			RBAGetPerformanceDiagnostics(&producer_nice, &start_request_ms,
+			                             &stop_wait_ms, &first_buffer_ms);
 			rb["num_tracks"] = RBAGetNumberOfTracks();
 			rb["num_audio_tracks"] = RBAGetNumAudioTracks();
 			rb["current_track"] = RBAGetTrackNum();
@@ -2128,6 +2138,10 @@ extern "C" char *game_introspect_get_state(void)
 			rb["proven_mixer_frames_delivered"] = proven_mixer_frames_delivered;
 			rb["source_io_errors_total"] = source_io_errors_total;
 			rb["generation_source_io_errors"] = generation_source_io_errors;
+			rb["producer_nice"] = producer_nice;
+			rb["last_start_request_ms"] = start_request_ms;
+			rb["last_stop_wait_ms"] = stop_wait_ms;
+			rb["last_first_buffer_ms"] = first_buffer_ms;
 		}
 		j["redbook"] = std::move(rb);
 	}
