@@ -35,8 +35,9 @@ const level_metadata_state *level_metadata_get_state(void);
 const level_metadata_state *level_metadata_get_canonical_state(void);
 int level_metadata_get_canonical_route_plan_summary(route_planner_plan_summary *summary);
 int level_metadata_get_route_analysis_cache_summary(route_analysis_cache_summary *summary);
-void level_metadata_mark_route_objective_completed(
+int level_metadata_mark_route_objective_completed(
     int kind, int trigger, int wall, int key_index);
+int level_metadata_canonical_route_step_completed(int index);
 const level_metadata_state *level_metadata_get_live_route_state(void);
 int level_metadata_get_live_route_plan_summary(route_planner_plan_summary *summary);
 int level_metadata_get_canonical_route_snapshot(route_snapshot_summary *summary);

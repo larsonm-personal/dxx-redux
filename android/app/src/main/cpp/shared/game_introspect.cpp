@@ -778,6 +778,7 @@ static json serialize_level_metadata_route()
 		item["key"] = introspect_route_key_name(step->key_index);
 		item["can_be_bypassed"] = step->can_be_bypassed != 0;
 		item["key_carrier_objnum"] = step->key_carrier_objnum;
+		item["completed"] = level_metadata_canonical_route_step_completed(index) != 0;
 		item["activation_pos"] = step->activation_pos_valid ? json::array({ step->activation_pos[0], step->activation_pos[1], step->activation_pos[2] }) : json(nullptr);
 		item["aim_pos"] = step->aim_pos_valid ? json::array({ step->aim_pos[0], step->aim_pos[1], step->aim_pos[2] }) : json(nullptr);
 		item["label_pos"] = step->label_pos_valid ? json::array({ step->label_pos[0], step->label_pos[1], step->label_pos[2] }) : json(nullptr);

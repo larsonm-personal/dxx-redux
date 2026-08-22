@@ -1025,6 +1025,13 @@ void escort_route_notify_trigger_changed(int trigger_num)
 	int matches_objective = Escort_route_goal.active && trigger_num >= 0 &&
 	                        (trigger_num == Escort_route_goal.objective_trigger ||
 	                         trigger_num == Escort_route_goal.trigger_num);
+	if (trigger_num >= 0 && level_metadata_mark_route_objective_completed(
+	                            LEVEL_METADATA_ROUTE_TRIGGER,
+	                            trigger_num, -1, -1))
+		ESCORT_DIAG(
+		    "completed trigger=%d active_kind=%d active_trigger=%d",
+		    trigger_num, Escort_route_goal.objective_kind,
+		    Escort_route_goal.objective_trigger);
 	escort_route_record_event(
 	    ESCORT_ROUTE_EVENT_TRIGGER,
 	    &Escort_route_trigger_generation,

@@ -3018,7 +3018,7 @@ int level_metadata_get_route_analysis_cache_summary(
 #endif
 }
 
-void level_metadata_mark_route_objective_completed(
+int level_metadata_mark_route_objective_completed(
     int kind,
     int trigger,
     int wall,
@@ -3044,8 +3044,17 @@ void level_metadata_mark_route_objective_completed(
 		     step->key_index != key_index))
 			continue;
 		Level_metadata_completed_canonical_steps[index] = 1;
-		return;
+		return 1;
 	}
+	return 0;
+}
+
+int level_metadata_canonical_route_step_completed(int index)
+{
+	return index >= 0 &&
+	       index < Level_metadata_canonical_state.route_step_count &&
+	       index < LEVEL_METADATA_MAX_ROUTE_STEPS &&
+	       Level_metadata_completed_canonical_steps[index] != 0;
 }
 
 static void secret_area_scan_current_level(int allow_expensive_planning)

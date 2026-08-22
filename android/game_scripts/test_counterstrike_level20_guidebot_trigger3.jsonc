@@ -35,6 +35,10 @@
     {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
     {"action": "set_debug", "field": "player_keys", "value": "blue", "post_delay_ms": 100},
     {"action": "set_debug", "field": "fire_trigger", "value": "18", "post_delay_ms": 100},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "level_metadata_route.steps[2].trigger": "18",
+        "level_metadata_route.steps[2].completed": "true"
+    }},
     {"action": "wait_ms", "ms": 3000},
     {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
