@@ -143,6 +143,12 @@ int level_metadata_route_step_required_by_world_state(
 		case LEVEL_METADATA_ROUTE_BOSS:
 			return view->initial_control_center_destroyed == 0;
 		case LEVEL_METADATA_ROUTE_TRIGGER:
+			if (step->activation_kind ==
+			        LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH &&
+			    step->wall_num >= 0 && step->wall_num < view->num_walls &&
+			    view->wall_is_shootable_trigger &&
+			    !view->wall_is_shootable_trigger(view->user, step->wall_num))
+				return 0;
 			if (step->opened_link_count <= 0)
 				return 1;
 			for (link = 0; link < step->opened_link_count; ++link) {
