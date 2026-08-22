@@ -87,6 +87,7 @@ void automap_metadata_update_route(int player_objnum, int allow_adoption)
 	const fix64 now = timer_query();
 	const int progress_state = automap_metadata_progress_state();
 	const int readiness = level_metadata_get_route_readiness();
+	(void) player_objnum;
 
 	if (!allow_adoption)
 		return;
@@ -103,7 +104,6 @@ void automap_metadata_update_route(int player_objnum, int allow_adoption)
 	if (revision == displayed_route_revision)
 		return;
 	displayed_route_revision = revision;
-	level_metadata_rescan_route_from_object(player_objnum);
 	route_refresh_count++;
 }
 

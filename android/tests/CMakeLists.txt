@@ -163,7 +163,9 @@ add_executable(
     "${DXX_TEST_SHARED_SOURCE_DIR}/level_metadata_scan.c"
     "${DXX_TEST_SHARED_SOURCE_DIR}/route_snapshot.cpp"
     "${DXX_TEST_SHARED_SOURCE_DIR}/route_edge.cpp"
-    "${DXX_TEST_SHARED_SOURCE_DIR}/route_planner.cpp")
+    "${DXX_TEST_SHARED_SOURCE_DIR}/route_planner.cpp"
+    "${DXX_TEST_SHARED_SOURCE_DIR}/guidebot_route_decision.c"
+    "${DXX_TEST_SHARED_SOURCE_DIR}/guidebot_route_certifier.c")
 target_compile_features(test_level_metadata_scan PRIVATE cxx_std_11)
 target_link_libraries(test_level_metadata_scan PRIVATE ${DXX_TARGET_PREFIX}maths)
 target_include_directories(test_level_metadata_scan PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
@@ -174,6 +176,9 @@ add_executable(
     "${DXX_TEST_SHARED_SOURCE_DIR}/route_snapshot.cpp"
     "${DXX_TEST_SHARED_SOURCE_DIR}/route_edge.cpp"
     "${DXX_TEST_SHARED_SOURCE_DIR}/route_planner.cpp"
+    "${DXX_TEST_SHARED_SOURCE_DIR}/guidebot_route_decision.c"
+    "${DXX_TEST_SHARED_SOURCE_DIR}/guidebot_route_certifier.c"
+    "${DXX_TEST_SHARED_SOURCE_DIR}/route_analysis_cache.c"
     "${DXX_TEST_SHARED_SOURCE_DIR}/level_metadata_scan.c")
 target_compile_features(test_route_snapshot PRIVATE cxx_std_11)
 target_link_libraries(test_route_snapshot PRIVATE ${DXX_TARGET_PREFIX}maths)
@@ -182,6 +187,24 @@ target_include_directories(test_route_snapshot PRIVATE "${DXX_TEST_SHARED_SOURCE
 add_executable(test_route_analysis_cache test_route_analysis_cache.c
                                          "${DXX_TEST_SHARED_SOURCE_DIR}/route_analysis_cache.c")
 target_include_directories(test_route_analysis_cache PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
+
+add_executable(
+    test_guidebot_route_decision test_guidebot_route_decision.c
+                                 "${DXX_TEST_SHARED_SOURCE_DIR}/guidebot_route_decision.c")
+target_include_directories(test_guidebot_route_decision PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
+
+add_executable(
+    test_guidebot_route_certifier
+    test_guidebot_route_certifier.c
+    "${DXX_TEST_SHARED_SOURCE_DIR}/guidebot_route_certifier.c"
+    "${DXX_TEST_SHARED_SOURCE_DIR}/guidebot_route_decision.c"
+    "${DXX_TEST_SHARED_SOURCE_DIR}/level_metadata_scan.c"
+    "${DXX_TEST_SHARED_SOURCE_DIR}/route_snapshot.cpp"
+    "${DXX_TEST_SHARED_SOURCE_DIR}/route_edge.cpp"
+    "${DXX_TEST_SHARED_SOURCE_DIR}/route_planner.cpp")
+target_compile_features(test_guidebot_route_certifier PRIVATE cxx_std_11)
+target_link_libraries(test_guidebot_route_certifier PRIVATE ${DXX_TARGET_PREFIX}maths)
+target_include_directories(test_guidebot_route_certifier PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
 
 add_executable(test_android_route_metadata_progress test_android_route_metadata_progress.c)
 target_include_directories(test_android_route_metadata_progress
@@ -314,6 +337,8 @@ set(DXX_HOST_TEST_TARGETS
     test_level_metadata_scan
     test_route_snapshot
     test_route_analysis_cache
+    test_guidebot_route_decision
+    test_guidebot_route_certifier
     test_android_route_metadata_progress
     test_input_demo_controls
     test_input_demo_fixture

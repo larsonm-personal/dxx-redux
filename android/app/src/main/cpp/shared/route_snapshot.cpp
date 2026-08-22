@@ -1,10 +1,12 @@
 #include "route_snapshot.h"
+#include "guidebot_route_certifier.h"
 #include "route_snapshot_c.h"
 
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
 #include <exception>
+#include <sstream>
 #include <utility>
 
 namespace dxx_route
@@ -274,6 +276,251 @@ route_state_fingerprints fingerprint_state(const route_state &state)
 		automap.add_bool(segment.explored);
 	result.automap = automap.value();
 	return result;
+}
+
+bool fingerprint_view_domain(
+    const level_metadata_scan_view &view, int domain,
+    std::uint64_t &result, unsigned int &work_units)
+{
+	stable_hasher hasher;
+	const int object_count =
+	    view.object_count ? view.object_count(view.user) : 0;
+
+	work_units = 0;
+	if (view.num_segments < 0 || view.num_segments > LEVEL_METADATA_MAX_SEGMENTS ||
+	    view.num_walls < 0 || view.num_walls > LEVEL_METADATA_MAX_WALLS ||
+	    view.num_triggers < 0 ||
+	    view.num_triggers > LEVEL_METADATA_MAX_TRIGGERS ||
+	    object_count < 0 || object_count > LEVEL_METADATA_MAX_OBJECTS)
+		return false;
+	switch (domain) {
+		case ROUTE_SNAPSHOT_DOMAIN_START: {
+			hasher.add_int(view.start_segment);
+			hash_position(hasher, read_start_position(view));
+			work_units = 1;
+			break;
+		}
+		case ROUTE_SNAPSHOT_DOMAIN_PROGRESSION:
+			hasher.add_int(view.initial_key_mask);
+			hasher.add_bool(view.initial_control_center_destroyed != 0);
+			work_units = 2;
+			break;
+		case ROUTE_SNAPSHOT_DOMAIN_NAVIGATION:
+			hasher.add_int(view.num_segments);
+			hasher.add_int(view.num_walls);
+			for (int segment = 0; segment < view.num_segments; ++segment)
+				for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+					hasher.add_bool(
+					    view.side_is_flyable &&
+					    view.side_is_flyable(view.user, segment, side));
+					hasher.add_bool(
+					    view.side_is_hard_blocked &&
+					    view.side_is_hard_blocked(view.user, segment, side));
+					hasher.add_bool(
+					    view.side_is_control_center_link &&
+					    view.side_is_control_center_link(
+					        view.user, segment, side));
+					hasher.add_bool(
+					    view.side_has_exit_trigger &&
+					    view.side_has_exit_trigger(view.user, segment, side));
+					work_units++;
+				}
+			for (int wall = 0; wall < view.num_walls; ++wall) {
+				const int type = view.wall_type
+				                     ? view.wall_type(view.user, wall)
+				                     : -1;
+				const int flags = view.wall_flags
+				                      ? view.wall_flags(view.user, wall)
+				                      : 0;
+				const int keys = view.wall_keys
+				                     ? view.wall_keys(view.user, wall)
+				                     : 0;
+				const int clip_flags = view.wall_clip_flags
+				                           ? view.wall_clip_flags(view.user, wall)
+				                           : 0;
+				hasher.add_int(type);
+				hasher.add_int(static_cast<int>(normalize_wall_kind(view, type)));
+				hasher.add_int(flags);
+				hasher.add_int(keys);
+				hasher.add_int(static_cast<int>(normalize_wall_key(view, keys)));
+				hasher.add_int(clip_flags);
+				hasher.add_int(
+				    view.wall_trigger ? view.wall_trigger(view.user, wall) : -1);
+				hasher.add_bool(
+				    view.wall_flag_door_locked != 0 &&
+				    (flags & view.wall_flag_door_locked) != 0);
+				hasher.add_bool(
+				    (view.wall_flag_door_opened != 0 &&
+				     (flags & view.wall_flag_door_opened) != 0) ||
+				    (view.wall_is_opening &&
+				     view.wall_is_opening(view.user, wall)));
+				hasher.add_bool(
+				    view.wall_clip_hidden != 0 &&
+				    (clip_flags & view.wall_clip_hidden) != 0);
+				hasher.add_bool(
+				    view.wall_flag_buddy_proof != 0 &&
+				    (flags & view.wall_flag_buddy_proof) != 0);
+				work_units++;
+			}
+			break;
+		case ROUTE_SNAPSHOT_DOMAIN_NAVIGATION_ACCESS:
+			hasher.add_int(view.num_segments);
+			for (int segment = 0; segment < view.num_segments; ++segment)
+				for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+					hasher.add_bool(guidebot_route_side_passable_current(
+					    &view, segment, side));
+					work_units++;
+				}
+			break;
+		case ROUTE_SNAPSHOT_DOMAIN_ACTOR_PROFILE:
+			hasher.add_int(view.navigator_radius);
+			work_units = 1;
+			break;
+		case ROUTE_SNAPSHOT_DOMAIN_TRIGGERS:
+			hasher.add_int(view.num_triggers);
+			for (int trigger = 0; trigger < view.num_triggers; ++trigger) {
+				const int flags = view.trigger_flags
+				                      ? view.trigger_flags(view.user, trigger)
+				                      : 0;
+				hasher.add_int(flags);
+				hasher.add_bool(
+				    view.trigger_flag_disabled != 0 &&
+				    (flags & view.trigger_flag_disabled) != 0);
+				work_units++;
+			}
+			break;
+		case ROUTE_SNAPSHOT_DOMAIN_OBJECTS:
+			hasher.add_int(object_count);
+			for (int object_index = 0; object_index < object_count;
+			     ++object_index) {
+				const int type = view.object_type
+				                     ? view.object_type(view.user, object_index)
+				                     : 0;
+				const int id = view.object_id
+				                   ? view.object_id(view.user, object_index)
+				                   : 0;
+				const int flags = view.object_flags
+				                      ? view.object_flags(view.user, object_index)
+				                      : 0;
+				const int contains_type =
+				    view.object_contains_type
+				        ? view.object_contains_type(view.user, object_index)
+				        : 0;
+				const int contains_id =
+				    view.object_contains_id
+				        ? view.object_contains_id(view.user, object_index)
+				        : 0;
+				hasher.add_int(
+				    view.object_segment
+				        ? view.object_segment(view.user, object_index)
+				        : -1);
+				hasher.add_int(type);
+				hasher.add_int(id);
+				hasher.add_int(flags);
+				hasher.add_int(contains_type);
+				hasher.add_int(contains_id);
+				hasher.add_int(
+				    view.object_contains_count
+				        ? view.object_contains_count(view.user, object_index)
+				        : 0);
+				hasher.add_int(
+				    static_cast<int>(normalize_object_kind(view, type)));
+				hasher.add_int(static_cast<int>(
+				    type == view.obj_type_powerup
+				        ? normalize_powerup_key(view, id)
+				        : route_key_requirement::none));
+				hasher.add_int(static_cast<int>(
+				    contains_type == view.obj_type_powerup
+				        ? normalize_powerup_key(view, contains_id)
+				        : route_key_requirement::none));
+				hash_position(
+				    hasher,
+				    read_position(
+				        view.object_position, view.user, object_index));
+				hasher.add_bool(
+				    view.obj_flag_should_be_dead != 0 &&
+				    (flags & view.obj_flag_should_be_dead) != 0);
+				hasher.add_bool(
+				    view.object_is_boss &&
+				    view.object_is_boss(view.user, object_index));
+				hasher.add_bool(
+				    view.object_is_companion &&
+				    view.object_is_companion(view.user, object_index));
+				hasher.add_bool(
+				    view.object_is_fleeing &&
+				    view.object_is_fleeing(view.user, object_index));
+				work_units++;
+			}
+			break;
+		case ROUTE_SNAPSHOT_DOMAIN_PROGRESSION_OBJECTS:
+			for (int object_index = 0; object_index < object_count;
+			     ++object_index) {
+				const int type = view.object_type
+				                     ? view.object_type(view.user, object_index)
+				                     : 0;
+				const int id = view.object_id
+				                   ? view.object_id(view.user, object_index)
+				                   : 0;
+				const int flags = view.object_flags
+				                      ? view.object_flags(view.user, object_index)
+				                      : 0;
+				const int contains_type =
+				    view.object_contains_type
+				        ? view.object_contains_type(view.user, object_index)
+				        : 0;
+				const int contains_id =
+				    view.object_contains_id
+				        ? view.object_contains_id(view.user, object_index)
+				        : 0;
+				const bool progression_object =
+				    type == view.obj_type_control_center ||
+				    (type == view.obj_type_powerup &&
+				     normalize_powerup_key(view, id) !=
+				         route_key_requirement::none) ||
+				    (contains_type == view.obj_type_powerup &&
+				     normalize_powerup_key(view, contains_id) !=
+				         route_key_requirement::none) ||
+				    (view.object_is_boss &&
+				     view.object_is_boss(view.user, object_index));
+				if (!progression_object)
+					continue;
+				hasher.add_int(object_index);
+				hasher.add_int(
+				    view.object_segment
+				        ? view.object_segment(view.user, object_index)
+				        : -1);
+				hasher.add_int(type);
+				hasher.add_int(id);
+				hasher.add_int(flags);
+				hasher.add_int(contains_type);
+				hasher.add_int(contains_id);
+				hasher.add_int(
+				    view.object_contains_count
+				        ? view.object_contains_count(view.user, object_index)
+				        : 0);
+				hash_position(
+				    hasher,
+				    read_position(
+				        view.object_position, view.user, object_index));
+				hasher.add_bool(
+				    view.obj_flag_should_be_dead != 0 &&
+				    (flags & view.obj_flag_should_be_dead) != 0);
+				work_units++;
+			}
+			break;
+		case ROUTE_SNAPSHOT_DOMAIN_AUTOMAP:
+			hasher.add_int(view.num_segments);
+			for (int segment = 0; segment < view.num_segments; ++segment) {
+				hasher.add_bool(
+				    view.segment_is_explored &&
+				    view.segment_is_explored(view.user, segment));
+				work_units++;
+			}
+			break;
+		default: return false;
+	}
+	result = hasher.value();
+	return true;
 }
 
 std::uint64_t hash_state(const route_state &state)
@@ -557,10 +804,172 @@ bool build_route_snapshot(const level_metadata_scan_view &view,
 	return true;
 }
 
+bool build_route_replay_fixture(const level_metadata_scan_view &view,
+                                route_replay_fixture &fixture,
+                                std::string *problem)
+{
+	route_snapshot snapshot;
+	if (!build_route_snapshot(view, snapshot, problem))
+		return false;
+	route_replay_fixture next;
+	next.topology_hash = snapshot.topology.hash;
+	next.navigator_radius = view.navigator_radius;
+	next.state = std::move(snapshot.state);
+	fixture = std::move(next);
+	return true;
+}
+
+bool apply_route_replay_fixture(const route_replay_fixture &fixture,
+                                const route_topology &topology,
+                                route_snapshot &snapshot,
+                                std::string *problem)
+{
+	if (problem)
+		problem->clear();
+	if (fixture.version != 1)
+		return fail(problem, "unsupported route replay fixture version");
+	if (fixture.topology_hash != topology.hash)
+		return fail(problem, "route replay fixture topology mismatch");
+	if (fixture.state.segments.size() != topology.segments.size() ||
+	    fixture.state.walls.size() != topology.walls.size() ||
+	    fixture.state.triggers.size() != topology.triggers.size())
+		return fail(problem, "route replay fixture size mismatch");
+	route_snapshot next;
+	next.topology = topology;
+	next.state = fixture.state;
+	snapshot = std::move(next);
+	return true;
+}
+
+namespace
+{
+
+void write_position(std::ostringstream &out, const route_position &position)
+{
+	if (!position.valid) {
+		out << "null";
+		return;
+	}
+	out << '[' << position.value[0] << ", " << position.value[1] << ", "
+	    << position.value[2] << ']';
+}
+
+bool replay_relevant_object(const route_state_object &object)
+{
+	return object.kind == route_object_kind::control_center ||
+	       (object.kind == route_object_kind::powerup &&
+	        object.key != route_key_requirement::none) ||
+	       object.contains_key != route_key_requirement::none || object.boss;
+}
+
+} // namespace
+
+std::string serialize_route_replay_fixture(
+    const route_replay_fixture &fixture)
+{
+	std::ostringstream out;
+	out << "{\n"
+	    << "  \"version\": " << fixture.version << ",\n"
+	    << "  \"topology_hash\": \"" << fixture.topology_hash << "\",\n"
+	    << "  \"navigator_radius\": " << fixture.navigator_radius << ",\n"
+	    << "  \"start\": {\n"
+	    << "    \"segment\": " << fixture.state.start_segment << ",\n"
+	    << "    \"position\": ";
+	write_position(out, fixture.state.start_position);
+	out << "\n  },\n"
+	    << "  \"progression\": {\n"
+	    << "    \"key_mask\": " << fixture.state.key_mask << ",\n"
+	    << "    \"control_center_destroyed\": "
+	    << (fixture.state.control_center_destroyed ? "true" : "false")
+	    << "\n  },\n"
+	    << "  \"segments\": [\n";
+	for (std::size_t segment = 0; segment < fixture.state.segments.size();
+	     ++segment) {
+		const auto &state_segment = fixture.state.segments[segment];
+		out << "    {\"explored\": "
+		    << (state_segment.explored ? "true" : "false")
+		    << ", \"sides\": [";
+		for (std::size_t side = 0; side < state_segment.sides.size(); ++side) {
+			const auto &state_side = state_segment.sides[side];
+			if (side)
+				out << ", ";
+			out << '[' << (state_side.flyable ? 1 : 0) << ", "
+			    << (state_side.hard_blocked ? 1 : 0) << ", "
+			    << (state_side.control_center_link ? 1 : 0) << ", "
+			    << (state_side.exit_trigger ? 1 : 0) << ']';
+		}
+		out << "]}";
+		out << (segment + 1 == fixture.state.segments.size() ? "\n" : ",\n");
+	}
+	out << "  ],\n  \"walls\": [\n";
+	for (std::size_t wall = 0; wall < fixture.state.walls.size(); ++wall) {
+		const auto &state_wall = fixture.state.walls[wall];
+		out << "    [" << static_cast<int>(state_wall.kind) << ", "
+		    << static_cast<int>(state_wall.key) << ", "
+		    << state_wall.trigger << ", " << (state_wall.locked ? 1 : 0)
+		    << ", " << (state_wall.opened ? 1 : 0) << ", "
+		    << (state_wall.hidden ? 1 : 0) << ", "
+		    << (state_wall.buddy_proof ? 1 : 0) << ']';
+		out << (wall + 1 == fixture.state.walls.size() ? "\n" : ",\n");
+	}
+	out << "  ],\n  \"triggers\": [";
+	for (std::size_t trigger = 0; trigger < fixture.state.triggers.size();
+	     ++trigger) {
+		if (trigger)
+			out << ", ";
+		out << (fixture.state.triggers[trigger].disabled ? 1 : 0);
+	}
+	out << "],\n  \"object_slots\": " << fixture.state.objects.size()
+	    << ",\n  \"progression_objects\": [\n";
+	bool wrote_object = false;
+	for (std::size_t object_index = 0;
+	     object_index < fixture.state.objects.size(); ++object_index) {
+		const auto &object = fixture.state.objects[object_index];
+		if (!replay_relevant_object(object))
+			continue;
+		if (wrote_object)
+			out << ",\n";
+		wrote_object = true;
+		out << "    {\"index\": " << object_index
+		    << ", \"segment\": " << object.segment << ", \"kind\": "
+		    << static_cast<int>(object.kind) << ", \"key\": "
+		    << static_cast<int>(object.key) << ", \"contains_key\": "
+		    << static_cast<int>(object.contains_key)
+		    << ", \"contains_count\": " << object.contains_count
+		    << ", \"position\": ";
+		write_position(out, object.position);
+		out << ", \"dead\": " << (object.should_be_dead ? "true" : "false")
+		    << ", \"boss\": " << (object.boss ? "true" : "false")
+		    << ", \"fleeing\": " << (object.fleeing ? "true" : "false")
+		    << '}';
+	}
+	if (wrote_object)
+		out << '\n';
+	out << "  ],\n"
+	    << "  \"fingerprints\": {\n"
+	    << "    \"state\": \"" << fixture.state.hash << "\",\n"
+	    << "    \"start\": \"" << fixture.state.fingerprints.start
+	    << "\",\n"
+	    << "    \"progression\": \""
+	    << fixture.state.fingerprints.progression << "\",\n"
+	    << "    \"navigation\": \""
+	    << fixture.state.fingerprints.navigation << "\",\n"
+	    << "    \"triggers\": \"" << fixture.state.fingerprints.triggers
+	    << "\",\n"
+	    << "    \"objects\": \"" << fixture.state.fingerprints.objects
+	    << "\",\n"
+	    << "    \"automap\": \"" << fixture.state.fingerprints.automap
+	    << "\"\n  }\n}\n";
+	return out.str();
+}
+
 } // namespace dxx_route
 
 namespace
 {
+
+dxx_route::route_replay_fixture captured_replay_fixture;
+std::string captured_replay_fixture_json;
 
 void copy_problem(char *out, int capacity, const char *problem)
 {
@@ -601,6 +1010,16 @@ extern "C" int route_snapshot_build_summary(
 		summary->trigger_hash = snapshot.state.fingerprints.triggers;
 		summary->object_hash = snapshot.state.fingerprints.objects;
 		summary->automap_hash = snapshot.state.fingerprints.automap;
+		std::uint64_t actor_hash = 0;
+		unsigned int actor_work = 0;
+		if (!dxx_route::fingerprint_view_domain(
+		        *view, ROUTE_SNAPSHOT_DOMAIN_ACTOR_PROFILE, actor_hash,
+		        actor_work)) {
+			copy_problem(problem, problem_capacity,
+			             "route actor profile fingerprint failed");
+			return 0;
+		}
+		summary->actor_hash = actor_hash;
 		summary->segment_count =
 		    static_cast<int>(snapshot.topology.segments.size());
 		summary->wall_count =
@@ -621,4 +1040,57 @@ extern "C" int route_snapshot_build_summary(
 		             "unknown route snapshot failure");
 	}
 	return 0;
+}
+
+extern "C" int route_snapshot_build_domain_hash(
+    const level_metadata_scan_view *view, int domain,
+    unsigned long long *hash, unsigned int *work_units)
+{
+	std::uint64_t result = 0;
+	unsigned int work = 0;
+
+	if (hash)
+		*hash = 0;
+	if (work_units)
+		*work_units = 0;
+	if (!view || !hash ||
+	    !dxx_route::fingerprint_view_domain(*view, domain, result, work))
+		return 0;
+	*hash = result;
+	if (work_units)
+		*work_units = work;
+	return 1;
+}
+
+extern "C" void route_snapshot_clear_replay_fixture(void)
+{
+	captured_replay_fixture = dxx_route::route_replay_fixture{};
+	captured_replay_fixture_json.clear();
+}
+
+extern "C" int route_snapshot_capture_replay_fixture(
+    const level_metadata_scan_view *view)
+{
+	if (!view)
+		return 0;
+	try {
+		dxx_route::route_replay_fixture fixture;
+		if (!dxx_route::build_route_replay_fixture(*view, fixture, nullptr))
+			return 0;
+		std::string normalized =
+		    dxx_route::serialize_route_replay_fixture(fixture);
+		captured_replay_fixture = std::move(fixture);
+		captured_replay_fixture_json = std::move(normalized);
+		return 1;
+	} catch (...) {
+		route_snapshot_clear_replay_fixture();
+		return 0;
+	}
+}
+
+extern "C" const char *route_snapshot_get_replay_fixture_json(void)
+{
+	return captured_replay_fixture_json.empty()
+	           ? nullptr
+	           : captured_replay_fixture_json.c_str();
 }

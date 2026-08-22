@@ -1153,7 +1153,6 @@ void do_automap()
 	automap *am;
 
 #ifdef __ANDROID__
-	level_metadata_rescan_route_from_object(Players[Player_num].objnum);
 	automap_metadata_begin();
 #endif
 	

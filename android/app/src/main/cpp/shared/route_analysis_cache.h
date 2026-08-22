@@ -13,7 +13,8 @@ extern "C" {
 #define ROUTE_ANALYSIS_CACHE_GAME_D1 1
 #define ROUTE_ANALYSIS_CACHE_GAME_D2 2
 /* Keep in sync with ROUTE_METADATA_CACHE_GENERATION in RouteMetadataScheduling.kt. */
-#define ROUTE_ANALYSIS_CACHE_GENERATION 6
+#define ROUTE_ANALYSIS_CACHE_GENERATION       7
+#define ROUTE_ANALYSIS_TIMING_SAMPLE_CAPACITY 32
 
 typedef struct route_analysis_cache_key {
 	unsigned int generation;
@@ -32,8 +33,25 @@ typedef struct route_analysis_cache_summary {
 	unsigned int writes;
 	unsigned int rejections;
 	unsigned int io_errors;
+	unsigned int live_reuse_attempts;
 	unsigned int live_reuses;
 	unsigned int live_fallbacks;
+	unsigned int live_certifier_attempts;
+	unsigned int live_certifier_successes;
+	unsigned int live_certifier_prepared_fallbacks;
+	unsigned int live_certifier_failures;
+	unsigned int live_certifier_max_visited_segments;
+	unsigned int live_certifier_max_evaluated_edges;
+	unsigned int live_certifier_max_evaluated_actions;
+	unsigned long long live_reuse_total_us;
+	unsigned long long live_reuse_max_us;
+	unsigned long long live_reuse_median_us;
+	unsigned long long live_reuse_p95_us;
+	unsigned long long live_reuse_samples[ROUTE_ANALYSIS_TIMING_SAMPLE_CAPACITY];
+	unsigned int live_reuse_sample_count;
+	unsigned int live_reuse_sample_next;
+	unsigned long long live_fallback_total_us;
+	unsigned long long live_fallback_max_us;
 	unsigned long long topology_hash;
 	char filename[192];
 } route_analysis_cache_summary;

@@ -72,6 +72,8 @@ set(D1X_MAIN_SOURCES
     ../../android/app/src/main/cpp/shared/route_edge.cpp
     ../../android/app/src/main/cpp/shared/route_planner.cpp
     ../../android/app/src/main/cpp/shared/route_analysis_cache.c
+    ../../android/app/src/main/cpp/shared/guidebot_route_decision.c
+    ../../android/app/src/main/cpp/shared/guidebot_route_certifier.c
     ../../android/app/src/main/cpp/shared/secretarea.c
     ../../android/app/src/main/cpp/shared/secret_area_item_names.c
     ../../android/app/src/main/cpp/shared/secret_area_scan.c

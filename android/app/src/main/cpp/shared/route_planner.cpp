@@ -1,5 +1,6 @@
 #include "route_planner.h"
 #include "route_planner_c.h"
+#include "guidebot_route_decision.h"
 
 #include <algorithm>
 #include <cmath>
@@ -20,6 +21,64 @@ bool Work_tracking_enabled = false;
 
 bool valid_segment(const route_snapshot &snapshot, int segment);
 bool valid_wall(const route_snapshot &snapshot, int wall);
+
+guidebot_route_objective_identity target_identity(const route_target &target)
+{
+	guidebot_route_objective_identity identity = {};
+
+	switch (target.kind) {
+		case route_target_kind::key:
+			identity.kind = LEVEL_METADATA_ROUTE_KEY;
+			break;
+		case route_target_kind::reactor:
+			identity.kind = LEVEL_METADATA_ROUTE_REACTOR;
+			break;
+		case route_target_kind::boss:
+			identity.kind = LEVEL_METADATA_ROUTE_BOSS;
+			break;
+		case route_target_kind::exit:
+			identity.kind = LEVEL_METADATA_ROUTE_EXIT;
+			break;
+	}
+	identity.trigger = -1;
+	identity.wall = -1;
+	identity.object = target.object;
+	identity.segment = target.segment;
+	identity.side = target.side;
+	return identity;
+}
+
+guidebot_route_objective_identity trigger_identity(
+    const route_trigger_source &source)
+{
+	guidebot_route_objective_identity identity = {};
+
+	identity.kind = LEVEL_METADATA_ROUTE_TRIGGER;
+	identity.trigger = source.trigger;
+	identity.wall = source.source_wall;
+	identity.object = -1;
+	identity.segment = source.source_segment;
+	identity.side = source.source_side;
+	return identity;
+}
+
+bool stable_identity_less(
+    const guidebot_route_objective_identity &left,
+    const guidebot_route_objective_identity &right)
+{
+	return guidebot_route_objective_identity_compare(&left, &right) < 0;
+}
+
+bool position_identity_less(
+    int left_segment,
+    const route_position &left,
+    int right_segment,
+    const route_position &right)
+{
+	if (left_segment != right_segment)
+		return left_segment < right_segment;
+	return left.value < right.value;
+}
 
 double point_distance(const route_position &left, const route_position &right)
 {
@@ -215,7 +274,9 @@ class route_heap
 		if (progress_cost_ &&
 		    nodes_[left].progress_weight != nodes_[right].progress_weight)
 			return nodes_[left].progress_weight < nodes_[right].progress_weight;
-		return nodes_[left].distance < nodes_[right].distance;
+		if (nodes_[left].distance != nodes_[right].distance)
+			return nodes_[left].distance < nodes_[right].distance;
+		return left < right;
 	}
 
 	void swap(int left, int right)
@@ -1045,8 +1106,14 @@ route_target_selection select_route_target(
 		const auto &node = search.nodes[target.segment];
 		const double distance = node.distance +
 		                        point_distance(center, target.position);
+		const bool equal_cost =
+		    node.progress_weight == best_progress && distance == best_distance;
 		if (node.progress_weight > best_progress ||
-		    (node.progress_weight == best_progress && distance >= best_distance))
+		    (node.progress_weight == best_progress && distance > best_distance) ||
+		    (equal_cost && result.selected_index >= 0 &&
+		     !stable_identity_less(
+		         target_identity(target),
+		         target_identity(targets[result.selected_index]))))
 			continue;
 		best_progress = node.progress_weight;
 		best_distance = distance;
@@ -1094,7 +1161,11 @@ route_target_selection select_key_target(
 			continue;
 		const double distance = search.nodes[target.segment].distance +
 		                        point_distance(center, target.position);
-		if (distance >= best_distance)
+		if (distance > best_distance ||
+		    (distance == best_distance && result.selected_index >= 0 &&
+		     !stable_identity_less(
+		         target_identity(target),
+		         target_identity(targets[result.selected_index]))))
 			continue;
 		best_distance = distance;
 		result.selected_index = target_index;
@@ -1196,7 +1267,12 @@ route_trigger_path_selection select_trigger_firing_path(
 				 * the distance the Guide-Bot must actually travel. */
 				const double score = path.distance +
 				                     point_distance(terminal, source.source_position);
-				if (candidate.found && score >= candidate_score)
+				if (candidate.found &&
+				    (score > candidate_score ||
+				     (score == candidate_score &&
+				      !position_identity_less(
+				          segment, terminal, candidate.terminal_segment,
+				          candidate.terminal_position))))
 					return;
 				path.progress_weight = 0;
 				path.terminal_segment = segment;
@@ -1225,7 +1301,11 @@ route_trigger_path_selection select_trigger_firing_path(
 						if (!keyed_result.found ||
 						    shot_distance < keyed_shot_distance ||
 						    (shot_distance == keyed_shot_distance &&
-						     path.distance < keyed_result.path.distance)) {
+						     (path.distance < keyed_result.path.distance ||
+						      (path.distance == keyed_result.path.distance &&
+						       stable_identity_less(
+						           trigger_identity(source),
+						           trigger_identity(keyed_result.source)))))) {
 							path.progress_weight = 0;
 							path.terminal_segment = source.source_segment;
 							path.terminal_position = terminal;
@@ -1246,7 +1326,7 @@ route_trigger_path_selection select_trigger_firing_path(
 				const int segment = search.visit_order[index];
 				double extra_distance = 0.0;
 				route_position terminal;
-				if (search.nodes[segment].distance >= best_score())
+				if (search.nodes[segment].distance > best_score())
 					break;
 				if (visible_source_center_position(
 				        snapshot, progress, source, visibility, segment,
@@ -1264,7 +1344,7 @@ route_trigger_path_selection select_trigger_firing_path(
 				const int segment = search.visit_order[index];
 				double extra_distance = 0.0;
 				route_position terminal;
-				if (search.nodes[segment].distance >= best_score())
+				if (search.nodes[segment].distance > best_score())
 					break;
 				if (visible_source_detailed_position(
 				        snapshot, source, visibility, segment, terminal,
@@ -1294,7 +1374,12 @@ route_trigger_path_selection select_trigger_firing_path(
 			candidate_score = candidate.path.distance;
 		}
 		if (!candidate.found ||
-		    (result.found && candidate_score >= result_score))
+		    (result.found &&
+		     (candidate_score > result_score ||
+		      (candidate_score == result_score &&
+		       !stable_identity_less(
+		           trigger_identity(candidate.source),
+		           trigger_identity(result.source))))))
 			continue;
 		result = std::move(candidate);
 		result_score = candidate_score;
@@ -1302,7 +1387,12 @@ route_trigger_path_selection select_trigger_firing_path(
 		    result.terminal_position, result.source.source_position);
 	}
 	report_progress(visibility, "route_visibility", total, total);
-	if (keyed_result.found && keyed_shot_distance < result_shot_distance)
+	if (keyed_result.found &&
+	    (keyed_shot_distance < result_shot_distance ||
+	     (keyed_shot_distance == result_shot_distance &&
+	      (!result.found || stable_identity_less(
+	                            trigger_identity(keyed_result.source),
+	                            trigger_identity(result.source))))))
 		result = std::move(keyed_result);
 	if (result.found && visibility.wall_shootable_without_transparency &&
 	    valid_wall(snapshot, result.source.source_wall) &&
@@ -3098,6 +3188,9 @@ bool project_step(
 	destination.key_carrier_objnum = source.key_carrier_object;
 	destination.can_be_bypassed = source.can_be_bypassed ? 1 : 0;
 	destination.activation_kind = static_cast<int>(source.activation);
+	destination.path_segment_count =
+	    static_cast<int>(source.path.segments.size());
+	destination.path_terminal_segment = source.path.terminal_segment;
 	project_position(
 	    source.activation_position, destination.activation_pos_valid,
 	    destination.activation_pos);

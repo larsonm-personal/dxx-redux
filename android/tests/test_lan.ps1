@@ -332,7 +332,7 @@ function Invoke-GuidebotOwnershipScenario {
         [bool]$guidebot.route_goal_active -and
         $guidebot.route_goal_label -eq "Unexplored" -and
         [int]$guidebot.route_goal_objective_kind -eq 1000 -and
-        $guidebot.route_last_replan_reason -eq "owner_handoff" -and
+        [int]$guidebot.route_metadata_rescan_count -ge 1 -and
         [int]$guidebot.route_ignored_nonowner_key_change_count -ge 1
     }
     if (-not $replanned) {
@@ -951,7 +951,9 @@ function Invoke-GuidebotSlotRemapRestoreScenario {
     -not [bool]$hostGuidebot.local_control_slot_matches -and
     [bool]$joinGuidebot.local_control_slot_matches -and
     $hostGuidebot.route_target_mode_name -eq "unexplored" -and
-    $joinGuidebot.route_target_mode_name -eq "unexplored"
+    $joinGuidebot.route_target_mode_name -eq "unexplored" -and
+    [int]$joinGuidebot.route_decision.target_policy -eq 1 -and
+    [int]$joinGuidebot.route_metadata_rescan_count -ge 1
     if (-not $stateMatches) {
         Write-Status "FAIL: Guide-Bot restore state differs between slot-swapped peers" "Red"
         Write-DeviceAutomationDiagnostics -Serial $EMU2
@@ -960,7 +962,7 @@ function Invoke-GuidebotSlotRemapRestoreScenario {
     }
 
     Write-Status "Saved owner identity remapped from slot 0 to slot 1 on both peers" "Green"
-    Write-Status "Unexplored intent and owner-local robot control survived coop restore" "Green"
+    Write-Status "New owner reconstructed unexplored guidance from restored world state" "Green"
     return $true
 }
 

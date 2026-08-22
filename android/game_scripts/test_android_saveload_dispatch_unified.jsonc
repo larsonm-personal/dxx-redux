@@ -97,5 +97,10 @@
     {"action": "set_debug", "field": "android_game_request", "value": "difficulty:3", "post_delay_ms": 300},
     {"action": "wait_for", "field": "difficulty", "value": "3", "timeout_ms": 5000},
     {"action": "set_debug", "field": "android_game_request", "value": "quick_load", "post_delay_ms": 1000},
-    {"action": "wait_for", "field": "difficulty", "value": "2", "timeout_ms": 10000}
+    {"action": "wait_for", "field": "difficulty", "value": "2", "timeout_ms": 10000},
+    {"action": "wait_for", "when": "d2", "timeout_ms": 10000, "expect": {
+        "guidebot.route_decision.target_policy": "0",
+        "guidebot.route_decision.certificate_status": "1",
+        "guidebot.route_metadata_rescan_count": {"gte": 1}
+    }}
 ]

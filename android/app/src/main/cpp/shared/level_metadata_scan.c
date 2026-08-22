@@ -102,7 +102,7 @@ const char *level_metadata_route_activation_kind_name(int kind)
 	}
 }
 
-static int level_metadata_route_wall_completed(
+static int level_metadata_route_wall_passable(
     const level_metadata_scan_view *view,
     int wall)
 {
@@ -125,42 +125,44 @@ static int level_metadata_route_wall_completed(
 	        view->side_is_flyable(view->user, segment, side));
 }
 
-int level_metadata_route_step_completed_by_world_state(
+int level_metadata_route_step_required_by_world_state(
     const level_metadata_scan_view *view,
     const level_metadata_route_step *step)
 {
 	int link;
 
 	if (!view || !step)
-		return 0;
+		return 1;
 	switch (step->kind) {
 		case LEVEL_METADATA_ROUTE_START:
-			return 1;
+			return 0;
 		case LEVEL_METADATA_ROUTE_KEY:
-			return step->key_index >= 0 && step->key_index < 3 &&
-			       (view->initial_key_mask & (1 << step->key_index)) != 0;
+			return step->key_index < 0 || step->key_index >= 3 ||
+			       (view->initial_key_mask & (1 << step->key_index)) == 0;
 		case LEVEL_METADATA_ROUTE_REACTOR:
 		case LEVEL_METADATA_ROUTE_BOSS:
-			return view->initial_control_center_destroyed != 0;
+			return view->initial_control_center_destroyed == 0;
 		case LEVEL_METADATA_ROUTE_TRIGGER:
 			if (step->opened_link_count <= 0)
-				return 0;
+				return 1;
 			for (link = 0; link < step->opened_link_count; ++link) {
 				int wall = step->opened_link_wall[link];
-				if (step->trigger_type == view->trigger_type_unlock_door &&
-				    wall >= 0 && wall < view->num_walls && view->wall_flags &&
-				    (view->wall_flags(view->user, wall) &
-				     view->wall_flag_door_locked) == 0)
-					return 1;
-				if (level_metadata_route_wall_completed(view, wall))
+				if (step->trigger_type == view->trigger_type_unlock_door) {
+					if (wall < 0 || wall >= view->num_walls || !view->wall_flags ||
+					    (view->wall_flags(view->user, wall) &
+					     view->wall_flag_door_locked) != 0)
+						return 1;
+					continue;
+				}
+				if (!level_metadata_route_wall_passable(view, wall))
 					return 1;
 			}
 			return 0;
 		case LEVEL_METADATA_ROUTE_HIDDEN_DOOR:
 		case LEVEL_METADATA_ROUTE_BLASTABLE_WALL:
-			return level_metadata_route_wall_completed(view, step->wall_num);
+			return !level_metadata_route_wall_passable(view, step->wall_num);
 		default:
-			return 0;
+			return 1;
 	}
 }
 

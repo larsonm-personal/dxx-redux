@@ -200,9 +200,25 @@ struct route_snapshot {
 	route_state state;
 };
 
+struct route_replay_fixture {
+	unsigned int version = 1;
+	std::uint64_t topology_hash = 0;
+	int navigator_radius = 0;
+	route_state state;
+};
+
 bool build_route_snapshot(const level_metadata_scan_view &view,
                           route_snapshot &snapshot,
                           std::string *problem = nullptr);
+bool build_route_replay_fixture(const level_metadata_scan_view &view,
+                                route_replay_fixture &fixture,
+                                std::string *problem = nullptr);
+bool apply_route_replay_fixture(const route_replay_fixture &fixture,
+                                const route_topology &topology,
+                                route_snapshot &snapshot,
+                                std::string *problem = nullptr);
+std::string serialize_route_replay_fixture(
+    const route_replay_fixture &fixture);
 
 } // namespace dxx_route
 

@@ -2,6 +2,7 @@
 #define _SECRETAREA_H
 
 #include "level_metadata_scan.h"
+#include "guidebot_route_decision.h"
 #include "route_snapshot_c.h"
 #include "route_planner_c.h"
 #include "route_analysis_cache.h"
@@ -13,6 +14,11 @@
 #define LEVEL_METADATA_READINESS_COMPLETE    2
 #define LEVEL_METADATA_READINESS_PARTIAL     3
 #define LEVEL_METADATA_READINESS_FAILED      4
+
+#define LEVEL_METADATA_ROUTE_PROVENANCE_NONE              0
+#define LEVEL_METADATA_ROUTE_PROVENANCE_CERTIFIER         1
+#define LEVEL_METADATA_ROUTE_PROVENANCE_PREPARED_FALLBACK 2
+#define LEVEL_METADATA_ROUTE_PROVENANCE_FULL_PLANNER      3
 
 void secret_area_rescan_current_level(void);
 void secret_area_prepare_current_level(void);
@@ -35,13 +41,22 @@ const level_metadata_state *level_metadata_get_state(void);
 const level_metadata_state *level_metadata_get_canonical_state(void);
 int level_metadata_get_canonical_route_plan_summary(route_planner_plan_summary *summary);
 int level_metadata_get_route_analysis_cache_summary(route_analysis_cache_summary *summary);
-int level_metadata_mark_route_objective_completed(
-    int kind, int trigger, int wall, int key_index);
-int level_metadata_canonical_route_step_completed(int index);
 const level_metadata_state *level_metadata_get_live_route_state(void);
 int level_metadata_get_live_route_plan_summary(route_planner_plan_summary *summary);
+int level_metadata_get_live_route_decision(guidebot_route_decision *decision);
+int level_metadata_get_live_route_provenance(void);
+const char *level_metadata_route_provenance_name(int provenance);
+void level_metadata_set_live_certifier_enabled(int enabled);
+int level_metadata_get_live_certifier_enabled(void);
+void level_metadata_set_route_shadow_enabled(int enabled);
+int level_metadata_get_route_shadow_summary(
+    guidebot_route_shadow_summary *summary);
 int level_metadata_get_canonical_route_snapshot(route_snapshot_summary *summary);
 int level_metadata_get_live_route_snapshot(route_snapshot_summary *summary);
+int level_metadata_route_audit_domain(
+    int start_objnum, int domain, unsigned int *work_units);
+int level_metadata_validate_live_route_certificate(
+    int start_objnum, unsigned int *work_units);
 int secret_area_note_segment_entered(int segnum);
 void secret_area_restore_saved_found(int saved_total, const unsigned char *found, int found_capacity, const unsigned char *visited, int visited_count);
 void secret_area_restore_found_from_automap(const unsigned char *visited, int visited_count);

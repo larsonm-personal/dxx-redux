@@ -7,6 +7,8 @@ function(dxx_audio_tag_prepare_deps)
         return()
     endif()
 
+    set(_dxx_parent_build_testing "${BUILD_TESTING}")
+
     dxx_verified_fetchcontent_declare(utf8cpp UTF8CPP)
     FetchContent_MakeAvailable(utf8cpp)
     set(utf8cpp_INCLUDE_DIR "${utf8cpp_SOURCE_DIR}/source" CACHE PATH "" FORCE)
@@ -29,6 +31,7 @@ function(dxx_audio_tag_prepare_deps)
     set(VISIBILITY_HIDDEN ON CACHE BOOL "" FORCE)
     dxx_verified_fetchcontent_declare(taglib TAGLIB)
     FetchContent_MakeAvailable(taglib)
+    set(BUILD_TESTING "${_dxx_parent_build_testing}" CACHE BOOL "" FORCE)
 endfunction()
 
 function(dxx_audio_tag_apply target)

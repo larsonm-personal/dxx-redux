@@ -94,10 +94,10 @@
         "guidebot.unexplored_waypoint_seg": {"gte": 0},
         "guidebot.unexplored_target_visited": "false",
         "guidebot.route_pending_event_mask": "0",
-        "guidebot.route_event_coalesced_rescan_count": "0",
         "guidebot.route_goal_guidance_seg": {"gte": 0},
         "level_metadata_route.visibility_cache.bypasses": "0"
     }},
+    {"action": "set_debug", "field": "guidebot_route_reset_efficiency_counters", "value": "true"},
 
     // Two same-frame automap transitions must collapse into one high-level
     // semantic route rescan while leaving the player's map unchanged.
@@ -107,17 +107,19 @@
         "guidebot.unexplored_target_visited": "false",
         "guidebot.route_event_generations.automap": {"gt": 19},
         "guidebot.route_pending_event_mask": "0",
-        "guidebot.route_event_coalesced_rescan_count": "1",
-        "guidebot.route_metadata_rescan_count": {"gte": 3},
-        "guidebot.route_last_replan_reason": "automap_exploration"
+        "guidebot.route_event_notification_count": "2",
+        "guidebot.route_notification_coalesced_count": "1",
+        "guidebot.route_event_coalesced_rescan_count": {"gte": 1},
+        "guidebot.route_metadata_rescan_count": {"gte": 1}
     }},
 
     {"action": "wait_ms", "ms": 6000},
     {"action": "assert", "expect": {
         "guidebot.route_target_mode_name": "unexplored",
-        "guidebot.route_event_coalesced_rescan_count": "1",
-        "guidebot.route_metadata_rescan_count": {"gte": 3},
-        "guidebot.route_last_replan_reason": "automap_exploration"
+        "guidebot.route_event_notification_count": "2",
+        "guidebot.route_notification_coalesced_count": "1",
+        "guidebot.route_event_coalesced_rescan_count": {"gte": 1},
+        "guidebot.route_metadata_rescan_count": {"gte": 1}
     }},
 
     {"action": "introspect"},

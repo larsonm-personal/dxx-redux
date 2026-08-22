@@ -1,6 +1,9 @@
 #include "route_snapshot.h"
 #include "route_snapshot_c.h"
 #include "route_edge.h"
+#include "guidebot_route_certifier.h"
+#include "guidebot_route_decision.h"
+#include "route_analysis_cache.h"
 #include "route_planner.h"
 #include "route_planner_c.h"
 
@@ -9,7 +12,9 @@
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
+#include <random>
 #include <string>
+#include <vector>
 
 #ifdef NDEBUG
 #undef assert
@@ -31,12 +36,22 @@ struct test_level {
 	int flyable = 0;
 	int wall_flags = 0;
 	int wall_opening = 0;
+	int wallless = 0;
 	int key_mask = 0;
 	int child = 1;
 	int trigger_flags = 0;
 	int object_segment = 1;
+	int object_flags = 82;
+	int object_contains_type = 83;
+	int object_contains_id = 84;
+	int object_contains_count = 2;
+	int object_boss = 1;
+	int navigator_radius = 7;
 	int wall_key[2] = { 20, 21 };
 	int side_clearance = 8 * 65536;
+	int hard_blocked = 1;
+	int control_center_link = 1;
+	int exit_trigger = 1;
 };
 
 int segment_child(void *user, int segment, int side)
@@ -80,23 +95,31 @@ int side_clearance(void *user, int segment, int side)
 	           : 0;
 }
 
-int side_hard_blocked(void *, int segment, int side)
+int side_hard_blocked(void *user, int segment, int side)
 {
-	return segment == 1 && side == 0;
+	return segment == 1 && side == 0
+	           ? static_cast<test_level *>(user)->hard_blocked
+	           : 0;
 }
 
-int side_control_center_link(void *, int segment, int side)
+int side_control_center_link(void *user, int segment, int side)
 {
-	return segment == 0 && side == 0;
+	return segment == 0 && side == 0
+	           ? static_cast<test_level *>(user)->control_center_link
+	           : 0;
 }
 
-int side_exit(void *, int segment, int side)
+int side_exit(void *user, int segment, int side)
 {
-	return segment == 1 && side == 0;
+	return segment == 1 && side == 0
+	           ? static_cast<test_level *>(user)->exit_trigger
+	           : 0;
 }
 
-int wall_num(void *, int segment, int side)
+int wall_num(void *user, int segment, int side)
 {
+	if (static_cast<test_level *>(user)->wallless)
+		return -1;
 	return side == 0 ? segment : -1;
 }
 
@@ -196,24 +219,24 @@ int object_id(void *, int)
 	return 81;
 }
 
-int object_flags(void *, int)
+int object_flags(void *user, int)
 {
-	return 82;
+	return static_cast<test_level *>(user)->object_flags;
 }
 
-int object_contains_type(void *, int)
+int object_contains_type(void *user, int)
 {
-	return 83;
+	return static_cast<test_level *>(user)->object_contains_type;
 }
 
-int object_contains_id(void *, int)
+int object_contains_id(void *user, int)
 {
-	return 84;
+	return static_cast<test_level *>(user)->object_contains_id;
 }
 
-int object_contains_count(void *, int)
+int object_contains_count(void *user, int)
 {
-	return 2;
+	return static_cast<test_level *>(user)->object_contains_count;
 }
 
 int object_position(void *, int, int xyz[3])
@@ -224,9 +247,9 @@ int object_position(void *, int, int xyz[3])
 	return 1;
 }
 
-int object_is_boss(void *, int)
+int object_is_boss(void *user, int)
 {
-	return 1;
+	return static_cast<test_level *>(user)->object_boss;
 }
 
 int object_is_companion(void *, int)
@@ -455,6 +478,7 @@ level_metadata_scan_view make_view(test_level &level)
 	view.num_walls = 2;
 	view.num_triggers = 1;
 	view.start_segment = 0;
+	view.navigator_radius = level.navigator_radius;
 	view.initial_key_mask = level.key_mask;
 	view.wall_type_blastable = 10;
 	view.wall_type_door = 11;
@@ -861,6 +885,28 @@ int main()
 	       trigger_sources[0].source_position.value);
 	assert(direct_firing.path.reached);
 	assert(direct_firing.path.segments.size() == 1);
+	auto trigger_tie_snapshot = triggered_snapshot;
+	trigger_tie_snapshot.topology.triggers.resize(2);
+	trigger_tie_snapshot.state.triggers.resize(2);
+	auto trigger_tie_progress = dxx_route::initial_route_progress_state(
+	    trigger_tie_snapshot, planner_query);
+	auto higher_trigger_source = trigger_sources[0];
+	higher_trigger_source.trigger = 1;
+	std::vector<dxx_route::route_trigger_source> trigger_tie_sources = {
+		higher_trigger_source,
+		trigger_sources[0],
+	};
+	const auto stable_trigger_firing =
+	    dxx_route::select_trigger_firing_path(
+	        trigger_tie_snapshot, planner_query, trigger_tie_progress,
+	        trigger_tie_sources);
+	assert(stable_trigger_firing.found);
+	assert(stable_trigger_firing.source.trigger == 0);
+	std::reverse(trigger_tie_sources.begin(), trigger_tie_sources.end());
+	assert(dxx_route::select_trigger_firing_path(
+	           trigger_tie_snapshot, planner_query, trigger_tie_progress,
+	           trigger_tie_sources)
+	           .source.trigger == 0);
 	const auto direct_dependency = dxx_route::resolve_trigger_dependency(
 	    triggered_snapshot, planner_query, source_progress, 1, 0);
 	assert(direct_dependency.attempted);
@@ -965,6 +1011,29 @@ int main()
 	assert(nested_dependency.steps[1].path.segments[0] == 0);
 	assert(nested_dependency.steps[1].path.segments[1] == 1);
 	assert(nested_dependency.steps[1].path.segments[2] == 2);
+	auto work_query = nested_query;
+	work_query.endpoint = dxx_route::route_endpoint_kind::segment;
+	work_query.target_segment = 3;
+	dxx_route::set_route_planner_work_tracking(true);
+	dxx_route::reset_route_planner_work_summary();
+	const auto first_work_plan = dxx_route::plan_route(
+	    nested_snapshot, work_query);
+	const auto first_work = dxx_route::get_route_planner_work_summary();
+	dxx_route::reset_route_planner_work_summary();
+	const auto repeated_work_plan = dxx_route::plan_route(
+	    nested_snapshot, work_query);
+	const auto repeated_work = dxx_route::get_route_planner_work_summary();
+	dxx_route::set_route_planner_work_tracking(false);
+	assert(first_work_plan.status == repeated_work_plan.status);
+	assert(first_work_plan.steps.size() == repeated_work_plan.steps.size());
+	assert(first_work.search_calls == repeated_work.search_calls);
+	assert(first_work.visited_segments == repeated_work.visited_segments);
+	assert(first_work.considered_edges == repeated_work.considered_edges);
+	assert(first_work.evaluated_edges == repeated_work.evaluated_edges);
+	assert(first_work.search_calls <= 16);
+	assert(first_work.visited_segments <= 64);
+	assert(first_work.considered_edges <= 384);
+	assert(first_work.evaluated_edges <= 128);
 	auto loop_snapshot = nested_snapshot;
 	loop_snapshot.topology.walls[0].segment = 2;
 	loop_snapshot.topology.walls[0].side = 3;
@@ -1082,8 +1151,7 @@ int main()
 	for (int coordinate = 0; coordinate < 3; ++coordinate)
 		least_cost_visible.position.value[coordinate] =
 		    (least_cost_snapshot.topology.segments[0].center.value[coordinate] +
-		     least_cost_snapshot.topology.segments[0].vertices[7]
-		             .value[coordinate] *
+		     least_cost_snapshot.topology.segments[0].vertices[7].value[coordinate] *
 		         3) /
 		    4;
 	least_cost_visible.second_segment = 1;
@@ -1257,6 +1325,22 @@ int main()
 	           dxx_route::initial_route_progress_state(first, planner_query),
 	           selection_targets)
 	           .selected_index == 0);
+	auto high_side_exit = nearer_exit;
+	high_side_exit.side = 4;
+	auto low_side_exit = nearer_exit;
+	low_side_exit.side = 1;
+	selection_targets = { high_side_exit, low_side_exit };
+	assert(dxx_route::select_route_target(
+	           first, planner_query,
+	           dxx_route::initial_route_progress_state(first, planner_query),
+	           selection_targets)
+	           .selected_index == 1);
+	std::reverse(selection_targets.begin(), selection_targets.end());
+	assert(dxx_route::select_route_target(
+	           first, planner_query,
+	           dxx_route::initial_route_progress_state(first, planner_query),
+	           selection_targets)
+	           .selected_index == 0);
 	auto key_snapshot = first;
 	key_snapshot.state.objects[0].kind = dxx_route::route_object_kind::powerup;
 	key_snapshot.state.objects[0].key = dxx_route::route_key_requirement::blue;
@@ -1336,6 +1420,27 @@ int main()
 	    dxx_route::route_key_requirement::blue, key_targets.keys[0]);
 	assert(selected_key.found);
 	assert(selected_key.selected_index == 0);
+	auto high_object_key = key_targets.keys[0][0];
+	high_object_key.object = 9;
+	auto low_object_key = high_object_key;
+	low_object_key.object = 2;
+	std::vector<dxx_route::route_target> key_ties = {
+		high_object_key,
+		low_object_key,
+	};
+	assert(dxx_route::select_key_target(
+	           key_snapshot, planner_query,
+	           dxx_route::initial_route_progress_state(
+	               key_snapshot, planner_query),
+	           dxx_route::route_key_requirement::blue, key_ties)
+	           .selected_index == 1);
+	std::reverse(key_ties.begin(), key_ties.end());
+	assert(dxx_route::select_key_target(
+	           key_snapshot, planner_query,
+	           dxx_route::initial_route_progress_state(
+	               key_snapshot, planner_query),
+	           dxx_route::route_key_requirement::blue, key_ties)
+	           .selected_index == 0);
 	auto forbidden_key_snapshot = key_snapshot;
 	forbidden_key_snapshot.state.walls[0].kind =
 	    dxx_route::route_wall_kind::door;
@@ -1365,11 +1470,65 @@ int main()
 	assert(summary.trigger_hash == first.state.fingerprints.triggers);
 	assert(summary.object_hash == first.state.fingerprints.objects);
 	assert(summary.automap_hash == first.state.fingerprints.automap);
+	assert(summary.actor_hash != 0);
 	assert(summary.segment_count == 2);
 	assert(summary.wall_count == 2);
 	assert(summary.trigger_count == 1);
 	assert(summary.object_count == 1);
 	assert(summary.start_segment == 0);
+	const unsigned long long expected_domain_hashes[ROUTE_SNAPSHOT_DOMAIN_PROGRESSION_OBJECTS] = {
+		summary.start_hash,
+		summary.progression_hash,
+		summary.navigation_hash,
+		summary.trigger_hash,
+		summary.object_hash,
+		summary.automap_hash,
+	};
+	for (int domain = 0; domain < ROUTE_SNAPSHOT_DOMAIN_COUNT; ++domain) {
+		unsigned long long domain_hash = 0;
+		unsigned int work_units = 0;
+		assert(route_snapshot_build_domain_hash(
+		    &view, domain, &domain_hash, &work_units));
+		if (domain < ROUTE_SNAPSHOT_DOMAIN_PROGRESSION_OBJECTS)
+			assert(domain_hash == expected_domain_hashes[domain]);
+		assert(work_units > 0);
+	}
+	test_level wider_navigator = level;
+	wider_navigator.navigator_radius++;
+	auto wider_navigator_view = make_view(wider_navigator);
+	route_snapshot_summary wider_navigator_summary = {};
+	assert(route_snapshot_build_summary(
+	    &wider_navigator_view, &wider_navigator_summary, summary_problem,
+	    sizeof(summary_problem)));
+	assert(wider_navigator_summary.state_hash == summary.state_hash);
+	assert(wider_navigator_summary.navigation_hash == summary.navigation_hash);
+	assert(wider_navigator_summary.actor_hash != summary.actor_hash);
+	unsigned long long wallless_access_hash = 0;
+	unsigned long long flyable_access_hash = 0;
+	level.wallless = 1;
+	level.hard_blocked = 0;
+	level.control_center_link = 0;
+	level.exit_trigger = 0;
+	view = make_view(level);
+	assert(route_snapshot_build_domain_hash(
+	    &view,
+	    ROUTE_SNAPSHOT_DOMAIN_NAVIGATION_ACCESS,
+	    &wallless_access_hash,
+	    nullptr));
+	level.flyable = 1;
+	view = make_view(level);
+	assert(route_snapshot_build_domain_hash(
+	    &view,
+	    ROUTE_SNAPSHOT_DOMAIN_NAVIGATION_ACCESS,
+	    &flyable_access_hash,
+	    nullptr));
+	assert(wallless_access_hash == flyable_access_hash);
+	level.flyable = 0;
+	level.wallless = 0;
+	level.hard_blocked = 1;
+	level.control_center_link = 1;
+	level.exit_trigger = 1;
+	view = make_view(level);
 
 	assert(dxx_route::build_route_snapshot(view, repeated, nullptr));
 	assert(repeated.topology.hash == first.topology.hash);
@@ -1414,6 +1573,306 @@ int main()
 	assert(changed_state.state.triggers[0].disabled);
 	assert(changed_state.state.walls[0].locked);
 	assert(changed_state.state.walls[0].opened);
+
+	/* A shadow mismatch fixture carries mutable normalized state and refers to
+	 * immutable level geometry only by its stable topology hash. */
+	dxx_route::route_replay_fixture replay_fixture;
+	assert(dxx_route::build_route_replay_fixture(
+	    view, replay_fixture, &problem));
+	assert(replay_fixture.topology_hash == changed_state.topology.hash);
+	dxx_route::route_snapshot replayed_state;
+	assert(dxx_route::apply_route_replay_fixture(
+	    replay_fixture, first.topology, replayed_state, &problem));
+	assert(problem.empty());
+	assert(replayed_state.state.hash == changed_state.state.hash);
+	assert(replayed_state.state.fingerprints.navigation ==
+	       changed_state.state.fingerprints.navigation);
+	dxx_route::route_query replay_query;
+	replay_query.endpoint = dxx_route::route_endpoint_kind::end_of_level;
+	replay_query.start = changed_state.state.start_position;
+	replay_query.progression.key_mask = changed_state.state.key_mask;
+	replay_query.navigator.radius = replay_fixture.navigator_radius;
+	const auto changed_plan =
+	    dxx_route::plan_route(changed_state, replay_query);
+	const auto replayed_plan =
+	    dxx_route::plan_route(replayed_state, replay_query);
+	assert(changed_plan.status == replayed_plan.status);
+	assert(changed_plan.steps.size() == replayed_plan.steps.size());
+	for (std::size_t step = 0; step < changed_plan.steps.size(); ++step) {
+		assert(changed_plan.steps[step].kind == replayed_plan.steps[step].kind);
+		assert(changed_plan.steps[step].segment ==
+		       replayed_plan.steps[step].segment);
+		assert(changed_plan.steps[step].side == replayed_plan.steps[step].side);
+		assert(changed_plan.steps[step].wall == replayed_plan.steps[step].wall);
+		assert(changed_plan.steps[step].trigger ==
+		       replayed_plan.steps[step].trigger);
+	}
+	const std::string replay_json =
+	    dxx_route::serialize_route_replay_fixture(replay_fixture);
+	assert(replay_json.find("\n  \"segments\": [\n") !=
+	       std::string::npos);
+	assert(replay_json.find("\"progression_objects\"") !=
+	       std::string::npos);
+	route_snapshot_clear_replay_fixture();
+	assert(route_snapshot_get_replay_fixture_json() == nullptr);
+	assert(route_snapshot_capture_replay_fixture(&view));
+	assert(std::string(route_snapshot_get_replay_fixture_json()) ==
+	       replay_json);
+	route_snapshot_clear_replay_fixture();
+	auto wrong_topology_fixture = replay_fixture;
+	wrong_topology_fixture.topology_hash++;
+	assert(!dxx_route::apply_route_replay_fixture(
+	    wrong_topology_fixture, first.topology, replayed_state, &problem));
+	assert(problem == "route replay fixture topology mismatch");
+
+	auto project_current_state = [](
+	                                 test_level &candidate,
+	                                 route_snapshot_summary &projected_summary,
+	                                 guidebot_route_decision &projected_decision) {
+		auto candidate_view = make_view(candidate);
+		level_metadata_state projected_plan = {};
+		route_planner_plan_summary projected_plan_summary = {};
+		char projected_problem[96] = {};
+		assert(route_snapshot_build_summary(
+		    &candidate_view, &projected_summary, projected_problem,
+		    sizeof(projected_problem)));
+		assert(route_planner_plan_view(
+		    &candidate_view, ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL, -1,
+		    &projected_plan, nullptr, &projected_plan_summary,
+		    projected_problem, sizeof(projected_problem)));
+		assert(guidebot_route_decision_project(
+		    &projected_plan, &projected_plan_summary, &projected_summary, 2, -1,
+		    &projected_decision));
+	};
+
+	/* Activating an objective before it is selected and selecting it before
+	 * activation must converge once the live door, trigger, key, and carrier
+	 * states agree. Repeated activation and a door open-close cycle are inert. */
+	test_level activate_before_selection;
+	activate_before_selection.explored[1] = 1;
+	activate_before_selection.flyable = 1;
+	activate_before_selection.wall_flags = 5;
+	activate_before_selection.key_mask = LEVEL_METADATA_KEY_MASK_BLUE;
+	activate_before_selection.trigger_flags = 4;
+	activate_before_selection.object_segment = 0;
+	activate_before_selection.object_flags = 83;
+	activate_before_selection.object_contains_type = 90;
+	activate_before_selection.object_contains_id = 100;
+	activate_before_selection.object_contains_count = 1;
+	activate_before_selection.object_boss = 0;
+	route_snapshot_summary activate_first_summary = {};
+	guidebot_route_decision activate_first_decision = {};
+	project_current_state(
+	    activate_before_selection, activate_first_summary,
+	    activate_first_decision);
+
+	test_level select_before_activation;
+	select_before_activation.object_contains_type = 90;
+	select_before_activation.object_contains_id = 100;
+	select_before_activation.object_contains_count = 1;
+	select_before_activation.object_boss = 0;
+	route_snapshot_summary selected_summary = {};
+	guidebot_route_decision selected_decision = {};
+	project_current_state(
+	    select_before_activation, selected_summary, selected_decision);
+	select_before_activation.trigger_flags = 4;
+	select_before_activation.trigger_flags = 4;
+	select_before_activation.wall_opening = 1;
+	select_before_activation.wall_opening = 0;
+	select_before_activation.explored[1] = 1;
+	select_before_activation.flyable = 1;
+	select_before_activation.wall_flags = 5;
+	select_before_activation.key_mask = LEVEL_METADATA_KEY_MASK_BLUE;
+	select_before_activation.object_segment = 0;
+	select_before_activation.object_flags = 83;
+	route_snapshot_summary select_first_summary = {};
+	guidebot_route_decision select_first_decision = {};
+	project_current_state(
+	    select_before_activation, select_first_summary,
+	    select_first_decision);
+
+	assert(selected_summary.state_hash != select_first_summary.state_hash);
+	assert(activate_first_summary.state_hash == select_first_summary.state_hash);
+	assert(activate_first_summary.start_hash == select_first_summary.start_hash);
+	assert(activate_first_summary.progression_hash ==
+	       select_first_summary.progression_hash);
+	assert(activate_first_summary.navigation_hash ==
+	       select_first_summary.navigation_hash);
+	assert(activate_first_summary.trigger_hash ==
+	       select_first_summary.trigger_hash);
+	assert(activate_first_summary.object_hash ==
+	       select_first_summary.object_hash);
+	assert(activate_first_summary.automap_hash ==
+	       select_first_summary.automap_hash);
+	assert(activate_first_summary.actor_hash == select_first_summary.actor_hash);
+	assert(guidebot_route_decision_semantic_equal(
+	    &activate_first_decision, &select_first_decision));
+	assert(guidebot_route_decision_guidance_equal(
+	    &activate_first_decision, &select_first_decision));
+	assert(activate_first_decision.input_hash ==
+	       select_first_decision.input_hash);
+	assert(activate_first_decision.decision_hash ==
+	       select_first_decision.decision_hash);
+
+	guidebot_route_decision reference_decision = {};
+	route_snapshot_summary reference_summary = {};
+	std::mt19937 mutation_random(0x20d2u);
+	std::vector<int> mutation_order = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
+	for (int permutation = 0; permutation < 32; ++permutation) {
+		test_level permuted_level;
+		permuted_level.wall_opening = 1;
+		permuted_level.object_contains_type = 90;
+		permuted_level.object_contains_id = 100;
+		permuted_level.object_contains_count = 1;
+		permuted_level.object_boss = 0;
+		std::shuffle(
+		    mutation_order.begin(), mutation_order.end(), mutation_random);
+		for (const int mutation : mutation_order) {
+			switch (mutation) {
+				case 0: permuted_level.explored[1] = 1; break;
+				case 1: permuted_level.flyable = 1; break;
+				case 2: permuted_level.wall_flags = 5; break;
+				case 3: permuted_level.wall_opening = 0; break;
+				case 4:
+					permuted_level.key_mask =
+					    LEVEL_METADATA_KEY_MASK_BLUE;
+					break;
+				case 5: permuted_level.trigger_flags = 4; break;
+				case 6: permuted_level.object_segment = 0; break;
+				case 7: permuted_level.trigger_flags = 4; break;
+				case 8: permuted_level.object_flags = 83; break;
+			}
+		}
+		auto permuted_view = make_view(permuted_level);
+		level_metadata_state permuted_plan = {};
+		route_planner_plan_summary permuted_plan_summary = {};
+		route_snapshot_summary permuted_summary = {};
+		guidebot_route_decision permuted_decision = {};
+		char permuted_problem[96] = {};
+
+		assert(route_snapshot_build_summary(
+		    &permuted_view, &permuted_summary, permuted_problem,
+		    sizeof(permuted_problem)));
+		assert(route_planner_plan_view(
+		    &permuted_view, ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL, -1,
+		    &permuted_plan, nullptr, &permuted_plan_summary,
+		    permuted_problem, sizeof(permuted_problem)));
+		assert(guidebot_route_decision_project(
+		    &permuted_plan, &permuted_plan_summary, &permuted_summary, 2,
+		    -1, &permuted_decision));
+		if (permutation == 0) {
+			reference_summary = permuted_summary;
+			reference_decision = permuted_decision;
+		} else {
+			assert(permuted_summary.state_hash ==
+			       reference_summary.state_hash);
+			assert(permuted_summary.start_hash ==
+			       reference_summary.start_hash);
+			assert(permuted_summary.progression_hash ==
+			       reference_summary.progression_hash);
+			assert(permuted_summary.navigation_hash ==
+			       reference_summary.navigation_hash);
+			assert(permuted_summary.trigger_hash ==
+			       reference_summary.trigger_hash);
+			assert(permuted_summary.object_hash ==
+			       reference_summary.object_hash);
+			assert(permuted_summary.automap_hash ==
+			       reference_summary.automap_hash);
+			assert(permuted_summary.actor_hash ==
+			       reference_summary.actor_hash);
+			assert(guidebot_route_decision_semantic_equal(
+			    &permuted_decision, &reference_decision));
+			assert(guidebot_route_decision_guidance_equal(
+			    &permuted_decision, &reference_decision));
+			assert(permuted_decision.input_hash ==
+			       reference_decision.input_hash);
+			assert(permuted_decision.decision_hash ==
+			       reference_decision.decision_hash);
+		}
+	}
+
+	/* One current state must produce the same guidance through cold planning,
+	 * prepared-plan certification, a decoded cache record, and an explicit
+	 * full-planner fallback. */
+	test_level convergence_level;
+	auto convergence_view = make_view(convergence_level);
+	level_metadata_state cold_plan = {};
+	route_planner_plan_summary cold_plan_summary = {};
+	route_snapshot_summary convergence_summary = {};
+	guidebot_route_decision cold_decision = {};
+	char convergence_problem[96] = {};
+	assert(route_snapshot_build_summary(
+	    &convergence_view, &convergence_summary, convergence_problem,
+	    sizeof(convergence_problem)));
+	assert(route_planner_plan_view(
+	    &convergence_view, ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL, -1,
+	    &cold_plan, nullptr, &cold_plan_summary, convergence_problem,
+	    sizeof(convergence_problem)));
+	assert(guidebot_route_decision_project(
+	    &cold_plan, &cold_plan_summary, &convergence_summary, 2, -1,
+	    &cold_decision));
+
+	guidebot_route_certifier_workspace certifier_workspace = {};
+	level_metadata_state certified_plan = {};
+	route_planner_plan_summary certified_plan_summary = {};
+	guidebot_route_validity_certificate certificate = {};
+	guidebot_route_certifier_summary certifier_summary = {};
+	guidebot_route_decision certified_decision = {};
+	assert(guidebot_route_certify_current_state(
+	    &convergence_view, &cold_plan, &cold_plan_summary,
+	    &certifier_workspace, &certified_plan, &certified_plan_summary,
+	    &certificate, &certifier_summary));
+	assert(guidebot_route_decision_project(
+	    &certified_plan, &certified_plan_summary, &convergence_summary, 2, -1,
+	    &certified_decision));
+	assert(guidebot_route_decision_semantic_equal(
+	    &cold_decision, &certified_decision));
+	assert(guidebot_route_decision_guidance_equal(
+	    &cold_decision, &certified_decision));
+
+	route_analysis_cache_key convergence_key = {};
+	assert(route_analysis_cache_make_key(
+	    ROUTE_ANALYSIS_CACHE_GENERATION, ROUTE_ANALYSIS_CACHE_GAME_D2,
+	    0x20d2, &convergence_summary, &convergence_key));
+	std::vector<unsigned char> convergence_record(
+	    route_analysis_cache_record_size());
+	assert(route_analysis_cache_encode(
+	    &convergence_key, &cold_plan, &cold_plan_summary,
+	    convergence_record.data(), convergence_record.size()));
+	level_metadata_state cached_plan = {};
+	route_planner_plan_summary cached_plan_summary = {};
+	assert(route_analysis_cache_decode(
+	    &convergence_key, convergence_record.data(),
+	    convergence_record.size(), &cached_plan, &cached_plan_summary));
+	level_metadata_state cached_certified_plan = {};
+	route_planner_plan_summary cached_certified_summary = {};
+	guidebot_route_decision cached_decision = {};
+	assert(guidebot_route_certify_current_state(
+	    &convergence_view, &cached_plan, &cached_plan_summary,
+	    &certifier_workspace, &cached_certified_plan,
+	    &cached_certified_summary, &certificate, &certifier_summary));
+	assert(guidebot_route_decision_project(
+	    &cached_certified_plan, &cached_certified_summary,
+	    &convergence_summary, 2, -1, &cached_decision));
+	assert(guidebot_route_decision_semantic_equal(
+	    &cold_decision, &cached_decision));
+	assert(guidebot_route_decision_guidance_equal(
+	    &cold_decision, &cached_decision));
+
+	level_metadata_state fallback_plan = {};
+	route_planner_plan_summary fallback_plan_summary = {};
+	guidebot_route_decision fallback_decision = {};
+	assert(route_planner_plan_view(
+	    &convergence_view, ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL, -1,
+	    &fallback_plan, nullptr, &fallback_plan_summary,
+	    convergence_problem, sizeof(convergence_problem)));
+	assert(guidebot_route_decision_project(
+	    &fallback_plan, &fallback_plan_summary, &convergence_summary, 2, -1,
+	    &fallback_decision));
+	assert(guidebot_route_decision_semantic_equal(
+	    &cold_decision, &fallback_decision));
+	assert(guidebot_route_decision_guidance_equal(
+	    &cold_decision, &fallback_decision));
 
 	dxx_route::route_query query;
 	query.endpoint = dxx_route::route_endpoint_kind::unexplored;

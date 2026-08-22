@@ -35,6 +35,7 @@
         "guidebot.remote_owner": "1",
         "guidebot.local_control_slot_matches": "false"
     }},
+    {"action": "set_debug", "field": "guidebot_route_reset_efficiency_counters", "value": "true"},
     {"action": "set_debug", "field": "player_keys", "value": "none", "post_delay_ms": 100},
     {"action": "wait_for", "timeout_ms": 10000, "expect": {
         "guidebot.route_ignored_nonowner_key_change_count": {"gte": 1}
@@ -53,7 +54,7 @@
         "guidebot.remote_owner": "1",
         "guidebot.local_control_slot_matches": "false",
         "guidebot.route_target_mode_name": "unexplored",
-        "guidebot.route_metadata_rescan_count": "1"
+        "guidebot.route_metadata_rescan_count": "0"
     }},
     {"action": "introspect"},
     {"action": "log", "message": "=== COOP GUIDEBOT OWNER: host PASS ==="}

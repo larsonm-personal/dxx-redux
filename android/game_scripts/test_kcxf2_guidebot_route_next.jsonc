@@ -376,6 +376,7 @@
         "guidebot.route_goal_objective_trigger": {"ne": 22}
     }},
     {"action": "send_axis", "axis": 1, "axis_value": 0.0, "post_delay_ms": 0},
+    {"action": "set_debug", "field": "zero_player_velocity", "value": "true"},
 
     {"action": "wait_ms", "ms": 3000},
     {"action": "assert", "expect": {

@@ -39,7 +39,7 @@ int main(void)
 	wrong_key.generation++;
 	failures += expect(
 	    route_analysis_cache_filename(&key, filename, sizeof(filename)) &&
-	        strstr(filename, "route-cache/g6/d2-0000000000005678-") == filename,
+	        strstr(filename, "route-cache/g7/d2-0000000000005678-") == filename,
 	    "generation and profile filename");
 
 	input.route_status = LEVEL_METADATA_ROUTE_OK;
@@ -53,6 +53,8 @@ int main(void)
 	input.route_steps[1].activation_pos[0] = 10;
 	input.route_steps[1].aim_pos_valid = 1;
 	input.route_steps[1].aim_pos[2] = 30;
+	input.route_steps[1].path_segment_count = 7;
+	input.route_steps[1].path_terminal_segment = 4;
 	strcpy(input.route_steps[1].label, "Shoot switch 6");
 	strcpy(input.route_steps[1].trigger_type_name, "open_door");
 	input_summary.endpoint_kind = ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL;
@@ -74,6 +76,8 @@ int main(void)
 	failures += expect(
 	    output.route_steps[1].activation_pos[0] == 10 &&
 	        output.route_steps[1].aim_pos[2] == 30 &&
+	        output.route_steps[1].path_segment_count == 7 &&
+	        output.route_steps[1].path_terminal_segment == 4 &&
 	        output_summary.first_pending_path_terminal_segment == 4,
 	    "preserve firing coordinates and summary");
 	input.route_status = LEVEL_METADATA_ROUTE_PARTIAL;

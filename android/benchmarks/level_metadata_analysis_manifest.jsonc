@@ -25,6 +25,6 @@
     { "id": "d2-counterstrike-12", "game": "d2", "mission": null, "archive": null, "level": 12, "expected_sha256": "ec3cfa30d05bef612df801f19711a419777ac17ac110c917847c7ceb5cdd566d" },
     { "id": "d2-counterstrike-secret-03", "game": "d2", "mission": null, "archive": null, "level": -3, "expected_sha256": "d74065ad3e93aa2c000b6baca6251d62a47a63e278426474e937553a636800c3" },
     { "id": "d2-kcxf2-03", "game": "d2", "mission": "kcxf2", "archive": "kcxf2", "level": 3, "expected_sha256": "b3687baae466d7212a101e01dcc4beda67403b9935ff60ef37001a6b5f3730fd" },
-    { "id": "d2-obsidian-11", "game": "d2", "mission": "obsidian", "archive": "obsidian", "level": 11, "expected_sha256": "ad9e222397d84461a5d96945fee142281150335ca16fd1e88c151c97fe0b1519" }
+    { "id": "d2-obsidian-11", "game": "d2", "mission": "obsidian", "archive": "obsidian", "level": 11, "expected_sha256": "a05fe8be88cf6130fcb333e7d498e0cef2e54d8a92ad48c6b69e4956e82474f4" }
   ]
 }

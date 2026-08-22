@@ -677,6 +677,7 @@ static json serialize_route_snapshot(const route_snapshot_summary &snapshot)
 		      { "triggers", serialize_route_hash(snapshot.trigger_hash) },
 		      { "objects", serialize_route_hash(snapshot.object_hash) },
 		      { "automap", serialize_route_hash(snapshot.automap_hash) },
+		      { "actor", serialize_route_hash(snapshot.actor_hash) },
 		  } },
 		{ "generations",
 		  {
@@ -687,6 +688,7 @@ static json serialize_route_snapshot(const route_snapshot_summary &snapshot)
 		      { "triggers", snapshot.trigger_generation },
 		      { "objects", snapshot.object_generation },
 		      { "automap", snapshot.automap_generation },
+		      { "actor", snapshot.actor_generation },
 		  } },
 		{ "segment_count", snapshot.segment_count },
 		{ "wall_count", snapshot.wall_count },
@@ -738,6 +740,8 @@ static json serialize_level_metadata_route()
 			{ "capacity", visibility_cache.capacity },
 			{ "resets", visibility_cache.resets },
 			{ "bypasses", visibility_cache.bypasses },
+			{ "allocated_bytes", visibility_cache.allocated_bytes },
+			{ "peak_allocated_bytes", visibility_cache.peak_allocated_bytes },
 		};
 	}
 	if (level_metadata_get_route_analysis_cache_summary(&analysis_cache)) {
@@ -748,8 +752,23 @@ static json serialize_level_metadata_route()
 			{ "writes", analysis_cache.writes },
 			{ "rejections", analysis_cache.rejections },
 			{ "io_errors", analysis_cache.io_errors },
+			{ "live_reuse_attempts", analysis_cache.live_reuse_attempts },
 			{ "live_reuses", analysis_cache.live_reuses },
 			{ "live_fallbacks", analysis_cache.live_fallbacks },
+			{ "live_certifier_attempts", analysis_cache.live_certifier_attempts },
+			{ "live_certifier_successes", analysis_cache.live_certifier_successes },
+			{ "live_certifier_prepared_fallbacks", analysis_cache.live_certifier_prepared_fallbacks },
+			{ "live_certifier_failures", analysis_cache.live_certifier_failures },
+			{ "live_certifier_max_visited_segments", analysis_cache.live_certifier_max_visited_segments },
+			{ "live_certifier_max_evaluated_edges", analysis_cache.live_certifier_max_evaluated_edges },
+			{ "live_certifier_max_evaluated_actions", analysis_cache.live_certifier_max_evaluated_actions },
+			{ "live_reuse_total_us", analysis_cache.live_reuse_total_us },
+			{ "live_reuse_max_us", analysis_cache.live_reuse_max_us },
+			{ "live_reuse_sample_count", analysis_cache.live_reuse_sample_count },
+			{ "live_reuse_median_us", analysis_cache.live_reuse_median_us },
+			{ "live_reuse_p95_us", analysis_cache.live_reuse_p95_us },
+			{ "live_fallback_total_us", analysis_cache.live_fallback_total_us },
+			{ "live_fallback_max_us", analysis_cache.live_fallback_max_us },
 			{ "topology_hash", serialize_route_hash(analysis_cache.topology_hash) },
 			{ "filename", analysis_cache.filename },
 		};
@@ -778,7 +797,8 @@ static json serialize_level_metadata_route()
 		item["key"] = introspect_route_key_name(step->key_index);
 		item["can_be_bypassed"] = step->can_be_bypassed != 0;
 		item["key_carrier_objnum"] = step->key_carrier_objnum;
-		item["completed"] = level_metadata_canonical_route_step_completed(index) != 0;
+		item["path_segment_count"] = step->path_segment_count;
+		item["path_terminal_segment"] = step->path_terminal_segment;
 		item["activation_pos"] = step->activation_pos_valid ? json::array({ step->activation_pos[0], step->activation_pos[1], step->activation_pos[2] }) : json(nullptr);
 		item["aim_pos"] = step->aim_pos_valid ? json::array({ step->aim_pos[0], step->aim_pos[1], step->aim_pos[2] }) : json(nullptr);
 		item["label_pos"] = step->label_pos_valid ? json::array({ step->label_pos[0], step->label_pos[1], step->label_pos[2] }) : json(nullptr);
@@ -872,6 +892,46 @@ static json serialize_guidebot()
 	route_planner_plan_summary live_plan = {};
 	const bool live_plan_available =
 	    level_metadata_get_live_route_plan_summary(&live_plan) != 0;
+	guidebot_route_decision route_decision = {};
+	const bool route_decision_available =
+	    level_metadata_get_live_route_decision(&route_decision) != 0;
+	guidebot_route_shadow_summary route_shadow = {};
+	const bool route_shadow_available =
+	    level_metadata_get_route_shadow_summary(&route_shadow) != 0;
+	json route_shadow_replay_fixture = nullptr;
+	std::size_t route_shadow_replay_fixture_bytes = 0;
+	if (const char *fixture_json =
+	        route_snapshot_get_replay_fixture_json()) {
+		route_shadow_replay_fixture_bytes = std::strlen(fixture_json);
+		route_shadow_replay_fixture =
+		    json::parse(fixture_json, nullptr, false);
+		if (route_shadow_replay_fixture.is_discarded())
+			route_shadow_replay_fixture = nullptr;
+	}
+	const auto serialize_shadow_decision = [](
+	                                           const guidebot_route_decision &decision) {
+		return json{
+			{ "status", guidebot_route_decision_status_name(decision.status) },
+			{ "target_policy", decision.target_policy },
+			{ "requested_target_segment", decision.requested_target_segment },
+			{ "objective_kind", decision.objective_kind },
+			{ "activation_kind", decision.activation_kind },
+			{ "trigger", decision.objective_trigger },
+			{ "wall", decision.objective_wall },
+			{ "key", decision.objective_key },
+			{ "object", decision.objective_object },
+			{ "segment", decision.objective_segment },
+			{ "side", decision.objective_side },
+			{ "guidance_position", decision.guidance_position_valid ? json::array({ decision.guidance_position[0], decision.guidance_position[1], decision.guidance_position[2] }) : json(nullptr) },
+			{ "path_terminal_segment", decision.path_terminal_segment },
+			{ "partial_frontier_segment", decision.partial_frontier_segment },
+			{ "input_hash", serialize_route_hash(decision.input_hash) },
+			{ "semantic_hash", serialize_route_hash(decision.semantic_hash) },
+			{ "guidance_hash", serialize_route_hash(decision.guidance_hash) },
+			{ "decision_hash", serialize_route_hash(decision.decision_hash) },
+			{ "certificate_status", decision.certificate.status },
+		};
+	};
 
 	result["route_goal_active"] = (bool) escort_get_route_goal_active();
 	result["route_goal_label"] = escort_get_route_goal_label();
@@ -930,6 +990,11 @@ static json serialize_guidebot()
 	result["route_avoid_seg"] = escort_get_route_avoid_seg();
 	result["route_avoid_seg2"] = escort_get_route_avoid_seg2();
 	result["route_stall_recovery_count"] = escort_get_route_stall_recovery_count();
+	result["route_path_adoption"] = {
+		{ "retained", escort_get_route_path_retained_count() },
+		{ "replaced", escort_get_route_path_replaced_count() },
+		{ "invalid_stopped", escort_get_route_invalid_path_stopped_count() }
+	};
 	result["route_ignored_nonowner_key_change_count"] =
 	    escort_get_route_ignored_nonowner_key_change_count();
 	result["route_boss_move_invalidation_count"] =
@@ -942,13 +1007,130 @@ static json serialize_guidebot()
 		{ "automap", escort_get_route_automap_generation() }
 	};
 	result["route_pending_event_mask"] = escort_get_route_pending_event_mask();
+	result["route_pending_audit_mask"] = escort_get_route_pending_audit_mask();
 	result["route_event_notification_count"] =
 	    escort_get_route_event_notification_count();
+	result["route_notification_coalesced_count"] =
+	    escort_get_route_notification_coalesced_count();
+	result["route_redundant_dirty_domain_count"] =
+	    escort_get_route_redundant_dirty_domain_count();
 	result["route_event_coalesced_rescan_count"] =
 	    escort_get_route_event_coalesced_rescan_count();
+	result["route_publish_latency"] = {
+		{ "samples", escort_get_route_publish_latency_sample_count() },
+		{ "last_ticks", escort_get_route_publish_latency_last_ticks() },
+		{ "max_ticks", escort_get_route_publish_latency_max_ticks() }
+	};
 	result["route_ignored_nonowner_event_count"] =
 	    escort_get_route_ignored_nonowner_event_count();
+	result["route_audit"] = {
+		{ "notifications_suppressed", escort_get_route_notifications_suppressed() != 0 },
+		{ "certificate_checks_suppressed", escort_get_route_certificate_checks_suppressed() != 0 },
+		{ "checks", escort_get_route_audit_check_count() },
+		{ "discoveries", escort_get_route_audit_discovery_count() },
+		{ "audit_only_discoveries", escort_get_route_audit_only_discovery_count() },
+		{ "work_total", escort_get_route_audit_work_total() },
+		{ "work_max", escort_get_route_audit_work_max() },
+		{ "certificate_checks", escort_get_route_certificate_check_count() },
+		{ "certificate_failures", escort_get_route_certificate_failure_count() },
+		{ "certificate_work_total", escort_get_route_certificate_work_total() },
+		{ "certificate_work_max", escort_get_route_certificate_work_max() }
+	};
 	result["route_planner_source"] = live_plan_available ? "shared_cpp" : "unavailable";
+	result["route_live_certifier_enabled"] =
+	    level_metadata_get_live_certifier_enabled() != 0;
+	result["route_decision"] = route_decision_available
+	                               ? json{
+		                                 { "version", route_decision.version },
+		                                 { "provenance", level_metadata_route_provenance_name(level_metadata_get_live_route_provenance()) },
+		                                 { "status", guidebot_route_decision_status_name(route_decision.status) },
+		                                 { "target_policy", route_decision.target_policy },
+		                                 { "requested_target_segment", route_decision.requested_target_segment },
+		                                 { "objective_kind", route_decision.objective_kind },
+		                                 { "activation_kind", route_decision.activation_kind },
+		                                 { "trigger", route_decision.objective_trigger },
+		                                 { "wall", route_decision.objective_wall },
+		                                 { "key", route_decision.objective_key },
+		                                 { "object", route_decision.objective_object },
+		                                 { "segment", route_decision.objective_segment },
+		                                 { "side", route_decision.objective_side },
+		                                 { "path_terminal_segment", route_decision.path_terminal_segment },
+		                                 { "partial_frontier_segment", route_decision.partial_frontier_segment },
+		                                 { "dependency_mask", route_decision.dependency_mask },
+		                                 { "input_hash", serialize_route_hash(route_decision.input_hash) },
+		                                 { "semantic_hash", serialize_route_hash(route_decision.semantic_hash) },
+		                                 { "guidance_hash", serialize_route_hash(route_decision.guidance_hash) },
+		                                 { "decision_hash", serialize_route_hash(route_decision.decision_hash) },
+		                                 { "topology_hash", serialize_route_hash(route_decision.topology_hash) },
+		                                 { "state_hash", serialize_route_hash(route_decision.state_hash) },
+		                                 { "start_hash", serialize_route_hash(route_decision.start_hash) },
+		                                 { "progression_hash", serialize_route_hash(route_decision.progression_hash) },
+		                                 { "navigation_hash", serialize_route_hash(route_decision.navigation_hash) },
+		                                 { "trigger_hash", serialize_route_hash(route_decision.trigger_hash) },
+		                                 { "object_hash", serialize_route_hash(route_decision.object_hash) },
+		                                 { "automap_hash", serialize_route_hash(route_decision.automap_hash) },
+		                                 { "actor_hash", serialize_route_hash(route_decision.actor_hash) },
+		                                 { "certificate_status", route_decision.certificate.status },
+	                                 }
+	                               : json(nullptr);
+	result["route_shadow"] = route_shadow_available
+	                             ? json{
+		                               { "enabled", route_shadow.enabled != 0 },
+		                               { "attempted", route_shadow.attempted != 0 },
+		                               { "primary_valid", route_shadow.primary_valid != 0 },
+		                               { "shadow_valid", route_shadow.shadow_valid != 0 },
+		                               { "mismatch", guidebot_route_shadow_mismatch_name(route_shadow.mismatch_kind) },
+		                               { "attempts", route_shadow.attempts },
+		                               { "semantic_matches", route_shadow.semantic_matches },
+		                               { "guidance_matches", route_shadow.guidance_matches },
+		                               { "availability_mismatches", route_shadow.availability_mismatches },
+		                               { "semantic_mismatches", route_shadow.semantic_mismatches },
+		                               { "guidance_mismatches", route_shadow.guidance_mismatches },
+		                               { "proof_mismatches", route_shadow.proof_mismatches },
+		                               { "last_fvi_count", route_shadow.last_fvi_count },
+		                               { "total_us", route_shadow.total_us },
+		                               { "max_us", route_shadow.max_us },
+		                               { "replay_fixture_bytes", route_shadow_replay_fixture_bytes },
+		                               { "replay_fixture_valid", route_shadow_replay_fixture.is_object() },
+		                               { "primary_trigger", route_shadow.primary.objective_trigger },
+		                               { "primary_segment", route_shadow.primary.objective_segment },
+		                               { "primary_semantic_hash", serialize_route_hash(route_shadow.primary.semantic_hash) },
+		                               { "primary_guidance_hash", serialize_route_hash(route_shadow.primary.guidance_hash) },
+		                               { "shadow_trigger", route_shadow.shadow.objective_trigger },
+		                               { "shadow_segment", route_shadow.shadow.objective_segment },
+		                               { "shadow_semantic_hash", serialize_route_hash(route_shadow.shadow.semantic_hash) },
+		                               { "shadow_guidance_hash", serialize_route_hash(route_shadow.shadow.guidance_hash) },
+		                               { "fixture", {
+		                                                { "version", route_shadow.fixture.version },
+		                                                { "game", route_shadow.fixture.game },
+		                                                { "level", route_shadow.fixture.level },
+		                                                { "mismatch", guidebot_route_shadow_mismatch_name(route_shadow.fixture.mismatch_kind) },
+		                                                { "reason", guidebot_route_shadow_reason_name(route_shadow.fixture.reason_kind) },
+		                                                { "hints", route_shadow.fixture.hints },
+		                                                { "snapshot", {
+		                                                                  { "topology_hash", serialize_route_hash(route_shadow.fixture.snapshot.topology_hash) },
+		                                                                  { "state_hash", serialize_route_hash(route_shadow.fixture.snapshot.state_hash) },
+		                                                                  { "start_hash", serialize_route_hash(route_shadow.fixture.snapshot.start_hash) },
+		                                                                  { "progression_hash", serialize_route_hash(route_shadow.fixture.snapshot.progression_hash) },
+		                                                                  { "navigation_hash", serialize_route_hash(route_shadow.fixture.snapshot.navigation_hash) },
+		                                                                  { "trigger_hash", serialize_route_hash(route_shadow.fixture.snapshot.trigger_hash) },
+		                                                                  { "object_hash", serialize_route_hash(route_shadow.fixture.snapshot.object_hash) },
+		                                                                  { "automap_hash", serialize_route_hash(route_shadow.fixture.snapshot.automap_hash) },
+		                                                                  { "actor_hash", serialize_route_hash(route_shadow.fixture.snapshot.actor_hash) },
+		                                                                  { "segment_count", route_shadow.fixture.snapshot.segment_count },
+		                                                                  { "wall_count", route_shadow.fixture.snapshot.wall_count },
+		                                                                  { "trigger_count", route_shadow.fixture.snapshot.trigger_count },
+		                                                                  { "object_count", route_shadow.fixture.snapshot.object_count },
+		                                                                  { "start_segment", route_shadow.fixture.snapshot.start_segment },
+		                                                                  { "key_mask", route_shadow.fixture.snapshot.key_mask },
+		                                                                  { "control_center_destroyed", route_shadow.fixture.snapshot.control_center_destroyed },
+		                                                              } },
+		                                                { "live_state", route_shadow_replay_fixture },
+		                                                { "primary", serialize_shadow_decision(route_shadow.primary) },
+		                                                { "shadow", serialize_shadow_decision(route_shadow.shadow) },
+		                                            } },
+	                               }
+	                             : json(nullptr);
 	result["route_first_pending_step"] =
 	    live_plan_available ? live_plan.first_pending_step : -1;
 	result["route_first_pending_path_segment_count"] =

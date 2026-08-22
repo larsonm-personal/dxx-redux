@@ -26,6 +26,10 @@ typedef struct route_planner_plan_summary {
 	int partial_frontier_segment;
 } route_planner_plan_summary;
 
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
+
 int route_planner_plan_view(
     const level_metadata_scan_view *view,
     int endpoint_kind,

@@ -3750,11 +3750,75 @@ extern "C" void game_automate_tick(void)
 					stop_script_fail(reason);
 					break;
 				}
+			} else if (s.field == "zero_player_velocity") {
+				if (!ConsoleObject ||
+				    ConsoleObject->movement_type != MT_PHYSICS) {
+					stop_script_fail(
+					    "zero_player_velocity: player physics unavailable");
+					break;
+				}
+				vm_vec_zero(&ConsoleObject->mtype.phys_info.velocity);
+				vm_vec_zero(&ConsoleObject->mtype.phys_info.thrust);
+				vm_vec_zero(&ConsoleObject->mtype.phys_info.rotvel);
+				vm_vec_zero(&ConsoleObject->mtype.phys_info.rotthrust);
 			} else if (s.field == "guidebot_nav_trace") {
 				debug_log_set_enabled(
 				    DLOG_GUIDEBOT,
 				    strcasecmp(s.value.c_str(), "true") == 0 ||
 				        strtol(s.value.c_str(), NULL, 10) != 0);
+			} else if (s.field == "route_shadow_enabled") {
+				level_metadata_set_route_shadow_enabled(
+				    strcasecmp(s.value.c_str(), "true") == 0 ||
+				    strtol(s.value.c_str(), NULL, 10) != 0);
+			} else if (s.field == "guidebot_live_certifier_enabled") {
+				level_metadata_set_live_certifier_enabled(
+				    strcasecmp(s.value.c_str(), "true") == 0 ||
+				    strtol(s.value.c_str(), NULL, 10) != 0);
+			} else if (s.field == "guidebot_route_notifications_suppressed") {
+#ifdef DXX_BUILD_DESCENT_II
+				escort_set_route_notifications_suppressed(
+				    strcasecmp(s.value.c_str(), "true") == 0 ||
+				    strtol(s.value.c_str(), NULL, 10) != 0);
+#else
+				stop_script_fail(
+				    "guidebot_route_notifications_suppressed: D2-only action");
+				break;
+#endif
+			} else if (s.field == "guidebot_route_reset_efficiency_counters") {
+#ifdef DXX_BUILD_DESCENT_II
+				escort_reset_route_efficiency_counters();
+#else
+				stop_script_fail(
+				    "guidebot_route_reset_efficiency_counters: D2-only action");
+				break;
+#endif
+			} else if (s.field == "guidebot_route_certificate_checks_suppressed") {
+#ifdef DXX_BUILD_DESCENT_II
+				escort_set_route_certificate_checks_suppressed(
+				    strcasecmp(s.value.c_str(), "true") == 0 ||
+				    strtol(s.value.c_str(), NULL, 10) != 0);
+#else
+				stop_script_fail(
+				    "guidebot_route_certificate_checks_suppressed: D2-only action");
+				break;
+#endif
+			} else if (s.field == "guidebot_route_notify_trigger") {
+#ifdef DXX_BUILD_DESCENT_II
+				char *end = nullptr;
+				const long trigger_num =
+				    strtol(s.value.c_str(), &end, 10);
+				if (end == s.value.c_str() || *end != '\0' ||
+				    trigger_num < 0 || trigger_num >= Num_triggers) {
+					stop_script_fail(
+					    "guidebot_route_notify_trigger: invalid trigger");
+					break;
+				}
+				escort_route_notify_trigger_changed((int) trigger_num);
+#else
+				stop_script_fail(
+				    "guidebot_route_notify_trigger: D2-only action");
+				break;
+#endif
 			} else if (s.field == "guidebot_path_parity") {
 #ifdef DXX_BUILD_DESCENT_II
 				if ((strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) &&

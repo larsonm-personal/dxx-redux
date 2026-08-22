@@ -258,9 +258,31 @@ static unsigned int Escort_route_object_generation;
 static unsigned int Escort_route_reactor_generation;
 static unsigned int Escort_route_automap_generation;
 static unsigned int Escort_route_pending_event_mask;
+static unsigned int Escort_route_pending_audit_mask;
 static unsigned int Escort_route_event_notification_count;
+static unsigned int Escort_route_notification_coalesced_count;
+static unsigned int Escort_route_redundant_dirty_domain_count;
 static unsigned int Escort_route_event_coalesced_rescan_count;
+static unsigned int Escort_route_publish_latency_sample_count;
+static unsigned int Escort_route_publish_latency_last_ticks;
+static unsigned int Escort_route_publish_latency_max_ticks;
+static fix64 Escort_route_first_dirty_notification_time;
+static int Escort_route_dirty_notification_time_valid;
 static unsigned int Escort_route_ignored_nonowner_event_count;
+static unsigned int Escort_route_audit_check_count;
+static unsigned int Escort_route_audit_discovery_count;
+static unsigned int Escort_route_audit_only_discovery_count;
+static unsigned int Escort_route_audit_work_total;
+static unsigned int Escort_route_audit_work_max;
+static unsigned int Escort_route_certificate_check_count;
+static unsigned int Escort_route_certificate_failure_count;
+static unsigned int Escort_route_certificate_work_total;
+static unsigned int Escort_route_certificate_work_max;
+static unsigned int Escort_route_path_retained_count;
+static unsigned int Escort_route_path_replaced_count;
+static unsigned int Escort_route_invalid_path_stopped_count;
+static unsigned int Escort_route_audit_domain_cursor;
+static fix64 Escort_route_audit_next_time;
 static fix64 Escort_route_completion_check_time;
 static const char *Escort_route_last_replan_reason = "level_start";
 static fix64 Escort_nav_trace_next_time;
@@ -283,6 +305,8 @@ static int Escort_route_progress_target_seg = -1;
 static int Escort_route_progress_stall_samples;
 static unsigned int Escort_route_stall_recovery_count;
 #ifdef INTROSPECT_ON
+static int Escort_route_notifications_suppressed;
+static int Escort_route_certificate_checks_suppressed;
 static escort_path_parity_result Escort_path_parity_result;
 static point_seg Escort_path_parity_ordinary[MAX_SEGMENTS * 2];
 static point_seg Escort_path_parity_route[MAX_SEGMENTS * 2];
@@ -414,23 +438,56 @@ static void escort_route_note_replan(const char *reason)
 	Escort_route_last_replan_reason = reason && reason[0] ? reason : "unknown";
 }
 
-static void escort_route_consume_pending_completion(void)
+static void escort_route_consume_pending_events(void)
 {
 	if (!Escort_route_pending_event_mask)
 		return;
-	if (Escort_route_goal.active && Escort_route_goal.objective_kind >= 0)
-		level_metadata_mark_route_objective_completed(
-		    Escort_route_goal.objective_kind,
-		    Escort_route_goal.objective_trigger,
-		    Escort_route_goal.objective_wall,
-		    Escort_route_goal.objective_key_index);
 	Escort_route_pending_event_mask = 0;
+	Escort_route_pending_audit_mask = 0;
 }
 
 static unsigned int escort_route_next_event_generation(unsigned int generation)
 {
 	generation++;
 	return generation ? generation : 1;
+}
+
+static unsigned int escort_route_count_event_domains(unsigned int event_mask)
+{
+	unsigned int count = 0;
+
+	while (event_mask) {
+		count += event_mask & 1u;
+		event_mask >>= 1;
+	}
+	return count;
+}
+
+static void escort_route_enqueue_event_mask(
+    unsigned int event_mask,
+    int notification,
+    int audit)
+{
+	const unsigned int redundant_mask =
+	    Escort_route_pending_event_mask & event_mask;
+
+	if (!event_mask)
+		return;
+	if (notification && redundant_mask)
+		Escort_route_notification_coalesced_count++;
+	if (notification && !Escort_route_dirty_notification_time_valid) {
+		Escort_route_first_dirty_notification_time = GameTime64;
+		Escort_route_dirty_notification_time_valid = 1;
+	}
+	Escort_route_redundant_dirty_domain_count +=
+	    escort_route_count_event_domains(redundant_mask);
+	if (audit) {
+		Escort_route_pending_audit_mask |= event_mask;
+		if (!redundant_mask)
+			Escort_route_audit_only_discovery_count++;
+	}
+	Escort_route_pending_event_mask |= event_mask;
+	Escort_route_metadata_dirty = 1;
 }
 
 static int escort_route_has_local_authority(void)
@@ -449,6 +506,10 @@ static void escort_route_record_event(
 {
 	int local_authority;
 
+#ifdef INTROSPECT_ON
+	if (Escort_route_notifications_suppressed)
+		return;
+#endif
 	if (generation)
 		*generation = escort_route_next_event_generation(*generation);
 	Escort_route_event_notification_count++;
@@ -464,8 +525,86 @@ static void escort_route_record_event(
 	        event_mask,
 	        matches_objective))
 		return;
-	Escort_route_pending_event_mask |= event_mask;
-	Escort_route_metadata_dirty = 1;
+	escort_route_enqueue_event_mask(event_mask, 1, 0);
+}
+
+static unsigned int escort_route_audit_event_mask(int domain)
+{
+	switch (domain) {
+		case ROUTE_SNAPSHOT_DOMAIN_PROGRESSION:
+			return ESCORT_ROUTE_EVENT_OBJECT |
+			       ESCORT_ROUTE_EVENT_REACTOR;
+		case ROUTE_SNAPSHOT_DOMAIN_NAVIGATION:
+			return ESCORT_ROUTE_EVENT_WALL;
+		case ROUTE_SNAPSHOT_DOMAIN_TRIGGERS:
+			return ESCORT_ROUTE_EVENT_TRIGGER;
+		case ROUTE_SNAPSHOT_DOMAIN_PROGRESSION_OBJECTS:
+			return ESCORT_ROUTE_EVENT_OBJECT;
+		case ROUTE_SNAPSHOT_DOMAIN_AUTOMAP:
+			return ESCORT_ROUTE_EVENT_AUTOMAP;
+		default: return 0;
+	}
+}
+
+static unsigned int escort_route_certificate_event_mask(void)
+{
+	switch (Escort_route_goal.objective_kind) {
+		case LEVEL_METADATA_ROUTE_TRIGGER:
+			return ESCORT_ROUTE_EVENT_TRIGGER |
+			       ESCORT_ROUTE_EVENT_WALL;
+		case LEVEL_METADATA_ROUTE_HIDDEN_DOOR:
+		case LEVEL_METADATA_ROUTE_BLASTABLE_WALL:
+			return ESCORT_ROUTE_EVENT_WALL;
+		case LEVEL_METADATA_ROUTE_KEY:
+		case LEVEL_METADATA_ROUTE_BOSS:
+			return ESCORT_ROUTE_EVENT_OBJECT;
+		case LEVEL_METADATA_ROUTE_REACTOR:
+			return ESCORT_ROUTE_EVENT_OBJECT |
+			       ESCORT_ROUTE_EVENT_REACTOR;
+		case LEVEL_METADATA_ROUTE_EXIT:
+			return ESCORT_ROUTE_EVENT_REACTOR |
+			       ESCORT_ROUTE_EVENT_WALL;
+		default: return ESCORT_ROUTE_EVENT_WALL;
+	}
+}
+
+static void escort_route_run_staggered_audit(void)
+{
+	static const unsigned char domains[] = {
+		ROUTE_SNAPSHOT_DOMAIN_PROGRESSION,
+		ROUTE_SNAPSHOT_DOMAIN_NAVIGATION,
+		ROUTE_SNAPSHOT_DOMAIN_TRIGGERS,
+		ROUTE_SNAPSHOT_DOMAIN_PROGRESSION_OBJECTS,
+		ROUTE_SNAPSHOT_DOMAIN_AUTOMAP
+	};
+	unsigned int work_units = 0;
+	unsigned int event_mask;
+	int domain;
+	int changed;
+
+	if (GameTime64 < Escort_route_audit_next_time &&
+	    Escort_route_audit_next_time - GameTime64 < F1_0 * 2)
+		return;
+	Escort_route_audit_next_time = GameTime64 + F1_0 / 4;
+	domain = domains[Escort_route_audit_domain_cursor %
+	                 (sizeof(domains) / sizeof(domains[0]))];
+	Escort_route_audit_domain_cursor++;
+	if (domain == ROUTE_SNAPSHOT_DOMAIN_AUTOMAP &&
+	    Escort_route_target_mode != ESCORT_ROUTE_TARGET_UNEXPLORED)
+		return;
+	changed = level_metadata_route_audit_domain(
+	    Buddy_objnum, domain, &work_units);
+	if (changed < 0)
+		return;
+	Escort_route_audit_check_count++;
+	Escort_route_audit_work_total += work_units;
+	if (work_units > Escort_route_audit_work_max)
+		Escort_route_audit_work_max = work_units;
+	if (!changed)
+		return;
+	event_mask = escort_route_audit_event_mask(domain);
+	escort_route_enqueue_event_mask(event_mask, 0, 1);
+	Escort_route_audit_discovery_count++;
 }
 
 static void escort_route_sync_target_mode(void)
@@ -897,15 +1036,154 @@ unsigned int escort_get_route_event_notification_count(void)
 	return Escort_route_event_notification_count;
 }
 
+unsigned int escort_get_route_notification_coalesced_count(void)
+{
+	return Escort_route_notification_coalesced_count;
+}
+
+unsigned int escort_get_route_redundant_dirty_domain_count(void)
+{
+	return Escort_route_redundant_dirty_domain_count;
+}
+
 unsigned int escort_get_route_event_coalesced_rescan_count(void)
 {
 	return Escort_route_event_coalesced_rescan_count;
+}
+
+unsigned int escort_get_route_publish_latency_sample_count(void)
+{
+	return Escort_route_publish_latency_sample_count;
+}
+
+unsigned int escort_get_route_publish_latency_last_ticks(void)
+{
+	return Escort_route_publish_latency_last_ticks;
+}
+
+unsigned int escort_get_route_publish_latency_max_ticks(void)
+{
+	return Escort_route_publish_latency_max_ticks;
 }
 
 unsigned int escort_get_route_ignored_nonowner_event_count(void)
 {
 	return Escort_route_ignored_nonowner_event_count;
 }
+
+unsigned int escort_get_route_pending_audit_mask(void)
+{
+	return Escort_route_pending_audit_mask;
+}
+
+unsigned int escort_get_route_audit_check_count(void)
+{
+	return Escort_route_audit_check_count;
+}
+
+unsigned int escort_get_route_audit_discovery_count(void)
+{
+	return Escort_route_audit_discovery_count;
+}
+
+unsigned int escort_get_route_audit_only_discovery_count(void)
+{
+	return Escort_route_audit_only_discovery_count;
+}
+
+unsigned int escort_get_route_audit_work_total(void)
+{
+	return Escort_route_audit_work_total;
+}
+
+unsigned int escort_get_route_audit_work_max(void)
+{
+	return Escort_route_audit_work_max;
+}
+
+unsigned int escort_get_route_certificate_check_count(void)
+{
+	return Escort_route_certificate_check_count;
+}
+
+unsigned int escort_get_route_certificate_failure_count(void)
+{
+	return Escort_route_certificate_failure_count;
+}
+
+unsigned int escort_get_route_certificate_work_total(void)
+{
+	return Escort_route_certificate_work_total;
+}
+
+unsigned int escort_get_route_certificate_work_max(void)
+{
+	return Escort_route_certificate_work_max;
+}
+
+unsigned int escort_get_route_path_retained_count(void)
+{
+	return Escort_route_path_retained_count;
+}
+
+unsigned int escort_get_route_path_replaced_count(void)
+{
+	return Escort_route_path_replaced_count;
+}
+
+unsigned int escort_get_route_invalid_path_stopped_count(void)
+{
+	return Escort_route_invalid_path_stopped_count;
+}
+
+#ifdef INTROSPECT_ON
+void escort_set_route_notifications_suppressed(int suppressed)
+{
+	Escort_route_notifications_suppressed = suppressed != 0;
+}
+
+int escort_get_route_notifications_suppressed(void)
+{
+	return Escort_route_notifications_suppressed;
+}
+
+void escort_reset_route_efficiency_counters(void)
+{
+	Escort_route_metadata_rescan_count = 0;
+	Escort_route_guidance_full_search_count = 0;
+	Escort_route_event_notification_count = 0;
+	Escort_route_notification_coalesced_count = 0;
+	Escort_route_redundant_dirty_domain_count = 0;
+	Escort_route_event_coalesced_rescan_count = 0;
+	Escort_route_publish_latency_sample_count = 0;
+	Escort_route_publish_latency_last_ticks = 0;
+	Escort_route_publish_latency_max_ticks = 0;
+	Escort_route_first_dirty_notification_time = 0;
+	Escort_route_dirty_notification_time_valid = 0;
+	Escort_route_audit_check_count = 0;
+	Escort_route_audit_discovery_count = 0;
+	Escort_route_audit_only_discovery_count = 0;
+	Escort_route_audit_work_total = 0;
+	Escort_route_audit_work_max = 0;
+	Escort_route_certificate_check_count = 0;
+	Escort_route_certificate_failure_count = 0;
+	Escort_route_certificate_work_total = 0;
+	Escort_route_certificate_work_max = 0;
+	Escort_route_path_retained_count = 0;
+	Escort_route_path_replaced_count = 0;
+	Escort_route_invalid_path_stopped_count = 0;
+}
+
+void escort_set_route_certificate_checks_suppressed(int suppressed)
+{
+	Escort_route_certificate_checks_suppressed = suppressed != 0;
+}
+
+int escort_get_route_certificate_checks_suppressed(void)
+{
+	return Escort_route_certificate_checks_suppressed;
+}
+#endif
 
 void escort_restore_route_target_mode(int target_mode)
 {
@@ -1022,16 +1300,15 @@ void escort_route_notify_wall_changed(int wall_num)
 
 void escort_route_notify_trigger_changed(int trigger_num)
 {
-	int matches_objective = Escort_route_goal.active && trigger_num >= 0 &&
-	                        (trigger_num == Escort_route_goal.objective_trigger ||
-	                         trigger_num == Escort_route_goal.trigger_num);
-	if (trigger_num >= 0 && level_metadata_mark_route_objective_completed(
-	                            LEVEL_METADATA_ROUTE_TRIGGER,
-	                            trigger_num, -1, -1))
-		ESCORT_DIAG(
-		    "completed trigger=%d active_kind=%d active_trigger=%d",
-		    trigger_num, Escort_route_goal.objective_kind,
-		    Escort_route_goal.objective_trigger);
+	int matches_objective;
+
+#ifdef INTROSPECT_ON
+	if (Escort_route_notifications_suppressed)
+		return;
+#endif
+	matches_objective = Escort_route_goal.active && trigger_num >= 0 &&
+	                    (trigger_num == Escort_route_goal.objective_trigger ||
+	                     trigger_num == Escort_route_goal.trigger_num);
 	escort_route_record_event(
 	    ESCORT_ROUTE_EVENT_TRIGGER,
 	    &Escort_route_trigger_generation,
@@ -1392,7 +1669,7 @@ static void escort_route_refresh_metadata(void)
 	if (!Escort_route_metadata_dirty)
 		return;
 	Escort_route_metadata_dirty = 0;
-	escort_route_consume_pending_completion();
+	escort_route_consume_pending_events();
 	Escort_route_metadata_rescan_count++;
 	if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED &&
 	    escort_is_companion_object(Buddy_objnum)) {
@@ -1421,33 +1698,164 @@ static void escort_route_refresh_metadata(void)
 		level_metadata_rescan_current_level();
 }
 
+static void escort_route_stop_invalid_path(void)
+{
+	object *objp;
+	ai_local *ailp;
+	ai_static *aip;
+
+	if (!escort_is_companion_object(Buddy_objnum))
+		return;
+	objp = &Objects[Buddy_objnum];
+	ailp = &Ai_local_info[Buddy_objnum];
+	aip = &objp->ctype.ai_info;
+	if (ailp->mode != AIM_GOTO_OBJECT)
+		return;
+	ailp->mode = AIM_GOTO_PLAYER;
+	create_path_to_player(objp, Max_escort_length, 1);
+	if (aip->path_length > 3)
+		aip->path_length = polish_path(
+		    objp, &Point_segs[aip->hide_index], aip->path_length);
+	Buddy_last_player_path_created = GameTime64;
+	Escort_last_path_created = GameTime64;
+}
+
 void escort_route_monitor_completion(void)
 {
+	escort_route_goal previous_goal;
+	guidebot_route_decision previous_decision;
+	guidebot_route_decision next_decision;
+	int previous_decision_valid;
+	int previous_goal_object;
+	int certificate_valid = -1;
+	int certificate_failed = 0;
+	int has_active_goal;
+
 #ifdef NETWORK
 	if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player != Player_num)
 		return;
 #endif
 	escort_route_poll_pending_cache();
-	if (!Escort_route_goal.active || Escort_route_goal.objective_kind < 0)
-		return;
 	if (!escort_route_has_local_authority())
 		return;
+	has_active_goal = Escort_route_goal.active &&
+	                  Escort_route_goal.objective_kind >= 0;
+	previous_goal = Escort_route_goal;
+	previous_goal_object = Escort_goal_object;
+	previous_decision_valid =
+	    level_metadata_get_live_route_decision(&previous_decision);
 	if (GameTime64 >= Escort_route_completion_check_time &&
 	    GameTime64 - Escort_route_completion_check_time < F1_0 / 4)
 		return;
 	Escort_route_completion_check_time = GameTime64;
-	if (Escort_route_pending_event_mask) {
+#ifdef INTROSPECT_ON
+	if (!Escort_route_certificate_checks_suppressed)
+#else
+	if (1)
+#endif
+	{
+		unsigned int work_units = 0;
+		int valid = level_metadata_validate_live_route_certificate(
+		    Buddy_objnum, &work_units);
+		certificate_valid = valid;
+
+		if (valid >= 0) {
+			Escort_route_certificate_check_count++;
+			Escort_route_certificate_work_total += work_units;
+			if (work_units > Escort_route_certificate_work_max)
+				Escort_route_certificate_work_max = work_units;
+		}
+		if (valid == 0) {
+			unsigned int event_mask =
+			    escort_route_certificate_event_mask();
+
+			escort_route_enqueue_event_mask(event_mask, 0, 0);
+			Escort_route_certificate_failure_count++;
+			certificate_failed = 1;
+		}
+	}
+	if (has_active_goal && !Escort_route_pending_event_mask)
+		escort_route_run_staggered_audit();
+	if (Escort_route_pending_event_mask || Escort_route_metadata_dirty) {
 		unsigned int pending_events = Escort_route_pending_event_mask;
-		escort_route_consume_pending_completion();
-		Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
-		escort_route_clear_goal();
-		escort_route_note_replan(
-		    pending_events == ESCORT_ROUTE_EVENT_AUTOMAP ?
-		        "automap_exploration" :
-		        "world_state_event");
+		unsigned int audit_events = Escort_route_pending_audit_mask;
+		int previous_certificate_valid =
+		    certificate_valid == 1 && previous_decision_valid &&
+		    previous_decision.certificate.status ==
+		        GUIDEBOT_ROUTE_CERTIFICATE_VALID;
+		escort_route_consume_pending_events();
+		if (pending_events)
+			escort_route_note_replan(
+			    certificate_failed ?
+			        "state_certificate" :
+			    audit_events == pending_events ?
+			        "state_audit" :
+			    pending_events == ESCORT_ROUTE_EVENT_AUTOMAP ?
+			        "automap_exploration" :
+			        "world_state_event");
 		escort_route_refresh_metadata();
 		Escort_route_event_coalesced_rescan_count++;
-		escort_route_next_goal();
+		if (has_active_goal) {
+			int next_decision_valid =
+			    0;
+			int adoption_action =
+			    0;
+
+			(void) escort_route_next_goal();
+			next_decision_valid =
+			    level_metadata_get_live_route_decision(&next_decision);
+			adoption_action =
+			    guidebot_route_decision_adoption_action(
+			        previous_decision_valid, &previous_decision,
+			        previous_certificate_valid,
+			        next_decision_valid, &next_decision);
+
+			if (adoption_action ==
+			    GUIDEBOT_ROUTE_ADOPTION_RETAIN_PATH) {
+				if (!Escort_route_goal.active ||
+				    (next_decision_valid &&
+				     next_decision.status ==
+				         GUIDEBOT_ROUTE_DECISION_CALCULATING))
+					Escort_route_goal = previous_goal;
+				else {
+					Escort_route_goal.path_endpoint_seg =
+					    previous_goal.path_endpoint_seg;
+					Escort_route_goal.path_endpoint_pos_valid =
+					    previous_goal.path_endpoint_pos_valid;
+					Escort_route_goal.path_endpoint_pos =
+					    previous_goal.path_endpoint_pos;
+				}
+				Escort_goal_object = previous_goal_object;
+				Escort_route_path_retained_count++;
+			} else if (adoption_action ==
+			           GUIDEBOT_ROUTE_ADOPTION_REPLACE_PATH) {
+				Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
+				Escort_route_path_replaced_count++;
+			} else {
+				Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
+				escort_route_clear_goal();
+				escort_route_stop_invalid_path();
+				Escort_route_invalid_path_stopped_count++;
+			}
+		}
+		if (Escort_route_dirty_notification_time_valid &&
+		    !Escort_route_metadata_dirty) {
+			fix64 latency =
+			    GameTime64 - Escort_route_first_dirty_notification_time;
+
+			if (latency < 0)
+				latency = 0;
+			if (latency > 0xffffffffLL)
+				latency = 0xffffffffLL;
+			Escort_route_publish_latency_last_ticks =
+			    (unsigned int) latency;
+			if (Escort_route_publish_latency_last_ticks >
+			    Escort_route_publish_latency_max_ticks)
+				Escort_route_publish_latency_max_ticks =
+				    Escort_route_publish_latency_last_ticks;
+			Escort_route_publish_latency_sample_count++;
+			Escort_route_dirty_notification_time_valid = 0;
+		}
 		return;
 	}
 }
@@ -1604,10 +2012,36 @@ void init_buddy_for_level(void)
 	Escort_route_reactor_generation = 0;
 	Escort_route_automap_generation = 0;
 	Escort_route_pending_event_mask = 0;
+	Escort_route_pending_audit_mask = 0;
 	Escort_route_event_notification_count = 0;
+	Escort_route_notification_coalesced_count = 0;
+	Escort_route_redundant_dirty_domain_count = 0;
 	Escort_route_event_coalesced_rescan_count = 0;
+	Escort_route_publish_latency_sample_count = 0;
+	Escort_route_publish_latency_last_ticks = 0;
+	Escort_route_publish_latency_max_ticks = 0;
+	Escort_route_first_dirty_notification_time = 0;
+	Escort_route_dirty_notification_time_valid = 0;
 	Escort_route_ignored_nonowner_event_count = 0;
+	Escort_route_audit_check_count = 0;
+	Escort_route_audit_discovery_count = 0;
+	Escort_route_audit_only_discovery_count = 0;
+	Escort_route_audit_work_total = 0;
+	Escort_route_audit_work_max = 0;
+	Escort_route_certificate_check_count = 0;
+	Escort_route_certificate_failure_count = 0;
+	Escort_route_certificate_work_total = 0;
+	Escort_route_certificate_work_max = 0;
+	Escort_route_path_retained_count = 0;
+	Escort_route_path_replaced_count = 0;
+	Escort_route_invalid_path_stopped_count = 0;
+	Escort_route_audit_domain_cursor = 0;
+	Escort_route_audit_next_time = 0;
 	Escort_route_completion_check_time = 0;
+#ifdef INTROSPECT_ON
+	Escort_route_notifications_suppressed = 0;
+	Escort_route_certificate_checks_suppressed = 0;
+#endif
 	escort_route_note_replan("level_start");
 	Escort_route_target_mode_restore_pending = 0;
 #endif
@@ -3405,6 +3839,12 @@ void escort_rebuild_runtime_state_after_restore(void)
 	}
 #ifdef NETWORK
 	escort_restore_companion_robot_control();
+#endif
+#ifdef __ANDROID__
+	/* Publish guidance from the restored world before any consumer can reuse the
+	 * pre-restore decision.  Coop nonowners return without planning. */
+	if (!input_demo_replay_is_loaded())
+		escort_route_refresh_metadata();
 #endif
 	input_demo_log_escort_restore_normalization(buddy_objp, ailp, raw_time_player_seen, raw_escort_last_path_created);
 	input_demo_log_escort_restore_state(buddy_objp, ailp);

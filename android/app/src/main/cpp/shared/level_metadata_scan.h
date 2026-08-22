@@ -96,6 +96,8 @@ typedef struct level_metadata_route_step {
 	int key_carrier_objnum;
 	int can_be_bypassed;
 	int activation_kind;
+	int path_segment_count;
+	int path_terminal_segment;
 	int activation_pos_valid;
 	int activation_pos[3];
 	int aim_pos_valid;
@@ -218,6 +220,8 @@ typedef struct level_metadata_visibility_cache_summary {
 	int capacity;
 	int resets;
 	int bypasses;
+	unsigned long long allocated_bytes;
+	unsigned long long peak_allocated_bytes;
 } level_metadata_visibility_cache_summary;
 
 typedef struct level_metadata_state {
@@ -261,7 +265,7 @@ void level_metadata_set_cancel_callback(
 const char *level_metadata_route_status_name(int status);
 const char *level_metadata_route_step_kind_name(int kind);
 const char *level_metadata_route_activation_kind_name(int kind);
-int level_metadata_route_step_completed_by_world_state(
+int level_metadata_route_step_required_by_world_state(
     const level_metadata_scan_view *view,
     const level_metadata_route_step *step);
 
