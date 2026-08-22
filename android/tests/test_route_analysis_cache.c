@@ -40,7 +40,7 @@ int main(void)
 	wrong_key.generation++;
 	failures += expect(
 	    route_analysis_cache_filename(&key, filename, sizeof(filename)) &&
-	        strstr(filename, "route-cache/g8/d2-0000000000005678-") == filename,
+	        strstr(filename, "route-cache/g9/d2-0000000000005678-") == filename,
 	    "generation and profile filename");
 	snapshot.progression_hash++;
 	snapshot.trigger_hash++;

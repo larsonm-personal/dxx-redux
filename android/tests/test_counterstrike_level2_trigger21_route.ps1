@@ -103,17 +103,21 @@ if (@($keyProgressionLevel[0].route_steps | Where-Object { $_.trigger -eq 5 }).C
 }
 
 $mixedKeyLevel = @($metadata.levels | Where-Object { $_.level_num -eq 20 })
-if ($mixedKeyLevel.Count -ne 1 -or
-    'gold key not necessary' -notin @($mixedKeyLevel[0].notes)) {
-    throw 'Counterstrike level 20 does not identify its unused gold key'
+if ($mixedKeyLevel.Count -ne 1) {
+    throw "Expected exactly one Counterstrike level 20 record, found $($mixedKeyLevel.Count)"
 }
-$bypassableBlue = @(
+$level20Objectives = @(
     $mixedKeyLevel[0].route_steps |
-        Where-Object { $_.kind -eq 'key' -and $_.key -eq 'blue' -and $_.can_be_bypassed -eq $true }
+        Where-Object { $_.kind -ne 'start' } |
+        ForEach-Object {
+            if ($_.kind -eq 'key') { $_.key } elseif ($_.kind -eq 'trigger') { "trigger:$($_.trigger)" } else { $_.kind }
+        }
 )
-if ($bypassableBlue.Count -ne 1 -or
-    'blue key not necessary' -in @($mixedKeyLevel[0].notes)) {
-    throw 'Counterstrike level 20 conflates its bypassable blue key with its unnecessary gold key'
+if (($level20Objectives -join ',') -ne 'blue,trigger:31,gold,red,boss,exit') {
+    throw "Counterstrike level 20 route is $($level20Objectives -join ','), expected grated trigger 31 before the gold key"
+}
+if ('gold key not necessary' -in @($mixedKeyLevel[0].notes)) {
+    throw 'Counterstrike level 20 still identifies its routed gold key as unnecessary'
 }
 
 Write-Host "PASS Counterstrike transparent and shoot-open door firing waypoints"

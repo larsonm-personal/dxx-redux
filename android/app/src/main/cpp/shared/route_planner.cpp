@@ -3357,10 +3357,13 @@ extern "C" int route_planner_plan_view(
 				    visibility.wall_shootable_without_transparency;
 				auto strict = dxx_route::plan_route(
 				    snapshot, query, strict_visibility);
+				const int result_keys = plan_key_mask(result);
+				const int strict_keys = plan_key_mask(strict);
 				const int bypassable_keys =
-				    preceding_keys & plan_key_mask(strict);
+				    preceding_keys & strict_keys;
 				if (strict.status == dxx_route::route_plan_status::ok &&
 				    !plan_uses_transparent_shot(strict) && bypassable_keys &&
+				    (strict_keys & result_keys) == result_keys &&
 				    !plans_have_same_objective_sequence(strict, result) &&
 				    plan_unresolved_trigger_count(strict) <=
 				        plan_unresolved_trigger_count(result)) {
