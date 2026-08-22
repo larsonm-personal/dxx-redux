@@ -815,7 +815,12 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
         val allFiles = dir.listFiles()?.map { it.name }?.sorted() ?: emptyList()
         root.put("files_on_disk", JSONArray(allFiles))
 
-        val setFiles = setDir.listFiles()?.map { it.name }?.sorted() ?: emptyList()
+        val setFiles =
+            setDir
+                .listFiles()
+                ?.filter { it.isFile }
+                ?.map { it.name }
+                ?.sorted() ?: emptyList()
         root.put("set_files", JSONArray(setFiles))
         val recursiveSetFiles =
             setDir

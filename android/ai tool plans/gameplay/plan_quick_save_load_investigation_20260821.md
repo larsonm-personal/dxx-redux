@@ -49,3 +49,10 @@
 - [x] Restore the admin overlay `Load` item to the engine load-slot dialog
 - [x] Keep fixed-slot quick save/load exclusive to explicit touch and controller bindings
 - [x] Run focused Kotlin tests, scoped code quality, and Android build verification
+
+## Automatic-save description follow-up
+
+- [x] Centralize automatic-save descriptions with a lowercase `[auto] ` prefix
+- [x] Update minimize, exit, abort, best-progress, and periodic automatic saves
+- [x] Update launcher fallback copy and affected native, Kotlin, and automation expectations
+- [x] Run scoped code quality, focused save UI tests, Android build verification, and D1/D2 Windows builds

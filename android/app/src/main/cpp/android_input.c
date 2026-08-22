@@ -1090,7 +1090,7 @@ void android_lifecycle_actions_game_tick(int screen_is_game, int has_game_window
 			    generation, ANDROID_SAVE_META_SLOT_AUTO_MINIMIZE);
 			android_lifecycle_diagnostics_checkpoint_writing();
 			checkpoint_result = state_android_save_lifecycle_checkpoint(
-			    ANDROID_SAVE_META_SLOT_AUTO_MINIMIZE, "AUTO SAVE",
+			    ANDROID_SAVE_META_SLOT_AUTO_MINIMIZE, ANDROID_SAVE_DESC_AUTO_MINIMIZE,
 			    ANDROID_SAVE_META_KIND_AUTO_MINIMIZE);
 			android_lifecycle_diagnostics_checkpoint_finish(
 			    checkpoint_result > 0

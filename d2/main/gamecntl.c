@@ -877,7 +877,7 @@ int HandleSystemKey(int key)
 				{
 					case 0: // Abort Game
 					#ifdef __ANDROID__
-						if (state_android_save_to_slot(ANDROID_SAVE_META_SLOT_AUTO_ABORT, "AUTO ABORT",
+						if (state_android_save_to_slot(ANDROID_SAVE_META_SLOT_AUTO_ABORT, ANDROID_SAVE_DESC_AUTO_ABORT,
 						    ANDROID_SAVE_META_KIND_AUTO_ABORT))
 							debug_log(DLOG_GAME, "autosave saved: D2 slot %d", ANDROID_SAVE_META_SLOT_AUTO_ABORT);
 					#endif

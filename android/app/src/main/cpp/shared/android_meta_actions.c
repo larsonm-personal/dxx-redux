@@ -264,7 +264,7 @@ int android_handle_ingame_saveload_request(void)
 	if (g_android_autosave_request_kind) {
 		int request_kind = g_android_autosave_request_kind;
 		int slotnum = request_kind == ANDROID_SAVE_META_KIND_AUTO_EXIT ? ANDROID_SAVE_META_SLOT_AUTO_EXIT : ANDROID_SAVE_META_SLOT_AUTO_MINIMIZE;
-		const char *desc = request_kind == ANDROID_SAVE_META_KIND_AUTO_EXIT ? "AUTO EXIT" : "AUTO SAVE";
+		const char *desc = request_kind == ANDROID_SAVE_META_KIND_AUTO_EXIT ? ANDROID_SAVE_DESC_AUTO_EXIT : ANDROID_SAVE_DESC_AUTO_MINIMIZE;
 		int saved = 0;
 
 		g_android_autosave_request_kind = 0;

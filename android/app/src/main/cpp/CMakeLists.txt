@@ -556,15 +556,10 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/coop_indicator_lines.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/track_names.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/music_name_table.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/cd_preview.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/jni_cd_preview.c
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_fingerprint.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_preview.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_seek_timeline.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_metadata.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_metadata_physfs.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_enumeration.c
-            ${CMAKE_CURRENT_SOURCE_DIR}/jni_midi_preview.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/pngfile.c)
 if(OPENGL)
     target_sources(
@@ -737,6 +732,8 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/cd_preview.c
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_cd_preview.c
             ${CMAKE_CURRENT_SOURCE_DIR}/jni_fingerprint.c
+            # Launcher preview bridges load dxx-redux-d2 explicitly. Keep their state and JNI
+            # symbols in one library so calls cannot split state.
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_preview.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_seek_timeline.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_metadata.c

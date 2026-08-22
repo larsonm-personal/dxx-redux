@@ -852,7 +852,7 @@ static void state_android_save_highest_progress_if_needed(int blank_thumbnail)
 	}
 
 	result = state_android_save_to_slot_internal(
-	    ANDROID_SAVE_META_SLOT_AUTO_PROGRESS, "AUTO BEST",
+	    ANDROID_SAVE_META_SLOT_AUTO_PROGRESS, ANDROID_SAVE_DESC_AUTO_PROGRESS,
 	    ANDROID_SAVE_META_KIND_AUTO_PROGRESS, blank_thumbnail);
 	if (result)
 		debug_log(DLOG_GAME, "autosave progress saved: %s slot %d",
@@ -1076,7 +1076,7 @@ void state_android_maybe_periodic_autosave(void)
 	slotnum = state->next_slot;
 	state->last_game_time = GameTime64;
 	result = state_android_save_to_slot(
-	    slotnum, "AUTO 5MIN", ANDROID_SAVE_META_KIND_AUTO_PERIODIC);
+	    slotnum, ANDROID_SAVE_DESC_AUTO_PERIODIC, ANDROID_SAVE_META_KIND_AUTO_PERIODIC);
 	if (result > 0) {
 		state->next_slot =
 		    slotnum == ANDROID_SAVE_META_SLOT_AUTO_PERIODIC_A

@@ -59,7 +59,7 @@
         "resume_offer_enabled": "true",
         "resume_candidate.game": "${GAME}",
         "resume_candidate.save_kind": "auto_exit",
-        "resume_candidate.description": "AUTO EXIT",
+        "resume_candidate.description": "[auto] exit",
         "resume_candidate.level_num": "1"
     }},
     {"action": "assert_button", "text": "Load Last Save", "enabled": true},
@@ -80,7 +80,7 @@
         "resume_offer_enabled": "true",
         "resume_candidate.game": "${GAME}",
         "resume_candidate.save_kind": "auto_exit",
-        "resume_candidate.description": "AUTO EXIT",
+        "resume_candidate.description": "[auto] exit",
         "resume_candidate.level_num": "1"
     }},
     {"action": "setup_command", "command": "clear_pilot_files", "post_delay_ms": 500},
@@ -101,7 +101,7 @@
         "resume_offer_enabled": "true",
         "resume_candidate.game": "${GAME}",
         "resume_candidate.save_kind": "auto_exit",
-        "resume_candidate.description": "AUTO EXIT",
+        "resume_candidate.description": "[auto] exit",
         "resume_candidate.level_num": "1"
     }},
     {"action": "assert_button", "text": "Load Last Save", "enabled": true},

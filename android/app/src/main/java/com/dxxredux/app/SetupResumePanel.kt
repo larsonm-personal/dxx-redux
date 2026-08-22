@@ -412,7 +412,7 @@ private fun callsignFromSavePath(path: String): String? {
 private fun resumePanelPrimaryLine(candidate: ResumeSaveBridge.ResumeSaveCandidate): String {
     val callsign = resolveResumeSaveLaunchCallsign(candidate) ?: "unknown pilot"
     return buildString {
-        append(candidate.description.ifBlank { "AUTO SAVE" })
+        append(candidate.description.ifBlank { "[auto] save" })
         append(" | ")
         append(resumeGameDisplayName(candidate.game))
         append(" | ")

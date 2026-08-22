@@ -65,7 +65,7 @@ int main(void)
 	params.music_type = ANDROID_SAVE_META_MUSIC_MISSION;
 	params.wall_clock_unix_seconds = 100;
 	params.callsign = "ace";
-	params.description = "AUTO SAVE";
+	params.description = ANDROID_SAVE_DESC_AUTO_MINIMIZE;
 	params.mission_name = "descent";
 	params.level_num = 3;
 	params.level_name = "Lunar Outpost";
@@ -91,7 +91,7 @@ int main(void)
 	params.music_type = 2;
 	params.wall_clock_unix_seconds = 200;
 	params.callsign = "zen";
-	params.description = "AUTO EXIT";
+	params.description = ANDROID_SAVE_DESC_AUTO_EXIT;
 	params.mission_name = "d2";
 	params.level_num = 9;
 	params.level_name = "Fueling Center";
@@ -106,7 +106,7 @@ int main(void)
 	abort_meta = d2_meta;
 	abort_meta.save_kind = ANDROID_SAVE_META_KIND_AUTO_ABORT;
 	memset(abort_meta.description, 0, sizeof(abort_meta.description));
-	strncpy(abort_meta.description, "AUTO ABORT", sizeof(abort_meta.description) - 1);
+	strncpy(abort_meta.description, ANDROID_SAVE_DESC_AUTO_ABORT, sizeof(abort_meta.description) - 1);
 
 	if (!write_file_with_meta("test_android_save_meta_d1.sav", &d1_meta))
 		return report_failure("failed to write D1 test file");
@@ -117,13 +117,13 @@ int main(void)
 	progress_meta = d2_meta;
 	progress_meta.save_kind = ANDROID_SAVE_META_KIND_AUTO_PROGRESS;
 	memset(progress_meta.description, 0, sizeof(progress_meta.description));
-	strncpy(progress_meta.description, "AUTO SAVE", sizeof(progress_meta.description) - 1);
+	strncpy(progress_meta.description, ANDROID_SAVE_DESC_AUTO_PROGRESS, sizeof(progress_meta.description) - 1);
 	if (!write_file_with_meta("test_android_save_meta_progress.sav", &progress_meta))
 		return report_failure("failed to write progress test file");
 	periodic_meta = d2_meta;
 	periodic_meta.save_kind = ANDROID_SAVE_META_KIND_AUTO_PERIODIC;
 	memset(periodic_meta.description, 0, sizeof(periodic_meta.description));
-	strncpy(periodic_meta.description, "AUTO 5MIN", sizeof(periodic_meta.description) - 1);
+	strncpy(periodic_meta.description, ANDROID_SAVE_DESC_AUTO_PERIODIC, sizeof(periodic_meta.description) - 1);
 	if (!write_file_with_meta("test_android_save_meta_periodic.sav", &periodic_meta))
 		return report_failure("failed to write periodic test file");
 	if (!write_file_with_meta("test_android_save_meta_missing.sav", NULL))
@@ -147,7 +147,7 @@ int main(void)
 	if (!android_save_meta_read_path("test_android_save_meta_d1.sav", &parsed))
 		return report_failure("could not parse D1 metadata trailer");
 	failures += expect_string("callsign", "ace", parsed.callsign);
-	failures += expect_string("description", "AUTO SAVE", parsed.description);
+	failures += expect_string("description", ANDROID_SAVE_DESC_AUTO_MINIMIZE, parsed.description);
 	failures += expect_string("level name", "Lunar Outpost", parsed.level_name);
 	if (parsed.game_id != ANDROID_SAVE_META_GAME_D1)
 		failures += report_failure("parsed wrong game id for D1 trailer");

@@ -141,7 +141,7 @@ static void automation_enter_launcher(void)
 	else if (Screen_mode != SCREEN_GAME || Game_wind == NULL || Current_level_num <= 0)
 		debug_log(DLOG_GAME, "autosave skipped: enter_launcher not in active level");
 	else
-		saved = state_android_save_to_slot(slotnum, "AUTO EXIT",
+		saved = state_android_save_to_slot(slotnum, ANDROID_SAVE_DESC_AUTO_EXIT,
 		                                   ANDROID_SAVE_META_KIND_AUTO_EXIT);
 	if (saved)
 		debug_log(DLOG_GAME, "autosave saved: enter_launcher slot %d", slotnum);

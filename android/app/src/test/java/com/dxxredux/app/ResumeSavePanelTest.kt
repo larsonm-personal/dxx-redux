@@ -183,7 +183,7 @@ class ResumeSavePanelTest {
         saveKind = saveKind,
         saveTimeUnixSeconds = 1_700_000_000L + slot,
         callsign = "test",
-        description = "AUTO SAVE",
+        description = "[auto] save",
         missionName = "Counterstrike!",
         levelNum = 1,
         levelName = "Lunar Outpost",

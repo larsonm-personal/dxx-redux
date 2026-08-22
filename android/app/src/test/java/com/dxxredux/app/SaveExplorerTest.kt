@@ -277,7 +277,7 @@ class SaveExplorerTest {
         saveKind = saveKind,
         saveTimeUnixSeconds = saveTimeUnixSeconds,
         callsign = "test",
-        description = "AUTO SAVE",
+        description = "[auto] save",
         missionName = missionName,
         levelNum = 1,
         levelName = "Lunar Outpost",

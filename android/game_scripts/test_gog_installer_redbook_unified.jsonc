@@ -121,9 +121,9 @@
 
     // ── Phase 2: MIDI preview verification ──────────────────────
 
-    {"action": "log", "when": "${AUDIO_CHECKS_WHEN}", "message": "Testing MIDI preview playback (track 3)"},
+    {"action": "log", "when": "${AUDIO_CHECKS_WHEN}", "message": "Testing MIDI preview playback (track 4)"},
     {"action": "setup_command", "when": "${AUDIO_CHECKS_WHEN}", "command": "music_midi_play",
-     "args": {"source": 0, "track": 2}},
+     "args": {"source": 0, "track": 3}},
 
     // Track enumeration and synth initialization run asynchronously. Wait for
     // their observable completion instead of assuming a fixed startup delay.
