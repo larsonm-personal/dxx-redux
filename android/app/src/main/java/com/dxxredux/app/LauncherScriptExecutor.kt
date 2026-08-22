@@ -72,7 +72,7 @@ internal fun stripLauncherJsonc(text: String): String {
  * Executes JSONC automation scripts in the launcher (SetupActivity) process.
  *
  * Steps like log, wait_ms, wait_for, assert, setup_command, reset_state,
- * write_config, install_staged_demo, and enter_launcher are handled here. When an enter_game
+ * write_config, write_set_file, write_set_files, install_staged_demo, and enter_launcher are handled here. When an enter_game
  * step is reached, the executor launches the game with intent extras
  * telling the C engine where to resume, then suspends. SetupActivity
  * calls [resume] when the game exits and automation_result.json contains
@@ -285,6 +285,29 @@ class LauncherScriptExecutor(
                         }
                         output.parentFile?.mkdirs()
                         output.writeText(content)
+                    }
+                    currentStep++
+                }
+
+                "write_set_files" -> {
+                    val sourceFiles = step.optJSONArray("files")
+                    if (sourceFiles == null || sourceFiles.length() == 0) {
+                        fail("write_set_files: missing 'files' array")
+                        return
+                    }
+                    val files =
+                        (0 until sourceFiles.length()).map { index ->
+                            val source = sourceFiles.getJSONObject(index)
+                            val fileName = source.optString("file", "")
+                            if (fileName.isEmpty()) {
+                                fail("write_set_files: item ${index + 1} is missing 'file'")
+                                return
+                            }
+                            fileName to source.optString("content", "")
+                        }
+                    withContext(Dispatchers.IO) {
+                        val fileSets = FileSetManager(context.filesDir)
+                        FileSetContentManager(fileSets.getSetDir(fileSets.getActive())).writeSourceFiles(files)
                     }
                     currentStep++
                 }
@@ -908,9 +931,19 @@ class LauncherScriptExecutor(
                             ?: return@withContext "key \"$key\" not found"
 
                     if (expected is JSONObject) {
-                        // Comparison operator: {"gt": 1000}
                         val op = expected.keys().next()
-                        val opVal = expected.getDouble(op)
+                        val opValue = expected.get(op)
+                        if (op == "contains" || op == "not_contains") {
+                            val needle = opValue.toString()
+                            val contains = actual.contains(needle, ignoreCase = true)
+                            val pass = if (op == "contains") contains else !contains
+                            if (!pass) return@withContext "\"$key\" $op \"$needle\" (got $actual)"
+                            Log.i(TAG, "ASSERT_PASS: $key $op $needle")
+                            continue
+                        }
+                        val opVal =
+                            (opValue as? Number)?.toDouble()
+                                ?: return@withContext "\"$key\": $op requires a numeric value"
                         val actualNum =
                             actual.toDoubleOrNull()
                                 ?: return@withContext "\"$key\" is not numeric (got \"$actual\")"

@@ -1,7 +1,7 @@
 // TEST: Mod Loading -- verifies hires texture DXA load coverage
 // Parameterized: select texture resolution (128, 256, or 512).
-// Pushes hires sounds + textures DXA to files/mods/, writes
-// mod_manifest.json, launches D2, and checks hires replacement percent.
+// Pushes hires sounds + textures DXA to the default set's mod store, writes
+// its manifest, launches D2, and checks hires replacement percent.
 [
     {"_info": {
         "games": ["d2"],
@@ -28,19 +28,21 @@
             {"file": "fire.pig", "sha256": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156"},
             {"file": "ice.pig", "sha256": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1"},
             {"file": "water.pig", "sha256": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"},
-            {"file": "d2-hires-sounds.dxa", "sha256": "8a46ac26e8442a75ba1807692d44ea1b280bd3bd5b3f52e01c553a2c7892df4d", "target": "files/mods"},
-            {"file": "d2-hires-${RESOLUTION}-textures-ktx2.dxa", "sha256": "${DXA_SHA}", "target": "files/mods"}
+            {"file": "d2-hires-sounds.dxa", "sha256": "8a46ac26e8442a75ba1807692d44ea1b280bd3bd5b3f52e01c553a2c7892df4d", "target": "files/imported/sets/default/.content/mods"},
+            {"file": "d2-hires-${RESOLUTION}-textures-ktx2.dxa", "sha256": "${DXA_SHA}", "target": "files/imported/sets/default/.content/mods"}
         ]
     }},
 
     {"action": "enter_launcher"},
+    {"action": "setup_command", "command": "switch_set",
+     "args": {"name": "default"}, "post_delay_ms": 250},
     {"action": "reset_state"},
     {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "dlog_texture_enabled", "value": true}, "post_delay_ms": 250},
-    {"action": "write_config", "file": "mods/mod_manifest.json",
+    {"action": "write_config", "file": "imported/sets/default/.content/mods/mod_manifest.json",
      "content": "{\"mods\":[{\"filename\":\"d2-hires-sounds.dxa\",\"displayName\":\"D2 Hires Sounds\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":0},{\"filename\":\"d2-hires-${RESOLUTION}-textures-ktx2.dxa\",\"displayName\":\"D2 Hires ${RESOLUTION} Textures\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":1}]}"},
 
     {"action": "enter_game", "game": "d2"},
@@ -82,6 +84,10 @@
      "_comment": "Replacement success rate: of PNG files found on disk, >= 85% should load (lower to account for oversized sprite strips exceeding GL_MAX_TEXTURE_SIZE on some devices)"},
 
     {"action": "enter_launcher"},
+    {"action": "setup_command", "command": "delete_mod",
+     "args": {"filename": "d2-hires-sounds.dxa"}, "post_delay_ms": 100},
+    {"action": "setup_command", "command": "delete_mod",
+     "args": {"filename": "d2-hires-${RESOLUTION}-textures-ktx2.dxa"}, "post_delay_ms": 100},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "dlog_texture_enabled", "value": false}, "post_delay_ms": 250},
     {"action": "assert", "expect": {"debug_prefs.texture_log_enabled": "false"}},

@@ -60,8 +60,11 @@ try {
     if (-not $BaseGame) {
         $temporaryZip = "/data/local/tmp/$deviceZip"
         Adb -AdbArgs @("push", $MissionZip, $temporaryZip) | Out-Null
-        Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", "files/mods") | Out-Null
-        Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "cp", $temporaryZip, "files/mods/$deviceZip") | Out-Null
+        Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", "files/mission_zip_batch_cache") | Out-Null
+        Adb -AdbArgs @(
+            "shell", "run-as", $script:PACKAGE, "cp", $temporaryZip,
+            "files/mission_zip_batch_cache/$deviceZip"
+        ) | Out-Null
         Adb -AdbArgs @("shell", "rm", "-f", $temporaryZip) | Out-Null
     }
 
@@ -474,9 +477,15 @@ try {
 } finally {
     try {
         if (Test-DeviceOnline -Serial $Serial) {
+            if (-not $BaseGame) {
+                Adb -AdbArgs @(
+                    "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND", "-p", $script:PACKAGE,
+                    "--es", "command", "delete_mod", "--es", "filename", $deviceZip
+                ) | Out-Null
+            }
             Adb -AdbArgs @("shell", "am", "force-stop", $script:PACKAGE) | Out-Null
             $cleanupFiles = @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/$deviceScript")
-            if (-not $BaseGame) { $cleanupFiles += "files/mods/$deviceZip" }
+            if (-not $BaseGame) { $cleanupFiles += "files/mission_zip_batch_cache/$deviceZip" }
             Adb -AdbArgs $cleanupFiles | Out-Null
         }
     } catch {

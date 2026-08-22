@@ -91,6 +91,16 @@ internal class FileSetContentManager(
             materialize(stored.values, repairState(stored.keys))
         }
 
+    /** Publish a related group of source files without allowing reconciliation between writes. */
+    fun writeSourceFiles(files: List<Pair<String, String>>) =
+        synchronized(CONTENT_LOCK) {
+            val outputs = files.map { (path, _) -> containedFile(setDir, path) }
+            outputs.forEachIndexed { index, output ->
+                output.parentFile?.mkdirs()
+                output.writeText(files[index].second)
+            }
+        }
+
     fun setEnabled(
         id: String,
         enabled: Boolean,
@@ -453,18 +463,27 @@ internal class FileSetContentManager(
         for (entry in stored) {
             val payloadRoot = File(entryDirectory(entry.id), "payload")
             for (owned in entry.files) {
-                val source = containedFile(setDir, owned.path)
-                if (!source.isFile) continue
                 val payload = containedFile(payloadRoot, owned.path)
-                if (source.length() == owned.sizeBytes && payload.isFile && sha256(source) == owned.sha256) {
-                    check(source.delete()) { "Could not remove published source ${owned.path}" }
-                    if (source.parentFile?.canonicalFile == setDir.canonicalFile) {
-                        AssetManifest(setDir).remove(source.name)
+                val sourcePaths =
+                    buildList {
+                        add(owned.path)
+                        if (owned.path.startsWith("missions/", ignoreCase = true)) {
+                            add(owned.path.substringAfter('/'))
+                        }
                     }
-                    removeEmptyParents(source.parentFile)
-                    removed += owned.path
-                } else {
-                    conflicts += "${entry.displayName}: ${owned.path} differs from its managed payload"
+                for (sourcePath in sourcePaths.distinct()) {
+                    val source = containedFile(setDir, sourcePath)
+                    if (!source.isFile) continue
+                    if (source.length() == owned.sizeBytes && payload.isFile && sha256(source) == owned.sha256) {
+                        check(source.delete()) { "Could not remove published source $sourcePath" }
+                        if (source.parentFile?.canonicalFile == setDir.canonicalFile) {
+                            AssetManifest(setDir).remove(source.name)
+                        }
+                        removeEmptyParents(source.parentFile)
+                        removed += sourcePath
+                    } else {
+                        conflicts += "${entry.displayName}: $sourcePath differs from its managed payload"
+                    }
                 }
             }
         }
@@ -596,5 +615,7 @@ internal class FileSetContentManager(
         private val CONTENT_LOCK = Any()
         private const val ENTRY_FILE = "entry.json"
         private val ID_PATTERN = Regex("^[0-9a-f]{24}$")
+
+        internal fun <T> withContentLock(block: () -> T): T = synchronized(CONTENT_LOCK, block)
     }
 }

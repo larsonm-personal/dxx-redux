@@ -134,25 +134,29 @@ class FileSetManager(
             return
         }
         val permissions =
-            AtomicFilePublication.transaction {
-                val removed = trackedContentUrisForSet(name)
-                val retained =
-                    listSets().filter { it.name != name }.flatMap { trackedContentUrisForSet(it.name) } +
-                        retainedTrackedUris
-                val config = loadConfig()
-                val sets = config.optJSONArray("sets") ?: return@transaction removed to retained
-                val newSets = JSONArray()
-                for (i in 0 until sets.length()) {
-                    val obj = sets.getJSONObject(i)
-                    if (obj.getString("name") != name) newSets.put(obj)
+            FileSetContentManager.withContentLock {
+                AtomicFilePublication.transaction {
+                    val removed = trackedContentUrisForSet(name)
+                    val retained =
+                        listSets().filter { it.name != name }.flatMap { trackedContentUrisForSet(it.name) } +
+                            retainedTrackedUris
+                    val config = loadConfig()
+                    val sets = config.optJSONArray("sets") ?: return@transaction removed to retained
+                    val newSets = JSONArray()
+                    for (i in 0 until sets.length()) {
+                        val obj = sets.getJSONObject(i)
+                        if (obj.getString("name") != name) newSets.put(obj)
+                    }
+                    config.put("sets", newSets)
+                    if (config.optString("active") == name) config.put("active", DEFAULT_SET)
+                    saveConfig(config)
+                    val dir = File(setsDir, name)
+                    check(!dir.exists() || dir.deleteRecursively()) {
+                        "Could not delete file set '$name'"
+                    }
+                    NativeTextureLookupCache.clear()
+                    removed to retained
                 }
-                config.put("sets", newSets)
-                if (config.optString("active") == name) config.put("active", DEFAULT_SET)
-                saveConfig(config)
-                val dir = File(setsDir, name)
-                if (dir.exists()) dir.deleteRecursively()
-                NativeTextureLookupCache.clear()
-                removed to retained
             }
         context?.let { revokeUnusedPersistedReadPermissions(it, permissions.first, permissions.second) }
     }

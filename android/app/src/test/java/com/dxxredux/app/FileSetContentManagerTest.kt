@@ -62,6 +62,43 @@ class FileSetContentManagerTest {
     }
 
     @Test
+    fun groupedSourceWriteKeepsRelatedMissionFilesUnderOneOwner() {
+        val setDir = temporaryFolder.newFolder("grouped-write")
+        val manager = FileSetContentManager(setDir)
+
+        manager.writeSourceFiles(
+            listOf(
+                "panic.mn2" to "name = Panic\nnum_levels = 1\npanic01.rl2\n",
+                "panic.hog" to "mission",
+            ),
+        )
+        val entry = manager.reconcile().entries.single()
+
+        assertEquals(FileSetContentCatalog.KIND_LOOSE_MISSION, entry.kind)
+        assertEquals(listOf("missions/panic.hog", "missions/panic.mn2"), entry.virtualPaths)
+    }
+
+    @Test
+    fun reconcileRemovesMatchingRootAliasForOwnedMissionFile() {
+        val setDir = temporaryFolder.newFolder("mission-alias")
+        val manager = FileSetContentManager(setDir)
+        manager.writeSourceFiles(
+            listOf(
+                "panic.mn2" to "name = Panic\nnum_levels = 1\npanic01.rl2\n",
+                "panic.hog" to "mission",
+            ),
+        )
+        val entry = manager.reconcile().entries.single()
+        entry.files.single { it.name == "panic.mn2" }.copyTo(File(setDir, "panic.mn2"))
+
+        val result = manager.reconcile()
+
+        assertEquals(listOf("panic.mn2"), result.removedDuplicatePaths)
+        assertFalse(File(setDir, "panic.mn2").exists())
+        assertEquals(entry.id, result.entries.single().id)
+    }
+
+    @Test
     fun enableStateControlsProjectionAndRepairsMissingState() {
         val setDir = temporaryFolder.newFolder("toggle")
         File(setDir, "extra.hog").writeText("extra")

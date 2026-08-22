@@ -163,7 +163,7 @@ class SetupLaunchReadinessTest {
         val filesDir = createTempDirectory("d1-in-d2-assets").toFile()
         val setDir = File(filesDir, "sets/default").also { it.mkdirs() }
         writeD2Files(setDir)
-        val imported = ModManager(filesDir).importMissionZipFile(createD1MissionZip(), "d1pack.zip")
+        val imported = ModManager(filesDir, setDir = setDir).importMissionZipFile(createD1MissionZip(), "d1pack.zip")
         assertTrue(imported?.game == "d1")
 
         val degraded =

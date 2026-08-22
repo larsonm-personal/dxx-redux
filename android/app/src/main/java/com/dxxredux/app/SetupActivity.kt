@@ -958,6 +958,15 @@ class SetupActivity : ComponentActivity() {
                         }
                     }
 
+                    "delete_mod" -> {
+                        val filename = intent.getStringExtra("filename") ?: return
+                        runIo {
+                            ModManager.forActiveSet(filesDir, this@SetupActivity).deleteMod(filename)
+                            Log.i("DXX-Setup", "delete_mod '$filename': ok")
+                            requestSetupRefresh()
+                        }
+                    }
+
                     "import_gog" -> {
                         val path = intent.getStringExtra("path") ?: return
                         val audio = intent.getBooleanExtra("include_audio", true)

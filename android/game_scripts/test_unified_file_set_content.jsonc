@@ -17,10 +17,10 @@
     {"action": "setup_command", "command": "switch_set",
      "args": {"name": "automation-unified-content"}, "post_delay_ms": 250},
 
-    {"action": "write_set_file", "file": "panic.mn2",
-     "content": "name = Automation Panic Test\nnum_levels = 1\npanic01.rl2\n"},
-    {"action": "write_set_file", "file": "panic.hog",
-     "content": "automation-test-payload\n"},
+    {"action": "write_set_files", "files": [
+        {"file": "panic.mn2", "content": "name = Automation Panic Test\nnum_levels = 1\npanic01.rl2\n"},
+        {"file": "panic.hog", "content": "automation-test-payload\n"}
+    ]},
     {"action": "setup_command", "command": "switch_set",
      "args": {"name": "automation-unified-content"}, "post_delay_ms": 750},
     {"action": "wait_for", "field": "content_entries[0].managed", "value": "true", "timeout_ms": 10000},
@@ -31,8 +31,8 @@
         "content_entries[0].kind": "loose_mission",
         "content_entries[0].enabled": "true",
         "content_entries[0].managed": "true",
-        "content_entries[0].files[0]": "panic.hog",
-        "content_entries[0].files[1]": "panic.mn2"
+        "content_entries[0].files[0]": "missions/panic.hog",
+        "content_entries[0].files[1]": "missions/panic.mn2"
     }},
 
     {"action": "setup_command", "command": "set_content_enabled",

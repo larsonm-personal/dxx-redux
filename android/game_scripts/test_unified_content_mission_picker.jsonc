@@ -31,10 +31,10 @@
     {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
-    {"action": "write_set_file", "file": "panic.mn2",
-     "content": "name = Automation Panic Test\nnum_levels = 1\npanic01.rl2\n"},
-    {"action": "write_set_file", "file": "panic.hog",
-     "content": "automation-test-payload\n"},
+    {"action": "write_set_files", "files": [
+        {"file": "panic.mn2", "content": "name = Automation Panic Test\nnum_levels = 1\npanic01.rl2\n"},
+        {"file": "panic.hog", "content": "automation-test-payload\n"}
+    ]},
     {"action": "setup_command", "command": "switch_set",
      "args": {"name": "default"}, "post_delay_ms": 750},
     {"action": "assert", "expect": {
@@ -71,6 +71,8 @@
     {"action": "enter_launcher"},
     {"action": "setup_command", "command": "delete_content",
      "args": {"id": "1b46f9d7a5eaf6db07e963a6"}, "post_delay_ms": 500},
-    {"action": "assert", "expect": {"content_entry_count": "0"}},
+    {"action": "assert", "expect": {
+        "content_entries": {"not_contains": "1b46f9d7a5eaf6db07e963a6"}
+    }},
     {"action": "log", "message": "Managed loose mission picker visibility passed"}
 ]
