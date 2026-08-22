@@ -44,6 +44,35 @@ class LevelPreviewRequestStoreTest {
     }
 
     @Test
+    fun requestMountsManagedDescriptorDirectoryAlongsideRootHog() {
+        val root = testRoot("managed-descriptor")
+        val cacheDir = File(root, "cache").apply { mkdirs() }
+        val dataDir = File(root, "data").apply { mkdirs() }
+        val descriptorDir = File(dataDir, ".content/vertigo/payload/missions").apply { mkdirs() }
+        val descriptor = File(descriptorDir, "d2x.mn2").apply { writeText("name = Vertigo") }
+        val hog = File(dataDir, "d2x.hog").apply { writeBytes(byteArrayOf(1, 2, 3)) }
+        val target =
+            LevelMetadataTarget(
+                displayName = descriptor.name,
+                game = GameFileFormats.GAME_D2,
+                sourceType = "hog",
+                sourcePath = hog.path,
+                dataDir = dataDir.path,
+                extraDataDir = descriptorDir.path,
+                missionName = "d2x",
+                missionFilename = descriptor.name,
+                levelFile = "d2xlvl01.rl2",
+            )
+
+        val launch = LevelPreviewRequestStore.create(cacheDir, target, levelRow("d2xlvl01.rl2"))
+        val request = JSONObject(launch.requestFile.readText())
+
+        assertEquals(hog.canonicalPath, request.getString("hog_path"))
+        assertEquals(descriptorDir.canonicalPath, request.getString("extra_data_dir"))
+        assertEquals("d2x.mn2", request.getString("mission_filename"))
+    }
+
+    @Test
     fun cleanupRefusesARequestOutsidePreviewCache() {
         val root = testRoot("cleanup-scope")
         val cacheDir = File(root, "cache").apply { mkdirs() }

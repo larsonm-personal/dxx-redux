@@ -47,6 +47,7 @@ internal data class LevelMetadataTarget(
     val sourceType: String,
     val sourcePath: String? = null,
     val dataDir: String? = null,
+    val extraDataDir: String? = null,
     val missionName: String? = null,
     val missionDisplayName: String? = null,
     val missionFilename: String? = null,
@@ -1016,14 +1017,19 @@ internal object LevelMetadataTargets {
             runCatching {
                 MissionZip.parseMissionDescriptor(descriptor.name, descriptor.readBytes())
             }.getOrNull() ?: return null
-        val hog = File(descriptor.parentFile, "${descriptor.name.substringBeforeLast('.')}.hog")
-        if (!hog.isFile) return null
+        val hogName = "${descriptor.name.substringBeforeLast('.')}.hog"
+        val adjacentHog = File(descriptor.parentFile, hogName)
+        val hog =
+            adjacentHog.takeIf { it.isFile }
+                ?: findFile(setDir, hogName)?.let { File(setDir, it) }
+                ?: return null
         return LevelMetadataTarget(
             displayName = descriptor.name,
             game = game,
             sourceType = "hog",
             sourcePath = hog.absolutePath,
             dataDir = setDir.absolutePath,
+            extraDataDir = descriptor.parentFile?.absolutePath ?: setDir.absolutePath,
             missionName = descriptor.name.substringBeforeLast('.'),
             missionDisplayName = mission.displayName,
             missionFilename = descriptor.name,
@@ -1716,7 +1722,7 @@ internal object LevelMetadataAnalyzer {
         return PreparedTarget(
             sourceType = target.sourceType,
             dataDir = target.dataDir ?: source?.parentFile?.absolutePath.orEmpty(),
-            extraDataDir = "",
+            extraDataDir = target.extraDataDir.orEmpty(),
             missionName = target.missionName.orEmpty(),
             missionDisplayName = target.missionDisplayName.orEmpty(),
             missionFilename = target.missionFilename.orEmpty(),

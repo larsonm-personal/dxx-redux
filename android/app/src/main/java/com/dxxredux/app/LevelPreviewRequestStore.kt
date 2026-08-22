@@ -113,6 +113,7 @@ internal object LevelPreviewRequestStore {
                     requireNotNull(target.dataDir) { "Preview base data directory is missing" },
                     "base data",
                 ),
+            extraDataDir = target.extraDataDir?.let { canonicalDirectory(it, "mission data") },
             archivePath = target.archivePath?.let { canonicalFile(it, "archive") },
         )
 

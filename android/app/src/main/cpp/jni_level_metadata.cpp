@@ -547,6 +547,11 @@ static int load_requested_mission(const json &request, LevelMetadataRequestMount
 #ifdef DXX_BUILD_DESCENT_II
 	if (mission.empty())
 		mission = "d2";
+	if (!d_stricmp(mission.c_str(), "d2x") && !PHYSFSX_exists("d2x.ham", 1)) {
+		snprintf(error, error_size, "%s",
+		         "Vertigo data is incomplete: d2x.ham was not found inside d2x.hog");
+		return 0;
+	}
 #endif
 	write_checkpoint(request, "mission", mission.c_str());
 	std::vector<char> mission_name(mission.begin(), mission.end());

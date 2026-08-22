@@ -145,6 +145,35 @@ class LevelMetadataTargetsTest {
     }
 
     @Test
+    fun managedVertigoDescriptorUsesHogFromFileSetRoot() {
+        val setDir = File("build/test-level-metadata-targets/managed-vertigo").absoluteFile
+        setDir.deleteRecursively()
+        val descriptorDir = File(setDir, ".content/entries/vertigo/payload/missions").apply { mkdirs() }
+        val hog = File(setDir, "D2X.HOG").apply { writeBytes(byteArrayOf(1, 2, 3)) }
+        val descriptor =
+            File(descriptorDir, "d2x.mn2").apply {
+                writeText(
+                    """
+                    zname = Descent 2: Vertigo
+                    type = normal
+                    num_levels = 1
+                    d2xlvl01.rl2
+                    """.trimIndent(),
+                )
+            }
+
+        val target = LevelMetadataTargets.directFile(descriptor, setDir, null)
+
+        assertNotNull(target)
+        target!!
+        assertEquals("hog", target.sourceType)
+        assertEquals(hog.canonicalPath, File(target.sourcePath!!).canonicalPath)
+        assertEquals(descriptorDir.canonicalPath, File(target.extraDataDir!!).canonicalPath)
+        assertEquals("d2x", target.missionName)
+        assertEquals(listOf("d2xlvl01.rl2"), target.normalLevelFiles)
+    }
+
+    @Test
     fun directDescriptorUsesAdjacentHogForMetadata() {
         val setDir = File("build/test-level-metadata-targets/direct-descriptor").absoluteFile
         setDir.deleteRecursively()
@@ -173,6 +202,7 @@ class LevelMetadataTargetsTest {
         assertEquals("max_f", target.missionName)
         assertEquals("Descent Maximum (fixed)", target.missionDisplayName)
         assertEquals(File(setDir, "max_f.hog").absolutePath, target.sourcePath)
+        assertEquals(setDir.absolutePath, target.extraDataDir)
         assertEquals(listOf("psx01.rl2"), target.normalLevelFiles)
         assertEquals(listOf("psxs1a.rl2"), target.secretLevelFiles)
     }

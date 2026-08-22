@@ -1057,7 +1057,7 @@ class LauncherScriptExecutor(
         val setDir = fileSetManager.getSetDir(fileSetManager.getActive())
 
         if (fileName.isNotBlank()) {
-            val file = findFile(setDir, fileName)?.let { File(setDir, it) } ?: File(setDir, fileName)
+            val file = findMetadataAutomationFile(setDir, fileName)
             val metadata = GameFileMetadata.summarizeLocalFile(file)
             return LevelMetadataTargets.directFile(file, setDir, metadata)
         }
@@ -1081,7 +1081,7 @@ class LauncherScriptExecutor(
         val setDir = fileSetManager.getSetDir(fileSetManager.getActive())
 
         if (fileName.isNotBlank()) {
-            val file = findFile(setDir, fileName)?.let { File(setDir, it) } ?: File(setDir, fileName)
+            val file = findMetadataAutomationFile(setDir, fileName)
             val metadata = GameFileMetadata.summarizeLocalFile(file)
             return listOfNotNull(LevelMetadataTargets.directFile(file, setDir, metadata))
         }
@@ -1096,6 +1096,18 @@ class LauncherScriptExecutor(
 
         return emptyList()
     }
+
+    private fun findMetadataAutomationFile(
+        setDir: File,
+        fileName: String,
+    ): File =
+        findFile(setDir, fileName)?.let { File(setDir, it) }
+            ?: FileSetContentManager(setDir)
+                .listEntries()
+                .asSequence()
+                .flatMap { it.files.asSequence() }
+                .firstOrNull { it.name.equals(fileName, ignoreCase = true) }
+            ?: File(setDir, fileName)
 
     private fun importMissionZipForAutomation(step: JSONObject): Pair<ModManager.ModInfo, MissionZip.ScanResult?>? {
         val source = resolveAutomationFile(step)

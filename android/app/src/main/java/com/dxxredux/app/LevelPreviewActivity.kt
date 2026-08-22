@@ -287,6 +287,30 @@ abstract class LevelPreviewActivity :
         }
     }
 
+    @Suppress("unused")
+    fun debugLogFromNative(
+        category: Int,
+        message: String,
+    ) = DebugLog.log(category, message)
+
+    @Suppress("unused")
+    fun debugLogForcedFromNative(
+        category: Int,
+        message: String,
+    ) = DebugLog.logForced(this, category, message)
+
+    @Suppress("unused")
+    fun debugLogBatchFromNative(
+        category: Int,
+        payload: String,
+    ) = DebugLog.logBatch(category, payload)
+
+    @Suppress("unused")
+    fun debugLogBatchForcedFromNative(
+        category: Int,
+        payload: String,
+    ) = DebugLog.logBatchForcedAsync(this, category, payload)
+
     private fun closePreview() {
         if (!nativeStarted) {
             finishWithResult("")

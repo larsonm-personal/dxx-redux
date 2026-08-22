@@ -1,0 +1,25 @@
+// TEST: Analyze Vertigo when d2x.ham is embedded in d2x.hog.
+[
+    {"_info": {
+        "description": "Verify direct Vertigo metadata analysis loads its embedded HAM",
+        "games": ["d2"],
+        "_deps": [
+            {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
+            {"file": "descent2.ham", "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"},
+            {"file": "descent2.s22", "sha256": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728"},
+            {"file": "groupa.pig", "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"},
+            {"file": "d2x.hog", "sha256": "97a4433833ec1f2fbdd2becc144a1e9726ca78b1210a71a49ddbec6182665fe6"},
+            {"file": "d2x.mn2", "sha256": "42d1c04c96f4dad7e8d03a6fdf342ac9ccd22672c0db5886f965638bd325764d"}
+        ]
+    }},
+    {"action": "enter_launcher"},
+    {"action": "setup_command", "command": "switch_set", "args": {"name": "default"}},
+    {"action": "setup_command", "command": "clear_crash_reports", "post_delay_ms": 250},
+    {"action": "setup_command", "command": "clear_route_metadata_cache"},
+    {"action": "setup_command", "command": "clear_level_metadata_result_cache", "post_delay_ms": 250},
+    {"action": "setup_command", "command": "pause_route_metadata_precompute", "post_delay_ms": 250},
+    {"action": "analyze_level_metadata", "label": "vertigo_hog", "file": "d2x.hog", "game": "d2", "status": "ok", "min_levels": 23},
+    {"action": "analyze_level_metadata", "label": "vertigo_mn2", "file": "d2x.mn2", "game": "d2", "status": "ok", "min_levels": 23},
+    {"action": "launch_random_level_preview", "label": "vertigo_mn2_preview", "file": "d2x.mn2", "game": "d2", "seed": 20},
+    {"action": "log", "message": "Vertigo HOG and managed MN2 metadata and preview passed"}
+]
