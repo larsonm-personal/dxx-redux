@@ -13,7 +13,6 @@
             {"file": "fire.pig", "sha256": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156"},
             {"file": "ice.pig", "sha256": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1"},
             {"file": "water.pig", "sha256": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"},
-            {"file": "obsidian.zip", "sha256": "441c970b8ebab45f9544c00cd44843f1fce7cda649ee402ef6e4e407f94ef5ce", "target": "files/mods"},
             {"file": "obsidian.zip", "sha256": "441c970b8ebab45f9544c00cd44843f1fce7cda649ee402ef6e4e407f94ef5ce", "target": "files/mission_zip_batch_cache"}
         ]
     }},

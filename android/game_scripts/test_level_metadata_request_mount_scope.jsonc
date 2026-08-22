@@ -6,14 +6,18 @@
             {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
             {"file": "descent2.ham", "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"},
             {"file": "groupa.pig", "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"},
-            {"file": "drmsaga.zip", "sha256": "aa8ba1df48cddb118aaf3950318930fe3c19f63d3c7af31df0e06c797d0bcc2d", "target": "files/mods"}
+            {"file": "drmsaga.zip", "sha256": "aa8ba1df48cddb118aaf3950318930fe3c19f63d3c7af31df0e06c797d0bcc2d", "target": "files/mission_zip_batch_cache"}
         ]
     }},
 
     {"action": "enter_launcher"},
+    {"action": "setup_command", "command": "switch_set", "args": {"name": "default"}},
+    {"action": "clear_mods"},
+    {"action": "import_mission_zip", "file": "drmsaga.zip", "label": "mount_scope_import", "display_name": "drmsaga.zip"},
     {"action": "analyze_level_metadata", "label": "mount_scope_base_first", "file": "descent2.hog", "game": "d2", "status": "ok", "min_levels": 24},
     {"action": "analyze_level_metadata", "label": "mount_scope_mod_first", "mod_file": "drmsaga.zip", "game": "d2", "status": "ok", "min_levels": 5},
     {"action": "analyze_level_metadata", "label": "mount_scope_base_second", "file": "descent2.hog", "game": "d2", "status": "ok", "min_levels": 24},
     {"action": "analyze_level_metadata", "label": "mount_scope_mod_second", "mod_file": "drmsaga.zip", "game": "d2", "status": "ok", "min_levels": 5},
+    {"action": "delete_mod", "mod_file": "drmsaga.zip"},
     {"action": "log", "message": "Sequential level metadata request mount scope passed"}
 ]

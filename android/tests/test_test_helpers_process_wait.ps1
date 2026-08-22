@@ -32,6 +32,9 @@ if ($helperSource -notmatch 'function Test-AppPrivateStorageReady' -or
 if ($runnerSource -notmatch '"test_launcher_dpad"\s*=\s*180') {
     throw 'Launcher DPAD test does not have its required timeout override'
 }
+if ($runnerSource -notmatch '"test_xcrash_native_report"\s*=\s*300') {
+    throw 'xCrash native report test does not allow enough time for a cold native build'
+}
 
 $matchingResult = '{"result":"PASS","run_id":"run-a"}' | ConvertFrom-Json
 $otherResult = '{"result":"PASS","run_id":"run-b"}' | ConvertFrom-Json

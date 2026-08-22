@@ -27,11 +27,15 @@
             {"file": "water.pig", "sha256": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"},
             {"file": "descent.hog", "sha256": "83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052"},
             {"file": "descent.pig", "sha256": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe"},
-            {"file": "${ZIP_FILE}", "sha256": "${ZIP_SHA}", "target": "files/mods"}
+            {"file": "${ZIP_FILE}", "sha256": "${ZIP_SHA}", "target": "files/mission_zip_batch_cache"}
         ]
     }},
 
     {"action": "enter_launcher"},
+    {"action": "setup_command", "command": "switch_set", "args": {"name": "default"}},
+    {"action": "clear_mods"},
+    {"action": "import_mission_zip", "file": "${ZIP_FILE}", "label": "${LEVEL_ZIP}_import", "display_name": "${ZIP_FILE}"},
     {"action": "analyze_level_metadata", "label": "${LEVEL_ZIP}", "mod_file": "${ZIP_FILE}", "game": "d2", "status": "ok", "min_levels": "${MIN_LEVELS}"},
+    {"action": "delete_mod", "mod_file": "${ZIP_FILE}"},
     {"action": "log", "message": "Level metadata launcher ZIP analysis passed for ${ZIP_FILE}"}
 ]

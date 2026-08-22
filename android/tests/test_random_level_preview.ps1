@@ -76,9 +76,10 @@ try {
     $deviceTemporaryZip = "/data/local/tmp/$deviceZip"
     $push = Adb -AdbArgs @("push", $selectedPack.Zip.FullName, $deviceTemporaryZip)
     if ($push -match "failed") { throw "adb push failed: $push" }
-    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", "files/mods") | Out-Null
+    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", "files/mission_zip_batch_cache") | Out-Null
     Adb -AdbArgs @(
-        "shell", "run-as", $script:PACKAGE, "cp", $deviceTemporaryZip, "files/mods/$deviceZip"
+        "shell", "run-as", $script:PACKAGE, "cp", $deviceTemporaryZip,
+        "files/mission_zip_batch_cache/$deviceZip"
     ) | Out-Null
     Adb -AdbArgs @("shell", "rm", "-f", $deviceTemporaryZip) | Out-Null
 
@@ -307,7 +308,8 @@ try {
                 ) | Out-Null
             }
             Adb -AdbArgs @(
-                "shell", "run-as", $script:PACKAGE, "rm", "-f", "files/$deviceScript"
+                "shell", "run-as", $script:PACKAGE, "rm", "-f", "files/$deviceScript",
+                "files/mission_zip_batch_cache/$deviceZip"
             ) | Out-Null
         }
     } catch {

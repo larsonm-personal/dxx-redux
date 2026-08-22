@@ -9,6 +9,9 @@
         "_owner": "test_random_level_preview"
     }},
     {"action": "enter_launcher"},
+    {"action": "setup_command", "command": "switch_set", "args": {"name": "default"}},
+    {"action": "import_mission_zip", "file": "${MISSION_ZIP}",
+     "label": "random_level_preview", "display_name": "${MISSION_ZIP}"},
     {
         "action": "launch_random_level_preview",
         "label": "host-selected mission pack",

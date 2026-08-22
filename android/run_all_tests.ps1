@@ -351,6 +351,7 @@ $testTimeouts = @{
     "test_mission_zip_batch"              = 3600
     "test_mod_loading"                    = 360
     "test_saf_archiver"                   = 360
+    "test_xcrash_native_report"           = 300
     "test_mac_extract_saf"                = 360
     "test_saf_redbook"                    = 420
     "test_all_extracts"                   = $testAllExtractsTimeout
