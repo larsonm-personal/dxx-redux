@@ -2421,6 +2421,33 @@ private fun StickPropertiesPanel(
         LabeledToggle("Inv: $yLabel", stick.invertY) { onUpdate(stick.copy(invertY = it)) }
         LabeledToggle("Haptic", stick.hapticFeedback) { onUpdate(stick.copy(hapticFeedback = it)) }
     }
+    if (stick.mouseMode) {
+        LabeledToggle("Edge Continuous Movement", stick.mouseEdgeContinuousMovement) {
+            onUpdate(stick.copy(mouseEdgeContinuousMovement = it))
+        }
+        if (stick.mouseEdgeContinuousMovement) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                LabeledSlider(
+                    "Edge Size %",
+                    stick.mouseEdgeRegionPct,
+                    TouchBindings.MIN_MOUSE_EDGE_REGION_PCT,
+                    TouchBindings.MAX_MOUSE_EDGE_REGION_PCT,
+                    Modifier.weight(1f),
+                ) {
+                    onUpdate(stick.copy(mouseEdgeRegionPct = it))
+                }
+                LabeledSlider(
+                    "Edge Max Rate %",
+                    stick.mouseEdgeMaxRatePct,
+                    TouchBindings.MIN_MOUSE_EDGE_MAX_RATE_PCT,
+                    TouchBindings.MAX_MOUSE_EDGE_MAX_RATE_PCT,
+                    Modifier.weight(1f),
+                ) {
+                    onUpdate(stick.copy(mouseEdgeMaxRatePct = it))
+                }
+            }
+        }
+    }
 
     // Extreme action (available for all stick modes)
     val extremeAction = stick.extremeActions.firstOrNull()

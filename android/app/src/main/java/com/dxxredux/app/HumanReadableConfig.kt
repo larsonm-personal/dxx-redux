@@ -272,6 +272,19 @@ object HumanReadableConfig {
             mouseMode = j.optBoolean("mouseMode"),
             mouseExponential = j.optBoolean("mouseExponential", true),
             mouseExponentialMax = j.optDouble("mouseExponentialMax", 3.0).toFloat(),
+            mouseEdgeContinuousMovement = j.optBoolean("mouseEdgeContinuousMovement"),
+            mouseEdgeRegionPct =
+                j
+                    .optDouble(
+                        "mouseEdgeRegionPct",
+                        TouchBindings.DEFAULT_MOUSE_EDGE_REGION_PCT.toDouble(),
+                    ).toFloat(),
+            mouseEdgeMaxRatePct =
+                j
+                    .optDouble(
+                        "mouseEdgeMaxRatePct",
+                        TouchBindings.DEFAULT_MOUSE_EDGE_MAX_RATE_PCT.toDouble(),
+                    ).toFloat(),
             buttonMode = buttonMode,
             negXBinding =
                 if (buttonMode) {

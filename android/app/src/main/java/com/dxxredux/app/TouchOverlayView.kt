@@ -245,6 +245,8 @@ class TouchOverlayView
             // Mouse mode: drag-start anchor and recent motion state
             var mouseOriginX = 0f
             var mouseOriginY = 0f
+            var mouseEdgeOriginX = 0f
+            var mouseEdgeOriginY = 0f
             var mouseLastSampleTimeMs = 0L
             var mouseRecentDistancePx = 0f
             var mouseRecentGracePx = 0f
@@ -362,6 +364,8 @@ class TouchOverlayView
             var pointerId = -1
             var touchOrigin = 0f // axis-position where the touch set the zero point
             var value = 0f // current output -1..1
+            var gestureOriginX = 0f
+            var gestureOriginY = 0f
 
             // Pointer stealing: which stick we stole from (to return the drag later)
             var stealSourceStick: StickState? = null
@@ -624,17 +628,36 @@ class TouchOverlayView
                 // Discard tiny residuals to avoid drift
                 if (abs(s.mousePendingX) < 0.001f) s.mousePendingX = 0f
                 if (abs(s.mousePendingY) < 0.001f) s.mousePendingY = 0f
-                var outX = emitX
-                var outY = emitY
-                if (s.control.invertX) outX = -outX
-                if (s.control.invertY) outY = -outY
+                val edgeX =
+                    mouseEdgeAxisContribution(
+                        enabled = s.control.mouseEdgeContinuousMovement,
+                        positionPx = s.mouseLastX,
+                        originPx = s.mouseEdgeOriginX,
+                        lowPx = s.fzLeft,
+                        highPx = s.fzRight,
+                        edgeRegionPct = s.control.mouseEdgeRegionPct,
+                        edgeMaxRatePct = s.control.mouseEdgeMaxRatePct,
+                    )
+                val edgeY =
+                    mouseEdgeAxisContribution(
+                        enabled = s.control.mouseEdgeContinuousMovement,
+                        positionPx = s.mouseLastY,
+                        originPx = s.mouseEdgeOriginY,
+                        lowPx = s.fzTop,
+                        highPx = s.fzBottom,
+                        edgeRegionPct = s.control.mouseEdgeRegionPct,
+                        edgeMaxRatePct = s.control.mouseEdgeMaxRatePct,
+                    )
+                val outX = combineMouseDragAndEdge(emitX, edgeX, s.control.invertX)
+                val outY = combineMouseDragAndEdge(emitY, edgeY, s.control.invertY)
                 logMouseDiag(
                     "drain axis=(${s.control.axisX},${s.control.axisY}) pending=(${"%.4f".format(
                         s.mousePendingX,
                     )},${"%.4f".format(s.mousePendingY)}) " +
                         "emit=(${"%.4f".format(
                             emitX,
-                        )},${"%.4f".format(emitY)}) out=(${"%.4f".format(outX)},${"%.4f".format(outY)}) " +
+                        )},${"%.4f".format(emitY)}) edge=(${"%.4f".format(edgeX)},${"%.4f".format(edgeY)}) " +
+                        "out=(${"%.4f".format(outX)},${"%.4f".format(outY)}) " +
                         "cap=(${"%.3f".format(
                             capX,
                         )},${"%.3f".format(
@@ -642,8 +665,8 @@ class TouchOverlayView
                         )}) sens=(${"%.2f".format(s.control.sensitivityX)},${"%.2f".format(s.control.sensitivityY)}) " +
                         "mouseExp=${s.control.mouseExponential} curve=${s.control.responseCurve} deadzone=${s.control.deadzone}",
                 )
-                axisCallback?.invoke(s.control.axisX, outX.coerceIn(-1f, 1f))
-                axisCallback?.invoke(s.control.axisY, outY.coerceIn(-1f, 1f))
+                axisCallback?.invoke(s.control.axisX, outX)
+                axisCallback?.invoke(s.control.axisY, outY)
             }
         }
 
@@ -654,12 +677,16 @@ class TouchOverlayView
             py: Float,
             originX: Float = px,
             originY: Float = py,
+            edgeOriginX: Float = px,
+            edgeOriginY: Float = py,
         ) {
             s.pointerId = pointerId
             s.mouseLastX = px
             s.mouseLastY = py
             s.mouseOriginX = originX
             s.mouseOriginY = originY
+            s.mouseEdgeOriginX = edgeOriginX
+            s.mouseEdgeOriginY = edgeOriginY
             s.mousePendingX = 0f
             s.mousePendingY = 0f
             s.mouseLastSampleTimeMs = android.os.SystemClock.uptimeMillis()
@@ -2766,6 +2793,8 @@ class TouchOverlayView
                             val vertical = ar.control.orientation == SliderOrientation.VERTICAL
                             ar.touchOrigin = if (vertical) py else px
                             ar.value = 0f
+                            ar.gestureOriginX = px
+                            ar.gestureOriginY = py
                             ar.stealSourceStick = null
                             axisCallback?.invoke(ar.control.axis, 0f)
                             invalidate()
@@ -2943,11 +2972,18 @@ class TouchOverlayView
                                 ar.touchOrigin = if (vertical) sy else sx
                                 ar.value = 0f
                                 ar.stealSourceStick = s
+                                ar.gestureOriginX = if (s.control.mouseMode) s.mouseEdgeOriginX else sx
+                                ar.gestureOriginY = if (s.control.mouseMode) s.mouseEdgeOriginY else sy
                                 // Save stick center before reset so we can restore it
                                 ar.savedStickCX = if (s.floatingActive) s.floatingCX else s.centerX
                                 ar.savedStickCY = if (s.floatingActive) s.floatingCY else s.centerY
                                 // Zero the stick without releasing the pointer entirely
                                 s.pointerId = -1
+                                if (s.control.mouseMode &&
+                                    stickStates.none { it.control.mouseMode && it.pointerId >= 0 }
+                                ) {
+                                    stopMouseDrain()
+                                }
                                 s.pos.set(0f, 0f)
                                 s.floatingActive = false
                                 releaseStickExtremeActions(s)
@@ -2981,7 +3017,16 @@ class TouchOverlayView
                                     src.floatingCY = ar.savedStickCY
                                     src.floatingActive = true
                                     if (src.control.mouseMode) {
-                                        beginMouseDrag(src, ar.pointerId, ax, ay, ar.savedStickCX, ar.savedStickCY)
+                                        beginMouseDrag(
+                                            src,
+                                            ar.pointerId,
+                                            ax,
+                                            ay,
+                                            ar.savedStickCX,
+                                            ar.savedStickCY,
+                                            ar.gestureOriginX,
+                                            ar.gestureOriginY,
+                                        )
                                     }
                                 }
                                 // Release the region
@@ -3014,7 +3059,14 @@ class TouchOverlayView
                                         }
                                     if (inZone) {
                                         if (s.control.mouseMode) {
-                                            beginMouseDrag(s, ar.pointerId, ax, ay)
+                                            beginMouseDrag(
+                                                s,
+                                                ar.pointerId,
+                                                ax,
+                                                ay,
+                                                edgeOriginX = ar.gestureOriginX,
+                                                edgeOriginY = ar.gestureOriginY,
+                                            )
                                         } else if (s.control.floating) {
                                             s.pointerId = ar.pointerId
                                             s.floatingCX = ax
@@ -3460,6 +3512,8 @@ class TouchOverlayView
                 s.mouseLastSampleTimeMs = 0L
                 s.mouseRecentDistancePx = 0f
                 s.mouseRecentGracePx = 0f
+                s.mouseEdgeOriginX = 0f
+                s.mouseEdgeOriginY = 0f
             }
             s.pointerId = -1
             s.pos.set(0f, 0f)
@@ -3550,6 +3604,8 @@ class TouchOverlayView
             ar.pointerId = -1
             ar.value = 0f
             ar.stealSourceStick = null
+            ar.gestureOriginX = 0f
+            ar.gestureOriginY = 0f
             axisCallback?.invoke(ar.control.axis, 0f)
             invalidate()
         }

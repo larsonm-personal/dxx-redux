@@ -401,6 +401,12 @@ object TouchBindings {
     const val MAX_OPACITY = 1.0f
     const val MIN_SENSITIVITY = 0.2f
     const val MAX_SENSITIVITY = 3.0f
+    const val MIN_MOUSE_EDGE_REGION_PCT = 1f
+    const val MAX_MOUSE_EDGE_REGION_PCT = 50f
+    const val DEFAULT_MOUSE_EDGE_REGION_PCT = 15f
+    const val MIN_MOUSE_EDGE_MAX_RATE_PCT = 0f
+    const val MAX_MOUSE_EDGE_MAX_RATE_PCT = 100f
+    const val DEFAULT_MOUSE_EDGE_MAX_RATE_PCT = 100f
     const val MIN_DEADZONE = 0
     const val MAX_DEADZONE = 50
     const val MIN_EXPONENT = 1.0f

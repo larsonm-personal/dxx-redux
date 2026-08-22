@@ -23,6 +23,10 @@ private val TOUCH_FLOAT_RANGES =
         "sensitivityY" to TouchBindings.MIN_SENSITIVITY.toDouble()..TouchBindings.MAX_SENSITIVITY.toDouble(),
         "exponent" to TouchBindings.MIN_EXPONENT.toDouble()..TouchBindings.MAX_EXPONENT.toDouble(),
         "mouseExponentialMax" to 1.0..10.0,
+        "mouseEdgeRegionPct" to
+            TouchBindings.MIN_MOUSE_EDGE_REGION_PCT.toDouble()..TouchBindings.MAX_MOUSE_EDGE_REGION_PCT.toDouble(),
+        "mouseEdgeMaxRatePct" to
+            TouchBindings.MIN_MOUSE_EDGE_MAX_RATE_PCT.toDouble()..TouchBindings.MAX_MOUSE_EDGE_MAX_RATE_PCT.toDouble(),
         "threshold" to
             TouchBindings.MIN_STICK_EXTREME_THRESHOLD.toDouble()..TouchBindings.MAX_STICK_EXTREME_THRESHOLD.toDouble(),
         "releaseThreshold" to 0.5f.toDouble()..2.45f.toDouble(),
@@ -381,6 +385,18 @@ internal fun validateTouchLayoutDomains(layout: TouchLayout): String? {
         ) {
             return "$path mouseExponentialMax is invalid"
         }
+        if (!stick.mouseEdgeRegionPct.isFinite() ||
+            stick.mouseEdgeRegionPct !in
+            TouchBindings.MIN_MOUSE_EDGE_REGION_PCT..TouchBindings.MAX_MOUSE_EDGE_REGION_PCT
+        ) {
+            return "$path mouseEdgeRegionPct is invalid"
+        }
+        if (!stick.mouseEdgeMaxRatePct.isFinite() ||
+            stick.mouseEdgeMaxRatePct !in
+            TouchBindings.MIN_MOUSE_EDGE_MAX_RATE_PCT..TouchBindings.MAX_MOUSE_EDGE_MAX_RATE_PCT
+        ) {
+            return "$path mouseEdgeMaxRatePct is invalid"
+        }
         validateFloatingZone("$path.floatingZone", stick.floatingZone)?.let { return it }
         stick.extremeActions.forEachIndexed { actionIndex, action ->
             binding("$path.extremeActions[$actionIndex].binding", action.binding)?.let { return it }
@@ -595,6 +611,9 @@ data class AnalogStickControl(
     val mouseMode: Boolean = false,
     val mouseExponential: Boolean = true,
     val mouseExponentialMax: Float = 3f,
+    val mouseEdgeContinuousMovement: Boolean = false,
+    val mouseEdgeRegionPct: Float = TouchBindings.DEFAULT_MOUSE_EDGE_REGION_PCT,
+    val mouseEdgeMaxRatePct: Float = TouchBindings.DEFAULT_MOUSE_EDGE_MAX_RATE_PCT,
     val buttonMode: Boolean = false,
     val negXBinding: Int = TouchBindings.BTN_FIRE_PRIMARY,
     val posXBinding: Int = TouchBindings.BTN_FIRE_PRIMARY,
@@ -629,6 +648,9 @@ data class AnalogStickControl(
                 put("mouseMode", true)
                 put("mouseExponential", mouseExponential)
                 put("mouseExponentialMax", mouseExponentialMax.toDouble())
+                put("mouseEdgeContinuousMovement", mouseEdgeContinuousMovement)
+                put("mouseEdgeRegionPct", mouseEdgeRegionPct.toDouble())
+                put("mouseEdgeMaxRatePct", mouseEdgeMaxRatePct.toDouble())
             }
             if (buttonMode) {
                 put("buttonMode", true)
@@ -680,6 +702,19 @@ data class AnalogStickControl(
                 mouseMode = j.optBoolean("mouseMode"),
                 mouseExponential = j.optBoolean("mouseExponential", true),
                 mouseExponentialMax = j.optDouble("mouseExponentialMax", 3.0).toFloat(),
+                mouseEdgeContinuousMovement = j.optBoolean("mouseEdgeContinuousMovement"),
+                mouseEdgeRegionPct =
+                    j
+                        .optDouble(
+                            "mouseEdgeRegionPct",
+                            TouchBindings.DEFAULT_MOUSE_EDGE_REGION_PCT.toDouble(),
+                        ).toFloat(),
+                mouseEdgeMaxRatePct =
+                    j
+                        .optDouble(
+                            "mouseEdgeMaxRatePct",
+                            TouchBindings.DEFAULT_MOUSE_EDGE_MAX_RATE_PCT.toDouble(),
+                        ).toFloat(),
                 buttonMode = j.optBoolean("buttonMode"),
                 negXBinding = j.optInt("negXBinding", TouchBindings.BTN_FIRE_PRIMARY),
                 posXBinding = j.optInt("posXBinding", TouchBindings.BTN_FIRE_PRIMARY),
