@@ -205,15 +205,6 @@ function Get-SetupIntrospection {
     try { return ($json | ConvertFrom-Json) } catch { return $null }
 }
 
-function Get-MissingExpectedFiles {
-    param([object[]]$ExpectedFiles, [object[]]$RemoteFiles)
-
-    return @($ExpectedFiles | Where-Object {
-            $expected = $_.ToString().ToLowerInvariant()
-            -not ($RemoteFiles | Where-Object { $_.ToString().ToLowerInvariant() -eq $expected })
-        })
-}
-
 function Write-DirectImportDiagnostics {
     param($State, [object[]]$ExpectedFiles)
 
@@ -221,16 +212,14 @@ function Write-DirectImportDiagnostics {
         Write-Status '  Setup introspection unavailable' 'Yellow'
         return
     }
-    $remoteFiles = @($State.set_files | Where-Object { $_ })
-    $missing = @(Get-MissingExpectedFiles -ExpectedFiles $ExpectedFiles -RemoteFiles $remoteFiles)
+    $remoteFiles = @(Get-ExtractRegressionLogicalSetFiles $State)
+    $missing = @(Get-ExtractRegressionMissingExpectedFiles $ExpectedFiles $remoteFiles)
     $importStatus = if ($State.import_state) { $State.import_state.status } else { 'unavailable' }
     $importKind = if ($State.import_state) { $State.import_state.kind } else { '' }
     $importError = if ($State.import_state) { $State.import_state.error } else { '' }
     $importCount = if ($State.import_state) { $State.import_state.result_count } else { -1 }
-    $recursiveCount = @($State.set_files_recursive | Where-Object { $_ }).Count
     Write-Status "  Import state: kind=$importKind status=$importStatus result=$importCount error=$importError" 'Yellow'
-    Write-Status "  Root files visible: $($remoteFiles.Count)" 'Yellow'
-    Write-Status "  Recursive files visible: $recursiveCount" 'Yellow'
+    Write-Status "  Logical files visible: $($remoteFiles.Count)" 'Yellow'
     if ($missing.Count -gt 0) {
         Write-Status "  Missing expected files ($($missing.Count)): $($missing -join ', ')" 'Yellow'
     }
@@ -1223,8 +1212,8 @@ if ($useDirectCdImport) {
         Start-Sleep -Seconds 2
         $state = Get-SetupIntrospection
         if (-not $state) { continue }
-        $remoteFiles = @($state.set_files | Where-Object { $_ })
-        $missingExpected = @(Get-MissingExpectedFiles -ExpectedFiles $expectedFiles -RemoteFiles $remoteFiles)
+        $remoteFiles = @(Get-ExtractRegressionLogicalSetFiles $state)
+        $missingExpected = @(Get-ExtractRegressionMissingExpectedFiles $expectedFiles $remoteFiles)
         $haveExpected = $missingExpected.Count -eq 0
         $haveTotal = $true
         if ($expectedFiles.Count -eq 0 -and $spec.total_extracted) {
@@ -1269,7 +1258,7 @@ if ($useDirectCdImport) {
         Exit-Test 1 'fail' 'import_timeout' -TestMode $script:testMode
     }
 
-    $pushCount = @($state.set_files | Where-Object { $_ }).Count
+    $pushCount = @(Get-ExtractRegressionLogicalSetFiles $state).Count
     Write-Status "Direct import completed with $pushCount file(s) visible in '$TEST_SET'" 'Green'
     Clear-DirectImportScratch
 } elseif ($useDirectIsoImport) {
@@ -1303,8 +1292,8 @@ if ($useDirectCdImport) {
         Start-Sleep -Seconds 2
         $state = Get-SetupIntrospection
         if (-not $state) { continue }
-        $remoteFiles = @($state.set_files | Where-Object { $_ })
-        $missingExpected = @(Get-MissingExpectedFiles -ExpectedFiles $expectedFiles -RemoteFiles $remoteFiles)
+        $remoteFiles = @(Get-ExtractRegressionLogicalSetFiles $state)
+        $missingExpected = @(Get-ExtractRegressionMissingExpectedFiles $expectedFiles $remoteFiles)
         $haveExpected = $missingExpected.Count -eq 0
         $haveTotal = $true
         if ($expectedFiles.Count -eq 0 -and $spec.total_extracted) {
@@ -1349,7 +1338,7 @@ if ($useDirectCdImport) {
         Exit-Test 1 'fail' 'import_timeout' -TestMode $script:testMode
     }
 
-    $pushCount = @($state.set_files | Where-Object { $_ }).Count
+    $pushCount = @(Get-ExtractRegressionLogicalSetFiles $state).Count
     Write-Status "Direct import completed with $pushCount file(s) visible in '$TEST_SET'" 'Green'
     Clear-DirectImportScratch
 } else {
@@ -1399,13 +1388,12 @@ if (-not $state) {
     Write-Status "FAIL: Could not get setup introspection (app may not be running)" 'Red'
     Exit-Test 1 'fail' 'files_missing'
 }
-$remoteFiles = @($state.set_files_recursive | Where-Object { $_ })
+$remoteFiles = @(Get-ExtractRegressionLogicalSetFiles $state)
 
 # Check expected files present
 $missingFiles = @()
 foreach ($ef in $expectedFiles) {
-    $efLower = $ef.ToLower()
-    $found = $remoteFiles | Where-Object { $_.ToLower() -eq $efLower }
+    $found = @(Get-ExtractRegressionMissingExpectedFiles @($ef) $remoteFiles).Count -eq 0
     if (-not $found) {
         $missingFiles += $ef
     }

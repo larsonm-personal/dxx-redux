@@ -42,6 +42,10 @@ try {
         $extractSource -match '\$spec\.mission_files\s*\|\s*Where-Object') {
         throw 'Optional mission_files are no longer normalized before push planning'
     }
+    if ($extractSource -notmatch 'Get-ExtractRegressionLogicalSetFiles' -or
+        $extractSource -notmatch 'Get-ExtractRegressionMissingExpectedFiles') {
+        throw 'Extraction verification no longer includes managed content virtual paths'
+    }
     if ($extractSource -notmatch '(?s)trap \{.*?Test-ExtractRegressionAdbTransportFailure.*?exit 98.*?Unexpected extraction test runner error.*?exit 99' -or
         $allExtractsSource -notmatch '\$exitCode -in @\(98, 99\)') {
         throw 'Unexpected runner errors no longer fail fast without being mistaken for emulator failures'
@@ -110,6 +114,30 @@ try {
         (@(Get-JsonStringArray $gogSpecWithoutMissionFiles 'expected_files') -join ',') -ne
         'descent.hog,descent.pig') {
         throw 'Optional JSON string arrays are not normalized safely for GOG specs'
+    }
+
+    $managedState = [PSCustomObject]@{
+        set_files_recursive = @(
+            'descent2.hog',
+            '.content/entries/internal/payload/missions/d2x.hog',
+            '.content_projection/d2/missions/d2x.hog'
+        )
+        content_entries = @(
+            [PSCustomObject]@{ files = @('missions/d2x.hog', 'missions/d2x.mn2') }
+        )
+    }
+    $logicalFiles = @(Get-ExtractRegressionLogicalSetFiles $managedState)
+    if (($logicalFiles -join ',') -ne 'descent2.hog,missions/d2x.hog,missions/d2x.mn2') {
+        throw "Managed content paths were not normalized: $($logicalFiles -join ',')"
+    }
+    $managedMissing = @(Get-ExtractRegressionMissingExpectedFiles `
+        @('descent2.hog', 'd2x.hog', 'missions/d2x.mn2') $logicalFiles)
+    if ($managedMissing.Count -ne 0) {
+        throw "Managed mission files were reported missing: $($managedMissing -join ',')"
+    }
+    $negativeMissing = @(Get-ExtractRegressionMissingExpectedFiles @('missing.mn2') $logicalFiles)
+    if (($negativeMissing -join ',') -ne 'missing.mn2') {
+        throw 'Missing managed mission file was not reported'
     }
 
     $evidencePath = Join-Path $tempRoot 'evidence.jsonc'

@@ -11,6 +11,23 @@ class StatePersistenceContractsTest(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.state = (ROOT / "android/app/src/main/cpp/shared/state_android_shared.c").read_text(encoding="utf-8")
         cls.coop = (ROOT / "android/app/src/main/cpp/shared/coop/coop_save.c").read_text(encoding="utf-8")
+        cls.meta_actions = (ROOT / "android/app/src/main/cpp/shared/android_meta_actions.c").read_text(encoding="utf-8")
+
+    def test_quick_save_and_load_use_synchronized_coop_protocol(self) -> None:
+        save_start = self.meta_actions.index("static void android_coop_quick_save(void)")
+        load_start = self.meta_actions.index("static void android_coop_quick_load(void)", save_start)
+        handler_start = self.meta_actions.index("int android_handle_ingame_saveload_request(void)", load_start)
+        save_body = self.meta_actions[save_start:load_start]
+        load_body = self.meta_actions[load_start:handler_start]
+        handler_body = self.meta_actions[handler_start:self.meta_actions.index("if (g_android_autosave_request_kind)", handler_start)]
+
+        self.assertLess(save_body.index("memset(desc"), save_body.index("multi_send_save_game"))
+        self.assertLess(save_body.index("multi_send_save_game"), save_body.index("multi_save_game"))
+        self.assertIn("ANDROID_SAVE_META_SLOT_QUICK, 1, 0", load_body)
+        self.assertLess(load_body.index("multi_send_restore_game"), load_body.index("multi_restore_game"))
+        self.assertIn("multi_coop_restore_transfer_pending()", load_body)
+        self.assertIn("if (Game_mode & GM_MULTI_COOP)", handler_body)
+        self.assertNotIn("Player_is_dead || (Game_mode & GM_MULTI)", handler_body)
 
     def test_save_stage_is_validated_and_transactionally_published(self) -> None:
         start = self.state.index("int state_android_save_to_path")

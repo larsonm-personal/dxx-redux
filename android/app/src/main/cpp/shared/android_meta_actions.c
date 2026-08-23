@@ -24,6 +24,7 @@
 #include "coop/coop_level_restart.h"
 #include "cntrlcen.h"
 #include "android_save_meta.h"
+#include "endlevel.h"
 #include "game.h"
 #include "fuelcen.h"
 #include "hudmsg.h"
@@ -38,6 +39,7 @@
 #include "screens.h"
 #include "state.h"
 #include "state_android_shared.h"
+#include "timer.h"
 #include "weapon.h"
 #include "window.h"
 
@@ -191,6 +193,92 @@ static void android_clear_saveload_requests(void)
 	g_android_open_load_menu = 0;
 }
 
+static int android_coop_quick_action_allowed(int restoring)
+{
+	const char *action = restoring ? "load" : "save";
+	int i, j;
+
+	if (Netgame.host_is_obs) {
+		HUD_init_message(HM_MULTI, "Can't %s with a host that is observing!", action);
+		return 0;
+	}
+	if ((Endlevel_sequence) || (Control_center_destroyed))
+		return 0;
+	if (!multi_i_am_master()) {
+		HUD_init_message(HM_MULTI, "Only host is allowed to %s a game!", action);
+		return 0;
+	}
+	if (!multi_all_players_alive()) {
+		HUD_init_message(HM_MULTI, "Can't %s! All players must be alive!", action);
+		return 0;
+	}
+	for (i = 0; i < N_players; i++) {
+		for (j = i + 1; j < N_players; j++) {
+			if (!d_stricmp(Players[i].callsign, Players[j].callsign)) {
+				HUD_init_message(HM_MULTI,
+				                 "Can't %s! Multiple players with same callsign!",
+				                 action);
+				return 0;
+			}
+		}
+	}
+	return 1;
+}
+
+static uint android_coop_quick_game_id(void)
+{
+	uint game_id = (uint) timer_query() ^ ((uint) N_players << 4);
+	int i;
+
+	for (i = 0; i < N_players; i++) {
+		fix callsign_id;
+
+		memcpy(&callsign_id, Players[i].callsign, sizeof(callsign_id));
+		game_id ^= (uint) callsign_id;
+	}
+	return game_id ? game_id : 1;
+}
+
+static void android_coop_quick_save(void)
+{
+	char desc[21];
+	uint game_id;
+
+	if (!android_coop_quick_action_allowed(0))
+		return;
+	memset(desc, 0, sizeof(desc));
+	snprintf(desc, sizeof(desc), "[quick] level %d", Current_level_num);
+	game_id = android_coop_quick_game_id();
+	multi_send_save_game(ANDROID_SAVE_META_SLOT_QUICK, game_id, desc);
+	multi_do_frame();
+	multi_save_game(ANDROID_SAVE_META_SLOT_QUICK, game_id, desc);
+}
+
+static void android_coop_quick_load(void)
+{
+	char filename[PATH_MAX];
+	uint game_id;
+
+	if (!android_coop_quick_action_allowed(1))
+		return;
+	if (!state_android_build_save_filename(filename, sizeof(filename),
+	                                       ANDROID_SAVE_META_SLOT_QUICK, 1, 0) ||
+	    !PHYSFSX_exists(filename, 0)) {
+		HUD_init_message_literal(HM_DEFAULT, "No quick save found");
+		return;
+	}
+	game_id = state_get_game_id(filename);
+	if (!game_id) {
+		HUD_init_message_literal(HM_DEFAULT, "Quick load failed");
+		return;
+	}
+	state_game_id = game_id;
+	multi_send_restore_game(ANDROID_SAVE_META_SLOT_QUICK, game_id);
+	multi_do_frame();
+	if (!multi_coop_restore_transfer_pending())
+		multi_restore_game(ANDROID_SAVE_META_SLOT_QUICK, game_id);
+}
+
 int android_handle_pause_saveload_request(window *wind)
 {
 	if (g_android_difficulty_request >= 0) {
@@ -233,8 +321,12 @@ int android_handle_ingame_saveload_request(void)
 		int saved;
 
 		android_quick_save_pending = 0;
-		if (Player_is_dead || (Game_mode & GM_MULTI)) {
+		if (Player_is_dead || ((Game_mode & GM_MULTI) && !(Game_mode & GM_MULTI_COOP))) {
 			HUD_init_message_literal(HM_DEFAULT, "Quick save unavailable");
+			return 1;
+		}
+		if (Game_mode & GM_MULTI_COOP) {
+			android_coop_quick_save();
 			return 1;
 		}
 		snprintf(desc, sizeof(desc), "[quick] level %d", Current_level_num);
@@ -249,8 +341,12 @@ int android_handle_ingame_saveload_request(void)
 		int restored;
 
 		android_quick_load_pending = 0;
-		if (Game_mode & GM_MULTI) {
+		if ((Game_mode & GM_MULTI) && !(Game_mode & GM_MULTI_COOP)) {
 			HUD_init_message_literal(HM_DEFAULT, "Quick load unavailable");
+			return 1;
+		}
+		if (Game_mode & GM_MULTI_COOP) {
+			android_coop_quick_load();
 			return 1;
 		}
 		restored = state_android_restore_slot(ANDROID_SAVE_META_SLOT_QUICK);

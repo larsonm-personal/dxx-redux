@@ -327,6 +327,7 @@ void multi_initiate_save_game();
 void multi_initiate_restore_game();
 void multi_send_save_game(ubyte slot, uint id, char *desc);
 void multi_send_restore_game(ubyte slot, uint id);
+void multi_save_game(ubyte slot, uint id, char *desc);
 void multi_prepare_restore_sync(void);
 void multi_restore_game(ubyte slot, uint id);
 int multi_all_players_alive(void);

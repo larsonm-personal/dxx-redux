@@ -41,6 +41,47 @@ function Get-JsonProperties($value) {
         })
 }
 
+function Get-ExtractRegressionLogicalSetFiles($state) {
+    if ($null -eq $state) {
+        return @()
+    }
+
+    $files = [System.Collections.Generic.List[string]]::new()
+    foreach ($path in @(Get-JsonPropertyValue $state 'set_files_recursive')) {
+        if ($null -eq $path) { continue }
+        $normalized = $path.ToString().Replace('\', '/').TrimStart('/')
+        if ($normalized -and $normalized -notmatch '(?i)^\.content(?:_projection)?(?:/|$)') {
+            $files.Add($normalized)
+        }
+    }
+    foreach ($entry in @(Get-JsonPropertyValue $state 'content_entries')) {
+        foreach ($path in @(Get-JsonPropertyValue $entry 'files')) {
+            if ($null -eq $path) { continue }
+            $normalized = $path.ToString().Replace('\', '/').TrimStart('/')
+            if ($normalized) {
+                $files.Add($normalized)
+            }
+        }
+    }
+    return @($files | Sort-Object -Unique)
+}
+
+function Get-ExtractRegressionMissingExpectedFiles($expectedFiles, $remoteFiles) {
+    $normalizedRemote = @($remoteFiles | Where-Object { $null -ne $_ } | ForEach-Object {
+            $_.ToString().Replace('\', '/').TrimStart('/').ToLowerInvariant()
+        })
+    return @($expectedFiles | Where-Object {
+            $expected = $_.ToString().Replace('\', '/').TrimStart('/').ToLowerInvariant()
+            $found = $normalizedRemote -contains $expected
+            if (-not $found -and $expected -notmatch '/') {
+                $found = @($normalizedRemote | Where-Object {
+                        $_ -like 'missions/*' -and [System.IO.Path]::GetFileName($_) -eq $expected
+                    }).Count -gt 0
+            }
+            -not $found
+        })
+}
+
 function Test-ExtractRegressionInfrastructureFailure($failureStep) {
     return $failureStep -in @('emulator_offline', 'setup_timeout', 'adb_staging_failed')
 }
