@@ -2,28 +2,17 @@
 
 $ErrorActionPreference = "Stop"
 $androidRoot = Split-Path -Parent $PSScriptRoot
-$normalizer = Join-Path $androidRoot "helpers\normalize_json.py"
-$python = Get-Command python -ErrorAction SilentlyContinue
-$usePyLauncher = $false
-if (-not $python) {
-    $python = Get-Command py -ErrorAction SilentlyContinue
-    $usePyLauncher = $true
-}
-if (-not $python) {
-    throw "Python not found for mission metadata JSON normalization test"
-}
+. (Join-Path $androidRoot "helpers\normalized_json_text.ps1")
 
 function Invoke-MetadataNormalizer {
     param([Parameter(Mandatory = $true)][string]$Text)
 
-    $arguments = @()
-    if ($usePyLauncher) { $arguments += "-3" }
-    $arguments += @($normalizer, "--mission-metadata")
-    $result = $Text | & $python.Source @arguments
-    if ($LASTEXITCODE -ne 0) {
-        throw "Mission metadata normalizer failed with exit code $LASTEXITCODE"
-    }
-    return (($result -join "`n") + "`n")
+    return ConvertTo-NormalizedJsonText -Text $Text -MissionMetadata
+}
+
+$quotedArgument = ConvertTo-WindowsProcessArgument 'C:\path with spaces\trailing\'
+if ($quotedArgument -cne '"C:\path with spaces\trailing\\"') {
+    throw "Windows process argument quoting is incorrect: $quotedArgument"
 }
 
 $androidStyle = '{"levels":[{"mine_volume":24904610,"travel_distance":0,"route_steps":[{"distance":580,"label_pos":{"x":514,"y":-22,"z":0}}],"replacements":[{"kind":"robot"}],"replacement_groups":[{"kind":"robot_changes"}]}]}'

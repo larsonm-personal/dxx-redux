@@ -24,6 +24,7 @@ $androidRoot = Split-Path -Parent $helpersDir
 . (Join-Path $helpersDir "test_helpers.ps1")
 . (Join-Path $helpersDir "bounded_extraction.ps1")
 . (Join-Path $helpersDir "mission_zip_batch_recovery.ps1")
+. (Join-Path $helpersDir "normalized_json_text.ps1")
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 function Get-7zaPath {
@@ -59,69 +60,6 @@ function ConvertTo-JsonStringContent {
     param([Parameter(Mandatory = $true)][string]$Value)
     $literal = $Value | ConvertTo-Json -Compress
     return $literal.Substring(1, $literal.Length - 2)
-}
-
-function ConvertTo-NormalizedJsonText {
-    param(
-        [Parameter(Mandatory = $true)][string]$Text,
-        [switch]$MissionMetadata
-    )
-
-    $trimmed = $Text.Trim()
-    if (-not $trimmed) { throw "JSON text is empty" }
-    $formatterPath = Join-Path $helpersDir "normalize_json.py"
-    if (-not (Test-Path -LiteralPath $formatterPath -PathType Leaf)) {
-        throw "JSON formatter not found: $formatterPath"
-    }
-    $python = Get-Command python -ErrorAction SilentlyContinue
-    $usePyLauncher = $false
-    if (-not $python) {
-        $python = Get-Command py -ErrorAction SilentlyContinue
-        $usePyLauncher = $true
-    }
-    if (-not $python) {
-        throw "Python not found for JSON formatting"
-    }
-
-    $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
-    $startInfo.FileName = $python.Source
-    if ($usePyLauncher) {
-        [void]$startInfo.ArgumentList.Add("-3")
-    }
-    [void]$startInfo.ArgumentList.Add($formatterPath)
-    if ($MissionMetadata) {
-        [void]$startInfo.ArgumentList.Add("--mission-metadata")
-    }
-    $startInfo.RedirectStandardInput = $true
-    $startInfo.RedirectStandardOutput = $true
-    $startInfo.RedirectStandardError = $true
-    $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
-    $startInfo.StandardInputEncoding = $utf8NoBom
-    $startInfo.StandardOutputEncoding = $utf8NoBom
-    $startInfo.StandardErrorEncoding = $utf8NoBom
-    $startInfo.UseShellExecute = $false
-    $startInfo.CreateNoWindow = $true
-
-    $process = [System.Diagnostics.Process]::Start($startInfo)
-    try {
-        $process.StandardInput.Write($trimmed)
-        $process.StandardInput.Close()
-        $outputTask = $process.StandardOutput.ReadToEndAsync()
-        $errorTask = $process.StandardError.ReadToEndAsync()
-        if (-not $process.WaitForExit(30000)) {
-            $process.Kill($true)
-            throw "JSON formatter timed out after 30 seconds"
-        }
-        $json = $outputTask.GetAwaiter().GetResult()
-        $errorText = $errorTask.GetAwaiter().GetResult()
-        if ($process.ExitCode -ne 0) {
-            throw "JSON formatter failed with exit code $($process.ExitCode): $errorText"
-        }
-        $json = $json -replace "`r`n", "`n"
-        return ($json.TrimEnd([char[]]@("`r", "`n")) + "`n")
-    } finally {
-        $process.Dispose()
-    }
 }
 
 . (Join-Path $PSScriptRoot 'atomic_text_file.ps1')

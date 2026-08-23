@@ -26,16 +26,14 @@
         "name": "MIDI Track 2",
         "filename": "endlevel.hmp",
         "format": "hmp",
-        "length_s": 0,
-        "parse_status": "invalid_midi"
+        "length_s": 19
       },
       {
         "track": 3,
         "name": "MIDI Track 3",
         "filename": "endgame.hmp",
         "format": "hmp",
-        "length_s": 0,
-        "parse_status": "invalid_midi"
+        "length_s": 131
       },
       {
         "track": 4,

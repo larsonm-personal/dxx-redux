@@ -71,13 +71,6 @@
         "filename": "game04.hmp",
         "format": "hmp",
         "length_s": 212
-      },
-      {
-        "track": 9,
-        "name": "MIDI Track 5",
-        "filename": "game05.hmp",
-        "format": "hmp",
-        "length_s": 226
       }
     ],
     "level_count": 5,
@@ -535,7 +528,7 @@
         "wall_count": 112,
         "trigger_count": 25,
         "object_count": 202,
-        "texture_count": 76,
+        "texture_count": 74,
         "robots": 96,
         "hostages": 1,
         "secrets": 0,

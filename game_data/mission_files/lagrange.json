@@ -266,7 +266,6 @@
             "index": 8,
             "kind": "trigger",
             "activation_kind": "unresolved_trigger",
-            "calculated": false,
             "label": "Locate and activate switch trigger 8",
             "seg": 2,
             "wall": 203,
@@ -275,6 +274,7 @@
               "y": 190.0,
               "z": 0.0
             },
+            "calculated": false,
             "trigger": 8,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",

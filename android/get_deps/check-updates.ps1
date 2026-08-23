@@ -1593,8 +1593,8 @@ if ([string]::IsNullOrWhiteSpace($targetInput) -and [string]::IsNullOrWhiteSpace
     return
 }
 
-$selectedTarget = Resolve-Selection $targetInput $targetUpgradeable
-$selectedInstall = Resolve-Selection $installInput $installOutOfSync
+$selectedTarget = @(Resolve-Selection $targetInput $targetUpgradeable)
+$selectedInstall = @(Resolve-Selection $installInput $installOutOfSync)
 
 function Get-InstallPriority($depName) {
     switch -Wildcard ($depName) {
@@ -1633,7 +1633,7 @@ if ($installAllSelected -and $selectedTarget.Count -gt 0) {
     }
 }
 if ($targetInstallSelections.Count -gt 0) {
-    $selectedInstall = @($selectedInstall + $targetInstallSelections)
+    $selectedInstall = @(@($selectedInstall) + @($targetInstallSelections))
     $targetInstallNames = ($targetInstallSelections | ForEach-Object { $_.Dep.Name }) -join ', '
     Write-Host ("Install sync 'a' also includes selected target updates: {0}" -f $targetInstallNames)
 }

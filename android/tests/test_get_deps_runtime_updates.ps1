@@ -28,6 +28,10 @@ function Assert-Matches($content, $pattern, $label) {
 
 Assert-Matches $checkUpdates '(?s)"JDK\*"\s*\{.*?Invoke-InstallSyncForDependency \$dep \$new' `
     "a selected JDK target update immediately runs its install helper"
+Assert-Matches $checkUpdates '\$selectedInstall\s*=\s*@\(Resolve-Selection' `
+    "a single install selection remains an array"
+Assert-Matches $checkUpdates '\$selectedInstall\s*=\s*@\(@\(\$selectedInstall\)\s*\+\s*@\(\$targetInstallSelections\)\)' `
+    "target-update install selections use array addition"
 Assert-Matches $checkUpdates 'Installer script failed with exit code \$LASTEXITCODE' `
     "a failed Bash installer stops check-updates"
 Assert-Matches $jdkUpdater 'create_temp_dir "\.jdk-\$JDK_MAJOR-stage" "\$INSTALL_DIR"' `
@@ -96,6 +100,17 @@ foreach ($value in @(
     if (Test-SafeToolConfValue -Key 'TEST_VERSION' -Value $value) {
         throw "Unsafe value accepted: $value"
     }
+}
+$oneSelectedInstall = @{ Index = 1; Dep = @{ Name = 'PowerShell 7' } }
+$targetInstallSelections = @(
+    @{ Index = 100001; Dep = @{ Name = 'Gradle' } },
+    @{ Index = 100002; Dep = @{ Name = 'Android SDK cmdline-tools' } }
+)
+$combinedInstallSelections = @(@($oneSelectedInstall) + @($targetInstallSelections))
+if ($combinedInstallSelections.Count -ne 3 -or
+    ($combinedInstallSelections | ForEach-Object { $_.Dep.Name }) -join ',' -ne
+    'PowerShell 7,Gradle,Android SDK cmdline-tools') {
+    throw 'Single-item and target-update install selections did not combine as arrays'
 }
 if (Test-SafeToolConfValue -Key 'TEST_URL' -Value 'http://example.com/tool.zip') {
     throw 'Non-HTTPS URL accepted'

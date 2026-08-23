@@ -14,6 +14,7 @@ $androidRoot = Split-Path -Parent $scriptDir
 $repoRoot = Split-Path -Parent $androidRoot
 . (Join-Path $scriptDir "standard_game_data.ps1")
 . (Join-Path $scriptDir "cd_level_metadata_sources.ps1")
+. (Join-Path $scriptDir "normalized_json_text.ps1")
 $zipDir = Join-Path $repoRoot "game_data\mission_files"
 $cdSourceManifest = Join-Path $zipDir "cd_level_metadata_sources.jsonc"
 $stamp = Get-Date -Format "yyyyMMdd_HHmmss"
@@ -127,57 +128,6 @@ function Test-LargeMissionZipIncluded {
         }
     }
     return $false
-}
-
-function ConvertTo-NormalizedJsonText {
-    param(
-        [Parameter(Mandatory = $true)][string]$Text,
-        [switch]$MissionMetadata
-    )
-
-    $formatter = Join-Path $scriptDir "normalize_json.py"
-    $python = Get-Command python -ErrorAction SilentlyContinue
-    $usePyLauncher = $false
-    if (-not $python) {
-        $python = Get-Command py -ErrorAction SilentlyContinue
-        $usePyLauncher = $true
-    }
-    if (-not $python) {
-        throw "Python not found for JSON formatting"
-    }
-
-    $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
-    $startInfo.FileName = $python.Source
-    if ($usePyLauncher) {
-        [void]$startInfo.ArgumentList.Add("-3")
-    }
-    [void]$startInfo.ArgumentList.Add($formatter)
-    if ($MissionMetadata) {
-        [void]$startInfo.ArgumentList.Add("--mission-metadata")
-    }
-    $startInfo.RedirectStandardInput = $true
-    $startInfo.RedirectStandardOutput = $true
-    $startInfo.RedirectStandardError = $true
-    $encoding = [System.Text.UTF8Encoding]::new($false)
-    $startInfo.StandardInputEncoding = $encoding
-    $startInfo.StandardOutputEncoding = $encoding
-    $startInfo.StandardErrorEncoding = $encoding
-    $startInfo.UseShellExecute = $false
-    $startInfo.CreateNoWindow = $true
-    $process = [System.Diagnostics.Process]::Start($startInfo)
-    try {
-        $process.StandardInput.Write($Text.Trim())
-        $process.StandardInput.Close()
-        $json = $process.StandardOutput.ReadToEnd()
-        $errorText = $process.StandardError.ReadToEnd()
-        $process.WaitForExit()
-        if ($process.ExitCode -ne 0) {
-            throw "JSON formatter failed with exit code $($process.ExitCode): $errorText"
-        }
-        return (($json -replace "`r`n", "`n").TrimEnd([char[]]@("`r", "`n")) + "`n")
-    } finally {
-        $process.Dispose()
-    }
 }
 
 . (Join-Path $PSScriptRoot 'atomic_text_file.ps1')
@@ -603,9 +553,7 @@ function Invoke-HeadlessMetadataProcess {
 
     $startInfo = [Diagnostics.ProcessStartInfo]::new()
     $startInfo.FileName = $Executable
-    foreach ($argument in $Arguments) {
-        [void]$startInfo.ArgumentList.Add($argument)
-    }
+    Set-CompatibleProcessArguments -StartInfo $startInfo -Arguments $Arguments
     $startInfo.RedirectStandardOutput = $true
     $startInfo.RedirectStandardError = $true
     $startInfo.UseShellExecute = $false
