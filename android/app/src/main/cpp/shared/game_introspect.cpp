@@ -1211,12 +1211,47 @@ static json serialize_guidebot()
 	result["route_analysis"] = serialize_guidebot_route_analysis();
 #endif
 	if (Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index) {
+		json path_segments = json::array();
+		const ai_static &buddy_ai = Objects[Buddy_objnum].ctype.ai_info;
+
 		result["segment"] = (int) Objects[Buddy_objnum].segnum;
 		result["object_type"] = (int) Objects[Buddy_objnum].type;
 		result["ai_mode"] = Ai_local_info[Buddy_objnum].mode;
-		result["path_index"] = Objects[Buddy_objnum].ctype.ai_info.cur_path_index;
-		result["path_length"] = Objects[Buddy_objnum].ctype.ai_info.path_length;
-		result["path_direction"] = Objects[Buddy_objnum].ctype.ai_info.PATH_DIR;
+		result["path_index"] = buddy_ai.cur_path_index;
+		result["path_length"] = buddy_ai.path_length;
+		result["path_direction"] = buddy_ai.PATH_DIR;
+		if (buddy_ai.hide_index >= 0 && buddy_ai.path_length > 0 &&
+		    buddy_ai.hide_index + buddy_ai.path_length <= MAX_POINT_SEGS)
+			for (int index = 0; index < buddy_ai.path_length; ++index)
+				path_segments.push_back(
+				    Point_segs[buddy_ai.hide_index + index].segnum);
+		result["path_segments"] = std::move(path_segments);
+#ifdef __ANDROID__
+		bool path_currently_passable =
+		    level_metadata_prepare_guidebot_path_view(Buddy_objnum) != 0;
+		if (path_currently_passable && buddy_ai.hide_index >= 0 &&
+		    buddy_ai.path_length > 0 &&
+		    buddy_ai.hide_index + buddy_ai.path_length <= MAX_POINT_SEGS)
+			for (int index = 0; index < buddy_ai.path_length; ++index) {
+				const int from = index > 0
+				                     ? Point_segs[buddy_ai.hide_index + index - 1].segnum
+				                     : Objects[Buddy_objnum].segnum;
+				const int to = Point_segs[buddy_ai.hide_index + index].segnum;
+				int side = 0;
+
+				if (from == to)
+					continue;
+				while (side < MAX_SIDES_PER_SEGMENT &&
+				       Segments[from].children[side] != to)
+					++side;
+				if (side >= MAX_SIDES_PER_SEGMENT ||
+				    !level_metadata_guidebot_side_passable_current(from, side)) {
+					path_currently_passable = false;
+					break;
+				}
+			}
+		result["path_currently_passable"] = path_currently_passable;
+#endif
 #ifdef NETWORK
 		int remote_slot = Objects[Buddy_objnum].ctype.ai_info.REMOTE_SLOT_NUM;
 		result["remote_owner"] = (int) Objects[Buddy_objnum].ctype.ai_info.REMOTE_OWNER;

@@ -888,10 +888,10 @@ int escort_debug_compare_route_path(void)
 	*ailp = saved_ailp;
 	ailp->goal_segment = saved_route_goal.target_seg;
 	Escort_route_goal = saved_route_goal;
-	Escort_path_parity_result.route_result = create_path_points(
+	Escort_path_parity_result.route_result = create_guidebot_route_path_points(
 	    objp, objp->segnum, saved_route_goal.target_seg,
 	    Escort_path_parity_route, &route_length,
-	    Max_escort_length, 1, 1, -1);
+	    Max_escort_length, 1, 1);
 	d_rand_get_state(&Escort_path_parity_result.route_rng_state);
 	route_rng_calls_after = d_rand_get_call_count();
 	route_mode_after = ailp->mode;
@@ -3410,9 +3410,13 @@ void escort_create_path_to_goal(object *objp)
 					Escort_route_avoid_seg2 = -1;
 					Escort_route_avoid_trigger = -1;
 					Escort_route_avoid_wall = -1;
-					create_path_to_segment(objp, goal_seg, Max_escort_length, 1);
+					create_guidebot_route_path_to_segment(
+					    objp, goal_seg, Max_escort_length, 1);
 				}
-			} else
+			} else if (using_route_goal)
+				create_guidebot_route_path_to_segment(
+				    objp, goal_seg, Max_escort_length, 1);
+			else
 #endif
 				create_path_to_segment(objp, goal_seg, Max_escort_length, 1);	//	MK!: Last parm (safety_flag) used to be 1!!
 			if (aip->path_length > 3)

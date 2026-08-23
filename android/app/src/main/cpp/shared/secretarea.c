@@ -3729,6 +3729,19 @@ int level_metadata_validate_live_route_certificate(
 	return 1;
 }
 
+int level_metadata_prepare_guidebot_path_view(int start_objnum)
+{
+	return level_metadata_refresh_scan_view(start_objnum) != NULL;
+}
+
+int level_metadata_guidebot_side_passable_current(int segment, int side)
+{
+	if (!Level_metadata_scan_view_initialized)
+		return 0;
+	return guidebot_route_side_passable_current(
+	    &Level_metadata_scan_view, segment, side);
+}
+
 int secret_area_note_segment_entered(int segnum)
 {
 	int display_index = secret_area_mark_segment_entered(&Secret_area_state, segnum);
