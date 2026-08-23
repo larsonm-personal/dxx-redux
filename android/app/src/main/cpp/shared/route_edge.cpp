@@ -264,8 +264,7 @@ route_edge_decision evaluate_route_edge(
 			result.action = route_required_action::wait_for_player;
 		return result;
 	}
-	if (wall_state.kind == route_wall_kind::open ||
-	    wall_state.kind == route_wall_kind::illusion)
+	if (wall_state.kind == route_wall_kind::open)
 		return passable(wall);
 	if (wall_state.kind == route_wall_kind::blastable &&
 	    state_flag(state.destroyed_blastable_walls, wall))

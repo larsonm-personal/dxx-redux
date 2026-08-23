@@ -48,6 +48,7 @@ typedef struct android_listbox_touch_log_state {
 const char *android_menu_touch_event_phase(int event_type);
 void android_log_newmenu_touch_state(const android_newmenu_touch_log_state *state);
 void android_log_listbox_touch_state(const android_listbox_touch_log_state *state);
+void android_log_menu_drag_cancel(const char *menu_kind, int dx, int dy, int threshold);
 
 #ifdef __cplusplus
 }

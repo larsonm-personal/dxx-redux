@@ -635,7 +635,10 @@ class TouchOverlayView
                         originPx = s.mouseEdgeOriginX,
                         lowPx = s.fzLeft,
                         highPx = s.fzRight,
+                        screenLowPx = 0f,
+                        screenHighPx = width.toFloat(),
                         edgeRegionPct = s.control.mouseEdgeRegionPct,
+                        screenEdgeZonePct = s.control.mouseScreenEdgeZonePct,
                         edgeMaxRatePct = s.control.mouseEdgeMaxRatePct,
                     )
                 val edgeY =
@@ -645,7 +648,10 @@ class TouchOverlayView
                         originPx = s.mouseEdgeOriginY,
                         lowPx = s.fzTop,
                         highPx = s.fzBottom,
+                        screenLowPx = 0f,
+                        screenHighPx = height.toFloat(),
                         edgeRegionPct = s.control.mouseEdgeRegionPct,
+                        screenEdgeZonePct = s.control.mouseScreenEdgeZonePct,
                         edgeMaxRatePct = s.control.mouseEdgeMaxRatePct,
                     )
                 val outX = combineMouseDragAndEdge(emitX, edgeX, s.control.invertX)

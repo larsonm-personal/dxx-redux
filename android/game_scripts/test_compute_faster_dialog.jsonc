@@ -1,12 +1,12 @@
 // TEST: Advanced precompute exposes a scoped full-CPU dialog.
 [
     {"_info": {
-        "description": "Verify Compute faster opens from Advanced settings",
+        "description": "Verify Foreground compute opens from Advanced settings",
         "games": ["d2"]
     }},
     {"action": "enter_launcher"},
     {"action": "tap_button", "text": "Advanced", "post_delay_ms": 600},
-    {"action": "assert_button", "text": "Compute faster", "exact": true},
-    {"action": "tap_button", "text": "Compute faster", "exact": true, "post_delay_ms": 500},
+    {"action": "assert_button", "text": "Foreground compute", "exact": true},
+    {"action": "tap_button", "text": "Foreground compute", "exact": true, "post_delay_ms": 500},
     {"action": "wait_ms", "ms": 500}
 ]

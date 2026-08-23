@@ -75,7 +75,7 @@ int guidebot_route_side_passable_current(
 		return 1;
 	type = view->wall_type ? view->wall_type(view->user, wall) : -1;
 	flags = view->wall_flags ? view->wall_flags(view->user, wall) : 0;
-	if (type == view->wall_type_open || type == view->wall_type_illusion ||
+	if (type == view->wall_type_open ||
 	    (flags & view->wall_flag_door_opened) != 0 ||
 	    (view->wall_is_opening && view->wall_is_opening(view->user, wall)))
 		return 1;
@@ -269,8 +269,6 @@ int guidebot_route_certify_current_state(
 	guidebot_route_certifier_summary local_summary;
 	int selected = -1;
 	int selected_segment = -1;
-	int fallback = -1;
-	int fallback_segment = -1;
 	int requires_control_center = 0;
 	int step;
 
@@ -320,21 +318,12 @@ int guidebot_route_certify_current_state(
 			local_summary.rejected_actions++;
 			continue;
 		}
-		if (fallback < 0) {
-			fallback = step;
-			fallback_segment = target_segment;
-		}
 		if (!workspace->reachable[target_segment]) {
 			local_summary.rejected_actions++;
 			continue;
 		}
 		selected = step;
 		selected_segment = target_segment;
-	}
-	if (selected < 0 && fallback >= 0) {
-		selected = fallback;
-		selected_segment = fallback_segment;
-		local_summary.used_prepared_fallback = 1;
 	}
 	if (selected < 0) {
 		int incomplete = 0;

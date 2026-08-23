@@ -102,10 +102,11 @@ struct newmenu
 	int				scroll_line_spacing;
 	int				mouse_state, dblclick_flag;
 	int				drag_start_y;	// Y coord at touch start for drag-to-scroll, -1 if inactive
-	int				drag_happened;	// Set when a drag-scroll actually occurred (suppresses tap activation)
+	int				drag_happened;	// Set when touch motion invalidates tap activation
 	int				*rval;			// Pointer to return value (for polling newmenus)
 	void			*userdata;		// For whatever - like with window system
 #ifdef ANDROID
+	int touch_start_x, touch_start_y;
 	newmenu_item	*android_original_items;
 	int				android_original_nitems;
 	int				android_readable_tiny;
@@ -123,6 +124,13 @@ static ubyte android_newmenu_menu_fade_table[256 * GR_FADE_LEVELS];
 static int nm_background_palette_valid = 0;
 static int android_newmenu_menu_palette_valid = 0;
 enum { ANDROID_TINY_TEXT_MAX_VISIBLE = 9 };
+enum { ANDROID_MENU_TAP_DRAG_THRESHOLD = 4 };
+
+static int android_menu_touch_dragged(int start_x, int start_y, int mx, int my)
+{
+	return abs(mx - start_x) >= ANDROID_MENU_TAP_DRAG_THRESHOLD ||
+	       abs(my - start_y) >= ANDROID_MENU_TAP_DRAG_THRESHOLD;
+}
 
 static int android_tap_outside_game_menu(newmenu *menu, int mx, int my)
 {
@@ -655,6 +663,24 @@ void strip_end_whitespace( char * text )
 	}
 }
 
+static void newmenu_activate_input_menu(newmenu_item *item)
+{
+	item->group = 1;
+	if (!d_strnicmp(item->saved_text, TXT_EMPTY, strlen(TXT_EMPTY))) {
+#ifdef ANDROID
+		const char *default_text = state_android_get_empty_save_name();
+		if (default_text) {
+			strncpy(item->text, default_text, item->text_len);
+			item->text[item->text_len] = 0;
+		} else
+#endif
+			item->text[0] = 0;
+		item->value = -1;
+	} else {
+		strip_end_whitespace(item->text);
+	}
+}
+
 int newmenu_do( char * title, char * subtitle, int nitems, newmenu_item * item, int (*subfunction)(newmenu *menu, d_event *event, void *userdata), void *userdata )
 {
 	return newmenu_do2( title, subtitle, nitems, item, subfunction, userdata, 0, NULL );
@@ -770,6 +796,7 @@ void game_menu_introspect_read(newmenu *menu, game_menu_introspect_snapshot *sna
 	snapshot->android_original_nitems = menu->nitems;
 #endif
 }
+
 #endif
 
 void newmenu_scroll(newmenu *menu, int amount)
@@ -866,10 +893,20 @@ static void newmenu_get_item_bounds(newmenu *menu, int item_index,
 	if (row_height < scroll_line_spacing)
 		row_height = scroll_line_spacing;
 
+#ifdef ANDROID
+	{
+		int top_padding = (row_height - item->h) / 2;
+		*x1 = grd_curcanv->cv_bitmap.bm_x + item->x - FSPACX(13);
+		*x2 = grd_curcanv->cv_bitmap.bm_x + item->x + item->w + FSPACX(13);
+		*y1 = grd_curcanv->cv_bitmap.bm_y + visible_y - top_padding;
+		*y2 = *y1 + row_height;
+	}
+#else
 	*x1 = grd_curcanv->cv_bitmap.bm_x + item->x - FSPACX(13);
 	*x2 = *x1 + item->w + FSPACX(13);
 	*y1 = grd_curcanv->cv_bitmap.bm_y + visible_y;
 	*y2 = *y1 + row_height;
+#endif
 }
 
 static void newmenu_reorder_ensure_visible(newmenu *menu)
@@ -1284,13 +1321,7 @@ int newmenu_mouse(window *wind, d_event *event, newmenu *menu, int button)
 
 			if ((event->type == EVENT_MOUSE_BUTTON_UP) && (menu->citem>-1) && (menu->items[menu->citem].type==NM_TYPE_INPUT_MENU) && (menu->items[menu->citem].group==0))
 			{
-				menu->items[menu->citem].group = 1;
-				if ( !d_strnicmp( menu->items[menu->citem].saved_text, TXT_EMPTY, strlen(TXT_EMPTY) ) )	{
-					menu->items[menu->citem].text[0] = 0;
-					menu->items[menu->citem].value = -1;
-				} else {
-					strip_end_whitespace(menu->items[menu->citem].text);
-				}
+				newmenu_activate_input_menu(&menu->items[menu->citem]);
 			}
 
 #ifdef ANDROID
@@ -1522,13 +1553,7 @@ int newmenu_key_command(window *wind, d_event *event, newmenu *menu)
 						break;
 				}
 			} else if ( (menu->citem>-1) && (item->type==NM_TYPE_INPUT_MENU) && (item->group==0))	{
-				item->group = 1;
-				if ( !d_strnicmp( item->saved_text, TXT_EMPTY, strlen(TXT_EMPTY) ) )	{
-					item->text[0] = 0;
-					item->value = -1;
-				} else {
-					strip_end_whitespace(item->text);
-				}
+				newmenu_activate_input_menu(item);
 			} else
 			{
 				if (item->type==NM_TYPE_INPUT_MENU)
@@ -1899,13 +1924,7 @@ void newmenu_create_structure( newmenu *menu )
 		}
 #ifdef ANDROID
 		if (menu->items[menu->citem].type == NM_TYPE_INPUT_MENU) {
-			menu->items[menu->citem].group = 1;
-			if (!d_strnicmp(menu->items[menu->citem].saved_text, TXT_EMPTY, strlen(TXT_EMPTY))) {
-				menu->items[menu->citem].text[0] = 0;
-				menu->items[menu->citem].value = -1;
-			} else {
-				strip_end_whitespace(menu->items[menu->citem].text);
-			}
+			newmenu_activate_input_menu(&menu->items[menu->citem]);
 		}
 #endif
 	}
@@ -2218,12 +2237,16 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 			menu->mouse_state = event->type == EVENT_MOUSE_BUTTON_DOWN;
 #ifdef ANDROID
 			if (button == MBTN_LEFT) {
-				if (menu->mouse_state && menu->is_scroll_box) {
+				if (menu->mouse_state) {
 					int mx, my, mz;
 					mouse_get_pos(&mx, &my, &mz);
-					menu->drag_start_y = my;
+					menu->touch_start_x = mx;
+					menu->touch_start_y = my;
+					menu->drag_start_y = menu->is_scroll_box ? my : -1;
 					menu->drag_happened = 0;
 				} else {
+					menu->touch_start_x = -1;
+					menu->touch_start_y = -1;
 					menu->drag_start_y = -1;
 				}
 			}
@@ -2317,6 +2340,17 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 
 #ifdef ANDROID
 		case EVENT_MOUSE_MOVED:
+			if (menu->mouse_state && !menu->drag_happened &&
+			    menu->touch_start_x >= 0 && menu->touch_start_y >= 0) {
+				int mx, my, mz;
+				mouse_get_pos(&mx, &my, &mz);
+				if (android_menu_touch_dragged(menu->touch_start_x, menu->touch_start_y, mx, my)) {
+					menu->drag_happened = 1;
+					android_log_menu_drag_cancel("newmenu", mx - menu->touch_start_x,
+					                             my - menu->touch_start_y,
+					                             ANDROID_MENU_TAP_DRAG_THRESHOLD);
+				}
+			}
 			if (menu->mouse_state && menu->reorderitems && menu->reorder.touch_candidate >= 0) {
 				int mx, my, mz, target;
 				grs_canvas *menu_canvas = window_get_canvas(wind);
@@ -2469,6 +2503,8 @@ newmenu *newmenu_do4( char * title, char * subtitle, int nitems, newmenu_item * 
 	menu->rval = NULL;		// Default to not returning a value - respond to EVENT_NEWMENU_SELECTED instead
 	menu->userdata = userdata;
 #ifdef ANDROID
+	menu->touch_start_x = -1;
+	menu->touch_start_y = -1;
 	android_menu_reorder_init(&menu->reorder);
 #endif
 
@@ -2599,6 +2635,9 @@ struct listbox
 	int box_w, height, box_x, box_y, title_height, line_spacing, row_height, selected_row_height;
 	short swidth, sheight; float fntscalex, fntscaley; // with these we check if resolution or fonts have changed so listbox structure can be recreated
 	int mouse_state;
+#ifdef ANDROID
+	int touch_start_x, touch_start_y, drag_happened;
+#endif
 	void *userdata;
 };
 
@@ -2827,7 +2866,11 @@ int listbox_mouse(window *wind, d_event *event, listbox *lb, int button)
 				android_pilot_listbox_hold_clear(lb);
 #endif
 			}
-			else if (event->type == EVENT_MOUSE_BUTTON_UP)
+			else if (event->type == EVENT_MOUSE_BUTTON_UP
+#ifdef ANDROID
+			         && !lb->drag_happened
+#endif
+			        )
 			{
 				if (lb->citem < 0)
 					return 0;
@@ -3266,6 +3309,20 @@ int listbox_handler(window *wind, d_event *event, listbox *lb)
 		{
 			int button = event_mouse_get_button(event);
 			lb->mouse_state = event->type == EVENT_MOUSE_BUTTON_DOWN;
+#ifdef ANDROID
+			if (button == MBTN_LEFT) {
+				if (lb->mouse_state) {
+					int mx, my, mz;
+					mouse_get_pos(&mx, &my, &mz);
+					lb->touch_start_x = mx;
+					lb->touch_start_y = my;
+					lb->drag_happened = 0;
+				} else {
+					lb->touch_start_x = -1;
+					lb->touch_start_y = -1;
+				}
+			}
+#endif
 			return listbox_mouse(wind, event, lb, button);
 		}
 
@@ -3274,6 +3331,21 @@ int listbox_handler(window *wind, d_event *event, listbox *lb)
 			break;
 
 #ifdef ANDROID
+		case EVENT_MOUSE_MOVED:
+			if (lb->mouse_state && !lb->drag_happened &&
+			    lb->touch_start_x >= 0 && lb->touch_start_y >= 0) {
+				int mx, my, mz;
+				mouse_get_pos(&mx, &my, &mz);
+				if (android_menu_touch_dragged(lb->touch_start_x, lb->touch_start_y, mx, my)) {
+					lb->drag_happened = 1;
+					android_pilot_listbox_hold_clear(lb);
+					android_log_menu_drag_cancel("listbox", mx - lb->touch_start_x,
+					                             my - lb->touch_start_y,
+					                             ANDROID_MENU_TAP_DRAG_THRESHOLD);
+				}
+			}
+			return lb->drag_happened;
+
 		case EVENT_JOYSTICK_BUTTON_DOWN:
 		{
 			int btn = event_joystick_get_button(event);

@@ -24,6 +24,7 @@
 typedef struct certifier_fixture {
 	int child[TEST_SEGMENTS][LEVEL_METADATA_MAX_SIDES];
 	int wall[TEST_SEGMENTS][LEVEL_METADATA_MAX_SIDES];
+	int wall_type[TEST_WALLS];
 	int wall_open[TEST_WALLS];
 	int wall_shootable[TEST_WALLS];
 	int trigger_flags[TEST_TRIGGERS];
@@ -74,9 +75,8 @@ static int wall_num(void *user, int segment, int side)
 
 static int wall_type(void *user, int wall)
 {
-	(void) user;
-	(void) wall;
-	return 1;
+	certifier_fixture *fixture = (certifier_fixture *) user;
+	return fixture->wall_type[wall];
 }
 
 static int wall_flags(void *user, int wall)
@@ -218,8 +218,10 @@ static void initialize_fixture(certifier_fixture *fixture)
 		fixture->child[segment + 1][1] = segment;
 		fixture->wall[segment + 1][1] = segment;
 	}
-	for (segment = 0; segment < TEST_WALLS; ++segment)
+	for (segment = 0; segment < TEST_WALLS; ++segment) {
+		fixture->wall_type[segment] = 1;
 		fixture->wall_shootable[segment] = 1;
+	}
 }
 
 static void initialize_plan(route_planner_plan_summary *plan)
@@ -401,10 +403,9 @@ static void test_destroyed_switch_stays_complete_when_link_recloses(void)
 	fixture.wall_shootable[0] = 0;
 	assert(!fixture.wall_open[0]);
 
-	assert(certify(
+	assert(!certify(
 	    &view, &prepared_plan, &live_plan, &certificate, &summary));
-	assert(live_plan.first_pending_step == 2);
-	assert(certificate.source_trigger == 1);
+	assert(summary.selected_step == -1);
 
 	Prepared.route_steps[1].activation_kind =
 	    LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER;
@@ -414,12 +415,49 @@ static void test_destroyed_switch_stays_complete_when_link_recloses(void)
 	assert(certificate.source_trigger == 0);
 }
 
+static void test_solid_illusion_wall_is_not_passable(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+
+	initialize_fixture(&fixture);
+	view = make_view(&fixture);
+	fixture.wall_type[0] = view.wall_type_illusion;
+	assert(!fixture.wall_open[0]);
+	assert(!guidebot_route_side_passable_current(&view, 0, 0));
+	fixture.wall_open[0] = 1;
+	assert(guidebot_route_side_passable_current(&view, 0, 0));
+}
+
+static void test_unreachable_prepared_target_requires_replan(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+	route_planner_plan_summary prepared_plan;
+	route_planner_plan_summary live_plan;
+	guidebot_route_validity_certificate certificate;
+	guidebot_route_certifier_summary summary;
+
+	initialize_fixture(&fixture);
+	initialize_plan(&prepared_plan);
+	view = make_view(&fixture);
+	view.start_segment = 0;
+	Prepared.route_steps[1].seg = 1;
+	Prepared.route_steps[1].path_terminal_segment = 1;
+	assert(!certify(
+	    &view, &prepared_plan, &live_plan, &certificate, &summary));
+	assert(summary.selected_step == -1);
+	assert(summary.rejected_actions > 0);
+}
+
 int main(void)
 {
 	test_current_start_and_accessibility_select_action();
 	test_identical_state_is_history_independent();
 	test_disabled_action_uses_reachable_prepared_alternative();
 	test_destroyed_switch_stays_complete_when_link_recloses();
+	test_solid_illusion_wall_is_not_passable();
+	test_unreachable_prepared_target_requires_replan();
 	printf("guidebot route certifier tests passed\n");
 	return 0;
 }

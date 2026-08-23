@@ -53,3 +53,15 @@ void android_log_listbox_touch_state(const android_listbox_touch_log_state *stat
 	          scale.src.x, scale.src.y, scale.src.w, scale.src.h,
 	          scale.dst.x, scale.dst.y, scale.dst.w, scale.dst.h);
 }
+
+void android_log_menu_drag_cancel(const char *menu_kind, int dx, int dy, int threshold)
+{
+	static int diag_count;
+
+	if (diag_count >= ANDROID_MENU_TOUCH_LOG_LIMIT)
+		return;
+	diag_count++;
+	debug_log(DLOG_GAME,
+	          "[menu-touch] drag-cancel kind=%s dx=%d dy=%d threshold=%d\n",
+	          menu_kind ? menu_kind : "unknown", dx, dy, threshold);
+}

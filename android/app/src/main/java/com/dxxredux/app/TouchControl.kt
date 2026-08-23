@@ -25,6 +25,8 @@ private val TOUCH_FLOAT_RANGES =
         "mouseExponentialMax" to 1.0..10.0,
         "mouseEdgeRegionPct" to
             TouchBindings.MIN_MOUSE_EDGE_REGION_PCT.toDouble()..TouchBindings.MAX_MOUSE_EDGE_REGION_PCT.toDouble(),
+        "mouseScreenEdgeZonePct" to
+            TouchBindings.run { MIN_MOUSE_SCREEN_EDGE_ZONE_PCT.toDouble()..MAX_MOUSE_SCREEN_EDGE_ZONE_PCT.toDouble() },
         "mouseEdgeMaxRatePct" to
             TouchBindings.MIN_MOUSE_EDGE_MAX_RATE_PCT.toDouble()..TouchBindings.MAX_MOUSE_EDGE_MAX_RATE_PCT.toDouble(),
         "threshold" to
@@ -391,6 +393,12 @@ internal fun validateTouchLayoutDomains(layout: TouchLayout): String? {
         ) {
             return "$path mouseEdgeRegionPct is invalid"
         }
+        if (!stick.mouseScreenEdgeZonePct.isFinite() ||
+            stick.mouseScreenEdgeZonePct !in
+            TouchBindings.MIN_MOUSE_SCREEN_EDGE_ZONE_PCT..TouchBindings.MAX_MOUSE_SCREEN_EDGE_ZONE_PCT
+        ) {
+            return "$path mouseScreenEdgeZonePct is invalid"
+        }
         if (!stick.mouseEdgeMaxRatePct.isFinite() ||
             stick.mouseEdgeMaxRatePct !in
             TouchBindings.MIN_MOUSE_EDGE_MAX_RATE_PCT..TouchBindings.MAX_MOUSE_EDGE_MAX_RATE_PCT
@@ -613,6 +621,7 @@ data class AnalogStickControl(
     val mouseExponentialMax: Float = 3f,
     val mouseEdgeContinuousMovement: Boolean = false,
     val mouseEdgeRegionPct: Float = TouchBindings.DEFAULT_MOUSE_EDGE_REGION_PCT,
+    val mouseScreenEdgeZonePct: Float = TouchBindings.DEFAULT_MOUSE_SCREEN_EDGE_ZONE_PCT,
     val mouseEdgeMaxRatePct: Float = TouchBindings.DEFAULT_MOUSE_EDGE_MAX_RATE_PCT,
     val buttonMode: Boolean = false,
     val negXBinding: Int = TouchBindings.BTN_FIRE_PRIMARY,
@@ -650,6 +659,7 @@ data class AnalogStickControl(
                 put("mouseExponentialMax", mouseExponentialMax.toDouble())
                 put("mouseEdgeContinuousMovement", mouseEdgeContinuousMovement)
                 put("mouseEdgeRegionPct", mouseEdgeRegionPct.toDouble())
+                put("mouseScreenEdgeZonePct", mouseScreenEdgeZonePct.toDouble())
                 put("mouseEdgeMaxRatePct", mouseEdgeMaxRatePct.toDouble())
             }
             if (buttonMode) {
@@ -708,6 +718,12 @@ data class AnalogStickControl(
                         .optDouble(
                             "mouseEdgeRegionPct",
                             TouchBindings.DEFAULT_MOUSE_EDGE_REGION_PCT.toDouble(),
+                        ).toFloat(),
+                mouseScreenEdgeZonePct =
+                    j
+                        .optDouble(
+                            "mouseScreenEdgeZonePct",
+                            TouchBindings.DEFAULT_MOUSE_SCREEN_EDGE_ZONE_PCT.toDouble(),
                         ).toFloat(),
                 mouseEdgeMaxRatePct =
                     j

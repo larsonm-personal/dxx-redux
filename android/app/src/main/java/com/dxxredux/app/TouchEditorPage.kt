@@ -2428,7 +2428,7 @@ private fun StickPropertiesPanel(
         if (stick.mouseEdgeContinuousMovement) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 LabeledSlider(
-                    "Edge Size %",
+                    "Ramp Size (% of Touch Region)",
                     stick.mouseEdgeRegionPct,
                     TouchBindings.MIN_MOUSE_EDGE_REGION_PCT,
                     TouchBindings.MAX_MOUSE_EDGE_REGION_PCT,
@@ -2445,6 +2445,15 @@ private fun StickPropertiesPanel(
                 ) {
                     onUpdate(stick.copy(mouseEdgeMaxRatePct = it))
                 }
+            }
+            LabeledSlider(
+                "Screen Edge 100% Zone (% of Full Screen)",
+                stick.mouseScreenEdgeZonePct,
+                TouchBindings.MIN_MOUSE_SCREEN_EDGE_ZONE_PCT,
+                TouchBindings.MAX_MOUSE_SCREEN_EDGE_ZONE_PCT,
+                Modifier.fillMaxWidth(),
+            ) {
+                onUpdate(stick.copy(mouseScreenEdgeZonePct = it))
             }
         }
     }

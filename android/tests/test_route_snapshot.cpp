@@ -653,6 +653,18 @@ int main()
 	assert(key_edge.progress_cost == LEVEL_METADATA_ROUTE_EDGE_PROGRESS);
 	assert(key_edge.blocker == dxx_route::route_edge_blocker::missing_key);
 	assert(key_edge.action == dxx_route::route_required_action::acquire_key);
+	edge_cases.state.walls[1].kind =
+	    dxx_route::route_wall_kind::illusion;
+	edge_cases.state.walls[1].key =
+	    dxx_route::route_key_requirement::none;
+	assert(dxx_route::evaluate_route_edge(edge_cases, edge_query, 1, 0)
+	           .progress_cost == LEVEL_METADATA_ROUTE_EDGE_BLOCKED);
+	edge_cases.state.segments[1].sides[0].flyable = true;
+	assert(dxx_route::evaluate_route_edge(edge_cases, edge_query, 1, 0)
+	           .progress_cost == LEVEL_METADATA_ROUTE_EDGE_PASSABLE);
+	edge_cases.state.segments[1].sides[0].flyable = false;
+	edge_cases.state.walls[1].kind = dxx_route::route_wall_kind::door;
+	edge_cases.state.walls[1].key = dxx_route::route_key_requirement::blue;
 	edge_query.progression.key_mask = LEVEL_METADATA_KEY_MASK_BLUE;
 	assert(dxx_route::evaluate_route_edge(edge_cases, edge_query, 1, 0)
 	           .progress_cost == LEVEL_METADATA_ROUTE_EDGE_PASSABLE);

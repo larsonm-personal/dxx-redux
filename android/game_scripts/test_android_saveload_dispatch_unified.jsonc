@@ -68,6 +68,32 @@
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "time_paused": "true"}},
     {"action": "set_debug", "field": "android_game_request", "value": "save", "post_delay_ms": 300},
     {"action": "wait_for", "field": "menu_subtitle", "value": "Save Game", "timeout_ms": 5000},
+    {"action": "assert", "expect": {
+        "menu.selected_index": "1",
+        "menu.items[1].text": "level 1",
+        "menu.items[2].text": "-empty-",
+        "menu.items[3].text": "-empty-",
+        "menu.items[4].text": "-empty-",
+        "menu.items[5].text": "-empty-",
+        "menu.items[6].text": "-empty-",
+        "menu.items[7].text": "-empty-",
+        "menu.items[8].text": "[auto] best",
+        "menu.items[9].text": "-empty-",
+        "menu.items[10].text": "[auto] save"
+    }},
+    {"action": "key", "key": "down", "post_delay_ms": 100},
+    {"action": "assert", "expect": {
+        "menu.selected_index": "2",
+        "menu.items[1].text": "-empty-",
+        "menu.items[2].text": "-empty-"
+    }},
+    {"action": "key", "key": "enter", "post_delay_ms": 100},
+    {"action": "assert", "expect": {
+        "menu.selected_index": "2",
+        "menu.items[1].text": "-empty-",
+        "menu.items[2].text": "level 1",
+        "menu.items[3].text": "-empty-"
+    }},
     {"action": "key", "key": "enter", "post_delay_ms": 200},
     {"action": "wait_for", "field": "screen_mode", "value": "game", "timeout_ms": 5000},
     {"action": "assert", "expect": {"in_game": "true", "game_window_is_front": "true", "time_paused": "false"}},

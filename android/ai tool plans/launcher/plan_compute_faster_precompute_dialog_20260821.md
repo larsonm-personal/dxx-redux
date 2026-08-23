@@ -14,6 +14,7 @@ latest eight work-log items.
 - [x] Add the Compute faster dialog with progress bars and eight recent log items
 - [x] Add focused regression coverage for concurrency and retained log behavior
 - [x] Run scoped code quality, focused tests, and the Android debug build
+- [x] Rename the two user-facing labels to Foreground compute
 
 ## Status
 

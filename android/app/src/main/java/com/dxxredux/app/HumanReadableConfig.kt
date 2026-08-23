@@ -279,6 +279,12 @@ object HumanReadableConfig {
                         "mouseEdgeRegionPct",
                         TouchBindings.DEFAULT_MOUSE_EDGE_REGION_PCT.toDouble(),
                     ).toFloat(),
+            mouseScreenEdgeZonePct =
+                j
+                    .optDouble(
+                        "mouseScreenEdgeZonePct",
+                        TouchBindings.DEFAULT_MOUSE_SCREEN_EDGE_ZONE_PCT.toDouble(),
+                    ).toFloat(),
             mouseEdgeMaxRatePct =
                 j
                     .optDouble(

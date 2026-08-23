@@ -129,6 +129,14 @@
         "menu.items[20].text": "NETGAME SYSTEM KEYS",
         "menu.items[21].text": "DEMO SYSTEM KEYS"
     }},
+    {"action": "select", "text": "DEMO SYSTEM KEYS", "post_delay_ms": 200, "timeout_ms": 5000},
+    {"action": "wait_for", "field": "menu_subtitle", "value": "DEMO PLAYBACK CONTROLS", "timeout_ms": 5000},
+    {"action": "assert", "expect": {
+        "menu.type": "newmenu",
+        "menu_subtitle": "DEMO PLAYBACK CONTROLS"
+    }},
+    {"action": "key", "key": "escape", "post_delay_ms": 200},
+    {"action": "wait_for", "field": "menu_subtitle", "value": "Controls", "timeout_ms": 5000},
 
     {"action": "introspect"},
     {"action": "log", "message": "=== TEST: D2 controls readability -- COMPLETE ==="}

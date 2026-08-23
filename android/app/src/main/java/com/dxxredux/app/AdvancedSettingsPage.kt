@@ -1023,7 +1023,7 @@ private fun RouteMetadataPrecomputeSection(
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
             modifier = Modifier.height(28.dp),
         ) {
-            Text("Compute faster", fontSize = 11.sp)
+            Text("Foreground compute", fontSize = 11.sp)
         }
         if (monitor.logFile.isFile) {
             OutlinedButton(
@@ -1110,7 +1110,7 @@ private fun RouteMetadataPrecomputeSection(
         }
         AlertDialog(
             onDismissRequest = { showComputeFaster = false },
-            title = { Text("Compute Faster") },
+            title = { Text("Foreground Compute") },
             text = {
                 Column(
                     modifier = Modifier.fillMaxWidth().heightIn(max = 560.dp).verticalScroll(rememberScrollState()),

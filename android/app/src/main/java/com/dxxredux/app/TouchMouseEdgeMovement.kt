@@ -6,10 +6,13 @@ internal fun mouseEdgeAxisContribution(
     originPx: Float,
     lowPx: Float,
     highPx: Float,
+    screenLowPx: Float,
+    screenHighPx: Float,
     edgeRegionPct: Float,
+    screenEdgeZonePct: Float,
     edgeMaxRatePct: Float,
 ): Float {
-    if (!enabled || highPx <= lowPx) return 0f
+    if (!enabled || highPx <= lowPx || screenHighPx <= screenLowPx) return 0f
 
     val edgeWidth =
         (highPx - lowPx) *
@@ -19,9 +22,17 @@ internal fun mouseEdgeAxisContribution(
             ) / 100f
     if (edgeWidth <= 0f) return 0f
 
+    val screenEdgeWidth =
+        (screenHighPx - screenLowPx) *
+            screenEdgeZonePct.coerceIn(
+                TouchBindings.MIN_MOUSE_SCREEN_EDGE_ZONE_PCT,
+                TouchBindings.MAX_MOUSE_SCREEN_EDGE_ZONE_PCT,
+            ) / 100f
+    val negativeFullRatePx = (screenLowPx + screenEdgeWidth).coerceIn(lowPx, highPx)
+    val positiveFullRatePx = (screenHighPx - screenEdgeWidth).coerceIn(lowPx, highPx)
     val minimumStartTravel = edgeWidth / 2f
-    val negativeRamp = ((lowPx + edgeWidth - positionPx) / edgeWidth).coerceIn(0f, 1f)
-    val positiveRamp = ((positionPx - (highPx - edgeWidth)) / edgeWidth).coerceIn(0f, 1f)
+    val negativeRamp = ((negativeFullRatePx + edgeWidth - positionPx) / edgeWidth).coerceIn(0f, 1f)
+    val positiveRamp = ((positionPx - (positiveFullRatePx - edgeWidth)) / edgeWidth).coerceIn(0f, 1f)
     val negative = if (originPx - positionPx >= minimumStartTravel) negativeRamp else 0f
     val positive = if (positionPx - originPx >= minimumStartTravel) positiveRamp else 0f
     val maxRate =

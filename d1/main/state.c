@@ -1661,6 +1661,20 @@ static int state_default_item = 0;
 //Since state_default_item should ALWAYS point to a valid savegame slot, we use this to check if we once already actually SAVED a game. If yes, state_quick_item will be equal state_default_item, otherwise it should be -1 on every new mission and tell us we need to select a slot for quicksave.
 int state_quick_item = -1;
 
+#ifdef __ANDROID__
+static int state_android_empty_save_name_active = 0;
+
+const char *state_android_get_empty_save_name(void)
+{
+	static char name[DESC_LENGTH + 1];
+
+	if (!state_android_empty_save_name_active)
+		return NULL;
+	snprintf(name, sizeof(name), "level %d", Current_level_num);
+	return name;
+}
+#endif
+
 
 /* Present a menu for selection of a savegame filename.
  * For saving, dsc should be a pre-allocated buffer into which the new
@@ -1726,11 +1740,6 @@ int state_get_savegame_filename(char * fname, char * dsc, char * caption, int bl
 			PHYSFS_close(fp);
 		} 
 		if (!valid) {
-#ifdef __ANDROID__
-			if (dsc != NULL)
-				snprintf(desc[i], sizeof(desc[i]), "level %d", Current_level_num);
-			else
-#endif
 			strcpy( desc[i], TXT_EMPTY );
 			//rpad_string( desc[i], DESC_LENGTH-1 );
 			if (dsc == NULL) m[i+1].type = NM_TYPE_TEXT;
@@ -1758,9 +1767,11 @@ int state_get_savegame_filename(char * fname, char * dsc, char * caption, int bl
 #ifdef __ANDROID__
 		extern volatile int g_saveload_menu_active;
 		g_saveload_menu_active = 1;
+		state_android_empty_save_name_active = dsc != NULL;
 #endif
 		choice = newmenu_do2( NULL, caption, NUM_SAVES+1, m, (int (*)(newmenu *, d_event *, void *))state_callback, sc_bmp, state_default_item + 1, NULL );
 #ifdef __ANDROID__
+		state_android_empty_save_name_active = 0;
 		g_saveload_menu_active = 0;
 #endif
 	}

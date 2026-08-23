@@ -13,7 +13,7 @@ extern "C" {
 #define ROUTE_ANALYSIS_CACHE_GAME_D1 1
 #define ROUTE_ANALYSIS_CACHE_GAME_D2 2
 /* Keep in sync with ROUTE_METADATA_CACHE_GENERATION in RouteMetadataScheduling.kt. */
-#define ROUTE_ANALYSIS_CACHE_GENERATION       9
+#define ROUTE_ANALYSIS_CACHE_GENERATION       10
 #define ROUTE_ANALYSIS_TIMING_SAMPLE_CAPACITY 32
 
 typedef struct route_analysis_cache_key {

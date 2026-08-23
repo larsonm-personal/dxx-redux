@@ -37,6 +37,7 @@ int state_restore_all_path(int in_game, char *filename_override);
 int state_runtime_version(void);
 
 #ifdef __ANDROID__
+const char *state_android_get_empty_save_name(void);
 int state_android_save_to_slot(int slotnum, const char *desc, int save_kind);
 int state_android_save_to_path(const char *filename, const char *desc, int save_kind, int blank_thumbnail);
 int state_save_to_memory(rewind_memory_buffer *buffer, const char *desc, int save_kind, int blank_thumbnail);

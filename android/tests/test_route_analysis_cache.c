@@ -38,9 +38,13 @@ int main(void)
 	    "make key");
 	wrong_key = key;
 	wrong_key.generation++;
+	snprintf(
+	    mutable_filename, sizeof(mutable_filename),
+	    "route-cache/g%d/d2-0000000000005678-",
+	    ROUTE_ANALYSIS_CACHE_GENERATION);
 	failures += expect(
 	    route_analysis_cache_filename(&key, filename, sizeof(filename)) &&
-	        strstr(filename, "route-cache/g9/d2-0000000000005678-") == filename,
+	        strstr(filename, mutable_filename) == filename,
 	    "generation and profile filename");
 	snapshot.progression_hash++;
 	snapshot.trigger_hash++;
