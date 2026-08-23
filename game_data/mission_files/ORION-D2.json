@@ -71,27 +71,6 @@
         "filename": "game04.hmp",
         "format": "hmp",
         "length_s": 88
-      },
-      {
-        "track": 9,
-        "name": "MIDI Track 5",
-        "filename": "game01.hmp",
-        "format": "hmp",
-        "length_s": 235
-      },
-      {
-        "track": 10,
-        "name": "MIDI Track 6",
-        "filename": "game06.hmp",
-        "format": "hmp",
-        "length_s": 120
-      },
-      {
-        "track": 11,
-        "name": "MIDI Track 7",
-        "filename": "game07.hmp",
-        "format": "hmp",
-        "length_s": 165
       }
     ],
     "level_count": 8,

@@ -3,7 +3,7 @@
     "status": "ok",
     "source": "Descent 2: Enemy Vignettes",
     "game": "d2",
-    "mission_name": "Descent 2: Enemy Vignette",
+    "mission_name": "Descent 2: Enemy Vignettes",
     "mission_filename": "vignett2.mn2",
     "coop_starts": "1-4",
     "track_names": [
@@ -304,9 +304,9 @@
         "mine_volume": 3801703.1483193147,
         "mine_volume_normalized": 0.8313544595663935,
         "mine_volume_text": "0.83x",
-        "travel_distance": 1233.6073202136376,
-        "travel_time_seconds": 25,
-        "travel_time_text": "0M:25S",
+        "travel_distance": 1223.6073202136376,
+        "travel_time_seconds": 24,
+        "travel_time_text": "0M:24S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -324,14 +324,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 3",
-            "seg": 84,
+            "seg": 87,
             "wall": 77,
             "label_pos": {
               "x": 0.0,
               "y": -42.499603271484375,
               "z": -55.91925048828125
             },
-            "distance": 405.22618502367254,
+            "distance": 435.22618502367254,
             "trigger": 3,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -359,7 +359,7 @@
               "y": -22.499603271484375,
               "z": 23.990127563476562
             },
-            "distance": 196.9100239365911,
+            "distance": 156.9100239365911,
             "key": "red"
           },
           {
@@ -417,9 +417,9 @@
         "mine_volume": 7405048.057355367,
         "mine_volume_normalized": 1.6193320429311875,
         "mine_volume_text": "1.6x",
-        "travel_distance": 2056.953717141425,
-        "travel_time_seconds": 41,
-        "travel_time_text": "0M:41S",
+        "travel_distance": 1992.3989763439374,
+        "travel_time_seconds": 40,
+        "travel_time_text": "0M:40S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -437,14 +437,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 6",
-            "seg": 5,
+            "seg": 8,
             "wall": 137,
             "label_pos": {
               "x": 42.57063293457031,
               "y": 15.910186767578125,
               "z": -132.49313354492188
             },
-            "distance": 62.69118054170917,
+            "distance": 100.82762028593072,
             "trigger": 6,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -472,7 +472,7 @@
               "y": -23.745864868164062,
               "z": -203.1595916748047
             },
-            "distance": 363.06769959941164,
+            "distance": 260.37651905770247,
             "key": "blue"
           },
           {
@@ -2221,9 +2221,9 @@
         "mine_volume": 15172710.806300526,
         "mine_volume_normalized": 3.3179604772943936,
         "mine_volume_text": "3.3x",
-        "travel_distance": 2474.1623175902564,
-        "travel_time_seconds": 49,
-        "travel_time_text": "0M:49S",
+        "travel_distance": 2484.1623175902564,
+        "travel_time_seconds": 50,
+        "travel_time_text": "0M:50S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2248,7 +2248,7 @@
               "y": -139.99998474121094,
               "z": 25.66534423828125
             },
-            "distance": 149.99996948242188,
+            "distance": 154.99996948242188,
             "trigger": 13,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -2278,7 +2278,7 @@
               "y": -79.99998474121094,
               "z": 78.93856811523438
             },
-            "distance": 244.77548658733633,
+            "distance": 249.77548658733633,
             "trigger": 12,
             "trigger_type_id": 0,
             "trigger_type": "open_door",

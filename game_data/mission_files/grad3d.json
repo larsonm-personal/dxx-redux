@@ -39,7 +39,7 @@
       },
       {
         "track": 4,
-        "name": "‚fRADIUS III  Try to Star ¯‚É’§‚ßI  (c)KONAMI  ^‚c‚d‚l",
+        "name": "ΓÇÜfRADIUS III  Try to Star ┬É┬»ΓÇÜ├ëΓÇÖ┬ºΓÇÜ├ƒ┬üI  (c)KONAMI  ┬ü^ΓÇÜcΓÇÜdΓÇÜl",
         "filename": "credits.hmp",
         "format": "hmp",
         "length_s": 73
@@ -71,20 +71,6 @@
         "filename": "game04.hmp",
         "format": "hmp",
         "length_s": 142
-      },
-      {
-        "track": 9,
-        "name": "MIDI Track 5",
-        "filename": "game05.hmp",
-        "format": "hmp",
-        "length_s": 99
-      },
-      {
-        "track": 10,
-        "name": "MIDI Track 6",
-        "filename": "game06.hmp",
-        "format": "hmp",
-        "length_s": 153
       }
     ],
     "level_count": 6,

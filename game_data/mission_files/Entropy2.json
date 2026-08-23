@@ -3,7 +3,7 @@
     "status": "ok",
     "source": "Entropy 2: Vengeance",
     "game": "d2",
-    "mission_name": "entropy 2: vengeance",
+    "mission_name": "Entropy 2: Vengeance",
     "mission_filename": "ENTROPY2.MN2",
     "coop_starts": "4",
     "track_names": [
@@ -93,7 +93,7 @@
         "mine_volume": 13919359.808122696,
         "mine_volume_normalized": 3.0438783354002337,
         "mine_volume_text": "3.0x",
-        "travel_distance": 4655.856847730457,
+        "travel_distance": 4655.856793479606,
         "travel_time_seconds": 93,
         "travel_time_text": "1M:33S",
         "guidebot_count": 0,
@@ -112,24 +112,24 @@
             "index": 1,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
-            "label": "Fly-through trigger 15",
-            "seg": 348,
-            "side": 0,
-            "wall": 95,
+            "label": "Fly-through trigger 16",
+            "seg": 347,
+            "side": 2,
+            "wall": 93,
             "label_pos": {
-              "x": 51.0,
-              "y": 50.0,
-              "z": 79.0
+              "x": -30.999969482421875,
+              "y": 49.999969482421875,
+              "z": 78.99996948242188
             },
-            "distance": 531.1267939735451,
-            "trigger": 15,
+            "distance": 531.1267614533315,
+            "trigger": 16,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
             "opens": [
               {
-                "seg": 339,
-                "side": 2,
-                "wall": 68
+                "seg": 337,
+                "side": 0,
+                "wall": 67
               }
             ]
           },
@@ -146,7 +146,7 @@
               "y": -151.0,
               "z": -733.0
             },
-            "distance": 1449.9650151442543,
+            "distance": 1449.964993413616,
             "trigger": 12,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -956,9 +956,9 @@
         "mine_volume": 32365228.333333403,
         "mine_volume_normalized": 7.0776112337168025,
         "mine_volume_text": "7.1x",
-        "travel_distance": 15351.20685242067,
-        "travel_time_seconds": 307,
-        "travel_time_text": "5M:07S",
+        "travel_distance": 15294.638309925745,
+        "travel_time_seconds": 306,
+        "travel_time_text": "5M:06S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1282,14 +1282,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 3",
-            "seg": 162,
+            "seg": 55,
             "wall": 9,
             "label_pos": {
               "x": 10.0,
               "y": 25.0,
               "z": -1850.0
             },
-            "distance": 1022.4451162324781,
+            "distance": 1113.302980608747,
             "trigger": 3,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1311,14 +1311,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 0",
-            "seg": 101,
+            "seg": 1,
             "wall": 0,
             "label_pos": {
               "x": 10.0,
               "y": 25.0,
               "z": -2770.0
             },
-            "distance": 1044.4830835824455,
+            "distance": 1016.1988123349836,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1348,7 +1348,7 @@
               "y": 20.0,
               "z": -3650.0
             },
-            "distance": 1215.4515740203933,
+            "distance": 1096.3094383966625,
             "trigger": 9,
             "trigger_type_id": 3,
             "trigger_type": "exit"

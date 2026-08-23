@@ -1199,7 +1199,6 @@
     "game": "d1",
     "mission_name": "Duality",
     "mission_filename": "DUALITY.MSN",
-    "coop_starts": "1",
     "track_names": [
       {
         "track": 0,

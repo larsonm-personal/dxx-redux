@@ -93,7 +93,7 @@
         "mine_volume": 12978885.03264464,
         "mine_volume_normalized": 2.838215802530186,
         "mine_volume_text": "2.8x",
-        "travel_distance": 4624.4708606750055,
+        "travel_distance": 4598.008614656508,
         "travel_time_seconds": 92,
         "travel_time_text": "1M:32S",
         "guidebot_count": 0,
@@ -113,14 +113,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 1",
-            "seg": 168,
+            "seg": 379,
             "wall": 61,
             "label_pos": {
               "x": -122.94908142089844,
               "y": -195.54702758789062,
               "z": -42.500396728515625
             },
-            "distance": 1021.8066869933507,
+            "distance": 1031.8005786365286,
             "trigger": 1,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -158,7 +158,7 @@
               "y": -190.56430053710938,
               "z": -42.50738525390625
             },
-            "distance": 84.13152085356496,
+            "distance": 47.675383191889935,
             "key": "blue",
             "key_carrier_objnum": 51
           },

@@ -191,9 +191,9 @@
         "mine_volume": 12051066.234811988,
         "mine_volume_normalized": 2.63532087224382,
         "mine_volume_text": "2.6x",
-        "travel_distance": 4883.236967821766,
-        "travel_time_seconds": 98,
-        "travel_time_text": "1M:38S",
+        "travel_distance": 5055.728987648907,
+        "travel_time_seconds": 101,
+        "travel_time_text": "1M:41S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -211,14 +211,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 10",
-            "seg": 327,
+            "seg": 358,
             "wall": 106,
             "label_pos": {
               "x": 0.0,
               "y": 11.595672607421875,
               "z": -296.0354919433594
             },
-            "distance": 862.98296714437,
+            "distance": 871.7273641714977,
             "trigger": 10,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -276,7 +276,7 @@
               "y": 30.060089111328125,
               "z": -92.49990844726562
             },
-            "distance": 418.2397972366469,
+            "distance": 581.9874200366596,
             "key": "blue"
           },
           {
@@ -849,7 +849,6 @@
             "index": 5,
             "kind": "trigger",
             "activation_kind": "unresolved_trigger",
-            "calculated": false,
             "label": "Locate and activate switch trigger 11",
             "seg": 494,
             "wall": 170,
@@ -858,6 +857,7 @@
               "y": 77.65278625488281,
               "z": -368.2799835205078
             },
+            "calculated": false,
             "trigger": 11,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",

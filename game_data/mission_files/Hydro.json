@@ -1686,25 +1686,25 @@
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
-            "seg": 338,
-            "side": 2,
-            "wall": 152,
+            "seg": 337,
+            "side": 0,
+            "wall": 153,
             "label_pos": {
-              "x": 530.0,
+              "x": 550.0,
               "y": 20.0,
               "z": 300.0
             },
             "distance": 742.994617735075,
             "opens": [
               {
-                "seg": 338,
-                "side": 2,
-                "wall": 152
+                "seg": 337,
+                "side": 0,
+                "wall": 153
               },
               {
                 "seg": 336,
-                "side": 0,
-                "wall": 151
+                "side": 2,
+                "wall": 154
               }
             ]
           },
@@ -2198,9 +2198,9 @@
         "mine_volume": 13437593.661257586,
         "mine_volume_normalized": 2.9385259659388008,
         "mine_volume_text": "2.9x",
-        "travel_distance": 7086.366225732252,
-        "travel_time_seconds": 142,
-        "travel_time_text": "2M:22S",
+        "travel_distance": 7252.7496898623795,
+        "travel_time_seconds": 145,
+        "travel_time_text": "2M:25S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -2261,14 +2261,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 1",
-            "seg": 324,
+            "seg": 326,
             "wall": 67,
             "label_pos": {
               "x": -151.58358764648438,
               "y": -93.29179382324219,
               "z": 530.0
             },
-            "distance": 708.0781200584587,
+            "distance": 791.2698521235221,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -2296,7 +2296,7 @@
               "y": -100.0,
               "z": 650.0
             },
-            "distance": 640.710454717524,
+            "distance": 723.9021867825876,
             "key": "gold"
           },
           {
@@ -2388,7 +2388,7 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 3",
-            "seg": 219,
+            "seg": 218,
             "wall": 92,
             "label_pos": {
               "x": -100.0,

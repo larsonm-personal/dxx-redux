@@ -71,13 +71,6 @@
         "filename": "game04.hmp",
         "format": "hmp",
         "length_s": 196
-      },
-      {
-        "track": 9,
-        "name": "MIDI Track 5",
-        "filename": "game05.hmp",
-        "format": "hmp",
-        "length_s": 148
       }
     ],
     "level_count": 7,
@@ -198,7 +191,7 @@
         "mine_volume": 10797120.225129455,
         "mine_volume_normalized": 2.3611086135444728,
         "mine_volume_text": "2.4x",
-        "travel_distance": 5992.00989669084,
+        "travel_distance": 5992.28024813374,
         "travel_time_seconds": 120,
         "travel_time_text": "2M:00S",
         "guidebot_count": 0,
@@ -218,14 +211,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 1",
-            "seg": 121,
+            "seg": 122,
             "wall": 21,
             "label_pos": {
               "x": 1.0,
               "y": -120.0,
               "z": 112.0
             },
-            "distance": 510.447817326162,
+            "distance": 510.58299304761186,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -263,7 +256,7 @@
               "y": 80.0,
               "z": 630.0
             },
-            "distance": 1143.5962978602765,
+            "distance": 1143.7314735817265,
             "key": "blue",
             "key_carrier_objnum": 47
           },

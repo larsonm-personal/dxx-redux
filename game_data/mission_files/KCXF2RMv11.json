@@ -1859,7 +1859,9 @@
         "route_status": "failed",
         "route_steps": [],
         "route_problem": "level file is missing",
-        "problems": "level file is missing",
+        "problems": [
+          "level file is missing"
+        ],
         "status": "failed"
       },
       {
@@ -1922,7 +1924,9 @@
         ]
       }
     ],
-    "problems": "one or more secret levels are referenced but missing",
+    "problems": [
+      "one or more secret levels are referenced but missing"
+    ],
     "target_index": 0
   }
 ]

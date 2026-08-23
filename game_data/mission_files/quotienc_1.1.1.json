@@ -823,9 +823,9 @@
         "mine_volume": 17814134.193591673,
         "mine_volume_normalized": 3.8955855645130706,
         "mine_volume_text": "3.9x",
-        "travel_distance": 9401.567039035237,
-        "travel_time_seconds": 188,
-        "travel_time_text": "3M:08S",
+        "travel_distance": 9189.638431041081,
+        "travel_time_seconds": 184,
+        "travel_time_text": "3M:04S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -871,25 +871,25 @@
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
-            "seg": 54,
+            "seg": 53,
             "side": 4,
-            "wall": 112,
+            "wall": 110,
             "label_pos": {
-              "x": 120.0,
+              "x": 0.0,
               "y": 0.0,
               "z": 270.0
             },
             "distance": 1905.9196543514292,
             "opens": [
               {
-                "seg": 54,
+                "seg": 53,
                 "side": 4,
-                "wall": 112
+                "wall": 110
               },
               {
-                "seg": 347,
+                "seg": 346,
                 "side": 5,
-                "wall": 113
+                "wall": 111
               }
             ]
           },
@@ -904,7 +904,7 @@
               "y": 240.0,
               "z": -140.0
             },
-            "distance": 1400.810460803083,
+            "distance": 1294.8461568060056,
             "key": "red"
           },
           {
@@ -918,7 +918,7 @@
               "y": 250.0,
               "z": 510.0
             },
-            "distance": 2272.2337855538917
+            "distance": 2166.269481556814
           },
           {
             "index": 6,
@@ -4117,9 +4117,9 @@
         "mine_volume": 17814134.193591673,
         "mine_volume_normalized": 3.8955855645130706,
         "mine_volume_text": "3.9x",
-        "travel_distance": 9401.567039035237,
-        "travel_time_seconds": 188,
-        "travel_time_text": "3M:08S",
+        "travel_distance": 9189.638431041081,
+        "travel_time_seconds": 184,
+        "travel_time_text": "3M:04S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -4165,25 +4165,25 @@
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
-            "seg": 54,
+            "seg": 53,
             "side": 4,
-            "wall": 112,
+            "wall": 110,
             "label_pos": {
-              "x": 120.0,
+              "x": 0.0,
               "y": 0.0,
               "z": 270.0
             },
             "distance": 1905.9196543514292,
             "opens": [
               {
-                "seg": 54,
+                "seg": 53,
                 "side": 4,
-                "wall": 112
+                "wall": 110
               },
               {
-                "seg": 347,
+                "seg": 346,
                 "side": 5,
-                "wall": 113
+                "wall": 111
               }
             ]
           },
@@ -4198,7 +4198,7 @@
               "y": 240.0,
               "z": -140.0
             },
-            "distance": 1400.810460803083,
+            "distance": 1294.8461568060056,
             "key": "red"
           },
           {
@@ -4212,7 +4212,7 @@
               "y": 250.0,
               "z": 510.0
             },
-            "distance": 2272.2337855538917
+            "distance": 2166.269481556814
           },
           {
             "index": 6,
