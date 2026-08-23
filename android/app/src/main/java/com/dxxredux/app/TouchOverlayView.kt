@@ -5068,10 +5068,12 @@ class TouchOverlayView
                         adminTraySlide = it.animatedValue as Float
                         if (!open && adminTraySlide == 0f) {
                             if (adminTrayOpen) {
+                                // Close the state before notifying pause owners so the tray does
+                                // not appear to still require a pause during the callback.
+                                adminTrayOpen = false
+                                adminTraySelectedIndex = -1
                                 adminTrayClosedCallback?.invoke()
                             }
-                            adminTrayOpen = false
-                            adminTraySelectedIndex = -1
                         }
                         invalidate()
                     }

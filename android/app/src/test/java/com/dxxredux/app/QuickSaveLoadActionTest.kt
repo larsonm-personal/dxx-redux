@@ -55,4 +55,29 @@ class QuickSaveLoadActionTest {
             ),
         )
     }
+
+    @Test
+    fun closedSettingsTrayReleasesSharedOverlayPause() {
+        assertFalse(
+            shouldKeepOverlayPause(
+                adminTrayOpen = false,
+                musicPanelVisible = false,
+                quickLoadPromptVisible = false,
+            ),
+        )
+        assertTrue(
+            shouldKeepOverlayPause(
+                adminTrayOpen = false,
+                musicPanelVisible = true,
+                quickLoadPromptVisible = false,
+            ),
+        )
+        assertTrue(
+            shouldKeepOverlayPause(
+                adminTrayOpen = false,
+                musicPanelVisible = false,
+                quickLoadPromptVisible = true,
+            ),
+        )
+    }
 }

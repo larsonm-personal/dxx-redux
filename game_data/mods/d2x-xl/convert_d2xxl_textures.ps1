@@ -317,7 +317,9 @@ function Read-TGA {
     [byte[]]$maskBytes = $null
     if ($hasKeyColor) {
         $maskBytes = [byte[]]::new($pixelCount * 4)
-        [Array]::Fill[byte]($maskBytes, 255)
+        for ($index = 0; $index -lt $maskBytes.Length; $index++) {
+            $maskBytes[$index] = 255
+        }
     }
 
     $hasTransparentPixels = $false

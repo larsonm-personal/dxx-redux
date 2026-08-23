@@ -39,10 +39,12 @@
         "buildd2/": true,
         "d2/build/": true,
     },
-    // search.exclude adds to files.exclude for search; keep game_data searchable in explorer
+    // Keep game-data metadata searchable while skipping large binary payloads
     "search.exclude": {
-        "game_data/": true,
-        "game_data_to_copy_to_emulator/": true,
+        "game_data/**/*.{386,7z,bin,bmp,cab,dem,dll,drv,dxa,exe,flac,gog,ham,hog,hqx,img,ins,iso,jpeg,jpg,mid,mp3,mve,mvl,ogg,pcx,pig,pkg,png,rdl,res,s11,s22,sfa,sit,sow,sub,vxd,wav,zip}": true,
+        "game_data/game_logs_net_desync_2/**/*.txt": true,
+        "game_data/logs_net_failure/**/*.txt": true,
+        "game_data_to_copy_to_emulator/**/*.{386,7z,bin,bmp,cab,dem,dll,drv,dxa,exe,flac,gog,ham,hog,hqx,img,ins,iso,jpeg,jpg,mid,mp3,mve,mvl,ogg,pcx,pig,pkg,png,rdl,res,s11,s22,sfa,sit,sow,sub,vxd,wav,zip}": true,
         "temp/": true
     }
 }

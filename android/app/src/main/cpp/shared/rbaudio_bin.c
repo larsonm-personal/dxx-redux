@@ -256,6 +256,24 @@ static unsigned int s_generation_start_ticks = 0;
 static unsigned int s_last_start_request_ms = 0;
 static unsigned int s_last_stop_wait_ms = 0;
 static unsigned int s_last_first_buffer_ms = 0;
+static unsigned int s_last_request_apply_ms = 0;
+static unsigned int s_stale_render_chunks_total = 0;
+
+enum {
+	RBA_REQUEST_STOP = 0,
+	RBA_REQUEST_PLAY = 1
+};
+typedef struct {
+	int operation;
+	int first;
+	int last;
+	void (*finished_hook)(void);
+	unsigned int started_ticks;
+} playback_request_t;
+static playback_request_t s_pending_request;
+static unsigned int s_request_generation = 0;
+static unsigned int s_applied_request_generation = 0;
+static int s_logical_track = 0;
 
 /* Monotonic playback diagnostics.  The generation baselines let automation
  * distinguish work performed for the current request from stale activity. */
@@ -1119,7 +1137,7 @@ static int find_audio_track(int first, int last)
 	return 0;
 }
 
-static int refill_pcm(void)
+static int refill_pcm(unsigned int request_generation)
 {
 	int frames_read = 0;
 	if (__atomic_load_n(&s_terminal_state, __ATOMIC_ACQUIRE) == RBA_TERMINAL_IO_ERROR)
@@ -1139,7 +1157,8 @@ static int refill_pcm(void)
 		unsigned char raw[SECTOR_SIZE];
 		PHYSFS_sint64 offset;
 		int i;
-		if (!__atomic_load_n(&s_render_running, __ATOMIC_ACQUIRE))
+		if (!__atomic_load_n(&s_render_running, __ATOMIC_ACQUIRE) ||
+		    request_generation != __atomic_load_n(&s_request_generation, __ATOMIC_ACQUIRE))
 			return frames_read;
 
 #ifdef INTROSPECT_ON
@@ -1159,6 +1178,7 @@ static int refill_pcm(void)
 			if (next_track == 0)
 				return frames_read; /* all tracks done */
 			s_current_track = next_track;
+			__atomic_store_n(&s_logical_track, next_track, __ATOMIC_RELEASE);
 			s_read_sector = s_tracks[s_current_track - 1].start_sector;
 			s_track_end = s_read_sector + s_tracks[s_current_track - 1].num_sectors;
 		}
@@ -1201,16 +1221,19 @@ static int refill_pcm(void)
 /* ── Resampling render (44100 → output rate) ─────────────────────────── */
 
 /* Render up to max_frames stereo output frames.  Returns actual count. */
-static int render_cd_frames(short *out, int max_frames)
+static int render_cd_frames(short *out, int max_frames, unsigned int request_generation)
 {
 	const double ratio = (double) CD_SAMPLE_RATE / (double) s_output_rate;
 	int written = 0;
 
-	while (written < max_frames && s_playing) {
+	while (written < max_frames && s_playing &&
+	       request_generation == __atomic_load_n(&s_request_generation, __ATOMIC_ACQUIRE)) {
 		/* Need more input? */
 		if (s_pcm_pos >= s_pcm_len - 1) {
-			int refill_result = refill_pcm();
+			int refill_result = refill_pcm(request_generation);
 			if (refill_result <= 0 && s_pcm_pos >= s_pcm_len - 1) {
+				if (request_generation != __atomic_load_n(&s_request_generation, __ATOMIC_ACQUIRE))
+					break;
 				s_playing = 0;
 				s_paused = 0;
 				if (refill_result == 0) {
@@ -1254,11 +1277,50 @@ static int render_cd_frames(short *out, int max_frames)
 
 /* ── Background render thread ────────────────────────────────────────── */
 
+static void playback_diagnostics_begin(int first_track);
+
+/* Called with s_background_mutex held.  The producer owns all state used
+ * for source reads so a new request never has to wait for blocked storage. */
+static int apply_pending_request(void)
+{
+	playback_request_t request = s_pending_request;
+	unsigned int generation = __atomic_load_n(&s_request_generation, __ATOMIC_ACQUIRE);
+
+	if (generation == s_applied_request_generation)
+		return 0;
+	s_applied_request_generation = generation;
+	s_pcm_len = 0;
+	s_pcm_pos = 0;
+	s_resample_frac = 0.0;
+	rb_reset();
+	if (request.operation == RBA_REQUEST_STOP)
+		return 0;
+
+	s_current_track = request.first;
+	s_play_first = request.first;
+	s_play_last = request.last;
+	s_read_sector = s_tracks[request.first - 1].start_sector;
+	s_track_end = s_read_sector + s_tracks[request.first - 1].num_sectors;
+	s_finished_hook = request.finished_hook;
+	s_song_finished = 0;
+	s_rb_underruns = 0;
+	s_rb_cb_count = 0;
+	playback_diagnostics_begin(request.first);
+	__atomic_store_n(&s_generation_start_ticks, SDL_GetTicks(), __ATOMIC_RELEASE);
+	__atomic_store_n(&s_last_first_buffer_ms, 0, __ATOMIC_RELEASE);
+	__atomic_store_n(&s_last_request_apply_ms, SDL_GetTicks() - request.started_ticks,
+	                 __ATOMIC_RELEASE);
+	RBA_DIAG("producer_apply generation=%u track=%d delay_ms=%u",
+	         generation, request.first,
+	         __atomic_load_n(&s_last_request_apply_ms, __ATOMIC_ACQUIRE));
+	return 1;
+}
+
 static int render_thread_func(void *data)
 {
 	enum { CHUNK = 2048 };
 	short buf[CHUNK * 2];
-	int first_buffer = 1;
+	int first_buffer = 0;
 	(void) data;
 
 #ifdef ANDROID
@@ -1274,9 +1336,11 @@ static int render_thread_func(void *data)
 	RBA_LOG("CD render thread started");
 
 	while (__atomic_load_n(&s_render_running, __ATOMIC_SEQ_CST)) {
+		unsigned int render_generation;
+		int got;
 		android_lifecycle_diagnostics_count(ANDROID_LIFECYCLE_COUNTER_REDBOOK_PRODUCER_WAKE);
+		pthread_mutex_lock(&s_background_mutex);
 		if (__atomic_load_n(&s_bg_paused, __ATOMIC_ACQUIRE)) {
-			pthread_mutex_lock(&s_background_mutex);
 			s_background_waiting = 1;
 			pthread_cond_broadcast(&s_background_cond);
 			while (__atomic_load_n(&s_bg_paused, __ATOMIC_ACQUIRE) &&
@@ -1286,10 +1350,18 @@ static int render_thread_func(void *data)
 			pthread_mutex_unlock(&s_background_mutex);
 			continue;
 		}
+		if (apply_pending_request())
+			first_buffer = 1;
 		if (!s_playing || s_paused) {
-			SDL_Delay(20);
+			s_background_waiting = 1;
+			pthread_cond_broadcast(&s_background_cond);
+			pthread_cond_wait(&s_background_cond, &s_background_mutex);
+			s_background_waiting = 0;
+			pthread_mutex_unlock(&s_background_mutex);
 			continue;
 		}
+		render_generation = s_applied_request_generation;
+		pthread_mutex_unlock(&s_background_mutex);
 
 		unsigned int space = RB_SAMPLES - rb_available();
 		if (space < CHUNK * 2u) {
@@ -1297,9 +1369,19 @@ static int render_thread_func(void *data)
 			continue;
 		}
 
-		int got = render_cd_frames(buf, CHUNK);
+		got = render_cd_frames(buf, CHUNK, render_generation);
 		if (got > 0) {
-			rb_write(buf, got * 2);
+			pthread_mutex_lock(&s_background_mutex);
+			if (render_generation == __atomic_load_n(&s_request_generation, __ATOMIC_ACQUIRE) &&
+			    render_generation == s_applied_request_generation && s_playing) {
+				rb_write(buf, got * 2);
+			} else {
+				__atomic_add_fetch(&s_stale_render_chunks_total, 1, __ATOMIC_RELAXED);
+				got = 0;
+			}
+			pthread_mutex_unlock(&s_background_mutex);
+		}
+		if (got > 0) {
 			if (first_buffer) {
 				unsigned int started = __atomic_load_n(&s_generation_start_ticks,
 				                                       __ATOMIC_ACQUIRE);
@@ -1314,7 +1396,6 @@ static int render_thread_func(void *data)
 			SDL_Delay(1);
 		}
 
-		if (!s_playing) break;
 	}
 
 	pthread_mutex_lock(&s_background_mutex);
@@ -1630,49 +1711,58 @@ void RBAGetLastPlaybackProof(unsigned int *generation, int *first_track,
 }
 
 /* Start playing a single track (1-based) */
+static int queue_playback_request(int first, int last, void (*hook_finished)(void))
+{
+	unsigned int generation;
+	unsigned int request_started = SDL_GetTicks();
+	unsigned int hook_started;
+
+	if (!render_thread_start())
+		return 0;
+	pthread_mutex_lock(&s_background_mutex);
+	s_pending_request.operation = RBA_REQUEST_PLAY;
+	s_pending_request.first = first;
+	s_pending_request.last = last;
+	s_pending_request.finished_hook = hook_finished;
+	s_pending_request.started_ticks = request_started;
+	generation = __atomic_add_fetch(&s_request_generation, 1, __ATOMIC_ACQ_REL);
+	s_logical_track = first;
+	s_playing = 1;
+	s_paused = 0;
+	s_song_finished = 0;
+	__atomic_store_n(&s_terminal_state, RBA_TERMINAL_NONE, __ATOMIC_RELEASE);
+	rb_reset();
+	pthread_cond_broadcast(&s_background_cond);
+	pthread_mutex_unlock(&s_background_mutex);
+
+	hook_started = SDL_GetTicks();
+	Mix_HookMusic(rba_music_callback, NULL);
+	__atomic_store_n(&s_last_start_request_ms, SDL_GetTicks() - request_started,
+	                 __ATOMIC_RELEASE);
+	__atomic_store_n(&s_last_stop_wait_ms, 0, __ATOMIC_RELEASE);
+	RBA_DIAG("request_queued generation=%u track=%d request_ms=%u hook_ms=%u",
+	         generation, first,
+	         __atomic_load_n(&s_last_start_request_ms, __ATOMIC_ACQUIRE),
+	         SDL_GetTicks() - hook_started);
+	return 1;
+}
+
 int RBAPlayTrack(int track)
 {
-	unsigned int request_started;
 	if (!s_initialised) return -1;
 	if (track < 1 || track > s_num_tracks) return -1;
 	if (s_tracks[track - 1].type != 1) return -1; /* not audio */
 
-	request_started = SDL_GetTicks();
-	RBAStop();
-
-	s_current_track = track;
-	s_play_first = track;
-	s_play_last = track;
-	s_read_sector = s_tracks[track - 1].start_sector;
-	s_track_end = s_read_sector + s_tracks[track - 1].num_sectors;
-	s_pcm_len = 0;
-	s_pcm_pos = 0;
-	s_resample_frac = 0.0;
-	s_song_finished = 0;
-	s_paused = 0;
-	s_rb_underruns = 0;
-	s_rb_cb_count = 0;
-	playback_diagnostics_begin(track);
-	s_playing = 1;
-	__atomic_store_n(&s_generation_start_ticks, SDL_GetTicks(), __ATOMIC_RELEASE);
-	__atomic_store_n(&s_last_first_buffer_ms, 0, __ATOMIC_RELEASE);
-
-	if (!render_thread_start()) {
-		RBAStop();
+	if (!queue_playback_request(track, track, NULL))
 		return -1;
-	}
-	Mix_HookMusic(rba_music_callback, NULL);
-	__atomic_store_n(&s_last_start_request_ms, SDL_GetTicks() - request_started,
-	                 __ATOMIC_RELEASE);
 
-	RBA_DIAG("play_track track=%d type=%s disc_id=0x%08lx orig_track_order=%d start=%d len=%d request_ms=%u stop_wait_ms=%u",
+	RBA_DIAG("play_track track=%d type=%s disc_id=0x%08lx orig_track_order=%d start=%d len=%d request_ms=%u",
 	         track,
 	         s_tracks[track - 1].type ? "audio" : "data",
 	         (unsigned long) RBAGetDiscID(), GameCfg.OrigTrackOrder,
 	         s_tracks[track - 1].start_sector,
 	         s_tracks[track - 1].num_sectors,
-	         __atomic_load_n(&s_last_start_request_ms, __ATOMIC_ACQUIRE),
-	         __atomic_load_n(&s_last_stop_wait_ms, __ATOMIC_ACQUIRE));
+	         __atomic_load_n(&s_last_start_request_ms, __ATOMIC_ACQUIRE));
 	RBA_LOG("Playing track %d (sectors %d–%d)", track, s_read_sector, s_track_end - 1);
 	return track;
 }
@@ -1681,8 +1771,6 @@ int RBAPlayTrack(int track)
 int RBAPlayTracks(int first, int last, void (*hook_finished)(void))
 {
 	int first_audio;
-	unsigned int request_started;
-
 	if (!s_initialised) return 0;
 	if (first < 1 || first > s_num_tracks) return 0;
 	if (last < first) last = first;
@@ -1690,50 +1778,22 @@ int RBAPlayTracks(int first, int last, void (*hook_finished)(void))
 	first_audio = find_audio_track(first, last);
 	if (first_audio == 0) return 0;
 
-	request_started = SDL_GetTicks();
-	RBAStop();
-
-	s_finished_hook = hook_finished;
-	s_current_track = first_audio;
-	s_play_first = first_audio;
-	s_play_last = last;
-	s_read_sector = s_tracks[first_audio - 1].start_sector;
-	s_track_end = s_read_sector + s_tracks[first_audio - 1].num_sectors;
-	s_pcm_len = 0;
-	s_pcm_pos = 0;
-	s_resample_frac = 0.0;
-	s_song_finished = 0;
-	s_paused = 0;
-	s_rb_underruns = 0;
-	s_rb_cb_count = 0;
-	playback_diagnostics_begin(first_audio);
-	s_playing = 1;
-	__atomic_store_n(&s_generation_start_ticks, SDL_GetTicks(), __ATOMIC_RELEASE);
-	__atomic_store_n(&s_last_first_buffer_ms, 0, __ATOMIC_RELEASE);
-
-	if (!render_thread_start()) {
-		RBAStop();
+	if (!queue_playback_request(first_audio, last, hook_finished))
 		return 0;
-	}
-	Mix_HookMusic(rba_music_callback, NULL);
-	__atomic_store_n(&s_last_start_request_ms, SDL_GetTicks() - request_started,
-	                 __ATOMIC_RELEASE);
 
-	RBA_DIAG("play_tracks first=%d last=%d first_type=%s disc_id=0x%08lx orig_track_order=%d first_start=%d first_len=%d request_ms=%u stop_wait_ms=%u",
+	RBA_DIAG("play_tracks first=%d last=%d first_type=%s disc_id=0x%08lx orig_track_order=%d first_start=%d first_len=%d request_ms=%u",
 	         first_audio, last,
 	         s_tracks[first_audio - 1].type ? "audio" : "data",
 	         (unsigned long) RBAGetDiscID(), GameCfg.OrigTrackOrder,
 	         s_tracks[first_audio - 1].start_sector,
 	         s_tracks[first_audio - 1].num_sectors,
-	         __atomic_load_n(&s_last_start_request_ms, __ATOMIC_ACQUIRE),
-	         __atomic_load_n(&s_last_stop_wait_ms, __ATOMIC_ACQUIRE));
+	         __atomic_load_n(&s_last_start_request_ms, __ATOMIC_ACQUIRE));
 	RBA_LOG("Playing tracks %d–%d", first_audio, last);
 	return 1;
 }
 
 void RBAStop(void)
 {
-	unsigned int wait_started;
 	s_playing = 0;
 	s_paused = 0;
 	if (!s_initialised) {
@@ -1744,10 +1804,16 @@ void RBAStop(void)
 		return;
 	}
 
-	wait_started = SDL_GetTicks();
-	render_thread_stop();
-	__atomic_store_n(&s_last_stop_wait_ms, SDL_GetTicks() - wait_started,
-	                 __ATOMIC_RELEASE);
+	pthread_mutex_lock(&s_background_mutex);
+	s_pending_request.operation = RBA_REQUEST_STOP;
+	s_pending_request.finished_hook = NULL;
+	s_pending_request.started_ticks = SDL_GetTicks();
+	__atomic_add_fetch(&s_request_generation, 1, __ATOMIC_ACQ_REL);
+	s_logical_track = 0;
+	rb_reset();
+	pthread_cond_broadcast(&s_background_cond);
+	pthread_mutex_unlock(&s_background_mutex);
+	__atomic_store_n(&s_last_stop_wait_ms, 0, __ATOMIC_RELEASE);
 	Mix_HookMusic(NULL, NULL);
 	s_finished_hook = NULL;
 	s_song_finished = 0;
@@ -1763,7 +1829,9 @@ void RBAStop(void)
 void RBAGetPerformanceDiagnostics(int *producer_nice,
                                   unsigned int *start_request_ms,
                                   unsigned int *stop_wait_ms,
-                                  unsigned int *first_buffer_ms)
+                                  unsigned int *first_buffer_ms,
+                                  unsigned int *request_apply_ms,
+                                  unsigned int *stale_render_chunks_total)
 {
 	if (producer_nice)
 		*producer_nice = __atomic_load_n(&s_render_thread_nice, __ATOMIC_ACQUIRE);
@@ -1773,6 +1841,10 @@ void RBAGetPerformanceDiagnostics(int *producer_nice,
 		*stop_wait_ms = __atomic_load_n(&s_last_stop_wait_ms, __ATOMIC_ACQUIRE);
 	if (first_buffer_ms)
 		*first_buffer_ms = __atomic_load_n(&s_last_first_buffer_ms, __ATOMIC_ACQUIRE);
+	if (request_apply_ms)
+		*request_apply_ms = __atomic_load_n(&s_last_request_apply_ms, __ATOMIC_ACQUIRE);
+	if (stale_render_chunks_total)
+		*stale_render_chunks_total = __atomic_load_n(&s_stale_render_chunks_total, __ATOMIC_ACQUIRE);
 }
 
 void RBASetVolume(int volume)
@@ -1787,6 +1859,9 @@ void RBAPause(void)
 	    __atomic_load_n(&s_terminal_state, __ATOMIC_ACQUIRE) != RBA_TERMINAL_NONE)
 		return;
 	s_paused = 1;
+	pthread_mutex_lock(&s_background_mutex);
+	pthread_cond_broadcast(&s_background_cond);
+	pthread_mutex_unlock(&s_background_mutex);
 	RBA_LOG("Paused");
 }
 
@@ -1797,6 +1872,9 @@ int RBAResume(void)
 	    __atomic_load_n(&s_terminal_state, __ATOMIC_ACQUIRE) != RBA_TERMINAL_NONE)
 		return 0;
 	s_paused = 0;
+	pthread_mutex_lock(&s_background_mutex);
+	pthread_cond_broadcast(&s_background_cond);
+	pthread_mutex_unlock(&s_background_mutex);
 	RBA_LOG("Resumed");
 	return 1;
 }
@@ -1832,6 +1910,9 @@ int RBAPauseResume(void)
 		s_paused = 1;
 		RBA_LOG("Toggle → paused");
 	}
+	pthread_mutex_lock(&s_background_mutex);
+	pthread_cond_broadcast(&s_background_cond);
+	pthread_mutex_unlock(&s_background_mutex);
 	return 1;
 }
 
@@ -1863,7 +1944,7 @@ void RBACheckFinishedHook(void)
 int RBAGetTrackNum(void)
 {
 	if (!s_initialised || !s_playing) return 0;
-	return s_current_track;
+	return __atomic_load_n(&s_logical_track, __ATOMIC_ACQUIRE);
 }
 
 int RBAPeekPlayStatus(void)
@@ -1882,8 +1963,9 @@ unsigned long RBAGetDiscID(void)
 	 * songs_haved2_cd() recognise a GOG image as an original D2 CD. */
 	int src_idx;
 	if (!s_initialised) return 0;
-	if (s_current_track >= 1 && s_current_track <= s_num_tracks) {
-		src_idx = s_tracks[s_current_track - 1].source_index;
+	int logical_track = __atomic_load_n(&s_logical_track, __ATOMIC_ACQUIRE);
+	if (logical_track >= 1 && logical_track <= s_num_tracks) {
+		src_idx = s_tracks[logical_track - 1].source_index;
 		if (src_idx >= 0 && src_idx < s_num_sources)
 			return s_sources[src_idx].legacy_disc_id;
 	}

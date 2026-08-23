@@ -23,6 +23,7 @@ $lockFile = Join-Path $lockDir "run-code-quality.lock.json"
 $summaryFile = Join-Path $lockDir "run-code-quality.summary.json"
 $resolvedPaths = @()
 $exitCode = 0
+. (Join-Path $helpersDir "powershell_compat.ps1")
 
 function Resolve-CodeQualityPaths {
     param(
@@ -57,7 +58,7 @@ function Get-RepoRelativePath {
         [string]$FullName
     )
 
-    return [System.IO.Path]::GetRelativePath($repoRoot, $FullName)
+    return Get-CompatibleRelativePath -BasePath $repoRoot -TargetPath $FullName
 }
 
 function Get-GitDirtyPaths {

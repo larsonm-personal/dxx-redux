@@ -67,7 +67,7 @@ foreach ($report in $resolvedReports) {
         continue
     }
 
-    $relativeReport = [System.IO.Path]::GetRelativePath($repoRoot, $report).Replace('\', '/')
+$relativeReport = (Get-CompatibleRelativePath -BasePath $repoRoot -TargetPath $report).Replace('\', '/')
     $normalizedReport = $reportText.TrimEnd("`r", "`n")
     $block = @"
 
