@@ -23387,3 +23387,836 @@ No product test or build was run because this was a frozen read-only survey and 
 </details>
 
 <!-- END IMPORT: GQ1-CHUNK-0167 frozen survey -->
+
+<!-- BEGIN IMPORT: GQ1-CHUNK-0168 frozen survey SHA256:82c1a0c0abc540cf7012eed5060cf8e915c8df8dac6f077a538623485e42e4ca -->
+
+## GQ1-CHUNK-0168 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0168.md`
+- Imported SHA-256: `82c1a0c0abc540cf7012eed5060cf8e915c8df8dac6f077a538623485e42e4ca`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0168 frozen survey
+
+## Frozen scope and classification
+
+- Coverage unit: `GQ1-CHUNK-0168`
+- Frozen base: `fb555eec75e1ed12c8348805ab335afb4c721b06`
+- Frozen head: `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned review: `route_planner.cpp` L3001-L3201, `route_planner.h` L1-L317, and `route_snapshot_c.h` L1-L52, for 570 lines
+- Classification: all three assigned paths are branch-added. Their frozen whole-path changes are +3,201/-0, +317/-0, and +52/-0
+- The frozen base is an ancestor of the frozen head. Analysis used frozen Git objects
+
+## Diff-minimization assessment
+
+Disposition: `NO_INHERITED_EFFECT`
+
+The assigned C++ model, C facade tail, and C summary header are shared branch-added owners. Frozen consumers include the shared snapshot, cache, adapter, and focused tests, plus paired branch-added `secretarea.h` facades. The inherited D1/D2 call sites retain game-local observations and compact calls; moving route policy into either inherited tree would duplicate it. Deleting the paired facade headers would broaden inherited include churn without removing route policy. No assigned extraction can remove a base-existing path, hunk, or line
+
+## Quality and historical reconciliation
+
+No new finding or investigation is recommended
+
+- The exact earlier public-surface review `R1-CHUNK-0125` was clean. The later frozen additions extend the facade with bounded work, bounded cache entries, cancellation propagation, strict visibility cache namespacing, and exception containment
+- Open planner roots in earlier implementation ranges, including `BR-0215`, `BR-0301`, `BR-0302`, `BR-0329`, `BR-0330`, and `BR-0331`, were checked and are not duplicated by this public-surface and facade-tail unit
+- Route projection rejects step and opened-link overflow before copying. Segment reachability returns success only for an uncancelled, unexhausted `ok` plan
+- C and C++ linkage, MSVC packing restoration, owned standard-library storage, default initialization, bounded problem copying, and null input rejection are coherent
+
+## Scope, validation, and gaps
+
+- Context checked: all declarations and matching definitions, C projection and reachability facades, snapshot/cache consumers, paired secret-area facades, focused route tests, file history, the complete post-adversarial delta, and all active/done GQ, adversarial, and DMR1 records found by path and symbol
+- Commands used: `git show`, `git diff --numstat`, `git merge-base --is-ancestor`, `git grep`, `rg`, and line-numbered frozen inspection
+- No build or product test was run because this is a frozen read-only survey. Static inspection cannot prove maximum-size runtime cost, which remains owned by existing budget findings rather than a new root
+- No product source, test, fixture, canonical ledger, generated output, build output, or unrelated worktree file was changed
+
+## Outcome
+
+- Coverage outcome: `CLEAN`
+- Provisional impact rating: 0 (H/M/B/C/R = 0/0/0/0/0); proposed owner: none; rationale: branch-added shared ownership is already natural and no new live defect survived reconciliation
+- Canonical handoff: record one `NO_INHERITED_EFFECT` GQD decision, one non-partial clean GQC record, and no new finding, investigation, or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0168 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0169 frozen survey SHA256:8feab85c3d377e2beec4925691b964d37224bcce4a9485a7734ecaf3a4d1766c -->
+
+## GQ1-CHUNK-0169 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0169.md`
+- Imported SHA-256: `8feab85c3d377e2beec4925691b964d37224bcce4a9485a7734ecaf3a4d1766c`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0169 frozen survey
+
+## Frozen scope and classification
+
+- Coverage unit: `GQ1-CHUNK-0169`
+- Frozen base/head: `fb555eec75e1ed12c8348805ab335afb4c721b06` to `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned review: complete `songs_android_shared.c/.h` and `startup_resume_shared.c/.h`, 453 lines
+- All four assigned paths are branch-added, at +335, +21, +89, and +8 frozen whole-path lines
+- The frozen base is an ancestor of the frozen head and all analysis used frozen Git objects
+
+## Diff-minimization assessment
+
+Disposition: `DEFER`, duplicate confirmation of `GQD-0010`
+
+The shared files already own cross-game music selection, playlist projection, Redbook ordinal traversal, and startup resume policy. Paired inherited `songs.c` files still contain the same guarded post-initialization name-table load and diagnostic block. Moving that block behind `android_music_songs_initialized` could remove about 16 inherited additions across two paths but removes no complete hunk and adds a comparable shared implementation plus arguments. Startup resume has only compact game-local includes, build entries, and one ordered call per game. Retain the existing deferred owner and recheck only with a coherent adjacent songs extraction that eliminates a complete hunk or at least 30 inherited lines
+
+## Quality and historical reconciliation
+
+No new finding or investigation is recommended
+
+- `BR-0029` still owns main-looper traversal and mutation of live song, jukebox, configuration, and player state. This scope confirms rather than duplicates that thread-ownership root
+- Archived `BR-0081` remains fixed: list construction now uses the bounded `music_track_json_writer` and returns failure instead of trusting `snprintf` would-have-written counts
+- Archived `BR-0065` remains addressed by the later strict JNI/native UTF-8 boundary. Broader track-name schema and lookup defects remain owned by their existing records
+- Redbook traversal clamps the declared range, skips non-audio tracks, normalizes signed offsets, and validates playback. Startup resume validates operands, prepares the pilot before restore, preserves replay precedence, and returns failures to the paired normal menu paths
+
+## Scope, validation, and gaps
+
+- Context checked: complete assigned definitions and declarations, paired songs/playsave/inferno/CMake consumers, JNI, automation, introspection, Kotlin music UI, resume-pilot/save readers, focused JSON writer and related tests, complete post-adversarial delta, history, and active/done GQ, adversarial, and DMR1 records
+- Commands used: `git diff`, `git show`, `git grep`, `git merge-base --is-ancestor`, `rg`, and frozen line inspection
+- No build, emulator, or product test was run for this read-only frozen survey. Runtime thread interleavings remain existing `BR-0029` evidence
+- No product or unrelated user-owned file was changed
+
+## Outcome
+
+- Coverage outcome: `ISSUES`
+- Provisional impact rating: 0 (H/M/B/C/R = 0/0/0/0/0); proposed owner: `BR-0029` reference-only; rationale: all live quality evidence is already owned and the only minimization is an existing below-payoff deferral
+- Canonical handoff: record one `DEFER` GQD decision, one non-partial issues GQC record, duplicate/historical links only, and no new finding, investigation, or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0169 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0170 frozen survey SHA256:d06bf4df81d96b1606ea3d3602bbefb990591bc1182b2d990064a3ec31d6490c -->
+
+## GQ1-CHUNK-0170 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0170.md`
+- Imported SHA-256: `d06bf4df81d96b1606ea3d3602bbefb990591bc1182b2d990064a3ec31d6490c`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0170 frozen survey
+
+## Frozen scope and classification
+
+- Coverage unit: `GQ1-CHUNK-0170`
+- Frozen base/head: `fb555eec75e1ed12c8348805ab335afb4c721b06` to `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned review: complete branch-added `ogl_texture_android.c/.h` and `ogl_viewport_android.c/.h`, 609 lines
+- Frozen whole-path additions are 407, 77, 101, and 24 lines. Analysis used frozen Git objects and confirmed ancestry
+
+## Diff-minimization assessment
+
+Disposition: `RETAIN`
+
+These files are the natural branch-added owners and already absorbed duplicated texture lookup, texture policy, runtime filter, and viewport bodies. The completed DMR1 extraction removed 92 inherited extension-lookup lines. Remaining paired inherited `ogl.c` sites are compact state-bearing calls at GL load, bind, filter, and viewport transition points. Moving them behind callbacks retains the observation sites and adds a larger state interface, so no further material inherited path, hunk, or line reduction is supported
+
+## Quality and historical reconciliation
+
+- `GQF-0007` owns the unbounded `_mask.png` name construction in `android_ogl_load_dxa_mask`
+- `GQF-0020` owns signed `int` accumulation in `android_ogl_get_texture_bytes`
+- `GQF-0021` owns narrowing monotonic elapsed microseconds to `int` before widening at the metrics sink
+- `GQF-0006` is fixed after the frozen head by the accepted capacity-aware extension lookup and exact boundary tests; no regrowth is present in the accepted live remediation
+- The former active-texture-unit bind-cache defect is historically closed: frozen code binds unconditionally and treats the scalar only as diagnostic state
+- Viewport conversion validates state and dimensions, caches logical and physical rectangles together, and preserves the keyboard offset contract. No new root survived caller and historical reconciliation
+
+## Scope, validation, and gaps
+
+- Context checked: all assigned functions and declarations, paired D1/D2 OGL callers, merged-wall consumer, Android build registration, renderer contract tests, DMR1 completion, post-adversarial delta, and active/done GQ and adversarial records
+- Commands used: `git diff`, `git grep`, `git show`, `git merge-base --is-ancestor`, `rg`, and frozen line inspection
+- No GL runtime or build was run for this frozen read-only survey. Driver behavior remains covered only by maintained renderer tests and existing runtime evidence
+- No product or unrelated user-owned file was changed
+
+## Outcome
+
+- Coverage outcome: `ISSUES`
+- Provisional impact rating: 56 (H/M/B/C/R = 32/0/7/10/7); proposed owner: `GQF-0007`; rationale: duplicate evidence for an open high-confidence stack-boundary defect, with no second remediation owner
+- Canonical handoff: record one `RETAIN` GQD decision, one issues GQC record, extensions to `GQF-0007`, `GQF-0020`, and `GQF-0021`, historical closure for the bind cache, and no new finding or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0170 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0171 frozen survey SHA256:2477c0dec9a9ca28e1a962aef4a85d4de3f4e2c0c802a3038200bcfc80a8cfcb -->
+
+## GQ1-CHUNK-0171 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0171.md`
+- Imported SHA-256: `2477c0dec9a9ca28e1a962aef4a85d4de3f4e2c0c802a3038200bcfc80a8cfcb`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0171 frozen survey
+
+## Frozen scope and classification
+
+- Coverage unit: `GQ1-CHUNK-0171`
+- Frozen base/head: `fb555eec75e1ed12c8348805ab335afb4c721b06` to `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned review: complete `rewind_file.h`, `rgba8888.h`, and `route_analysis_cache.c/.h`, 648 lines
+- All four assigned paths are branch-added, with frozen whole-path additions of 409, 15, 159, and 65 lines. Ancestry was confirmed and frozen Git objects were used
+
+## Diff-minimization assessment
+
+Disposition: `RETAIN`
+
+The rewind wrapper and route-cache implementation are existing branch-added shared owners. Paired inherited serializers include the wrapper because their public read/write signatures are locally owned, while paired cache build registrations and secret-area facades are compact source/declaration seams. Moving serializers, cache lifecycle observations, or game-specific state ownership behind a larger callback table would retain those sites and increase the shared ABI. `rgba8888.h` has only branch-added consumers. No material inherited path or complete hunk can be removed safely
+
+## Quality and historical reconciliation
+
+- `BR-0208` remains the owner for rewind read/write failure semantics. The later frozen error latch, overflow checks, replacement helpers, and logical-size reset repair failed writes and smaller-buffer reuse, but scalar read helpers still return zero-valued fields after short reads unless every caller checks the latched outcome
+- `BR-0332` owns omission of `navigation_hash` from `route_analysis_cache_key`, filename identity, equality, and record admission
+- `BR-0259` owns unbounded persistent cache generations and entries
+- `BR-0229` owns the broader ambient MSVC packing contract at route-facing C boundaries. No distinct layout root was found here
+- `BR-0396` separately owns missing CTest registration for the focused route snapshot/cache executables
+- Cache encoding zero-initializes the record and validates exact size, key, checksum, endpoint, counts, strings, and link bounds. RGBA storage is a four-byte caller-capacity primitive with focused coverage
+
+## Scope, validation, and gaps
+
+- Context checked: complete assigned code, paired D1/D2 state serializers and secret-area/build consumers, cache load/save publication, snapshot hashes, introspection, focused rewind/RGBA/cache tests, post-adversarial delta, history, and active/done GQ, adversarial, and DMR1 records
+- Commands used: `git diff`, `git show`, `git grep`, `git merge-base --is-ancestor`, `rg`, and frozen line inspection
+- No build or runtime test was run for this frozen read-only survey. Filesystem retention and injected short-I/O behavior remain covered only by existing defect evidence and focused-test gaps
+- No product or unrelated user-owned file was changed
+
+## Outcome
+
+- Coverage outcome: `ISSUES`
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: `BR-0332`; rationale: duplicate high-confidence cache identity evidence is the highest-impact live owner in this scope
+- Canonical handoff: record one `RETAIN` GQD decision, one issues GQC record, extensions to `BR-0208`, `BR-0332`, `BR-0259`, `BR-0229`, and `BR-0396`, and no new finding, investigation, or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0171 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0172 frozen survey SHA256:5e88d1fb606e91c2b9ae577cf0d7301ead741e6b1cb6f57aee90696f95b43b41 -->
+
+## GQ1-CHUNK-0172 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0172.md`
+- Imported SHA-256: `5e88d1fb606e91c2b9ae577cf0d7301ead741e6b1cb6f57aee90696f95b43b41`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0172 frozen survey
+
+## Frozen scope and classification
+
+- Coverage unit: `GQ1-CHUNK-0172`
+- Frozen base/head: `fb555eec75e1ed12c8348805ab335afb4c721b06` to `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned review: complete `input_demo_result.h`, `input_demo_rng_mode.c/.h`, and `input_demo_rng_trace.c`, 750 branch-added lines
+- Frozen whole-path additions are 124, 181, 23, and 422 lines. Ancestry was confirmed and frozen objects were used
+
+## Diff-minimization assessment
+
+Disposition: `RETAIN`
+
+The assigned result ABI, RNG-mode validator, and trace owner are already branch-added and shared by both games. Their inherited consumers are local RNG, lifecycle, simulation, serializer, and build observation sites. Replacing those sites with a callback table or a broader facade would retain the observations and add dispatch state. Result and mode declarations are consumed directly at natural boundaries. No material inherited path or complete hunk reduction is supported
+
+## Quality and historical reconciliation
+
+- `BR-0246` owns disagreement between permissive textual RNG-mode preflight and strict fixture parsing, including duplicate or decoy key behavior
+- `BR-0247` owns unbounded always-on RNG trace growth and retained high-water allocation
+- `BR-0222` owns non-transactional trace/artifact-set publication
+- `BR-0361` owns unsequenced seeded-state acquisition in paired inherited RNG producers; this trace sink correctly serializes the supplied values and is related evidence only
+- The later frozen file-size admission extends the repair for `BR-0219` at this preflight loader, but aggregate input-demo size/work ownership remains that existing root
+- Archived native JSON byte-encoding evidence remains separately owned. Result packing, fixed-width fields, bounded inline arrays, trace reset, ordinary allocation cleanup, and valid pointer lifetimes introduce no new root
+
+## Scope, validation, and gaps
+
+- Context checked: complete assigned paths, strict fixture parser, replay/startup callers, recorder and rewind lifecycle, paired D1/D2 RNG and demo consumers, result readers, trace comparer and focused tests, post-adversarial delta, history, and active/done ledgers
+- Commands used: `git diff`, `git grep`, `git show`, `git merge-base --is-ancestor`, `rg`, and frozen line inspection
+- No build or replay was run for this frozen read-only survey. Allocation-failure, maximum-duration, and cross-compiler reseed behavior remain existing validation gaps
+- No product or unrelated user-owned file was changed
+
+## Outcome
+
+- Coverage outcome: `ISSUES`
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: `BR-0247`; rationale: duplicate evidence for the open unbounded trace-growth root is the highest-impact live owner
+- Canonical handoff: record one `RETAIN` GQD decision, one issues GQC record, duplicate/extensions only, and no new finding, investigation, or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0172 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0173 frozen survey SHA256:1307f22c23f016d695c862b3dcd43c62976c8ab01729cd43434ada76549ed79c -->
+
+## GQ1-CHUNK-0173 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0173.md`
+- Imported SHA-256: `1307f22c23f016d695c862b3dcd43c62976c8ab01729cd43434ada76549ed79c`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0173 frozen survey
+
+## Frozen scope and classification
+
+- Coverage unit: `GQ1-CHUNK-0173`
+- Frozen base/head: `fb555eec75e1ed12c8348805ab335afb4c721b06` to `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned review: complete `playsave_android_shared.c/.h` and `playsave_layout.c/.h`, 694 branch-added lines
+- Frozen whole-path additions are 472, 34, 161, and 27 lines. Ancestry was confirmed and frozen objects were used
+
+## Diff-minimization assessment
+
+Disposition: `RETAIN`
+
+These files are the established branch-added owners for shared Android preference defaults, text/binary patching, and versioned player-file layout. Paired inherited `playsave.c` sites retain file-format serialization order and game-specific version branches, with compact includes, source registration, and calls into the shared helpers. Moving those branches would violate the C source-of-truth policy or expand inherited changes. No material inherited path or complete hunk is safely removable
+
+## Quality and historical reconciliation
+
+- `BR-0236` owns grouped preference writes that can partially commit across fields, files, pilots, and games while aggregation reports success. The new combined HUD text update improves same-section atomicity but does not solve the broader multi-target generation root
+- `BR-0029` remains the owner for launcher/main-looper versus engine player-file access races
+- Layout helpers validate signatures, version ranges, byte-swapped D2 counts, known D1 sizes, required extents, and checked offset arithmetic. Patch helpers validate offsets, lengths, arrays, and file extent before transactional replacement
+- New boss-health and combined HUD preferences use bounded lines, normalized booleans, and the existing section transaction. Permissive `atoi` behavior follows the existing disposable Android preference policy and does not create a distinct material root
+
+## Scope, validation, and gaps
+
+- Context checked: complete assigned definitions and APIs, paired D1/D2 player readers/writers, text and binary transaction callees, JNI pilot/gamepad/autoselect aggregation, Kotlin settings and import/export consumers, supported format versions, focused layout/text/transaction tests, post-adversarial delta, history, and active/done ledgers
+- Commands used: `git diff`, `git grep`, `git show`, `git merge-base --is-ancestor`, `rg`, and frozen line inspection
+- No build or injected-failure test was run for this frozen read-only survey. Cross-file and cross-pilot rollback remains an existing untested acceptance boundary
+- No product or unrelated user-owned file was changed
+
+## Outcome
+
+- Coverage outcome: `ISSUES`
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: `BR-0236`; rationale: duplicate high-confidence partial-commit evidence is the only live quality root
+- Canonical handoff: record one `RETAIN` GQD decision, one issues GQC record, extensions to `BR-0236` and `BR-0029`, and no new finding, investigation, or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0173 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0174 frozen survey SHA256:afc32380170f9acf7f4f596b73f2443dbce670b6c52718ae1f31f0dec7db5995 -->
+
+## GQ1-CHUNK-0174 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0174.md`
+- Imported SHA-256: `afc32380170f9acf7f4f596b73f2443dbce670b6c52718ae1f31f0dec7db5995`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0174 frozen survey
+
+## Frozen scope and classification
+
+- Coverage unit: `GQ1-CHUNK-0174`
+- Frozen base/head: `fb555eec75e1ed12c8348805ab335afb4c721b06` to `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned review: complete `merged_wall_debug.h`, `merged_wall_geometry_hit.h`, `messagebox.c`, and `midi_enumeration.c`, 749 branch-added lines
+- Frozen whole-path additions are 307, 53, 18, and 371 lines. Ancestry was confirmed and frozen objects were used
+
+## Diff-minimization assessment
+
+Disposition: `RETAIN`
+
+The merged-wall declarations and geometry classifier are branch-added interfaces to already-shared implementation, while message delivery and MIDI enumeration are branch-added Android owners. Remaining inherited renderer hooks, warning callback installation, and game-specific data inputs are compact natural observation sites. Moving them behind further wrappers removes no material path or complete hunk and would obscure renderer or engine ownership
+
+## Quality and historical reconciliation
+
+- `BR-0238` still owns duplicate and false D1/D2 classification because `midi_enumerate_tracks` scans the same physical mission directory twice without deriving game identity from its descriptor
+- `BR-0239` still owns warnings routed only to transient logcat by `msgbox_warning`
+- `BR-0394` owns the incomplete software-renderer build boundary. The newer non-OGL header branch exposes a small subset, but software debug still needs OGL-hidden snapshot/probe/state structures
+- The catalog refactor historically closes the earlier 64-entry truncation and HMP-suppresses-MIDI behavior by using one bounded mixed HOG catalog and explicit incomplete/error publication
+- Geometry classification clears optional outputs, distinguishes bad start from no wall, validates segment/side bounds, and has focused coverage. Merged-wall declarations have matching implementations or guarded consumers. No new root survived reconciliation
+
+## Scope, validation, and gaps
+
+- Context checked: all assigned declarations/functions, complete merged-wall implementation and paired renderers, software/OGL guards, warning installation and durable logging contract, HOG catalog and MIDI preview consumers, JNI/Kotlin picker/introspection, focused geometry/catalog tests, post-adversarial delta, history, and active/done ledgers
+- Commands used: `git diff`, `git grep`, `git show`, `git merge-base --is-ancestor`, `rg`, and frozen line inspection
+- No renderer build, MIDI enumeration, or emulator warning test was run for this frozen read-only survey. These runtime gaps remain owned by the cited findings
+- No product or unrelated user-owned file was changed
+
+## Outcome
+
+- Coverage outcome: `ISSUES`
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: `BR-0238`; rationale: duplicate high-confidence mission-source identity evidence is the highest ready live root
+- Canonical handoff: record one `RETAIN` GQD decision, one issues GQC record, duplicate/extensions to `BR-0238`, `BR-0239`, and `BR-0394`, historical closure of the catalog defects, and no new finding or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0174 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0175 frozen survey SHA256:6172e650d433b377f63ef0c9a868cdd3a77be85a3161e2ef6467917da10ba897 -->
+
+## GQ1-CHUNK-0175 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0175.md`
+- Imported SHA-256: `6172e650d433b377f63ef0c9a868cdd3a77be85a3161e2ef6467917da10ba897`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0175 frozen survey
+
+## Frozen scope and classification
+
+- Coverage unit: `GQ1-CHUNK-0175`
+- Frozen base/head: `fb555eec75e1ed12c8348805ab335afb4c721b06` to `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned review: complete `midi_preview.h`, `midi_seek_timeline.c/.h`, and `multi_save_transfer_policy.h`, 234 branch-added lines
+- Frozen whole-path additions are 63, 120, 34, and 17 lines. Ancestry was confirmed and frozen objects were used
+
+## Diff-minimization assessment
+
+Disposition: `NO_INHERITED_EFFECT`
+
+The MIDI public interface, sample-frame reconstruction helper, and save-transfer policy are branch-added and consumed by branch-added preview, JNI, transfer, build, and focused-test owners. No assigned symbol requires a base-existing D1/D2 hook or registration. Moving these policies into either inherited game would duplicate them. Measured attributable inherited effect is 0 paths, 0 hunks, and +0/-0 lines
+
+## Quality and historical reconciliation
+
+- `BR-0016` remains the owner for unordered external MIDI lifecycle calls. The revised contract accurately states internal serialization, but callers can still overlap start/stop lifecycle ownership at the broader boundary
+- `BR-0276` remains the owner for producer-ahead playback position and premature stopped publication in the preview implementation
+- Archived `BR-0028`, `BR-0030`, and `BR-0319` repairs remain intact. The shared timeline renders elapsed sample frames during reconstruction, retains the final PCM suffix, and is protected by the preview synchronization and initialization fixes
+- The transfer-policy helper deterministically waits when connected clients exist and applies immediately otherwise; protocol authentication and all-peers restore ownership remain in the transfer implementation's existing roots
+- Timeline operations validate production inputs and avoid event-frame underflow by dispatching every event at or before the current frame. Focused tests cover frame rounding, event order, reconstruction, and prefill
+
+## Scope, validation, and gaps
+
+- Context checked: complete assigned code, MIDI preview implementation/JNI/Kotlin callers, TinySoundFont integration, transfer implementation and paired restore callers, focused seek/transfer tests, historical fixes, post-adversarial delta, and active/done ledgers
+- Commands used: `git diff`, `git grep`, `git show`, `git merge-base --is-ancestor`, `rg`, and frozen line inspection
+- No audio runtime, multiplayer session, or build was run for this frozen read-only survey. Launcher-driven seek and lifecycle overlap remain existing validation gaps
+- No product or unrelated user-owned file was changed
+
+## Outcome
+
+- Coverage outcome: `ISSUES`
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: `BR-0276`; rationale: duplicate evidence for the remaining preview completion/clock root is the highest live owner
+- Canonical handoff: record one `NO_INHERITED_EFFECT` GQD decision, one issues GQC record, extensions to `BR-0016` and `BR-0276`, historical closure links, and no new finding, investigation, or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0175 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0176 frozen survey SHA256:4cd57e4a0e98c06a955205365237cc8c9da5e426174ebc770ae5ab56681176ae -->
+
+## GQ1-CHUNK-0176 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0176.md`
+- Imported SHA-256: `4cd57e4a0e98c06a955205365237cc8c9da5e426174ebc770ae5ab56681176ae`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0176 frozen survey
+
+## Frozen scope and classification
+
+- Coverage unit: `GQ1-CHUNK-0176`
+- Frozen base/head: `fb555eec75e1ed12c8348805ab335afb4c721b06` to `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned review: complete branch-added `auto_net.c/.h` and `net_udp_android_autonet_shared.c/.h`, 529 lines
+- Frozen whole-path additions are 210, 78, 230, and 11 lines. Ancestry was confirmed and frozen objects were used
+
+## Diff-minimization assessment
+
+Disposition: `RETAIN`
+
+The assigned files already centralize paired auto-join/host policy outside inherited games. Remaining inherited menu activation, socket, player-selection, mission, and Netgame sites own game-local lifecycle and state. Further callbacks would retain those observations and enlarge the interface. The existing paired calls and registrations are the narrow natural boundary, with no material path or complete hunk safely removable
+
+## Quality and historical reconciliation
+
+- `BR-0257` remains open: `check_auto_net` leaves `auto_host_pending` armed until player selection, ignores the host result, and therefore retries terminal mission or socket failures on later menu activation. New parameter preflight avoids opening sockets for invalid tuples but does not consume the queued request
+- `GQF-0023` owns the still-unproven `strcpy`/`sprintf` capacity assumptions for wire-visible `Netgame` mission, title, and game-name fields
+- `BR-0195` remains the separate unauthenticated save-transfer sender/authority root and is only adjacent context
+- New host tuple validation checks mission existence, level range, mode, difficulty, and player count before network mutation. Boolean QoL fields are normalized, and auto-join retains bounded polling and terminal cleanup. No new root survived reconciliation
+
+## Scope, validation, and gaps
+
+- Context checked: all assigned code, JNI/Kotlin launch producers, paired menu activation, UDP initialization/socket/player-selection paths, mission and Netgame layouts, save-transfer adjacency, multiplayer plans, post-adversarial delta, history, and active/done ledgers
+- Commands used: `git diff`, `git grep`, `git show`, `git merge-base --is-ancestor`, `rg`, and frozen line inspection
+- No emulator or multiplayer runtime was run for this frozen read-only survey. Bind-failure and repeated-activation behavior remains existing validation work
+- No product or unrelated user-owned file was changed
+
+## Outcome
+
+- Coverage outcome: `ISSUES`
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: `BR-0257`; rationale: duplicate high-confidence one-shot lifecycle failure remains the highest live root
+- Canonical handoff: record one `RETAIN` GQD decision, one issues GQC record, extensions to `BR-0257` and `GQF-0023`, and no new finding, investigation, or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0176 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0177 frozen survey SHA256:ddce9144cab30e6ff9e210cb95424dea4f9fc3a3677ccacc24dab8414f8520f1 -->
+
+## GQ1-CHUNK-0177 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0177.md`
+- Imported SHA-256: `ddce9144cab30e6ff9e210cb95424dea4f9fc3a3677ccacc24dab8414f8520f1`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0177 frozen survey
+
+## Frozen scope and classification
+
+- Coverage unit: `GQ1-CHUNK-0177`
+- Frozen base/head: `fb555eec75e1ed12c8348805ab335afb4c721b06` to `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned review: complete branch-added `ogl_msaa_android.c/.h` and `ogl_shader_runtime.c/.h`, 417 lines
+- Frozen whole-path additions are 287, 64, 54, and 12 lines. Ancestry was confirmed and frozen objects were used
+
+## Diff-minimization assessment
+
+Disposition: `RETAIN`
+
+These shared files already own paired MSAA lifecycle and shader-runtime policy. Remaining inherited D1/D2 OGL sites provide renderer-local frame nesting, context lifecycle, compile/link calls, and state binding. Moving those observations behind another facade retains the same sites and enlarges the state contract. The existing include/call/source-registration boundary is natural and no material inherited path or complete hunk is safely removable
+
+## Quality and historical reconciliation
+
+- `BR-0251` remains the owner for failure-blind EGL/context recovery and shader initialization. MSAA now captures GL errors, effective sample counts, creation status, generation, bind, and resolve diagnostics, but context replacement still needs complete reverse-order invalidation and rebuild across all renderer resources
+- `BR-0647` owns the unattended MSAA smoke test's failure to require actual FBO creation and successful resolve. The new diagnostic API supplies the needed production evidence but does not by itself change that test oracle
+- `BR-0260` is adjacent GPU timer ownership outside this assigned scope and is not duplicated
+- FBO creation clamps samples, checks both attachment sample counts, framebuffer completeness, and GL error, destroys partial resources, and publishes success only afterward. Nested frame depth, outer resolve, overlay/window target selection, and shader diagnostic buffer bounds remain coherent
+
+## Scope, validation, and gaps
+
+- Context checked: complete assigned paths, paired D1/D2 OGL callers and state, EGL recreation, GLES3 shader compilation/linking, introspection and MSAA smoke consumers, focused scripts, prior OGL extraction plans, post-adversarial delta, history, and active/done ledgers
+- Commands used: `git diff`, `git grep`, `git show`, `git merge-base --is-ancestor`, `rg`, and frozen line inspection
+- No GL driver, context-loss, or emulator test was run for this frozen read-only survey. Effective-sample and failed-compile behavior remain existing acceptance gaps
+- No product or unrelated user-owned file was changed
+
+## Outcome
+
+- Coverage outcome: `ISSUES`
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: `BR-0251`; rationale: duplicate renderer recovery evidence is the highest-impact live owner
+- Canonical handoff: record one `RETAIN` GQD decision, one issues GQC record, extensions to `BR-0251` and `BR-0647`, and no new finding, investigation, or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0177 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0178 frozen survey SHA256:6939b5d8836cf045a48bcf18bc9b0368d589a163f71e59fef098dbe08997dea1 -->
+
+## GQ1-CHUNK-0178 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0178.md`
+- Imported SHA-256: `6939b5d8836cf045a48bcf18bc9b0368d589a163f71e59fef098dbe08997dea1`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0178 frozen survey
+
+## Frozen scope and classification
+
+- Coverage unit: `GQ1-CHUNK-0178`
+- Frozen base/head: `fb555eec75e1ed12c8348805ab335afb4c721b06` to `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned review: complete branch-added `overlay_ringbuf.cpp/.h` and `pcm_decoders.c/.h`, 647 lines
+- Frozen whole-path additions are 154, 48, 385, and 60 lines. Ancestry was confirmed and frozen objects were used
+
+## Diff-minimization assessment
+
+Disposition: `NO_INHERITED_EFFECT`
+
+The assigned overlay and decoder owners, their source registrations, JNI/fingerprint consumers, automation/introspection consumers, and PCM music implementation are branch-added. Base-existing paired song call sites reach the decoder only through the branch-added music implementation and require no direct assigned symbol, hook, or registration. Removing or wrapping the assigned files cannot eliminate an inherited D1/D2 path or complete hunk, for zero attributable inherited paths, hunks, and lines
+
+## Quality and historical reconciliation
+
+- `GQF-0058` remains open: file and memory MP3, OGG, and FLAC entry points decode and allocate complete PCM before `finish_decode` enforces the decoded-byte ceiling. Fingerprint JNI, host tools, and music playback also remain blocking complete-file consumers without typed cancellation or an early duration/work budget
+- Archived `BR-0252` remains closed. Current result validation accepts only mono or stereo output before publication, and file, memory, fingerprint, and music callers all pass through that validation
+- `BR-0286` owns stale cross-run overlay assertions. The assigned ring correctly retains process-global history and supports cursored reads; the automation consumer's zero-cursor search and missing run baseline create the false pass
+- The overlay ring serializes add and snapshot operations, bounds stored values, escapes JSON, handles wraparound and stale cursors, and returns caller-owned storage. Decoder outputs are initialized, failure cleanup is centralized, frame and byte arithmetic is checked, CD geometry is bounded, and partial CD reads publish only retained samples. No new root survived reconciliation
+
+## Scope, validation, and gaps
+
+- Context checked: complete assigned paths, paired build registrations, overlay producers and automation/introspection consumers, fingerprint JNI and host tools, music playback, CD wrappers, decoded-audio policy, prior reports, post-adversarial delta, history, and active/done ledgers
+- Commands used: `git diff`, `git grep`, `git show`, `git merge-base --is-ancestor`, `rg`, and frozen line inspection
+- No decoder corpus, allocation-fault, CD device, emulator, or automation runtime was run for this frozen read-only survey. Early resource enforcement and current-run overlay scoping remain existing validation work
+- No product or unrelated user-owned file was changed
+
+## Outcome
+
+- Coverage outcome: `ISSUES`
+- Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); proposed owner: `GQF-0058`; rationale: duplicate high-confidence complete-media resource and cancellation exposure is the highest live root
+- Canonical handoff: record one `NO_INHERITED_EFFECT` GQD decision, one issues GQC record, extensions to `GQF-0058` and `BR-0286`, confirmation that archived `BR-0252` remains closed, and no new finding, investigation, or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0178 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0179 frozen survey SHA256:5d647b060cb641f39622f57689d43427cbadfbb8a74aa90d20cbcf2bfc919bf9 -->
+
+## GQ1-CHUNK-0179 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0179.md`
+- Imported SHA-256: `5d647b060cb641f39622f57689d43427cbadfbb8a74aa90d20cbcf2bfc919bf9`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0179 frozen survey
+
+## Frozen scope and classification
+
+- Coverage unit: `GQ1-CHUNK-0179`
+- Frozen base/head: `fb555eec75e1ed12c8348805ab335afb4c721b06` to `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned review: complete branch-added `playsave_text.c/.h` and `playsave_transaction.c/.h`, 424 lines
+- Frozen whole-path additions are 230, 15, 144, and 35 lines. Ancestry was confirmed and frozen objects were used
+
+## Diff-minimization assessment
+
+Disposition: `RETAIN`
+
+The assigned helpers already centralize paired D1/D2 text-section reconstruction and durable file replacement. Remaining inherited play-save sites own game-specific layouts, offsets, option values, and file-format sequencing. Moving those observations behind another interface would retain the same paired call sites and enlarge the helper contract. Existing includes, calls, and source registrations are the narrow boundary, with no material inherited path or complete hunk safely removable
+
+## Quality and historical reconciliation
+
+- `BR-0029` remains open: concurrent same-process launcher/UI and engine writers can read one generation, independently modify it, and replace it without serialization or a source-generation check. Same-process calls also share the target-plus-PID temporary name, permitting staging truncation, interleaving, and cleanup collision
+- `BR-0236` remains open: each helper publishes one file immediately and cannot stage, validate, commit, or roll back a complete multi-section, binary/text, multi-pilot, or paired-game preference operation. A successful individual replacement therefore cannot establish grouped success
+- The later header adds the required C linkage boundary and does not alter the transaction root. Text input/output and file replacement remain capped at 16 MiB; allocation and patch bounds are checked; unknown content is preserved; writes are flushed, synced, closed, and atomically renamed before success; ordinary failures retain the prior target and attempt staging cleanup. No new root survived reconciliation
+
+## Scope, validation, and gaps
+
+- Context checked: complete assigned paths, paired D1/D2 format callers and build registrations, shared Android preference bridge, launcher and game-process writers, transaction and text tests, post-adversarial delta, history, and active/done ledgers
+- Commands used: `git diff`, `git grep`, `git show`, `git merge-base --is-ancestor`, `rg`, and frozen line inspection
+- No concurrent-writer, crash-recovery, filesystem-fault, or grouped-publication runtime was run for this frozen read-only survey. Those schedules remain existing validation work
+- No product or unrelated user-owned file was changed
+
+## Outcome
+
+- Coverage outcome: `ISSUES`
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: `BR-0236`; rationale: duplicate grouped partial-publication risk is the broadest live owner in this scope
+- Canonical handoff: record one `RETAIN` GQD decision, one issues GQC record, extensions to `BR-0029` and `BR-0236`, and no new finding, investigation, or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0179 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0180 frozen survey SHA256:5ec80e684346a2559e846115ccc1867c181cbbf3e96c9e65b7f374e8136dc9b2 -->
+
+## GQ1-CHUNK-0180 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0180.md`
+- Imported SHA-256: `5ec80e684346a2559e846115ccc1867c181cbbf3e96c9e65b7f374e8136dc9b2`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0180 frozen survey
+
+## Frozen scope and classification
+
+- Coverage unit: `GQ1-CHUNK-0180`
+- Frozen base/head: `fb555eec75e1ed12c8348805ab335afb4c721b06` to `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned review: complete branch-added classic-demo wall validator, console ring buffer, and cooperative indicator math header, 278 lines
+- Frozen whole-path additions are 15, 157, 36, and 70 lines. Ancestry was confirmed and frozen objects were used
+
+## Diff-minimization assessment
+
+Disposition: `RETAIN`
+
+The assigned owners already centralize bounded demo-record validation, paired console capture, and paired indicator arithmetic. Remaining inherited D1/D2 sites supply one format read, console emission, or render-policy call each and own their local engine state. Folding those sites into a larger facade would retain the same observations and registrations. The current shared boundaries are narrow, with no material inherited path or complete hunk safely removable
+
+## Quality and historical reconciliation
+
+- `BR-0243` remains open: when more eligible console records exist than `max_lines`, the getter returns the oldest bounded page but advertises producer `cur_seq` as `next_seq`. A caller following that cursor permanently skips retained records that were not represented in the response
+- Archived `BR-0389` remains closed. The new classic-demo validator rejects negative and over-capacity wall counts and proves the complete seven-byte record span using division-based, subtraction-safe arithmetic before the D2 decoder loops
+- Cooperative alpha advancement clamps state and frame time, widened fade arithmetic maps the full fixed-point range, and viewport classification rejects invalid dimensions and uses symmetric inclusive margins. Its focused paired tests cover the operational boundaries
+- The console ring serializes publication and snapshots, bounds storage and JSON allocation, strips terminators, escapes admitted JSON characters, and clamps overwritten cursors. No new root survived reconciliation
+
+## Scope, validation, and gaps
+
+- Context checked: complete assigned paths, D2 classic-demo consumer and focused validator test, paired console producers, JNI and introspection consumers, cooperative renderer and paired math tests, post-adversarial delta, history, and active/done ledgers
+- Commands used: `git diff`, `git grep`, `git show`, `git merge-base --is-ancestor`, `rg`, and frozen line inspection
+- No concurrent console pagination, classic-demo corpus, or renderer runtime was run for this frozen read-only survey. Pagination and malformed-demo acceptance remain covered by existing owner-specific validation work
+- No product or unrelated user-owned file was changed
+
+## Outcome
+
+- Coverage outcome: `ISSUES`
+- Provisional impact rating: 43 (H/M/B/C/R = 23/0/7/10/3); proposed owner: `BR-0243`; rationale: duplicate high-confidence diagnostic pagination loss is the only live root in this scope
+- Canonical handoff: record one `RETAIN` GQD decision, one issues GQC record, an extension to `BR-0243`, confirmation that archived `BR-0389` remains closed, and no new finding, investigation, or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0180 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0181 frozen survey SHA256:67dcf5ecb911d6ac861b3405ffd17fa0ccce167e314a6e7873418139bf645822 -->
+
+## GQ1-CHUNK-0181 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0181.md`
+- Imported SHA-256: `67dcf5ecb911d6ac861b3405ffd17fa0ccce167e314a6e7873418139bf645822`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0181 frozen survey
+
+## Frozen scope and classification
+
+- Coverage unit: `GQ1-CHUNK-0181`
+- Frozen base/head: `fb555eec75e1ed12c8348805ab335afb4c721b06` to `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned review: complete branch-added `android_font_scale.c/.h` and `android_graphics_options.c/.h`, 676 lines
+- Frozen whole-path additions are 148, 7, 482, and 39 lines. Ancestry was confirmed and frozen objects were used
+
+## Diff-minimization assessment
+
+Disposition: `RETAIN`
+
+The assigned owners already centralize paired font transformation, graphics option mutation, rounded-corner inset policy, and transactional config dispatch. Remaining inherited font, menu, gauge, and renderer sites provide local glyph state, option UI, HUD geometry, and frame-thread consumption. Another facade would retain those observations and enlarge the interface. Existing paired calls and registrations are the natural boundary, with no material inherited path or complete hunk safely removable
+
+## Quality and historical reconciliation
+
+- `BR-0029` remains open: main-looper JNI setters mutate `GameCfg`, `PlayerCfg`, palette, render policy, rounded-corner fields, and pending graphics globals while the engine and renderer consume them. Barriers plus `volatile` pending flags do not establish C synchronization or one coherent command generation
+- `BR-0236` remains open for player visual preference persistence. `persist_player_if_needed` ignores `write_player_file` and per-pilot mirror results, while the alpha and dynamic-light setters return `OK`; partial pilot/file publication therefore remains indistinguishable from complete success
+- `GQF-0141` and `GQF-0142` remain owned by the called graphics transaction component: failed rollback cleanup can remove the retained original backup, and parent-directory `fsync` failure can leak its descriptor. Typed propagation here exposes forward failure but cannot repair those dependency failure paths
+- Archived `BR-0199` and `BR-0200` remain closed. Launcher resume applies a detached snapshot without persistence, and native config persistence uses a process mutex, bounded full-file reconstruction, uniquely claimed staging, typed results, and rollback across intended targets
+- Font scaling remains confined to Android linear monochrome glyphs, preserves control/color/underline and masked versus opaque behavior, bounds temporary allocation from fixed engine font dimensions and scale producers, and releases every temporary bitmap. No new root survived reconciliation
+
+## Scope, validation, and gaps
+
+- Context checked: complete assigned paths, paired font and graphics callers, JNI and launcher snapshot application, in-game menus, renderer pending consumers, HUD inset consumers, graphics transaction dependency, pilot mirrors, focused tests, post-adversarial delta, history, and active/done ledgers
+- Commands used: `git diff`, `git grep`, `git show`, `git merge-base --is-ancestor`, `rg`, and frozen line inspection
+- No emulator, concurrent setter/render, filesystem-fault, rollback-failure, or glyph-render runtime was run for this frozen read-only survey. Those schedules remain existing owner-specific validation work
+- No product or unrelated user-owned file was changed
+
+## Outcome
+
+- Coverage outcome: `ISSUES`
+- Provisional impact rating: 53 (H/M/B/C/R = 32/0/7/10/4); proposed owner: `BR-0029`; rationale: duplicate high-confidence cross-thread engine and renderer ownership is the highest live root
+- Canonical handoff: record one `RETAIN` GQD decision, one issues GQC record, extensions to `BR-0029`, `BR-0236`, `GQF-0141`, and `GQF-0142`, confirmation that archived `BR-0199` and `BR-0200` remain closed, and no new finding, investigation, or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0181 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0182 frozen survey SHA256:712ada503c8ff8c4afb78310cfec9d093393f270abc11bdd60cf51bbf128a9c0 -->
+
+## GQ1-CHUNK-0182 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0182.md`
+- Imported SHA-256: `712ada503c8ff8c4afb78310cfec9d093393f270abc11bdd60cf51bbf128a9c0`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0182 frozen survey
+
+## Frozen scope and classification
+
+- Coverage unit: `GQ1-CHUNK-0182`
+- Frozen base/head: `fb555eec75e1ed12c8348805ab335afb4c721b06` to `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned review: complete branch-added menu-scale API header, menu-touch logger, and `android_meta_actions.c`, 694 lines
+- Frozen whole-path additions are 83, 55, 56, and 500 lines. Ancestry was confirmed and frozen objects were used
+
+## Diff-minimization assessment
+
+Disposition: `RETAIN`
+
+The assigned owners already centralize paired menu transform declarations, touch diagnostics, meta-action mapping, and game-thread request handling. Remaining inherited D1/D2 menu, event, and game-control sites own their local geometry, window state, and command eligibility. Moving those observations behind another facade would retain the same paired calls and enlarge the interface. Existing calls and registrations are the natural boundary, with no material inherited path or complete hunk safely removable
+
+## Quality and historical reconciliation
+
+- `BR-0244` remains open: JNI/UI writers and game-thread consumers conflict on plain `volatile int` mailboxes with separate test, copy, and clear operations. The newer cooperative-restart and exact-weapon requests repeat the same lost-update schedule; multiple exact selections can overwrite one another, and a later publication can be erased by an earlier consumer clear
+- `BR-0245` remains open: every SDL key and quit injection ignores `SDL_PushEvent` failure. Multi-event shortcuts can be partially admitted, leaving modifiers or holds stuck, while exit paths can report success and set force-quit state even when no quit event entered the queue
+- `BR-0029` remains the broader menu-transform ownership root. The header exposes publication, clear, and snapshot APIs whose implementation writes and reads a multi-field plain global generation while main-looper touch consumers and game-thread menu drawing can overlap
+- Menu-scale declarations match implementations and paired consumers; touch diagnostics normalize producer strings, bound lifetime volume, and route through the centralized log. Native and Kotlin action IDs, game availability, game-thread eligibility checks, exact-weapon range/ownership checks, and input-demo command recording remain coherent. No new root survived reconciliation
+
+## Scope, validation, and gaps
+
+- Context checked: complete assigned paths, menu-scale implementation and paired menu consumers, touch producers, JNI/Kotlin action producers, SDL queue contract, paired game-thread handlers, weapon and cooperative restart consumers, input-demo hook, post-adversarial delta, history, and active/done ledgers
+- Commands used: `git diff`, `git grep`, `git show`, `git merge-base --is-ancestor`, `rg`, and frozen line inspection
+- No race instrumentation, SDL queue saturation, repeated exact-selection, menu redraw/touch overlap, emulator, or gameplay runtime was run for this frozen read-only survey. Those schedules remain existing validation work
+- No product or unrelated user-owned file was changed
+
+## Outcome
+
+- Coverage outcome: `ISSUES`
+- Provisional impact rating: 50 (H/M/B/C/R = 23/0/10/10/7); proposed owner: `BR-0244`; rationale: duplicate high-confidence request loss spans every newly added mailbox and existing action paths
+- Canonical handoff: record one `RETAIN` GQD decision, one issues GQC record, extensions to `BR-0244`, `BR-0245`, and `BR-0029`, and no new finding, investigation, or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0182 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0183 frozen survey SHA256:a65e3e6b9fb6bcaa030ea20dbacecbfde7cae4cd236c948e2d5d0f5b453fc0b9 -->
+
+## GQ1-CHUNK-0183 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0183.md`
+- Imported SHA-256: `a65e3e6b9fb6bcaa030ea20dbacecbfde7cae4cd236c948e2d5d0f5b453fc0b9`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0183 frozen survey
+
+## Frozen scope and classification
+
+- Coverage unit: `GQ1-CHUNK-0183`
+- Frozen base/head: `fb555eec75e1ed12c8348805ab335afb4c721b06` to `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned review: complete branch-added classic-demo JSON serializer and D2 snapshot adapter, 743 lines
+- Frozen whole-path additions are 171, 20, 357, and 195 lines. Ancestry was confirmed and frozen objects were used
+
+## Diff-minimization assessment
+
+Disposition: `RETAIN`
+
+The assigned owners already separate stable JSON formatting and immutable D2 snapshot construction from the inherited demo decoder. Remaining inherited D2 sites own live engine observation, demo event sequencing, and conversion lifecycle. Moving those observations into the serializer would couple it to engine globals and retain the same calls. Existing snapshot/write calls and source registrations are the narrow natural boundary, with no material inherited path or complete hunk safely removable
+
+## Quality and historical reconciliation
+
+- The classic-demo instance of `BR-0233` is historically closed at the current frozen head. The converter opens and validates a stable source first, rejects source/output aliases by file identity, writes to a uniquely claimed sibling temporary, checks serializer, flush, sync, close, and replacement results, and preserves the prior destination on every pre-publication failure
+- Archived native JSON owner `BR-0042` does not establish a distinct live defect here. The only assigned string is the engine's bounded mission basename, JSON metacharacters and controls are escaped, and no arbitrary native path or JNI string enters this serializer
+- The writer rejects null required state, latches callback failure, dynamically formats overlong records, and propagates every emission result. Snapshot construction validates player identity and object capacity, zero-initializes optional records, copies stable scalar/vector/matrix fields, filters inactive objects, and publishes object count only after complete construction
+- Header, frame, robot-damage, and terminal-result ordering is stable; signed widths used by the serializer match the snapshot types and current consumers. No actionable correctness, bounds, ownership, portability, determinism, or diagnostics root survived reconciliation
+
+## Scope, validation, and gaps
+
+- Context checked: complete assigned paths, D2 demo snapshot producers and decoder, current staged converter publication, wall validation, focused serializer and command integration tests, post-adversarial history, and active/done ledgers
+- Commands used: `git diff`, `git grep`, `git show`, `git merge-base --is-ancestor`, `rg`, and frozen line inspection
+- No converter corpus, allocation-fault, filesystem-fault, sanitizer, or runtime demo conversion was run for this frozen read-only survey. Existing focused and integration evidence remains the validation basis
+- No product or unrelated user-owned file was changed
+
+## Outcome
+
+- Coverage outcome: `CLEAN`
+- Provisional impact rating: 0 (H/M/B/C/R = 0/0/0/0/0); proposed owner: none; rationale: all historical roots are closed or non-applicable and no new root survived complete reconciliation
+- Canonical handoff: record one `RETAIN` GQD decision, one clean GQC record, historical closure of the classic-demo `BR-0233` path, and no new finding, investigation, or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0183 frozen survey -->
+<!-- BEGIN IMPORT: GQ1-CHUNK-0184 frozen survey SHA256:03052036518d6fc38758829fcaf169671d73698b4671c5cc6337ba829cfa48e5 -->
+
+## GQ1-CHUNK-0184 frozen survey imported evidence
+
+- Original workspace path: `android/ai tool plans/code management/general_code_quality_inbox/gq1_chunk_0184.md`
+- Imported SHA-256: `03052036518d6fc38758829fcaf169671d73698b4671c5cc6337ba829cfa48e5`
+
+<details>
+<summary>Full worker report</summary>
+
+# GQ1-CHUNK-0184 frozen survey
+
+## Frozen scope and classification
+
+- Coverage unit: `GQ1-CHUNK-0184`
+- Frozen base/head: `fb555eec75e1ed12c8348805ab335afb4c721b06` to `7877ad30d05887b8e19869ed4c50075e41e2f88e`
+- Assigned review: complete loading-progress header, Android logging implementation/API, and menu-reorder state header, 315 lines
+- Frozen whole-path additions are 18, 155, 61, and 81 lines. Ancestry was confirmed and frozen objects were used
+
+## Diff-minimization assessment
+
+Disposition: `RETAIN`
+
+The assigned owners already centralize paired progress declarations, Android diagnostic routing, and menu-reorder state transitions. Remaining inherited loading, logging, and menu sites own their phase data, formatted events, menu items, and lifecycle decisions. Another facade would retain those observations and enlarge the interface. Existing calls and registrations are the narrow natural boundary, with no material inherited path or complete hunk safely removable
+
+## Quality and historical reconciliation
+
+- `BR-0254` remains open: Kotlin/JNI writers and native logging/profiling readers conflict on plain `volatile` category flags. Volatile does not establish atomic or ordered cross-thread publication
+- `BR-0078` remains open at the shared Activity boundary. Logging checks pointer presence but cannot pin or synchronize `g_activity` across lifecycle replacement and method calls
+- `GQF-0037`, linked to archived `BR-0065`, owns standard UTF-8 passed directly to `NewStringUTF`. Formatted paths and diagnostic text can include four-byte or malformed sequences that Modified UTF-8 does not accept as ordinary UTF-8, and pending exceptions are not surfaced by this void API
+- `BR-0203` remains open because `COOPLOG` truncates records in its fixed 256-byte intermediate before the centralized logger's larger buffer. `BR-0202` remains the menu-reorder focus-loss owner; the state helpers have no lifecycle input beyond explicit paired caller cleanup
+- Category indices, format buffers, JNI attachment, ordinary local-reference cleanup, forced/batched dispatch, progress linkage, hold arithmetic, and explicit button/touch drop behavior remain coherent. The added dormancy category and forced batch method match Kotlin/category consumers. No new root survived reconciliation
+
+## Scope, validation, and gaps
+
+- Context checked: complete assigned paths, loading-progress implementation and producers, JNI/Kotlin debug sinks, category producers and profiling readers, Activity lifecycle, paired menu-reorder consumers and automation, post-adversarial delta, history, and active/done ledgers
+- Commands used: `git diff`, `git grep`, `git show`, `git merge-base --is-ancestor`, `rg`, and frozen line inspection
+- No CheckJNI, non-BMP diagnostic, Activity teardown race, category-toggle race, focus-loss reorder, emulator, or loading runtime was run for this frozen read-only survey. Those schedules remain existing validation work
+- No product or unrelated user-owned file was changed
+
+## Outcome
+
+- Coverage outcome: `ISSUES`
+- Provisional impact rating: 47 (H/M/B/C/R = 23/0/7/10/7); proposed owner: `BR-0078`; rationale: duplicate lifecycle exposure is the broadest high-confidence failure boundary in the assigned logging path
+- Canonical handoff: record one `RETAIN` GQD decision, one issues GQC record, extensions to `BR-0254`, `BR-0078`, `GQF-0037`, `BR-0203`, and `BR-0202`, and no new finding, investigation, or remediation
+
+</details>
+
+<!-- END IMPORT: GQ1-CHUNK-0184 frozen survey -->

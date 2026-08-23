@@ -37,8 +37,18 @@ try {
     if ($extractSource -notmatch '(?s)function Get-ExtractAutomationScriptText.*?"command": "write_music_prefs".*?"source": "midi".*?"action": "enter_game"') {
         throw 'Extraction launch automation no longer isolates itself from external CD-audio preferences'
     }
+    if ($extractSource -notmatch '(?s)function Get-ExtractAutomationScriptText.*?\$whenMatch = \[regex\]::Match.*?Groups\[1\]\.Value -cne \$Game.*?\$line -replace.*?"when"') {
+        throw 'Extraction launch automation no longer resolves game-specific template steps'
+    }
     if ($automationTemplateSource -notmatch '(?s)"text": "Multiplayer".*?"key": "esc".*?"text": "New game"') {
         throw 'Extraction launch automation no longer normalizes the multiplayer submenu before New Game'
+    }
+    if ($extractSource -notmatch '(?s)\$missionSelectionText = if \(\$MissionSelectionRequired\).*?else \{ '''' \}' -or
+        $automationTemplateSource -notmatch '"action": "select_mission", "text": "MISSION_NAME"') {
+        throw 'Optional extraction mission selection no longer chooses the current mission or skips an absent picker'
+    }
+    if ($automationTemplateSource -notmatch '"action": "select", "text": "1", "when": "d1"') {
+        throw 'D1 extraction automation no longer accepts the visible starting-level value through the menu-aware selector'
     }
     if ($allExtractsSource -notmatch '(?s)\$exitCode -ne 98.*?\$attempt -gt 1.*?Confirm-EmulatorHealthWithAdbRecovery.*?Invoke-LauncherStartupRecovery.*?Ensure-LauncherTestDeviceReady') {
         throw 'Extraction suite no longer recovers ADB/device infrastructure before its one complete-spec retry'
@@ -58,6 +68,9 @@ try {
     if ($extractSource -notmatch '(?s)trap \{.*?Test-ExtractRegressionAdbTransportFailure.*?exit 98.*?Unexpected extraction test runner error.*?exit 99' -or
         $allExtractsSource -notmatch '\$exitCode -in @\(98, 99\)') {
         throw 'Unexpected runner errors no longer fail fast without being mistaken for emulator failures'
+    }
+    if ($extractSource -notmatch '(?s)function Adb \{.*?throw "ADB timeout.*?Test-ExtractRegressionAdbTransportFailure -Reason \$stderr.*?function Adb-RunAs \{.*?throw "ADB timeout.*?Test-ExtractRegressionAdbTransportFailure -Reason \$stderr') {
+        throw 'Direct ADB helpers no longer promote transport timeouts and failures to retryable infrastructure errors'
     }
     foreach ($transportFailure in @(
             'ADB timeout (30s): shell get-state',
@@ -84,6 +97,13 @@ try {
     }
     if ($extractSource -notmatch '(?s)function Invoke-GameAutomationScript.*?Ensure-AppPrivateFile.*?gameAutomationInfrastructureFailure.*?Exit-Test 98.*?adb_staging_failed') {
         throw 'Automation staging failures are no longer verified and classified as retryable infrastructure failures'
+    }
+    if ($extractSource -notmatch '(?s)function Invoke-GameAutomationScript.*?\$runId = \[Guid\]::NewGuid.*?''--es'', ''run_id'', \$runId.*?\$resultRunId -cne \$runId' -or
+        $extractSource -notmatch "'shared_prefs/automation_state.xml', 'shared_prefs/automation_state.xml.bak'") {
+        throw 'Extraction automation no longer isolates results and persisted state by run ID'
+    }
+    if ($extractSource -notmatch '(?s)Send-SetupCommand ''clear_audio_sources''.*?Send-SetupCommand ''switch_set'' -Name \$TEST_SET.*?# Clean filesDir root') {
+        throw 'Extraction sanitization no longer reasserts the regression set after asynchronous cleanup commands'
     }
 
     $stablePath = Join-Path $tempRoot 'stable.jsonc'

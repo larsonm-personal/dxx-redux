@@ -141,10 +141,14 @@ function Adb {
         Write-Status "  ADB timeout (${Timeout}s): $($CmdArgs -join ' ')" 'Red'
         try { $proc.Kill() } catch {}
         $proc.Dispose()
-        return ''
+        throw "ADB timeout (${Timeout}s): $($CmdArgs -join ' ')"
     }
     $stdout = $stdoutTask.GetAwaiter().GetResult()
+    $stderr = $stderrTask.GetAwaiter().GetResult()
     $proc.Dispose()
+    if (Test-ExtractRegressionAdbTransportFailure -Reason $stderr) {
+        throw "ADB transport failure ($($CmdArgs -join ' ')): $stderr"
+    }
     return $stdout.Trim()
 }
 
@@ -167,11 +171,14 @@ function Adb-RunAs {
         Write-Status "  ADB timeout (${script:ADB_TIMEOUT}s): run-as $Cmd" 'Red'
         try { $proc.Kill() } catch {}
         $proc.Dispose()
-        return ''
+        throw "ADB timeout (${script:ADB_TIMEOUT}s): run-as $Cmd"
     }
     $stdout = $stdoutTask.GetAwaiter().GetResult()
-    $null = $stderrTask.GetAwaiter().GetResult()
+    $stderr = $stderrTask.GetAwaiter().GetResult()
     $proc.Dispose()
+    if (Test-ExtractRegressionAdbTransportFailure -Reason $stderr) {
+        throw "ADB transport failure (run-as $Cmd): $stderr"
+    }
     return $stdout.Trim()
 }
 
@@ -319,7 +326,8 @@ function Get-ExtractAutomationScriptText {
 
     $templatePath = Join-Path (Split-Path $PSScriptRoot) 'game_scripts\test_extract_regression_template.jsonc'
     $text = Get-Content -LiteralPath $templatePath -Raw
-    $text = $text.Replace('"MISSION_NAME"', (ConvertTo-Json ([string]$MissionName) -Compress))
+    $missionSelectionText = if ($MissionSelectionRequired) { $MissionName } else { '' }
+    $text = $text.Replace('"MISSION_NAME"', (ConvertTo-Json ([string]$missionSelectionText) -Compress))
     $text = $text.Replace('"LEVEL_NAME"', (ConvertTo-Json ([string]$LevelName) -Compress))
     $text = $text.Replace('"MISSION_OPTIONAL"', $(if ($MissionSelectionRequired) { 'false' } else { 'true' }))
     $body = ($text -replace "`r`n", "`n").Trim()
@@ -329,6 +337,14 @@ function Get-ExtractAutomationScriptText {
         $body = $body.Substring($start + 1, $end - $start - 1).Trim()
     }
     $body = [regex]::Replace($body, '(?m)^\s*\{"action":\s*"skip_intro"[^\r\n]*(?:\r?\n)?', '')
+    $bodyLines = foreach ($line in ($body -split "`n")) {
+        $whenMatch = [regex]::Match($line, '"when"\s*:\s*"([^"]+)"')
+        if ($whenMatch.Success -and $whenMatch.Groups[1].Value -cne $Game) {
+            continue
+        }
+        $line -replace ',\s*"when"\s*:\s*"[^"]+"', ''
+    }
+    $body = $bodyLines -join "`n"
     $gameJson = ConvertTo-Json ([string]$Game) -Compress
     $setJson = ConvertTo-Json ([string]$TestSet) -Compress
     return @"
@@ -378,6 +394,7 @@ function Invoke-GameAutomationScript {
     }
 
     $scriptName = "extract_regression_$([Guid]::NewGuid().ToString('N')).jsonc"
+    $runId = [Guid]::NewGuid().ToString('N')
     $localPath = Join-Path $tempDir $scriptName
     [System.IO.File]::WriteAllText($localPath, $ScriptText, [System.Text.UTF8Encoding]::new($false))
 
@@ -390,17 +407,31 @@ function Invoke-GameAutomationScript {
         Write-Status "Sending setup automation broadcast for: $scriptName" 'Cyan'
         Invoke-AdbShellArgs -ShellArgs @(
             'am', 'broadcast', '-a', 'com.dxxredux.SETUP_AUTOMATE',
-            '--es', 'script', $scriptName
+            '--es', 'script', $scriptName,
+            '--es', 'run_id', $runId
         ) -TimeoutSeconds 30 | Out-Null
 
         $sw = [System.Diagnostics.Stopwatch]::StartNew()
+        $reportedMismatchedRunIds = [System.Collections.Generic.HashSet[string]]::new()
         while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
             Start-Sleep -Milliseconds 1500
             $resultJson = Invoke-AppPrivateShell -Command (
                 'if [ -f files/automation_result.json ]; then cat files/automation_result.json; fi'
             ) -TimeoutSeconds 15
             if ($resultJson -and $resultJson -match '^\s*\{') {
-                try { return ($resultJson | ConvertFrom-Json) } catch { }
+                try {
+                    $result = $resultJson | ConvertFrom-Json
+                    $resultRunId = if ($result.run_id) { [string]$result.run_id } else { '' }
+                    if ($resultRunId -cne $runId) {
+                        if ($reportedMismatchedRunIds.Add($resultRunId)) {
+                            $displayRunId = if ($resultRunId) { $resultRunId } else { '<missing>' }
+                            Write-Status "  Ignoring automation result for run_id=$displayRunId" 'Yellow'
+                        }
+                        Remove-AppPrivateFile -RemotePath 'files/automation_result.json'
+                        continue
+                    }
+                    return $result
+                } catch { }
             }
         }
 
@@ -1012,7 +1043,8 @@ Adb -CmdArgs @(
     'files/automation_result.json', 'files/automation_result.json.tmp',
     'files/automation_log.jsonl',
     'shared_prefs/dxx_prefs.xml', 'shared_prefs/dxx_prefs.xml.bak',
-    'shared_prefs/launcher_prefs.xml', 'shared_prefs/launcher_prefs.xml.bak'
+    'shared_prefs/launcher_prefs.xml', 'shared_prefs/launcher_prefs.xml.bak',
+    'shared_prefs/automation_state.xml', 'shared_prefs/automation_state.xml.bak'
 ) | Out-Null
 
 # Launch SetupActivity (needed for broadcasts to work)
@@ -1045,6 +1077,12 @@ Clear-AppPrivateDirectoryContents "$SETS_ROOT_ABS/default"
 
 Send-SetupCommand 'clear_audio_sources'
 Start-Sleep -Milliseconds 500
+
+# Setup commands perform their file work asynchronously after broadcast delivery.
+# Reassert the target set after all cleanup commands so a slow earlier refresh or
+# package restart cannot leave the canary observing the default set.
+Send-SetupCommand 'switch_set' -Name $TEST_SET
+Start-Sleep -Seconds 1
 
 # Clean filesDir root of any game files (belt-and-suspenders for legacy setups)
 Write-Status "Cleaning filesDir root of game files..."

@@ -85,16 +85,16 @@ try {
 }
 
 foreach ($case in @(
-        @{ Key = 'GRADLE_VERSION'; Value = '9.6.1' },
-        @{ Key = 'NDK_VERSION'; Value = 'r27d' },
-        @{ Key = 'MINIMP3_COMMIT'; Value = '853a0a171759f1ddba0de1442133a75912bbeffa' },
-        @{ Key = 'JDK_URL'; Value = 'https://api.adoptium.net/v3/binary/latest/21/ga?project=jdk&image_type=jdk' }
+        @{ Key = 'GRADLE_VERSION'; Value = '9.6.1'; Expected = 'GRADLE_VERSION=9.6.1' },
+        @{ Key = 'NDK_VERSION'; Value = 'r27d'; Expected = 'NDK_VERSION=r27d' },
+        @{ Key = 'MINIMP3_COMMIT'; Value = '853a0a171759f1ddba0de1442133a75912bbeffa'; Expected = 'MINIMP3_COMMIT=853a0a171759f1ddba0de1442133a75912bbeffa' },
+        @{ Key = 'JDK_URL'; Value = 'https://api.adoptium.net/v3/binary/latest/21/ga?project=jdk&image_type=jdk'; Expected = 'JDK_URL=''https://api.adoptium.net/v3/binary/latest/21/ga?project=jdk&image_type=jdk''' }
     )) {
     if (-not (Test-SafeToolConfValue -Key $case.Key -Value $case.Value)) {
         throw "Valid value rejected: $($case.Key)=$($case.Value)"
     }
-    if ((Format-SafeToolConfAssignment -Key $case.Key -Value $case.Value) -ne "$($case.Key)='$($case.Value)'") {
-        throw 'Safe tool configuration assignment was not single-quoted'
+    if ((Format-SafeToolConfAssignment -Key $case.Key -Value $case.Value) -cne $case.Expected) {
+        throw "Safe tool configuration assignment was not cross-parser compatible: $($case.Key)"
     }
 }
 foreach ($value in @(

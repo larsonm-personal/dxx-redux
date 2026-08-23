@@ -34,7 +34,11 @@ function Format-SafeToolConfAssignment {
     if (-not (Test-SafeToolConfValue -Key $Key -Value $Value)) {
         throw "Unsafe value rejected for $Key"
     }
-    # The allowlist excludes a single quote; explicit shell quoting keeps
-    # accepted URL punctuation inert when Bash sources the legacy manifest.
+    # Keep plain version, hash, commit, and simple URL values compatible with
+    # both Java Properties and shell sourcing. Quote only values containing
+    # query-string punctuation that the shell could interpret.
+    if ($Value -match '^[A-Za-z0-9][A-Za-z0-9._~:/%+@,-]*$') {
+        return "$Key=$Value"
+    }
     return "$Key='$Value'"
 }

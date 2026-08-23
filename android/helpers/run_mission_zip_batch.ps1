@@ -677,9 +677,6 @@ foreach ($zip in $zips) {
         Write-Status "FAIL: $($zip.Name): $($record["reason"])" "Red"
         $results += [pscustomobject]$record
         Write-MissionZipFailureJson -Path $metadataPath -Record $record
-        if (-not $NoRegressionJson) {
-            Write-MissionZipFailureJson -Path $regressionJsonPath -Record $record
-        }
         ($record | ConvertTo-Json -Depth 20 -Compress) | Add-Content -Path (Join-Path $OutDir "summary.jsonl") -Encoding utf8
         $runStopwatch.Stop()
         Write-MissionZipBatchResult -Index $zipIndex -Total $zips.Count -Zip $zip -Record $record -RunElapsed $runStopwatch.Elapsed -BatchElapsed $batchStopwatch.Elapsed -Counts (Get-MissionZipBatchCounts -Results $results)
@@ -727,14 +724,20 @@ foreach ($zip in $zips) {
                 Restore-MissionZipBatchDevice -Reason $Reason
             }
             $script:MissionZipBatchConsecutiveRecoveryCount = 0
+            $runId = [Guid]::NewGuid().ToString("N")
             Adb -AdbArgs @(
                 "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_AUTOMATE",
-                "--es", "script", $deviceScriptName
+                "--es", "script", $deviceScriptName,
+                "--es", "run_id", $runId
             ) | Out-Null
 
-            $passed = Watch-AutomationResult -TimeoutSeconds $TimeoutSeconds -IsLauncherScript
+            $passed = Watch-AutomationResult -TimeoutSeconds $TimeoutSeconds -IsLauncherScript -ExpectedRunId $runId
             $automationResult = Read-AppAutomationResult
-            $record["automation_result"] = $automationResult
+            if (Test-AutomationResultRunId -Result $automationResult -ExpectedRunId $runId) {
+                $record["automation_result"] = $automationResult
+            } else {
+                $automationResult = $null
+            }
             $record["status"] = if ($passed) { "passed" } else { "failed" }
             if (-not $passed -and $automationResult -and $automationResult.reason) {
                 $record["reason"] = $automationResult.reason
@@ -786,9 +789,6 @@ foreach ($zip in $zips) {
                 $record["status"] = "failed"
                 $record["reason"] = "metadata output file was not created"
                 Write-MissionZipFailureJson -Path $metadataPath -Record $record
-                if (-not $NoRegressionJson) {
-                    Write-MissionZipFailureJson -Path $regressionJsonPath -Record $record
-                }
             } elseif (-not $NoRegressionJson) {
                 Write-Utf8NoBomTextAtomically -Path $regressionJsonPath -Text ([System.IO.File]::ReadAllText($metadataPath))
             }

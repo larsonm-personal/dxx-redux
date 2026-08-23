@@ -33,9 +33,9 @@
     {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Mission select
-    {"action": "select", "text": "MISSION_NAME", "optional": "MISSION_OPTIONAL", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select_mission", "text": "MISSION_NAME", "optional": "MISSION_OPTIONAL", "post_delay_ms": 100, "timeout_ms": 5000},
     // Accept default level 1
-    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
+    {"action": "select", "text": "1", "when": "d1", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
     // Difficulty
     {"action": "select", "text": "Trainee", "optional": true, "post_delay_ms": 100, "timeout_ms": 10000},

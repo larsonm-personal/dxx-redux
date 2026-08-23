@@ -1,8 +1,8 @@
 #!/usr/bin/env pwsh
 function Get-HostPlatform {
-    if ($IsWindows) { return "Windows" }
-    if ($IsLinux) { return "Linux" }
-    if ($IsMacOS) { return "MacOS" }
+    if ($env:OS -eq "Windows_NT" -or (Get-Variable IsWindows -ValueOnly -ErrorAction SilentlyContinue)) { return "Windows" }
+    if (Get-Variable IsLinux -ValueOnly -ErrorAction SilentlyContinue) { return "Linux" }
+    if (Get-Variable IsMacOS -ValueOnly -ErrorAction SilentlyContinue) { return "MacOS" }
     return "Unknown"
 }
 
