@@ -44,8 +44,12 @@ Assert-Matches $jdkUpdater '(?s)recover_matching_incomplete_install.*?cmp -s.*?c
     "an incomplete JDK is recovered only when surviving files match the staged replacement"
 Assert-Matches $versions '(?m)^PLAY_SERVICES_GAMES_VERSION=21\.0\.0$' `
     "Play Games remains on the newest release compatible with minSdk 23"
-Assert-Matches $checkUpdates '(?s)Name = "play-services-games-v2".*?SuppressTargetUpdate = \$true.*?requires minSdk 24' `
-    "dependency checks do not automatically select Play Games releases that require minSdk 24"
+Assert-Matches $checkUpdates '(?s)Name = "play-services-games-v2".*?SuppressTargetUpdate = \$true.*?BlockedTargetLabel = "held-minSdk23"' `
+    "dependency checks retain Play Games 21 without requesting manual target work"
+Assert-Matches $checkUpdates '(?s)"Chromaprint".*?Get-RemoteFileSha256.*?Update-Conf "CHROMAPRINT_SHA256"' `
+    "Chromaprint target updates calculate and store the matching source hash"
+Assert-Matches $checkUpdates '(?s)"minimp3".*?Get-RemoteFileSha256.*?Update-Conf "MINIMP3_SHA256".*?Update-Conf "MINIMP3_EX_SHA256"' `
+    "minimp3 target updates calculate and store both source hashes"
 Assert-Matches $versions '(?m)^POWERSHELL_INSTALL_CMD=.*update-powershell\.ps1.*-System' `
     "routine PowerShell sync updates the system runtime"
 Assert-Matches $powerShellUpdater 'active PowerShell 7 processes' `

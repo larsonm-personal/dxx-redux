@@ -1200,6 +1200,13 @@ if ($useDirectCdImport) {
         $deviceImagePaths += "/data/user/0/$PACKAGE/$appImageRelPath"
     }
 
+    # Large image staging can outlive SetupActivity's process. Its command
+    # receiver is dynamic, so an async broadcast sent after that process dies
+    # is silently dropped and leaves only stale idle introspection behind.
+    if (-not (Start-ExtractSetupActivity -Context 'direct CD import handoff')) {
+        Write-Status 'FAIL: SetupActivity not responding before direct CD import' 'Red'
+        Exit-Test 98 'fail' 'setup_timeout' -TestMode $script:testMode
+    }
     Write-Status "Triggering setup-command CD import..."
     # Audio fingerprint coverage is regenerated separately, so keeping it off here
     # avoids duplicate work and preserves space for data-track extraction
@@ -1282,6 +1289,10 @@ if ($useDirectCdImport) {
     Write-Status "Staging ISO source file for direct import..."
     Ensure-AppPrivateFile -LocalPath $localIsoPath -RemoteRelativePath $appIsoRelPath -TimeoutSeconds 1800
 
+    if (-not (Start-ExtractSetupActivity -Context 'direct ISO import handoff')) {
+        Write-Status 'FAIL: SetupActivity not responding before direct ISO import' 'Red'
+        Exit-Test 98 'fail' 'setup_timeout' -TestMode $script:testMode
+    }
     Write-Status "Triggering setup-command ISO import..."
     Send-SetupIsoImport -IsoPath $deviceIsoPath
 

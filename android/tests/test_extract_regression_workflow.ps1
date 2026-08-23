@@ -6,6 +6,7 @@ $tempRoot = Join-Path $repoRoot 'android\temp\test_extract_regression_workflow'
 $helperPath = Join-Path $PSScriptRoot 'extract_regression_spec_helpers.ps1'
 $validatorPath = Join-Path $PSScriptRoot 'validate_extract_regression_specs.ps1'
 $extractPath = Join-Path $PSScriptRoot 'test_extract.ps1'
+$automationTemplatePath = Join-Path $repoRoot 'android\game_scripts\test_extract_regression_template.jsonc'
 $allExtractsPath = Join-Path $PSScriptRoot 'test_all_extracts.ps1'
 $runAllPath = Join-Path $repoRoot 'android\run_all_tests.ps1'
 . $helperPath
@@ -18,6 +19,7 @@ New-Item -ItemType Directory -Path $tempRoot | Out-Null
 
 try {
     $extractSource = [System.IO.File]::ReadAllText($extractPath)
+    $automationTemplateSource = [System.IO.File]::ReadAllText($automationTemplatePath)
     $allExtractsSource = [System.IO.File]::ReadAllText($allExtractsPath)
     $runAllSource = [System.IO.File]::ReadAllText($runAllPath)
     if ($extractSource -notmatch "(?s)function Start-ExtractSetupActivity.*?'am', 'start', '-W', '-S'.*?'pidof'.*?Wait-SetupReady" -or
@@ -28,8 +30,15 @@ try {
         $extractSource -notmatch "(?s)function Send-SetupIsoImport.*?'am', 'broadcast', '--async'.*?'import_iso'") {
         throw 'Long-running direct imports no longer return host broadcast delivery promptly'
     }
+    if ($extractSource -notmatch "(?s)Staging CD source files.*?Start-ExtractSetupActivity -Context 'direct CD import handoff'.*?Send-SetupCdImport" -or
+        $extractSource -notmatch "(?s)Staging ISO source file.*?Start-ExtractSetupActivity -Context 'direct ISO import handoff'.*?Send-SetupIsoImport") {
+        throw 'Direct imports no longer refresh the dynamic setup-command receiver after source staging'
+    }
     if ($extractSource -notmatch '(?s)function Get-ExtractAutomationScriptText.*?"command": "write_music_prefs".*?"source": "midi".*?"action": "enter_game"') {
         throw 'Extraction launch automation no longer isolates itself from external CD-audio preferences'
+    }
+    if ($automationTemplateSource -notmatch '(?s)"text": "Multiplayer".*?"key": "esc".*?"text": "New game"') {
+        throw 'Extraction launch automation no longer normalizes the multiplayer submenu before New Game'
     }
     if ($allExtractsSource -notmatch '(?s)\$exitCode -ne 98.*?\$attempt -gt 1.*?Confirm-EmulatorHealthWithAdbRecovery.*?Invoke-LauncherStartupRecovery.*?Ensure-LauncherTestDeviceReady') {
         throw 'Extraction suite no longer recovers ADB/device infrastructure before its one complete-spec retry'

@@ -83,10 +83,12 @@ try {
         'sys\.dont_write_bytecode\s*=\s*True' `
         'verified Python execution preserves the hashed package tree'
     $updater = Join-Path $repoRoot 'android\get_deps\check-updates.ps1'
-    Assert-Contains $updater 'ManualTargetUpdateHint' `
-        'dependency updates require reviewed hash changes'
-    Assert-Contains $updater 'review-hash' `
-        'hash-coupled updates remain visible to maintainers'
+    Assert-Contains $updater '(?s)function Get-RemoteFileSha256.*?Get-FileHash.*?SHA256' `
+        'dependency updates calculate hashes for downloaded targets'
+    foreach ($dependency in @('CHROMAPRINT', 'MINIMP3', 'MINIMP3_EX', 'STB_VORBIS', 'DR_FLAC')) {
+        Assert-Contains $updater ("Update-Conf `"{0}_SHA256`"" -f $dependency) `
+            "$dependency updates write the matching downloaded-file hash"
+    }
 
     foreach ($relativePath in @(
             'game_data\extract_dos_demos.ps1',

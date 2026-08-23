@@ -352,7 +352,9 @@ function Invoke-LoggedWebRequest {
 
         [int]$TimeoutSec = 15,
 
-        [hashtable]$Headers
+        [hashtable]$Headers,
+
+        [string]$OutFile
     )
 
     Write-RequestLoadLine $Uri
@@ -365,8 +367,23 @@ function Invoke-LoggedWebRequest {
     if ($Headers) {
         $requestParams["Headers"] = $Headers
     }
+    if ($OutFile) {
+        $requestParams["OutFile"] = $OutFile
+    }
 
     Invoke-WebRequest @requestParams
+}
+
+function Get-RemoteFileSha256($uri) {
+    $downloadDir = Join-Path $androidDir "temp/check-update-downloads"
+    New-Item -ItemType Directory -Path $downloadDir -Force | Out-Null
+    $downloadPath = Join-Path $downloadDir ([IO.Path]::GetRandomFileName())
+    try {
+        Invoke-LoggedWebRequest -Uri $uri -TimeoutSec 120 -OutFile $downloadPath | Out-Null
+        return (Get-FileHash -LiteralPath $downloadPath -Algorithm SHA256).Hash.ToLower()
+    } finally {
+        Remove-Item -LiteralPath $downloadPath -Force -ErrorAction Ignore
+    }
 }
 
 function Get-InstalledIfPathExists($path, $version) {
@@ -1298,7 +1315,7 @@ $deps = @(
         Current = $conf["PLAY_SERVICES_GAMES_VERSION"];
         Latest = Get-LatestMavenVersion "com.google.android.gms" "play-services-games-v2";
         SuppressTargetUpdate = $true;
-        ManualTargetUpdateHint = "22.0.0 requires minSdk 24; retain 21.x while MIN_SDK is 23"
+        BlockedTargetLabel = "held-minSdk23"
     },
 
     @{ Name = "commons-compress"; ConfKey = "COMMONS_COMPRESS_VERSION";
@@ -1334,36 +1351,28 @@ $deps = @(
 
     @{ Name = "Chromaprint"; ConfKey = "CHROMAPRINT_VERSION";
         Current = $conf["CHROMAPRINT_VERSION"];
-        Latest = if ($latestChromaprint) { $latestChromaprint["Tag"] } else { $null };
-        SuppressTargetUpdate = $true;
-        ManualTargetUpdateHint = "Update CHROMAPRINT_URL and CHROMAPRINT_SHA256 together after reviewing the release"
+        Latest = if ($latestChromaprint) { $latestChromaprint["Tag"] } else { $null }
     },
 
     @{ Name = "minimp3"; ConfKey = "MINIMP3_COMMIT";
         Current = $conf["MINIMP3_COMMIT"];
         CurrentDisplay = Get-ShortCommit $conf["MINIMP3_COMMIT"];
         Latest = $latestMinimp3Commit;
-        LatestDisplay = Get-ShortCommit $latestMinimp3Commit;
-        SuppressTargetUpdate = $true;
-        ManualTargetUpdateHint = "Update MINIMP3_COMMIT, both URLs, and both SHA-256 values together"
+        LatestDisplay = Get-ShortCommit $latestMinimp3Commit
     },
 
     @{ Name = "stb_vorbis"; ConfKey = "STB_VORBIS_COMMIT";
         Current = $conf["STB_VORBIS_COMMIT"];
         CurrentDisplay = Get-ShortCommit $conf["STB_VORBIS_COMMIT"];
         Latest = $latestStbVorbisCommit;
-        LatestDisplay = Get-ShortCommit $latestStbVorbisCommit;
-        SuppressTargetUpdate = $true;
-        ManualTargetUpdateHint = "Update STB_VORBIS_COMMIT, URL, and SHA-256 together"
+        LatestDisplay = Get-ShortCommit $latestStbVorbisCommit
     },
 
     @{ Name = "dr_flac"; ConfKey = "DR_FLAC_COMMIT";
         Current = $conf["DR_FLAC_COMMIT"];
         CurrentDisplay = Get-ShortCommit $conf["DR_FLAC_COMMIT"];
         Latest = $latestDrFlacCommit;
-        LatestDisplay = Get-ShortCommit $latestDrFlacCommit;
-        SuppressTargetUpdate = $true;
-        ManualTargetUpdateHint = "Update DR_FLAC_COMMIT, URL, and SHA-256 together"
+        LatestDisplay = Get-ShortCommit $latestDrFlacCommit
     },
 
     @{ Name = "ImageMagick"; ConfKey = "IMAGEMAGICK_VERSION";
@@ -1379,7 +1388,7 @@ $deps = @(
         Current = $conf["SEVENZIP_VERSION"];
         Latest = Get-LatestSevenZipVersion;
         SuppressTargetUpdate = $true;
-        ManualTargetUpdateHint = "Update the 7-Zip URLs and reviewed archive, bootstrap, and executable SHA-256 values together";
+        BlockedTargetLabel = "pinned";
         LinuxManualOnly = $script:hostPlatform -eq "Linux";
         DriftLabel = "manual-linux";
         ManualInstallHint = "Install a host 7z binary such as p7zip-full or 7zip"
@@ -1425,7 +1434,6 @@ $deps = @($deps | Sort-Object { [string]$_["Name"] })
 $targetUpgradeable = @()
 $installOutOfSync = @()
 $manualInstallDrift = @()
-$manualTargetReviews = @()
 $targetIndex = 1
 $installIndex = 1
 
@@ -1488,9 +1496,8 @@ foreach ($dep in $deps) {
         $statusParts += "T[$targetIndex]"
         $targetUpgradeable += @{ Index = $targetIndex; Dep = $dep }
         $targetIndex++
-    } elseif ($targetNeedsUpdate -and $dep.ContainsKey("ManualTargetUpdateHint")) {
-        $statusParts += "review-hash"
-        $manualTargetReviews += $dep
+    } elseif ($targetNeedsUpdate -and $dep.SuppressTargetUpdate -and $dep.ContainsKey("BlockedTargetLabel")) {
+        $statusParts += $dep.BlockedTargetLabel
     }
 
     $installNeedsSync = $false
@@ -1525,16 +1532,8 @@ foreach ($dep in $deps) {
     Write-Host ("{0,-25} {1,-18} {2,-18} {3,-18} {4}" -f $dep.Name, $installedDisplay, $currentDisplay, $latestDisplay, $status)
 }
 
-if ($manualTargetReviews.Count -gt 0) {
-    Write-Host ""
-    Write-Host "Manual target review needed for:"
-    foreach ($dep in $manualTargetReviews) {
-        Write-Host ("  - {0}: {1}" -f $dep.Name, $dep.ManualTargetUpdateHint)
-    }
-}
-
 if ($targetUpgradeable.Count -eq 0 -and $installOutOfSync.Count -eq 0 -and
-    $manualInstallDrift.Count -eq 0 -and $manualTargetReviews.Count -eq 0) {
+    $manualInstallDrift.Count -eq 0) {
     Write-Host ""
     Write-Host "Everything is up to date and installed tools match the configured targets"
     Write-RunNote "finished" @("result=everything_up_to_date")
@@ -1542,7 +1541,7 @@ if ($targetUpgradeable.Count -eq 0 -and $installOutOfSync.Count -eq 0 -and
 }
 
 if ($targetUpgradeable.Count -eq 0 -and $installOutOfSync.Count -eq 0 -and
-    ($manualInstallDrift.Count -gt 0 -or $manualTargetReviews.Count -gt 0)) {
+    $manualInstallDrift.Count -gt 0) {
     Write-Host ""
     Write-Host "No target updates or scripted install sync actions remain"
     if ($manualInstallDrift.Count -gt 0) {
@@ -1554,8 +1553,7 @@ if ($targetUpgradeable.Count -eq 0 -and $installOutOfSync.Count -eq 0 -and
     }
     Write-RunNote "finished" @(
         "result=manual_review_needed",
-        "manual_drift_count=$($manualInstallDrift.Count)",
-        "manual_target_review_count=$($manualTargetReviews.Count)"
+        "manual_drift_count=$($manualInstallDrift.Count)"
     )
     return
 }
@@ -1711,9 +1709,13 @@ foreach ($item in $selectedTarget) {
 
     Write-Host "  Upgrading $name $old -> $newDisplay ..."
 
-    # Always update the conf file
+    # Hash-coupled downloads are updated atomically in their switch cases after
+    # all new payloads have been downloaded and hashed successfully
     $confValue = if ($dep.ContainsKey("NewValue")) { $dep.NewValue } else { $new }
-    Update-Conf $key $confValue
+    $hashCoupledTarget = $name -in @("Chromaprint", "minimp3", "stb_vorbis", "dr_flac")
+    if (-not $hashCoupledTarget) {
+        Update-Conf $key $confValue
+    }
 
     switch -Wildcard ($name) {
         "Gradle" {
@@ -1802,19 +1804,38 @@ foreach ($item in $selectedTarget) {
         }
         "Chromaprint" {
             $plainVersion = $new -replace '^v', ''
-            Update-Conf "CHROMAPRINT_URL" "https://github.com/acoustid/chromaprint/archive/refs/tags/$new.tar.gz"
+            $chromaprintUrl = "https://github.com/acoustid/chromaprint/archive/refs/tags/$new.tar.gz"
+            $chromaprintSha256 = Get-RemoteFileSha256 $chromaprintUrl
+            Update-Conf $key $confValue
+            Update-Conf "CHROMAPRINT_URL" $chromaprintUrl
+            Update-Conf "CHROMAPRINT_SHA256" $chromaprintSha256
             Update-Conf "FPCALC_URL" (Get-ChromaprintFpcalcUrlForPlatform $new)
             Update-Conf "FPCALC_DIR_NAME" "fpcalc-$plainVersion"
         }
         "minimp3" {
-            Update-Conf "MINIMP3_URL" "https://raw.githubusercontent.com/lieff/minimp3/$new/minimp3.h"
-            Update-Conf "MINIMP3_EX_URL" "https://raw.githubusercontent.com/lieff/minimp3/$new/minimp3_ex.h"
+            $minimp3Url = "https://raw.githubusercontent.com/lieff/minimp3/$new/minimp3.h"
+            $minimp3ExUrl = "https://raw.githubusercontent.com/lieff/minimp3/$new/minimp3_ex.h"
+            $minimp3Sha256 = Get-RemoteFileSha256 $minimp3Url
+            $minimp3ExSha256 = Get-RemoteFileSha256 $minimp3ExUrl
+            Update-Conf $key $confValue
+            Update-Conf "MINIMP3_URL" $minimp3Url
+            Update-Conf "MINIMP3_EX_URL" $minimp3ExUrl
+            Update-Conf "MINIMP3_SHA256" $minimp3Sha256
+            Update-Conf "MINIMP3_EX_SHA256" $minimp3ExSha256
         }
         "stb_vorbis" {
-            Update-Conf "STB_VORBIS_URL" "https://raw.githubusercontent.com/nothings/stb/$new/stb_vorbis.c"
+            $stbVorbisUrl = "https://raw.githubusercontent.com/nothings/stb/$new/stb_vorbis.c"
+            $stbVorbisSha256 = Get-RemoteFileSha256 $stbVorbisUrl
+            Update-Conf $key $confValue
+            Update-Conf "STB_VORBIS_URL" $stbVorbisUrl
+            Update-Conf "STB_VORBIS_SHA256" $stbVorbisSha256
         }
         "dr_flac" {
-            Update-Conf "DR_FLAC_URL" "https://raw.githubusercontent.com/mackron/dr_libs/$new/dr_flac.h"
+            $drFlacUrl = "https://raw.githubusercontent.com/mackron/dr_libs/$new/dr_flac.h"
+            $drFlacSha256 = Get-RemoteFileSha256 $drFlacUrl
+            Update-Conf $key $confValue
+            Update-Conf "DR_FLAC_URL" $drFlacUrl
+            Update-Conf "DR_FLAC_SHA256" $drFlacSha256
         }
         "ImageMagick" {
             Update-Conf "IMAGEMAGICK_URL" "https://imagemagick.org/archive/binaries/ImageMagick-$new-portable-Q16-HDRI-x64.7z"
