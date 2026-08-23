@@ -1,6 +1,6 @@
 # Kotlin menu zoom, vertical pan, and back overlay plan
 
-Status: planned, not implemented
+Status: implemented; automated validation complete
 
 Created: 2026-08-23
 
@@ -290,7 +290,7 @@ Back dispatch policy:
 
 ## Implementation phases
 
-1. [ ] Shared viewport math and tests
+1. [x] Shared viewport math and tests
    - Extend `android_menu_scale` with user zoom, vertical pan, horizontal-center
      invariants, focal update inputs, clamps, and clear/reset semantics
    - Keep existing scale behavior byte-for-byte equivalent when `Z = 1` and
@@ -299,14 +299,14 @@ Back dispatch policy:
      focal-Y stability, no horizontal translation, pan clamps, kconfig crop plus
      pan, and render-area caps
 
-2. [ ] Authoritative interaction publication
+2. [x] Authoritative interaction publication
    - Add the atomic fixed-capacity snapshot and shared point-classification API
    - Publish visible newmenu/listbox/kconfig regions from mirrored D1/D2 hooks
    - Reuse current native item-bound helpers and scroll line spacing
    - Extend introspection with menu kind, generation, zoom multiplier, pan,
      effective transform, interaction counts, and clamp status
 
-3. [ ] Kotlin overlay and gesture state machine
+3. [x] Kotlin overlay and gesture state machine
    - Add `MenuInteractionOverlayView` with explicit idle, background-candidate,
      native-pass-through, pan, pinch, and cancelled states
    - Add unit tests for both-points-clear gating, second-point rejection, touch
@@ -314,7 +314,7 @@ Back dispatch policy:
    - Feed fixed-point viewport intent through JNI at most once per display frame
      to avoid redraw/JNI flooding
 
-4. [ ] Back/Exit composition and IME behavior
+4. [x] Back/Exit composition and IME behavior
    - Move Exit drawing/hit behavior into the composed overlay without changing
      its callback policy
    - Add bottom-right Back with inset-aware geometry and accessibility content
@@ -323,7 +323,7 @@ Back dispatch policy:
    - Retire only the save/load-specific temporary Back label, leaving other
      transient actions untouched
 
-5. [ ] D1/D2 integration regression
+5. [x] D1/D2 integration regression
    - Extend `test_newmenu_render_paths_unified.jsonc` or add a focused unified
      script covering newmenu, scroll-box newmenu, listbox, kconfig, pause menu,
      and text input
@@ -338,7 +338,7 @@ Back dispatch policy:
      nothing destructive at the root main menu
    - Assert Exit retains its prior launcher/game-menu behavior
 
-6. [ ] Validation and device tuning
+6. [ ] Validation and physical-device tuning
    - Run scoped code quality on all changed Kotlin, shared Android native, D1,
      D2, test, and plan files
    - Build Android debug with JDK 21
@@ -384,3 +384,31 @@ Back dispatch policy:
   stale menu cannot remap touches on gameplay or transient screens
 - Keep all D1/D2 changes Android-guarded and mirrored
 
+## Implementation and validation record
+
+Implemented on 2026-08-23. The shared native transform now owns zoom, vertical
+pan, horizontal centering, interaction classification, and IME-aware inverse
+mapping. The Kotlin overlay composes Back and Exit and leaves native-owned
+touch streams on the SurfaceView.
+
+Completed validation:
+
+- Scoped code-quality formatting and checks passed for the changed C, C++, and
+  Kotlin sources
+- `MenuInteractionOverlayViewTest` passed, covering both-point gating,
+  focal-point stability, centroid pan, and zoom/pan intent clamps
+- Android debug APK assembled successfully for arm64-v8a, armeabi-v7a, and
+  x86_64 with JDK 21
+- `test_newmenu_render_paths_unified.jsonc` passed on the emulator for D1 (71
+  steps) and D2 (83 steps), including text entry, zoom/pan publication,
+  newmenu, listbox, kconfig, scroll-owned regions, and pause-menu return
+- The live Android view hierarchy exposed the full-surface composed overlay;
+  an ADB tap at the computed bottom-right Back-circle center popped the active
+  native menu layer
+- Windows D1 and D2 release builds, including headless targets, passed
+- `git diff --check` passed
+
+Remaining optional tuning is a physical-device pass for real two-finger feel,
+portrait/landscape ergonomics, and measured render-frame timing. The render
+buffer is already hard-capped to 2048 pixels per dimension, and this tuning is
+not required for functional availability.

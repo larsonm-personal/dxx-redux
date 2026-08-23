@@ -2496,8 +2496,10 @@ extern "C" char *game_introspect_get_state(void)
 		 * expose them via a helper instead of extern */
 		extern int android_get_keyboard_state(int *kb_native, int *scr_native, int *field_y);
 		android_menu_scale_result menu_scale = {};
+		android_menu_interaction_state menu_interaction = {};
 		int kb_native = 0, scr_native = 0, field_y_val = 0;
 		int have_menu_scale = android_menu_scale_get_state(&menu_scale);
+		android_menu_interaction_get_state(&menu_interaction);
 		android_get_keyboard_state(&kb_native, &scr_native, &field_y_val);
 		json kb;
 		kb["keyboard_height_native"] = kb_native;
@@ -2511,7 +2513,12 @@ extern "C" char *game_introspect_get_state(void)
 		scale["active"] = have_menu_scale && menu_scale.active;
 		scale["direct_render"] = have_menu_scale && menu_scale.direct_render;
 		scale["target_fill"] = android_menu_scale_get_target_fill();
+		scale["base_scale"] = menu_scale.base_scale;
 		scale["scale"] = menu_scale.scale;
+		scale["user_zoom_milli"] = menu_scale.user_zoom_milli;
+		scale["user_pan_milli"] = menu_scale.user_pan_milli;
+		scale["pan_y"] = menu_scale.pan_y;
+		scale["pan_clamped"] = menu_scale.pan_clamped != 0;
 		scale["render_scale"] = menu_scale.render_scale;
 		scale["render_w"] = menu_scale.render_w;
 		scale["render_h"] = menu_scale.render_h;
@@ -2522,6 +2529,15 @@ extern "C" char *game_introspect_get_state(void)
 		scale["src"] = { { "x", menu_scale.src.x }, { "y", menu_scale.src.y }, { "w", menu_scale.src.w }, { "h", menu_scale.src.h } };
 		scale["dst"] = { { "x", menu_scale.dst.x }, { "y", menu_scale.dst.y }, { "w", menu_scale.dst.w }, { "h", menu_scale.dst.h } };
 		j["menu_scale"] = scale;
+
+		json interaction;
+		interaction["active"] = menu_interaction.active != 0;
+		interaction["kind"] = menu_interaction.kind;
+		interaction["generation"] = menu_interaction.generation;
+		interaction["region_count"] = menu_interaction.region_count;
+		interaction["tappable_count"] = menu_interaction.tappable_count;
+		interaction["scroll_owned_count"] = menu_interaction.scroll_owned_count;
+		j["menu_interaction"] = interaction;
 	}
 
 	/* -- PhysFS paths and mounted mods -------------------------------- */

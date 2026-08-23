@@ -60,7 +60,26 @@
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
     {"action": "introspect"},
     {"action": "log", "message": "Phase 3: Reached main menu after pilot creation -- no crash"},
-    {"action": "assert", "expect": {"screen_mode": "menu"}},
+    {"action": "assert", "expect": {
+        "screen_mode": "menu",
+        "menu_interaction.active": "true",
+        "menu_interaction.kind": 1,
+        "menu_interaction.region_count": {"gt": 0},
+        "menu_interaction.tappable_count": {"gt": 0}
+    }},
+    {"action": "set_menu_viewport", "zoom_milli": 1600, "pan_milli": 1000},
+    {"action": "wait_ms", "ms": 300},
+    {"action": "introspect"},
+    {"action": "assert", "expect": {
+        "menu_scale.active": "true",
+        "menu_scale.user_zoom_milli": 1600,
+        "menu_scale.user_pan_milli": 1000,
+        "menu_scale.pan_y": {"gt": 0},
+        "menu_scale.scale": {"gt": 1.2},
+        "menu_interaction.active": "true"
+    }},
+    {"action": "set_menu_viewport", "zoom_milli": 1000, "pan_milli": 0},
+    {"action": "wait_ms", "ms": 200},
     {"action": "log", "message": "=== TEST: Keyboard Viewport Offset -- COMPLETE ==="},
 
     // D2 high-resolution menu scale introspection shares the owner's 3:4,
@@ -98,7 +117,9 @@
         "menu_scale.direct_render": "true",
         "menu_scale.render_scale": {"gt": 1.05},
         "menu_scale.dst.w": {"gt": 0},
-        "menu_scale.dst.h": {"gt": 0}
+        "menu_scale.dst.h": {"gt": 0},
+        "menu_interaction.kind": 2,
+        "menu_interaction.tappable_count": {"gt": 0}
     }},
 
     {"action": "key", "key": "enter", "post_delay_ms": 150},
@@ -119,6 +140,11 @@
     {"action": "select", "text": "Controls...", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "select", "text": "CUSTOMIZE JOYSTICK", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "introspect"},
+    {"action": "assert", "expect": {
+        "menu_interaction.active": "true",
+        "menu_interaction.kind": 3,
+        "menu_interaction.scroll_owned_count": {"gt": 0}
+    }},
     {"action": "log", "message": "=== TEST: Joystick Menu Introspection -- COMPLETE ==="},
     {"action": "key", "key": "escape", "post_delay_ms": 150},
     {"action": "key", "key": "escape", "post_delay_ms": 150},
@@ -134,7 +160,9 @@
         "menu.type": "newmenu",
         "menu.is_scroll_box": "true",
         "menu.subtitle": "Reticle Options",
-        "menu.selected_index": {"gte": 0}
+        "menu.selected_index": {"gte": 0},
+        "menu_interaction.kind": 1,
+        "menu_interaction.scroll_owned_count": {"gt": 0}
     }},
     {"action": "log", "message": "=== TEST: D2 reticle options scroll box -- PASS ===", "when": "d2"},
     {"action": "key", "key": "escape", "when": "d2", "post_delay_ms": 150},

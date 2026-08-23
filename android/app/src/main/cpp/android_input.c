@@ -23,6 +23,7 @@
 #include "android_screen_advance.h"
 #include "android_lifecycle_actions.h"
 #include "android_lifecycle_diagnostics.h"
+#include "android_menu_scale.h"
 #include "android_rewind.h"
 #include "coop/coop_level_restart.h"
 #include "cntrlcen.h"
@@ -681,6 +682,61 @@ Java_com_dxxredux_app_MainActivity_nativeTouchEvent(JNIEnv *env, jobject thiz,
 	}
 
 	android_push_touch_action(action, gameX, gameY);
+}
+
+JNIEXPORT jlong JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetMenuOverlayState(JNIEnv *env, jobject thiz)
+{
+	android_menu_interaction_state state;
+	jlong packed = 0;
+
+	(void) env;
+	(void) thiz;
+	if (!android_menu_interaction_get_state(&state))
+		return 0;
+	packed = ((jlong) state.generation) << 32;
+	packed |= ((jlong) (state.kind & 0x7)) << 1;
+	if (state.active)
+		packed |= 1;
+	return packed;
+}
+
+JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_MainActivity_nativeMenuPointFlags(JNIEnv *env, jobject thiz,
+                                                        jfloat normX, jfloat normY)
+{
+	int screen_w, screen_h;
+	int x, y;
+
+	(void) env;
+	(void) thiz;
+	android_get_touch_screen_size(&screen_w, &screen_h);
+	x = (int) (normX * screen_w);
+	y = (int) (normY * screen_h);
+	if (x < 0) x = 0;
+	if (x >= screen_w) x = screen_w - 1;
+	if (y < 0) y = 0;
+	if (y >= screen_h) y = screen_h - 1;
+	return android_menu_interaction_classify_screen_point(
+	    x, y, (int) g_blit_y_offset);
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetMenuViewport(JNIEnv *env, jobject thiz,
+                                                         jint zoomMilli,
+                                                         jint panMilli)
+{
+	(void) env;
+	(void) thiz;
+	android_menu_scale_set_viewport(zoomMilli, panMilli);
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeResetMenuViewport(JNIEnv *env, jobject thiz)
+{
+	(void) env;
+	(void) thiz;
+	android_menu_scale_reset_viewport();
 }
 
 /* ── Keyboard ───────────────────────────────────────────────

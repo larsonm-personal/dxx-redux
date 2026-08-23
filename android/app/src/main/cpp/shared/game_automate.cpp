@@ -48,6 +48,7 @@ extern "C" {
 #include "android_screen_advance.h"
 #include "android_graphics_options.h"
 #include "android_log.h"
+#include "android_menu_scale.h"
 #include "android_music_control.h"
 #include "android_texture_debug.h"
 #include "android_meta_actions.h"
@@ -378,10 +379,11 @@ enum step_type {
 	STEP_ASSERT_BUTTON,              /* launcher-only: no-op in game engine (skip) */
 	STEP_ASSERT_CONTROLLER_MATCH,    /* launcher-only: no-op in game engine (skip) */
 	STEP_ASSERT_MISSION_LIST_HAS_NON_BASE,
-	STEP_SELECT_MISSION,       /* select mission if mission picker is present */
-	STEP_SET_DEBUG,            /* set a debug flag (e.g. tex_overlay) */
-	STEP_SET_SECRET_REVEAL,    /* automation-only: set automap secret reveal */
-	STEP_SET_OBJECTIVE_OVERLAY /* automation-only: set objective display mode */
+	STEP_SELECT_MISSION,        /* select mission if mission picker is present */
+	STEP_SET_DEBUG,             /* set a debug flag (e.g. tex_overlay) */
+	STEP_SET_SECRET_REVEAL,     /* automation-only: set automap secret reveal */
+	STEP_SET_OBJECTIVE_OVERLAY, /* automation-only: set objective display mode */
+	STEP_SET_MENU_VIEWPORT      /* automation-only: set Android menu zoom/pan */
 };
 
 /* Key-value pair for STEP_ASSERT expectations.
@@ -423,6 +425,8 @@ struct auto_step {
 	bool axis_saturate_sdl_queue = false;  /* STEP_SEND_AXIS: deterministic queue pressure */
 	bool axis_use_production_path = false; /* STEP_SEND_AXIS: use production mailbox */
 	bool axis_pulse_before_drain = false;  /* STEP_SEND_AXIS: publish value then zero */
+	int menu_zoom_milli = 1000;            /* STEP_SET_MENU_VIEWPORT */
+	int menu_pan_milli = 0;                /* STEP_SET_MENU_VIEWPORT */
 	int button_id = -1;                    /* STEP_SEND_BUTTON: button index */
 	int button_held = 0;                   /* STEP_SEND_BUTTON: 1 = hold (no release) */
 	int button_pressed = 1;                /* STEP_SEND_BUTTON: 0 = release only */
@@ -590,6 +594,7 @@ static const char *step_type_name(step_type t)
 		case STEP_SET_DEBUG: return "set_debug";
 		case STEP_SET_SECRET_REVEAL: return "set_secret_reveal";
 		case STEP_SET_OBJECTIVE_OVERLAY: return "set_objective_overlay";
+		case STEP_SET_MENU_VIEWPORT: return "set_menu_viewport";
 		default: return "unknown";
 	}
 }
@@ -2234,6 +2239,7 @@ static int parse_script(const char *json_text)
 			else if (action == "set_debug") s.type = STEP_SET_DEBUG;
 			else if (action == "set_secret_reveal") s.type = STEP_SET_SECRET_REVEAL;
 			else if (action == "set_objective_overlay") s.type = STEP_SET_OBJECTIVE_OVERLAY;
+			else if (action == "set_menu_viewport") s.type = STEP_SET_MENU_VIEWPORT;
 			else {
 				LOGE("Unknown action: %s", action.c_str());
 				continue;
@@ -2258,6 +2264,8 @@ static int parse_script(const char *json_text)
 			s.axis_saturate_sdl_queue = step_json.value("saturate_sdl_queue", false);
 			s.axis_use_production_path = step_json.value("use_production_path", false);
 			s.axis_pulse_before_drain = step_json.value("pulse_before_drain", false);
+			s.menu_zoom_milli = step_json.value("zoom_milli", 1000);
+			s.menu_pan_milli = step_json.value("pan_milli", 0);
 			s.button_id = step_json.value("button", -1);
 			s.button_held = step_json.value("held", 0);
 			s.button_pressed = step_json.value("pressed", 1);
@@ -3979,6 +3987,16 @@ extern "C" void game_automate_tick(void)
 			advance_step();
 			break;
 		}
+
+		case STEP_SET_MENU_VIEWPORT:
+#ifdef ANDROID
+			android_menu_scale_set_viewport(s.menu_zoom_milli,
+			                                s.menu_pan_milli);
+			advance_step();
+#else
+			stop_script_fail("set_menu_viewport: Android-only action");
+#endif
+			break;
 	}
 }
 

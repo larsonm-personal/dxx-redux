@@ -605,6 +605,20 @@ static void android_kconfig_draw_contents(void *userdata, grs_canvas *canvas)
 	kconfig_draw_contents((kc_menu *)userdata, canvas);
 }
 
+static void android_kconfig_publish_interactions(kc_menu *menu,
+                                                 int x, int y, int w, int h)
+{
+	android_menu_interaction_region region;
+
+	region.rect.x = x;
+	region.rect.y = y;
+	region.rect.w = w;
+	region.rect.h = h;
+	region.flags = ANDROID_MENU_INTERACTION_SCROLL_OWNED;
+	android_menu_interaction_publish(ANDROID_MENU_INTERACTION_KCONFIG,
+	                                 menu, &region, 1);
+}
+
 #endif
 
 void kconfig_draw(kc_menu *menu)
@@ -618,10 +632,13 @@ void kconfig_draw(kc_menu *menu)
 		int source_w = w + 2 * BORDERX;
 		int source_h = h + 2 * BORDERY;
 
-		if (android_menu_scale_draw_kconfig(
-		        source_x, source_y, source_w, source_h, SWIDTH, SHEIGHT,
-		        &menu->android_scroll_y, window_get_canvas(menu->wind),
-		        android_kconfig_draw_contents, menu))
+		int scaled = android_menu_scale_draw_kconfig(
+		    source_x, source_y, source_w, source_h, SWIDTH, SHEIGHT,
+		    &menu->android_scroll_y, window_get_canvas(menu->wind),
+		    android_kconfig_draw_contents, menu);
+		android_kconfig_publish_interactions(menu, source_x, source_y,
+		                                     source_w, source_h);
+		if (scaled)
 			return;
 	}
 #endif
@@ -997,6 +1014,10 @@ int kconfig_handler(window *wind, d_event *event, kc_menu *menu)
 			break;
 			
 		case EVENT_WINDOW_CLOSE:
+#ifdef ANDROID
+			android_menu_scale_clear();
+			android_menu_interaction_clear();
+#endif
 			d_free(menu);
 			
 			// Update save values...

@@ -998,6 +998,48 @@ static void android_log_newmenu_touch(newmenu *menu, d_event *event,
 	};
 	android_log_newmenu_touch_state(&state);
 }
+
+static void android_newmenu_publish_interactions(window *wind, newmenu *menu)
+{
+	android_menu_interaction_region regions[64];
+	grs_canvas *menu_canvas = window_get_canvas(wind);
+	grs_canvas *save_canvas = grd_curcanv;
+	int count = 0;
+	int first, last, i;
+
+	if (android_screen_advance_get_kind() == ANDROID_SCREEN_ADVANCE_LEVELCOMPLETE) {
+		android_menu_interaction_clear();
+		return;
+	}
+	if (!menu || !menu_canvas || window_get_front() != wind)
+		return;
+	gr_set_current_canvas(menu_canvas);
+	if (menu->is_scroll_box) {
+		regions[count].rect.x = menu_canvas->cv_bitmap.bm_x;
+		regions[count].rect.y = menu_canvas->cv_bitmap.bm_y;
+		regions[count].rect.w = menu_canvas->cv_bitmap.bm_w;
+		regions[count].rect.h = menu_canvas->cv_bitmap.bm_h;
+		regions[count++].flags = ANDROID_MENU_INTERACTION_SCROLL_OWNED;
+	}
+	first = menu->scroll_offset;
+	last = first + menu->max_displayable;
+	if (last > menu->nitems)
+		last = menu->nitems;
+	for (i = first; i < last && count < 64; i++) {
+		int x1, y1, x2, y2;
+		if (menu->items[i].type == NM_TYPE_TEXT)
+			continue;
+		newmenu_get_item_bounds(menu, i, &x1, &y1, &x2, &y2);
+		regions[count].rect.x = x1;
+		regions[count].rect.y = y1;
+		regions[count].rect.w = x2 - x1;
+		regions[count].rect.h = y2 - y1;
+		regions[count++].flags = ANDROID_MENU_INTERACTION_TAPPABLE;
+	}
+	gr_set_current_canvas(save_canvas);
+	android_menu_interaction_publish(ANDROID_MENU_INTERACTION_NEWMENU,
+	                                 menu, regions, count);
+}
 #endif
 
 int newmenu_mouse(window *wind, d_event *event, newmenu *menu, int button)
@@ -2095,6 +2137,9 @@ int newmenu_draw(window *wind, newmenu *menu)
 		}
 	}
 #endif
+#ifdef ANDROID
+	android_newmenu_publish_interactions(wind, menu);
+#endif
 
 	return 1;
 }
@@ -2378,6 +2423,7 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 				extern void android_hide_keyboard(void);
 				android_hide_keyboard();
 				android_menu_scale_clear();
+				android_menu_interaction_clear();
 				android_newmenu_free_wrapped_items(menu);
 			}
 #endif
@@ -2710,6 +2756,30 @@ static void android_log_listbox_touch(listbox *lb, const char *phase,
 		x1, y1, x2, y2, lb->title ? lb->title : "", text
 	};
 	android_log_listbox_touch_state(&state);
+}
+
+static void android_listbox_publish_interactions(window *wind, listbox *lb)
+{
+	android_menu_interaction_region regions[64];
+	int count = 0;
+	int last, i;
+
+	if (!lb || window_get_front() != wind)
+		return;
+	last = lb->first_item + LB_ITEMS_ON_SCREEN;
+	if (last > lb->nitems)
+		last = lb->nitems;
+	for (i = lb->first_item; i < last && count < 64; i++) {
+		int x1, y1, x2, y2;
+		listbox_get_item_bounds(lb, i, &x1, &y1, &x2, &y2);
+		regions[count].rect.x = x1;
+		regions[count].rect.y = y1;
+		regions[count].rect.w = x2 - x1;
+		regions[count].rect.h = y2 - y1;
+		regions[count++].flags = ANDROID_MENU_INTERACTION_TAPPABLE;
+	}
+	android_menu_interaction_publish(ANDROID_MENU_INTERACTION_LISTBOX,
+	                                 lb, regions, count);
 }
 #endif
 
@@ -3145,6 +3215,7 @@ int listbox_draw(window *wind, listbox *lb)
 			android_menu_scale_draw_result(
 				&menu_scale, SWIDTH, SHEIGHT, 0, 0, NULL,
 				android_listbox_draw_scaled_contents, lb);
+			android_listbox_publish_interactions(wind, lb);
 			return 1;
 		} else {
 			android_menu_scale_clear();
@@ -3154,6 +3225,9 @@ int listbox_draw(window *wind, listbox *lb)
 
 	gr_set_current_canvas(NULL);
 	listbox_draw_contents(lb);
+#ifdef ANDROID
+	android_listbox_publish_interactions(wind, lb);
+#endif
 
 	return 1;
 }
@@ -3302,6 +3376,7 @@ int listbox_handler(window *wind, d_event *event, listbox *lb)
 #ifdef ANDROID
 			{
 				android_menu_scale_clear();
+				android_menu_interaction_clear();
 			}
 #endif
 			d_free(lb);

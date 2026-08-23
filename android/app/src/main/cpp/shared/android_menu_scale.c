@@ -1,5 +1,6 @@
 #include "android_menu_scale.h"
 
+#include <stdint.h>
 #include <string.h>
 
 #include "console.h"
@@ -13,8 +14,11 @@
 static const float k_target_fill = 0.85f;
 static const float k_min_scale = 1.05f;
 static const float k_kconfig_max_scale = 3.5f;
+static const float k_max_scale = 4.0f;
 static const int k_crop_pad = 15;
 static const int k_blit_tile_size = 1024;
+static const int k_max_render_dimension = 2048;
+enum { ANDROID_MENU_INTERACTION_MAX_REGIONS = 64 };
 
 extern int g_menu_scale_active;
 extern int g_menu_scale_src_x, g_menu_scale_src_y;
@@ -23,6 +27,30 @@ extern int g_menu_scale_dst_x, g_menu_scale_dst_y;
 extern int g_menu_scale_dst_w, g_menu_scale_dst_h;
 
 static android_menu_scale_result g_last_result;
+static volatile int g_user_zoom_milli = 1000;
+static volatile int g_user_pan_milli;
+
+typedef struct android_menu_interaction_snapshot {
+	android_menu_interaction_state state;
+	uintptr_t owner;
+	android_menu_interaction_region regions[ANDROID_MENU_INTERACTION_MAX_REGIONS];
+} android_menu_interaction_snapshot;
+
+static android_menu_interaction_snapshot g_interaction_snapshots[2];
+static volatile int g_interaction_snapshot_index;
+static volatile int g_interaction_lock;
+static unsigned int g_interaction_generation;
+
+static void interaction_lock(void)
+{
+	while (__atomic_test_and_set(&g_interaction_lock, __ATOMIC_ACQUIRE)) {
+	}
+}
+
+static void interaction_unlock(void)
+{
+	__atomic_clear(&g_interaction_lock, __ATOMIC_RELEASE);
+}
 
 static void clear_result(android_menu_scale_result *result)
 {
@@ -47,15 +75,67 @@ static int clamp_source_box(android_menu_scale_rect *source, int screen_w, int s
 	return source->w > 0 && source->h > 0;
 }
 
-static int compute_destination(android_menu_scale_result *result, int screen_w,
-                               int screen_h, float scale)
+static float clamp_effective_scale(float base_scale, int source_w, int source_h,
+                                   int zoom_milli)
 {
+	float scale = base_scale * zoom_milli / 1000.0f;
+	float dimension_scale;
+
+	if (scale < 1.0f)
+		scale = 1.0f;
+	if (scale > k_max_scale)
+		scale = k_max_scale;
+	dimension_scale = (float) k_max_render_dimension / source_w;
+	if (scale > dimension_scale)
+		scale = dimension_scale;
+	dimension_scale = (float) k_max_render_dimension / source_h;
+	if (scale > dimension_scale)
+		scale = dimension_scale;
+	if (scale < 1.0f)
+		scale = 1.0f;
+	return scale;
+}
+
+static int clamp_pan_y(int pan_y, int destination_h, int screen_h,
+                       int *clamped)
+{
+	int limit = destination_h - screen_h;
+
+	if (limit < 0)
+		limit = -limit;
+	limit /= 2;
+	if (pan_y < -limit) {
+		pan_y = -limit;
+		*clamped = 1;
+	} else if (pan_y > limit) {
+		pan_y = limit;
+		*clamped = 1;
+	}
+	return pan_y;
+}
+
+static int compute_destination(android_menu_scale_result *result, int screen_w,
+                               int screen_h, float base_scale)
+{
+	const int zoom_milli = __atomic_load_n(&g_user_zoom_milli, __ATOMIC_ACQUIRE);
+	const int pan_milli = __atomic_load_n(&g_user_pan_milli, __ATOMIC_ACQUIRE);
+	float scale = clamp_effective_scale(base_scale, result->src.w,
+	                                    result->src.h, zoom_milli);
+	int requested_pan;
+
 	result->dst.w = (int) (result->src.w * scale);
 	result->dst.h = (int) (result->src.h * scale);
 	if (result->dst.w <= 0 || result->dst.h <= 0)
 		return 0;
 	result->dst.x = (screen_w - result->dst.w) / 2;
-	result->dst.y = (screen_h - result->dst.h) / 2;
+	requested_pan = pan_milli * screen_h / 10000;
+	result->pan_clamped = 0;
+	result->pan_y = clamp_pan_y(requested_pan, result->dst.h, screen_h,
+	                            &result->pan_clamped);
+	result->dst.y = (screen_h - result->dst.h) / 2 + result->pan_y;
+	result->base_scale = base_scale;
+	result->user_zoom_milli = zoom_milli;
+	result->user_pan_milli = pan_milli;
 	result->scale = scale;
 	result->render_w = result->src.w;
 	result->render_h = result->src.h;
@@ -133,6 +213,10 @@ int android_menu_scale_compute_cropped(int source_x, int source_y, int source_w,
 	scale_y = k_target_fill * screen_h / result->box.h;
 	scale = scale_x < scale_y ? scale_x : scale_y;
 	if (scale <= k_min_scale)
+		scale = 1.0f;
+	if (scale == 1.0f &&
+	    __atomic_load_n(&g_user_zoom_milli, __ATOMIC_ACQUIRE) == 1000 &&
+	    __atomic_load_n(&g_user_pan_milli, __ATOMIC_ACQUIRE) == 0)
 		return 0;
 
 	return compute_destination(result, screen_w, screen_h, scale);
@@ -142,6 +226,7 @@ int android_menu_scale_compute_kconfig(int source_x, int source_y, int source_w,
                                        int source_h, int screen_w, int screen_h, int *scroll_y,
                                        android_menu_scale_result *result)
 {
+	float base_scale;
 	float scale;
 	int full_dst_w;
 	int full_dst_h;
@@ -151,10 +236,14 @@ int android_menu_scale_compute_kconfig(int source_x, int source_y, int source_w,
 	if (!result || source_w <= 0 || source_h <= 0 || screen_w <= 0 || screen_h <= 0)
 		return 0;
 
-	scale = k_target_fill * screen_w / source_w;
-	if (scale > k_kconfig_max_scale)
-		scale = k_kconfig_max_scale;
-	if (scale <= k_min_scale)
+	base_scale = k_target_fill * screen_w / source_w;
+	if (base_scale > k_kconfig_max_scale)
+		base_scale = k_kconfig_max_scale;
+	if (base_scale <= k_min_scale)
+		base_scale = 1.0f;
+	if (base_scale == 1.0f &&
+	    __atomic_load_n(&g_user_zoom_milli, __ATOMIC_ACQUIRE) == 1000 &&
+	    __atomic_load_n(&g_user_pan_milli, __ATOMIC_ACQUIRE) == 0)
 		return 0;
 
 	result->box.x = source_x;
@@ -165,6 +254,10 @@ int android_menu_scale_compute_kconfig(int source_x, int source_y, int source_w,
 		return 0;
 
 	result->src = result->box;
+	result->user_zoom_milli = __atomic_load_n(&g_user_zoom_milli, __ATOMIC_ACQUIRE);
+	result->user_pan_milli = __atomic_load_n(&g_user_pan_milli, __ATOMIC_ACQUIRE);
+	scale = clamp_effective_scale(base_scale, result->box.w, result->box.h,
+	                              result->user_zoom_milli);
 	full_dst_w = (int) (result->box.w * scale);
 	full_dst_h = (int) (result->box.h * scale);
 	if (full_dst_w <= 0 || full_dst_h <= 0)
@@ -193,9 +286,14 @@ int android_menu_scale_compute_kconfig(int source_x, int source_y, int source_w,
 
 		result->src.y = result->box.y + current_scroll;
 		result->dst.x = (screen_w - full_dst_w) / 2;
-		result->dst.y = (screen_h - viewport_h) / 2;
+		result->pan_clamped = 0;
+		result->pan_y = clamp_pan_y(result->user_pan_milli * screen_h / 10000,
+		                            viewport_h, screen_h,
+		                            &result->pan_clamped);
+		result->dst.y = (screen_h - viewport_h) / 2 + result->pan_y;
 		result->dst.w = full_dst_w;
 		result->dst.h = viewport_h;
+		result->base_scale = base_scale;
 		result->scale = scale;
 		result->render_w = full_dst_w;
 		result->render_h = full_dst_h;
@@ -206,7 +304,7 @@ int android_menu_scale_compute_kconfig(int source_x, int source_y, int source_w,
 
 	if (scroll_y)
 		*scroll_y = 0;
-	return compute_destination(result, screen_w, screen_h, scale);
+	return compute_destination(result, screen_w, screen_h, base_scale);
 }
 
 void android_menu_scale_scroll_by(int *scroll_y, int delta_y)
@@ -216,6 +314,26 @@ void android_menu_scale_scroll_by(int *scroll_y, int delta_y)
 	*scroll_y += delta_y;
 	if (*scroll_y < 0)
 		*scroll_y = 0;
+}
+
+void android_menu_scale_set_viewport(int zoom_milli, int pan_milli)
+{
+	if (zoom_milli < 250)
+		zoom_milli = 250;
+	if (zoom_milli > 3000)
+		zoom_milli = 3000;
+	if (pan_milli < -10000)
+		pan_milli = -10000;
+	if (pan_milli > 10000)
+		pan_milli = 10000;
+	__atomic_store_n(&g_user_zoom_milli, zoom_milli, __ATOMIC_RELEASE);
+	__atomic_store_n(&g_user_pan_milli, pan_milli, __ATOMIC_RELEASE);
+}
+
+void android_menu_scale_reset_viewport(void)
+{
+	__atomic_store_n(&g_user_zoom_milli, 1000, __ATOMIC_RELEASE);
+	__atomic_store_n(&g_user_pan_milli, 0, __ATOMIC_RELEASE);
 }
 
 int android_menu_scale_draw_kconfig(int source_x, int source_y, int source_w,
@@ -393,7 +511,7 @@ int android_menu_scale_get_state(android_menu_scale_result *result)
 
 int android_menu_scale_begin_scaled_draw(float scale, android_menu_scale_draw_state *state)
 {
-	if (!state || !grd_curscreen || scale <= 1.0f)
+	if (!state || !grd_curscreen || scale < 1.0f)
 		return 0;
 
 	state->screen_w = grd_curscreen->sc_w;
@@ -406,6 +524,125 @@ int android_menu_scale_begin_scaled_draw(float scale, android_menu_scale_draw_st
 	FNTScaleX = state->fnt_scale_x * scale;
 	FNTScaleY = state->fnt_scale_y * scale;
 	return 1;
+}
+
+void android_menu_interaction_publish(
+    int kind, const void *owner,
+    const android_menu_interaction_region *regions, int region_count)
+{
+	int old_index;
+	int new_index;
+	const android_menu_interaction_snapshot *old_snapshot;
+	android_menu_interaction_snapshot *snapshot;
+	int changed;
+
+	interaction_lock();
+	old_index = g_interaction_snapshot_index;
+	old_snapshot = &g_interaction_snapshots[old_index];
+	new_index = old_index ? 0 : 1;
+	snapshot = &g_interaction_snapshots[new_index];
+	if (!regions || region_count < 0)
+		region_count = 0;
+	if (region_count > ANDROID_MENU_INTERACTION_MAX_REGIONS)
+		region_count = ANDROID_MENU_INTERACTION_MAX_REGIONS;
+	changed = !old_snapshot->state.active || old_snapshot->state.kind != kind ||
+	          old_snapshot->owner != (uintptr_t) owner ||
+	          old_snapshot->state.region_count != region_count;
+	if (!changed && region_count)
+		changed = memcmp(old_snapshot->regions, regions,
+		                 sizeof(*regions) * region_count) != 0;
+	if (changed)
+		g_interaction_generation++;
+
+	memset(snapshot, 0, sizeof(*snapshot));
+	snapshot->state.active = kind != ANDROID_MENU_INTERACTION_NONE;
+	snapshot->state.kind = kind;
+	snapshot->state.generation = g_interaction_generation;
+	snapshot->state.region_count = region_count;
+	for (int i = 0; i < region_count; ++i) {
+		if (regions[i].flags & ANDROID_MENU_INTERACTION_TAPPABLE)
+			snapshot->state.tappable_count++;
+		if (regions[i].flags & ANDROID_MENU_INTERACTION_SCROLL_OWNED)
+			snapshot->state.scroll_owned_count++;
+	}
+	snapshot->owner = (uintptr_t) owner;
+	android_menu_scale_get_state(&snapshot->state.scale);
+	if (region_count)
+		memcpy(snapshot->regions, regions, sizeof(*regions) * region_count);
+	__atomic_store_n(&g_interaction_snapshot_index, new_index, __ATOMIC_RELEASE);
+	interaction_unlock();
+}
+
+void android_menu_interaction_clear(void)
+{
+	int old_index;
+	int new_index;
+	android_menu_interaction_snapshot *snapshot;
+
+	interaction_lock();
+	old_index = g_interaction_snapshot_index;
+	if (!g_interaction_snapshots[old_index].state.active) {
+		interaction_unlock();
+		return;
+	}
+	new_index = old_index ? 0 : 1;
+	snapshot = &g_interaction_snapshots[new_index];
+	g_interaction_generation++;
+	memset(snapshot, 0, sizeof(*snapshot));
+	snapshot->state.generation = g_interaction_generation;
+	__atomic_store_n(&g_interaction_snapshot_index, new_index, __ATOMIC_RELEASE);
+	interaction_unlock();
+}
+
+int android_menu_interaction_get_state(android_menu_interaction_state *state)
+{
+	int index;
+
+	if (!state)
+		return 0;
+	interaction_lock();
+	index = __atomic_load_n(&g_interaction_snapshot_index, __ATOMIC_ACQUIRE);
+	*state = g_interaction_snapshots[index].state;
+	interaction_unlock();
+	return 1;
+}
+
+int android_menu_interaction_classify_screen_point(int x, int y,
+                                                   int keyboard_offset)
+{
+	int index;
+	const android_menu_interaction_snapshot *snapshot;
+	const android_menu_scale_result *scale;
+	int canvas_x = x;
+	int canvas_y = y + keyboard_offset;
+	int flags = 0;
+	int i;
+
+	interaction_lock();
+	index = __atomic_load_n(&g_interaction_snapshot_index, __ATOMIC_ACQUIRE);
+	snapshot = &g_interaction_snapshots[index];
+	scale = &snapshot->state.scale;
+	if (!snapshot->state.active) {
+		interaction_unlock();
+		return 0;
+	}
+	if (scale->active && scale->src.w > 0 && scale->src.h > 0 &&
+	    scale->dst.w > 0 && scale->dst.h > 0) {
+		canvas_x = scale->src.x +
+		           (canvas_x - scale->dst.x) * scale->src.w / scale->dst.w;
+		canvas_y = scale->src.y +
+		           (canvas_y - scale->dst.y) * scale->src.h / scale->dst.h;
+	}
+	for (i = 0; i < snapshot->state.region_count; i++) {
+		const android_menu_interaction_region *region = &snapshot->regions[i];
+		if (canvas_x >= region->rect.x &&
+		    canvas_x < region->rect.x + region->rect.w &&
+		    canvas_y >= region->rect.y &&
+		    canvas_y < region->rect.y + region->rect.h)
+			flags |= region->flags;
+	}
+	interaction_unlock();
+	return flags;
 }
 
 void android_menu_scale_end_scaled_draw(const android_menu_scale_draw_state *state)

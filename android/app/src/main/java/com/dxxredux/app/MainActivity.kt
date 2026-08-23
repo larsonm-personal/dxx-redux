@@ -260,6 +260,20 @@ class MainActivity :
         normY: Float,
     )
 
+    external fun nativeGetMenuOverlayState(): Long
+
+    external fun nativeMenuPointFlags(
+        normX: Float,
+        normY: Float,
+    ): Int
+
+    external fun nativeSetMenuViewport(
+        zoomMilli: Int,
+        panMilli: Int,
+    )
+
+    external fun nativeResetMenuViewport()
+
     external fun nativeKeyEvent(
         action: Int,
         androidKeyCode: Int,
@@ -676,7 +690,7 @@ class MainActivity :
     private lateinit var keyboardInputView: KeyboardInputView
     private lateinit var touchOverlay: TouchOverlayView
     private lateinit var skipButton: SkipButtonView
-    private lateinit var exitButton: ExitButtonView
+    private lateinit var menuInteractionOverlay: MenuInteractionOverlayView
     private lateinit var startGameButton: StartGameButtonView
     private lateinit var acceptJoinButton: AcceptJoinButtonView
     private lateinit var overlayContainer: LinearLayout
@@ -688,6 +702,7 @@ class MainActivity :
     private var overlayPollProfileMaxUs = 0L
     private var overlayPollProfileSlowCount = 0
     private var overlayPollProfileErrorCount = 0
+    private var lastMenuInteractionGeneration = 0L
     private var musicPanel: MusicControlPanel? = null
     private var quickLoadDialog: Dialog? = null
     private var netStatsOverlay: com.dxxredux.app.multiplayer.MultiplayerStatsOverlay? = null
@@ -1543,9 +1558,17 @@ class MainActivity :
                 visibility = View.GONE
             }
 
-        // Always-visible exit button (upper-left, returns to launcher from any screen)
-        exitButton =
-            ExitButtonView(this).apply {
+        // Menu gesture layer plus independently visible Back and Exit actions
+        menuInteractionOverlay =
+            MenuInteractionOverlayView(this).apply {
+                backCallback = {
+                    if (gameSurfaceView.keyboardActive || isKeyboardImeVisibleNow()) {
+                        hideKeyboard()
+                    } else {
+                        nativeKeyEvent(0, KeyEvent.KEYCODE_BACK, 0)
+                        nativeKeyEvent(1, KeyEvent.KEYCODE_BACK, 0)
+                    }
+                }
                 exitCallback = {
                     try {
                         NativeMetaActions.nativeMetaAction(TouchBindings.META_RETURN_TO_LAUNCHER, 1)
@@ -1555,6 +1578,16 @@ class MainActivity :
                         android.os.Process.killProcess(android.os.Process.myPid())
                     }
                 }
+                pointFlagsCallback = { x, y ->
+                    try {
+                        nativeMenuPointFlags(x, y)
+                    } catch (_: Exception) {
+                        MENU_POINT_TAPPABLE or MENU_POINT_SCROLL_OWNED
+                    }
+                }
+                nativeTouchCallback = { action, x, y -> nativeTouchEvent(action, x, y) }
+                viewportCallback = { zoom, pan -> nativeSetMenuViewport(zoom, pan) }
+                viewportResetCallback = { nativeResetMenuViewport() }
             }
 
         // "START GAME" button for host player selection screen (hidden by default)
@@ -1633,7 +1666,7 @@ class MainActivity :
             ),
         )
         frame.addView(
-            exitButton,
+            menuInteractionOverlay,
             FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -2536,12 +2569,28 @@ class MainActivity :
                                 }
                             val playerDead = screenAdvanceKind == SCREEN_ADVANCE_DEATH
                             val endlevel = screenAdvanceKind == SCREEN_ADVANCE_ENDLEVEL
-                            val saveloadMenu =
+                            val menuOverlayState =
                                 try {
-                                    nativeIsSaveLoadMenuActive()
+                                    nativeGetMenuOverlayState()
                                 } catch (_: Exception) {
-                                    false
+                                    0L
                                 }
+                            val menuOverlayActive = menuOverlayState and 1L != 0L
+                            val menuInteractionGeneration = menuOverlayState ushr 32
+                            if (menuOverlayActive) {
+                                if (lastMenuInteractionGeneration != 0L &&
+                                    lastMenuInteractionGeneration != menuInteractionGeneration
+                                ) {
+                                    menuInteractionOverlay.centerPanForMenuChange()
+                                }
+                                lastMenuInteractionGeneration = menuInteractionGeneration
+                            } else if (lastMenuInteractionGeneration != 0L) {
+                                lastMenuInteractionGeneration = 0L
+                                menuInteractionOverlay.resetViewport()
+                            }
+                            menuInteractionOverlay.showBack = menuOverlayActive
+                            menuInteractionOverlay.keyboardActive = gameSurfaceView.keyboardActive
+                            menuInteractionOverlay.bottomInsetPx = sampleVisibleKeyboardHeightPx()
                             val gamePaused =
                                 try {
                                     nativeIsGamePaused()
@@ -2590,12 +2639,7 @@ class MainActivity :
                             }
                             // Show/hide the native transient-screen action, intro preference, or BACK.
                             val levelComplete = screenAdvanceKind == SCREEN_ADVANCE_LEVELCOMPLETE
-                            if (saveloadMenu) {
-                                skipButton.screenAdvanceGeneration = null
-                                skipButton.bigLabel = false
-                                skipButton.label = "BACK"
-                                skipButton.visibility = View.VISIBLE
-                            } else if (levelComplete) {
+                            if (levelComplete) {
                                 skipButton.screenAdvanceGeneration = screenAdvanceGeneration
                                 skipButton.bigLabel = false
                                 skipButton.label = "NEXT"
@@ -2623,8 +2667,8 @@ class MainActivity :
                             }
                             // Poll current track to update the overlay label and open music panel
                             if (shouldPollCurrentTrack(shouldShow, automap, musicPanel != null)) pollCurrentTrack()
-                            // Hide standalone exit when touch overlay is active (admin tray has Exit)
-                            exitButton.visibility = if (shouldShow) View.GONE else View.VISIBLE
+                            // The admin tray has its own Exit action
+                            menuInteractionOverlay.showExit = !shouldShow
                             if (shouldHideStandaloneAdminOverlays(inGame, settingsTrayVisible)) {
                                 netStatsOverlay?.hide()
                                 videoInfoOverlay?.hide()
@@ -2675,7 +2719,10 @@ class MainActivity :
                             touchOverlay.automapActive = false
                             touchOverlay.updateDemoRecordingState(false)
                             skipButton.visibility = View.GONE
-                            exitButton.visibility = View.VISIBLE
+                            menuInteractionOverlay.showBack = false
+                            menuInteractionOverlay.showExit = true
+                            menuInteractionOverlay.resetViewport()
+                            lastMenuInteractionGeneration = 0L
                             startGameButton.visibility = View.GONE
                             acceptJoinButton.visibility = View.GONE
                             // Still try to show net events overlay during MP connecting

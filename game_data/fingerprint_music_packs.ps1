@@ -196,16 +196,16 @@ if ($requestedAlbums.Count -gt 0) {
 }
 
 $archiveIdentities = @($archives | ForEach-Object {
-    $name = $_.BaseName
-    if ($name -match '^(.+?) - ') { $name = $Matches[1] }
-    [PSCustomObject]@{
-        Archive = $_
-        AlbumName = $name
-        PortableKey = Get-DxxPortableSourceNameKey -Name $name
-        SourceId = ConvertTo-DxxFingerprintSourceId -Name $name
-    }
-})
-$archiveAlbumNames = [Collections.Generic.Dictionary[string,string]]::new(
+        $name = $_.BaseName
+        if ($name -match '^(.+?) - ') { $name = $Matches[1] }
+        [PSCustomObject]@{
+            Archive = $_
+            AlbumName = $name
+            PortableKey = Get-DxxPortableSourceNameKey -Name $name
+            SourceId = ConvertTo-DxxFingerprintSourceId -Name $name
+        }
+    })
+$archiveAlbumNames = [Collections.Generic.Dictionary[string, string]]::new(
     [StringComparer]::Ordinal
 )
 $sourceIdGroups = @{}
@@ -243,7 +243,7 @@ foreach ($archive in $archives) {
     # ── Extract ─────────────────────────────────────────────────
     if (-not $SkipExtract) {
         $hasFiles = (Test-Path $albumDir) -and
-            @(Get-ChildItem $albumDir -File | Where-Object {
+        @(Get-ChildItem $albumDir -File | Where-Object {
                 $_.Extension -match '^\.(mp3|ogg|flac)$'
             }).Count -gt 0
 

@@ -128,146 +128,146 @@ foreach ($inst in $Installers) {
 
     $proc = $null
     try {
-    # Extract zip
-    Write-Host "  Extracting $zipName"
-    Expand-ZipCompatibleArchive -ArchivePath $zipPath -DestinationPath $sourceDir
+        # Extract zip
+        Write-Host "  Extracting $zipName"
+        Expand-ZipCompatibleArchive -ArchivePath $zipPath -DestinationPath $sourceDir
 
-    # Find INSTALL.EXE (might be in root or subdirectory)
-    $installerExe = Get-ChildItem $sourceDir -Recurse -Filter $inst.Exe -File | Select-Object -First 1
-    if (-not $installerExe) {
-        Write-Warning "  $($inst.Exe) not found in $zipName. Skipping"
-        $failures++
-        continue
-    }
-    $installerDir = $installerExe.DirectoryName
-
-    # Build INPUT.TXT with stdin bytes for the installer
-    $inputBytes = New-Object System.Collections.Generic.List[byte]
-    foreach ($ch in $inst.StdinKeys) { $inputBytes.Add([byte]$ch) }
-    $inputPath = Join-Path $installerDir "INPUT.TXT"
-    [System.IO.File]::WriteAllBytes($inputPath, $inputBytes.ToArray())
-
-    # Build a batch file that redirects stdin into the installer
-    $batchContent = "@echo off`r`nINSTALL.EXE < INPUT.TXT`r`n"
-    $batchPath = Join-Path $installerDir "RUNINST.BAT"
-    [System.IO.File]::WriteAllText($batchPath, $batchContent, [System.Text.Encoding]::ASCII)
-
-    # Build DOSBox-X config (stdin redirect via batch file)
-    $targetFwd = $targetDir -replace '\\', '/'
-    $installerFwd = $installerDir -replace '\\', '/'
-
-    $confLines = @(
-        "[sdl]"
-        "output=surface"
-        "windowresolution=640x400"
-        ""
-        "[dosbox]"
-        "machine=svga_s3"
-        ""
-        "[cpu]"
-        "cycles=max"
-        ""
-        "[autoexec]"
-        "MOUNT C `"$targetFwd`""
-        "MOUNT D `"$installerFwd`""
-        "D:"
-        "RUNINST.BAT"
-        "EXIT"
-    )
-    $confContent = ($confLines -join "`r`n") + "`r`n"
-
-    $confPath = Join-Path $tempBase "dosbox.conf"
-    [System.IO.File]::WriteAllText($confPath, $confContent, [System.Text.Encoding]::ASCII)
-
-    # Run DOSBox-X and poll for game files
-    Write-Host ("  Running {0} in DOSBox-X (polling for game files, max {1}s)..." -f $inst.Exe, $TimeoutSec)
-    $proc = Start-Process -FilePath $DosboxExe `
-        -ArgumentList "-conf", "`"$confPath`"", "-exit", "-fastlaunch", "-nopromptfolder" `
-        -WorkingDirectory $DosboxDir `
-        -PassThru -WindowStyle Minimized
-
-    # Poll: wait for expected game files to appear and stabilize on the target drive
-    $deadline = (Get-Date).AddSeconds($TimeoutSec)
-    $filesFound = $false
-    $lastSizes = @{}
-    $stableCount = 0
-    while ((Get-Date) -lt $deadline) {
-        Start-Sleep -Milliseconds $PollIntervalMs
-        if ($proc.HasExited) { break }
-        $allPresent = $true
-        $currentSizes = @{}
-        foreach ($expect in $inst.ExpectFiles) {
-            $m = Get-ChildItem $targetDir -Recurse -Filter $expect -File -ErrorAction SilentlyContinue |
-                Select-Object -First 1
-            if (-not $m) { $allPresent = $false; break }
-            $currentSizes[$expect] = $m.Length
-        }
-        if (-not $allPresent) { continue }
-
-        # Check if file sizes have stabilized (same as previous poll)
-        $sizesSame = $true
-        foreach ($expect in $inst.ExpectFiles) {
-            if ($lastSizes[$expect] -ne $currentSizes[$expect]) { $sizesSame = $false; break }
-        }
-        $lastSizes = $currentSizes
-        if ($sizesSame) { $stableCount++ } else { $stableCount = 0 }
-
-        if ($stableCount -ge 2) {
-            Write-Host "  Game files detected and stable - killing DOSBox"
-            $filesFound = $true
-            break
-        }
-    }
-
-    if (-not $proc.HasExited) {
-        $proc.Kill()
-        Start-Sleep -Seconds 1
-        if (-not $filesFound) {
-            Write-Warning "  DOSBox-X timed out after ${TimeoutSec}s without expected game files"
-        }
-    }
-
-    # Search for game files in the target directory
-    Write-Host "  Scanning for game files..."
-    $found = @()
-    foreach ($ext in $GameExtensions) {
-        $found += Get-ChildItem $targetDir -Recurse -Filter $ext -File -ErrorAction SilentlyContinue
-    }
-
-    if ($found.Count -eq 0) {
-        Write-Warning "  No game files found. The installer may need different keystrokes"
-        Write-Host "  Contents of DOSBox C: drive:"
-        Get-ChildItem $targetDir -Recurse -File | ForEach-Object {
-            $rel = $_.FullName.Substring($targetDir.Length)
-            Write-Host "    $rel"
-        }
-        $failures++
-    } else {
-        $foundByName = @{}
-        $collision = $false
-        foreach ($f in $found) {
-            $key = $f.Name.ToLowerInvariant()
-            if ($foundByName.ContainsKey($key)) { $collision = $true }
-            $foundByName[$key] = $f
-        }
-        $missing = @($inst.ExpectFiles | Where-Object { -not $foundByName.ContainsKey($_.ToLowerInvariant()) })
-        $installerCompleted = $filesFound -or ($proc.HasExited -and $proc.ExitCode -eq 0)
-        if (-not $installerCompleted -or $missing.Count -gt 0 -or $collision) {
-            Write-Warning "  Extraction incomplete or contains colliding basenames"
+        # Find INSTALL.EXE (might be in root or subdirectory)
+        $installerExe = Get-ChildItem $sourceDir -Recurse -Filter $inst.Exe -File | Select-Object -First 1
+        if (-not $installerExe) {
+            Write-Warning "  $($inst.Exe) not found in $zipName. Skipping"
             $failures++
             continue
         }
-        $stagingDir = Join-Path $DemoDir ".${baseName}_extracted-$([Guid]::NewGuid().ToString('N'))"
-        New-Item -ItemType Directory -Path $stagingDir | Out-Null
-        foreach ($f in $foundByName.Values) {
-            Copy-Item $f.FullName (Join-Path $stagingDir $f.Name)
-            $sizeKB = [math]::Round($f.Length / 1024)
-            Write-Host ("    {0} [{1} KB]" -f $f.Name, $sizeKB)
+        $installerDir = $installerExe.DirectoryName
+
+        # Build INPUT.TXT with stdin bytes for the installer
+        $inputBytes = New-Object System.Collections.Generic.List[byte]
+        foreach ($ch in $inst.StdinKeys) { $inputBytes.Add([byte]$ch) }
+        $inputPath = Join-Path $installerDir "INPUT.TXT"
+        [System.IO.File]::WriteAllBytes($inputPath, $inputBytes.ToArray())
+
+        # Build a batch file that redirects stdin into the installer
+        $batchContent = "@echo off`r`nINSTALL.EXE < INPUT.TXT`r`n"
+        $batchPath = Join-Path $installerDir "RUNINST.BAT"
+        [System.IO.File]::WriteAllText($batchPath, $batchContent, [System.Text.Encoding]::ASCII)
+
+        # Build DOSBox-X config (stdin redirect via batch file)
+        $targetFwd = $targetDir -replace '\\', '/'
+        $installerFwd = $installerDir -replace '\\', '/'
+
+        $confLines = @(
+            "[sdl]"
+            "output=surface"
+            "windowresolution=640x400"
+            ""
+            "[dosbox]"
+            "machine=svga_s3"
+            ""
+            "[cpu]"
+            "cycles=max"
+            ""
+            "[autoexec]"
+            "MOUNT C `"$targetFwd`""
+            "MOUNT D `"$installerFwd`""
+            "D:"
+            "RUNINST.BAT"
+            "EXIT"
+        )
+        $confContent = ($confLines -join "`r`n") + "`r`n"
+
+        $confPath = Join-Path $tempBase "dosbox.conf"
+        [System.IO.File]::WriteAllText($confPath, $confContent, [System.Text.Encoding]::ASCII)
+
+        # Run DOSBox-X and poll for game files
+        Write-Host ("  Running {0} in DOSBox-X (polling for game files, max {1}s)..." -f $inst.Exe, $TimeoutSec)
+        $proc = Start-Process -FilePath $DosboxExe `
+            -ArgumentList "-conf", "`"$confPath`"", "-exit", "-fastlaunch", "-nopromptfolder" `
+            -WorkingDirectory $DosboxDir `
+            -PassThru -WindowStyle Minimized
+
+        # Poll: wait for expected game files to appear and stabilize on the target drive
+        $deadline = (Get-Date).AddSeconds($TimeoutSec)
+        $filesFound = $false
+        $lastSizes = @{}
+        $stableCount = 0
+        while ((Get-Date) -lt $deadline) {
+            Start-Sleep -Milliseconds $PollIntervalMs
+            if ($proc.HasExited) { break }
+            $allPresent = $true
+            $currentSizes = @{}
+            foreach ($expect in $inst.ExpectFiles) {
+                $m = Get-ChildItem $targetDir -Recurse -Filter $expect -File -ErrorAction SilentlyContinue |
+                    Select-Object -First 1
+                if (-not $m) { $allPresent = $false; break }
+                $currentSizes[$expect] = $m.Length
+            }
+            if (-not $allPresent) { continue }
+
+            # Check if file sizes have stabilized (same as previous poll)
+            $sizesSame = $true
+            foreach ($expect in $inst.ExpectFiles) {
+                if ($lastSizes[$expect] -ne $currentSizes[$expect]) { $sizesSame = $false; break }
+            }
+            $lastSizes = $currentSizes
+            if ($sizesSame) { $stableCount++ } else { $stableCount = 0 }
+
+            if ($stableCount -ge 2) {
+                Write-Host "  Game files detected and stable - killing DOSBox"
+                $filesFound = $true
+                break
+            }
         }
-        Write-ExtractionCompletionManifest -Directory $stagingDir -Provenance $provenance
-        Publish-ExtractionDirectory -StagingDirectory $stagingDir -DestinationDirectory $outputDir
-        Write-Host ("  Extracted {0} files -> {1}" -f $found.Count, $outputDir) -ForegroundColor Green
-    }
+
+        if (-not $proc.HasExited) {
+            $proc.Kill()
+            Start-Sleep -Seconds 1
+            if (-not $filesFound) {
+                Write-Warning "  DOSBox-X timed out after ${TimeoutSec}s without expected game files"
+            }
+        }
+
+        # Search for game files in the target directory
+        Write-Host "  Scanning for game files..."
+        $found = @()
+        foreach ($ext in $GameExtensions) {
+            $found += Get-ChildItem $targetDir -Recurse -Filter $ext -File -ErrorAction SilentlyContinue
+        }
+
+        if ($found.Count -eq 0) {
+            Write-Warning "  No game files found. The installer may need different keystrokes"
+            Write-Host "  Contents of DOSBox C: drive:"
+            Get-ChildItem $targetDir -Recurse -File | ForEach-Object {
+                $rel = $_.FullName.Substring($targetDir.Length)
+                Write-Host "    $rel"
+            }
+            $failures++
+        } else {
+            $foundByName = @{}
+            $collision = $false
+            foreach ($f in $found) {
+                $key = $f.Name.ToLowerInvariant()
+                if ($foundByName.ContainsKey($key)) { $collision = $true }
+                $foundByName[$key] = $f
+            }
+            $missing = @($inst.ExpectFiles | Where-Object { -not $foundByName.ContainsKey($_.ToLowerInvariant()) })
+            $installerCompleted = $filesFound -or ($proc.HasExited -and $proc.ExitCode -eq 0)
+            if (-not $installerCompleted -or $missing.Count -gt 0 -or $collision) {
+                Write-Warning "  Extraction incomplete or contains colliding basenames"
+                $failures++
+                continue
+            }
+            $stagingDir = Join-Path $DemoDir ".${baseName}_extracted-$([Guid]::NewGuid().ToString('N'))"
+            New-Item -ItemType Directory -Path $stagingDir | Out-Null
+            foreach ($f in $foundByName.Values) {
+                Copy-Item $f.FullName (Join-Path $stagingDir $f.Name)
+                $sizeKB = [math]::Round($f.Length / 1024)
+                Write-Host ("    {0} [{1} KB]" -f $f.Name, $sizeKB)
+            }
+            Write-ExtractionCompletionManifest -Directory $stagingDir -Provenance $provenance
+            Publish-ExtractionDirectory -StagingDirectory $stagingDir -DestinationDirectory $outputDir
+            Write-Host ("  Extracted {0} files -> {1}" -f $found.Count, $outputDir) -ForegroundColor Green
+        }
 
     } finally {
         if ($proc -and -not $proc.HasExited) {

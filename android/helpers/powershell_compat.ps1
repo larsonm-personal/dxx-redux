@@ -52,6 +52,7 @@ function Get-CompatibleRelativePath {
 }
 
 function ConvertTo-CompatibleHashtableValue {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseLiteralInitializerForHashtable', '', Justification = 'The explicit ordinal comparer preserves JSON keys that differ only by case')]
     param([AllowNull()][object]$Value)
 
     if ($Value -is [Collections.IDictionary]) {

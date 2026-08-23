@@ -111,8 +111,8 @@ function Get-FallbackVsInstances {
                     InstanceId = "$($yearDir.Name)-$($editionDir.Name)"
                     Toolsets = @(
                         Get-ChildItem (Join-Path $editionDir.FullName "VC\Tools\MSVC") -Directory -ErrorAction SilentlyContinue |
-                        Sort-Object Name -Descending |
-                        Select-Object -ExpandProperty Name
+                            Sort-Object Name -Descending |
+                            Select-Object -ExpandProperty Name
                     )
                 }
             }
@@ -129,7 +129,7 @@ function Get-VsInstances {
     if ($vsWhere) {
         $json = & $vsWhere -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -format json
         if ($LASTEXITCODE -eq 0 -and $json) {
-            $parsed = @(ConvertFrom-CompatibleJsonItems -Json $json)
+            $parsed = @(ConvertFrom-CompatibleJsonItems -Json ($json -join "`n"))
             foreach ($item in $parsed) {
                 $vcvars = Join-Path $item.installationPath "VC\Auxiliary\Build\vcvarsall.bat"
                 if (-not (Test-Path $vcvars)) {
@@ -144,8 +144,8 @@ function Get-VsInstances {
                     InstanceId = if ($item.instanceId) { $item.instanceId } else { Split-Path $item.installationPath -Leaf }
                     Toolsets = @(
                         Get-ChildItem (Join-Path $item.installationPath "VC\Tools\MSVC") -Directory -ErrorAction SilentlyContinue |
-                        Sort-Object Name -Descending |
-                        Select-Object -ExpandProperty Name
+                            Sort-Object Name -Descending |
+                            Select-Object -ExpandProperty Name
                     )
                 }
             }
@@ -158,7 +158,7 @@ function Get-VsInstances {
 
     return @(
         $instances |
-        Sort-Object @{ Expression = { $_.InstallationVersion } ; Descending = $true }, @{ Expression = { $_.InstallationPath } ; Descending = $true }
+            Sort-Object @{ Expression = { $_.InstallationVersion } ; Descending = $true }, @{ Expression = { $_.InstallationPath } ; Descending = $true }
     )
 }
 
@@ -171,8 +171,8 @@ function Get-WindowsSdkVersions {
 
     return @(
         Get-ChildItem $sdkRoot -Directory -ErrorAction SilentlyContinue |
-        Sort-Object Name -Descending |
-        Select-Object -ExpandProperty Name
+            Sort-Object Name -Descending |
+            Select-Object -ExpandProperty Name
     )
 }
 

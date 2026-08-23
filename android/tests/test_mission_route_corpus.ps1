@@ -69,7 +69,7 @@ function Normalize-RouteProjectionFloatJson {
     param([Parameter(Mandatory = $true)][string]$Json)
 
     $pattern = '"(?<name>distance|travel_distance)":(?<value>-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)'
-    $evaluator = [Text.RegularExpressions.MatchEvaluator]{
+    $evaluator = [Text.RegularExpressions.MatchEvaluator] {
         param($match)
         $value = [double]::Parse($match.Groups['value'].Value, [Globalization.CultureInfo]::InvariantCulture)
         return '"' + $match.Groups['name'].Value + '":' + `
