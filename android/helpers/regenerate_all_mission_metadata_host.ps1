@@ -88,7 +88,7 @@ function Initialize-HostExecutable {
     }
 
     Write-Status "Building host metadata executables"
-    if ($IsWindows -or $env:OS -eq "Windows_NT") {
+    if ($env:OS -eq "Windows_NT") {
         $powershell = Get-PowerShellPath
         & $powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File (Join-Path $repoRoot "run-windows-build.ps1") -Target both
     } else {
@@ -486,6 +486,7 @@ function Expand-MissionArchive {
         }
         return
     }
+    Add-Type -AssemblyName System.IO.Compression
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     [System.IO.Compression.ZipFile]::ExtractToDirectory($Archive.FullName, $RawArchiveDir)
 }

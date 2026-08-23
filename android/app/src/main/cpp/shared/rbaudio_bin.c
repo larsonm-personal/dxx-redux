@@ -349,10 +349,10 @@ static int s_render_thread_alive;
 static int s_background_waiting;
 #endif
 
-static void rb_reset(void)
+static void rb_discard(void)
 {
-	__atomic_store_n(&s_rb_wpos, 0, __ATOMIC_SEQ_CST);
-	__atomic_store_n(&s_rb_rpos, 0, __ATOMIC_SEQ_CST);
+	int write_position = __atomic_load_n(&s_rb_wpos, __ATOMIC_ACQUIRE);
+	__atomic_store_n(&s_rb_rpos, write_position, __ATOMIC_RELEASE);
 }
 
 static void rb_write(const short *data, int count)
@@ -1177,24 +1177,36 @@ static int refill_pcm(unsigned int request_generation)
 			int next_track = find_audio_track(s_current_track + 1, s_play_last);
 			if (next_track == 0)
 				return frames_read; /* all tracks done */
+			pthread_mutex_lock(&s_background_mutex);
+			if (request_generation != __atomic_load_n(&s_request_generation, __ATOMIC_ACQUIRE)) {
+				pthread_mutex_unlock(&s_background_mutex);
+				return frames_read;
+			}
 			s_current_track = next_track;
 			__atomic_store_n(&s_logical_track, next_track, __ATOMIC_RELEASE);
 			s_read_sector = s_tracks[s_current_track - 1].start_sector;
 			s_track_end = s_read_sector + s_tracks[s_current_track - 1].num_sectors;
+			pthread_mutex_unlock(&s_background_mutex);
 		}
 
 		{
 			bin_handle_t *src = get_track_handle(s_current_track);
 			if (!src || !bh_valid(src)) {
+				if (request_generation != __atomic_load_n(&s_request_generation, __ATOMIC_ACQUIRE))
+					return frames_read;
 				record_source_io_error(RBA_IO_HANDLE, src);
 				break;
 			}
 			offset = (PHYSFS_sint64) s_read_sector * SECTOR_SIZE;
 			if (!bh_seek(src, offset)) {
+				if (request_generation != __atomic_load_n(&s_request_generation, __ATOMIC_ACQUIRE))
+					return frames_read;
 				record_source_io_error(RBA_IO_SEEK, src);
 				break;
 			}
 			if (!bh_read(src, raw, SECTOR_SIZE)) {
+				if (request_generation != __atomic_load_n(&s_request_generation, __ATOMIC_ACQUIRE))
+					return frames_read;
 				record_source_io_error(RBA_IO_READ, src);
 				break;
 			}
@@ -1234,12 +1246,16 @@ static int render_cd_frames(short *out, int max_frames, unsigned int request_gen
 			if (refill_result <= 0 && s_pcm_pos >= s_pcm_len - 1) {
 				if (request_generation != __atomic_load_n(&s_request_generation, __ATOMIC_ACQUIRE))
 					break;
-				s_playing = 0;
-				s_paused = 0;
-				if (refill_result == 0) {
-					__atomic_store_n(&s_terminal_state, RBA_TERMINAL_COMPLETE, __ATOMIC_RELEASE);
-					s_song_finished = 1;
+				pthread_mutex_lock(&s_background_mutex);
+				if (request_generation == __atomic_load_n(&s_request_generation, __ATOMIC_ACQUIRE)) {
+					s_playing = 0;
+					s_paused = 0;
+					if (refill_result == 0) {
+						__atomic_store_n(&s_terminal_state, RBA_TERMINAL_COMPLETE, __ATOMIC_RELEASE);
+						s_song_finished = 1;
+					}
 				}
+				pthread_mutex_unlock(&s_background_mutex);
 				break;
 			}
 		}
@@ -1292,7 +1308,7 @@ static int apply_pending_request(void)
 	s_pcm_len = 0;
 	s_pcm_pos = 0;
 	s_resample_frac = 0.0;
-	rb_reset();
+	rb_discard();
 	if (request.operation == RBA_REQUEST_STOP)
 		return 0;
 
@@ -1395,7 +1411,6 @@ static int render_thread_func(void *data)
 			/* Avoid a track-start I/O and resampling burst competing with gameplay */
 			SDL_Delay(1);
 		}
-
 	}
 
 	pthread_mutex_lock(&s_background_mutex);
@@ -1410,7 +1425,7 @@ static int render_thread_func(void *data)
 static int render_thread_start(void)
 {
 	if (s_render_thread) return 1;
-	rb_reset();
+	rb_discard();
 	__atomic_store_n(&s_render_running, 1, __ATOMIC_SEQ_CST);
 	pthread_mutex_lock(&s_background_mutex);
 	s_render_thread_alive = 1;
@@ -1716,9 +1731,14 @@ static int queue_playback_request(int first, int last, void (*hook_finished)(voi
 	unsigned int generation;
 	unsigned int request_started = SDL_GetTicks();
 	unsigned int hook_started;
+	unsigned int unhook_started;
+	unsigned int unhook_ms;
 
 	if (!render_thread_start())
 		return 0;
+	unhook_started = SDL_GetTicks();
+	Mix_HookMusic(NULL, NULL);
+	unhook_ms = SDL_GetTicks() - unhook_started;
 	pthread_mutex_lock(&s_background_mutex);
 	s_pending_request.operation = RBA_REQUEST_PLAY;
 	s_pending_request.first = first;
@@ -1731,7 +1751,7 @@ static int queue_playback_request(int first, int last, void (*hook_finished)(voi
 	s_paused = 0;
 	s_song_finished = 0;
 	__atomic_store_n(&s_terminal_state, RBA_TERMINAL_NONE, __ATOMIC_RELEASE);
-	rb_reset();
+	rb_discard();
 	pthread_cond_broadcast(&s_background_cond);
 	pthread_mutex_unlock(&s_background_mutex);
 
@@ -1740,9 +1760,10 @@ static int queue_playback_request(int first, int last, void (*hook_finished)(voi
 	__atomic_store_n(&s_last_start_request_ms, SDL_GetTicks() - request_started,
 	                 __ATOMIC_RELEASE);
 	__atomic_store_n(&s_last_stop_wait_ms, 0, __ATOMIC_RELEASE);
-	RBA_DIAG("request_queued generation=%u track=%d request_ms=%u hook_ms=%u",
+	RBA_DIAG("request_queued generation=%u track=%d request_ms=%u unhook_ms=%u hook_ms=%u",
 	         generation, first,
 	         __atomic_load_n(&s_last_start_request_ms, __ATOMIC_ACQUIRE),
+	         unhook_ms,
 	         SDL_GetTicks() - hook_started);
 	return 1;
 }
@@ -1804,24 +1825,24 @@ void RBAStop(void)
 		return;
 	}
 
+	Mix_HookMusic(NULL, NULL);
 	pthread_mutex_lock(&s_background_mutex);
 	s_pending_request.operation = RBA_REQUEST_STOP;
 	s_pending_request.finished_hook = NULL;
 	s_pending_request.started_ticks = SDL_GetTicks();
 	__atomic_add_fetch(&s_request_generation, 1, __ATOMIC_ACQ_REL);
 	s_logical_track = 0;
-	rb_reset();
+	rb_discard();
 	pthread_cond_broadcast(&s_background_cond);
 	pthread_mutex_unlock(&s_background_mutex);
 	__atomic_store_n(&s_last_stop_wait_ms, 0, __ATOMIC_RELEASE);
-	Mix_HookMusic(NULL, NULL);
 	s_finished_hook = NULL;
 	s_song_finished = 0;
 	__atomic_store_n(&s_terminal_state, RBA_TERMINAL_STOPPED, __ATOMIC_RELEASE);
 #ifdef INTROSPECT_ON
 	__atomic_store_n(&s_test_source_failure_operation, RBA_IO_NONE, __ATOMIC_RELEASE);
 #endif
-	rb_reset();
+	rb_discard();
 
 	RBA_LOG("Playback stopped");
 }
@@ -1962,8 +1983,9 @@ unsigned long RBAGetDiscID(void)
 	 * falling back to the first source's disc ID.  This lets
 	 * songs_haved2_cd() recognise a GOG image as an original D2 CD. */
 	int src_idx;
+	int logical_track;
 	if (!s_initialised) return 0;
-	int logical_track = __atomic_load_n(&s_logical_track, __ATOMIC_ACQUIRE);
+	logical_track = __atomic_load_n(&s_logical_track, __ATOMIC_ACQUIRE);
 	if (logical_track >= 1 && logical_track <= s_num_tracks) {
 		src_idx = s_tracks[logical_track - 1].source_index;
 		if (src_idx >= 0 && src_idx < s_num_sources)
@@ -2017,9 +2039,10 @@ void RBAEnable(void)
 int RBANextTrack(void)
 {
 	int i, start;
+	int logical_track = __atomic_load_n(&s_logical_track, __ATOMIC_ACQUIRE);
 	if (!s_initialised || s_num_tracks == 0) return -1;
-	start = (s_current_track >= 1 && s_current_track <= s_num_tracks)
-	            ? s_current_track
+	start = (logical_track >= 1 && logical_track <= s_num_tracks)
+	            ? logical_track
 	            : 1;
 	for (i = 1; i <= s_num_tracks; i++) {
 		int idx = ((start - 1 + i) % s_num_tracks);
@@ -2033,9 +2056,10 @@ int RBANextTrack(void)
 int RBAPrevTrack(void)
 {
 	int i, start;
+	int logical_track = __atomic_load_n(&s_logical_track, __ATOMIC_ACQUIRE);
 	if (!s_initialised || s_num_tracks == 0) return -1;
-	start = (s_current_track >= 1 && s_current_track <= s_num_tracks)
-	            ? s_current_track
+	start = (logical_track >= 1 && logical_track <= s_num_tracks)
+	            ? logical_track
 	            : 1;
 	for (i = 1; i <= s_num_tracks; i++) {
 		int idx = ((start - 1 - i + s_num_tracks) % s_num_tracks);
@@ -2059,14 +2083,15 @@ int RBAPlaySpecificTrack(int track)
 int RBAGetCurrentTrackInfo(int *out_track, char *out_name, int name_size,
                            int *out_source_index)
 {
-	if (!s_initialised || !s_playing || s_current_track < 1 || s_current_track > s_num_tracks)
+	int logical_track = __atomic_load_n(&s_logical_track, __ATOMIC_ACQUIRE);
+	if (!s_initialised || !s_playing || logical_track < 1 || logical_track > s_num_tracks)
 		return -1;
-	if (out_track) *out_track = s_current_track;
+	if (out_track) *out_track = logical_track;
 	if (out_name && name_size > 0) {
-		strncpy(out_name, s_tracks[s_current_track - 1].name, name_size - 1);
+		strncpy(out_name, s_tracks[logical_track - 1].name, name_size - 1);
 		out_name[name_size - 1] = '\0';
 	}
-	if (out_source_index) *out_source_index = s_tracks[s_current_track - 1].source_index;
+	if (out_source_index) *out_source_index = s_tracks[logical_track - 1].source_index;
 	return 0;
 }
 

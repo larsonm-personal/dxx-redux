@@ -3,8 +3,9 @@
 $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+. (Join-Path $repoRoot 'android/helpers/powershell_compat.ps1')
 $metadataPath = Join-Path $repoRoot "game_data\mission_files\legacy.json"
-$missions = @(Get-Content -LiteralPath $metadataPath -Raw | ConvertFrom-Json)
+$missions = @(ConvertFrom-CompatibleJsonItems -Json (Get-Content -LiteralPath $metadataPath -Raw))
 $mission = @($missions | Where-Object { $_.mission_filename -eq "legacy.mn2" })
 if ($mission.Count -ne 1) {
     throw "Expected one Legacy of Chaos mission in legacy.json"

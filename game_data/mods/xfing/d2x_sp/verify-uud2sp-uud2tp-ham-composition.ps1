@@ -10,6 +10,7 @@ param(
 $ErrorActionPreference = "Stop"
 $scriptDir = $PSScriptRoot
 $repoRoot = Resolve-Path (Join-Path $scriptDir "..\..\..\..")
+. (Join-Path $repoRoot "android/helpers/powershell_compat.ps1")
 . (Join-Path $scriptDir "uud2sp_ham_patch_lib.ps1")
 
 if (-not $BaselineRoot) {
@@ -110,7 +111,7 @@ function Read-Uud2CompositionPatchDocument {
         return [pscustomobject]@{
             path = $Path
             patchPath = $patchPath
-            operations = @((Read-Uud2CompositionZipEntryText -Archive $archive -EntryName $patchPath) | ConvertFrom-Json)
+            operations = @(ConvertFrom-CompatibleJsonItems -Json (Read-Uud2CompositionZipEntryText -Archive $archive -EntryName $patchPath))
         }
     } finally {
         $archive.Dispose()

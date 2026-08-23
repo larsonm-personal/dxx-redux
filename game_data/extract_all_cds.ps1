@@ -21,16 +21,16 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$ScriptDir  = $PSScriptRoot
-$RepoRoot   = Split-Path $ScriptDir
+$ScriptDir = $PSScriptRoot
+$RepoRoot = Split-Path $ScriptDir
 
 # Resolve cmake and other tool paths
 . "$RepoRoot\android\helpers\test_env.ps1"
 . "$RepoRoot\android\helpers\bounded_extraction.ps1"
 
-$SrcDir     = Join-RegressionPath $RepoRoot "android" "app" "src" "main" "cpp" "extract"
-$BuildDir   = Join-RegressionPath $RepoRoot "android" "tests" "build"
-$CdImgDir   = Join-Path $ScriptDir "CD images"
+$SrcDir = Join-RegressionPath $RepoRoot "android" "app" "src" "main" "cpp" "extract"
+$BuildDir = Join-RegressionPath $RepoRoot "android" "tests" "build"
+$CdImgDir = Join-Path $ScriptDir "CD images"
 
 function Resolve-ExtractCdTool {
     foreach ($dir in @(
@@ -102,9 +102,9 @@ foreach ($folder in $folders) {
             })
         $provenance = New-ExtractionProvenance -Policy 'extract-all-cds-v1' `
             -Sources $sourceIdentities -Tools @(
-                (Get-ExtractionPathIdentity -Path $ExePath -Name 'extract_cd'),
-                (Get-ExtractionPathIdentity -Path $PSCommandPath -Name 'extract_all_cds.ps1')
-            )
+            (Get-ExtractionPathIdentity -Path $ExePath -Name 'extract_cd'),
+            (Get-ExtractionPathIdentity -Path $PSCommandPath -Name 'extract_all_cds.ps1')
+        )
     } catch {
         $failures += @{ Name = $name; Error = $_.Exception.Message }
         continue
@@ -172,8 +172,8 @@ foreach ($folder in $folders) {
             $failures += @{ Name = $name; Error = $errorMessage; Details = ($stderrLines -join "`n") }
         } else {
             $jsonLines = @($jsonLines | ForEach-Object { $_ -replace "`r", "" })
-            "[`n  " + ($jsonLines -join ",`n  ") + "`n]" |
-                Set-Content -NoNewline -LiteralPath (Join-Path $outDir ".track_hashes.json") -Encoding UTF8
+            $trackHashesPath = Join-Path $outDir ".track_hashes.json"
+            [IO.File]::WriteAllText($trackHashesPath, "[`n  " + ($jsonLines -join ",`n  ") + "`n]", [Text.UTF8Encoding]::new($false))
             Write-ExtractionCompletionManifest -Directory $outDir -Provenance $provenance
             Publish-ExtractionDirectory -StagingDirectory $outDir -DestinationDirectory $dataTracksDir
             $hashTemp = Join-Path $folder.FullName ".track_hashes-$([Guid]::NewGuid().ToString('N')).json"

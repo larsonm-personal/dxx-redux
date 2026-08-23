@@ -6,6 +6,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+. (Join-Path $repoRoot 'android/helpers/powershell_compat.ps1')
 $metadataDir = Join-Path $repoRoot "game_data\mission_files"
 $baselinePath = Join-Path $PSScriptRoot "fixtures\mission_route_baseline.json"
 
@@ -64,6 +65,19 @@ function Get-Sha256Text {
     }
 }
 
+function Normalize-RouteProjectionFloatJson {
+    param([Parameter(Mandatory = $true)][string]$Json)
+
+    $pattern = '"(?<name>distance|travel_distance)":(?<value>-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)'
+    $evaluator = [Text.RegularExpressions.MatchEvaluator]{
+        param($match)
+        $value = [double]::Parse($match.Groups['value'].Value, [Globalization.CultureInfo]::InvariantCulture)
+        return '"' + $match.Groups['name'].Value + '":' + `
+            $value.ToString('0.0#####', [Globalization.CultureInfo]::InvariantCulture)
+    }
+    return [regex]::Replace($Json, $pattern, $evaluator)
+}
+
 function Get-CurrentRouteManifest {
     $records = [Collections.Generic.List[object]]::new()
 
@@ -72,7 +86,7 @@ function Get-CurrentRouteManifest {
         Sort-Object Name |
         ForEach-Object {
             $metadataFile = $_
-            $missions = @(Get-Content -LiteralPath $metadataFile.FullName -Raw | ConvertFrom-Json)
+            $missions = @(ConvertFrom-CompatibleJsonItems -Json (Get-Content -LiteralPath $metadataFile.FullName -Raw))
             for ($missionIndex = 0; $missionIndex -lt $missions.Count; $missionIndex++) {
                 $mission = $missions[$missionIndex]
                 foreach ($level in @($mission.levels)) {
@@ -99,6 +113,9 @@ function Get-CurrentRouteManifest {
                         route_steps = $steps
                     }
                     $projectionJson = $projection | ConvertTo-Json -Compress -Depth 12
+                    # PowerShell editions serialize integral and rounded
+                    # doubles differently, so stabilize schema float fields
+                    $projectionJson = Normalize-RouteProjectionFloatJson -Json $projectionJson
                     $records.Add([pscustomobject][ordered]@{
                             key = "$($metadataFile.Name)|$missionIndex|$($level.level_num)|$($level.level_file)"
                             hash = Get-Sha256Text -Text $projectionJson

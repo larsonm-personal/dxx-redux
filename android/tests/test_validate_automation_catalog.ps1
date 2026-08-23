@@ -26,12 +26,13 @@ $failures = [System.Collections.Generic.List[string]]::new()
 
 $jsoncProbe = Join-Path ([IO.Path]::GetTempPath()) ("dxx-jsonc-catalog-" + [guid]::NewGuid().ToString('N') + '.jsonc')
 try {
-    @'
+    $jsoncProbeText = @'
 [
   { "_info": { "games": ["d1"], "marker": "marker,}", "vars": { "d1": { "URL": "https://example.invalid/a" } } } },
   { "action": "write_config", "value": "https://example.invalid/a", }, // retained URL
 ]
-'@ | Set-Content -LiteralPath $jsoncProbe -Encoding UTF8
+'@
+    [IO.File]::WriteAllText($jsoncProbe, $jsoncProbeText + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
     $probeInfo = Get-TestScriptInfo -ScriptPath $jsoncProbe
     $probeResolved = Resolve-TestScript -ScriptPath $jsoncProbe -GameId 'd1'
     $probeParsed = Read-JsoncFile -Path $probeResolved

@@ -10,12 +10,12 @@
 
 $ErrorActionPreference = "Stop"
 $ScriptDir = $PSScriptRoot
-$OutFile   = Join-Path $ScriptDir "SOURCE_FILES.txt"
+$OutFile = Join-Path $ScriptDir "SOURCE_FILES.txt"
 
 # Collect original source files
 $files = Get-ChildItem -Path $ScriptDir -Recurse -File | Where-Object {
-    ($_.FullName -match "\\CD images\\" -and $_.Extension -in '.bin','.cue','.ccd','.img','.sub') -or
-    ($_.FullName -match "\\gog installers\\" -and $_.Extension -in '.exe','.pkg','.zip' -and $_.FullName -notmatch "\\extracted\\") -or
+    ($_.FullName -match "\\CD images\\" -and $_.Extension -in '.bin', '.cue', '.ccd', '.img', '.sub') -or
+    ($_.FullName -match "\\gog installers\\" -and $_.Extension -in '.exe', '.pkg', '.zip' -and $_.FullName -notmatch "\\extracted\\") -or
     ($_.FullName -match "\\demo installers\\" -and $_.Extension -eq '.zip') -or
     ($_.Name -eq 'DESCENT2.SOW' -and $_.DirectoryName -eq $ScriptDir)
 } | Sort-Object { $_.FullName.Substring($ScriptDir.Length + 1) }
@@ -55,5 +55,5 @@ foreach ($f in $files) {
     $lines += "$hash  $($f.Length.ToString().PadLeft(12))  $rel"
 }
 
-($lines -join "`n") + "`n" | Set-Content $OutFile -NoNewline -Encoding UTF8
+[IO.File]::WriteAllText($OutFile, ($lines -join "`n") + "`n", [Text.UTF8Encoding]::new($false))
 Write-Host "`nManifest written to: $OutFile"

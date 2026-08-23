@@ -21,12 +21,14 @@ param(
 $ErrorActionPreference = "Stop"
 
 $repoRoot = (Resolve-Path "$PSScriptRoot/..").Path
+. "$repoRoot\android\helpers\powershell_compat.ps1"
 . "$repoRoot\android\helpers\test_env.ps1"
 . "$repoRoot\android\helpers\bounded_extraction.ps1"
 . "$repoRoot\android\helpers\fingerprint_audio_results.ps1"
 . "$repoRoot\android\helpers\acoustid_title_match.ps1"
 . "$repoRoot\android\helpers\jsonc.ps1"
 
+Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $buildDir = Join-Path $repoRoot "android/tests/build"
@@ -398,7 +400,7 @@ function Extract-DirectoryAudio {
     foreach ($file in $files) {
         Register-ArchiveEntry -Length $file.Length -CompressedLength 0 -Name $file.FullName `
             -ContainerDeclaredBytes ([ref]$containerDeclaredBytes)
-        $relative = [System.IO.Path]::GetRelativePath($DirectoryPath, $file.FullName).Replace('\', '/')
+        $relative = (Get-CompatibleRelativePath -BasePath $DirectoryPath -TargetPath $file.FullName).Replace('\', '/')
         $sourcePath = if ($SourcePrefix) { "$SourcePrefix!$relative" } else { $relative }
         $ext = $file.Extension.ToLowerInvariant()
         if (Test-AudioName $file.Name) {
@@ -903,7 +905,7 @@ foreach ($zipFile in $zipFiles) {
         if (-not (Test-Path $fpStdout)) {
             throw "fingerprint_audio.exe produced no output"
         }
-        $fpData = @(Get-Content $fpStdout -Raw | ConvertFrom-Json)
+        $fpData = @(ConvertFrom-CompatibleJsonItems -Json (Get-Content $fpStdout -Raw))
         Remove-Item $fpStdout -ErrorAction SilentlyContinue
         if ($proc.ExitCode -ne 0) {
             throw "fingerprint_audio.exe failed with exit code $($proc.ExitCode)"

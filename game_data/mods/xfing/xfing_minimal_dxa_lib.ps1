@@ -1,5 +1,6 @@
 #!/usr/bin/env pwsh
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot '../../../android/helpers/powershell_compat.ps1')
 
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -563,16 +564,16 @@ function Read-XfingD1Pig {
             throw "D1 PIG bitmap $entryIndex has invalid dimensions ${width}x$heightByte"
         }
         $bitmapHeaders.Add([pscustomobject]@{
-            Index = $entryIndex + 1
-            Name = Get-XfingBitmapName -Name $rawName -DFlags $dflags
-            RawName = $rawName
-            DFlags = $dflags
-            Width = $width
-            Height = $heightByte
-            Flags = $flags
-            AvgColor = $avgColor
-            RelativeOffset = $relativeOffset
-        })
+                Index = $entryIndex + 1
+                Name = Get-XfingBitmapName -Name $rawName -DFlags $dflags
+                RawName = $rawName
+                DFlags = $dflags
+                Width = $width
+                Height = $heightByte
+                Flags = $flags
+                AvgColor = $avgColor
+                RelativeOffset = $relativeOffset
+            })
     }
 
     $soundHeaders = [System.Collections.Generic.List[object]]::new($soundCount)
@@ -585,11 +586,11 @@ function Read-XfingD1Pig {
             throw "D1 PIG sound $entryIndex has a negative length or offset"
         }
         $soundHeaders.Add([pscustomobject]@{
-            Name = $soundName
-            Length = $length
-            DataLength = $dataLength
-            RelativeOffset = $relativeOffset
-        })
+                Name = $soundName
+                Length = $length
+                DataLength = $dataLength
+                RelativeOffset = $relativeOffset
+            })
     }
 
     $dataBase = [long]$pigDataStart + $headerLength
@@ -626,18 +627,18 @@ function Read-XfingD1Pig {
             throw "D1 PIG exceeds the aggregate pixel budget"
         }
         $entries.Add([pscustomobject]@{
-            Name = $header.Name
-            RawName = $header.RawName
-            Index = $header.Index
-            Width = $header.Width
-            Height = $header.Height
-            Flags = $header.Flags
-            DFlags = $header.DFlags
-            AvgColor = $header.AvgColor
-            Offset = $absoluteOffset
-            Length = $payloadLength
-            Hash = Get-XfingSha256ForBytes -Bytes $bytes -Offset $absoluteOffset -Length $payloadLength
-        })
+                Name = $header.Name
+                RawName = $header.RawName
+                Index = $header.Index
+                Width = $header.Width
+                Height = $header.Height
+                Flags = $header.Flags
+                DFlags = $header.DFlags
+                AvgColor = $header.AvgColor
+                Offset = $absoluteOffset
+                Length = $payloadLength
+                Hash = Get-XfingSha256ForBytes -Bytes $bytes -Offset $absoluteOffset -Length $payloadLength
+            })
     }
     foreach ($header in $soundHeaders) {
         $absoluteOffset = $dataBase + $header.RelativeOffset
@@ -698,16 +699,16 @@ function Read-XfingD2Pig {
             throw "D2 PIG bitmap $entryIndex has unsupported dimensions ${width}x$height"
         }
         $headers.Add([pscustomobject]@{
-            Index = $entryIndex + 1
-            Name = Get-XfingBitmapName -Name $rawName -DFlags $dflags
-            RawName = $rawName
-            DFlags = $dflags
-            Width = $width
-            Height = $height
-            Flags = $flags
-            AvgColor = $avgColor
-            RelativeOffset = $relativeOffset
-        })
+                Index = $entryIndex + 1
+                Name = Get-XfingBitmapName -Name $rawName -DFlags $dflags
+                RawName = $rawName
+                DFlags = $dflags
+                Width = $width
+                Height = $height
+                Flags = $flags
+                AvgColor = $avgColor
+                RelativeOffset = $relativeOffset
+            })
     }
 
     $dataBase = $headerLength
@@ -743,18 +744,18 @@ function Read-XfingD2Pig {
             throw "D2 PIG exceeds the aggregate pixel budget"
         }
         $entries.Add([pscustomobject]@{
-            Name = $header.Name
-            RawName = $header.RawName
-            Index = $header.Index
-            Width = $header.Width
-            Height = $header.Height
-            Flags = $header.Flags
-            DFlags = $header.DFlags
-            AvgColor = $header.AvgColor
-            Offset = $absoluteOffset
-            Length = $payloadLength
-            Hash = Get-XfingSha256ForBytes -Bytes $bytes -Offset $absoluteOffset -Length $payloadLength
-        })
+                Name = $header.Name
+                RawName = $header.RawName
+                Index = $header.Index
+                Width = $header.Width
+                Height = $header.Height
+                Flags = $header.Flags
+                DFlags = $header.DFlags
+                AvgColor = $header.AvgColor
+                Offset = $absoluteOffset
+                Length = $payloadLength
+                Hash = Get-XfingSha256ForBytes -Bytes $bytes -Offset $absoluteOffset -Length $payloadLength
+            })
     }
 
     $reader.Dispose()
@@ -987,19 +988,19 @@ function Read-XfingHamSections {
         $slideU = Read-XfingInt16Value $bytes $position
         $slideV = Read-XfingInt16Value $bytes $position
         $textures.Add([pscustomobject]@{
-            Index = $textureIndex
-            Bitmap = $textureIndices[$textureIndex]
-            Flags = $flags
-            Pad0 = $pad0
-            Pad1 = $pad1
-            Pad2 = $pad2
-            Lighting = $lighting
-            Damage = $damage
-            Eclip = $eclip
-            Destroyed = $destroyed
-            SlideU = $slideU
-            SlideV = $slideV
-        })
+                Index = $textureIndex
+                Bitmap = $textureIndices[$textureIndex]
+                Flags = $flags
+                Pad0 = $pad0
+                Pad1 = $pad1
+                Pad2 = $pad2
+                Lighting = $lighting
+                Damage = $damage
+                Eclip = $eclip
+                Destroyed = $destroyed
+                SlideU = $slideU
+                SlideV = $slideV
+            })
     }
 
     $soundCount = Read-XfingInt32Value $bytes $position
@@ -1037,28 +1038,28 @@ function Read-XfingHamSections {
         $seg = Read-XfingInt32Value $bytes $position
         $side = Read-XfingInt32Value $bytes $position
         $eclips.Add([pscustomobject]@{
-            Index = $sectionIndex
-            PlayTime = $vclip.PlayTime
-            NumFrames = $vclip.NumFrames
-            FrameTime = $vclip.FrameTime
-            VclipFlags = $vclip.Flags
-            VclipSound = $vclip.Sound
-            Frames = @($vclip.Frames)
-            Light = $vclip.Light
-            TimeLeft = $timeLeft
-            FrameCount = $frameCount
-            ChangingWall = $changingWall
-            ChangingObject = $changingObject
-            Flags = $flags
-            CritClip = $critClip
-            DestBm = $destBm
-            DestVclip = $destVclip
-            DestEclip = $destEclip
-            DestSize = $destSize
-            Sound = $sound
-            Seg = $seg
-            Side = $side
-        })
+                Index = $sectionIndex
+                PlayTime = $vclip.PlayTime
+                NumFrames = $vclip.NumFrames
+                FrameTime = $vclip.FrameTime
+                VclipFlags = $vclip.Flags
+                VclipSound = $vclip.Sound
+                Frames = @($vclip.Frames)
+                Light = $vclip.Light
+                TimeLeft = $timeLeft
+                FrameCount = $frameCount
+                ChangingWall = $changingWall
+                ChangingObject = $changingObject
+                Flags = $flags
+                CritClip = $critClip
+                DestBm = $destBm
+                DestVclip = $destVclip
+                DestEclip = $destEclip
+                DestSize = $destSize
+                Sound = $sound
+                Seg = $seg
+                Side = $side
+            })
     }
 
     $wallCount = Read-XfingInt32Value $bytes $position
@@ -1080,16 +1081,16 @@ function Read-XfingHamSections {
         $position.Value += 1
         Assert-XfingSpan -Offset $position.Value -Length 1 -Limit $bytes.Length -Description "HAM wall clip padding"
         $walls.Add([pscustomobject]@{
-            Index = $sectionIndex
-            PlayTime = $playTime
-            NumFrames = $numFrames
-            Frames = @($frames)
-            OpenSound = $openSound
-            CloseSound = $closeSound
-            Flags = $flags
-            Filename = $filename
-            Pad = $pad
-        })
+                Index = $sectionIndex
+                PlayTime = $playTime
+                NumFrames = $numFrames
+                Frames = @($frames)
+                OpenSound = $openSound
+                CloseSound = $closeSound
+                Flags = $flags
+                Filename = $filename
+                Pad = $pad
+            })
     }
 
     return [pscustomobject]@{
@@ -1402,24 +1403,24 @@ function Read-XfingD1LevelSurfaces {
                     $uvls = [System.Collections.Generic.List[object]]::new(4)
                     for ($uvlIndex = 0; $uvlIndex -lt 4; $uvlIndex++) {
                         $uvls.Add([pscustomobject]@{
-                            u = $reader.ReadInt16()
-                            v = $reader.ReadInt16()
-                            l = $reader.ReadUInt16()
-                        })
+                                u = $reader.ReadInt16()
+                                v = $reader.ReadInt16()
+                                l = $reader.ReadUInt16()
+                            })
                     }
                     $rows.Add([pscustomobject]@{
-                        segment = $segment
-                        side = $side
-                        child = $children[$side]
-                        wall = $walls[$side]
-                        rawTmap1 = $raw1
-                        tmap1 = $raw1 -band 0x7fff
-                        hasTmap2 = $hasTmap2
-                        rawTmap2 = $raw2
-                        tmap2 = $raw2 -band 0x3fff
-                        orient = $raw2 -band 0xc000
-                        uvls = @($uvls)
-                    })
+                            segment = $segment
+                            side = $side
+                            child = $children[$side]
+                            wall = $walls[$side]
+                            rawTmap1 = $raw1
+                            tmap1 = $raw1 -band 0x7fff
+                            hasTmap2 = $hasTmap2
+                            rawTmap2 = $raw2
+                            tmap2 = $raw2 -band 0x3fff
+                            orient = $raw2 -band 0xc000
+                            uvls = @($uvls)
+                        })
                 }
             }
         }
@@ -1492,7 +1493,7 @@ function Write-XfingJsonFile {
     if (-not (Test-Path -LiteralPath $parent)) {
         New-Item -ItemType Directory -Path $parent | Out-Null
     }
-    $Value | ConvertTo-Json -Depth $Depth | Set-Content -LiteralPath $Path -Encoding utf8
+    [IO.File]::WriteAllText($Path, ($Value | ConvertTo-Json -Depth $Depth) + "`n", [Text.UTF8Encoding]::new($false))
 }
 
 function New-XfingDxaFromDirectory {
@@ -1508,7 +1509,7 @@ function New-XfingDxaFromDirectory {
     try {
         $files = Get-ChildItem -LiteralPath $SourceDir -Recurse -File | Sort-Object FullName
         foreach ($file in $files) {
-            $relative = [System.IO.Path]::GetRelativePath($SourceDir, $file.FullName).Replace('\', '/')
+            $relative = (Get-CompatibleRelativePath -BasePath $SourceDir -TargetPath $file.FullName).Replace('\', '/')
             [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
                 $archive,
                 $file.FullName,

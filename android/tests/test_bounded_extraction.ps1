@@ -63,6 +63,7 @@ function Assert-RejectedArchive {
     Write-Host "PASS: rejected $Label"
 }
 
+Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 New-Item -ItemType Directory -Path $testRoot | Out-Null
 try {

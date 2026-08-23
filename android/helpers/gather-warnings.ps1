@@ -77,7 +77,7 @@ foreach ($line in $output) {
     }
 }
 
-($header + $warnings) | Set-Content $logFile -Encoding UTF8
+[IO.File]::WriteAllText($logFile, (($header + $warnings) -join [Environment]::NewLine) + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
 
 $nativeCount = ($warnings | Where-Object { $_ -match ':\d+:\d+: warning:' -or $_ -match '\[-W' }).Count
 $kotlinCount = ($warnings | Where-Object { $_ -match 'w: ' -and $_ -match '\.kt:' }).Count

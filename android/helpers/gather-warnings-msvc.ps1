@@ -77,7 +77,7 @@ if (-not $D1Only) {
     $allWarnings += ""
 }
 
-($header + $allWarnings) | Set-Content $logFile -Encoding UTF8
+[IO.File]::WriteAllText($logFile, (($header + $allWarnings) -join [Environment]::NewLine) + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
 
 Write-Host ""
 Write-Host "Written to: $logFile"

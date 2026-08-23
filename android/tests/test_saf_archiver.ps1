@@ -419,7 +419,7 @@ if ($RejectIncompleteOnly) {
 # over the visible generation. This matches the production publication contract.
 $manifestTmp = "/data/local/tmp/.saf_manifest.json"
 $localManifestTmp = Join-Path ([System.IO.Path]::GetTempPath()) "saf_manifest_test.json"
-$manifestJson | Set-Content -Path $localManifestTmp -NoNewline -Encoding UTF8
+[IO.File]::WriteAllText($localManifestTmp, $manifestJson, [Text.UTF8Encoding]::new($false))
 Adb push $localManifestTmp $manifestTmp | Out-Null
 $manifestStage = "$GAME_DATA_DIR/.saf_manifest.json.$([Guid]::NewGuid().ToString('N')).tmp"
 Adb shell "run-as $PACKAGE cp $manifestTmp $manifestStage" | Out-Null

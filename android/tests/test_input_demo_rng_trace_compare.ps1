@@ -14,11 +14,12 @@ function Write-RngTrace {
         [int]$SecondResult
     )
 
-    @(
+    $lines = @(
         '{"type":"meta","version":1,"events":2,"truncated":false}',
         '{"type":"rand","seq":0,"frame":10,"gt":3276,"call_count":1,"stream":0,"ctx_obj":42,"ctx_sig":9001,"ctx_id":7,"state_before":100,"state_after":200,"result":123,"line":111,"file":"ai.c","func":"do_ai_frame"}',
         "{`"type`":`"rand`",`"seq`":1,`"frame`":10,`"gt`":3276,`"call_count`":2,`"stream`":0,`"ctx_obj`":42,`"ctx_sig`":9001,`"ctx_id`":7,`"state_before`":200,`"state_after`":300,`"result`":$SecondResult,`"line`":112,`"file`":`"ai.c`",`"func`":`"do_ai_frame`"}"
-    ) | Set-Content -LiteralPath $Path -Encoding utf8NoBOM
+    )
+    [IO.File]::WriteAllText($Path, ($lines -join "`n") + "`n", [Text.UTF8Encoding]::new($false))
 }
 
 function Invoke-RngCompareFixture {

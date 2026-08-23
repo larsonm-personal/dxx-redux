@@ -1357,9 +1357,8 @@ function Add-ReportSidecarLog {
         New-Item -Path $logDir -ItemType Directory -Force | Out-Null
     }
 
-    "" | Out-File -FilePath $LogFile -Append -Encoding utf8
-    "===== Sidecar log: $($sidecarItem.Name) =====" | Out-File -FilePath $LogFile -Append -Encoding utf8
-    $sidecarText | Out-File -FilePath $LogFile -Append -Encoding utf8
+    $sidecarSection = [Environment]::NewLine + "===== Sidecar log: $($sidecarItem.Name) =====" + [Environment]::NewLine + $sidecarText + [Environment]::NewLine
+    [IO.File]::AppendAllText($LogFile, $sidecarSection, [Text.UTF8Encoding]::new($false))
     return $sidecarLog
 }
 
@@ -2031,7 +2030,7 @@ if ($failCount -gt 0 -or $timeoutCount -gt 0) {
     }
 }
 
-$md -join "`n" | Set-Content -Path $reportFile -Encoding utf8
+[IO.File]::WriteAllText($reportFile, ($md -join "`n") + "`n", [Text.UTF8Encoding]::new($false))
 Write-Host "  Report: $reportFile" -ForegroundColor Cyan
 Write-Host ""
 

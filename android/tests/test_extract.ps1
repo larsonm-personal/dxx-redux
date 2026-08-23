@@ -37,6 +37,7 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'extract_regression_spec_helpers.ps1')
 . (Join-Path $PSScriptRoot 'extract_regression_recovery.ps1')
 . (Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers') 'test_host_platform.ps1')
+. (Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers') 'normalized_json_text.ps1')
 
 trap {
     if (Test-ExtractRegressionAdbTransportFailure -Reason $_.Exception.Message) {
@@ -157,9 +158,7 @@ function Adb-RunAs {
     $psi = [System.Diagnostics.ProcessStartInfo]::new()
     $psi.FileName = $ADB
     $runAsCmd = "cd /data/data/$PACKAGE && $Cmd"
-    foreach ($arg in @('shell', 'run-as', $PACKAGE, 'sh', '-c', $runAsCmd)) {
-        $psi.ArgumentList.Add($arg)
-    }
+    Set-CompatibleProcessArguments -StartInfo $psi -Arguments @('shell', 'run-as', $PACKAGE, 'sh', '-c', $runAsCmd)
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true
     $psi.UseShellExecute = $false
@@ -638,9 +637,7 @@ function Invoke-AdbRaw {
 
     $psi = [System.Diagnostics.ProcessStartInfo]::new()
     $psi.FileName = $ADB
-    foreach ($arg in $Arguments) {
-        $psi.ArgumentList.Add($arg)
-    }
+    Set-CompatibleProcessArguments -StartInfo $psi -Arguments $Arguments
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true
     $psi.RedirectStandardInput = [bool]$InputFile

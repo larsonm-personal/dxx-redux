@@ -362,7 +362,7 @@ foreach ($specPath in $specs) {
             $logcat = @(Adb -AdbArgs @('logcat', '-d', '-v', 'time')) -join "`n"
             [System.IO.File]::WriteAllText($logcatPath, $logcat + "`n", [System.Text.UTF8Encoding]::new($false))
         } catch {
-            Add-Content -LiteralPath $testLogPath -Value "Could not save failed-test logcat: $_" -Encoding utf8
+            [IO.File]::AppendAllText($testLogPath, "Could not save failed-test logcat: $_" + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
             $logcatPath = ''
         }
     }

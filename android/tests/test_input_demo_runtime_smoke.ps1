@@ -1,4 +1,7 @@
 #!/usr/bin/env pwsh
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseCompatibleCommands', 'New-Fixture/GameName', Justification = 'New-Fixture is a local function')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseCompatibleCommands', 'New-Fixture/Config', Justification = 'New-Fixture is a local function')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseCompatibleCommands', 'New-Fixture/FixtureDir', Justification = 'New-Fixture is a local function')]
 param(
     [ValidateSet('both', 'd1', 'd2')]
     [string]$Game = 'both',

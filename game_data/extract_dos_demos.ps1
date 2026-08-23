@@ -14,6 +14,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $ScriptDir = $PSScriptRoot

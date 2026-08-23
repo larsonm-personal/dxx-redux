@@ -2,6 +2,7 @@
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+. (Join-Path $repoRoot 'android/helpers/powershell_compat.ps1')
 $metadataDir = Join-Path $repoRoot "game_data\mission_files"
 
 function Assert-LevelName {
@@ -11,7 +12,7 @@ function Assert-LevelName {
         [Parameter(Mandatory = $true)][string]$Expected
     )
 
-    $missions = @(Get-Content -LiteralPath (Join-Path $metadataDir $MetadataFile) -Raw | ConvertFrom-Json)
+    $missions = @(ConvertFrom-CompatibleJsonItems -Json (Get-Content -LiteralPath (Join-Path $metadataDir $MetadataFile) -Raw))
     $levels = @($missions | ForEach-Object { @($_.levels) })
     $level = @($levels | Where-Object { $_.level_num -eq $LevelNum } | Select-Object -First 1)
     if ($level.Count -ne 1) {

@@ -19,7 +19,7 @@ function Write-FixtureTrace {
     $slotHashes = @(0) * 32
     $slotCounts[5] = 2
     $slotHashes[5] = $ObjectSlotHash
-    @{
+    $json = @{
         type = 'frame_state'
         f = 0
         diag = [ordered]@{
@@ -34,7 +34,8 @@ function Write-FixtureTrace {
             segment_object_link_error_count = $SegmentLinkErrorCount
         }
         state = @{}
-    } | ConvertTo-Json -Compress -Depth 8 | Set-Content -LiteralPath $Path -Encoding utf8NoBOM
+    } | ConvertTo-Json -Compress -Depth 8
+    [IO.File]::WriteAllText($Path, $json, [Text.UTF8Encoding]::new($false))
 }
 
 function Invoke-CompareFixture {

@@ -23,16 +23,17 @@ param(
 $ErrorActionPreference = "Stop"
 
 $ScriptDir = $PSScriptRoot
-$RepoRoot  = Split-Path $ScriptDir
+$RepoRoot = Split-Path $ScriptDir
 
 # Resolve cmake and other tool paths
 . "$RepoRoot\android\helpers\test_env.ps1"
+. "$RepoRoot\android\helpers\powershell_compat.ps1"
 
-$SrcDir    = Join-Path $RepoRoot "android\app\src\main\cpp\extract"
-$BuildDir  = Join-Path $RepoRoot "android\tests\build"
-$CdImgDir  = if ($CdImageDir) { $CdImageDir } else { Join-Path $ScriptDir "CD images" }
-$ExeName   = "fingerprint_cd.exe"
-$ExePath   = if ($FingerprintExePath) { $FingerprintExePath } else { Join-Path $BuildDir "Release\$ExeName" }
+$SrcDir = Join-Path $RepoRoot "android\app\src\main\cpp\extract"
+$BuildDir = Join-Path $RepoRoot "android\tests\build"
+$CdImgDir = if ($CdImageDir) { $CdImageDir } else { Join-Path $ScriptDir "CD images" }
+$ExeName = "fingerprint_cd.exe"
+$ExePath = if ($FingerprintExePath) { $FingerprintExePath } else { Join-Path $BuildDir "Release\$ExeName" }
 
 function Get-CueTrackDefinitions {
     param([Parameter(Mandatory)][string]$Path)
@@ -94,7 +95,7 @@ function Read-ValidatedDiscFingerprintManifest {
     if (-not $raw.TrimStart().StartsWith('[')) {
         throw 'Fingerprint manifest root must be a JSON array'
     }
-    $results = @($raw | ConvertFrom-Json)
+    $results = @(ConvertFrom-CompatibleJsonItems -Json $raw)
     Assert-DiscFingerprintResults -ExpectedTracks $ExpectedTracks -Results $results
     return $results
 }
@@ -106,12 +107,17 @@ function Write-AtomicFingerprintManifest {
     )
 
     $tempPath = Join-Path (Split-Path -Parent $Path) ".$(Split-Path -Leaf $Path).$([Guid]::NewGuid().ToString('N')).tmp"
+    $backupPath = "$tempPath.bak"
     try {
         $json = (ConvertTo-Json -InputObject @($Results) -Depth 10) -replace "`r`n", "`n"
         [IO.File]::WriteAllText($tempPath, $json, [Text.UTF8Encoding]::new($false))
-        [IO.File]::Move($tempPath, $Path, $true)
+        if ([IO.File]::Exists($Path)) {
+            [IO.File]::Replace($tempPath, $Path, $backupPath)
+        } else {
+            [IO.File]::Move($tempPath, $Path)
+        }
     } finally {
-        Remove-Item -LiteralPath $tempPath -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $tempPath, $backupPath -Force -ErrorAction SilentlyContinue
     }
 }
 
@@ -232,11 +238,11 @@ if (-not (Test-Path $CdImgDir)) {
     exit 1
 }
 
-$folders   = Get-ChildItem -Path $CdImgDir -Directory | Sort-Object Name
+$folders = Get-ChildItem -Path $CdImgDir -Directory | Sort-Object Name
 if ($FolderNames) { $folders = @($folders | Where-Object Name -in $FolderNames) }
 $successes = @()
-$failures  = @()
-$skipped   = @()
+$failures = @()
+$skipped = @()
 
 foreach ($folder in $folders) {
     $name = $folder.Name

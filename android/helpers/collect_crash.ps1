@@ -41,7 +41,15 @@ adb logcat -c
 $logcatFile = Join-Path $reportDir "crash_logcat.txt"
 $logcatJob = Start-Job -ScriptBlock {
     param($outFile)
-    & adb logcat 2>&1 | Out-File $outFile -Encoding utf8
+    $writer = [IO.StreamWriter]::new($outFile, $false, [Text.UTF8Encoding]::new($false))
+    try {
+        & adb logcat 2>&1 | ForEach-Object {
+            $writer.WriteLine([string]$_)
+            $writer.Flush()
+        }
+    } finally {
+        $writer.Dispose()
+    }
 } -ArgumentList $logcatFile
 
 Write-Host "[2/5] Logcat capture started" -ForegroundColor Green
@@ -63,7 +71,8 @@ Write-Host "[3/5] Stopping logcat capture..." -ForegroundColor Yellow
 Stop-Job $logcatJob -ErrorAction SilentlyContinue
 Remove-Job $logcatJob -Force -ErrorAction SilentlyContinue
 # Also grab a fresh dump in case the job missed the tail
-adb logcat -d >> $logcatFile 2>$null
+$logcatTail = adb logcat -d 2>$null
+[IO.File]::AppendAllText($logcatFile, ($logcatTail -join [Environment]::NewLine) + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
 
 # Step 4: Collect tombstone
 Write-Host "[4/5] Collecting crash data..." -ForegroundColor Yellow
@@ -73,7 +82,8 @@ $tombFile = Join-Path $reportDir "crash_tombstone.txt"
 $latestTomb = adb shell "ls -t /data/tombstones/ 2>/dev/null | head -1" 2>$null | Out-String
 $latestTomb = $latestTomb.Trim()
 if ($latestTomb) {
-    adb shell "cat /data/tombstones/$latestTomb" 2>$null | Out-File $tombFile -Encoding utf8
+    $tombstoneText = adb shell "cat /data/tombstones/$latestTomb" 2>$null
+    [IO.File]::WriteAllText($tombFile, ($tombstoneText -join [Environment]::NewLine) + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
     Write-Host "  Tombstone: $latestTomb" -ForegroundColor Green
 } else {
     Write-Host "  No tombstone found (try: adb bugreport temp\crash_report\bugreport.zip)" -ForegroundColor Yellow
@@ -88,17 +98,20 @@ $debugLogList = adb shell "run-as $PACKAGE ls files/debuglogs/" 2>$null
 if ($debugLogList) {
     foreach ($logFile in ($debugLogList -split "`n" | Where-Object { $_.Trim() })) {
         $trimmed = $logFile.Trim()
-        adb shell "run-as $PACKAGE cat files/debuglogs/$trimmed" 2>$null | Out-File (Join-Path $debugLogDir $trimmed) -Encoding utf8
+        $debugLogText = adb shell "run-as $PACKAGE cat files/debuglogs/$trimmed" 2>$null
+        [IO.File]::WriteAllText((Join-Path $debugLogDir $trimmed), ($debugLogText -join [Environment]::NewLine) + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
     }
 }
 
 # Introspection dump
 $introFile = Join-Path $reportDir "crash_introspect.json"
-adb shell "run-as $PACKAGE cat files/introspect.json" 2>$null | Out-File $introFile -Encoding utf8
+$introspectionText = adb shell "run-as $PACKAGE cat files/introspect.json" 2>$null
+[IO.File]::WriteAllText($introFile, ($introspectionText -join [Environment]::NewLine) + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
 
 # Automation log (if present)
 $autoLogFile = Join-Path $reportDir "crash_automation_log.jsonl"
-adb shell "run-as $PACKAGE cat files/automation_log.jsonl" 2>$null | Out-File $autoLogFile -Encoding utf8
+$automationLogText = adb shell "run-as $PACKAGE cat files/automation_log.jsonl" 2>$null
+[IO.File]::WriteAllText($autoLogFile, ($automationLogText -join [Environment]::NewLine) + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
 
 # Step 5: Record metadata
 Write-Host "[5/5] Recording metadata..." -ForegroundColor Yellow
@@ -107,14 +120,15 @@ $commitHash = git rev-parse --short HEAD 2>$null
 $commitFull = git rev-parse HEAD 2>$null
 $branch = git branch --show-current 2>$null
 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-@"
+$metadataText = @"
 Crash report collected: $timestamp
 Git commit: $commitHash ($commitFull)
 Git branch: $branch
 Emulator: $(adb shell getprop ro.product.model 2>$null)
 Android: $(adb shell getprop ro.build.version.release 2>$null) (API $(adb shell getprop ro.build.version.sdk 2>$null))
 ABI: $(adb shell getprop ro.product.cpu.abi 2>$null)
-"@ | Out-File $metaFile -Encoding utf8
+"@
+[IO.File]::WriteAllText($metaFile, $metadataText + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
 
 # Summary
 Write-Host ""

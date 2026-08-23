@@ -32,6 +32,7 @@ function Stage-MissionZip {
     $missionsDir = Join-Path $StageDir "missions"
     New-Item -ItemType Directory -Force -Path $missionsDir | Out-Null
 
+    Add-Type -AssemblyName System.IO.Compression
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $zip = [IO.Compression.ZipFile]::OpenRead($ZipPath)
     try {
@@ -78,8 +79,10 @@ if (-not (Test-Path -LiteralPath $exePath -PathType Leaf)) {
 Stage-MissionZip -ZipPath $zipPath -StageDir $stageDir
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $outPath) | Out-Null
 
-& $exePath -hogdir $dataPath -extra-dir $stageDir -mission $MissionName -coop-starts-json-out $outPath > $logPath 2>&1
-if ($LASTEXITCODE -ne 0) {
+$logLines = & $exePath -hogdir $dataPath -extra-dir $stageDir -mission $MissionName -coop-starts-json-out $outPath 2>&1
+$dumpExitCode = $LASTEXITCODE
+[IO.File]::WriteAllText($logPath, ($logLines -join [Environment]::NewLine) + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
+if ($dumpExitCode -ne 0) {
     Get-Content -LiteralPath $logPath -ErrorAction SilentlyContinue | Select-Object -Last 80 | ForEach-Object {
         Write-Host $_
     }

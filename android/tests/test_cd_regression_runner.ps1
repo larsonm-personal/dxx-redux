@@ -100,11 +100,12 @@ Remove-Item -LiteralPath $manifestTemp -Recurse -Force -ErrorAction SilentlyCont
 New-Item -ItemType Directory -Path $manifestTemp -Force | Out-Null
 try {
     $cue = Join-Path $manifestTemp 'disc.cue'
-    @'
+    $cueText = @'
 FILE "disc.bin" BINARY
   TRACK 01 MODE1/2352
   TRACK 02 AUDIO
-'@ | Set-Content -LiteralPath $cue -Encoding UTF8
+'@
+    [IO.File]::WriteAllText($cue, $cueText + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
     $valid = @(
         [pscustomobject]@{ track = 2; type = 'audio'; sha1 = ('b' * 40) },
         [pscustomobject]@{ track = 1; type = 'data'; sha1 = ('a' * 40) }

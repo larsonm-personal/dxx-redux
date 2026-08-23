@@ -10,26 +10,29 @@ try {
     $olderReport = Join-Path $tempRoot 'report_20260722_010000.md'
     $newerReport = Join-Path $tempRoot 'report_20260723_010000.md'
     $newestReport = Join-Path $tempRoot 'report_20260724_010000.md'
-    @'
+    $olderText = @'
 | Status | Time | Test | Type |
 |--------|------|------|------|
 | PASS | 09:59 | stale_test | ps1 |
 | PASS | 00:59 | minute_test | jsonc |
-'@ | Set-Content -LiteralPath $olderReport -Encoding utf8
-    @'
+'@
+    [IO.File]::WriteAllText($olderReport, $olderText + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
+    $newerText = @'
 | Status | Time | Test | Type |
 |--------|------|------|------|
 | PASS | 00:09 | short_test | ps1 |
 | FAIL | 01:09 | minute_test | jsonc |
 | TIMEOUT | 01:02:03 | hour_test | ps1 |
 | SKIP | -- | skipped_test | ps1 |
-'@ | Set-Content -LiteralPath $newerReport -Encoding utf8
-    @'
+'@
+    [IO.File]::WriteAllText($newerReport, $newerText + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
+    $newestText = @'
 | Status | Time | Test | Type |
 |--------|------|------|------|
 | PASS | 00:19 | short_test | ps1 |
 | PASS | 20:09 | minute_test | jsonc |
-'@ | Set-Content -LiteralPath $newestReport -Encoding utf8
+'@
+    [IO.File]::WriteAllText($newestReport, $newestText + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
     (Get-Item -LiteralPath $olderReport).LastWriteTimeUtc = (Get-Date).AddMinutes(-2).ToUniversalTime()
     (Get-Item -LiteralPath $newerReport).LastWriteTimeUtc = (Get-Date).AddMinutes(-1).ToUniversalTime()
     (Get-Item -LiteralPath $newestReport).LastWriteTimeUtc = (Get-Date).ToUniversalTime()

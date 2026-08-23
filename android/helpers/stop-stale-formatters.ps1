@@ -141,7 +141,7 @@ if (-not $Kill) {
 
 foreach ($target in $targets) {
     Write-Host "Stopping PID $($target.ProcessId)"
-    if ($IsWindows -and (Get-Command taskkill -ErrorAction SilentlyContinue)) {
+    if ($env:OS -eq 'Windows_NT' -and (Get-Command taskkill -ErrorAction SilentlyContinue)) {
         & taskkill /PID $target.ProcessId /T /F | Out-Null
     } else {
         Stop-ProcessTree -RootProcessId $target.ProcessId

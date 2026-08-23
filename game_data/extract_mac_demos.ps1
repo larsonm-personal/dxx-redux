@@ -203,7 +203,7 @@ if ($WriteOracle) {
         Write-Warning "No oracle archives were extracted, leaving $OracleFile unchanged"
     } else {
         $oracle = [PSCustomObject]@{ archives = @($OracleArchives) }
-        $oracle | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $OracleFile -NoNewline -Encoding utf8
+        [IO.File]::WriteAllText($OracleFile, ($oracle | ConvertTo-Json -Depth 6), [Text.UTF8Encoding]::new($false))
         Write-Host "Wrote StuffIt oracle hashes -> $OracleFile" -ForegroundColor Green
     }
 }

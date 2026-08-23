@@ -42,7 +42,7 @@ $EMU2 = "emulator-$($emus[1].Groups[1].Value)"
 
 $script:LogFile = Join-RegressionPath $REPO_ROOT "temp" "lan_discovery_test_log.txt"
 try { if (Test-Path $script:LogFile) { Remove-Item $script:LogFile -Force -ErrorAction SilentlyContinue } } catch { }
-"" | Set-Content -Path $script:LogFile -Encoding utf8 -ErrorAction SilentlyContinue
+try { [IO.File]::WriteAllText($script:LogFile, [Environment]::NewLine, [Text.UTF8Encoding]::new($false)) } catch {}
 
 $found = $false
 

@@ -17,17 +17,17 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$ScriptDir    = $PSScriptRoot
-$RepoRoot     = Split-Path $ScriptDir
+$ScriptDir = $PSScriptRoot
+$RepoRoot = Split-Path $ScriptDir
 
 # Resolve cmake and other tool paths
 . "$RepoRoot\android\helpers\test_env.ps1"
 . "$RepoRoot\android\helpers\bounded_extraction.ps1"
 
-$SrcDir       = Join-Path $RepoRoot "android\app\src\main\cpp\extract"
-$BuildDir     = Join-Path $RepoRoot "android\tests\build"
-$GogDir       = Join-Path $ScriptDir "gog installers"
-$ExePath      = $null
+$SrcDir = Join-Path $RepoRoot "android\app\src\main\cpp\extract"
+$BuildDir = Join-Path $RepoRoot "android\tests\build"
+$GogDir = Join-Path $ScriptDir "gog installers"
+$ExePath = $null
 $KnownVerFile = Join-Path $RepoRoot "android\app\src\main\assets\known_versions.jsonc"
 
 function Resolve-ExtractTool {
@@ -131,9 +131,9 @@ if ($basenameCollisions.Count -gt 0) {
 }
 
 $totalExtracted = 0
-$totalErrors    = 0
-$totalUnknown   = 0
-$allResults     = @()
+$totalErrors = 0
+$totalUnknown = 0
+$allResults = @()
 
 foreach ($installer in $installers) {
     $name = $installer.Name
@@ -242,5 +242,5 @@ if ($totalUnknown -gt 0) {
 # -- Write detailed results to JSON --------------------------------------------
 
 $outJson = Join-Path $ScriptDir "gog_extraction_results.json"
-$allResults | ConvertTo-Json -Depth 5 | Set-Content $outJson -Encoding UTF8
+[IO.File]::WriteAllText($outJson, ($allResults | ConvertTo-Json -Depth 5) + "`n", [Text.UTF8Encoding]::new($false))
 Write-Host "`nResults saved to: $outJson"

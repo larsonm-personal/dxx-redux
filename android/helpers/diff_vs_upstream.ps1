@@ -34,7 +34,7 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-$numstat | Set-Content -Encoding utf8 $numstatPath
+[IO.File]::WriteAllText($numstatPath, ($numstat -join [Environment]::NewLine) + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
 
 $rows = foreach ($line in $numstat) {
     if ([string]::IsNullOrWhiteSpace($line)) { continue }
@@ -49,7 +49,7 @@ $rows = foreach ($line in $numstat) {
 }
 
 $sorted = $rows | Sort-Object Total -Descending
-$sorted | Format-Table -AutoSize | Out-String | Set-Content -Encoding utf8 $sortedPath
+[IO.File]::WriteAllText($sortedPath, ($sorted | Format-Table -AutoSize | Out-String), [Text.UTF8Encoding]::new($false))
 
 $totalAdded = ($rows | Measure-Object Added   -Sum).Sum
 $totalRemoved = ($rows | Measure-Object Removed -Sum).Sum
@@ -68,7 +68,7 @@ $summary += "  -removed: $totalRemoved"
 $summary += ""
 $summary += "Top $Top by total churn:"
 $summary += ($sorted | Select-Object -First $Top | Format-Table Added, Removed, Total, Path -AutoSize | Out-String).TrimEnd()
-$summary | Set-Content -Encoding utf8 $summaryPath
+[IO.File]::WriteAllText($summaryPath, ($summary -join [Environment]::NewLine) + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
 
 Write-Host ""
 Write-Host "Wrote:"
@@ -81,7 +81,8 @@ Get-Content $summaryPath
 if ($ShowContent) {
     $dumpPath = Join-Path $tempDir "d1d2_diff_top$Top.patch"
     $topPaths = $sorted | Select-Object -First $Top -ExpandProperty Path
-    git -C $repoRoot diff $Base -- $topPaths | Set-Content -Encoding utf8 $dumpPath
+    $patchText = git -C $repoRoot diff $Base -- $topPaths
+    [IO.File]::WriteAllText($dumpPath, ($patchText -join [Environment]::NewLine) + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
     Write-Host ""
     Write-Host "Wrote full patch for top $Top files: $dumpPath"
 }

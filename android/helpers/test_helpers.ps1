@@ -23,6 +23,8 @@
 . (Join-Path $PSScriptRoot "test_host_platform.ps1")
 . (Join-Path $PSScriptRoot "standard_game_data.ps1")
 . (Join-Path $PSScriptRoot "jsonc.ps1")
+. (Join-Path $PSScriptRoot "normalized_json_text.ps1")
+. (Join-Path $PSScriptRoot "powershell_compat.ps1")
 
 $script:ANDROID_ROOT = Split-Path $PSScriptRoot
 $script:REPO_ROOT = Split-Path $script:ANDROID_ROOT
@@ -401,7 +403,7 @@ function Write-Status {
     Write-Host $line -ForegroundColor $Color
     $logFileVar = Get-Variable -Name LogFile -Scope Script -ErrorAction SilentlyContinue
     if ($logFileVar -and $logFileVar.Value) {
-        $line | Add-Content -Path $logFileVar.Value -Encoding utf8
+        [IO.File]::AppendAllText($logFileVar.Value, $line + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
     }
 }
 
@@ -2134,7 +2136,7 @@ function Resolve-TestScript {
     $tempDir = Join-Path (Split-Path $ScriptPath) ".resolved"
     if (-not (Test-Path $tempDir)) { New-Item -ItemType Directory -Path $tempDir -Force | Out-Null }
     $tempFile = Join-Path $tempDir ([System.IO.Path]::GetFileName($ScriptPath))
-    Set-Content -Path $tempFile -Value $jsonOut -Encoding UTF8
+    [IO.File]::WriteAllText($tempFile, $jsonOut + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
     return $tempFile
 }
 
@@ -2286,9 +2288,7 @@ function Start-ManagedEmulatorProcess {
             $processInfo.FileName = $script:EMULATOR_EXE
             $processInfo.UseShellExecute = $true
             $processInfo.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
-            foreach ($argument in $arguments) {
-                $null = $processInfo.ArgumentList.Add($argument)
-            }
+            Set-CompatibleProcessArguments -StartInfo $processInfo -Arguments $arguments
 
             $process = [System.Diagnostics.Process]::Start($processInfo)
             if ($process) {

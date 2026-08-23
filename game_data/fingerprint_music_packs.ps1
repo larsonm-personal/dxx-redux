@@ -28,6 +28,7 @@ $repoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 . "$repoRoot\android\helpers\fingerprint_audio_results.ps1"
 . "$repoRoot\android\helpers\acoustid_title_match.ps1"
 . "$repoRoot\android\helpers\atomic_text_file.ps1"
+. "$repoRoot\android\helpers\powershell_compat.ps1"
 . "$repoRoot\android\helpers\fingerprint_source_identity.ps1"
 
 $musicDir = Join-Path $PSScriptRoot "music"
@@ -351,7 +352,7 @@ foreach ($archive in $archives) {
         Write-Warning "  fingerprint_audio.exe failed"
         continue
     }
-    $fpData = @(Get-Content -LiteralPath $fpStdout -Raw | ConvertFrom-Json)
+    $fpData = @(ConvertFrom-CompatibleJsonItems -Json (Get-Content -LiteralPath $fpStdout -Raw))
     Remove-Item $fpStdout -ErrorAction SilentlyContinue
     Assert-DxxFingerprintAudioResults -ExpectedNames $expectedAudioNames -Results $fpData
 

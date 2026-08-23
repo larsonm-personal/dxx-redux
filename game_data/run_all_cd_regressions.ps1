@@ -50,7 +50,7 @@ function New-CdRegressionSampleList {
             Sort-Object FullName | ForEach-Object {
                 $spec = Read-JsoncFile $_.FullName
                 [pscustomobject]@{
-                    Name = [IO.Path]::GetRelativePath($RepoRoot, $_.FullName).Replace('\', '/')
+                    Name = (Get-CompatibleRelativePath -BasePath $RepoRoot -TargetPath $_.FullName).Replace('\', '/')
                     Path = $_.FullName
                     Type = if ($spec.source_type) { [string]$spec.source_type } else { 'unknown' }
                 }

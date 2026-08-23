@@ -12,6 +12,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+. (Join-Path $PSScriptRoot "powershell_compat.ps1")
 $ledgerFullPath = Join-Path $repoRoot $LedgerPath
 $ledgerDirectory = Split-Path -Parent $ledgerFullPath
 $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
@@ -67,7 +68,7 @@ foreach ($report in $resolvedReports) {
         continue
     }
 
-$relativeReport = (Get-CompatibleRelativePath -BasePath $repoRoot -TargetPath $report).Replace('\', '/')
+    $relativeReport = (Get-CompatibleRelativePath -BasePath $repoRoot -TargetPath $report).Replace('\', '/')
     $normalizedReport = $reportText.TrimEnd("`r", "`n")
     $block = @"
 

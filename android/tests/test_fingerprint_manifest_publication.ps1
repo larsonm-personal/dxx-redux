@@ -5,8 +5,11 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $testRoot = Join-Path $repoRoot 'android\temp\fingerprint_manifest_publication_test'
 $workflow = Join-Path $repoRoot 'game_data\fingerprint_disc_tracks.ps1'
 $missionWorkflow = Join-Path $repoRoot 'game_data\fingerprint_mission_zip_music.ps1'
+$powershellPath = (Get-Process -Id $PID).Path
 . (Join-Path $repoRoot 'android\helpers\jsonc.ps1')
 . (Join-Path $repoRoot 'android\helpers\atomic_text_file.ps1')
+. (Join-Path $repoRoot 'android\helpers\powershell_compat.ps1')
+Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 function Assert-True {
@@ -25,7 +28,7 @@ function Invoke-Workflow {
         '-FingerprintExePath', $fakeCli
     )
     if ($Force) { $arguments += '-Force' }
-    & (Join-Path $PSHOME 'pwsh.exe') @arguments | Out-Null
+    & $powershellPath @arguments | Out-Null
     return $LASTEXITCODE
 }
 
@@ -33,7 +36,7 @@ function Invoke-MissionWorkflow {
     param([string]$Mode)
 
     $env:DXX_FINGERPRINT_MANIFEST_TEST_MODE = $Mode
-    $output = & (Join-Path $PSHOME 'pwsh.exe') -NoProfile -File $missionWorkflow `
+    $output = & $powershellPath -NoProfile -File $missionWorkflow `
         -SkipBuild -SkipAcoustId -MissionDir $missionRoot -OutputRoot $missionOutput `
         -FingerprintExePath $fakeAudio 2>&1
     $exitCode = $LASTEXITCODE
@@ -100,7 +103,7 @@ Write-Output "{`"track`":2,`"type`":`"audio`",`"sha1`":`"$sha1`",`"chromaprint`"
 exit 0
 '@
     [IO.File]::WriteAllText($fakeInner, $fakeBody, [Text.UTF8Encoding]::new($false))
-    $fakeCommand = "@`"$(Join-Path $PSHOME 'pwsh.exe')`" -NoProfile -File `"%~dp0fake_fingerprint_cd.ps1`" %*`r`n"
+    $fakeCommand = "@`"$powershellPath`" -NoProfile -File `"%~dp0fake_fingerprint_cd.ps1`" %*`r`n"
     [IO.File]::WriteAllText($fakeCli, $fakeCommand, [Text.ASCIIEncoding]::new())
 
     Assert-True ((Invoke-Workflow -Mode 'partial') -ne 0) `
@@ -113,7 +116,7 @@ exit 0
 
     Assert-True ((Invoke-Workflow -Mode 'success') -eq 0) `
         'A complete CLI result should succeed'
-    $published = @(Get-Content -LiteralPath $manifest -Raw | ConvertFrom-Json)
+    $published = @(ConvertFrom-CompatibleJsonItems -Json (Get-Content -LiteralPath $manifest -Raw))
     Assert-True ($published.Count -eq 2 -and $published[1].chromaprint -eq 'fingerprint') `
         'A complete result should publish every expected track'
     Assert-True (@(Get-ChildItem -LiteralPath $discDir -Filter '*.tmp').Count -eq 0) `
@@ -130,7 +133,7 @@ exit 0
         [Text.UTF8Encoding]::new($false))
     Assert-True ((Invoke-Workflow -Mode 'success') -eq 0) `
         'An incomplete existing manifest should be regenerated'
-    Assert-True (@(Get-Content -LiteralPath $manifest -Raw | ConvertFrom-Json).Count -eq 2) `
+    Assert-True (@(ConvertFrom-CompatibleJsonItems -Json (Get-Content -LiteralPath $manifest -Raw)).Count -eq 2) `
         'Regeneration should replace the incomplete manifest'
 
     $knownGood = [IO.File]::ReadAllText($manifest)
@@ -186,7 +189,7 @@ Write-Output (ConvertTo-Json -InputObject $results -Compress)
 exit 0
 '@
     [IO.File]::WriteAllText($fakeAudioInner, $fakeAudioBody, [Text.UTF8Encoding]::new($false))
-    $fakeAudioCommand = "@`"$(Join-Path $PSHOME 'pwsh.exe')`" -NoProfile -File `"%~dp0fake_fingerprint_audio.ps1`" %*`r`n"
+    $fakeAudioCommand = "@`"$powershellPath`" -NoProfile -File `"%~dp0fake_fingerprint_audio.ps1`" %*`r`n"
     [IO.File]::WriteAllText($fakeAudio, $fakeAudioCommand, [Text.ASCIIEncoding]::new())
 
     $missionAlbum = Join-Path $missionOutput 'Mission ZIP - partial'

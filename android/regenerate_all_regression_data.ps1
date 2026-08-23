@@ -347,7 +347,7 @@ function Invoke-RegressionDataStages {
             } catch {
                 $message = "Stage runner exception: $_"
                 Write-Host $message -ForegroundColor Red
-                if ($logPath) { Add-Content -LiteralPath $logPath -Value $message -Encoding utf8 }
+                if ($logPath) { [IO.File]::AppendAllText($logPath, $message + [Environment]::NewLine, [Text.UTF8Encoding]::new($false)) }
                 $exitCode = 126
             }
         }

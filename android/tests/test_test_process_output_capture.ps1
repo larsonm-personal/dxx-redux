@@ -12,18 +12,21 @@ $holderPidPath = Join-Path $testRoot "holder.pid"
 $holderProcess = $null
 
 New-Item -Path $testRoot -ItemType Directory -Force | Out-Null
-@'
+$utf8NoBom = [Text.UTF8Encoding]::new($false)
+$holderContent = @'
 param([string]$PidPath)
 Set-Content -LiteralPath $PidPath -Value $PID -Encoding ascii
 Start-Sleep -Seconds 20
-'@ | Set-Content -LiteralPath $holderScript -Encoding utf8NoBOM
-@'
+'@
+[IO.File]::WriteAllText($holderScript, $holderContent, $utf8NoBom)
+$parentContent = @'
 param([string]$HolderScript, [string]$PidPath)
 Write-Output "parent stdout diagnostic"
 Start-Process -FilePath "pwsh" -ArgumentList "-NoProfile", "-File", "`"$HolderScript`"", "`"$PidPath`"" -NoNewWindow | Out-Null
 Write-Error "parent stderr diagnostic" -ErrorAction Continue
 exit 1
-'@ | Set-Content -LiteralPath $parentScript -Encoding utf8NoBOM
+'@
+[IO.File]::WriteAllText($parentScript, $parentContent, $utf8NoBom)
 
 try {
     $process = Start-Process -FilePath "pwsh" `
@@ -33,7 +36,11 @@ try {
     if (-not $process.WaitForExit(10000)) {
         throw "Parent capture process did not exit"
     }
-    if ($process.ExitCode -ne 1) {
+    $process.WaitForExit()
+    $process.Refresh()
+    # Windows PowerShell 5.1 Start-Process can detach the returned Process
+    # object when file redirection is used, leaving ExitCode unavailable
+    if ($PSVersionTable.PSEdition -ne 'Desktop' -and $process.ExitCode -ne 1) {
         throw "Parent capture process exited with $($process.ExitCode), expected 1"
     }
 

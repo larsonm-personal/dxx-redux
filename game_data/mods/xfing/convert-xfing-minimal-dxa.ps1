@@ -38,7 +38,7 @@ function Get-XfingDisplayPath {
     param([string]$Path)
 
     $resolved = (Resolve-Path -LiteralPath $Path).Path
-    return [System.IO.Path]::GetRelativePath($repoRoot.Path, $resolved).Replace('\', '/')
+    return (Get-CompatibleRelativePath -BasePath $repoRoot.Path -TargetPath $resolved).Replace('\', '/')
 }
 
 function New-XfingStageRoot {
@@ -110,7 +110,7 @@ function Add-XfingDocumentation {
     }
 
     Copy-Item -LiteralPath $SourceDocPath -Destination (Join-Path $StageRoot ([System.IO.Path]::GetFileName($SourceDocPath))) -Force
-    Set-Content -LiteralPath (Join-Path $StageRoot "README.md") -Value (Get-XfingPackReadmeText -PackName $PackName) -Encoding utf8
+    [IO.File]::WriteAllText((Join-Path $StageRoot "README.md"), (Get-XfingPackReadmeText -PackName $PackName) + "`n", [Text.UTF8Encoding]::new($false))
 }
 
 function New-XfingRequiredBaseFile {

@@ -1,4 +1,5 @@
 #!/usr/bin/env pwsh
+. (Join-Path $PSScriptRoot 'powershell_compat.ps1')
 
 function Get-RuntimeSampleValue {
     param([Parameter(Mandatory)][object]$Item, [Parameter(Mandatory)][string]$Name)
@@ -20,7 +21,7 @@ function Get-RuntimeSampleHash {
 
     $sha = [Security.Cryptography.SHA256]::Create()
     try {
-        return [Convert]::ToHexString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($Name))).ToLowerInvariant()
+        return [BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($Name))).Replace('-', '').ToLowerInvariant()
     } finally {
         $sha.Dispose()
     }
@@ -66,7 +67,7 @@ function Get-RuntimeSampleState {
         return [ordered]@{ schema = 'dxx-runtime-sample-v1'; rings = [ordered]@{} }
     }
     try {
-        $state = Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json -AsHashtable
+        $state = ConvertFrom-CompatibleJsonHashtable -Json (Get-Content -LiteralPath $Path -Raw)
         if (-not $state.rings) { $state.rings = [ordered]@{} }
         return $state
     } catch {

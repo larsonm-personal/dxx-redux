@@ -116,7 +116,7 @@ function Assert-XfingJsonPatchEntry {
     if (-not $entry) {
         throw "Missing JSON Patch $EntryName in $DxaPath"
     }
-    $ops = @(Read-XfingZipEntryText -Archive $Archive -EntryName $EntryName | ConvertFrom-Json)
+    $ops = @(ConvertFrom-CompatibleJsonItems -Json (Read-XfingZipEntryText -Archive $Archive -EntryName $EntryName))
     foreach ($op in $ops) {
         if (-not $op.op -or -not $op.path) {
             throw "Invalid JSON Patch operation in $EntryName"
@@ -150,7 +150,7 @@ function Get-XfingManifestTextures {
     }
     if ($Manifest.d2 -and $Manifest.d2.textureSummaryPath) {
         $summaryText = Read-XfingZipEntryText -Archive $Archive -EntryName $Manifest.d2.textureSummaryPath
-        foreach ($texturePig in @($summaryText | ConvertFrom-Json)) {
+        foreach ($texturePig in @(ConvertFrom-CompatibleJsonItems -Json $summaryText)) {
             if ($texturePig.textures) {
                 $textures += @($texturePig.textures)
             }

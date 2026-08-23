@@ -24,7 +24,8 @@ $second = Select-RuntimeTargetedItems -Items $items -TargetSeconds 2100 -GroupPr
 Assert-True (($first.Items.Name -join ',') -eq ($second.Items.Name -join ',')) 'A fixed seed should reproduce the same sample'
 Assert-True ($first.EstimatedSeconds -eq 2100) 'The sample should fill the available historical-runtime budget'
 Assert-True (@($first.Items | Where-Object Type -eq 'jsonc').Count -gt 0) 'The sample should cover the jsonc type'
-Assert-True (@($first.Items | Select-Object -ExpandProperty Requires -Unique).Count -ge 2) 'The sample should spread across infrastructure types'
+Assert-True (@($first.Items | ForEach-Object { Get-RuntimeSampleValue $_ 'Requires' } | Sort-Object -Unique).Count -ge 2) `
+    'The sample should spread across infrastructure types'
 
 $oversized = Select-RuntimeTargetedItems -Items @(@{ Name = 'large'; Kind = 'only'; EstimatedRuntime = 4000 }) `
     -TargetSeconds 2700 -GroupProperties Kind -Seed 7
@@ -73,7 +74,7 @@ try {
         'A later hash-ring batch should resume after the prior batch'
     Assert-True (@($ringFirst.Items.Name | Where-Object { $_ -in $ringSecond.Items.Name }).Count -eq 0) `
         'Hash-ring batches should not overlap before the ring wraps'
-    Assert-True (@($ringFirst.Items | Select-Object -ExpandProperty Requires -Unique).Count -ge 2) `
+    Assert-True (@($ringFirst.Items | ForEach-Object { Get-RuntimeSampleValue $_ 'Requires' } | Sort-Object -Unique).Count -ge 2) `
         'The interleaved hash order should spread a batch across infrastructure groups'
 } finally {
     Remove-Item -LiteralPath $cursorPath -Force -ErrorAction SilentlyContinue

@@ -400,6 +400,7 @@ function Expand-BoundedZipArchive {
         [long]$FreeSpaceHeadroomBytes = 52428800
     )
 
+    Add-Type -AssemblyName System.IO.Compression
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $comparison = if ($env:OS -eq 'Windows_NT') {
         [StringComparison]::OrdinalIgnoreCase

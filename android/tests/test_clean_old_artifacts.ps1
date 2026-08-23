@@ -5,6 +5,7 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
+. (Join-Path $repoRoot "android\helpers\powershell_compat.ps1")
 $helper = Join-Path $repoRoot "android\helpers\clean-old-artifacts.ps1"
 $retentionHelper = Join-Path $repoRoot "android\helpers\retain-recent-artifacts.ps1"
 $fixtureRoot = Join-Path ([IO.Path]::GetTempPath()) "dxx-clean-old-artifacts-TEST_ONLY-$([guid]::NewGuid().ToString('N'))"
@@ -83,7 +84,7 @@ try {
     & $retentionHelper -RepositoryRoot $fixtureRoot -Artifacts $retentionFamily[-1] | Out-Null
     Assert-Missing -RelativePath "temp\TEST_ONLY_retention\TEST_ONLY_generation_20260101_010101.test-output"
     foreach ($path in $retentionFamily[1..5]) {
-        Assert-Exists -RelativePath ([IO.Path]::GetRelativePath($fixtureRoot, $path))
+        Assert-Exists -RelativePath (Get-CompatibleRelativePath -BasePath $fixtureRoot -TargetPath $path)
     }
 
     $preview = & $helper -RepositoryRoot $fixtureRoot -MinimumAgeHours 0 2>&1 | Out-String

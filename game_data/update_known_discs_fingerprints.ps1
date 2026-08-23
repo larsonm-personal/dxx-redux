@@ -13,7 +13,7 @@ param([switch]$DryRun)
 $ErrorActionPreference = "Stop"
 
 $ScriptDir = $PSScriptRoot
-$CdImgDir  = Join-Path $ScriptDir "CD images"
+$CdImgDir = Join-Path $ScriptDir "CD images"
 $JsoncPath = Join-Path $ScriptDir "..\android\app\src\main\assets\known_discs.jsonc"
 
 if (-not (Test-Path $JsoncPath)) {
@@ -137,5 +137,5 @@ if ($DryRun) {
 }
 
 $result = $newLines -join "`n"
-$result | Set-Content -NoNewline $JsoncPath -Encoding UTF8
+[IO.File]::WriteAllText($JsoncPath, $result, [Text.UTF8Encoding]::new($false))
 Write-Host "Wrote $JsoncPath"

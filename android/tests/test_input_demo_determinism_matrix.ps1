@@ -28,7 +28,7 @@ function Get-RelativeRepoPath {
     param([string]$Path)
 
     try {
-        return [System.IO.Path]::GetRelativePath($repoRoot, $Path)
+        return Get-CompatibleRelativePath -BasePath $repoRoot -TargetPath $Path
     } catch {
         return $Path
     }

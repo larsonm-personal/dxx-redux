@@ -133,7 +133,7 @@ foreach ($avd in $selectedAvds) {
         }
     }
 
-    $newConfig | Set-Content $configFile -Encoding UTF8
+    [IO.File]::WriteAllText($configFile, ($newConfig -join [Environment]::NewLine) + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
     Write-Host "  Applied lightweight config to $configFile"
     Write-Host "  Done: $name"
     Write-Host ""

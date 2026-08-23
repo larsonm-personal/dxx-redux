@@ -216,7 +216,9 @@ void RBAGetPlaybackTerminalDiagnostics(int *terminal_state, int *source_index,
 void RBAGetPerformanceDiagnostics(int *producer_nice,
                                   unsigned int *start_request_ms,
                                   unsigned int *stop_wait_ms,
-                                  unsigned int *first_buffer_ms);
+                                  unsigned int *first_buffer_ms,
+                                  unsigned int *request_apply_ms,
+                                  unsigned int *stale_render_chunks_total);
 extern int g_startup_title_song_requested;
 }
 
@@ -2126,6 +2128,8 @@ extern "C" char *game_introspect_get_state(void)
 			unsigned int start_request_ms;
 			unsigned int stop_wait_ms;
 			unsigned int first_buffer_ms;
+			unsigned int request_apply_ms;
+			unsigned int stale_render_chunks_total;
 			rb["enabled"] = true;
 			int status = RBAPeekPlayStatus();
 			RBAGetPlaybackDiagnostics(&generation, &first_track, &source_index,
@@ -2142,7 +2146,8 @@ extern "C" char *game_introspect_get_state(void)
 			                                  &error_track, &error_sector,
 			                                  &error_operation, &error_platform_code);
 			RBAGetPerformanceDiagnostics(&producer_nice, &start_request_ms,
-			                             &stop_wait_ms, &first_buffer_ms);
+			                             &stop_wait_ms, &first_buffer_ms,
+			                             &request_apply_ms, &stale_render_chunks_total);
 			rb["num_tracks"] = RBAGetNumberOfTracks();
 			rb["num_audio_tracks"] = RBAGetNumAudioTracks();
 			rb["current_track"] = RBAGetTrackNum();
@@ -2177,6 +2182,8 @@ extern "C" char *game_introspect_get_state(void)
 			rb["last_start_request_ms"] = start_request_ms;
 			rb["last_stop_wait_ms"] = stop_wait_ms;
 			rb["last_first_buffer_ms"] = first_buffer_ms;
+			rb["last_request_apply_ms"] = request_apply_ms;
+			rb["stale_render_chunks_total"] = stale_render_chunks_total;
 		}
 		j["redbook"] = std::move(rb);
 	}

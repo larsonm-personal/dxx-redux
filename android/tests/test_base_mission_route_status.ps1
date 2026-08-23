@@ -41,9 +41,8 @@ $expectedLevel10Steps = @(
 )
 $actualLevel10Steps = @(
     $level10.route_steps | ForEach-Object {
-        @($_.kind, $_.activation_kind, $_.key, $_.trigger) |
-            Where-Object { $null -ne $_ } |
-            Join-String -Separator ":"
+        (@($_.kind, $_.activation_kind, $_.key, $_.trigger) |
+            Where-Object { $null -ne $_ }) -join ':'
         }
     )
     if (-not $level10 -or (Compare-Object $expectedLevel10Steps $actualLevel10Steps)) {

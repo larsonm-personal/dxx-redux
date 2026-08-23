@@ -184,6 +184,25 @@
     }},
     {"action": "log", "message": "Confirmed exact Redbook play, pause, resume, and stop transitions"},
 
+    // Rapid replacements must return immediately and only the newest request
+    // may reach the mixer, even when an earlier source read is still in flight.
+    {"action": "music_control", "operation": "play", "track": 3},
+    {"action": "music_control", "operation": "play", "track": 5},
+    {"action": "music_control", "operation": "play", "track": 3},
+    {"action": "music_control", "operation": "play", "track": 5},
+    {"action": "wait_for", "expect": {
+        "redbook.current_track": "5",
+        "redbook.playback_first_track": "5",
+        "redbook.generation_source_sectors_read": {"gte": 1}
+    }, "timeout_ms": 5000},
+    {"action": "assert", "expect": {
+        "redbook.play_status": "playing",
+        "redbook.last_stop_wait_ms": "0",
+        "redbook.last_request_apply_ms": {"gte": 0},
+        "redbook.stale_render_chunks_total": {"gte": 0}
+    }},
+    {"action": "log", "message": "Rapid Redbook replacements selected only the latest queued track without a producer join"},
+
     // Restart a playable track, then inject a source failure on the render
     // thread. The prior bug dispatched the normal finished hook and retried it.
     {"action": "music_control", "operation": "play", "track": 5},

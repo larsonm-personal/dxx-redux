@@ -273,6 +273,7 @@ function Export-TestDataZip {
         Remove-Item -LiteralPath $zipFullPath -Force
     }
 
+    Add-Type -AssemblyName System.IO.Compression
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $zip = [System.IO.Compression.ZipFile]::Open($zipFullPath, [System.IO.Compression.ZipArchiveMode]::Create)
     try {

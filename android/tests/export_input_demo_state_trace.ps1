@@ -10,6 +10,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
+. (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers\powershell_compat.ps1')
 
 function Test-JsonRecordLine {
     param([string]$Line)
@@ -24,14 +25,14 @@ function Test-JsonRecordLine {
 function ConvertFrom-JsonLine {
     param([string]$Line)
 
-    return $Line.Trim() | ConvertFrom-Json -AsHashtable
+    return ConvertFrom-CompatibleJsonHashtable -Json $Line.Trim()
 }
 
 function Get-RelativeRepoPath {
     param([string]$Path)
 
     try {
-        return [System.IO.Path]::GetRelativePath($repoRoot, $Path)
+        return Get-CompatibleRelativePath -BasePath $repoRoot -TargetPath $Path
     } catch {
         return $Path
     }

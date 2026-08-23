@@ -1,5 +1,6 @@
 #!/usr/bin/env pwsh
 . (Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers') 'test_host_platform.ps1')
+. (Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers') 'powershell_compat.ps1')
 
 function Get-InputDemoRelativeRepoPath {
     param(
@@ -8,7 +9,7 @@ function Get-InputDemoRelativeRepoPath {
     )
 
     try {
-        return [System.IO.Path]::GetRelativePath($RepoRoot, $Path)
+        return Get-CompatibleRelativePath -BasePath $RepoRoot -TargetPath $Path
     } catch {
         return $Path
     }
@@ -90,7 +91,7 @@ function Get-InputDemoRecordedGameName {
             continue
         }
 
-        $record = $trimmed | ConvertFrom-Json -AsHashtable
+        $record = ConvertFrom-CompatibleJsonHashtable -Json $trimmed
         if ($record.type -ne 'header') {
             throw "Demo file does not start with a header record: $DemoPath"
         }

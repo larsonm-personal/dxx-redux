@@ -8,6 +8,7 @@ param(
 $ErrorActionPreference = "Stop"
 $scriptDir = $PSScriptRoot
 $repoRoot = Resolve-Path (Join-Path $scriptDir "..\..\..\..")
+. (Join-Path $repoRoot "android/helpers/powershell_compat.ps1")
 . (Join-Path $scriptDir "uud2sp_ham_patch_lib.ps1")
 
 if (-not $Path) {
@@ -105,7 +106,7 @@ try {
         throw "Unexpected manifest pack/game: $($manifest.pack)/$($manifest.game)"
     }
 
-    $patchOps = @((Read-Uud2spZipEntryText -Archive $archive -EntryName $manifest.d2.hamPatchPath) | ConvertFrom-Json)
+    $patchOps = @(ConvertFrom-CompatibleJsonItems -Json (Read-Uud2spZipEntryText -Archive $archive -EntryName $manifest.d2.hamPatchPath))
     $summary = (Read-Uud2spZipEntryText -Archive $archive -EntryName $manifest.d2.hamPatchSummaryPath) | ConvertFrom-Json
     if ($patchOps.Count -ne [int]$manifest.d2.hamPatchOperationCount) {
         throw "Manifest operation count does not match patch file"

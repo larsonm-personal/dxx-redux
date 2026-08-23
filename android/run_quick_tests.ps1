@@ -215,7 +215,7 @@ function Invoke-QuickTest {
     }
 
     if (-not (Test-Path -LiteralPath $psScript)) {
-        "Missing test entry point: $psScript" | Out-File -FilePath $logFile -Encoding utf8
+        [IO.File]::WriteAllText($logFile, "Missing test entry point: $psScript" + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
         Write-Host "  FAIL: Missing test entry point" -ForegroundColor Red
         return @{
             Name = $name
@@ -267,12 +267,12 @@ function Invoke-QuickTest {
         $stderr = if ($stderrTask.IsCompleted) { $stderrTask.Result } else { "" }
         $proc.Dispose()
 
-        $stdout | Out-File -FilePath $logFile -Encoding utf8
+        [IO.File]::WriteAllText($logFile, $stdout + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
         if ($stderr) {
-            $stderr | Out-File -FilePath $logFile -Append -Encoding utf8
+            [IO.File]::AppendAllText($logFile, $stderr + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
         }
         if ($timedOut) {
-            "TIMEOUT: Test killed after ${TestTimeoutSeconds}s" | Out-File -FilePath $logFile -Append -Encoding utf8
+            [IO.File]::AppendAllText($logFile, "TIMEOUT: Test killed after ${TestTimeoutSeconds}s" + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
         }
 
         $lines = ($stdout -split "`n" | Where-Object { $_.Trim() })
@@ -281,7 +281,7 @@ function Invoke-QuickTest {
         }
     } catch {
         $exitCode = 1
-        "EXCEPTION: $_" | Out-File -FilePath $logFile -Encoding utf8
+        [IO.File]::WriteAllText($logFile, "EXCEPTION: $_" + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
         Write-Host "  EXCEPTION: $_" -ForegroundColor Red
     }
 
@@ -454,7 +454,7 @@ if ($failCount -gt 0 -or $timeoutCount -gt 0 -or $notRun.Count -gt 0) {
     }
 }
 
-$md -join "`n" | Set-Content -Path $reportFile -Encoding utf8
+[IO.File]::WriteAllText($reportFile, ($md -join "`n") + "`n", [Text.UTF8Encoding]::new($false))
 
 $retentionArtifacts = @($reportFile, $quickDemoRoot, $quickPrimaryResultRoot) | Where-Object { Test-Path -LiteralPath $_ }
 $retentionArtifacts += @(Get-ChildItem -LiteralPath $ReportDir -File | Where-Object { $_.Name -like "*_$timestamp.*" } | Select-Object -ExpandProperty FullName)

@@ -80,7 +80,7 @@ function ConvertFrom-JsonLine {
     if (-not $Line) {
         throw 'Missing json line content'
     }
-    return $Line.Trim() | ConvertFrom-Json -AsHashtable
+    return ConvertFrom-CompatibleJsonHashtable -Json $Line.Trim()
 }
 
 function Test-DemoJsonRecordLine {
@@ -96,7 +96,7 @@ function Test-DemoJsonRecordLine {
 function Get-RelativeRepoPath {
     param([string]$Path)
 
-    return [System.IO.Path]::GetRelativePath($repoRoot, $Path)
+    return Get-CompatibleRelativePath -BasePath $repoRoot -TargetPath $Path
 }
 
 function Test-PathUnderDirectory {
@@ -1094,7 +1094,7 @@ function Select-DemoCandidate {
 function ConvertTo-DeepHashtableClone {
     param([hashtable]$Value)
 
-    return ($Value | ConvertTo-Json -Depth 20 | ConvertFrom-Json -AsHashtable)
+    return ConvertFrom-CompatibleJsonHashtable -Json ($Value | ConvertTo-Json -Depth 20)
 }
 
 function Normalize-ExpectedResult {
@@ -1235,7 +1235,7 @@ function Compare-JsonDiff {
 function Read-JsonFileAsHashtable {
     param([string]$Path)
 
-    return ([System.IO.File]::ReadAllText($Path) | ConvertFrom-Json -AsHashtable)
+    return ConvertFrom-CompatibleJsonHashtable -Json ([System.IO.File]::ReadAllText($Path))
 }
 
 function Get-TextFileLinesWithRetry {

@@ -10,6 +10,7 @@ param(
 $ErrorActionPreference = "Stop"
 $scriptDir = $PSScriptRoot
 $repoRoot = Resolve-Path (Join-Path $scriptDir "..\..\..\..")
+. (Join-Path $repoRoot "android/helpers/powershell_compat.ps1")
 . (Join-Path $scriptDir "uud2sp_ham_patch_lib.ps1")
 
 if (-not $OutputPath) {
@@ -32,7 +33,7 @@ function Get-Uud2spDisplayPath {
     param([string]$Path)
 
     $resolved = (Resolve-Path -LiteralPath $Path).Path
-    return [System.IO.Path]::GetRelativePath($repoRoot.Path, $resolved).Replace('\', '/')
+    return (Get-CompatibleRelativePath -BasePath $repoRoot.Path -TargetPath $resolved).Replace('\', '/')
 }
 
 function Join-Uud2spStagePath {
@@ -165,7 +166,7 @@ foreach ($soundPath in $soundPaths) {
     Copy-Uud2spFileToStage -SourcePath $soundPath.Source -StageRoot $stageRoot -ZipPath $soundPath.ZipPath
 }
 Copy-Uud2spFileToStage -SourcePath $rtfPath -StageRoot $stageRoot -ZipPath "UUD2SP.rtf"
-Set-Content -LiteralPath (Join-Path $stageRoot "README.md") -Value (Get-Uud2spReadmeText) -Encoding utf8
+[IO.File]::WriteAllText((Join-Path $stageRoot "README.md"), (Get-Uud2spReadmeText) + "`n", [Text.UTF8Encoding]::new($false))
 
 $requiredBaseFiles = @(
     New-Uud2spRequiredBaseFile -Path $baseHamPath -Sha256 $analysis.baseSha256 -Size $analysis.baseSize

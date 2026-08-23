@@ -5,6 +5,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'powershell_compat.ps1')
 
 if (-not $Path) {
     $Path = Join-Path (Split-Path $PSScriptRoot) 'temp_game_logs'
@@ -28,7 +29,7 @@ function Get-RelativeDisplayPath {
     $absoluteRepoRoot = [System.IO.Path]::GetFullPath($repoRoot)
 
     if ($absoluteValue.StartsWith($absoluteRepoRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
-        return [System.IO.Path]::GetRelativePath($absoluteRepoRoot, $absoluteValue)
+        return Get-CompatibleRelativePath -BasePath $absoluteRepoRoot -TargetPath $absoluteValue
     }
 
     return $absoluteValue
@@ -66,7 +67,7 @@ function ConvertFrom-JsonRecordLine {
     )
 
     try {
-        return ($Line | ConvertFrom-Json -Depth 100)
+        return ($Line | ConvertFrom-Json)
     } catch {
         throw "Could not parse JSON in $FilePath line ${LineNumber}: $($_.Exception.Message)"
     }

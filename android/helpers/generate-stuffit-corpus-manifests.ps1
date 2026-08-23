@@ -289,7 +289,7 @@ function Write-ManifestFile {
     Write-Utf8NoBomFile -Path $DestinationPath -Text (($lines -join "`n") + "`n")
 }
 
-if (-not $IsWindows) {
+if ($env:OS -ne 'Windows_NT') {
     throw 'This script currently supports Windows only because it pins the Windows unar package'
 }
 

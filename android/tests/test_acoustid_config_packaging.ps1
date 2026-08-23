@@ -31,18 +31,19 @@ $placeholderConfig = Join-Path $tempRoot "placeholder.jsonc"
 $malformedConfig = Join-Path $tempRoot "malformed.jsonc"
 $missingConfig = Join-Path $tempRoot "missing.jsonc"
 
-Set-Content -Path $validConfig -Encoding utf8NoBOM -Value @'
+$utf8NoBom = [Text.UTF8Encoding]::new($false)
+[IO.File]::WriteAllText($validConfig, @'
 {
     // Test-only key
     "api_key": "AbCd123456",
 }
-'@
-Set-Content -Path $placeholderConfig -Encoding utf8NoBOM -Value @'
+'@, $utf8NoBom)
+[IO.File]::WriteAllText($placeholderConfig, @'
 {"api_key": "YOUR_ACOUSTID_API_KEY_HERE"}
-'@
-Set-Content -Path $malformedConfig -Encoding utf8NoBOM -Value @'
+'@, $utf8NoBom)
+[IO.File]::WriteAllText($malformedConfig, @'
 {"api_key":
-'@
+'@, $utf8NoBom)
 
 Invoke-ConfigGeneration -ConfigPath $validConfig -ShouldSucceed $true
 $generated = Get-Content $generatedAsset -Raw | ConvertFrom-Json

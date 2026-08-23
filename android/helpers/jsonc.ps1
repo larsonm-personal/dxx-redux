@@ -116,7 +116,17 @@ function Read-StrictJsonFile {
     if ($raw.Length -gt 0 -and $raw[0] -eq [char]0xFEFF) {
         $raw = $raw.Substring(1)
     }
-    $document = [Text.Json.JsonDocument]::Parse($raw)
-    $document.Dispose()
+    $jsonDocumentType = 'System.Text.Json.JsonDocument' -as [type]
+    if ($jsonDocumentType) {
+        $parseMethod = $jsonDocumentType.GetMethod('Parse', [type[]]@([string]))
+        $document = $parseMethod.Invoke($null, @($raw))
+        $document.Dispose()
+    } else {
+        Add-Type -AssemblyName System.Web.Extensions
+        $serializer = [Web.Script.Serialization.JavaScriptSerializer]::new()
+        $serializer.MaxJsonLength = [int]::MaxValue
+        $serializer.RecursionLimit = 1024
+        $null = $serializer.DeserializeObject($raw)
+    }
     return $raw | ConvertFrom-Json -ErrorAction Stop
 }

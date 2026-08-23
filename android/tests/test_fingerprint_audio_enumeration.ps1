@@ -2,6 +2,8 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 . (Join-Path $repoRoot 'android/helpers/fingerprint_audio_results.ps1')
 . (Join-Path $repoRoot 'android/helpers/test_env.ps1')
+. (Join-Path $repoRoot 'android/helpers/normalized_json_text.ps1')
+. (Join-Path $repoRoot 'android/helpers/powershell_compat.ps1')
 
 $buildDir = Join-Path $repoRoot 'android/tests/build'
 $fingerprintAudio = Resolve-RegressionBuildTool -Directory (Join-Path $buildDir 'Release') -BaseName 'fingerprint_audio'
@@ -38,7 +40,7 @@ function Invoke-FingerprintAudioTest {
         }
         $executable = if ($FailAfter -ge 0) { $fingerprintAudioTest } else { $fingerprintAudio }
         $startInfo = [Diagnostics.ProcessStartInfo]::new($executable)
-        $startInfo.ArgumentList.Add($Directory)
+        Set-CompatibleProcessArguments -StartInfo $startInfo -Arguments @($Directory)
         $startInfo.UseShellExecute = $false
         $startInfo.RedirectStandardOutput = $true
         $startInfo.RedirectStandardError = $true
@@ -104,7 +106,7 @@ try {
     Copy-Item -LiteralPath $testAudio -Destination (Join-Path $unicodeDir $unicodeName)
     $unicode = Invoke-FingerprintAudioTest -Directory $unicodeDir
     Assert-Condition ($unicode.ExitCode -eq 0) 'Unicode audio path failed'
-    $unicodeResults = @($unicode.Stdout | ConvertFrom-Json)
+    $unicodeResults = @(ConvertFrom-CompatibleJsonItems -Json $unicode.Stdout)
     Assert-DxxFingerprintAudioResults -ExpectedNames @($unicodeName) -Results $unicodeResults
     Assert-Condition ($unicodeResults.Count -eq 1) 'Unicode audio file was not reported exactly once'
 

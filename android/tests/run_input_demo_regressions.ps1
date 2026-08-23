@@ -150,7 +150,7 @@ if ($ListOnly) {
         exit 0
     }
     foreach ($demo in $demos) {
-        Write-Host ([System.IO.Path]::GetRelativePath($repoRoot, $demo.FullName))
+        Write-Host (Get-CompatibleRelativePath -BasePath $repoRoot -TargetPath $demo.FullName)
     }
     exit 0
 }
@@ -196,7 +196,7 @@ $batchStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
 for ($index = 0; $index -lt $demos.Count; $index++) {
     $demo = $demos[$index]
-    $relativeDemo = [System.IO.Path]::GetRelativePath($repoRoot, $demo.FullName)
+    $relativeDemo = Get-CompatibleRelativePath -BasePath $repoRoot -TargetPath $demo.FullName
     Write-Host ''
     Write-Host ("[{0}/{1}] {2}" -f ($index + 1), $demos.Count, $relativeDemo)
 

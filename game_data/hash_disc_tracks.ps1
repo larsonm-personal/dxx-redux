@@ -11,9 +11,10 @@ param([switch]$Force)
 $ErrorActionPreference = "Stop"
 
 $ScriptDir = $PSScriptRoot
-$CdImgDir  = Join-Path $ScriptDir "CD images"
+$CdImgDir = Join-Path $ScriptDir "CD images"
 $JsoncPath = Join-Path $ScriptDir "..\android\app\src\main\assets\known_discs.jsonc"
 . (Join-Path $ScriptDir "..\android\helpers\fingerprint_source_identity.ps1")
+. (Join-Path $ScriptDir "..\android\helpers\powershell_compat.ps1")
 . (Join-Path $ScriptDir "disc_track_manifest.ps1")
 
 if (-not (Test-Path $JsoncPath)) {
@@ -58,19 +59,19 @@ $replaced = @()
 
 $folders = Get-ChildItem -Path $CdImgDir -Directory | Sort-Object Name
 $folderSources = @($folders | ForEach-Object {
-    $meta = Get-DiscMeta $_.Name
-    [PSCustomObject]@{ Id = $meta.Id; Label = $meta.Label }
-})
+        $meta = Get-DiscMeta $_.Name
+        [PSCustomObject]@{ Id = $meta.Id; Label = $meta.Label }
+    })
 $reservedSources = @($existing.discs | ForEach-Object {
-    [PSCustomObject]@{ Id = [string]$_.id; Label = [string]$_.label }
-})
+        [PSCustomObject]@{ Id = [string]$_.id; Label = [string]$_.label }
+    })
 $folderLabelsById = @{}
 foreach ($source in $folderSources) { $folderLabelsById[$source.Id.ToUpperInvariant()] = $source.Label }
 $nonReplacingSources = @($reservedSources | Where-Object {
-    $key = $_.Id.ToUpperInvariant()
-    -not ($folderLabelsById.ContainsKey($key) -and
-        [StringComparer]::Ordinal.Equals([string]$folderLabelsById[$key], [string]$_.Label))
-})
+        $key = $_.Id.ToUpperInvariant()
+        -not ($folderLabelsById.ContainsKey($key) -and
+            [StringComparer]::Ordinal.Equals([string]$folderLabelsById[$key], [string]$_.Label))
+    })
 Assert-DxxUniqueFingerprintSourceIds -Sources $folderSources -ReservedSources $nonReplacingSources
 foreach ($folder in $folders) {
     $hashFile = Join-Path $folder.FullName "track_hashes.json"
@@ -89,7 +90,7 @@ foreach ($folder in $folders) {
         $replaced += $meta.Id
     }
 
-    $tracks = @(Get-Content $hashFile -Raw -Encoding UTF8 | ConvertFrom-Json)
+    $tracks = @(ConvertFrom-CompatibleJsonItems -Json (Get-Content $hashFile -Raw -Encoding UTF8))
     $cueFiles = @(Get-ChildItem -LiteralPath $folder.FullName -Filter '*.cue' -File)
     if ($cueFiles.Count -ne 1) {
         throw "Disc source must contain exactly one CUE descriptor: $($folder.FullName)"
@@ -173,7 +174,7 @@ if ($replaced.Count -gt 0) {
                 if ($blockText -match '"id"\s*:\s*"([^"]+)"') { $entryId = $Matches[1] }
 
                 if (-not $replacedSet.ContainsKey($entryId)) {
-                    $blocks += ,@($currentBlock)
+                    $blocks += , @($currentBlock)
                 }
                 $currentBlock = @()
                 $inEntry = $false
@@ -247,7 +248,7 @@ foreach ($disc in $newDiscs) {
 }
 
 $newContent = ($beforeClosing + $newBlock + "`n  ]`n}`n") -replace "`r`n", "`n"
-$newContent | Set-Content -NoNewline $JsoncPath -Encoding UTF8
+[IO.File]::WriteAllText($JsoncPath, $newContent, [Text.UTF8Encoding]::new($false))
 Write-Host "`nAdded $($newDiscs.Count) new disc entries to known_discs.jsonc"
 
 # -- Report -----------------------------------------------------------

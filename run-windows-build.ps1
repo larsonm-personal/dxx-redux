@@ -19,6 +19,7 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSCommandPath
 
 . (Join-Path $repoRoot "android\helpers\test_host_platform.ps1")
+. (Join-Path $repoRoot "android\helpers\powershell_compat.ps1")
 
 function Add-PathDirectory($dir) {
     if (-not $dir -or -not (Test-Path $dir)) {
@@ -128,7 +129,7 @@ function Get-VsInstances {
     if ($vsWhere) {
         $json = & $vsWhere -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -format json
         if ($LASTEXITCODE -eq 0 -and $json) {
-            $parsed = @($json | ConvertFrom-Json)
+            $parsed = @(ConvertFrom-CompatibleJsonItems -Json $json)
             foreach ($item in $parsed) {
                 $vcvars = Join-Path $item.installationPath "VC\Auxiliary\Build\vcvarsall.bat"
                 if (-not (Test-Path $vcvars)) {

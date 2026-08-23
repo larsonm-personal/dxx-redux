@@ -25,6 +25,7 @@ $androidRoot = Split-Path -Parent $helpersDir
 . (Join-Path $helpersDir "bounded_extraction.ps1")
 . (Join-Path $helpersDir "mission_zip_batch_recovery.ps1")
 . (Join-Path $helpersDir "normalized_json_text.ps1")
+Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 function Get-7zaPath {
@@ -468,7 +469,7 @@ function Resolve-MissionZipTemplate {
     $text = $text.Replace('${GAME_SELECT_BUTTON_TEXT}', (ConvertTo-JsonStringContent $GameSelectButtonText))
     $text = $text.Replace('${MISSION_START_CONFIRM_ACTION}', (ConvertTo-JsonStringContent $MissionStartConfirmAction))
     $text = $text.Replace('${LAUNCH_BUTTON_TEXT}', (ConvertTo-JsonStringContent $LaunchButtonText))
-    Set-Content -Path $OutputPath -Value $text -Encoding utf8
+    [IO.File]::WriteAllText($OutputPath, $text + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
 }
 
 function Push-AppPrivateFile {
@@ -649,7 +650,7 @@ foreach ($zip in $zips) {
         $record["reason"] = "Could not stat archive: $($_.Exception.Message)"
         $results += [pscustomobject]$record
         Write-MissionZipFailureJson -Path $metadataPath -Record $record
-        ($record | ConvertTo-Json -Depth 20 -Compress) | Add-Content -Path (Join-Path $OutDir "summary.jsonl") -Encoding utf8
+        [IO.File]::AppendAllText((Join-Path $OutDir "summary.jsonl"), ($record | ConvertTo-Json -Depth 20 -Compress) + "`n", [Text.UTF8Encoding]::new($false))
         $runStopwatch.Stop()
         Write-MissionZipBatchResult -Index $zipIndex -Total $zips.Count -Zip $zip -Record $record -RunElapsed $runStopwatch.Elapsed -BatchElapsed $batchStopwatch.Elapsed -Counts (Get-MissionZipBatchCounts -Results $results)
         $consecutiveBaseDataFailures = 0
@@ -661,7 +662,7 @@ foreach ($zip in $zips) {
         $record["reason"] = "ZIP is larger than the configured batch limit"
         $results += [pscustomobject]$record
         Write-MissionZipFailureJson -Path $metadataPath -Record $record
-        ($record | ConvertTo-Json -Depth 20 -Compress) | Add-Content -Path (Join-Path $OutDir "summary.jsonl") -Encoding utf8
+        [IO.File]::AppendAllText((Join-Path $OutDir "summary.jsonl"), ($record | ConvertTo-Json -Depth 20 -Compress) + "`n", [Text.UTF8Encoding]::new($false))
         $runStopwatch.Stop()
         Write-MissionZipBatchResult -Index $zipIndex -Total $zips.Count -Zip $zip -Record $record -RunElapsed $runStopwatch.Elapsed -BatchElapsed $batchStopwatch.Elapsed -Counts (Get-MissionZipBatchCounts -Results $results)
         $consecutiveBaseDataFailures = 0
@@ -677,7 +678,7 @@ foreach ($zip in $zips) {
         Write-Status "FAIL: $($zip.Name): $($record["reason"])" "Red"
         $results += [pscustomobject]$record
         Write-MissionZipFailureJson -Path $metadataPath -Record $record
-        ($record | ConvertTo-Json -Depth 20 -Compress) | Add-Content -Path (Join-Path $OutDir "summary.jsonl") -Encoding utf8
+        [IO.File]::AppendAllText((Join-Path $OutDir "summary.jsonl"), ($record | ConvertTo-Json -Depth 20 -Compress) + "`n", [Text.UTF8Encoding]::new($false))
         $runStopwatch.Stop()
         Write-MissionZipBatchResult -Index $zipIndex -Total $zips.Count -Zip $zip -Record $record -RunElapsed $runStopwatch.Elapsed -BatchElapsed $batchStopwatch.Elapsed -Counts (Get-MissionZipBatchCounts -Results $results)
         $consecutiveBaseDataFailures = 0
@@ -689,7 +690,7 @@ foreach ($zip in $zips) {
         Write-Status "SKIP $($gameHint.Game) game ZIP: $($zip.Name) -- $($gameHint.Reason)" "Yellow"
         $results += [pscustomobject]$record
         Write-MissionZipFailureJson -Path $metadataPath -Record $record
-        ($record | ConvertTo-Json -Depth 20 -Compress) | Add-Content -Path (Join-Path $OutDir "summary.jsonl") -Encoding utf8
+        [IO.File]::AppendAllText((Join-Path $OutDir "summary.jsonl"), ($record | ConvertTo-Json -Depth 20 -Compress) + "`n", [Text.UTF8Encoding]::new($false))
         $runStopwatch.Stop()
         Write-MissionZipBatchResult -Index $zipIndex -Total $zips.Count -Zip $zip -Record $record -RunElapsed $runStopwatch.Elapsed -BatchElapsed $batchStopwatch.Elapsed -Counts (Get-MissionZipBatchCounts -Results $results)
         $consecutiveBaseDataFailures = 0
@@ -804,7 +805,7 @@ foreach ($zip in $zips) {
             Save-AppTextFile -DeviceRelativePath "introspect.json" -LocalPath "$artifactPrefix.introspect.json" | Out-Null
         }
         $results += [pscustomobject]$record
-        ($record | ConvertTo-Json -Depth 20 -Compress) | Add-Content -Path (Join-Path $OutDir "summary.jsonl") -Encoding utf8
+        [IO.File]::AppendAllText((Join-Path $OutDir "summary.jsonl"), ($record | ConvertTo-Json -Depth 20 -Compress) + "`n", [Text.UTF8Encoding]::new($false))
         $runStopwatch.Stop()
         Write-MissionZipBatchResult -Index $zipIndex -Total $zips.Count -Zip $zip -Record $record -RunElapsed $runStopwatch.Elapsed -BatchElapsed $batchStopwatch.Elapsed -Counts (Get-MissionZipBatchCounts -Results $results)
         if ($recoverAfterRun) {
@@ -836,9 +837,9 @@ if ($failed.Count -gt 0) {
         $reason = if ($item.reason) { $item.reason } else { "failed" }
         $failedLines += "$($item.name)`t$reason"
     }
-    Set-Content -Path $failedSummaryPath -Value $failedLines -Encoding utf8
+    [IO.File]::WriteAllText($failedSummaryPath, ($failedLines -join [Environment]::NewLine) + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
 } else {
-    Set-Content -Path $failedSummaryPath -Value @() -Encoding utf8
+    [IO.File]::WriteAllText($failedSummaryPath, '', [Text.UTF8Encoding]::new($false))
 }
 Write-Status "Mission ZIP batch complete: $($results.Count) total, $($passed.Count) passed, $($skipped.Count) skipped, $($failed.Count) failed. Output: $OutDir"
 if ($failed.Count -gt 0) {

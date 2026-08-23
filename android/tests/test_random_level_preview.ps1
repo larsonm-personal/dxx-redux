@@ -48,7 +48,7 @@ try {
             $zip = $_
             $metadataPath = Join-Path $zip.DirectoryName "$($zip.BaseName).json"
             try {
-                $metadata = @(Get-Content -LiteralPath $metadataPath -Raw | ConvertFrom-Json)
+                $metadata = @(ConvertFrom-CompatibleJsonItems -Json (Get-Content -LiteralPath $metadataPath -Raw))
                 $games = @($metadata | Where-Object {
                         $_.status -eq "ok" -and $_.game -in @("d1", "d2") -and @($_.levels).Count -gt 0
                     } | ForEach-Object { $_.game } | Sort-Object -Unique)

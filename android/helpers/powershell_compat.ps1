@@ -55,7 +55,7 @@ function ConvertTo-CompatibleHashtableValue {
     param([AllowNull()][object]$Value)
 
     if ($Value -is [Collections.IDictionary]) {
-        $result = [Collections.Hashtable]::new([StringComparer]::Ordinal)
+        $result = New-Object Collections.Hashtable ([StringComparer]::Ordinal)
         foreach ($key in $Value.Keys) {
             $result[[string]$key] = ConvertTo-CompatibleHashtableValue -Value $Value[$key]
         }
@@ -85,4 +85,14 @@ function ConvertFrom-CompatibleJsonHashtable {
     $serializer.MaxJsonLength = [int]::MaxValue
     $serializer.RecursionLimit = 1024
     return ConvertTo-CompatibleHashtableValue -Value $serializer.DeserializeObject($Json)
+}
+
+function ConvertFrom-CompatibleJsonItems {
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Json)
+
+    # Windows PowerShell 5.1 emits a root JSON array as one object, while
+    # modern PowerShell enumerates it. Returning the captured value from a
+    # function gives both editions the same item-by-item pipeline behavior
+    $value = $Json | ConvertFrom-Json -ErrorAction Stop
+    return $value
 }

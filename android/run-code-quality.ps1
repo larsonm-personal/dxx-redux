@@ -251,14 +251,15 @@ function Write-CodeQualityLock {
         [string]$Stage
     )
 
-    @{
+    $lockJson = @{
         pid = $PID
         started = (Get-Date).ToString("s")
         fix = [bool]$Fix
         host = $Host.Name
         stage = $Stage
         paths = @($resolvedPaths | ForEach-Object { Get-RepoRelativePath $_ })
-    } | ConvertTo-Json | Set-Content -LiteralPath $lockFile -Encoding utf8
+    } | ConvertTo-Json
+    [IO.File]::WriteAllText($lockFile, $lockJson + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
 }
 
 function Write-CodeQualitySummary {
@@ -269,7 +270,7 @@ function Write-CodeQualitySummary {
         [string[]]$CleanTransitions
     )
 
-    @{
+    $summaryJson = @{
         pid = $PID
         finished = (Get-Date).ToString("s")
         fix = [bool]$Fix
@@ -279,7 +280,8 @@ function Write-CodeQualitySummary {
         preDirty = @($PreDirty)
         postDirty = @($PostDirty)
         cleanTransitions = @($CleanTransitions)
-    } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $summaryFile -Encoding utf8
+    } | ConvertTo-Json -Depth 4
+    [IO.File]::WriteAllText($summaryFile, $summaryJson + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
 }
 
 function Test-ActiveProcess {

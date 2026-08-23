@@ -63,6 +63,7 @@ if ($manifest -notmatch "extractNativeLibs.*=true") {
     Fail "APK does not enable extracted native libraries"
 }
 
+Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $archive = [System.IO.Compression.ZipFile]::OpenRead($apk)
 try {

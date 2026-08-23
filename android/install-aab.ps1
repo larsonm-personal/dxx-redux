@@ -171,6 +171,7 @@ Write-Host "Converting AAB to universal APK..."
 if ($LASTEXITCODE -ne 0) { throw "bundletool build-apks failed" }
 
 # Extract universal.apk from the .apks zip
+Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $zip = [System.IO.Compression.ZipFile]::OpenRead($tempApks)
 try {

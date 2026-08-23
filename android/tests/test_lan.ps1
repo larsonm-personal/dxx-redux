@@ -65,7 +65,7 @@ $testPassed = $false
 
 $script:LogFile = Join-Path $REPO_ROOT "temp\lan_test_log.txt"
 try { if (Test-Path $script:LogFile) { Remove-Item $script:LogFile -Force -ErrorAction SilentlyContinue } } catch { }
-"" | Set-Content -Path $script:LogFile -Encoding utf8 -ErrorAction SilentlyContinue
+try { [IO.File]::WriteAllText($script:LogFile, [Environment]::NewLine, [Text.UTF8Encoding]::new($false)) } catch {}
 
 function Cleanup {
     Write-Status "Cleaning up..."
@@ -773,7 +773,7 @@ function Get-DeviceLatestCoopAutosaveSlot {
         return -1
     }
     try {
-        $history = @($historyJson | ConvertFrom-Json)
+        $history = @(ConvertFrom-CompatibleJsonItems -Json $historyJson)
         if ($history.Count -gt 0) {
             return [int]$history[0].slot
         }

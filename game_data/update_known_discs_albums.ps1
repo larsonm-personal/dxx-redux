@@ -101,16 +101,16 @@ $cdDiscIds = @{}
 foreach ($cd in $cdFingerprints) { $cdDiscIds[$cd.DiscId] = $true }
 
 $physicalSources = @($db.discs | Where-Object { $_.type -ne 'album' } | ForEach-Object {
-    [PSCustomObject]@{ Id = [string]$_.id; Label = [string]$_.label }
-})
+        [PSCustomObject]@{ Id = [string]$_.id; Label = [string]$_.label }
+    })
 $albumSources = @($albumFiles | ForEach-Object {
-    $sourceRaw = Get-Content $_.FullName -Raw
-    $sourceInfo = ($sourceRaw -replace '//[^\n]*', '' -replace '/\*[\s\S]*?\*/', '') | ConvertFrom-Json
-    [PSCustomObject]@{
-        Id = ConvertTo-DxxFingerprintSourceId -Name ([string]$sourceInfo.album)
-        Label = [string]$sourceInfo.album
-    }
-})
+        $sourceRaw = Get-Content $_.FullName -Raw
+        $sourceInfo = ($sourceRaw -replace '//[^\n]*', '' -replace '/\*[\s\S]*?\*/', '') | ConvertFrom-Json
+        [PSCustomObject]@{
+            Id = ConvertTo-DxxFingerprintSourceId -Name ([string]$sourceInfo.album)
+            Label = [string]$sourceInfo.album
+        }
+    })
 Assert-DxxUniqueFingerprintSourceIds -Sources $albumSources -ReservedSources $physicalSources
 
 $flatEntries = @()
@@ -141,8 +141,8 @@ foreach ($file in $albumFiles) {
         # entries predate those fields. Keep a fingerprint-stable legacy result
         # when its label still matches the maintained filename.
         $hasReviewedAcoustId = $t.acoustid_name -and
-            $t.name_source -ne 'tracklist' -and
-            (Test-DxxAcoustIdTitleMatch $t.filename $t.acoustid_name)
+        $t.name_source -ne 'tracklist' -and
+        (Test-DxxAcoustIdTitleMatch $t.filename $t.acoustid_name)
         $flatEntries += [ordered]@{
             name        = $baseName
             disc_id     = $albumId
@@ -275,10 +275,10 @@ foreach ($pair in $allPairs) {
     $bIsCd = $cdDiscIds.ContainsKey($pair.b_disc)
     if (-not $aIsCd -and -not $bIsCd) {
         $sameIdentity = $pair.a_disc -eq $pair.b_disc -and
-            $pair.a_track -eq $pair.b_track -and $pair.a_name -eq $pair.b_name
+        $pair.a_track -eq $pair.b_track -and $pair.a_name -eq $pair.b_name
         $durationRatio = [double]$pair.a_duration_ms / [double]$pair.b_duration_ms
         $durationCompatible = $durationRatio -ge (1.0 - $fingerprintConfig.DurationTolerance) -and
-            $durationRatio -le (1.0 + $fingerprintConfig.DurationTolerance)
+        $durationRatio -le (1.0 + $fingerprintConfig.DurationTolerance)
         $indistinguishableFingerprint = [double]$pair.score -ge (1.0 - 1.0e-6)
         if ($sameIdentity -or -not $durationCompatible -or -not $indistinguishableFingerprint) { continue }
         $aKey = "$($pair.a_disc)|$($pair.a_track)"
@@ -466,7 +466,7 @@ if ($DryRun) {
         Write-Host "  $($album.Label): $active tracks ($dupes duplicates removed)"
     }
 } else {
-    $output -join "`n" | Set-Content $albumDbPath -Encoding UTF8
+    [IO.File]::WriteAllText($albumDbPath, ($output -join "`n") + "`n", [Text.UTF8Encoding]::new($false))
     Write-Host "`nWrote $($output.Count) lines to $albumDbPath"
     Write-Host "Albums added: $($albumEntries.Count)"
     foreach ($album in $albumEntries) {

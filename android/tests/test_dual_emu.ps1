@@ -45,7 +45,7 @@ $script:dockerNatActive = $false
 
 $script:LogFile = Join-Path $REPO_ROOT "temp\dual_emu_log.txt"
 New-Item -Path (Join-Path $REPO_ROOT "temp") -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
-"" | Set-Content -Path $script:LogFile -Encoding utf8 -ErrorAction SilentlyContinue
+try { [IO.File]::WriteAllText($script:LogFile, [Environment]::NewLine, [Text.UTF8Encoding]::new($false)) } catch {}
 
 # ── Helpers ──────────────────────────────────────────────────────────────
 

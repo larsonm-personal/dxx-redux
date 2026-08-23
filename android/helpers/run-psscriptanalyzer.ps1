@@ -85,7 +85,19 @@ $analyzerModule = Get-Module PSScriptAnalyzer -ListAvailable |
 if (-not $analyzerModule) {
     Write-Host "PSScriptAnalyzer $analyzerVersion not found; installing for current user..."
     try {
-        Install-Module PSScriptAnalyzer -Scope CurrentUser -RequiredVersion $analyzerVersion -Repository PSGallery -Force -AllowClobber -AcceptLicense -ErrorAction Stop
+        $installParameters = @{
+            Name = 'PSScriptAnalyzer'
+            Scope = 'CurrentUser'
+            RequiredVersion = $analyzerVersion
+            Repository = 'PSGallery'
+            Force = $true
+            AllowClobber = $true
+            ErrorAction = 'Stop'
+        }
+        if ((Get-Command Install-Module).Parameters.ContainsKey('AcceptLicense')) {
+            $installParameters['AcceptLicense'] = $true
+        }
+        Install-Module @installParameters
     } catch {
         Write-Error "PSScriptAnalyzer install failed. Run: Install-Module PSScriptAnalyzer -Scope CurrentUser -RequiredVersion $analyzerVersion -Force"
         exit 1
@@ -109,7 +121,7 @@ if (-not (Test-Path $settingsFile)) {
 
 # --- Gather .ps1 files ---
 # Exclude build outputs, gradle wrapper, and NDK cmake cache
-$files = Get-ScopedFiles -RootPath $androidRoot -InputPaths $Paths -ValidExtensions @('.ps1')
+$files = Get-ScopedFiles -RootPath $repoRoot -InputPaths $Paths -ValidExtensions @('.ps1')
 
 if ($files.Count -eq 0) {
     Write-Host "No PowerShell files found"

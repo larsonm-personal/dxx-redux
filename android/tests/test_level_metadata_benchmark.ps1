@@ -63,7 +63,7 @@ function Invoke-HeadlessBuild {
     $cmakeLine = Select-String -LiteralPath $cmakeCache -Pattern '^CMAKE_COMMAND:INTERNAL=(.+)$' | Select-Object -First 1
     if (-not $cmakeLine) { throw 'CMAKE_COMMAND not found in buildd1/CMakeCache.txt' }
     $cmake = $cmakeLine.Matches[0].Groups[1].Value
-    if ($IsWindows -or $env:OS -eq 'Windows_NT') {
+    if ($env:OS -eq 'Windows_NT') {
         $vcvars = 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat'
         if (-not (Test-Path -LiteralPath $vcvars)) { throw "vcvarsall.bat missing: $vcvars" }
         $command = 'call "' + $vcvars + '" x86 && "' + $cmake + '" --build "' + (Join-Path $repoRoot 'buildd1') + '" --target dxx-redux-d1-headless-metadata && "' + $cmake + '" --build "' + (Join-Path $repoRoot 'buildd2') + '" --target dxx-redux-d2-headless-metadata'
@@ -106,7 +106,7 @@ function Resolve-DataDirectory {
 }
 
 function Get-EnvironmentIdentity {
-    $cpu = if ($IsWindows -or $env:OS -eq 'Windows_NT') {
+    $cpu = if ($env:OS -eq 'Windows_NT') {
         (Get-CimInstance Win32_Processor | Select-Object -First 1 -ExpandProperty Name).Trim()
     } else {
         $line = Select-String -Path '/proc/cpuinfo' -Pattern '^model name\s*:\s*(.+)$' | Select-Object -First 1

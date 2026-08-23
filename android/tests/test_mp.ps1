@@ -61,7 +61,7 @@ $testPassed = $false
 
 $script:LogFile = Join-Path $REPO_ROOT "temp\mp_test_log.txt"
 try { if (Test-Path $script:LogFile) { Remove-Item $script:LogFile -Force -ErrorAction SilentlyContinue } } catch { }
-"" | Set-Content -Path $script:LogFile -Encoding utf8 -ErrorAction SilentlyContinue
+try { [IO.File]::WriteAllText($script:LogFile, [Environment]::NewLine, [Text.UTF8Encoding]::new($false)) } catch {}
 
 function Get-MpIntrospection {
     param([string]$Serial)
