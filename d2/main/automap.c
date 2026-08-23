@@ -1070,6 +1070,7 @@ int automap_handler(window *wind, d_event *event, automap *am)
 
 		case EVENT_IDLE:
 		#ifdef __ANDROID__
+			android_reactor_pause_toggle_apply_pending();
 			android_matcen_mode_apply_pending();
 		#endif
 		case EVENT_JOYSTICK_BUTTON_UP:

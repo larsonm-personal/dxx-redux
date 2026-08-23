@@ -41,6 +41,21 @@ class MultiplayerSourceContractsTest(unittest.TestCase):
         self.assertLess(builder.index("Notification.Builder(this, CHANNEL_ID)"), builder.index("} else {"))
         self.assertGreater(builder.index("Notification.Builder(this)"), builder.index("} else {"))
 
+    def test_reactor_pause_is_consumed_while_automap_is_front(self) -> None:
+        actions = (
+            ROOT / "android/app/src/main/cpp/shared/android_meta_actions.c"
+        ).read_text(encoding="utf-8")
+        handler = actions[
+            actions.index("int android_handle_ingame_saveload_request") :
+            actions.index("int android_matcen_mode_apply_pending")
+        ]
+        self.assertIn("android_reactor_pause_toggle_apply_pending()", handler)
+
+        for game in ("d1", "d2"):
+            source = (ROOT / game / "main/automap.c").read_text(encoding="utf-8")
+            idle = source[source.index("case EVENT_IDLE:") : source.index("case EVENT_JOYSTICK_BUTTON_UP:")]
+            self.assertIn("android_reactor_pause_toggle_apply_pending();", idle)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -125,6 +125,7 @@ int android_handle_ingame_saveload_request(void);
 int android_open_overlay_pause_if_safe(void);
 int android_queue_saveload_request(int save_request);
 int android_matcen_mode_apply_pending(void);
+int android_reactor_pause_toggle_apply_pending(void);
 int android_weapon_select_apply_pending(void);
 
 /*

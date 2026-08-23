@@ -375,22 +375,28 @@ int android_handle_ingame_saveload_request(void)
 	if (android_matcen_mode_apply_pending())
 		return 1;
 
-	if (android_reactor_pause_toggle_pending) {
-		android_reactor_pause_toggle_pending = 0;
-		if (!PlayerCfg.MapCheatsAccessible || !reactor_countdown_is_active())
-			return 0;
-#ifdef NETWORK
-		if (Game_mode & GM_MULTI) {
-			multi_request_reactor_pause_toggle();
-			return 1;
-		}
-#endif
-		if (reactor_countdown_set_paused(!Reactor_countdown_paused, Countdown_timer))
-			HUD_init_message_literal(HM_DEFAULT, Reactor_countdown_paused ? "Reactor countdown paused" : "Reactor countdown resumed");
+	if (android_reactor_pause_toggle_apply_pending())
 		return 1;
-	}
 
 	return 0;
+}
+
+int android_reactor_pause_toggle_apply_pending(void)
+{
+	if (!android_reactor_pause_toggle_pending)
+		return 0;
+	android_reactor_pause_toggle_pending = 0;
+	if (!PlayerCfg.MapCheatsAccessible || !reactor_countdown_is_active())
+		return 0;
+#ifdef NETWORK
+	if (Game_mode & GM_MULTI) {
+		multi_request_reactor_pause_toggle();
+		return 1;
+	}
+#endif
+	if (reactor_countdown_set_paused(!Reactor_countdown_paused, Countdown_timer))
+		HUD_init_message_literal(HM_DEFAULT, Reactor_countdown_paused ? "Reactor countdown paused" : "Reactor countdown resumed");
+	return 1;
 }
 
 int android_matcen_mode_apply_pending(void)
