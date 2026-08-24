@@ -118,6 +118,7 @@ game_data/**
 !game_data/**/track_fingerprints.json
 !game_data/CD images/Descent Anniversary (ISO)/descent_anniversary.cue
 !game_data/mission_files/*.json
+!game_data/mission_files/d2xxl_downloads/*.json
 !game_data/mission_files/cd_level_metadata_sources.jsonc
 !game_data/music/**/chromaprint_info.jsonc
 !game_data/manage_data.ps1

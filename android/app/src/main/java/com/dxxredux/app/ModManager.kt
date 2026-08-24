@@ -495,6 +495,9 @@ class ModManager(
             Log.e(TAG, "Not enough space to import mission zip $displayName", e)
             ImportStorageGuard.recordFailure(filesDir, "Mission ZIP import failed for $displayName", e)
             throw e
+        } catch (e: MissionZip.UnsupportedD2xxlHogException) {
+            Log.w(TAG, "Unsupported D2X-XL HOG in mission zip $displayName")
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to import mission zip $displayName", e)
             ImportStorageGuard.recordFailure(filesDir, "Mission ZIP import failed for $displayName", e)
@@ -522,7 +525,10 @@ class ModManager(
     ): ModInfo? {
         onProgress(LauncherCopyProgress("Inspecting level pack: $displayName", 0L, 0L))
         val scan = MissionZip.inspect(source)
-        if (scan == null) return importNestedRebirthMissionZip(source, onProgress)
+        if (scan == null) {
+            if (MissionZip.containsUnsupportedD2xxlHog(source)) throw MissionZip.UnsupportedD2xxlHogException()
+            return importNestedRebirthMissionZip(source, onProgress)
+        }
         val safeName = displayName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
         val dest = File(modsDir, safeName)
         val extractionStore = MissionZipExtractionStore(supportDir)

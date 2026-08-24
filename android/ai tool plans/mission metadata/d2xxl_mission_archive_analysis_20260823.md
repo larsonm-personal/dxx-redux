@@ -27,17 +27,19 @@ focused near-duplicate samples tested below.
 All eight archives in the first-pass `duplicates` directory also pass this
 structural check, but they remain duplicates.
 
-Two archives in the first-pass `d2x-xl` directory use standard HOGs and can be
-selected in their original downloaded form:
+Two archives in the first-pass `d2x-xl` directory use standard HOGs:
 
-- `D2-XL.7z`: valid `DHF` HOG and descriptor pairing, 9.4 MiB unpacked
+- `D2-XL.7z`: valid `DHF` HOG and supported descriptor, 9.4 MiB unpacked;
+  verified importing in its original downloaded form on the emulator
 - `sphere-1.51.7z`: valid `DHF` HOG and descriptor pairing, but 692.4 MiB
-  unpacked, of which 671.3 MiB is D2X-XL cache data
+  unpacked, of which 671.3 MiB is D2X-XL cache data. Its descriptor uses the
+  D2X-XL-specific `d2x-name` field, which the current mission parser does not
+  support, so its original archive currently ends at a generic import failure.
 
-The launcher retains the original archive, stages its playable mission and
-supporting files internally, and ignores a generated top-level `cache/` tree.
-This makes the original Sphere download usable without spending another 671.3
-MiB on D2X-XL cache data.
+For admitted missions, the launcher retains the original archive, stages its
+playable mission and supporting files internally, and ignores a generated
+top-level `cache/` tree. Sphere descriptor support remains intentionally
+separate from this cache handling.
 
 ### Not importable as missions without conversion
 
@@ -51,6 +53,10 @@ as ordinary mission HOGs:
 - `dinter_multilevel-2.0.7z`
 - `lor-xl.7z`
 - `pmines_v11.7z`
+
+All six original downloads were manually selected on the Android emulator and
+displayed: `This level pack uses the D2X-XL extended HOG format, which DXX Redux
+does not currently support`.
 
 `pmines_v11.7z` is also 1.6 GiB unpacked and contains a 187.4 MiB extended HOG.
 It is under the general 2 GiB extraction ceiling, but it will not be admitted
@@ -179,7 +185,8 @@ to contain distinct layouts/gameplay rather than every historical port build.
 - Removed all temporary hardlinks from `game_data/mission_files`; retained
   generated analysis artifacts only under `android/temp`
 
-The standard-`DHF` ZIP/7z packages can therefore be handled as users find them
-on the web. The remaining format boundaries are the six extended-`D2X` HOG
-packages and the ACE-wrapped Panic package; support for those would require
+Standard-`DHF` ZIP/7z packages with supported descriptors can therefore be
+handled as users find them on the web. The remaining format boundaries are the
+six extended-`D2X` HOG packages, Sphere's D2X-XL-specific descriptor syntax,
+and the ACE-wrapped Panic package; support for those would require
 format-specific work intentionally deferred here.

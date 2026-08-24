@@ -255,6 +255,23 @@ class MissionZipTest {
     }
 
     @Test
+    fun identifiesD2xxlExtendedHogWithoutMisclassifyingOtherInvalidHogs() {
+        val extended =
+            createArchiveZip(
+                listOf(
+                    "extended.mn2" to "name = Extended\nnum_levels = 1\nlevel01.rl2\n".toByteArray(),
+                    "extended.hog" to "D2Xextended".toByteArray(Charsets.US_ASCII),
+                ),
+            )
+        val invalid = createArchiveZip(listOf("invalid.hog" to "BADinvalid".toByteArray(Charsets.US_ASCII)))
+
+        assertNull(MissionZip.inspect(extended))
+        assertTrue(MissionZip.containsUnsupportedD2xxlHog(extended))
+        assertTrue(extended.inputStream().use { MissionZip.containsUnsupportedD2xxlHog(it) })
+        assertFalse(MissionZip.containsUnsupportedD2xxlHog(invalid))
+    }
+
+    @Test
     fun acceptsMissionWithAllOrdinaryLevelsAndMissingOptionalSecret() {
         val zipFile = File.createTempFile("missing-secret-mission", ".zip")
         zipFile.deleteOnExit()

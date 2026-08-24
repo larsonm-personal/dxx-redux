@@ -20,15 +20,14 @@ $batch = Join-Path $scriptDir "run_mission_zip_batch.ps1"
 $hostBatch = Join-Path $scriptDir "regenerate_all_mission_metadata_host.ps1"
 . (Join-Path $scriptDir 'runtime_targeted_sampling.ps1')
 . (Join-Path $scriptDir 'cd_level_metadata_sources.ps1')
+. (Join-Path $scriptDir 'mission_metadata_archive_sources.ps1')
 
 function Write-Status {
     param([string]$Message, [string]$Color = "Cyan")
     Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] $Message" -ForegroundColor $Color
 }
 
-if (-not (Test-Path -LiteralPath $zipDir -PathType Container)) {
-    throw "Mission metadata source directory not found: $zipDir"
-}
+$archiveSources = @(Get-AvailableMissionMetadataArchiveSources -Sources (Get-MissionMetadataArchiveSources -RepoRoot $repoRoot))
 if (-not (Test-Path -LiteralPath $gradle -PathType Leaf)) {
     throw "Gradle wrapper not found: $gradle"
 }
@@ -55,36 +54,53 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Status "Regenerating mission metadata JSON"
 Write-Status "Output: $outDir"
-$batchArgs = @{
-    MetadataOnly = $true
-    Install = $true
-    ZipDir = $zipDir
-    OutDir = $outDir
-    TimeoutSeconds = 900
-}
+$selectedArchivesBySource = @{}
 $selectedCdSourceIds = $null
 if ($SampleFraction -lt 1.0) {
     if ($SampleSeed -eq 0) { $SampleSeed = Get-Random -Minimum 1 -Maximum ([int]::MaxValue) }
-    $zipItems = @(Get-ChildItem -LiteralPath $zipDir -File | Where-Object Extension -in '.zip', '.7z' | Sort-Object Name)
+    $zipItemCount = 0
+    foreach ($source in $archiveSources) {
+        $zipItems = @(Get-ChildItem -LiteralPath $source.Directory -File | Where-Object Extension -in '.zip', '.7z' | Sort-Object Name)
+        $selectedArchivesBySource[$source.Id] = @(Select-RuntimeHashRingFractionItems -Items $zipItems -Fraction $SampleFraction `
+                -Seed ($SampleSeed -bxor 401) -StatePath $SampleStatePath `
+                -RingName "regenerate:metadata:archives:$($source.Id)" | Select-Object -ExpandProperty Name)
+        $zipItemCount += $zipItems.Count
+    }
     $cdManifest = Join-Path $zipDir 'cd_level_metadata_sources.jsonc'
     $cdItems = @(Resolve-CdLevelMetadataSources -RepoRoot $repoRoot -ManifestPath $cdManifest -OutputDir $zipDir |
             ForEach-Object { [pscustomobject]@{ Name = $_.Id } })
-    $selectedZips = @(Select-RuntimeHashRingFractionItems -Items $zipItems -Fraction $SampleFraction `
-            -Seed ($SampleSeed -bxor 401) -StatePath $SampleStatePath `
-            -RingName 'regenerate:metadata:archives' | Select-Object -ExpandProperty Name)
     $selectedCdSourceIds = @(Select-RuntimeHashRingFractionItems -Items $cdItems -Fraction $SampleFraction `
             -Seed ($SampleSeed -bxor 402) -StatePath $SampleStatePath `
             -RingName 'regenerate:metadata:cd-sources' | Select-Object -ExpandProperty Name)
-    $batchArgs.Pattern = $selectedZips
+    $selectedZipCount = @($selectedArchivesBySource.Values | ForEach-Object { $_ }).Count
     Write-Status ("Metadata sample: archives {0}/{1}, CD sources {2}/{3} ({4:P1}), seed {5}" -f
-        $selectedZips.Count, $zipItems.Count, $selectedCdSourceIds.Count, $cdItems.Count,
+        $selectedZipCount, $zipItemCount, $selectedCdSourceIds.Count, $cdItems.Count,
         $SampleFraction, $SampleSeed)
 }
-& $batch @batchArgs
-$batchExit = $LASTEXITCODE
-if ($batchExit -ne 0) {
-    Write-Status "Mission metadata regeneration failed with exit code $batchExit" "Red"
-    exit $batchExit
+
+$sourceIndex = 0
+foreach ($source in $archiveSources) {
+    $patterns = if ($SampleFraction -lt 1.0) { @($selectedArchivesBySource[$source.Id]) } else { @("*.zip", "*.7z") }
+    if ($patterns.Count -eq 0) {
+        Write-Status "Skipping empty metadata sample for $($source.Directory)" "Yellow"
+        continue
+    }
+    $batchArgs = @{
+        MetadataOnly = $true
+        Install = ($sourceIndex -eq 0)
+        ZipDir = $source.Directory
+        OutDir = Join-Path $outDir $source.Id
+        Pattern = $patterns
+        TimeoutSeconds = 900
+    }
+    Write-Status "Mission archive source: $($source.Directory)"
+    & $batch @batchArgs
+    $batchExit = $LASTEXITCODE
+    if ($batchExit -ne 0) {
+        Write-Status "Mission metadata regeneration failed with exit code $batchExit" "Red"
+        exit $batchExit
+    }
+    $sourceIndex++
 }
 
 Write-Status "Regenerating CD mission metadata JSON"

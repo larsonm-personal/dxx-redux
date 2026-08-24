@@ -17,6 +17,11 @@ object MissionZip {
     private val INLINE_README_EXTENSIONS = setOf("txt")
     private val EXTERNAL_README_EXTENSIONS = setOf("pdf", "rtf", "doc", "docx")
 
+    const val UNSUPPORTED_D2XXL_HOG_MESSAGE =
+        "This level pack uses the D2X-XL extended HOG format, which DXX Redux does not currently support"
+
+    class UnsupportedD2xxlHogException : IllegalArgumentException(UNSUPPORTED_D2XXL_HOG_MESSAGE)
+
     data class Constituent(
         val path: String,
         val name: String,
@@ -271,6 +276,46 @@ object MissionZip {
         return hasRebirthChildZip || playableMissionSets(sortedConstituents(constituents), missions).isNotEmpty()
     }
 
+    fun containsUnsupportedD2xxlHog(file: File): Boolean {
+        if (!file.isFile) return false
+        ArchiveFiles.open(file).use { archive ->
+            val budget = ExtractionBudget()
+            for (entry in archive.entries) {
+                budget.registerEntry(
+                    if (entry.isDirectory) 0 else entry.sizeBytes,
+                    if (entry.isDirectory) 0 else entry.compressedSizeBytes ?: 0,
+                    entry.path,
+                )
+                if (!entry.isDirectory && isMissionHogName(entry.path)) {
+                    if (archive.openInputStream(entry).use(::hasD2xxlHogSignature)) return true
+                }
+            }
+        }
+        return false
+    }
+
+    fun containsUnsupportedD2xxlHog(
+        input: InputStream,
+        stagingDirectory: File? = null,
+        maxSourceBytes: Long = ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES,
+    ): Boolean {
+        val budget = ExtractionBudget()
+        openZipInputStreamSkippingPreamble(input, stagingDirectory, maxSourceBytes).use { zip ->
+            var entry = zip.nextEntry
+            while (entry != null) {
+                budget.registerEntry(
+                    if (entry.isDirectory) 0 else entry.size,
+                    if (entry.isDirectory) 0 else entry.compressedSize,
+                    entry.name,
+                )
+                if (!entry.isDirectory && isMissionHogName(entry.name) && hasD2xxlHogSignature(zip)) return true
+                zip.closeEntry()
+                entry = zip.nextEntry
+            }
+        }
+        return false
+    }
+
     private fun descriptorBudget() =
         ExtractionBudget(
             maxEntryBytes = ExtractionLimits.MAX_DESCRIPTOR_BYTES,
@@ -454,6 +499,21 @@ object MissionZip {
         role == GameFileFormats.MISSION_ZIP_HOG || role == GameFileFormats.MISSION_ZIP_MOD_ARCHIVE
 
     private fun isMissionHog(constituent: Constituent): Boolean = constituent.role == GameFileFormats.MISSION_ZIP_HOG
+
+    private fun isMissionHogName(path: String): Boolean =
+        GameFileFormats.missionZipRoleForFile(leafName(path)) == GameFileFormats.MISSION_ZIP_HOG
+
+    private fun hasD2xxlHogSignature(input: InputStream): Boolean {
+        val signature = ByteArray(3)
+        var offset = 0
+        while (offset < signature.size) {
+            val read = input.read(signature, offset, signature.size - offset)
+            if (read < 0) return false
+            if (read == 0) continue
+            offset += read
+        }
+        return signature.toString(Charsets.US_ASCII) == "D2X"
+    }
 
     private fun parentPath(path: String): String = normalizePath(path).substringBeforeLast('/', "")
 

@@ -166,6 +166,21 @@ class ModManagerMissionZipTest {
     }
 
     @Test
+    fun extendedD2xxlHogReportsSpecificImportFailure() {
+        val filesDir = File("build/test-mod-manager-extended-d2xxl-hog").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+
+        val error =
+            assertThrows(MissionZip.UnsupportedD2xxlHogException::class.java) {
+                ModManager(filesDir).importMissionZipFile(createExtendedD2xxlMission7z(), "Extended.7z")
+            }
+
+        assertEquals(MissionZip.UNSUPPORTED_D2XXL_HOG_MESSAGE, error.message)
+        assertTrue(ModManager(filesDir).listMods().isEmpty())
+    }
+
+    @Test
     fun missionSevenZipDetailsRepairStaleExtractionRecord() {
         val filesDir = File("build/test-mod-manager-mission-7z-details-repair").absoluteFile
         filesDir.deleteRecursively()
@@ -622,6 +637,19 @@ class ModManagerMissionZipTest {
             zip.closeEntry()
         }
         return zipFile
+    }
+
+    private fun createExtendedD2xxlMission7z(): File {
+        val archive = File.createTempFile("missionzip-extended-d2xxl", ".7z")
+        archive.deleteOnExit()
+        SevenZOutputFile(archive).use { sevenZ ->
+            sevenZ.writeEntry("Extended.hog", "D2Xextended".toByteArray(Charsets.US_ASCII))
+            sevenZ.writeEntry(
+                "Extended.mn2",
+                "name = Extended\nnum_levels = 1\nlevel01.rl2\n".toByteArray(),
+            )
+        }
+        return archive
     }
 
     private fun createMission7z(): File {
