@@ -244,7 +244,7 @@ static void test_terminal_statuses(void)
 	assert(decision.status == GUIDEBOT_ROUTE_DECISION_CALCULATING);
 }
 
-static void test_path_adoption_requires_current_equivalent_guidance(void)
+static void test_path_adoption_retains_current_equivalent_guidance(void)
 {
 	level_metadata_state state;
 	route_planner_plan_summary plan;
@@ -262,7 +262,12 @@ static void test_path_adoption_requires_current_equivalent_guidance(void)
 	       GUIDEBOT_ROUTE_ADOPTION_RETAIN_PATH);
 	assert(guidebot_route_decision_adoption_action(
 	           1, &previous, 0, 1, &next) ==
+	       GUIDEBOT_ROUTE_ADOPTION_RETAIN_PATH);
+	next.objective_segment++;
+	assert(guidebot_route_decision_adoption_action(
+	           1, &previous, 0, 1, &next) ==
 	       GUIDEBOT_ROUTE_ADOPTION_REPLACE_PATH);
+	next = previous;
 	next.path_terminal_segment++;
 	assert(guidebot_route_decision_adoption_action(
 	           1, &previous, 1, 1, &next) ==
@@ -377,7 +382,7 @@ int main(void)
 	test_actor_profile_changes_only_input_identity();
 	test_semantic_and_guidance_changes_are_distinct();
 	test_terminal_statuses();
-	test_path_adoption_requires_current_equivalent_guidance();
+	test_path_adoption_retains_current_equivalent_guidance();
 	test_shadow_classifies_mismatches();
 	return 0;
 }

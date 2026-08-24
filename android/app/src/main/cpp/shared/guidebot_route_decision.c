@@ -337,8 +337,7 @@ int guidebot_route_decision_adoption_action(
 		           : GUIDEBOT_ROUTE_ADOPTION_STOP;
 	if (!next_valid || !guidebot_route_decision_has_guidance(next))
 		return GUIDEBOT_ROUTE_ADOPTION_STOP;
-	if (previous_valid && previous_certificate_valid &&
-	    guidebot_route_decision_has_guidance(previous) &&
+	if (previous_valid && guidebot_route_decision_has_guidance(previous) &&
 	    guidebot_route_decision_guidance_equal(previous, next))
 		return GUIDEBOT_ROUTE_ADOPTION_RETAIN_PATH;
 	return GUIDEBOT_ROUTE_ADOPTION_REPLACE_PATH;

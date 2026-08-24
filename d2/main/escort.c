@@ -1809,6 +1809,25 @@ void escort_route_monitor_completion(void)
 			        previous_decision_valid, &previous_decision,
 			        previous_certificate_valid,
 			        next_decision_valid, &next_decision);
+#ifdef __ANDROID__
+			if (debug_log_enabled[DLOG_GUIDEBOT])
+				debug_log(
+				    DLOG_GUIDEBOT,
+				    "route_adoption action=%d previous_valid=%d "
+				    "previous_certificate=%d next_valid=%d "
+				    "same_guidance=%d previous_target=%d next_target=%d "
+				    "reason=%s",
+				    adoption_action, previous_decision_valid,
+				    previous_certificate_valid, next_decision_valid,
+				    previous_decision_valid && next_decision_valid &&
+				        guidebot_route_decision_guidance_equal(
+				            &previous_decision, &next_decision),
+				    previous_decision_valid
+				        ? previous_decision.objective_segment
+				        : -1,
+				    next_decision_valid ? next_decision.objective_segment : -1,
+				    Escort_route_last_replan_reason);
+#endif
 
 			if (adoption_action ==
 			    GUIDEBOT_ROUTE_ADOPTION_RETAIN_PATH) {
