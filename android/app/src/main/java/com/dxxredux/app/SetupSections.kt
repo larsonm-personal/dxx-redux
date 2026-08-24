@@ -750,6 +750,14 @@ private fun ModDetailsDialog(
             openMissionZipExternalDocument(context, archivePath, constituent)
         }
     }
+
+    fun openReadme(readme: MissionZip.Constituent) {
+        if (MissionZip.isInlineReadmeCandidate(readme.name)) {
+            textViewTarget = readme
+        } else if (MissionZip.isExternalReadmeCandidate(readme.name)) {
+            openExternalConstituent(readme)
+        }
+    }
     constituentTarget?.let { constituent ->
         MissionZipConstituentDialog(
             constituent = constituent,
@@ -794,15 +802,9 @@ private fun ModDetailsDialog(
                     fontSize = 16.sp,
                     modifier = Modifier.weight(1f),
                 )
-                details?.missionZip?.readme?.let { readme ->
+                details?.missionZip?.readmes?.singleOrNull()?.let { readme ->
                     TextButton(
-                        onClick = {
-                            if (MissionZip.isInlineReadmeCandidate(readme.name)) {
-                                textViewTarget = readme
-                            } else if (MissionZip.isExternalReadmeCandidate(readme.name)) {
-                                openExternalConstituent(readme)
-                            }
-                        },
+                        onClick = { openReadme(readme) },
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                         modifier = Modifier.height(32.dp),
                     ) {
@@ -912,6 +914,22 @@ private fun ModDetailsDialog(
                                 DetailRow("Extracted files", extraction.fileCount.toString())
                                 DetailRow("Extracted size", setupSectionFormatSize(extraction.extractedSizeBytes))
                                 DetailRow("Extracted path", extraction.rootPath)
+                            }
+                            if (missionZip.readmes.size > 1) {
+                                ModDetailSectionTitle("Readmes")
+                                missionZip.readmes.forEach { readme ->
+                                    OutlinedButton(
+                                        onClick = { openReadme(readme) },
+                                        shape = MaterialTheme.shapes.small,
+                                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .padding(bottom = 4.dp),
+                                    ) {
+                                        Text(readme.name, fontSize = 12.sp)
+                                    }
+                                }
                             }
                             ModDetailSectionTitle("Mission")
                             DetailRow("Title", missionZip.mission.displayName)
@@ -1954,32 +1972,7 @@ private fun readExtractedMissionZipTextFile(
     file: File,
     path: String,
     maxBytes: Long = 1024L * 1024L,
-): MissionZip.TextFileContent {
-    if (!MissionZip.isInlineReadmeCandidate(path)) {
-        return MissionZip.TextFileContent("", truncated = false, problem = "Only .txt files can be viewed")
-    }
-    if (!file.isFile) return MissionZip.TextFileContent("", truncated = false, problem = "Text file is missing")
-    return try {
-        val limit = maxBytes.coerceAtLeast(1L).coerceAtMost((Int.MAX_VALUE - 1).toLong()).toInt()
-        val bytes =
-            file.inputStream().use { input ->
-                val buffer = ByteArray(limit + 1)
-                var total = 0
-                while (total < buffer.size) {
-                    val read = input.read(buffer, total, buffer.size - total)
-                    if (read <= 0) break
-                    total += read
-                }
-                buffer.copyOf(total)
-            }
-        val truncated = bytes.size > limit
-        val keptBytes = bytes.copyOf(minOf(bytes.size, limit))
-        val text = MissionZip.decodeLegacyText(keptBytes, truncated)
-        MissionZip.TextFileContent(text, truncated)
-    } catch (e: Exception) {
-        MissionZip.TextFileContent("", truncated = false, problem = e.message ?: e.javaClass.simpleName)
-    }
-}
+): MissionZip.TextFileContent = MissionZip.readExtractedDocument(file, path, maxBytes)
 
 private fun missionZipViewAction(
     constituent: MissionZip.Constituent,

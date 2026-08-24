@@ -513,6 +513,25 @@ private data class MissionZipExtractionPlan(
 private fun isGeneratedD2xxlCachePath(path: String): Boolean =
     path.substringBefore('/').equals("cache", ignoreCase = true)
 
+private fun isD2xxlMissionModSongList(
+    scan: MissionZip.ScanResult,
+    path: String,
+): Boolean {
+    val parts = path.split('/')
+    if (parts.size != 3 ||
+        !parts[0].equals("mods", ignoreCase = true) ||
+        !parts[2].equals("descent.sng", ignoreCase = true)
+    ) {
+        return false
+    }
+    return scan.missionSets.any { missionSet ->
+        missionSet.mission.path
+            .substringAfterLast('/')
+            .substringBeforeLast('.')
+            .equals(parts[1], ignoreCase = true)
+    }
+}
+
 private fun missionZipExtractionPlan(
     entries: List<ArchiveFileEntry>,
     scan: MissionZip.ScanResult,
@@ -529,9 +548,13 @@ private fun missionZipExtractionPlan(
     val songLists =
         candidates.filter { candidate ->
             !candidate.archiveEntry.isDirectory &&
-                '/' !in candidate.entryPath &&
                 launcherExtensionOf(candidate.entryPath) == "sng" &&
-                candidate.entryPath.lowercase(Locale.US) !in MISSION_ZIP_SONG_LIST_FILES
+                (
+                    (
+                        '/' !in candidate.entryPath &&
+                            candidate.entryPath.lowercase(Locale.US) !in MISSION_ZIP_SONG_LIST_FILES
+                    ) || isD2xxlMissionModSongList(scan, candidate.entryPath)
+                )
         }
     val engineSongListExists =
         candidates.any { candidate ->

@@ -363,6 +363,26 @@ class ModManagerMissionZipTest {
     }
 
     @Test
+    fun d2xxlMissionModSongListStagesDescentSongAliasWithoutRepackingArchive() {
+        val filesDir = File("build/test-mod-manager-mission-zip-d2xxl-mod-music").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+        val archive = createD2xxlModFolderMission7z()
+        val originalSize = archive.length()
+
+        val manager = ModManager(filesDir)
+        val imported = manager.importMissionZipFile(archive, "Pluton2.7z")
+        assertNotNull(imported)
+        manager.writeEnabledModPaths("d2")
+
+        val extractedRoot = File(filesDir, "mods/.extracted_mission_zips/Pluton2.7z")
+        assertEquals("game01.hmp\n", File(extractedRoot, "descent.sng").readText())
+        assertEquals("game01.hmp\n", File(extractedRoot, "mods/pluton2/descent.sng").readText())
+        assertTrue(File(extractedRoot, "mods/pluton2/pluton2.s22").isFile)
+        assertEquals(originalSize, archive.length())
+    }
+
+    @Test
     fun rebirthMissionZipKeepsExistingMissionsDirectory() {
         val filesDir = File("build/test-mod-manager-mission-zip-rebirth-layout").absoluteFile
         filesDir.deleteRecursively()
@@ -661,6 +681,21 @@ class ModManagerMissionZipTest {
             sevenZ.writeEntry("Seven.dxa", createZipBytes {})
             sevenZ.writeEntry("Seven.hog", createHogBytes("seven01.rl2" to ByteArray(1)))
             sevenZ.writeEntry("Seven.mn2", "name = Seven Pack\nnum_levels = 1\nseven01.rl2\n".toByteArray())
+        }
+        return archive
+    }
+
+    private fun createD2xxlModFolderMission7z(): File {
+        val archive = File.createTempFile("missionzip-d2xxl-mod-folder", ".7z")
+        archive.deleteOnExit()
+        SevenZOutputFile(archive).use { sevenZ ->
+            sevenZ.writeEntry("missions/single/pluton2.hog", createHogBytes("level01.rl2" to ByteArray(1)))
+            sevenZ.writeEntry(
+                "missions/single/pluton2.mn2",
+                "name = Pluton 2\nnum_levels = 1\nlevel01.rl2\n".toByteArray(),
+            )
+            sevenZ.writeEntry("mods/pluton2/descent.sng", "game01.hmp\n".toByteArray())
+            sevenZ.writeEntry("mods/pluton2/pluton2.s22", ByteArray(32))
         }
         return archive
     }

@@ -1,0 +1,784 @@
+[
+  {
+    "status": "ok",
+    "source": "Phobos Encounter",
+    "game": "d2",
+    "mission_name": "Phobos Encounter",
+    "mission_filename": "phobos-e.mn2",
+    "coop_starts": "4",
+    "track_names": [
+      {
+        "track": 0,
+        "name": "MIDI Track 0",
+        "filename": "descent.hmp",
+        "format": "hmp",
+        "length_s": 183
+      },
+      {
+        "track": 1,
+        "name": "MIDI Track 1",
+        "filename": "briefing.hmp",
+        "format": "hmp",
+        "length_s": 95
+      },
+      {
+        "track": 2,
+        "name": "MIDI Track 2",
+        "filename": "endlevel.hmp",
+        "format": "hmp",
+        "length_s": 0,
+        "parse_status": "invalid_midi"
+      },
+      {
+        "track": 3,
+        "name": "MIDI Track 3",
+        "filename": "endgame.hmp",
+        "format": "hmp",
+        "length_s": 0,
+        "parse_status": "invalid_midi"
+      },
+      {
+        "track": 4,
+        "name": "Robot Zone",
+        "filename": "credits.hmp",
+        "format": "hmp",
+        "length_s": 133
+      },
+      {
+        "track": 5,
+        "name": "Get Ya !!!",
+        "filename": "game01.hmp",
+        "format": "hmp",
+        "length_s": 96
+      },
+      {
+        "track": 6,
+        "name": "MIDI Track 2",
+        "filename": "game02.hmp",
+        "format": "hmp",
+        "length_s": 253
+      },
+      {
+        "track": 7,
+        "name": "Runner",
+        "filename": "game03.hmp",
+        "format": "hmp",
+        "length_s": 106
+      },
+      {
+        "track": 8,
+        "name": "MIDI Track 4",
+        "filename": "game04.hmp",
+        "format": "hmp",
+        "length_s": 252
+      }
+    ],
+    "level_count": 6,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "TRAC Research Complex",
+        "level_file": "phobos1.rl2",
+        "segment_count": 355,
+        "wall_count": 74,
+        "trigger_count": 4,
+        "object_count": 125,
+        "texture_count": 60,
+        "robots": 74,
+        "hostages": 2,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 3,
+        "mine_volume": 21755207.879256308,
+        "mine_volume_normalized": 4.757417500419357,
+        "mine_volume_text": "4.8x",
+        "travel_distance": 9205.069960606297,
+        "travel_time_seconds": 184,
+        "travel_time_text": "3M:04S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 31
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 1",
+            "seg": 3,
+            "wall": 9,
+            "label_pos": {
+              "x": 27.0,
+              "y": -157.61865234375,
+              "z": -244.0816192626953
+            },
+            "distance": 869.2147529000925,
+            "trigger": 1,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 153,
+                "side": 2,
+                "wall": 5
+              },
+              {
+                "seg": 151,
+                "side": 0,
+                "wall": 4
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 300,
+            "label_pos": {
+              "x": 0.0,
+              "y": -117.61865234375,
+              "z": -224.0816192626953
+            },
+            "distance": 1008.1881631811775,
+            "key": "blue"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 323,
+            "label_pos": {
+              "x": 0.0,
+              "y": -206.44041442871094,
+              "z": -563.4700469970703
+            },
+            "distance": 1900.734336480728,
+            "key": "gold"
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 279,
+            "label_pos": {
+              "x": -0.0001373291015625,
+              "y": 99.38102722167969,
+              "z": 680.9186859130859
+            },
+            "distance": 2583.4975008425718,
+            "key": "red"
+          },
+          {
+            "index": 5,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 242,
+            "label_pos": {
+              "x": 0.0,
+              "y": -110.61865234375,
+              "z": 638.9183807373047
+            },
+            "distance": 1856.2346232631996
+          },
+          {
+            "index": 6,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 74,
+            "side": 1,
+            "wall": 38,
+            "label_pos": {
+              "x": 0.0,
+              "y": 159.38136291503906,
+              "z": -0.0816192626953125
+            },
+            "distance": 987.2005839385279,
+            "trigger": 2,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "no guidebot or guidebot start cage placed in this level"
+        ]
+      },
+      {
+        "level_num": 2,
+        "secret": false,
+        "level_name": "Altaridge Falls Mine",
+        "level_file": "phobos2.rl2",
+        "segment_count": 506,
+        "wall_count": 122,
+        "trigger_count": 7,
+        "object_count": 162,
+        "texture_count": 72,
+        "robots": 103,
+        "hostages": 10,
+        "secrets": 1,
+        "matcens": 1,
+        "energy_centers": 6,
+        "mine_volume": 33798108.60145905,
+        "mine_volume_normalized": 7.390952742629084,
+        "mine_volume_text": "7.4x",
+        "travel_distance": 11007.762060697438,
+        "travel_time_seconds": 220,
+        "travel_time_text": "3M:40S",
+        "guidebot_count": 1,
+        "guidebot_placed": true,
+        "guidebot_accessible": true,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 37
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 183,
+            "label_pos": {
+              "x": 297.5,
+              "y": -35.0,
+              "z": 232.0
+            },
+            "distance": 1630.1700210803845,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 234,
+            "label_pos": {
+              "x": 261.5,
+              "y": 100.0,
+              "z": 71.99984741210938
+            },
+            "distance": 2338.321029229983,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 388,
+            "label_pos": {
+              "x": -210.25,
+              "y": 215.0,
+              "z": 53.25
+            },
+            "distance": 3330.350581564824,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 419,
+            "label_pos": {
+              "x": -358.5,
+              "y": -195.0,
+              "z": 448.0
+            },
+            "distance": 3252.217358360321
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 401,
+            "side": 1,
+            "wall": 90,
+            "label_pos": {
+              "x": -358.5,
+              "y": -15.0,
+              "z": 158.0
+            },
+            "distance": 456.7030704619254,
+            "trigger": 1,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "guidebot or guidebot start cage placed in this level"
+        ]
+      },
+      {
+        "level_num": 3,
+        "secret": false,
+        "level_name": "Magmarok Excavation",
+        "level_file": "phobos3.rl2",
+        "segment_count": 387,
+        "wall_count": 144,
+        "trigger_count": 9,
+        "object_count": 136,
+        "texture_count": 65,
+        "robots": 85,
+        "hostages": 4,
+        "secrets": 5,
+        "matcens": 1,
+        "energy_centers": 3,
+        "mine_volume": 27769414.75301193,
+        "mine_volume_normalized": 6.072601119493351,
+        "mine_volume_text": "6.1x",
+        "travel_distance": 11074.77807207492,
+        "travel_time_seconds": 221,
+        "travel_time_text": "3M:41S",
+        "guidebot_count": 1,
+        "guidebot_placed": true,
+        "guidebot_accessible": true,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 1
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 132,
+            "label_pos": {
+              "x": -59.0,
+              "y": -10.0,
+              "z": 39.5
+            },
+            "distance": 1833.1573326514142,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 1",
+            "seg": 336,
+            "wall": 69,
+            "label_pos": {
+              "x": -59.0,
+              "y": 260.0,
+              "z": -500.5
+            },
+            "distance": 2359.3224140509956,
+            "trigger": 1,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 353,
+                "side": 4,
+                "wall": 68
+              },
+              {
+                "seg": 354,
+                "side": 5,
+                "wall": 67
+              },
+              {
+                "seg": 351,
+                "side": 0,
+                "wall": 66
+              },
+              {
+                "seg": 354,
+                "side": 2,
+                "wall": 65
+              },
+              {
+                "seg": 348,
+                "side": 2,
+                "wall": 64
+              },
+              {
+                "seg": 354,
+                "side": 0,
+                "wall": 63
+              },
+              {
+                "seg": 355,
+                "side": 5,
+                "wall": 62
+              },
+              {
+                "seg": 354,
+                "side": 4,
+                "wall": 61
+              },
+              {
+                "seg": 339,
+                "side": 1,
+                "wall": 60
+              },
+              {
+                "seg": 354,
+                "side": 3,
+                "wall": 59
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 354,
+            "label_pos": {
+              "x": -59.0,
+              "y": 250.0,
+              "z": -500.5
+            },
+            "distance": 182.80313681386775,
+            "key": "gold"
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 0",
+            "seg": 308,
+            "wall": 56,
+            "label_pos": {
+              "x": -59.0,
+              "y": 130.0,
+              "z": 510.5
+            },
+            "distance": 2154.6249657991607,
+            "trigger": 0,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 309,
+                "side": 3,
+                "wall": 52
+              },
+              {
+                "seg": 323,
+                "side": 1,
+                "wall": 53
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 324,
+            "label_pos": {
+              "x": -59.0,
+              "y": 20.0,
+              "z": 500.5
+            },
+            "distance": 171.51610707270083,
+            "key": "red"
+          },
+          {
+            "index": 6,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 295,
+            "label_pos": {
+              "x": 241.0,
+              "y": -272.5,
+              "z": 469.5
+            },
+            "distance": 2829.4945442628014
+          },
+          {
+            "index": 7,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 227,
+            "side": 1,
+            "wall": 114,
+            "label_pos": {
+              "x": -59.0,
+              "y": 150.0,
+              "z": -110.5
+            },
+            "distance": 1543.8595714239777,
+            "trigger": 2,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "guidebot or guidebot start cage placed in this level"
+        ]
+      },
+      {
+        "level_num": 4,
+        "secret": false,
+        "level_name": "Phobos Command Center",
+        "level_file": "phobos4.rl2",
+        "segment_count": 370,
+        "wall_count": 65,
+        "trigger_count": 3,
+        "object_count": 107,
+        "texture_count": 51,
+        "robots": 64,
+        "hostages": 0,
+        "secrets": 4,
+        "matcens": 2,
+        "energy_centers": 5,
+        "mine_volume": 35557141.28548071,
+        "mine_volume_normalized": 7.775617091561996,
+        "mine_volume_text": "7.8x",
+        "travel_distance": 4894.146691083575,
+        "travel_time_seconds": 98,
+        "travel_time_text": "1M:38S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 336
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 184,
+            "label_pos": {
+              "x": 0.0,
+              "y": 87.5,
+              "z": -43.0
+            },
+            "distance": 1356.3667273492067,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 259,
+            "label_pos": {
+              "x": 3.0517578125e-05,
+              "y": 51.5,
+              "z": 225.5
+            },
+            "distance": 2312.0202696219835,
+            "key": "red"
+          },
+          {
+            "index": 3,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 369,
+            "label_pos": {
+              "x": 0.0,
+              "y": 51.5,
+              "z": -107.0
+            },
+            "distance": 282.0443226114742
+          },
+          {
+            "index": 4,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 333,
+            "side": 1,
+            "wall": 42,
+            "label_pos": {
+              "x": 0.0,
+              "y": 37.5,
+              "z": -177.0
+            },
+            "distance": 943.7153715009106,
+            "trigger": 0,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_note": "Guide-Bot waits at the buddy-proof wall outside the boss",
+        "notes": [
+          "Guide-Bot waits at the buddy-proof wall outside the boss",
+          "no guidebot or guidebot start cage placed in this level"
+        ]
+      },
+      {
+        "level_num": -1,
+        "secret": true,
+        "level_name": "Tryhys Zinkor",
+        "level_file": "phoscrt1.rl2",
+        "segment_count": 221,
+        "wall_count": 60,
+        "trigger_count": 5,
+        "object_count": 118,
+        "texture_count": 33,
+        "robots": 62,
+        "hostages": 3,
+        "secrets": 7,
+        "matcens": 0,
+        "energy_centers": 3,
+        "mine_volume": 9718956.644012317,
+        "mine_volume_normalized": 2.125336364546004,
+        "mine_volume_text": "2.1x",
+        "travel_distance": 3597.9912505269476,
+        "travel_time_seconds": 72,
+        "travel_time_text": "1M:12S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 202,
+            "label_pos": {
+              "x": -314.0,
+              "y": -167.7995147705078,
+              "z": -447.0
+            },
+            "distance": 1872.9956252634738
+          },
+          {
+            "index": 2,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 204,
+            "side": 1,
+            "wall": 35,
+            "label_pos": {
+              "x": 414.0,
+              "y": 112.20050048828125,
+              "z": 93.0
+            },
+            "distance": 1724.9956252634738,
+            "trigger": 0,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "no guidebot or guidebot start cage placed in this level"
+        ]
+      },
+      {
+        "level_num": -2,
+        "secret": true,
+        "level_name": "Gamma-1 Storage Depot",
+        "level_file": "phoscrt2.rl2",
+        "segment_count": 323,
+        "wall_count": 93,
+        "trigger_count": 2,
+        "object_count": 143,
+        "texture_count": 53,
+        "robots": 84,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 0,
+        "energy_centers": 4,
+        "mine_volume": 27324240.751075193,
+        "mine_volume_normalized": 5.975250701179722,
+        "mine_volume_text": "6.0x",
+        "travel_distance": 803.4548109053487,
+        "travel_time_seconds": 16,
+        "travel_time_text": "0M:16S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 46
+          },
+          {
+            "index": 1,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 138,
+            "label_pos": {
+              "x": -60.0,
+              "y": 122.44010925292969,
+              "z": -84.99984741210938
+            },
+            "distance": 576.3980370216333
+          },
+          {
+            "index": 2,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 315,
+            "side": 1,
+            "wall": 79,
+            "label_pos": {
+              "x": 0.0,
+              "y": 187.4401092529297,
+              "z": -175.0
+            },
+            "distance": 227.0567738837155,
+            "trigger": 1,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
+          }
+        ],
+        "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "notes": [
+          "no guidebot or guidebot start cage placed in this level"
+        ]
+      }
+    ],
+    "target_index": 0
+  }
+]

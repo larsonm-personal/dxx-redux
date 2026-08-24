@@ -169,7 +169,7 @@ class MissionZipTest {
         assertEquals("Seven Pack", scan.mission.displayName)
         assertEquals("README.txt", scan.readme!!.name)
         assertTrue(scan.constituents.all { it.compressedSizeBytes == null })
-        assertEquals("7z readme", MissionZip.readTextFile(sevenZipFile, scan.readme.path).text)
+        assertEquals("7z readme", MissionZip.readTextFile(sevenZipFile, scan.readme!!.path).text)
     }
 
     @Test
@@ -420,7 +420,7 @@ class MissionZipTest {
         assertNotNull(scan)
         assertEquals("notes.txt", scan!!.constituents.first().name)
         assertEquals("notes.txt", scan.readme!!.name)
-        val content = MissionZip.readTextFile(zipFile, scan.readme.path)
+        val content = MissionZip.readTextFile(zipFile, scan.readme!!.path)
         assertEquals("hello", content.text)
     }
 
@@ -530,7 +530,7 @@ class MissionZipTest {
     }
 
     @Test
-    fun prefersZipNameExternalDocumentBeforeLargestFallback() {
+    fun prefersZipNameWordDocumentBeforeLargestFallback() {
         val zipFile =
             createMissionZipWithDocs(
                 "Castaway.zip",
@@ -546,8 +546,45 @@ class MissionZipTest {
         assertEquals("Castaway guide.docx", scan!!.readme!!.name)
         assertEquals(
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            MissionZip.externalViewMimeType(scan.readme.name),
+            MissionZip.externalViewMimeType(scan.readme!!.name),
         )
+    }
+
+    @Test
+    fun readsDocxReadmeInsideLauncher() {
+        val zipFile =
+            createMissionZipWithDocs(
+                "po2.zip",
+                emptyList(),
+                listOf("po2readme.docx" to createDocxBytes("THE PLUTONIAN OUTBREAK", "Features")),
+            )
+
+        val scan = requireNotNull(MissionZip.inspect(zipFile))
+        val readme = requireNotNull(scan.readme)
+        val content = MissionZip.readTextFile(zipFile, readme.path)
+
+        assertTrue(MissionZip.isInlineReadmeCandidate(readme.name))
+        assertEquals(listOf("po2readme.docx"), scan.readmes.map { it.name })
+        assertEquals("THE PLUTONIAN OUTBREAK\nFeatures", content.text)
+        assertEquals(null, content.problem)
+    }
+
+    @Test
+    fun exposesAllUsefulTextReadmesWithArchiveNamedReadmeFirst() {
+        val zipFile =
+            createMissionZipWithDocs(
+                "phobos-e.zip",
+                listOf(
+                    "missions/single/phobinfo.txt" to "mission information",
+                    "missions/single/phobos-e.txt" to "author notes",
+                ),
+            )
+
+        val scan = requireNotNull(MissionZip.inspect(zipFile))
+
+        assertEquals(listOf("phobos-e.txt", "phobinfo.txt"), scan.readmes.map { it.name })
+        assertEquals("author notes", MissionZip.readTextFile(zipFile, scan.readmes[0].path).text)
+        assertEquals("mission information", MissionZip.readTextFile(zipFile, scan.readmes[1].path).text)
     }
 
     @Test
@@ -579,7 +616,7 @@ class MissionZipTest {
         assertNotNull(scan)
         val content = MissionZip.readTextFile(zipFile, scan!!.readme!!.path)
 
-        assertEquals("Only .txt files can be viewed", content.problem)
+        assertEquals("Only .txt and .docx files can be viewed in the launcher", content.problem)
     }
 
     private fun createMissionZip(
@@ -643,6 +680,7 @@ class MissionZipTest {
     private fun createMissionZipWithDocs(
         filename: String,
         docs: List<Pair<String, String>>,
+        binaryDocs: List<Pair<String, ByteArray>> = emptyList(),
     ): File {
         val dir = File("build/test-missionzip-readme-rules").absoluteFile
         dir.mkdirs()
@@ -666,10 +704,43 @@ class MissionZipTest {
                 zip.write(text.toByteArray())
                 zip.closeEntry()
             }
+            for ((name, bytes) in binaryDocs) {
+                zip.putNextEntry(ZipEntry(name))
+                zip.write(bytes)
+                zip.closeEntry()
+            }
         }
         zipFile.deleteOnExit()
         return zipFile
     }
+
+    private fun createDocxBytes(vararg paragraphs: String): ByteArray =
+        ByteArrayOutputStream().use { output ->
+            ZipOutputStream(output).use { zip ->
+                zip.putNextEntry(ZipEntry("[Content_Types].xml"))
+                zip.write(
+                    """
+                    <?xml version="1.0" encoding="UTF-8"?>
+                    <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+                      <Default Extension="xml" ContentType="application/xml"/>
+                    </Types>
+                    """.trimIndent().toByteArray(),
+                )
+                zip.closeEntry()
+                zip.putNextEntry(ZipEntry("word/document.xml"))
+                val body = paragraphs.joinToString("") { "<w:p><w:r><w:t>$it</w:t></w:r></w:p>" }
+                zip.write(
+                    """
+                    <?xml version="1.0" encoding="UTF-8"?>
+                    <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+                      <w:body>$body</w:body>
+                    </w:document>
+                    """.trimIndent().toByteArray(),
+                )
+                zip.closeEntry()
+            }
+            output.toByteArray()
+        }
 
     private fun createDescentMaximumStyleZip(): File {
         val entries = descentMaximumEntries() + ("max_f.txt" to "readme".toByteArray())
