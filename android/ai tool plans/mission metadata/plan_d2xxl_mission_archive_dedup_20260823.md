@@ -5,10 +5,11 @@ Goal: extend the first-pass sort in `C:\Users\first last\Desktop\d2x-xl levels` 
 - [x] Recover and summarize the first-pass manifest, notes, and sorted archive sets.
 - [x] Inventory `.zip` and `.7z` layouts and compare them with the launcher's supported mission-import structure.
 - [x] Compare likely near-duplicates by normalized archive contents, HOG member inventories, hashes, and mission metadata, starting with Bahagad.
-- [x] Record actionable conclusions: importable as-is, repack needed, genuinely different, duplicate, or unresolved.
+- [x] Record actionable conclusions: importable as-is, format support needed, genuinely different, duplicate, or unresolved.
 - [x] Mark this plan with completed work and report any remaining verification or implementation work.
 
-Result: see `d2xxl_mission_archive_analysis_20260823.md`. Remaining work is to
-choose the retained variants, repack them without D2X-XL cache data, convert any
-desired extended `D2X` HOGs, and run the final selected corpus through the
-Android emulator import batch.
+Result: see `d2xxl_mission_archive_analysis_20260823.md`. Standard-`DHF`
+downloads can be imported in their original ZIP/7z form, with generated cache
+content ignored during internal staging. Remaining work is to choose retained
+variants and, separately, decide whether extended `D2X` HOG and ACE support are
+worth implementing.

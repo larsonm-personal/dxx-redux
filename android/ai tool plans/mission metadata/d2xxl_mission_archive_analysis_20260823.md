@@ -27,15 +27,17 @@ focused near-duplicate samples tested below.
 All eight archives in the first-pass `duplicates` directory also pass this
 structural check, but they remain duplicates.
 
-Two archives in the first-pass `d2x-xl` directory use standard HOGs:
+Two archives in the first-pass `d2x-xl` directory use standard HOGs and can be
+selected in their original downloaded form:
 
 - `D2-XL.7z`: valid `DHF` HOG and descriptor pairing, 9.4 MiB unpacked
 - `sphere-1.51.7z`: valid `DHF` HOG and descriptor pairing, but 692.4 MiB
   unpacked, of which 671.3 MiB is D2X-XL cache data
 
-Both should be repacked with only their mission payload and useful docs before
-being added. In particular, the Sphere cache is generated D2X-XL data and is
-not useful to DXX Redux.
+The launcher retains the original archive, stages its playable mission and
+supporting files internally, and ignores a generated top-level `cache/` tree.
+This makes the original Sphere download usable without spending another 671.3
+MiB on D2X-XL cache data.
 
 ### Not importable as missions without conversion
 
@@ -57,13 +59,13 @@ limit. Supporting these six requires a D2X extended-HOG converter, not merely a
 ZIP/7z repack.
 
 `panic.zip` contains only `Panic.gro`, a legacy ACE archive. It has no directly
-visible descriptor or HOG and is not an import candidate. Extract it with an
-ACE-capable tool and repack the resulting mission files.
+visible descriptor or HOG and remains outside the current as-is import scope.
 
-### Packaging cleanup
+### As-is handling of generated cache data
 
-Many D2X-XL downloads include generated `cache/` trees. They are accepted as
-part of 7z extracted bundles but waste substantial storage. Notable examples:
+Many D2X-XL downloads include generated top-level `cache/` trees. The source
+archive is preserved unchanged, but the launcher now omits that tree from its
+internal extracted launch bundle. Notable avoided extraction costs include:
 
 - `revodrav.7z`: 91.2 MiB cache out of 93.7 MiB unpacked
 - `vignettes.7z`: 73.1 MiB cache out of 78.6 MiB unpacked
@@ -72,8 +74,8 @@ part of 7z extracted bundles but waste substantial storage. Notable examples:
 - `bahagad.7z`: 44.6 MiB cache out of 49.1 MiB unpacked
 - `sphere-1.51.7z`: 671.3 MiB cache out of 692.4 MiB unpacked
 
-Repack selected missions as small ZIPs containing descriptor, HOG, docs, and
-any mission-specific music/mod assets that DXX Redux actually supports.
+Mission descriptors, HOGs, docs, music, and mod assets outside that generated
+tree continue to be staged. Users do not need to alter or repack the download.
 
 ## Duplicate and variant classification
 
@@ -169,9 +171,15 @@ to contain distinct layouts/gameplay rather than every historical port build.
 - Ran focused host native metadata analysis successfully for Bahagad, Diehard,
   EAF, EAF2, Entropy, Ironblade, Ironstar, Phobos-E, Revodrav, Vignettes,
   Maximum, and Orion Nebula
+- Imported the original `bahagad.7z` on the Android emulator, discovered both
+  contained campaigns, and completed metadata analysis for both
+- Verified with JVM coverage that the original 7z remains stored unchanged,
+  ordinary supporting files are staged, and generated top-level cache files
+  are not extracted
 - Removed all temporary hardlinks from `game_data/mission_files`; retained
   generated analysis artifacts only under `android/temp`
 
-The host analyzer proves native loader and metadata compatibility, but it does
-not exercise the Android import UI. A final selected-and-repacked corpus should
-receive one focused emulator mission ZIP batch before it is checked in.
+The standard-`DHF` ZIP/7z packages can therefore be handled as users find them
+on the web. The remaining format boundaries are the six extended-`D2X` HOG
+packages and the ACE-wrapped Panic package; support for those would require
+format-specific work intentionally deferred here.

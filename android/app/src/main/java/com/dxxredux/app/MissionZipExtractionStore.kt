@@ -457,17 +457,22 @@ internal fun missionZipExtractedStoreForArchivePath(archivePath: String): Missio
 internal fun missionZipLaunchStageBytes(entries: List<ArchiveFileEntry>): Long =
     ImportStorageGuard.archiveEntryBytes(entries.filterNot { it.isDirectory }.map { it.sizeBytes })
 
+private fun isMissionSetConstituent(
+    scan: MissionZip.ScanResult,
+    path: String,
+): Boolean =
+    scan.missionSets.any { missionSet ->
+        missionSet.constituents.any { it.path.equals(path, ignoreCase = true) }
+    }
+
 internal fun stagedRelativePath(
     scan: MissionZip.ScanResult,
     path: String,
 ): String {
     val normalized = path.replace('\\', '/').trim('/')
     if (normalized.startsWith("$MISSION_ZIP_GENERATED_MISSION_DIR/", ignoreCase = true)) return normalized
-    val isMissionPayload =
-        scan.missionSets.any { missionSet ->
-            missionSet.constituents.any { it.path.equals(normalized, ignoreCase = true) }
-        }
-    return if (isMissionPayload) "$MISSION_ZIP_GENERATED_MISSION_DIR/$normalized" else normalized
+    if (isMissionSetConstituent(scan, normalized)) return "$MISSION_ZIP_GENERATED_MISSION_DIR/$normalized"
+    return normalized
 }
 
 internal fun safeMissionZipDirName(filename: String): String = filename.replace(Regex("[^a-zA-Z0-9._-]"), "_")
@@ -505,6 +510,9 @@ private data class MissionZipExtractionPlan(
     val generatedSongListSource: MissionZipPlannedEntry?,
 )
 
+private fun isGeneratedD2xxlCachePath(path: String): Boolean =
+    path.substringBefore('/').equals("cache", ignoreCase = true)
+
 private fun missionZipExtractionPlan(
     entries: List<ArchiveFileEntry>,
     scan: MissionZip.ScanResult,
@@ -513,6 +521,9 @@ private fun missionZipExtractionPlan(
         entries.mapNotNull { entry ->
             val entryPath = normalizeArchivePath(entry.path)
             if (entryPath.isBlank()) return@mapNotNull null
+            if (isGeneratedD2xxlCachePath(entryPath) && !isMissionSetConstituent(scan, entryPath)) {
+                return@mapNotNull null
+            }
             MissionZipPlannedEntry(entry, entryPath, stagedRelativePath(scan, entryPath))
         }
     val songLists =
@@ -585,14 +596,15 @@ internal fun extractZipToRoot(
         val plan = missionZipExtractionPlan(archive.entries, scan)
         if (stageRoot.exists()) stageRoot.deleteRecursively()
         stageRoot.mkdirs()
-        archive.entries.forEach { entry ->
+        plan.files.forEach { planned ->
+            val entry = planned.archiveEntry
             extractionBudget.registerEntry(
-                if (entry.isDirectory) 0 else entry.sizeBytes,
-                if (entry.isDirectory) 0 else entry.compressedSizeBytes ?: 0,
+                entry.sizeBytes,
+                entry.compressedSizeBytes ?: 0,
                 entry.path,
             )
         }
-        totalBytes = missionZipLaunchStageBytes(archive.entries)
+        totalBytes = missionZipLaunchStageBytes(plan.files.map { it.archiveEntry })
         report("", force = true)
         ImportStorageGuard.requireFreeSpace(
             stageRoot,

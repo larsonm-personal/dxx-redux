@@ -158,6 +158,11 @@ class ModManagerMissionZipTest {
         assertTrue(File(stageDir, "Seven.mn2").isFile)
         assertTrue(File(stageDir, "Seven.hog").isFile)
         assertTrue(File(stageDir, "Seven.dxa").isFile)
+        val storedArchive = File(filesDir, "mods/SevenPack.7z")
+        assertTrue(storedArchive.isFile)
+        assertTrue(requireNotNull(MissionZip.inspect(storedArchive)).constituents.any { it.path.startsWith("cache/") })
+        assertTrue(File(filesDir, "mods/.extracted_mission_zips/SevenPack.7z/docs/readme.txt").isFile)
+        assertFalse(File(filesDir, "mods/.extracted_mission_zips/SevenPack.7z/cache").exists())
     }
 
     @Test
@@ -623,6 +628,8 @@ class ModManagerMissionZipTest {
         val archive = File.createTempFile("missionzip-manager", ".7z")
         archive.deleteOnExit()
         SevenZOutputFile(archive).use { sevenZ ->
+            sevenZ.writeEntry("cache/lightmaps/seven.lmap5", ByteArray(1024))
+            sevenZ.writeEntry("docs/readme.txt", "Original download documentation".toByteArray())
             sevenZ.writeEntry("Seven.dxa", createZipBytes {})
             sevenZ.writeEntry("Seven.hog", createHogBytes("seven01.rl2" to ByteArray(1)))
             sevenZ.writeEntry("Seven.mn2", "name = Seven Pack\nnum_levels = 1\nseven01.rl2\n".toByteArray())
