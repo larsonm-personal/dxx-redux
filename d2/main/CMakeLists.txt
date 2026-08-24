@@ -25,6 +25,7 @@ set(D2X_MAIN_SOURCES
     endlevel.c
     escort.c
     escort_owner_policy.c
+    guidebot_route.c
     fireball.c
     fuelcen.c
     fvi.c
