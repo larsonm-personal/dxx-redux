@@ -65,6 +65,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "d1_in_d2.h"
 #include "d1_in_d2_semantics.h"
 #include "input_demo_hooks.h"
+#ifdef __ANDROID__
+#include "guidebot_route_internal.h"
+#endif
 
 #ifdef EDITOR
 #include "editor/editor.h"
@@ -592,6 +595,11 @@ _exit_cheat:
 					// -- Buddy_got_stuck = 0;
 					break;
 				case AIM_GOTO_OBJECT:
+#ifdef __ANDROID__
+					if (Robot_info[obj->id].companion)
+						escort_trace_navigation_reset(
+						    "retry_recovery_goal_reset", obj, ailp, aip);
+#endif
 					Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
 					//if (obj->segnum == ConsoleObject->segnum) {
 					//	if (Point_segs[aip->hide_index + aip->cur_path_index].segnum == obj->segnum)

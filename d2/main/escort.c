@@ -2340,6 +2340,9 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 		((Escort_special_goal == ESCORT_GOAL_SCRAM) && ((Escort_last_path_created + F1_0*15) < GameTime64))) {
 		if (replay_state_probe_active)
 			input_demo_log_escort_goal_reset();
+#ifdef __ANDROID__
+		escort_trace_navigation_reset("periodic_goal_refresh", objp, ailp, aip);
+#endif
 		Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
 		Escort_last_path_created = GameTime64;
 	}
@@ -2369,6 +2372,14 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 	if ((Escort_special_goal != ESCORT_GOAL_SCRAM) && (replay_state_probe_active ? replay_should_visit_player : time_to_visit_player(objp, ailp, aip))) {
 		int	max_len;
 
+#ifdef __ANDROID__
+		escort_trace_navigation_reset(
+		    GameTime64 - Buddy_last_seen_player > MAX_ESCORT_TIME_AWAY &&
+		            GameTime64 - Buddy_last_player_path_created > F1_0 ?
+		        "visit_player_away_timeout" :
+		        "visit_player_path_midpoint",
+		    objp, ailp, aip);
+#endif
 		Buddy_last_player_path_created = GameTime64;
 		ailp->mode = AIM_GOTO_PLAYER;
 		if (!player_visibility) {

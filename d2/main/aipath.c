@@ -44,6 +44,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_hooks.h"
 #ifdef __ANDROID__
 #include "escort.h"
+#include "guidebot_route_internal.h"
 #include "secretarea.h"
 #endif
 
@@ -1103,6 +1104,11 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 
 	if ((aip->hide_index == -1) || (aip->path_length == 0))
 	{
+#ifdef __ANDROID__
+		if (robptr->companion)
+			escort_trace_navigation_reset(
+			    "path_follower_missing_path", objp, ailp, aip);
+#endif
 		if (ailp->mode == AIM_RUN_FROM_OBJECT) {
 			create_n_segment_path(objp, 5, -1);
 			//--Int3_if((aip->path_length != 0));
@@ -1356,6 +1362,11 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 
 		//	If went all the way around to original point, in same direction, then get out of here!
 		if ((aip->cur_path_index == original_index) && (aip->PATH_DIR == original_dir)) {
+#ifdef __ANDROID__
+			if (robptr->companion)
+				escort_trace_navigation_reset(
+				    "path_follower_circular_fallback", objp, ailp, aip);
+#endif
 			create_path_to_player(objp, 3, 1);
 			//--Int3_if(((aip->cur_path_index >= 0) && (aip->cur_path_index < aip->path_length)));
 			forced_break = 1;

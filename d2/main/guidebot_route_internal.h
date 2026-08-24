@@ -125,6 +125,8 @@ void escort_trace_path(const char *reason, object *objp, ai_local *ailp,
                        ai_static *aip, int goal_seg);
 void escort_trace_navigation(object *objp, ai_local *ailp, ai_static *aip,
                              fix dist_to_player, int player_visibility);
+void escort_trace_navigation_reset(const char *reason, object *objp,
+                                   ai_local *ailp, ai_static *aip);
 void escort_route_set_target_mode(int target_mode);
 void escort_route_note_replan(const char *reason);
 void escort_route_record_event(unsigned int event_mask,

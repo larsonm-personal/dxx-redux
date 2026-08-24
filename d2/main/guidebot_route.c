@@ -263,6 +263,28 @@ void escort_trace_navigation(object *objp, ai_local *ailp, ai_static *aip,
 	Escort_nav_trace_last_path_index = aip->cur_path_index;
 }
 
+void escort_trace_navigation_reset(const char *reason, object *objp,
+                                   ai_local *ailp, ai_static *aip)
+{
+	if (!debug_log_enabled[DLOG_GUIDEBOT])
+		return;
+	debug_log(DLOG_GUIDEBOT,
+	          "navigation_reset reason=%s obj=%d seg=%d player_seg=%d "
+	          "mode=%d goal=%d special=%d goal_index=%d route_active=%d "
+	          "route_target=%d path_len=%d path_index=%d path_dir=%d hide=%d "
+	          "since_seen=%lld since_player_path=%lld retries=%d "
+	          "consecutive_retries=%d",
+	          reason, (int) (objp - Objects), objp->segnum,
+	          ConsoleObject ? ConsoleObject->segnum : -1, ailp->mode,
+	          Escort_goal_object, Escort_special_goal, Escort_goal_index,
+	          Escort_route_goal.active, Escort_route_goal.target_seg,
+	          aip->path_length, aip->cur_path_index, aip->PATH_DIR,
+	          aip->hide_index,
+	          (long long) (GameTime64 - Buddy_last_seen_player),
+	          (long long) (GameTime64 - Buddy_last_player_path_created),
+	          ailp->retry_count, ailp->consecutive_retries);
+}
+
 void escort_route_set_target_mode(int target_mode)
 {
 	Escort_route_target_mode = target_mode;
