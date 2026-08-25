@@ -1635,6 +1635,13 @@ void ai_reset_all_paths(void)
 {
 	int	i;
 
+#ifdef __ANDROID__
+	if (escort_is_companion_object(Buddy_objnum))
+		escort_trace_navigation_reset(
+		    "ai_reset_all_paths_before", &Objects[Buddy_objnum],
+		    &Ai_local_info[Buddy_objnum],
+		    &Objects[Buddy_objnum].ctype.ai_info);
+#endif
 	for (i=0; i<=Highest_object_index; i++)
 		if (Objects[i].control_type == CT_AI) {
 			Objects[i].ctype.ai_info.hide_index = -1;
@@ -1642,6 +1649,13 @@ void ai_reset_all_paths(void)
 		}
 
 	ai_path_garbage_collect();
+#ifdef __ANDROID__
+	if (escort_is_companion_object(Buddy_objnum))
+		escort_trace_navigation_reset(
+		    "ai_reset_all_paths_after", &Objects[Buddy_objnum],
+		    &Ai_local_info[Buddy_objnum],
+		    &Objects[Buddy_objnum].ctype.ai_info);
+#endif
 
 }
 

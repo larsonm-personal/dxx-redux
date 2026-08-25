@@ -1240,10 +1240,20 @@ _exit_cheat:
 			break;
 
 		case AIM_GOTO_PLAYER:
-		case AIM_GOTO_OBJECT:
+		case AIM_GOTO_OBJECT: {
+#ifdef __ANDROID__
+			int guidebot_path_length = aip->path_length;
+#endif
 			ai_follow_path(obj, 2, previous_visibility, &vec_to_player);    // Follows path as if player can see robot.
+#ifdef __ANDROID__
+			if (robptr->companion && guidebot_path_length > 0 &&
+			    aip->path_length == 0)
+				escort_trace_navigation_reset(
+				    "ai_follow_path_cleared_path", obj, ailp, aip);
+#endif
 			ai_multi_send_robot_position(objnum, -1);
 			break;
+		}
 
 		case AIM_FOLLOW_PATH: {
 			int anger_level = 65;

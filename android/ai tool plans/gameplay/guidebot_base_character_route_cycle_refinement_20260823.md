@@ -44,6 +44,18 @@ turnarounds in cooperative play.
 - The next phone log should identify the first state mutation before each
   `visit_player_path_midpoint` event. The gameplay fix belongs at that mutation,
   not in `time_to_visit_player`.
+- The 2026-08-24 cooperative level 21 log contains 28 midpoint visits. Of
+  those, 23 occur with `path_len=0`, one with `path_len=1`, and only four after
+  actual midpoint progress. Long semantic paths repeatedly change from 53-65
+  points at index zero to zero points before the next visit decision. This
+  proves that the dominant halt is missing-path state being misread as route
+  progress, not the intended visit-player cadence.
+- Only two retry-recovery resets occur, so multiplayer retry recovery is a
+  secondary source of churn rather than the dominant cause in this run.
+- Added event probes around the inherited global AI path reset and around the
+  GuideBot `ai_follow_path` call. These distinguish path-pool reset, path
+  follower mutation, and an out-of-frame/network mutation without changing
+  gameplay behavior.
 
 ## Required validation before a gameplay fix
 
