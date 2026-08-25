@@ -761,7 +761,9 @@ bool g3_draw_morphing_model(ubyte *p,grs_bitmap **model_bitmaps,vms_angvec *anim
 
 void init_model_sub(ubyte *p)
 {
+	#ifndef NDEBUG
 	Assert(++nest_count < 1000);
+	#endif
 
 	while (w(p) != OP_EOF) {
 

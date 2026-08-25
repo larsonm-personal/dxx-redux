@@ -119,6 +119,21 @@ internal fun launcherPreparationLabel(state: LauncherPreparationState): String =
 internal fun launcherPreparationShowsDialog(state: LauncherPreparationState): Boolean =
     state.phase == LauncherPreparationPhase.PAUSING_METADATA
 
+internal fun formatAboutBuildLine(
+    buildType: String,
+    commitCount: String,
+    shortHash: String,
+    nativeDebugBuild: Boolean,
+): String {
+    val buildLine =
+        if (buildType == "dev") {
+            "Dev Build"
+        } else {
+            "Build $commitCount ($shortHash) $buildType"
+        }
+    return buildLine + if (nativeDebugBuild) " debug" else ""
+}
+
 /**
  * Pre-game setup screen built with Jetpack Compose.
  *
@@ -3694,13 +3709,12 @@ private fun SetupScreen(
                         text = {
                             val arch = Build.SUPPORTED_ABIS.firstOrNull() ?: "unknown"
                             val buildLine =
-                                if (BuildInfo.BUILD_TYPE == "dev") {
-                                    "Dev Build"
-                                } else {
-                                    "Build ${BuildInfo.GIT_COMMIT_COUNT}" +
-                                        " (${BuildInfo.GIT_SHORT_HASH})" +
-                                        " ${BuildInfo.BUILD_TYPE}"
-                                }
+                                formatAboutBuildLine(
+                                    buildType = BuildInfo.BUILD_TYPE,
+                                    commitCount = BuildInfo.GIT_COMMIT_COUNT,
+                                    shortHash = BuildInfo.GIT_SHORT_HASH,
+                                    nativeDebugBuild = BuildConfig.NATIVE_DEBUG_BUILD,
+                                )
                             Text(
                                 "$buildLine\n" +
                                     "Date: ${BuildInfo.BUILD_DATE}" +

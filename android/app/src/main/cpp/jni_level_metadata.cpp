@@ -63,9 +63,6 @@ static unsigned char *levelmeta_screen_pixels = NULL;
 static int levelmeta_runtime_ready = 0;
 static int levelmeta_runtime_poisoned = 0;
 static std::string levelmeta_data_dir;
-static char levelmeta_alloc_file[] = __FILE__;
-static char levelmeta_screen_name[] = "levelmeta_screen";
-static char levelmeta_pixels_name[] = "levelmeta_screen_pixels";
 
 static json failed_result(const json &request, const char *problem);
 
@@ -320,19 +317,8 @@ static int init_levelmeta_screen(char *error, size_t error_size)
 
 	if (grd_curscreen)
 		return 1;
-#ifdef DXX_BUILD_DESCENT_II
-	grd_curscreen = (grs_screen *) mem_calloc(1, sizeof(grs_screen), levelmeta_screen_name,
-	                                          levelmeta_alloc_file, __LINE__);
-	levelmeta_screen_pixels = (unsigned char *) mem_malloc((size_t) screen_w * (size_t) screen_h,
-	                                                       levelmeta_pixels_name, levelmeta_alloc_file,
-	                                                       __LINE__);
-#else
-	grd_curscreen = (grs_screen *) mem_malloc(sizeof(grs_screen), levelmeta_screen_name,
-	                                          levelmeta_alloc_file, __LINE__, 1);
-	levelmeta_screen_pixels = (unsigned char *) mem_malloc((size_t) screen_w * (size_t) screen_h,
-	                                                       levelmeta_pixels_name, levelmeta_alloc_file,
-	                                                       __LINE__, 0);
-#endif
+	grd_curscreen = (grs_screen *) calloc(1, sizeof(grs_screen));
+	levelmeta_screen_pixels = (unsigned char *) malloc((size_t) screen_w * (size_t) screen_h);
 	if (!grd_curscreen || !levelmeta_screen_pixels) {
 		snprintf(error, error_size, "%s", "screen allocation failed");
 		return 0;

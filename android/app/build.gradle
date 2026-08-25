@@ -345,6 +345,7 @@ android {
         def opengl = (project.findProperty('useOpenGL') ?: 'true') == 'true'
         buildConfigField "String", "RENDERER", "\"${opengl ? 'OpenGL ES' : 'Software'}\""
         buildConfigField "String", "GPGS_SERVER_CLIENT_ID", "\"${authServerClientId}\""
+        buildConfigField "boolean", "NATIVE_DEBUG_BUILD", "false"
 
         // GPGS APP_ID for AndroidManifest meta-data.
         // Use a generated string resource so Play Games v2 reads a String,
@@ -365,6 +366,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField "boolean", "NATIVE_DEBUG_BUILD", "true"
+        }
         release {
             minifyEnabled false
             if (keystorePropertiesFile.exists()) {
@@ -378,6 +382,7 @@ android {
         internal {
             initWith debug
             debuggable false
+            buildConfigField "boolean", "NATIVE_DEBUG_BUILD", "true"
             if (keystorePropertiesFile.exists()) {
                 signingConfig signingConfigs.release
             }

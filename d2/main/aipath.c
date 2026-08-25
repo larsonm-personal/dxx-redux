@@ -728,6 +728,11 @@ void validate_all_paths(void)
 
 #if PATH_VALIDATION
 	int	i;
+#ifdef __ANDROID__
+	static int last_reported_objnum = -1;
+	static int last_reported_hide_index = -1;
+	static int last_reported_path_length = -1;
+#endif
 
 	for (i=0; i<=Highest_object_index; i++) {
 		if (Objects[i].type == OBJ_ROBOT) {
@@ -738,10 +743,22 @@ void validate_all_paths(void)
 			if (objp->control_type == CT_AI) {
 				if ((aip->hide_index != -1) && (aip->path_length > 0))
 					if (!validate_path(4, &Point_segs[aip->hide_index], aip->path_length)) {
+#ifdef __ANDROID__
+						if (Robot_info[objp->id].companion &&
+						    (i != last_reported_objnum ||
+						     aip->hide_index != last_reported_hide_index ||
+						     aip->path_length != last_reported_path_length)) {
+							escort_trace_navigation_reset(
+							    "path_validation_noncontiguous_observed", objp,
+							    &Ai_local_info[i], aip);
+							last_reported_objnum = i;
+							last_reported_hide_index = aip->hide_index;
+							last_reported_path_length = aip->path_length;
+						}
+#endif
 						Int3();	//	This path is bogus!  Who corrupted it!  Danger! Danger!
 									//	Contact Mike, he caused this mess.
 						//force_dump_ai_objects_all("Error in validate_all_paths");
-						aip->path_length=0;	//	This allows people to resume without harm...
 					}
 			}
 		}

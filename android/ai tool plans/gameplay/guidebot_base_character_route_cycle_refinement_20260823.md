@@ -12,7 +12,7 @@ turnarounds in cooperative play.
   behavior and identify which original invariants the semantic route violates.
 - [completed] Separate legitimate visit-player expiration from premature path
   replacement, retry recovery, multiplayer state, and route recreation.
-- [in progress] Define a fix that preserves the 1996 visit-player behavior and only
+- [completed] Define a fix that preserves the 1996 visit-player behavior and only
   corrects the new routing integration.
 - [completed] Record the corrected diagnosis and the tests needed before changing
   gameplay behavior.
@@ -56,6 +56,23 @@ turnarounds in cooperative play.
   GuideBot `ai_follow_path` call. These distinguish path-pool reset, path
   follower mutation, and an out-of-frame/network mutation without changing
   gameplay behavior.
+- The 2026-08-24 12:31:42 coop trace rules out both of those boundaries. Long
+  GuideBot paths are created intact, survive `ai_follow_path`, and later become
+  zero while retaining the same `hide_index`. The debug-only classic
+  `validate_all_paths()` is the matching writer: on a connectivity validation
+  failure it deliberately clears only `path_length`.
+- The validator's own source comment says it is invalid for optimized paths.
+  GuideBot paths are optimized by `move_towards_outside()` and `polish_path()`.
+  The focused fix retains an Android companion path rejected by this
+  adjacency-only debug check, while keeping the original destructive behavior
+  for other robots and builds.
+- Retention requires the complete path storage range and every referenced
+  segment to remain valid, so malformed or out-of-range paths still take the
+  original defensive reset. The retained event is reported through the
+  launcher-exportable GuideBot log.
+- Scoped code-quality checks, the Android debug APK build for all three ABIs,
+  and the Windows D2 build passed. The Windows build emitted only the existing
+  `weapon.c` return-value warnings.
 
 ## Required validation before a gameplay fix
 
