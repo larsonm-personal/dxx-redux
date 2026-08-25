@@ -73,6 +73,19 @@ static int wall_num(void *user, int segment, int side)
 	return fixture->wall[segment][side];
 }
 
+static int wall_segment(void *user, int wall)
+{
+	(void) user;
+	return wall;
+}
+
+static int wall_side(void *user, int wall)
+{
+	(void) user;
+	(void) wall;
+	return 0;
+}
+
 static int wall_type(void *user, int wall)
 {
 	certifier_fixture *fixture = (certifier_fixture *) user;
@@ -186,6 +199,8 @@ static level_metadata_scan_view make_view(certifier_fixture *fixture)
 	view.side_is_flyable = side_is_flyable;
 	view.side_clearance_radius = side_clearance;
 	view.wall_num = wall_num;
+	view.wall_segment = wall_segment;
+	view.wall_side = wall_side;
 	view.wall_type = wall_type;
 	view.wall_flags = wall_flags;
 	view.wall_keys = wall_keys;
@@ -309,6 +324,7 @@ static void test_current_start_and_accessibility_select_action(void)
 	assert(summary.selected_segment == 0);
 	assert(certificate.status == GUIDEBOT_ROUTE_CERTIFICATE_VALID);
 
+	fixture.wall_open[0] = 1;
 	view.start_segment = 1;
 	assert(certify(
 	    &view, &prepared_plan, &live_plan, &certificate, &summary));
@@ -331,6 +347,30 @@ static void test_current_start_and_accessibility_select_action(void)
 	assert(summary.selected_segment == 3);
 }
 
+static void test_first_reachable_required_action_preserves_order(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+	route_planner_plan_summary prepared_plan;
+	route_planner_plan_summary live_plan;
+	guidebot_route_validity_certificate certificate;
+	guidebot_route_certifier_summary summary;
+
+	initialize_fixture(&fixture);
+	initialize_plan(&prepared_plan);
+	view = make_view(&fixture);
+	view.start_segment = 0;
+	Prepared.route_steps[2].seg = 0;
+	Prepared.route_steps[2].path_terminal_segment = 0;
+
+	assert(certify(
+	    &view, &prepared_plan, &live_plan, &certificate, &summary));
+	assert(summary.selected_step == 1);
+	assert(summary.selected_segment == 0);
+	assert(live_plan.first_pending_step == 1);
+	assert(certificate.source_trigger == 0);
+}
+
 static void test_identical_state_is_history_independent(void)
 {
 	certifier_fixture fixture;
@@ -347,11 +387,12 @@ static void test_identical_state_is_history_independent(void)
 	initialize_plan(&prepared_plan);
 	view = make_view(&fixture);
 	view.start_segment = 1;
+	fixture.wall_open[0] = 1;
 	assert(certify(
 	    &view, &prepared_plan, &first_plan, &first_certificate, &summary));
 	first_state = Live;
-	fixture.wall_open[0] = 1;
-	fixture.wall_open[0] = 0;
+	fixture.wall_open[2] = 1;
+	fixture.wall_open[2] = 0;
 	assert(certify(
 	    &view, &prepared_plan, &second_plan, &second_certificate, &summary));
 	assert(memcmp(&first_plan, &second_plan, sizeof(first_plan)) == 0);
@@ -374,7 +415,12 @@ static void test_disabled_action_uses_reachable_prepared_alternative(void)
 	initialize_plan(&prepared_plan);
 	view = make_view(&fixture);
 	view.start_segment = 1;
+	fixture.wall_open[0] = 1;
 	fixture.trigger_flags[1] = view.trigger_flag_disabled;
+	Prepared.route_steps[3].kind = LEVEL_METADATA_ROUTE_HIDDEN_DOOR;
+	Prepared.route_steps[3].activation_kind =
+	    LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR;
+	Prepared.route_steps[3].wall_num = 2;
 	Prepared.route_steps[3].seg = 1;
 	Prepared.route_steps[3].path_terminal_segment = 1;
 
@@ -444,6 +490,12 @@ static void test_unreachable_prepared_target_requires_replan(void)
 	view.start_segment = 0;
 	Prepared.route_steps[1].seg = 1;
 	Prepared.route_steps[1].path_terminal_segment = 1;
+	Prepared.route_steps[3].kind = LEVEL_METADATA_ROUTE_HIDDEN_DOOR;
+	Prepared.route_steps[3].activation_kind =
+	    LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR;
+	Prepared.route_steps[3].wall_num = 2;
+	Prepared.route_steps[3].seg = 0;
+	Prepared.route_steps[3].path_terminal_segment = 0;
 	assert(!certify(
 	    &view, &prepared_plan, &live_plan, &certificate, &summary));
 	assert(summary.selected_step == -1);
@@ -453,6 +505,7 @@ static void test_unreachable_prepared_target_requires_replan(void)
 int main(void)
 {
 	test_current_start_and_accessibility_select_action();
+	test_first_reachable_required_action_preserves_order();
 	test_identical_state_is_history_independent();
 	test_disabled_action_uses_reachable_prepared_alternative();
 	test_destroyed_switch_stays_complete_when_link_recloses();

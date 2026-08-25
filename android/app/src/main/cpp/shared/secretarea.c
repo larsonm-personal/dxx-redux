@@ -2715,6 +2715,18 @@ static int level_metadata_try_reuse_canonical_route(
 	    &Level_metadata_route_certifier_workspace, state, summary,
 	    &Level_metadata_live_certificate,
 	    &Level_metadata_route_certifier_summary);
+#ifdef __ANDROID__
+	debug_log(
+	    DLOG_GUIDEBOT,
+	    "route_certifier valid=%d prepared_first=%d selected=%d segment=%d "
+	    "evaluated=%u rejected=%u visited=%u\n",
+	    valid, Level_metadata_canonical_plan_summary.first_pending_step,
+	    Level_metadata_route_certifier_summary.selected_step,
+	    Level_metadata_route_certifier_summary.selected_segment,
+	    Level_metadata_route_certifier_summary.evaluated_actions,
+	    Level_metadata_route_certifier_summary.rejected_actions,
+	    Level_metadata_route_certifier_summary.visited_segments);
+#endif
 	if (valid) {
 		Level_metadata_analysis_cache_summary.live_certifier_successes++;
 		if (Level_metadata_route_certifier_summary.used_prepared_fallback)

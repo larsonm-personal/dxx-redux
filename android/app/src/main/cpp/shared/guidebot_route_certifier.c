@@ -313,17 +313,21 @@ int guidebot_route_certify_current_state(
 			local_summary.rejected_actions++;
 			continue;
 		}
+		/* A usable, still-required action is an ordering barrier.  If its
+		 * prepared target cannot be certified, require a live replan instead
+		 * of silently advancing to a later objective. */
 		target_segment = guidebot_step_target_segment(view, candidate);
 		if (!guidebot_valid_segment(view, target_segment)) {
 			local_summary.rejected_actions++;
-			continue;
+			break;
 		}
 		if (!workspace->reachable[target_segment]) {
 			local_summary.rejected_actions++;
-			continue;
+			break;
 		}
 		selected = step;
 		selected_segment = target_segment;
+		break;
 	}
 	if (selected < 0) {
 		int incomplete = 0;
