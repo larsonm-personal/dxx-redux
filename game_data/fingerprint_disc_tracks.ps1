@@ -27,6 +27,7 @@ $RepoRoot = Split-Path $ScriptDir
 
 # Resolve cmake and other tool paths
 . "$RepoRoot\android\helpers\test_env.ps1"
+. "$RepoRoot\android\helpers\normalized_json_text.ps1"
 . "$RepoRoot\android\helpers\powershell_compat.ps1"
 
 $SrcDir = Join-Path $RepoRoot "android\app\src\main\cpp\extract"
@@ -109,7 +110,8 @@ function Write-AtomicFingerprintManifest {
     $tempPath = Join-Path (Split-Path -Parent $Path) ".$(Split-Path -Leaf $Path).$([Guid]::NewGuid().ToString('N')).tmp"
     $backupPath = "$tempPath.bak"
     try {
-        $json = (ConvertTo-Json -InputObject @($Results) -Depth 10) -replace "`r`n", "`n"
+        $rawJson = ConvertTo-Json -InputObject @($Results) -Depth 10
+        $json = (ConvertTo-NormalizedJsonText -Text $rawJson).TrimEnd([char[]]@("`r", "`n"))
         [IO.File]::WriteAllText($tempPath, $json, [Text.UTF8Encoding]::new($false))
         if ([IO.File]::Exists($Path)) {
             [IO.File]::Replace($tempPath, $Path, $backupPath)

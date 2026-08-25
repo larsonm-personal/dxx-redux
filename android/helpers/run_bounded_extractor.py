@@ -372,7 +372,13 @@ def _measure_windows_tree(root, limits, strict):
                     if identity in seen:
                         raise RuntimeError("extractor output repeats a physical identity")
                     seen.add(identity)
-                    _assert_no_windows_streams(entry.path)
+                    try:
+                        _assert_no_windows_streams(entry.path)
+                    except FileNotFoundError:
+                        if strict:
+                            raise RuntimeError(
+                                "extractor output changed during validation") from None
+                        continue
                     if info.file_attributes & directory_attribute:
                         walk(entry.path)
                         continue
@@ -383,7 +389,13 @@ def _measure_windows_tree(root, limits, strict):
                     if strict and info.file_attributes & sparse_attribute:
                         raise RuntimeError("extractor produced a sparse output file")
                     logical = (info.file_size_high << 32) | info.file_size_low
-                    allocated = _windows_allocated_size(entry.path)
+                    try:
+                        allocated = _windows_allocated_size(entry.path)
+                    except FileNotFoundError:
+                        if strict:
+                            raise RuntimeError(
+                                "extractor output changed during validation") from None
+                        continue
                     files, total = _add_file(files, total, logical, allocated, limits)
                 finally:
                     kernel32.CloseHandle(handle)

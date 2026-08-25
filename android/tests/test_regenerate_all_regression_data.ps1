@@ -72,7 +72,7 @@ foreach ($templateName in @(
         "$templateName should clear the full-result cache before metadata analysis"
 }
 
-$tempRoot = Join-Path $repoRoot 'android\temp\regression_data_runner_test'
+$tempRoot = Join-Path $repoRoot 'android\temp\regression data runner test space'
 if (Test-Path -LiteralPath $tempRoot) {
     Remove-Item -LiteralPath $tempRoot -Recurse -Force
 }
@@ -162,7 +162,23 @@ exit 7
         Assert-True ($hangExitCode -eq 7) 'Detached-child stage should preserve the direct child exit code'
         Assert-True ($hangStopwatch.Elapsed.TotalSeconds -lt 10) `
             'Detached child inheriting output handles should not keep the stage runner open'
-        Assert-True ((Get-Content -LiteralPath $hangLogPath -Raw) -match 'stage complete') `
+        $hangLogStream = [IO.FileStream]::new(
+            $hangLogPath,
+            [IO.FileMode]::Open,
+            [IO.FileAccess]::Read,
+            [IO.FileShare]::ReadWrite -bor [IO.FileShare]::Delete
+        )
+        try {
+            $hangLogReader = [IO.StreamReader]::new($hangLogStream)
+            try {
+                $hangLog = $hangLogReader.ReadToEnd()
+            } finally {
+                $hangLogReader.Dispose()
+            }
+        } finally {
+            $hangLogStream.Dispose()
+        }
+        Assert-True ([bool]($hangLog -match 'stage complete')) `
             'Non-pipelined stage runner should retain child output'
     } finally {
         if (Test-Path -LiteralPath $backgroundPidPath) {

@@ -61,7 +61,7 @@ function Resolve-BoundedPythonRuntime {
         throw "Bounded Python runtime SHA-256 mismatch expected=$($ExpectedSha256.ToLowerInvariant()) actual=$actualSha256"
     }
 
-    $identityScript = 'import json, os, platform, sys; print(json.dumps({"executable": os.path.realpath(sys.executable), "version": platform.python_version()}))'
+    $identityScript = "import json, os, platform, sys; print(json.dumps({'executable': os.path.realpath(sys.executable), 'version': platform.python_version()}))"
     $oldPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     try {
@@ -71,7 +71,8 @@ function Resolve-BoundedPythonRuntime {
         $ErrorActionPreference = $oldPreference
     }
     if ($identityExitCode -ne 0 -or $identityOutput.Count -ne 1) {
-        throw 'Bounded Python runtime identity probe failed'
+        $identityDiagnostic = ($identityOutput | ForEach-Object { [string]$_ }) -join ' '
+        throw "Bounded Python runtime identity probe failed (exit=$identityExitCode output=$identityDiagnostic)"
     }
     try {
         $identity = $identityOutput[0] | ConvertFrom-Json -ErrorAction Stop

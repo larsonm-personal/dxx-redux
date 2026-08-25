@@ -125,8 +125,26 @@ function Get-TarPath {
 function Escape-JsonString {
     param([AllowNull()][string]$Text)
     if ($null -eq $Text) { return "" }
-    $json = ConvertTo-Json -Compress -InputObject ([string]$Text)
-    return $json.Substring(1, $json.Length - 2)
+
+    $escaped = [Text.StringBuilder]::new($Text.Length)
+    foreach ($character in $Text.ToCharArray()) {
+        $codePoint = [int][char]$character
+        switch ($codePoint) {
+            8 { [void]$escaped.Append('\b'); continue }
+            9 { [void]$escaped.Append('\t'); continue }
+            10 { [void]$escaped.Append('\n'); continue }
+            12 { [void]$escaped.Append('\f'); continue }
+            13 { [void]$escaped.Append('\r'); continue }
+            34 { [void]$escaped.Append('\"'); continue }
+            92 { [void]$escaped.Append('\\'); continue }
+        }
+        if ($codePoint -lt 0x20) {
+            [void]$escaped.AppendFormat('\u{0:x4}', $codePoint)
+        } else {
+            [void]$escaped.Append($character)
+        }
+    }
+    return $escaped.ToString()
 }
 
 function Get-SafeFilePart {

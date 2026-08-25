@@ -89,7 +89,7 @@ try {
 
     $outputRoot = Join-Path $testRoot 'bounded output [space]'
     New-Item -ItemType Directory -Path $outputRoot | Out-Null
-    $childCode = 'import pathlib,sys; pathlib.Path(sys.argv[1], "quoted ok").write_text("ok", encoding="ascii")'
+    $childCode = "import pathlib,sys; pathlib.Path(sys.argv[1], 'quoted ok').write_text('ok', encoding='ascii')"
     $result = Invoke-BoundedExtractor -OutputDirectory $outputRoot -FilePath $explicitPath `
         -ArgumentList @('-I', '-c', $childCode, $outputRoot) `
         -PythonRuntimePath $explicitPath -PythonRuntimeSha256 $explicitHash

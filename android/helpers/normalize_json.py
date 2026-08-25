@@ -146,8 +146,15 @@ def main() -> int:
             print("--check requires at least one file", file=sys.stderr)
             return 2
         try:
+            text = sys.stdin.read()
+            if text.startswith("\ufeff"):
+                text = text[1:]
+            elif text.startswith("\u00ef\u00bb\u00bf"):
+                # Windows PowerShell 5.1 writes a UTF-8 BOM, while Python can
+                # decode redirected stdin with the active Windows code page
+                text = text[3:]
             sys.stdout.write(
-                format_json_text(sys.stdin.read(), args.sort_keys, args.mission_metadata)
+                format_json_text(text, args.sort_keys, args.mission_metadata)
             )
             return 0
         except (json.JSONDecodeError, ValueError) as error:

@@ -29,6 +29,12 @@ if ($helperSource -notmatch 'function Test-AppPrivateStorageReady' -or
     $helperSource -notmatch 'Wait-EmulatorReadyForTests -TimeoutSeconds 30') {
     throw 'Emulator recovery does not validate app-private storage readiness'
 }
+if ($helperSource -notmatch '\$displayedLogLines\.Add\(\$trimmedLine\)') {
+    throw 'Automation monitoring can print the same accumulated logcat line repeatedly'
+}
+if ($helperSource -notmatch '@\("logcat", "-d", "-t", "400", "-s"') {
+    throw 'Automation monitoring does not bound its repeated logcat snapshots'
+}
 if ($runnerSource -notmatch '"test_launcher_dpad"\s*=\s*180') {
     throw 'Launcher DPAD test does not have its required timeout override'
 }

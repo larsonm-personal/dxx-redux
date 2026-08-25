@@ -57,8 +57,13 @@ try {
             -ExpectedSha256 $fileHash -Label 'missing source'
     } 'missing offline cache is rejected'
 
+    [IO.File]::WriteAllText((Join-Path $treePath 'a.txt'), 'lower')
+    [IO.File]::WriteAllText((Join-Path $treePath 'B.txt'), 'upper')
     [IO.File]::WriteAllText((Join-Path $treePath 'module.py'), 'trusted')
     $treeHash = Get-DxxTreeSha256 -Path $treePath
+    if ($treeHash -ne '773040e2de24eecc465c3514a3ed5f440804b71cf57699b39638ebae10da1371') {
+        throw "Tree hash ordering is not ordinal and stable: $treeHash"
+    }
     Assert-DxxTreeSha256 -Path $treePath -ExpectedSha256 $treeHash -Label 'test tree' | Out-Null
     Write-Host 'PASS: verified extracted tree is accepted'
 

@@ -37,15 +37,15 @@ function Get-DxxTreeSha256 {
     param([Parameter(Mandatory = $true)][string]$Path)
 
     $root = (Resolve-Path -LiteralPath $Path).Path
-    $records = @(
+    [string[]]$records = @(
         Get-ChildItem -LiteralPath $root -Recurse -File |
             ForEach-Object {
                 $relative = $_.FullName.Substring($root.Length + 1).Replace('\', '/')
                 $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
                 "$relative`0$hash`n"
-            } |
-            Sort-Object
+            }
     )
+    [Array]::Sort($records, [StringComparer]::Ordinal)
     $bytes = [Text.Encoding]::UTF8.GetBytes(($records -join ''))
     $sha = [Security.Cryptography.SHA256]::Create()
     try {

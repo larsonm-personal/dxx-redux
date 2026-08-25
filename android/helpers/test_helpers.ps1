@@ -1589,6 +1589,7 @@ function Watch-AutomationResult {
     $lastAutomationProgressSeconds = -1
     $automationProgressGraceSeconds = 120
     $mismatchedRunIds = [System.Collections.Generic.HashSet[string]]::new()
+    $displayedLogLines = [System.Collections.Generic.HashSet[string]]::new()
 
     while (-not $finished) {
         $elapsedNow = [int]$sw.Elapsed.TotalSeconds
@@ -1807,9 +1808,9 @@ function Watch-AutomationResult {
 
         # Fallback: check logcat (include launcher/setup tags for launcher tests)
         $logArgs = if ($IsLauncherScript) {
-            @("logcat", "-d", "-s", "DXX-Automate:*", "DXX-LauncherScript:*", "DXX-Setup:*")
+            @("logcat", "-d", "-t", "400", "-s", "DXX-Automate:*", "DXX-LauncherScript:*", "DXX-Setup:*")
         } else {
-            @("logcat", "-d", "-s", "DXX-Automate:*")
+            @("logcat", "-d", "-t", "400", "-s", "DXX-Automate:*")
         }
         $log = Adb-Timeout -AdbArgs $logArgs -Seconds 5
         if ($null -eq $log) {
@@ -1873,7 +1874,10 @@ function Watch-AutomationResult {
                         ($IsLauncherScript -and ($line -match 'DXX-LauncherScript' -or $line -match 'DXX-Setup'))
                     )
                 ) {
-                    Write-Host "  $($line.Trim())" -ForegroundColor Gray
+                    $trimmedLine = $line.Trim()
+                    if ($displayedLogLines.Add($trimmedLine)) {
+                        Write-Host "  $trimmedLine" -ForegroundColor Gray
+                    }
                 }
             }
         }

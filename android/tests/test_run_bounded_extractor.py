@@ -166,6 +166,30 @@ class RunBoundedExtractorTests(unittest.TestCase):
                 MODULE.measure_tree(root, 4, 16384, 16384, strict=True)
             self.assertEqual(sentinel.read_text(), "preserve")
 
+    @unittest.skipUnless(MODULE.os.name == "nt", "Windows path race fixture")
+    def test_measurement_ignores_a_file_removed_after_open(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = pathlib.Path(temp)
+            stable = root / "stable"
+            transient = root / "transient.tmp.0"
+            stable.write_bytes(b"stable")
+            transient.write_bytes(b"temporary")
+            real_assert = MODULE._assert_no_windows_streams
+
+            def racing_stream_check(path):
+                if pathlib.Path(path) == transient:
+                    transient.unlink()
+                    raise FileNotFoundError(path)
+                return real_assert(path)
+
+            with mock.patch.object(
+                    MODULE, "_assert_no_windows_streams",
+                    side_effect=racing_stream_check):
+                files, total = MODULE.measure_tree(root, 4, 16384, 16384)
+
+            self.assertEqual(files, 1)
+            self.assertGreaterEqual(total, len(b"stable"))
+
     @unittest.skipUnless(MODULE.os.name == "nt", "Windows junction fixture")
     def test_rejects_junction_escape_without_touching_sentinel(self):
         with tempfile.TemporaryDirectory() as temp:

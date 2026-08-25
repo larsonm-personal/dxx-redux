@@ -193,10 +193,29 @@ function Invoke-RegressionDataStageProcess {
 
     # Poll files instead of piping child output. A daemon can inherit and keep a
     # pipe or file handle open, but it cannot keep the direct process alive.
+    # The sidecar also avoids a Windows PowerShell 5.1 Start-Process bug that
+    # can detach redirected Process objects and make ExitCode unavailable.
     $stderrPath = "$LogPath.stderr"
+    $invocationId = [Guid]::NewGuid().ToString('N')
+    $requestPath = "$LogPath.$invocationId.request.json"
+    $exitCodePath = "$LogPath.$invocationId.exitcode"
     [System.IO.File]::WriteAllText($LogPath, '', [System.Text.UTF8Encoding]::new($false))
     [System.IO.File]::WriteAllText($stderrPath, '', [System.Text.UTF8Encoding]::new($false))
-    $processArguments = @('-NoProfile', '-NonInteractive', '-File', $ScriptPath) + @($Arguments)
+    $request = [ordered]@{
+        file_path = $PowerShellPath
+        arguments = @('-NoProfile', '-NonInteractive', '-File', $ScriptPath) + @($Arguments)
+    }
+    [System.IO.File]::WriteAllText(
+        $requestPath,
+        ($request | ConvertTo-Json -Depth 3 -Compress),
+        [System.Text.UTF8Encoding]::new($false)
+    )
+    $wrapperPath = Join-Path $script:HelpersDir 'invoke_process_with_exit_code.ps1'
+    $processArguments = @(
+        '-NoProfile', '-NonInteractive', '-File', "`"$wrapperPath`"",
+        '-RequestPath', "`"$requestPath`"",
+        '-ExitCodePath', "`"$exitCodePath`""
+    )
     $process = Start-Process -FilePath $PowerShellPath -ArgumentList $processArguments -NoNewWindow -PassThru `
         -RedirectStandardOutput $LogPath -RedirectStandardError $stderrPath
     $stdoutReader = $null
@@ -218,11 +237,20 @@ function Invoke-RegressionDataStageProcess {
         $process.WaitForExit()
         while (-not $stdoutReader.EndOfStream) { Write-Host $stdoutReader.ReadLine() }
         while (-not $stderrReader.EndOfStream) { Write-Host $stderrReader.ReadLine() -ForegroundColor Red }
-        return $process.ExitCode
+        if (-not (Test-Path -LiteralPath $exitCodePath -PathType Leaf)) {
+            throw 'Regression stage process exited without recording an exit code'
+        }
+        $exitCodeText = [IO.File]::ReadAllText($exitCodePath).Trim()
+        $exitCode = 0
+        if (-not [int]::TryParse($exitCodeText, [ref]$exitCode)) {
+            throw "Regression stage process recorded invalid exit code '$exitCodeText'"
+        }
+        return $exitCode
     } finally {
         if ($stdoutReader) { $stdoutReader.Dispose() }
         if ($stderrReader) { $stderrReader.Dispose() }
         $process.Dispose()
+        Remove-Item -LiteralPath $requestPath, $exitCodePath -Force -ErrorAction SilentlyContinue
     }
 }
 

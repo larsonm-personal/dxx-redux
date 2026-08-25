@@ -113,6 +113,10 @@ exit 0
     $singleManifest = Join-Path $singleDir 'track_fingerprints.json'
     Assert-True ([IO.File]::ReadAllText($singleManifest).TrimStart().StartsWith('[')) `
         'A complete one-track result should still publish as a JSON array'
+    $expectedSingle = "[`n  {`n    `"track`": 1,`n    `"type`": `"data`",`n" +
+    "    `"sha1`": `"$('1' * 40)`"`n  }`n]"
+    Assert-True ([IO.File]::ReadAllText($singleManifest) -ceq $expectedSingle) `
+        'Fingerprint manifest formatting should be canonical across PowerShell hosts'
 
     Assert-True ((Invoke-Workflow -Mode 'success') -eq 0) `
         'A complete CLI result should succeed'
@@ -161,7 +165,7 @@ exit 0
     New-Item -ItemType Directory -Path $missionRoot, $missionOutput | Out-Null
     $archive = [IO.Compression.ZipFile]::Open($missionZip, [IO.Compression.ZipArchiveMode]::Create)
     try {
-        foreach ($name in @('a.ogg', 'b.ogg')) {
+        foreach ($name in @("a's.ogg", 'b.ogg')) {
             $entry = $archive.CreateEntry($name)
             $stream = $entry.Open()
             try { $stream.WriteByte(1) } finally { $stream.Dispose() }
@@ -203,6 +207,9 @@ exit 0
     $missionMetadata = Read-JsoncFile $missionInfo
     Assert-True ($missionMetadata.complete -ceq $true -and @($missionMetadata.tracks).Count -eq 2) `
         'A complete mission batch should publish every track with a completeness marker'
+    $missionText = [IO.File]::ReadAllText($missionInfo)
+    Assert-True ($missionText.Contains("a's.ogg") -and -not $missionText.Contains('\u0027')) `
+        'Mission manifest apostrophe escaping should be canonical across PowerShell hosts'
     $incompleteText = [IO.File]::ReadAllText($missionInfo).Replace('"complete": true', '"complete": false')
     [IO.File]::WriteAllText($missionInfo, $incompleteText, [Text.UTF8Encoding]::new($false))
     Assert-True ((Invoke-MissionWorkflow -Mode 'mission_success') -eq 0) `
