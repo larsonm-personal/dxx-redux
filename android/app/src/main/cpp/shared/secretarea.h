@@ -59,6 +59,14 @@ int level_metadata_validate_live_route_certificate(
     int start_objnum, unsigned int *work_units);
 int level_metadata_prepare_guidebot_path_view(int start_objnum);
 int level_metadata_guidebot_side_passable_current(int segment, int side);
+int level_metadata_guidebot_route_frontier_current(
+    int start_segment,
+    int goal_segment,
+    int max_depth,
+    int avoid_from,
+    int avoid_to,
+    int avoid_from2,
+    int avoid_to2);
 int secret_area_note_segment_entered(int segnum);
 void secret_area_restore_saved_found(int saved_total, const unsigned char *found, int found_capacity, const unsigned char *visited, int visited_count);
 void secret_area_restore_found_from_automap(const unsigned char *visited, int visited_count);

@@ -35,3 +35,129 @@ Determine why GuideBot selects later objective 7 while the automap still identif
 - D2 Windows game, headless, metadata, and test targets built successfully.
 - All 43 D2 host tests passed, including the expanded GuideBot certifier regression.
 - Android `:app:assembleDebug` passed for `arm64-v8a`, `armeabi-v7a`, and `x86_64`.
+
+## Unchanged behavior follow-up
+
+- [x] Correlate the new `route_certifier` diagnostics with GuideBot goal adoption.
+- [x] Identify how objective 4 is classified by current-world-state checks.
+- [x] Trace any full-planner fallback that still produces objective 7.
+- [x] Add only the diagnostics needed to distinguish completion, usability, target, and reachability decisions.
+- [x] Implement and validate the correction supported by the new evidence.
+
+### Follow-up findings
+
+- The 16:14 log proves the ordering correction is running: canonical reuse selects no later step after rejecting its first still-required candidate.
+- After that rejection, the full live planner runs independently and produces segment 217 as its first pending target. The previous certifier behavior was therefore real but was not the active cause of the reported objective skip.
+- The old diagnostic did not identify the rejected canonical step or expose which route steps the current-world checks considered required, so it could not distinguish objective 4 being treated as complete from objective 4 being required but unreachable.
+- The new launcher-exportable GuideBot diagnostics record the required-step bit mask, exact blocking step and segment, rejection reason, current start segment and key mask, and the full planner's selected route-step metadata.
+- At that diagnostic stage, no further gameplay behavior was changed. The requested same-save log supplied the evidence needed for the correction.
+- The 16:41 log reports `required=0x780`, proving current-world inference considers only steps 7 through 10 unfinished. Objective 4 is skipped because its linked-wall effects appear passable, not because its target is rejected.
+- The same log reports canonical step 7 at segment 217 as unreachable. The full planner nevertheless publishes that step as a partial objective, reproducing the route toward the impassable frontier.
+- A provisional certifier fallback retained the first reachable unresolved canonical switch when a later required objective was unreachable. The 17:27 log disproved that fallback and it has been removed.
+
+### Follow-up validation
+
+- D2 Windows game, headless, metadata, and test targets built successfully.
+- All 43 D2 host tests passed, including assertions for the new blocking-step diagnostics.
+- Android `:app:assembleDebug` passed for all configured ABIs.
+- `git diff --check` passed.
+- The new unresolved-switch fallback regression passed, as did all 43 D2 host tests.
+- Android `:app:assembleDebug` passed again after the supported gameplay correction.
+
+## Passability root-cause follow-up
+
+- [x] Trace the linked-wall completion predicate against GuideBot movement and full-planner edge predicates.
+- [x] Inspect Aquarius walls 22 and 44 and the route toward segment 217 using available level data or exact runtime diagnostics.
+- [x] Determine whether shoot-through grates are being confused with object-passable sides at any shared boundary.
+- [x] Replace or revise the provisional unresolved-switch fallback if the shared passability cause explains both symptoms.
+- [x] Add a focused regression and run scoped quality, host tests, and Android assembly for any correction.
+
+### Passability findings
+
+- Objective completion, route snapshots, route certification, and GuideBot route path creation all use object flyability, represented by `WID_FLY_FLAG`, at their engine boundary. A solid transparent grate reports render-through without `WID_FLY_FLAG`, so these checks do not directly mistake an ordinary shoot-through grate for an object-passable wall.
+- The 16:41 log proves segment 217 is outside the certifier's 320-segment reachable set. The full planner nevertheless publishes segment 217 as a partial objective.
+- The original 1996 pathfinder deliberately returns a path to the last visited reachable segment when it cannot reach the requested goal. A grate on that frontier therefore becomes the visible stopping point even though the pathfinder did not traverse or classify it as passable.
+- The prior Obsidian level 6 grate regression involved physical movement failing at graph edges after path creation and is handled by stalled-edge exclusion. It is a different lower-level geometry or clearance case from the unreachable partial objective shown here.
+- The supplied log only records the aggregate result for objective 4. It cannot show whether wall 22 or wall 44 satisfied completion through `WALL_OPEN`, `WALL_DOOR_OPENED`, or current side flyability.
+- Launcher-exportable GuideBot logs now report the locator and each effect wall for skipped unresolved objectives, including wall type, state, flags, doorway bits, flyability, opening state, and the final completion-passable result. This will identify the exact erroneous or legitimate condition in the same save.
+- The 17:27 log resolves the aggregate ambiguity. Objective 4's locator wall 18 and effect walls 22 and 44 are all genuinely `WALL_OPEN`, with `WID_NO_WALL` doorway flags. They did not merely appear passable to the metadata code.
+- Wall 18 is also the declared effect of later canonical trigger 9. A cached unresolved objective can therefore retain a locator whose wall was legitimately removed by another action.
+- Objective 4's trigger has no disabled or one-shot state that can provide separate durable completion evidence. Its open effect walls are the only current-state evidence, and that evidence says the action is already satisfied.
+- The provisional fallback consequently sent GuideBot to stale segment 172 and displayed its synthetic `Locate and activate switch trigger 0` label. It did not find a missing prerequisite.
+- After the energy-center command, the certifier's reachable count changed from 320 to 470 while its start segment remained 265. A live wall transition made real objective 7 reachable; GuideBot did not discover a different static path by moving between connectivity components.
+- The later generic instruction belongs to real objective 7, a known shootable switch at segment 217. The inconsistent wording came from switching between two different objective records, not from nondeterministic message selection.
+- Repeated unresolved completion details are now logged only when their wall evidence changes. The diagnostic also lists every source wall attached to the unresolved trigger, including texture and shootability data.
+- Future logs report the exact wall type, state, flags, key, trigger, and controlling trigger whenever a connectivity change alters the certifier's reachable segment count.
+- A host scan of pristine Aquarius confirms trigger 0 is attached to closed wall 18 at segment 63 side 0. Its animated texture 418 has effect 74 and replacement bitmap 417, so it is a real shootable wall switch that happens to resemble a reactor surface.
+- The actual level reactor is object 6 in segment 47. Objective 4 is not a reactor or pseudo-reactor object.
+
+### Final validation
+
+- The D2 Windows game, headless analyzers, metadata analyzer, and affected test targets built successfully.
+- All 43 D2 host tests passed.
+- Android `:app:assembleDebug` passed for all configured ABIs after compiling the shared diagnostics for both D1 and D2.
+- Scoped code quality and `git diff --check` passed.
+
+### Passability diagnostic validation
+
+- Scoped code quality passed.
+- The D2 Windows build and all 43 D2 host tests passed.
+- Android `:app:assembleDebug` passed for all configured ABIs.
+
+## Keyed-door route stability follow-up
+
+- [x] Correlate the pseudo-reactor sequence and objective transitions in the 20:49 log.
+- [x] Identify the world-state transition responsible for the 320-to-470 reachable-segment changes.
+- [x] Separate strategic objective reachability from GuideBot's immediate physical door passability.
+- [x] Add focused regression coverage for a closed keyed buddy-proof door.
+- [x] Run scoped code quality, host tests, and Android assembly.
+
+### Keyed-door findings
+
+- The run completes the first logged pseudo-reactor action at route step 3, then advances through the paired switches at segment 302 and the switch at segment 217 before selecting the real reactor in segment 47.
+- The saved state already contains the destroyed replacement texture for route step 4's source wall and open linked walls, so skipping that step in this run is supported by current level state rather than stale completion history.
+- Reachability repeatedly changes from 470 segments to 320 segments when keyed buddy-proof walls 41 and 42 close, then returns to 470 when the player causes the door to open.
+- The certifier currently uses GuideBot's immediate physical passability for strategic objective reachability. A closed buddy-proof door therefore invalidates an otherwise valid route even when the player owns its key and can reopen it.
+- The correction must keep the original physical path behavior at the door while preventing this transient door state from resetting the selected objective.
+- Route certification and navigation-access auditing now treat an unlocked, visible keyed door as strategically reachable only when the player currently owns its key, even if the buddy-proof rule prevents GuideBot from opening the closed door himself.
+- GuideBot path creation continues to use immediate physical passability, so he still approaches and waits at the closed door until the player opens it instead of flying through or forgetting the selected objective.
+
+### Keyed-door validation
+
+- The focused regression proves the same closed keyed buddy-proof door is physically blocked but strategically reachable with the matching key, and strategically unreachable without it.
+- The D2 Windows game and headless targets built successfully.
+- All 43 D2 host tests passed.
+- Android `:app:assembleDebug` passed after compiling all configured ABIs.
+- Scoped code quality and `git diff --check` passed.
+
+## Route-aware physical frontier follow-up
+
+- [x] Define a route-aware frontier that is physically reachable by GuideBot and minimizes the remaining strategic route distance to the selected objective.
+- [x] Use that frontier for physical path creation without replacing or clearing the selected objective.
+- [x] Preserve original visit-player cadence and ordinary non-route GuideBot path behavior.
+- [x] Add focused tests for useful-frontier selection, keyed-door waiting, and genuinely unreachable objectives.
+- [x] Run scoped code quality, D2 host build and tests, and Android assembly.
+
+### Frontier design
+
+- The original partial-path fallback selects the last breadth-first-search segment enqueued. That endpoint is traversal-order-dependent and can be an irrelevant side branch.
+- A useful frontier must be selected by graph progress toward the objective, not by geometric proximity.
+- The route objective remains active while GuideBot waits at a frontier. Temporary physical obstruction must not switch him to scram behavior or erase the route destination.
+
+### Frontier implementation
+
+- Reverse strategic search assigns every segment its remaining route distance to the objective. A forward physical search then chooses the reachable segment with the smallest remaining strategic distance, using physical distance as the stable tie-break through breadth-first visitation order.
+- The physical search respects GuideBot clearance, current wall passability, the path-length limit, and both stalled edges already recorded by collision recovery.
+- If an alternate route avoids a stalled edge, the objective itself remains the physical target. Otherwise GuideBot targets the best useful segment before the obstruction.
+- A path that reaches this deliberate frontier is treated as successful physical progress. The semantic objective remains active and is retried after ordinary path refreshes or visit-player behavior.
+- Manual non-route GuideBot commands and the original `time_to_visit_player` function are unchanged.
+- Launcher-exportable GuideBot logs report `route_frontier` with the objective, selected frontier, and avoided edges whenever the physical and semantic targets differ.
+
+### Frontier validation
+
+- The focused graph regression includes a tempting passable side branch. It selects the segment immediately before a closed keyed buddy-proof door rather than the side branch.
+- The same regression reaches the objective when the door is open, stops before a recorded stalled edge when no alternate route exists, and returns no frontier when the objective is strategically unreachable without the key.
+- The D2 Windows game and headless targets built successfully.
+- All 43 D2 host tests passed.
+- Android `:app:assembleDebug` passed after compiling all configured ABIs.
+- Scoped code quality and `git diff --check` passed.

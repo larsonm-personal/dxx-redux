@@ -367,8 +367,9 @@ bool fingerprint_view_domain(
 			hasher.add_int(view.num_segments);
 			for (int segment = 0; segment < view.num_segments; ++segment)
 				for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
-					hasher.add_bool(guidebot_route_side_passable_current(
-					    &view, segment, side));
+					hasher.add_bool(
+					    guidebot_route_side_progress_reachable_current(
+					        &view, segment, side));
 					work_units++;
 				}
 			break;

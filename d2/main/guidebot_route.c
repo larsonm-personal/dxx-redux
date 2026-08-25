@@ -1756,6 +1756,28 @@ void escort_route_note_path_endpoint(object *objp)
 		Escort_route_goal.path_endpoint_seg = Escort_route_goal.target_seg;
 }
 
+int escort_route_physical_target(object *objp, int goal_seg, int max_depth)
+{
+	int frontier;
+
+	if (!objp || !level_metadata_prepare_guidebot_path_view(objp - Objects))
+		return goal_seg;
+	frontier = level_metadata_guidebot_route_frontier_current(
+	    objp->segnum, goal_seg, max_depth,
+	    Escort_route_avoid_from_seg, Escort_route_avoid_seg,
+	    Escort_route_avoid_from_seg2, Escort_route_avoid_seg2);
+	if (frontier < 0)
+		return goal_seg;
+	if (frontier != goal_seg)
+		debug_log(
+		    DLOG_GUIDEBOT,
+		    "route_frontier start=%d objective=%d frontier=%d avoid=%d>%d avoid2=%d>%d",
+		    objp->segnum, goal_seg, frontier,
+		    Escort_route_avoid_from_seg, Escort_route_avoid_seg,
+		    Escort_route_avoid_from_seg2, Escort_route_avoid_seg2);
+	return frontier;
+}
+
 void escort_route_apply_target_pos(object *objp)
 {
 	ai_static *aip;

@@ -23,6 +23,7 @@ extern "C" {
 #include "cntrlcen.h"
 #include "digi.h"
 #include "dxxerror.h"
+#include "effects.h"
 #include "game.h"
 #include "gameseq.h"
 #include "gamesave.h"
@@ -517,9 +518,14 @@ static void trace_wall_inventory(int level_num, const char *level_file)
 		    Triggers[trigger_num].type != TT_ILLUSORY_WALL)
 			continue;
 		for (source_wall = 0; source_wall < Num_walls; ++source_wall) {
+			int destroyed = -1;
+			int effect_dest = -1;
+			int effect_flags = 0;
+			int effect_num = -1;
 			int source_seg;
 			int source_side;
 			int source_child;
+			int source_texture = -1;
 			int reverse_side = -1;
 			int reverse_wall = -1;
 
@@ -528,13 +534,22 @@ static void trace_wall_inventory(int level_num, const char *level_file)
 			source_seg = Walls[source_wall].segnum;
 			source_side = Walls[source_wall].sidenum;
 			source_child = source_seg >= 0 && source_seg < Num_segments && source_side >= 0 && source_side < MAX_SIDES_PER_SEGMENT ? Segments[source_seg].children[source_side] : -1;
+			source_texture = source_seg >= 0 && source_seg < Num_segments && source_side >= 0 && source_side < MAX_SIDES_PER_SEGMENT ? Segments[source_seg].sides[source_side].tmap_num2 & 0x3fff : -1;
+			if (source_texture >= 0 && source_texture < MAX_TEXTURES) {
+				destroyed = TmapInfo[source_texture].destroyed;
+				effect_num = TmapInfo[source_texture].eclip_num;
+				if (effect_num >= 0 && effect_num < Num_effects && effect_num < MAX_EFFECTS) {
+					effect_dest = Effects[effect_num].dest_bm_num;
+					effect_flags = Effects[effect_num].flags;
+				}
+			}
 			if (source_child >= 0 && source_child < Num_segments) {
 				reverse_side = find_connect_side(&Segments[source_seg], &Segments[source_child]);
 				if (reverse_side >= 0)
 					reverse_wall = Segments[source_child].sides[reverse_side].wall_num;
 			}
 			fprintf(stderr,
-			        "SECRET-AREA-DUMP TRIGGER-SOURCE level=%d trigger=%d type=%d wall=%d wall_type=%d seg=%d side=%d child=%d reverse_side=%d reverse_wall=%d tmap2=%d\n",
+			        "SECRET-AREA-DUMP TRIGGER-SOURCE level=%d trigger=%d type=%d wall=%d wall_type=%d seg=%d side=%d child=%d reverse_side=%d reverse_wall=%d tmap2=%d texture=%d eclip=%d effect_dest=%d effect_flags=%d destroyed=%d\n",
 			        level_num,
 			        trigger_num,
 			        Triggers[trigger_num].type,
@@ -545,7 +560,12 @@ static void trace_wall_inventory(int level_num, const char *level_file)
 			        source_child,
 			        reverse_side,
 			        reverse_wall,
-			        source_seg >= 0 && source_seg < Num_segments && source_side >= 0 && source_side < MAX_SIDES_PER_SEGMENT ? Segments[source_seg].sides[source_side].tmap_num2 : 0);
+			        source_seg >= 0 && source_seg < Num_segments && source_side >= 0 && source_side < MAX_SIDES_PER_SEGMENT ? Segments[source_seg].sides[source_side].tmap_num2 : 0,
+			        source_texture,
+			        effect_num,
+			        effect_dest,
+			        effect_flags,
+			        destroyed);
 			type = Walls[source_wall].type;
 			if (type < 0 || type >= (int) (sizeof(opener_source_type_counts) / sizeof(opener_source_type_counts[0])))
 				type = 0;

@@ -1534,6 +1534,7 @@ void say_escort_goal(int goal_num)
 void escort_create_path_to_goal(object *objp)
 {
 	int	goal_seg = -1;
+	int path_goal_seg = -1;
 	int			objnum = objp-Objects;
 	ai_static	*aip = &objp->ctype.ai_info;
 	ai_local		*ailp = &Ai_local_info[objnum];
@@ -1656,6 +1657,13 @@ void escort_create_path_to_goal(object *objp)
 		}
 	}
 
+	path_goal_seg = goal_seg;
+#ifdef __ANDROID__
+	if (using_route_goal)
+		path_goal_seg = escort_route_physical_target(
+		    objp, goal_seg, Max_escort_length);
+#endif
+
 	input_demo_log_escort_goal_probe("resolved", objp, ailp, aip, goal_seg,
 		Escort_goal_index);
 
@@ -1689,7 +1697,7 @@ void escort_create_path_to_goal(object *objp)
 			    Escort_route_avoid_trigger == Escort_route_goal.objective_trigger &&
 			    Escort_route_avoid_wall == Escort_route_goal.objective_wall) {
 				if (!create_path_to_segment_avoiding_edges(
-				        objp, goal_seg, Max_escort_length, 1,
+				        objp, path_goal_seg, Max_escort_length, 1,
 				        Escort_route_avoid_from_seg, Escort_route_avoid_seg,
 				        Escort_route_avoid_from_seg2, Escort_route_avoid_seg2)) {
 					debug_log(DLOG_GUIDEBOT,
@@ -1704,18 +1712,18 @@ void escort_create_path_to_goal(object *objp)
 					Escort_route_avoid_trigger = -1;
 					Escort_route_avoid_wall = -1;
 					create_guidebot_route_path_to_segment(
-					    objp, goal_seg, Max_escort_length, 1);
+					    objp, path_goal_seg, Max_escort_length, 1);
 				}
 			} else if (using_route_goal)
 				create_guidebot_route_path_to_segment(
-				    objp, goal_seg, Max_escort_length, 1);
+				    objp, path_goal_seg, Max_escort_length, 1);
 			else
 #endif
 				create_path_to_segment(objp, goal_seg, Max_escort_length, 1);	//	MK!: Last parm (safety_flag) used to be 1!!
 			if (aip->path_length > 3)
 				aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
 			input_demo_log_escort_path_state("escort_create_path_to_goal to_segment", objp);
-			if ((aip->path_length > 0) && (Point_segs[aip->hide_index + aip->path_length - 1].segnum != goal_seg)) {
+			if ((aip->path_length > 0) && (Point_segs[aip->hide_index + aip->path_length - 1].segnum != path_goal_seg)) {
 				{
 					fix	dist_to_player;
 					Last_buddy_message_time = 0;	//	Force this message to get through.

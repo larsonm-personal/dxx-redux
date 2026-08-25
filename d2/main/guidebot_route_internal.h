@@ -139,6 +139,7 @@ int escort_valid_segment(int segnum);
 int escort_route_key_flag(int key_index);
 int escort_route_next_waypoint_pending(void);
 int escort_route_next_goal(void);
+int escort_route_physical_target(object *objp, int goal_seg, int max_depth);
 void escort_route_refresh_metadata(void);
 void escort_route_note_path_endpoint(object *objp);
 void escort_route_apply_target_pos(object *objp);

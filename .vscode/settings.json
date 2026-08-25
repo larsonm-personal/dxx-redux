@@ -4,7 +4,7 @@
         "**/temp/**"
     ],
     "java.import.gradle.wrapper.enabled": true,
-    "java.import.gradle.java.home": "C:\\local\\jdk-21",
+    "java.import.gradle.java.home": "c:\\local\\jdk-21",
     "C_Cpp.default.configurationProvider": "ms-vscode.cpptools",
     "C_Cpp.default.cStandard": "c11",
     "C_Cpp.default.cppStandard": "c++17",
@@ -15,7 +15,7 @@
     "java.configuration.runtimes": [
         {
             "name": "JavaSE-21",
-            "path": "C:\\local\\jdk-21", // absolute path won't be right for most
+            "path": "c:\\local\\jdk-21", // absolute path won't be right for most
             "default": true
         }
     ],

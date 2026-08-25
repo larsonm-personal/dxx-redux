@@ -81,6 +81,7 @@ static guidebot_route_shadow_summary Level_metadata_route_shadow_summary;
 static level_metadata_state Level_metadata_shadow_route_state;
 static route_planner_plan_summary Level_metadata_shadow_plan_summary;
 static guidebot_route_certifier_workspace Level_metadata_route_certifier_workspace;
+static guidebot_route_certifier_workspace Level_metadata_route_frontier_workspace;
 static guidebot_route_certifier_summary Level_metadata_route_certifier_summary;
 static guidebot_route_validity_certificate Level_metadata_live_certificate;
 static guidebot_route_decision Level_metadata_published_route_decision;
@@ -2696,6 +2697,213 @@ static int level_metadata_analysis_cache_save(
 #endif
 }
 
+#ifdef __ANDROID__
+static void level_metadata_log_unresolved_link_state(
+    const level_metadata_scan_view *view,
+    int step_index,
+    const level_metadata_route_step *step,
+    const char *role,
+    int wall_num,
+    int seg,
+    int side)
+{
+	int child = -1;
+	int doorway = 0;
+	int flyable = 0;
+	int opening = 0;
+	int passable = 0;
+	int type = -1;
+	int flags = 0;
+	int state = -1;
+
+	if (seg >= 0 && seg < Num_segments && side >= 0 &&
+	    side < MAX_SIDES_PER_SEGMENT) {
+		child = Segments[seg].children[side];
+		doorway = WALL_IS_DOORWAY(&Segments[seg], side);
+		flyable = view->side_is_flyable &&
+		          view->side_is_flyable(view->user, seg, side);
+	}
+	if (wall_num >= 0 && wall_num < Num_walls) {
+		type = Walls[wall_num].type;
+		flags = Walls[wall_num].flags;
+		state = Walls[wall_num].state;
+		opening = view->wall_is_opening &&
+		          view->wall_is_opening(view->user, wall_num);
+		passable = type == view->wall_type_open ||
+		           (flags & view->wall_flag_door_opened) != 0 || flyable;
+	}
+	debug_log(
+	    DLOG_GUIDEBOT,
+	    "route_unresolved_link step=%d trigger=%d role=%s wall=%d seg=%d "
+	    "side=%d child=%d type=%d state=%d flags=0x%x doorway=0x%x "
+	    "flyable=%d opening=%d completion_passable=%d\n",
+	    step_index, step->trigger_num, role, wall_num, seg, side, child, type,
+	    state, flags, doorway, flyable, opening, passable);
+}
+
+static void level_metadata_log_unresolved_completion_evidence(
+    const level_metadata_scan_view *view)
+{
+	static unsigned long long previous_signature;
+	static int previous_level = 0;
+	unsigned long long signature = 1469598103934665603ULL;
+	int step_index;
+	int completed_count = 0;
+
+	for (step_index = 0;
+	     step_index < Level_metadata_canonical_state.route_step_count;
+	     ++step_index) {
+		const level_metadata_route_step *step =
+		    &Level_metadata_canonical_state.route_steps[step_index];
+		int link;
+
+		if (step->kind != LEVEL_METADATA_ROUTE_TRIGGER ||
+		    step->activation_kind !=
+		        LEVEL_METADATA_ROUTE_ACTIVATION_UNRESOLVED_TRIGGER ||
+		    level_metadata_route_step_required_by_world_state(view, step))
+			continue;
+		++completed_count;
+		signature = (signature ^ (unsigned int) step_index) * 1099511628211ULL;
+		signature = (signature ^ (unsigned int) step->trigger_num) * 1099511628211ULL;
+		for (link = -1; link < step->opened_link_count; ++link) {
+			const int wall_num = link < 0 ? step->wall_num
+			                              : step->opened_link_wall[link];
+
+			if (wall_num < 0 || wall_num >= Num_walls)
+				continue;
+			signature = (signature ^ (unsigned int) wall_num) * 1099511628211ULL;
+			signature = (signature ^ (unsigned int) Walls[wall_num].type) *
+			            1099511628211ULL;
+			signature = (signature ^ (unsigned int) Walls[wall_num].state) *
+			            1099511628211ULL;
+			signature = (signature ^ (unsigned int) Walls[wall_num].flags) *
+			            1099511628211ULL;
+		}
+	}
+	if (!completed_count)
+		return;
+	if (previous_level == Current_level_num && previous_signature == signature)
+		return;
+	previous_level = Current_level_num;
+	previous_signature = signature;
+
+	for (step_index = 0;
+	     step_index < Level_metadata_canonical_state.route_step_count;
+	     ++step_index) {
+		const level_metadata_route_step *step =
+		    &Level_metadata_canonical_state.route_steps[step_index];
+		int link;
+		int source_wall;
+		int trigger_flags = 0;
+
+		if (step->kind != LEVEL_METADATA_ROUTE_TRIGGER ||
+		    step->activation_kind !=
+		        LEVEL_METADATA_ROUTE_ACTIVATION_UNRESOLVED_TRIGGER ||
+		    level_metadata_route_step_required_by_world_state(view, step))
+			continue;
+		if (view->trigger_flags && step->trigger_num >= 0 &&
+		    step->trigger_num < view->num_triggers)
+			trigger_flags =
+			    view->trigger_flags(view->user, step->trigger_num);
+		debug_log(
+		    DLOG_GUIDEBOT,
+		    "route_unresolved_complete step=%d trigger=%d trigger_flags=0x%x "
+		    "locator_wall=%d links=%d\n",
+		    step_index, step->trigger_num, trigger_flags, step->wall_num,
+		    step->opened_link_count);
+		if (step->wall_num >= 0 && step->wall_num < Num_walls)
+			level_metadata_log_unresolved_link_state(
+			    view, step_index, step, "locator", step->wall_num,
+			    Walls[step->wall_num].segnum,
+			    Walls[step->wall_num].sidenum);
+		for (link = 0; link < step->opened_link_count; ++link)
+			level_metadata_log_unresolved_link_state(
+			    view, step_index, step, "effect",
+			    step->opened_link_wall[link], step->opened_link_seg[link],
+			    step->opened_link_side[link]);
+		for (source_wall = 0; source_wall < Num_walls; ++source_wall) {
+			int seg;
+			int side;
+
+			if (!view->wall_trigger ||
+			    view->wall_trigger(view->user, source_wall) != step->trigger_num)
+				continue;
+			seg = Walls[source_wall].segnum;
+			side = Walls[source_wall].sidenum;
+			debug_log(
+			    DLOG_GUIDEBOT,
+			    "route_unresolved_source step=%d trigger=%d wall=%d seg=%d "
+			    "side=%d type=%d state=%d flags=0x%x tmap2=%d shootable=%d\n",
+			    step_index, step->trigger_num, source_wall, seg, side,
+			    Walls[source_wall].type, Walls[source_wall].state,
+			    Walls[source_wall].flags,
+			    seg >= 0 && seg < Num_segments && side >= 0 &&
+			            side < MAX_SIDES_PER_SEGMENT
+			        ? Segments[seg].sides[side].tmap_num2
+			        : 0,
+			    view->wall_is_shootable_trigger &&
+			        view->wall_is_shootable_trigger(view->user, source_wall));
+		}
+	}
+}
+
+static void level_metadata_log_connectivity_wall_changes(
+    const guidebot_route_certifier_summary *summary)
+{
+	static unsigned char previous_type[MAX_WALLS];
+	static unsigned char previous_state[MAX_WALLS];
+	static unsigned short previous_flags[MAX_WALLS];
+	static unsigned int previous_visited;
+	static int previous_level;
+	static int previous_wall_count = -1;
+	const int comparable = previous_level == Current_level_num &&
+	                       previous_wall_count == Num_walls;
+	int wall_num;
+
+	if (comparable && previous_visited != summary->visited_segments)
+		for (wall_num = 0; wall_num < Num_walls && wall_num < MAX_WALLS;
+		     ++wall_num) {
+			int controlling_trigger = -1;
+			int seg;
+			int side;
+
+			if (previous_type[wall_num] == Walls[wall_num].type &&
+			    previous_state[wall_num] == Walls[wall_num].state &&
+			    previous_flags[wall_num] == Walls[wall_num].flags)
+				continue;
+			seg = Walls[wall_num].segnum;
+			side = Walls[wall_num].sidenum;
+#ifdef DXX_BUILD_DESCENT_II
+			controlling_trigger = Walls[wall_num].controlling_trigger;
+#endif
+			debug_log(
+			    DLOG_GUIDEBOT,
+			    "route_connectivity_wall_change visited=%u->%u wall=%d seg=%d "
+			    "side=%d type=%u->%d state=%u->%d flags=0x%x->0x%x keys=%d "
+			    "doorway=0x%x trigger=%d controlling_trigger=%d\n",
+			    previous_visited, summary->visited_segments, wall_num, seg, side,
+			    previous_type[wall_num], Walls[wall_num].type,
+			    previous_state[wall_num], Walls[wall_num].state,
+			    previous_flags[wall_num], Walls[wall_num].flags,
+			    Walls[wall_num].keys,
+			    seg >= 0 && seg < Num_segments && side >= 0 &&
+			            side < MAX_SIDES_PER_SEGMENT
+			        ? WALL_IS_DOORWAY(&Segments[seg], side)
+			        : 0,
+			    Walls[wall_num].trigger, controlling_trigger);
+		}
+	for (wall_num = 0; wall_num < Num_walls && wall_num < MAX_WALLS;
+	     ++wall_num) {
+		previous_type[wall_num] = Walls[wall_num].type;
+		previous_state[wall_num] = Walls[wall_num].state;
+		previous_flags[wall_num] = Walls[wall_num].flags;
+	}
+	previous_level = Current_level_num;
+	previous_wall_count = Num_walls;
+	previous_visited = summary->visited_segments;
+}
+#endif
+
 static int level_metadata_try_reuse_canonical_route(
     const level_metadata_scan_view *view,
     level_metadata_state *state,
@@ -2719,13 +2927,24 @@ static int level_metadata_try_reuse_canonical_route(
 	debug_log(
 	    DLOG_GUIDEBOT,
 	    "route_certifier valid=%d prepared_first=%d selected=%d segment=%d "
-	    "evaluated=%u rejected=%u visited=%u\n",
+	    "fallback=%d blocking=%d blocking_segment=%d blocking_reason=%d "
+	    "start=%d keys=0x%x "
+	    "required=0x%llx evaluated=%u rejected=%u visited=%u\n",
 	    valid, Level_metadata_canonical_plan_summary.first_pending_step,
 	    Level_metadata_route_certifier_summary.selected_step,
 	    Level_metadata_route_certifier_summary.selected_segment,
+	    Level_metadata_route_certifier_summary.used_prepared_fallback,
+	    Level_metadata_route_certifier_summary.blocking_step,
+	    Level_metadata_route_certifier_summary.blocking_segment,
+	    Level_metadata_route_certifier_summary.blocking_reason,
+	    view->start_segment, view->initial_key_mask,
+	    Level_metadata_route_certifier_summary.required_steps_low,
 	    Level_metadata_route_certifier_summary.evaluated_actions,
 	    Level_metadata_route_certifier_summary.rejected_actions,
 	    Level_metadata_route_certifier_summary.visited_segments);
+	level_metadata_log_connectivity_wall_changes(
+	    &Level_metadata_route_certifier_summary);
+	level_metadata_log_unresolved_completion_evidence(view);
 #endif
 	if (valid) {
 		Level_metadata_analysis_cache_summary.live_certifier_successes++;
@@ -3155,6 +3374,27 @@ static void level_metadata_rescan_current_level_internal(
 			if (Level_metadata_live_plan_summary_valid)
 				Level_metadata_live_route_provenance =
 				    LEVEL_METADATA_ROUTE_PROVENANCE_FULL_PLANNER;
+#ifdef __ANDROID__
+			if (Level_metadata_live_plan_summary_valid &&
+			    Level_metadata_live_plan_summary.first_pending_step >= 0 &&
+			    Level_metadata_live_plan_summary.first_pending_step <
+			        Level_metadata_live_route_state.route_step_count) {
+				const level_metadata_route_step *pending =
+				    &Level_metadata_live_route_state.route_steps
+				         [Level_metadata_live_plan_summary.first_pending_step];
+
+				debug_log(
+				    DLOG_GUIDEBOT,
+				    "route_full_planner step=%d kind=%d activation=%d seg=%d "
+				    "terminal=%d wall=%d trigger=%d key=%d label=%s\n",
+				    Level_metadata_live_plan_summary.first_pending_step,
+				    pending->kind, pending->activation_kind, pending->seg,
+				    Level_metadata_live_plan_summary
+				        .first_pending_path_terminal_segment,
+				    pending->wall_num, pending->trigger_num, pending->key_index,
+				    pending->label);
+			}
+#endif
 #ifdef __ANDROID__
 			if (endpoint_kind == ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL) {
 				live_stage_elapsed_us = (unsigned long long) (android_profile_monotonic_us() - live_stage_started_us);
@@ -3752,6 +3992,23 @@ int level_metadata_guidebot_side_passable_current(int segment, int side)
 		return 0;
 	return guidebot_route_side_passable_current(
 	    &Level_metadata_scan_view, segment, side);
+}
+
+int level_metadata_guidebot_route_frontier_current(
+    int start_segment,
+    int goal_segment,
+    int max_depth,
+    int avoid_from,
+    int avoid_to,
+    int avoid_from2,
+    int avoid_to2)
+{
+	if (!Level_metadata_scan_view_initialized)
+		return -1;
+	return guidebot_route_best_physical_frontier(
+	    &Level_metadata_scan_view, start_segment, goal_segment, max_depth,
+	    avoid_from, avoid_to, avoid_from2, avoid_to2,
+	    &Level_metadata_route_frontier_workspace);
 }
 
 int secret_area_note_segment_entered(int segnum)

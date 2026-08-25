@@ -25,13 +25,16 @@ static int guidebot_key_allowed(
 	return 0;
 }
 
-int guidebot_route_side_passable_current(
+static int guidebot_route_side_passable(
     const level_metadata_scan_view *view,
     int segment,
-    int side)
+    int side,
+    int allow_player_keyed_door)
 {
 	int child;
 	int clearance;
+	int hard_blocked;
+	int key;
 	int wall;
 	int type;
 	int flags;
@@ -65,14 +68,22 @@ int guidebot_route_side_passable_current(
 	     (reverse >= 0 && view->side_is_control_center_link(
 	                          view->user, child, reverse))))
 		return 1;
-	if (view->side_is_hard_blocked &&
-	    (view->side_is_hard_blocked(view->user, segment, side) ||
-	     (reverse >= 0 &&
-	      view->side_is_hard_blocked(view->user, child, reverse))))
+	hard_blocked = view->side_is_hard_blocked &&
+	               (view->side_is_hard_blocked(view->user, segment, side) ||
+	                (reverse >= 0 && view->side_is_hard_blocked(
+	                                     view->user, child, reverse)));
+	if (hard_blocked && !allow_player_keyed_door)
 		return 0;
 	wall = view->wall_num ? view->wall_num(view->user, segment, side) : -1;
 	if (wall < 0 || wall >= view->num_walls)
-		return 1;
+		return !hard_blocked;
+	if (hard_blocked && !view->wall_keys)
+		return 0;
+	key = view->wall_keys ? view->wall_keys(view->user, wall)
+	                      : view->wall_key_none;
+	if (hard_blocked &&
+	    (key == view->wall_key_none || !guidebot_key_allowed(view, key)))
+		return 0;
 	type = view->wall_type ? view->wall_type(view->user, wall) : -1;
 	flags = view->wall_flags ? view->wall_flags(view->user, wall) : 0;
 	if (type == view->wall_type_open ||
@@ -90,11 +101,116 @@ int guidebot_route_side_passable_current(
 	    (view->triggered_side_opener_count(view->user, segment, side) > 0 ||
 	     (reverse >= 0 && view->triggered_side_opener_count(
 	                          view->user, child, reverse) > 0)) &&
-	    (!view->wall_keys ||
-	     view->wall_keys(view->user, wall) == view->wall_key_none))
+	    key == view->wall_key_none)
 		return 0;
-	return !view->wall_keys ||
-	       guidebot_key_allowed(view, view->wall_keys(view->user, wall));
+	return guidebot_key_allowed(view, key);
+}
+
+int guidebot_route_side_passable_current(
+    const level_metadata_scan_view *view,
+    int segment,
+    int side)
+{
+	return guidebot_route_side_passable(view, segment, side, 0);
+}
+
+int guidebot_route_side_progress_reachable_current(
+    const level_metadata_scan_view *view,
+    int segment,
+    int side)
+{
+	return guidebot_route_side_passable(view, segment, side, 1);
+}
+
+int guidebot_route_best_physical_frontier(
+    const level_metadata_scan_view *view,
+    int start_segment,
+    int goal_segment,
+    int max_depth,
+    int avoid_from,
+    int avoid_to,
+    int avoid_from2,
+    int avoid_to2,
+    guidebot_route_certifier_workspace *workspace)
+{
+	int best_remaining;
+	int best_segment;
+	int head;
+	int segment;
+	int side;
+	int tail;
+
+	if (!workspace || !view || view->num_segments > LEVEL_METADATA_MAX_SEGMENTS ||
+	    !view->segment_child || !view->reverse_side ||
+	    !guidebot_valid_segment(view, start_segment) ||
+	    !guidebot_valid_segment(view, goal_segment))
+		return -1;
+	for (segment = 0; segment < view->num_segments; ++segment) {
+		workspace->strategic_distance[segment] = -1;
+		workspace->physical_distance[segment] = -1;
+	}
+	head = 0;
+	tail = 0;
+	workspace->strategic_distance[goal_segment] = 0;
+	workspace->queue[tail++] = goal_segment;
+	while (head < tail) {
+		int child;
+		int reverse;
+
+		segment = workspace->queue[head++];
+		for (side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+			child = view->segment_child(view->user, segment, side);
+			if (!guidebot_valid_segment(view, child) ||
+			    workspace->strategic_distance[child] >= 0)
+				continue;
+			reverse = view->reverse_side(view->user, segment, child);
+			if (reverse < 0 || reverse >= LEVEL_METADATA_MAX_SIDES ||
+			    !guidebot_route_side_progress_reachable_current(
+			        view, child, reverse))
+				continue;
+			workspace->strategic_distance[child] =
+			    workspace->strategic_distance[segment] + 1;
+			workspace->queue[tail++] = child;
+		}
+	}
+	if (workspace->strategic_distance[start_segment] < 0)
+		return -1;
+	head = 0;
+	tail = 0;
+	best_segment = start_segment;
+	best_remaining = workspace->strategic_distance[start_segment];
+	workspace->physical_distance[start_segment] = 0;
+	workspace->queue[tail++] = start_segment;
+	while (head < tail) {
+		int child;
+
+		segment = workspace->queue[head++];
+		if (workspace->strategic_distance[segment] >= 0 &&
+		    workspace->strategic_distance[segment] < best_remaining) {
+			best_segment = segment;
+			best_remaining = workspace->strategic_distance[segment];
+		}
+		if (best_remaining == 0)
+			break;
+		if (max_depth > 0 &&
+		    workspace->physical_distance[segment] + 1 >= max_depth)
+			continue;
+		for (side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+			child = view->segment_child(view->user, segment, side);
+			if (!guidebot_valid_segment(view, child) ||
+			    workspace->physical_distance[child] >= 0 ||
+			    ((segment == avoid_from && child == avoid_to) ||
+			     (segment == avoid_to && child == avoid_from) ||
+			     (segment == avoid_from2 && child == avoid_to2) ||
+			     (segment == avoid_to2 && child == avoid_from2)) ||
+			    !guidebot_route_side_passable_current(view, segment, side))
+				continue;
+			workspace->physical_distance[child] =
+			    workspace->physical_distance[segment] + 1;
+			workspace->queue[tail++] = child;
+		}
+	}
+	return best_segment;
 }
 
 static int guidebot_build_reachability(
@@ -123,7 +239,8 @@ static int guidebot_build_reachability(
 			child = view->segment_child(view->user, segment, side);
 			if (!guidebot_valid_segment(view, child) ||
 			    workspace->reachable[child] ||
-			    !guidebot_route_side_passable_current(view, segment, side))
+			    !guidebot_route_side_progress_reachable_current(
+			        view, segment, side))
 				continue;
 			workspace->reachable[child] = 1;
 			workspace->queue[tail++] = child;
@@ -278,6 +395,8 @@ int guidebot_route_certify_current_state(
 	memset(&local_summary, 0, sizeof(local_summary));
 	local_summary.selected_step = -1;
 	local_summary.selected_segment = -1;
+	local_summary.blocking_step = -1;
+	local_summary.blocking_segment = -1;
 	memset(certificate, 0, sizeof(*certificate));
 	certificate->status = GUIDEBOT_ROUTE_CERTIFICATE_INVALID;
 	certificate->source_trigger = -1;
@@ -294,16 +413,22 @@ int guidebot_route_certify_current_state(
 	live_plan->first_pending_path_segment_count = 0;
 	live_plan->first_pending_path_terminal_segment = -1;
 	live_plan->partial_frontier_segment = -1;
-	for (step = 0; step < live_state->route_step_count; ++step)
+	for (step = 0; step < live_state->route_step_count; ++step) {
 		if (live_state->route_steps[step].kind == LEVEL_METADATA_ROUTE_REACTOR ||
 		    live_state->route_steps[step].kind == LEVEL_METADATA_ROUTE_BOSS)
 			requires_control_center = 1;
+		if (step < 64 &&
+		    level_metadata_route_step_required_by_world_state(
+		        view, &live_state->route_steps[step]))
+			local_summary.required_steps_low |= 1ULL << step;
+	}
 	for (step = 0; step < live_state->route_step_count; ++step) {
 		level_metadata_route_step *candidate = &live_state->route_steps[step];
 		int target_segment;
 
-		if (candidate->kind == LEVEL_METADATA_ROUTE_START ||
-		    !level_metadata_route_step_required_by_world_state(view, candidate))
+		if (candidate->kind == LEVEL_METADATA_ROUTE_START)
+			continue;
+		if (!level_metadata_route_step_required_by_world_state(view, candidate))
 			continue;
 		local_summary.evaluated_actions++;
 		if ((candidate->kind == LEVEL_METADATA_ROUTE_EXIT &&
@@ -319,10 +444,17 @@ int guidebot_route_certify_current_state(
 		target_segment = guidebot_step_target_segment(view, candidate);
 		if (!guidebot_valid_segment(view, target_segment)) {
 			local_summary.rejected_actions++;
+			local_summary.blocking_step = step;
+			local_summary.blocking_reason =
+			    GUIDEBOT_ROUTE_CERTIFIER_REJECTION_INVALID_TARGET;
 			break;
 		}
 		if (!workspace->reachable[target_segment]) {
 			local_summary.rejected_actions++;
+			local_summary.blocking_step = step;
+			local_summary.blocking_segment = target_segment;
+			local_summary.blocking_reason =
+			    GUIDEBOT_ROUTE_CERTIFIER_REJECTION_UNREACHABLE_TARGET;
 			break;
 		}
 		selected = step;
