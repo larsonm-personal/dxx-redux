@@ -39,6 +39,7 @@ object MissionZip {
         val constituents: List<Constituent>,
         val mission: GameFileFormats.MissionDescriptor,
         val missionSets: List<MissionSet>,
+        val variantSelection: MissionVariantSelection? = null,
         val game: String,
         val category: String = CATEGORY_LEVELS,
         val totalSizeBytes: Long,
@@ -47,11 +48,32 @@ object MissionZip {
         val archiveFormat: String = "zip",
     ) {
         val readme: Constituent? get() = readmes.firstOrNull()
+
+        val effectiveMissionSets: List<MissionSet>
+            get() {
+                val excludedPaths =
+                    variantSelection
+                        ?.excluded
+                        ?.map { it.missionPath.lowercase(Locale.US) }
+                        ?.toSet()
+                        ?: return missionSets
+                return missionSets.filterNot { it.mission.path.lowercase(Locale.US) in excludedPaths }
+            }
     }
 
     data class MissionSet(
         val mission: GameFileFormats.MissionDescriptor,
         val constituents: List<Constituent>,
+    )
+
+    data class MissionVariant(
+        val label: String,
+        val missionPath: String,
+    )
+
+    data class MissionVariantSelection(
+        val selected: MissionVariant,
+        val excluded: List<MissionVariant>,
     )
 
     data class TextFileContent(
@@ -233,7 +255,7 @@ object MissionZip {
         val metadataBudget = descriptorBudget()
         val constituents = mutableListOf<Constituent>()
         val missions = mutableListOf<GameFileFormats.MissionDescriptor>()
-        var hasRebirthChildZip = false
+        val nestedVariantChildren = mutableListOf<String>()
         openZipInputStreamSkippingPreamble(input, stagingDirectory, maxSourceBytes).use { zip ->
             var entry = zip.nextEntry
             while (entry != null) {
@@ -270,16 +292,19 @@ object MissionZip {
                             )
                     }
                     if (GameFileFormats.extensionOf(name) == "zip" &&
-                        name.lowercase(Locale.US).contains("rebirth")
+                        missionVariantForArchiveFilename(name) != null
                     ) {
-                        hasRebirthChildZip = true
+                        nestedVariantChildren += name
                     }
                 }
                 zip.closeEntry()
                 entry = zip.nextEntry
             }
         }
-        return hasRebirthChildZip || playableMissionSets(sortedConstituents(constituents), missions).isNotEmpty()
+        val nestedChoice =
+            selectPreferredMissionVariant(nestedVariantChildren, ::missionVariantForArchiveFilename)
+        return nestedChoice?.preference?.supportedByRedux == true ||
+            playableMissionSets(sortedConstituents(constituents), missions).isNotEmpty()
     }
 
     fun containsUnsupportedD2xxlHog(file: File): Boolean {
@@ -418,7 +443,15 @@ object MissionZip {
     ): ScanResult? {
         val sortedConstituents = sortedConstituents(constituents)
         val missionSets = playableMissionSets(sortedConstituents, missions)
-        val mission = missionSets.firstOrNull()?.mission ?: return null
+        if (missionSets.isEmpty()) return null
+        val variantSelection = selectMissionVariant(missionSets)
+        val mission =
+            variantSelection
+                ?.selected
+                ?.missionPath
+                ?.let { path -> missionSets.firstOrNull { it.mission.path.equals(path, ignoreCase = true) } }
+                ?.mission
+                ?: missionSets.first().mission
         val game =
             missionSets
                 .map { it.mission }
@@ -430,6 +463,7 @@ object MissionZip {
             constituents = sortedConstituents,
             mission = mission,
             missionSets = missionSets,
+            variantSelection = variantSelection,
             game = game,
             totalSizeBytes = totalSizeBytes,
             importMode =
@@ -510,6 +544,91 @@ object MissionZip {
                 if (!(directLevels + archivedLevels).containsAll(requiredLevelNames)) return@mapNotNull null
                 MissionSet(mission, inMissionDirectory)
             }
+
+    private data class VariantMissionSet(
+        val missionSet: MissionSet,
+        val preference: MissionVariantPreference?,
+        val rootPath: String,
+    )
+
+    private fun selectMissionVariant(missionSets: List<MissionSet>): MissionVariantSelection? {
+        val variants =
+            missionSets.map { missionSet ->
+                val variantDir = parentPath(missionSet.mission.path)
+                val preference = missionVariantForDirectoryName(leafName(variantDir))
+                VariantMissionSet(missionSet, preference, parentPath(variantDir))
+            }
+        val selections =
+            variants
+                .groupBy { variant ->
+                    "${variant.rootPath.lowercase(
+                        Locale.US,
+                    )}\u0000${leafName(variant.missionSet.mission.path).lowercase(Locale.US)}"
+                }.values
+                .filter { group -> group.all { it.preference != null } }
+                .mapNotNull(::selectEquivalentMissionVariantGroup)
+        val selection = selections.singleOrNull() ?: return null
+        val selectedRoot =
+            variants
+                .single {
+                    it.missionSet.mission.path
+                        .equals(selection.selected.missionPath, ignoreCase = true)
+                }.rootPath
+        val auxiliaryTests =
+            missionSets.mapNotNull { missionSet ->
+                val missionDir = parentPath(missionSet.mission.path)
+                if (!leafName(missionDir).equals("TEST", ignoreCase = true) ||
+                    !parentPath(missionDir).equals(selectedRoot, ignoreCase = true) ||
+                    !hasPairedMissionArchive(missionSet)
+                ) {
+                    return@mapNotNull null
+                }
+                MissionVariant("Test", missionSet.mission.path)
+            }
+        return selection.copy(excluded = selection.excluded + auxiliaryTests)
+    }
+
+    private fun selectEquivalentMissionVariantGroup(variants: List<VariantMissionSet>): MissionVariantSelection? {
+        val preferences = variants.map { it.preference }
+        if (preferences.size < 2 || preferences.size != preferences.distinct().size) return null
+        if (variants.any { !hasPairedMissionArchive(it.missionSet) }) return null
+        val identity = missionVariantIdentity(variants.first().missionSet.mission)
+        if (variants.drop(1).any { missionVariantIdentity(it.missionSet.mission) != identity }) return null
+        val choice = selectPreferredMissionVariant(variants) { it.preference } ?: return null
+        val selected = choice.value
+        return MissionVariantSelection(
+            selected = MissionVariant(choice.preference.displayName, selected.missionSet.mission.path),
+            excluded =
+                variants
+                    .filterNot { it === selected }
+                    .map { variant ->
+                        MissionVariant(requireNotNull(variant.preference).displayName, variant.missionSet.mission.path)
+                    },
+        )
+    }
+
+    private fun hasPairedMissionArchive(missionSet: MissionSet): Boolean {
+        val mission = missionSet.mission
+        val missionDir = parentPath(mission.path)
+        val missionStem = leafName(mission.path).substringBeforeLast('.')
+        return missionSet.constituents.any { constituent ->
+            parentPath(constituent.path).equals(missionDir, ignoreCase = true) &&
+                constituent.name.substringBeforeLast('.').equals(missionStem, ignoreCase = true) &&
+                isMissionArchive(constituent)
+        }
+    }
+
+    private fun missionVariantIdentity(mission: GameFileFormats.MissionDescriptor): List<Any?> =
+        listOf(
+            mission.game.lowercase(Locale.US),
+            mission.type?.trim()?.lowercase(Locale.US),
+            mission.displayName.trim().lowercase(Locale.US),
+            mission.levelNames.map(::normalizedMissionReference),
+            mission.secretLevelNames.map(::normalizedMissionReference),
+            mission.secretLevelOrigins,
+        )
+
+    private fun normalizedMissionReference(path: String): String = normalizePath(path).trim().lowercase(Locale.US)
 
     private fun isMissionPayload(
         constituent: Constituent,

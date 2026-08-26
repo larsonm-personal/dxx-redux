@@ -487,7 +487,7 @@ class ModManager(
                 }
             } ?: return null
             onProgress(LauncherCopyProgress("Inspecting level pack: $displayName", 0L, 0L))
-            nestedRebirthChildSize(temp)?.let { childSize ->
+            nestedPreferredChildSize(temp)?.let { childSize ->
                 ImportStorageGuard.requireFreeSpace(modsDir, childSize, "extract mission zip $displayName")
             }
             return importMissionZipFile(temp, displayName, moveDirectSource = true, onProgress = onProgress)
@@ -527,7 +527,7 @@ class ModManager(
         val scan = MissionZip.inspect(source)
         if (scan == null) {
             if (MissionZip.containsUnsupportedD2xxlHog(source)) throw MissionZip.UnsupportedD2xxlHogException()
-            return importNestedRebirthMissionZip(source, onProgress)
+            return importNestedPreferredMissionZip(source, onProgress)
         }
         val safeName = displayName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
         val dest = File(modsDir, safeName)
@@ -560,13 +560,13 @@ class ModManager(
         return registerMissionZip(safeName, dest.length(), scan)
     }
 
-    private fun importNestedRebirthMissionZip(
+    private fun importNestedPreferredMissionZip(
         source: File,
         onProgress: (LauncherCopyProgress) -> Unit = {},
     ): ModInfo? =
         try {
             ZipFile(source).use { zip ->
-                val child = selectNestedRebirthZip(zip) ?: return null
+                val child = selectNestedPreferredMissionZip(zip) ?: return null
                 val safeName = launcherLeafNameOf(child.name).replace(Regex("[^a-zA-Z0-9._-]"), "_")
                 val dest = File(modsDir, safeName)
                 ImportStorageGuard.requireFreeSpace(
@@ -580,7 +580,7 @@ class ModManager(
                             input,
                             output,
                             child.size.coerceAtLeast(0),
-                            "Extracting Rebirth level pack from archive: $safeName",
+                            "Extracting preferred level pack from archive: $safeName",
                             onProgress = onProgress,
                         )
                     }
@@ -609,7 +609,7 @@ class ModManager(
                 registerMissionZip(safeName, dest.length(), scan)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to import nested Rebirth mission ZIP from ${source.absolutePath}", e)
+            Log.e(TAG, "Failed to import preferred nested mission ZIP from ${source.absolutePath}", e)
             null
         }
 
@@ -621,27 +621,29 @@ class ModManager(
         return if (leaf == null) base else "$base ($leaf)"
     }
 
-    private fun nestedRebirthChildSize(source: File): Long? =
+    private fun nestedPreferredChildSize(source: File): Long? =
         try {
             ZipFile(source).use { zip ->
-                selectNestedRebirthZip(zip)?.size?.coerceAtLeast(0)
+                selectNestedPreferredMissionZip(zip)?.size?.coerceAtLeast(0)
             }
         } catch (_: Exception) {
             null
         }
 
-    private fun selectNestedRebirthZip(zip: ZipFile): java.util.zip.ZipEntry? {
-        val rebirthChildren = mutableListOf<java.util.zip.ZipEntry>()
+    private fun selectNestedPreferredMissionZip(zip: ZipFile): java.util.zip.ZipEntry? {
+        val children = mutableListOf<java.util.zip.ZipEntry>()
         val entries = zip.entries()
         while (entries.hasMoreElements()) {
             val entry = entries.nextElement()
             if (entry.isDirectory) continue
             val leaf = launcherLeafNameOf(entry.name)
-            if (GameFileFormats.extensionOf(leaf) == "zip" && leaf.lowercase(Locale.US).contains("rebirth")) {
-                rebirthChildren += entry
-            }
+            if (GameFileFormats.extensionOf(leaf) == "zip") children += entry
         }
-        return rebirthChildren.singleOrNull()
+        val choice =
+            selectPreferredMissionVariant(children) { child ->
+                missionVariantForArchiveFilename(launcherLeafNameOf(child.name))
+            }
+        return choice?.value?.takeIf { choice.preference.supportedByRedux }
     }
 
     /** Reorder: swap item at [index] with the one above it */

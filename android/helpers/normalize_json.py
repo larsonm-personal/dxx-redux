@@ -11,14 +11,12 @@ import sys
 import tempfile
 
 
-MISSION_METADATA_FLOAT_FIELDS = {
-    "distance",
-    "mine_volume",
-    "mine_volume_normalized",
-    "travel_distance",
-}
+MISSION_METADATA_LINEAR_FIELDS = {"distance", "travel_distance"}
+MISSION_METADATA_VOLUME_FIELDS = {"mine_volume", "mine_volume_normalized"}
 MISSION_METADATA_POSITION_FIELDS = {"activation_pos", "aim_pos", "label_pos"}
 MISSION_METADATA_EXCLUDED_FIELDS = {"replacements", "replacement_groups"}
+MISSION_METADATA_LINEAR_DECIMAL_PLACES = 1
+MISSION_METADATA_VOLUME_SIGNIFICANT_DIGITS = 6
 
 
 def reject_json_constant(token: str) -> object:
@@ -32,6 +30,14 @@ def unique_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
             raise ValueError(f"duplicate JSON object member: {key!r}")
         result[key] = value
     return result
+
+
+def canonicalize_float(value: int | float, *, decimal_places: int | None = None) -> float:
+    if decimal_places is None:
+        normalized = float(format(value, f".{MISSION_METADATA_VOLUME_SIGNIFICANT_DIGITS}g"))
+    else:
+        normalized = round(float(value), decimal_places)
+    return 0.0 if normalized == 0.0 else normalized
 
 
 def canonicalize_mission_metadata(value: object, parent_key: str = "") -> object:
@@ -69,11 +75,16 @@ def canonicalize_mission_metadata(value: object, parent_key: str = "") -> object
             continue
         normalized = canonicalize_mission_metadata(item, key)
         is_number = isinstance(normalized, (int, float)) and not isinstance(normalized, bool)
-        if is_number and (
-            key in MISSION_METADATA_FLOAT_FIELDS
+        if is_number and key in MISSION_METADATA_VOLUME_FIELDS:
+            normalized = canonicalize_float(normalized)
+        elif is_number and (
+            key in MISSION_METADATA_LINEAR_FIELDS
             or (parent_key in MISSION_METADATA_POSITION_FIELDS and key in {"x", "y", "z"})
         ):
-            normalized = float(normalized)
+            normalized = canonicalize_float(
+                normalized,
+                decimal_places=MISSION_METADATA_LINEAR_DECIMAL_PLACES,
+            )
         result[key] = normalized
     return result
 

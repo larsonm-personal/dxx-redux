@@ -23,9 +23,31 @@ $hostNormalized = Invoke-MetadataNormalizer -Text $hostStyle
 if ($androidNormalized -cne $hostNormalized) {
     throw "Android and host mission metadata did not normalize to identical output"
 }
-foreach ($expected in @('"mine_volume": 24904610.0', '"travel_distance": 0.0', '"distance": 580.0', '"x": 514.0')) {
+
+$powerShell7Style = '{"mine_volume":50869833.801380076,"mine_volume_normalized":10.468290463576233,"travel_distance":14106.360626121883}'
+$powerShell51Style = '{"mine_volume":50869833.80138008,"mine_volume_normalized":10.468290463576231,"travel_distance":14106.360626121885}'
+if ((Invoke-MetadataNormalizer -Text $powerShell7Style) -cne (Invoke-MetadataNormalizer -Text $powerShell51Style)) {
+    throw "PowerShell 5.1 and 7 mission metadata float forms did not normalize identically"
+}
+foreach ($expected in @('"mine_volume": 24904600.0', '"travel_distance": 0.0', '"distance": 580.0', '"x": 514.0')) {
     if (-not $androidNormalized.Contains($expected)) {
         throw "Canonical mission metadata output is missing $expected"
+    }
+}
+
+$precisionInput = '{"mine_volume":50869833.801380076,"mine_volume_normalized":10.468290463576233,' +
+'"travel_distance":14106.360626121883,"label_pos":{"x":-250.8622589111328,"y":-0.0001,"z":500.0885772705078}}'
+$precisionNormalized = Invoke-MetadataNormalizer -Text $precisionInput
+foreach ($expected in @(
+        '"mine_volume": 50869800.0',
+        '"mine_volume_normalized": 10.4683',
+        '"travel_distance": 14106.4',
+        '"x": -250.9',
+        '"y": 0.0',
+        '"z": 500.1'
+    )) {
+    if (-not $precisionNormalized.Contains($expected)) {
+        throw "Gameplay-scale mission metadata output is missing $expected"
     }
 }
 foreach ($excluded in @('"replacements"', '"replacement_groups"')) {

@@ -606,7 +606,7 @@ internal object LevelMetadataTargets {
         setDir: File,
         scan: MissionZip.ScanResult,
     ): List<LevelMetadataTarget> {
-        val sets = scan.missionSets.ifEmpty { listOf(MissionZip.MissionSet(scan.mission, scan.constituents)) }
+        val sets = scan.effectiveMissionSets.ifEmpty { listOf(MissionZip.MissionSet(scan.mission, scan.constituents)) }
         return sets.mapNotNull { missionZipTarget(archivePath, setDir, scan, it) }
     }
 

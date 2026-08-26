@@ -5,6 +5,7 @@ import org.apache.commons.compress.archivers.sevenz.SevenZOutputFile
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -431,6 +432,57 @@ class ModManagerMissionZipTest {
     }
 
     @Test
+    fun parentMissionZipUsesSharedDosOverD2xPrecedence() {
+        val filesDir = File("build/test-mod-manager-mission-zip-parent-dos").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+
+        val imported =
+            ModManager(filesDir).importMissionZipFile(
+                createMissionVariantParentZip("ewithin-d2x.zip", "ewithin-dos.zip"),
+                "ewithin-versions.zip",
+            )
+
+        assertNotNull(imported)
+        assertEquals("ewithin-dos.zip", imported!!.filename)
+        assertTrue(File(filesDir, "mods/ewithin-dos.zip").isFile)
+        assertFalse(File(filesDir, "mods/ewithin-d2x.zip").exists())
+    }
+
+    @Test
+    fun parentMissionZipRejectsUnsupportedXlOnlyChild() {
+        val filesDir = File("build/test-mod-manager-mission-zip-parent-xl").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+
+        val imported =
+            ModManager(filesDir).importMissionZipFile(
+                createMissionVariantParentZip("ewithin-xl.zip"),
+                "ewithin-versions.zip",
+            )
+
+        assertNull(imported)
+        assertFalse(File(filesDir, "mods/ewithin-xl.zip").exists())
+    }
+
+    @Test
+    fun parentMissionZipRejectsAmbiguousHighestPreference() {
+        val filesDir = File("build/test-mod-manager-mission-zip-parent-ambiguous").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+
+        val imported =
+            ModManager(filesDir).importMissionZipFile(
+                createMissionVariantParentZip("first-rebirth.zip", "second-rebirth.zip", "ewithin-dos.zip"),
+                "ewithin-versions.zip",
+            )
+
+        assertNull(imported)
+        assertFalse(File(filesDir, "mods/first-rebirth.zip").exists())
+        assertFalse(File(filesDir, "mods/second-rebirth.zip").exists())
+    }
+
+    @Test
     fun parentMissionZipExtractsLargeRebirthChildDurably() {
         val filesDir = File("build/test-mod-manager-mission-zip-parent-large-rebirth").absoluteFile
         filesDir.deleteRecursively()
@@ -818,6 +870,20 @@ class ModManagerMissionZipTest {
             zip.putNextEntry(ZipEntry("ewithin-rebirth.zip"))
             zip.write(rebirthBytes)
             zip.closeEntry()
+        }
+        return zipFile
+    }
+
+    private fun createMissionVariantParentZip(vararg childNames: String): File {
+        val zipFile = File.createTempFile("missionzip-manager-variant-parent", ".zip")
+        zipFile.deleteOnExit()
+        val childBytes = createZipBytes { writeEnemyWithinStyleEntries(it) }
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            for (childName in childNames) {
+                zip.putNextEntry(ZipEntry(childName))
+                zip.write(childBytes)
+                zip.closeEntry()
+            }
         }
         return zipFile
     }

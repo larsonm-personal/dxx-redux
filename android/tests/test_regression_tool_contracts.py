@@ -20,6 +20,24 @@ def normalize(text: str, *args: str) -> subprocess.CompletedProcess[str]:
 
 
 class RegressionToolContractsTest(unittest.TestCase):
+    def test_host_mission_variant_order_mirrors_launcher_policy(self) -> None:
+        policy = (
+            ROOT
+            / "android/app/src/main/java/com/dxxredux/app/MissionVariantPolicy.kt"
+        ).read_text(encoding="utf-8")
+        host_generator = (
+            ROOT / "android/helpers/regenerate_all_mission_metadata_host.ps1"
+        ).read_text(encoding="utf-8")
+        positions = [
+            policy.index(f'MissionVariantPreference("{variant}"')
+            for variant in ("rebirth", "dos", "d2x")
+        ]
+        self.assertEqual(sorted(positions), positions)
+        self.assertIn(
+            '$missionVariantDirectoryMaskPrecedence = @("REBIRTH", "DOS", "D2X")',
+            host_generator,
+        )
+
     def test_desktop_targets_keep_public_executable_names(self) -> None:
         for game, public_name in (("d1", "d1x-redux"), ("d2", "d2x-redux")):
             text = (ROOT / game / "main/CMakeLists.txt").read_text(encoding="utf-8")

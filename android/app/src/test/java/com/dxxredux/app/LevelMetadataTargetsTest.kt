@@ -270,6 +270,36 @@ class LevelMetadataTargetsTest {
     }
 
     @Test
+    fun missionZipTargetsMaskEquivalentLowerPrecedenceVariants() {
+        val setDir = File("build/test-level-metadata-targets/variant-zip-set").absoluteFile
+        val zipFile = File("build/test-level-metadata-targets/variant-zip-set/ulterior.zip").absoluteFile
+        setDir.deleteRecursively()
+        zipFile.parentFile?.mkdirs()
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            for (variant in listOf("D2X", "DOS", "REBIRTH")) {
+                zip.putNextEntry(ZipEntry("$variant/ULTERIOR.hog"))
+                zip.write(hogBytes("LEVEL01.rl2"))
+                zip.closeEntry()
+                zip.putNextEntry(ZipEntry("$variant/ULTERIOR.mn2"))
+                zip.write("name = Ulterior\ntype = normal\nnum_levels = 1\nLEVEL01.rl2\n".toByteArray())
+                zip.closeEntry()
+            }
+            zip.putNextEntry(ZipEntry("TEST/EXITD2V.hog"))
+            zip.write(hogBytes("TEST01.rl2"))
+            zip.closeEntry()
+            zip.putNextEntry(ZipEntry("TEST/EXITD2V.mn2"))
+            zip.write("name = Test mission\ntype = normal\nnum_levels = 1\nTEST01.rl2\n".toByteArray())
+            zip.closeEntry()
+        }
+
+        val scan = requireNotNull(MissionZip.inspect(zipFile))
+        val targets = LevelMetadataTargets.missionZipTargets(zipFile.absolutePath, setDir, scan)
+
+        assertEquals(4, scan.missionSets.size)
+        assertEquals(listOf("REBIRTH/ULTERIOR.mn2"), targets.map { it.missionPath })
+    }
+
+    @Test
     fun missionZipTargetsIncludeLooseLevelsReferencedByDescriptor() {
         val setDir = File("build/test-level-metadata-targets/loose-level-zip-set").absoluteFile
         val zipFile = File("build/test-level-metadata-targets/loose_level.zip").absoluteFile

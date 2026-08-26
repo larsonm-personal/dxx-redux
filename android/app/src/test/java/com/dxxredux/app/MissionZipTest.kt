@@ -17,6 +17,22 @@ import java.util.zip.ZipOutputStream
 
 class MissionZipTest {
     @Test
+    fun centralizesMissionVariantMaskPrecedence() {
+        assertEquals(
+            listOf("rebirth", "dos", "d2x", "d2xxl"),
+            MISSION_VARIANT_MASK_PRECEDENCE.map { it.id },
+        )
+        assertEquals(
+            listOf(true, true, true, false),
+            MISSION_VARIANT_MASK_PRECEDENCE.map { it.supportedByRedux },
+        )
+        assertEquals("rebirth", missionVariantForArchiveFilename("ewithin-rebirth.zip")?.id)
+        assertEquals("d2xxl", missionVariantForArchiveFilename("ewithin-d2x-xl.zip")?.id)
+        assertEquals("d2xxl", missionVariantForArchiveFilename("ewithin-xl.zip")?.id)
+        assertNull(missionVariantForArchiveFilename("example.zip"))
+    }
+
+    @Test
     fun detectsD2MissionZipFromZipFile() {
         val zipFile =
             createMissionZip(
@@ -121,6 +137,107 @@ class MissionZipTest {
             scan.missionSets.map { set ->
                 set.constituents.single { it.role == GameFileFormats.MISSION_ZIP_HOG }.path
             },
+        )
+        assertNull(scan.variantSelection)
+        assertEquals(scan.missionSets, scan.effectiveMissionSets)
+    }
+
+    @Test
+    fun doesNotSelectWhenSameNamedSiblingHasUnknownVariantLabel() {
+        val zipFile = File.createTempFile("mission-unknown-variant", ".zip")
+        zipFile.deleteOnExit()
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            for (variant in listOf("D2X", "Rebirth", "OtherPort")) {
+                zip.putNextEntry(ZipEntry("$variant/ULTERIOR.hog"))
+                zip.write(hogBytes("LEVEL01.rl2"))
+                zip.closeEntry()
+                zip.putNextEntry(ZipEntry("$variant/ULTERIOR.mn2"))
+                zip.write("name = Ulterior\ntype = normal\nnum_levels = 1\nLEVEL01.rl2\n".toByteArray())
+                zip.closeEntry()
+            }
+        }
+
+        val scan = requireNotNull(MissionZip.inspect(zipFile))
+
+        assertNull(scan.variantSelection)
+        assertEquals(scan.missionSets, scan.effectiveMissionSets)
+    }
+
+    @Test
+    fun selectsDosWhenOnlyDosAndD2xEquivalentSiblingsExist() {
+        val zipFile = File.createTempFile("mission-dos-variant", ".zip")
+        zipFile.deleteOnExit()
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            for (variant in listOf("D2X", "DOS")) {
+                zip.putNextEntry(ZipEntry("$variant/ULTERIOR.hog"))
+                zip.write(hogBytes("LEVEL01.rl2"))
+                zip.closeEntry()
+                zip.putNextEntry(ZipEntry("$variant/ULTERIOR.mn2"))
+                zip.write("name = Ulterior\ntype = normal\nnum_levels = 1\nLEVEL01.rl2\n".toByteArray())
+                zip.closeEntry()
+            }
+        }
+
+        val scan = requireNotNull(MissionZip.inspect(zipFile))
+        val selection = requireNotNull(scan.variantSelection)
+
+        assertEquals("DOS", selection.selected.label)
+        assertEquals("DOS/ULTERIOR.mn2", scan.mission.path)
+        assertEquals(listOf("D2X/ULTERIOR.mn2"), selection.excluded.map { it.missionPath })
+        assertEquals(listOf("DOS/ULTERIOR.mn2"), scan.effectiveMissionSets.map { it.mission.path })
+        assertEquals(2, scan.missionSets.size)
+    }
+
+    @Test
+    fun selectsEquivalentRebirthSiblingAndPreservesCompleteInventory() {
+        val zipFile = File.createTempFile("mission-rebirth-variant", ".zip")
+        zipFile.deleteOnExit()
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            for (variant in listOf("D2X", "DOS", "REBIRTH")) {
+                zip.putNextEntry(ZipEntry("$variant/ULTERIOR.hog"))
+                zip.write(hogBytes("LEVEL01.rl2"))
+                zip.closeEntry()
+                zip.putNextEntry(ZipEntry("$variant/ULTERIOR.mn2"))
+                zip.write("name = Ulterior\ntype = normal\nnum_levels = 1\nLEVEL01.rl2\n".toByteArray())
+                zip.closeEntry()
+            }
+            zip.putNextEntry(ZipEntry("BONUS.hog"))
+            zip.write(hogBytes("BONUS.rl2"))
+            zip.closeEntry()
+            zip.putNextEntry(ZipEntry("BONUS.mn2"))
+            zip.write("name = Bonus mission\ntype = normal\nnum_levels = 1\nBONUS.rl2\n".toByteArray())
+            zip.closeEntry()
+            zip.putNextEntry(ZipEntry("TEST/EXITD2V.hog"))
+            zip.write(hogBytes("TEST01.rl2"))
+            zip.closeEntry()
+            zip.putNextEntry(ZipEntry("TEST/EXITD2V.mn2"))
+            zip.write("name = Test mission\ntype = normal\nnum_levels = 1\nTEST01.rl2\n".toByteArray())
+            zip.closeEntry()
+        }
+
+        val scan = requireNotNull(MissionZip.inspect(zipFile))
+        val selection = requireNotNull(scan.variantSelection)
+
+        assertEquals(
+            listOf(
+                "BONUS.mn2",
+                "D2X/ULTERIOR.mn2",
+                "DOS/ULTERIOR.mn2",
+                "REBIRTH/ULTERIOR.mn2",
+                "TEST/EXITD2V.mn2",
+            ),
+            scan.missionSets.map { it.mission.path },
+        )
+        assertEquals("REBIRTH/ULTERIOR.mn2", scan.mission.path)
+        assertEquals("Rebirth", selection.selected.label)
+        assertEquals("REBIRTH/ULTERIOR.mn2", selection.selected.missionPath)
+        assertEquals(
+            listOf("D2X/ULTERIOR.mn2", "DOS/ULTERIOR.mn2", "TEST/EXITD2V.mn2"),
+            selection.excluded.map { it.missionPath },
+        )
+        assertEquals(
+            listOf("BONUS.mn2", "REBIRTH/ULTERIOR.mn2"),
+            scan.effectiveMissionSets.map { it.mission.path },
         )
     }
 
@@ -352,6 +469,23 @@ class MissionZipTest {
         }
 
         assertTrue(zipFile.inputStream().use { MissionZip.isImportCandidate(it) })
+    }
+
+    @Test
+    fun importCandidateUsesSharedNestedVariantPolicy() {
+        fun parentZip(childName: String): File {
+            val zipFile = File.createTempFile("parent-variant-candidate", ".zip")
+            zipFile.deleteOnExit()
+            ZipOutputStream(zipFile.outputStream()).use { zip ->
+                zip.putNextEntry(ZipEntry(childName))
+                zip.write(byteArrayOf(1, 2, 3, 4))
+                zip.closeEntry()
+            }
+            return zipFile
+        }
+
+        assertTrue(parentZip("mission-dos.zip").inputStream().use { MissionZip.isImportCandidate(it) })
+        assertFalse(parentZip("mission-xl.zip").inputStream().use { MissionZip.isImportCandidate(it) })
     }
 
     @Test

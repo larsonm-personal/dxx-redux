@@ -466,13 +466,21 @@ private fun isMissionSetConstituent(
         missionSet.constituents.any { it.path.equals(path, ignoreCase = true) }
     }
 
+private fun isLaunchMissionSetConstituent(
+    scan: MissionZip.ScanResult,
+    path: String,
+): Boolean =
+    scan.effectiveMissionSets.any { missionSet ->
+        missionSet.constituents.any { it.path.equals(path, ignoreCase = true) }
+    }
+
 internal fun stagedRelativePath(
     scan: MissionZip.ScanResult,
     path: String,
 ): String {
     val normalized = path.replace('\\', '/').trim('/')
     if (normalized.startsWith("$MISSION_ZIP_GENERATED_MISSION_DIR/", ignoreCase = true)) return normalized
-    if (isMissionSetConstituent(scan, normalized)) return "$MISSION_ZIP_GENERATED_MISSION_DIR/$normalized"
+    if (isLaunchMissionSetConstituent(scan, normalized)) return "$MISSION_ZIP_GENERATED_MISSION_DIR/$normalized"
     return normalized
 }
 

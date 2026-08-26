@@ -31,6 +31,10 @@ $stagesDir = Join-Path $outDir "stages"
 $summaryJsonl = Join-Path $outDir "summary.jsonl"
 $largeZipBytes = 524288000
 $largeZipIncludePatterns = @("ewithin-versions.zip")
+# Host-side mirror of MissionVariantPolicy.kt. The host generator cannot execute
+# Android Kotlin, so keep this directory order synchronized with
+# MISSION_VARIANT_MASK_PRECEDENCE.
+$missionVariantDirectoryMaskPrecedence = @("REBIRTH", "DOS", "D2X")
 $invariantCulture = [System.Globalization.CultureInfo]::InvariantCulture
 $d1DataCandidates = @(
     (Join-Path $repoRoot "game_data\extracted\d1 mac extracted"),
@@ -285,7 +289,13 @@ function ConvertTo-CheckedInLevelJson {
 }
 
 function ConvertTo-CheckedInMissionJson {
-    param($Raw, [int]$TargetIndex, [string]$SourceName = "", [string]$MissionFilename = "")
+    param(
+        $Raw,
+        [int]$TargetIndex,
+        [string]$SourceName = "",
+        [string]$MissionFilename = "",
+        [string]$MissionPath = ""
+    )
 
     $levels = @(Get-ArrayValue (Get-Prop $Raw "levels" @()) | ForEach-Object { ConvertTo-CheckedInLevelJson -Level $_ })
     $missionName = Get-StringProp $Raw "mission_name"
@@ -329,6 +339,7 @@ function ConvertTo-CheckedInMissionJson {
     $result["levels"] = $levels
     $problems = @(Get-ArrayValue (Get-Prop $Raw "problems" @())) | Where-Object { $_ }
     if ($problems.Count -gt 0) { $result["problems"] = $problems }
+    Add-IfString -Target $result -Name "mission_path" -Value $MissionPath
     $result["target_index"] = $TargetIndex
     return $result
 }
@@ -346,10 +357,96 @@ function Copy-StageAlias {
     Copy-Item -LiteralPath $Source -Destination $Target -Force
 }
 
+function Test-FileUnderDirectory {
+    param(
+        [Parameter(Mandatory = $true)][string]$FilePath,
+        [Parameter(Mandatory = $true)][string]$DirectoryPath
+    )
+
+    $directoryPrefix = [IO.Path]::GetFullPath($DirectoryPath).TrimEnd([char[]]@('\', '/')) + [IO.Path]::DirectorySeparatorChar
+    return [IO.Path]::GetFullPath($FilePath).StartsWith($directoryPrefix, [StringComparison]::OrdinalIgnoreCase)
+}
+
+function Test-PairedMissionHog {
+    param([Parameter(Mandatory = $true)][System.IO.FileInfo]$Descriptor)
+
+    return $null -ne (Get-ChildItem -LiteralPath $Descriptor.DirectoryName -File | Where-Object {
+            $_.BaseName.Equals($Descriptor.BaseName, [StringComparison]::OrdinalIgnoreCase) -and
+            $_.Extension.Equals(".hog", [StringComparison]::OrdinalIgnoreCase)
+        } | Select-Object -First 1)
+}
+
+function Get-MissionVariantMaskSelection {
+    param([Parameter(Mandatory = $true)][string]$RawDirPath)
+
+    $descriptors = @(Get-ChildItem -LiteralPath $RawDirPath -Recurse -File | Where-Object {
+            $_.Extension.ToLowerInvariant() -in @(".msn", ".mn2")
+        })
+    $selections = @()
+    foreach ($group in @($descriptors | Group-Object {
+                "$($_.Directory.Parent.FullName.ToLowerInvariant())|$($_.BaseName.ToLowerInvariant())"
+            })) {
+        $members = @($group.Group)
+        if ($members.Count -lt 2) { continue }
+        $labels = @($members | ForEach-Object { $_.Directory.Name.ToUpperInvariant() })
+        if (@($labels | Select-Object -Unique).Count -ne $labels.Count) { continue }
+        if (@($labels | Where-Object { $_ -notin $missionVariantDirectoryMaskPrecedence }).Count -gt 0) { continue }
+        if (@($members | Where-Object { -not (Test-PairedMissionHog -Descriptor $_) }).Count -gt 0) { continue }
+        if (@($members | ForEach-Object { (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash } | Select-Object -Unique).Count -ne 1) {
+            continue
+        }
+
+        $selectedLabel = $missionVariantDirectoryMaskPrecedence | Where-Object { $_ -in $labels } | Select-Object -First 1
+        $selected = $members | Where-Object { $_.Directory.Name.Equals($selectedLabel, [StringComparison]::OrdinalIgnoreCase) } | Select-Object -First 1
+        $maskedDirectories = @($members | Where-Object { $_.FullName -ne $selected.FullName } | ForEach-Object { $_.Directory.FullName })
+        $testDirectory = Join-Path $selected.Directory.Parent.FullName "TEST"
+        if (Test-Path -LiteralPath $testDirectory -PathType Container) {
+            $pairedTestDescriptors = @(Get-ChildItem -LiteralPath $testDirectory -File | Where-Object {
+                    $_.Extension.ToLowerInvariant() -in @(".msn", ".mn2")
+                } | Where-Object { Test-PairedMissionHog -Descriptor $_ })
+            if ($pairedTestDescriptors.Count -gt 0) {
+                $maskedDirectories += $testDirectory
+            }
+        }
+        $selections += [pscustomobject]@{
+            SelectedDirectory = $selected.Directory.FullName
+            MaskedDirectories = @($maskedDirectories)
+        }
+    }
+    if ($selections.Count -ne 1) { return $null }
+    return $selections[0]
+}
+
+function Get-RawMissionDescriptorPath {
+    param(
+        [Parameter(Mandatory = $true)][string]$RawDirPath,
+        [Parameter(Mandatory = $true)][System.IO.FileInfo]$StagedDescriptor,
+        [AllowNull()]$VariantSelection
+    )
+
+    $candidates = @(Get-ChildItem -LiteralPath $RawDirPath -Recurse -File | Where-Object {
+            $_.Name.Equals($StagedDescriptor.Name, [StringComparison]::OrdinalIgnoreCase)
+        })
+    if ($VariantSelection) {
+        $candidates = @($candidates | Where-Object {
+                $candidate = $_
+                @($VariantSelection.MaskedDirectories | Where-Object {
+                        Test-FileUnderDirectory -FilePath $candidate.FullName -DirectoryPath $_
+                    }).Count -eq 0
+            })
+    }
+    if ($candidates.Count -ne 1) { return "" }
+    $rootPrefix = [IO.Path]::GetFullPath($RawDirPath).TrimEnd([char[]]@('\', '/')) + [IO.Path]::DirectorySeparatorChar
+    $fullPath = [IO.Path]::GetFullPath($candidates[0].FullName)
+    if (-not $fullPath.StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase)) { return "" }
+    return $fullPath.Substring($rootPrefix.Length).Replace('\', '/')
+}
+
 function Copy-RawMissionFileSet {
     param(
         [Parameter(Mandatory = $true)][string]$RawDirPath,
-        [Parameter(Mandatory = $true)][string]$StageDir
+        [Parameter(Mandatory = $true)][string]$StageDir,
+        [AllowNull()]$VariantSelection
     )
 
     $stageFull = [IO.Path]::GetFullPath($StageDir)
@@ -361,8 +458,16 @@ function Copy-RawMissionFileSet {
         Remove-Item -LiteralPath $StageDir -Recurse -Force
     }
     New-Item -ItemType Directory -Force -Path $StageDir | Out-Null
+    if ($null -eq $VariantSelection) {
+        $VariantSelection = Get-MissionVariantMaskSelection -RawDirPath $RawDirPath
+    }
     $used = @{}
     foreach ($file in Get-ChildItem -LiteralPath $RawDirPath -Recurse -File) {
+        if ($VariantSelection -and @($VariantSelection.MaskedDirectories | Where-Object {
+                    Test-FileUnderDirectory -FilePath $file.FullName -DirectoryPath $_
+                }).Count -gt 0) {
+            continue
+        }
         $leaf = $file.Name
         if (-not $leaf -or $leaf -eq "." -or $leaf -eq "..") {
             continue
@@ -833,7 +938,8 @@ if (-not $CdSourcesOnly) {
                     continue
                 }
                 Expand-MissionArchive -Archive $archive -RawArchiveDir $rawArchiveDir
-                Copy-RawMissionFileSet -RawDirPath $rawArchiveDir -StageDir $stageDir
+                $variantSelection = Get-MissionVariantMaskSelection -RawDirPath $rawArchiveDir
+                Copy-RawMissionFileSet -RawDirPath $rawArchiveDir -StageDir $stageDir -VariantSelection $variantSelection
                 $descriptors = @(Get-MissionDescriptor -StageDir $stageDir)
                 if ($descriptors.Count -eq 0) {
                     $record["status"] = "skipped_no_descriptor"
@@ -847,8 +953,9 @@ if (-not $CdSourcesOnly) {
                     $rawOutputPath = Join-Path $rawDir "$label.$($descriptor.BaseName).metadata.json"
                     $logPath = Join-Path $logsDir "$label.$($descriptor.BaseName).log"
                     $descriptorInfo = Get-MissionDescriptorInfo -Descriptor $descriptor
+                    $missionPath = Get-RawMissionDescriptorPath -RawDirPath $rawArchiveDir -StagedDescriptor $descriptor -VariantSelection $variantSelection
                     $raw = Invoke-HeadlessScan -Descriptor $descriptor -StageDir $stageDir -Executables $executables -DataDirs $dataDirs -RawOutputPath $rawOutputPath -LogPath $logPath
-                    $missions += ConvertTo-CheckedInMissionJson -Raw $raw -TargetIndex $targetIndex -SourceName $descriptorInfo.DisplayName -MissionFilename $descriptorInfo.Filename
+                    $missions += ConvertTo-CheckedInMissionJson -Raw $raw -TargetIndex $targetIndex -SourceName $descriptorInfo.DisplayName -MissionFilename $descriptorInfo.Filename -MissionPath $missionPath
                     $targetIndex++
                 }
                 Write-JsonValue -Path $metadataPath -Value ([object[]]$missions) -MissionMetadata

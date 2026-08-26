@@ -1472,7 +1472,7 @@ class LauncherScriptExecutor(
     private fun missionSetArrayJson(scan: MissionZip.ScanResult?): JSONArray {
         val array = JSONArray()
         if (scan == null) return array
-        val sets = scan.missionSets.ifEmpty { listOf(MissionZip.MissionSet(scan.mission, scan.constituents)) }
+        val sets = scan.effectiveMissionSets.ifEmpty { listOf(MissionZip.MissionSet(scan.mission, scan.constituents)) }
         sets.forEach { set ->
             array.put(
                 JSONObject()

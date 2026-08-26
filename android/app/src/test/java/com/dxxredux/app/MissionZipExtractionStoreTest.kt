@@ -171,6 +171,39 @@ class MissionZipExtractionStoreTest {
         assertEquals("existing.ogg", File(target, "missions/descent.sng").readText())
     }
 
+    @Test
+    fun exposesOnlySelectedRebirthSiblingToMissionDirectory() {
+        val filesDir = File("build/test-mission-zip-extraction/rebirth-variant").absoluteFile
+        filesDir.deleteRecursively()
+        filesDir.mkdirs()
+        val archive = File(filesDir, "variants.zip")
+        ZipOutputStream(archive.outputStream()).use { zip ->
+            for (variant in listOf("D2X", "DOS", "REBIRTH")) {
+                zip.writeEntry("$variant/ULTERIOR.mn2", missionDescriptor("Ulterior"))
+                zip.writeEntry("$variant/ULTERIOR.hog", missionHog())
+            }
+            zip.writeEntry("BONUS.mn2", missionDescriptor("Bonus mission"))
+            zip.writeEntry("BONUS.hog", missionHog())
+            zip.writeEntry("TEST/EXITD2V.mn2", missionDescriptor("Test mission"))
+            zip.writeEntry("TEST/EXITD2V.hog", missionHog())
+        }
+        val scan = requireNotNull(MissionZip.inspect(archive))
+        val target = File(filesDir, "target")
+
+        extractZipToRoot(archive, target, scan)
+
+        assertTrue(File(target, "missions/REBIRTH/ULTERIOR.mn2").isFile)
+        assertTrue(File(target, "missions/REBIRTH/ULTERIOR.hog").isFile)
+        assertTrue(File(target, "missions/BONUS.mn2").isFile)
+        assertTrue(File(target, "missions/BONUS.hog").isFile)
+        assertFalse(File(target, "missions/D2X").exists())
+        assertFalse(File(target, "missions/DOS").exists())
+        assertFalse(File(target, "missions/TEST").exists())
+        assertTrue(File(target, "D2X/ULTERIOR.mn2").isFile)
+        assertTrue(File(target, "DOS/ULTERIOR.mn2").isFile)
+        assertTrue(File(target, "TEST/EXITD2V.mn2").isFile)
+    }
+
     private fun file(
         sourcePath: String,
         relativePath: String,

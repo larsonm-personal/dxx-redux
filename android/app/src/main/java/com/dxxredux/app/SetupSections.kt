@@ -931,6 +931,20 @@ private fun ModDetailsDialog(
                                     }
                                 }
                             }
+                            missionZip.variantSelection?.let { selection ->
+                                ModDetailSectionTitle("Mission variant")
+                                DetailRow(
+                                    "Selected variant",
+                                    "${selection.selected.label} (recommended for DXX Redux)",
+                                )
+                                ModDetailLine(selection.selected.missionPath)
+                                if (selection.excluded.isNotEmpty()) {
+                                    DetailRow("Not launched", selection.excluded.size.toString())
+                                    selection.excluded.forEach { variant ->
+                                        ModDetailLine("${variant.label}: ${variant.missionPath}")
+                                    }
+                                }
+                            }
                             ModDetailSectionTitle("Mission")
                             DetailRow("Title", missionZip.mission.displayName)
                             missionZip.mission.type?.let { DetailRow("Type", it) }
@@ -970,6 +984,10 @@ private fun ModDetailsDialog(
                         ModDetailSectionTitle("Files")
                         if (details.missionZip != null) {
                             val fileListScrollState = rememberScrollState()
+                            val duplicateNames =
+                                details.missionZip.constituents
+                                    .groupingBy { portableGameFilenameIdentity(it.name) }
+                                    .eachCount()
                             Column(
                                 modifier =
                                     Modifier
@@ -1004,7 +1022,20 @@ private fun ModDetailsDialog(
                                     ) {
                                         Column(modifier = Modifier.fillMaxWidth()) {
                                             Text(
-                                                constituent.name,
+                                                if (
+                                                    (
+                                                        duplicateNames[
+                                                            portableGameFilenameIdentity(
+                                                                constituent.name,
+                                                            ),
+                                                        ] ?: 0
+                                                    ) >
+                                                    1
+                                                ) {
+                                                    constituent.path
+                                                } else {
+                                                    constituent.name
+                                                },
                                                 fontSize = 12.sp,
                                                 fontWeight = FontWeight.SemiBold,
                                                 color = MaterialTheme.colorScheme.onSurface,
