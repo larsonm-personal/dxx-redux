@@ -1,0 +1,2829 @@
+[
+  {
+    "status": "ok",
+    "source": "Descent Vignettes",
+    "game": "d1",
+    "mission_name": "Descent Vignettes",
+    "mission_filename": "vignette.msn",
+    "coop_starts": "4",
+    "track_names": [
+      {
+        "track": 0,
+        "name": "MIDI Track 0",
+        "filename": "descent.hmp",
+        "format": "hmp",
+        "length_s": 233
+      },
+      {
+        "track": 1,
+        "name": "MIDI Track 1",
+        "filename": "briefing.hmp",
+        "format": "hmp",
+        "length_s": 176
+      },
+      {
+        "track": 2,
+        "name": "MIDI Track 2",
+        "filename": "endlevel.hmp",
+        "format": "hmp",
+        "length_s": 19
+      },
+      {
+        "track": 3,
+        "name": "MIDI Track 3",
+        "filename": "endgame.hmp",
+        "format": "hmp",
+        "length_s": 131
+      },
+      {
+        "track": 4,
+        "name": "MIDI Track 4",
+        "filename": "credits.hmp",
+        "format": "hmp",
+        "length_s": 132
+      },
+      {
+        "track": 5,
+        "name": "MIDI Track 1",
+        "filename": "game01.hmp",
+        "format": "hmp",
+        "length_s": 123
+      },
+      {
+        "track": 6,
+        "name": "Drawbar Organ (Pan Right)",
+        "filename": "game02.hmp",
+        "format": "hmp",
+        "length_s": 295
+      },
+      {
+        "track": 7,
+        "name": "MIDI Track 3",
+        "filename": "game03.hmp",
+        "format": "hmp",
+        "length_s": 259
+      },
+      {
+        "track": 8,
+        "name": "Level 6: The Dark Tower",
+        "filename": "game04.hmp",
+        "format": "hmp",
+        "length_s": 184
+      },
+      {
+        "track": 9,
+        "name": "Stage 2: The Hollow Tree",
+        "filename": "game05.hmp",
+        "format": "hmp",
+        "length_s": 193
+      },
+      {
+        "track": 10,
+        "name": "MIDI Track 6",
+        "filename": "game06.hmp",
+        "format": "hmp",
+        "length_s": 350
+      },
+      {
+        "track": 11,
+        "name": "MIDI Track 7",
+        "filename": "game07.hmp",
+        "format": "hmp",
+        "length_s": 299
+      },
+      {
+        "track": 12,
+        "name": "Level 4",
+        "filename": "game08.hmp",
+        "format": "hmp",
+        "length_s": 93
+      },
+      {
+        "track": 13,
+        "name": "MIDI Track 9",
+        "filename": "game09.hmp",
+        "format": "hmp",
+        "length_s": 175
+      },
+      {
+        "track": 14,
+        "name": "Level 1",
+        "filename": "game10.hmp",
+        "format": "hmp",
+        "length_s": 263
+      },
+      {
+        "track": 15,
+        "name": "Battle Toads & Double Dragon",
+        "filename": "game11.hmp",
+        "format": "hmp",
+        "length_s": 106
+      },
+      {
+        "track": 16,
+        "name": "MIDI Track 12",
+        "filename": "game12.hmp",
+        "format": "hmp",
+        "length_s": 159
+      },
+      {
+        "track": 17,
+        "name": "MIDI Track 13",
+        "filename": "game13.hmp",
+        "format": "hmp",
+        "length_s": 115
+      },
+      {
+        "track": 18,
+        "name": "MIDI Track 14",
+        "filename": "game14.hmp",
+        "format": "hmp",
+        "length_s": 51
+      },
+      {
+        "track": 19,
+        "name": "Battle Toads & Double Dragon",
+        "filename": "game15.hmp",
+        "format": "hmp",
+        "length_s": 80
+      },
+      {
+        "track": 20,
+        "name": "Level 5: Roller Coaster",
+        "filename": "game16.hmp",
+        "format": "hmp",
+        "length_s": 88
+      },
+      {
+        "track": 21,
+        "name": "MIDI Track 17",
+        "filename": "game17.hmp",
+        "format": "hmp",
+        "length_s": 212
+      },
+      {
+        "track": 22,
+        "name": "Acoustic Steel Guitar",
+        "filename": "game18.hmp",
+        "format": "hmp",
+        "length_s": 215
+      },
+      {
+        "track": 23,
+        "name": "MIDI Track 19",
+        "filename": "game19.hmp",
+        "format": "hmp",
+        "length_s": 226
+      },
+      {
+        "track": 24,
+        "name": "Alteration",
+        "filename": "game20.hmp",
+        "format": "hmp",
+        "length_s": 222
+      },
+      {
+        "track": 25,
+        "name": "MIDI Track 21",
+        "filename": "game21.hmp",
+        "format": "hmp",
+        "length_s": 207
+      },
+      {
+        "track": 26,
+        "name": "Alien 3 - Level 01  [NES game soundtrack]",
+        "filename": "game22.hmp",
+        "format": "hmp",
+        "length_s": 270
+      }
+    ],
+    "level_count": 27,
+    "levels": [
+      {
+        "level_num": 1,
+        "secret": false,
+        "level_name": "Shaft Complex",
+        "level_file": "level01.rdl",
+        "segment_count": 233,
+        "wall_count": 87,
+        "trigger_count": 3,
+        "object_count": 29,
+        "texture_count": 117,
+        "robots": 14,
+        "hostages": 4,
+        "secrets": 1,
+        "matcens": 1,
+        "energy_centers": 1,
+        "mine_volume": 4492224.802572839,
+        "mine_volume_normalized": 0.98235737439014,
+        "mine_volume_text": "0.98x",
+        "travel_distance": 1552.956105784298,
+        "travel_time_seconds": 31,
+        "travel_time_text": "0M:31S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 145,
+            "label_pos": {
+              "x": -4.57763671875e-05,
+              "y": -104.81918334960938,
+              "z": 66.73779296875
+            },
+            "distance": 635.468752280545,
+            "key": "red"
+          },
+          {
+            "index": 2,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 226,
+            "label_pos": {
+              "x": 0.0,
+              "y": 40.0,
+              "z": -60.0
+            },
+            "distance": 350.52034182064267
+          },
+          {
+            "index": 3,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 132,
+            "side": 4,
+            "wall": 61,
+            "label_pos": {
+              "x": 69.99989318847656,
+              "y": -59.99955749511719,
+              "z": 191.99977111816406
+            },
+            "distance": 566.9670116831103,
+            "trigger": 1,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 2,
+        "secret": false,
+        "level_name": "The Pit",
+        "level_file": "level02.rdl",
+        "segment_count": 211,
+        "wall_count": 68,
+        "trigger_count": 2,
+        "object_count": 41,
+        "texture_count": 102,
+        "robots": 23,
+        "hostages": 4,
+        "secrets": 1,
+        "matcens": 1,
+        "energy_centers": 1,
+        "mine_volume": 3767600.4751836527,
+        "mine_volume_normalized": 0.8238969048104412,
+        "mine_volume_text": "0.82x",
+        "travel_distance": 1223.607236690099,
+        "travel_time_seconds": 24,
+        "travel_time_text": "0M:24S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 121,
+            "label_pos": {
+              "x": -19.787673950195312,
+              "y": -20.0,
+              "z": 280.335693359375
+            },
+            "distance": 592.1361943596307,
+            "key": "red"
+          },
+          {
+            "index": 2,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 210,
+            "label_pos": {
+              "x": -20.00006103515625,
+              "y": -40.0,
+              "z": 77.54574584960938
+            },
+            "distance": 258.95616446773823
+          },
+          {
+            "index": 3,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 110,
+            "side": 4,
+            "wall": 40,
+            "label_pos": {
+              "x": -19.318939208984375,
+              "y": -80.0,
+              "z": 416.8934631347656
+            },
+            "distance": 372.51487786272986,
+            "trigger": 0,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 3,
+        "secret": false,
+        "level_name": "Prison Compound",
+        "level_file": "level05.rdl",
+        "segment_count": 440,
+        "wall_count": 122,
+        "trigger_count": 3,
+        "object_count": 71,
+        "texture_count": 126,
+        "robots": 50,
+        "hostages": 4,
+        "secrets": 1,
+        "matcens": 1,
+        "energy_centers": 1,
+        "mine_volume": 7165717.986168986,
+        "mine_volume_normalized": 1.5669954679208262,
+        "mine_volume_text": "1.6x",
+        "travel_distance": 1992.398975826443,
+        "travel_time_seconds": 40,
+        "travel_time_text": "0M:40S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 66,
+            "label_pos": {
+              "x": 0.0,
+              "y": -40.0,
+              "z": 249.95599365234375
+            },
+            "distance": 361.20413894574574,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 240,
+            "side": 2,
+            "wall": 100,
+            "label_pos": {
+              "x": 65.00022888183594,
+              "y": -45.295135498046875,
+              "z": 465.00042724609375
+            },
+            "distance": 445.97457685904453,
+            "opens": [
+              {
+                "seg": 240,
+                "side": 2,
+                "wall": 100
+              },
+              {
+                "seg": 377,
+                "side": 0,
+                "wall": 101
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 387,
+            "label_pos": {
+              "x": 127.92387390136719,
+              "y": -38.20936584472656,
+              "z": 465.00038146972656
+            },
+            "distance": 80.17520857045095,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 410,
+            "label_pos": {
+              "x": -6.103515625e-05,
+              "y": -20.0001220703125,
+              "z": 774.7211303710938
+            },
+            "distance": 531.4601986482985
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 421,
+            "side": 4,
+            "wall": 104,
+            "label_pos": {
+              "x": 3.0517578125e-05,
+              "y": -85.295166015625,
+              "z": 655.0003662109375
+            },
+            "distance": 573.5848528029032,
+            "trigger": 2,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 4,
+        "secret": false,
+        "level_name": "Dropshaft",
+        "level_file": "level09.rdl",
+        "segment_count": 397,
+        "wall_count": 145,
+        "trigger_count": 8,
+        "object_count": 71,
+        "texture_count": 127,
+        "robots": 44,
+        "hostages": 4,
+        "secrets": 1,
+        "matcens": 2,
+        "energy_centers": 3,
+        "mine_volume": 3617408.1180326706,
+        "mine_volume_normalized": 0.7910529185656293,
+        "mine_volume_text": "0.79x",
+        "travel_distance": 3276.7165270972487,
+        "travel_time_seconds": 66,
+        "travel_time_text": "1M:06S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 183,
+            "label_pos": {
+              "x": 0.0,
+              "y": -40.0,
+              "z": 130.0
+            },
+            "distance": 722.682809858612,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 270,
+            "label_pos": {
+              "x": 90.0,
+              "y": -40.0,
+              "z": 200.0
+            },
+            "distance": 632.0644496390279,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 156,
+            "label_pos": {
+              "x": 0.0,
+              "y": 20.0,
+              "z": 200.0
+            },
+            "distance": 1405.255698018719,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 379,
+            "label_pos": {
+              "x": 160.0,
+              "y": -120.0,
+              "z": 200.0
+            },
+            "distance": 295.22527814102295
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 347,
+            "side": 1,
+            "wall": 122,
+            "label_pos": {
+              "x": 0.0,
+              "y": -110.0,
+              "z": 200.0
+            },
+            "distance": 221.4882914398667,
+            "trigger": 3,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 5,
+        "secret": false,
+        "level_name": "Grated Catwalk",
+        "level_file": "level10.rdl",
+        "segment_count": 310,
+        "wall_count": 119,
+        "trigger_count": 7,
+        "object_count": 62,
+        "texture_count": 103,
+        "robots": 35,
+        "hostages": 4,
+        "secrets": 1,
+        "matcens": 3,
+        "energy_centers": 1,
+        "mine_volume": 4137332.3174022594,
+        "mine_volume_normalized": 0.9047496710260319,
+        "mine_volume_text": "0.90x",
+        "travel_distance": 3486.634695347056,
+        "travel_time_seconds": 70,
+        "travel_time_text": "1M:10S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 99,
+            "label_pos": {
+              "x": -80.0,
+              "y": 0.0,
+              "z": 359.99993896484375
+            },
+            "distance": 673.7022992083591,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 286,
+            "label_pos": {
+              "x": -79.99993896484375,
+              "y": -20.0,
+              "z": 169.99996948242188
+            },
+            "distance": 1088.9668215642428,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 200,
+            "label_pos": {
+              "x": -269.9951934814453,
+              "y": 0.0,
+              "z": 276.3484344482422
+            },
+            "distance": 1013.934428401738,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 136,
+            "label_pos": {
+              "x": -179.9999237060547,
+              "y": 15.0,
+              "z": 209.99993896484375
+            },
+            "distance": 570.2589964421322
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 198,
+            "side": 5,
+            "wall": 75,
+            "label_pos": {
+              "x": -269.9994201660156,
+              "y": 0.0,
+              "z": 215.00071716308594
+            },
+            "distance": 139.7721497305839,
+            "trigger": 3,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 6,
+        "secret": false,
+        "level_name": "Submerged",
+        "level_file": "level11.rdl",
+        "segment_count": 337,
+        "wall_count": 48,
+        "trigger_count": 4,
+        "object_count": 42,
+        "texture_count": 73,
+        "robots": 24,
+        "hostages": 4,
+        "secrets": 1,
+        "matcens": 1,
+        "energy_centers": 1,
+        "mine_volume": 4509214.762898062,
+        "mine_volume_normalized": 0.986072730043428,
+        "mine_volume_text": "0.99x",
+        "travel_distance": 1572.5834193488809,
+        "travel_time_seconds": 31,
+        "travel_time_text": "0M:31S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 196,
+            "label_pos": {
+              "x": 306.2016143798828,
+              "y": -62.0111083984375,
+              "z": 412.0960388183594
+            },
+            "distance": 780.5281450316721,
+            "key": "red"
+          },
+          {
+            "index": 2,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 263,
+            "label_pos": {
+              "x": 115.332763671875,
+              "y": -82.49555969238281,
+              "z": 347.16346740722656
+            },
+            "distance": 468.9699590764605
+          },
+          {
+            "index": 3,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 1",
+            "seg": 264,
+            "side": 1,
+            "wall": 22,
+            "label_pos": {
+              "x": 164.809814453125,
+              "y": -105.2786865234375,
+              "z": 259.652099609375
+            },
+            "distance": 176.65124535992888,
+            "trigger": 1,
+            "trigger_type_id": 1,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 262,
+                "side": 3,
+                "wall": 26
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 274,
+            "side": 3,
+            "wall": 28,
+            "label_pos": {
+              "x": 125.68038940429688,
+              "y": -109.04615783691406,
+              "z": 329.3574981689453
+            },
+            "distance": 146.43406988081944,
+            "trigger": 0,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 7,
+        "secret": false,
+        "level_name": "Inner Tubing",
+        "level_file": "level12.rdl",
+        "segment_count": 310,
+        "wall_count": 106,
+        "trigger_count": 8,
+        "object_count": 77,
+        "texture_count": 82,
+        "robots": 50,
+        "hostages": 4,
+        "secrets": 1,
+        "matcens": 2,
+        "energy_centers": 2,
+        "mine_volume": 6030143.945859031,
+        "mine_volume_normalized": 1.3186687296806594,
+        "mine_volume_text": "1.3x",
+        "travel_distance": 0.0,
+        "travel_time_seconds": 0,
+        "travel_time_text": "0M:00S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "failed",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          }
+        ],
+        "route_problem": "red key unreachable"
+      },
+      {
+        "level_num": 8,
+        "secret": false,
+        "level_name": "The Sewers",
+        "level_file": "level15.rdl",
+        "segment_count": 273,
+        "wall_count": 99,
+        "trigger_count": 6,
+        "object_count": 57,
+        "texture_count": 69,
+        "robots": 37,
+        "hostages": 4,
+        "secrets": 1,
+        "matcens": 1,
+        "energy_centers": 1,
+        "mine_volume": 2611250.921086052,
+        "mine_volume_normalized": 0.5710269880623001,
+        "mine_volume_text": "0.57x",
+        "travel_distance": 1993.0832621166173,
+        "travel_time_seconds": 40,
+        "travel_time_text": "0M:40S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 107,
+            "label_pos": {
+              "x": 3.1681671142578125,
+              "y": 4.8538818359375,
+              "z": 178.6421661376953
+            },
+            "distance": 473.3266909002183,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 258,
+            "label_pos": {
+              "x": -86.58970642089844,
+              "y": -103.77322387695312,
+              "z": 231.17999267578125
+            },
+            "distance": 626.1251518056047,
+            "key": "red"
+          },
+          {
+            "index": 3,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 272,
+            "label_pos": {
+              "x": 0.530029296875,
+              "y": -70.75807189941406,
+              "z": -46.292144775390625
+            },
+            "distance": 428.8759561152995
+          },
+          {
+            "index": 4,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 233,
+            "side": 5,
+            "wall": 70,
+            "label_pos": {
+              "x": 4.23443603515625,
+              "y": 46.09977722167969,
+              "z": 214.5657501220703
+            },
+            "distance": 464.75546329549513,
+            "trigger": 0,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 9,
+        "secret": false,
+        "level_name": "The Riverbed",
+        "level_file": "level18.rdl",
+        "segment_count": 328,
+        "wall_count": 120,
+        "trigger_count": 3,
+        "object_count": 51,
+        "texture_count": 77,
+        "robots": 25,
+        "hostages": 4,
+        "secrets": 0,
+        "matcens": 2,
+        "energy_centers": 1,
+        "mine_volume": 3544210.549482521,
+        "mine_volume_normalized": 0.7750461124922814,
+        "mine_volume_text": "0.78x",
+        "travel_distance": 2797.7234879079033,
+        "travel_time_seconds": 56,
+        "travel_time_text": "0M:56S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 43,
+            "label_pos": {
+              "x": -0.0012054443359375,
+              "y": -40.2022705078125,
+              "z": 49.943817138671875
+            },
+            "distance": 253.67417989102572,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 224,
+            "label_pos": {
+              "x": -139.5690155029297,
+              "y": -62.25508117675781,
+              "z": -191.31727600097656
+            },
+            "distance": 653.7307911899122,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 103,
+            "label_pos": {
+              "x": 129.14598083496094,
+              "y": -64.40428161621094,
+              "z": -218.91561889648438
+            },
+            "distance": 651.593799400844,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 192,
+            "label_pos": {
+              "x": 288.2799987792969,
+              "y": -86.838134765625,
+              "z": -327.99400329589844
+            },
+            "distance": 984.4233290584043
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 105,
+            "side": 2,
+            "wall": 40,
+            "label_pos": {
+              "x": 189.15359497070312,
+              "y": -64.05549621582031,
+              "z": -158.7165985107422
+            },
+            "distance": 254.30138836771718,
+            "trigger": 0,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 10,
+        "secret": false,
+        "level_name": "The Great Escape",
+        "level_file": "level20.rdl",
+        "segment_count": 532,
+        "wall_count": 172,
+        "trigger_count": 5,
+        "object_count": 88,
+        "texture_count": 101,
+        "robots": 55,
+        "hostages": 4,
+        "secrets": 1,
+        "matcens": 2,
+        "energy_centers": 1,
+        "mine_volume": 9262123.79956689,
+        "mine_volume_normalized": 2.0254363966397753,
+        "mine_volume_text": "2.0x",
+        "travel_distance": 3791.1117060487254,
+        "travel_time_seconds": 76,
+        "travel_time_text": "1M:16S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 342,
+            "label_pos": {
+              "x": -5.2562255859375,
+              "y": 40.28990173339844,
+              "z": 105.68153381347656
+            },
+            "distance": 361.477053716955,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 405,
+            "label_pos": {
+              "x": -162.58534240722656,
+              "y": 5.2464447021484375,
+              "z": -192.9168701171875
+            },
+            "distance": 868.8050105446648,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 463,
+            "label_pos": {
+              "x": -120.98165893554688,
+              "y": 105.21356201171875,
+              "z": 227.39678955078125
+            },
+            "distance": 1216.2717400306526,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 527,
+            "label_pos": {
+              "x": 111.61741638183594,
+              "y": 32.2625732421875,
+              "z": -231.88755798339844
+            },
+            "distance": 1182.71838415216
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 505,
+            "side": 0,
+            "wall": 169,
+            "label_pos": {
+              "x": 159.76922607421875,
+              "y": 22.403762817382812,
+              "z": -143.4929656982422
+            },
+            "distance": 161.83951760429287,
+            "trigger": 3,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 11,
+        "secret": false,
+        "level_name": "Under Tuck",
+        "level_file": "level22.rdl",
+        "segment_count": 254,
+        "wall_count": 70,
+        "trigger_count": 10,
+        "object_count": 59,
+        "texture_count": 74,
+        "robots": 30,
+        "hostages": 4,
+        "secrets": 0,
+        "matcens": 3,
+        "energy_centers": 2,
+        "mine_volume": 5043194.5125895,
+        "mine_volume_normalized": 1.1028431429096661,
+        "mine_volume_text": "1.1x",
+        "travel_distance": 1898.9046577656484,
+        "travel_time_seconds": 38,
+        "travel_time_text": "0M:38S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 87,
+            "label_pos": {
+              "x": 0.0,
+              "y": 62.49998474121094,
+              "z": 146.02606201171875
+            },
+            "distance": 689.5342706667924,
+            "key": "red"
+          },
+          {
+            "index": 2,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 173,
+            "label_pos": {
+              "x": 1.2296295166015625,
+              "y": 80.48626708984375,
+              "z": 520.0785217285156
+            },
+            "distance": 788.6583674788802
+          },
+          {
+            "index": 3,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 164,
+            "side": 5,
+            "wall": 57,
+            "label_pos": {
+              "x": 0.1304931640625,
+              "y": 80.73126220703125,
+              "z": 364.99964904785156
+            },
+            "distance": 420.7120196199758,
+            "trigger": 7,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 12,
+        "secret": false,
+        "level_name": "Roundabout",
+        "level_file": "level23.rdl",
+        "segment_count": 420,
+        "wall_count": 158,
+        "trigger_count": 7,
+        "object_count": 80,
+        "texture_count": 63,
+        "robots": 53,
+        "hostages": 4,
+        "secrets": 1,
+        "matcens": 2,
+        "energy_centers": 1,
+        "mine_volume": 4133970.956516296,
+        "mine_volume_normalized": 0.9040146103824903,
+        "mine_volume_text": "0.90x",
+        "travel_distance": 2091.663210894982,
+        "travel_time_seconds": 42,
+        "travel_time_text": "0M:42S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 263,
+            "label_pos": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 325.0
+            },
+            "distance": 553.4114237167748,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 281,
+            "label_pos": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 445.0
+            },
+            "distance": 737.0916316926945,
+            "key": "red"
+          },
+          {
+            "index": 3,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 269,
+            "label_pos": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 385.0
+            },
+            "distance": 545.5916129905892
+          },
+          {
+            "index": 4,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 358,
+            "side": 5,
+            "wall": 132,
+            "label_pos": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 625.0
+            },
+            "distance": 255.5685424949238,
+            "trigger": 0,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 13,
+        "secret": false,
+        "level_name": "The Black Rock",
+        "level_file": "level24.rdl",
+        "segment_count": 543,
+        "wall_count": 162,
+        "trigger_count": 4,
+        "object_count": 93,
+        "texture_count": 99,
+        "robots": 62,
+        "hostages": 4,
+        "secrets": 1,
+        "matcens": 3,
+        "energy_centers": 1,
+        "mine_volume": 46175868.07359513,
+        "mine_volume_normalized": 10.097714721441058,
+        "mine_volume_text": "10x",
+        "travel_distance": 3203.713614735541,
+        "travel_time_seconds": 64,
+        "travel_time_text": "1M:04S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 126,
+            "label_pos": {
+              "x": 0.88671875,
+              "y": -57.81434631347656,
+              "z": 490.10948181152344
+            },
+            "distance": 698.530925830259,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 449,
+            "label_pos": {
+              "x": 7.50775146484375,
+              "y": -182.53709411621094,
+              "z": 935.6120758056641
+            },
+            "distance": 895.419421349523,
+            "key": "red"
+          },
+          {
+            "index": 3,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 540,
+            "label_pos": {
+              "x": 14.161224365234375,
+              "y": -22.670013427734375,
+              "z": 1080.3108367919922
+            },
+            "distance": 955.9406864517329
+          },
+          {
+            "index": 4,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 157,
+            "side": 5,
+            "wall": 69,
+            "label_pos": {
+              "x": 146.7456512451172,
+              "y": -21.291519165039062,
+              "z": 569.3065338134766
+            },
+            "distance": 653.822581104026,
+            "trigger": 1,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 14,
+        "secret": false,
+        "level_name": "Into The Fire",
+        "level_file": "level25.rdl",
+        "segment_count": 419,
+        "wall_count": 49,
+        "trigger_count": 2,
+        "object_count": 52,
+        "texture_count": 49,
+        "robots": 22,
+        "hostages": 4,
+        "secrets": 1,
+        "matcens": 0,
+        "energy_centers": 1,
+        "mine_volume": 14594100.68955284,
+        "mine_volume_normalized": 3.191430319062266,
+        "mine_volume_text": "3.2x",
+        "travel_distance": 1768.2550646961463,
+        "travel_time_seconds": 35,
+        "travel_time_text": "0M:35S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 44,
+            "label_pos": {
+              "x": -70.0,
+              "y": -10.0,
+              "z": 450.0
+            },
+            "distance": 855.281195549533,
+            "key": "red"
+          },
+          {
+            "index": 2,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 360,
+            "label_pos": {
+              "x": 134.99993896484375,
+              "y": -180.0,
+              "z": 989.9992065429688
+            },
+            "distance": 616.9738691466134
+          },
+          {
+            "index": 3,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 266,
+            "side": 2,
+            "wall": 16,
+            "label_pos": {
+              "x": 134.99993896484375,
+              "y": -90.0,
+              "z": 1149.9992065429688
+            },
+            "distance": 296.0,
+            "trigger": 0,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ],
+        "route_note": "no reactor, exit exists",
+        "notes": [
+          "no reactor, exit exists"
+        ]
+      },
+      {
+        "level_num": 15,
+        "secret": false,
+        "level_name": "Stalactite Volcano",
+        "level_file": "level26.rdl",
+        "segment_count": 365,
+        "wall_count": 120,
+        "trigger_count": 4,
+        "object_count": 68,
+        "texture_count": 69,
+        "robots": 37,
+        "hostages": 4,
+        "secrets": 1,
+        "matcens": 4,
+        "energy_centers": 1,
+        "mine_volume": 17151944.992815956,
+        "mine_volume_normalized": 3.7507783758231876,
+        "mine_volume_text": "3.8x",
+        "travel_distance": 3800.397878765883,
+        "travel_time_seconds": 76,
+        "travel_time_text": "1M:16S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 162,
+            "label_pos": {
+              "x": -0.0634002685546875,
+              "y": 127.87474060058594,
+              "z": 289.50001525878906
+            },
+            "distance": 635.0353485395433,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 130,
+            "label_pos": {
+              "x": -20.236328125,
+              "y": 100.000244140625,
+              "z": 381.5946807861328
+            },
+            "distance": 841.935935190622,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 128,
+            "label_pos": {
+              "x": 19.838775634765625,
+              "y": 100.000244140625,
+              "z": 341.66986083984375
+            },
+            "distance": 1132.2668890961518,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 282,
+            "label_pos": {
+              "x": -0.7471466064453125,
+              "y": 3.2645721435546875,
+              "z": 684.4534606933594
+            },
+            "distance": 805.1075181732184
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 60,
+            "side": 1,
+            "wall": 12,
+            "label_pos": {
+              "x": -0.1987457275390625,
+              "y": 30.000259399414062,
+              "z": 361.63230895996094
+            },
+            "distance": 386.0521877663472,
+            "trigger": 0,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 16,
+        "secret": false,
+        "level_name": "To The Top",
+        "level_file": "level30.rdl",
+        "segment_count": 732,
+        "wall_count": 174,
+        "trigger_count": 9,
+        "object_count": 106,
+        "texture_count": 65,
+        "robots": 64,
+        "hostages": 4,
+        "secrets": 0,
+        "matcens": 4,
+        "energy_centers": 3,
+        "mine_volume": 33954234.49534467,
+        "mine_volume_normalized": 7.425094271589066,
+        "mine_volume_text": "7.4x",
+        "travel_distance": 5808.524969946086,
+        "travel_time_seconds": 116,
+        "travel_time_text": "1M:56S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 280
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 2",
+            "seg": 364,
+            "side": 1,
+            "wall": 168,
+            "label_pos": {
+              "x": 0.0,
+              "y": 80.0,
+              "z": 140.0
+            },
+            "distance": 228.0,
+            "trigger": 2,
+            "trigger_type_id": 1,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 366,
+                "side": 1,
+                "wall": 79
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 359,
+            "label_pos": {
+              "x": 40.0,
+              "y": 40.0,
+              "z": 140.0
+            },
+            "distance": 793.531130372195,
+            "key": "blue"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 650,
+            "label_pos": {
+              "x": 20.0,
+              "y": 480.0,
+              "z": 366.0
+            },
+            "distance": 1250.7501884434457,
+            "key": "gold"
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 360,
+            "label_pos": {
+              "x": -40.0,
+              "y": 40.0,
+              "z": 140.0
+            },
+            "distance": 1839.2218400570578,
+            "key": "red"
+          },
+          {
+            "index": 5,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 94,
+            "label_pos": {
+              "x": 0.0,
+              "y": 863.0,
+              "z": 140.0
+            },
+            "distance": 1586.0218110733872
+          },
+          {
+            "index": 6,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 383,
+            "side": 4,
+            "wall": 120,
+            "label_pos": {
+              "x": 0.0,
+              "y": 970.0,
+              "z": 140.0
+            },
+            "distance": 111.0,
+            "trigger": 0,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 17,
+        "secret": false,
+        "level_name": "Observatory Row",
+        "level_file": "level31.rdl",
+        "segment_count": 500,
+        "wall_count": 175,
+        "trigger_count": 4,
+        "object_count": 70,
+        "texture_count": 93,
+        "robots": 42,
+        "hostages": 4,
+        "secrets": 1,
+        "matcens": 6,
+        "energy_centers": 1,
+        "mine_volume": 9174362.733270261,
+        "mine_volume_normalized": 2.0062448524829786,
+        "mine_volume_text": "2.0x",
+        "travel_distance": 1831.828912661581,
+        "travel_time_seconds": 37,
+        "travel_time_text": "0M:37S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 157,
+            "label_pos": {
+              "x": 0.0027313232421875,
+              "y": -24.5,
+              "z": 502.6835479736328
+            },
+            "distance": 1036.2568050339685,
+            "key": "red"
+          },
+          {
+            "index": 2,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 428,
+            "label_pos": {
+              "x": 0.9687347412109375,
+              "y": -88.597412109375,
+              "z": -110.79171752929688
+            },
+            "distance": 628.5947974000788
+          },
+          {
+            "index": 3,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 351,
+            "side": 4,
+            "wall": 135,
+            "label_pos": {
+              "x": 0.0,
+              "y": -25.0,
+              "z": 145.0
+            },
+            "distance": 166.97731022753345,
+            "trigger": 1,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 18,
+        "secret": false,
+        "level_name": "Ice Tower",
+        "level_file": "level33.rdl",
+        "segment_count": 395,
+        "wall_count": 134,
+        "trigger_count": 11,
+        "object_count": 98,
+        "texture_count": 84,
+        "robots": 64,
+        "hostages": 4,
+        "secrets": 1,
+        "matcens": 3,
+        "energy_centers": 1,
+        "mine_volume": 15000903.318405164,
+        "mine_volume_normalized": 3.2803897055438815,
+        "mine_volume_text": "3.3x",
+        "travel_distance": 0.0,
+        "travel_time_seconds": 0,
+        "travel_time_text": "0M:00S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "failed",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          }
+        ],
+        "route_problem": "blue key unreachable"
+      },
+      {
+        "level_num": 19,
+        "secret": false,
+        "level_name": "The Central Pillar",
+        "level_file": "level36.rdl",
+        "segment_count": 451,
+        "wall_count": 152,
+        "trigger_count": 11,
+        "object_count": 78,
+        "texture_count": 87,
+        "robots": 52,
+        "hostages": 4,
+        "secrets": 1,
+        "matcens": 4,
+        "energy_centers": 1,
+        "mine_volume": 7085268.230925077,
+        "mine_volume_normalized": 1.5494027574477276,
+        "mine_volume_text": "1.5x",
+        "travel_distance": 3646.347131579696,
+        "travel_time_seconds": 73,
+        "travel_time_text": "1M:13S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 0",
+            "seg": 157,
+            "side": 5,
+            "wall": 50,
+            "label_pos": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 384.999755859375
+            },
+            "distance": 486.07906083008857,
+            "trigger": 0,
+            "trigger_type_id": 1,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 48,
+                "side": 5,
+                "wall": 17
+              },
+              {
+                "seg": 47,
+                "side": 4,
+                "wall": 19
+              },
+              {
+                "seg": 52,
+                "side": 4,
+                "wall": 13
+              },
+              {
+                "seg": 53,
+                "side": 5,
+                "wall": 15
+              },
+              {
+                "seg": 92,
+                "side": 1,
+                "wall": 151
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 271,
+            "label_pos": {
+              "x": 0.0,
+              "y": -60.0,
+              "z": 639.9996948242188
+            },
+            "distance": 318.8574803761958,
+            "key": "blue"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 132,
+            "label_pos": {
+              "x": -0.41925048828125,
+              "y": -96.36038208007812,
+              "z": 270.08421325683594
+            },
+            "distance": 807.6714382134118,
+            "key": "gold"
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 274,
+            "label_pos": {
+              "x": 0.0,
+              "y": -75.0,
+              "z": 459.999755859375
+            },
+            "distance": 862.9432996513525,
+            "key": "red"
+          },
+          {
+            "index": 5,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 423,
+            "label_pos": {
+              "x": -0.3982696533203125,
+              "y": -96.37086486816406,
+              "z": 169.9721221923828
+            },
+            "distance": 898.9236811446162
+          },
+          {
+            "index": 6,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 242,
+            "side": 5,
+            "wall": 142,
+            "label_pos": {
+              "x": -0.186859130859375,
+              "y": -140.56558227539062,
+              "z": 399.7766418457031
+            },
+            "distance": 271.8721713640314,
+            "trigger": 9,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 20,
+        "secret": false,
+        "level_name": "Command Post",
+        "level_file": "level37.rdl",
+        "segment_count": 280,
+        "wall_count": 82,
+        "trigger_count": 3,
+        "object_count": 66,
+        "texture_count": 126,
+        "robots": 35,
+        "hostages": 4,
+        "secrets": 0,
+        "matcens": 2,
+        "energy_centers": 1,
+        "mine_volume": 6685096.442433471,
+        "mine_volume_normalized": 1.4618933996741645,
+        "mine_volume_text": "1.5x",
+        "travel_distance": 2398.6605021091746,
+        "travel_time_seconds": 48,
+        "travel_time_text": "0M:48S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 59,
+            "label_pos": {
+              "x": -0.2166290283203125,
+              "y": 142.5,
+              "z": 347.44000244140625
+            },
+            "distance": 469.8630457923613,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 209,
+            "label_pos": {
+              "x": 0.0,
+              "y": 50.0,
+              "z": 449.99981689453125
+            },
+            "distance": 657.5265801205067,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 184,
+            "label_pos": {
+              "x": 0.0,
+              "y": 50.0,
+              "z": 319.99981689453125
+            },
+            "distance": 404.6060549512023,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 244,
+            "label_pos": {
+              "x": 0.0,
+              "y": 120.0,
+              "z": 369.99981689453125
+            },
+            "distance": 357.0569979522289
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 168,
+            "side": 4,
+            "wall": 68,
+            "label_pos": {
+              "x": 0.0,
+              "y": 70.0,
+              "z": 524.9998168945312
+            },
+            "distance": 509.60782329287576,
+            "trigger": 1,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 21,
+        "secret": false,
+        "level_name": "Vertigo Tube",
+        "level_file": "level43.rdl",
+        "segment_count": 464,
+        "wall_count": 85,
+        "trigger_count": 2,
+        "object_count": 91,
+        "texture_count": 73,
+        "robots": 61,
+        "hostages": 4,
+        "secrets": 1,
+        "matcens": 2,
+        "energy_centers": 1,
+        "mine_volume": 6432690.090932051,
+        "mine_volume_normalized": 1.4066973105117702,
+        "mine_volume_text": "1.4x",
+        "travel_distance": 1680.2833374960376,
+        "travel_time_seconds": 34,
+        "travel_time_text": "0M:34S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 462,
+            "label_pos": {
+              "x": -4.57763671875e-05,
+              "y": -59.93879699707031,
+              "z": -155.4867706298828
+            },
+            "distance": 460.24153880411154,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 250,
+            "label_pos": {
+              "x": -25.0,
+              "y": -179.0,
+              "z": 80.0
+            },
+            "distance": 701.0560400906753,
+            "key": "red"
+          },
+          {
+            "index": 3,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 332,
+            "label_pos": {
+              "x": 0.0,
+              "y": -279.0,
+              "z": 80.0
+            },
+            "distance": 365.8098843779445
+          },
+          {
+            "index": 4,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 307,
+            "side": 1,
+            "wall": 42,
+            "label_pos": {
+              "x": 0.0,
+              "y": -204.0,
+              "z": 80.0
+            },
+            "distance": 153.17587422330624,
+            "trigger": 0,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 22,
+        "secret": false,
+        "level_name": "Alien Tunnels",
+        "level_file": "level44.rdl",
+        "segment_count": 306,
+        "wall_count": 100,
+        "trigger_count": 4,
+        "object_count": 60,
+        "texture_count": 96,
+        "robots": 35,
+        "hostages": 4,
+        "secrets": 1,
+        "matcens": 5,
+        "energy_centers": 1,
+        "mine_volume": 4461579.915021084,
+        "mine_volume_normalized": 0.9756559663803314,
+        "mine_volume_text": "0.98x",
+        "travel_distance": 2228.281829123753,
+        "travel_time_seconds": 45,
+        "travel_time_text": "0M:45S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 73,
+            "label_pos": {
+              "x": -15.00006103515625,
+              "y": -28.923248291015625,
+              "z": 250.00018310546875
+            },
+            "distance": 864.1332336702777,
+            "key": "red"
+          },
+          {
+            "index": 2,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 301,
+            "label_pos": {
+              "x": -109.99900817871094,
+              "y": -53.923828125,
+              "z": 250.000244140625
+            },
+            "distance": 1207.1083456195818
+          },
+          {
+            "index": 3,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 74,
+            "side": 1,
+            "wall": 36,
+            "label_pos": {
+              "x": -6.103515625e-05,
+              "y": -14.923095703125,
+              "z": 250.000244140625
+            },
+            "distance": 157.04024983389354,
+            "trigger": 0,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ],
+        "notes": [
+          "blue key not necessary"
+        ]
+      },
+      {
+        "level_num": 23,
+        "secret": false,
+        "level_name": "Grand Hall",
+        "level_file": "level46.rdl",
+        "segment_count": 432,
+        "wall_count": 106,
+        "trigger_count": 3,
+        "object_count": 105,
+        "texture_count": 97,
+        "robots": 62,
+        "hostages": 4,
+        "secrets": 1,
+        "matcens": 4,
+        "energy_centers": 1,
+        "mine_volume": 10701224.252611224,
+        "mine_volume_normalized": 2.3401381323424535,
+        "mine_volume_text": "2.3x",
+        "travel_distance": 2346.9288547238175,
+        "travel_time_seconds": 47,
+        "travel_time_text": "0M:47S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 138,
+            "label_pos": {
+              "x": 0.0001678466796875,
+              "y": -54.99992370605469,
+              "z": 354.9991912841797
+            },
+            "distance": 424.2795390660427,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 288,
+            "label_pos": {
+              "x": 280.7748718261719,
+              "y": 91.53762817382812,
+              "z": 264.99951171875
+            },
+            "distance": 456.6272431693909,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 325,
+            "label_pos": {
+              "x": -280.77423095703125,
+              "y": 91.53761291503906,
+              "z": 445.00050354003906
+            },
+            "distance": 773.2545919723941,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 427,
+            "label_pos": {
+              "x": 0.012939453125,
+              "y": 9.99993896484375,
+              "z": 659.9985504150391
+            },
+            "distance": 545.1964948985667
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 396,
+            "side": 4,
+            "wall": 102,
+            "label_pos": {
+              "x": 0.001678466796875,
+              "y": 60.15380859375,
+              "z": 569.9987335205078
+            },
+            "distance": 147.57098561742285,
+            "trigger": 0,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 24,
+        "secret": false,
+        "level_name": "Forgotten Fortress",
+        "level_file": "level49.rdl",
+        "segment_count": 732,
+        "wall_count": 76,
+        "trigger_count": 7,
+        "object_count": 122,
+        "texture_count": 104,
+        "robots": 77,
+        "hostages": 4,
+        "secrets": 1,
+        "matcens": 4,
+        "energy_centers": 2,
+        "mine_volume": 22498894.294157628,
+        "mine_volume_normalized": 4.920046457343698,
+        "mine_volume_text": "4.9x",
+        "travel_distance": 4001.7222377161993,
+        "travel_time_seconds": 80,
+        "travel_time_text": "1M:20S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 469,
+            "label_pos": {
+              "x": -3.8753814697265625,
+              "y": -7.7713775634765625,
+              "z": 672.3868713378906
+            },
+            "distance": 792.2232030041478,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 706,
+            "label_pos": {
+              "x": -85.86579895019531,
+              "y": 20.168197631835938,
+              "z": 412.94325256347656
+            },
+            "distance": 777.2726395166198,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 710,
+            "label_pos": {
+              "x": 87.95521545410156,
+              "y": 28.446426391601562,
+              "z": 412.16343688964844
+            },
+            "distance": 1222.0685850595619,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 661,
+            "label_pos": {
+              "x": -4.2133941650390625,
+              "y": -58.70811462402344,
+              "z": 300.8057403564453
+            },
+            "distance": 1153.636588946613
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 658,
+            "side": 0,
+            "wall": 42,
+            "label_pos": {
+              "x": -3.0302734375,
+              "y": -57.75590515136719,
+              "z": 360.7853546142578
+            },
+            "distance": 56.521221189256224,
+            "trigger": 0,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ]
+      },
+      {
+        "level_num": 25,
+        "secret": false,
+        "level_name": "Claustrophobia",
+        "level_file": "level50.rdl",
+        "segment_count": 624,
+        "wall_count": 96,
+        "trigger_count": 5,
+        "object_count": 104,
+        "texture_count": 80,
+        "robots": 62,
+        "hostages": 4,
+        "secrets": 0,
+        "matcens": 1,
+        "energy_centers": 4,
+        "mine_volume": 346038690.1884637,
+        "mine_volume_normalized": 75.67156010007594,
+        "mine_volume_text": "76x",
+        "travel_distance": 3656.1067136754805,
+        "travel_time_seconds": 73,
+        "travel_time_text": "1M:13S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 268
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 0",
+            "seg": 264,
+            "side": 1,
+            "wall": 12,
+            "label_pos": {
+              "x": 0.0,
+              "y": 140.0,
+              "z": 115.0
+            },
+            "distance": 204.7926558956455,
+            "trigger": 0,
+            "trigger_type_id": 1,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 259,
+                "side": 1,
+                "wall": 11
+              },
+              {
+                "seg": 260,
+                "side": 1,
+                "wall": 9
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 165,
+            "label_pos": {
+              "x": 0.0,
+              "y": 250.0,
+              "z": -130.0
+            },
+            "distance": 665.6291801344402,
+            "key": "blue"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 91,
+            "label_pos": {
+              "x": -115.0,
+              "y": 250.0,
+              "z": 100.0
+            },
+            "distance": 757.3384354339736,
+            "key": "gold"
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 142,
+            "label_pos": {
+              "x": 115.0,
+              "y": 250.0,
+              "z": 100.0
+            },
+            "distance": 701.4877587282197,
+            "key": "red"
+          },
+          {
+            "index": 5,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 199,
+            "label_pos": {
+              "x": 0.0,
+              "y": 242.5,
+              "z": -570.0
+            },
+            "distance": 1274.6372514769655
+          },
+          {
+            "index": 6,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 254,
+            "side": 4,
+            "wall": 54,
+            "label_pos": {
+              "x": 0.0,
+              "y": 267.07110595703125,
+              "z": -532.9288940429688
+            },
+            "distance": 52.221432006236256,
+            "trigger": 3,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ],
+        "route_note": "no reactor, exit exists",
+        "notes": [
+          "no reactor, exit exists"
+        ]
+      },
+      {
+        "level_num": -1,
+        "secret": true,
+        "level_name": "Dwelling of the Gods",
+        "level_file": "slevel.rdl",
+        "segment_count": 563,
+        "wall_count": 169,
+        "trigger_count": 3,
+        "object_count": 66,
+        "texture_count": 102,
+        "robots": 28,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 2,
+        "energy_centers": 0,
+        "mine_volume": 10025455.721960815,
+        "mine_volume_normalized": 2.1923614228854795,
+        "mine_volume_text": "2.2x",
+        "travel_distance": 485.5460095901032,
+        "travel_time_seconds": 10,
+        "travel_time_text": "0M:10S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "partial",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 140,
+            "side": 3,
+            "wall": 3,
+            "label_pos": {
+              "x": 0.0223846435546875,
+              "y": 67.53329467773438,
+              "z": 366.36561584472656
+            },
+            "distance": 446.45549882573664,
+            "opens": [
+              {
+                "seg": 140,
+                "side": 3,
+                "wall": 3
+              },
+              {
+                "seg": 342,
+                "side": 1,
+                "wall": 48
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 341,
+            "label_pos": {
+              "x": 0.0223388671875,
+              "y": 41.05107116699219,
+              "z": 363.38067626953125
+            },
+            "distance": 39.090510764366556,
+            "key": "red"
+          }
+        ],
+        "route_problem": "route target unreachable"
+      },
+      {
+        "level_num": -2,
+        "secret": true,
+        "level_name": "Core Reactor",
+        "level_file": "slevel2.rdl",
+        "segment_count": 800,
+        "wall_count": 153,
+        "trigger_count": 10,
+        "object_count": 63,
+        "texture_count": 65,
+        "robots": 38,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 2,
+        "energy_centers": 0,
+        "mine_volume": 7146894.860283403,
+        "mine_volume_normalized": 1.5628792365799133,
+        "mine_volume_text": "1.6x",
+        "travel_distance": 1653.1348966948603,
+        "travel_time_seconds": 33,
+        "travel_time_text": "0M:33S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 491,
+            "label_pos": {
+              "x": 0.471435546875,
+              "y": -51.783172607421875,
+              "z": 363.6073455810547
+            },
+            "distance": 415.3741284633002
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 490,
+            "label_pos": {
+              "x": 0.0073394775390625,
+              "y": 74.99850463867188,
+              "z": 363.50054931640625
+            },
+            "distance": 186.74637816725487,
+            "key": "blue"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 167,
+            "label_pos": {
+              "x": 0.0,
+              "y": 25.000076293945312,
+              "z": 189.9999542236328
+            },
+            "distance": 493.33037272289744,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 670,
+            "side": 0,
+            "wall": 126,
+            "label_pos": {
+              "x": 6.103515625e-05,
+              "y": -6.103515625e-05,
+              "z": 507.0008544921875
+            },
+            "distance": 557.6840173414078,
+            "trigger": 0,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ]
+      }
+    ],
+    "target_index": 0
+  }
+]
