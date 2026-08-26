@@ -36,3 +36,20 @@ function Get-AvailableMissionMetadataArchiveSources {
     }
     return $available
 }
+
+function Get-MissionMetadataArchives {
+    param([Parameter(Mandatory = $true)]$Source)
+
+    return @(Get-ChildItem -LiteralPath $Source.Directory -File |
+            Where-Object { $_.Extension.ToLowerInvariant() -in @(".zip", ".7z") } |
+            Sort-Object Name)
+}
+
+function Get-MissingMissionMetadataArchives {
+    param([Parameter(Mandatory = $true)]$Source)
+
+    return @(Get-MissionMetadataArchives -Source $Source | Where-Object {
+            $regressionPath = Join-Path $_.DirectoryName "$($_.BaseName).json"
+            -not (Test-Path -LiteralPath $regressionPath -PathType Leaf)
+        })
+}

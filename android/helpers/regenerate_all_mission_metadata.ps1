@@ -3,7 +3,8 @@
 param(
     [ValidateRange(0.000001, 1.0)][double]$SampleFraction = 1.0,
     [ValidateRange(0, [int]::MaxValue)][int]$SampleSeed = 0,
-    [string]$SampleStatePath
+    [string]$SampleStatePath,
+    [switch]$MissingOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -34,8 +35,22 @@ if (-not (Test-Path -LiteralPath $gradle -PathType Leaf)) {
 if (-not (Test-Path -LiteralPath $batch -PathType Leaf)) {
     throw "Mission metadata batch runner not found: $batch"
 }
-if (-not (Test-Path -LiteralPath $hostBatch -PathType Leaf)) {
+if (-not $MissingOnly -and -not (Test-Path -LiteralPath $hostBatch -PathType Leaf)) {
     throw "Host mission metadata batch runner not found: $hostBatch"
+}
+
+$archiveItemsBySource = @{}
+foreach ($source in $archiveSources) {
+    $archiveItemsBySource[$source.Id] = if ($MissingOnly) {
+        @(Get-MissingMissionMetadataArchives -Source $source)
+    } else {
+        @(Get-MissionMetadataArchives -Source $source)
+    }
+}
+$eligibleArchiveCount = @($archiveItemsBySource.Values | ForEach-Object { $_ }).Count
+if ($MissingOnly -and $eligibleArchiveCount -eq 0) {
+    Write-Status "All mission archives already have regression JSON files" "Green"
+    exit 0
 }
 
 if (Test-Path -LiteralPath $jdkHome -PathType Container) {
@@ -60,29 +75,45 @@ if ($SampleFraction -lt 1.0) {
     if ($SampleSeed -eq 0) { $SampleSeed = Get-Random -Minimum 1 -Maximum ([int]::MaxValue) }
     $zipItemCount = 0
     foreach ($source in $archiveSources) {
-        $zipItems = @(Get-ChildItem -LiteralPath $source.Directory -File | Where-Object Extension -in '.zip', '.7z' | Sort-Object Name)
+        $zipItems = @($archiveItemsBySource[$source.Id])
         $selectedArchivesBySource[$source.Id] = @(Select-RuntimeHashRingFractionItems -Items $zipItems -Fraction $SampleFraction `
                 -Seed ($SampleSeed -bxor 401) -StatePath $SampleStatePath `
                 -RingName "regenerate:metadata:archives:$($source.Id)" | Select-Object -ExpandProperty Name)
         $zipItemCount += $zipItems.Count
     }
-    $cdManifest = Join-Path $zipDir 'cd_level_metadata_sources.jsonc'
-    $cdItems = @(Resolve-CdLevelMetadataSources -RepoRoot $repoRoot -ManifestPath $cdManifest -OutputDir $zipDir |
-            ForEach-Object { [pscustomobject]@{ Name = $_.Id } })
-    $selectedCdSourceIds = @(Select-RuntimeHashRingFractionItems -Items $cdItems -Fraction $SampleFraction `
-            -Seed ($SampleSeed -bxor 402) -StatePath $SampleStatePath `
-            -RingName 'regenerate:metadata:cd-sources' | Select-Object -ExpandProperty Name)
+    $cdItems = @()
+    if (-not $MissingOnly) {
+        $cdManifest = Join-Path $zipDir 'cd_level_metadata_sources.jsonc'
+        $cdItems = @(Resolve-CdLevelMetadataSources -RepoRoot $repoRoot -ManifestPath $cdManifest -OutputDir $zipDir |
+                ForEach-Object { [pscustomobject]@{ Name = $_.Id } })
+        $selectedCdSourceIds = @(Select-RuntimeHashRingFractionItems -Items $cdItems -Fraction $SampleFraction `
+                -Seed ($SampleSeed -bxor 402) -StatePath $SampleStatePath `
+                -RingName 'regenerate:metadata:cd-sources' | Select-Object -ExpandProperty Name)
+    }
     $selectedZipCount = @($selectedArchivesBySource.Values | ForEach-Object { $_ }).Count
-    Write-Status ("Metadata sample: archives {0}/{1}, CD sources {2}/{3} ({4:P1}), seed {5}" -f
+    $sampleDescription = if ($MissingOnly) {
+        "missing archives {0}/{1} ({2:P1}), seed {3}" -f
+        $selectedZipCount, $zipItemCount, $SampleFraction, $SampleSeed
+    } else {
+        "archives {0}/{1}, CD sources {2}/{3} ({4:P1}), seed {5}" -f
         $selectedZipCount, $zipItemCount, $selectedCdSourceIds.Count, $cdItems.Count,
-        $SampleFraction, $SampleSeed)
+        $SampleFraction, $SampleSeed
+    }
+    Write-Status "Metadata sample: $sampleDescription"
 }
 
 $sourceIndex = 0
 foreach ($source in $archiveSources) {
-    $patterns = if ($SampleFraction -lt 1.0) { @($selectedArchivesBySource[$source.Id]) } else { @("*.zip", "*.7z") }
+    $patterns = if ($SampleFraction -lt 1.0) {
+        @($selectedArchivesBySource[$source.Id])
+    } elseif ($MissingOnly) {
+        @($archiveItemsBySource[$source.Id] | Select-Object -ExpandProperty Name)
+    } else {
+        @("*.zip", "*.7z")
+    }
     if ($patterns.Count -eq 0) {
-        Write-Status "Skipping empty metadata sample for $($source.Directory)" "Yellow"
+        $reason = if ($MissingOnly) { "no missing regression JSON files" } else { "empty metadata sample" }
+        Write-Status "Skipping $($source.Directory): $reason" "Yellow"
         continue
     }
     $batchArgs = @{
@@ -103,14 +134,16 @@ foreach ($source in $archiveSources) {
     $sourceIndex++
 }
 
-Write-Status "Regenerating CD mission metadata JSON"
-$hostArgs = @{ CdSourcesOnly = $true }
-if ($null -ne $selectedCdSourceIds) { $hostArgs.CdSourceIds = $selectedCdSourceIds }
-& $hostBatch @hostArgs
-$cdBatchExit = $LASTEXITCODE
-if ($cdBatchExit -ne 0) {
-    Write-Status "CD mission metadata regeneration failed with exit code $cdBatchExit" "Red"
-    exit $cdBatchExit
+if (-not $MissingOnly) {
+    Write-Status "Regenerating CD mission metadata JSON"
+    $hostArgs = @{ CdSourcesOnly = $true }
+    if ($null -ne $selectedCdSourceIds) { $hostArgs.CdSourceIds = $selectedCdSourceIds }
+    & $hostBatch @hostArgs
+    $cdBatchExit = $LASTEXITCODE
+    if ($cdBatchExit -ne 0) {
+        Write-Status "CD mission metadata regeneration failed with exit code $cdBatchExit" "Red"
+        exit $cdBatchExit
+    }
 }
 
 Write-Status "Mission metadata regeneration complete" "Green"

@@ -7,6 +7,21 @@
 static uint8_t g_cached_thumbnail_rgb6[ANDROID_SAVE_META_THUMB_RGB6_BYTES];
 static int g_cached_thumbnail_valid = 0;
 
+void android_save_meta_format_description(char *out, size_t out_size,
+                                          const char *description,
+                                          int save_kind, int level_num)
+{
+	if (!out || !out_size)
+		return;
+	memset(out, 0, out_size);
+	if (!description)
+		return;
+	if (save_kind == ANDROID_SAVE_META_KIND_MANUAL)
+		snprintf(out, out_size, "%s", description);
+	else
+		snprintf(out, out_size, "%s L%d", description, level_num);
+}
+
 void android_save_meta_clear_cached_thumbnail(void)
 {
 	g_cached_thumbnail_valid = 0;

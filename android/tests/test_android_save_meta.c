@@ -50,6 +50,7 @@ int main(void)
 	android_save_meta_write_params params;
 	uint8_t thumb_a[ANDROID_SAVE_META_THUMB_RGB6_BYTES];
 	uint8_t thumb_b[ANDROID_SAVE_META_THUMB_RGB6_BYTES];
+	char description[ANDROID_SAVE_META_DESC_LEN + 1];
 	const char *paths[7];
 	FILE *corrupt;
 	int failures = 0;
@@ -58,6 +59,21 @@ int main(void)
 	memset(thumb_b, 19, sizeof(thumb_b));
 	if (ANDROID_SAVE_META_THUMB_W != 200 || ANDROID_SAVE_META_THUMB_H != 100)
 		failures += report_failure("launcher metadata thumbnail is not 200x100");
+	android_save_meta_format_description(
+	    description, sizeof(description), ANDROID_SAVE_DESC_AUTO_PERIODIC,
+	    ANDROID_SAVE_META_KIND_AUTO_PERIODIC, 11);
+	failures += expect_string("periodic autosave description",
+	                          "[auto] 5min L11", description);
+	android_save_meta_format_description(
+	    description, sizeof(description), ANDROID_SAVE_DESC_AUTO_ABORT,
+	    ANDROID_SAVE_META_KIND_AUTO_ABORT, 999);
+	failures += expect_string("long autosave description",
+	                          "[auto] abort L999", description);
+	android_save_meta_format_description(description, sizeof(description),
+	                                     "[quick] level 11",
+	                                     ANDROID_SAVE_META_KIND_MANUAL, 11);
+	failures += expect_string("manual save description", "[quick] level 11",
+	                          description);
 
 	memset(&params, 0, sizeof(params));
 	params.game_id = ANDROID_SAVE_META_GAME_D1;

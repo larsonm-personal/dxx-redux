@@ -1793,7 +1793,7 @@ class TouchOverlayView
         }
 
         private fun drawPausedIndicator(canvas: Canvas) {
-            val bannerW = width * 0.44f
+            val bannerW = width * PauseOverlayStyle.WIDTH_RATIO
             val bannerH = height * 0.15f
             val left = (width - bannerW) / 2f
             val top = height * 0.08f

@@ -1,6 +1,7 @@
 #ifndef ANDROID_SAVE_META_H
 #define ANDROID_SAVE_META_H
 
+#include <stddef.h>
 #include <stdint.h>
 #include <physfs.h>
 
@@ -117,6 +118,9 @@ typedef struct android_save_meta_candidate {
 	android_save_meta_disk meta;
 } android_save_meta_candidate;
 
+void android_save_meta_format_description(char *out, size_t out_size,
+                                          const char *description,
+                                          int save_kind, int level_num);
 int android_save_meta_build(android_save_meta_disk *out,
                             const android_save_meta_write_params *params);
 int android_save_meta_is_valid(const android_save_meta_disk *meta);

@@ -5,6 +5,7 @@ internal object PauseOverlayStyle {
     val BORDER_COLOR = 0xEEFFFFFF.toInt()
     val TEXT_COLOR = 0xFFFFFFFF.toInt()
     val SECONDARY_TEXT_COLOR = 0xDDFFFFFF.toInt()
+    const val WIDTH_RATIO = 0.44f
     const val CORNER_RATIO = 0.2f
     const val BORDER_RATIO = 0.025f
 

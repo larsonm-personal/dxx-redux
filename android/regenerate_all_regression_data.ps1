@@ -12,7 +12,8 @@
   report used by later full and partial runs for remaining-time estimates.
 
 .PARAMETER Category
-  Menu, All, Cd, Fingerprints, or Metadata. Menu is the interactive default.
+  Menu, All, Cd, Fingerprints, Metadata, or MissingMetadata. Menu is the
+  interactive default.
 
 .PARAMETER ReportDir
   Directory for durable run artifacts and full-run timing reports.
@@ -29,12 +30,13 @@
   .\android\regenerate_all_regression_data.ps1
   .\android\regenerate_all_regression_data.ps1 -Category All
   .\android\regenerate_all_regression_data.ps1 -Category Metadata
+  .\android\regenerate_all_regression_data.ps1 -Category MissingMetadata
   .\android\regenerate_all_regression_data.ps1 -Target45Minutes
 #>
 
 [CmdletBinding()]
 param(
-    [ValidateSet('Menu', 'All', 'Cd', 'Fingerprints', 'Metadata')]
+    [ValidateSet('Menu', 'All', 'Cd', 'Fingerprints', 'Metadata', 'MissingMetadata')]
     [string]$Category = 'Menu',
     [string]$ReportDir,
     [switch]$Target45Minutes,
@@ -51,7 +53,7 @@ $script:HelpersDir = Join-Path $PSScriptRoot 'helpers'
 function Get-RegressionDataStages {
     param(
         [string]$RepoRoot,
-        [ValidateSet('All', 'Cd', 'Fingerprints', 'Metadata')]
+        [ValidateSet('All', 'Cd', 'Fingerprints', 'Metadata', 'MissingMetadata')]
         [string]$Category = 'All'
     )
 
@@ -84,6 +86,13 @@ function Get-RegressionDataStages {
     if ($Category -eq 'All') {
         return $stages
     }
+    if ($Category -eq 'MissingMetadata') {
+        $stage = @($stages | Where-Object { $_.Key -eq 'Metadata' })[0]
+        $stage.Name = 'Missing mission archive metadata'
+        $stage.Description = 'Mission archives without checked-in level metadata JSON'
+        $stage.Arguments = @('-MissingOnly')
+        return @($stage)
+    }
     return @($stages | Where-Object { $_.Key -eq $Category })
 }
 
@@ -94,6 +103,7 @@ function Select-RegressionDataCategory {
     Write-Host '  2. CD extraction, Android import, and launch regressions'
     Write-Host '  3. Disc and music fingerprints, hashes, tags, and AcoustID data'
     Write-Host '  4. Mission level metadata'
+    Write-Host '  5. Missing mission archive metadata only'
     Write-Host '  T. Resumable hash-ring sample targeting 45 minutes'
     Write-Host '  Q. Cancel'
     while ($true) {
@@ -106,11 +116,14 @@ function Select-RegressionDataCategory {
             'fingerprints' { return 'Fingerprints' }
             '4' { return 'Metadata' }
             'metadata' { return 'Metadata' }
+            '5' { return 'MissingMetadata' }
+            'missing' { return 'MissingMetadata' }
+            'missingmetadata' { return 'MissingMetadata' }
             't' { return 'Target45' }
             'target' { return 'Target45' }
             'q' { return $null }
             'quit' { return $null }
-            default { Write-Host 'Enter 1, 2, 3, 4, T, or Q' -ForegroundColor Yellow }
+            default { Write-Host 'Enter 1, 2, 3, 4, 5, T, or Q' -ForegroundColor Yellow }
         }
     }
 }

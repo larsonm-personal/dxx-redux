@@ -117,7 +117,12 @@ internal fun launcherPreparationLabel(state: LauncherPreparationState): String =
     }
 
 internal fun launcherPreparationShowsDialog(state: LauncherPreparationState): Boolean =
-    state.phase == LauncherPreparationPhase.PAUSING_METADATA
+    when (state.phase) {
+        LauncherPreparationPhase.PREPARING,
+        LauncherPreparationPhase.PAUSING_METADATA,
+        LauncherPreparationPhase.STARTING_GAME,
+        -> true
+    }
 
 internal fun formatAboutBuildLine(
     buildType: String,
@@ -439,7 +444,7 @@ class SetupActivity : ComponentActivity() {
                 )
                 withContext(Dispatchers.Main.immediate) {
                     if (!isFinishing && !isDestroyed) {
-                        finishLaunchPreparation("handoff_complete")
+                        updateLaunchPreparation(LauncherPreparationPhase.STARTING_GAME)
                         try {
                             startActivity(intent)
                         } catch (e: Exception) {
@@ -2649,6 +2654,9 @@ class SetupActivity : ComponentActivity() {
     }
 
     override fun onPause() {
+        if (launchPreparation.value?.phase == LauncherPreparationPhase.STARTING_GAME) {
+            finishLaunchPreparation("activity_started")
+        }
         routeMetadataCoordinator.stop("launcher paused")
         super.onPause()
     }

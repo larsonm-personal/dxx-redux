@@ -30,13 +30,13 @@ class ResumeSavePanelTest {
                 preparing.copy(game = "d1", phase = LauncherPreparationPhase.STARTING_GAME),
             ),
         )
-        assertFalse(launcherPreparationShowsDialog(preparing))
+        assertTrue(launcherPreparationShowsDialog(preparing))
         assertTrue(
             launcherPreparationShowsDialog(
                 preparing.copy(phase = LauncherPreparationPhase.PAUSING_METADATA),
             ),
         )
-        assertFalse(
+        assertTrue(
             launcherPreparationShowsDialog(
                 preparing.copy(phase = LauncherPreparationPhase.STARTING_GAME),
             ),

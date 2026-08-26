@@ -38,6 +38,11 @@ Assert-True ((Get-RegressionDataStages -RepoRoot $repoRoot -Category Fingerprint
     'Fingerprint-only selection should select the fingerprint stage'
 Assert-True ((Get-RegressionDataStages -RepoRoot $repoRoot -Category Metadata)[0].Key -eq 'Metadata') `
     'Metadata-only selection should select the metadata stage'
+$missingMetadataStage = @(Get-RegressionDataStages -RepoRoot $repoRoot -Category MissingMetadata)
+Assert-True ($missingMetadataStage.Count -eq 1 -and $missingMetadataStage[0].Key -eq 'Metadata') `
+    'Missing-metadata selection should contain only the metadata stage'
+Assert-True (($missingMetadataStage[0].Arguments -join ',') -eq '-MissingOnly') `
+    'Missing-metadata selection should request missing archive JSON only'
 
 $sampleStages = @(Get-RegressionDataStages -RepoRoot $repoRoot)
 $sampleEstimates = @(600, 1200, 1800)

@@ -12,9 +12,9 @@ class RouteMetadataSchedulingTest {
     val temporaryFolder = TemporaryFolder()
 
     @Test
-    fun explicitGameLaunchUsesOneFastMetadataPollInterval() {
+    fun explicitGameLaunchDoesNotUseMetadataPollAsArtificialGrace() {
         assertEquals(100L, LEVEL_METADATA_POLL_MS)
-        assertEquals(LEVEL_METADATA_POLL_MS, ROUTE_METADATA_GAME_LAUNCH_GRACE_MS)
+        assertEquals(0L, ROUTE_METADATA_GAME_LAUNCH_GRACE_MS)
     }
 
     @Test

@@ -2473,7 +2473,21 @@ class MainActivity :
         )
 
         val dialog = Dialog(this)
-        dialog.setContentView(card)
+        val dialogRoot =
+            FrameLayout(this).apply {
+                isClickable = true
+                setOnClickListener { dialog.dismiss() }
+            }
+        card.isClickable = true
+        dialogRoot.addView(
+            card,
+            FrameLayout.LayoutParams(
+                (resources.displayMetrics.widthPixels * PauseOverlayStyle.WIDTH_RATIO).roundToInt(),
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER,
+            ),
+        )
+        dialog.setContentView(dialogRoot)
         dialog.setCanceledOnTouchOutside(true)
         no.setOnClickListener { dialog.dismiss() }
         yes.setOnClickListener {
@@ -2489,10 +2503,20 @@ class MainActivity :
         dialog.window?.apply {
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            WindowCompat.setDecorFitsSystemWindows(this, false)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                attributes.layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            }
             setLayout(
-                (resources.displayMetrics.widthPixels * 0.44f).roundToInt(),
-                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.MATCH_PARENT,
             )
+            WindowInsetsControllerCompat(this, decorView).apply {
+                hide(WindowInsetsCompat.Type.systemBars())
+                systemBarsBehavior =
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
         }
         no.requestFocus()
     }

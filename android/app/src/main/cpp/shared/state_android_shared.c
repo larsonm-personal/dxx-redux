@@ -793,9 +793,9 @@ int state_android_save_to_path(const char *filename, const char *desc,
 	if (!filename || !filename[0] || !desc)
 		return 0;
 	memset(save_filename, 0, sizeof(save_filename));
-	memset(save_desc, 0, sizeof(save_desc));
 	strncpy(save_filename, filename, PATH_MAX - 1);
-	strncpy(save_desc, desc, STATE_ANDROID_DESC_LENGTH);
+	android_save_meta_format_description(save_desc, sizeof(save_desc), desc,
+	                                     save_kind, Current_level_num);
 	android_save_meta_clear_cached_thumbnail();
 	g_android_save_meta_kind = save_kind;
 	g_android_save_blank_thumbnail = blank_thumbnail ? 1 : 0;

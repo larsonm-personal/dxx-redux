@@ -18,7 +18,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 
-internal const val ROUTE_METADATA_GAME_LAUNCH_GRACE_MS = 100L
+internal const val ROUTE_METADATA_GAME_LAUNCH_GRACE_MS = 0L
 
 internal data class RouteMetadataPrecomputeJob(
     val target: LevelMetadataTarget,
@@ -610,10 +610,8 @@ internal class RouteMetadataPrecomputeCoordinator(
         val startedAt = SystemClock.elapsedRealtime()
         val previous = cancelRunner()
         val workerWasActive = LevelMetadataAnalyzer.hasWorkerProcessForGameLaunch(appContext)
-        val graceApplied = previous != null && workerWasActive
-        // Ordinary analyzer preemption keeps its two-second checkpoint grace.
-        // An explicit game launch waits only one poll before forcing the isolated worker down.
-        if (graceApplied) delay(ROUTE_METADATA_GAME_LAUNCH_GRACE_MS)
+        // Explicit game launches prioritize immediate engine startup
+        // Completed metadata checkpoints are already published atomically, so no grace wait is needed
         val terminatedProcesses = LevelMetadataAnalyzer.terminateWorkerProcessesForGameLaunch(appContext)
         val cleanupPending = previous?.isCompleted == false
         monitor.launchHandoff(
@@ -621,7 +619,7 @@ internal class RouteMetadataPrecomputeCoordinator(
             SystemClock.elapsedRealtime() - startedAt,
             terminatedProcesses,
             workerWasActive,
-            if (graceApplied) ROUTE_METADATA_GAME_LAUNCH_GRACE_MS else 0L,
+            ROUTE_METADATA_GAME_LAUNCH_GRACE_MS,
             cleanupPending,
         )
         return true

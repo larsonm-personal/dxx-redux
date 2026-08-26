@@ -11,6 +11,7 @@ class QuickSaveLoadActionTest {
         assertEquals("load quick save?", PauseOverlayStyle.QUICK_LOAD_QUESTION)
         assertEquals("yes", PauseOverlayStyle.QUICK_LOAD_YES)
         assertEquals("no", PauseOverlayStyle.QUICK_LOAD_NO)
+        assertEquals(0.44f, PauseOverlayStyle.WIDTH_RATIO)
     }
 
     @Test
