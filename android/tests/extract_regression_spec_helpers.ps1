@@ -1,4 +1,16 @@
 . (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers\jsonc.ps1')
+. (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers\normalized_json_text.ps1')
+
+function Get-OrdinalSortedStrings($values) {
+    $result = [string[]]@($values | Where-Object { $null -ne $_ } | ForEach-Object { [string]$_ })
+    [Array]::Sort($result, [StringComparer]::Ordinal)
+    return $result
+}
+
+function Get-OrdinalSortedUniqueStrings($values) {
+    $seen = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+    return @(Get-OrdinalSortedStrings $values | Where-Object { $seen.Add($_) })
+}
 
 function Test-JsonProperty($value, $name) {
     if ($null -eq $value) {
@@ -124,7 +136,9 @@ function ConvertTo-CanonicalSourceFiles($sourceFiles) {
             if (Test-JsonProperty $_ 'sha256') {
                 $entry.sha256 = $_.sha256
             }
-            foreach ($property in (Get-JsonProperties $_ | Sort-Object Name)) {
+            $properties = @(Get-JsonProperties $_)
+            foreach ($propertyName in (Get-OrdinalSortedStrings @($properties.Name))) {
+                $property = $properties | Where-Object Name -CEQ $propertyName | Select-Object -First 1
                 if ($property.Name -ne 'name' -and $property.Name -ne 'sha256') {
                     $entry[$property.Name] = $property.Value
                 }
@@ -153,7 +167,9 @@ function ConvertTo-CanonicalLastTestResult($result) {
             $handled[$name] = $true
         }
     }
-    foreach ($property in (Get-JsonProperties $result | Sort-Object Name)) {
+    $properties = @(Get-JsonProperties $result)
+    foreach ($propertyName in (Get-OrdinalSortedStrings @($properties.Name))) {
+        $property = $properties | Where-Object Name -CEQ $propertyName | Select-Object -First 1
         if (-not $handled.ContainsKey($property.Name)) {
             $canonical[$property.Name] = $property.Value
         }
@@ -187,6 +203,9 @@ function ConvertTo-CanonicalRegressionSpec($spec) {
         if ($name -eq 'source_files' -and (Test-JsonProperty $spec $name)) {
             $canonical[$name] = ConvertTo-CanonicalSourceFiles (Get-JsonPropertyValue $spec $name)
             $handled[$name] = $true
+        } elseif ($name -eq 'expected_files' -and (Test-JsonProperty $spec $name)) {
+            $canonical[$name] = @(Get-OrdinalSortedUniqueStrings (Get-JsonPropertyValue $spec $name))
+            $handled[$name] = $true
         } elseif ($name -eq 'last_test_result' -and (Test-JsonProperty $spec $name)) {
             $canonical[$name] = ConvertTo-CanonicalLastTestResult (Get-JsonPropertyValue $spec $name)
             $handled[$name] = $true
@@ -195,7 +214,9 @@ function ConvertTo-CanonicalRegressionSpec($spec) {
         }
     }
 
-    foreach ($property in (Get-JsonProperties $spec | Sort-Object Name)) {
+    $properties = @(Get-JsonProperties $spec)
+    foreach ($propertyName in (Get-OrdinalSortedStrings @($properties.Name))) {
+        $property = $properties | Where-Object Name -CEQ $propertyName | Select-Object -First 1
         if (-not $handled.ContainsKey($property.Name)) {
             $canonical[$property.Name] = $property.Value
         }
@@ -234,20 +255,19 @@ function Write-CanonicalRegressionSpec($path, $spec, $sourceName = $null, $gener
         $sourceName = [System.IO.Path]::GetFileName((Split-Path $path -Parent))
     }
     $canonical = ConvertTo-CanonicalRegressionSpec $spec
-    $json = ($canonical | ConvertTo-Json -Depth 10) -replace "`r`n", "`n"
+    $json = (ConvertTo-NormalizedJsonText -Text ($canonical | ConvertTo-Json -Depth 10)).TrimEnd()
+    $semanticMatch = $false
     if (Test-Path -LiteralPath $path -PathType Leaf) {
         try {
             $existingCanonical = ConvertTo-CanonicalRegressionSpec (Read-JsoncFile $path)
-            $existingJson = ($existingCanonical | ConvertTo-Json -Depth 10) -replace "`r`n", "`n"
-            if ($existingJson -ceq $json -and $header.SourceName -ceq $sourceName) {
-                return
-            }
+            $existingJson = (ConvertTo-NormalizedJsonText -Text ($existingCanonical | ConvertTo-Json -Depth 10)).TrimEnd()
+            $semanticMatch = $existingJson -ceq $json -and $header.SourceName -ceq $sourceName
         } catch {}
     }
     # The header records when the regression oracle was generated. Callers
     # that update test evidence use the shared writer too, but those updates
     # must not churn the generation timestamp.
-    if (-not $generated) {
+    if ($semanticMatch -or -not $generated) {
         $generated = $header.Generated
     }
     if (-not $generated) {
@@ -255,6 +275,10 @@ function Write-CanonicalRegressionSpec($path, $spec, $sourceName = $null, $gener
     }
 
     $content = "// Auto-generated regression spec for: $sourceName`n// Generated: $generated`n$json`n"
+    if ((Test-Path -LiteralPath $path -PathType Leaf) -and
+        [System.IO.File]::ReadAllText($path) -ceq $content) {
+        return
+    }
     [System.IO.File]::WriteAllText($path, $content, [System.Text.UTF8Encoding]::new($false))
 }
 

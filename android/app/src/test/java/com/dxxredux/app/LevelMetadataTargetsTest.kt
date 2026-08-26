@@ -253,6 +253,7 @@ class LevelMetadataTargetsTest {
 
         assertEquals(listOf("Descent Maximum (fixed)", "Descent Max Anarchy (fix)"), targets.map { it.displayName })
         assertEquals(listOf("max_f", "maxlnk_f"), targets.map { it.missionName })
+        assertEquals(listOf("max_f.mn2", "maxlnk_f.mn2"), targets.map { it.missionPath })
         assertEquals(
             listOf("Descent Maximum (fixed)", "Descent Max Anarchy (fix)"),
             targets.map { it.missionDisplayName },

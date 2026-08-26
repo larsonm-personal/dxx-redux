@@ -51,6 +51,7 @@ internal data class LevelMetadataTarget(
     val missionName: String? = null,
     val missionDisplayName: String? = null,
     val missionFilename: String? = null,
+    val missionPath: String? = null,
     val missionType: String? = null,
     val levelFile: String? = null,
     val levelNum: Int = 1,
@@ -702,6 +703,7 @@ internal object LevelMetadataTargets {
                     .substringBeforeLast('.'),
             missionDisplayName = mission.displayName,
             missionFilename = mission.path.substringAfterLast('/').substringAfterLast('\\'),
+            missionPath = mission.path,
             missionType = mission.type,
             hogFiles =
                 missionSet.constituents
@@ -879,6 +881,7 @@ internal object LevelMetadataTargets {
             missionName = constituent.name.substringBeforeLast('.'),
             missionDisplayName = mission.displayName,
             missionFilename = sourceLayout.relativeToRoot(extracted.relativePath),
+            missionPath = constituent.path,
             missionType = mission.type,
             hogFiles = listOf(sourceLayout.relativeToRoot(hog.relativePath)),
             normalLevelFiles = mission.levelNames,
@@ -914,6 +917,7 @@ internal object LevelMetadataTargets {
             missionName = constituent.name.substringBeforeLast('.'),
             missionDisplayName = mission.displayName,
             missionFilename = sourceLayout.relativeToRoot(descriptor.relativePath),
+            missionPath = descriptor.relativePath,
             missionType = mission.type,
             hogFiles = listOf(sourceLayout.relativeToRoot(extracted.relativePath)),
             normalLevelFiles = mission.levelNames,

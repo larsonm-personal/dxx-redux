@@ -258,8 +258,8 @@ foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
     $extractScriptIdentity = Get-ExtractionPathIdentity `
         -Path (Join-Path $gameDataDir 'extract_all_cds.ps1') -Name 'extract_all_cds.ps1'
     if (-not (Test-ExtractionCompletionSources -Directory $dataTracksDir `
-            -ExpectedPolicy 'extract-all-cds-v1' -ExpectedSources $sourceIdentities `
-            -RequiredTools @($extractScriptIdentity))) {
+                -ExpectedPolicy 'extract-all-cds-v1' -ExpectedSources $sourceIdentities `
+                -RequiredTools @($extractScriptIdentity))) {
         throw "$($dir.FullName): data_tracks cache does not match the current source, extraction policy, or outputs"
     }
 
@@ -290,17 +290,17 @@ foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
     # Get extracted files list
     $extractedFiles = @()
     if (Test-Path $dataTracksDir) {
-        $extractedFiles = @(Get-ChildItem $dataTracksDir -Recurse -File |
-            Where-Object { $_.Extension -match '\.(hog|pig|ham|s11|s22|mvl|dem|msn|mn2|sow|gog|inst)$' } |
-            Select-Object -ExpandProperty Name | Sort-Object -Unique)
+        $extractedFiles = @(Get-OrdinalSortedUniqueStrings @(Get-ChildItem $dataTracksDir -Recurse -File |
+                    Where-Object { $_.Extension -match '\.(hog|pig|ham|s11|s22|mvl|dem|msn|mn2|sow|gog|inst)$' } |
+                    Select-Object -ExpandProperty Name))
     }
 
     # Classify
     $classification = Get-DiscClassification $discId $game $extractedFiles
     $resolvedGame = Resolve-GameForSpec $game $classification
-    $expectedFiles = @($classification.min_files | Sort-Object)
+    $expectedFiles = @(Get-OrdinalSortedUniqueStrings @($classification.min_files))
     if ($expectedFiles.Count -eq 0 -and $extractedFiles.Count -gt 0) {
-        $expectedFiles = @($extractedFiles | Sort-Object)
+        $expectedFiles = @(Get-OrdinalSortedUniqueStrings $extractedFiles)
     }
 
     # Build spec
@@ -387,10 +387,10 @@ if (Test-Path -LiteralPath $combinedLaunchDir) {
                 throw "$($helperFile.FullName): mission file is not in a component expected_files oracle: $missionFile"
             }
         }
-        $combinedExpectedFiles = @($expectedFiles | ForEach-Object {
-                $name = $_.ToLowerInvariant()
-                if ($missionFiles -contains $name) { "missions/$name" } else { $name }
-            } | Sort-Object -Unique)
+        $combinedExpectedFiles = @(Get-OrdinalSortedUniqueStrings @($expectedFiles | ForEach-Object {
+                    $name = $_.ToLowerInvariant()
+                    if ($missionFiles -contains $name) { "missions/$name" } else { $name }
+                }))
 
         $lastTestResult = Get-ExistingLastTestResult $specPath
         $spec = [ordered]@{
@@ -424,17 +424,21 @@ Write-Host "=== GOG installers ===" -ForegroundColor Cyan
 
 $gogInstallers = @(
     @{ file = 'setup_descent_1.4a_(16596).exe'; game = 'd1'; type = 'd1_full';
-       mission = 'Descent: First Strike'; level1 = 'Lunar Outpost';
-       min_files = @('DESCENT.HOG', 'DESCENT.PIG') },
+        mission = 'Descent: First Strike'; level1 = 'Lunar Outpost';
+        min_files = @('DESCENT.HOG', 'DESCENT.PIG')
+    },
     @{ file = 'setup_descent_2_1.1_(16596).exe'; game = 'd2'; type = 'd2_full';
-       mission = 'Descent 2: Counterstrike!'; level1 = 'Ahayweh Gate';
-       min_files = @('DESCENT2.HOG', 'DESCENT2.HAM', 'DESCENT2.S11', 'DESCENT2.S22', 'GROUPA.PIG') },
+        mission = 'Descent 2: Counterstrike!'; level1 = 'Ahayweh Gate';
+        min_files = @('DESCENT2.HOG', 'DESCENT2.HAM', 'DESCENT2.S11', 'DESCENT2.S22', 'GROUPA.PIG')
+    },
     @{ file = 'descent_enUS_1_0_35122.pkg'; game = 'd1'; type = 'd1_full';
-       mission = 'Descent: First Strike'; level1 = 'Lunar Outpost';
-       min_files = @('DESCENT.HOG', 'DESCENT.PIG') },
+        mission = 'Descent: First Strike'; level1 = 'Lunar Outpost';
+        min_files = @('DESCENT.HOG', 'DESCENT.PIG')
+    },
     @{ file = 'descent_2_enUS_1_0_51877.pkg'; game = 'd2'; type = 'd2_full';
-       mission = 'Descent 2: Counterstrike!'; level1 = 'Ahayweh Gate';
-       min_files = @('DESCENT2.HOG', 'DESCENT2.HAM', 'DESCENT2.S11', 'DESCENT2.S22', 'GROUPA.PIG') }
+        mission = 'Descent 2: Counterstrike!'; level1 = 'Ahayweh Gate';
+        min_files = @('DESCENT2.HOG', 'DESCENT2.HAM', 'DESCENT2.S11', 'DESCENT2.S22', 'GROUPA.PIG')
+    }
 )
 
 foreach ($gog in $gogInstallers) {
@@ -462,16 +466,16 @@ foreach ($gog in $gogInstallers) {
     $extractScriptIdentity = Get-ExtractionPathIdentity `
         -Path (Join-Path $gameDataDir 'extract_all_gog.ps1') -Name 'extract_all_gog.ps1'
     if (-not (Test-ExtractionCompletionSources -Directory $extractedDir `
-            -ExpectedPolicy 'extract-all-gog-v1' -ExpectedSources @($installerIdentity) `
-            -RequiredTools @($extractScriptIdentity))) {
+                -ExpectedPolicy 'extract-all-gog-v1' -ExpectedSources @($installerIdentity) `
+                -RequiredTools @($extractScriptIdentity))) {
         throw "${installerPath}: extracted cache does not match the current source, extraction policy, or outputs"
     }
     $extractedFiles = @()
     $extractedCount = 0
     if (Test-Path -LiteralPath $extractedDir) {
-        $extractedFiles = @(Get-ChildItem $extractedDir -Recurse -File |
-            Where-Object Name -ne '.extraction-complete.json' |
-            Select-Object -ExpandProperty Name | Sort-Object)
+        $extractedFiles = @(Get-OrdinalSortedStrings @(Get-ChildItem $extractedDir -Recurse -File |
+                    Where-Object Name -ne '.extraction-complete.json' |
+                    Select-Object -ExpandProperty Name))
         $extractedCount = $extractedFiles.Count
     }
 
@@ -491,7 +495,7 @@ foreach ($gog in $gogInstallers) {
         classification = $gog.type
         expected_mission = $gog.mission
         expected_level1 = $gog.level1
-        expected_files = ($gog.min_files | Sort-Object)
+        expected_files = @(Get-OrdinalSortedUniqueStrings @($gog.min_files))
         audio_tracks = $audioTracks
         total_extracted = $extractedCount
     }

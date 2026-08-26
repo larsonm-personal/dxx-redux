@@ -39,4 +39,14 @@ if ($secondPass -cne $androidNormalized) {
     throw "Mission metadata normalization is not idempotent"
 }
 
+$variantInput = '[{"mission_filename":"ULTERIOR.MN2","mission_path":"REBIRTH/ULTERIOR.MN2","target_index":9},' +
+'{"mission_filename":"ULTERIOR.MN2","mission_path":"D2X/ULTERIOR.MN2","target_index":8},' +
+'{"mission_filename":"ULTERIOR.MN2","mission_path":"DOS/ULTERIOR.MN2","target_index":7}]'
+$variants = Invoke-MetadataNormalizer -Text $variantInput | ConvertFrom-Json
+if ((@($variants.mission_path) -join ',') -cne `
+        'D2X/ULTERIOR.MN2,DOS/ULTERIOR.MN2,REBIRTH/ULTERIOR.MN2' -or
+    (@($variants.target_index) -join ',') -cne '0,1,2') {
+    throw "Mission variants are not canonically ordered by archive-relative path"
+}
+
 Write-Host "PASS: Android and host mission metadata numeric forms converge to byte-stable JSON"

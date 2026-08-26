@@ -311,6 +311,7 @@ internal class MissionZipExtractionStore(
                     .substringBeforeLast('.'),
             missionDisplayName = mission.displayName,
             missionFilename = sourceLayout.relativeToRoot(stagedRelativePath(scan, mission.path)),
+            missionPath = mission.path,
             missionType = mission.type,
             hogFiles = hogFiles.map(sourceLayout::relativeToRoot),
             normalLevelFiles = mission.levelNames,

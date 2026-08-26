@@ -39,6 +39,10 @@ try {
         -Destination (Join-Path $helpersDir 'jsonc.ps1')
     Copy-Item -LiteralPath (Join-Path $repoRoot 'android\helpers\bounded_extraction.ps1') `
         -Destination (Join-Path $helpersDir 'bounded_extraction.ps1')
+    Copy-Item -LiteralPath (Join-Path $repoRoot 'android\helpers\normalized_json_text.ps1') `
+        -Destination (Join-Path $helpersDir 'normalized_json_text.ps1')
+    Copy-Item -LiteralPath (Join-Path $repoRoot 'android\helpers\normalize_json.py') `
+        -Destination (Join-Path $helpersDir 'normalize_json.py')
     Copy-Item -LiteralPath (Join-Path $repoRoot 'game_data\extract_all_cds.ps1') `
         -Destination (Join-Path $gameDataDir 'extract_all_cds.ps1')
     [System.IO.File]::WriteAllText(
@@ -95,6 +99,13 @@ try {
         'fixture',
         [System.Text.UTF8Encoding]::new($false)
     )
+    foreach ($name in @('deepfrst.hog', 'deep-pit.msn', 'tartarus.msn', 't-zone.msn')) {
+        [System.IO.File]::WriteAllText(
+            (Join-Path (Join-Path $discDir 'data_tracks') $name),
+            'fixture',
+            [System.Text.UTF8Encoding]::new($false)
+        )
+    }
     [System.IO.File]::WriteAllText(
         (Join-Path $testFlightDir 'data_tracks\.track_hashes.json'),
         '[{"track":1,"type":"data","sha1":"test-flight-sha1"},' +
@@ -136,6 +147,9 @@ try {
         'Regression spec generation should use an ISO referenced by its fingerprint CUE'
     Assert-True ($spec.import_mode -eq 'setup_iso') `
         'An ISO with a matching fingerprint CUE should retain setup_iso import mode'
+    Assert-True ((@($spec.expected_files) -join ',') -eq `
+            'deep-pit.msn,deepfrst.hog,fixture.hog,t-zone.msn,tartarus.msn') `
+        'Expected filenames should use ordinal ordering independent of runtime culture'
     Assert-True (@($spec.source_files).Count -eq 2 -and
         @($spec.source_files.name) -contains 'disc.cue' -and
         @($spec.source_files.name) -contains 'disc.iso') `

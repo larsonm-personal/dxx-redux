@@ -1,5 +1,8 @@
 #!/usr/bin/env pwsh
-param([switch]$WindowsPowerShellChild)
+param(
+    [switch]$WindowsPowerShellChild,
+    [string]$CanonicalSpecOutput
+)
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
@@ -57,9 +60,25 @@ function Test-WindowsPowerShellParser {
     Write-Host "PASS: $($relativeFiles.Count) PowerShell files parse under Windows PowerShell $($PSVersionTable.PSVersion)"
 }
 
+function Write-TestCanonicalRegressionSpec {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    . (Join-Path $repoRoot 'android/tests/extract_regression_spec_helpers.ps1')
+    $spec = [ordered]@{
+        source_type = 'cd'
+        expected_files = @('tartarus.msn', 't-zone.msn', 'deepfrst.hog', 'deep-pit.msn')
+        total_extracted = 4
+    }
+    Write-CanonicalRegressionSpec -path $Path -spec $spec -sourceName 'runtime parity' `
+        -generated '2000-01-01 00:00:00'
+}
+
 if ($WindowsPowerShellChild) {
     Test-CompatibilityHelpers
     Test-WindowsPowerShellParser
+    if ($CanonicalSpecOutput) {
+        Write-TestCanonicalRegressionSpec -Path $CanonicalSpecOutput
+    }
     Write-Host 'PASS: PowerShell 5.1 compatibility helpers'
     exit 0
 }
@@ -70,7 +89,20 @@ if (-not $windowsPowerShell) {
     exit 0
 }
 
-& $windowsPowerShell.Source -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $PSCommandPath -WindowsPowerShellChild
-if ($LASTEXITCODE -ne 0) {
-    throw "Windows PowerShell 5.1 compatibility test failed with exit code $LASTEXITCODE"
+$tempRoot = Join-Path $repoRoot "android/temp/powershell-compat-$PID"
+$currentOutput = Join-Path $tempRoot 'current.jsonc'
+$legacyOutput = Join-Path $tempRoot 'windows-powershell.jsonc'
+try {
+    New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
+    Write-TestCanonicalRegressionSpec -Path $currentOutput
+    & $windowsPowerShell.Source -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $PSCommandPath `
+        -WindowsPowerShellChild -CanonicalSpecOutput $legacyOutput
+    if ($LASTEXITCODE -ne 0) {
+        throw "Windows PowerShell 5.1 compatibility test failed with exit code $LASTEXITCODE"
+    }
+    if ([IO.File]::ReadAllText($currentOutput) -cne [IO.File]::ReadAllText($legacyOutput)) {
+        throw 'PowerShell 5.1 and PowerShell 7 produced different canonical regression specs'
+    }
+} finally {
+    Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
 }

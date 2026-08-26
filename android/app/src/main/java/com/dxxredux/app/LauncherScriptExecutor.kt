@@ -1166,11 +1166,14 @@ class LauncherScriptExecutor(
         val file = File(context.filesDir, "level_metadata_automation_${safeAutomationLabel(label)}.json")
         val array = JSONArray()
         results.forEachIndexed { index, result ->
-            val missionDisplayName = targets.getOrNull(index)?.missionDisplayName.orEmpty()
+            val target = targets.getOrNull(index)
             array.put(
                 levelMetadataResultJson(result)
                     .apply {
+                        val missionDisplayName = target?.missionDisplayName.orEmpty()
                         if (missionDisplayName.isNotBlank()) put("mission_name", missionDisplayName)
+                        val missionPath = target?.missionPath.orEmpty()
+                        if (missionPath.isNotBlank()) put("mission_path", missionPath)
                     }.put("target_index", index),
             )
         }

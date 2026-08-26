@@ -49,7 +49,12 @@ def canonicalize_mission_metadata(value: object, parent_key: str = "") -> object
             for item in normalized
         ):
             normalized.sort(
-                key=lambda item: (item["mission_filename"].casefold(), item["mission_filename"])
+                key=lambda item: (
+                    item["mission_filename"].casefold(),
+                    item["mission_filename"],
+                    str(item.get("mission_path", "")).casefold(),
+                    str(item.get("mission_path", "")),
+                )
             )
             if all("target_index" in item for item in normalized):
                 for index, item in enumerate(normalized):

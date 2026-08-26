@@ -29,6 +29,34 @@ if ((Test-Path -LiteralPath $albumDbPath) -and -not $Force -and -not $DryRun) {
     exit 0
 }
 
+function Format-InvariantDouble($value) {
+    return [Convert]::ToDouble($value, [Globalization.CultureInfo]::InvariantCulture).ToString(
+        'R', [Globalization.CultureInfo]::InvariantCulture)
+}
+
+function Compare-OrdinalText($left, $right) {
+    $comparison = [StringComparer]::OrdinalIgnoreCase.Compare([string]$left, [string]$right)
+    if ($comparison -eq 0) {
+        $comparison = [StringComparer]::Ordinal.Compare([string]$left, [string]$right)
+    }
+    return $comparison
+}
+
+function Get-OrdinalSortedAlbumFiles($files) {
+    $result = [IO.FileInfo[]]@($files)
+    for ($index = 1; $index -lt $result.Count; $index++) {
+        $candidate = $result[$index]
+        $position = $index
+        while ($position -gt 0 -and
+            (Compare-OrdinalText $result[$position - 1].Directory.Name $candidate.Directory.Name) -gt 0) {
+            $result[$position] = $result[$position - 1]
+            $position--
+        }
+        $result[$position] = $candidate
+    }
+    return $result
+}
+
 # Load match threshold from fingerprint_config.jsonc
 
 $fingerprintConfig = Get-DxxFingerprintMatchingConfig -Path $configPath
@@ -91,8 +119,8 @@ if ($albumFiles.Count -eq 0) {
 }
 Write-Host "Found $($albumFiles.Count) album info files"
 
-# Sort alphabetically by album name
-$albumFiles = $albumFiles | Sort-Object { $_.Directory.Name }
+# Sort alphabetically without depending on the host culture
+$albumFiles = @(Get-OrdinalSortedAlbumFiles $albumFiles)
 
 # Build flat JSON for fingerprint_match.exe
 # Combine CD fingerprints + album fingerprints into a single JSON array
@@ -263,7 +291,7 @@ function Compare-DiscMatch($a, $b) {
     # Same tier + same score: lower alphabetical disc ID wins (stable tiebreak).
     if ($a.Tier -ne $b.Tier) { return $a.Tier -lt $b.Tier }
     if ($a.Score -ne $b.Score) { return $a.Score -gt $b.Score }
-    return $a.DiscId -lt $b.DiscId
+    return (Compare-OrdinalText $a.DiscId $b.DiscId) -lt 0
 }
 
 # Filter to CD-vs-Album pairs and build lookup: "albumId|trackNum" -> best CD match
@@ -285,8 +313,9 @@ foreach ($pair in $allPairs) {
         $bKey = "$($pair.b_disc)|$($pair.b_track)"
         $aIdentity = "$($pair.a_disc) track $($pair.a_track) ($($pair.a_name))"
         $bIdentity = "$($pair.b_disc) track $($pair.b_track) ($($pair.b_name))"
-        $ambiguousLookup[$aKey] = "$bIdentity at score $($pair.score)"
-        $ambiguousLookup[$bKey] = "$aIdentity at score $($pair.score)"
+        $scoreText = Format-InvariantDouble $pair.score
+        $ambiguousLookup[$aKey] = "$bIdentity at score $scoreText"
+        $ambiguousLookup[$bKey] = "$aIdentity at score $scoreText"
         continue
     }
     # Physical-disc pairs are already maintained outside this album generator
@@ -432,7 +461,7 @@ for ($ai = 0; $ai -lt $albumEntries.Count; $ai++) {
             $line += ", `"acoustid_album`": `"$albumEscaped`""
         }
         if ($e.acoustid_score) {
-            $line += ", `"acoustid_score`": $($e.acoustid_score)"
+            $line += ", `"acoustid_score`": $(Format-InvariantDouble $e.acoustid_score)"
         }
         if ($e.acoustid_recording_id) {
             $recordingIdEscaped = $e.acoustid_recording_id -replace '"', '\"'
@@ -466,8 +495,14 @@ if ($DryRun) {
         Write-Host "  $($album.Label): $active tracks ($dupes duplicates removed)"
     }
 } else {
-    [IO.File]::WriteAllText($albumDbPath, ($output -join "`n") + "`n", [Text.UTF8Encoding]::new($false))
-    Write-Host "`nWrote $($output.Count) lines to $albumDbPath"
+    $content = ($output -join "`n") + "`n"
+    if ((Test-Path -LiteralPath $albumDbPath -PathType Leaf) -and
+        [IO.File]::ReadAllText($albumDbPath) -ceq $content) {
+        Write-Host "`nAlbum database unchanged: $albumDbPath"
+    } else {
+        [IO.File]::WriteAllText($albumDbPath, $content, [Text.UTF8Encoding]::new($false))
+        Write-Host "`nWrote $($output.Count) lines to $albumDbPath"
+    }
     Write-Host "Albums added: $($albumEntries.Count)"
     foreach ($album in $albumEntries) {
         $active = @($album.Tracks | Where-Object { -not $_.IsDuplicate -and -not $_.IsAmbiguous }).Count

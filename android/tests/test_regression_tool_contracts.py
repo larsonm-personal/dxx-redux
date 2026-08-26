@@ -66,11 +66,17 @@ class RegressionToolContractsTest(unittest.TestCase):
                 self.assertEqual(0, result.returncode, result.stderr)
                 self.assertIn("1.0", result.stdout)
 
-        source = (ROOT / "android/helpers/run_mission_zip_batch.ps1").read_text(encoding="utf-8")
-        self.assertIn('throw "JSON text is empty"', source)
-        self.assertIn("JSON formatter timed out after 30 seconds", source)
-        self.assertIn("metadata JSON validation failed", source)
-        self.assertNotIn("writing raw text", source.lower())
+        batch_source = (ROOT / "android/helpers/run_mission_zip_batch.ps1").read_text(
+            encoding="utf-8"
+        )
+        formatter_source = (ROOT / "android/helpers/normalized_json_text.ps1").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("ConvertTo-NormalizedJsonText", batch_source)
+        self.assertIn('throw "JSON text is empty"', formatter_source)
+        self.assertIn("JSON formatter timed out after 30 seconds", formatter_source)
+        self.assertIn("metadata JSON validation failed", batch_source)
+        self.assertNotIn("writing raw text", batch_source.lower())
 
     def test_normalizer_rejects_ambiguous_json(self) -> None:
         for token in ("NaN", "Infinity", "-Infinity"):

@@ -49,6 +49,14 @@ $publisher = Get-Content (Join-Path $repoRoot 'game_data\update_known_discs_albu
 if ($publisher -notmatch 'IsAmbiguous' -or $publisher -notmatch 'ambiguousLookup') {
     throw 'Album publication does not exclude ambiguous fingerprint identities'
 }
+if ($publisher -notmatch '\[IO\.File\]::ReadAllText\(\$albumDbPath\) -ceq \$content') {
+    throw 'Album publication does not skip byte-identical output'
+}
+if ($publisher -notmatch "ToString\(\s*'R', \[Globalization\.CultureInfo\]::InvariantCulture\)" -or
+    $publisher -notmatch 'Get-OrdinalSortedAlbumFiles' -or
+    $publisher -notmatch '\[StringComparer\]::OrdinalIgnoreCase\.Compare') {
+    throw 'Album publication does not normalize numeric text and ordering across PowerShell runtimes'
+}
 
 $discRaw = Get-Content (Join-Path $repoRoot 'android\app\src\main\assets\known_discs.jsonc') -Raw
 $albumRaw = Get-Content (Join-Path $repoRoot 'android\app\src\main\assets\known_albums.jsonc') -Raw
