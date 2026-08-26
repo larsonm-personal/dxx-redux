@@ -69,13 +69,16 @@
         "guidebot.route_goal_guidance_mode_name": "reach_firing_position",
         "guidebot.route_goal_instruction": {"contains": "shoot the blastable wall"}
     }},
+    // Route paths deliberately use stricter physical passability than the ordinary
+    // 1996 pathfinder, so their points and intermediate RNG use may differ.  The
+    // comparison must still restore the live AI and RNG state.
     {"action": "set_debug", "field": "guidebot_path_parity", "value": "true"},
     {"action": "assert", "expect": {
         "guidebot.path_parity.valid": "true",
-        "guidebot.path_parity.match": "true",
-        "guidebot.path_parity.rng_state_match": "true",
-        "guidebot.path_parity.rng_calls_match": "true",
-        "guidebot.path_parity.restored_state_match": "true"
+        "guidebot.path_parity.ai_state_match": "true",
+        "guidebot.path_parity.restored_state_match": "true",
+        "guidebot.path_parity.first_mismatch": {"gte": 0},
+        "guidebot.path_parity.match": "false"
     }},
     {"action": "wait_ms", "ms": 5000},
     {"action": "assert", "expect": {
@@ -151,14 +154,12 @@
     {"action": "set_debug", "field": "guidebot_path_parity", "value": "true"},
     {"action": "assert", "expect": {
         "guidebot.path_parity.valid": "true",
-        "guidebot.path_parity.match": "true",
+        "guidebot.path_parity.match": "false",
         "guidebot.path_parity.ai_state_match": "true",
         "guidebot.path_parity.restored_state_match": "true",
-        "guidebot.path_parity.first_mismatch": "-1",
+        "guidebot.path_parity.first_mismatch": {"gte": 0},
         "guidebot.path_parity.ordinary_length": {"gte": 1},
-        "guidebot.path_parity.length_match": "true",
-        "guidebot.path_parity.rng_state_match": "true",
-        "guidebot.path_parity.rng_calls_match": "true"
+        "guidebot.path_parity.route_length": {"gte": 1}
     }},
     {"action": "wait_ms", "ms": 7000},
     {"action": "assert", "expect": {

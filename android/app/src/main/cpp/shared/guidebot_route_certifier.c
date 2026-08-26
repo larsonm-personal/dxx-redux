@@ -373,6 +373,30 @@ static int guidebot_step_usable(
 	return 1;
 }
 
+static int guidebot_later_required_target_reachable(
+    const level_metadata_scan_view *view,
+    level_metadata_state *state,
+    const guidebot_route_certifier_workspace *workspace,
+    int current_step)
+{
+	int step;
+
+	for (step = current_step + 1; step < state->route_step_count; ++step) {
+		level_metadata_route_step *candidate = &state->route_steps[step];
+		int target_segment;
+
+		if (candidate->kind == LEVEL_METADATA_ROUTE_START ||
+		    !level_metadata_route_step_required_by_world_state(view, candidate) ||
+		    !guidebot_step_usable(view, candidate))
+			continue;
+		target_segment = guidebot_step_target_segment(view, candidate);
+		if (guidebot_valid_segment(view, target_segment) &&
+		    workspace->reachable[target_segment])
+			return 1;
+	}
+	return 0;
+}
+
 int guidebot_route_certify_current_state(
     const level_metadata_scan_view *view,
     const level_metadata_state *prepared_state,
@@ -431,6 +455,12 @@ int guidebot_route_certify_current_state(
 		if (!level_metadata_route_step_required_by_world_state(view, candidate))
 			continue;
 		local_summary.evaluated_actions++;
+		/* An auto-closing hidden door behind the current start must not pull the
+		 * route backward when a later required objective is already reachable. */
+		if (candidate->kind == LEVEL_METADATA_ROUTE_HIDDEN_DOOR &&
+		    guidebot_later_required_target_reachable(
+		        view, live_state, workspace, step))
+			continue;
 		if ((candidate->kind == LEVEL_METADATA_ROUTE_EXIT &&
 		     requires_control_center &&
 		     !view->initial_control_center_destroyed) ||

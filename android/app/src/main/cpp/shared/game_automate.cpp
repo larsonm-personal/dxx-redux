@@ -3829,11 +3829,9 @@ extern "C" void game_automate_tick(void)
 #endif
 			} else if (s.field == "guidebot_path_parity") {
 #ifdef DXX_BUILD_DESCENT_II
-				if ((strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) &&
-				    !escort_debug_compare_route_path()) {
-					stop_script_fail("guidebot_path_parity: comparison failed");
-					break;
-				}
+				if (strcasecmp(s.value.c_str(), "true") == 0 ||
+				    strtol(s.value.c_str(), NULL, 10) != 0)
+					escort_debug_compare_route_path();
 #else
 				stop_script_fail("guidebot_path_parity: D2-only action");
 				break;

@@ -589,6 +589,37 @@ static void test_unreachable_prepared_target_requires_replan(void)
 	    GUIDEBOT_ROUTE_CERTIFIER_REJECTION_UNREACHABLE_TARGET);
 }
 
+static void test_reclosed_hidden_door_behind_start_does_not_regress_route(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+	route_planner_plan_summary prepared_plan;
+	route_planner_plan_summary live_plan;
+	guidebot_route_validity_certificate certificate;
+	guidebot_route_certifier_summary summary;
+
+	initialize_fixture(&fixture);
+	initialize_plan(&prepared_plan);
+	view = make_view(&fixture);
+	view.start_segment = 2;
+	Prepared.route_steps[1].kind = LEVEL_METADATA_ROUTE_HIDDEN_DOOR;
+	Prepared.route_steps[1].activation_kind =
+	    LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR;
+	Prepared.route_steps[1].wall_num = 1;
+	Prepared.route_steps[1].seg = 1;
+	Prepared.route_steps[1].path_terminal_segment = 1;
+	Prepared.route_steps[2].wall_num = 2;
+	Prepared.route_steps[2].opened_link_wall[0] = 2;
+	Prepared.route_steps[2].seg = 2;
+	Prepared.route_steps[2].path_terminal_segment = 2;
+
+	assert(certify(
+	    &view, &prepared_plan, &live_plan, &certificate, &summary));
+	assert(live_plan.first_pending_step == 2);
+	assert(summary.selected_segment == 2);
+	assert(certificate.source_trigger == 1);
+}
+
 int main(void)
 {
 	test_current_start_and_accessibility_select_action();
@@ -600,6 +631,7 @@ int main(void)
 	test_keyed_buddy_proof_door_keeps_objective_reachable();
 	test_physical_frontier_follows_strategic_route();
 	test_unreachable_prepared_target_requires_replan();
+	test_reclosed_hidden_door_behind_start_does_not_regress_route();
 	printf("guidebot route certifier tests passed\n");
 	return 0;
 }

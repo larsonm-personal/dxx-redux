@@ -241,7 +241,10 @@
         "guidebot.route_goal_objective_side": "2"
     }},
     {"action": "set_debug", "field": "guidebot_path_parity", "value": "true"},
-    {"action": "introspect"},
+    {"action": "assert", "expect": {
+        "guidebot.path_parity.valid": "true",
+        "guidebot.path_parity.match": "true"
+    }},
     {"action": "log", "message": "=== TEST: Obsidian fly-through GuideBot goal -- PASS ==="},
 
     {"action": "set_debug", "field": "android_game_request", "value": "game_menu", "post_delay_ms": 300},

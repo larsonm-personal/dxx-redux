@@ -85,11 +85,14 @@
         "guidebot.route_goal_objective_trigger": {"ne": 17}
     }},
     {"action": "set_debug", "field": "player_keys", "value": "blue", "post_delay_ms": 500},
+    // Movement fields stop at the useful physical frontier while the semantic
+    // objective remains the switch in segment 24.
     {"action": "wait_for", "timeout_ms": 30000, "expect": {
         "guidebot.route_goal_active": "true",
         "guidebot.route_goal_objective_trigger": "21",
         "guidebot.route_goal_activation_kind_name": "shoot_switch",
-        "guidebot.route_goal_seg": "52",
+        "guidebot.route_goal_seg": "47",
+        "guidebot.route_goal_guidance_seg": "47",
         "guidebot.route_goal_objective_seg": "24"
     }},
     {"action": "set_debug", "field": "fire_trigger", "value": "21", "post_delay_ms": 500},

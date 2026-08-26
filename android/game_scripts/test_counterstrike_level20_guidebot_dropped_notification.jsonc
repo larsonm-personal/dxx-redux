@@ -37,14 +37,17 @@
     {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 10000, "expect": {
         "guidebot.route_goal_active": "true",
-        "guidebot.route_goal_trigger": "18"
+        "guidebot.route_goal_trigger": "31"
     }},
     {"action": "set_debug", "field": "guidebot_route_notifications_suppressed", "value": "true"},
     {"action": "set_debug", "field": "guidebot_route_certificate_checks_suppressed", "value": "true"},
-    {"action": "set_debug", "field": "fire_trigger", "value": "18", "post_delay_ms": 100},
+    {"action": "set_debug", "field": "fire_trigger", "value": "31", "post_delay_ms": 100},
     {"action": "wait_for", "timeout_ms": 10000, "expect": {
         "guidebot.route_goal_active": "true",
-        "guidebot.route_goal_trigger": "12",
+        "guidebot.route_goal_activation_kind_name": "pickup_key",
+        "guidebot.route_goal_label": {"contains": "gold key"},
+        "guidebot.route_goal_trigger": "-1",
+        "guidebot.route_first_pending_step": "3",
         "guidebot.route_audit.discoveries": {"gt": 0},
         "guidebot.route_audit.work_max": {"lte": 3000}
     }},

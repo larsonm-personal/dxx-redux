@@ -161,3 +161,33 @@ Determine why GuideBot selects later objective 7 while the automap still identif
 - All 43 D2 host tests passed.
 - Android `:app:assembleDebug` passed after compiling all configured ABIs.
 - Scoped code quality and `git diff --check` passed.
+
+## Full-suite failure follow-up
+
+- [x] Inspect artifacts for all five failures in report `report_20260824_230254.md`.
+- [x] Classify GuideBot failures as behavior regressions, intended expectation changes, or test-instrumentation mismatches.
+- [x] Diagnose the unrelated JSONC parser and level-complete failures independently.
+- [x] Implement narrow fixes where the evidence identifies a product or test defect.
+- [x] Re-run affected tests plus proportionate host and Android validation.
+
+### Full-suite findings
+
+- The strict JSON parser reflected a one-argument `JsonDocument.Parse` method that is absent in the current .NET runtime. Direct static invocation preserves strict parsing and works across the supported overload shapes.
+- Counterstrike level 20 metadata was regenerated with trigger 31, not trigger 18, as the action after the blue key. Both integration fixtures still encoded the superseded route and now follow trigger 31 into the gold-key objective.
+- The level 20 certifier fixture's shadow comparison now records a target-ranking semantic mismatch instead of the old reversible-wall proof mismatch. The maintained fixture asserts that current classification and its replay artifact.
+- The physical-frontier change intentionally makes both the active and guidance route segments 47 in the level 2 switch case while the semantic objective remains trigger 21 in segment 24.
+- KCXF2 path parity differs in generated path points and may consume a different number of temporary RNG calls. This is expected because route paths now use stricter physical passability than the ordinary pathfinder. The comparison restores the live AI and RNG state before returning.
+- The parity debug action now records results without aborting before the script can assert and report the individual comparison fields.
+- The extended KCXF2 run exposed an auto-closing hidden door being selected again after the player and GuideBot had advanced to the boss side. The certifier now ignores a reclosed hidden door only when a later required objective is already reachable from the current start, preserving the door objective while it still blocks forward progress.
+
+### Full-suite validation
+
+- Strict JSONC and tracklist parsing passed with seven current tracklists.
+- The Counterstrike dropped-notification fixture passed all 30 steps.
+- The Counterstrike trigger fixture passed all 40 steps, including movement away from the formerly stalled segment.
+- The level-complete touch-skip fixture passed all 88 steps.
+- The rebuilt KCXF2 fixture passed all 183 steps, including the reclosed-hidden-door transition and later objective checks.
+- The focused GuideBot route certifier host test passed, including the new reclosed-hidden-door regression.
+- The D2 Windows game, headless analyzers, metadata analyzer, and test targets built successfully.
+- Android `:app:assembleDebug` passed for all configured ABIs after final formatting.
+- Scoped code quality passed.
