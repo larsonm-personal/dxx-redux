@@ -244,6 +244,30 @@ static void test_terminal_statuses(void)
 	assert(decision.status == GUIDEBOT_ROUTE_DECISION_CALCULATING);
 }
 
+static void test_exit_command_requires_ready_certified_objective(void)
+{
+	guidebot_route_decision decision;
+
+	memset(&decision, 0, sizeof(decision));
+	decision.status = GUIDEBOT_ROUTE_DECISION_READY;
+	decision.certificate.status = GUIDEBOT_ROUTE_CERTIFICATE_VALID;
+	decision.objective_kind = LEVEL_METADATA_ROUTE_TRIGGER;
+	assert(guidebot_route_decision_supports_exit_command(&decision));
+	decision.status = GUIDEBOT_ROUTE_DECISION_PARTIAL;
+	assert(guidebot_route_decision_supports_exit_command(&decision));
+	decision.certificate.status = GUIDEBOT_ROUTE_CERTIFICATE_INVALID;
+	assert(!guidebot_route_decision_supports_exit_command(&decision));
+	decision.certificate.status = GUIDEBOT_ROUTE_CERTIFICATE_VALID;
+	decision.status = GUIDEBOT_ROUTE_DECISION_CALCULATING;
+	assert(!guidebot_route_decision_supports_exit_command(&decision));
+	decision.status = GUIDEBOT_ROUTE_DECISION_COMPLETE;
+	assert(!guidebot_route_decision_supports_exit_command(&decision));
+	decision.status = GUIDEBOT_ROUTE_DECISION_READY;
+	decision.objective_kind = -1;
+	assert(!guidebot_route_decision_supports_exit_command(&decision));
+	assert(!guidebot_route_decision_supports_exit_command(NULL));
+}
+
 static void test_path_adoption_retains_current_equivalent_guidance(void)
 {
 	level_metadata_state state;
@@ -382,6 +406,7 @@ int main(void)
 	test_actor_profile_changes_only_input_identity();
 	test_semantic_and_guidance_changes_are_distinct();
 	test_terminal_statuses();
+	test_exit_command_requires_ready_certified_objective();
 	test_path_adoption_retains_current_equivalent_guidance();
 	test_shadow_classifies_mismatches();
 	return 0;

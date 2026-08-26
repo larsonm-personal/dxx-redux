@@ -57,6 +57,7 @@ private fun lanOnlyMultiplayerRelease(): Boolean = true
 fun MultiplayerScreen(
     onBack: () -> Unit,
     onLaunchGame: (GameLaunchInfo) -> Unit,
+    onLaunchRequested: (String) -> Unit,
 ) {
     val state by MatchmakingStateHolder.state.collectAsState()
 
@@ -68,7 +69,7 @@ fun MultiplayerScreen(
                 onBack()
             }
         }
-        LanContent(state, onBack, onLaunchGame)
+        LanContent(state, onBack, onLaunchGame, onLaunchRequested)
         return
     }
 
@@ -80,7 +81,7 @@ fun MultiplayerScreen(
             }
             val lobby = state.currentLobby
             if (lobby != null) {
-                LobbyScreen(onLaunchGame)
+                LobbyScreen(onLaunchGame, onLaunchRequested)
             } else {
                 // Stale nav state, reset
                 MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
@@ -102,7 +103,7 @@ fun MultiplayerScreen(
                     onBack()
                 }
             }
-            LanContent(state, onBack, onLaunchGame)
+            LanContent(state, onBack, onLaunchGame, onLaunchRequested)
         }
 
         MultiplayerNav.BROWSER -> {
@@ -1349,6 +1350,7 @@ private fun LanContent(
     state: MatchmakingState,
     onBack: () -> Unit,
     onLaunchGame: (GameLaunchInfo) -> Unit,
+    onLaunchRequested: (String) -> Unit,
 ) {
     val context = LocalContext.current
     val isLandscape =
@@ -1436,7 +1438,11 @@ private fun LanContent(
         }
         Spacer(Modifier.height(8.dp))
 
-        LanDiscoveryTab(callsign = lanCallsign, onLaunchGame = onLaunchGame)
+        LanDiscoveryTab(
+            callsign = lanCallsign,
+            onLaunchGame = onLaunchGame,
+            onLaunchRequested = onLaunchRequested,
+        )
     }
 }
 

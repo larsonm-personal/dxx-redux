@@ -1057,8 +1057,32 @@ object LobbyService {
         val mode = hostedMode
         val maxPlayers = hostedMaxPlayers
 
-        // Send START to every joiner on IO thread, then emit launch event
-        // so the socket stays alive until sends complete (A7 fix)
+        // Launch the local host immediately. Discovery remains active for a
+        // LAN host, so client START retries can continue in the background.
+        _lanLaunchEvent.value =
+            com.dxxredux.app.multiplayer.GameLaunchInfo(
+                game = game,
+                mission = mission,
+                mode = mode,
+                difficulty = difficulty,
+                levelNum = levelNum,
+                maxPlayers = maxPlayers,
+                yourSlot = 0,
+                isHost = true,
+                peers = emptyList(),
+                isLan = true,
+                hostCallsign = hostCallsign,
+                hostClientId = localClientId,
+                coopQol = coopQol,
+                duplicateEnergyShields = duplicateEnergyShields,
+                fullDeathSpew = fullDeathSpew,
+                playerSpewNoExpire = playerSpewNoExpire,
+                clientsCanRequestRewind = clientsCanRequestRewind,
+                restrictNonCoopFovToBase = restrictNonCoopFovToBase,
+            )
+        NetLog.log("LAN", "Local host launch emitted: $game/$mission lvl=$levelNum diff=$difficulty")
+
+        // Send START to every joiner on the IO thread with redundant retries.
         scope?.launch(Dispatchers.IO) {
             for (p in players) {
                 if (p.address != "127.0.0.1") {
@@ -1076,28 +1100,6 @@ object LobbyService {
                     }
                 }
             }
-            // Emit launch event after sends complete
-            _lanLaunchEvent.value =
-                com.dxxredux.app.multiplayer.GameLaunchInfo(
-                    game = game,
-                    mission = mission,
-                    mode = mode,
-                    difficulty = difficulty,
-                    levelNum = levelNum,
-                    maxPlayers = maxPlayers,
-                    yourSlot = 0,
-                    isHost = true,
-                    peers = emptyList(),
-                    isLan = true,
-                    hostCallsign = hostCallsign,
-                    hostClientId = localClientId,
-                    coopQol = coopQol,
-                    duplicateEnergyShields = duplicateEnergyShields,
-                    fullDeathSpew = fullDeathSpew,
-                    playerSpewNoExpire = playerSpewNoExpire,
-                    clientsCanRequestRewind = clientsCanRequestRewind,
-                    restrictNonCoopFovToBase = restrictNonCoopFovToBase,
-                )
             NetLog.log("LAN", "Game started: $game/$mission lvl=$levelNum diff=$difficulty")
             Log.i(TAG, "Game started: $game/$mission lvl=$levelNum diff=$difficulty")
         }

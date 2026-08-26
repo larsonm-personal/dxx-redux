@@ -25,6 +25,9 @@ $androidRoot = Split-Path -Parent $helpersDir
 . (Join-Path $helpersDir "bounded_extraction.ps1")
 . (Join-Path $helpersDir "mission_zip_batch_recovery.ps1")
 . (Join-Path $helpersDir "normalized_json_text.ps1")
+if (-not $env:ANDROID_SERIAL) {
+    $env:ANDROID_SERIAL = $script:PRIMARY_EMULATOR_SERIAL
+}
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 

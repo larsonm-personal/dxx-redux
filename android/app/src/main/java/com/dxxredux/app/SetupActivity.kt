@@ -101,10 +101,16 @@ internal data class LauncherPreparationState(
     val startedAtMs: Long,
 )
 
+internal const val MULTIPLAYER_LAUNCH_REQUEST_TIMEOUT_MS = 15_000L
+
 internal fun launcherPreparationLabel(state: LauncherPreparationState): String =
     when (state.phase) {
         LauncherPreparationPhase.PREPARING -> {
-            if (state.launchKind == "resume") "Preparing saved game" else "Preparing game"
+            when (state.launchKind) {
+                "resume" -> "Preparing saved game"
+                "multiplayer" -> "Preparing multiplayer game"
+                else -> "Preparing game"
+            }
         }
 
         LauncherPreparationPhase.PAUSING_METADATA -> {
@@ -274,6 +280,14 @@ class SetupActivity : ComponentActivity() {
      *  rapid startActivity calls create two MainActivity instances in the
      *  :game process, causing a FORTIFY pthread_mutex crash. */
     private var mpGameLaunching = false
+    private val multiplayerLaunchRequestTimeout =
+        Runnable {
+            val state = launchPreparation.value
+            if (state?.launchKind == "multiplayer" && state.phase == LauncherPreparationPhase.PREPARING) {
+                finishLaunchPreparation("multiplayer_request_timeout")
+                showLaunchPreflightFailure("Multiplayer game start timed out")
+            }
+        }
 
     /** True if LAN discovery was active before game launch; used to auto-resume on return */
     private var wasLanDiscoveringBeforeLaunch = false
@@ -1587,6 +1601,14 @@ class SetupActivity : ComponentActivity() {
                         Log.i("DXX-MP", "lan_host_lobby: hosting as $callsign ($game/$mission/$mode)")
                     }
 
+                    "lan_start_game" -> {
+                        val difficulty = intent.getIntExtra("difficulty", 1)
+                        val levelNum = intent.getIntExtra("level_num", 1)
+                        com.dxxredux.app.lobby.LobbyService
+                            .startGame(difficulty, levelNum)
+                        Log.i("DXX-MP", "lan_start_game: level=$levelNum difficulty=$difficulty")
+                    }
+
                     "lan_stop_lobby" -> {
                         com.dxxredux.app.lobby.LobbyService
                             .stopDiscovery()
@@ -2095,12 +2117,46 @@ class SetupActivity : ComponentActivity() {
         return super.dispatchKeyEvent(event)
     }
 
+    private fun beginMultiplayerLaunchRequest(game: String) {
+        if (!beginLaunchPreparation(game, "multiplayer")) return
+        RouteMetadataDiagnostics.log("Multiplayer launch action committed game=$game")
+        resumeOfferRefreshHandler.postDelayed(
+            multiplayerLaunchRequestTimeout,
+            MULTIPLAYER_LAUNCH_REQUEST_TIMEOUT_MS,
+        )
+    }
+
     private fun launchMultiplayerGame(info: GameLaunchInfo) {
         if (mpGameLaunching) {
             Log.w("DXX-MP", "Game already launching, ignoring duplicate")
             return
         }
+        resumeOfferRefreshHandler.removeCallbacks(multiplayerLaunchRequestTimeout)
+        if (launchPreparation.value == null && !beginLaunchPreparation(info.game, "multiplayer")) return
         mpGameLaunching = true
+        RouteMetadataDiagnostics.log(
+            "Multiplayer launch event received game=${info.game} mode=${info.mode} " +
+                "elapsed_ms=${SystemClock.elapsedRealtime() - (launchPreparation.value?.startedAtMs ?: 0L)}",
+        )
+        lifecycleScope.launch {
+            val preflightMessage =
+                try {
+                    withContext(Dispatchers.IO) { prepareGameLaunchFiles(info.game) }
+                } catch (e: Exception) {
+                    Log.e("DXX-Setup", "Multiplayer launch preflight failed for ${info.game}", e)
+                    "Could not prepare ${gameDisplayName(info.game)}"
+                }
+            if (preflightMessage != null) {
+                mpGameLaunching = false
+                finishLaunchPreparation("multiplayer_preflight_failed")
+                showLaunchPreflightFailure(preflightMessage)
+                return@launch
+            }
+            continueMultiplayerGameLaunch(info)
+        }
+    }
+
+    private fun continueMultiplayerGameLaunch(info: GameLaunchInfo) {
         // For LAN hosts, keep the announce broadcast alive so the game
         // remains discoverable; for everyone else, shut down fully
         wasLanDiscoveringBeforeLaunch = com.dxxredux.app.lobby.LobbyService.isDiscovering.value
@@ -2109,11 +2165,6 @@ class SetupActivity : ComponentActivity() {
         } else {
             com.dxxredux.app.lobby.LobbyService
                 .stopDiscovery()
-        }
-        prepareGameLaunchFiles(info.game)?.let { message ->
-            showLaunchPreflightFailure(message)
-            mpGameLaunching = false
-            return
         }
         val launchCallsign =
             MatchmakingStateHolder.state.value.callsign
@@ -2373,6 +2424,7 @@ class SetupActivity : ComponentActivity() {
                 onMultiplayerLaunch = { info ->
                     launchMultiplayerGame(info)
                 },
+                onMultiplayerLaunchRequested = ::beginMultiplayerLaunchRequest,
                 onContentImported = { routeMetadataCoordinator.notifyContentImported() },
                 onClearRouteMetadataCache = {
                     val result = routeMetadataCoordinator.clearCache()
@@ -2666,6 +2718,7 @@ class SetupActivity : ComponentActivity() {
         routeMetadataCoordinator.stop("launcher destroyed")
         routeMetadataScope.cancel()
         resumeOfferRefreshHandler.removeCallbacks(resumeOfferRefreshRunnable)
+        resumeOfferRefreshHandler.removeCallbacks(multiplayerLaunchRequestTimeout)
         try {
             unregisterReceiver(introspectReceiver)
         } catch (_: Exception) {
@@ -2730,6 +2783,7 @@ private fun SetupScreen(
     onLaunchGame: (String, ResumeSaveBridge.ResumeSaveCandidate?) -> Unit,
     onPlayInputDemo: (StagedInputDemo) -> Unit,
     onMultiplayerLaunch: (com.dxxredux.app.multiplayer.GameLaunchInfo) -> Unit,
+    onMultiplayerLaunchRequested: (String) -> Unit,
     onContentImported: () -> Unit,
     onClearRouteMetadataCache: suspend () -> Int,
     onSetRouteMetadataComputeFaster: (Boolean) -> Unit,
@@ -3646,6 +3700,7 @@ private fun SetupScreen(
             com.dxxredux.app.multiplayer.MultiplayerScreen(
                 onBack = { showMultiplayerPage = false },
                 onLaunchGame = onMultiplayerLaunch,
+                onLaunchRequested = onMultiplayerLaunchRequested,
             )
             return@LauncherTheme
         }

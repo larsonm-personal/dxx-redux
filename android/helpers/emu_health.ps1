@@ -18,6 +18,7 @@ param(
     [int]$TimeoutSeconds = 120,
     [string]$AvdName = "Nexus5X_Light_1",
     [string]$GpuRenderer = "host",
+    [string]$PreferredSerial = $env:ANDROID_SERIAL,
     [switch]$ForceRestart
 )
 
@@ -151,7 +152,7 @@ function Test-EmulatorHealth {
 
     # Step 1: Check if any emulator device is listed
     $devices = (& $ADB devices 2>&1) | Out-String
-    $onlineSerials = Get-OnlineEmulatorSerials
+    $onlineSerials = @(Get-OnlineEmulatorSerials)
     if ($onlineSerials.Count -eq 0) {
         if ($devices -match 'emulator-\d+\s+offline') {
             return @{ Healthy = $false; Reason = "emulator is offline" }
@@ -223,7 +224,7 @@ function Test-EmulatorHealth {
 }
 
 function Stop-Emulator {
-    $onlineSerials = Get-OnlineEmulatorSerials
+    $onlineSerials = @(Get-OnlineEmulatorSerials)
     if ($onlineSerials.Count -gt 0) {
         Write-Host "Cleaning up /data/local/tmp on online emulators..."
         foreach ($serial in $onlineSerials) {
@@ -325,7 +326,8 @@ function Wait-EmulatorHealthy {
 function Restart-EmulatorForHealth {
     param(
         [int]$Timeout = 120,
-        [switch]$WaitForHealth
+        [switch]$WaitForHealth,
+        [string]$PreferredSerial
     )
 
     if (-not (Test-EmulatorAccelerationAvailable)) {
@@ -340,7 +342,7 @@ function Restart-EmulatorForHealth {
         return $true
     }
 
-    if (Wait-EmulatorHealthy -Timeout $Timeout -FastFailOnCrash) {
+    if (Wait-EmulatorHealthy -Timeout $Timeout -PreferredSerial $PreferredSerial -FastFailOnCrash) {
         return $true
     }
 
@@ -352,7 +354,7 @@ function Restart-EmulatorForHealth {
         return $false
     }
 
-    if (Wait-EmulatorHealthy -Timeout $Timeout) {
+    if (Wait-EmulatorHealthy -Timeout $Timeout -PreferredSerial $PreferredSerial) {
         return $true
     }
 
@@ -361,11 +363,11 @@ function Restart-EmulatorForHealth {
 }
 
 # -- Main --
-$status = Test-EmulatorHealth
+$status = Test-EmulatorHealth -PreferredSerial $PreferredSerial
 Write-Host "Emulator status: $($status.Reason)"
 
 if ($Restart -and $ForceRestart) {
-    $started = Restart-EmulatorForHealth -Timeout $TimeoutSeconds -WaitForHealth:$Wait
+    $started = Restart-EmulatorForHealth -Timeout $TimeoutSeconds -WaitForHealth:$Wait -PreferredSerial $PreferredSerial
     if ($Wait) {
         if ($started) {
             Write-Host "FORCE_RESTARTED_AND_HEALTHY"
@@ -394,7 +396,7 @@ if ($status.Healthy) {
 
 # Unhealthy
 if ($Restart) {
-    $started = Restart-EmulatorForHealth -Timeout $TimeoutSeconds -WaitForHealth:$Wait
+    $started = Restart-EmulatorForHealth -Timeout $TimeoutSeconds -WaitForHealth:$Wait -PreferredSerial $PreferredSerial
     if ($Wait) {
         if ($started) {
             Write-Host "RESTARTED_AND_HEALTHY"
@@ -412,7 +414,7 @@ if ($Restart) {
         exit 1
     }
 } elseif ($Wait) {
-    $ok = Wait-EmulatorHealthy -Timeout $TimeoutSeconds
+    $ok = Wait-EmulatorHealthy -Timeout $TimeoutSeconds -PreferredSerial $PreferredSerial
     if ($ok) { exit 0 } else { exit 1 }
 } else {
     Write-Host "UNHEALTHY"

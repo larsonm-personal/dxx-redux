@@ -20,6 +20,17 @@ def normalize(text: str, *args: str) -> subprocess.CompletedProcess[str]:
 
 
 class RegressionToolContractsTest(unittest.TestCase):
+    def test_mission_batch_selects_primary_emulator_and_health_arrays_are_stable(self) -> None:
+        batch = (ROOT / "android/helpers/run_mission_zip_batch.ps1").read_text(
+            encoding="utf-8"
+        )
+        health = (ROOT / "android/helpers/emu_health.ps1").read_text(encoding="utf-8")
+        self.assertIn("if (-not $env:ANDROID_SERIAL)", batch)
+        self.assertIn("$env:ANDROID_SERIAL = $script:PRIMARY_EMULATOR_SERIAL", batch)
+        self.assertEqual(2, health.count("@(Get-OnlineEmulatorSerials)"))
+        self.assertIn("[string]$PreferredSerial = $env:ANDROID_SERIAL", health)
+        self.assertIn("Test-EmulatorHealth -PreferredSerial $PreferredSerial", health)
+
     def test_host_mission_variant_order_mirrors_launcher_policy(self) -> None:
         policy = (
             ROOT

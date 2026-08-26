@@ -21,6 +21,11 @@ class ResumeSavePanelTest {
 
         assertEquals("Preparing saved game", launcherPreparationLabel(preparing))
         assertEquals(
+            "Preparing multiplayer game",
+            launcherPreparationLabel(preparing.copy(launchKind = "multiplayer")),
+        )
+        assertEquals(15_000L, MULTIPLAYER_LAUNCH_REQUEST_TIMEOUT_MS)
+        assertEquals(
             "Pausing background analysis",
             launcherPreparationLabel(preparing.copy(phase = LauncherPreparationPhase.PAUSING_METADATA)),
         )

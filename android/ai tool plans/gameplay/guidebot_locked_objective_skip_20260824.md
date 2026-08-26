@@ -191,3 +191,57 @@ Determine why GuideBot selects later objective 7 while the automap still identif
 - The D2 Windows game, headless analyzers, metadata analyzer, and test targets built successfully.
 - Android `:app:assembleDebug` passed for all configured ABIs after final formatting.
 - Scoped code quality passed.
+## D2 level 21 post-reactor grate follow-up (2026-08-25)
+
+- [x] Locate and parse the supplied exported GuideBot log.
+- [x] Correlate the post-reactor exit objective with route certification and frontier selection.
+- [x] Trace how the shoot-through grate and its linked switch are represented in level metadata and runtime passability.
+- [x] Record the root cause and the narrowest behavior-preserving fix direction.
+
+### Results
+
+- The level metadata is correct: step 5 is shoot-switch trigger 16 in segment
+  271 (wall 148), which opens the closed transparent wall pair at segments
+  339/302 (walls 121/120); step 6 is the exit in segment 297.
+- At 22:02:54.187 the player selects the legacy Exit command. The command
+  clears the semantic route and sets `Escort_special_goal` to
+  `ESCORT_GOAL_EXIT` (`special=5`, `route_active=0`).
+- The legacy path then targets exit segment 284 directly. Its non-route path
+  search calls `ai_door_is_openable`, which treats a closed wall with a
+  `controlling_trigger` as openable while GuideBot is going to an objective.
+  Wall 121 is closed and not flyable (`doorway=0x6`) but has controlling
+  trigger 16, so the legacy search plans through the impassable grate.
+- The live route certifier independently selects step 5 / segment 271 at
+  22:03:08, proving that the planner recognizes the switch prerequisite, but
+  the explicit special goal prevents that certified route from being adopted.
+- When trigger 16 is finally shot at 22:05:14, wall 121 changes from closed to
+  illusion-off and the certifier immediately advances from step 5 to the exit
+  step 6. This confirms the switch/grate dependency from runtime state rather
+  than only static metadata.
+- The narrow behavior-preserving fix is to let the Android Exit command use
+  the certified end-of-level route when available, including its physical
+  frontier, while retaining the original direct Exit behavior as the fallback
+  when no usable metadata route exists. The general legacy door-openability
+  rule should not be globally changed as part of this fix.
+
+### Implementation
+
+- [x] Add a shared route-layer operation that adopts the next certified
+  end-of-level objective for an explicit Exit request.
+- [x] Add the smallest Android-only hook in the original escort command code,
+  retaining the legacy Exit goal as fallback.
+- [x] Add regression coverage for prerequisite adoption and fallback behavior.
+- [x] Run scoped formatting, tests, and the required Windows CMake build.
+
+### Implementation results
+
+- Explicit Exit now adopts a ready, validity-certified semantic route with a
+  pending objective. The special legacy Exit goal remains the fallback for
+  calculating, failed, invalid, complete, or absent route decisions.
+- The adopted route retains its activation guidance and physical-frontier
+  calculation, so Counterstrike level 21 selects trigger 16 before the exit.
+- The exported GuideBot log records `exit_command route_adopted` with the goal,
+  target segment, objective kind, trigger, and wall.
+- Scoped code quality passed. The Windows D2 build passed, all 43 configured D2
+  CTest tests passed, and Android `assembleDebug` passed for arm64-v8a,
+  armeabi-v7a, and x86_64.

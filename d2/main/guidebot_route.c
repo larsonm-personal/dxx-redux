@@ -1509,6 +1509,29 @@ int escort_route_next_goal(void)
 	return escort_route_shared_next_goal(1, NULL);
 }
 
+int escort_route_adopt_exit_command(void)
+{
+	guidebot_route_decision decision;
+	int route_goal;
+
+	escort_route_refresh_metadata();
+	if (!level_metadata_get_live_route_decision(&decision) ||
+	    !guidebot_route_decision_supports_exit_command(&decision))
+		return 0;
+	route_goal = escort_route_next_goal();
+	if (!Escort_route_goal.active || !escort_goal_is_pathable(route_goal)) {
+		escort_route_clear_goal();
+		return 0;
+	}
+	debug_log(DLOG_GUIDEBOT,
+	          "exit_command route_adopted goal=%d target=%d kind=%d trigger=%d wall=%d",
+	          route_goal, Escort_route_goal.target_seg,
+	          Escort_route_goal.objective_kind,
+	          Escort_route_goal.objective_trigger,
+	          Escort_route_goal.objective_wall);
+	return 1;
+}
+
 void escort_route_refresh_metadata(void)
 {
 #ifdef NETWORK

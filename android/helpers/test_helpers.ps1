@@ -180,8 +180,11 @@ function Test-AppPackageInstalled {
 }
 
 function Test-AppPrivateStorageReady {
+    $script:LastAppPrivateStorageReason = ""
     $appDataDir = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "pwd") -Seconds 5 -IncludeStandardError
     if (-not $appDataDir -or $appDataDir.Trim() -notmatch '^/data/(?:data|user/\d+)/[A-Za-z0-9._]+$') {
+        $detail = if ($appDataDir) { ($appDataDir.Trim() -replace '\s+', ' ') } else { "no response" }
+        $script:LastAppPrivateStorageReason = "run-as pwd failed: $detail"
         return $false
     }
 
@@ -190,7 +193,12 @@ function Test-AppPrivateStorageReady {
         Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", "files") -Seconds 5 -IncludeStandardError | Out-Null
         Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "touch", $marker) -Seconds 5 -IncludeStandardError | Out-Null
         $published = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "ls", $marker) -Seconds 5 -IncludeStandardError
-        return ($published -and $published.Trim() -ceq $marker)
+        if ($published -and $published.Trim() -ceq $marker) {
+            return $true
+        }
+        $detail = if ($published) { ($published.Trim() -replace '\s+', ' ') } else { "marker not found" }
+        $script:LastAppPrivateStorageReason = "app-private marker check failed: $detail"
+        return $false
     } finally {
         Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", $marker) -Seconds 5 -IncludeStandardError | Out-Null
     }
@@ -239,14 +247,15 @@ function Ensure-EmulatorHealthy {
         $forceRestart = $true
     }
     $healthScript = Join-Path $PSScriptRoot "emu_health.ps1"
-    & $healthScript -Restart -Wait -ForceRestart:$forceRestart -TimeoutSeconds 120
+    & $healthScript -Restart -Wait -ForceRestart:$forceRestart -TimeoutSeconds 120 -PreferredSerial $env:ANDROID_SERIAL
     $emuExit = $LASTEXITCODE
     if ($emuExit -ne 0 -and $emuExit -ne 2) {
         Write-Status "FAIL: Emulator could not be restored (exit $emuExit)" "Red"
         exit 1
     }
     if (-not (Wait-EmulatorReadyForTests -TimeoutSeconds 30)) {
-        Write-Status "FAIL: Emulator recovered but app-private storage is not ready" "Red"
+        $detail = if ($script:LastAppPrivateStorageReason) { ": $script:LastAppPrivateStorageReason" } else { "" }
+        Write-Status "FAIL: Emulator recovered but app-private storage is not ready$detail" "Red"
         exit 1
     }
     Write-Status "Emulator healthy" "Green"

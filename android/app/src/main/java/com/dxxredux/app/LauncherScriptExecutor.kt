@@ -71,7 +71,7 @@ internal fun stripLauncherJsonc(text: String): String {
 /**
  * Executes JSONC automation scripts in the launcher (SetupActivity) process.
  *
- * Steps like log, wait_ms, wait_for, assert, setup_command, reset_state,
+ * Steps like log, wait_ms, wait_for, assert, setup_command, mp_command, reset_state,
  * write_config, write_set_file, write_set_files, install_staged_demo, and enter_launcher are handled here. When an enter_game
  * step is reached, the executor launches the game with intent extras
  * telling the C engine where to resume, then suspends. SetupActivity
@@ -243,6 +243,16 @@ class LauncherScriptExecutor(
                     val postDelay = step.optLong("post_delay_ms", 0)
                     Log.i(TAG, "Sending setup command: $cmd")
                     sendSetupCommand(cmd, args)
+                    if (postDelay > 0) delay(postDelay)
+                    currentStep++
+                }
+
+                "mp_command" -> {
+                    val cmd = step.optString("command", "")
+                    val args = step.optJSONObject("args")
+                    val postDelay = step.optLong("post_delay_ms", 0)
+                    Log.i(TAG, "Sending multiplayer command: $cmd")
+                    sendCommand("com.dxxredux.MP_COMMAND", cmd, args)
                     if (postDelay > 0) delay(postDelay)
                     currentStep++
                 }
@@ -790,8 +800,14 @@ class LauncherScriptExecutor(
     private suspend fun sendSetupCommand(
         cmd: String,
         args: JSONObject?,
+    ) = sendCommand("com.dxxredux.SETUP_COMMAND", cmd, args)
+
+    private suspend fun sendCommand(
+        action: String,
+        cmd: String,
+        args: JSONObject?,
     ) {
-        val intent = Intent("com.dxxredux.SETUP_COMMAND")
+        val intent = Intent(action)
         intent.setPackage(context.packageName)
         intent.putExtra("command", cmd)
         if (args != null) {

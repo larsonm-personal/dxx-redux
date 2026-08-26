@@ -935,6 +935,9 @@ static void escort_report_secret_goal_failure(int goal_index);
 void set_escort_special_goal(int special_key)
 {
 	int marker_key;
+#ifdef __ANDROID__
+	int using_route_command = 0;
+#endif
 
 	if (!escort_goal_command_allowed())
 		return;
@@ -982,7 +985,16 @@ void set_escort_special_goal(int special_key)
 			case KEY_6:	Escort_special_goal = ESCORT_GOAL_HOSTAGE;		break;
 			case KEY_7:	Escort_special_goal = ESCORT_GOAL_SCRAM;			break;
 			case KEY_8:	Escort_special_goal = ESCORT_GOAL_PLAYER_SPEW;	break;
-			case KEY_9:	Escort_special_goal = ESCORT_GOAL_EXIT;			break;
+			case KEY_9:
+#ifdef __ANDROID__
+				using_route_command = escort_route_adopt_exit_command();
+				if (using_route_command) {
+					Escort_special_goal = -1;
+					break;
+				}
+#endif
+				Escort_special_goal = ESCORT_GOAL_EXIT;
+				break;
 			case KEY_0:
 				Escort_special_goal = -1;
 				Escort_goal_index = -1;
@@ -995,7 +1007,12 @@ void set_escort_special_goal(int special_key)
 
 	Last_buddy_message_time = GameTime64 - 2*F1_0;	//	Allow next message to come through.
 
-	say_escort_goal(Escort_special_goal);
+#ifdef __ANDROID__
+	if (using_route_command)
+		buddy_message("Finding NEXT: %s", escort_get_route_goal_instruction());
+	else
+#endif
+		say_escort_goal(Escort_special_goal);
 	// -- Escort_goal_object = escort_set_goal_object();
 
 	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;

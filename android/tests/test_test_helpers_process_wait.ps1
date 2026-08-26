@@ -151,6 +151,9 @@ $script:AppPrivateStorageReady = $false
 if (Test-EmulatorReadyForTests) {
     throw 'Unwritable app-private storage was accepted by emulator readiness'
 }
+if ($script:LastAppPrivateStorageReason -notmatch 'marker check failed') {
+    throw "App-private storage failure reason was not retained: $script:LastAppPrivateStorageReason"
+}
 $script:AppPrivateStorageReady = $true
 
 if (Wait-ProcessDead -TimeoutMs 250) {

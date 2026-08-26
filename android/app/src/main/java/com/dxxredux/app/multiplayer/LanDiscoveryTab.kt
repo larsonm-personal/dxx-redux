@@ -96,6 +96,7 @@ private fun getDefaultIpPrefix(): String {
 fun LanDiscoveryTab(
     callsign: String,
     onLaunchGame: (GameLaunchInfo) -> Unit,
+    onLaunchRequested: (String) -> Unit,
 ) {
     val joinedLobby by LobbyService.joinedLobby.collectAsState()
     val context = LocalContext.current
@@ -119,7 +120,7 @@ fun LanDiscoveryTab(
     if (joinedLobby != null) {
         LanJoinedLobbyView(callsign, onLaunchGame)
     } else {
-        LanDiscoveryView(callsign, onLaunchGame)
+        LanDiscoveryView(callsign, onLaunchGame, onLaunchRequested)
     }
 }
 
@@ -267,6 +268,7 @@ private fun LanJoinedLobbyView(
 private fun LanDiscoveryView(
     callsign: String,
     onLaunchGame: (GameLaunchInfo) -> Unit,
+    onLaunchRequested: (String) -> Unit,
 ) {
     val context = LocalContext.current
     val isLandscape =
@@ -756,6 +758,7 @@ private fun LanDiscoveryView(
                 }
                 Button(
                     onClick = {
+                        onLaunchRequested(hostedGame)
                         LobbyService.startGame(
                             hostedDifficulty,
                             hostedLevelNum,

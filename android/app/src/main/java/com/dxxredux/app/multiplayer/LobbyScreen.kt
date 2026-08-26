@@ -32,7 +32,10 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 
 @Composable
-fun LobbyScreen(onLaunchGame: (GameLaunchInfo) -> Unit) {
+fun LobbyScreen(
+    onLaunchGame: (GameLaunchInfo) -> Unit,
+    onLaunchRequested: (String) -> Unit,
+) {
     val state by MatchmakingStateHolder.state.collectAsState()
     val lobby = state.currentLobby ?: return
     val myId = state.playerId
@@ -152,7 +155,10 @@ fun LobbyScreen(onLaunchGame: (GameLaunchInfo) -> Unit) {
             val allReady = lobby.players.all { it.ready }
             val enoughPlayers = lobby.players.size >= 2
             Button(
-                onClick = { MatchmakingService.startGame() },
+                onClick = {
+                    onLaunchRequested(gi["game"]?.jsonPrimitive?.content ?: "d2")
+                    MatchmakingService.startGame()
+                },
                 enabled = allReady && enoughPlayers,
                 modifier = Modifier.fillMaxWidth(),
             ) {
