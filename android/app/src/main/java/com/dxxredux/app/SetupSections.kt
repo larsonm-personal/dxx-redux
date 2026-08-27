@@ -3570,6 +3570,7 @@ private fun LevelMetadataResultContent(
     onRobotPreview: (LevelMetadataLevelRow, LevelMetadataReplacementItem, String) -> Unit,
 ) {
     var showMusicMetadata by remember(result) { mutableStateOf(false) }
+    var showMissionIntent by remember(result) { mutableStateOf(false) }
     if (result == null) {
         ModDetailLine("No analysis result", color = MaterialTheme.colorScheme.error)
         return
@@ -3580,6 +3581,12 @@ private fun LevelMetadataResultContent(
     }
     if (result.missionName.isNotBlank()) {
         DetailRow("Mission", result.missionName)
+    }
+    result.missionIntent?.let { intent ->
+        MissionIntentRow(intent) { showMissionIntent = true }
+        if (showMissionIntent) {
+            MissionIntentDialog(intent) { showMissionIntent = false }
+        }
     }
     if (result.coopStarts.isNotBlank()) {
         DetailRow("Coop starts", result.coopStarts)
@@ -3634,6 +3641,138 @@ private fun LevelMetadataResultContent(
     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
     ModDetailSectionTitle("Levels")
     LevelMetadataTable(result.levels, target, previewPreparing, previewError, onPreview)
+}
+
+internal fun missionIntentClassificationLabel(classification: String): String =
+    when (classification) {
+        "single_player_or_coop" -> {
+            "Single-player / coop"
+        }
+
+        "multiplayer_anarchy" -> {
+            "Multiplayer anarchy"
+        }
+
+        "single_player_or_coop_and_multiplayer_anarchy" -> {
+            "Single-player / coop + multiplayer anarchy"
+        }
+
+        else -> {
+            "Ambiguous"
+        }
+    }
+
+private fun missionIntentRange(
+    minimum: Int,
+    maximum: Int,
+    levels: Int,
+): String =
+    when {
+        levels <= 0 -> "Not available"
+        minimum == maximum -> minimum.toString()
+        else -> "$minimum-$maximum"
+    }
+
+@Composable
+private fun MissionIntentRow(
+    intent: MissionIntentSummary,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            "Intended play: ",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            missionIntentClassificationLabel(intent.classification),
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.weight(1f),
+        )
+        Icon(
+            Icons.Default.Info,
+            contentDescription = "Show intended play classification details",
+            modifier = Modifier.size(18.dp),
+            tint = MaterialTheme.colorScheme.primary,
+        )
+    }
+}
+
+@Composable
+private fun MissionIntentDialog(
+    intent: MissionIntentSummary,
+    onDismiss: () -> Unit,
+) {
+    val scroll = rememberScrollState()
+    val declarationText =
+        intent.declarations
+            .enabledLabels()
+            .joinToString()
+            .ifBlank { "None" }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Intended play classification") },
+        text = {
+            Box(modifier = Modifier.heightIn(max = 460.dp)) {
+                SelectionContainer {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().verticalScroll(scroll),
+                        verticalArrangement = Arrangement.spacedBy(5.dp),
+                    ) {
+                        DetailRow("Classification", missionIntentClassificationLabel(intent.classification))
+                        DetailRow("Confidence", intent.confidence.replaceFirstChar { it.uppercase() })
+                        Text(
+                            intent.reason,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(vertical = 5.dp),
+                        )
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                        ModDetailSectionTitle("Rule inputs")
+                        DetailRow("Descriptor declarations", declarationText)
+                        DetailRow("Normal levels analyzed", intent.normalLevels.toString())
+                        DetailRow("Levels with campaign actors", intent.campaignActorLevels.toString())
+                        DetailRow("Arena-like levels", intent.arenaLikeLevels.toString())
+                        DetailRow("Solo-like levels", intent.soloLikeLevels.toString())
+                        DetailRow(
+                            "Ordinary player starts per level",
+                            missionIntentRange(intent.playerStartMin, intent.playerStartMax, intent.normalLevels),
+                        )
+                        DetailRow(
+                            "Coop-only starts per level",
+                            missionIntentRange(intent.coopStartMin, intent.coopStartMax, intent.normalLevels),
+                        )
+                        DetailRow("Robots", intent.robots.toString())
+                        DetailRow("Hostages", intent.hostages.toString())
+                        DetailRow("Matcens", intent.matcens.toString())
+                        DetailRow("Guide-Bots", intent.guidebots.toString())
+                        DetailRow("Powerups", intent.powerups.toString())
+                        DetailRow("Reactors", intent.reactors.toString())
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                        Text(
+                            "Applied rule: ${intent.rule}",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            "Campaign actors are robots, hostages, matcens, or Guide-Bots. " +
+                                "An arena-like level has no campaign actors and at least two ordinary player starts. " +
+                                "Secret levels are excluded from the mission-wide decision.",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                SetupScrollArrows(scroll)
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+    )
 }
 
 @Composable

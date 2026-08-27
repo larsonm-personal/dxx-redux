@@ -54,6 +54,7 @@ internal data class LevelMetadataTarget(
     val missionFilename: String? = null,
     val missionPath: String? = null,
     val missionType: String? = null,
+    val missionModeFlags: Set<String> = emptySet(),
     val levelFile: String? = null,
     val levelNum: Int = 1,
     val hogFile: String? = null,
@@ -376,6 +377,49 @@ internal data class LevelMetadataReplacementGroup(
     val items: List<LevelMetadataReplacementItem>,
 )
 
+internal data class MissionIntentDeclarations(
+    val anarchyOnly: Boolean,
+    val normal: Boolean,
+    val coop: Boolean,
+    val anarchy: Boolean,
+    val roboAnarchy: Boolean,
+    val captureFlag: Boolean,
+    val hoard: Boolean,
+) {
+    fun enabledLabels(): List<String> =
+        buildList {
+            if (anarchyOnly) add("Anarchy-only mission")
+            if (normal) add("Normal")
+            if (coop) add("Coop")
+            if (anarchy) add("Anarchy")
+            if (roboAnarchy) add("Robo-anarchy")
+            if (captureFlag) add("Capture the flag")
+            if (hoard) add("Hoard")
+        }
+}
+
+internal data class MissionIntentSummary(
+    val classification: String,
+    val rule: String,
+    val confidence: String,
+    val reason: String,
+    val declarations: MissionIntentDeclarations,
+    val normalLevels: Int,
+    val campaignActorLevels: Int,
+    val arenaLikeLevels: Int,
+    val soloLikeLevels: Int,
+    val playerStartMin: Int,
+    val playerStartMax: Int,
+    val coopStartMin: Int,
+    val coopStartMax: Int,
+    val robots: Int,
+    val hostages: Int,
+    val matcens: Int,
+    val guidebots: Int,
+    val powerups: Int,
+    val reactors: Int,
+)
+
 internal data class LevelMetadataLevelRow(
     val levelNum: Int,
     val secret: Boolean,
@@ -386,6 +430,10 @@ internal data class LevelMetadataLevelRow(
     val triggerCount: Int = 0,
     val objectCount: Int = 0,
     val textureCount: Int = 0,
+    val playerStarts: Int = 0,
+    val coopOnlyStarts: Int = 0,
+    val powerups: Int = 0,
+    val reactors: Int = 0,
     val robots: Int,
     val hostages: Int,
     val secrets: Int,
@@ -430,6 +478,7 @@ internal data class LevelMetadataResult(
     val problems: List<String>,
     val diagnostics: List<String> = emptyList(),
     val failureKind: String = "",
+    val missionIntent: MissionIntentSummary? = null,
 ) {
     companion object {
         fun fromJson(text: String): LevelMetadataResult {
@@ -495,6 +544,10 @@ internal data class LevelMetadataResult(
                                 triggerCount = row.optInt("trigger_count"),
                                 objectCount = row.optInt("object_count"),
                                 textureCount = row.optInt("texture_count"),
+                                playerStarts = row.optInt("player_starts"),
+                                coopOnlyStarts = row.optInt("coop_only_starts"),
+                                powerups = row.optInt("powerups"),
+                                reactors = row.optInt("reactors"),
                                 robots = row.optInt("robots"),
                                 hostages = row.optInt("hostages"),
                                 secrets = row.optInt("secrets"),
@@ -541,6 +594,7 @@ internal data class LevelMetadataResult(
                 problems = obj.optStringList("problems"),
                 diagnostics = obj.optStringList("diagnostics"),
                 failureKind = obj.optString("failure_kind"),
+                missionIntent = obj.optMissionIntent("mission_intent"),
             )
         }
 
@@ -566,6 +620,43 @@ internal data class LevelMetadataResult(
                 failureKind = failureKind,
             )
     }
+}
+
+private fun JSONObject.optMissionIntent(name: String): MissionIntentSummary? {
+    val value = optJSONObject(name) ?: return null
+    val classification = value.optString("classification")
+    if (classification.isBlank()) return null
+    val declarations = value.optJSONObject("declarations") ?: JSONObject()
+    return MissionIntentSummary(
+        classification = classification,
+        rule = value.optString("rule"),
+        confidence = value.optString("confidence"),
+        reason = value.optString("reason"),
+        declarations =
+            MissionIntentDeclarations(
+                anarchyOnly = declarations.optBoolean("anarchy_only"),
+                normal = declarations.optBoolean("normal"),
+                coop = declarations.optBoolean("coop"),
+                anarchy = declarations.optBoolean("anarchy"),
+                roboAnarchy = declarations.optBoolean("robo_anarchy"),
+                captureFlag = declarations.optBoolean("capture_flag"),
+                hoard = declarations.optBoolean("hoard"),
+            ),
+        normalLevels = value.optInt("normal_levels"),
+        campaignActorLevels = value.optInt("campaign_actor_levels"),
+        arenaLikeLevels = value.optInt("arena_like_levels"),
+        soloLikeLevels = value.optInt("solo_like_levels"),
+        playerStartMin = value.optInt("player_start_min"),
+        playerStartMax = value.optInt("player_start_max"),
+        coopStartMin = value.optInt("coop_start_min"),
+        coopStartMax = value.optInt("coop_start_max"),
+        robots = value.optInt("robots"),
+        hostages = value.optInt("hostages"),
+        matcens = value.optInt("matcens"),
+        guidebots = value.optInt("guidebots"),
+        powerups = value.optInt("powerups"),
+        reactors = value.optInt("reactors"),
+    )
 }
 
 internal data class LevelMetadataMusicTrack(
@@ -657,6 +748,7 @@ internal object LevelMetadataTargets {
                         missionDisplayName = mission.displayName,
                         missionFilename = descriptorFileNameForHog(file, game),
                         missionType = mission.type,
+                        missionModeFlags = mission.modeFlags,
                         hogFile = file.name,
                         normalLevelFiles = mission.levelNames,
                         secretLevelFiles = mission.secretLevelNames,
@@ -731,6 +823,7 @@ internal object LevelMetadataTargets {
             missionFilename = mission.path.substringAfterLast('/').substringAfterLast('\\'),
             missionPath = mission.path,
             missionType = mission.type,
+            missionModeFlags = mission.modeFlags,
             hogFiles =
                 missionSet.constituents
                     .filter { GameFileFormats.extensionOf(it.name) == "hog" }
@@ -909,6 +1002,7 @@ internal object LevelMetadataTargets {
             missionFilename = sourceLayout.relativeToRoot(extracted.relativePath),
             missionPath = constituent.path,
             missionType = mission.type,
+            missionModeFlags = mission.modeFlags,
             hogFiles = listOf(sourceLayout.relativeToRoot(hog.relativePath)),
             normalLevelFiles = mission.levelNames,
             secretLevelFiles = mission.secretLevelNames,
@@ -945,6 +1039,7 @@ internal object LevelMetadataTargets {
             missionFilename = sourceLayout.relativeToRoot(descriptor.relativePath),
             missionPath = descriptor.relativePath,
             missionType = mission.type,
+            missionModeFlags = mission.modeFlags,
             hogFiles = listOf(sourceLayout.relativeToRoot(extracted.relativePath)),
             normalLevelFiles = mission.levelNames,
             secretLevelFiles = mission.secretLevelNames,
@@ -1064,6 +1159,7 @@ internal object LevelMetadataTargets {
             missionDisplayName = mission.displayName,
             missionFilename = descriptor.name,
             missionType = mission.type,
+            missionModeFlags = mission.modeFlags,
             hogFile = hog.name,
             normalLevelFiles = mission.levelNames,
             secretLevelFiles = mission.secretLevelNames,
@@ -1099,6 +1195,7 @@ internal object LevelMetadataTargets {
                 missionDisplayName = mission.displayName,
                 missionFilename = constituent.name,
                 missionType = mission.type,
+                missionModeFlags = mission.modeFlags,
                 hogFiles = listOf(hogName),
                 normalLevelFiles = mission.levelNames,
                 secretLevelFiles = mission.secretLevelNames,
@@ -1134,6 +1231,7 @@ internal object LevelMetadataTargets {
                 missionDisplayName = mission.displayName,
                 missionFilename = descriptorEntry.name.substringAfterLast('/').substringAfterLast('\\'),
                 missionType = mission.type,
+                missionModeFlags = mission.modeFlags,
                 hogFiles = listOf(constituent.name),
                 normalLevelFiles = mission.levelNames,
                 secretLevelFiles = mission.secretLevelNames,
@@ -1683,6 +1781,7 @@ internal object LevelMetadataAnalyzer {
             .put("mission_display_name", prepared.missionDisplayName)
             .put("mission_filename", prepared.missionFilename)
             .put("mission_type", target.missionType.orEmpty())
+            .put("mission_mode_flags", JSONArray(target.missionModeFlags.sorted()))
             .put("level_file", prepared.levelFile)
             .put("level_num", prepared.levelNum)
             .put("hog_path", prepared.hogPath)

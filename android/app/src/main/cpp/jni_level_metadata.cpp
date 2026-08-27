@@ -1,6 +1,7 @@
 #include <jni.h>
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -50,6 +51,7 @@ extern "C" {
 
 #include "level_statistics.hpp"
 #include "midi_metadata_json.hpp"
+#include "mission_intent_classification.hpp"
 
 #ifdef DXX_BUILD_DESCENT_II
 extern "C" void piggy_init_pigfile(char *filename);
@@ -614,19 +616,34 @@ static int mount_requested_hogs(const json &request, LevelMetadataRequestMounts 
 	return 1;
 }
 
-static void count_level_objects(int *robots, int *hostages)
+struct LevelObjectCounts {
+	int player_starts = 0;
+	int coop_starts = 0;
+	int robots = 0;
+	int hostages = 0;
+	int powerups = 0;
+	int reactors = 0;
+};
+
+static LevelObjectCounts count_level_objects()
 {
-	*robots = 0;
-	*hostages = 0;
+	LevelObjectCounts counts;
+
 	for (int objnum = 0; objnum <= Highest_object_index; ++objnum) {
 		const object *obj = &Objects[objnum];
 		if (obj->flags & OF_SHOULD_BE_DEAD)
 			continue;
-		if (obj->type == OBJ_ROBOT)
-			++*robots;
-		else if (obj->type == OBJ_HOSTAGE)
-			++*hostages;
+		switch (obj->type) {
+			case OBJ_PLAYER:
+			case OBJ_GHOST: ++counts.player_starts; break;
+			case OBJ_COOP: ++counts.coop_starts; break;
+			case OBJ_ROBOT: ++counts.robots; break;
+			case OBJ_HOSTAGE: ++counts.hostages; break;
+			case OBJ_POWERUP: ++counts.powerups; break;
+			case OBJ_CNTRLCEN: ++counts.reactors; break;
+		}
 	}
+	return counts;
 }
 
 static std::string format_levelmeta_multiplier(double value)
@@ -776,13 +793,11 @@ static json serialize_current_level_row(int level_num, const char *level_file,
 	const secret_area_state *secret_state = secret_area_get_state();
 	const level_metadata_state *metadata = level_metadata_get_canonical_state();
 	char display_level_name[256];
-	int robots = 0;
-	int hostages = 0;
+	const LevelObjectCounts object_counts = count_level_objects();
 	json row;
 	route_analysis_cache_summary cache_summary;
 	level_metadata_visibility_cache_summary visibility_summary;
 
-	count_level_objects(&robots, &hostages);
 	row["level_num"] = level_num;
 	row["secret"] = level_num < 0;
 	level_metadata_choose_level_display_name(
@@ -795,8 +810,12 @@ static json serialize_current_level_row(int level_num, const char *level_file,
 	row["trigger_count"] = statistics.trigger_count;
 	row["object_count"] = statistics.object_count;
 	row["texture_count"] = statistics.texture_count;
-	row["robots"] = robots;
-	row["hostages"] = hostages;
+	row["player_starts"] = object_counts.player_starts;
+	row["coop_only_starts"] = object_counts.coop_starts;
+	row["robots"] = object_counts.robots;
+	row["hostages"] = object_counts.hostages;
+	row["powerups"] = object_counts.powerups;
+	row["reactors"] = object_counts.reactors;
 	row["secrets"] = secret_area_total(secret_state);
 	row["matcens"] = metadata ? metadata->matcen_count : 0;
 	row["energy_centers"] = metadata ? metadata->energy_center_count : 0;
@@ -913,6 +932,45 @@ static void set_coop_start_header(json &root, const json &request, const CoopSta
 		root["coop_starts"] = range.text();
 }
 
+static dxx_mission_intent::ModeDeclarations mission_intent_declarations(const json &request)
+{
+	dxx_mission_intent::ModeDeclarations result;
+	std::string mission_type = request.value("mission_type", "");
+
+	std::transform(mission_type.begin(), mission_type.end(), mission_type.begin(),
+	               [](unsigned char value) { return static_cast<char>(tolower(value)); });
+	result.anarchy_only = mission_type == "anarchy" || (Current_mission && ANARCHY_ONLY_MISSION);
+	for (const std::string &mode : json_string_array(request, "mission_mode_flags"))
+		result.add(mode.c_str());
+	return result;
+}
+
+static void set_mission_intent(json &root, const json &request)
+{
+	dxx_mission_intent::Accumulator accumulator;
+	const json::const_iterator levels = root.find("levels");
+
+	if (levels != root.end() && levels->is_array()) {
+		for (const json &row : *levels) {
+			if (row.value("status", "ok") != "ok")
+				continue;
+			dxx_mission_intent::LevelInputs input;
+			input.level_num = row.value("level_num", 0);
+			input.player_starts = row.value("player_starts", 0);
+			input.coop_starts = row.value("coop_only_starts", 0);
+			input.robots = row.value("robots", 0);
+			input.hostages = row.value("hostages", 0);
+			input.matcens = row.value("matcens", 0);
+			input.guidebots = row.value("guidebot_count", 0);
+			input.powerups = row.value("powerups", 0);
+			input.reactors = row.value("reactors", 0);
+			accumulator.add(input);
+		}
+	}
+	root["mission_intent"] =
+	    dxx_mission_intent::serialize<json>(accumulator.finish(mission_intent_declarations(request)));
+}
+
 enum LevelScanStatus {
 	LEVEL_SCAN_FAILED = 0,
 	LEVEL_SCAN_OK = 1,
@@ -932,8 +990,12 @@ static json failed_level_row(int level_num, const char *level_file,
 	row["trigger_count"] = 0;
 	row["object_count"] = 0;
 	row["texture_count"] = 0;
+	row["player_starts"] = 0;
+	row["coop_only_starts"] = 0;
 	row["robots"] = 0;
 	row["hostages"] = 0;
+	row["powerups"] = 0;
+	row["reactors"] = 0;
 	row["secrets"] = 0;
 	row["matcens"] = 0;
 	row["energy_centers"] = 0;
@@ -1103,6 +1165,7 @@ static json analyze_hog_entries(const json &request)
 		root["problems"].push_back("one or more levels could not be loaded");
 	if (missing_secret)
 		root["problems"].push_back("one or more secret levels are referenced but missing");
+	set_mission_intent(root, request);
 	return root;
 }
 
@@ -1145,6 +1208,7 @@ static json analyze_loaded_mission(const json &request)
 	root["music_tracks"] = serialize_active_music_metadata<json>();
 	root["levels"] = levels;
 	root["problems"] = json::array();
+	set_mission_intent(root, request);
 	return root;
 }
 
@@ -1221,6 +1285,7 @@ static json analyze_request(JNIEnv *env, jobject context, const json &request)
 		set_coop_start_header(root, request, coop_start_range);
 		root["levels"] = levels;
 		root["problems"] = json::array();
+		set_mission_intent(root, request);
 		return finish_levelmeta_request(mounts, request, root, error, sizeof(error));
 	}
 	if (source_type == "active_level") {
@@ -1256,6 +1321,7 @@ static json analyze_request(JNIEnv *env, jobject context, const json &request)
 		root["music_tracks"] = serialize_active_music_metadata<json>();
 		root["levels"] = levels;
 		root["problems"] = json::array();
+		set_mission_intent(root, request);
 		return finish_levelmeta_request(mounts, request, root, error, sizeof(error));
 	}
 	if (!load_requested_mission(request, mounts, error, sizeof(error)))

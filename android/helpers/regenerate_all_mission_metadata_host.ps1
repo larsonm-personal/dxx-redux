@@ -309,6 +309,8 @@ function ConvertTo-CheckedInMissionJson {
         mission_name = $missionName
         mission_filename = $filename
     }
+    $missionIntent = Get-Prop $Raw "mission_intent" $null
+    Add-IfString -Target $result -Name "mission_intent" -Value (Get-StringProp $missionIntent "classification")
     Add-IfString -Target $result -Name "coop_starts" -Value (Get-StringProp $Raw "coop_starts")
     $musicTracks = @(Get-ArrayValue (Get-Prop $Raw "music_tracks" @()))
     if ($musicTracks.Count -gt 0) {
@@ -647,10 +649,18 @@ function Get-MissionDescriptorInfo {
     if (-not $displayName) {
         $displayName = $Descriptor.BaseName
     }
+    $modeFlags = @(
+        foreach ($key in @("normal", "coop", "anarchy", "robo_anarchy", "capture_flag", "hoard")) {
+            if ($values.ContainsKey($key) -and $values[$key].ToLowerInvariant() -in @("yes", "true", "1")) {
+                $key
+            }
+        }
+    )
     return [pscustomobject]@{
         DisplayName = $displayName
         Filename = $Descriptor.Name
         Type = if ($values.ContainsKey("type")) { $values["type"].ToLowerInvariant() } else { "normal" }
+        ModeFlags = $modeFlags
     }
 }
 
@@ -703,14 +713,19 @@ function Invoke-HeadlessScan {
 
     $game = if ($Descriptor.Extension.Equals(".msn", [StringComparison]::OrdinalIgnoreCase)) { "d1" } else { "d2" }
     $mission = [IO.Path]::GetFileNameWithoutExtension($Descriptor.Name)
+    $descriptorInfo = Get-MissionDescriptorInfo -Descriptor $Descriptor
     $exe = $Executables[$game]
     $dataDir = $DataDirs[$game]
-    $exitCode = Invoke-HeadlessMetadataProcess -Executable $exe -Arguments @(
+    $arguments = @(
         "-hogdir", $dataDir,
         "-extra-dir", $StageDir,
         "-mission", $mission,
         "-secretarea-json-out", $RawOutputPath
-    ) -LogPath $LogPath -TimeoutSeconds $TimeoutSeconds
+    )
+    if ($descriptorInfo.ModeFlags.Count -gt 0) {
+        $arguments += @("-mission-mode-flags", ($descriptorInfo.ModeFlags -join ","))
+    }
+    $exitCode = Invoke-HeadlessMetadataProcess -Executable $exe -Arguments $arguments -LogPath $LogPath -TimeoutSeconds $TimeoutSeconds
     if ($exitCode -ne 0) {
         throw (Get-HeadlessFailureSummary -Mission $mission -LogPath $LogPath)
     }

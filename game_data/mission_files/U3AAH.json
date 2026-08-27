@@ -5,6 +5,7 @@
     "game": "d2",
     "mission_name": "U3AAH",
     "mission_filename": "U3AAH.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {

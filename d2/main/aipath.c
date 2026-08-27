@@ -44,6 +44,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_hooks.h"
 #ifdef __ANDROID__
 #include "escort.h"
+#include "escort_goal_policy.h"
 #include "guidebot_route_internal.h"
 #include "secretarea.h"
 #endif
@@ -1250,13 +1251,13 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 	while ((dist_to_goal < threshold_distance) && !forced_break) {
 
 #ifdef __ANDROID__
-		/* Android semantic guidance can legitimately end at the robot's current
-		 * point.  The classic path follower treats a one-point path as circular
-		 * and replaces it with a route back to the player, pulling Guide-Bot away
-		 * from the switch it just reached. */
-		if (robptr->companion && aip->path_length == 1 &&
-		    escort_get_route_goal_active()) {
-			aip->cur_path_index = 0;
+		/* The classic path follower treats a completed path as circular.  An
+		 * Android semantic route instead holds its exact endpoint until its
+		 * objective changes or the lost-player timeout recalls Guide-Bot. */
+		if (robptr->companion && escort_semantic_route_holds_endpoint(
+		        escort_get_route_goal_active(), ailp->mode == AIM_GOTO_OBJECT,
+		        escort_path_has_remaining_point(
+		            aip->path_length, aip->cur_path_index, aip->PATH_DIR))) {
 			vm_vec_zero(&objp->mtype.phys_info.velocity);
 			vm_vec_zero(&objp->mtype.phys_info.rotvel);
 			return;

@@ -79,6 +79,26 @@ class GameFileFormatsTest {
     }
 
     @Test
+    fun parsesExplicitMissionModeFlagsWithoutReadmeInterpretation() {
+        val mission =
+            GameFileFormats.parseMissionDescriptor(
+                "headband.mn2",
+                """
+                name = Headband
+                normal = yes
+                coop = true
+                anarchy = 1
+                robo_anarchy = no
+                capture_flag = yes
+                num_levels = 1
+                headband.rl2
+                """.trimIndent(),
+            )
+
+        assertEquals(setOf("normal", "coop", "anarchy", "capture_flag"), mission.modeFlags)
+    }
+
+    @Test
     fun stripsInlineCommentsFromMissionDescriptorLevelLists() {
         val mission =
             GameFileFormats.parseMissionDescriptor(

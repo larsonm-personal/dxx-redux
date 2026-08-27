@@ -5,6 +5,7 @@
     "game": "d1",
     "mission_name": "Trine - Episode 1",
     "mission_filename": "trine1.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {

@@ -5,6 +5,7 @@
     "game": "d2",
     "mission_name": "Encounter 2: Dimensions",
     "mission_filename": "eaf2.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {

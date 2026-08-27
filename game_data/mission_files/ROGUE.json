@@ -5,6 +5,7 @@
     "game": "d1",
     "mission_name": "The Rogue Missions",
     "mission_filename": "ROG.MSN",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {

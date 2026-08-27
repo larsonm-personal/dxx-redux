@@ -5,6 +5,7 @@
     "game": "d1",
     "mission_name": "Abandoned Base 1.0",
     "mission_filename": "abandn10.msn",
+    "mission_intent": "multiplayer_anarchy",
     "coop_starts": "4",
     "track_names": [
       {
@@ -328,6 +329,7 @@
     "game": "d1",
     "mission_name": "Abyss 1.0",
     "mission_filename": "abyss10.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -666,6 +668,7 @@
     "game": "d1",
     "mission_name": "Advanced Anarchy",
     "mission_filename": "advance.msn",
+    "mission_intent": "multiplayer_anarchy",
     "coop_starts": "1",
     "track_names": [
       {
@@ -962,6 +965,7 @@
     "game": "d1",
     "mission_name": "Alexander",
     "mission_filename": "alexand.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "2",
     "track_names": [
       {
@@ -1328,6 +1332,7 @@
     "game": "d1",
     "mission_name": "Alien Stronghold",
     "mission_filename": "alien.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1640,6 +1645,7 @@
     "game": "d1",
     "mission_name": "Alpha Centuri",
     "mission_filename": "alphac.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "2",
     "track_names": [
       {
@@ -2086,6 +2092,7 @@
     "game": "d1",
     "mission_name": "Death Arena",
     "mission_filename": "arena.msn",
+    "mission_intent": "multiplayer_anarchy",
     "coop_starts": "1",
     "track_names": [
       {
@@ -2355,6 +2362,7 @@
     "game": "d1",
     "mission_name": "Aurora",
     "mission_filename": "aurora.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2693,6 +2701,7 @@
     "game": "d1",
     "mission_name": "Barium",
     "mission_filename": "barium.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3044,6 +3053,7 @@
     "game": "d1",
     "mission_name": "CHAOS AT BAY 32",
     "mission_filename": "bay32.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3341,6 +3351,7 @@
     "game": "d1",
     "mission_name": "Nick the Blue Snake",
     "mission_filename": "blusnake.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3610,6 +3621,7 @@
     "game": "d1",
     "mission_name": "Boli",
     "mission_filename": "boli.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "2",
     "track_names": [
       {
@@ -3973,6 +3985,7 @@
     "game": "d1",
     "mission_name": "BRattica",
     "mission_filename": "brattica.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -4284,6 +4297,7 @@
     "game": "d1",
     "mission_name": "BRbeta",
     "mission_filename": "brbeta.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -4890,6 +4904,7 @@
     "game": "d1",
     "mission_name": "BRDecon",
     "mission_filename": "brdecon.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -5201,6 +5216,7 @@
     "game": "d1",
     "mission_name": "BRequipment",
     "mission_filename": "brequip.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -5566,6 +5582,7 @@
     "game": "d1",
     "mission_name": "BRinsane",
     "mission_filename": "brinsane.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "2",
     "track_names": [
       {
@@ -5929,6 +5946,7 @@
     "game": "d1",
     "mission_name": "BRspiral",
     "mission_filename": "brspiral.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -6240,6 +6258,7 @@
     "game": "d1",
     "mission_name": "BRtrade",
     "mission_filename": "brtrade.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -6628,6 +6647,7 @@
     "game": "d1",
     "mission_name": "Bushwak",
     "mission_filename": "bushwak.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -7034,6 +7054,7 @@
     "game": "d1",
     "mission_name": "Captain Rye's Rescue",
     "mission_filename": "cap-rye.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -7424,6 +7445,7 @@
     "game": "d1",
     "mission_name": "The Catacombs",
     "mission_filename": "catacomb.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -7751,6 +7773,7 @@
     "game": "d1",
     "mission_name": "Caverns Of Croix 1.1",
     "mission_filename": "cavern11.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -8143,6 +8166,7 @@
     "game": "d1",
     "mission_name": "Creeping Death",
     "mission_filename": "cd.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -8454,6 +8478,7 @@
     "game": "d1",
     "mission_name": "Chambers of Fun!",
     "mission_filename": "chambers.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -8723,6 +8748,7 @@
     "game": "d1",
     "mission_name": "Cicero Outpost",
     "mission_filename": "cicero.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -9144,6 +9170,7 @@
     "game": "d1",
     "mission_name": "C.O.D.",
     "mission_filename": "cod.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "2",
     "track_names": [
       {
@@ -9481,6 +9508,7 @@
     "game": "d1",
     "mission_name": "Halley's Comet",
     "mission_filename": "comet.msn",
+    "mission_intent": "multiplayer_anarchy",
     "coop_starts": "1",
     "track_names": [
       {
@@ -9750,6 +9778,7 @@
     "game": "d1",
     "mission_name": "CorkScrew",
     "mission_filename": "corkscrw.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -10165,6 +10194,7 @@
     "game": "d1",
     "mission_name": "CUBIK",
     "mission_filename": "cubik.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -10476,6 +10506,7 @@
     "game": "d1",
     "mission_name": "deathmat",
     "mission_filename": "deathmat.msn",
+    "mission_intent": "multiplayer_anarchy",
     "coop_starts": "1",
     "track_names": [
       {
@@ -10745,6 +10776,7 @@
     "game": "d1",
     "mission_name": "Deep Pit Mine",
     "mission_filename": "deep-pit.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -11108,6 +11140,7 @@
     "game": "d1",
     "mission_name": "Death Star",
     "mission_filename": "dethstar.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -11447,6 +11480,7 @@
     "game": "d1",
     "mission_name": "Devil's Heart",
     "mission_filename": "devheart.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -11899,6 +11933,7 @@
     "game": "d1",
     "mission_name": "Deep Jovian Mine",
     "mission_filename": "diamond.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -12235,6 +12270,7 @@
     "game": "d1",
     "mission_name": "Ziv's Dark Zone II",
     "mission_filename": "drkzone2.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -12547,6 +12583,7 @@
     "game": "d1",
     "mission_name": "Ziv's Descent City",
     "mission_filename": "dsntcity.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -12871,6 +12908,7 @@
     "game": "d1",
     "mission_name": "Century Post Excelsior As",
     "mission_filename": "excel.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -13294,6 +13332,7 @@
     "game": "d1",
     "mission_name": "fork",
     "mission_filename": "fork.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "2",
     "track_names": [
       {
@@ -13632,6 +13671,7 @@
     "game": "d1",
     "mission_name": "GameFreak's Realm",
     "mission_filename": "gamerelm.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -13943,6 +13983,7 @@
     "game": "d1",
     "mission_name": "Mine of Ganymed",
     "mission_filename": "ganymed.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -14493,6 +14534,7 @@
     "game": "d1",
     "mission_name": "gehenna",
     "mission_filename": "gehenna.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -14906,6 +14948,7 @@
     "game": "d1",
     "mission_name": "The Jolly Green Gyro",
     "mission_filename": "grengyro.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -15175,6 +15218,7 @@
     "game": "d1",
     "mission_name": "Hunting Halls 1.0",
     "mission_filename": "halls10.msn",
+    "mission_intent": "multiplayer_anarchy",
     "coop_starts": "4",
     "track_names": [
       {
@@ -15498,6 +15542,7 @@
     "game": "d1",
     "mission_name": "Hyperactive",
     "mission_filename": "hypractv.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -15795,6 +15840,7 @@
     "game": "d1",
     "mission_name": "Ice's Outpost I",
     "mission_filename": "iceout.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -16152,6 +16198,7 @@
     "game": "d1",
     "mission_name": "in square out",
     "mission_filename": "insqout.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -16519,6 +16566,7 @@
     "game": "d1",
     "mission_name": "JAXX",
     "mission_filename": "jaxx.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -16788,6 +16836,7 @@
     "game": "d1",
     "mission_name": "johnny's way",
     "mission_filename": "johnsway.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -17099,6 +17148,7 @@
     "game": "d1",
     "mission_name": "The Keep",
     "mission_filename": "keep.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -17368,6 +17418,7 @@
     "game": "d1",
     "mission_name": "Kicker",
     "mission_filename": "kicker.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -17637,6 +17688,7 @@
     "game": "d1",
     "mission_name": "Lava4d:The Total Conversi",
     "mission_filename": "lava4dtc.msn",
+    "mission_intent": "multiplayer_anarchy",
     "coop_starts": "1",
     "track_names": [
       {
@@ -17906,6 +17958,7 @@
     "game": "d1",
     "mission_name": "little devil by TAC",
     "mission_filename": "lil-dev.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -18220,6 +18273,7 @@
     "game": "d1",
     "mission_name": "The Lupis Outposts",
     "mission_filename": "lupis.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -19989,6 +20043,7 @@
     "game": "d1",
     "mission_name": "Lupis Outpost Two",
     "mission_filename": "lupis2.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -20375,6 +20430,7 @@
     "game": "d1",
     "mission_name": "Lupis Outpost Three",
     "mission_filename": "lupis3.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -20877,6 +20933,7 @@
     "game": "d1",
     "mission_name": "Lupis Outpost Four",
     "mission_filename": "lupis4.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -21272,6 +21329,7 @@
     "game": "d1",
     "mission_name": "Lupis Outpost Five",
     "mission_filename": "lupis5.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -21716,6 +21774,7 @@
     "game": "d1",
     "mission_name": "Lupis Outpost Six",
     "mission_filename": "lupis6.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -22077,6 +22136,7 @@
     "game": "d1",
     "mission_name": "Lupis Outpost Seven",
     "mission_filename": "lupis7.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -22455,6 +22515,7 @@
     "game": "d1",
     "mission_name": "The Magic Box",
     "mission_filename": "magicbox.msn",
+    "mission_intent": "multiplayer_anarchy",
     "coop_starts": "1",
     "track_names": [
       {
@@ -22724,6 +22785,7 @@
     "game": "d1",
     "mission_name": "Martian Gas Mine",
     "mission_filename": "mars.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -23089,6 +23151,7 @@
     "game": "d1",
     "mission_name": "Meridian",
     "mission_filename": "meridian.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -23386,6 +23449,7 @@
     "game": "d1",
     "mission_name": "R&D 2",
     "mission_filename": "muni2.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -23812,6 +23876,7 @@
     "game": "d1",
     "mission_name": "Neural Intensity!",
     "mission_filename": "neural-i.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -24205,6 +24270,7 @@
     "game": "d1",
     "mission_name": "Nexus Point",
     "mission_filename": "nexus.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -24513,6 +24579,7 @@
     "game": "d1",
     "mission_name": "Panic",
     "mission_filename": "panic.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -24824,6 +24891,7 @@
     "game": "d1",
     "mission_name": "Paradox",
     "mission_filename": "paradox.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -25146,6 +25214,7 @@
     "game": "d1",
     "mission_name": "The Pit",
     "mission_filename": "pit.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -25458,6 +25527,7 @@
     "game": "d1",
     "mission_name": "Ports O' Kill 1.0",
     "mission_filename": "ports10.msn",
+    "mission_intent": "multiplayer_anarchy",
     "coop_starts": "4",
     "track_names": [
       {
@@ -25727,6 +25797,7 @@
     "game": "d1",
     "mission_name": "pyramid",
     "mission_filename": "pyramid.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -26115,6 +26186,7 @@
     "game": "d1",
     "mission_name": "ratrace",
     "mission_filename": "ratrace.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "2",
     "track_names": [
       {
@@ -26476,6 +26548,7 @@
     "game": "d1",
     "mission_name": "REDRUM",
     "mission_filename": "redrum.msn",
+    "mission_intent": "multiplayer_anarchy",
     "coop_starts": "4",
     "track_names": [
       {
@@ -26715,6 +26788,7 @@
     "game": "d1",
     "mission_name": "Diplomatic Rescue",
     "mission_filename": "rescue.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -27087,6 +27161,7 @@
     "game": "d1",
     "mission_name": "Operation ResQ",
     "mission_filename": "resq.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -27508,6 +27583,7 @@
     "game": "d1",
     "mission_name": "Roundup",
     "mission_filename": "roundup.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -27819,6 +27895,7 @@
     "game": "d1",
     "mission_name": "SATELLITE",
     "mission_filename": "satelite.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -28213,6 +28290,7 @@
     "game": "d1",
     "mission_name": "Destination Saturn",
     "mission_filename": "saturn.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -28551,6 +28629,7 @@
     "game": "d1",
     "mission_name": "Secrets",
     "mission_filename": "secrets.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "2",
     "track_names": [
       {
@@ -28915,6 +28994,7 @@
     "game": "d1",
     "mission_name": "Seti-Alpha V",
     "mission_filename": "setialph.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -29278,6 +29358,7 @@
     "game": "d1",
     "mission_name": "Slightly Modified",
     "mission_filename": "slimod12.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -29589,6 +29670,7 @@
     "game": "d1",
     "mission_name": "Spooge",
     "mission_filename": "spooge.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -29927,6 +30009,7 @@
     "game": "d1",
     "mission_name": "The Stair Case",
     "mission_filename": "stair.msn",
+    "mission_intent": "multiplayer_anarchy",
     "coop_starts": "1",
     "track_names": [
       {
@@ -30196,6 +30279,7 @@
     "game": "d1",
     "mission_name": "stick",
     "mission_filename": "stick.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "2",
     "track_names": [
       {
@@ -30560,6 +30644,7 @@
     "game": "d1",
     "mission_name": "Submerged!",
     "mission_filename": "sub.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -30914,6 +30999,7 @@
     "game": "d1",
     "mission_name": "Switch",
     "mission_filename": "switch.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -31428,6 +31514,7 @@
     "game": "d1",
     "mission_name": "tartarus",
     "mission_filename": "tartarus.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -31841,6 +31928,7 @@
     "game": "d1",
     "mission_name": "Training Camp",
     "mission_filename": "tcamp.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -32110,6 +32198,7 @@
     "game": "d1",
     "mission_name": "Team Death!",
     "mission_filename": "teamdeth.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -32626,6 +32715,7 @@
     "game": "d1",
     "mission_name": "Technic Cleansing",
     "mission_filename": "techncl.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -33099,6 +33189,7 @@
     "game": "d1",
     "mission_name": "The Temple on 3rd Ave.",
     "mission_filename": "temple.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -33368,6 +33459,7 @@
     "game": "d1",
     "mission_name": "T.F. MiLiTaRY DePoT",
     "mission_filename": "titanium.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -33802,6 +33894,7 @@
     "game": "d1",
     "mission_name": "Tolstoy1",
     "mission_filename": "tolstoy1.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -34114,6 +34207,7 @@
     "game": "d1",
     "mission_name": "Tolstoy2",
     "mission_filename": "tolstoy2.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -34480,6 +34574,7 @@
     "game": "d1",
     "mission_name": "top",
     "mission_filename": "top.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "2",
     "track_names": [
       {
@@ -34848,6 +34943,7 @@
     "game": "d1",
     "mission_name": "tribyss omega",
     "mission_filename": "tribyss.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -35159,6 +35255,7 @@
     "game": "d1",
     "mission_name": "Turncoat",
     "mission_filename": "turncoat.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -35494,6 +35591,7 @@
     "game": "d1",
     "mission_name": "The Tapeworm Colony",
     "mission_filename": "twyrm.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -35805,6 +35903,7 @@
     "game": "d1",
     "mission_name": "ufp1771G",
     "mission_filename": "ufp1771g.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -36117,6 +36216,7 @@
     "game": "d1",
     "mission_name": "Vanguard",
     "mission_filename": "vanguard.msn",
+    "mission_intent": "multiplayer_anarchy",
     "coop_starts": "1",
     "track_names": [
       {
@@ -36386,6 +36486,7 @@
     "game": "d1",
     "mission_name": "Venus Const. Zone",
     "mission_filename": "venus1.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "2",
     "track_names": [
       {
@@ -36688,6 +36789,7 @@
     "game": "d1",
     "mission_name": "Venus Waste Processing Pl",
     "mission_filename": "venus3.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -37100,6 +37202,7 @@
     "game": "d1",
     "mission_name": "Viper's Playground",
     "mission_filename": "viper.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -37414,6 +37517,7 @@
     "game": "d1",
     "mission_name": "Viper's Playground",
     "mission_filename": "viper1.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -37728,6 +37832,7 @@
     "game": "d1",
     "mission_name": "Ziv's Village",
     "mission_filename": "votd.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {

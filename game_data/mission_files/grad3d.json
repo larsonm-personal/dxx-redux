@@ -5,6 +5,7 @@
     "game": "d2",
     "mission_name": "Gradius 3D: Defiance",
     "mission_filename": "GRADIUS.MN2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {

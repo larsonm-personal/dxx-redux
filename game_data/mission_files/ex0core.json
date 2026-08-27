@@ -5,6 +5,7 @@
     "game": "d2",
     "mission_name": "ex0core system",
     "mission_filename": "ex0core.mn2",
+    "mission_intent": "single_player_or_coop_and_multiplayer_anarchy",
     "coop_starts": "4",
     "track_names": [
       {

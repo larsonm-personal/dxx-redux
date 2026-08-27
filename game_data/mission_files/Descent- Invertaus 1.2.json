@@ -5,6 +5,7 @@
     "game": "d1",
     "mission_name": "Descent: Invertaus",
     "mission_filename": "dinvert.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1-3",
     "track_names": [
       {

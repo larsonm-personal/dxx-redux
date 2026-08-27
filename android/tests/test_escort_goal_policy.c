@@ -5,6 +5,9 @@
 
 int main(void)
 {
+	escort_path_recalc_limiter limiter = {{0}, 0};
+	long long next_allowed = -1;
+
 	assert(!escort_goal_is_pathable(-1));
 	assert(!escort_goal_is_pathable(0));
 	assert(escort_goal_is_pathable(1));
@@ -19,6 +22,33 @@ int main(void)
 	assert(!escort_path_needs_fallback(3, 0));
 	assert(escort_path_needs_fallback(0, 1));
 	assert(!escort_path_needs_fallback(1, 1));
+	assert(escort_semantic_route_suppresses_midpoint_visit(1, 1, 0));
+	assert(!escort_semantic_route_suppresses_midpoint_visit(1, 1, 1));
+	assert(!escort_semantic_route_suppresses_midpoint_visit(1, 0, 0));
+	assert(!escort_semantic_route_suppresses_midpoint_visit(0, 1, 0));
+	assert(escort_path_has_remaining_point(2, 0, 1));
+	assert(!escort_path_has_remaining_point(2, 1, 1));
+	assert(!escort_path_has_remaining_point(1, 0, 1));
+	assert(escort_path_has_remaining_point(2, 1, -1));
+	assert(!escort_path_has_remaining_point(2, 0, -1));
+	assert(!escort_path_has_remaining_point(0, 0, 1));
+	assert(escort_semantic_route_holds_endpoint(1, 1, 0));
+	assert(!escort_semantic_route_holds_endpoint(1, 1, 1));
+	assert(!escort_semantic_route_holds_endpoint(1, 0, 0));
+	assert(!escort_semantic_route_holds_endpoint(0, 1, 0));
+	assert(escort_path_recalc_limiter_allow(&limiter, 0, 1000, &next_allowed));
+	assert(escort_path_recalc_limiter_allow(&limiter, 100, 1000, &next_allowed));
+	assert(escort_path_recalc_limiter_allow(&limiter, 200, 1000, &next_allowed));
+	assert(escort_path_recalc_limiter_allow(&limiter, 300, 1000, &next_allowed));
+	assert(!escort_path_recalc_limiter_allow(&limiter, 999, 1000, &next_allowed));
+	assert(next_allowed == 1000);
+	assert(escort_path_recalc_limiter_allow(&limiter, 1000, 1000, &next_allowed));
+	assert(!escort_path_recalc_limiter_allow(&limiter, 1099, 1000, &next_allowed));
+	assert(next_allowed == 1100);
+	escort_path_recalc_limiter_reset(&limiter);
+	assert(escort_path_recalc_limiter_allow(&limiter, 500, 1000, &next_allowed));
+	assert(escort_path_recalc_limiter_allow(&limiter, 100, 1000, &next_allowed));
+	assert(limiter.count == 1);
 	puts("escort goal policy tests passed");
 	return 0;
 }

@@ -1210,6 +1210,10 @@ class LauncherScriptExecutor(
                     .put("trigger_count", row.triggerCount)
                     .put("object_count", row.objectCount)
                     .put("texture_count", row.textureCount)
+                    .put("player_starts", row.playerStarts)
+                    .put("coop_only_starts", row.coopOnlyStarts)
+                    .put("powerups", row.powerups)
+                    .put("reactors", row.reactors)
                     .put("robots", row.robots)
                     .put("hostages", row.hostages)
                     .put("secrets", row.secrets)
@@ -1260,10 +1264,42 @@ class LauncherScriptExecutor(
                     }
                 }.put("level_count", result.levels.size)
                 .put("levels", levels)
+        result.missionIntent?.let { json.put("mission_intent", missionIntentJson(it)) }
         if (result.problems.isNotEmpty()) json.put("problems", JSONArray(result.problems))
         if (result.diagnostics.isNotEmpty()) json.put("diagnostics", JSONArray(result.diagnostics))
         return json
     }
+
+    private fun missionIntentJson(intent: MissionIntentSummary): JSONObject =
+        JSONObject()
+            .put("classification", intent.classification)
+            .put("rule", intent.rule)
+            .put("confidence", intent.confidence)
+            .put("reason", intent.reason)
+            .put(
+                "declarations",
+                JSONObject()
+                    .put("anarchy_only", intent.declarations.anarchyOnly)
+                    .put("normal", intent.declarations.normal)
+                    .put("coop", intent.declarations.coop)
+                    .put("anarchy", intent.declarations.anarchy)
+                    .put("robo_anarchy", intent.declarations.roboAnarchy)
+                    .put("capture_flag", intent.declarations.captureFlag)
+                    .put("hoard", intent.declarations.hoard),
+            ).put("normal_levels", intent.normalLevels)
+            .put("campaign_actor_levels", intent.campaignActorLevels)
+            .put("arena_like_levels", intent.arenaLikeLevels)
+            .put("solo_like_levels", intent.soloLikeLevels)
+            .put("player_start_min", intent.playerStartMin)
+            .put("player_start_max", intent.playerStartMax)
+            .put("coop_start_min", intent.coopStartMin)
+            .put("coop_start_max", intent.coopStartMax)
+            .put("robots", intent.robots)
+            .put("hostages", intent.hostages)
+            .put("matcens", intent.matcens)
+            .put("guidebots", intent.guidebots)
+            .put("powerups", intent.powerups)
+            .put("reactors", intent.reactors)
 
     private fun levelMetadataRouteStepsJson(steps: List<LevelMetadataRouteStep>): JSONArray {
         val array = JSONArray()

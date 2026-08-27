@@ -5,6 +5,7 @@
     "game": "d2",
     "mission_name": "- MOON 01 -",
     "mission_filename": "-moon01-.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -256,6 +257,7 @@
     "game": "d2",
     "mission_name": "- MOON 02 -",
     "mission_filename": "-MOON02-.MN2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "5",
     "track_names": [
       {
@@ -376,6 +378,7 @@
     "game": "d2",
     "mission_name": "- MOON 03 -",
     "mission_filename": "-MOON03-.MN2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -802,6 +805,7 @@
     "game": "d2",
     "mission_name": "- MOON 04 -",
     "mission_filename": "-MOON04-.MN2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1213,6 +1217,7 @@
     "game": "d2",
     "mission_name": "- MOON 05 -",
     "mission_filename": "-MOON05-.MN2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1555,6 +1560,7 @@
     "game": "d2",
     "mission_name": "- MOON 06 -",
     "mission_filename": "-MOON06-.MN2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1675,6 +1681,7 @@
     "game": "d2",
     "mission_name": "- Moon 07 -",
     "mission_filename": "-MOON07-.MN2",
+    "mission_intent": "single_player_or_coop_and_multiplayer_anarchy",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2052,6 +2059,7 @@
     "game": "d2",
     "mission_name": "- MOON 08 -",
     "mission_filename": "-MOON08-.MN2",
+    "mission_intent": "single_player_or_coop_and_multiplayer_anarchy",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2468,6 +2476,7 @@
     "game": "d2",
     "mission_name": "- Moon 09 -",
     "mission_filename": "-MOON09-.MN2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3049,6 +3058,7 @@
     "game": "d2",
     "mission_name": "- MOON 10 -",
     "mission_filename": "-MOON10-.MN2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3428,6 +3438,7 @@
     "game": "d2",
     "mission_name": "- MOON 11 -",
     "mission_filename": "-MOON11-.MN2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3674,6 +3685,7 @@
     "game": "d2",
     "mission_name": "- Moon 12 -",
     "mission_filename": "-Moon12-.MN2",
+    "mission_intent": "single_player_or_coop_and_multiplayer_anarchy",
     "coop_starts": "4",
     "track_names": [
       {
@@ -4040,6 +4052,7 @@
     "game": "d2",
     "mission_name": "- MOON 13 -",
     "mission_filename": "-MOON13-.MN2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -4490,6 +4503,7 @@
     "game": "d2",
     "mission_name": "- MOON 14 -",
     "mission_filename": "-MOON14-.MN2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {

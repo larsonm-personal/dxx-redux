@@ -65,6 +65,56 @@ class LevelMetadataResultTest {
     }
 
     @Test
+    fun fromJsonReadsMissionIntentEvidence() {
+        val result =
+            LevelMetadataResult.fromJson(
+                """
+                {
+                  "status": "ok",
+                  "mission_intent": {
+                    "classification": "both",
+                    "rule": "descriptor_both",
+                    "confidence": "high",
+                    "reason": "Explicit declarations enable both kinds of play",
+                    "declarations": {
+                      "anarchy_only": false,
+                      "normal": true,
+                      "coop": true,
+                      "anarchy": true,
+                      "robo_anarchy": false,
+                      "capture_flag": false,
+                      "hoard": false
+                    },
+                    "normal_levels": 1,
+                    "campaign_actor_levels": 1,
+                    "arena_like_levels": 0,
+                    "solo_like_levels": 0,
+                    "player_start_min": 8,
+                    "player_start_max": 8,
+                    "coop_start_min": 3,
+                    "coop_start_max": 3,
+                    "robots": 26,
+                    "hostages": 1,
+                    "matcens": 2,
+                    "guidebots": 1,
+                    "powerups": 12,
+                    "reactors": 1
+                  },
+                  "levels": []
+                }
+                """.trimIndent(),
+            )
+
+        val intent = result.missionIntent!!
+        assertEquals("both", intent.classification)
+        assertEquals("descriptor_both", intent.rule)
+        assertEquals(listOf("Normal", "Coop", "Anarchy"), intent.declarations.enabledLabels())
+        assertEquals(8, intent.playerStartMin)
+        assertEquals(26, intent.robots)
+        assertEquals("Both", missionIntentClassificationLabel(intent.classification))
+    }
+
+    @Test
     fun fromJsonReadsInheritedMidiMetadata() {
         val result =
             LevelMetadataResult.fromJson(

@@ -5,6 +5,7 @@
     "game": "d2",
     "mission_name": "HARQYJIA MISSION",
     "mission_filename": "harqyjia.MN2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1-4",
     "track_names": [
       {

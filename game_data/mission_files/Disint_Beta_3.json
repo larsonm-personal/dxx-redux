@@ -5,6 +5,7 @@
     "game": "d2",
     "mission_name": "Disintegration",
     "mission_filename": "d2disint.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {

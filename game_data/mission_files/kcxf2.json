@@ -5,6 +5,7 @@
     "game": "d2",
     "mission_name": "KC-XF2",
     "mission_filename": "KCXF2.MN2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {

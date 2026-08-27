@@ -5,6 +5,7 @@
     "game": "d2",
     "mission_name": "Fimbul",
     "mission_filename": "fimbul.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "5",
     "track_names": [
       {

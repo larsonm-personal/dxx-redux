@@ -5,6 +5,7 @@
     "game": "d2",
     "mission_name": "Descent 2: Vertigo",
     "mission_filename": "d2x.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1-6",
     "track_names": [
       {
@@ -3057,6 +3058,7 @@
     "game": "d2",
     "mission_name": "Tutorial",
     "mission_filename": "tutorial.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {

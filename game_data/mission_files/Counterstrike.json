@@ -4,6 +4,7 @@
   "game": "d2",
   "mission_name": "Descent 2: Counterstrike!",
   "mission_filename": "d2",
+  "mission_intent": "single_player_or_coop",
   "coop_starts": "1-5",
   "track_names": [
     {

@@ -5,6 +5,7 @@
     "game": "d2",
     "mission_name": "Descent Maximum (fixed)",
     "mission_filename": "max_f.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1-5",
     "track_names": [
       {
@@ -5216,6 +5217,7 @@
     "game": "d2",
     "mission_name": "Descent Max Anarchy (fix)",
     "mission_filename": "maxlnk_f.mn2",
+    "mission_intent": "multiplayer_anarchy",
     "track_names": [
       {
         "track": 0,

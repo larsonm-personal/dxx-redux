@@ -5,6 +5,7 @@
     "game": "d1",
     "mission_name": "Combat Deluxe",
     "mission_filename": "comdelux.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -274,6 +275,7 @@
     "game": "d1",
     "mission_name": "Corridor Nine 1.1",
     "mission_filename": "corr11.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -588,6 +590,7 @@
     "game": "d1",
     "mission_name": "Demon Bridge",
     "mission_filename": "demonbrg.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -886,6 +889,7 @@
     "game": "d1",
     "mission_name": "Outpost Death",
     "mission_filename": "dethpost.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1199,6 +1203,7 @@
     "game": "d1",
     "mission_name": "Earth Strike",
     "mission_filename": "erthstrk.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1567,6 +1572,7 @@
     "game": "d1",
     "mission_name": "Firebase Omega",
     "mission_filename": "fbomega.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1867,6 +1873,7 @@
     "game": "d1",
     "mission_name": "Humility ver1.2",
     "mission_filename": "humil2.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2178,6 +2185,7 @@
     "game": "d1",
     "mission_name": "Lunar Surface Outpost",
     "mission_filename": "lunapost.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2618,6 +2626,7 @@
     "game": "d1",
     "mission_name": "Mad Decorator!",
     "mission_filename": "mad.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2956,6 +2965,7 @@
     "game": "d1",
     "mission_name": "Magnum Outpost Four",
     "mission_filename": "mag4.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3292,6 +3302,7 @@
     "game": "d1",
     "mission_name": "The Newest Threat",
     "mission_filename": "newest.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3603,6 +3614,7 @@
     "game": "d1",
     "mission_name": "The Observatory 1.3",
     "mission_filename": "obsrv13.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3940,6 +3952,7 @@
     "game": "d1",
     "mission_name": "Retribution Base 1.0",
     "mission_filename": "retrib10.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -4179,6 +4192,7 @@
     "game": "d1",
     "mission_name": "Retribution Base 1.1",
     "mission_filename": "retrib11.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -4418,6 +4432,7 @@
     "game": "d1",
     "mission_name": "Serenity",
     "mission_filename": "serenity.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -4756,6 +4771,7 @@
     "game": "d1",
     "mission_name": "Super Station",
     "mission_filename": "super_s.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -5024,6 +5040,7 @@
     "game": "d1",
     "mission_name": "Terminus",
     "mission_filename": "terminus.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -5362,6 +5379,7 @@
     "game": "d1",
     "mission_name": "Sea of Tranquility",
     "mission_filename": "tranquil.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {

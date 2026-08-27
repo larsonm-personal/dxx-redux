@@ -138,6 +138,17 @@ fix64	Escort_last_path_created = 0;
 int	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED, Escort_special_goal = -1, Escort_goal_index = -1, Buddy_messages_suppressed = 0;
 static int Escort_goal_secret_seg = -1;
 static int Escort_goal_secret_side = -1;
+#ifdef __ANDROID__
+static escort_path_recalc_limiter Escort_route_path_recalc_limiter;
+static int Escort_route_path_recalc_pending;
+static fix64 Escort_route_path_recalc_requested_time;
+static fix64 Escort_route_path_recalc_due_time;
+static unsigned int Escort_route_path_recalc_suppressed_count;
+static int Escort_route_path_recalc_goal_kind = -1;
+static int Escort_route_path_recalc_goal_seg = -1;
+static int Escort_route_path_recalc_goal_trigger = -1;
+static int Escort_route_path_recalc_goal_wall = -1;
+#endif
 fix64	Buddy_sorry_time;
 int	Buddy_objnum, Buddy_allowed_to_talk;
 int	Looking_for_marker;
@@ -251,6 +262,81 @@ static int thief_store_stolen_item(ubyte item)
 	return 1;
 }
 
+#ifdef __ANDROID__
+static void escort_route_path_recalc_cancel_pending(void)
+{
+	Escort_route_path_recalc_pending = 0;
+	Escort_route_path_recalc_requested_time = 0;
+	Escort_route_path_recalc_due_time = 0;
+	Escort_route_path_recalc_suppressed_count = 0;
+}
+
+static void escort_route_path_recalc_reset(void)
+{
+	escort_path_recalc_limiter_reset(&Escort_route_path_recalc_limiter);
+	escort_route_path_recalc_cancel_pending();
+}
+
+static void escort_route_path_recalc_sync_goal(void)
+{
+	if (!Escort_route_goal.active) {
+		escort_route_path_recalc_cancel_pending();
+		Escort_route_path_recalc_goal_kind = -1;
+		Escort_route_path_recalc_goal_seg = -1;
+		Escort_route_path_recalc_goal_trigger = -1;
+		Escort_route_path_recalc_goal_wall = -1;
+		return;
+	}
+	if (Escort_route_path_recalc_goal_kind == Escort_route_goal.objective_kind &&
+	    Escort_route_path_recalc_goal_seg == Escort_route_goal.target_seg &&
+	    Escort_route_path_recalc_goal_trigger == Escort_route_goal.objective_trigger &&
+	    Escort_route_path_recalc_goal_wall == Escort_route_goal.objective_wall)
+		return;
+	escort_route_path_recalc_cancel_pending();
+	Escort_route_path_recalc_goal_kind = Escort_route_goal.objective_kind;
+	Escort_route_path_recalc_goal_seg = Escort_route_goal.target_seg;
+	Escort_route_path_recalc_goal_trigger = Escort_route_goal.objective_trigger;
+	Escort_route_path_recalc_goal_wall = Escort_route_goal.objective_wall;
+}
+
+static int escort_route_path_recalc_begin(const char *reason)
+{
+	long long next_allowed;
+	fix64 delay;
+
+	escort_route_path_recalc_sync_goal();
+	if (!Escort_route_goal.active)
+		return 1;
+	if (escort_path_recalc_limiter_allow(&Escort_route_path_recalc_limiter,
+	                                     GameTime64, F1_0, &next_allowed)) {
+		if (Escort_route_path_recalc_pending) {
+			delay = GameTime64 - Escort_route_path_recalc_requested_time;
+			if (delay < 0)
+				delay = 0;
+			debug_log(DLOG_GUIDEBOT,
+			          "path_recalc delayed_rerun executed reason=%s delay_ms=%lld suppressed=%u",
+			          reason, (long long) (delay * 1000 / F1_0),
+			          Escort_route_path_recalc_suppressed_count);
+			Escort_route_path_recalc_pending = 0;
+			Escort_route_path_recalc_suppressed_count = 0;
+		}
+		return 1;
+	}
+	if (!Escort_route_path_recalc_pending) {
+		Escort_route_path_recalc_pending = 1;
+		Escort_route_path_recalc_requested_time = GameTime64;
+		Escort_route_path_recalc_due_time = (fix64) next_allowed;
+		debug_log(DLOG_GUIDEBOT,
+		          "path_recalc delayed_rerun scheduled reason=%s limit=%d delay_ms=%lld",
+		          reason, ESCORT_PATH_RECALC_LIMIT_PER_SECOND,
+		          (long long) ((Escort_route_path_recalc_due_time - GameTime64) *
+		                       1000 / F1_0));
+	}
+	Escort_route_path_recalc_suppressed_count++;
+	return 0;
+}
+#endif
+
 static void thief_drop_stolen_mine(object *objp, int weapon_id)
 {
 	int newseg;
@@ -278,6 +364,11 @@ void init_buddy_for_level(void)
 	Escort_goal_secret_seg = -1;
 	Escort_goal_secret_side = -1;
 #ifdef __ANDROID__
+	escort_route_path_recalc_reset();
+	Escort_route_path_recalc_goal_kind = -1;
+	Escort_route_path_recalc_goal_seg = -1;
+	Escort_route_path_recalc_goal_trigger = -1;
+	Escort_route_path_recalc_goal_wall = -1;
 	Escort_route_cache_poll_time = 0;
 	Escort_route_seen_revision = level_metadata_get_route_revision();
 	escort_route_clear_goal();
@@ -1838,7 +1929,6 @@ static void escort_route_monitor_path_progress(object *objp, ai_local *ailp,
 	if (target_seg != objp->segnum &&
 	    Escort_route_progress_signature == objp->signature &&
 	    Escort_route_progress_seg == objp->segnum &&
-	    Escort_route_progress_path_index == aip->cur_path_index &&
 	    Escort_route_progress_target_seg == target_seg)
 		Escort_route_progress_stall_samples++;
 	else
@@ -1885,8 +1975,31 @@ static void escort_route_monitor_path_progress(object *objp, ai_local *ailp,
 	          wall_num >= 0 && wall_num < Num_walls ? Walls[wall_num].controlling_trigger : -1,
 	          objp->size,
 	          Escort_route_stall_recovery_count);
+	if (!escort_route_path_recalc_begin("stalled_edge"))
+		return;
 	Escort_last_path_created = GameTime64;
 	escort_create_path_to_goal(objp);
+}
+
+static int escort_route_at_physical_endpoint(object *objp, ai_local *ailp,
+	ai_static *aip)
+{
+	point_seg *current_point;
+
+	if (!escort_semantic_route_holds_endpoint(
+	        Escort_route_goal.active, ailp->mode == AIM_GOTO_OBJECT,
+	        escort_get_route_goal_path_pending()))
+		return 0;
+	if (aip->hide_index < 0 || aip->path_length <= 0 ||
+	    aip->cur_path_index < 0 || aip->cur_path_index >= aip->path_length)
+		return 0;
+	current_point = &Point_segs[aip->hide_index + aip->cur_path_index];
+	if (Escort_route_goal.path_endpoint_seg >= 0 &&
+	    current_point->segnum != Escort_route_goal.path_endpoint_seg)
+		return 0;
+	if (objp->segnum != current_point->segnum)
+		return 0;
+	return vm_vec_dist_quick(&objp->pos, &current_point->point) <= F1_0 * 4;
 }
 #endif
 
@@ -1951,27 +2064,38 @@ int escort_get_route_goal_path_pending(void)
 {
 	ai_local *ailp;
 	ai_static *aip;
-	int next_path_index;
 
 	if (!escort_is_companion_object(Buddy_objnum))
 		return 0;
 	ailp = &Ai_local_info[Buddy_objnum];
 	aip = &Objects[Buddy_objnum].ctype.ai_info;
-	if (!Escort_route_goal.active || ailp->mode != AIM_GOTO_OBJECT || aip->path_length <= 1)
+	if (!Escort_route_goal.active || ailp->mode != AIM_GOTO_OBJECT ||
+	    aip->path_length <= 0)
 		return 0;
-	next_path_index = aip->cur_path_index + aip->PATH_DIR;
-	return next_path_index >= 0 && next_path_index < aip->path_length;
+	return escort_path_has_remaining_point(
+	    aip->path_length, aip->cur_path_index, aip->PATH_DIR);
 }
 #endif
 
 //	-----------------------------------------------------------------------------
 int time_to_visit_player(object *objp, ai_local *ailp, ai_static *aip)
 {
+	int lost_player_timeout = 0;
+
 	//	Note: This one has highest priority because, even if already going towards player,
 	//	might be necessary to create a new path, as player can move.
 	if (GameTime64 - Buddy_last_seen_player > MAX_ESCORT_TIME_AWAY)
 		if (GameTime64 - Buddy_last_player_path_created > F1_0)
-			return 1;
+			lost_player_timeout = 1;
+	if (lost_player_timeout)
+		return 1;
+
+#ifdef __ANDROID__
+	if (escort_semantic_route_suppresses_midpoint_visit(
+	        Escort_route_goal.active, ailp->mode == AIM_GOTO_OBJECT,
+	        lost_player_timeout))
+		return 0;
+#endif
 
 	if (ailp->mode == AIM_GOTO_PLAYER)
 		return 0;
@@ -2317,6 +2441,7 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 	int replay_visit_early_path_gate = 0;
 	int replay_player_seg = -1;
 	int replay_believed_seg = -1;
+	int semantic_route_terminal_hold = 0;
 	int replay_state_probe_active = input_demo_trace_escort_active() &&
 		Robot_info[objp->id].companion;
 	int replay_rng_probe_active = input_demo_trace_escort_active() &&
@@ -2328,6 +2453,21 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 #ifdef __ANDROID__
 	escort_route_monitor_path_progress(objp, ailp, aip);
 	escort_trace_navigation(objp, ailp, aip, dist_to_player, player_visibility);
+	escort_route_path_recalc_sync_goal();
+	semantic_route_terminal_hold =
+	    escort_route_at_physical_endpoint(objp, ailp, aip);
+	if (semantic_route_terminal_hold)
+		escort_route_path_recalc_cancel_pending();
+	else if (Escort_route_path_recalc_pending &&
+	    GameTime64 >= Escort_route_path_recalc_due_time) {
+		if (!escort_goal_is_pathable(Escort_goal_object))
+			Escort_goal_object = escort_set_goal_object();
+		if (escort_goal_is_pathable(Escort_goal_object) &&
+		    escort_route_path_recalc_begin("delayed_rerun")) {
+			ailp->mode = AIM_GOTO_OBJECT;
+			escort_create_path_to_goal(objp);
+		}
+	}
 #endif
 
 	if (player_visibility) {
@@ -2381,7 +2521,9 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 	}
 
 	//	Force checking for new goal every 5 seconds, and create new path, if necessary.
-	if (((Escort_special_goal != ESCORT_GOAL_SCRAM) && ((Escort_last_path_created + F1_0*5) < GameTime64)) ||
+	if (((Escort_special_goal != ESCORT_GOAL_SCRAM) &&
+	     !semantic_route_terminal_hold &&
+	     ((Escort_last_path_created + F1_0*5) < GameTime64)) ||
 		((Escort_special_goal == ESCORT_GOAL_SCRAM) && ((Escort_last_path_created + F1_0*15) < GameTime64))) {
 		if (replay_state_probe_active)
 			input_demo_log_escort_goal_reset();
@@ -2453,6 +2595,9 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 #ifdef __ANDROID__
 		if (!escort_goal_request_is_pathable(Escort_goal_object, Escort_special_goal))
 			return;
+		if (Escort_route_goal.active &&
+		    !escort_route_path_recalc_begin("player_path_midpoint"))
+			return;
 #endif
 		ailp->mode = AIM_GOTO_OBJECT;		//	May look stupid to be before path creation, but ai_door_is_openable uses mode to determine what doors can be got through
 		escort_create_path_to_goal(objp);
@@ -2482,6 +2627,9 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 			Escort_goal_object = escort_set_goal_object();
 #ifdef __ANDROID__
 			if (!escort_goal_request_is_pathable(Escort_goal_object, Escort_special_goal))
+				return;
+			if (Escort_route_goal.active &&
+			    !escort_route_path_recalc_begin("unspecified_goal"))
 				return;
 #endif
 			ailp->mode = AIM_GOTO_OBJECT;		//	May look stupid to be before path creation, but ai_door_is_openable uses mode to determine what doors can be got through

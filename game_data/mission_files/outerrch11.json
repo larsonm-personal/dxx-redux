@@ -5,6 +5,7 @@
     "game": "d1",
     "mission_name": "The Outer Reaches",
     "mission_filename": "outerrch.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "3",
     "track_names": [
       {

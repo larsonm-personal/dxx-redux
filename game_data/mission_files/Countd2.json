@@ -5,6 +5,7 @@
     "game": "d2",
     "mission_name": "Descent: The Countdown demo2",
     "mission_filename": "Countd2.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {

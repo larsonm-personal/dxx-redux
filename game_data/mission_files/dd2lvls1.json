@@ -5,6 +5,7 @@
     "game": "d2",
     "mission_name": "Descer's d2 stages 1",
     "mission_filename": "DD2LVLS1.MN2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {

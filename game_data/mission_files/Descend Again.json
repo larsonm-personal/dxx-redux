@@ -5,6 +5,7 @@
     "game": "d1",
     "mission_name": "Descend Again",
     "mission_filename": "series.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1-4",
     "track_names": [
       {

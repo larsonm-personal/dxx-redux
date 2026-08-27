@@ -5,6 +5,7 @@
     "game": "d2",
     "mission_name": "Project: H.Y.D.R.O.",
     "mission_filename": "Hydro.MN2",
+    "mission_intent": "single_player_or_coop_and_multiplayer_anarchy",
     "coop_starts": "1-4",
     "track_names": [
       {

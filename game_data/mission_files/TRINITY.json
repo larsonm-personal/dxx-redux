@@ -5,6 +5,7 @@
     "game": "d2",
     "mission_name": "Trinity United",
     "mission_filename": "Trinity.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1-6",
     "track_names": [
       {

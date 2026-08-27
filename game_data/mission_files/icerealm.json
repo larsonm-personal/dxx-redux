@@ -5,6 +5,7 @@
     "game": "d1",
     "mission_name": "Ice's Realm",
     "mission_filename": "icerealm.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {

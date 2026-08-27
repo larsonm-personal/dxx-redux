@@ -5,6 +5,7 @@
     "game": "d2",
     "mission_name": "Orion Nebula Project",
     "mission_filename": "ORION-D2.MN2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4-5",
     "track_names": [
       {

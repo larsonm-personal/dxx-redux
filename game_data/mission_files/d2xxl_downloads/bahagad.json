@@ -5,6 +5,7 @@
     "game": "d2",
     "mission_name": "Bahagad (easy mode)",
     "mission_filename": "bahaeasy.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1753,6 +1754,7 @@
     "game": "d2",
     "mission_name": "Bahagad Outbreak",
     "mission_filename": "bahagad.mn2",
+    "mission_intent": "single_player_or_coop_and_multiplayer_anarchy",
     "coop_starts": "4",
     "track_names": [
       {

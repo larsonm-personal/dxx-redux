@@ -5,6 +5,7 @@
     "game": "d2",
     "mission_name": "Gigalomania 01",
     "mission_filename": "gigalo01.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -309,6 +310,7 @@
     "game": "d2",
     "mission_name": "Gigalomania 02",
     "mission_filename": "gigalo02.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -752,6 +754,7 @@
     "game": "d2",
     "mission_name": "Gigalomania 03",
     "mission_filename": "gigalo03.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1037,6 +1040,7 @@
     "game": "d2",
     "mission_name": "Gigalomania 04",
     "mission_filename": "gigalo04.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1337,6 +1341,7 @@
     "game": "d2",
     "mission_name": "gigalomania 05",
     "mission_filename": "gigalo05.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1529,6 +1534,7 @@
     "game": "d2",
     "mission_name": "Gigalomania 06",
     "mission_filename": "gigalo06.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1746,6 +1752,7 @@
     "game": "d2",
     "mission_name": "gigalomania 07",
     "mission_filename": "gigalo07.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1938,6 +1945,7 @@
     "game": "d2",
     "mission_name": "Gigalomania 08",
     "mission_filename": "gigalo08.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2176,6 +2184,7 @@
     "game": "d2",
     "mission_name": "Gigalomania 09",
     "mission_filename": "gigalo09.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2404,6 +2413,7 @@
     "game": "d2",
     "mission_name": "Gigalomania 10",
     "mission_filename": "gigalo10.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2742,6 +2752,7 @@
     "game": "d2",
     "mission_name": "Gigalomania 11",
     "mission_filename": "gigalo11.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2951,6 +2962,7 @@
     "game": "d2",
     "mission_name": "gigalomania 12",
     "mission_filename": "gigalo12.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {

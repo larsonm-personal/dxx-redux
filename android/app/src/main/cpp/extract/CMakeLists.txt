@@ -462,6 +462,16 @@ add_test(NAME ogl_texture_filename_tests COMMAND test_ogl_texture_filename)
 add_executable(test_rgba8888 ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_rgba8888.c)
 target_include_directories(test_rgba8888 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
 add_test(NAME rgba8888_tests COMMAND test_rgba8888)
+add_executable(test_mission_intent_classification
+               ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_mission_intent_classification.cpp)
+target_include_directories(test_mission_intent_classification
+                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
+if(MSVC)
+    target_compile_options(test_mission_intent_classification PRIVATE /W4)
+else()
+    target_compile_options(test_mission_intent_classification PRIVATE -Wall -Wextra -Werror)
+endif()
+add_test(NAME mission_intent_classification_tests COMMAND test_mission_intent_classification)
 add_executable(test_merged_wall_geometry_hit
                ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_merged_wall_geometry_hit.c)
 target_include_directories(test_merged_wall_geometry_hit

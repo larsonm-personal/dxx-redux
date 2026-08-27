@@ -5,6 +5,7 @@
     "game": "d2",
     "mission_name": "Entropy",
     "mission_filename": "entropy.MN2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {

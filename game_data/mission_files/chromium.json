@@ -5,6 +5,7 @@
     "game": "d1",
     "mission_name": "Chromium Mines",
     "mission_filename": "CHROMIUM.MSN",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {

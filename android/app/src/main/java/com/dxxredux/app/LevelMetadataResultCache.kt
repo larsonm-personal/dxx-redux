@@ -6,7 +6,7 @@ import java.io.File
 import java.security.MessageDigest
 import java.util.Locale
 
-private const val LEVEL_METADATA_RESULT_CACHE_SCHEMA = "dxx-level-metadata-result-cache-v2"
+private const val LEVEL_METADATA_RESULT_CACHE_SCHEMA = "dxx-level-metadata-result-cache-v3"
 private const val LEVEL_METADATA_RESULT_CACHE_MAX_FILES = 512
 private const val LEVEL_METADATA_RESULT_CACHE_MAX_BYTES = 256L * 1024L * 1024L
 private const val LEVEL_METADATA_RESULT_CACHE_FILE_MAX_BYTES = 32L * 1024L * 1024L
@@ -42,6 +42,7 @@ internal object LevelMetadataResultCache {
                 .put("mission_name", target.missionName.orEmpty())
                 .put("mission_filename", target.missionFilename.orEmpty())
                 .put("mission_type", target.missionType.orEmpty())
+                .put("mission_mode_flags", JSONArray(target.missionModeFlags.sorted()))
                 .put("level_file", target.levelFile.orEmpty())
                 .put("level_num", target.levelNum)
                 .put("hog_file", target.hogFile.orEmpty())

@@ -53,6 +53,7 @@ extern "C" {
 #include "level_statistics.hpp"
 #include "route_planner.h"
 #include "midi_metadata_json.hpp"
+#include "mission_intent_classification.hpp"
 
 #ifdef DXX_BUILD_DESCENT_II
 extern "C" void piggy_init_pigfile(char *filename);
@@ -64,6 +65,7 @@ extern "C" void gameseq_init_network_players(void);
 static unsigned char *headless_screen_pixels = NULL;
 static int secret_area_dump_failed = 0;
 static int secret_area_missing_secret_levels = 0;
+static const char *mission_intent_mode_flags = NULL;
 
 namespace
 {
@@ -962,19 +964,34 @@ static nlohmann::ordered_json serialize_metadata_notes(const level_metadata_stat
 	return notes;
 }
 
-static void count_level_objects(int *robots, int *hostages)
+struct LevelObjectCounts {
+	int player_starts = 0;
+	int coop_starts = 0;
+	int robots = 0;
+	int hostages = 0;
+	int powerups = 0;
+	int reactors = 0;
+};
+
+static LevelObjectCounts count_level_objects()
 {
-	*robots = 0;
-	*hostages = 0;
+	LevelObjectCounts counts;
+
 	for (int objnum = 0; objnum <= Highest_object_index; ++objnum) {
 		const object *obj = &Objects[objnum];
 		if (obj->flags & OF_SHOULD_BE_DEAD)
 			continue;
-		if (obj->type == OBJ_ROBOT)
-			++*robots;
-		else if (obj->type == OBJ_HOSTAGE)
-			++*hostages;
+		switch (obj->type) {
+			case OBJ_PLAYER:
+			case OBJ_GHOST: ++counts.player_starts; break;
+			case OBJ_COOP: ++counts.coop_starts; break;
+			case OBJ_ROBOT: ++counts.robots; break;
+			case OBJ_HOSTAGE: ++counts.hostages; break;
+			case OBJ_POWERUP: ++counts.powerups; break;
+			case OBJ_CNTRLCEN: ++counts.reactors; break;
+		}
 	}
+	return counts;
 }
 
 static nlohmann::ordered_json serialize_current_level(
@@ -984,13 +1001,11 @@ static nlohmann::ordered_json serialize_current_level(
 	const level_metadata_state *metadata = level_metadata_get_canonical_state();
 	const secret_area_state *state = secret_area_get_state();
 	int total = secret_area_total(state);
-	int robots = 0;
-	int hostages = 0;
+	const LevelObjectCounts object_counts = count_level_objects();
 	nlohmann::ordered_json result;
 	nlohmann::ordered_json secrets = nlohmann::ordered_json::array();
 	char display_level_name[256];
 
-	count_level_objects(&robots, &hostages);
 	result["level_num"] = level_num;
 	result["secret"] = level_num < 0;
 	level_metadata_choose_level_display_name(
@@ -1003,8 +1018,12 @@ static nlohmann::ordered_json serialize_current_level(
 	result["trigger_count"] = statistics.trigger_count;
 	result["object_count"] = statistics.object_count;
 	result["texture_count"] = statistics.texture_count;
-	result["robot_count"] = robots;
-	result["hostage_count"] = hostages;
+	result["player_start_count"] = object_counts.player_starts;
+	result["coop_only_start_count"] = object_counts.coop_starts;
+	result["robot_count"] = object_counts.robots;
+	result["hostage_count"] = object_counts.hostages;
+	result["powerup_count"] = object_counts.powerups;
+	result["reactor_count"] = object_counts.reactors;
 	result["scanner_enabled"] = state->enabled ? true : false;
 	result["disabled_reason"] = secret_area_disabled_reason_name(state->disabled_reason);
 	result["raw_candidate_count"] = state->raw_candidate_count;
@@ -1066,8 +1085,12 @@ static nlohmann::ordered_json serialize_failed_level(int level_num, const char *
 	result["trigger_count"] = 0;
 	result["object_count"] = 0;
 	result["texture_count"] = 0;
+	result["player_start_count"] = 0;
+	result["coop_only_start_count"] = 0;
 	result["robot_count"] = 0;
 	result["hostage_count"] = 0;
+	result["powerup_count"] = 0;
+	result["reactor_count"] = 0;
 	result["scanner_enabled"] = false;
 	result["disabled_reason"] = secret_area_disabled_reason_name(SECRET_AREA_DISABLED_INVALID_VIEW);
 	result["raw_candidate_count"] = 0;
@@ -1099,6 +1122,50 @@ static nlohmann::ordered_json serialize_failed_level(int level_num, const char *
 	result["status"] = "failed";
 	result["problems"] = nlohmann::ordered_json::array({ problem ? problem : "could not load level" });
 	return result;
+}
+
+static dxx_mission_intent::ModeDeclarations mission_intent_declarations()
+{
+	dxx_mission_intent::ModeDeclarations result;
+
+	result.anarchy_only = Current_mission && ANARCHY_ONLY_MISSION;
+	if (!mission_intent_mode_flags)
+		return result;
+	std::string flags = mission_intent_mode_flags;
+	for (std::string::size_type begin = 0; begin <= flags.size();) {
+		const std::string::size_type end = flags.find(',', begin);
+		const std::string value = flags.substr(
+		    begin, end == std::string::npos ? std::string::npos : end - begin);
+		result.add(value.c_str());
+		if (end == std::string::npos)
+			break;
+		begin = end + 1;
+	}
+	return result;
+}
+
+static void set_mission_intent(
+    nlohmann::ordered_json &root, const nlohmann::ordered_json &levels)
+{
+	dxx_mission_intent::Accumulator accumulator;
+
+	for (const auto &row : levels) {
+		if (row.value("status", std::string()) == "failed")
+			continue;
+		dxx_mission_intent::LevelInputs input;
+		input.level_num = row.value("level_num", 0);
+		input.player_starts = row.value("player_start_count", 0);
+		input.coop_starts = row.value("coop_only_start_count", 0);
+		input.robots = row.value("robot_count", 0);
+		input.hostages = row.value("hostage_count", 0);
+		input.matcens = row.value("matcen_count", 0);
+		input.guidebots = row.value("guidebot_count", 0);
+		input.powerups = row.value("powerup_count", 0);
+		input.reactors = row.value("reactor_count", 0);
+		accumulator.add(input);
+	}
+	root["mission_intent"] = dxx_mission_intent::serialize<nlohmann::ordered_json>(
+	    accumulator.finish(mission_intent_declarations()));
 }
 
 static int dump_level(nlohmann::ordered_json &levels, int level_num, const char *level_file,
@@ -1214,6 +1281,7 @@ static nlohmann::ordered_json build_dump(int *total_secrets)
 		root["coop_starts"] = coop_start_range.text();
 	root["music_tracks"] = serialize_active_music_metadata<nlohmann::ordered_json>();
 	root["levels"] = levels;
+	set_mission_intent(root, levels);
 	root["problems"] = nlohmann::ordered_json::array();
 	if (secret_area_missing_secret_levels)
 		root["problems"].push_back("one or more secret levels are referenced but missing");
@@ -1261,6 +1329,7 @@ static nlohmann::ordered_json build_level_dump(
 	if (!coop_start_range.text().empty())
 		root["coop_starts"] = coop_start_range.text();
 	root["levels"] = levels;
+	set_mission_intent(root, levels);
 	root["problems"] = nlohmann::ordered_json::array();
 	root["total_secret_count"] = secret_total;
 	if (total_secrets)
@@ -1277,11 +1346,12 @@ int main(int argc, char *argv[])
 	const char *extra_dir = find_arg_value(argc, argv, "-extra-dir");
 	const char *level_text = find_arg_value(argc, argv, "-level");
 	const char *timing_json_out = find_arg_value(argc, argv, "-analysis-timing-json-out");
+	mission_intent_mode_flags = find_arg_value(argc, argv, "-mission-mode-flags");
 	int selected_level = 0;
 	benchmark_timing timing;
 	int total_secrets = 0;
 	if (!json_out && !coop_starts_json_out) {
-		fprintf(stderr, "usage: %s (-secretarea-json-out <path> | -coop-starts-json-out <path>) [-hogdir <game-data-dir>] [-extra-dir <mission-dir>] [-mission <mission-name>] [-level <signed-number>] [-analysis-timing-json-out <path>]\n",
+		fprintf(stderr, "usage: %s (-secretarea-json-out <path> | -coop-starts-json-out <path>) [-hogdir <game-data-dir>] [-extra-dir <mission-dir>] [-mission <mission-name>] [-mission-mode-flags <comma-separated-flags>] [-level <signed-number>] [-analysis-timing-json-out <path>]\n",
 		        argc > 0 ? argv[0] : "dxx-redux-headless-metadata");
 		return 1;
 	}

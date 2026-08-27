@@ -5,6 +5,7 @@
     "game": "d1",
     "mission_name": "Descent:Mercenary01",
     "mission_filename": "merc01.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -317,6 +318,7 @@
     "game": "d1",
     "mission_name": "Descent:Mercenary02",
     "mission_filename": "merc02.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -615,6 +617,7 @@
     "game": "d1",
     "mission_name": "descent:mercenary03",
     "mission_filename": "merc03.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -913,6 +916,7 @@
     "game": "d1",
     "mission_name": "descent:mercenary04",
     "mission_filename": "merc04.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -1252,6 +1256,7 @@
     "game": "d1",
     "mission_name": "descent:mercenary05",
     "mission_filename": "merc05.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -1522,6 +1527,7 @@
     "game": "d1",
     "mission_name": "descent:mercenary06",
     "mission_filename": "merc06.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -1762,6 +1768,7 @@
     "game": "d1",
     "mission_name": "descent:mercenary07",
     "mission_filename": "merc07.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {

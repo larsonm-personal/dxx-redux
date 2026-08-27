@@ -5,6 +5,7 @@
     "game": "d2",
     "mission_name": "Saturn",
     "mission_filename": "SATURN_E.MN2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {

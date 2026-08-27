@@ -5,6 +5,7 @@
     "game": "d2",
     "mission_name": "-Descent- Maximum",
     "mission_filename": "maximum.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1-5",
     "track_names": [
       {
@@ -5217,6 +5218,7 @@
     "game": "d2",
     "mission_name": "-Descent- Maximum Anarchy",
     "mission_filename": "maxlink.mn2",
+    "mission_intent": "multiplayer_anarchy",
     "coop_starts": "1",
     "track_names": [
       {

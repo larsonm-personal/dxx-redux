@@ -49,6 +49,7 @@ object GameFileFormats {
         val declaredSecretLevelCount: Int?,
         val assetReferences: Map<String, String>,
         val game: String,
+        val modeFlags: Set<String> = emptySet(),
         val valid: Boolean = true,
         val problem: String? = null,
     ) {
@@ -539,6 +540,11 @@ object GameFileFormats {
             declaredSecretLevelCount = declaredSecretLevelCount,
             assetReferences = assetReferences,
             game = detectMissionGame(path, levels),
+            modeFlags =
+                setOf("normal", "coop", "anarchy", "robo_anarchy", "capture_flag", "hoard")
+                    .filterTo(linkedSetOf()) { key ->
+                        values[key]?.lowercase(Locale.US) in setOf("yes", "true", "1")
+                    },
             valid = problem == null,
             problem = problem,
         )

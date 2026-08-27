@@ -5,6 +5,7 @@
     "game": "d1",
     "mission_name": "Ironstar 1.0",
     "mission_filename": "ironstar.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1-4",
     "track_names": [
       {

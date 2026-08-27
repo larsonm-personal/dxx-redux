@@ -5,6 +5,7 @@
     "game": "d1",
     "mission_name": "Colossus",
     "mission_filename": "COLOSSUS.MSN",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {

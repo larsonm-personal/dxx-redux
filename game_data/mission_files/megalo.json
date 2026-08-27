@@ -5,6 +5,7 @@
     "game": "d1",
     "mission_name": "Megalomania 01",
     "mission_filename": "megalo01.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -303,6 +304,7 @@
     "game": "d1",
     "mission_name": "Megalomania 02",
     "mission_filename": "megalo02.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -601,6 +603,7 @@
     "game": "d1",
     "mission_name": "Megalomania 03",
     "mission_filename": "megalo03.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -916,6 +919,7 @@
     "game": "d1",
     "mission_name": "Megalomania 04",
     "mission_filename": "megalo04.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1190,6 +1194,7 @@
     "game": "d1",
     "mission_name": "Megalomania 05",
     "mission_filename": "megalo05.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1502,6 +1507,7 @@
     "game": "d1",
     "mission_name": "Megalomania 06",
     "mission_filename": "megalo06.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1814,6 +1820,7 @@
     "game": "d1",
     "mission_name": "Megalomania 07",
     "mission_filename": "megalo07.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2180,6 +2187,7 @@
     "game": "d1",
     "mission_name": "Megalomania 08",
     "mission_filename": "megalo08.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2450,6 +2458,7 @@
     "game": "d1",
     "mission_name": "Megalomania 09",
     "mission_filename": "megalo09.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3084,6 +3093,7 @@
     "game": "d1",
     "mission_name": "Megalomania 10",
     "mission_filename": "megalo10.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3396,6 +3406,7 @@
     "game": "d1",
     "mission_name": "Megalomania 11",
     "mission_filename": "megalo11.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3678,6 +3689,7 @@
     "game": "d1",
     "mission_name": "Megalomania 12",
     "mission_filename": "megalo12.msn",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {

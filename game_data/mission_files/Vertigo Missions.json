@@ -5,6 +5,7 @@
     "game": "d1",
     "mission_name": "Vertigo Demensia",
     "mission_filename": "VERT.MSN",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {

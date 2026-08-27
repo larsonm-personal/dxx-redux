@@ -5,6 +5,7 @@
     "game": "d2",
     "mission_name": "Phobos Encounter",
     "mission_filename": "phobos-e.mn2",
+    "mission_intent": "single_player_or_coop_and_multiplayer_anarchy",
     "coop_starts": "4",
     "track_names": [
       {

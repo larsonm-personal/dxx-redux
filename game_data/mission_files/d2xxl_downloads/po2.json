@@ -5,6 +5,7 @@
     "game": "d2",
     "mission_name": "Dark Matter",
     "mission_filename": "darkmatr.mn2",
+    "mission_intent": "multiplayer_anarchy",
     "coop_starts": "1",
     "track_names": [
       {
@@ -124,6 +125,7 @@
     "game": "d2",
     "mission_name": "Pluton Outbreak 2",
     "mission_filename": "pluton2.mn2",
+    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1438,6 +1440,7 @@
     "game": "d2",
     "mission_name": "Vanhuta Tower",
     "mission_filename": "space1.mn2",
+    "mission_intent": "multiplayer_anarchy",
     "coop_starts": "1",
     "track_names": [
       {
