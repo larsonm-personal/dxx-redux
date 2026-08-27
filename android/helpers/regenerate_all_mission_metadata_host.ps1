@@ -15,11 +15,11 @@ $repoRoot = Split-Path -Parent $androidRoot
 . (Join-Path $scriptDir "standard_game_data.ps1")
 . (Join-Path $scriptDir "cd_level_metadata_sources.ps1")
 . (Join-Path $scriptDir "normalized_json_text.ps1")
-. (Join-Path $scriptDir "mission_metadata_archive_sources.ps1")
+. (Join-Path $scriptDir "mission_archive_sources.ps1")
 $zipDir = Join-Path $repoRoot "game_data\mission_files"
 $archiveSources = @()
 if (-not $CdSourcesOnly) {
-    $archiveSources = @(Get-AvailableMissionMetadataArchiveSources -Sources (Get-MissionMetadataArchiveSources -RepoRoot $repoRoot))
+    $archiveSources = @(Get-AvailableMissionArchiveSources -Sources (Get-MissionArchiveSources -RepoRoot $repoRoot))
 }
 $cdSourceManifest = Join-Path $zipDir "cd_level_metadata_sources.jsonc"
 $stamp = Get-Date -Format "yyyyMMdd_HHmmss"

@@ -21,14 +21,14 @@ $batch = Join-Path $scriptDir "run_mission_zip_batch.ps1"
 $hostBatch = Join-Path $scriptDir "regenerate_all_mission_metadata_host.ps1"
 . (Join-Path $scriptDir 'runtime_targeted_sampling.ps1')
 . (Join-Path $scriptDir 'cd_level_metadata_sources.ps1')
-. (Join-Path $scriptDir 'mission_metadata_archive_sources.ps1')
+. (Join-Path $scriptDir 'mission_archive_sources.ps1')
 
 function Write-Status {
     param([string]$Message, [string]$Color = "Cyan")
     Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] $Message" -ForegroundColor $Color
 }
 
-$archiveSources = @(Get-AvailableMissionMetadataArchiveSources -Sources (Get-MissionMetadataArchiveSources -RepoRoot $repoRoot))
+$archiveSources = @(Get-AvailableMissionArchiveSources -Sources (Get-MissionArchiveSources -RepoRoot $repoRoot))
 if (-not (Test-Path -LiteralPath $gradle -PathType Leaf)) {
     throw "Gradle wrapper not found: $gradle"
 }
@@ -44,7 +44,7 @@ foreach ($source in $archiveSources) {
     $archiveItemsBySource[$source.Id] = if ($MissingOnly) {
         @(Get-MissingMissionMetadataArchives -Source $source)
     } else {
-        @(Get-MissionMetadataArchives -Source $source)
+        @(Get-MissionArchives -Source $source)
     }
 }
 $eligibleArchiveCount = @($archiveItemsBySource.Values | ForEach-Object { $_ }).Count
@@ -103,6 +103,7 @@ if ($SampleFraction -lt 1.0) {
 }
 
 $sourceIndex = 0
+$archiveBatchExit = 0
 foreach ($source in $archiveSources) {
     $patterns = if ($SampleFraction -lt 1.0) {
         @($selectedArchivesBySource[$source.Id])
@@ -129,7 +130,7 @@ foreach ($source in $archiveSources) {
     $batchExit = $LASTEXITCODE
     if ($batchExit -ne 0) {
         Write-Status "Mission metadata regeneration failed with exit code $batchExit" "Red"
-        exit $batchExit
+        if ($archiveBatchExit -eq 0) { $archiveBatchExit = $batchExit }
     }
     $sourceIndex++
 }
@@ -142,8 +143,13 @@ if (-not $MissingOnly) {
     $cdBatchExit = $LASTEXITCODE
     if ($cdBatchExit -ne 0) {
         Write-Status "CD mission metadata regeneration failed with exit code $cdBatchExit" "Red"
-        exit $cdBatchExit
+        if ($archiveBatchExit -eq 0) { $archiveBatchExit = $cdBatchExit }
     }
+}
+
+if ($archiveBatchExit -ne 0) {
+    Write-Status "Mission metadata regeneration completed with failures" "Red"
+    exit $archiveBatchExit
 }
 
 Write-Status "Mission metadata regeneration complete" "Green"

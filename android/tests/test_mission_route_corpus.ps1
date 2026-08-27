@@ -7,7 +7,8 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 . (Join-Path $repoRoot 'android/helpers/powershell_compat.ps1')
-$metadataDir = Join-Path $repoRoot "game_data\mission_files"
+. (Join-Path $repoRoot 'android/helpers/mission_archive_sources.ps1')
+$missionSources = @(Get-AvailableMissionArchiveSources -Sources (Get-MissionArchiveSources -RepoRoot $repoRoot))
 $baselinePath = Join-Path $PSScriptRoot "fixtures\mission_route_baseline.json"
 
 function ConvertTo-RoundedRouteDistance {
@@ -81,9 +82,8 @@ function Normalize-RouteProjectionFloatJson {
 function Get-CurrentRouteManifest {
     $records = [Collections.Generic.List[object]]::new()
 
-    Get-ChildItem -LiteralPath $metadataDir -Filter "*.json" |
-        Where-Object { $_.Name -notlike "*.tracklist.json" } |
-        Sort-Object Name |
+    @($missionSources | ForEach-Object { Get-MissionMetadataFiles -Source $_ }) |
+        Sort-Object MissionMetadataKey |
         ForEach-Object {
             $metadataFile = $_
             $missions = @(ConvertFrom-CompatibleJsonItems -Json (Get-Content -LiteralPath $metadataFile.FullName -Raw))
@@ -117,7 +117,7 @@ function Get-CurrentRouteManifest {
                     # doubles differently, so stabilize schema float fields
                     $projectionJson = Normalize-RouteProjectionFloatJson -Json $projectionJson
                     $records.Add([pscustomobject][ordered]@{
-                            key = "$($metadataFile.Name)|$missionIndex|$($level.level_num)|$($level.level_file)"
+                            key = "$($metadataFile.MissionMetadataKey)|$missionIndex|$($level.level_num)|$($level.level_file)"
                             hash = Get-Sha256Text -Text $projectionJson
                             status = $status
                             step_count = $steps.Count

@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 private const val LEVEL_METADATA_TIMEOUT_MS = 120_000L
 internal const val LEVEL_METADATA_POLL_MS = 100L
 private const val LEVEL_METADATA_WORKER_START_TIMEOUT_MS = 5_000L
+private const val LEVEL_METADATA_WORKER_RESULT_GRACE_MS = 1_000L
 private const val LEVEL_METADATA_CANCELLATION_GRACE_MS = 2_000L
 private const val LEVEL_METADATA_PROGRESS_EXTENSION_MS = 120_000L
 private const val LEVEL_METADATA_MAX_ZIP_FILES = 240
@@ -169,6 +170,30 @@ internal class LevelMetadataProgressDeadline(
     }
 
     fun isExpired(nowMs: Long): Boolean = nowMs >= deadlineMs
+}
+
+internal class LevelMetadataWorkerResultGrace(
+    private val graceMs: Long = LEVEL_METADATA_WORKER_RESULT_GRACE_MS,
+) {
+    private var workerMissingSinceMs: Long? = null
+
+    fun shouldStop(
+        workerRunning: Boolean,
+        resultExists: Boolean,
+        startTimeoutElapsed: Boolean,
+        nowMs: Long,
+    ): Boolean {
+        if (workerRunning || resultExists || !startTimeoutElapsed) {
+            workerMissingSinceMs = null
+            return false
+        }
+        val missingSince = workerMissingSinceMs
+        if (missingSince == null) {
+            workerMissingSinceMs = nowMs
+            return false
+        }
+        return nowMs - missingSince >= graceMs
+    }
 }
 
 internal data class LevelMetadataWorkerIdentity(
@@ -627,6 +652,7 @@ internal object LevelMetadataTargets {
                         sourceType = "hog",
                         sourcePath = file.absolutePath,
                         dataDir = setDir.absolutePath,
+                        extraDataDir = file.parentFile?.absolutePath ?: setDir.absolutePath,
                         missionName = file.name.substringBeforeLast('.'),
                         missionDisplayName = mission.displayName,
                         missionFilename = descriptorFileNameForHog(file, game),
@@ -1303,6 +1329,7 @@ internal object LevelMetadataAnalyzer {
                 }
                 val workerStartedAt = SystemClock.elapsedRealtime()
                 val progressDeadline = LevelMetadataProgressDeadline(workerStartedAt)
+                val workerResultGrace = LevelMetadataWorkerResultGrace()
                 if (expectedLevelCount > 0) {
                     onProgress(
                         LevelMetadataAnalysisProgress(
@@ -1375,19 +1402,27 @@ internal object LevelMetadataAnalyzer {
                                 }
                             }
                     }
-                    if (!isOwnedWorkerProcessRunning(
+                    if (resultFile.isFile) continue
+                    val now = SystemClock.elapsedRealtime()
+                    val workerRunning =
+                        isOwnedWorkerProcessRunning(
                             appContext,
                             target.game,
                             requestId,
                             workerFile,
                             queuedFile,
                             ownerFile,
-                        ) &&
-                        SystemClock.elapsedRealtime() - workerStartedAt > LEVEL_METADATA_WORKER_START_TIMEOUT_MS
+                        )
+                    if (workerResultGrace.shouldStop(
+                            workerRunning = workerRunning,
+                            resultExists = resultFile.isFile,
+                            startTimeoutElapsed = now - workerStartedAt > LEVEL_METADATA_WORKER_START_TIMEOUT_MS,
+                            nowMs = now,
+                        )
                     ) {
                         break
                     }
-                    if (progressDeadline.isExpired(SystemClock.elapsedRealtime())) break
+                    if (progressDeadline.isExpired(now)) break
                     delay(LEVEL_METADATA_POLL_MS)
                 }
 

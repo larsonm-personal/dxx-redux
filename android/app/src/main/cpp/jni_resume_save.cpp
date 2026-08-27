@@ -477,6 +477,8 @@ static bool read_resume_candidate(const std::string &path,
 		return false;
 	if (save_metadata_path_identity_error(path, meta) != NULL)
 		return false;
+	if (save_path_is_coop(path.c_str()))
+		return false;
 	if (meta.wall_clock_unix_seconds == 0)
 		meta.wall_clock_unix_seconds = file_mtime_seconds(path.c_str());
 	callsign = sanitize_text(meta.callsign);
@@ -650,7 +652,7 @@ static std::string game_name_from_relative(const std::string &relative_path)
 }
 
 static bool select_newest_resume_save(const std::vector<std::string> &paths,
-	                                  android_save_meta_candidate *out);
+                                      android_save_meta_candidate *out);
 
 static void save_set_parts_from_relative(const std::string &relative_path,
                                          std::string *scope,
@@ -702,9 +704,9 @@ static std::string parent_path(const std::string &path)
 }
 
 static bool publish_last_save_set(const char *files_dir, const std::string &game,
-	                              const std::string &scope,
-	                              const std::string &pilot,
-	                              const std::string &mission)
+                                  const std::string &scope,
+                                  const std::string &pilot,
+                                  const std::string &mission)
 {
 	std::string root = std::string(files_dir) + "/" + game +
 	                   "/Players/save_sets";
@@ -730,9 +732,9 @@ static bool publish_last_save_set(const char *files_dir, const std::string &game
 }
 
 static bool last_save_set_matches(const char *files_dir, const std::string &game,
-	                              const std::string &scope,
-	                              const std::string &pilot,
-	                              const std::string &mission)
+                                  const std::string &scope,
+                                  const std::string &pilot,
+                                  const std::string &mission)
 {
 	std::string path = std::string(files_dir) + "/" + game +
 	                   "/Players/save_sets/last_" + scope + ".txt";
@@ -753,7 +755,7 @@ static bool last_save_set_matches(const char *files_dir, const std::string &game
 }
 
 static bool repair_deleted_save_set(const char *files_dir,
-	                                const std::string &deleted_path)
+                                    const std::string &deleted_path)
 {
 	std::string relative = relative_to_files_dir(files_dir, deleted_path.c_str());
 	std::string game = game_name_from_relative(relative);
@@ -774,11 +776,12 @@ static bool repair_deleted_save_set(const char *files_dir,
 
 	collect_save_paths(files_dir, (game + "x-redux").c_str(), &paths);
 	paths.erase(std::remove_if(paths.begin(), paths.end(), [&](const std::string &path) {
-		std::string candidate_scope;
-		save_set_parts_from_relative(relative_to_files_dir(files_dir, path.c_str()),
-		                             &candidate_scope, nullptr, nullptr);
-		return candidate_scope != scope;
-	}), paths.end());
+		            std::string candidate_scope;
+		            save_set_parts_from_relative(relative_to_files_dir(files_dir, path.c_str()),
+		                                         &candidate_scope, nullptr, nullptr);
+		            return candidate_scope != scope;
+	            }),
+	            paths.end());
 	if (!select_newest_resume_save(paths, &candidate))
 		return publish_last_save_set(files_dir, game + "x-redux", scope, "", "");
 

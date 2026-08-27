@@ -28,6 +28,7 @@ int state_android_build_secret_filename(char *filename, size_t filename_size,
 int state_android_build_coop_sidecar_filename(char *filename,
                                               size_t filename_size,
                                               const char *sidecar_name);
+int state_android_save_filename_is_coop(const char *filename);
 void state_android_ensure_parent_dirs_for_path(const char *filename);
 int state_android_write_save_metadata(rewind_file *fp, const char *desc,
                                       const char *mission_filename);

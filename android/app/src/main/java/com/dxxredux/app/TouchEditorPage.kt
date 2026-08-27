@@ -30,6 +30,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -76,6 +77,9 @@ private val cBackground = Color(0xFF1A1A1A)
 private val cCollisionWarn = Color(0xCCFF5722.toInt())
 private val cReticleBright = Color(0xFF20FF20)
 private val cReticleDark = Color(0x99408040)
+private val cMouseEdgeHorizontal = Color(0xFFFFFF00)
+private val cMouseEdgeVertical = Color(0xFF00FF00)
+private const val MOUSE_EDGE_EDITOR_MAX_ALPHA = 0.3f
 private const val SELECTED_TYPE_STICK_ZONE_EDGE = "stickZoneEdge"
 private const val SELECTED_TYPE_AXIS_REGION_EDGE = "axisRegionEdge"
 private const val SELECTED_TYPE_MORE_ACTIONS = "moreActions"
@@ -115,7 +119,7 @@ internal fun decodeFloatingZoneEdgeSelection(selectionIndex: Int): Pair<Int, Flo
     return selectionIndex / floatingZoneEdges.size to floatingZoneEdges[edgeIndex]
 }
 
-internal fun defaultTouchEditorEdgeHitSlopPx(buttonRadius: Float): Float = max(buttonRadius * 0.3f, 12f)
+internal fun defaultTouchEditorEdgeHitSlopPx(canvasWidth: Float): Float = max(canvasWidth * 0.03f, 12f)
 
 internal data class DefaultReticlePreviewGeometry(
     val center: Offset,
@@ -1156,6 +1160,115 @@ private fun drawDefaultReticlePreview(scope: DrawScope) {
     scope.drawCircle(cReticleDark, 2f * unit, point(10f, -2f), style = Stroke(strokeWidth))
 }
 
+private fun DrawScope.drawMouseEdgeBands(
+    bands: MouseEdgeAxisVisualBands,
+    lowPx: Float,
+    highPx: Float,
+    crossLowPx: Float,
+    crossHighPx: Float,
+    horizontal: Boolean,
+    color: Color,
+) {
+    fun drawBand(
+        startPx: Float,
+        endPx: Float,
+        brush: Brush? = null,
+    ) {
+        if (endPx <= startPx) return
+        val topLeft = if (horizontal) Offset(startPx, crossLowPx) else Offset(crossLowPx, startPx)
+        val size =
+            if (horizontal) {
+                ComposeSize(endPx - startPx, crossHighPx - crossLowPx)
+            } else {
+                ComposeSize(crossHighPx - crossLowPx, endPx - startPx)
+            }
+        if (brush == null) {
+            drawRect(color = color, topLeft = topLeft, size = size)
+        } else {
+            drawRect(brush = brush, topLeft = topLeft, size = size)
+        }
+    }
+
+    drawBand(lowPx, bands.negativeFullRatePx)
+    if (bands.negativeRampInnerPx > bands.negativeFullRatePx) {
+        val brush =
+            if (horizontal) {
+                Brush.horizontalGradient(
+                    colors = listOf(color, color.copy(alpha = 0f)),
+                    startX = bands.negativeFullRatePx,
+                    endX = bands.negativeRampInnerPx,
+                )
+            } else {
+                Brush.verticalGradient(
+                    colors = listOf(color, color.copy(alpha = 0f)),
+                    startY = bands.negativeFullRatePx,
+                    endY = bands.negativeRampInnerPx,
+                )
+            }
+        drawBand(bands.negativeFullRatePx, bands.negativeRampInnerPx, brush)
+    }
+    if (bands.positiveFullRatePx > bands.positiveRampInnerPx) {
+        val brush =
+            if (horizontal) {
+                Brush.horizontalGradient(
+                    colors = listOf(color.copy(alpha = 0f), color),
+                    startX = bands.positiveRampInnerPx,
+                    endX = bands.positiveFullRatePx,
+                )
+            } else {
+                Brush.verticalGradient(
+                    colors = listOf(color.copy(alpha = 0f), color),
+                    startY = bands.positiveRampInnerPx,
+                    endY = bands.positiveFullRatePx,
+                )
+            }
+        drawBand(bands.positiveRampInnerPx, bands.positiveFullRatePx, brush)
+    }
+    drawBand(bands.positiveFullRatePx, highPx)
+}
+
+private fun DrawScope.drawEditorLabel(
+    textMeasurer: androidx.compose.ui.text.TextMeasurer,
+    label: String,
+    center: Offset,
+    style: TextStyle,
+) {
+    val textResult = textMeasurer.measure(label, style = style)
+    drawText(
+        textResult,
+        topLeft = Offset(center.x - textResult.size.width / 2f, center.y - textResult.size.height / 2f),
+    )
+}
+
+internal fun editorStickAxisLabels(
+    axisX: Int,
+    axisY: Int,
+): Pair<String, String> =
+    Pair(
+        TouchBindings.AXIS_LABELS[axisX] ?: "?",
+        TouchBindings.AXIS_LABELS[axisY] ?: "?",
+    )
+
+private fun DrawScope.drawEditorStickAxisLabels(
+    textMeasurer: androidx.compose.ui.text.TextMeasurer,
+    labels: Pair<String, String>,
+    center: Offset,
+    style: TextStyle,
+) {
+    val xResult = textMeasurer.measure(labels.first, style = style)
+    val yResult = textMeasurer.measure(labels.second, style = style)
+    val gap = 1.dp.toPx()
+    val top = center.y - (xResult.size.height + gap + yResult.size.height) / 2f
+    drawText(
+        xResult,
+        topLeft = Offset(center.x - xResult.size.width / 2f, top),
+    )
+    drawText(
+        yResult,
+        topLeft = Offset(center.x - yResult.size.width / 2f, top + xResult.size.height + gap),
+    )
+}
+
 private fun drawAllControls(
     scope: DrawScope,
     layout: TouchLayout,
@@ -1186,6 +1299,8 @@ private fun drawAllControls(
         var zoneTop = 0f
         var zoneRight = 0f
         var zoneBottom = 0f
+        var horizontalEdgeBands: MouseEdgeAxisVisualBands? = null
+        var verticalEdgeBands: MouseEdgeAxisVisualBands? = null
 
         // Floating zone indicator
         if (hasEditableZone) {
@@ -1206,6 +1321,50 @@ private fun drawAllControls(
                 size = fzSize,
             )
             if (stick.mouseMode) {
+                horizontalEdgeBands =
+                    mouseEdgeAxisVisualBands(
+                        enabled = stick.mouseEdgeContinuousMovement,
+                        lowPx = zoneLeft,
+                        highPx = zoneRight,
+                        screenLowPx = 0f,
+                        screenHighPx = w,
+                        edgeRegionPct = stick.mouseEdgeRegionPct,
+                        screenEdgeZonePct = stick.mouseScreenEdgeZonePct,
+                        edgeMaxRatePct = stick.mouseEdgeMaxRatePct,
+                    )
+                verticalEdgeBands =
+                    mouseEdgeAxisVisualBands(
+                        enabled = stick.mouseEdgeContinuousMovement,
+                        lowPx = zoneTop,
+                        highPx = zoneBottom,
+                        screenLowPx = 0f,
+                        screenHighPx = h,
+                        edgeRegionPct = stick.mouseEdgeRegionPct,
+                        screenEdgeZonePct = stick.mouseScreenEdgeZonePct,
+                        edgeMaxRatePct = stick.mouseEdgeMaxRatePct,
+                    )
+                horizontalEdgeBands?.let {
+                    scope.drawMouseEdgeBands(
+                        bands = it,
+                        lowPx = zoneLeft,
+                        highPx = zoneRight,
+                        crossLowPx = zoneTop,
+                        crossHighPx = zoneBottom,
+                        horizontal = true,
+                        color = cMouseEdgeHorizontal.copy(alpha = MOUSE_EDGE_EDITOR_MAX_ALPHA * alpha * it.maxStrength),
+                    )
+                }
+                verticalEdgeBands?.let {
+                    scope.drawMouseEdgeBands(
+                        bands = it,
+                        lowPx = zoneTop,
+                        highPx = zoneBottom,
+                        crossLowPx = zoneLeft,
+                        crossHighPx = zoneRight,
+                        horizontal = false,
+                        color = cMouseEdgeVertical.copy(alpha = MOUSE_EDGE_EDITOR_MAX_ALPHA * alpha * it.maxStrength),
+                    )
+                }
                 // In mouse mode, draw a visible border instead of the stick circle
                 scope.drawRect(
                     color = cStickRing.copy(alpha = alpha),
@@ -1270,20 +1429,39 @@ private fun drawAllControls(
         if (selectedEdge != null && hasEditableZone && !stick.mouseMode) {
             scope.drawSelectedZoneEdge(zoneLeft, zoneTop, zoneRight, zoneBottom, selectedEdge)
         }
-        // Label
-        val label = TouchBindings.AXIS_LABELS[stick.axisX]?.take(3) ?: "?"
-        val textResult =
-            textMeasurer.measure(
-                label,
-                style = TextStyle(fontSize = 10.sp, color = cButtonLabel.copy(alpha = alpha)),
+        if (horizontalEdgeBands != null && verticalEdgeBands != null) {
+            val labels = mouseEdgeDirectionLabels(stick.invertX, stick.invertY)
+            val textStyle = TextStyle(fontSize = 9.sp, color = cButtonLabel.copy(alpha = alpha))
+            scope.drawEditorLabel(
+                textMeasurer,
+                labels.left,
+                Offset((zoneLeft + horizontalEdgeBands.negativeRampInnerPx) / 2f, (zoneTop + zoneBottom) / 2f),
+                textStyle,
             )
-        scope.drawText(
-            textResult,
-            topLeft =
-                Offset(
-                    cx - textResult.size.width / 2f,
-                    cy - textResult.size.height / 2f,
-                ),
+            scope.drawEditorLabel(
+                textMeasurer,
+                labels.right,
+                Offset((horizontalEdgeBands.positiveRampInnerPx + zoneRight) / 2f, (zoneTop + zoneBottom) / 2f),
+                textStyle,
+            )
+            scope.drawEditorLabel(
+                textMeasurer,
+                labels.top,
+                Offset((zoneLeft + zoneRight) / 2f, (zoneTop + verticalEdgeBands.negativeRampInnerPx) / 2f),
+                textStyle,
+            )
+            scope.drawEditorLabel(
+                textMeasurer,
+                labels.bottom,
+                Offset((zoneLeft + zoneRight) / 2f, (verticalEdgeBands.positiveRampInnerPx + zoneBottom) / 2f),
+                textStyle,
+            )
+        }
+        scope.drawEditorStickAxisLabels(
+            textMeasurer = textMeasurer,
+            labels = editorStickAxisLabels(stick.axisX, stick.axisY),
+            center = Offset(cx, cy),
+            style = TextStyle(fontSize = 9.sp, color = cButtonLabel.copy(alpha = alpha)),
         )
     }
 
@@ -1944,8 +2122,9 @@ internal fun hitTestAll(
 ): List<Pair<String, Int>> {
     val baseScale = sqrt(canvasWidth * canvasHeight)
     val hits = mutableListOf<Pair<String, Int>>()
-    val regionHits = mutableListOf<Pair<String, Int>>()
-    val edgeHitSlopPx = defaultTouchEditorEdgeHitSlopPx(baseScale * 0.04f)
+    val edgeHits = mutableListOf<Pair<String, Int>>()
+    val broadRegionHits = mutableListOf<Pair<String, Int>>()
+    val edgeHitSlopPx = defaultTouchEditorEdgeHitSlopPx(canvasWidth)
 
     // Check buttons first (smaller targets, should take priority)
     layout.buttons.forEachIndexed { i, btn ->
@@ -1968,11 +2147,11 @@ internal fun hitTestAll(
         hits.add(Pair(SELECTED_TYPE_MORE_ACTIONS, 0))
     }
 
-    // Check editable stick-zone and axis-region edges before larger body hits.
+    // Check editable stick-zone and axis-region edges before larger body hits
     layout.sticks.forEachIndexed { i, stick ->
         if (!stick.floating && !stick.mouseMode) return@forEachIndexed
         addFloatingZoneEdgeHits(
-            hits = regionHits,
+            hits = edgeHits,
             selectionType = SELECTED_TYPE_STICK_ZONE_EDGE,
             controlIndex = i,
             zone = stick.floatingZone,
@@ -1984,7 +2163,7 @@ internal fun hitTestAll(
     }
     layout.axisRegions.forEachIndexed { i, ar ->
         addFloatingZoneEdgeHits(
-            hits = regionHits,
+            hits = edgeHits,
             selectionType = SELECTED_TYPE_AXIS_REGION_EDGE,
             controlIndex = i,
             zone = ar.zone,
@@ -2030,13 +2209,13 @@ internal fun hitTestAll(
             val top = canvasHeight * fz.topPct / 100f
             val right = canvasWidth * fz.rightPct / 100f
             val bottom = canvasHeight * fz.bottomPct / 100f
-            if (offset.x in left..right && offset.y in top..bottom) regionHits.add(Pair("stick", i))
+            if (offset.x in left..right && offset.y in top..bottom) broadRegionHits.add(Pair("stick", i))
         } else {
             val cx = canvasWidth * stick.xPct / 100f
             val cy = canvasHeight * stick.yPct / 100f
             val r = baseScale * 0.12f * stick.sizeMult
             val dist = sqrt((offset.x - cx) * (offset.x - cx) + (offset.y - cy) * (offset.y - cy))
-            if (dist <= r) regionHits.add(Pair("stick", i))
+            if (dist <= r) broadRegionHits.add(Pair("stick", i))
         }
     }
 
@@ -2065,15 +2244,15 @@ internal fun hitTestAll(
         val top = canvasHeight * z.topPct / 100f
         val right = canvasWidth * z.rightPct / 100f
         val bottom = canvasHeight * z.bottomPct / 100f
-        if (offset.x in left..right && offset.y in top..bottom) regionHits.add(Pair("axisRegion", i))
+        if (offset.x in left..right && offset.y in top..bottom) broadRegionHits.add(Pair("axisRegion", i))
     }
 
-    // Broad stick and drag regions sit behind discrete controls in the editor.
-    return hits.ifEmpty { regionHits }
+    // Edges participate in stacked-control tap cycling while broad region bodies stay behind discrete controls
+    return if (hits.isNotEmpty() || edgeHits.isNotEmpty()) hits + edgeHits else broadRegionHits
 }
 
 /** Returns a new layout with the specified control moved by (dxPct, dyPct). */
-private fun moveControl(
+internal fun moveControl(
     layout: TouchLayout,
     type: String,
     index: Int,

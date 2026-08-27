@@ -20,9 +20,9 @@ class TouchEditorZoneEdgeTest {
     }
 
     @Test
-    fun edgeHitSlopUsesButtonOversizeWithMinimum() {
-        assertEquals(12f, defaultTouchEditorEdgeHitSlopPx(8f), 0.001f)
-        assertEquals(18f, defaultTouchEditorEdgeHitSlopPx(60f), 0.001f)
+    fun edgeHitSlopUsesThreePercentOfScreenWidthWithMinimum() {
+        assertEquals(12f, defaultTouchEditorEdgeHitSlopPx(100f), 0.001f)
+        assertEquals(30f, defaultTouchEditorEdgeHitSlopPx(1000f), 0.001f)
     }
 
     @Test
@@ -100,6 +100,27 @@ class TouchEditorZoneEdgeTest {
         val hits = hitTestAll(layout, Offset(100f, 350f), canvasWidth = 1000f, canvasHeight = 1000f)
 
         assertTrue(hits.contains("stickZoneEdge" to encodeFloatingZoneEdgeSelection(0, FloatingZoneEdge.LEFT)))
+    }
+
+    @Test
+    fun regionEdgesUseExpandedHitTargetOnBothAxes() {
+        val layout =
+            TouchLayout(
+                axisRegions =
+                    listOf(
+                        AxisRegionControl(
+                            id = "region0",
+                            zone = FloatingZone(leftPct = 20f, topPct = 20f, rightPct = 80f, bottomPct = 80f),
+                        ),
+                    ),
+            )
+        val leftEdge = "axisRegionEdge" to encodeFloatingZoneEdgeSelection(0, FloatingZoneEdge.LEFT)
+        val topEdge = "axisRegionEdge" to encodeFloatingZoneEdgeSelection(0, FloatingZoneEdge.TOP)
+
+        assertTrue(hitTestAll(layout, Offset(171f, 500f), 1000f, 1000f).contains(leftEdge))
+        assertFalse(hitTestAll(layout, Offset(169f, 500f), 1000f, 1000f).contains(leftEdge))
+        assertTrue(hitTestAll(layout, Offset(500f, 171f), 1000f, 1000f).contains(topEdge))
+        assertFalse(hitTestAll(layout, Offset(500f, 169f), 1000f, 1000f).contains(topEdge))
     }
 
     @Test
@@ -193,6 +214,61 @@ class TouchEditorZoneEdgeTest {
         val hits = hitTestAll(layout, Offset(500f, 500f), canvasWidth = 1000f, canvasHeight = 1000f)
 
         assertEquals(listOf("button" to 0), hits)
+    }
+
+    @Test
+    fun overlappingRegionEdgeJoinsTapCycleAfterDiscreteControl() {
+        val layout =
+            TouchLayout(
+                buttons =
+                    listOf(
+                        ButtonControl(
+                            id = "button0",
+                            xPct = 20f,
+                            yPct = 50f,
+                            binding = TouchBindings.BTN_FIRE_PRIMARY,
+                        ),
+                    ),
+                axisRegions =
+                    listOf(
+                        AxisRegionControl(
+                            id = "region0",
+                            zone = FloatingZone(leftPct = 20f, topPct = 20f, rightPct = 80f, bottomPct = 80f),
+                        ),
+                    ),
+            )
+
+        val hits = hitTestAll(layout, Offset(200f, 500f), canvasWidth = 1000f, canvasHeight = 1000f)
+
+        assertEquals(
+            listOf(
+                "button" to 0,
+                "axisRegionEdge" to encodeFloatingZoneEdgeSelection(0, FloatingZoneEdge.LEFT),
+            ),
+            hits,
+        )
+    }
+
+    @Test
+    fun selectedAxisRegionEdgeDragResizesThatEdge() {
+        val original = FloatingZone(leftPct = 20f, topPct = 20f, rightPct = 80f, bottomPct = 80f)
+        val layout = TouchLayout(axisRegions = listOf(AxisRegionControl(id = "region0", zone = original)))
+
+        val moved =
+            moveControl(
+                layout = layout,
+                type = "axisRegionEdge",
+                index = encodeFloatingZoneEdgeSelection(0, FloatingZoneEdge.LEFT),
+                dxPct = 5f,
+                dyPct = 9f,
+                canvasWidth = 1000f,
+                canvasHeight = 1000f,
+            ).axisRegions.single().zone
+
+        assertEquals(25f, moved.leftPct, 0.001f)
+        assertEquals(original.topPct, moved.topPct, 0.001f)
+        assertEquals(original.rightPct, moved.rightPct, 0.001f)
+        assertEquals(original.bottomPct, moved.bottomPct, 0.001f)
     }
 
     private fun minimalHumanLayout(): JSONObject =

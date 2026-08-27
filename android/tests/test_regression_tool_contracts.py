@@ -49,6 +49,32 @@ class RegressionToolContractsTest(unittest.TestCase):
             host_generator,
         )
 
+    def test_mission_archive_appendage_is_shared_across_regression_workflows(self) -> None:
+        helper = (ROOT / "android/helpers/mission_archive_sources.ps1").read_text(
+            encoding="utf-8"
+        )
+        metadata = (
+            ROOT / "android/helpers/regenerate_all_mission_metadata.ps1"
+        ).read_text(encoding="utf-8")
+        fingerprint_wrapper = (
+            ROOT / "game_data/update_all_fingerprints.ps1"
+        ).read_text(encoding="utf-8")
+        fingerprint_worker = (
+            ROOT / "game_data/fingerprint_mission_zip_music.ps1"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn('Id = "d2xxl_downloads"', helper)
+        self.assertIn('FingerprintAlbumPrefix = "Mission ZIP - D2X-XL - "', helper)
+        for source in (metadata, fingerprint_wrapper, fingerprint_worker):
+            self.assertIn("mission_archive_sources.ps1", source)
+        self.assertIn('"regenerate:fingerprints:missions:$($_.Id)"', fingerprint_wrapper)
+        self.assertIn("Get-MissionArchiveSampleItems -Source $_", fingerprint_wrapper)
+        self.assertIn("$_.MissionArchiveKey -in $requestedZips", fingerprint_worker)
+
+        source_loop = metadata[metadata.index("foreach ($source in $archiveSources)") :]
+        self.assertIn("$archiveBatchExit", source_loop)
+        self.assertNotIn("exit $batchExit", source_loop)
+
     def test_desktop_targets_keep_public_executable_names(self) -> None:
         for game, public_name in (("d1", "d1x-redux"), ("d2", "d2x-redux")):
             text = (ROOT / game / "main/CMakeLists.txt").read_text(encoding="utf-8")

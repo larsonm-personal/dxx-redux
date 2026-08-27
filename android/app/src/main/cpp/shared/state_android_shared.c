@@ -93,6 +93,19 @@ static const char *state_android_current_scope(int coop)
 	return coop ? "coop" : "single";
 }
 
+int state_android_save_filename_is_coop(const char *filename)
+{
+	const char *extension;
+
+	if (!filename)
+		return 0;
+	extension = strrchr(filename, '.');
+	return extension &&
+	       (extension[1] == 'm' || extension[1] == 'M') &&
+	       (extension[2] == 'g' || extension[2] == 'G') &&
+	       extension[3] >= '0' && extension[3] <= '9' && !extension[4];
+}
+
 static int state_android_last_save_set_path(char *filename, size_t filename_size,
                                             int coop)
 {

@@ -3,6 +3,7 @@
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 . (Join-Path $repoRoot 'game_data\fingerprint_mission_zip_music.ps1') -BudgetTestOnly -SkipAcoustId
+. (Join-Path $repoRoot 'android\helpers\mission_archive_sources.ps1')
 $tempRoot = Join-Path $repoRoot 'android\temp\jsonc_and_tracklist_parsing'
 
 function Assert-Equal {
@@ -55,10 +56,8 @@ try {
         throw 'Strict .tracklist.json parsing accepted a JSONC comment'
     }
 
-    $tracklistFiles = @(
-        Get-ChildItem -LiteralPath (Join-Path $repoRoot 'game_data\mission_files') `
-            -Filter '*.tracklist.json' -File
-    )
+    $tracklistFiles = @(Get-AvailableMissionArchiveSources -Sources (Get-MissionArchiveSources -RepoRoot $repoRoot) |
+            ForEach-Object { Get-MissionTracklistFiles -Source $_ })
     foreach ($tracklistFile in $tracklistFiles) {
         $current = Read-StrictJsonFile -Path $tracklistFile.FullName
         Assert-Equal 'dxx-mission-tracklist-v1' ([string]$current.schema) `

@@ -141,6 +141,7 @@ class StatePersistenceContractsTest(unittest.TestCase):
         source = (ROOT / "android/app/src/main/cpp/jni_resume_save.cpp").read_text(encoding="utf-8")
         start = source.index("static bool read_resume_candidate")
         self.assertLess(source.index("save_metadata_path_identity_error(path, meta)", start), source.index("out->meta = meta", start))
+        self.assertLess(source.index("save_path_is_coop(path.c_str())", start), source.index("out->meta = meta", start))
         for reason in (
             "metadata_game_path_mismatch",
             "metadata_scope_extension_mismatch",
@@ -151,6 +152,17 @@ class StatePersistenceContractsTest(unittest.TestCase):
             self.assertIn(reason, source)
         explorer = source.index("static json save_explorer_slot_json")
         self.assertLess(source.index("const char *identity_error", explorer), source.index("identity_error ? identity_error", explorer))
+
+    def test_single_player_restore_rejects_coop_save_before_header_parse(self) -> None:
+        for game in ("d1", "d2"):
+            source = (ROOT / f"{game}/main/state.c").read_text(encoding="utf-8")
+            restore = source.index("int state_restore_all_sub")
+            reject = source.index("state_android_save_filename_is_coop(filename)", restore)
+            open_save = source.index("PHYSFSX_openReadBuffered(filename)", restore)
+            self.assertLess(reject, open_save)
+            self.assertIn("This is a co-op save.", source[reject:open_save])
+            self.assertIn("It cannot be loaded as\\na single-player game.", source[reject:open_save])
+            self.assertNotIn("Host LAN Game", source[reject:open_save])
 
 
 if __name__ == "__main__":

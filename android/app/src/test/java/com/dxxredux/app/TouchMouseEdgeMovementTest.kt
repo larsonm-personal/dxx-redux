@@ -48,6 +48,74 @@ class TouchMouseEdgeMovementTest {
     }
 
     @Test
+    fun editorBandsMatchRuntimeRampAndStandoffGeometry() {
+        val bands =
+            requireNotNull(
+                visualBands(
+                    low = 55f,
+                    high = 98f,
+                    fullRateZone = 7f,
+                ),
+            )
+        val rampWidth = (98f - 55f) * 0.15f
+
+        assertEquals(55f, bands.negativeFullRatePx, 0.0001f)
+        assertEquals(55f + rampWidth, bands.negativeRampInnerPx, 0.0001f)
+        assertEquals(93f - rampWidth, bands.positiveRampInnerPx, 0.0001f)
+        assertEquals(93f, bands.positiveFullRatePx, 0.0001f)
+        assertEquals(0f, mouseEdgeAxisVisualStrength(bands, bands.positiveRampInnerPx), 0.0001f)
+        assertEquals(
+            0.5f,
+            mouseEdgeAxisVisualStrength(bands, bands.positiveRampInnerPx + rampWidth / 2f),
+            0.0001f,
+        )
+        assertEquals(1f, mouseEdgeAxisVisualStrength(bands, 93f), 0.0001f)
+        assertEquals(1f, mouseEdgeAxisVisualStrength(bands, 98f), 0.0001f)
+    }
+
+    @Test
+    fun editorBandsUseAxisSpanAndScaleConfiguredMaximum() {
+        val horizontal = requireNotNull(visualBands(low = 20f, high = 80f, maxRate = 50f))
+        val vertical = requireNotNull(visualBands(low = 10f, high = 90f, maxRate = 50f))
+
+        assertEquals(9f, horizontal.negativeRampInnerPx - horizontal.negativeFullRatePx, 0.0001f)
+        assertEquals(12f, vertical.negativeRampInnerPx - vertical.negativeFullRatePx, 0.0001f)
+        assertEquals(0.5f, horizontal.maxStrength, 0.0001f)
+        assertEquals(0.5f, mouseEdgeAxisVisualStrength(horizontal, 20f), 0.0001f)
+    }
+
+    @Test
+    fun editorBandsSkipDisabledZeroRateAndInvalidRegions() {
+        assertNull(visualBands(enabled = false))
+        assertNull(visualBands(maxRate = 0f))
+        assertNull(visualBands(low = 50f, high = 50f))
+    }
+
+    @Test
+    fun editorDirectionLabelsFollowAxisInversion() {
+        assertEquals(
+            MouseEdgeDirectionLabels("Stick Left", "Stick Right", "Stick Up", "Stick Down"),
+            mouseEdgeDirectionLabels(invertX = false, invertY = false),
+        )
+        assertEquals(
+            MouseEdgeDirectionLabels("Stick Right", "Stick Left", "Stick Down", "Stick Up"),
+            mouseEdgeDirectionLabels(invertX = true, invertY = true),
+        )
+    }
+
+    @Test
+    fun editorStickLabelsIncludeBothConfiguredAxes() {
+        assertEquals(
+            Pair("Turn L/R", "Pitch U/D"),
+            editorStickAxisLabels(TouchBindings.AXIS_RIGHT_X, TouchBindings.AXIS_RIGHT_Y),
+        )
+        assertEquals(
+            Pair("Slide L/R", "Fwd/Back"),
+            editorStickAxisLabels(TouchBindings.AXIS_LEFT_X, TouchBindings.AXIS_LEFT_Y),
+        )
+    }
+
+    @Test
     fun disabledOrInvalidRegionHasNoContribution() {
         assertEquals(0f, contribution(position = 100f, enabled = false), 0.0001f)
         assertEquals(
@@ -151,6 +219,24 @@ class TouchMouseEdgeMovementTest {
             enabled = enabled,
             positionPx = position,
             originPx = origin,
+            lowPx = low,
+            highPx = high,
+            screenLowPx = 0f,
+            screenHighPx = 100f,
+            edgeRegionPct = 15f,
+            screenEdgeZonePct = fullRateZone,
+            edgeMaxRatePct = maxRate,
+        )
+
+    private fun visualBands(
+        enabled: Boolean = true,
+        maxRate: Float = 100f,
+        low: Float = 0f,
+        high: Float = 100f,
+        fullRateZone: Float = 0f,
+    ): MouseEdgeAxisVisualBands? =
+        mouseEdgeAxisVisualBands(
+            enabled = enabled,
             lowPx = low,
             highPx = high,
             screenLowPx = 0f,

@@ -9,6 +9,35 @@ import java.io.File
 
 class LevelPreviewRequestStoreTest {
     @Test
+    fun directHogRequestMountsAdjacentMissionDescriptor() {
+        val root = testRoot("adjacent-descriptor")
+        val cacheDir = File(root, "cache").apply { mkdirs() }
+        val dataDir = File(root, "data").apply { mkdirs() }
+        val hog = File(dataDir, "chaos.hog").apply { writeBytes(byteArrayOf(1, 2, 3)) }
+        File(dataDir, "chaos.msn").writeText(
+            "name = Total Chaos\ntype = anarchy\nnum_levels = 1\nchaos1.rdl\n",
+        )
+        val metadata =
+            GameFileMetadata.Summary(
+                format = "HOG",
+                scope = "Mission archive",
+                game = "D1",
+                detailRows = emptyList(),
+                categories = emptyList(),
+                contents = listOf(GameFileMetadata.EntrySummary("chaos1.rdl", 1, "D1 level")),
+            )
+        val target = requireNotNull(LevelMetadataTargets.directFile(hog, dataDir, metadata))
+
+        val launch = LevelPreviewRequestStore.create(cacheDir, target, levelRow("chaos1.rdl"))
+        val request = JSONObject(launch.requestFile.readText())
+
+        assertEquals(hog.canonicalPath, request.getString("hog_path"))
+        assertEquals(dataDir.canonicalPath, request.getString("extra_data_dir"))
+        assertEquals("chaos.msn", request.getString("mission_filename"))
+        assertEquals("anarchy", request.getString("mission_type"))
+    }
+
+    @Test
     fun requestUsesCanonicalInputsAndIsolatedWriteDirectory() {
         val root = testRoot("create")
         val cacheDir = File(root, "cache").apply { mkdirs() }

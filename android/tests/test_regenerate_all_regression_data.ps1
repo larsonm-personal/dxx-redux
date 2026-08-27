@@ -70,11 +70,15 @@ foreach ($templateName in @(
     $template = Get-Content -LiteralPath $templatePath -Raw
     $routeCacheClear = $template.IndexOf('"command": "clear_route_metadata_cache"')
     $resultCacheClear = $template.IndexOf('"command": "clear_level_metadata_result_cache"')
+    $missionImport = $template.IndexOf('"action": "import_mission_zip"')
+    $postImportPause = $template.IndexOf('"command": "pause_route_metadata_precompute"', $missionImport)
     $metadataAnalysis = $template.IndexOf('"action": "analyze_level_metadata_all"')
     Assert-True ($routeCacheClear -ge 0 -and $routeCacheClear -lt $metadataAnalysis) `
         "$templateName should clear the native route cache before metadata analysis"
     Assert-True ($resultCacheClear -ge 0 -and $resultCacheClear -lt $metadataAnalysis) `
         "$templateName should clear the full-result cache before metadata analysis"
+    Assert-True ($missionImport -ge 0 -and $postImportPause -gt $missionImport -and $postImportPause -lt $metadataAnalysis) `
+        "$templateName should pause restarted route precompute after import and before metadata analysis"
 }
 
 $tempRoot = Join-Path $repoRoot 'android\temp\regression data runner test space'

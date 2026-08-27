@@ -4,12 +4,12 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 . (Join-Path $repoRoot 'android/helpers/powershell_compat.ps1')
-$metadataDir = Join-Path $repoRoot "game_data\mission_files"
+. (Join-Path $repoRoot 'android/helpers/mission_archive_sources.ps1')
+$missionSources = @(Get-AvailableMissionArchiveSources -Sources (Get-MissionArchiveSources -RepoRoot $repoRoot))
 $mismatches = @()
 $checked = 0
 
-Get-ChildItem -LiteralPath $metadataDir -Filter "*.json" |
-    Where-Object { $_.Name -notlike "*.tracklist.json" } |
+@($missionSources | ForEach-Object { Get-MissionMetadataFiles -Source $_ }) |
     ForEach-Object {
         $metadataFile = $_
         $missions = @(ConvertFrom-CompatibleJsonItems -Json (Get-Content -LiteralPath $metadataFile.FullName -Raw))
@@ -24,7 +24,7 @@ Get-ChildItem -LiteralPath $metadataDir -Filter "*.json" |
                 $checked++
                 if ($level.travel_time_text -ne $expected) {
                     $mismatches += "{0} level {1}: {2} seconds is '{3}', expected '{4}'" -f `
-                        $metadataFile.Name, $level.level_num, $seconds, $level.travel_time_text, $expected
+                        $metadataFile.MissionMetadataKey, $level.level_num, $seconds, $level.travel_time_text, $expected
                 }
             }
         }

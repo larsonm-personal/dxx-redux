@@ -140,6 +140,7 @@ class LevelMetadataTargetsTest {
         assertEquals("hog", target.sourceType)
         assertEquals("d2x", target.missionName)
         assertEquals("Descent 2: Vertigo", target.missionDisplayName)
+        assertEquals(setDir.absolutePath, target.extraDataDir)
         assertEquals(20, target.normalLevelFiles.size)
         assertEquals(listOf("d2xlvls1.rl2", "d2xlvls2.rl2", "d2xlvls3.rl2"), target.secretLevelFiles)
     }

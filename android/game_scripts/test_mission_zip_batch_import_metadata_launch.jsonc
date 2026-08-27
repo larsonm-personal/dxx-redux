@@ -16,6 +16,7 @@
     {"action": "setup_command", "command": "clear_level_metadata_result_cache", "post_delay_ms": 250},
     {"action": "setup_command", "command": "pause_route_metadata_precompute", "post_delay_ms": 250},
     {"action": "import_mission_zip", "file": "${ZIP_FILE}", "label": "${ZIP_LABEL}", "display_name": "${ZIP_DISPLAY_NAME}"},
+    {"action": "setup_command", "command": "pause_route_metadata_precompute", "post_delay_ms": 250},
     {"action": "analyze_level_metadata_all", "label": "${ZIP_LABEL}", "mod_file": "${ZIP_FILE}", "game": "${GAME_ID}", "status": "ok", "min_total_levels": 1},
     {"action": "tap_button", "text": "${GAME_SELECT_BUTTON_TEXT}", "post_delay_ms": 0},
     {"action": "tap_button", "text": "${LAUNCH_BUTTON_TEXT}", "launches_game": true},

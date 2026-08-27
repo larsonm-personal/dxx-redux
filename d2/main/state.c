@@ -2867,6 +2867,13 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	long long restore_profile_before_level_us;
 	long long restore_profile_after_level_us;
 	long long restore_profile_after_state_us;
+	if (!(Game_mode & GM_MULTI_COOP) && state_android_save_filename_is_coop(filename)) {
+		debug_log(DLOG_GAME, "restore rejected coop save in single-player: game=d2 file='%s'", filename);
+		state_android_prepare_modal_error_background("coop save launched as single-player");
+		nm_messagebox(NULL, 1, "Ok",
+		              "This is a co-op save.\nIt cannot be loaded as\na single-player game.");
+		return 0;
+	}
 #endif
 
 #ifdef __ANDROID__

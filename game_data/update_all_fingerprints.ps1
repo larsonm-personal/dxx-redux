@@ -36,6 +36,7 @@ $ErrorActionPreference = "Stop"
 $ScriptDir = $PSScriptRoot
 $RepoRoot = Split-Path $ScriptDir -Parent
 . (Join-Path $RepoRoot 'android\helpers\runtime_targeted_sampling.ps1')
+. (Join-Path $RepoRoot 'android\helpers\mission_archive_sources.ps1')
 
 function Select-FingerprintSampleNames {
     param([object[]]$Items, [double]$Fraction, [int]$Seed, [string]$RingName)
@@ -57,11 +58,19 @@ if ($SampleFraction -lt 1.0) {
                 if ($name -match '^(.+?) - ') { $name = $Matches[1] }
                 [pscustomobject]@{ Name = $name }
             } | Sort-Object Name -Unique)
-    $missionItems = @(Get-ChildItem (Join-Path $ScriptDir 'mission_files') -File |
-            Where-Object Extension -Match '^\.(zip|7z|rar)$' | Sort-Object Name)
+    $missionSources = @(Get-AvailableMissionArchiveSources `
+            -Sources (Get-MissionArchiveSources -RepoRoot $RepoRoot) `
+            -Extensions @('.zip', '.7z', '.rar'))
+    $missionItems = @($missionSources | ForEach-Object {
+            Get-MissionArchiveSampleItems -Source $_
+        })
     $discNames = Select-FingerprintSampleNames $discItems $SampleFraction ($SampleSeed -bxor 101) 'regenerate:fingerprints:discs'
     $albumNames = Select-FingerprintSampleNames $albumItems $SampleFraction ($SampleSeed -bxor 202) 'regenerate:fingerprints:packs'
-    $missionZipNames = Select-FingerprintSampleNames $missionItems $SampleFraction ($SampleSeed -bxor 303) 'regenerate:fingerprints:missions'
+    $missionZipNames = @($missionSources | ForEach-Object {
+            $sourceItems = @(Get-MissionArchiveSampleItems -Source $_)
+            Select-FingerprintSampleNames $sourceItems $SampleFraction ($SampleSeed -bxor 303) `
+                "regenerate:fingerprints:missions:$($_.Id)"
+        })
     Write-Host ("Fingerprint sample: discs {0}/{1}, packs {2}/{3}, mission archives {4}/{5} ({6:P1}), seed {7}" -f
         $discNames.Count, $discItems.Count, $albumNames.Count, $albumItems.Count,
         $missionZipNames.Count, $missionItems.Count, $SampleFraction, $SampleSeed)

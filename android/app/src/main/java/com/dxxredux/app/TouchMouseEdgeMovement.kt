@@ -1,5 +1,110 @@
 package com.dxxredux.app
 
+internal data class MouseEdgeAxisVisualBands(
+    val negativeFullRatePx: Float,
+    val negativeRampInnerPx: Float,
+    val positiveRampInnerPx: Float,
+    val positiveFullRatePx: Float,
+    val maxStrength: Float,
+)
+
+internal data class MouseEdgeDirectionLabels(
+    val left: String,
+    val right: String,
+    val top: String,
+    val bottom: String,
+)
+
+internal fun mouseEdgeDirectionLabels(
+    invertX: Boolean,
+    invertY: Boolean,
+): MouseEdgeDirectionLabels =
+    MouseEdgeDirectionLabels(
+        left = if (invertX) "Stick Right" else "Stick Left",
+        right = if (invertX) "Stick Left" else "Stick Right",
+        top = if (invertY) "Stick Down" else "Stick Up",
+        bottom = if (invertY) "Stick Up" else "Stick Down",
+    )
+
+internal fun mouseEdgeAxisVisualBands(
+    enabled: Boolean,
+    lowPx: Float,
+    highPx: Float,
+    screenLowPx: Float,
+    screenHighPx: Float,
+    edgeRegionPct: Float,
+    screenEdgeZonePct: Float,
+    edgeMaxRatePct: Float,
+): MouseEdgeAxisVisualBands? {
+    if (!enabled || highPx <= lowPx || screenHighPx <= screenLowPx) return null
+
+    val edgeWidth =
+        (highPx - lowPx) *
+            edgeRegionPct.coerceIn(
+                TouchBindings.MIN_MOUSE_EDGE_REGION_PCT,
+                TouchBindings.MAX_MOUSE_EDGE_REGION_PCT,
+            ) / 100f
+    val maxStrength =
+        edgeMaxRatePct.coerceIn(
+            TouchBindings.MIN_MOUSE_EDGE_MAX_RATE_PCT,
+            TouchBindings.MAX_MOUSE_EDGE_MAX_RATE_PCT,
+        ) / 100f
+    if (edgeWidth <= 0f || maxStrength <= 0f) return null
+
+    val screenEdgeWidth =
+        (screenHighPx - screenLowPx) *
+            screenEdgeZonePct.coerceIn(
+                TouchBindings.MIN_MOUSE_SCREEN_EDGE_ZONE_PCT,
+                TouchBindings.MAX_MOUSE_SCREEN_EDGE_ZONE_PCT,
+            ) / 100f
+    val negativeFullRatePx = (screenLowPx + screenEdgeWidth).coerceIn(lowPx, highPx)
+    val positiveFullRatePx = (screenHighPx - screenEdgeWidth).coerceIn(lowPx, highPx)
+    return MouseEdgeAxisVisualBands(
+        negativeFullRatePx = negativeFullRatePx,
+        negativeRampInnerPx = (negativeFullRatePx + edgeWidth).coerceIn(lowPx, highPx),
+        positiveRampInnerPx = (positiveFullRatePx - edgeWidth).coerceIn(lowPx, highPx),
+        positiveFullRatePx = positiveFullRatePx,
+        maxStrength = maxStrength,
+    )
+}
+
+internal fun mouseEdgeAxisVisualStrength(
+    bands: MouseEdgeAxisVisualBands,
+    positionPx: Float,
+): Float {
+    val negativeRampWidth = bands.negativeRampInnerPx - bands.negativeFullRatePx
+    val positiveRampWidth = bands.positiveFullRatePx - bands.positiveRampInnerPx
+    val negative =
+        when {
+            positionPx <= bands.negativeFullRatePx -> {
+                1f
+            }
+
+            negativeRampWidth > 0f -> {
+                ((bands.negativeRampInnerPx - positionPx) / negativeRampWidth).coerceIn(0f, 1f)
+            }
+
+            else -> {
+                0f
+            }
+        }
+    val positive =
+        when {
+            positionPx >= bands.positiveFullRatePx -> {
+                1f
+            }
+
+            positiveRampWidth > 0f -> {
+                ((positionPx - bands.positiveRampInnerPx) / positiveRampWidth).coerceIn(0f, 1f)
+            }
+
+            else -> {
+                0f
+            }
+        }
+    return maxOf(negative, positive) * bands.maxStrength
+}
+
 internal fun mouseEdgeAxisContribution(
     enabled: Boolean,
     positionPx: Float,
