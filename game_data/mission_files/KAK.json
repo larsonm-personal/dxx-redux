@@ -90,10 +90,10 @@
         "secrets": 1,
         "matcens": 2,
         "energy_centers": 4,
-        "mine_volume": 12978885.03264464,
-        "mine_volume_normalized": 2.838215802530186,
+        "mine_volume": 12978900.0,
+        "mine_volume_normalized": 2.83822,
         "mine_volume_text": "2.8x",
-        "travel_distance": 4598.008614656508,
+        "travel_distance": 4598.0,
         "travel_time_seconds": 92,
         "travel_time_text": "1M:32S",
         "guidebot_count": 0,
@@ -116,11 +116,11 @@
             "seg": 379,
             "wall": 61,
             "label_pos": {
-              "x": -122.94908142089844,
-              "y": -195.54702758789062,
-              "z": -42.500396728515625
+              "x": -122.9,
+              "y": -195.5,
+              "z": -42.5
             },
-            "distance": 1031.8005786365286,
+            "distance": 1031.8,
             "trigger": 1,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -154,11 +154,11 @@
             "label": "Destroy robot carrying blue key",
             "seg": 383,
             "label_pos": {
-              "x": -110.71086120605469,
-              "y": -190.56430053710938,
-              "z": -42.50738525390625
+              "x": -110.7,
+              "y": -190.6,
+              "z": -42.5
             },
-            "distance": 47.675383191889935,
+            "distance": 47.7,
             "key": "blue",
             "key_carrier_objnum": 51
           },
@@ -171,11 +171,11 @@
             "side": 0,
             "wall": 18,
             "label_pos": {
-              "x": -22.057907104492188,
-              "y": -112.76889038085938,
-              "z": -88.99494934082031
+              "x": -22.1,
+              "y": -112.8,
+              "z": -89.0
             },
-            "distance": 698.2855847257485,
+            "distance": 698.3,
             "opens": [
               {
                 "seg": 132,
@@ -196,11 +196,11 @@
             "label": "Destroy robot carrying gold key",
             "seg": 79,
             "label_pos": {
-              "x": -84.7659912109375,
-              "y": -113.21849060058594,
-              "z": -203.4453125
+              "x": -84.8,
+              "y": -113.2,
+              "z": -203.4
             },
-            "distance": 253.4683420649656,
+            "distance": 253.5,
             "key": "gold",
             "key_carrier_objnum": 59
           },
@@ -213,11 +213,11 @@
             "side": 0,
             "wall": 48,
             "label_pos": {
-              "x": 306.81004333496094,
-              "y": -133.05828857421875,
-              "z": -227.6941680908203
+              "x": 306.8,
+              "y": -133.1,
+              "z": -227.7
             },
-            "distance": 1288.544356602316,
+            "distance": 1288.5,
             "trigger": 5,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -236,11 +236,11 @@
             "label": "Destroy robot carrying red key",
             "seg": 419,
             "label_pos": {
-              "x": 102.13429260253906,
-              "y": -112.98408508300781,
-              "z": -102.5850830078125
+              "x": 102.1,
+              "y": -113.0,
+              "z": -102.6
             },
-            "distance": 1278.2343694350595,
+            "distance": 1278.2,
             "key": "red",
             "key_carrier_objnum": 60
           }
@@ -266,8 +266,8 @@
         "secrets": 2,
         "matcens": 0,
         "energy_centers": 4,
-        "mine_volume": 8311397.769601282,
-        "mine_volume_normalized": 1.8175321247906748,
+        "mine_volume": 8311400.0,
+        "mine_volume_normalized": 1.81753,
         "mine_volume_text": "1.8x",
         "travel_distance": 0.0,
         "travel_time_seconds": 0,
@@ -306,8 +306,8 @@
         "secrets": 4,
         "matcens": 0,
         "energy_centers": 5,
-        "mine_volume": 10331536.618801737,
-        "mine_volume_normalized": 2.2592950335986877,
+        "mine_volume": 10331500.0,
+        "mine_volume_normalized": 2.2593,
         "mine_volume_text": "2.3x",
         "travel_distance": 0.0,
         "travel_time_seconds": 0,
@@ -346,10 +346,10 @@
         "secrets": 0,
         "matcens": 2,
         "energy_centers": 2,
-        "mine_volume": 12519266.149680907,
-        "mine_volume_normalized": 2.7377065851753937,
+        "mine_volume": 12519300.0,
+        "mine_volume_normalized": 2.73771,
         "mine_volume_text": "2.7x",
-        "travel_distance": 3605.1322581102804,
+        "travel_distance": 3605.1,
         "travel_time_seconds": 72,
         "travel_time_text": "1M:12S",
         "guidebot_count": 0,
@@ -371,11 +371,11 @@
             "label": "Boss robot",
             "seg": 124,
             "label_pos": {
-              "x": -145.4949493408203,
-              "y": -235.95840454101562,
-              "z": 660.60791015625
+              "x": -145.5,
+              "y": -236.0,
+              "z": 660.6
             },
-            "distance": 1908.814877896364
+            "distance": 1908.8
           },
           {
             "index": 2,
@@ -386,11 +386,11 @@
             "side": 1,
             "wall": 118,
             "label_pos": {
-              "x": -52.32373046875,
-              "y": 161.006103515625,
-              "z": 661.2105407714844
+              "x": -52.3,
+              "y": 161.0,
+              "z": 661.2
             },
-            "distance": 1696.3173802139165,
+            "distance": 1696.3,
             "trigger": 1,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -402,6 +402,7 @@
         ]
       }
     ],
+    "mission_path": "KAK.MN2",
     "target_index": 0
   }
 ]

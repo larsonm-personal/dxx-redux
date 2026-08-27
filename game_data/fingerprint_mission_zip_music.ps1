@@ -13,7 +13,7 @@ param(
     [switch]$BudgetTestOnly,
     [string]$Zip,
     [string[]]$Zips,
-    [string]$MissionDir = (Join-Path $PSScriptRoot "mission_files"),
+    [string[]]$MissionDir,
     [string]$OutputRoot = (Join-Path $PSScriptRoot "music"),
     [string]$FingerprintExePath
 )
@@ -27,6 +27,7 @@ $repoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 . "$repoRoot\android\helpers\fingerprint_audio_results.ps1"
 . "$repoRoot\android\helpers\acoustid_title_match.ps1"
 . "$repoRoot\android\helpers\jsonc.ps1"
+. "$repoRoot\android\helpers\mission_archive_sources.ps1"
 
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -828,12 +829,35 @@ if (-not $SkipAcoustId) {
 $script:lastRequestTime = [datetime]::MinValue
 $script:minDelayMs = 350
 
-$zipFiles = @(Get-ChildItem $MissionDir -File |
-        Where-Object { $_.Extension -match '^\.(zip|7z|rar)$' } |
-        Sort-Object Name)
+$missionSources = if ($MissionDir.Count -gt 0) {
+    @($MissionDir | ForEach-Object -Begin { $sourceIndex = 0 } -Process {
+            $sourceId = if ($sourceIndex -eq 0) { "mission_files" } else { "mission_files_$sourceIndex" }
+            [pscustomobject]@{
+                Id = $sourceId
+                Directory = $_
+                Required = $true
+                FingerprintAlbumPrefix = if ($sourceIndex -eq 0) { "Mission ZIP - " } else { "Mission ZIP - $sourceId - " }
+            }
+            $sourceIndex++
+        })
+} else {
+    @(Get-MissionArchiveSources -RepoRoot $repoRoot)
+}
+$missionSources = @(Get-AvailableMissionArchiveSources -Sources $missionSources -Extensions @(".zip", ".7z", ".rar"))
+$zipFiles = @($missionSources | ForEach-Object {
+        $source = $_
+        Get-MissionArchives -Source $source -Extensions @(".zip", ".7z", ".rar") | ForEach-Object {
+            $_ | Add-Member -NotePropertyName MissionSourceId -NotePropertyValue $source.Id -Force
+            $_ | Add-Member -NotePropertyName MissionArchiveKey -NotePropertyValue "$($source.Id)/$($_.Name)" -Force
+            $_ | Add-Member -NotePropertyName FingerprintAlbumPrefix -NotePropertyValue $source.FingerprintAlbumPrefix -Force
+            $_
+        }
+    })
 $requestedZips = @(@($Zips) + @($Zip) | Where-Object { $_ })
 if ($requestedZips.Count -gt 0) {
-    $zipFiles = @($zipFiles | Where-Object { $_.Name -in $requestedZips -or $_.BaseName -in $requestedZips })
+    $zipFiles = @($zipFiles | Where-Object {
+            $_.MissionArchiveKey -in $requestedZips -or $_.Name -in $requestedZips -or $_.BaseName -in $requestedZips
+        })
     if ($zipFiles.Count -eq 0) { Write-Error "No mission ZIP found matching selection: $($requestedZips -join ', ')" }
 }
 
@@ -844,7 +868,7 @@ $withAudio = 0
 $failed = @()
 
 foreach ($zipFile in $zipFiles) {
-    $albumName = "Mission ZIP - $($zipFile.BaseName)"
+    $albumName = "$($zipFile.FingerprintAlbumPrefix)$($zipFile.BaseName)"
     $albumDir = Join-Path $OutputRoot $albumName
     $infoFile = Join-Path $albumDir "chromaprint_info.jsonc"
     $sourceSha1 = Get-Sha1File $zipFile.FullName

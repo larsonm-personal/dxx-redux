@@ -214,10 +214,10 @@
         "secrets": 0,
         "matcens": 0,
         "energy_centers": 0,
-        "mine_volume": 3691693.0834689965,
-        "mine_volume_normalized": 0.8072975160223053,
+        "mine_volume": 3691690.0,
+        "mine_volume_normalized": 0.807298,
         "mine_volume_text": "0.81x",
-        "travel_distance": 3752.257954246717,
+        "travel_distance": 3752.3,
         "travel_time_seconds": 75,
         "travel_time_text": "1M:15S",
         "guidebot_count": 0,
@@ -243,7 +243,7 @@
               "y": -90.0,
               "z": 40.0
             },
-            "distance": 309.5153275036385,
+            "distance": 309.5,
             "key": "blue"
           },
           {
@@ -253,11 +253,11 @@
             "label": "gold key",
             "seg": 265,
             "label_pos": {
-              "x": 209.99993896484375,
-              "y": 139.9999237060547,
-              "z": 199.9999237060547
+              "x": 210.0,
+              "y": 140.0,
+              "z": 200.0
             },
-            "distance": 1119.999893188649,
+            "distance": 1120.0,
             "key": "gold"
           },
           {
@@ -267,11 +267,11 @@
             "label": "red key",
             "seg": 343,
             "label_pos": {
-              "x": 101.53411865234375,
+              "x": 101.5,
               "y": -310.0,
-              "z": 161.5303497314453
+              "z": 161.5
             },
-            "distance": 1399.2291243420436,
+            "distance": 1399.2,
             "key": "red"
           },
           {
@@ -285,7 +285,7 @@
               "y": 20.0,
               "z": -40.0
             },
-            "distance": 677.5136092123862
+            "distance": 677.5
           },
           {
             "index": 5,
@@ -308,6 +308,7 @@
         ]
       }
     ],
+    "mission_path": "merc01.msn",
     "target_index": 0
   },
   {
@@ -525,10 +526,10 @@
         "secrets": 0,
         "matcens": 0,
         "energy_centers": 0,
-        "mine_volume": 1844711.6247969235,
-        "mine_volume_normalized": 0.4034005749677955,
+        "mine_volume": 1844710.0,
+        "mine_volume_normalized": 0.403401,
         "mine_volume_text": "0.40x",
-        "travel_distance": 1855.3841947328433,
+        "travel_distance": 1855.4,
         "travel_time_seconds": 37,
         "travel_time_text": "0M:37S",
         "guidebot_count": 0,
@@ -565,10 +566,10 @@
             "seg": 137,
             "label_pos": {
               "x": 60.0,
-              "y": -79.99998474121094,
-              "z": 99.99996948242188
+              "y": -80.0,
+              "z": 100.0
             },
-            "distance": 379.99998474122253,
+            "distance": 380.0,
             "key": "red"
           },
           {
@@ -582,7 +583,7 @@
               "y": 0.0,
               "z": 180.0
             },
-            "distance": 357.5780335959261
+            "distance": 357.6
           },
           {
             "index": 4,
@@ -593,11 +594,11 @@
             "side": 5,
             "wall": 0,
             "label_pos": {
-              "x": -100.00003051757812,
-              "y": -113.61773681640625,
-              "z": 507.72821044921875
+              "x": -100.0,
+              "y": -113.6,
+              "z": 507.7
             },
-            "distance": 642.8061763956946,
+            "distance": 642.8,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -605,6 +606,7 @@
         ]
       }
     ],
+    "mission_path": "merc02.msn",
     "target_index": 1
   },
   {
@@ -822,10 +824,10 @@
         "secrets": 0,
         "matcens": 1,
         "energy_centers": 0,
-        "mine_volume": 41493210.07420263,
-        "mine_volume_normalized": 9.073713514997513,
+        "mine_volume": 41493200.0,
+        "mine_volume_normalized": 9.07371,
         "mine_volume_text": "9.1x",
-        "travel_distance": 9004.098343863447,
+        "travel_distance": 9004.1,
         "travel_time_seconds": 180,
         "travel_time_text": "3M:00S",
         "guidebot_count": 0,
@@ -847,11 +849,11 @@
             "label": "blue key",
             "seg": 176,
             "label_pos": {
-              "x": -1215.3087463378906,
-              "y": -349.9997100830078,
-              "z": 439.998291015625
+              "x": -1215.3,
+              "y": -350.0,
+              "z": 440.0
             },
-            "distance": 3323.931806518629,
+            "distance": 3323.9,
             "key": "blue"
           },
           {
@@ -861,11 +863,11 @@
             "label": "red key",
             "seg": 311,
             "label_pos": {
-              "x": -320.00010681152344,
-              "y": -271.5308380126953,
-              "z": 721.5322875976562
+              "x": -320.0,
+              "y": -271.5,
+              "z": 721.5
             },
-            "distance": 3953.1615349602785,
+            "distance": 3953.2,
             "key": "red"
           },
           {
@@ -879,7 +881,7 @@
               "y": 20.0,
               "z": 240.0
             },
-            "distance": 1553.8673883012514
+            "distance": 1553.9
           },
           {
             "index": 4,
@@ -890,11 +892,11 @@
             "side": 5,
             "wall": 16,
             "label_pos": {
-              "x": 559.9999542236328,
-              "y": -1.52587890625e-05,
-              "z": 229.9999542236328
+              "x": 560.0,
+              "y": 0.0,
+              "z": 230.0
             },
-            "distance": 173.13761408328924,
+            "distance": 173.1,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -902,6 +904,7 @@
         ]
       }
     ],
+    "mission_path": "merc03.msn",
     "target_index": 2
   },
   {
@@ -1119,10 +1122,10 @@
         "secrets": 0,
         "matcens": 0,
         "energy_centers": 0,
-        "mine_volume": 2482897.95452636,
-        "mine_volume_normalized": 0.5429588283494226,
+        "mine_volume": 2482900.0,
+        "mine_volume_normalized": 0.542959,
         "mine_volume_text": "0.54x",
-        "travel_distance": 5435.232328940221,
+        "travel_distance": 5435.2,
         "travel_time_seconds": 109,
         "travel_time_text": "1M:49S",
         "guidebot_count": 0,
@@ -1144,11 +1147,11 @@
             "label": "blue key",
             "seg": 226,
             "label_pos": {
-              "x": 689.9999389648438,
+              "x": 690.0,
               "y": 22.5,
-              "z": 19.99993896484375
+              "z": 20.0
             },
-            "distance": 756.924805873035,
+            "distance": 756.9,
             "key": "blue"
           },
           {
@@ -1164,7 +1167,7 @@
               "y": -57.5,
               "z": -70.0
             },
-            "distance": 869.9999694824567,
+            "distance": 870.0,
             "opens": [
               {
                 "seg": 68,
@@ -1213,11 +1216,11 @@
             "label": "Reactor",
             "seg": 300,
             "label_pos": {
-              "x": 869.0178833007812,
-              "y": -37.50048828125,
-              "z": 402.0810546875
+              "x": 869.0,
+              "y": -37.5,
+              "z": 402.1
             },
-            "distance": 1983.6537615335874
+            "distance": 1983.7
           },
           {
             "index": 6,
@@ -1228,11 +1231,11 @@
             "side": 5,
             "wall": 26,
             "label_pos": {
-              "x": 429.99993896484375,
+              "x": 430.0,
               "y": -97.5,
-              "z": 49.99993896484375
+              "z": 50.0
             },
-            "distance": 1407.1537920511419,
+            "distance": 1407.2,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -1240,6 +1243,7 @@
         ]
       }
     ],
+    "mission_path": "merc04.msn",
     "target_index": 3
   },
   {
@@ -1457,10 +1461,10 @@
         "secrets": 0,
         "matcens": 0,
         "energy_centers": 0,
-        "mine_volume": 5042334.266074849,
-        "mine_volume_normalized": 1.1026550246509856,
+        "mine_volume": 5042330.0,
+        "mine_volume_normalized": 1.10266,
         "mine_volume_text": "1.1x",
-        "travel_distance": 2508.34812863525,
+        "travel_distance": 2508.3,
         "travel_time_seconds": 50,
         "travel_time_text": "0M:50S",
         "guidebot_count": 0,
@@ -1482,11 +1486,11 @@
             "label": "Reactor",
             "seg": 111,
             "label_pos": {
-              "x": 160.8075408935547,
-              "y": 300.8545379638672,
-              "z": 1386.380859375
+              "x": 160.8,
+              "y": 300.9,
+              "z": 1386.4
             },
-            "distance": 1693.802136644757
+            "distance": 1693.8
           },
           {
             "index": 2,
@@ -1497,11 +1501,11 @@
             "side": 4,
             "wall": 12,
             "label_pos": {
-              "x": 107.43284606933594,
-              "y": 340.85418701171875,
-              "z": 2119.9835815429688
+              "x": 107.4,
+              "y": 340.9,
+              "z": 2120.0
             },
-            "distance": 814.5459919904928,
+            "distance": 814.5,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -1509,6 +1513,7 @@
         ]
       }
     ],
+    "mission_path": "merc05.msn",
     "target_index": 4
   },
   {
@@ -1726,8 +1731,8 @@
         "secrets": 0,
         "matcens": 0,
         "energy_centers": 0,
-        "mine_volume": 3110129.4050002964,
-        "mine_volume_normalized": 0.6801214744551112,
+        "mine_volume": 3110130.0,
+        "mine_volume_normalized": 0.680121,
         "mine_volume_text": "0.68x",
         "travel_distance": 0.0,
         "travel_time_seconds": 0,
@@ -1748,6 +1753,7 @@
         "route_problem": "blue key unreachable"
       }
     ],
+    "mission_path": "merc06.msn",
     "target_index": 5
   },
   {
@@ -1965,10 +1971,10 @@
         "secrets": 0,
         "matcens": 0,
         "energy_centers": 0,
-        "mine_volume": 4295060.208209234,
-        "mine_volume_normalized": 0.9392415238363571,
+        "mine_volume": 4295060.0,
+        "mine_volume_normalized": 0.939242,
         "mine_volume_text": "0.94x",
-        "travel_distance": 6650.209810475055,
+        "travel_distance": 6650.2,
         "travel_time_seconds": 133,
         "travel_time_text": "2M:13S",
         "guidebot_count": 0,
@@ -1993,10 +1999,10 @@
             "wall": 24,
             "label_pos": {
               "x": 130.0,
-              "y": -41.18035888671875,
+              "y": -41.2,
               "z": 200.0
             },
-            "distance": 352.33424649888764,
+            "distance": 352.3,
             "opens": [
               {
                 "seg": 196,
@@ -2018,7 +2024,7 @@
             "seg": 205,
             "label_pos": {
               "x": 180.0,
-              "y": -81.18035888671875,
+              "y": -81.2,
               "z": 200.0
             },
             "distance": 100.0,
@@ -2036,7 +2042,7 @@
               "y": -45.0,
               "z": 260.0
             },
-            "distance": 656.3051557912416,
+            "distance": 656.3,
             "key": "gold"
           },
           {
@@ -2046,11 +2052,11 @@
             "label": "red key",
             "seg": 326,
             "label_pos": {
-              "x": -283.0610656738281,
-              "y": -0.00048828125,
-              "z": 400.0016174316406
+              "x": -283.1,
+              "y": 0.0,
+              "z": 400.0
             },
-            "distance": 2030.0087819618554,
+            "distance": 2030.0,
             "key": "red"
           },
           {
@@ -2064,7 +2070,7 @@
               "y": -135.0,
               "z": 200.0
             },
-            "distance": 2271.239838218032
+            "distance": 2271.2
           },
           {
             "index": 6,
@@ -2079,7 +2085,7 @@
               "y": 0.0,
               "z": 310.0
             },
-            "distance": 1240.321788005038,
+            "distance": 1240.3,
             "trigger": 1,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -2087,6 +2093,7 @@
         ]
       }
     ],
+    "mission_path": "merc07.msn",
     "target_index": 6
   }
 ]

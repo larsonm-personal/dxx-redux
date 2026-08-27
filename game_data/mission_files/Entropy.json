@@ -90,10 +90,10 @@
         "secrets": 3,
         "matcens": 2,
         "energy_centers": 1,
-        "mine_volume": 24904610.0,
-        "mine_volume_normalized": 5.446127111848547,
+        "mine_volume": 24904600.0,
+        "mine_volume_normalized": 5.44613,
         "mine_volume_text": "5.4x",
-        "travel_distance": 7438.410380215758,
+        "travel_distance": 7438.4,
         "travel_time_seconds": 149,
         "travel_time_text": "2M:29S",
         "guidebot_count": 0,
@@ -120,7 +120,7 @@
               "y": -60.0,
               "z": 300.0
             },
-            "distance": 385.6923646563933,
+            "distance": 385.7,
             "trigger": 21,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -144,7 +144,7 @@
               "y": -80.0,
               "z": 670.0
             },
-            "distance": 445.6513875697027,
+            "distance": 445.7,
             "trigger": 6,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -174,7 +174,7 @@
               "y": -160.0,
               "z": 60.0
             },
-            "distance": 1207.8744405355244,
+            "distance": 1207.9,
             "trigger": 10,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -213,7 +213,7 @@
               "y": -80.0,
               "z": 490.0
             },
-            "distance": 1896.710627317349,
+            "distance": 1896.7,
             "trigger": 2,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -243,7 +243,7 @@
               "y": -180.0,
               "z": 182.5
             },
-            "distance": 1108.400547564269,
+            "distance": 1108.4,
             "trigger": 3,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -277,7 +277,7 @@
               "y": -339.5,
               "z": 520.0
             },
-            "distance": 379.68025279533055,
+            "distance": 379.7,
             "trigger": 17,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -302,7 +302,7 @@
               "y": -339.5,
               "z": 300.5
             },
-            "distance": 202.05417224739125,
+            "distance": 202.1,
             "trigger": 16,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -361,7 +361,7 @@
               "y": -340.0,
               "z": 80.0
             },
-            "distance": 202.05417224739125,
+            "distance": 202.1,
             "trigger": 18,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -386,7 +386,7 @@
               "y": -339.5,
               "z": 300.5
             },
-            "distance": 293.15702269956,
+            "distance": 293.2,
             "trigger": 15,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -411,7 +411,7 @@
               "y": -410.0,
               "z": 240.0
             },
-            "distance": 366.13539258284794,
+            "distance": 366.1,
             "trigger": 5,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -475,10 +475,10 @@
         "secrets": 9,
         "matcens": 0,
         "energy_centers": 2,
-        "mine_volume": 53915999.99999982,
-        "mine_volume_normalized": 11.790322729905238,
+        "mine_volume": 53916000.0,
+        "mine_volume_normalized": 11.7903,
         "mine_volume_text": "12x",
-        "travel_distance": 14013.894072439403,
+        "travel_distance": 14013.9,
         "travel_time_seconds": 280,
         "travel_time_text": "4M:40S",
         "guidebot_count": 0,
@@ -506,7 +506,7 @@
               "y": -240.0,
               "z": 790.0
             },
-            "distance": 2251.209538607519,
+            "distance": 2251.2,
             "trigger": 11,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -531,7 +531,7 @@
               "y": -120.0,
               "z": 1335.0
             },
-            "distance": 2098.4091847480977,
+            "distance": 2098.4,
             "trigger": 9,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -556,7 +556,7 @@
               "y": -30.0,
               "z": 1195.0
             },
-            "distance": 1153.7225631723206,
+            "distance": 1153.7,
             "trigger": 12,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -581,7 +581,7 @@
               "y": -120.0,
               "z": 1255.0
             },
-            "distance": 932.0367101215576,
+            "distance": 932.0,
             "trigger": 8,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -606,7 +606,7 @@
               "y": -240.0,
               "z": 1255.0
             },
-            "distance": 772.2694394821586,
+            "distance": 772.3,
             "trigger": 14,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -631,7 +631,7 @@
               "y": -120.0,
               "z": 1175.0
             },
-            "distance": 550.5835864313958,
+            "distance": 550.6,
             "trigger": 7,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -656,7 +656,7 @@
               "y": -240.0,
               "z": 1400.0
             },
-            "distance": 1483.2202546774045,
+            "distance": 1483.2,
             "trigger": 16,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -681,7 +681,7 @@
               "y": -120.0,
               "z": 1255.0
             },
-            "distance": 1260.9277999088433,
+            "distance": 1260.9,
             "trigger": 6,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -704,7 +704,7 @@
               "y": -150.0,
               "z": 1255.0
             },
-            "distance": 675.8948679647709,
+            "distance": 675.9,
             "key": "red"
           },
           {
@@ -720,7 +720,7 @@
               "y": -70.0,
               "z": 1835.0
             },
-            "distance": 1165.5307166892453,
+            "distance": 1165.5,
             "trigger": 4,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -748,7 +748,7 @@
               "y": -110.0,
               "z": 2000.0
             },
-            "distance": 461.05914001303614
+            "distance": 461.1
           },
           {
             "index": 12,
@@ -763,7 +763,7 @@
               "y": 180.0,
               "z": 1255.0
             },
-            "distance": 1209.0302706230536,
+            "distance": 1209.0,
             "trigger": 24,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -789,10 +789,10 @@
         "secrets": 4,
         "matcens": 0,
         "energy_centers": 1,
-        "mine_volume": 33845417.644493505,
-        "mine_volume_normalized": 7.401298259459324,
+        "mine_volume": 33845400.0,
+        "mine_volume_normalized": 7.4013,
         "mine_volume_text": "7.4x",
-        "travel_distance": 3174.8917691577726,
+        "travel_distance": 3174.9,
         "travel_time_seconds": 63,
         "travel_time_text": "1M:03S",
         "guidebot_count": 0,
@@ -820,7 +820,7 @@
               "y": -80.0,
               "z": 340.0
             },
-            "distance": 1705.9794221742611,
+            "distance": 1706.0,
             "trigger": 13,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -843,7 +843,7 @@
               "y": 0.0,
               "z": 160.0
             },
-            "distance": 539.2879626608483,
+            "distance": 539.3,
             "key": "red"
           },
           {
@@ -857,7 +857,7 @@
               "y": -260.0,
               "z": 260.0
             },
-            "distance": 813.6243843226631
+            "distance": 813.6
           },
           {
             "index": 4,
@@ -898,10 +898,10 @@
         "secrets": 3,
         "matcens": 2,
         "energy_centers": 2,
-        "mine_volume": 34814792.666666545,
-        "mine_volume_normalized": 7.613280683187517,
+        "mine_volume": 34814800.0,
+        "mine_volume_normalized": 7.61328,
         "mine_volume_text": "7.6x",
-        "travel_distance": 10870.487023054342,
+        "travel_distance": 10870.5,
         "travel_time_seconds": 217,
         "travel_time_text": "3M:37S",
         "guidebot_count": 0,
@@ -927,7 +927,7 @@
               "y": -515.0,
               "z": 5.0
             },
-            "distance": 1265.357794414126,
+            "distance": 1265.4,
             "key": "gold",
             "key_carrier_objnum": 12
           },
@@ -944,7 +944,7 @@
               "y": -250.0,
               "z": 135.0
             },
-            "distance": 1175.1108083187542,
+            "distance": 1175.1,
             "trigger": 12,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -974,7 +974,7 @@
               "y": -227.5,
               "z": -270.0
             },
-            "distance": 483.92647566380424,
+            "distance": 483.9,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -998,7 +998,7 @@
               "y": -215.0,
               "z": -430.0
             },
-            "distance": 192.5780488547035,
+            "distance": 192.6,
             "trigger": 4,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1043,7 +1043,7 @@
               "y": -250.0,
               "z": 195.0
             },
-            "distance": 1074.0045245185074,
+            "distance": 1074.0,
             "trigger": 13,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1073,7 +1073,7 @@
               "y": -445.0,
               "z": 50.0
             },
-            "distance": 1164.2664251663848,
+            "distance": 1164.3,
             "trigger": 8,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1113,7 +1113,7 @@
               "y": -250.0,
               "z": 135.0
             },
-            "distance": 1287.183985971647,
+            "distance": 1287.2,
             "trigger": 14,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1143,7 +1143,7 @@
               "y": -345.0,
               "z": 510.0
             },
-            "distance": 1646.983545826897,
+            "distance": 1647.0,
             "trigger": 18,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -1167,7 +1167,7 @@
               "y": -555.0,
               "z": 410.0
             },
-            "distance": 590.1489849220334,
+            "distance": 590.1,
             "trigger": 16,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1200,7 +1200,7 @@
               "y": -600.0,
               "z": 125.0
             },
-            "distance": 636.4211875927039
+            "distance": 636.4
           },
           {
             "index": 13,
@@ -1215,7 +1215,7 @@
               "y": -345.0,
               "z": 140.0
             },
-            "distance": 677.0052418047809,
+            "distance": 677.0,
             "trigger": 15,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -1243,10 +1243,10 @@
         "secrets": 0,
         "matcens": 0,
         "energy_centers": 2,
-        "mine_volume": 21322749.999999914,
-        "mine_volume_normalized": 4.6628478371742474,
+        "mine_volume": 21322700.0,
+        "mine_volume_normalized": 4.66285,
         "mine_volume_text": "4.7x",
-        "travel_distance": 2262.560848576353,
+        "travel_distance": 2262.6,
         "travel_time_seconds": 45,
         "travel_time_text": "0M:45S",
         "guidebot_count": 0,
@@ -1301,7 +1301,7 @@
               "y": 80.0,
               "z": 120.0
             },
-            "distance": 876.2321376954825,
+            "distance": 876.2,
             "trigger": 21,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1324,7 +1324,7 @@
               "y": 80.0,
               "z": -200.0
             },
-            "distance": 317.0087712549569
+            "distance": 317.0
           },
           {
             "index": 4,
@@ -1339,7 +1339,7 @@
               "y": 100.0,
               "z": 460.0
             },
-            "distance": 1069.3199396259133,
+            "distance": 1069.3,
             "trigger": 22,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -1351,6 +1351,7 @@
         ]
       }
     ],
+    "mission_path": "ENTROPY.MN2",
     "target_index": 0
   }
 ]

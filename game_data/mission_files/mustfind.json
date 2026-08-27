@@ -90,8 +90,8 @@
         "secrets": 0,
         "matcens": 0,
         "energy_centers": 0,
-        "mine_volume": 2523704.956899906,
-        "mine_volume_normalized": 0.5518824823227164,
+        "mine_volume": 2523700.0,
+        "mine_volume_normalized": 0.551882,
         "mine_volume_text": "0.55x",
         "travel_distance": 0.0,
         "travel_time_seconds": 0,
@@ -130,10 +130,10 @@
         "secrets": 3,
         "matcens": 4,
         "energy_centers": 2,
-        "mine_volume": 16950764.477465924,
-        "mine_volume_normalized": 3.706784325764846,
+        "mine_volume": 16950800.0,
+        "mine_volume_normalized": 3.70678,
         "mine_volume_text": "3.7x",
-        "travel_distance": 5886.239841728074,
+        "travel_distance": 5886.2,
         "travel_time_seconds": 118,
         "travel_time_text": "1M:58S",
         "guidebot_count": 1,
@@ -155,11 +155,11 @@
             "label": "blue key",
             "seg": 360,
             "label_pos": {
-              "x": -129.73736572265625,
-              "y": -174.3134002685547,
-              "z": -267.52171325683594
+              "x": -129.7,
+              "y": -174.3,
+              "z": -267.5
             },
-            "distance": 1222.171731702565,
+            "distance": 1222.2,
             "key": "blue"
           },
           {
@@ -175,7 +175,7 @@
               "y": -36.0,
               "z": -66.0
             },
-            "distance": 1042.8444926196796,
+            "distance": 1042.8,
             "trigger": 3,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -209,11 +209,11 @@
             "seg": 639,
             "wall": 202,
             "label_pos": {
-              "x": -239.58863830566406,
-              "y": 100.22425842285156,
+              "x": -239.6,
+              "y": 100.2,
               "z": -180.0
             },
-            "distance": 945.0000224687353,
+            "distance": 945.0,
             "trigger": 4,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -232,11 +232,11 @@
             "label": "red key",
             "seg": 664,
             "label_pos": {
-              "x": -322.0507354736328,
-              "y": 58.99357604980469,
-              "z": -180.00001525878906
+              "x": -322.1,
+              "y": 59.0,
+              "z": -180.0
             },
-            "distance": 147.0708042942067,
+            "distance": 147.1,
             "key": "red"
           },
           {
@@ -247,10 +247,10 @@
             "seg": 792,
             "label_pos": {
               "x": 304.0,
-              "y": -48.000244140625,
+              "y": -48.0,
               "z": 454.0
             },
-            "distance": 2015.0616558096056
+            "distance": 2015.1
           },
           {
             "index": 7,
@@ -261,7 +261,7 @@
             "wall": 218,
             "label_pos": {
               "x": 324.0,
-              "y": -48.000244140625,
+              "y": -48.0,
               "z": 364.0
             },
             "distance": 20.0,
@@ -286,10 +286,10 @@
             "wall": 212,
             "label_pos": {
               "x": 144.0,
-              "y": -49.000244140625,
+              "y": -49.0,
               "z": 509.0
             },
-            "distance": 314.091134833281,
+            "distance": 314.1,
             "trigger": 6,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -301,6 +301,7 @@
         ]
       }
     ],
+    "mission_path": "MUSTFIND.MN2",
     "target_index": 0
   }
 ]

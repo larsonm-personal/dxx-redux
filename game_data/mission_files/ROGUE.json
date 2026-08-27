@@ -214,10 +214,10 @@
         "secrets": 0,
         "matcens": 0,
         "energy_centers": 1,
-        "mine_volume": 3435600.3333332767,
-        "mine_volume_normalized": 0.7512952871312687,
+        "mine_volume": 3435600.0,
+        "mine_volume_normalized": 0.751295,
         "mine_volume_text": "0.75x",
-        "travel_distance": 2650.5293628998525,
+        "travel_distance": 2650.5,
         "travel_time_seconds": 53,
         "travel_time_text": "0M:53S",
         "guidebot_count": 0,
@@ -245,7 +245,7 @@
               "y": -240.0,
               "z": 80.0
             },
-            "distance": 613.2646814499262,
+            "distance": 613.3,
             "opens": [
               {
                 "seg": 271,
@@ -286,7 +286,7 @@
               "y": -230.0,
               "z": 30.0
             },
-            "distance": 631.2646814499263,
+            "distance": 631.3,
             "trigger": 7,
             "trigger_type_id": 1,
             "trigger_type": "open_door",
@@ -426,8 +426,8 @@
         "secrets": 2,
         "matcens": 0,
         "energy_centers": 1,
-        "mine_volume": 6881056.333333755,
-        "mine_volume_normalized": 1.5047458063035766,
+        "mine_volume": 6881060.0,
+        "mine_volume_normalized": 1.50475,
         "mine_volume_text": "1.5x",
         "travel_distance": 0.0,
         "travel_time_seconds": 0,
@@ -462,8 +462,8 @@
         "secrets": 1,
         "matcens": 5,
         "energy_centers": 1,
-        "mine_volume": 13090687.333333286,
-        "mine_volume_normalized": 2.862664671271655,
+        "mine_volume": 13090700.0,
+        "mine_volume_normalized": 2.86266,
         "mine_volume_text": "2.9x",
         "travel_distance": 0.0,
         "travel_time_seconds": 0,
@@ -498,8 +498,8 @@
         "secrets": 3,
         "matcens": 5,
         "energy_centers": 5,
-        "mine_volume": 9869725.126475753,
-        "mine_volume_normalized": 2.1583063375733422,
+        "mine_volume": 9869730.0,
+        "mine_volume_normalized": 2.15831,
         "mine_volume_text": "2.2x",
         "travel_distance": 0.0,
         "travel_time_seconds": 0,
@@ -534,8 +534,8 @@
         "secrets": 3,
         "matcens": 2,
         "energy_centers": 1,
-        "mine_volume": 553924639.1697598,
-        "mine_volume_normalized": 121.1319508839268,
+        "mine_volume": 553925000.0,
+        "mine_volume_normalized": 121.132,
         "mine_volume_text": "120x",
         "travel_distance": 0.0,
         "travel_time_seconds": 0,
@@ -556,6 +556,7 @@
         "route_problem": "gold key unreachable"
       }
     ],
+    "mission_path": "ROG.MSN",
     "target_index": 0
   }
 ]

@@ -76,10 +76,10 @@
         "secrets": 1,
         "matcens": 1,
         "energy_centers": 3,
-        "mine_volume": 124594288.32737851,
-        "mine_volume_normalized": 27.24621391947961,
+        "mine_volume": 124594000.0,
+        "mine_volume_normalized": 27.2462,
         "mine_volume_text": "27x",
-        "travel_distance": 556.989864807628,
+        "travel_distance": 557.0,
         "travel_time_seconds": 11,
         "travel_time_text": "0M:11S",
         "guidebot_count": 0,
@@ -102,10 +102,10 @@
             "seg": 280,
             "label_pos": {
               "x": 7.0,
-              "y": -121.59295654296875,
+              "y": -121.6,
               "z": 0.0
             },
-            "distance": 556.989864807628,
+            "distance": 557.0,
             "key": "blue"
           }
         ],
@@ -132,10 +132,10 @@
         "secrets": 0,
         "matcens": 0,
         "energy_centers": 10,
-        "mine_volume": 28892497.383987084,
-        "mine_volume_normalized": 6.318196242862076,
+        "mine_volume": 28892500.0,
+        "mine_volume_normalized": 6.3182,
         "mine_volume_text": "6.3x",
-        "travel_distance": 6200.269703806322,
+        "travel_distance": 6200.3,
         "travel_time_seconds": 124,
         "travel_time_text": "2M:04S",
         "guidebot_count": 0,
@@ -159,11 +159,11 @@
             "side": 5,
             "wall": 14,
             "label_pos": {
-              "x": -45.00013732910156,
+              "x": -45.0,
               "y": 0.0,
-              "z": -59.9998779296875
+              "z": -60.0
             },
-            "distance": 257.499969482647,
+            "distance": 257.5,
             "opens": [
               {
                 "seg": 126,
@@ -186,11 +186,11 @@
             "side": 5,
             "wall": 17,
             "label_pos": {
-              "x": -45.00013732910156,
-              "y": -0.0015106201171875,
-              "z": -308.3066711425781
+              "x": -45.0,
+              "y": 0.0,
+              "z": -308.3
             },
-            "distance": 265.9381735759614,
+            "distance": 265.9,
             "opens": [
               {
                 "seg": 149,
@@ -213,11 +213,11 @@
             "side": 5,
             "wall": 55,
             "label_pos": {
-              "x": 104.99980163574219,
-              "y": -0.001007080078125,
-              "z": -265.8065643310547
+              "x": 105.0,
+              "y": 0.0,
+              "z": -265.8
             },
-            "distance": 440.64644995939045,
+            "distance": 440.6,
             "trigger": 3,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -271,11 +271,11 @@
             "label": "red key",
             "seg": 1389,
             "label_pos": {
-              "x": -167.86813354492188,
-              "y": 14.993667602539062,
-              "z": -945.872802734375
+              "x": -167.9,
+              "y": 15.0,
+              "z": -945.9
             },
-            "distance": 821.6815033848909,
+            "distance": 821.7,
             "key": "red"
           },
           {
@@ -287,11 +287,11 @@
             "side": 5,
             "wall": 64,
             "label_pos": {
-              "x": 435.99937438964844,
+              "x": 436.0,
               "y": 0.0,
-              "z": -179.00015258789062
+              "z": -179.0
             },
-            "distance": 2244.097749603139,
+            "distance": 2244.1,
             "opens": [
               {
                 "seg": 2000,
@@ -316,7 +316,7 @@
               "y": -171.0,
               "z": 497.0
             },
-            "distance": 1955.234628116766
+            "distance": 1955.2
           },
           {
             "index": 7,
@@ -328,10 +328,10 @@
             "wall": 58,
             "label_pos": {
               "x": 169.0,
-              "y": -153.1114501953125,
-              "z": 712.7770690917969
+              "y": -153.1,
+              "z": 712.8
             },
-            "distance": 215.17122968352714,
+            "distance": 215.2,
             "trigger": 4,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -343,6 +343,7 @@
         ]
       }
     ],
+    "mission_path": "U3AAH.mn2",
     "target_index": 0
   }
 ]
