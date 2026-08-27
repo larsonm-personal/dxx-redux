@@ -1045,15 +1045,19 @@ int escort_get_route_certificate_checks_suppressed(void)
 void escort_restore_route_target_mode(int target_mode)
 {
 	escort_route_set_target_mode(
-	    target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED ?
-	        ESCORT_ROUTE_TARGET_UNEXPLORED :
-	        ESCORT_ROUTE_TARGET_END_OF_LEVEL);
+	    target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED ||
+	            target_mode == ESCORT_ROUTE_TARGET_EXIT ?
+	        target_mode : ESCORT_ROUTE_TARGET_END_OF_LEVEL);
 	Escort_route_target_mode_restore_pending = 1;
 }
 
 const char *escort_get_route_target_mode_name(void)
 {
-	return Escort_route_target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED ? "unexplored" : "end_of_level";
+	return Escort_route_target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED ?
+	           "unexplored" :
+	       Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT ?
+	           "exit" :
+	           "end_of_level";
 }
 
 int escort_get_unexplored_component_size(void)
@@ -1377,9 +1381,11 @@ int escort_route_shared_next_goal(int set_goal, int *selected_index)
 {
 	const level_metadata_state *metadata = level_metadata_get_live_route_state();
 	route_planner_plan_summary summary;
+	level_metadata_route_step exit_step;
 	const level_metadata_route_step *step;
 	int guidance_mode;
 	int index;
+	int target_segment;
 
 	if (selected_index)
 		*selected_index = -1;
@@ -1388,6 +1394,28 @@ int escort_route_shared_next_goal(int set_goal, int *selected_index)
 		if (set_goal)
 			escort_route_clear_goal();
 		return ESCORT_GOAL_UNSPECIFIED;
+	}
+	if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT) {
+		if (!escort_is_companion_object(Buddy_objnum) ||
+		    !level_metadata_get_exit_route_step_current(
+		        Buddy_objnum, &exit_step, &index, &target_segment) ||
+		    !escort_route_step_is_targetable(&exit_step)) {
+			if (set_goal)
+				escort_route_clear_goal();
+			return ESCORT_GOAL_UNSPECIFIED;
+		}
+		guidance_mode = escort_route_step_guidance_mode(&exit_step);
+		if (guidance_mode == ESCORT_ROUTE_GUIDANCE_NONE) {
+			if (set_goal)
+				escort_route_clear_goal();
+			return ESCORT_GOAL_UNSPECIFIED;
+		}
+		if (set_goal)
+			escort_route_set_step_goal(
+			    &exit_step, guidance_mode, target_segment);
+		if (selected_index)
+			*selected_index = index;
+		return escort_route_goal_object_for_step(&exit_step);
 	}
 	if (!metadata || !level_metadata_get_live_route_plan_summary(&summary)) {
 		if (set_goal)
@@ -1511,16 +1539,14 @@ int escort_route_next_goal(void)
 
 int escort_route_adopt_exit_command(void)
 {
-	guidebot_route_decision decision;
 	int route_goal;
 
+	escort_route_set_target_mode(ESCORT_ROUTE_TARGET_EXIT);
 	escort_route_refresh_metadata();
-	if (!level_metadata_get_live_route_decision(&decision) ||
-	    !guidebot_route_decision_supports_exit_command(&decision))
-		return 0;
 	route_goal = escort_route_next_goal();
 	if (!Escort_route_goal.active || !escort_goal_is_pathable(route_goal)) {
 		escort_route_clear_goal();
+		escort_route_set_target_mode(ESCORT_ROUTE_TARGET_END_OF_LEVEL);
 		return 0;
 	}
 	debug_log(DLOG_GUIDEBOT,
@@ -1529,6 +1555,7 @@ int escort_route_adopt_exit_command(void)
 	          Escort_route_goal.objective_kind,
 	          Escort_route_goal.objective_trigger,
 	          Escort_route_goal.objective_wall);
+	escort_route_sync_target_mode();
 	return 1;
 }
 
@@ -1598,6 +1625,21 @@ void escort_route_stop_invalid_path(void)
 		    objp, &Point_segs[aip->hide_index], aip->path_length);
 	Buddy_last_player_path_created = GameTime64;
 	Escort_last_path_created = GameTime64;
+}
+
+static int escort_route_goal_semantic_equal(
+    const escort_route_goal *left,
+    const escort_route_goal *right)
+{
+	return left && right && left->active && right->active &&
+	       left->objective_kind == right->objective_kind &&
+	       left->activation_kind == right->activation_kind &&
+	       left->objective_seg == right->objective_seg &&
+	       left->objective_side == right->objective_side &&
+	       left->objective_wall == right->objective_wall &&
+	       left->objective_trigger == right->objective_trigger &&
+	       left->objective_object == right->objective_object &&
+	       left->objective_key_index == right->objective_key_index;
 }
 
 void escort_route_monitor_completion(void)
@@ -1680,15 +1722,30 @@ void escort_route_monitor_completion(void)
 			    0;
 			int adoption_action =
 			    0;
+			int same_guidance;
 
 			(void) escort_route_next_goal();
 			next_decision_valid =
 			    level_metadata_get_live_route_decision(&next_decision);
-			adoption_action =
-			    guidebot_route_decision_adoption_action(
-			        previous_decision_valid, &previous_decision,
-			        previous_certificate_valid,
-			        next_decision_valid, &next_decision);
+			if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT) {
+				same_guidance = escort_route_goal_semantic_equal(
+				    &previous_goal, &Escort_route_goal);
+				adoption_action = same_guidance ?
+				                      GUIDEBOT_ROUTE_ADOPTION_RETAIN_PATH :
+				                  Escort_route_goal.active ?
+				                      GUIDEBOT_ROUTE_ADOPTION_REPLACE_PATH :
+				                      GUIDEBOT_ROUTE_ADOPTION_STOP;
+			} else {
+				same_guidance = previous_decision_valid &&
+				                next_decision_valid &&
+				                guidebot_route_decision_guidance_equal(
+				                    &previous_decision, &next_decision);
+				adoption_action =
+				    guidebot_route_decision_adoption_action(
+				        previous_decision_valid, &previous_decision,
+				        previous_certificate_valid,
+				        next_decision_valid, &next_decision);
+			}
 #ifdef __ANDROID__
 			if (debug_log_enabled[DLOG_GUIDEBOT])
 				debug_log(
@@ -1699,9 +1756,7 @@ void escort_route_monitor_completion(void)
 				    "reason=%s",
 				    adoption_action, previous_decision_valid,
 				    previous_certificate_valid, next_decision_valid,
-				    previous_decision_valid && next_decision_valid &&
-				        guidebot_route_decision_guidance_equal(
-				            &previous_decision, &next_decision),
+				    same_guidance,
 				    previous_decision_valid
 				        ? previous_decision.objective_segment
 				        : -1,
@@ -1785,10 +1840,17 @@ int escort_route_physical_target(object *objp, int goal_seg, int max_depth)
 
 	if (!objp || !level_metadata_prepare_guidebot_path_view(objp - Objects))
 		return goal_seg;
-	frontier = level_metadata_guidebot_route_frontier_current(
-	    objp->segnum, goal_seg, max_depth,
-	    Escort_route_avoid_from_seg, Escort_route_avoid_seg,
-	    Escort_route_avoid_from_seg2, Escort_route_avoid_seg2);
+	if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT)
+		frontier =
+		    level_metadata_guidebot_route_deferred_countdown_frontier_current(
+		        objp->segnum, goal_seg, max_depth,
+		        Escort_route_avoid_from_seg, Escort_route_avoid_seg,
+		        Escort_route_avoid_from_seg2, Escort_route_avoid_seg2);
+	else
+		frontier = level_metadata_guidebot_route_frontier_current(
+		    objp->segnum, goal_seg, max_depth,
+		    Escort_route_avoid_from_seg, Escort_route_avoid_seg,
+		    Escort_route_avoid_from_seg2, Escort_route_avoid_seg2);
 	if (frontier < 0)
 		return goal_seg;
 	if (frontier != goal_seg)

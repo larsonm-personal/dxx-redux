@@ -52,6 +52,22 @@ int guidebot_route_best_physical_frontier(
     int avoid_from2,
     int avoid_to2,
     guidebot_route_certifier_workspace *workspace);
+int guidebot_route_best_deferred_countdown_frontier(
+    const level_metadata_scan_view *view,
+    int start_segment,
+    int goal_segment,
+    int max_depth,
+    int avoid_from,
+    int avoid_to,
+    int avoid_from2,
+    int avoid_to2,
+    guidebot_route_certifier_workspace *workspace);
+int guidebot_route_select_exit_step_current_state(
+    const level_metadata_scan_view *view,
+    const level_metadata_state *state,
+    level_metadata_route_step *selected_step,
+    int *selected_index,
+    int *selected_segment);
 int guidebot_route_certify_current_state(
     const level_metadata_scan_view *view,
     const level_metadata_state *prepared_state,

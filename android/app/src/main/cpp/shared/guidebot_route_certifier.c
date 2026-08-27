@@ -29,7 +29,8 @@ static int guidebot_route_side_passable(
     const level_metadata_scan_view *view,
     int segment,
     int side,
-    int allow_player_keyed_door)
+    int allow_player_keyed_door,
+    int allow_control_center_link)
 {
 	int child;
 	int clearance;
@@ -62,7 +63,7 @@ static int guidebot_route_side_passable(
 	if (view->side_is_flyable &&
 	    view->side_is_flyable(view->user, segment, side))
 		return 1;
-	if (view->initial_control_center_destroyed &&
+	if ((view->initial_control_center_destroyed || allow_control_center_link) &&
 	    view->side_is_control_center_link &&
 	    (view->side_is_control_center_link(view->user, segment, side) ||
 	     (reverse >= 0 && view->side_is_control_center_link(
@@ -111,7 +112,7 @@ int guidebot_route_side_passable_current(
     int segment,
     int side)
 {
-	return guidebot_route_side_passable(view, segment, side, 0);
+	return guidebot_route_side_passable(view, segment, side, 0, 0);
 }
 
 int guidebot_route_side_progress_reachable_current(
@@ -119,10 +120,10 @@ int guidebot_route_side_progress_reachable_current(
     int segment,
     int side)
 {
-	return guidebot_route_side_passable(view, segment, side, 1);
+	return guidebot_route_side_passable(view, segment, side, 1, 0);
 }
 
-int guidebot_route_best_physical_frontier(
+static int guidebot_route_best_physical_frontier_internal(
     const level_metadata_scan_view *view,
     int start_segment,
     int goal_segment,
@@ -131,6 +132,7 @@ int guidebot_route_best_physical_frontier(
     int avoid_to,
     int avoid_from2,
     int avoid_to2,
+    int allow_control_center_link,
     guidebot_route_certifier_workspace *workspace)
 {
 	int best_remaining;
@@ -165,8 +167,9 @@ int guidebot_route_best_physical_frontier(
 				continue;
 			reverse = view->reverse_side(view->user, segment, child);
 			if (reverse < 0 || reverse >= LEVEL_METADATA_MAX_SIDES ||
-			    !guidebot_route_side_progress_reachable_current(
-			        view, child, reverse))
+			    !guidebot_route_side_passable(
+			        view, child, reverse, 1,
+			        allow_control_center_link))
 				continue;
 			workspace->strategic_distance[child] =
 			    workspace->strategic_distance[segment] + 1;
@@ -211,6 +214,38 @@ int guidebot_route_best_physical_frontier(
 		}
 	}
 	return best_segment;
+}
+
+int guidebot_route_best_physical_frontier(
+    const level_metadata_scan_view *view,
+    int start_segment,
+    int goal_segment,
+    int max_depth,
+    int avoid_from,
+    int avoid_to,
+    int avoid_from2,
+    int avoid_to2,
+    guidebot_route_certifier_workspace *workspace)
+{
+	return guidebot_route_best_physical_frontier_internal(
+	    view, start_segment, goal_segment, max_depth, avoid_from, avoid_to,
+	    avoid_from2, avoid_to2, 0, workspace);
+}
+
+int guidebot_route_best_deferred_countdown_frontier(
+    const level_metadata_scan_view *view,
+    int start_segment,
+    int goal_segment,
+    int max_depth,
+    int avoid_from,
+    int avoid_to,
+    int avoid_from2,
+    int avoid_to2,
+    guidebot_route_certifier_workspace *workspace)
+{
+	return guidebot_route_best_physical_frontier_internal(
+	    view, start_segment, goal_segment, max_depth, avoid_from, avoid_to,
+	    avoid_from2, avoid_to2, 1, workspace);
 }
 
 static int guidebot_build_reachability(
@@ -371,6 +406,59 @@ static int guidebot_step_usable(
 	       view->trigger_flag_disabled) != 0)))
 		return 0;
 	return 1;
+}
+
+static int guidebot_step_starts_countdown(
+    const level_metadata_route_step *step)
+{
+	return step &&
+	       (step->kind == LEVEL_METADATA_ROUTE_REACTOR ||
+	        step->kind == LEVEL_METADATA_ROUTE_BOSS ||
+	        step->activation_kind ==
+	            LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_REACTOR ||
+	        step->activation_kind ==
+	            LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BOSS);
+}
+
+int guidebot_route_select_exit_step_current_state(
+    const level_metadata_scan_view *view,
+    const level_metadata_state *state,
+    level_metadata_route_step *selected_step,
+    int *selected_index,
+    int *selected_segment)
+{
+	int step;
+
+	if (selected_index)
+		*selected_index = -1;
+	if (selected_segment)
+		*selected_segment = -1;
+	if (!view || !state || !selected_step || state->route_step_count < 0 ||
+	    state->route_step_count > LEVEL_METADATA_MAX_ROUTE_STEPS)
+		return 0;
+	for (step = 0; step < state->route_step_count; ++step) {
+		level_metadata_route_step candidate = state->route_steps[step];
+		int target_segment;
+
+		if (candidate.kind == LEVEL_METADATA_ROUTE_START ||
+		    !level_metadata_route_step_required_by_world_state(
+		        view, &candidate))
+			continue;
+		if (guidebot_step_starts_countdown(&candidate))
+			continue;
+		if (!guidebot_step_usable(view, &candidate))
+			return 0;
+		target_segment = guidebot_step_target_segment(view, &candidate);
+		if (!guidebot_valid_segment(view, target_segment))
+			return 0;
+		*selected_step = candidate;
+		if (selected_index)
+			*selected_index = step;
+		if (selected_segment)
+			*selected_segment = target_segment;
+		return 1;
+	}
+	return 0;
 }
 
 static int guidebot_later_required_target_reachable(

@@ -1,6 +1,12 @@
 #ifndef D2_GUIDEBOT_ROUTE_INTERNAL_H
 #define D2_GUIDEBOT_ROUTE_INTERNAL_H
 
+enum escort_route_target_mode {
+	ESCORT_ROUTE_TARGET_END_OF_LEVEL = 0,
+	ESCORT_ROUTE_TARGET_UNEXPLORED = 1,
+	ESCORT_ROUTE_TARGET_EXIT = 2
+};
+
 #ifdef __ANDROID__
 
 #include "level_metadata_scan.h"
@@ -15,11 +21,6 @@ enum escort_route_guidance_mode {
 };
 
 #define ESCORT_ROUTE_OBJECTIVE_UNEXPLORED 1000
-
-enum escort_route_target_mode {
-	ESCORT_ROUTE_TARGET_END_OF_LEVEL = 0,
-	ESCORT_ROUTE_TARGET_UNEXPLORED = 1
-};
 
 typedef struct escort_unexplored_route_target {
 	int active;

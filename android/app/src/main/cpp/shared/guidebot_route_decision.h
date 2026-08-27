@@ -177,8 +177,6 @@ int guidebot_route_decision_semantic_equal(
 int guidebot_route_decision_guidance_equal(
     const guidebot_route_decision *left,
     const guidebot_route_decision *right);
-int guidebot_route_decision_supports_exit_command(
-    const guidebot_route_decision *decision);
 int guidebot_route_decision_adoption_action(
     int previous_valid,
     const guidebot_route_decision *previous,

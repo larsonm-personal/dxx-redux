@@ -28,6 +28,7 @@ typedef struct certifier_fixture {
 	int wall_open[TEST_WALLS];
 	int wall_key[TEST_WALLS];
 	int hard_blocked[TEST_WALLS];
+	int control_center_link[TEST_WALLS];
 	int wall_shootable[TEST_WALLS];
 	int trigger_flags[TEST_TRIGGERS];
 	int object_dead;
@@ -75,6 +76,14 @@ static int side_is_hard_blocked(void *user, int segment, int side)
 	int wall = fixture->wall[segment][side];
 
 	return wall >= 0 && fixture->hard_blocked[wall];
+}
+
+static int side_is_control_center_link(void *user, int segment, int side)
+{
+	certifier_fixture *fixture = (certifier_fixture *) user;
+	int wall = fixture->wall[segment][side];
+
+	return wall >= 0 && fixture->control_center_link[wall];
 }
 
 static int wall_num(void *user, int segment, int side)
@@ -208,6 +217,7 @@ static level_metadata_scan_view make_view(certifier_fixture *fixture)
 	view.side_is_flyable = side_is_flyable;
 	view.side_clearance_radius = side_clearance;
 	view.side_is_hard_blocked = side_is_hard_blocked;
+	view.side_is_control_center_link = side_is_control_center_link;
 	view.wall_num = wall_num;
 	view.wall_segment = wall_segment;
 	view.wall_side = wall_side;
@@ -557,6 +567,74 @@ static void test_physical_frontier_follows_strategic_route(void)
 	        &view, 0, 3, 200, -1, -1, -1, -1, &Workspace) == -1);
 }
 
+static void test_exit_projection_skips_only_countdown_steps(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+	level_metadata_route_step selected;
+	int selected_index;
+	int selected_segment;
+
+	initialize_fixture(&fixture);
+	view = make_view(&fixture);
+	fixture.wall_open[0] = 1;
+	Prepared.route_steps[2].kind = LEVEL_METADATA_ROUTE_REACTOR;
+	Prepared.route_steps[2].activation_kind =
+	    LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_REACTOR;
+	Prepared.route_steps[3].kind = LEVEL_METADATA_ROUTE_TRIGGER;
+	Prepared.route_steps[3].activation_kind =
+	    LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH;
+	Prepared.route_steps[3].trigger_num = 1;
+	Prepared.route_steps[3].wall_num = 1;
+	Prepared.route_steps[3].seg = 1;
+	Prepared.route_steps[3].path_terminal_segment = 1;
+	Prepared.route_steps[3].opened_link_count = 1;
+	Prepared.route_steps[3].opened_link_wall[0] = 1;
+
+	assert(guidebot_route_select_exit_step_current_state(
+	    &view, &Prepared, &selected, &selected_index, &selected_segment));
+	assert(selected_index == 3);
+	assert(selected.kind == LEVEL_METADATA_ROUTE_TRIGGER);
+	assert(selected_segment == 1);
+
+	fixture.wall_open[1] = 1;
+	assert(guidebot_route_select_exit_step_current_state(
+	    &view, &Prepared, &selected, &selected_index, &selected_segment));
+	assert(selected_index == 4);
+	assert(selected.kind == LEVEL_METADATA_ROUTE_EXIT);
+	assert(selected_segment == 3);
+
+	Prepared.route_steps[2].kind = LEVEL_METADATA_ROUTE_BOSS;
+	Prepared.route_steps[2].activation_kind =
+	    LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BOSS;
+	assert(guidebot_route_select_exit_step_current_state(
+	    &view, &Prepared, &selected, &selected_index, &selected_segment));
+	assert(selected_index == 4);
+}
+
+static void test_deferred_countdown_frontier_stops_before_closed_link(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+
+	initialize_fixture(&fixture);
+	view = make_view(&fixture);
+	fixture.wall_open[0] = 1;
+	fixture.control_center_link[1] = 1;
+	fixture.wall_open[2] = 1;
+
+	assert(
+	    guidebot_route_best_physical_frontier(
+	        &view, 0, 3, 200, -1, -1, -1, -1, &Workspace) == -1);
+	assert(
+	    guidebot_route_best_deferred_countdown_frontier(
+	        &view, 0, 3, 200, -1, -1, -1, -1, &Workspace) == 1);
+	view.initial_control_center_destroyed = 1;
+	assert(
+	    guidebot_route_best_physical_frontier(
+	        &view, 0, 3, 200, -1, -1, -1, -1, &Workspace) == 3);
+}
+
 static void test_unreachable_prepared_target_requires_replan(void)
 {
 	certifier_fixture fixture;
@@ -630,6 +708,8 @@ int main(void)
 	test_solid_illusion_wall_is_not_passable();
 	test_keyed_buddy_proof_door_keeps_objective_reachable();
 	test_physical_frontier_follows_strategic_route();
+	test_exit_projection_skips_only_countdown_steps();
+	test_deferred_countdown_frontier_stops_before_closed_link();
 	test_unreachable_prepared_target_requires_replan();
 	test_reclosed_hidden_door_behind_start_does_not_regress_route();
 	printf("guidebot route certifier tests passed\n");

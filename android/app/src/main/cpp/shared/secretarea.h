@@ -58,8 +58,21 @@ int level_metadata_route_audit_domain(
 int level_metadata_validate_live_route_certificate(
     int start_objnum, unsigned int *work_units);
 int level_metadata_prepare_guidebot_path_view(int start_objnum);
+int level_metadata_get_exit_route_step_current(
+    int start_objnum,
+    level_metadata_route_step *step,
+    int *step_index,
+    int *target_segment);
 int level_metadata_guidebot_side_passable_current(int segment, int side);
 int level_metadata_guidebot_route_frontier_current(
+    int start_segment,
+    int goal_segment,
+    int max_depth,
+    int avoid_from,
+    int avoid_to,
+    int avoid_from2,
+    int avoid_to2);
+int level_metadata_guidebot_route_deferred_countdown_frontier_current(
     int start_segment,
     int goal_segment,
     int max_depth,

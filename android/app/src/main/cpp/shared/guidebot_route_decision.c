@@ -322,16 +322,6 @@ static int guidebot_route_decision_has_guidance(
 	        decision->partial_frontier_segment >= 0);
 }
 
-int guidebot_route_decision_supports_exit_command(
-    const guidebot_route_decision *decision)
-{
-	return decision &&
-	       (decision->status == GUIDEBOT_ROUTE_DECISION_READY ||
-	        decision->status == GUIDEBOT_ROUTE_DECISION_PARTIAL) &&
-	       decision->certificate.status == GUIDEBOT_ROUTE_CERTIFICATE_VALID &&
-	       decision->objective_kind >= 0;
-}
-
 int guidebot_route_decision_adoption_action(
     int previous_valid,
     const guidebot_route_decision *previous,

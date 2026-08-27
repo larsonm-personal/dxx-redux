@@ -1008,8 +1008,15 @@ void set_escort_special_goal(int special_key)
 	Last_buddy_message_time = GameTime64 - 2*F1_0;	//	Allow next message to come through.
 
 #ifdef __ANDROID__
-	if (using_route_command)
-		buddy_message("Finding NEXT: %s", escort_get_route_goal_instruction());
+	if (using_route_command) {
+		if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT &&
+		    Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_EXIT)
+			buddy_message("Finding EXIT");
+		else if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT)
+			buddy_message("Exit route: %s", escort_get_route_goal_instruction());
+		else
+			buddy_message("Finding NEXT: %s", escort_get_route_goal_instruction());
+	}
 	else
 #endif
 		say_escort_goal(Escort_special_goal);
@@ -1746,7 +1753,10 @@ void escort_create_path_to_goal(object *objp)
 					Last_buddy_message_time = 0;	//	Force this message to get through.
 #ifdef __ANDROID__
 					if (using_route_goal)
-						buddy_message("Can't reach next: %s.", escort_route_goal_label());
+						if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT)
+							buddy_message("Can't reach EXIT.");
+						else
+							buddy_message("Can't reach next: %s.", escort_route_goal_label());
 					else
 #endif
 					if (Escort_goal_object == ESCORT_GOAL_SECRET)
@@ -1781,8 +1791,18 @@ void escort_create_path_to_goal(object *objp)
 #endif
 
 #ifdef __ANDROID__
-		if (using_route_goal)
-			buddy_message("Finding NEXT: %s", escort_get_route_goal_instruction());
+		if (using_route_goal) {
+			if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT &&
+			    path_goal_seg != goal_seg)
+				buddy_message("Can't reach EXIT yet; navigating as close as possible");
+			else if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT &&
+			         Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_EXIT)
+				buddy_message("Finding EXIT");
+			else if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT)
+				buddy_message("Exit route: %s", escort_get_route_goal_instruction());
+			else
+				buddy_message("Finding NEXT: %s", escort_get_route_goal_instruction());
+		}
 		else
 #endif
 		say_escort_goal(Escort_goal_object);
@@ -1895,7 +1915,7 @@ int escort_set_goal_object(void)
 		return route_goal;
 	if (escort_route_next_waypoint_pending())
 		return ESCORT_GOAL_UNSPECIFIED;
-	if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED)
+	if (Escort_route_target_mode != ESCORT_ROUTE_TARGET_END_OF_LEVEL)
 		return ESCORT_GOAL_UNSPECIFIED;
 #endif
 	if ((key_flags & PLAYER_FLAGS_RED_KEY) == 0) {
@@ -3531,7 +3551,11 @@ void do_escort_menu(void)
 		case ESCORT_GOAL_EXIT:
 #ifdef __ANDROID__
 			if (Escort_route_goal.active) {
-				snprintf(menu->goal_str, sizeof(menu->goal_str), "next: %s", escort_route_goal_label());
+				snprintf(
+				    menu->goal_str, sizeof(menu->goal_str),
+				    Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT ?
+				        "exit: %s" : "next: %s",
+				    escort_route_goal_label());
 				break;
 			}
 #endif
@@ -3682,7 +3706,9 @@ static int escort_route_target_mode_for_network(void)
 
 static int escort_route_target_mode_valid(int target_mode)
 {
-	return target_mode == 0 || target_mode == 1;
+	return target_mode == ESCORT_ROUTE_TARGET_END_OF_LEVEL ||
+	       target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED ||
+	       target_mode == ESCORT_ROUTE_TARGET_EXIT;
 }
 
 static int escort_owner_candidate_eligible(int pnum)

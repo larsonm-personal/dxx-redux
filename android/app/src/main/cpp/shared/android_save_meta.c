@@ -188,7 +188,8 @@ int android_save_meta_is_valid(const android_save_meta_disk *meta)
 	if (meta->difficulty_min > 4 || meta->difficulty_max > 4 ||
 	    meta->difficulty_min > meta->difficulty_max)
 		return 0;
-	if (meta->guidebot_route_target_mode > 1)
+	if (meta->guidebot_route_target_mode >
+	    ANDROID_SAVE_META_GUIDEBOT_ROUTE_TARGET_MAX)
 		return 0;
 	if (meta->matcen_mode >= MATCEN_MODE_COUNT)
 		return 0;

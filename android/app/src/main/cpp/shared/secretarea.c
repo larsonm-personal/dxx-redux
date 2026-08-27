@@ -3986,6 +3986,20 @@ int level_metadata_prepare_guidebot_path_view(int start_objnum)
 	return level_metadata_refresh_scan_view(start_objnum) != NULL;
 }
 
+int level_metadata_get_exit_route_step_current(
+    int start_objnum,
+    level_metadata_route_step *step,
+    int *step_index,
+    int *target_segment)
+{
+	if (!Level_metadata_live_route_state_valid ||
+	    !level_metadata_refresh_scan_view(start_objnum))
+		return 0;
+	return guidebot_route_select_exit_step_current_state(
+	    &Level_metadata_scan_view, &Level_metadata_live_route_state, step,
+	    step_index, target_segment);
+}
+
 int level_metadata_guidebot_side_passable_current(int segment, int side)
 {
 	if (!Level_metadata_scan_view_initialized)
@@ -4006,6 +4020,23 @@ int level_metadata_guidebot_route_frontier_current(
 	if (!Level_metadata_scan_view_initialized)
 		return -1;
 	return guidebot_route_best_physical_frontier(
+	    &Level_metadata_scan_view, start_segment, goal_segment, max_depth,
+	    avoid_from, avoid_to, avoid_from2, avoid_to2,
+	    &Level_metadata_route_frontier_workspace);
+}
+
+int level_metadata_guidebot_route_deferred_countdown_frontier_current(
+    int start_segment,
+    int goal_segment,
+    int max_depth,
+    int avoid_from,
+    int avoid_to,
+    int avoid_from2,
+    int avoid_to2)
+{
+	if (!Level_metadata_scan_view_initialized)
+		return -1;
+	return guidebot_route_best_deferred_countdown_frontier(
 	    &Level_metadata_scan_view, start_segment, goal_segment, max_depth,
 	    avoid_from, avoid_to, avoid_from2, avoid_to2,
 	    &Level_metadata_route_frontier_workspace);

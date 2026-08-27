@@ -13,6 +13,9 @@
 /* Values 0-3 match MUSIC_TYPE_*; 4 distinguishes mission MIDI from base MIDI. */
 #define ANDROID_SAVE_META_MUSIC_MISSION 4
 
+/* Keep in sync with the highest escort_route_target_mode value in D2. */
+#define ANDROID_SAVE_META_GUIDEBOT_ROUTE_TARGET_MAX 2
+
 #define ANDROID_SAVE_META_CALLSIGN_LEN     8
 #define ANDROID_SAVE_META_DESC_LEN         20
 #define ANDROID_SAVE_META_MISSION_LEN      8
