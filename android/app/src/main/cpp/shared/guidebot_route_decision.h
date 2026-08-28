@@ -183,6 +183,10 @@ int guidebot_route_decision_adoption_action(
     int previous_certificate_valid,
     int next_valid,
     const guidebot_route_decision *next);
+int guidebot_route_passive_adoption_action(
+    int incumbent_active,
+    int candidate_active,
+    int same_objective);
 const char *guidebot_route_decision_status_name(int status);
 const char *guidebot_route_shadow_mismatch_name(int kind);
 const char *guidebot_route_shadow_reason_name(int kind);

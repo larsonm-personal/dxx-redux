@@ -63,3 +63,15 @@ Separately, terminal firing-position guidance should orient Guide-Bot toward
 the switch wall.  That would make either valid firing waypoint visibly useful,
 but orientation alone would not correct the backward cache downgrade shown in
 this log.
+
+## Implementation
+
+- [x] Reduce route publication to one incumbent-aware adoption path instead of
+  allowing cache readiness to mutate the active goal indirectly.
+- [x] Retain an active same-objective firing waypoint across cache publication,
+  while still replacing it for a changed or invalidated objective.
+- [x] Add focused adoption coverage for a live firing waypoint followed by a
+  different canonical waypoint for the same switch.
+- [x] Add or extend a high-level route test that exercises late cache readiness.
+- [x] Run scoped code quality, focused tests, the Windows D2 build, and Android
+  native builds for every configured ABI.

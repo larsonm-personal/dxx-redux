@@ -285,6 +285,41 @@ static void test_path_adoption_retains_current_equivalent_guidance(void)
 	       GUIDEBOT_ROUTE_ADOPTION_STOP);
 }
 
+static void test_passive_cache_publication_preserves_incumbent_waypoint(void)
+{
+	level_metadata_state state;
+	route_planner_plan_summary plan;
+	route_snapshot_summary snapshot;
+	guidebot_route_decision incumbent;
+	guidebot_route_decision cached;
+
+	initialize_trigger_plan(&state, &plan);
+	initialize_snapshot(&snapshot);
+	assert(guidebot_route_decision_project(
+	    &state, &plan, &snapshot, 2, -1, &incumbent));
+	state.route_steps[1].activation_pos[0] += 1000;
+	plan.first_pending_path_terminal_segment = 320;
+	assert(guidebot_route_decision_project(
+	    &state, &plan, &snapshot, 2, -1, &cached));
+	assert(guidebot_route_decision_semantic_equal(&incumbent, &cached));
+	assert(!guidebot_route_decision_guidance_equal(&incumbent, &cached));
+	assert(guidebot_route_passive_adoption_action(
+	           1, 1,
+	           guidebot_route_decision_semantic_equal(&incumbent, &cached)) ==
+	       GUIDEBOT_ROUTE_ADOPTION_RETAIN_PATH);
+	assert(guidebot_route_decision_adoption_action(
+	           1, &incumbent, 0, 1, &cached) ==
+	       GUIDEBOT_ROUTE_ADOPTION_REPLACE_PATH);
+	assert(guidebot_route_passive_adoption_action(1, 0, 0) ==
+	       GUIDEBOT_ROUTE_ADOPTION_RETAIN_PATH);
+	assert(guidebot_route_passive_adoption_action(1, 1, 0) ==
+	       GUIDEBOT_ROUTE_ADOPTION_REPLACE_PATH);
+	assert(guidebot_route_passive_adoption_action(0, 1, 0) ==
+	       GUIDEBOT_ROUTE_ADOPTION_REPLACE_PATH);
+	assert(guidebot_route_passive_adoption_action(0, 0, 0) ==
+	       GUIDEBOT_ROUTE_ADOPTION_STOP);
+}
+
 static void test_shadow_classifies_mismatches(void)
 {
 	level_metadata_state state;
@@ -383,6 +418,7 @@ int main(void)
 	test_semantic_and_guidance_changes_are_distinct();
 	test_terminal_statuses();
 	test_path_adoption_retains_current_equivalent_guidance();
+	test_passive_cache_publication_preserves_incumbent_waypoint();
 	test_shadow_classifies_mismatches();
 	return 0;
 }

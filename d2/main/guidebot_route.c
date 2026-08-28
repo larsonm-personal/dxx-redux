@@ -475,32 +475,42 @@ void escort_route_sync_target_mode(void)
 #endif
 }
 
-void escort_route_clear_goal(void)
+static void escort_route_goal_initialize(escort_route_goal *goal)
 {
-	memset(&Escort_route_goal, 0, sizeof(Escort_route_goal));
+	memset(goal, 0, sizeof(*goal));
+	goal->target_seg = -1;
+	goal->target_side = -1;
+	goal->target_wall = -1;
+	goal->trigger_num = -1;
+	goal->objective_kind = -1;
+	goal->activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_NONE;
+	goal->objective_seg = -1;
+	goal->objective_side = -1;
+	goal->objective_wall = -1;
+	goal->objective_trigger = -1;
+	goal->objective_object = -1;
+	goal->objective_key_index = -1;
+	goal->guidance_mode = ESCORT_ROUTE_GUIDANCE_NONE;
+	goal->guidance_seg = -1;
+	goal->guidance_side = -1;
+	goal->target_pos_valid = 0;
+	goal->path_endpoint_seg = -1;
+	goal->path_endpoint_pos_valid = 0;
+}
+
+static void escort_route_consume_cache_improvement(void)
+{
 	if (Escort_route_cache_improvement_pending) {
 		Escort_route_cache_improvement_pending = 0;
 		Escort_route_metadata_dirty = 1;
 		Escort_route_last_replan_reason = "cache_ready";
 	}
-	Escort_route_goal.target_seg = -1;
-	Escort_route_goal.target_side = -1;
-	Escort_route_goal.target_wall = -1;
-	Escort_route_goal.trigger_num = -1;
-	Escort_route_goal.objective_kind = -1;
-	Escort_route_goal.activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_NONE;
-	Escort_route_goal.objective_seg = -1;
-	Escort_route_goal.objective_side = -1;
-	Escort_route_goal.objective_wall = -1;
-	Escort_route_goal.objective_trigger = -1;
-	Escort_route_goal.objective_object = -1;
-	Escort_route_goal.objective_key_index = -1;
-	Escort_route_goal.guidance_mode = ESCORT_ROUTE_GUIDANCE_NONE;
-	Escort_route_goal.guidance_seg = -1;
-	Escort_route_goal.guidance_side = -1;
-	Escort_route_goal.target_pos_valid = 0;
-	Escort_route_goal.path_endpoint_seg = -1;
-	Escort_route_goal.path_endpoint_pos_valid = 0;
+}
+
+void escort_route_clear_goal(void)
+{
+	escort_route_consume_cache_improvement();
+	escort_route_goal_initialize(&Escort_route_goal);
 }
 
 const char *escort_route_goal_label(void)
@@ -534,10 +544,13 @@ const char *escort_get_route_goal_instruction(void)
 	}
 }
 
-int escort_route_shared_next_goal(int set_goal, int *selected_index);
+int escort_route_select_next_goal(escort_route_goal *candidate, int *selected_index);
 void escort_route_refresh_metadata(void);
 void escort_route_monitor_completion(void);
 int escort_valid_segment(int segnum);
+static int escort_route_goal_semantic_equal(
+	const escort_route_goal *left,
+	const escort_route_goal *right);
 
 int escort_get_route_goal_active(void)
 {
@@ -1307,19 +1320,13 @@ int escort_route_step_is_targetable(const level_metadata_route_step *step)
 	}
 }
 
-void escort_route_set_step_goal(const level_metadata_route_step *step, int guidance_mode, int path_terminal_seg)
+static void escort_route_build_step_goal(
+	const level_metadata_route_step *step,
+	int guidance_mode,
+	int path_terminal_seg,
+	escort_route_goal *goal)
 {
 	int target_seg = escort_valid_segment(path_terminal_seg) ? path_terminal_seg : step->seg;
-	if (Escort_route_avoid_seg >= 0 &&
-	    (Escort_route_avoid_trigger != step->trigger_num ||
-	     Escort_route_avoid_wall != step->wall_num)) {
-		Escort_route_avoid_from_seg = -1;
-		Escort_route_avoid_seg = -1;
-		Escort_route_avoid_from_seg2 = -1;
-		Escort_route_avoid_seg2 = -1;
-		Escort_route_avoid_trigger = -1;
-		Escort_route_avoid_wall = -1;
-	}
 
 	if (step->activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_UNRESOLVED_TRIGGER &&
 	    escort_valid_segment(step->seg))
@@ -1330,57 +1337,61 @@ void escort_route_set_step_goal(const level_metadata_route_step *step, int guida
 		target_seg = step->seg;
 	int target_side = target_seg == step->seg ? step->side : -1;
 
-	escort_route_clear_goal();
-	Escort_route_goal.active = 1;
-	Escort_route_goal.target_seg = target_seg;
-	Escort_route_goal.target_side = target_side;
-	Escort_route_goal.target_wall = step->wall_num;
-	Escort_route_goal.trigger_num = step->trigger_num;
-	Escort_route_goal.objective_kind = step->kind;
-	Escort_route_goal.activation_kind = step->activation_kind;
-	Escort_route_goal.objective_seg = step->seg;
-	Escort_route_goal.objective_side = step->side;
-	Escort_route_goal.objective_wall = step->wall_num;
-	Escort_route_goal.objective_trigger = step->trigger_num;
-	Escort_route_goal.objective_object = step->key_carrier_objnum;
-	Escort_route_goal.objective_key_index = step->key_index;
-	Escort_route_goal.guidance_mode = guidance_mode;
-	Escort_route_goal.guidance_seg = target_seg;
-	Escort_route_goal.guidance_side = target_side;
+	escort_route_goal_initialize(goal);
+	goal->active = 1;
+	goal->target_seg = target_seg;
+	goal->target_side = target_side;
+	goal->target_wall = step->wall_num;
+	goal->trigger_num = step->trigger_num;
+	goal->objective_kind = step->kind;
+	goal->activation_kind = step->activation_kind;
+	goal->objective_seg = step->seg;
+	goal->objective_side = step->side;
+	goal->objective_wall = step->wall_num;
+	goal->objective_trigger = step->trigger_num;
+	goal->objective_object = step->key_carrier_objnum;
+	goal->objective_key_index = step->key_index;
+	goal->guidance_mode = guidance_mode;
+	goal->guidance_seg = target_seg;
+	goal->guidance_side = target_side;
 	if (guidance_mode == ESCORT_ROUTE_GUIDANCE_REACH_FIRING_POSITION &&
 	    step->activation_pos_valid && target_seg == path_terminal_seg) {
-		Escort_route_goal.target_pos_valid = 1;
-		Escort_route_goal.target_pos.x = step->activation_pos[0];
-		Escort_route_goal.target_pos.y = step->activation_pos[1];
-		Escort_route_goal.target_pos.z = step->activation_pos[2];
+		goal->target_pos_valid = 1;
+		goal->target_pos.x = step->activation_pos[0];
+		goal->target_pos.y = step->activation_pos[1];
+		goal->target_pos.z = step->activation_pos[2];
 	}
 	if (step->kind == LEVEL_METADATA_ROUTE_UNEXPLORED) {
-		Escort_route_goal.objective_kind = ESCORT_ROUTE_OBJECTIVE_UNEXPLORED;
+		goal->objective_kind = ESCORT_ROUTE_OBJECTIVE_UNEXPLORED;
 		if (Escort_unexplored_route_target.active)
-			Escort_route_goal.objective_seg = Escort_unexplored_route_target.target_seg;
+			goal->objective_seg = Escort_unexplored_route_target.target_seg;
 	}
 	if (escort_valid_wall(step->wall_num)) {
-		Escort_route_goal.objective_seg = Walls[step->wall_num].segnum;
-		Escort_route_goal.objective_side = Walls[step->wall_num].sidenum;
+		goal->objective_seg = Walls[step->wall_num].segnum;
+		goal->objective_side = Walls[step->wall_num].sidenum;
 	}
-	snprintf(Escort_route_goal.label, sizeof(Escort_route_goal.label), "%s",
+	snprintf(goal->label, sizeof(goal->label), "%s",
 	         step->label[0] ? step->label : "route objective");
 }
 
-void escort_route_set_frontier_goal(int target_seg)
+static void escort_route_build_frontier_goal(
+	int target_seg,
+	escort_route_goal *goal)
 {
-	escort_route_clear_goal();
-	Escort_route_goal.active = 1;
-	Escort_route_goal.target_seg = target_seg;
-	Escort_route_goal.guidance_mode = ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT;
-	Escort_route_goal.guidance_seg = target_seg;
+	escort_route_goal_initialize(goal);
+	goal->active = 1;
+	goal->target_seg = target_seg;
+	goal->guidance_mode = ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT;
+	goal->guidance_seg = target_seg;
 	if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED)
-		Escort_route_goal.objective_kind = ESCORT_ROUTE_OBJECTIVE_UNEXPLORED;
-	snprintf(Escort_route_goal.label, sizeof(Escort_route_goal.label), "%s",
+		goal->objective_kind = ESCORT_ROUTE_OBJECTIVE_UNEXPLORED;
+	snprintf(goal->label, sizeof(goal->label), "%s",
 	         "closest reachable route point");
 }
 
-int escort_route_shared_next_goal(int set_goal, int *selected_index)
+int escort_route_select_next_goal(
+	escort_route_goal *candidate,
+	int *selected_index)
 {
 	const level_metadata_state *metadata = level_metadata_get_live_route_state();
 	route_planner_plan_summary summary;
@@ -1392,10 +1403,10 @@ int escort_route_shared_next_goal(int set_goal, int *selected_index)
 
 	if (selected_index)
 		*selected_index = -1;
+	if (candidate)
+		escort_route_goal_initialize(candidate);
 	if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_UNEXPLORED &&
 	    !Escort_unexplored_route_target.active) {
-		if (set_goal)
-			escort_route_clear_goal();
 		return ESCORT_GOAL_UNSPECIFIED;
 	}
 	if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT) {
@@ -1403,60 +1414,50 @@ int escort_route_shared_next_goal(int set_goal, int *selected_index)
 		    !level_metadata_get_exit_route_step_current(
 		        Buddy_objnum, &exit_step, &index, &target_segment) ||
 		    !escort_route_step_is_targetable(&exit_step)) {
-			if (set_goal)
-				escort_route_clear_goal();
 			return ESCORT_GOAL_UNSPECIFIED;
 		}
 		guidance_mode = escort_route_step_guidance_mode(&exit_step);
 		if (guidance_mode == ESCORT_ROUTE_GUIDANCE_NONE) {
-			if (set_goal)
-				escort_route_clear_goal();
 			return ESCORT_GOAL_UNSPECIFIED;
 		}
-		if (set_goal)
-			escort_route_set_step_goal(
-			    &exit_step, guidance_mode, target_segment);
+		if (candidate)
+			escort_route_build_step_goal(
+			    &exit_step, guidance_mode, target_segment, candidate);
 		if (selected_index)
 			*selected_index = index;
 		return escort_route_goal_object_for_step(&exit_step);
 	}
 	if (!metadata || !level_metadata_get_live_route_plan_summary(&summary)) {
-		if (set_goal)
-			escort_route_clear_goal();
 		return ESCORT_GOAL_UNSPECIFIED;
 	}
 	index = summary.first_pending_step;
 	if (index < 0 || index >= metadata->route_step_count ||
 	    index >= LEVEL_METADATA_MAX_ROUTE_STEPS) {
 		if (!escort_valid_segment(summary.partial_frontier_segment)) {
-			if (set_goal)
-				escort_route_clear_goal();
 			return ESCORT_GOAL_UNSPECIFIED;
 		}
-		if (set_goal)
-			escort_route_set_frontier_goal(summary.partial_frontier_segment);
+		if (candidate)
+			escort_route_build_frontier_goal(
+			    summary.partial_frontier_segment, candidate);
 		return ESCORT_GOAL_EXIT;
 	}
 	step = &metadata->route_steps[index];
 	if (!escort_route_step_is_targetable(step)) {
-		if (set_goal)
-			escort_route_clear_goal();
 		return ESCORT_GOAL_UNSPECIFIED;
 	}
 	guidance_mode = escort_route_step_guidance_mode(step);
 	if (guidance_mode == ESCORT_ROUTE_GUIDANCE_NONE) {
-		if (set_goal)
-			escort_route_clear_goal();
 		if (selected_index)
 			*selected_index = index;
 		return ESCORT_GOAL_UNSPECIFIED;
 	}
-	if (set_goal)
-		escort_route_set_step_goal(
+	if (candidate)
+		escort_route_build_step_goal(
 		    step, guidance_mode,
 		    escort_valid_segment(summary.first_pending_path_terminal_segment) ?
 		        summary.first_pending_path_terminal_segment :
-		        summary.partial_frontier_segment);
+		        summary.partial_frontier_segment,
+		    candidate);
 	if (selected_index)
 		*selected_index = index;
 	return escort_route_goal_object_for_step(step);
@@ -1478,7 +1479,7 @@ int escort_route_next_waypoint_pending(void)
 	if (readiness == LEVEL_METADATA_READINESS_CALCULATING)
 		return 1;
 	return readiness == LEVEL_METADATA_READINESS_PARTIAL &&
-	       escort_route_shared_next_goal(0, NULL) == ESCORT_GOAL_UNSPECIFIED;
+	       escort_route_select_next_goal(NULL, NULL) == ESCORT_GOAL_UNSPECIFIED;
 }
 
 int escort_get_route_next_waypoint_pending(void)
@@ -1535,9 +1536,74 @@ void escort_route_poll_pending_cache(void)
 	}
 }
 
+static int escort_route_goal_object_for_goal(const escort_route_goal *goal)
+{
+	if (!goal || !goal->active)
+		return ESCORT_GOAL_UNSPECIFIED;
+	switch (goal->objective_kind) {
+		case LEVEL_METADATA_ROUTE_KEY:
+			return escort_route_key_goal(goal->objective_key_index);
+		case LEVEL_METADATA_ROUTE_REACTOR:
+			return ESCORT_GOAL_CONTROLCEN;
+		case LEVEL_METADATA_ROUTE_BOSS:
+			return ESCORT_GOAL_BOSS;
+		default:
+			return ESCORT_GOAL_EXIT;
+	}
+}
+
+static void escort_route_publish_goal(const escort_route_goal *candidate)
+{
+	if (Escort_route_avoid_seg >= 0 &&
+	    (Escort_route_avoid_trigger != candidate->trigger_num ||
+	     Escort_route_avoid_wall != candidate->target_wall)) {
+		Escort_route_avoid_from_seg = -1;
+		Escort_route_avoid_seg = -1;
+		Escort_route_avoid_from_seg2 = -1;
+		Escort_route_avoid_seg2 = -1;
+		Escort_route_avoid_trigger = -1;
+		Escort_route_avoid_wall = -1;
+	}
+	Escort_route_goal = *candidate;
+}
+
 int escort_route_next_goal(void)
 {
-	return escort_route_shared_next_goal(1, NULL);
+	escort_route_goal candidate;
+	int route_goal = escort_route_select_next_goal(&candidate, NULL);
+	int cache_improvement = Escort_route_cache_improvement_pending;
+	int same_objective = escort_route_goal_semantic_equal(
+	    &Escort_route_goal, &candidate);
+	int adoption_action = guidebot_route_passive_adoption_action(
+	    Escort_route_goal.active, candidate.active, same_objective);
+
+	escort_route_consume_cache_improvement();
+	if (adoption_action == GUIDEBOT_ROUTE_ADOPTION_RETAIN_PATH) {
+#ifdef __ANDROID__
+		if (cache_improvement && candidate.active &&
+		    (Escort_route_goal.target_seg != candidate.target_seg ||
+		     Escort_route_goal.target_pos_valid != candidate.target_pos_valid ||
+		     (Escort_route_goal.target_pos_valid &&
+		      (Escort_route_goal.target_pos.x != candidate.target_pos.x ||
+		       Escort_route_goal.target_pos.y != candidate.target_pos.y ||
+		       Escort_route_goal.target_pos.z != candidate.target_pos.z))))
+			debug_log(
+			    DLOG_GUIDEBOT,
+			    "route_publish action=retain_incumbent objective=%d "
+			    "trigger=%d wall=%d incumbent_target=%d candidate_target=%d "
+			    "reason=cache_ready",
+			    candidate.objective_kind, candidate.objective_trigger,
+			    candidate.objective_wall, Escort_route_goal.target_seg,
+			    candidate.target_seg);
+#endif
+		return escort_route_goal_object_for_goal(&Escort_route_goal);
+	}
+	if (adoption_action == GUIDEBOT_ROUTE_ADOPTION_STOP) {
+		escort_route_goal_initialize(&Escort_route_goal);
+		return ESCORT_GOAL_UNSPECIFIED;
+	}
+	escort_route_publish_goal(&candidate);
+	return route_goal;
 }
 
 int escort_route_adopt_exit_command(void)
@@ -1721,21 +1787,22 @@ void escort_route_monitor_completion(void)
 		escort_route_refresh_metadata();
 		Escort_route_event_coalesced_rescan_count++;
 		if (has_active_goal) {
+			escort_route_goal candidate_goal;
 			int next_decision_valid =
 			    0;
 			int adoption_action =
 			    0;
 			int same_guidance;
 
-			(void) escort_route_next_goal();
+			(void) escort_route_select_next_goal(&candidate_goal, NULL);
 			next_decision_valid =
 			    level_metadata_get_live_route_decision(&next_decision);
 			if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT) {
 				same_guidance = escort_route_goal_semantic_equal(
-				    &previous_goal, &Escort_route_goal);
+				    &previous_goal, &candidate_goal);
 				adoption_action = same_guidance ?
 				                      GUIDEBOT_ROUTE_ADOPTION_RETAIN_PATH :
-				                  Escort_route_goal.active ?
+				                  candidate_goal.active ?
 				                      GUIDEBOT_ROUTE_ADOPTION_REPLACE_PATH :
 				                      GUIDEBOT_ROUTE_ADOPTION_STOP;
 			} else {
@@ -1769,23 +1836,15 @@ void escort_route_monitor_completion(void)
 
 			if (adoption_action ==
 			    GUIDEBOT_ROUTE_ADOPTION_RETAIN_PATH) {
-				if (!Escort_route_goal.active ||
-				    (next_decision_valid &&
-				     next_decision.status ==
-				         GUIDEBOT_ROUTE_DECISION_CALCULATING))
-					Escort_route_goal = previous_goal;
-				else {
-					Escort_route_goal.path_endpoint_seg =
-					    previous_goal.path_endpoint_seg;
-					Escort_route_goal.path_endpoint_pos_valid =
-					    previous_goal.path_endpoint_pos_valid;
-					Escort_route_goal.path_endpoint_pos =
-					    previous_goal.path_endpoint_pos;
-				}
+				Escort_route_goal = previous_goal;
 				Escort_goal_object = previous_goal_object;
 				Escort_route_path_retained_count++;
 			} else if (adoption_action ==
 			           GUIDEBOT_ROUTE_ADOPTION_REPLACE_PATH) {
+				if (candidate_goal.active)
+					escort_route_publish_goal(&candidate_goal);
+				else
+					escort_route_goal_initialize(&Escort_route_goal);
 				Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
 				Escort_route_path_replaced_count++;
 			} else {

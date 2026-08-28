@@ -343,6 +343,17 @@ int guidebot_route_decision_adoption_action(
 	return GUIDEBOT_ROUTE_ADOPTION_REPLACE_PATH;
 }
 
+int guidebot_route_passive_adoption_action(
+    int incumbent_active,
+    int candidate_active,
+    int same_objective)
+{
+	if (incumbent_active && (!candidate_active || same_objective))
+		return GUIDEBOT_ROUTE_ADOPTION_RETAIN_PATH;
+	return candidate_active ? GUIDEBOT_ROUTE_ADOPTION_REPLACE_PATH
+	                        : GUIDEBOT_ROUTE_ADOPTION_STOP;
+}
+
 const char *guidebot_route_decision_status_name(int status)
 {
 	switch (status) {
