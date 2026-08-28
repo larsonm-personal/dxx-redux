@@ -72,7 +72,7 @@ class LevelMetadataResultTest {
                 {
                   "status": "ok",
                   "mission_intent": {
-                    "classification": "both",
+                    "classification": "single_player_or_coop_and_multiplayer_anarchy",
                     "rule": "descriptor_both",
                     "confidence": "high",
                     "reason": "Explicit declarations enable both kinds of play",
@@ -106,12 +106,12 @@ class LevelMetadataResultTest {
             )
 
         val intent = result.missionIntent!!
-        assertEquals("both", intent.classification)
+        assertEquals("single_player_or_coop_and_multiplayer_anarchy", intent.classification)
         assertEquals("descriptor_both", intent.rule)
         assertEquals(listOf("Normal", "Coop", "Anarchy"), intent.declarations.enabledLabels())
         assertEquals(8, intent.playerStartMin)
         assertEquals(26, intent.robots)
-        assertEquals("Both", missionIntentClassificationLabel(intent.classification))
+        assertEquals("Single-player / coop + multiplayer anarchy", missionIntentClassificationLabel(intent.classification))
     }
 
     @Test

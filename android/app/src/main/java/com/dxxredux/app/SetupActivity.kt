@@ -936,8 +936,13 @@ class SetupActivity : ComponentActivity() {
                         runIo {
                             val fsm = FileSetManager(filesDir)
                             fsm.setActive(name)
+                            val activeSet = fsm.getActive()
+                            if (activeSet != name) {
+                                Log.w("DXX-Setup", "switch_set '$name': rejected; active set remains '$activeSet'")
+                                return@runIo
+                            }
                             fsm.writeActiveSetPath()
-                            val content = FileSetContentManager(fsm.getSetDir(name)).reconcile()
+                            val content = FileSetContentManager(fsm.getSetDir(activeSet)).reconcile()
                             Log.i(
                                 "DXX-Setup",
                                 "switch_set '$name': ok adopted=${content.adoptedIds.size} " +

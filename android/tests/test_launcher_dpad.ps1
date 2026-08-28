@@ -102,13 +102,14 @@ function Wait-ForSetupButtons {
         [int]$TimeoutSeconds = 10
     )
 
+    $buttonPredicate = $Predicate
     $matched = Wait-SetupCondition -TimeoutSeconds $TimeoutSeconds -PollMs 500 -Predicate {
         param($obj)
         if ($null -eq $obj.buttons -or $obj.buttons.Count -eq 0) {
             return $false
         }
         $texts = @($obj.buttons | ForEach-Object { $_.text })
-        return (& $Predicate (, $texts))
+        return (& $buttonPredicate $texts)
     }
 
     $buttons = GetSetupButtons
@@ -227,7 +228,12 @@ EnableLauncherDpadMode
 Wait-ForSetupButtonFocus -Text "Define Controls"
 & $script:ADB logcat -c
 SendKey 23  # DPAD_CENTER
-$buttons = GetSetupButtons
+$buttons = Wait-ForSetupButtons -Failure "DPAD_CENTER did not navigate to the controller page" -Predicate {
+    param($texts)
+    return (($texts -notcontains "Define Controls") -and
+        ($texts -contains "Cancel") -and
+        (@($texts | Where-Object { $_ -like "Save*" }).Count -gt 0))
+}
 if (($buttons -contains "Define Controls") -or
     ($buttons -notcontains "Cancel") -or
     (@($buttons | Where-Object { $_ -like "Save*" }).Count -eq 0)) {
@@ -248,7 +254,12 @@ Info "  PASS: Returned to main page"
 Info "Test 4: Focus restoration after return..."
 Wait-ForSetupButtonFocus -Text "Define Controls"
 SendKey 23  # DPAD_CENTER
-$buttons = GetSetupButtons
+$buttons = Wait-ForSetupButtons -Failure "Focus was not restored after returning from the controller page" -Predicate {
+    param($texts)
+    return (($texts -notcontains "Define Controls") -and
+        ($texts -contains "Cancel") -and
+        (@($texts | Where-Object { $_ -like "Save*" }).Count -gt 0))
+}
 if (($buttons -contains "Define Controls") -or
     ($buttons -notcontains "Cancel") -or
     (@($buttons | Where-Object { $_ -like "Save*" }).Count -eq 0)) {
@@ -266,7 +277,10 @@ if (($buttons -notcontains "Define Controls") -or ($buttons -notcontains "Touch 
 Wait-ForSetupButtonFocus -Text "Define Controls"
 SendKey 22  # DPAD_RIGHT to Touch Layout
 SendKey 23  # DPAD_CENTER
-$buttons = GetSetupButtons
+$buttons = Wait-ForSetupButtons -Failure "DPAD_RIGHT + CENTER did not open the Touch Layout editor" -Predicate {
+    param($texts)
+    return ($texts -contains "Close Editor")
+}
 if ($buttons -notcontains "Close Editor") {
     Info "  DEBUG: buttons after RIGHT+CENTER: $($buttons -join ', ')"
     Fail "DPAD_RIGHT + CENTER did not open the Touch Layout editor"

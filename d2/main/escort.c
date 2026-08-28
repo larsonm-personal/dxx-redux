@@ -1759,8 +1759,8 @@ void escort_create_path_to_goal(object *objp)
 					int	boss_id;
 
 					boss_id = get_boss_id();
-					Assert(boss_id != -1);
-					Escort_goal_index = exists_in_mine(objp->segnum, OBJ_ROBOT, boss_id, -1);
+					Escort_goal_index = boss_id == -1 ? -1 :
+						exists_in_mine(objp->segnum, OBJ_ROBOT, boss_id, -1);
 					if (Escort_goal_index > -1) goal_seg = Objects[Escort_goal_index].segnum;
 					break;
 				}

@@ -886,6 +886,9 @@ internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.Butto
                     .put("files", JSONArray(audioSet.files))
         }
         root.put("content_entries", JSONArray(contentEntries))
+        val contentEntriesById = JSONObject()
+        contentEntries.forEach { entry -> contentEntriesById.put(entry.getString("id"), entry) }
+        root.put("content_entries_by_id", contentEntriesById)
         root.put("content_entry_count", contentEntries.size)
         val importState = SetupImportTracker.snapshot()
         root.put(

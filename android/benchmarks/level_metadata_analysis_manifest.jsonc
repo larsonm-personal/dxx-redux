@@ -17,14 +17,14 @@
     }
   },
   "levels": [
-    { "id": "d1-first-strike-01", "game": "d1", "mission": null, "archive": null, "level": 1, "expected_sha256": "0ffc8ca80551da791ccda7369eaf58f0129096cd61459385dfbe5f57bdb08f6d" },
-    { "id": "d1-first-strike-10", "game": "d1", "mission": null, "archive": null, "level": 10, "expected_sha256": "62cba56e7fed61bf71e41d4cbd6d404d4ef8099ba6fc29f6692329f4709027ae" },
-    { "id": "d1-first-strike-21", "game": "d1", "mission": null, "archive": null, "level": 21, "expected_sha256": "fa4e85222a03627c2b565e4b8e0a69f06bf12f0102ad2475241a02056bcba58b" },
-    { "id": "d2-counterstrike-01", "game": "d2", "mission": null, "archive": null, "level": 1, "expected_sha256": "8c010ea9c000e69f0919762c4fb49c6594affb90db28d2ca77eb889585b42fcd" },
-    { "id": "d2-counterstrike-02", "game": "d2", "mission": null, "archive": null, "level": 2, "expected_sha256": "35c3d45a179697c9a94945d558691ff5e3b1cd75140d6e15b8aacf24aea06dab" },
-    { "id": "d2-counterstrike-12", "game": "d2", "mission": null, "archive": null, "level": 12, "expected_sha256": "ec3cfa30d05bef612df801f19711a419777ac17ac110c917847c7ceb5cdd566d" },
-    { "id": "d2-counterstrike-secret-03", "game": "d2", "mission": null, "archive": null, "level": -3, "expected_sha256": "d74065ad3e93aa2c000b6baca6251d62a47a63e278426474e937553a636800c3" },
-    { "id": "d2-kcxf2-03", "game": "d2", "mission": "kcxf2", "archive": "kcxf2", "level": 3, "expected_sha256": "b3687baae466d7212a101e01dcc4beda67403b9935ff60ef37001a6b5f3730fd" },
-    { "id": "d2-obsidian-11", "game": "d2", "mission": "obsidian", "archive": "obsidian", "level": 11, "expected_sha256": "a05fe8be88cf6130fcb333e7d498e0cef2e54d8a92ad48c6b69e4956e82474f4" }
+    { "id": "d1-first-strike-01", "game": "d1", "mission": null, "archive": null, "level": 1, "expected_sha256": "a38b15efe1332070ec95b4bd3be10fb4e308d0991cc1ef04c161737023068dae" },
+    { "id": "d1-first-strike-10", "game": "d1", "mission": null, "archive": null, "level": 10, "expected_sha256": "3abbbac5e4b58b487ed50eee269e6453486612102b853dc48b4df54e4d882c73" },
+    { "id": "d1-first-strike-21", "game": "d1", "mission": null, "archive": null, "level": 21, "expected_sha256": "0e471084a4bdf74b5c70c8f64a9107c73e0b8f61625f9b5bd5ca176854198703" },
+    { "id": "d2-counterstrike-01", "game": "d2", "mission": null, "archive": null, "level": 1, "expected_sha256": "4dda73c892639ae5f9009f612b8920255f93f2ed4731400932804480a9d338a2" },
+    { "id": "d2-counterstrike-02", "game": "d2", "mission": null, "archive": null, "level": 2, "expected_sha256": "d90947f36069d5f2ebcae178497240a611f2a9f7b69ad8b1207a5d7940699439" },
+    { "id": "d2-counterstrike-12", "game": "d2", "mission": null, "archive": null, "level": 12, "expected_sha256": "e8fd8c05bf1484df87683dc77e4d64d3023c0ecfe139b6529474183af11f86d4" },
+    { "id": "d2-counterstrike-secret-03", "game": "d2", "mission": null, "archive": null, "level": -3, "expected_sha256": "c20d86c92c451c82c79947f76802d1b34aa02027125653a31728e62f86a12bc3" },
+    { "id": "d2-kcxf2-03", "game": "d2", "mission": "kcxf2", "archive": "kcxf2", "level": 3, "expected_sha256": "e30eb1f3c95b30c751f61c006934965872e06bda24c24adcedad375a4e03d966" },
+    { "id": "d2-obsidian-11", "game": "d2", "mission": "obsidian", "archive": "obsidian", "level": 11, "expected_sha256": "7b003f72b3f9cbcbe091ecec9fe2c92de9129627ca1fbc0d242c82a71ce94312" }
   ]
 }

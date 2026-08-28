@@ -595,7 +595,7 @@ function Wait-SetupReady {
 function Start-SetupActivity {
     # Force-stop, clear logcat, and launch SetupActivity on a specific device.
     # Returns $true if SetupActivity becomes responsive, $false on timeout.
-    param([string]$Serial)
+    param([string]$Serial, [int]$TimeoutSec = 60)
     Write-Status "Force-stopping app on $Serial..."
     Adb-Dev -Serial $Serial -AdbArgs @("shell", "am", "force-stop", $script:PACKAGE) | Out-Null
     Start-Sleep -Seconds 2
@@ -604,7 +604,7 @@ function Start-SetupActivity {
     Adb-Dev -Serial $Serial -AdbArgs @(
         "shell", "am", "start", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)"
     ) | Out-Null
-    return Wait-SetupReady -Serial $Serial -TimeoutSec 30
+    return Wait-SetupReady -Serial $Serial -TimeoutSec $TimeoutSec
 }
 
 function Setup-EmulatorRedir {

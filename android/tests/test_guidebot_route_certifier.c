@@ -187,6 +187,24 @@ static int object_position(void *user, int object, int xyz[3])
 	return 1;
 }
 
+static int segment_center(void *user, int segment, int xyz[3])
+{
+	(void) user;
+	xyz[0] = 100 + segment;
+	xyz[1] = 0;
+	xyz[2] = 0;
+	return 1;
+}
+
+static int wall_shootable_from_position(
+    void *user, int segment, const int from_pos[3], int wall)
+{
+	certifier_fixture *fixture = (certifier_fixture *) user;
+	(void) segment;
+	(void) from_pos;
+	return fixture->wall_shootable[wall];
+}
+
 static level_metadata_scan_view make_view(certifier_fixture *fixture)
 {
 	level_metadata_scan_view view;
@@ -233,6 +251,8 @@ static level_metadata_scan_view make_view(certifier_fixture *fixture)
 	view.object_flags = object_flags;
 	view.object_segment = object_segment;
 	view.object_position = object_position;
+	view.segment_center = segment_center;
+	view.wall_shootable_from_position = wall_shootable_from_position;
 	return view;
 }
 
@@ -276,6 +296,10 @@ static void initialize_plan(route_planner_plan_summary *plan)
 	step->seg = 0;
 	step->path_segment_count = 1;
 	step->path_terminal_segment = 0;
+	step->activation_pos_valid = 1;
+	step->activation_pos[0] = 10;
+	step->aim_pos_valid = 1;
+	step->aim_pos[0] = 20;
 	step->opened_link_count = 1;
 	step->opened_link_wall[0] = 0;
 	step = &Prepared.route_steps[2];
@@ -286,6 +310,10 @@ static void initialize_plan(route_planner_plan_summary *plan)
 	step->seg = 1;
 	step->path_segment_count = 1;
 	step->path_terminal_segment = 1;
+	step->activation_pos_valid = 1;
+	step->activation_pos[0] = 11;
+	step->aim_pos_valid = 1;
+	step->aim_pos[0] = 21;
 	step->opened_link_count = 1;
 	step->opened_link_wall[0] = 1;
 	step = &Prepared.route_steps[3];
@@ -479,6 +507,32 @@ static void test_destroyed_switch_stays_complete_when_link_recloses(void)
 	    &view, &prepared_plan, &live_plan, &certificate, &summary));
 	assert(live_plan.first_pending_step == 1);
 	assert(certificate.source_trigger == 0);
+}
+
+static void test_equal_switch_positions_use_segment_center(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+	route_planner_plan_summary prepared_plan;
+	route_planner_plan_summary live_plan;
+	guidebot_route_validity_certificate certificate;
+	guidebot_route_certifier_summary summary;
+
+	initialize_fixture(&fixture);
+	initialize_plan(&prepared_plan);
+	view = make_view(&fixture);
+	view.start_segment = 0;
+	memcpy(
+	    Prepared.route_steps[1].aim_pos,
+	    Prepared.route_steps[1].activation_pos,
+	    sizeof(Prepared.route_steps[1].aim_pos));
+
+	assert(certify(
+	    &view, &prepared_plan, &live_plan, &certificate, &summary));
+	assert(live_plan.first_pending_step == 1);
+	assert(Live.route_steps[1].activation_pos[0] == 100);
+	assert(Live.route_steps[1].activation_pos[0] !=
+	       Live.route_steps[1].aim_pos[0]);
 }
 
 static void test_solid_illusion_wall_is_not_passable(void)
@@ -705,6 +759,7 @@ int main(void)
 	test_identical_state_is_history_independent();
 	test_disabled_action_uses_reachable_prepared_alternative();
 	test_destroyed_switch_stays_complete_when_link_recloses();
+	test_equal_switch_positions_use_segment_center();
 	test_solid_illusion_wall_is_not_passable();
 	test_keyed_buddy_proof_door_keeps_objective_reachable();
 	test_physical_frontier_follows_strategic_route();

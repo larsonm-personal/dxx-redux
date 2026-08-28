@@ -408,6 +408,32 @@ static int guidebot_step_usable(
 	return 1;
 }
 
+static int guidebot_prepare_shoot_switch_position(
+    const level_metadata_scan_view *view,
+    level_metadata_route_step *step)
+{
+	int firing_pos[3];
+
+	if (step->activation_kind !=
+	    LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH)
+		return 1;
+	if (!step->activation_pos_valid || step->wall_num < 0 ||
+	    !view->wall_shootable_from_position)
+		return 0;
+	memcpy(firing_pos, step->activation_pos, sizeof(firing_pos));
+	if (step->aim_pos_valid &&
+	    memcmp(firing_pos, step->aim_pos, sizeof(firing_pos)) == 0) {
+		if (!view->segment_center ||
+		    !view->segment_center(view->user, step->seg, firing_pos))
+			return 0;
+	}
+	if (!view->wall_shootable_from_position(
+	        view->user, step->seg, firing_pos, step->wall_num))
+		return 0;
+	memcpy(step->activation_pos, firing_pos, sizeof(firing_pos));
+	return 1;
+}
+
 static int guidebot_step_starts_countdown(
     const level_metadata_route_step *step)
 {
@@ -573,6 +599,14 @@ int guidebot_route_certify_current_state(
 			local_summary.blocking_segment = target_segment;
 			local_summary.blocking_reason =
 			    GUIDEBOT_ROUTE_CERTIFIER_REJECTION_UNREACHABLE_TARGET;
+			break;
+		}
+		if (!guidebot_prepare_shoot_switch_position(view, candidate)) {
+			local_summary.rejected_actions++;
+			local_summary.blocking_step = step;
+			local_summary.blocking_segment = target_segment;
+			local_summary.blocking_reason =
+			    GUIDEBOT_ROUTE_CERTIFIER_REJECTION_INVALID_TARGET;
 			break;
 		}
 		selected = step;

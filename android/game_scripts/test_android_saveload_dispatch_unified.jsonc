@@ -77,9 +77,9 @@
         "menu.items[5].text": "-empty-",
         "menu.items[6].text": "-empty-",
         "menu.items[7].text": "-empty-",
-        "menu.items[8].text": "[auto] best",
+        "menu.items[8].text": "[auto] best L1",
         "menu.items[9].text": "-empty-",
-        "menu.items[10].text": "[auto] save"
+        "menu.items[10].text": "[auto] save L1"
     }},
     {"action": "key", "key": "down", "post_delay_ms": 100},
     {"action": "assert", "expect": {

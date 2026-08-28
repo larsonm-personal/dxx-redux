@@ -122,20 +122,23 @@
     {"action": "set_debug", "field": "fire_trigger", "value": "6", "post_delay_ms": 200},
     {"action": "set_debug", "field": "fire_trigger", "value": "5", "post_delay_ms": 200},
     {"action": "set_debug", "field": "fire_trigger", "value": "8", "post_delay_ms": 200},
-    // Automap pauses the game simulation, so let trigger 8's cloaking wall
-    // finish opening before entering it.
+    // Automap pauses the game simulation. Observe trigger 8's cloaking wall
+    // start and finish opening before entering it; checking only for zero can
+    // race ahead of the transition's first simulation tick.
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "active_wall_transition_count": {"gt": 0}
+    }},
     {"action": "wait_for", "field": "active_wall_transition_count", "value": "0", "timeout_ms": 10000},
     {"action": "key", "key": "tab", "post_delay_ms": 100},
     {"action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000},
-    {"action": "introspect"},
-    {"action": "assert", "expect": {
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
         "automap.objective_overlay_mode_name": "remaining",
-        "automap.objective_visible_step_count": "2",
-        "automap.objective_label_candidate_count": "2",
-        "automap.objective_connector_candidate_count": "0",
+        "automap.objective_visible_step_count": "3",
+        "automap.objective_label_candidate_count": "4",
+        "automap.objective_connector_candidate_count": "1",
         "automap.objective_merged_label_count": "0",
-        "automap.next_objective_count": "2",
-        "automap.first_next_objective_text": "6: Reactor"
+        "automap.next_objective_count": "3",
+        "automap.first_next_objective_text": "5: Fly-through trigger 8"
     }},
     {"action": "log", "message": "=== TEST: Obsidian level 1 next objectives -- PASS ==="},
 

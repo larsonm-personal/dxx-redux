@@ -90,6 +90,35 @@ static int Level_metadata_live_route_provenance;
 static int Level_metadata_live_certifier_enabled = 1;
 static unsigned long long Level_metadata_route_shadow_logged_hash;
 
+static void level_metadata_certify_fresh_live_plan(void)
+{
+	const int pending_index =
+	    Level_metadata_live_plan_summary.first_pending_step;
+
+	memset(
+	    &Level_metadata_live_certificate, 0,
+	    sizeof(Level_metadata_live_certificate));
+	Level_metadata_live_certificate.status =
+	    GUIDEBOT_ROUTE_CERTIFICATE_VALID;
+	Level_metadata_live_certificate.source_trigger = -1;
+	Level_metadata_live_certificate.source_wall = -1;
+	Level_metadata_live_certificate.source_object = -1;
+	Level_metadata_live_certificate.frontier_segment = -1;
+	if (pending_index >= 0 &&
+	    pending_index < Level_metadata_live_route_state.route_step_count) {
+		const level_metadata_route_step *pending =
+		    &Level_metadata_live_route_state.route_steps[pending_index];
+
+		Level_metadata_live_certificate.source_trigger = pending->trigger_num;
+		Level_metadata_live_certificate.source_wall = pending->wall_num;
+		Level_metadata_live_certificate.source_object =
+		    pending->key_carrier_objnum;
+		Level_metadata_live_certificate.frontier_segment =
+		    Level_metadata_live_plan_summary
+		        .first_pending_path_terminal_segment;
+	}
+}
+
 static void level_metadata_route_shadow_reset(void)
 {
 	const int enabled = Level_metadata_route_shadow_summary.enabled;
@@ -3371,9 +3400,11 @@ static void level_metadata_rescan_current_level_internal(
 			    &Level_metadata_live_plan_summary,
 			    problem,
 			    sizeof(problem));
-			if (Level_metadata_live_plan_summary_valid)
+			if (Level_metadata_live_plan_summary_valid) {
 				Level_metadata_live_route_provenance =
 				    LEVEL_METADATA_ROUTE_PROVENANCE_FULL_PLANNER;
+				level_metadata_certify_fresh_live_plan();
+			}
 #ifdef __ANDROID__
 			if (Level_metadata_live_plan_summary_valid &&
 			    Level_metadata_live_plan_summary.first_pending_step >= 0 &&
