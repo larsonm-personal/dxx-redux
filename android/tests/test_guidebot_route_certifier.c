@@ -47,6 +47,9 @@ typedef struct certifier_fixture {
 	unsigned int segment_center_calls;
 	int trigger_flags[TEST_TRIGGERS];
 	int object_dead;
+	int object_type;
+	int object_id;
+	int object_segment;
 } certifier_fixture;
 
 static guidebot_route_certifier_workspace Workspace;
@@ -174,9 +177,16 @@ static int object_count(void *user)
 
 static int object_type(void *user, int object)
 {
-	(void) user;
+	certifier_fixture *fixture = (certifier_fixture *) user;
 	(void) object;
-	return 3;
+	return fixture->object_type;
+}
+
+static int object_id(void *user, int object)
+{
+	certifier_fixture *fixture = (certifier_fixture *) user;
+	(void) object;
+	return fixture->object_id;
 }
 
 static int object_flags(void *user, int object)
@@ -188,9 +198,9 @@ static int object_flags(void *user, int object)
 
 static int object_segment(void *user, int object)
 {
-	(void) user;
+	certifier_fixture *fixture = (certifier_fixture *) user;
 	(void) object;
-	return 2;
+	return fixture->object_segment;
 }
 
 static int object_position(void *user, int object, int xyz[3])
@@ -306,6 +316,9 @@ static level_metadata_scan_view make_view(certifier_fixture *fixture)
 	view.obj_type_powerup = 2;
 	view.obj_type_control_center = 3;
 	view.obj_flag_should_be_dead = 1;
+	view.powerup_key_blue = 10;
+	view.powerup_key_red = 20;
+	view.powerup_key_gold = 30;
 	view.trigger_flag_disabled = 1;
 	view.trigger_type_unlock_door = 10;
 	view.segment_child = segment_child;
@@ -326,6 +339,7 @@ static level_metadata_scan_view make_view(certifier_fixture *fixture)
 	view.triggered_side_opener_count = triggered_side_opener_count;
 	view.object_count = object_count;
 	view.object_type = object_type;
+	view.object_id = object_id;
 	view.object_flags = object_flags;
 	view.object_segment = object_segment;
 	view.object_position = object_position;
@@ -347,6 +361,8 @@ static void initialize_fixture(certifier_fixture *fixture)
 
 	memset(fixture, 0, sizeof(*fixture));
 	fixture->num_segments = TEST_SEGMENTS;
+	fixture->object_type = 3;
+	fixture->object_segment = 2;
 	fixture->position_sensitive_wall = -1;
 	fixture->detailed_shootable_segment = -1;
 	for (segment = 0; segment < TEST_SEGMENTS; ++segment) {
@@ -439,6 +455,129 @@ static int certify(
 	return guidebot_route_certify_current_state(
 	    view, &Prepared, prepared_plan, &Workspace, &Live, live_plan,
 	    certificate, summary);
+}
+
+static int select_compiled(
+    level_metadata_scan_view *view,
+    const route_planner_plan_summary *compiled_plan,
+    route_planner_plan_summary *live_plan,
+    guidebot_route_validity_certificate *certificate,
+    guidebot_route_certifier_summary *summary)
+{
+	return guidebot_route_select_compiled_current_state(
+	    view, &Prepared, compiled_plan, &Live, live_plan, certificate,
+	    summary);
+}
+
+static void test_compiled_selector_never_restores_collected_key(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+	route_planner_plan_summary compiled_plan;
+	route_planner_plan_summary live_plan;
+	guidebot_route_validity_certificate certificate;
+	guidebot_route_certifier_summary summary;
+
+	initialize_fixture(&fixture);
+	initialize_plan(&compiled_plan);
+	view = make_view(&fixture);
+	view.initial_key_mask = LEVEL_METADATA_KEY_MASK_GOLD;
+	Prepared.route_steps[1].kind = LEVEL_METADATA_ROUTE_KEY;
+	Prepared.route_steps[1].activation_kind =
+	    LEVEL_METADATA_ROUTE_ACTIVATION_PICKUP_KEY;
+	Prepared.route_steps[1].key_index = 2;
+	Prepared.route_steps[1].seg = 1;
+	Prepared.route_steps[1].path_terminal_segment = 1;
+	Prepared.route_steps[2].seg = 4;
+	Prepared.route_steps[2].path_terminal_segment = 4;
+	fixture.segment_child_calls = 0;
+
+	assert(select_compiled(
+	    &view, &compiled_plan, &live_plan, &certificate, &summary));
+	assert(summary.selected_step == 2);
+	assert(summary.selected_segment == 4);
+	assert(live_plan.first_pending_step == 2);
+	assert(certificate.source_trigger == 1);
+	assert(fixture.segment_child_calls == 0);
+}
+
+static void test_compiled_selector_rebinds_moving_key_object(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+	route_planner_plan_summary compiled_plan;
+	route_planner_plan_summary live_plan;
+	guidebot_route_validity_certificate certificate;
+	guidebot_route_certifier_summary summary;
+
+	initialize_fixture(&fixture);
+	initialize_plan(&compiled_plan);
+	view = make_view(&fixture);
+	fixture.object_type = view.obj_type_powerup;
+	fixture.object_id = view.powerup_key_gold;
+	fixture.object_segment = 4;
+	Prepared.route_steps[1].kind = LEVEL_METADATA_ROUTE_KEY;
+	Prepared.route_steps[1].activation_kind =
+	    LEVEL_METADATA_ROUTE_ACTIVATION_PICKUP_KEY;
+	Prepared.route_steps[1].key_index = 2;
+	Prepared.route_steps[1].seg = 1;
+	Prepared.route_steps[1].path_terminal_segment = 1;
+
+	assert(select_compiled(
+	    &view, &compiled_plan, &live_plan, &certificate, &summary));
+	assert(summary.selected_step == 1);
+	assert(summary.selected_segment == 4);
+	assert(Live.route_steps[1].seg == 4);
+	assert(live_plan.first_pending_path_terminal_segment == 4);
+}
+
+static void test_compiled_selector_chooses_reachable_switch_guidance(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+	route_planner_plan_summary compiled_plan;
+	route_planner_plan_summary live_plan;
+	guidebot_route_validity_certificate certificate;
+	guidebot_route_certifier_summary summary;
+	level_metadata_route_step *step;
+	int wall;
+
+	initialize_fixture(&fixture);
+	initialize_plan(&compiled_plan);
+	view = make_view(&fixture);
+	view.start_segment = 0;
+	for (wall = 0; wall < TEST_WALLS; ++wall)
+		fixture.wall_open[wall] = 1;
+	step = &Prepared.route_steps[1];
+	step->opened_link_count = 0;
+	step->switch_guidance_candidate_count = 3;
+	step->switch_guidance_candidate_seg[0] = 4;
+	step->switch_guidance_candidate_quality[0] =
+	    LEVEL_METADATA_SWITCH_SHOT_CONFIRMED_STEEP;
+	step->switch_guidance_candidate_incidence[0] = 10000;
+	step->switch_guidance_candidate_pos[0][0] = 40;
+	step->switch_guidance_candidate_seg[1] = 2;
+	step->switch_guidance_candidate_quality[1] =
+	    LEVEL_METADATA_SWITCH_SHOT_CONFIRMED;
+	step->switch_guidance_candidate_incidence[1] =
+	    LEVEL_METADATA_SHOT_COSINE_ONE;
+	step->switch_guidance_candidate_pos[1][0] = 20;
+	step->switch_guidance_candidate_seg[2] = 99;
+	step->switch_guidance_candidate_quality[2] =
+	    LEVEL_METADATA_SWITCH_SHOT_CONFIRMED;
+	step->switch_guidance_candidate_incidence[2] =
+	    LEVEL_METADATA_SHOT_COSINE_ONE;
+
+	assert(select_compiled(
+	    &view, &compiled_plan, &live_plan, &certificate, &summary));
+	assert(summary.selected_step == 1);
+	assert(summary.selected_segment == 2);
+	assert(summary.reranked_firing_position);
+	assert(summary.visited_segments == TEST_SEGMENTS);
+	assert(Live.route_steps[1].seg == 2);
+	assert(Live.route_steps[1].activation_pos[0] == 20);
+	assert(Live.route_steps[1].switch_shot_quality ==
+	       LEVEL_METADATA_SWITCH_SHOT_CONFIRMED);
 }
 
 static void test_current_start_and_accessibility_select_action(void)
@@ -1535,6 +1674,103 @@ static certifier_benchmark_result run_unexplored_benchmark(
 	return metrics;
 }
 
+static certifier_benchmark_result run_compiled_selector_benchmark(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+	route_planner_plan_summary compiled_plan;
+	route_planner_plan_summary live_plan;
+	guidebot_route_validity_certificate certificate;
+	guidebot_route_certifier_summary summary;
+	certifier_benchmark_result metrics;
+	double started;
+	int iteration;
+	int step;
+
+	initialize_fixture(&fixture);
+	initialize_plan(&compiled_plan);
+	view = make_view(&fixture);
+	view.initial_key_mask = LEVEL_METADATA_KEY_MASK_GOLD;
+	Prepared.route_step_count = LEVEL_METADATA_MAX_ROUTE_STEPS;
+	compiled_plan.route_step_count = Prepared.route_step_count;
+	for (step = 1; step + 1 < Prepared.route_step_count; ++step) {
+		Prepared.route_steps[step].kind = LEVEL_METADATA_ROUTE_KEY;
+		Prepared.route_steps[step].activation_kind =
+		    LEVEL_METADATA_ROUTE_ACTIVATION_PICKUP_KEY;
+		Prepared.route_steps[step].key_index = 2;
+		Prepared.route_steps[step].seg = 1;
+		Prepared.route_steps[step].path_terminal_segment = 1;
+	}
+	Prepared.route_steps[Prepared.route_step_count - 1].kind =
+	    LEVEL_METADATA_ROUTE_EXIT;
+	Prepared.route_steps[Prepared.route_step_count - 1].activation_kind =
+	    LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT;
+	Prepared.route_steps[Prepared.route_step_count - 1].seg = 4;
+	Prepared.route_steps[Prepared.route_step_count - 1]
+	    .path_terminal_segment = 4;
+	memset(&metrics, 0, sizeof(metrics));
+	for (iteration = 0; iteration < 100; ++iteration)
+		assert(select_compiled(
+		    &view, &compiled_plan, &live_plan, &certificate, &summary));
+	started = benchmark_wall_us();
+	for (iteration = 0; iteration < 10000; ++iteration)
+		assert(select_compiled(
+		    &view, &compiled_plan, &live_plan, &certificate, &summary));
+	metrics.wall_us = (benchmark_wall_us() - started) / 10000.0;
+	metrics.segment_child_calls = fixture.segment_child_calls;
+	metrics.segment_center_calls = fixture.segment_center_calls;
+	metrics.wall_shootable_calls = fixture.wall_shootable_calls;
+	return metrics;
+}
+
+static certifier_benchmark_result run_compiled_switch_benchmark(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+	route_planner_plan_summary compiled_plan;
+	route_planner_plan_summary live_plan;
+	guidebot_route_validity_certificate certificate;
+	guidebot_route_certifier_summary summary;
+	certifier_benchmark_result metrics;
+	level_metadata_route_step *step;
+	double started;
+	int candidate;
+	int iteration;
+
+	initialize_benchmark_fixture(&fixture);
+	initialize_benchmark_plan(&compiled_plan, 1);
+	view = make_view(&fixture);
+	view.start_segment = 0;
+	step = &Prepared.route_steps[1];
+	step->switch_guidance_candidate_count =
+	    LEVEL_METADATA_MAX_SWITCH_GUIDANCE_CANDIDATES;
+	for (candidate = 0;
+	     candidate < LEVEL_METADATA_MAX_SWITCH_GUIDANCE_CANDIDATES;
+	     ++candidate) {
+		step->switch_guidance_candidate_seg[candidate] =
+		    BENCHMARK_SEGMENTS - 1 - candidate * 10;
+		step->switch_guidance_candidate_quality[candidate] =
+		    LEVEL_METADATA_SWITCH_SHOT_CONFIRMED;
+		step->switch_guidance_candidate_incidence[candidate] =
+		    LEVEL_METADATA_SHOT_COSINE_ONE - candidate * 1000;
+	}
+	for (iteration = 0; iteration < 10; ++iteration)
+		assert(select_compiled(
+		    &view, &compiled_plan, &live_plan, &certificate, &summary));
+	fixture.segment_child_calls = 0;
+	memset(&metrics, 0, sizeof(metrics));
+	started = benchmark_wall_us();
+	for (iteration = 0; iteration < 1000; ++iteration)
+		assert(select_compiled(
+		    &view, &compiled_plan, &live_plan, &certificate, &summary));
+	metrics.wall_us = (benchmark_wall_us() - started) / 1000.0;
+	metrics.evaluated_edges = summary.evaluated_edges;
+	metrics.segment_child_calls = fixture.segment_child_calls / 1000;
+	metrics.segment_center_calls = fixture.segment_center_calls;
+	metrics.wall_shootable_calls = fixture.wall_shootable_calls;
+	return metrics;
+}
+
 static void print_benchmark_case(
     const char *name, const certifier_benchmark_result *result, int last)
 {
@@ -1563,6 +1799,10 @@ static int run_benchmarks(void)
 	    run_certifier_benchmark(1, 0, 1, 0);
 	const certifier_benchmark_result unexplored =
 	    run_unexplored_benchmark(512);
+	const certifier_benchmark_result compiled =
+	    run_compiled_selector_benchmark();
+	const certifier_benchmark_result compiled_switch =
+	    run_compiled_switch_benchmark();
 
 	assert(ordinary.max_callbacks_per_slice <= 1024);
 	assert(detailed.wall_shootable_calls <= 64);
@@ -1573,15 +1813,24 @@ static int run_benchmarks(void)
 	assert(frontier.slices > 1);
 	assert(frontier.max_callbacks_per_slice <= 4096);
 	assert(unexplored.max_callbacks_per_slice <= 1024);
+	assert(compiled.segment_child_calls == 0);
+	assert(compiled.segment_center_calls == 0);
+	assert(compiled.wall_shootable_calls == 0);
+	assert(compiled_switch.evaluated_edges <= BENCHMARK_SEGMENTS *
+	                                                LEVEL_METADATA_MAX_SIDES);
+	assert(compiled_switch.wall_shootable_calls == 0);
+	assert(compiled_switch.segment_center_calls == 0);
 
-	printf("{\n  \"schema\": \"dxx-guidebot-live-calculation-benchmark-v1\",\n");
+	printf("{\n  \"schema\": \"dxx-guidebot-live-calculation-benchmark-v3\",\n");
 	printf("  \"segments\": %d,\n  \"cases\": {\n", BENCHMARK_SEGMENTS);
 	print_benchmark_case("ordinary_certification", &ordinary, 0);
 	print_benchmark_case("detailed_switch_search", &detailed, 0);
 	print_benchmark_case("cached_switch_reuse", &cached, 0);
 	print_benchmark_case("unreachable_switch_frontier", &frontier, 0);
 	print_benchmark_case("unreachable_switch_frontier_unsliced", &unsliced_frontier, 0);
-	print_benchmark_case("largest_unexplored_area", &unexplored, 1);
+	print_benchmark_case("largest_unexplored_area", &unexplored, 0);
+	print_benchmark_case("compiled_action_selection", &compiled, 0);
+	print_benchmark_case("compiled_switch_guidance", &compiled_switch, 1);
 	printf("  }\n}\n");
 	return 0;
 }
@@ -1590,6 +1839,9 @@ int main(int argc, char **argv)
 {
 	if (argc == 2 && !strcmp(argv[1], "--benchmark"))
 		return run_benchmarks();
+	test_compiled_selector_never_restores_collected_key();
+	test_compiled_selector_rebinds_moving_key_object();
+	test_compiled_selector_chooses_reachable_switch_guidance();
 	test_current_start_and_accessibility_select_action();
 	test_first_reachable_required_action_preserves_order();
 	test_identical_state_is_history_independent();

@@ -872,6 +872,7 @@ static int test_route_shootable_trigger_step(void)
 	failures += expect_int("shootable trigger route wall", 2, state.route_steps[1].wall_num);
 	failures += expect_int("shootable trigger route trigger", 0, state.route_steps[1].trigger_num);
 	failures += expect_int("shootable trigger activation pose", 1, state.route_steps[1].activation_pos_valid);
+	failures += expect_int("shootable trigger guidance candidates", 2, state.route_steps[1].switch_guidance_candidate_count);
 	failures += expect_int("shootable trigger aim point", 1, state.route_steps[1].aim_pos_valid);
 	failures += expect_int("shootable trigger activation x", 0, state.route_steps[1].activation_pos[0]);
 	failures += expect_int("shootable trigger aim x", 100 * TEST_FIX, state.route_steps[1].aim_pos[0]);

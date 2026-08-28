@@ -91,7 +91,6 @@ static guidebot_route_validity_certificate Level_metadata_live_certificate;
 static guidebot_route_decision Level_metadata_published_route_decision;
 static int Level_metadata_published_route_decision_valid;
 static int Level_metadata_live_route_provenance;
-static int Level_metadata_live_certifier_enabled = 1;
 static unsigned long long Level_metadata_route_shadow_logged_hash;
 static level_metadata_live_work_summary Level_metadata_live_work_summary;
 static int Level_metadata_live_route_work_pending;
@@ -3012,64 +3011,9 @@ static void level_metadata_log_unresolved_completion_evidence(
 	}
 }
 
-static void level_metadata_log_connectivity_wall_changes(
-    const guidebot_route_certifier_summary *summary)
-{
-	static unsigned char previous_type[MAX_WALLS];
-	static unsigned char previous_state[MAX_WALLS];
-	static unsigned short previous_flags[MAX_WALLS];
-	static unsigned int previous_visited;
-	static int previous_level;
-	static int previous_wall_count = -1;
-	const int comparable = previous_level == Current_level_num &&
-	                       previous_wall_count == Num_walls;
-	int wall_num;
-
-	if (comparable && previous_visited != summary->visited_segments)
-		for (wall_num = 0; wall_num < Num_walls && wall_num < MAX_WALLS;
-		     ++wall_num) {
-			int controlling_trigger = -1;
-			int seg;
-			int side;
-
-			if (previous_type[wall_num] == Walls[wall_num].type &&
-			    previous_state[wall_num] == Walls[wall_num].state &&
-			    previous_flags[wall_num] == Walls[wall_num].flags)
-				continue;
-			seg = Walls[wall_num].segnum;
-			side = Walls[wall_num].sidenum;
-#ifdef DXX_BUILD_DESCENT_II
-			controlling_trigger = Walls[wall_num].controlling_trigger;
-#endif
-			debug_log(
-			    DLOG_GUIDEBOT,
-			    "route_connectivity_wall_change visited=%u->%u wall=%d seg=%d "
-			    "side=%d type=%u->%d state=%u->%d flags=0x%x->0x%x keys=%d "
-			    "doorway=0x%x trigger=%d controlling_trigger=%d\n",
-			    previous_visited, summary->visited_segments, wall_num, seg, side,
-			    previous_type[wall_num], Walls[wall_num].type,
-			    previous_state[wall_num], Walls[wall_num].state,
-			    previous_flags[wall_num], Walls[wall_num].flags,
-			    Walls[wall_num].keys,
-			    seg >= 0 && seg < Num_segments && side >= 0 &&
-			            side < MAX_SIDES_PER_SEGMENT
-			        ? WALL_IS_DOORWAY(&Segments[seg], side)
-			        : 0,
-			    Walls[wall_num].trigger, controlling_trigger);
-		}
-	for (wall_num = 0; wall_num < Num_walls && wall_num < MAX_WALLS;
-	     ++wall_num) {
-		previous_type[wall_num] = Walls[wall_num].type;
-		previous_state[wall_num] = Walls[wall_num].state;
-		previous_flags[wall_num] = Walls[wall_num].flags;
-	}
-	previous_level = Current_level_num;
-	previous_wall_count = Num_walls;
-	previous_visited = summary->visited_segments;
-}
 #endif
 
-static int level_metadata_try_reuse_canonical_route(
+static int level_metadata_select_compiled_route(
     const level_metadata_scan_view *view,
     level_metadata_state *state,
     route_planner_plan_summary *summary,
@@ -3077,91 +3021,45 @@ static int level_metadata_try_reuse_canonical_route(
     const guidebot_route_certifier_budget *budget)
 {
 	int valid;
+	(void) budget;
 
 	if (!view || !state || !summary ||
 	    !Level_metadata_canonical_plan_summary_valid ||
 	    !Level_metadata_canonical_snapshot_valid ||
 	    !Level_metadata_live_snapshot_valid)
 		return 0;
-	Level_metadata_analysis_cache_summary.live_certifier_attempts++;
-	valid = guidebot_route_certify_current_state_budgeted(
+	Level_metadata_live_work_summary.compiled_selector_calls++;
+	valid = guidebot_route_select_compiled_current_state(
 	    view, &Level_metadata_canonical_state,
 	    &Level_metadata_canonical_plan_summary,
-	    &Level_metadata_route_certifier_workspace, state, summary,
-	    certificate,
-	    &Level_metadata_route_certifier_summary, budget);
+	    state, summary, certificate,
+	    &Level_metadata_route_certifier_summary);
 #ifdef __ANDROID__
 	debug_log(
 	    DLOG_GUIDEBOT,
-	    "route_certifier valid=%d prepared_first=%d selected=%d segment=%d "
-	    "fallback=%d blocking=%d blocking_segment=%d blocking_reason=%d "
-	    "start=%d keys=0x%x "
-	    "required=0x%llx evaluated=%u rejected=%u visited=%u "
-	    "firing_evaluated=%u firing_reranked=%d firing_cache_hit=%d "
-	    "firing_approximate=%d firing_steep=%d firing_original=%d "
-	    "firing_near=%d,%d,%d,%d,%d,%d,%d,%d\n",
+	    "route_compiled_selector valid=%d compiled_first=%d selected=%d "
+	    "segment=%d blocking=%d blocking_reason=%d start=%d keys=0x%x "
+	    "required=0x%llx evaluated=%u rejected=%u\n",
 	    valid, Level_metadata_canonical_plan_summary.first_pending_step,
 	    Level_metadata_route_certifier_summary.selected_step,
 	    Level_metadata_route_certifier_summary.selected_segment,
-	    Level_metadata_route_certifier_summary.used_prepared_fallback,
 	    Level_metadata_route_certifier_summary.blocking_step,
-	    Level_metadata_route_certifier_summary.blocking_segment,
 	    Level_metadata_route_certifier_summary.blocking_reason,
 	    view->start_segment, view->initial_key_mask,
 	    Level_metadata_route_certifier_summary.required_steps_low,
 	    Level_metadata_route_certifier_summary.evaluated_actions,
-	    Level_metadata_route_certifier_summary.rejected_actions,
-	    Level_metadata_route_certifier_summary.visited_segments,
-	    Level_metadata_route_certifier_summary.evaluated_firing_positions,
-	    Level_metadata_route_certifier_summary.reranked_firing_position,
-	    Level_metadata_route_certifier_summary.firing_cache_hit,
-	    Level_metadata_route_certifier_summary.approximate_firing_position,
-	    Level_metadata_route_certifier_summary.steep_firing_position,
-	    Level_metadata_route_certifier_workspace.firing_search_original_segment,
-	    Level_metadata_route_certifier_workspace
-	        .firing_search_detailed_segments[0],
-	    Level_metadata_route_certifier_workspace
-	        .firing_search_detailed_segments[1],
-	    Level_metadata_route_certifier_workspace
-	        .firing_search_detailed_segments[2],
-	    Level_metadata_route_certifier_workspace
-	        .firing_search_detailed_segments[3],
-	    Level_metadata_route_certifier_workspace
-	        .firing_search_detailed_segments[4],
-	    Level_metadata_route_certifier_workspace
-	        .firing_search_detailed_segments[5],
-	    Level_metadata_route_certifier_workspace
-	        .firing_search_detailed_segments[6],
-	    Level_metadata_route_certifier_workspace
-	        .firing_search_detailed_segments[7]);
-	level_metadata_log_connectivity_wall_changes(
-	    &Level_metadata_route_certifier_summary);
+	    Level_metadata_route_certifier_summary.rejected_actions);
 	level_metadata_log_unresolved_completion_evidence(view);
 #endif
 	if (valid == GUIDEBOT_ROUTE_CERTIFIER_VALID) {
-		Level_metadata_analysis_cache_summary.live_certifier_successes++;
-		if (Level_metadata_route_certifier_summary.used_prepared_fallback)
-			Level_metadata_analysis_cache_summary
-			    .live_certifier_prepared_fallbacks++;
+		Level_metadata_live_work_summary.compiled_selector_successes++;
 	} else if (valid == GUIDEBOT_ROUTE_CERTIFIER_INVALID)
-		Level_metadata_analysis_cache_summary.live_certifier_failures++;
-	if (Level_metadata_route_certifier_summary.visited_segments >
-	    Level_metadata_analysis_cache_summary
-	        .live_certifier_max_visited_segments)
-		Level_metadata_analysis_cache_summary
-		    .live_certifier_max_visited_segments =
-		    Level_metadata_route_certifier_summary.visited_segments;
-	if (Level_metadata_route_certifier_summary.evaluated_edges >
-	    Level_metadata_analysis_cache_summary
-	        .live_certifier_max_evaluated_edges)
-		Level_metadata_analysis_cache_summary
-		    .live_certifier_max_evaluated_edges =
-		    Level_metadata_route_certifier_summary.evaluated_edges;
+		Level_metadata_live_work_summary.compiled_selector_failures++;
 	if (Level_metadata_route_certifier_summary.evaluated_actions >
-	    Level_metadata_analysis_cache_summary
-	        .live_certifier_max_evaluated_actions)
-		Level_metadata_analysis_cache_summary
-		    .live_certifier_max_evaluated_actions =
+	    Level_metadata_live_work_summary
+	        .compiled_selector_max_evaluated_actions)
+		Level_metadata_live_work_summary
+		    .compiled_selector_max_evaluated_actions =
 		    Level_metadata_route_certifier_summary.evaluated_actions;
 	return valid;
 }
@@ -3599,8 +3497,7 @@ static void level_metadata_rescan_current_level_internal(
 			}
 		}
 #endif
-		if (endpoint_kind == ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL &&
-		    Level_metadata_live_certifier_enabled) {
+		if (endpoint_kind == ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL) {
 			int certifier_result;
 
 			Level_metadata_analysis_cache_summary.live_reuse_attempts++;
@@ -3609,7 +3506,7 @@ static void level_metadata_rescan_current_level_internal(
 			certifier_budget.deadline_us =
 			    (unsigned long long) live_stage_started_us + 2000ULL;
 #endif
-			certifier_result = level_metadata_try_reuse_canonical_route(
+			certifier_result = level_metadata_select_compiled_route(
 			    view, &Level_metadata_live_candidate_state,
 			    &Level_metadata_live_candidate_summary,
 			    &Level_metadata_live_candidate_certificate,
@@ -3626,10 +3523,7 @@ static void level_metadata_rescan_current_level_internal(
 			Level_metadata_live_route_work_pending = certifier_pending;
 			if (candidate_valid)
 				candidate_provenance =
-				    Level_metadata_route_certifier_summary
-				            .used_prepared_fallback
-				        ? LEVEL_METADATA_ROUTE_PROVENANCE_PREPARED_FALLBACK
-				        : LEVEL_METADATA_ROUTE_PROVENANCE_CERTIFIER;
+				    LEVEL_METADATA_ROUTE_PROVENANCE_COMPILED_SELECTOR;
 #ifdef __ANDROID__
 			live_stage_elapsed_us = (unsigned long long) (android_profile_monotonic_us() - live_stage_started_us);
 			Level_metadata_analysis_cache_summary.live_reuse_total_us +=
@@ -3644,6 +3538,7 @@ static void level_metadata_rescan_current_level_internal(
 		if (candidate_valid)
 			Level_metadata_analysis_cache_summary.live_reuses++;
 		else if (!certifier_pending &&
+		         endpoint_kind != ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL &&
 		         Level_metadata_expensive_planning_allowed &&
 		         level_metadata_gameplay_full_planner_allowed()) {
 			if (endpoint_kind == ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL)
@@ -3701,7 +3596,8 @@ static void level_metadata_rescan_current_level_internal(
 #endif
 		} else if (!candidate_valid &&
 		           (certifier_pending ||
-		            Level_metadata_expensive_planning_allowed)) {
+		            (endpoint_kind != ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL &&
+		             Level_metadata_expensive_planning_allowed))) {
 			deferred = 1;
 			if (!certifier_pending)
 				Level_metadata_live_work_summary.blocked_full_plan_calls++;
@@ -3792,13 +3688,13 @@ static void level_metadata_rescan_current_level_internal(
 		    live_stage_elapsed_us;
 		Level_metadata_live_work_summary.last_refresh_us =
 		    refresh_elapsed_us;
-		Level_metadata_live_work_summary.certifier_ticks++;
+		Level_metadata_live_work_summary.route_ticks++;
 		if (certifier_pending)
-			Level_metadata_live_work_summary.certifier_deferred_ticks++;
+			Level_metadata_live_work_summary.deferred_ticks++;
 		else
-			Level_metadata_live_work_summary.certifier_completed_ticks++;
+			Level_metadata_live_work_summary.completed_ticks++;
 		if (live_stage_elapsed_us > 4000ULL) {
-			Level_metadata_live_work_summary.certifier_overruns++;
+			Level_metadata_live_work_summary.tick_overruns++;
 			debug_log(
 			    DLOG_GUIDEBOT,
 			    "route_work_overrun stage=live_refresh elapsed_us=%llu "
@@ -4262,23 +4158,13 @@ const char *level_metadata_route_provenance_name(int provenance)
 	switch (provenance) {
 		case LEVEL_METADATA_ROUTE_PROVENANCE_CERTIFIER:
 			return "certifier";
-		case LEVEL_METADATA_ROUTE_PROVENANCE_PREPARED_FALLBACK:
-			return "prepared_fallback";
 		case LEVEL_METADATA_ROUTE_PROVENANCE_FULL_PLANNER:
 			return "full_planner";
+		case LEVEL_METADATA_ROUTE_PROVENANCE_COMPILED_SELECTOR:
+			return "compiled_selector";
 		default:
 			return "none";
 	}
-}
-
-void level_metadata_set_live_certifier_enabled(int enabled)
-{
-	Level_metadata_live_certifier_enabled = enabled != 0;
-}
-
-int level_metadata_get_live_certifier_enabled(void)
-{
-	return Level_metadata_live_certifier_enabled;
 }
 
 void level_metadata_set_route_shadow_enabled(int enabled)

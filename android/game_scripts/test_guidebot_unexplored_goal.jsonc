@@ -96,7 +96,7 @@
         "guidebot.route_pending_event_mask": "0",
         "guidebot.route_goal_guidance_seg": {"gte": 0},
         "guidebot.route_live_work.full_plan_calls": "0",
-        "guidebot.route_live_work.certifier_overruns": "0",
+        "guidebot.route_live_work.tick_overruns": "0",
         "guidebot.route_live_work.max_tick_us": {"lte": 4000},
         "guidebot.route_live_work.pending": "false",
         "level_metadata_route.visibility_cache.bypasses": "0"

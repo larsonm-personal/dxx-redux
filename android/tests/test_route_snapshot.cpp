@@ -1298,6 +1298,7 @@ int main()
 	       reachable_visible_step.aim_position.value);
 	assert(reachable_visible_step.switch_shot_quality ==
 	       LEVEL_METADATA_SWITCH_SHOT_CONFIRMED);
+	assert(!reachable_visible_step.switch_guidance_candidates.empty());
 	dxx_route::route_visibility_query approximate_visibility = visibility;
 	approximate_visibility.wall_shootable = wall_not_shootable;
 	approximate_visibility.wall_potentially_shootable = wall_shootable;
@@ -1310,6 +1311,8 @@ int main()
 	       dxx_route::route_activation_kind::shoot_switch);
 	assert(approximate_dependency.steps[0].switch_shot_quality ==
 	       LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE);
+	assert(!approximate_dependency.steps[0]
+	            .switch_guidance_candidates.empty());
 	visible.position = visible_snapshot.topology.segments[0].center;
 	const auto visible_firing = dxx_route::select_trigger_firing_path(
 	    visible_snapshot, planner_query, source_progress, visible_sources,

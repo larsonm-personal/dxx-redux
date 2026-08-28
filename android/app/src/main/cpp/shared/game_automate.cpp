@@ -3786,10 +3786,6 @@ extern "C" void game_automate_tick(void)
 				level_metadata_set_route_shadow_enabled(
 				    strcasecmp(s.value.c_str(), "true") == 0 ||
 				    strtol(s.value.c_str(), NULL, 10) != 0);
-			} else if (s.field == "guidebot_live_certifier_enabled") {
-				level_metadata_set_live_certifier_enabled(
-				    strcasecmp(s.value.c_str(), "true") == 0 ||
-				    strtol(s.value.c_str(), NULL, 10) != 0);
 			} else if (s.field == "guidebot_route_notifications_suppressed") {
 #ifdef DXX_BUILD_DESCENT_II
 				escort_set_route_notifications_suppressed(

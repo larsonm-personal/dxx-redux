@@ -152,6 +152,14 @@ struct route_analysis_budget {
 };
 
 struct route_trigger_path_selection {
+	struct guidance_candidate {
+		int segment = -1;
+		route_position position;
+		int quality = LEVEL_METADATA_SWITCH_SHOT_NONE;
+		int incidence_cosine = LEVEL_METADATA_SHOT_COSINE_ONE;
+		double utility = 0.0;
+		double initial_start_utility = -1.0;
+	};
 	bool found = false;
 	bool uses_transparent_surface = false;
 	int switch_shot_quality = LEVEL_METADATA_SWITCH_SHOT_NONE;
@@ -160,6 +168,7 @@ struct route_trigger_path_selection {
 	route_path_result path;
 	int terminal_segment = -1;
 	route_position terminal_position;
+	std::vector<guidance_candidate> guidance_candidates;
 };
 
 enum class route_semantic_step_kind {
@@ -211,6 +220,8 @@ struct route_semantic_step {
 	bool uses_transparent_surface = false;
 	int switch_shot_quality = LEVEL_METADATA_SWITCH_SHOT_NONE;
 	int switch_shot_incidence_cosine = LEVEL_METADATA_SHOT_COSINE_ONE;
+	std::vector<route_trigger_path_selection::guidance_candidate>
+	    switch_guidance_candidates;
 	route_activation_kind activation = route_activation_kind::none;
 	route_position activation_position;
 	route_position aim_position;

@@ -1,4 +1,4 @@
-// TEST: Obsidian level 6 Guide-Bot stays at a nearby switch and routes around a blocked grate
+// TEST: Obsidian level 12 advances immediately beyond a collected gold key
 [
     {"_info": {
         "games": ["d2"],
@@ -22,7 +22,8 @@
     {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
     {"action": "setup_command", "command": "clear_route_metadata_cache", "post_delay_ms": 250},
     {"action": "setup_command", "command": "clear_level_metadata_result_cache", "post_delay_ms": 250},
-    {"action": "import_mission_zip", "file": "obsidian.zip", "label": "obsidian_level6_guidebot", "display_name": "Obsidian.zip"},
+    {"action": "import_mission_zip", "file": "obsidian.zip", "label": "obsidian_level12_gold", "display_name": "Obsidian.zip"},
+    {"action": "analyze_level_metadata_all", "label": "obsidian_level12_gold", "mod_file": "Obsidian.zip", "game": "d2", "status": "ok", "min_total_levels": 18},
     {"action": "enter_game", "game": "d2"},
     {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
@@ -31,54 +32,53 @@
     {"action": "select_mission", "text": "Obsidian", "post_delay_ms": 100, "timeout_ms": 10000},
     {"action": "wait_ms", "ms": 300},
     {"action": "key", "key": "backspace", "post_delay_ms": 100},
-    {"action": "key", "key": "6", "post_delay_ms": 100},
+    {"action": "key", "key": "1", "post_delay_ms": 100},
+    {"action": "key", "key": "2", "post_delay_ms": 100},
     {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "select", "text": "Trainee", "post_delay_ms": 100, "timeout_ms": 10000, "optional": true},
     {"action": "skip_briefing", "timeout_ms": 60000, "post_delay_ms": 100},
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000},
     {"action": "wait_for", "timeout_ms": 30000, "expect": {
-        "current_level_num": "6",
+        "current_level_num": "12",
         "level_metadata_route.status": "ok",
-        "level_metadata_route.step_count": "9"
+        "level_metadata_route.step_count": "16",
+        "level_metadata_route.steps[6].key": "gold",
+        "level_metadata_route.steps[7].trigger": "9"
     }},
 
     {"action": "set_debug", "field": "clear_robots", "value": "true", "post_delay_ms": 100},
+    {"action": "set_debug", "field": "fire_trigger", "value": "3", "post_delay_ms": 100},
+    {"action": "set_debug", "field": "player_keys", "value": "blue", "post_delay_ms": 100},
+    {"action": "set_debug", "field": "fire_trigger", "value": "2", "post_delay_ms": 100},
+    {"action": "set_debug", "field": "fire_trigger", "value": "1", "post_delay_ms": 100},
+    {"action": "set_debug", "field": "fire_trigger", "value": "4", "post_delay_ms": 100},
     {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
     {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
-    {"action": "set_debug", "field": "fire_trigger", "value": "1", "post_delay_ms": 100},
-    {"action": "set_debug", "field": "fire_trigger", "value": "13", "post_delay_ms": 100},
-    {"action": "wait_for", "timeout_ms": 20000, "expect": {
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
         "guidebot.route_goal_active": "true",
-        "guidebot.route_goal_activation_kind_name": "shoot_switch",
-        "guidebot.route_goal_trigger": "15",
-        "guidebot.route_goal_seg": "96",
-        "guidebot.route_live_work.full_plan_calls": "0",
-        "guidebot.route_live_work.tick_overruns": "0",
-        "guidebot.route_live_work.max_tick_us": {"lte": 4000},
-        "guidebot.route_live_work.pending": "false"
-    }},
-    {"action": "pose_route_guidance", "post_delay_ms": 250},
-    {"action": "meta_action", "id": 1042, "post_delay_ms": 500},
-    {"action": "wait_ms", "ms": 12000},
-    {"action": "assert", "expect": {
-        "guidebot.route_goal_trigger": "15",
-        "guidebot.segment": "96",
-        "guidebot.path_length": "1"
+        "guidebot.route_goal_label": {"contains": "gold key"},
+        "guidebot.route_goal_seg": "277",
+        "guidebot.route_decision.provenance": "compiled_selector"
     }},
 
-    {"action": "set_debug", "field": "fire_trigger", "value": "15", "post_delay_ms": 100},
-    {"action": "set_debug", "field": "fire_trigger", "value": "16", "post_delay_ms": 100},
-    {"action": "wait_for", "timeout_ms": 20000, "expect": {
-        "guidebot.route_goal_trigger": "14",
-        "guidebot.route_goal_seg": "506"
+    {"action": "set_debug", "field": "player_keys", "value": "blue gold", "post_delay_ms": 100},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "player.has_gold_key": "true",
+        "guidebot.route_goal_activation_kind_name": "fly_through_trigger",
+        "guidebot.route_goal_trigger": "9",
+        "guidebot.route_goal_seg": "567",
+        "guidebot.route_decision.provenance": "compiled_selector",
+        "guidebot.route_live_work.full_plan_calls": "0",
+        "guidebot.route_live_work.compiled_selector_failures": "0",
+        "guidebot.route_live_work.compiled_selector_max_evaluated_actions": {"lte": 8},
+        "guidebot.route_live_work.pending": "false"
     }},
-    {"action": "pose_route_guidance", "post_delay_ms": 250},
-    {"action": "meta_action", "id": 1042, "post_delay_ms": 500},
-    {"action": "wait_ms", "ms": 12000},
+    {"action": "wait_ms", "ms": 3000},
     {"action": "assert", "expect": {
-        "guidebot.route_goal_trigger": "14",
-        "guidebot.segment": "506",
-        "guidebot.path_length": "1"
+        "guidebot.route_goal_trigger": "9",
+        "guidebot.route_goal_seg": "567",
+        "guidebot.route_live_work.compiled_selector_failures": "0",
+        "guidebot.route_live_work.retained_incumbents": "0"
     }},
-    {"action": "log", "message": "=== TEST: Obsidian level 6 Guide-Bot switch and grate routing -- PASS ==="}
+    {"action": "log", "message": "=== TEST: Obsidian level 12 gold-key advance -- PASS ==="}
 ]

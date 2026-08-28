@@ -17,8 +17,8 @@
 
 #define LEVEL_METADATA_ROUTE_PROVENANCE_NONE              0
 #define LEVEL_METADATA_ROUTE_PROVENANCE_CERTIFIER         1
-#define LEVEL_METADATA_ROUTE_PROVENANCE_PREPARED_FALLBACK 2
 #define LEVEL_METADATA_ROUTE_PROVENANCE_FULL_PLANNER      3
+#define LEVEL_METADATA_ROUTE_PROVENANCE_COMPILED_SELECTOR 4
 
 typedef struct level_metadata_live_work_summary {
 	unsigned int full_plan_calls;
@@ -26,10 +26,14 @@ typedef struct level_metadata_live_work_summary {
 	unsigned int deferred_refreshes;
 	unsigned int retained_incumbents;
 	unsigned int deferred_without_incumbent;
-	unsigned int certifier_ticks;
-	unsigned int certifier_deferred_ticks;
-	unsigned int certifier_completed_ticks;
-	unsigned int certifier_overruns;
+	unsigned int route_ticks;
+	unsigned int deferred_ticks;
+	unsigned int completed_ticks;
+	unsigned int tick_overruns;
+	unsigned int compiled_selector_calls;
+	unsigned int compiled_selector_successes;
+	unsigned int compiled_selector_failures;
+	unsigned int compiled_selector_max_evaluated_actions;
 	unsigned int pending_event_mask;
 	int pending;
 	int reachability_cursor;
@@ -76,8 +80,6 @@ int level_metadata_get_live_route_plan_summary(route_planner_plan_summary *summa
 int level_metadata_get_live_route_decision(guidebot_route_decision *decision);
 int level_metadata_get_live_route_provenance(void);
 const char *level_metadata_route_provenance_name(int provenance);
-void level_metadata_set_live_certifier_enabled(int enabled);
-int level_metadata_get_live_certifier_enabled(void);
 void level_metadata_set_route_shadow_enabled(int enabled);
 int level_metadata_get_route_shadow_summary(
     guidebot_route_shadow_summary *summary);

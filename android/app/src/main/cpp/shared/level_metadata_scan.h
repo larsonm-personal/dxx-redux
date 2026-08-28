@@ -12,6 +12,7 @@ extern "C" {
 #define LEVEL_METADATA_MAX_SIDES                            6
 #define LEVEL_METADATA_MAX_TARGETS                          512
 #define LEVEL_METADATA_MAX_ROUTE_STEPS                      96
+#define LEVEL_METADATA_MAX_SWITCH_GUIDANCE_CANDIDATES       16
 #define LEVEL_METADATA_MAX_ROUTE_LINKS                      10
 #define LEVEL_METADATA_ROUTE_LABEL_LEN                      64
 #define LEVEL_METADATA_ROUTE_TRIGGER_TYPE_LEN               24
@@ -107,6 +108,11 @@ typedef struct level_metadata_route_step {
 	int activation_kind;
 	int switch_shot_quality;
 	int switch_shot_incidence_cosine;
+	int switch_guidance_candidate_count;
+	int switch_guidance_candidate_seg[LEVEL_METADATA_MAX_SWITCH_GUIDANCE_CANDIDATES];
+	int switch_guidance_candidate_pos[LEVEL_METADATA_MAX_SWITCH_GUIDANCE_CANDIDATES][3];
+	int switch_guidance_candidate_quality[LEVEL_METADATA_MAX_SWITCH_GUIDANCE_CANDIDATES];
+	int switch_guidance_candidate_incidence[LEVEL_METADATA_MAX_SWITCH_GUIDANCE_CANDIDATES];
 	int path_segment_count;
 	int path_terminal_segment;
 	int activation_pos_valid;

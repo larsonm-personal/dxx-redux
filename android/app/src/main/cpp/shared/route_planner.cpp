@@ -7,8 +7,10 @@
 #include <cstdio>
 #include <cstring>
 #include <exception>
+#include <functional>
 #include <limits>
 #include <memory>
+#include <queue>
 #include <unordered_map>
 
 namespace dxx_route
@@ -1217,12 +1219,103 @@ std::vector<route_trigger_source> discover_trigger_sources(
 	    snapshot, progress, segment, side, false);
 }
 
-route_trigger_path_selection select_trigger_firing_path(
+struct switch_guidance_graph {
+	std::vector<int> component_ids;
+	int component_count = 0;
+	std::vector<std::vector<int>> optimistic_edges;
+};
+
+switch_guidance_graph build_switch_guidance_graph(
+    const route_snapshot &snapshot,
+    const route_query &query)
+{
+	switch_guidance_graph result;
+	const int segment_count =
+	    static_cast<int>(snapshot.topology.segments.size());
+	result.component_ids.assign(segment_count, -1);
+	result.optimistic_edges.resize(segment_count);
+	std::vector<std::vector<int>> passable_edges(segment_count);
+	std::vector<std::vector<int>> reverse_edges(segment_count);
+	const auto initial_progress = initial_route_progress_state(snapshot, query);
+	for (int segment = 0; segment < segment_count; ++segment) {
+		if (!snapshot.topology.segments[segment].center.valid)
+			continue;
+		for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+			const auto &topology_side =
+			    snapshot.topology.segments[segment].sides[side];
+			const int child = topology_side.child;
+			if (!valid_segment(snapshot, child) ||
+			    !snapshot.topology.segments[child].center.valid)
+				continue;
+			if (query.navigator.radius > 0 &&
+			    topology_side.clearance_radius > 0 &&
+			    topology_side.clearance_radius < query.navigator.radius)
+				continue;
+			const auto edge = evaluate_route_edge(
+			    snapshot, query, initial_progress, segment, side);
+			if (edge.progress_cost == LEVEL_METADATA_ROUTE_EDGE_BLOCKED)
+				continue;
+			result.optimistic_edges[segment].push_back(child);
+			if (edge.progress_cost != LEVEL_METADATA_ROUTE_EDGE_PASSABLE)
+				continue;
+			passable_edges[segment].push_back(child);
+			reverse_edges[child].push_back(segment);
+		}
+	}
+	std::vector<unsigned char> visited(segment_count, 0);
+	std::vector<int> finish_order;
+	finish_order.reserve(segment_count);
+	std::vector<std::pair<int, std::size_t>> depth_first;
+	for (int segment = 0; segment < segment_count; ++segment) {
+		if (!visited[segment] &&
+		    snapshot.topology.segments[segment].center.valid) {
+			visited[segment] = 1;
+			depth_first.push_back({ segment, 0 });
+			while (!depth_first.empty()) {
+				auto &entry = depth_first.back();
+				if (entry.second < passable_edges[entry.first].size()) {
+					const int child =
+					    passable_edges[entry.first][entry.second++];
+					if (!visited[child]) {
+						visited[child] = 1;
+						depth_first.push_back({ child, 0 });
+					}
+					continue;
+				}
+				finish_order.push_back(entry.first);
+				depth_first.pop_back();
+			}
+		}
+	}
+	std::vector<int> component_stack;
+	for (auto current = finish_order.rbegin(); current != finish_order.rend();
+	     ++current) {
+		if (result.component_ids[*current] >= 0)
+			continue;
+		result.component_ids[*current] = result.component_count;
+		component_stack.push_back(*current);
+		while (!component_stack.empty()) {
+			const int segment = component_stack.back();
+			component_stack.pop_back();
+			for (const int child : reverse_edges[segment]) {
+				if (result.component_ids[child] >= 0)
+					continue;
+				result.component_ids[child] = result.component_count;
+				component_stack.push_back(child);
+			}
+		}
+		++result.component_count;
+	}
+	return result;
+}
+
+static route_trigger_path_selection select_trigger_firing_path_internal(
     const route_snapshot &snapshot,
     const route_query &query,
     const route_progress_state &progress,
     const std::vector<route_trigger_source> &sources,
-    const route_visibility_query &visibility)
+    const route_visibility_query &visibility,
+    const switch_guidance_graph *guidance_graph)
 {
 	route_trigger_path_selection result;
 	route_trigger_path_selection keyed_result;
@@ -1256,14 +1349,41 @@ route_trigger_path_selection select_trigger_firing_path(
 		                       snapshot.topology.walls[source.source_wall]
 		                           .shootable_trigger;
 		if (shootable) {
-			auto best_score = [&]() {
-				return candidate.found
-				           ? candidate_score
-				       : result.found ? result_score
-				                      : std::numeric_limits<double>::infinity();
+			auto record_guidance_candidate = [&](
+			                                     int segment,
+			                                     const route_position &terminal,
+			                                     int quality, int incidence,
+			                                     double utility,
+			                                     double initial_start_utility) {
+				for (auto &existing : candidate.guidance_candidates) {
+					if (existing.segment != segment)
+						continue;
+					if (utility < existing.utility) {
+						existing.position = terminal;
+						existing.quality = quality;
+						existing.incidence_cosine = incidence;
+						existing.utility = utility;
+					}
+					if (initial_start_utility >= 0.0 &&
+					    (existing.initial_start_utility < 0.0 ||
+					     initial_start_utility <
+					         existing.initial_start_utility))
+						existing.initial_start_utility =
+						    initial_start_utility;
+					return;
+				}
+				route_trigger_path_selection::guidance_candidate guidance;
+				guidance.segment = segment;
+				guidance.position = terminal;
+				guidance.quality = quality;
+				guidance.incidence_cosine = incidence;
+				guidance.utility = utility;
+				guidance.initial_start_utility = initial_start_utility;
+				candidate.guidance_candidates.push_back(guidance);
 			};
 			auto accept_position = [&](int segment, const route_position &terminal,
-			                           double extra_distance) {
+			                           double extra_distance,
+			                           double initial_start_utility = -1.0) {
 				auto path = build_route_path(search, segment);
 				path.distance += extra_distance;
 				int incidence = LEVEL_METADATA_SHOT_COSINE_ONE;
@@ -1291,6 +1411,16 @@ route_trigger_path_selection select_trigger_firing_path(
 				    path.distance +
 				    point_distance(terminal, source.source_position) *
 				        ROUTE_SWITCH_SHOT_DISTANCE_WEIGHT * angle_multiplier;
+				const int quality = visibility.approximate_shots
+				                        ? LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE
+				                    : incidence_ratio < ROUTE_SWITCH_STEEP_COSINE
+				                        ? LEVEL_METADATA_SWITCH_SHOT_CONFIRMED_STEEP
+				                        : LEVEL_METADATA_SWITCH_SHOT_CONFIRMED;
+				record_guidance_candidate(
+				    segment, terminal, quality, incidence,
+				    point_distance(terminal, source.source_position) *
+				        angle_multiplier,
+				    initial_start_utility);
 				if (candidate.found &&
 				    (score > candidate_score ||
 				     (score == candidate_score &&
@@ -1305,15 +1435,99 @@ route_trigger_path_selection select_trigger_firing_path(
 				candidate.terminal_segment = segment;
 				candidate.terminal_position = terminal;
 				candidate.switch_shot_incidence_cosine = incidence;
-				candidate.switch_shot_quality =
-				    visibility.approximate_shots
-				        ? LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE
-				    : incidence_ratio < ROUTE_SWITCH_STEEP_COSINE
-				        ? LEVEL_METADATA_SWITCH_SHOT_CONFIRMED_STEEP
-				        : LEVEL_METADATA_SWITCH_SHOT_CONFIRMED;
+				candidate.switch_shot_quality = quality;
 				candidate.found = true;
 				candidate_score = score;
 			};
+			/* Retain one conservative approach point per initially disconnected
+			 * region.  The topology partition is compiled once for the whole plan;
+			 * each switch only needs a graph traversal to rank its regions. */
+			if (guidance_graph && valid_segment(snapshot, source.source_segment)) {
+				const int segment_count = static_cast<int>(
+				    guidance_graph->component_ids.size());
+				const double infinity =
+				    std::numeric_limits<double>::infinity();
+				std::vector<double> strategic_distance(
+				    segment_count, infinity);
+				using distance_entry = std::pair<double, int>;
+				std::priority_queue<
+				    distance_entry, std::vector<distance_entry>,
+				    std::greater<distance_entry>>
+				    queue;
+				strategic_distance[source.source_segment] = point_distance(
+				    source.source_position,
+				    snapshot.topology.segments[source.source_segment].center);
+				queue.push({
+				    strategic_distance[source.source_segment],
+				    source.source_segment,
+				});
+				while (!queue.empty()) {
+					const auto entry = queue.top();
+					queue.pop();
+					const int current = entry.second;
+					if (entry.first != strategic_distance[current])
+						continue;
+					for (const int next :
+					     guidance_graph->optimistic_edges[current]) {
+						const double distance = entry.first + point_distance(
+						                                          snapshot.topology.segments[current].center,
+						                                          snapshot.topology.segments[next].center);
+						if (distance >= strategic_distance[next])
+							continue;
+						strategic_distance[next] = distance;
+						queue.push({ distance, next });
+					}
+				}
+				for (int component = 0;
+				     component < guidance_graph->component_count; ++component) {
+					int best_segment = -1;
+					int best_incidence = LEVEL_METADATA_SHOT_COSINE_ONE;
+					double best_utility =
+					    std::numeric_limits<double>::infinity();
+					for (int segment = 0; segment < segment_count; ++segment) {
+						if (guidance_graph->component_ids[segment] != component ||
+						    strategic_distance[segment] == infinity)
+							continue;
+						const auto &center =
+						    snapshot.topology.segments[segment].center;
+						if (!center.valid)
+							continue;
+						int incidence = LEVEL_METADATA_SHOT_COSINE_ONE;
+						if (visibility.wall_shot_incidence_cosine)
+							incidence = std::max(
+							    0,
+							    std::min(
+							        LEVEL_METADATA_SHOT_COSINE_ONE,
+							        visibility.wall_shot_incidence_cosine(
+							            visibility.user, center,
+							            source.source_wall)));
+						const double incidence_ratio =
+						    static_cast<double>(incidence) /
+						    LEVEL_METADATA_SHOT_COSINE_ONE;
+						const double angle_multiplier =
+						    incidence_ratio >= ROUTE_SWITCH_STEEP_COSINE
+						        ? 1.0
+						        : ROUTE_SWITCH_STEEP_COSINE /
+						              std::max(incidence_ratio, 0.01);
+						const double utility =
+						    strategic_distance[segment] +
+						    point_distance(center, source.source_position) *
+						        angle_multiplier * 0.001;
+						if (utility < best_utility ||
+						    (utility == best_utility && segment < best_segment)) {
+							best_segment = segment;
+							best_incidence = incidence;
+							best_utility = utility;
+						}
+					}
+					if (best_segment >= 0)
+						record_guidance_candidate(
+						    best_segment,
+						    snapshot.topology.segments[best_segment].center,
+						    LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE,
+						    best_incidence, best_utility, best_utility);
+				}
+			}
 			/* A nearer route can still be a needlessly difficult long shot.  When
 			 * the player already owns a key, separately test the switch's own
 			 * segment if reaching it uses that keyed door. */
@@ -1361,20 +1575,29 @@ route_trigger_path_selection select_trigger_firing_path(
 							        ROUTE_SWITCH_STEEP_COSINE)
 								keyed_result.switch_shot_quality =
 								    LEVEL_METADATA_SWITCH_SHOT_CONFIRMED_STEEP;
+							route_trigger_path_selection::guidance_candidate guidance;
+							guidance.segment = source.source_segment;
+							guidance.position = terminal;
+							guidance.quality = keyed_result.switch_shot_quality;
+							guidance.incidence_cosine =
+							    keyed_result.switch_shot_incidence_cosine;
+							guidance.utility = shot_distance;
+							keyed_result.guidance_candidates = { guidance };
 							keyed_result.found = true;
 							keyed_shot_distance = shot_distance;
 						}
 					}
 				}
 			}
-			/* Find a center-line candidate cheaply before sampling every face,
-			 * vertex, and edge.  The detailed pass only examines segments whose
-			 * center-path lower bound can still improve the selected route. */
+			/* Find the route-optimal center-line candidate first.  Once the path
+			 * lower bound cannot improve the route, exact center visibility farther
+			 * away is unnecessary. */
 			for (int index = 0; index < segments; ++index) {
 				const int segment = search.visit_order[index];
 				double extra_distance = 0.0;
 				route_position terminal;
-				if (search.nodes[segment].distance > best_score())
+				if (candidate.found &&
+				    search.nodes[segment].distance > candidate_score)
 					break;
 				if (visible_source_center_position(
 				        snapshot, progress, source, visibility, segment,
@@ -1388,11 +1611,70 @@ route_trigger_path_selection select_trigger_firing_path(
 			report_progress(
 			    visibility, "route_visibility", source_base + segments,
 			    total);
+
+			/* Switch guidance is a different question from finding the shortest
+			 * mission route.  Preselect the geometrically best cells across the
+			 * whole reachable mine, then do the expensive exact face/edge sampling
+			 * for only that bounded set.  This compiles useful alternate firing
+			 * poses ahead of time even when their route distance cannot beat the
+			 * canonical mission step. */
+			struct detailed_guidance_candidate {
+				int segment;
+				double utility;
+			};
+			std::vector<detailed_guidance_candidate> detailed_guidance;
+			detailed_guidance.reserve(segments);
+			for (int index = 0; index < segments; ++index) {
+				const int segment = search.visit_order[index];
+				const auto &center = snapshot.topology.segments[segment].center;
+				if (!center.valid)
+					continue;
+				int incidence = LEVEL_METADATA_SHOT_COSINE_ONE;
+				if (visibility.wall_shot_incidence_cosine)
+					incidence = std::max(
+					    0,
+					    std::min(
+					        LEVEL_METADATA_SHOT_COSINE_ONE,
+					        visibility.wall_shot_incidence_cosine(
+					            visibility.user, center, source.source_wall)));
+				const double incidence_ratio =
+				    static_cast<double>(incidence) /
+				    LEVEL_METADATA_SHOT_COSINE_ONE;
+				const double angle_multiplier =
+				    incidence_ratio >= ROUTE_SWITCH_STEEP_COSINE
+				        ? 1.0
+				        : ROUTE_SWITCH_STEEP_COSINE /
+				              std::max(incidence_ratio, 0.01);
+				detailed_guidance.push_back({
+				    segment,
+				    point_distance(center, source.source_position) *
+				        angle_multiplier,
+				});
+			}
+			std::sort(
+			    detailed_guidance.begin(), detailed_guidance.end(),
+			    [](const auto &left, const auto &right) {
+				    if (left.utility != right.utility)
+					    return left.utility < right.utility;
+				    return left.segment < right.segment;
+			    });
+			if (detailed_guidance.size() > 8)
+				detailed_guidance.resize(8);
+			for (const auto &guidance : detailed_guidance) {
+				double extra_distance = 0.0;
+				route_position terminal;
+				if (visible_source_detailed_position(
+				        snapshot, source, visibility, guidance.segment,
+				        terminal, extra_distance))
+					accept_position(
+					    guidance.segment, terminal, extra_distance);
+			}
 			for (int index = 0; index < segments; ++index) {
 				const int segment = search.visit_order[index];
 				double extra_distance = 0.0;
 				route_position terminal;
-				if (search.nodes[segment].distance > best_score())
+				if (candidate.found &&
+				    search.nodes[segment].distance > candidate_score)
 					break;
 				if (visible_source_detailed_position(
 				        snapshot, source, visibility, segment, terminal,
@@ -1450,6 +1732,17 @@ route_trigger_path_selection select_trigger_firing_path(
 		        visibility.user, result.terminal_segment,
 		        result.terminal_position, result.source.source_wall);
 	return result;
+}
+
+route_trigger_path_selection select_trigger_firing_path(
+    const route_snapshot &snapshot,
+    const route_query &query,
+    const route_progress_state &progress,
+    const std::vector<route_trigger_source> &sources,
+    const route_visibility_query &visibility)
+{
+	return select_trigger_firing_path_internal(
+	    snapshot, query, progress, sources, visibility, nullptr);
 }
 
 route_target_inventory discover_route_targets(const route_snapshot &snapshot)
@@ -1719,6 +2012,7 @@ class dependency_planner
 	    bool allow_unresolved_triggers = false)
 	    : snapshot_(snapshot), query_(query), visibility_(visibility),
 	      targets_(discover_route_targets(snapshot)),
+	      switch_guidance_graph_(build_switch_guidance_graph(snapshot, query)),
 	      allow_unresolved_triggers_(allow_unresolved_triggers)
 	{
 		state_.progress = progress;
@@ -2747,8 +3041,9 @@ class dependency_planner
 			            snapshot_, query_, candidate);
 		        }),
 		    firing_sources.end());
-		const auto firing = select_trigger_firing_path(
-		    snapshot_, query_, state_.progress, firing_sources, visibility_);
+		const auto firing = select_trigger_firing_path_internal(
+		    snapshot_, query_, state_.progress, firing_sources, visibility_,
+		    &switch_guidance_graph_);
 		auto selected_firing = firing;
 		if (!selected_firing.found &&
 		    visibility_.wall_potentially_shootable) {
@@ -2757,9 +3052,9 @@ class dependency_planner
 			    visibility_.wall_potentially_shootable;
 			approximate_visibility.approximate_shots = true;
 			approximate_visibility.sample_cache_namespace ^= 0x80000000u;
-			selected_firing = select_trigger_firing_path(
+			selected_firing = select_trigger_firing_path_internal(
 			    snapshot_, query_, state_.progress, firing_sources,
-			    approximate_visibility);
+			    approximate_visibility, &switch_guidance_graph_);
 		}
 		if (selected_firing.found)
 			source = selected_firing.source;
@@ -2825,6 +3120,64 @@ class dependency_planner
 			    selected_firing.switch_shot_quality;
 			state_.steps.back().switch_shot_incidence_cosine =
 			    selected_firing.switch_shot_incidence_cosine;
+			auto guidance = selected_firing.guidance_candidates;
+			std::sort(
+			    guidance.begin(), guidance.end(), [](const auto &left, const auto &right) {
+				    const bool left_approximate =
+				        left.quality == LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE;
+				    const bool right_approximate =
+				        right.quality == LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE;
+				    if (left_approximate != right_approximate)
+					    return !left_approximate;
+				    if (left.utility != right.utility)
+					    return left.utility < right.utility;
+				    return left.segment < right.segment;
+			    });
+			auto &compiled = state_.steps.back().switch_guidance_candidates;
+			route_trigger_path_selection::guidance_candidate canonical;
+			canonical.segment = selected_firing.terminal_segment;
+			canonical.position = selected_firing.terminal_position;
+			canonical.quality = selected_firing.switch_shot_quality;
+			canonical.incidence_cosine =
+			    selected_firing.switch_shot_incidence_cosine;
+			compiled.push_back(canonical);
+			auto append_unique = [&](const auto &candidate) {
+				if (std::any_of(
+				        compiled.begin(), compiled.end(), [&](const auto &existing) {
+					        return existing.segment == candidate.segment;
+				        }))
+					return;
+				compiled.push_back(candidate);
+			};
+			auto initial_guidance = guidance;
+			initial_guidance.erase(
+			    std::remove_if(
+			        initial_guidance.begin(), initial_guidance.end(),
+			        [](const auto &candidate) {
+				        return candidate.initial_start_utility < 0.0;
+			        }),
+			    initial_guidance.end());
+			std::sort(
+			    initial_guidance.begin(), initial_guidance.end(),
+			    [](const auto &left, const auto &right) {
+				    if (left.initial_start_utility !=
+				        right.initial_start_utility)
+					    return left.initial_start_utility <
+					           right.initial_start_utility;
+				    return left.segment < right.segment;
+			    });
+			for (const auto &candidate : initial_guidance) {
+				if (compiled.size() >=
+				    LEVEL_METADATA_MAX_SWITCH_GUIDANCE_CANDIDATES - 3)
+					break;
+				append_unique(candidate);
+			}
+			for (const auto &candidate : guidance) {
+				if (compiled.size() >=
+				    LEVEL_METADATA_MAX_SWITCH_GUIDANCE_CANDIDATES)
+					break;
+				append_unique(candidate);
+			}
 		}
 		state_.progress.fired_triggers[source.trigger] = 1;
 		state_.progress.trigger_in_progress[source.trigger] = 0;
@@ -3007,6 +3360,7 @@ class dependency_planner
 	const route_query &query_;
 	const route_visibility_query &visibility_;
 	route_target_inventory targets_;
+	switch_guidance_graph switch_guidance_graph_;
 	bool allow_unresolved_triggers_;
 	dependency_state state_;
 };
@@ -3279,6 +3633,23 @@ bool project_step(
 	destination.switch_shot_quality = source.switch_shot_quality;
 	destination.switch_shot_incidence_cosine =
 	    source.switch_shot_incidence_cosine;
+	destination.switch_guidance_candidate_count = static_cast<int>(
+	    std::min(
+	        source.switch_guidance_candidates.size(),
+	        static_cast<std::size_t>(
+	            LEVEL_METADATA_MAX_SWITCH_GUIDANCE_CANDIDATES)));
+	for (int index = 0; index < destination.switch_guidance_candidate_count;
+	     ++index) {
+		const auto &candidate = source.switch_guidance_candidates[index];
+
+		destination.switch_guidance_candidate_seg[index] = candidate.segment;
+		for (int coordinate = 0; coordinate < 3; ++coordinate)
+			destination.switch_guidance_candidate_pos[index][coordinate] =
+			    candidate.position.valid ? candidate.position.value[coordinate] : 0;
+		destination.switch_guidance_candidate_quality[index] = candidate.quality;
+		destination.switch_guidance_candidate_incidence[index] =
+		    candidate.incidence_cosine;
+	}
 	destination.path_segment_count =
 	    static_cast<int>(source.path.segments.size());
 	destination.path_terminal_segment = source.path.terminal_segment;

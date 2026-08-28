@@ -763,13 +763,6 @@ static json serialize_level_metadata_route()
 			{ "live_reuse_attempts", analysis_cache.live_reuse_attempts },
 			{ "live_reuses", analysis_cache.live_reuses },
 			{ "live_fallbacks", analysis_cache.live_fallbacks },
-			{ "live_certifier_attempts", analysis_cache.live_certifier_attempts },
-			{ "live_certifier_successes", analysis_cache.live_certifier_successes },
-			{ "live_certifier_prepared_fallbacks", analysis_cache.live_certifier_prepared_fallbacks },
-			{ "live_certifier_failures", analysis_cache.live_certifier_failures },
-			{ "live_certifier_max_visited_segments", analysis_cache.live_certifier_max_visited_segments },
-			{ "live_certifier_max_evaluated_edges", analysis_cache.live_certifier_max_evaluated_edges },
-			{ "live_certifier_max_evaluated_actions", analysis_cache.live_certifier_max_evaluated_actions },
 			{ "live_reuse_total_us", analysis_cache.live_reuse_total_us },
 			{ "live_reuse_max_us", analysis_cache.live_reuse_max_us },
 			{ "live_reuse_sample_count", analysis_cache.live_reuse_sample_count },
@@ -802,6 +795,8 @@ static json serialize_level_metadata_route()
 		item["switch_shot_incidence_cosine"] =
 		    static_cast<double>(step->switch_shot_incidence_cosine) /
 		    LEVEL_METADATA_SHOT_COSINE_ONE;
+		item["switch_guidance_candidate_count"] =
+		    step->switch_guidance_candidate_count;
 		item["label"] = step->label;
 		item["seg"] = step->seg;
 		item["side"] = step->side;
@@ -856,6 +851,8 @@ static json serialize_guidebot_route_analysis()
 		item["switch_shot_incidence_cosine"] =
 		    static_cast<double>(step->switch_shot_incidence_cosine) /
 		    LEVEL_METADATA_SHOT_COSINE_ONE;
+		item["switch_guidance_candidate_count"] =
+		    step->switch_guidance_candidate_count;
 		item["label"] = step->label;
 		item["activation_pos"] = step->activation_pos_valid ? json::array({ step->activation_pos[0], step->activation_pos[1], step->activation_pos[2] }) : json(nullptr);
 		item["aim_pos"] = step->aim_pos_valid ? json::array({ step->aim_pos[0], step->aim_pos[1], step->aim_pos[2] }) : json(nullptr);
@@ -1063,10 +1060,14 @@ static json serialize_guidebot()
 			{ "deferred_refreshes", live_work.deferred_refreshes },
 			{ "retained_incumbents", live_work.retained_incumbents },
 			{ "deferred_without_incumbent", live_work.deferred_without_incumbent },
-			{ "certifier_ticks", live_work.certifier_ticks },
-			{ "certifier_deferred_ticks", live_work.certifier_deferred_ticks },
-			{ "certifier_completed_ticks", live_work.certifier_completed_ticks },
-			{ "certifier_overruns", live_work.certifier_overruns },
+			{ "route_ticks", live_work.route_ticks },
+			{ "deferred_ticks", live_work.deferred_ticks },
+			{ "completed_ticks", live_work.completed_ticks },
+			{ "tick_overruns", live_work.tick_overruns },
+			{ "compiled_selector_calls", live_work.compiled_selector_calls },
+			{ "compiled_selector_successes", live_work.compiled_selector_successes },
+			{ "compiled_selector_failures", live_work.compiled_selector_failures },
+			{ "compiled_selector_max_evaluated_actions", live_work.compiled_selector_max_evaluated_actions },
 			{ "pending_event_mask", live_work.pending_event_mask },
 			{ "pending", live_work.pending != 0 },
 			{ "reachability_cursor", live_work.reachability_cursor },
@@ -1080,8 +1081,6 @@ static json serialize_guidebot()
 			{ "refresh_overruns", live_work.refresh_overruns }
 		};
 	result["route_planner_source"] = live_plan_available ? "shared_cpp" : "unavailable";
-	result["route_live_certifier_enabled"] =
-	    level_metadata_get_live_certifier_enabled() != 0;
 	result["route_decision"] = route_decision_available
 	                               ? json{
 		                                 { "version", route_decision.version },

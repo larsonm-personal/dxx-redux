@@ -49,8 +49,8 @@
     {"action": "set_objective_overlay", "mode": "next", "post_delay_ms": 300},
     {"action": "introspect"},
     {"action": "assert", "expect": {
-        "automap.objective_connector_candidate_count": "1",
-        "automap.objective_connector_drawn_count": "1"
+        "automap.objective_connector_candidate_count": "0",
+        "automap.objective_connector_drawn_count": "0"
     }},
     {"action": "key", "key": "escape", "post_delay_ms": 100},
     {"action": "wait_for", "field": "automap_active", "value": "false", "timeout_ms": 5000},
@@ -62,7 +62,7 @@
         "guidebot.route_goal_active": "true",
         "guidebot.route_goal_activation_kind_name": "shoot_switch",
         "guidebot.route_goal_trigger": "7",
-        "guidebot.route_goal_seg": "303",
+        "guidebot.route_goal_seg": "304",
         "guidebot.route_goal_activation_matches_aim": "false",
         "guidebot.route_goal_target_matches_activation": "true"
     }},
@@ -83,13 +83,13 @@
     {"action": "meta_action", "id": 1042, "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
         "guidebot.route_goal_trigger": "7",
-        "guidebot.route_goal_path_endpoint_seg": "303",
+        "guidebot.route_goal_path_endpoint_seg": "304",
         "guidebot.route_goal_path_endpoint_matches_target": "true"
     }},
     {"action": "wait_for", "timeout_ms": 30000, "expect": {
         "guidebot.segment": {"ne": "20"},
         "guidebot.route_goal_trigger": "7",
-        "guidebot.route_goal_path_endpoint_seg": "303"
+        "guidebot.route_goal_path_endpoint_seg": "304"
     }},
     {"action": "log", "message": "=== TEST: Obsidian level 7 switch guidance -- PASS ==="}
 ]

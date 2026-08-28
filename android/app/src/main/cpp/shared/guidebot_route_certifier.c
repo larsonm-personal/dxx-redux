@@ -620,6 +620,184 @@ static int guidebot_step_usable(
 	return 1;
 }
 
+static void guidebot_select_compiled_switch_guidance(
+    const level_metadata_scan_view *view,
+    level_metadata_route_step *step,
+    guidebot_route_certifier_summary *summary)
+{
+	int distance[LEVEL_METADATA_MAX_SEGMENTS];
+	int queue[LEVEL_METADATA_MAX_SEGMENTS];
+	long long best_score = 0;
+	int best = -1;
+	int head = 0;
+	int tail = 0;
+	int segment;
+
+	if (step->activation_kind !=
+	        LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH ||
+	    step->switch_guidance_candidate_count <= 0 || !view->segment_child ||
+	    !guidebot_valid_segment(view, view->start_segment))
+		return;
+	for (segment = 0; segment < view->num_segments; ++segment)
+		distance[segment] = -1;
+	distance[view->start_segment] = 0;
+	queue[tail++] = view->start_segment;
+	while (head < tail) {
+		int side;
+
+		segment = queue[head++];
+		summary->visited_segments++;
+		for (side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+			const int child =
+			    view->segment_child(view->user, segment, side);
+
+			summary->evaluated_edges++;
+			if (!guidebot_valid_segment(view, child) ||
+			    distance[child] >= 0 ||
+			    !guidebot_route_side_passable_current(view, segment, side))
+				continue;
+			distance[child] = distance[segment] + 1;
+			queue[tail++] = child;
+		}
+	}
+	for (segment = 0;
+	     segment < step->switch_guidance_candidate_count &&
+	     segment < LEVEL_METADATA_MAX_SWITCH_GUIDANCE_CANDIDATES;
+	     ++segment) {
+		const int candidate_segment =
+		    step->switch_guidance_candidate_seg[segment];
+		const int quality =
+		    step->switch_guidance_candidate_quality[segment];
+		const int incidence =
+		    step->switch_guidance_candidate_incidence[segment];
+		long long score;
+
+		if (!guidebot_valid_segment(view, candidate_segment) ||
+		    distance[candidate_segment] < 0)
+			continue;
+		score = (long long) distance[candidate_segment] *
+		            LEVEL_METADATA_SHOT_COSINE_ONE +
+		        4LL * (LEVEL_METADATA_SHOT_COSINE_ONE - incidence);
+		if (quality == LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE)
+			score += 1LL << 40;
+		if (best >= 0 && score >= best_score)
+			continue;
+		best = segment;
+		best_score = score;
+	}
+	if (best < 0)
+		return;
+	step->seg = step->switch_guidance_candidate_seg[best];
+	step->path_terminal_segment = step->seg;
+	step->path_segment_count = distance[step->seg] + 1;
+	step->activation_pos_valid = 1;
+	memcpy(
+	    step->activation_pos, step->switch_guidance_candidate_pos[best],
+	    sizeof(step->activation_pos));
+	step->switch_shot_quality =
+	    step->switch_guidance_candidate_quality[best];
+	step->switch_shot_incidence_cosine =
+	    step->switch_guidance_candidate_incidence[best];
+	summary->reranked_firing_position = best != 0;
+}
+
+int guidebot_route_select_compiled_current_state(
+    const level_metadata_scan_view *view,
+    const level_metadata_state *compiled_state,
+    const route_planner_plan_summary *compiled_plan,
+    level_metadata_state *live_state,
+    route_planner_plan_summary *live_plan,
+    guidebot_route_validity_certificate *certificate,
+    guidebot_route_certifier_summary *summary)
+{
+	guidebot_route_certifier_summary local_summary;
+	int selected = -1;
+	int selected_segment = -1;
+	int step;
+
+	if (!view || !compiled_state || !compiled_plan || !live_state ||
+	    !live_plan || !certificate || compiled_state->route_step_count < 0 ||
+	    compiled_state->route_step_count > LEVEL_METADATA_MAX_ROUTE_STEPS)
+		return GUIDEBOT_ROUTE_CERTIFIER_INVALID;
+	memset(&local_summary, 0, sizeof(local_summary));
+	local_summary.selected_step = -1;
+	local_summary.selected_segment = -1;
+	local_summary.blocking_step = -1;
+	local_summary.blocking_segment = -1;
+	*live_state = *compiled_state;
+	*live_plan = *compiled_plan;
+	live_plan->first_pending_step = -1;
+	live_plan->first_pending_path_segment_count = 0;
+	live_plan->first_pending_path_terminal_segment = -1;
+	live_plan->partial_frontier_segment = -1;
+	memset(certificate, 0, sizeof(*certificate));
+	certificate->status = GUIDEBOT_ROUTE_CERTIFICATE_INVALID;
+	certificate->source_trigger = -1;
+	certificate->source_wall = -1;
+	certificate->source_object = -1;
+	certificate->frontier_segment = -1;
+
+	for (step = 0; step < live_state->route_step_count; ++step) {
+		level_metadata_route_step *candidate = &live_state->route_steps[step];
+
+		if (candidate->kind == LEVEL_METADATA_ROUTE_START ||
+		    !level_metadata_route_step_required_by_world_state(view, candidate))
+			continue;
+		if (step < 64)
+			local_summary.required_steps_low |= 1ULL << step;
+		local_summary.evaluated_actions++;
+		if (!guidebot_step_usable(view, candidate)) {
+			local_summary.rejected_actions++;
+			local_summary.blocking_step = step;
+			local_summary.blocking_reason =
+			    GUIDEBOT_ROUTE_CERTIFIER_REJECTION_INVALID_TARGET;
+			break;
+		}
+		guidebot_select_compiled_switch_guidance(
+		    view, candidate, &local_summary);
+		selected_segment = guidebot_step_target_segment(view, candidate);
+		if ((candidate->kind == LEVEL_METADATA_ROUTE_KEY ||
+		     candidate->kind == LEVEL_METADATA_ROUTE_REACTOR ||
+		     candidate->kind == LEVEL_METADATA_ROUTE_BOSS) &&
+		    guidebot_valid_segment(view, candidate->seg))
+			selected_segment = candidate->seg;
+		if (!guidebot_valid_segment(view, selected_segment)) {
+			local_summary.rejected_actions++;
+			local_summary.blocking_step = step;
+			local_summary.blocking_reason =
+			    GUIDEBOT_ROUTE_CERTIFIER_REJECTION_INVALID_TARGET;
+			break;
+		}
+		selected = step;
+		break;
+	}
+	if (selected < 0 && local_summary.blocking_step >= 0) {
+		if (summary)
+			*summary = local_summary;
+		return GUIDEBOT_ROUTE_CERTIFIER_INVALID;
+	}
+	if (selected >= 0) {
+		const level_metadata_route_step *pending =
+		    &live_state->route_steps[selected];
+
+		live_plan->first_pending_step = selected;
+		live_plan->first_pending_path_segment_count =
+		    pending->path_segment_count > 0 ? pending->path_segment_count : 1;
+		live_plan->first_pending_path_terminal_segment = selected_segment;
+		certificate->source_trigger = pending->trigger_num;
+		certificate->source_wall = pending->wall_num;
+		certificate->source_object = pending->key_carrier_objnum;
+		certificate->frontier_segment = selected_segment;
+	} else
+		live_state->route_status = LEVEL_METADATA_ROUTE_OK;
+	certificate->status = GUIDEBOT_ROUTE_CERTIFICATE_VALID;
+	local_summary.selected_step = selected;
+	local_summary.selected_segment = selected_segment;
+	if (summary)
+		*summary = local_summary;
+	return GUIDEBOT_ROUTE_CERTIFIER_VALID;
+}
+
 static long double guidebot_position_distance_squared(
     const int left[3],
     const int right[3])
