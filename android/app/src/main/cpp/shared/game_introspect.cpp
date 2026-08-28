@@ -1049,11 +1049,36 @@ static json serialize_guidebot()
 		{ "audit_only_discoveries", escort_get_route_audit_only_discovery_count() },
 		{ "work_total", escort_get_route_audit_work_total() },
 		{ "work_max", escort_get_route_audit_work_max() },
+		{ "deferred", escort_get_route_audit_deferred_count() },
 		{ "certificate_checks", escort_get_route_certificate_check_count() },
 		{ "certificate_failures", escort_get_route_certificate_failure_count() },
 		{ "certificate_work_total", escort_get_route_certificate_work_total() },
 		{ "certificate_work_max", escort_get_route_certificate_work_max() }
 	};
+	level_metadata_live_work_summary live_work{};
+	if (level_metadata_get_live_work_summary(&live_work))
+		result["route_live_work"] = {
+			{ "full_plan_calls", live_work.full_plan_calls },
+			{ "blocked_full_plan_calls", live_work.blocked_full_plan_calls },
+			{ "deferred_refreshes", live_work.deferred_refreshes },
+			{ "retained_incumbents", live_work.retained_incumbents },
+			{ "deferred_without_incumbent", live_work.deferred_without_incumbent },
+			{ "certifier_ticks", live_work.certifier_ticks },
+			{ "certifier_deferred_ticks", live_work.certifier_deferred_ticks },
+			{ "certifier_completed_ticks", live_work.certifier_completed_ticks },
+			{ "certifier_overruns", live_work.certifier_overruns },
+			{ "pending_event_mask", live_work.pending_event_mask },
+			{ "pending", live_work.pending != 0 },
+			{ "reachability_cursor", live_work.reachability_cursor },
+			{ "firing_candidate_cursor", live_work.firing_candidate_cursor },
+			{ "firing_candidate_pass", live_work.firing_candidate_pass },
+			{ "unexplored_candidate_cursor", live_work.unexplored_candidate_cursor },
+			{ "last_tick_us", live_work.last_tick_us },
+			{ "max_tick_us", live_work.max_tick_us },
+			{ "last_refresh_us", live_work.last_refresh_us },
+			{ "max_refresh_us", live_work.max_refresh_us },
+			{ "refresh_overruns", live_work.refresh_overruns }
+		};
 	result["route_planner_source"] = live_plan_available ? "shared_cpp" : "unavailable";
 	result["route_live_certifier_enabled"] =
 	    level_metadata_get_live_certifier_enabled() != 0;

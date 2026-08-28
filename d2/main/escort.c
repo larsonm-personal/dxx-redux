@@ -397,6 +397,7 @@ void init_buddy_for_level(void)
 	Escort_route_automap_generation = 0;
 	Escort_route_pending_event_mask = 0;
 	Escort_route_pending_audit_mask = 0;
+	Escort_route_deferred_live_event_mask = 0;
 	Escort_route_event_notification_count = 0;
 	Escort_route_notification_coalesced_count = 0;
 	Escort_route_redundant_dirty_domain_count = 0;
@@ -412,6 +413,7 @@ void init_buddy_for_level(void)
 	Escort_route_audit_only_discovery_count = 0;
 	Escort_route_audit_work_total = 0;
 	Escort_route_audit_work_max = 0;
+	Escort_route_audit_deferred_count = 0;
 	Escort_route_certificate_check_count = 0;
 	Escort_route_certificate_failure_count = 0;
 	Escort_route_certificate_work_total = 0;
@@ -421,6 +423,8 @@ void init_buddy_for_level(void)
 	Escort_route_invalid_path_stopped_count = 0;
 	Escort_route_audit_domain_cursor = 0;
 	Escort_route_audit_next_time = 0;
+	Escort_route_last_audit_rescan_time = 0;
+	Escort_route_last_audit_rescan_time_valid = 0;
 	Escort_route_completion_check_time = 0;
 #ifdef INTROSPECT_ON
 	Escort_route_notifications_suppressed = 0;
@@ -1681,8 +1685,18 @@ void escort_create_path_to_goal(object *objp)
 			goal_seg = Objects[Escort_goal_index].segnum;
 	} else {
 #ifdef __ANDROID__
-		if (Escort_route_goal.active) {
-			goal_seg = Escort_route_goal.target_seg;
+	if (Escort_route_goal.active) {
+		if (Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_BOSS &&
+		    Escort_route_goal.objective_object >= 0 &&
+		    Escort_route_goal.objective_object <= Highest_object_index &&
+		    Objects[Escort_route_goal.objective_object].type == OBJ_ROBOT &&
+		    Robot_info[Objects[Escort_route_goal.objective_object].id].boss_flag) {
+			Escort_route_goal.target_seg =
+			    Objects[Escort_route_goal.objective_object].segnum;
+			Escort_route_goal.objective_seg =
+			    Escort_route_goal.target_seg;
+		}
+		goal_seg = Escort_route_goal.target_seg;
 			Escort_goal_index = goal_seg;
 			using_route_goal = 1;
 		} else
@@ -2716,11 +2730,9 @@ void escort_note_boss_teleported(int objnum)
 	if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player != Player_num)
 		return;
 #endif
-	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
-	escort_route_clear_goal();
-	escort_route_note_replan("boss_teleported");
-	escort_route_refresh_metadata();
-	escort_route_next_goal();
+	Escort_route_goal.target_seg = Objects[objnum].segnum;
+	Escort_route_goal.objective_seg = Objects[objnum].segnum;
+	Escort_last_path_created = 0;
 	Escort_route_boss_move_invalidation_count++;
 #else
 	(void) objnum;

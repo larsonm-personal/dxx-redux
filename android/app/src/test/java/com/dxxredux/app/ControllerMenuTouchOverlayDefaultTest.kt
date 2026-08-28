@@ -7,8 +7,8 @@ import org.junit.Test
 
 class ControllerMenuTouchOverlayDefaultTest {
     @Test
-    fun touchDevicesDefaultToAdvancedPreset() {
-        assertEquals(DEFAULT_TOUCH_PRESET_NAME, defaultTouchPresetName(hasTouchscreen = true))
+    fun touchDevicesDefaultToClawPreset() {
+        assertEquals("Claw", defaultTouchPresetName(hasTouchscreen = true))
     }
 
     @Test
@@ -62,4 +62,5 @@ class ControllerMenuTouchOverlayDefaultTest {
         assertTrue(isControllerMenuOnlyTouchLayout(TouchLayout(name = CONTROLLER_MENU_TOUCH_PRESET_NAME)))
         assertFalse(isControllerMenuOnlyTouchLayout(TouchLayout(name = DEFAULT_TOUCH_PRESET_NAME)))
     }
+
 }

@@ -29,6 +29,14 @@ class RouteMetadataSchedulingTest {
     }
 
     @Test
+    fun automapBoostOnlyAppliesDuringInitialCurrentLevelCalculation() {
+        assertEquals(10, RouteMetadataInGameCpuPolicy.dutyPercent(false, false))
+        assertEquals(10, RouteMetadataInGameCpuPolicy.dutyPercent(false, true))
+        assertEquals(10, RouteMetadataInGameCpuPolicy.dutyPercent(true, false))
+        assertEquals(100, RouteMetadataInGameCpuPolicy.dutyPercent(true, true))
+    }
+
+    @Test
     fun completeCurrentLevelSkipsDirectlyToNextWork() {
         val complete = RouteMetadataCurrentWork.forReadiness("complete")
         val partial = RouteMetadataCurrentWork.forReadiness("next_ready")

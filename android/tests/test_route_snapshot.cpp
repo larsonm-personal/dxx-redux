@@ -1571,6 +1571,35 @@ int main()
 			assert(domain_hash == expected_domain_hashes[domain]);
 		assert(work_units > 0);
 	}
+	unsigned long long stationary_boss_hash = 0;
+	unsigned long long moved_boss_hash = 0;
+	unsigned long long dead_boss_hash = 0;
+	assert(route_snapshot_build_domain_hash(
+	    &view, ROUTE_SNAPSHOT_DOMAIN_PROGRESSION_OBJECTS,
+	    &stationary_boss_hash, nullptr));
+	level.object_segment = 0;
+	view = make_view(level);
+	assert(route_snapshot_build_domain_hash(
+	    &view, ROUTE_SNAPSHOT_DOMAIN_PROGRESSION_OBJECTS,
+	    &moved_boss_hash, nullptr));
+	assert(moved_boss_hash == stationary_boss_hash);
+	for (int audit = 0; audit < 100; ++audit) {
+		level.object_segment = audit & 1;
+		view = make_view(level);
+		assert(route_snapshot_build_domain_hash(
+		    &view, ROUTE_SNAPSHOT_DOMAIN_PROGRESSION_OBJECTS,
+		    &moved_boss_hash, nullptr));
+		assert(moved_boss_hash == stationary_boss_hash);
+	}
+	level.object_flags |= view.obj_flag_should_be_dead;
+	view = make_view(level);
+	assert(route_snapshot_build_domain_hash(
+	    &view, ROUTE_SNAPSHOT_DOMAIN_PROGRESSION_OBJECTS,
+	    &dead_boss_hash, nullptr));
+	assert(dead_boss_hash != stationary_boss_hash);
+	level.object_segment = 1;
+	level.object_flags = 82;
+	view = make_view(level);
 	test_level wider_navigator = level;
 	wider_navigator.navigator_radius++;
 	auto wider_navigator_view = make_view(wider_navigator);

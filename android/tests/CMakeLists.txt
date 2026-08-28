@@ -364,3 +364,7 @@ foreach(test_target IN LISTS DXX_HOST_TEST_TARGETS)
     add_test(NAME ${test_target} COMMAND ${test_target})
     set_tests_properties(${test_target} PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 endforeach()
+
+add_test(NAME test_guidebot_calculation_benchmark COMMAND test_guidebot_route_certifier --benchmark)
+set_tests_properties(test_guidebot_calculation_benchmark PROPERTIES WORKING_DIRECTORY
+                                                                    "${CMAKE_CURRENT_BINARY_DIR}")

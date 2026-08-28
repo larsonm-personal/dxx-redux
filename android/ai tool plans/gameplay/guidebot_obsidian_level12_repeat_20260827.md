@@ -155,3 +155,47 @@ projectile check and is marked `confirmed_steep`, with incidence cosine
 0.242523.  The focused Obsidian regeneration, scoped code-quality pass, Windows
 D1 and D2 builds, all 43 native tests, and Android debug builds for arm64-v8a,
 armeabi-v7a, and x86_64 pass.
+
+## 17:43 Navigation Stall Investigation
+
+- [x] Locate and verify the supplied retest log and identify the level-12
+  switch-navigation interval.
+- [x] Correlate slowdown detector events with route planning, certification,
+  shot validation, and physical path recalculation logs.
+- [x] Trace any repeated expensive operation to its owning code and determine
+  whether the existing recalculation limiter covers it.
+- [x] Report the supported cause and the smallest safe correction, without
+  changing behavior during this diagnostic tranche.
+
+The requested nested `debuglog` path does not exist; the supplied log is
+`C:\Users\first last\Downloads\debuglog_20260827_174314.txt`.  It records one
+definite 2.55-second between-frame pause at 17:43:38 and a later 46.53-second
+period with no game-window draw frames.  The latter cannot be classified as a
+game-thread stall from this category set because a menu or automap window also
+stops these frame samples.
+
+After the switch route becomes active, the stronger evidence is the repeating
+`route_full_planner` sequence every 1.2 to 2.0 seconds.  Each `state_audit`
+adoption reports `previous_certificate=1`, normally retains the same segment
+503 guidance, and still recomputes the complete semantic route.  At 17:45:14
+one rerun changes only the context-selected firing segment from 503 to 504.
+The physical path recalculation limiter does not cover these semantic audit
+replans.
+
+Obsidian level 12 has a future boss objective.  The progression-object audit
+fingerprint includes the segment and exact position of bosses, so the moving
+boss continuously invalidates the route snapshot while Guide-Bot is pursuing
+the unrelated first switch.  Exact switch-ray sampling made each unnecessary
+full replan more expensive, exposing the pre-existing invalidation flaw.
+
+The safe correction is to make boss movement non-semantic for whole-route
+audits, while retaining boss alive/dead state and handling current-boss
+tracking through the live objective.  Audit-only changes should also retain a
+still-valid current certificate and defer full replanning until a discrete
+progression event or certificate failure.  A separate low-rate limiter for
+audit-triggered semantic replans should remain as containment; the existing
+physical-path limiter is the wrong layer.
+
+Main-thread stall containment now takes priority over this invalidation fix.
+Implementation order and acceptance criteria are tracked in
+`guidebot_game_thread_budget_20260827.md`.

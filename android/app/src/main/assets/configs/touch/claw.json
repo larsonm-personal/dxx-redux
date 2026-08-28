@@ -1,110 +1,118 @@
 {
   "type": "touch_layout",
-  "version": 2,
+  "version": 11,
   "name": "Claw",
-  "globalOpacity": 0.7,
+  "globalOpacity": 0.699999988079071,
   "sticks": [
     {
       "type": "analog_stick",
       "id": "move",
-      "x": 15.0,
-      "y": 80.0,
-      "size": 1.0,
-      "opacity": 0.7,
-      "axisX": "Left Stick X",
-      "axisY": "Left Stick Y",
+      "x": 29.03537368774414,
+      "y": 30.779264450073242,
+      "size": 1,
+      "opacity": 0.699999988079071,
+      "axisX": "Bank",
+      "axisY": "Slide UD",
       "invertX": false,
-      "invertY": false,
-      "deadzone": 15,
+      "invertY": true,
+      "deadzone": 0,
       "responseCurve": "LINEAR",
-      "exponent": 2.0,
-      "sensitivity": 1.0,
+      "exponent": 2,
+      "sensitivity": 1,
+      "sensitivityX": 1,
+      "sensitivityY": 1,
       "floating": true,
-      "floatingZone": { "left": 0.0, "top": 40.0, "right": 40.0, "bottom": 100.0 },
+      "floatingZone": {
+        "left": 19.744993209838867,
+        "top": 0,
+        "right": 40,
+        "bottom": 59.6356315612793
+      },
       "haptic": true,
-      "doubleTapBinding": "Fire Secondary"
+      "doubleTapBinding": "Toggle Bomb"
     },
     {
       "type": "analog_stick",
       "id": "look",
-      "x": 85.0,
-      "y": 80.0,
-      "size": 1.0,
-      "opacity": 0.7,
+      "x": 9.398295402526855,
+      "y": 29.069137573242188,
+      "size": 1,
+      "opacity": 0.699999988079071,
+      "axisX": "Left Stick X",
+      "axisY": "Left Stick Y",
+      "invertX": false,
+      "invertY": false,
+      "deadzone": 0,
+      "responseCurve": "LINEAR",
+      "exponent": 2.2669248580932617,
+      "sensitivity": 1,
+      "sensitivityX": 1.2660472393035889,
+      "sensitivityY": 1.230320930480957,
+      "floating": true,
+      "floatingZone": {
+        "left": 0,
+        "top": 0,
+        "right": 19.973289489746094,
+        "bottom": 60.329254150390625
+      },
+      "haptic": true,
+      "doubleTapBinding": "Fire Secondary",
+      "extremeActions": [
+        {
+          "enabled": true,
+          "axis": "Y",
+          "direction": "POSITIVE",
+          "threshold": 1.5,
+          "releaseThreshold": 1.350000023841858,
+          "binding": "Afterburner",
+          "mode": "HOLD"
+        }
+      ]
+    },
+    {
+      "type": "analog_stick",
+      "id": "stick_2",
+      "x": 79.1548080444336,
+      "y": 27.078439712524414,
+      "size": 1,
+      "opacity": 0.699999988079071,
       "axisX": "Right Stick X",
       "axisY": "Right Stick Y",
       "invertX": false,
       "invertY": true,
-      "deadzone": 15,
+      "deadzone": 0,
       "responseCurve": "EXPONENTIAL",
-      "exponent": 2.0,
-      "sensitivity": 1.0,
+      "exponent": 1.039220929145813,
+      "sensitivity": 1,
+      "sensitivityX": 1.3980566263198853,
+      "sensitivityY": 1.4215198755264282,
       "floating": true,
-      "floatingZone": { "left": 60.0, "top": 40.0, "right": 100.0, "bottom": 100.0 },
+      "floatingZone": {
+        "left": 56.00889587402344,
+        "top": 0,
+        "right": 100,
+        "bottom": 60.7908935546875
+      },
       "haptic": true,
-      "doubleTapBinding": "Fire Primary"
+      "mouseMode": true,
+      "mouseExponential": true,
+      "mouseExponentialMax": 3,
+      "mouseEdgeContinuousMovement": true,
+      "mouseEdgeRegionPct": 14.136204719543457,
+      "mouseScreenEdgeZonePct": 7,
+      "mouseEdgeMaxRatePct": 100,
+      "doubleTapBinding": "Fire Primary",
+      "doubleTapMode": "HOLD_FIRE"
     }
   ],
   "buttons": [
     {
       "type": "button",
-      "id": "fire1",
-      "x": 90.0,
-      "y": 12.0,
-      "size": 1.0,
-      "opacity": 0.7,
-      "binding": "Fire Primary",
-      "label": "1",
-      "shape": "CIRCLE",
-      "toggle": false,
-      "haptic": true
-    },
-    {
-      "type": "button",
-      "id": "fire2",
-      "x": 80.0,
-      "y": 12.0,
-      "size": 1.0,
-      "opacity": 0.7,
-      "binding": "Fire Secondary",
-      "label": "2",
-      "shape": "CIRCLE",
-      "toggle": false,
-      "haptic": true
-    },
-    {
-      "type": "button",
-      "id": "slide",
-      "x": 10.0,
-      "y": 12.0,
-      "size": 1.0,
-      "opacity": 0.7,
-      "binding": "Slide On",
-      "label": "SL",
-      "shape": "CIRCLE",
-      "toggle": true,
-      "haptic": true
-    },
-    {
-      "type": "button",
-      "id": "afterburner",
-      "x": 20.0,
-      "y": 12.0,
-      "size": 1.0,
-      "opacity": 0.7,
-      "binding": "Afterburner",
-      "label": "AB",
-      "shape": "CIRCLE",
-      "toggle": true,
-      "haptic": true
-    },
-    {
-      "type": "button",
       "id": "map",
-      "x": 50.0,
-      "y": 5.0,
-      "size": 1.4,
-      "opacity": 0.7,
+      "x": 5.567464351654053,
+      "y": 84.88591003417969,
+      "size": 1.399999976158142,
+      "opacity": 0.699999988079071,
       "binding": "Automap",
       "label": "MAP",
       "shape": "CIRCLE",
@@ -113,16 +121,65 @@
     },
     {
       "type": "button",
-      "id": "gyro_recenter",
-      "x": 50.0,
-      "y": 92.0,
-      "size": 0.7,
-      "opacity": 0.7,
-      "binding": "Gyro Recenter",
-      "longPressEnabled": true,
-      "longPressBinding": "Meta: Gyro On/Off",
-      "longPressDurationMs": 500,
-      "label": "GR",
+      "id": "btn_1",
+      "x": 14.736032485961914,
+      "y": 84.87553405761719,
+      "size": 1.4289437532424927,
+      "opacity": 0.699999988079071,
+      "binding": "Fire Flare",
+      "label": "FLR",
+      "shape": "CIRCLE",
+      "toggle": false,
+      "haptic": true
+    },
+    {
+      "type": "button",
+      "id": "btn_2",
+      "x": 31.310176849365234,
+      "y": 82.74771881103516,
+      "size": 1,
+      "opacity": 0.699999988079071,
+      "binding": "Meta: Rewind",
+      "label": "RW",
+      "shape": "CIRCLE",
+      "toggle": false,
+      "haptic": true
+    },
+    {
+      "type": "button",
+      "id": "btn_3",
+      "x": 23.723072052001953,
+      "y": 82.83344268798828,
+      "size": 1,
+      "opacity": 0.699999988079071,
+      "binding": "Energy->Shield",
+      "label": "E-S",
+      "shape": "CIRCLE",
+      "toggle": false,
+      "haptic": true
+    },
+    {
+      "type": "button",
+      "id": "btn_4",
+      "x": 37.38686752319336,
+      "y": 71.778076171875,
+      "size": 1,
+      "opacity": 0.699999988079071,
+      "binding": "Meta: Quick Save",
+      "label": "save",
+      "shape": "CIRCLE",
+      "toggle": false,
+      "haptic": true
+    },
+    {
+      "type": "button",
+      "id": "btn_5",
+      "x": 37.45186233520508,
+      "y": 88.6786880493164,
+      "size": 1,
+      "opacity": 0.699999988079071,
+      "binding": "Meta: Quick Load",
+      "label": "load",
       "shape": "CIRCLE",
       "toggle": false,
       "haptic": true
@@ -133,73 +190,230 @@
     {
       "type": "radial_menu",
       "id": "Guide",
-      "x": 30.0,
-      "y": 5.0,
-      "size": 1.0,
-      "opacity": 0.7,
-      "haptic": true,
+      "x": 49.254310607910156,
+      "y": 63.633880615234375,
+      "size": 1,
+      "ringSize": 1,
+      "opacity": 0.699999988079071,
       "segments": [
-        { "label": "Energy", "binding": "Meta: GB: Find Energy", "iconRes": "" },
-        { "label": "Enrg Ctr", "binding": "Meta: GB: Find Reactor", "iconRes": "" },
-        { "label": "Shield", "binding": "Meta: GB: Find Shield", "iconRes": "" },
-        { "label": "Powerup", "binding": "Meta: GB: Find Powerup", "iconRes": "" },
-        { "label": "Robot", "binding": "Meta: GB: Find Robot", "iconRes": "" },
-        { "label": "Hostage", "binding": "Meta: GB: Find Hostage", "iconRes": "" },
-        { "label": "Scram!", "binding": "Meta: GB: Scram", "iconRes": "" },
-        { "label": "Items", "binding": "Meta: GB: Find Items", "iconRes": "" },
-        { "label": "Exit", "binding": "Meta: GB: Find Exit", "iconRes": "" },
-        { "label": "Secret", "binding": "Meta: GB: Find Secret", "iconRes": "" },
-        { "label": "Warp to Me", "binding": "Meta: GB: Warp to Me", "iconRes": "" },
-        { "label": "Unexplored", "binding": "Meta: GB: Unexplored", "iconRes": "" },
-        { "label": "Next", "binding": "Meta: GB: Next Goal", "iconRes": "" }
+        {
+          "label": "Energy",
+          "binding": "Meta: GB: Find Energy",
+          "iconRes": ""
+        },
+        {
+          "label": "Enrg Ctr",
+          "binding": "Meta: GB: Find Reactor",
+          "iconRes": ""
+        },
+        {
+          "label": "Shield",
+          "binding": "Meta: GB: Find Shield",
+          "iconRes": ""
+        },
+        {
+          "label": "Powerup",
+          "binding": "Meta: GB: Find Powerup",
+          "iconRes": ""
+        },
+        {
+          "label": "Robot",
+          "binding": "Meta: GB: Find Robot",
+          "iconRes": ""
+        },
+        {
+          "label": "Hostage",
+          "binding": "Meta: GB: Find Hostage",
+          "iconRes": ""
+        },
+        {
+          "label": "Scram!",
+          "binding": "Meta: GB: Scram",
+          "iconRes": ""
+        },
+        {
+          "label": "Items",
+          "binding": "Meta: GB: Find Items",
+          "iconRes": ""
+        },
+        {
+          "label": "Exit",
+          "binding": "Meta: GB: Find Exit",
+          "iconRes": ""
+        },
+        {
+          "label": "Secret",
+          "binding": "Meta: GB: Find Secret",
+          "iconRes": ""
+        },
+        {
+          "label": "Warp to Me",
+          "binding": "Meta: GB: Warp to Me",
+          "iconRes": ""
+        },
+        {
+          "label": "Unexplored",
+          "binding": "Meta: GB: Unexplored",
+          "iconRes": ""
+        },
+        {
+          "label": "Next",
+          "binding": "Meta: GB: Next Goal",
+          "iconRes": ""
+        }
       ],
-      "centerLabel": "",
-      "centerBinding": -1
+      "haptic": true,
+      "presentation": "SCROLL_STRIP",
+      "stripOrientation": "VERTICAL",
+      "stripDragSpanWidthPct": 24.018718719482422,
+      "stripLabelAngleDeg": 0,
+      "stripSelectedScale": 2.5999999046325684,
+      "stripCardScale": 1,
+      "stripRowOffset": "ABOVE_LEFT"
     },
     {
       "type": "radial_menu",
       "id": "PriWpn",
-      "x": 50.0,
-      "y": 5.0,
-      "size": 1.0,
-      "opacity": 0.7,
-      "haptic": true,
+      "x": 89.03182983398438,
+      "y": 89.49766540527344,
+      "size": 1,
+      "ringSize": 1,
+      "opacity": 0.699999988079071,
       "segments": [
-        { "label": "Laser", "binding": "KEYCODE_1", "iconRes": "", "wpnIdx": 0 },
-        { "label": "Vulcan", "binding": "KEYCODE_2", "iconRes": "", "wpnIdx": 1 },
-        { "label": "Spread", "binding": "KEYCODE_3", "iconRes": "", "wpnIdx": 2 },
-        { "label": "Plasma", "binding": "KEYCODE_4", "iconRes": "", "wpnIdx": 3 },
-        { "label": "Fusion", "binding": "KEYCODE_5", "iconRes": "", "wpnIdx": 4 }
-      ]
+        {
+          "label": "Laser",
+          "binding": "Slide Up",
+          "iconRes": "",
+          "wpnIdx": 0
+        },
+        {
+          "label": "Vulcan",
+          "binding": "Slide Down",
+          "iconRes": "",
+          "wpnIdx": 1
+        },
+        {
+          "label": "Spread",
+          "binding": "Bank On",
+          "iconRes": "",
+          "wpnIdx": 2
+        },
+        {
+          "label": "Plasma",
+          "binding": "Bank Left",
+          "iconRes": "",
+          "wpnIdx": 3
+        },
+        {
+          "label": "Fusion",
+          "binding": "Bank Right",
+          "iconRes": "",
+          "wpnIdx": 4
+        }
+      ],
+      "haptic": true,
+      "presentation": "WHEEL",
+      "stripOrientation": "HORIZONTAL",
+      "stripDragSpanWidthPct": 20,
+      "stripLabelAngleDeg": 0,
+      "stripSelectedScale": 2.5999999046325684,
+      "stripCardScale": 1,
+      "stripRowOffset": "ABOVE_LEFT"
     },
     {
       "type": "radial_menu",
       "id": "SecWpn",
-      "x": 70.0,
-      "y": 5.0,
-      "size": 1.0,
-      "opacity": 0.7,
-      "haptic": true,
+      "x": 66.66519927978516,
+      "y": 85.80615234375,
+      "size": 1,
+      "ringSize": 1,
+      "opacity": 0.699999988079071,
       "segments": [
-        { "label": "Concsn", "binding": "KEYCODE_6", "iconRes": "", "wpnIdx": 0 },
-        { "label": "Homing", "binding": "KEYCODE_7", "iconRes": "", "wpnIdx": 1 },
-        { "label": "Proxim", "binding": "KEYCODE_8", "iconRes": "", "wpnIdx": 2 },
-        { "label": "Smart", "binding": "KEYCODE_9", "iconRes": "", "wpnIdx": 3 },
-        { "label": "Mega", "binding": "KEYCODE_0", "iconRes": "", "wpnIdx": 4 }
-      ]
+        {
+          "label": "Concsn",
+          "binding": "KEYCODE_6",
+          "iconRes": "",
+          "wpnIdx": 0
+        },
+        {
+          "label": "Homing",
+          "binding": "KEYCODE_7",
+          "iconRes": "",
+          "wpnIdx": 1
+        },
+        {
+          "label": "Proxim",
+          "binding": "KEYCODE_8",
+          "iconRes": "",
+          "wpnIdx": 2
+        },
+        {
+          "label": "Smart",
+          "binding": "KEYCODE_9",
+          "iconRes": "",
+          "wpnIdx": 3
+        },
+        {
+          "label": "Mega",
+          "binding": "Slide Right",
+          "iconRes": "",
+          "wpnIdx": 4
+        }
+      ],
+      "haptic": true,
+      "presentation": "WHEEL",
+      "stripOrientation": "HORIZONTAL",
+      "stripDragSpanWidthPct": 20,
+      "stripLabelAngleDeg": 0,
+      "stripSelectedScale": 2.5999999046325684,
+      "stripCardScale": 1,
+      "stripRowOffset": "ABOVE_LEFT"
     }
   ],
   "dpads": [],
   "gyro": {
-    "enabled": true,
+    "enabled": false,
     "activation": "TOUCH_STICK",
-    "sensitivityX": 3.0,
-    "sensitivityY": 3.0,
+    "mode": "ABSOLUTE",
     "invertX": false,
     "invertY": true,
     "invertZ": true,
     "axisX": "Right Stick X",
     "axisY": "Right Stick Y",
-    "deadzone": 0.1
+    "axisZ": -1,
+    "deadzone": 0.22935780882835388,
+    "deadzoneX": 0.22935780882835388,
+    "deadzoneY": 0.22935780882835388,
+    "deadzoneZ": 0.6000000238418579,
+    "maxAngleX": 0.4359999895095825,
+    "maxAngleY": 0.4359999895095825,
+    "maxAngleZ": 0.4359999895095825
+  },
+  "diagnostics": [
+    {
+      "type": "diagnostic",
+      "id": "diag_0",
+      "x": 49.064117431640625,
+      "y": 81.24696350097656,
+      "size": 1,
+      "opacity": 0.699999988079071,
+      "diagType": "SETTINGS"
+    },
+    {
+      "type": "diagnostic",
+      "id": "diag_1",
+      "x": 44.48223114013672,
+      "y": 7.6442461013793945,
+      "size": 1,
+      "opacity": 0.699999988079071,
+      "diagType": "MUSIC"
+    }
+  ],
+  "moreActions": {
+    "type": "more_actions",
+    "x": 48.60746765136719,
+    "y": 93.44257354736328,
+    "size": 1,
+    "opacity": 0.699999988079071
   }
 }

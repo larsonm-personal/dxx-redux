@@ -35,6 +35,30 @@ internal object RouteMetadataCpuPolicy {
         if (computeFaster) COMPUTE_FASTER_DUTY_PERCENT else LAUNCHER_VISIBLE_DUTY_PERCENT
 }
 
+internal object RouteMetadataInGameCpuPolicy {
+    private const val CONTROL_FILENAME = "route_metadata_ingame_cpu_duty"
+    const val AUTOMAP_DUTY_PERCENT = 100
+
+    fun dutyPercent(
+        currentLevelCalculating: Boolean,
+        automapOpen: Boolean,
+    ): Int =
+        if (currentLevelCalculating && automapOpen) {
+            AUTOMAP_DUTY_PERCENT
+        } else {
+            RouteMetadataPriority.ACTIVE.cpuDutyPercent
+        }
+
+    fun controlFile(filesDir: File): File = File(filesDir, CONTROL_FILENAME)
+
+    fun publish(
+        filesDir: File,
+        dutyPercent: Int,
+    ) {
+        AtomicFilePublication.writeUtf8(controlFile(filesDir), "${dutyPercent.coerceIn(1, 100)}\n")
+    }
+}
+
 internal object RouteMetadataPreemption {
     fun shouldPreempt(
         running: RouteMetadataPriority?,

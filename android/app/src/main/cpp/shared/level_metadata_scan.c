@@ -131,6 +131,8 @@ static int level_metadata_route_wall_passable(
 	flags = view->wall_flags(view->user, wall);
 	return type == view->wall_type_open ||
 	       (flags & view->wall_flag_door_opened) != 0 ||
+	       (view->wall_is_opening &&
+	        view->wall_is_opening(view->user, wall)) ||
 	       (view->side_is_flyable && segment >= 0 && side >= 0 &&
 	        view->side_is_flyable(view->user, segment, side));
 }
@@ -153,6 +155,12 @@ int level_metadata_route_step_required_by_world_state(
 		case LEVEL_METADATA_ROUTE_BOSS:
 			return view->initial_control_center_destroyed == 0;
 		case LEVEL_METADATA_ROUTE_TRIGGER:
+			if (step->trigger_num >= 0 &&
+			    step->trigger_num < view->num_triggers &&
+			    view->trigger_flags &&
+			    (view->trigger_flags(view->user, step->trigger_num) &
+			     view->trigger_flag_disabled) != 0)
+				return 0;
 			if (step->activation_kind ==
 			        LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH &&
 			    step->wall_num >= 0 && step->wall_num < view->num_walls &&

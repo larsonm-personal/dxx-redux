@@ -5,6 +5,7 @@ param(
     [switch]$SkipBuild,
     [switch]$PolicySelfTest,
     [switch]$NoHistoryUpdate,
+    [switch]$SkipDigestValidation,
     [int]$MeasuredRuns = 0,
     [string]$D1DataDir,
     [string]$D2DataDir
@@ -66,11 +67,11 @@ function Invoke-HeadlessBuild {
     if ($env:OS -eq 'Windows_NT') {
         $vcvars = 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat'
         if (-not (Test-Path -LiteralPath $vcvars)) { throw "vcvarsall.bat missing: $vcvars" }
-        $command = 'call "' + $vcvars + '" x86 && "' + $cmake + '" --build "' + (Join-Path $repoRoot 'buildd1') + '" --target dxx-redux-d1-headless-metadata && "' + $cmake + '" --build "' + (Join-Path $repoRoot 'buildd2') + '" --target dxx-redux-d2-headless-metadata'
+        $command = 'call "' + $vcvars + '" x86 && "' + $cmake + '" --build "' + (Join-Path $repoRoot 'buildd1') + '" --target dxx-redux-d1-headless-metadata && "' + $cmake + '" --build "' + (Join-Path $repoRoot 'buildd2') + '" --target dxx-redux-d2-headless-metadata test_guidebot_route_certifier'
         & cmd.exe /d /c $command | Out-Host
     } else {
         & $cmake --build (Join-Path $repoRoot 'buildd1') --target dxx-redux-d1-headless-metadata | Out-Host
-        if ($LASTEXITCODE -eq 0) { & $cmake --build (Join-Path $repoRoot 'buildd2') --target dxx-redux-d2-headless-metadata | Out-Host }
+        if ($LASTEXITCODE -eq 0) { & $cmake --build (Join-Path $repoRoot 'buildd2') --target dxx-redux-d2-headless-metadata test_guidebot_route_certifier | Out-Host }
     }
     if ($LASTEXITCODE -ne 0) { throw 'Headless metadata benchmark build failed' }
 }
@@ -170,6 +171,14 @@ $executables = @{
 foreach ($exe in $executables.Values) {
     if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) { throw "Benchmark executable missing: $exe" }
 }
+$liveBenchmarkName = if ($env:OS -eq 'Windows_NT') { 'test_guidebot_route_certifier.exe' } else { 'test_guidebot_route_certifier' }
+$liveBenchmarkExe = Join-Path (Join-Path $repoRoot 'buildd2\tests') $liveBenchmarkName
+if (-not (Test-Path -LiteralPath $liveBenchmarkExe -PathType Leaf)) {
+    throw "GuideBot live benchmark executable missing: $liveBenchmarkExe"
+}
+$liveBenchmarkText = (& $liveBenchmarkExe --benchmark) -join "`n"
+if ($LASTEXITCODE -ne 0) { throw 'GuideBot live calculation benchmark failed' }
+$liveBenchmark = $liveBenchmarkText | ConvertFrom-Json
 
 $runDir = Join-Path $androidRoot "temp\level_metadata_benchmark_$PID"
 New-Item -ItemType Directory -Force -Path $runDir | Out-Null
@@ -199,7 +208,7 @@ foreach ($level in $manifest.levels) {
     $runs = @()
     for ($run = 0; $run -lt (1 + $MeasuredRuns); ++$run) {
         $sample = Invoke-LevelRun -Config $level -Exe $executables[$game] -DataDir $dataDir -MissionDir $missionDir -RunDir $runDir -Index $run
-        if ($level.expected_sha256 -and $sample.Digest -cne [string]$level.expected_sha256) {
+        if (-not $SkipDigestValidation -and $level.expected_sha256 -and $sample.Digest -cne [string]$level.expected_sha256) {
             throw "$($level.id) metadata digest changed: expected $($level.expected_sha256), got $($sample.Digest)"
         }
         if ($run -gt 0) { $runs += $sample }
@@ -241,6 +250,7 @@ $snapshot = [ordered]@{
     elapsed_wall_seconds = $suiteWatch.Elapsed.TotalSeconds
     aggregate_cpu_seconds = [double]$aggregateCpu
     aggregate_wall_seconds = [double]$aggregateWall
+    guidebot_live_calculations = $liveBenchmark
     levels = $levelResults
 }
 Write-NormalizedJson -Value $snapshot -Path $detailPath

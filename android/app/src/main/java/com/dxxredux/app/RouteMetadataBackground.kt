@@ -113,6 +113,12 @@ internal object RouteMetadataBackground {
                             target,
                             background = true,
                             priority = priority,
+                            cpuDutyControlFile =
+                                if (level.levelNum == currentLevelNum && !currentReported) {
+                                    RouteMetadataInGameCpuPolicy.controlFile(context.filesDir)
+                                } else {
+                                    null
+                                },
                             totalTimeoutMs = TOTAL_TIMEOUT_MS,
                             onProgress = { progress ->
                                 val now = android.os.SystemClock.elapsedRealtime()

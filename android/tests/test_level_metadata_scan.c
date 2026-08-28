@@ -50,6 +50,7 @@ static int test_wall_key[TEST_WALLS];
 static int test_wall_clip_flags[TEST_WALLS];
 static int test_wall_trigger[TEST_WALLS];
 static int test_wall_shootable[TEST_WALLS];
+static int test_wall_opening[TEST_WALLS];
 static int test_wall_seg[TEST_WALLS];
 static int test_wall_sides[TEST_WALLS];
 static int test_object_count_value;
@@ -94,6 +95,7 @@ static void test_reset(void)
 		test_wall_clip_flags[wall] = 0;
 		test_wall_trigger[wall] = -1;
 		test_wall_shootable[wall] = 0;
+		test_wall_opening[wall] = 0;
 		test_wall_seg[wall] = -1;
 		test_wall_sides[wall] = -1;
 	}
@@ -420,6 +422,12 @@ static int test_trigger_flags_at(void *user, int trigger_num)
 	return test_trigger_flags[trigger_num];
 }
 
+static int test_wall_is_opening(void *user, int wall)
+{
+	(void) user;
+	return wall >= 0 && wall < TEST_WALLS && test_wall_opening[wall];
+}
+
 static int test_trigger_link_count_at(void *user, int trigger_num)
 {
 	(void) user;
@@ -512,6 +520,7 @@ static level_metadata_scan_view test_view(void)
 	view.wall_side = test_wall_side;
 	view.wall_type = test_wall_type_at;
 	view.wall_flags = test_wall_flags_at;
+	view.wall_is_opening = test_wall_is_opening;
 	view.wall_keys = test_wall_keys;
 	view.wall_clip_flags = test_wall_clip_flags_at;
 	view.wall_trigger = test_wall_trigger_at;
@@ -1132,6 +1141,31 @@ static int test_unlock_trigger_requirement_uses_all_linked_walls(void)
 	return failures;
 }
 
+static int test_opening_wall_completes_trigger_requirement(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_route_step step;
+	int failures = 0;
+
+	test_reset();
+	memset(&step, 0, sizeof(step));
+	step.kind = LEVEL_METADATA_ROUTE_TRIGGER;
+	step.trigger_num = 0;
+	step.opened_link_count = 1;
+	step.opened_link_wall[0] = 0;
+	test_wall_type[0] = TEST_WALL_CLOSED;
+	test_wall_seg[0] = 0;
+	test_wall_sides[0] = 0;
+	failures += expect_int(
+	    "closed wall keeps trigger pending", 1,
+	    level_metadata_route_step_required_by_world_state(&view, &step));
+	test_wall_opening[0] = 1;
+	failures += expect_int(
+	    "opening wall completes trigger", 0,
+	    level_metadata_route_step_required_by_world_state(&view, &step));
+	return failures;
+}
+
 static int test_segment_route_reuses_trigger_dependencies(void)
 {
 	level_metadata_scan_view view = test_view();
@@ -1671,6 +1705,7 @@ int main(void)
 	failures += test_route_promotes_unreachable_trigger_blocker();
 	failures += test_route_continues_after_unresolved_shootable_trigger();
 	failures += test_unlock_trigger_requirement_uses_all_linked_walls();
+	failures += test_opening_wall_completes_trigger_requirement();
 	failures += test_segment_route_reuses_trigger_dependencies();
 	failures += test_unexplored_route_acquires_key_for_largest_component();
 	failures += test_unexplored_route_keeps_hidden_wall_dependency();

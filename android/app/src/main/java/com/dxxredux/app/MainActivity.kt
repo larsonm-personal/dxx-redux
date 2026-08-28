@@ -221,6 +221,15 @@ class MainActivity :
     private val startupScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var playlistPreparation: Deferred<Unit>? = null
     private var routeMetadataJob: Job? = null
+    private val routeMetadataDutyLock = Any()
+
+    @Volatile
+    private var routeMetadataCurrentLevelCalculating = false
+
+    @Volatile
+    private var routeMetadataAutomapOpen = false
+
+    private var routeMetadataPublishedDutyPercent = -1
 
     companion object {
         private const val ADMIN_TRAY_CLOSE_GRACE_MS = 400L
@@ -631,8 +640,11 @@ class MainActivity :
         requestGeneration: Int,
     ) {
         routeMetadataJob?.cancel()
+        routeMetadataCurrentLevelCalculating =
+            !RouteMetadataCurrentWork.forReadiness(routeReadiness).ready
         routeMetadataJob =
             startupScope.launch(Dispatchers.IO) {
+                publishRouteMetadataCpuDuty()
                 RouteMetadataBackground.computeMission(
                     this@MainActivity,
                     game,
@@ -644,6 +656,8 @@ class MainActivity :
                     secretLevelFiles.toList(),
                     secretEntryLevels.toList(),
                     onCurrentReady = { success ->
+                        routeMetadataCurrentLevelCalculating = false
+                        publishRouteMetadataCpuDuty()
                         nativeNotifyRouteMetadataFinished(requestGeneration, success)
                     },
                     onCurrentProgress = { estimatedPermille, state ->
@@ -655,6 +669,30 @@ class MainActivity :
                     },
                 )
             }
+    }
+
+    private fun publishRouteMetadataCpuDuty() {
+        synchronized(routeMetadataDutyLock) {
+            val dutyPercent =
+                RouteMetadataInGameCpuPolicy.dutyPercent(
+                    routeMetadataCurrentLevelCalculating,
+                    routeMetadataAutomapOpen,
+                )
+            if (dutyPercent == routeMetadataPublishedDutyPercent) return
+            RouteMetadataInGameCpuPolicy.publish(filesDir, dutyPercent)
+            routeMetadataPublishedDutyPercent = dutyPercent
+            RouteMetadataDiagnostics.log(
+                "Route metadata in-game cpu_duty_percent=$dutyPercent " +
+                    "automap=$routeMetadataAutomapOpen " +
+                    "current_calculating=$routeMetadataCurrentLevelCalculating",
+            )
+        }
+    }
+
+    private fun setRouteMetadataAutomapOpen(open: Boolean) {
+        if (routeMetadataAutomapOpen == open) return
+        routeMetadataAutomapOpen = open
+        startupScope.launch(Dispatchers.IO) { publishRouteMetadataCpuDuty() }
     }
 
     // ── SAF leave-in-place: called from native via JNI (jni_saf.c) ───
@@ -2576,6 +2614,7 @@ class MainActivity :
                                     false
                                 }
                             profileAutomap = automap
+                            setRouteMetadataAutomapOpen(automap)
                             val screenAdvanceState =
                                 try {
                                     nativeGetScreenAdvanceState()
@@ -2914,6 +2953,9 @@ class MainActivity :
         }
         window.decorView.removeCallbacks(musicStateRefreshRunnable)
         routeMetadataJob?.cancel()
+        routeMetadataCurrentLevelCalculating = false
+        routeMetadataAutomapOpen = false
+        publishRouteMetadataCpuDuty()
         startupScope.cancel()
         clearGameActivityState(this)
         AudioSourceManager.closeActivePfds()

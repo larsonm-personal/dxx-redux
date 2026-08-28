@@ -89,6 +89,7 @@ extern unsigned int escort_get_route_audit_discovery_count(void);
 extern unsigned int escort_get_route_audit_only_discovery_count(void);
 extern unsigned int escort_get_route_audit_work_total(void);
 extern unsigned int escort_get_route_audit_work_max(void);
+extern unsigned int escort_get_route_audit_deferred_count(void);
 extern unsigned int escort_get_route_certificate_check_count(void);
 extern unsigned int escort_get_route_certificate_failure_count(void);
 extern unsigned int escort_get_route_certificate_work_total(void);

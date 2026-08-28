@@ -1306,6 +1306,7 @@ internal object LevelMetadataAnalyzer {
         background: Boolean = false,
         priority: RouteMetadataPriority = if (background) RouteMetadataPriority.FILL else RouteMetadataPriority.ACTIVE,
         cpuDutyPercent: Int = priority.cpuDutyPercent,
+        cpuDutyControlFile: File? = null,
         totalTimeoutMs: Long = Long.MAX_VALUE,
         onProgress: suspend (LevelMetadataAnalysisProgress) -> Unit = {},
     ): LevelMetadataResult =
@@ -1382,6 +1383,7 @@ internal object LevelMetadataAnalyzer {
                             background,
                             priority,
                             cpuDutyPercent,
+                            cpuDutyControlFile,
                             totalTimeoutMs,
                         )
                     } catch (e: CancellationException) {
@@ -1693,6 +1695,7 @@ internal object LevelMetadataAnalyzer {
         background: Boolean,
         priority: RouteMetadataPriority,
         cpuDutyPercent: Int,
+        cpuDutyControlFile: File?,
         totalTimeoutMs: Long,
     ): JSONObject =
         buildPreparedRequestJson(target, requestId, workDir, "dxx-level-metadata-request-v1")
@@ -1702,6 +1705,7 @@ internal object LevelMetadataAnalyzer {
             .put("background", background)
             .put("priority", priority.wireName)
             .put("cpu_duty_percent", cpuDutyPercent.coerceIn(1, 100))
+            .put("cpu_duty_control_path", cpuDutyControlFile?.absolutePath.orEmpty())
             .put("fvi_limit", priority.fviLimit)
             .put("defer_guidebot_accessibility", target.sourceType == "active_level")
             .put("total_timeout_ms", totalTimeoutMs)

@@ -473,6 +473,9 @@ bool fingerprint_view_domain(
 				    view.object_contains_id
 				        ? view.object_contains_id(view.user, object_index)
 				        : 0;
+				const bool boss =
+				    view.object_is_boss &&
+				    view.object_is_boss(view.user, object_index);
 				const bool progression_object =
 				    type == view.obj_type_control_center ||
 				    (type == view.obj_type_powerup &&
@@ -481,15 +484,15 @@ bool fingerprint_view_domain(
 				    (contains_type == view.obj_type_powerup &&
 				     normalize_powerup_key(view, contains_id) !=
 				         route_key_requirement::none) ||
-				    (view.object_is_boss &&
-				     view.object_is_boss(view.user, object_index));
+				    boss;
 				if (!progression_object)
 					continue;
 				hasher.add_int(object_index);
-				hasher.add_int(
-				    view.object_segment
-				        ? view.object_segment(view.user, object_index)
-				        : -1);
+				if (!boss)
+					hasher.add_int(
+					    view.object_segment
+					        ? view.object_segment(view.user, object_index)
+					        : -1);
 				hasher.add_int(type);
 				hasher.add_int(id);
 				hasher.add_int(flags);
@@ -499,10 +502,11 @@ bool fingerprint_view_domain(
 				    view.object_contains_count
 				        ? view.object_contains_count(view.user, object_index)
 				        : 0);
-				hash_position(
-				    hasher,
-				    read_position(
-				        view.object_position, view.user, object_index));
+				if (!boss)
+					hash_position(
+					    hasher,
+					    read_position(
+					        view.object_position, view.user, object_index));
 				hasher.add_bool(
 				    view.obj_flag_should_be_dead != 0 &&
 				    (flags & view.obj_flag_should_be_dead) != 0);

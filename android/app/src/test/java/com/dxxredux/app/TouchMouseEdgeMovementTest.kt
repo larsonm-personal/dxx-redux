@@ -111,6 +111,15 @@ class TouchMouseEdgeMovementTest {
                 invertY = true,
             ),
         )
+        assertEquals(
+            EditorStickDirectionLabels("Bank Left", "Bank Right", "Strafe Up", "Strafe Down"),
+            editorStickDirectionLabels(
+                axisX = TouchBindings.AXIS_BANK,
+                axisY = TouchBindings.AXIS_SLIDE_UD,
+                invertX = false,
+                invertY = true,
+            ),
+        )
     }
 
     @Test

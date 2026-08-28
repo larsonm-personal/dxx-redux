@@ -20,6 +20,29 @@
 #define LEVEL_METADATA_ROUTE_PROVENANCE_PREPARED_FALLBACK 2
 #define LEVEL_METADATA_ROUTE_PROVENANCE_FULL_PLANNER      3
 
+typedef struct level_metadata_live_work_summary {
+	unsigned int full_plan_calls;
+	unsigned int blocked_full_plan_calls;
+	unsigned int deferred_refreshes;
+	unsigned int retained_incumbents;
+	unsigned int deferred_without_incumbent;
+	unsigned int certifier_ticks;
+	unsigned int certifier_deferred_ticks;
+	unsigned int certifier_completed_ticks;
+	unsigned int certifier_overruns;
+	unsigned int pending_event_mask;
+	int pending;
+	int reachability_cursor;
+	int firing_candidate_cursor;
+	int firing_candidate_pass;
+	int unexplored_candidate_cursor;
+	unsigned long long last_tick_us;
+	unsigned long long max_tick_us;
+	unsigned long long last_refresh_us;
+	unsigned long long max_refresh_us;
+	unsigned int refresh_overruns;
+} level_metadata_live_work_summary;
+
 void secret_area_rescan_current_level(void);
 void secret_area_prepare_current_level(void);
 int level_metadata_try_load_pending_cache(void);
@@ -42,6 +65,12 @@ const level_metadata_state *level_metadata_get_state(void);
 const level_metadata_state *level_metadata_get_canonical_state(void);
 int level_metadata_get_canonical_route_plan_summary(route_planner_plan_summary *summary);
 int level_metadata_get_route_analysis_cache_summary(route_analysis_cache_summary *summary);
+int level_metadata_get_live_work_summary(
+    level_metadata_live_work_summary *summary);
+int level_metadata_live_route_work_pending(void);
+void level_metadata_invalidate_live_route_work(void);
+void level_metadata_set_live_work_pending_event_mask(
+    unsigned int event_mask);
 const level_metadata_state *level_metadata_get_live_route_state(void);
 int level_metadata_get_live_route_plan_summary(route_planner_plan_summary *summary);
 int level_metadata_get_live_route_decision(guidebot_route_decision *decision);

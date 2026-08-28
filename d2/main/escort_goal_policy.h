@@ -82,4 +82,11 @@ static inline int escort_semantic_route_holds_endpoint(
 	return semantic_route_active && going_to_object && !path_remaining;
 }
 
+static inline int escort_audit_replan_should_defer(
+	int audit_only, int last_valid, long long now, long long last,
+	long long interval)
+{
+	return audit_only && last_valid && now >= last && now - last < interval;
+}
+
 #endif

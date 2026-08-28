@@ -2,6 +2,27 @@
 
 #include <string.h>
 
+static int guidebot_certifier_budget_exhausted(
+    const guidebot_route_certifier_budget *budget,
+    unsigned int work)
+{
+	return budget &&
+	       ((budget->work_limit && work >= budget->work_limit) ||
+	        (budget->clock_us &&
+	         budget->clock_us(budget->clock_user) >= budget->deadline_us));
+}
+
+void guidebot_route_certifier_reset_job(
+    guidebot_route_certifier_workspace *workspace)
+{
+	if (!workspace)
+		return;
+	workspace->job_active = 0;
+	workspace->reach_complete = 0;
+	workspace->firing_search_active = 0;
+	workspace->unexplored_active = 0;
+}
+
 static int guidebot_valid_segment(
     const level_metadata_scan_view *view,
     int segment)
@@ -30,7 +51,8 @@ static int guidebot_route_side_passable(
     int segment,
     int side,
     int allow_player_keyed_door,
-    int allow_control_center_link)
+    int allow_control_center_link,
+    int allow_triggered_link)
 {
 	int child;
 	int clearance;
@@ -63,12 +85,12 @@ static int guidebot_route_side_passable(
 	if (view->side_is_flyable &&
 	    view->side_is_flyable(view->user, segment, side))
 		return 1;
-	if ((view->initial_control_center_destroyed || allow_control_center_link) &&
-	    view->side_is_control_center_link &&
+	if (view->side_is_control_center_link &&
 	    (view->side_is_control_center_link(view->user, segment, side) ||
 	     (reverse >= 0 && view->side_is_control_center_link(
 	                          view->user, child, reverse))))
-		return 1;
+		return view->initial_control_center_destroyed ||
+		       allow_control_center_link;
 	hard_blocked = view->side_is_hard_blocked &&
 	               (view->side_is_hard_blocked(view->user, segment, side) ||
 	                (reverse >= 0 && view->side_is_hard_blocked(
@@ -102,7 +124,7 @@ static int guidebot_route_side_passable(
 	    (view->triggered_side_opener_count(view->user, segment, side) > 0 ||
 	     (reverse >= 0 && view->triggered_side_opener_count(
 	                          view->user, child, reverse) > 0)) &&
-	    key == view->wall_key_none)
+	    key == view->wall_key_none && !allow_triggered_link)
 		return 0;
 	return guidebot_key_allowed(view, key);
 }
@@ -112,7 +134,7 @@ int guidebot_route_side_passable_current(
     int segment,
     int side)
 {
-	return guidebot_route_side_passable(view, segment, side, 0, 0);
+	return guidebot_route_side_passable(view, segment, side, 0, 0, 0);
 }
 
 int guidebot_route_side_progress_reachable_current(
@@ -120,7 +142,7 @@ int guidebot_route_side_progress_reachable_current(
     int segment,
     int side)
 {
-	return guidebot_route_side_passable(view, segment, side, 1, 0);
+	return guidebot_route_side_passable(view, segment, side, 1, 0, 0);
 }
 
 static int guidebot_route_best_physical_frontier_internal(
@@ -169,7 +191,7 @@ static int guidebot_route_best_physical_frontier_internal(
 			if (reverse < 0 || reverse >= LEVEL_METADATA_MAX_SIDES ||
 			    !guidebot_route_side_passable(
 			        view, child, reverse, 1,
-			        allow_control_center_link))
+			        allow_control_center_link, 1))
 				continue;
 			workspace->strategic_distance[child] =
 			    workspace->strategic_distance[segment] + 1;
@@ -251,30 +273,56 @@ int guidebot_route_best_deferred_countdown_frontier(
 static int guidebot_build_reachability(
     const level_metadata_scan_view *view,
     guidebot_route_certifier_workspace *workspace,
-    guidebot_route_certifier_summary *summary)
+    guidebot_route_certifier_summary *summary,
+    const guidebot_route_certifier_budget *budget,
+    unsigned int *tick_work)
 {
-	int head = 0;
-	int tail = 0;
-
 	if (!guidebot_valid_segment(view, view->start_segment) ||
 	    !view->segment_child)
-		return 0;
-	memset(workspace->reachable, 0, sizeof(workspace->reachable));
-	for (tail = 0; tail < view->num_segments; ++tail)
-		workspace->physical_distance[tail] = -1;
-	tail = 0;
-	workspace->reachable[view->start_segment] = 1;
-	workspace->physical_distance[view->start_segment] = 0;
-	workspace->queue[tail++] = view->start_segment;
-	while (head < tail) {
-		int segment = workspace->queue[head++];
-		int side;
+		return GUIDEBOT_ROUTE_CERTIFIER_INVALID;
+	if (!workspace->job_active ||
+	    workspace->job_num_segments != view->num_segments) {
+		int segment;
 
-		summary->visited_segments++;
-		for (side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+		workspace->job_active = 1;
+		workspace->job_start_segment = view->start_segment;
+		workspace->job_num_segments = view->num_segments;
+		workspace->reach_head = 0;
+		workspace->reach_tail = 1;
+		workspace->reach_side = 0;
+		workspace->reach_complete = 0;
+		workspace->job_visited_segments = 0;
+		workspace->job_evaluated_edges = 0;
+		workspace->job_evaluated_firing_positions = 0;
+		workspace->firing_search_active = 0;
+		memset(workspace->reachable, 0, sizeof(workspace->reachable));
+		for (segment = 0; segment < view->num_segments; ++segment)
+			workspace->physical_distance[segment] = -1;
+		workspace->reachable[view->start_segment] = 1;
+		workspace->physical_distance[view->start_segment] = 0;
+		workspace->queue[0] = view->start_segment;
+	}
+	while (!workspace->reach_complete) {
+		int segment;
+
+		if (workspace->reach_head >= workspace->reach_tail) {
+			workspace->reach_complete = 1;
+			break;
+		}
+		if (guidebot_certifier_budget_exhausted(budget, *tick_work))
+			return GUIDEBOT_ROUTE_CERTIFIER_PENDING;
+		segment = workspace->queue[workspace->reach_head];
+		while (workspace->reach_side < LEVEL_METADATA_MAX_SIDES) {
 			int child;
+			int side;
 
-			summary->evaluated_edges++;
+			if (guidebot_certifier_budget_exhausted(
+			        budget, *tick_work))
+				return GUIDEBOT_ROUTE_CERTIFIER_PENDING;
+			side = workspace->reach_side++;
+
+			workspace->job_evaluated_edges++;
+			(*tick_work)++;
 			child = view->segment_child(view->user, segment, side);
 			if (!guidebot_valid_segment(view, child) ||
 			    workspace->reachable[child] ||
@@ -284,10 +332,168 @@ static int guidebot_build_reachability(
 			workspace->reachable[child] = 1;
 			workspace->physical_distance[child] =
 			    workspace->physical_distance[segment] + 1;
-			workspace->queue[tail++] = child;
+			workspace->queue[workspace->reach_tail++] = child;
+			if (guidebot_certifier_budget_exhausted(
+			        budget, *tick_work))
+				return GUIDEBOT_ROUTE_CERTIFIER_PENDING;
+		}
+		workspace->reach_side = 0;
+		workspace->reach_head++;
+		workspace->job_visited_segments++;
+	}
+	summary->visited_segments = workspace->job_visited_segments;
+	summary->evaluated_edges = workspace->job_evaluated_edges;
+	return GUIDEBOT_ROUTE_CERTIFIER_VALID;
+}
+
+int guidebot_route_find_unexplored_budgeted(
+    const level_metadata_scan_view *view,
+    guidebot_route_certifier_workspace *workspace,
+    level_metadata_unexplored_route *result,
+    const guidebot_route_certifier_budget *budget)
+{
+	guidebot_route_certifier_summary summary;
+	unsigned int tick_work = 0;
+	int reachability;
+
+	if (!view || !workspace || !result || !view->segment_is_explored ||
+	    !view->segment_child)
+		return GUIDEBOT_ROUTE_CERTIFIER_INVALID;
+	reachability = guidebot_build_reachability(
+	    view, workspace, &summary, budget, &tick_work);
+	if (reachability != GUIDEBOT_ROUTE_CERTIFIER_VALID)
+		return reachability;
+	if (!workspace->unexplored_active) {
+		workspace->unexplored_active = 1;
+		workspace->unexplored_init_segment = 0;
+		workspace->unexplored_scan_segment = 0;
+		workspace->unexplored_component_head = 0;
+		workspace->unexplored_component_tail = 0;
+		workspace->unexplored_component_side = 0;
+		workspace->unexplored_component_size = 0;
+		workspace->unexplored_component_target = -1;
+		workspace->unexplored_component_distance = -1;
+		workspace->unexplored_best_size = 0;
+		workspace->unexplored_best_target = -1;
+		workspace->unexplored_best_distance = -1;
+	}
+	while (workspace->unexplored_init_segment < view->num_segments) {
+		if (guidebot_certifier_budget_exhausted(budget, tick_work))
+			return GUIDEBOT_ROUTE_CERTIFIER_PENDING;
+		workspace->strategic_distance
+		    [workspace->unexplored_init_segment++] = -1;
+		tick_work++;
+	}
+	for (;;) {
+		if (workspace->unexplored_component_head >=
+		    workspace->unexplored_component_tail) {
+			if (workspace->unexplored_component_size > 0 &&
+			    (workspace->unexplored_component_size >
+			         workspace->unexplored_best_size ||
+			     (workspace->unexplored_component_size ==
+			          workspace->unexplored_best_size &&
+			      ((workspace->unexplored_component_distance >= 0) >
+			           (workspace->unexplored_best_distance >= 0) ||
+			       ((workspace->unexplored_component_distance >= 0) ==
+			            (workspace->unexplored_best_distance >= 0) &&
+			        ((workspace->unexplored_component_distance >= 0 &&
+			          (workspace->unexplored_component_distance <
+			               workspace->unexplored_best_distance ||
+			           (workspace->unexplored_component_distance ==
+			                workspace->unexplored_best_distance &&
+			            workspace->unexplored_component_target <
+			                workspace->unexplored_best_target))) ||
+			         (workspace->unexplored_component_distance < 0 &&
+			          workspace->unexplored_component_target <
+			              workspace->unexplored_best_target))))))) {
+				workspace->unexplored_best_size =
+				    workspace->unexplored_component_size;
+				workspace->unexplored_best_target =
+				    workspace->unexplored_component_target;
+				workspace->unexplored_best_distance =
+				    workspace->unexplored_component_distance;
+			}
+			while (workspace->unexplored_scan_segment < view->num_segments &&
+			       (workspace->strategic_distance
+			                [workspace->unexplored_scan_segment] >= 0 ||
+			        view->segment_is_explored(
+			            view->user,
+			            workspace->unexplored_scan_segment))) {
+				if (guidebot_certifier_budget_exhausted(
+				        budget, tick_work))
+					return GUIDEBOT_ROUTE_CERTIFIER_PENDING;
+				workspace->unexplored_scan_segment++;
+				tick_work++;
+			}
+			if (workspace->unexplored_scan_segment >= view->num_segments)
+				break;
+			workspace->unexplored_component_head = 0;
+			workspace->unexplored_component_tail = 1;
+			workspace->unexplored_component_side = 0;
+			workspace->unexplored_component_size = 1;
+			workspace->unexplored_component_target =
+			    workspace->unexplored_scan_segment;
+			workspace->unexplored_component_distance = -1;
+			workspace->queue[0] = workspace->unexplored_scan_segment;
+			workspace->strategic_distance
+			    [workspace->unexplored_scan_segment] =
+			    workspace->unexplored_scan_segment;
+			workspace->unexplored_scan_segment++;
+		}
+		while (workspace->unexplored_component_head <
+		       workspace->unexplored_component_tail) {
+			const int segment = workspace->queue
+			                        [workspace->unexplored_component_head];
+
+			if (workspace->unexplored_component_side == 0) {
+				if (workspace->reachable[segment] &&
+				    (workspace->unexplored_component_distance < 0 ||
+				     workspace->physical_distance[segment] <
+				         workspace->unexplored_component_distance ||
+				     (workspace->physical_distance[segment] ==
+				          workspace->unexplored_component_distance &&
+				      segment <
+				          workspace->unexplored_component_target))) {
+					workspace->unexplored_component_target = segment;
+					workspace->unexplored_component_distance =
+					    workspace->physical_distance[segment];
+				}
+			}
+			while (workspace->unexplored_component_side <
+			       LEVEL_METADATA_MAX_SIDES) {
+				int child;
+				int side;
+
+				if (guidebot_certifier_budget_exhausted(
+				        budget, tick_work))
+					return GUIDEBOT_ROUTE_CERTIFIER_PENDING;
+				side = workspace->unexplored_component_side++;
+				child = view->segment_child(view->user, segment, side);
+				tick_work++;
+				if (!guidebot_valid_segment(view, child) ||
+				    workspace->strategic_distance[child] >= 0 ||
+				    view->segment_is_explored(view->user, child))
+					continue;
+				workspace->strategic_distance[child] = child;
+				workspace->queue
+				    [workspace->unexplored_component_tail++] = child;
+				workspace->unexplored_component_size++;
+			}
+			workspace->unexplored_component_side = 0;
+			workspace->unexplored_component_head++;
 		}
 	}
-	return 1;
+	if (workspace->unexplored_best_target < 0) {
+		guidebot_route_certifier_reset_job(workspace);
+		return GUIDEBOT_ROUTE_CERTIFIER_INVALID;
+	}
+	result->component_size = workspace->unexplored_best_size;
+	result->target_seg = workspace->unexplored_best_target;
+	result->waypoint_seg = workspace->unexplored_best_target;
+	result->direct_reachable =
+	    workspace->unexplored_best_distance >= 0;
+	guidebot_route_certifier_reset_job(workspace);
+	return GUIDEBOT_ROUTE_CERTIFIER_VALID;
 }
 
 static int guidebot_object_alive(
@@ -463,6 +669,310 @@ static long double guidebot_shot_score(
 	return distance_squared * multiplier * multiplier;
 }
 
+static void guidebot_weighted_position(
+    const int first[3], const int second[3], int second_weight, int result[3])
+{
+	const int total = 1 + second_weight;
+	int coordinate;
+
+	for (coordinate = 0; coordinate < 3; ++coordinate)
+		result[coordinate] = (int) (((long long) first[coordinate] +
+		                             (long long) second[coordinate] *
+		                                 second_weight) /
+		                            total);
+}
+
+static int guidebot_detailed_firing_sample(
+    const level_metadata_scan_view *view,
+    int segment,
+    int sample,
+    int result[3])
+{
+	static const unsigned char edges[12][2] = {
+		{ 7, 6 }, { 6, 2 }, { 2, 3 }, { 3, 7 }, { 0, 4 }, { 4, 7 }, { 3, 0 }, { 0, 1 }, { 1, 5 }, { 5, 4 }, { 6, 5 }, { 1, 2 }
+	};
+	int center[3];
+	int point[3];
+
+	if (!view->segment_center ||
+	    !view->segment_center(view->user, segment, center))
+		return 0;
+	if (sample == 0) {
+		if (!view->side_center ||
+		    !view->side_center(view->user, segment, 0, point))
+			return 0;
+		memcpy(result, center, sizeof(center));
+		return 1;
+	}
+	sample--;
+	if (sample < 12) {
+		if (!view->side_center ||
+		    !view->side_center(view->user, segment, sample / 2, point))
+			return 0;
+		guidebot_weighted_position(
+		    center, point, sample & 1 ? 3 : 1, result);
+		return 1;
+	}
+	if (sample < 20) {
+		if (!view->segment_vertex ||
+		    !view->segment_vertex(view->user, segment, sample - 12, point))
+			return 0;
+		guidebot_weighted_position(center, point, 1, result);
+		return 1;
+	}
+	if (sample < 32) {
+		int first[3];
+		int second[3];
+		int coordinate;
+		const int edge = sample - 20;
+
+		if (!view->segment_vertex ||
+		    !view->segment_vertex(
+		        view->user, segment, edges[edge][0], first) ||
+		    !view->segment_vertex(
+		        view->user, segment, edges[edge][1], second))
+			return 0;
+		for (coordinate = 0; coordinate < 3; ++coordinate)
+			point[coordinate] = (first[coordinate] + second[coordinate]) / 2;
+		guidebot_weighted_position(center, point, 1, result);
+		return 1;
+	}
+	return 0;
+}
+
+#define GUIDEBOT_DETAILED_FIRING_SEGMENTS 8
+
+static int guidebot_select_detailed_firing_segments_budgeted(
+    const level_metadata_scan_view *view,
+    const level_metadata_route_step *step,
+    guidebot_route_certifier_workspace *workspace,
+    const guidebot_route_certifier_budget *budget,
+    unsigned int *tick_work)
+{
+	const int *target = step->aim_pos_valid ? step->aim_pos : step->activation_pos;
+
+	while (workspace->firing_search_selection_segment < view->num_segments) {
+		long double score;
+		int center[3];
+		int incidence;
+		int insert;
+		int segment;
+
+		if (guidebot_certifier_budget_exhausted(budget, *tick_work))
+			return GUIDEBOT_ROUTE_CERTIFIER_PENDING;
+		segment = workspace->firing_search_selection_segment++;
+		(*tick_work)++;
+		if (!workspace->reachable[segment] || !view->segment_center ||
+		    !view->segment_center(view->user, segment, center))
+			continue;
+		incidence = guidebot_shot_incidence_cosine(
+		    view, center, step->wall_num);
+		score = guidebot_shot_score(
+		    guidebot_position_distance_squared(center, target), incidence);
+		for (insert = 0; insert < workspace->firing_search_detailed_count;
+		     ++insert)
+			if (score < workspace->firing_search_detailed_scores[insert] ||
+			    (score == workspace->firing_search_detailed_scores[insert] &&
+			     segment < workspace->firing_search_detailed_segments[insert]))
+				break;
+		if (insert >= GUIDEBOT_DETAILED_FIRING_SEGMENTS)
+			continue;
+		if (workspace->firing_search_detailed_count <
+		    GUIDEBOT_DETAILED_FIRING_SEGMENTS)
+			workspace->firing_search_detailed_count++;
+		{
+			int move;
+
+			for (move = workspace->firing_search_detailed_count - 1;
+			     move > insert; --move) {
+				workspace->firing_search_detailed_segments[move] =
+				    workspace->firing_search_detailed_segments[move - 1];
+				workspace->firing_search_detailed_scores[move] =
+				    workspace->firing_search_detailed_scores[move - 1];
+			}
+		}
+		workspace->firing_search_detailed_segments[insert] = segment;
+		workspace->firing_search_detailed_scores[insert] = score;
+	}
+	workspace->firing_search_selection_complete = 1;
+	workspace->firing_search_detailed_index = 0;
+	workspace->firing_search_detailed_sample = 0;
+	return GUIDEBOT_ROUTE_CERTIFIER_VALID;
+}
+
+#define GUIDEBOT_FIRING_FRONTIER_INITIALIZE 0
+#define GUIDEBOT_FIRING_FRONTIER_STRATEGIC  1
+#define GUIDEBOT_FIRING_FRONTIER_PROGRESS   2
+#define GUIDEBOT_FIRING_FRONTIER_ANGLE      3
+#define GUIDEBOT_FIRING_FRONTIER_COMPLETE   4
+
+static int guidebot_firing_frontier_budgeted(
+    const level_metadata_scan_view *view,
+    int goal_segment,
+    int wall_num,
+    guidebot_route_certifier_workspace *workspace,
+    const guidebot_route_certifier_budget *budget,
+    unsigned int *tick_work)
+{
+	if (!view || !workspace || !tick_work || !view->segment_child ||
+	    !view->reverse_side ||
+	    !guidebot_valid_segment(view, workspace->job_start_segment) ||
+	    !guidebot_valid_segment(view, goal_segment))
+		return GUIDEBOT_ROUTE_CERTIFIER_INVALID;
+	if (!workspace->firing_frontier_active ||
+	    workspace->firing_frontier_goal_segment != goal_segment) {
+		workspace->firing_frontier_active = 1;
+		workspace->firing_frontier_phase =
+		    GUIDEBOT_FIRING_FRONTIER_INITIALIZE;
+		workspace->firing_frontier_goal_segment = goal_segment;
+		workspace->firing_frontier_init_segment = 0;
+		workspace->firing_frontier_best_segment = -1;
+	}
+	while (workspace->firing_frontier_phase !=
+	       GUIDEBOT_FIRING_FRONTIER_COMPLETE) {
+		if (workspace->firing_frontier_phase ==
+		    GUIDEBOT_FIRING_FRONTIER_INITIALIZE) {
+			while (workspace->firing_frontier_init_segment <
+			       view->num_segments) {
+				if (guidebot_certifier_budget_exhausted(
+				        budget, *tick_work))
+					return GUIDEBOT_ROUTE_CERTIFIER_PENDING;
+				workspace->strategic_distance
+				    [workspace->firing_frontier_init_segment++] = -1;
+				(*tick_work)++;
+			}
+			workspace->strategic_distance[goal_segment] = 0;
+			workspace->queue[0] = goal_segment;
+			workspace->firing_frontier_head = 0;
+			workspace->firing_frontier_tail = 1;
+			workspace->firing_frontier_side = 0;
+			workspace->firing_frontier_phase =
+			    GUIDEBOT_FIRING_FRONTIER_STRATEGIC;
+		}
+		if (workspace->firing_frontier_phase ==
+		    GUIDEBOT_FIRING_FRONTIER_STRATEGIC) {
+			while (workspace->firing_frontier_head <
+			       workspace->firing_frontier_tail) {
+				const int segment = workspace->queue
+				                        [workspace->firing_frontier_head];
+
+				while (workspace->firing_frontier_side <
+				       LEVEL_METADATA_MAX_SIDES) {
+					int child;
+					int reverse;
+					int side;
+
+					if (guidebot_certifier_budget_exhausted(
+					        budget, *tick_work))
+						return GUIDEBOT_ROUTE_CERTIFIER_PENDING;
+					side = workspace->firing_frontier_side++;
+					(*tick_work)++;
+					child = view->segment_child(
+					    view->user, segment, side);
+					if (!guidebot_valid_segment(view, child) ||
+					    workspace->strategic_distance[child] >= 0)
+						continue;
+					reverse = view->reverse_side(
+					    view->user, segment, child);
+					if (reverse < 0 ||
+					    reverse >= LEVEL_METADATA_MAX_SIDES ||
+					    !guidebot_route_side_passable(
+					        view, child, reverse, 1, 0, 1))
+						continue;
+					workspace->strategic_distance[child] =
+					    workspace->strategic_distance[segment] + 1;
+					workspace->queue
+					    [workspace->firing_frontier_tail++] = child;
+				}
+				workspace->firing_frontier_side = 0;
+				workspace->firing_frontier_head++;
+			}
+			if (workspace->strategic_distance
+			        [workspace->job_start_segment] < 0) {
+				workspace->firing_frontier_phase =
+				    GUIDEBOT_FIRING_FRONTIER_COMPLETE;
+				continue;
+			}
+			workspace->firing_frontier_scan_segment = 0;
+			workspace->firing_frontier_best_remaining =
+			    view->num_segments + 1;
+			workspace->firing_frontier_phase =
+			    GUIDEBOT_FIRING_FRONTIER_PROGRESS;
+		}
+		if (workspace->firing_frontier_phase ==
+		    GUIDEBOT_FIRING_FRONTIER_PROGRESS) {
+			while (workspace->firing_frontier_scan_segment <
+			       view->num_segments) {
+				int segment;
+
+				if (guidebot_certifier_budget_exhausted(
+				        budget, *tick_work))
+					return GUIDEBOT_ROUTE_CERTIFIER_PENDING;
+				segment = workspace->firing_frontier_scan_segment++;
+				(*tick_work)++;
+				if (workspace->physical_distance[segment] < 0 ||
+				    workspace->strategic_distance[segment] < 0 ||
+				    workspace->strategic_distance[segment] >=
+				        workspace->firing_frontier_best_remaining)
+					continue;
+				workspace->firing_frontier_best_segment = segment;
+				workspace->firing_frontier_best_remaining =
+				    workspace->strategic_distance[segment];
+			}
+			workspace->firing_frontier_scan_segment = 0;
+			workspace->firing_frontier_best_incidence = -1;
+			workspace->firing_frontier_phase =
+			    GUIDEBOT_FIRING_FRONTIER_ANGLE;
+		}
+		if (workspace->firing_frontier_phase ==
+		    GUIDEBOT_FIRING_FRONTIER_ANGLE) {
+			while (workspace->firing_frontier_scan_segment <
+			       view->num_segments) {
+				int candidate_pos[3];
+				int incidence;
+				int segment;
+
+				if (guidebot_certifier_budget_exhausted(
+				        budget, *tick_work))
+					return GUIDEBOT_ROUTE_CERTIFIER_PENDING;
+				segment = workspace->firing_frontier_scan_segment++;
+				(*tick_work)++;
+				if (workspace->physical_distance[segment] < 0 ||
+				    workspace->strategic_distance[segment] <
+				        workspace->firing_frontier_best_remaining ||
+				    workspace->strategic_distance[segment] >
+				        workspace->firing_frontier_best_remaining + 2 ||
+				    !view->segment_center ||
+				    !view->segment_center(
+				        view->user, segment, candidate_pos))
+					continue;
+				incidence = guidebot_shot_incidence_cosine(
+				    view, candidate_pos, wall_num);
+				if (workspace->firing_frontier_best_incidence >= 0 &&
+				    (incidence <
+				         workspace->firing_frontier_best_incidence ||
+				     (incidence ==
+				          workspace->firing_frontier_best_incidence &&
+				      (workspace->strategic_distance[segment] >
+				           workspace->strategic_distance
+				               [workspace->firing_frontier_best_segment] ||
+				       (workspace->strategic_distance[segment] ==
+				            workspace->strategic_distance
+				                [workspace->firing_frontier_best_segment] &&
+				        workspace->physical_distance[segment] >=
+				            workspace->physical_distance
+				                [workspace->firing_frontier_best_segment])))))
+					continue;
+				workspace->firing_frontier_best_segment = segment;
+				workspace->firing_frontier_best_incidence = incidence;
+			}
+			workspace->firing_frontier_phase =
+			    GUIDEBOT_FIRING_FRONTIER_COMPLETE;
+		}
+	}
+	return GUIDEBOT_ROUTE_CERTIFIER_VALID;
+}
+
 static int guidebot_firing_cache_matches(
     const level_metadata_scan_view *view,
     const level_metadata_route_step *step,
@@ -482,31 +992,25 @@ static int guidebot_prepare_shoot_switch_position(
     const level_metadata_scan_view *view,
     level_metadata_route_step *step,
     guidebot_route_certifier_workspace *workspace,
-    guidebot_route_certifier_summary *summary)
+    guidebot_route_certifier_summary *summary,
+    const guidebot_route_certifier_budget *budget,
+    unsigned int *tick_work)
 {
-	long double best_score = 0.0;
-	int best_path_distance;
-	int best_pos[3];
-	int best_segment = -1;
-	int best_incidence = LEVEL_METADATA_SHOT_COSINE_ONE;
-	int best_quality = LEVEL_METADATA_SWITCH_SHOT_NONE;
 	int firing_pos[3];
 	int original_segment;
-	int pass;
-	int segment;
 
 	if (step->activation_kind !=
 	    LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH)
-		return 1;
+		return GUIDEBOT_ROUTE_CERTIFIER_VALID;
 	if (!step->activation_pos_valid || step->wall_num < 0 ||
 	    !view->wall_shootable_from_position)
-		return 0;
+		return GUIDEBOT_ROUTE_CERTIFIER_INVALID;
 	memcpy(firing_pos, step->activation_pos, sizeof(firing_pos));
 	if (step->aim_pos_valid &&
 	    memcmp(firing_pos, step->aim_pos, sizeof(firing_pos)) == 0) {
 		if (!view->segment_center ||
 		    !view->segment_center(view->user, step->seg, firing_pos))
-			return 0;
+			return GUIDEBOT_ROUTE_CERTIFIER_INVALID;
 	}
 	original_segment = step->seg;
 	if (guidebot_firing_cache_matches(view, step, workspace) &&
@@ -540,27 +1044,133 @@ static int guidebot_prepare_shoot_switch_position(
 		summary->steep_firing_position =
 		    step->switch_shot_quality ==
 		    LEVEL_METADATA_SWITCH_SHOT_CONFIRMED_STEEP;
-		return 1;
+		workspace->firing_search_active = 0;
+		return GUIDEBOT_ROUTE_CERTIFIER_VALID;
 	}
-	best_path_distance = -1;
-	for (pass = 0; pass < 2 && best_segment < 0; ++pass) {
+	if (!workspace->firing_search_active) {
+		workspace->firing_search_active = 1;
+		workspace->firing_search_pass = 0;
+		workspace->firing_search_segment = -1;
+		workspace->firing_search_detailed_count = 0;
+		workspace->firing_search_selection_segment = 0;
+		workspace->firing_search_selection_complete = 0;
+		workspace->firing_frontier_active = 0;
+		workspace->firing_search_original_segment = original_segment;
+		memcpy(
+		    workspace->firing_search_original_position, firing_pos,
+		    sizeof(workspace->firing_search_original_position));
+		workspace->firing_search_best_segment = -1;
+		workspace->firing_search_best_path_distance = -1;
+		workspace->firing_search_best_quality =
+		    LEVEL_METADATA_SWITCH_SHOT_NONE;
+		workspace->firing_search_best_incidence =
+		    LEVEL_METADATA_SHOT_COSINE_ONE;
+		workspace->firing_search_best_score = 0.0;
+	}
+	if (!workspace->firing_search_selection_complete) {
+		const int selection =
+		    guidebot_select_detailed_firing_segments_budgeted(
+		        view, step, workspace, budget, tick_work);
+
+		if (selection == GUIDEBOT_ROUTE_CERTIFIER_PENDING)
+			return selection;
+	}
+	while (workspace->firing_search_pass < 4) {
+		const int pass = workspace->firing_search_pass;
 		int (*shootable)(void *, int, const int[3], int) =
-		    pass == 0 ? view->wall_shootable_from_position
-		              : view->wall_potentially_shootable_from_position;
-		const int quality = pass == 0
+		    !(pass & 1) ? view->wall_shootable_from_position
+		                : view->wall_potentially_shootable_from_position;
+		const int quality = !(pass & 1)
 		                        ? LEVEL_METADATA_SWITCH_SHOT_CONFIRMED
 		                        : LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE;
+		const int detailed_pass = pass < 2;
 
-		if (!shootable ||
-		    (pass != 0 && step->switch_shot_quality !=
-		                      LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE))
-			continue;
-		for (segment = -1; segment < view->num_segments; ++segment) {
+		/* Cached metadata can call a shot confirmed even after a live geometry
+		 * check rejects it.  In that case still run the conservative potential
+		 * visibility pass and publish it as approximate guidance. */
+		if (!shootable) {
+			if (detailed_pass)
+				workspace->firing_search_detailed_index =
+				    workspace->firing_search_detailed_count;
+			else
+				workspace->firing_search_segment = view->num_segments;
+		}
+		/* Search detailed poses in the nearest reachable cells before asking the
+		 * collision system about every cell center in the mine.  A square-enough
+		 * nearby shot is already useful guidance and avoids the broad scan. */
+		while (detailed_pass &&
+		       workspace->firing_search_detailed_index <
+		           workspace->firing_search_detailed_count) {
+			long double distance_squared;
+			long double score;
+			int candidate_pos[3];
+			int incidence;
+			const int candidate_segment =
+			    workspace->firing_search_detailed_segments
+			        [workspace->firing_search_detailed_index];
+			int sample;
+
+			if (workspace->firing_search_detailed_sample >= 33) {
+				workspace->firing_search_detailed_index++;
+				workspace->firing_search_detailed_sample = 0;
+				continue;
+			}
+			if (guidebot_certifier_budget_exhausted(budget, *tick_work))
+				return GUIDEBOT_ROUTE_CERTIFIER_PENDING;
+			sample = workspace->firing_search_detailed_sample++;
+			(*tick_work)++;
+			if (!guidebot_detailed_firing_sample(
+			        view, candidate_segment, sample, candidate_pos))
+				continue;
+			workspace->job_evaluated_firing_positions++;
+			if (!shootable(
+			        view->user, candidate_segment, candidate_pos,
+			        step->wall_num))
+				continue;
+			incidence = guidebot_shot_incidence_cosine(
+			    view, candidate_pos, step->wall_num);
+			distance_squared = step->aim_pos_valid
+			                       ? guidebot_position_distance_squared(
+			                             candidate_pos, step->aim_pos)
+			                       : 0.0;
+			score = guidebot_shot_score(distance_squared, incidence);
+			if (workspace->firing_search_best_segment >= 0 &&
+			    score >= workspace->firing_search_best_score)
+				continue;
+			workspace->firing_search_best_segment = candidate_segment;
+			workspace->firing_search_best_path_distance =
+			    workspace->physical_distance[candidate_segment];
+			workspace->firing_search_best_score = score;
+			workspace->firing_search_best_incidence = incidence;
+			workspace->firing_search_best_quality =
+			    quality == LEVEL_METADATA_SWITCH_SHOT_CONFIRMED &&
+			            incidence < GUIDEBOT_STEEP_SHOT_COSINE
+			        ? LEVEL_METADATA_SWITCH_SHOT_CONFIRMED_STEEP
+			        : quality;
+			memcpy(
+			    workspace->firing_search_best_position, candidate_pos,
+			    sizeof(workspace->firing_search_best_position));
+			if (incidence >= GUIDEBOT_STEEP_SHOT_COSINE) {
+				workspace->firing_search_detailed_index =
+				    workspace->firing_search_detailed_count;
+				break;
+			}
+		}
+		if (detailed_pass &&
+		    workspace->firing_search_best_segment >= 0)
+			break;
+		while (!detailed_pass &&
+		       workspace->firing_search_segment < view->num_segments) {
 			long double distance_squared;
 			long double score;
 			int candidate_pos[3];
 			int candidate_segment;
 			int incidence;
+			int segment;
+
+			if (guidebot_certifier_budget_exhausted(budget, *tick_work))
+				return GUIDEBOT_ROUTE_CERTIFIER_PENDING;
+			segment = workspace->firing_search_segment++;
 
 			if (segment < 0) {
 				candidate_segment = original_segment;
@@ -575,7 +1185,8 @@ static int guidebot_prepare_shoot_switch_position(
 			if (!guidebot_valid_segment(view, candidate_segment) ||
 			    !workspace->reachable[candidate_segment])
 				continue;
-			summary->evaluated_firing_positions++;
+			workspace->job_evaluated_firing_positions++;
+			(*tick_work)++;
 			if (!shootable(
 			        view->user, candidate_segment, candidate_pos,
 			        step->wall_num))
@@ -587,62 +1198,112 @@ static int guidebot_prepare_shoot_switch_position(
 			                             candidate_pos, step->aim_pos)
 			                       : 0.0;
 			score = guidebot_shot_score(distance_squared, incidence);
-			if (best_segment >= 0 &&
-			    (score > best_score ||
-			     (score == best_score &&
+			if (workspace->firing_search_best_segment >= 0 &&
+			    (score > workspace->firing_search_best_score ||
+			     (score == workspace->firing_search_best_score &&
 			      (workspace->physical_distance[candidate_segment] >
-			           best_path_distance ||
+			           workspace->firing_search_best_path_distance ||
 			       (workspace->physical_distance[candidate_segment] ==
-			            best_path_distance &&
-			        candidate_segment >= best_segment)))))
+			            workspace->firing_search_best_path_distance &&
+			        candidate_segment >=
+			            workspace->firing_search_best_segment)))))
 				continue;
-			best_segment = candidate_segment;
-			best_path_distance =
+			workspace->firing_search_best_segment = candidate_segment;
+			workspace->firing_search_best_path_distance =
 			    workspace->physical_distance[candidate_segment];
-			best_score = score;
-			best_incidence = incidence;
-			best_quality =
+			workspace->firing_search_best_score = score;
+			workspace->firing_search_best_incidence = incidence;
+			workspace->firing_search_best_quality =
 			    quality == LEVEL_METADATA_SWITCH_SHOT_CONFIRMED &&
 			            incidence < GUIDEBOT_STEEP_SHOT_COSINE
 			        ? LEVEL_METADATA_SWITCH_SHOT_CONFIRMED_STEEP
 			        : quality;
-			memcpy(best_pos, candidate_pos, sizeof(best_pos));
+			memcpy(
+			    workspace->firing_search_best_position, candidate_pos,
+			    sizeof(workspace->firing_search_best_position));
 		}
+		if (workspace->firing_search_best_segment >= 0)
+			break;
+		workspace->firing_search_pass++;
+		workspace->firing_search_segment = -1;
+		workspace->firing_search_detailed_index = 0;
+		workspace->firing_search_detailed_sample = 0;
 	}
-	if (best_segment < 0) {
+	if (workspace->firing_search_best_segment < 0) {
 		int (*shootable)(void *, int, const int[3], int) =
 		    view->wall_shootable_from_position;
+		int frontier_result;
+		int frontier;
 
-		best_quality = LEVEL_METADATA_SWITCH_SHOT_CONFIRMED;
-		if (!shootable(
+		frontier_result = guidebot_firing_frontier_budgeted(
+		    view, original_segment, step->wall_num, workspace, budget,
+		    tick_work);
+		if (frontier_result == GUIDEBOT_ROUTE_CERTIFIER_PENDING)
+			return GUIDEBOT_ROUTE_CERTIFIER_PENDING;
+		frontier = frontier_result == GUIDEBOT_ROUTE_CERTIFIER_VALID
+		               ? workspace->firing_frontier_best_segment
+		               : -1;
+
+		if (guidebot_valid_segment(view, frontier) &&
+		    view->segment_center &&
+		    view->segment_center(
+		        view->user, frontier,
+		        workspace->firing_search_best_position)) {
+			workspace->firing_search_best_segment = frontier;
+			workspace->firing_search_best_path_distance =
+			    workspace->physical_distance[frontier];
+			workspace->firing_search_best_quality =
+			    LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE;
+			workspace->firing_search_best_incidence =
+			    LEVEL_METADATA_SHOT_COSINE_ONE;
+		}
+
+		if (workspace->firing_search_best_segment < 0) {
+			workspace->firing_search_best_quality =
+			    LEVEL_METADATA_SWITCH_SHOT_CONFIRMED;
+		}
+		if (workspace->firing_search_best_segment < 0 &&
+		    !shootable(
 		        view->user, original_segment, firing_pos, step->wall_num)) {
 			if (step->switch_shot_quality !=
 			        LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE ||
 			    !view->wall_potentially_shootable_from_position)
-				return 0;
+				return GUIDEBOT_ROUTE_CERTIFIER_INVALID;
 			shootable = view->wall_potentially_shootable_from_position;
 			if (!shootable(
 			        view->user, original_segment, firing_pos,
 			        step->wall_num))
-				return 0;
-			best_quality = LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE;
+				return GUIDEBOT_ROUTE_CERTIFIER_INVALID;
+			workspace->firing_search_best_quality =
+			    LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE;
 		}
-		best_segment = original_segment;
-		best_incidence = guidebot_shot_incidence_cosine(
-		    view, firing_pos, step->wall_num);
-		if (best_quality == LEVEL_METADATA_SWITCH_SHOT_CONFIRMED &&
-		    best_incidence < GUIDEBOT_STEEP_SHOT_COSINE)
-			best_quality = LEVEL_METADATA_SWITCH_SHOT_CONFIRMED_STEEP;
-		memcpy(best_pos, firing_pos, sizeof(best_pos));
+		if (workspace->firing_search_best_segment < 0) {
+			workspace->firing_search_best_segment = original_segment;
+			workspace->firing_search_best_incidence =
+			    guidebot_shot_incidence_cosine(
+			        view, firing_pos, step->wall_num);
+			if (workspace->firing_search_best_quality ==
+			        LEVEL_METADATA_SWITCH_SHOT_CONFIRMED &&
+			    workspace->firing_search_best_incidence <
+			        GUIDEBOT_STEEP_SHOT_COSINE)
+				workspace->firing_search_best_quality =
+				    LEVEL_METADATA_SWITCH_SHOT_CONFIRMED_STEEP;
+			memcpy(
+			    workspace->firing_search_best_position, firing_pos,
+			    sizeof(workspace->firing_search_best_position));
+		}
 	}
-	step->seg = best_segment;
-	step->path_terminal_segment = best_segment;
-	step->path_segment_count = best_path_distance >= 0
-	                               ? best_path_distance + 1
+	step->seg = workspace->firing_search_best_segment;
+	step->path_terminal_segment = workspace->firing_search_best_segment;
+	step->path_segment_count = workspace->firing_search_best_path_distance >= 0
+	                               ? workspace->firing_search_best_path_distance + 1
 	                               : step->path_segment_count;
-	memcpy(step->activation_pos, best_pos, sizeof(step->activation_pos));
-	step->switch_shot_quality = best_quality;
-	step->switch_shot_incidence_cosine = best_incidence;
+	memcpy(
+	    step->activation_pos, workspace->firing_search_best_position,
+	    sizeof(step->activation_pos));
+	step->switch_shot_quality = workspace->firing_search_best_quality;
+	step->switch_shot_incidence_cosine =
+	    workspace->firing_search_best_incidence;
 	workspace->firing_cache_valid = 1;
 	workspace->firing_cache_num_segments = view->num_segments;
 	workspace->firing_cache_num_walls = view->num_walls;
@@ -651,21 +1312,31 @@ static int guidebot_prepare_shoot_switch_position(
 	memcpy(
 	    workspace->firing_cache_aim, step->aim_pos,
 	    sizeof(workspace->firing_cache_aim));
-	workspace->firing_cache_segment = best_segment;
+	workspace->firing_cache_segment = workspace->firing_search_best_segment;
 	workspace->firing_cache_path_segment_count = step->path_segment_count;
 	memcpy(
-	    workspace->firing_cache_position, best_pos,
+	    workspace->firing_cache_position,
+	    workspace->firing_search_best_position,
 	    sizeof(workspace->firing_cache_position));
-	workspace->firing_cache_shot_quality = best_quality;
-	workspace->firing_cache_incidence_cosine = best_incidence;
+	workspace->firing_cache_shot_quality =
+	    workspace->firing_search_best_quality;
+	workspace->firing_cache_incidence_cosine =
+	    workspace->firing_search_best_incidence;
 	summary->reranked_firing_position =
-	    best_segment != original_segment ||
-	    memcmp(best_pos, firing_pos, sizeof(best_pos)) != 0;
+	    workspace->firing_search_best_segment != original_segment ||
+	    memcmp(
+	        workspace->firing_search_best_position, firing_pos,
+	        sizeof(workspace->firing_search_best_position)) != 0;
 	summary->approximate_firing_position =
-	    best_quality == LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE;
+	    workspace->firing_search_best_quality ==
+	    LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE;
 	summary->steep_firing_position =
-	    best_quality == LEVEL_METADATA_SWITCH_SHOT_CONFIRMED_STEEP;
-	return 1;
+	    workspace->firing_search_best_quality ==
+	    LEVEL_METADATA_SWITCH_SHOT_CONFIRMED_STEEP;
+	summary->evaluated_firing_positions =
+	    workspace->job_evaluated_firing_positions;
+	workspace->firing_search_active = 0;
+	return GUIDEBOT_ROUTE_CERTIFIER_VALID;
 }
 
 static int guidebot_step_starts_countdown(
@@ -745,7 +1416,7 @@ static int guidebot_later_required_target_reachable(
 	return 0;
 }
 
-int guidebot_route_certify_current_state(
+int guidebot_route_certify_current_state_budgeted(
     const level_metadata_scan_view *view,
     const level_metadata_state *prepared_state,
     const route_planner_plan_summary *prepared_plan,
@@ -753,9 +1424,11 @@ int guidebot_route_certify_current_state(
     level_metadata_state *live_state,
     route_planner_plan_summary *live_plan,
     guidebot_route_validity_certificate *certificate,
-    guidebot_route_certifier_summary *certifier_summary)
+    guidebot_route_certifier_summary *certifier_summary,
+    const guidebot_route_certifier_budget *budget)
 {
 	guidebot_route_certifier_summary local_summary;
+	unsigned int tick_work = 0;
 	int selected = -1;
 	int selected_segment = -1;
 	int requires_control_center = 0;
@@ -776,9 +1449,28 @@ int guidebot_route_certify_current_state(
 	certificate->source_object = -1;
 	certificate->frontier_segment = -1;
 	if (prepared_state->route_step_count < 0 ||
-	    prepared_state->route_step_count > LEVEL_METADATA_MAX_ROUTE_STEPS ||
-	    !guidebot_build_reachability(view, workspace, &local_summary))
-		return 0;
+	    prepared_state->route_step_count > LEVEL_METADATA_MAX_ROUTE_STEPS) {
+		guidebot_route_certifier_reset_job(workspace);
+		return GUIDEBOT_ROUTE_CERTIFIER_INVALID;
+	}
+	{
+		const int reachability = guidebot_build_reachability(
+		    view, workspace, &local_summary, budget, &tick_work);
+
+		if (reachability == GUIDEBOT_ROUTE_CERTIFIER_PENDING) {
+			local_summary.visited_segments =
+			    workspace->job_visited_segments;
+			local_summary.evaluated_edges =
+			    workspace->job_evaluated_edges;
+			if (certifier_summary)
+				*certifier_summary = local_summary;
+			return GUIDEBOT_ROUTE_CERTIFIER_PENDING;
+		}
+		if (reachability != GUIDEBOT_ROUTE_CERTIFIER_VALID) {
+			guidebot_route_certifier_reset_job(workspace);
+			return GUIDEBOT_ROUTE_CERTIFIER_INVALID;
+		}
+	}
 	*live_state = *prepared_state;
 	*live_plan = *prepared_plan;
 	live_plan->first_pending_step = -1;
@@ -827,15 +1519,36 @@ int guidebot_route_certify_current_state(
 			    GUIDEBOT_ROUTE_CERTIFIER_REJECTION_INVALID_TARGET;
 			break;
 		}
-		if (!guidebot_prepare_shoot_switch_position(
-		        view, candidate, workspace, &local_summary)) {
-			local_summary.rejected_actions++;
-			local_summary.blocking_step = step;
-			local_summary.blocking_segment = target_segment;
-			local_summary.blocking_reason =
-			    GUIDEBOT_ROUTE_CERTIFIER_REJECTION_INVALID_TARGET;
-			break;
+		{
+			const int firing = guidebot_prepare_shoot_switch_position(
+			    view, candidate, workspace, &local_summary, budget,
+			    &tick_work);
+
+			if (firing == GUIDEBOT_ROUTE_CERTIFIER_PENDING) {
+				local_summary.visited_segments =
+				    workspace->job_visited_segments;
+				local_summary.evaluated_edges =
+				    workspace->job_evaluated_edges;
+				local_summary.evaluated_firing_positions =
+				    workspace->job_evaluated_firing_positions;
+				if (certifier_summary)
+					*certifier_summary = local_summary;
+				return GUIDEBOT_ROUTE_CERTIFIER_PENDING;
+			}
+			if (firing != GUIDEBOT_ROUTE_CERTIFIER_VALID) {
+				local_summary.rejected_actions++;
+				local_summary.blocking_step = step;
+				local_summary.blocking_segment = target_segment;
+				local_summary.blocking_reason =
+				    GUIDEBOT_ROUTE_CERTIFIER_REJECTION_INVALID_TARGET;
+				break;
+			}
 		}
+		/* A trigger can complete while a firing-position search is yielding.
+		 * Do not publish the now-obsolete action and force another job cycle */
+		if (!level_metadata_route_step_required_by_world_state(
+		        view, candidate))
+			continue;
 		target_segment = guidebot_step_target_segment(view, candidate);
 		if (!guidebot_valid_segment(view, target_segment) ||
 		    !workspace->reachable[target_segment]) {
@@ -864,7 +1577,8 @@ int guidebot_route_certify_current_state(
 		if (incomplete) {
 			if (certifier_summary)
 				*certifier_summary = local_summary;
-			return 0;
+			guidebot_route_certifier_reset_job(workspace);
+			return GUIDEBOT_ROUTE_CERTIFIER_INVALID;
 		}
 		live_state->route_status = LEVEL_METADATA_ROUTE_OK;
 	} else {
@@ -885,5 +1599,22 @@ int guidebot_route_certify_current_state(
 	local_summary.selected_segment = selected_segment;
 	if (certifier_summary)
 		*certifier_summary = local_summary;
-	return 1;
+	guidebot_route_certifier_reset_job(workspace);
+	return GUIDEBOT_ROUTE_CERTIFIER_VALID;
+}
+
+int guidebot_route_certify_current_state(
+    const level_metadata_scan_view *view,
+    const level_metadata_state *prepared_state,
+    const route_planner_plan_summary *prepared_plan,
+    guidebot_route_certifier_workspace *workspace,
+    level_metadata_state *live_state,
+    route_planner_plan_summary *live_plan,
+    guidebot_route_validity_certificate *certificate,
+    guidebot_route_certifier_summary *certifier_summary)
+{
+	guidebot_route_certifier_reset_job(workspace);
+	return guidebot_route_certify_current_state_budgeted(
+	    view, prepared_state, prepared_plan, workspace, live_state, live_plan,
+	    certificate, certifier_summary, NULL);
 }

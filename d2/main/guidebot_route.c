@@ -97,6 +97,7 @@ unsigned int Escort_route_reactor_generation;
 unsigned int Escort_route_automap_generation;
 unsigned int Escort_route_pending_event_mask;
 unsigned int Escort_route_pending_audit_mask;
+unsigned int Escort_route_deferred_live_event_mask;
 unsigned int Escort_route_event_notification_count;
 unsigned int Escort_route_notification_coalesced_count;
 unsigned int Escort_route_redundant_dirty_domain_count;
@@ -112,6 +113,7 @@ unsigned int Escort_route_audit_discovery_count;
 unsigned int Escort_route_audit_only_discovery_count;
 unsigned int Escort_route_audit_work_total;
 unsigned int Escort_route_audit_work_max;
+unsigned int Escort_route_audit_deferred_count;
 unsigned int Escort_route_certificate_check_count;
 unsigned int Escort_route_certificate_failure_count;
 unsigned int Escort_route_certificate_work_total;
@@ -121,8 +123,11 @@ unsigned int Escort_route_path_replaced_count;
 unsigned int Escort_route_invalid_path_stopped_count;
 unsigned int Escort_route_audit_domain_cursor;
 fix64 Escort_route_audit_next_time;
+fix64 Escort_route_last_audit_rescan_time;
+int Escort_route_last_audit_rescan_time_valid;
 fix64 Escort_route_completion_check_time;
 const char *Escort_route_last_replan_reason = "level_start";
+static int Escort_route_goal_request_pending;
 static fix64 Escort_nav_trace_next_time;
 static vms_vector Escort_nav_trace_last_pos;
 static int Escort_nav_trace_last_signature = -1;
@@ -287,6 +292,8 @@ void escort_trace_navigation_reset(const char *reason, object *objp,
 
 void escort_route_set_target_mode(int target_mode)
 {
+	if (Escort_route_target_mode != target_mode)
+		level_metadata_invalidate_live_route_work();
 	Escort_route_target_mode = target_mode;
 	if (target_mode != ESCORT_ROUTE_TARGET_UNEXPLORED)
 		escort_unexplored_route_target_clear(&Escort_unexplored_route_target);
@@ -329,10 +336,38 @@ void escort_route_enqueue_event_mask(
     int audit)
 {
 	const unsigned int redundant_mask =
-	    Escort_route_pending_event_mask & event_mask;
+	    (Escort_route_pending_event_mask |
+	     Escort_route_deferred_live_event_mask) &
+	    event_mask;
 
 	if (!event_mask)
 		return;
+	/* A resumable certification job reads the current world through its live
+	 * view callbacks.  Restarting that job for every wall/trigger notification
+	 * can prevent it from ever reaching publication, especially while a door is
+	 * opening and reports several related state changes.  Finish the bounded
+	 * job, then coalesce everything that arrived meanwhile into one follow-up
+	 * pass.  The certifier rechecks completed actions before publishing, so this
+	 * does not preserve a switch objective that changed during the scan. */
+	if (level_metadata_live_route_work_pending()) {
+		if (notification && redundant_mask)
+			Escort_route_notification_coalesced_count++;
+		Escort_route_redundant_dirty_domain_count +=
+		    escort_route_count_event_domains(redundant_mask);
+		if (notification && !Escort_route_dirty_notification_time_valid) {
+			Escort_route_first_dirty_notification_time = GameTime64;
+			Escort_route_dirty_notification_time_valid = 1;
+		}
+		if (!(Escort_route_deferred_live_event_mask & event_mask))
+			debug_log(
+			    DLOG_GUIDEBOT,
+			    "route_work_delayed_rerun scheduled pending=0x%x deferred=0x%x",
+			    event_mask,
+			    Escort_route_deferred_live_event_mask | event_mask);
+		Escort_route_deferred_live_event_mask |= event_mask;
+		return;
+	}
+	level_metadata_invalidate_live_route_work();
 	if (notification && redundant_mask)
 		Escort_route_notification_coalesced_count++;
 	if (notification && !Escort_route_dirty_notification_time_valid) {
@@ -347,7 +382,29 @@ void escort_route_enqueue_event_mask(
 			Escort_route_audit_only_discovery_count++;
 	}
 	Escort_route_pending_event_mask |= event_mask;
+	level_metadata_set_live_work_pending_event_mask(
+	    Escort_route_pending_event_mask);
 	Escort_route_metadata_dirty = 1;
+}
+
+static void escort_route_schedule_deferred_live_events(void)
+{
+	unsigned int deferred_events;
+
+	if (level_metadata_live_route_work_pending() ||
+	    !Escort_route_deferred_live_event_mask)
+		return;
+	deferred_events = Escort_route_deferred_live_event_mask;
+	Escort_route_pending_event_mask |= deferred_events;
+	Escort_route_deferred_live_event_mask = 0;
+	level_metadata_invalidate_live_route_work();
+	level_metadata_set_live_work_pending_event_mask(
+	    Escort_route_pending_event_mask);
+	Escort_route_metadata_dirty = 1;
+	debug_log(
+	    DLOG_GUIDEBOT,
+	    "route_work_delayed_rerun executed pending=0x%x",
+	    deferred_events);
 }
 
 int escort_route_has_local_authority(void)
@@ -512,6 +569,7 @@ static void escort_route_consume_cache_improvement(void)
 void escort_route_clear_goal(void)
 {
 	escort_route_consume_cache_improvement();
+	Escort_route_goal_request_pending = 0;
 	escort_route_goal_initialize(&Escort_route_goal);
 }
 
@@ -982,6 +1040,11 @@ unsigned int escort_get_route_audit_work_max(void)
 	return Escort_route_audit_work_max;
 }
 
+unsigned int escort_get_route_audit_deferred_count(void)
+{
+	return Escort_route_audit_deferred_count;
+}
+
 unsigned int escort_get_route_certificate_check_count(void)
 {
 	return Escort_route_certificate_check_count;
@@ -1046,6 +1109,9 @@ void escort_reset_route_efficiency_counters(void)
 	Escort_route_audit_only_discovery_count = 0;
 	Escort_route_audit_work_total = 0;
 	Escort_route_audit_work_max = 0;
+	Escort_route_audit_deferred_count = 0;
+	Escort_route_last_audit_rescan_time = 0;
+	Escort_route_last_audit_rescan_time_valid = 0;
 	Escort_route_certificate_check_count = 0;
 	Escort_route_certificate_failure_count = 0;
 	Escort_route_certificate_work_total = 0;
@@ -1588,6 +1654,12 @@ int escort_route_next_goal(void)
 	int adoption_action = guidebot_route_passive_adoption_action(
 	    Escort_route_goal.active, candidate.active, same_objective);
 
+	if (!Escort_route_goal.active && !candidate.active &&
+	    level_metadata_live_route_work_pending())
+		Escort_route_goal_request_pending = 1;
+	else if (candidate.active || !level_metadata_live_route_work_pending())
+		Escort_route_goal_request_pending = 0;
+
 	escort_route_consume_cache_improvement();
 	if (adoption_action == GUIDEBOT_ROUTE_ADOPTION_RETAIN_PATH) {
 #ifdef __ANDROID__
@@ -1674,6 +1746,11 @@ void escort_route_refresh_metadata(void)
 			            route.target_seg,
 			            route.waypoint_seg,
 			            route.direct_reachable);
+			escort_route_schedule_deferred_live_events();
+			return;
+		}
+		if (level_metadata_live_route_work_pending()) {
+			Escort_route_metadata_dirty = 1;
 			return;
 		}
 		escort_unexplored_route_target_clear(&Escort_unexplored_route_target);
@@ -1683,6 +1760,9 @@ void escort_route_refresh_metadata(void)
 		level_metadata_rescan_route_from_object(Buddy_objnum);
 	else
 		level_metadata_rescan_current_level();
+	if (level_metadata_live_route_work_pending())
+		Escort_route_metadata_dirty = 1;
+	escort_route_schedule_deferred_live_events();
 }
 
 void escort_route_stop_invalid_path(void)
@@ -1747,14 +1827,20 @@ void escort_route_monitor_completion(void)
 	previous_goal_object = Escort_goal_object;
 	previous_decision_valid =
 	    level_metadata_get_live_route_decision(&previous_decision);
-	if (GameTime64 >= Escort_route_completion_check_time &&
+	if (!level_metadata_live_route_work_pending() &&
+	    GameTime64 >= Escort_route_completion_check_time &&
 	    GameTime64 - Escort_route_completion_check_time < F1_0 / 4)
 		return;
 	Escort_route_completion_check_time = GameTime64;
+	/* The incumbent certificate is expected to be stale while its replacement
+	 * is being certified.  Rechecking it here would enqueue the same failure
+	 * every frame and reset the resumable job before it can finish.  Explicit
+	 * world-state notifications still invalidate live work at their source */
 #ifdef INTROSPECT_ON
-	if (!Escort_route_certificate_checks_suppressed)
+	if (!level_metadata_live_route_work_pending() &&
+	    !Escort_route_certificate_checks_suppressed)
 #else
-	if (1)
+	if (!level_metadata_live_route_work_pending())
 #endif
 	{
 		unsigned int work_units = 0;
@@ -1782,10 +1868,25 @@ void escort_route_monitor_completion(void)
 	if (Escort_route_pending_event_mask || Escort_route_metadata_dirty) {
 		unsigned int pending_events = Escort_route_pending_event_mask;
 		unsigned int audit_events = Escort_route_pending_audit_mask;
+		int audit_only = audit_events && audit_events == pending_events &&
+		                 !certificate_failed;
 		int previous_certificate_valid =
 		    certificate_valid == 1 && previous_decision_valid &&
 		    previous_decision.certificate.status ==
 		        GUIDEBOT_ROUTE_CERTIFICATE_VALID;
+		if (escort_audit_replan_should_defer(
+		        audit_only, Escort_route_last_audit_rescan_time_valid,
+		        GameTime64, Escort_route_last_audit_rescan_time, 5 * F1_0)) {
+			Escort_route_audit_deferred_count++;
+#ifdef __ANDROID__
+			debug_log(
+			    DLOG_GUIDEBOT,
+			    "route_work_deferred reason=audit_governor stage=queue "
+			    "elapsed_us=0 pending=0x%x incumbent=%d",
+			    pending_events, has_active_goal);
+#endif
+			return;
+		}
 		escort_route_consume_pending_events();
 		if (pending_events)
 			escort_route_note_replan(
@@ -1797,6 +1898,10 @@ void escort_route_monitor_completion(void)
 			        "automap_exploration" :
 			        "world_state_event");
 		escort_route_refresh_metadata();
+		if (audit_only) {
+			Escort_route_last_audit_rescan_time = GameTime64;
+			Escort_route_last_audit_rescan_time_valid = 1;
+		}
 		Escort_route_event_coalesced_rescan_count++;
 		if (has_active_goal) {
 			escort_route_goal candidate_goal;
@@ -1865,6 +1970,15 @@ void escort_route_monitor_completion(void)
 				escort_route_stop_invalid_path();
 				Escort_route_invalid_path_stopped_count++;
 			}
+		} else if (Escort_route_goal_request_pending &&
+		           !level_metadata_live_route_work_pending()) {
+			Escort_goal_object = escort_route_next_goal();
+			if (Escort_route_goal.active)
+				Escort_last_path_created = 0;
+		} else if (Escort_route_target_mode ==
+		               ESCORT_ROUTE_TARGET_UNEXPLORED &&
+		           Escort_unexplored_route_target.active) {
+			escort_route_next_goal();
 		}
 		if (Escort_route_dirty_notification_time_valid &&
 		    !Escort_route_metadata_dirty) {

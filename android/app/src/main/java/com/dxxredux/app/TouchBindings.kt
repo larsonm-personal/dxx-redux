@@ -308,7 +308,7 @@ object TouchBindings {
             AXIS_RIGHT_X to AxisDirectionLabels("Turn Left", "Turn Right"),
             AXIS_RIGHT_Y to AxisDirectionLabels("Pitch Up", "Pitch Down"),
             AXIS_BANK to AxisDirectionLabels("Bank Left", "Bank Right"),
-            AXIS_SLIDE_UD to AxisDirectionLabels("Strafe Up", "Strafe Down"),
+            AXIS_SLIDE_UD to AxisDirectionLabels("Strafe Down", "Strafe Up"),
         )
 
     fun axisDirectionLabels(

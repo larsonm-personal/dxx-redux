@@ -36,6 +36,11 @@ int main(void)
 	assert(!escort_semantic_route_holds_endpoint(1, 1, 1));
 	assert(!escort_semantic_route_holds_endpoint(1, 0, 0));
 	assert(!escort_semantic_route_holds_endpoint(0, 1, 0));
+	assert(!escort_audit_replan_should_defer(0, 1, 120, 100, 50));
+	assert(!escort_audit_replan_should_defer(1, 0, 120, 100, 50));
+	assert(escort_audit_replan_should_defer(1, 1, 120, 100, 50));
+	assert(!escort_audit_replan_should_defer(1, 1, 150, 100, 50));
+	assert(!escort_audit_replan_should_defer(1, 1, 90, 100, 50));
 	assert(escort_path_recalc_limiter_allow(&limiter, 0, 1000, &next_allowed));
 	assert(escort_path_recalc_limiter_allow(&limiter, 100, 1000, &next_allowed));
 	assert(escort_path_recalc_limiter_allow(&limiter, 200, 1000, &next_allowed));

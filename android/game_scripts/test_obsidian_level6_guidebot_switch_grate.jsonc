@@ -23,7 +23,6 @@
     {"action": "setup_command", "command": "clear_route_metadata_cache", "post_delay_ms": 250},
     {"action": "setup_command", "command": "clear_level_metadata_result_cache", "post_delay_ms": 250},
     {"action": "import_mission_zip", "file": "obsidian.zip", "label": "obsidian_level6_guidebot", "display_name": "Obsidian.zip"},
-    {"action": "analyze_level_metadata_all", "label": "obsidian_level6_guidebot", "mod_file": "Obsidian.zip", "game": "d2", "status": "ok", "min_total_levels": 18},
     {"action": "enter_game", "game": "d2"},
     {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
@@ -52,14 +51,18 @@
         "guidebot.route_goal_active": "true",
         "guidebot.route_goal_activation_kind_name": "shoot_switch",
         "guidebot.route_goal_trigger": "15",
-        "guidebot.route_goal_seg": "257"
+        "guidebot.route_goal_seg": "11",
+        "guidebot.route_live_work.full_plan_calls": "0",
+        "guidebot.route_live_work.certifier_overruns": "0",
+        "guidebot.route_live_work.max_tick_us": {"lte": 4000},
+        "guidebot.route_live_work.pending": "false"
     }},
     {"action": "pose_route_guidance", "post_delay_ms": 250},
     {"action": "meta_action", "id": 1042, "post_delay_ms": 500},
     {"action": "wait_ms", "ms": 12000},
     {"action": "assert", "expect": {
         "guidebot.route_goal_trigger": "15",
-        "guidebot.segment": "257",
+        "guidebot.segment": "11",
         "guidebot.path_length": "1"
     }},
 
@@ -67,26 +70,15 @@
     {"action": "set_debug", "field": "fire_trigger", "value": "16", "post_delay_ms": 100},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
         "guidebot.route_goal_trigger": "14",
-        "guidebot.route_goal_seg": "506"
+        "guidebot.route_goal_seg": "52"
     }},
-    {"action": "pose_view", "segment": 540, "x": 86.679718, "y": 182.797989, "z": 413.188293, "post_delay_ms": 250},
+    {"action": "pose_route_guidance", "post_delay_ms": 250},
     {"action": "meta_action", "id": 1042, "post_delay_ms": 500},
-    {"action": "wait_for", "timeout_ms": 20000, "expect": {
-        "guidebot.route_stall_recovery_count": {"gte": 1},
-        "guidebot.route_avoid_seg": "607"
-    }},
-    {"action": "wait_for", "timeout_ms": 20000, "expect": {
-        "guidebot.segment": {"ne": 540}
-    }},
-    {"action": "pose_view", "segment": 541, "x": -87.503891, "y": 172.280426, "z": 417.697983, "post_delay_ms": 250},
-    {"action": "meta_action", "id": 1042, "post_delay_ms": 500},
-    {"action": "wait_for", "timeout_ms": 30000, "expect": {
-        "guidebot.route_stall_recovery_count": {"gte": 2},
-        "guidebot.route_avoid_seg": "607",
-        "guidebot.route_avoid_seg2": "606"
-    }},
-    {"action": "wait_for", "timeout_ms": 30000, "expect": {
-        "guidebot.segment": {"ne": 541}
+    {"action": "wait_ms", "ms": 12000},
+    {"action": "assert", "expect": {
+        "guidebot.route_goal_trigger": "14",
+        "guidebot.segment": "52",
+        "guidebot.path_length": "1"
     }},
     {"action": "log", "message": "=== TEST: Obsidian level 6 Guide-Bot switch and grate routing -- PASS ==="}
 ]

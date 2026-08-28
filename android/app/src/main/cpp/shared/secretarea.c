@@ -53,6 +53,10 @@ static level_metadata_state Level_metadata_live_route_state;
 static int Level_metadata_live_route_state_valid;
 static route_planner_plan_summary Level_metadata_live_plan_summary;
 static int Level_metadata_live_plan_summary_valid;
+static level_metadata_state Level_metadata_live_candidate_state;
+static route_planner_plan_summary Level_metadata_live_candidate_summary;
+static guidebot_route_validity_certificate
+    Level_metadata_live_candidate_certificate;
 static route_snapshot_summary Level_metadata_canonical_snapshot;
 static int Level_metadata_canonical_snapshot_valid;
 static unsigned long long Level_metadata_canonical_analysis_profile_hash;
@@ -89,6 +93,74 @@ static int Level_metadata_published_route_decision_valid;
 static int Level_metadata_live_route_provenance;
 static int Level_metadata_live_certifier_enabled = 1;
 static unsigned long long Level_metadata_route_shadow_logged_hash;
+static level_metadata_live_work_summary Level_metadata_live_work_summary;
+static int Level_metadata_live_route_work_pending;
+
+#ifdef __ANDROID__
+static unsigned long long level_metadata_live_work_clock_us(void *user)
+{
+	(void) user;
+	return (unsigned long long) android_profile_monotonic_us();
+}
+#endif
+
+static int level_metadata_gameplay_full_planner_allowed(void)
+{
+#ifdef __ANDROID__
+	return 0;
+#else
+	return Level_metadata_expensive_planning_allowed;
+#endif
+}
+
+#ifdef __ANDROID__
+static void level_metadata_build_unexplored_candidate(
+    const level_metadata_scan_view *view,
+    const level_metadata_unexplored_route *unexplored,
+    level_metadata_state *state,
+    route_planner_plan_summary *summary)
+{
+	level_metadata_route_step *start;
+	level_metadata_route_step *target;
+
+	level_metadata_state_clear(state);
+	state->route_status = LEVEL_METADATA_ROUTE_OK;
+	state->route_step_count = 2;
+	start = &state->route_steps[0];
+	start->kind = LEVEL_METADATA_ROUTE_START;
+	start->seg = view->start_segment;
+	start->side = -1;
+	start->wall_num = -1;
+	start->trigger_num = -1;
+	start->key_index = -1;
+	start->key_carrier_objnum = -1;
+	start->path_terminal_segment = view->start_segment;
+	start->path_segment_count = 1;
+	snprintf(start->label, sizeof(start->label), "%s", "Start");
+	target = &state->route_steps[1];
+	target->kind = LEVEL_METADATA_ROUTE_UNEXPLORED;
+	target->seg = unexplored->target_seg;
+	target->side = -1;
+	target->wall_num = -1;
+	target->trigger_num = -1;
+	target->key_index = -1;
+	target->key_carrier_objnum = -1;
+	target->path_terminal_segment = unexplored->waypoint_seg;
+	target->path_segment_count = 1;
+	if (view->segment_center)
+		target->activation_pos_valid = view->segment_center(
+		    view->user, target->seg, target->activation_pos);
+	snprintf(target->label, sizeof(target->label), "%s", "Unexplored");
+	memset(summary, 0, sizeof(*summary));
+	summary->endpoint_kind = ROUTE_PLANNER_ENDPOINT_UNEXPLORED;
+	summary->route_step_count = state->route_step_count;
+	summary->first_pending_step = 1;
+	summary->first_pending_path_segment_count = 1;
+	summary->first_pending_path_terminal_segment =
+	    unexplored->waypoint_seg;
+	summary->partial_frontier_segment = -1;
+}
+#endif
 
 static void level_metadata_certify_fresh_live_plan(void)
 {
@@ -3000,7 +3072,9 @@ static void level_metadata_log_connectivity_wall_changes(
 static int level_metadata_try_reuse_canonical_route(
     const level_metadata_scan_view *view,
     level_metadata_state *state,
-    route_planner_plan_summary *summary)
+    route_planner_plan_summary *summary,
+    guidebot_route_validity_certificate *certificate,
+    const guidebot_route_certifier_budget *budget)
 {
 	int valid;
 
@@ -3010,12 +3084,12 @@ static int level_metadata_try_reuse_canonical_route(
 	    !Level_metadata_live_snapshot_valid)
 		return 0;
 	Level_metadata_analysis_cache_summary.live_certifier_attempts++;
-	valid = guidebot_route_certify_current_state(
+	valid = guidebot_route_certify_current_state_budgeted(
 	    view, &Level_metadata_canonical_state,
 	    &Level_metadata_canonical_plan_summary,
 	    &Level_metadata_route_certifier_workspace, state, summary,
-	    &Level_metadata_live_certificate,
-	    &Level_metadata_route_certifier_summary);
+	    certificate,
+	    &Level_metadata_route_certifier_summary, budget);
 #ifdef __ANDROID__
 	debug_log(
 	    DLOG_GUIDEBOT,
@@ -3024,7 +3098,8 @@ static int level_metadata_try_reuse_canonical_route(
 	    "start=%d keys=0x%x "
 	    "required=0x%llx evaluated=%u rejected=%u visited=%u "
 	    "firing_evaluated=%u firing_reranked=%d firing_cache_hit=%d "
-	    "firing_approximate=%d firing_steep=%d\n",
+	    "firing_approximate=%d firing_steep=%d firing_original=%d "
+	    "firing_near=%d,%d,%d,%d,%d,%d,%d,%d\n",
 	    valid, Level_metadata_canonical_plan_summary.first_pending_step,
 	    Level_metadata_route_certifier_summary.selected_step,
 	    Level_metadata_route_certifier_summary.selected_segment,
@@ -3041,17 +3116,34 @@ static int level_metadata_try_reuse_canonical_route(
 	    Level_metadata_route_certifier_summary.reranked_firing_position,
 	    Level_metadata_route_certifier_summary.firing_cache_hit,
 	    Level_metadata_route_certifier_summary.approximate_firing_position,
-	    Level_metadata_route_certifier_summary.steep_firing_position);
+	    Level_metadata_route_certifier_summary.steep_firing_position,
+	    Level_metadata_route_certifier_workspace.firing_search_original_segment,
+	    Level_metadata_route_certifier_workspace
+	        .firing_search_detailed_segments[0],
+	    Level_metadata_route_certifier_workspace
+	        .firing_search_detailed_segments[1],
+	    Level_metadata_route_certifier_workspace
+	        .firing_search_detailed_segments[2],
+	    Level_metadata_route_certifier_workspace
+	        .firing_search_detailed_segments[3],
+	    Level_metadata_route_certifier_workspace
+	        .firing_search_detailed_segments[4],
+	    Level_metadata_route_certifier_workspace
+	        .firing_search_detailed_segments[5],
+	    Level_metadata_route_certifier_workspace
+	        .firing_search_detailed_segments[6],
+	    Level_metadata_route_certifier_workspace
+	        .firing_search_detailed_segments[7]);
 	level_metadata_log_connectivity_wall_changes(
 	    &Level_metadata_route_certifier_summary);
 	level_metadata_log_unresolved_completion_evidence(view);
 #endif
-	if (valid) {
+	if (valid == GUIDEBOT_ROUTE_CERTIFIER_VALID) {
 		Level_metadata_analysis_cache_summary.live_certifier_successes++;
 		if (Level_metadata_route_certifier_summary.used_prepared_fallback)
 			Level_metadata_analysis_cache_summary
 			    .live_certifier_prepared_fallbacks++;
-	} else
+	} else if (valid == GUIDEBOT_ROUTE_CERTIFIER_INVALID)
 		Level_metadata_analysis_cache_summary.live_certifier_failures++;
 	if (Level_metadata_route_certifier_summary.visited_segments >
 	    Level_metadata_analysis_cache_summary
@@ -3101,6 +3193,15 @@ static void level_metadata_run_route_shadow(
 	    endpoint_kind != ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL ||
 	    !Level_metadata_live_snapshot_valid)
 		return;
+#ifdef __ANDROID__
+	Level_metadata_live_work_summary.blocked_full_plan_calls++;
+	debug_log(
+	    DLOG_GUIDEBOT,
+	    "route_work_deferred reason=shadow_full_plan stage=shadow "
+	    "elapsed_us=0 incumbent=%d",
+	    Level_metadata_live_route_state_valid);
+	return;
+#endif
 	level_metadata_state_clear(&Level_metadata_shadow_route_state);
 	memset(
 	    &Level_metadata_shadow_plan_summary, 0,
@@ -3218,6 +3319,12 @@ static void level_metadata_rescan_current_level_internal(
 #ifdef __ANDROID__
 	const long long rescan_started_us = android_profile_monotonic_us();
 #endif
+	const int continuing_live_work =
+	    route_only && Level_metadata_live_route_work_pending;
+	const int lightweight_unexplored_work =
+	    route_only && unexplored_result &&
+	    (Level_metadata_live_snapshot_valid ||
+	     Level_metadata_canonical_snapshot_valid);
 	level_metadata_scan_view *view = level_metadata_refresh_scan_view(start_objnum);
 #ifdef __ANDROID__
 	const long long refresh_finished_us = android_profile_monotonic_us();
@@ -3232,6 +3339,16 @@ static void level_metadata_rescan_current_level_internal(
 	Level_metadata_live_route_target_seg = route_target_seg;
 	if (!route_only) {
 		level_metadata_route_shadow_reset();
+		memset(
+		    &Level_metadata_live_work_summary, 0,
+		    sizeof(Level_metadata_live_work_summary));
+		memset(
+		    &Level_metadata_route_certifier_workspace, 0,
+		    sizeof(Level_metadata_route_certifier_workspace));
+		memset(
+		    &Level_metadata_route_frontier_workspace, 0,
+		    sizeof(Level_metadata_route_frontier_workspace));
+		level_metadata_invalidate_live_route_work();
 		level_metadata_report_progress("level_topology", 0, 1);
 		Level_metadata_canonical_analysis_profile_hash =
 		    level_metadata_analysis_profile_hash(view);
@@ -3259,7 +3376,7 @@ static void level_metadata_rescan_current_level_internal(
 			level_metadata_seed_snapshot_generations(
 			    &Level_metadata_canonical_snapshot);
 		level_metadata_report_progress("level_topology", 1, 1);
-	} else {
+	} else if (!continuing_live_work && !lightweight_unexplored_work) {
 		route_snapshot_summary previous_snapshot;
 		int previous_valid = Level_metadata_live_snapshot_valid ||
 		                     Level_metadata_canonical_snapshot_valid;
@@ -3283,18 +3400,20 @@ static void level_metadata_rescan_current_level_internal(
 				    &Level_metadata_live_snapshot);
 		}
 	}
-	Level_metadata_progression_object_audit_hash_valid =
-	    route_snapshot_build_domain_hash(
-	        view,
-	        ROUTE_SNAPSHOT_DOMAIN_PROGRESSION_OBJECTS,
-	        &Level_metadata_progression_object_audit_hash,
-	        NULL);
-	Level_metadata_navigation_access_audit_hash_valid =
-	    route_snapshot_build_domain_hash(
-	        view,
-	        ROUTE_SNAPSHOT_DOMAIN_NAVIGATION_ACCESS,
-	        &Level_metadata_navigation_access_audit_hash,
-	        NULL);
+	if (!continuing_live_work && !lightweight_unexplored_work) {
+		Level_metadata_progression_object_audit_hash_valid =
+		    route_snapshot_build_domain_hash(
+		        view,
+		        ROUTE_SNAPSHOT_DOMAIN_PROGRESSION_OBJECTS,
+		        &Level_metadata_progression_object_audit_hash,
+		        NULL);
+		Level_metadata_navigation_access_audit_hash_valid =
+		    route_snapshot_build_domain_hash(
+		        view,
+		        ROUTE_SNAPSHOT_DOMAIN_NAVIGATION_ACCESS,
+		        &Level_metadata_navigation_access_audit_hash,
+		        NULL);
+	}
 	if (!route_only) {
 		level_metadata_state shared_route;
 		char problem[128];
@@ -3397,9 +3516,18 @@ static void level_metadata_rescan_current_level_internal(
 	if (route_only) {
 		char problem[128];
 		int endpoint_kind = ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL;
+		const int incumbent_valid =
+		    Level_metadata_live_route_state_valid &&
+		    Level_metadata_live_plan_summary_valid;
+		int candidate_provenance = LEVEL_METADATA_ROUTE_PROVENANCE_NONE;
+		int candidate_valid = 0;
+		int certifier_pending = 0;
+		int deferred = 0;
 #ifdef __ANDROID__
+		guidebot_route_certifier_budget certifier_budget;
 		long long live_stage_started_us;
 		unsigned long long live_stage_elapsed_us;
+		unsigned long long refresh_elapsed_us;
 #endif
 		problem[0] = '\0';
 
@@ -3408,37 +3536,96 @@ static void level_metadata_rescan_current_level_internal(
 		else if (route_target_seg >= 0)
 			endpoint_kind = ROUTE_PLANNER_ENDPOINT_SEGMENT;
 
-		level_metadata_state_clear(&Level_metadata_live_route_state);
-		memset(&Level_metadata_live_plan_summary, 0,
-		       sizeof(Level_metadata_live_plan_summary));
-		Level_metadata_live_plan_summary.first_pending_step = -1;
-		Level_metadata_live_plan_summary.first_pending_path_terminal_segment = -1;
-		Level_metadata_live_plan_summary.partial_frontier_segment = -1;
+		level_metadata_state_clear(&Level_metadata_live_candidate_state);
+		memset(&Level_metadata_live_candidate_summary, 0,
+		       sizeof(Level_metadata_live_candidate_summary));
+		Level_metadata_live_candidate_summary.first_pending_step = -1;
+		Level_metadata_live_candidate_summary
+		    .first_pending_path_terminal_segment = -1;
+		Level_metadata_live_candidate_summary.partial_frontier_segment = -1;
 		level_metadata_analysis_budget_reset();
-		Level_metadata_live_plan_summary_valid = 0;
-		Level_metadata_live_route_provenance =
-		    LEVEL_METADATA_ROUTE_PROVENANCE_NONE;
 		memset(
-		    &Level_metadata_live_certificate, 0,
-		    sizeof(Level_metadata_live_certificate));
-		Level_metadata_live_certificate.status =
+		    &Level_metadata_live_candidate_certificate, 0,
+		    sizeof(Level_metadata_live_candidate_certificate));
+		Level_metadata_live_candidate_certificate.status =
 		    GUIDEBOT_ROUTE_CERTIFICATE_UNCHECKED;
-		Level_metadata_live_certificate.source_trigger = -1;
-		Level_metadata_live_certificate.source_wall = -1;
-		Level_metadata_live_certificate.source_object = -1;
-		Level_metadata_live_certificate.frontier_segment = -1;
+		Level_metadata_live_candidate_certificate.source_trigger = -1;
+		Level_metadata_live_candidate_certificate.source_wall = -1;
+		Level_metadata_live_candidate_certificate.source_object = -1;
+		Level_metadata_live_candidate_certificate.frontier_segment = -1;
+		if (!Level_metadata_live_route_work_pending)
+			guidebot_route_certifier_reset_job(
+			    &Level_metadata_route_certifier_workspace);
+#ifdef __ANDROID__
+		live_stage_started_us = android_profile_monotonic_us();
+		certifier_budget.clock_us = level_metadata_live_work_clock_us;
+		certifier_budget.clock_user = NULL;
+		certifier_budget.deadline_us =
+		    (unsigned long long) live_stage_started_us + 2000ULL;
+		certifier_budget.work_limit = 512;
+		if (endpoint_kind == ROUTE_PLANNER_ENDPOINT_UNEXPLORED) {
+			const int endpoint_result =
+			    guidebot_route_find_unexplored_budgeted(
+			        view, &Level_metadata_route_certifier_workspace,
+			        unexplored_result, &certifier_budget);
+
+			candidate_valid =
+			    endpoint_result == GUIDEBOT_ROUTE_CERTIFIER_VALID;
+			certifier_pending =
+			    endpoint_result == GUIDEBOT_ROUTE_CERTIFIER_PENDING;
+			Level_metadata_live_route_work_pending = certifier_pending;
+			if (candidate_valid) {
+				level_metadata_build_unexplored_candidate(
+				    view, unexplored_result,
+				    &Level_metadata_live_candidate_state,
+				    &Level_metadata_live_candidate_summary);
+				if (!Level_metadata_live_snapshot_valid &&
+				    Level_metadata_canonical_snapshot_valid) {
+					Level_metadata_live_snapshot =
+					    Level_metadata_canonical_snapshot;
+					Level_metadata_live_snapshot_valid = 1;
+				}
+				if (Level_metadata_live_snapshot_valid)
+					route_snapshot_build_domain_hash(
+					    view, ROUTE_SNAPSHOT_DOMAIN_AUTOMAP,
+					    &Level_metadata_live_snapshot.automap_hash,
+					    NULL);
+				Level_metadata_live_candidate_certificate.status =
+				    GUIDEBOT_ROUTE_CERTIFICATE_VALID;
+				Level_metadata_live_candidate_certificate.frontier_segment =
+				    unexplored_result->waypoint_seg;
+				candidate_provenance =
+				    LEVEL_METADATA_ROUTE_PROVENANCE_CERTIFIER;
+			}
+		}
+#endif
 		if (endpoint_kind == ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL &&
 		    Level_metadata_live_certifier_enabled) {
+			int certifier_result;
+
 			Level_metadata_analysis_cache_summary.live_reuse_attempts++;
 #ifdef __ANDROID__
 			live_stage_started_us = android_profile_monotonic_us();
+			certifier_budget.deadline_us =
+			    (unsigned long long) live_stage_started_us + 2000ULL;
 #endif
-			Level_metadata_live_plan_summary_valid =
-			    level_metadata_try_reuse_canonical_route(
-			        view, &Level_metadata_live_route_state,
-			        &Level_metadata_live_plan_summary);
-			if (Level_metadata_live_plan_summary_valid)
-				Level_metadata_live_route_provenance =
+			certifier_result = level_metadata_try_reuse_canonical_route(
+			    view, &Level_metadata_live_candidate_state,
+			    &Level_metadata_live_candidate_summary,
+			    &Level_metadata_live_candidate_certificate,
+#ifdef __ANDROID__
+			    &certifier_budget
+#else
+			    NULL
+#endif
+			);
+			candidate_valid =
+			    certifier_result == GUIDEBOT_ROUTE_CERTIFIER_VALID;
+			certifier_pending =
+			    certifier_result == GUIDEBOT_ROUTE_CERTIFIER_PENDING;
+			Level_metadata_live_route_work_pending = certifier_pending;
+			if (candidate_valid)
+				candidate_provenance =
 				    Level_metadata_route_certifier_summary
 				            .used_prepared_fallback
 				        ? LEVEL_METADATA_ROUTE_PROVENANCE_PREPARED_FALLBACK
@@ -3454,44 +3641,48 @@ static void level_metadata_rescan_current_level_internal(
 				    live_stage_elapsed_us;
 #endif
 		}
-		if (Level_metadata_live_plan_summary_valid)
+		if (candidate_valid)
 			Level_metadata_analysis_cache_summary.live_reuses++;
-		else if (Level_metadata_expensive_planning_allowed) {
+		else if (!certifier_pending &&
+		         Level_metadata_expensive_planning_allowed &&
+		         level_metadata_gameplay_full_planner_allowed()) {
 			if (endpoint_kind == ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL)
 				Level_metadata_analysis_cache_summary.live_fallbacks++;
+			Level_metadata_live_work_summary.full_plan_calls++;
 #ifdef __ANDROID__
 			live_stage_started_us = android_profile_monotonic_us();
 #endif
-			Level_metadata_live_plan_summary_valid = route_planner_plan_view(
+			candidate_valid = route_planner_plan_view(
 			    view,
 			    endpoint_kind,
 			    route_target_seg,
-			    &Level_metadata_live_route_state,
+			    &Level_metadata_live_candidate_state,
 			    unexplored_result,
-			    &Level_metadata_live_plan_summary,
+			    &Level_metadata_live_candidate_summary,
 			    problem,
 			    sizeof(problem));
-			if (Level_metadata_live_plan_summary_valid) {
-				Level_metadata_live_route_provenance =
+			if (candidate_valid) {
+				Level_metadata_live_candidate_certificate.status =
+				    GUIDEBOT_ROUTE_CERTIFICATE_VALID;
+				candidate_provenance =
 				    LEVEL_METADATA_ROUTE_PROVENANCE_FULL_PLANNER;
-				level_metadata_certify_fresh_live_plan();
 			}
 #ifdef __ANDROID__
-			if (Level_metadata_live_plan_summary_valid &&
-			    Level_metadata_live_plan_summary.first_pending_step >= 0 &&
-			    Level_metadata_live_plan_summary.first_pending_step <
-			        Level_metadata_live_route_state.route_step_count) {
+			if (candidate_valid &&
+			    Level_metadata_live_candidate_summary.first_pending_step >= 0 &&
+			    Level_metadata_live_candidate_summary.first_pending_step <
+			        Level_metadata_live_candidate_state.route_step_count) {
 				const level_metadata_route_step *pending =
-				    &Level_metadata_live_route_state.route_steps
-				         [Level_metadata_live_plan_summary.first_pending_step];
+				    &Level_metadata_live_candidate_state.route_steps
+				         [Level_metadata_live_candidate_summary.first_pending_step];
 
 				debug_log(
 				    DLOG_GUIDEBOT,
 				    "route_full_planner step=%d kind=%d activation=%d seg=%d "
 				    "terminal=%d wall=%d trigger=%d key=%d label=%s\n",
-				    Level_metadata_live_plan_summary.first_pending_step,
+				    Level_metadata_live_candidate_summary.first_pending_step,
 				    pending->kind, pending->activation_kind, pending->seg,
-				    Level_metadata_live_plan_summary
+				    Level_metadata_live_candidate_summary
 				        .first_pending_path_terminal_segment,
 				    pending->wall_num, pending->trigger_num, pending->key_index,
 				    pending->label);
@@ -3508,29 +3699,129 @@ static void level_metadata_rescan_current_level_internal(
 					    live_stage_elapsed_us;
 			}
 #endif
+		} else if (!candidate_valid &&
+		           (certifier_pending ||
+		            Level_metadata_expensive_planning_allowed)) {
+			deferred = 1;
+			if (!certifier_pending)
+				Level_metadata_live_work_summary.blocked_full_plan_calls++;
+			Level_metadata_live_work_summary.deferred_refreshes++;
+			if (incumbent_valid)
+				Level_metadata_live_work_summary.retained_incumbents++;
+			else
+				Level_metadata_live_work_summary
+				    .deferred_without_incumbent++;
+#ifdef __ANDROID__
+			debug_log(
+			    DLOG_GUIDEBOT,
+			    "route_work_deferred reason=%s "
+			    "stage=live_refresh elapsed_us=%llu pending=0x%x "
+			    "incumbent=%d endpoint=%d",
+			    certifier_pending ? "budget" : "full_plan_forbidden",
+			    (unsigned long long) (android_profile_monotonic_us() -
+			                          rescan_started_us),
+			    Level_metadata_live_work_summary.pending_event_mask,
+			    incumbent_valid, endpoint_kind);
+#endif
 		}
 		if (Level_metadata_analysis_cancelled ||
 		    (Level_metadata_analysis_budget_exhausted &&
-		     !Level_metadata_live_plan_summary_valid)) {
-			Level_metadata_live_plan_summary_valid = 0;
+		     !candidate_valid)) {
+			candidate_valid = 0;
 			snprintf(
 			    problem, sizeof(problem), "%s",
 			    Level_metadata_analysis_cancelled
 			        ? "metadata analysis cancelled"
 			        : "metadata analysis exceeded its collision-work budget");
 		}
-		if (!Level_metadata_live_plan_summary_valid) {
-			Level_metadata_live_route_state.route_status = LEVEL_METADATA_ROUTE_FAILED;
+		if (candidate_valid) {
+			Level_metadata_live_route_state =
+			    Level_metadata_live_candidate_state;
+			Level_metadata_live_plan_summary =
+			    Level_metadata_live_candidate_summary;
+			Level_metadata_live_certificate =
+			    Level_metadata_live_candidate_certificate;
+			Level_metadata_live_route_state_valid = 1;
+			Level_metadata_live_plan_summary_valid = 1;
+			Level_metadata_live_route_provenance = candidate_provenance;
+			if (candidate_provenance ==
+			    LEVEL_METADATA_ROUTE_PROVENANCE_FULL_PLANNER)
+				level_metadata_certify_fresh_live_plan();
+			level_metadata_publish_live_route_decision();
+		} else if (deferred && incumbent_valid) {
+			Level_metadata_live_route_state_valid = 1;
+			Level_metadata_live_plan_summary_valid = 1;
+		} else if (!deferred || !incumbent_valid) {
+			level_metadata_state_clear(&Level_metadata_live_route_state);
+			Level_metadata_live_route_state.route_status =
+			    deferred ? LEVEL_METADATA_ROUTE_PARTIAL
+			             : LEVEL_METADATA_ROUTE_FAILED;
 			snprintf(Level_metadata_live_route_state.route_problem,
 			         sizeof(Level_metadata_live_route_state.route_problem),
 			         "shared route planner: %s",
-			         problem[0] ? problem : "unknown failure");
+			         deferred     ? "live route calculation deferred"
+			         : problem[0] ? problem
+			                      : "unknown failure");
+			memset(&Level_metadata_live_plan_summary, 0,
+			       sizeof(Level_metadata_live_plan_summary));
+			Level_metadata_live_plan_summary.first_pending_step = -1;
+			Level_metadata_live_plan_summary
+			    .first_pending_path_terminal_segment = -1;
+			Level_metadata_live_plan_summary.partial_frontier_segment = -1;
+			Level_metadata_live_route_state_valid = deferred;
+			Level_metadata_live_plan_summary_valid = deferred;
+			Level_metadata_live_route_provenance =
+			    LEVEL_METADATA_ROUTE_PROVENANCE_NONE;
+			memset(&Level_metadata_live_certificate, 0,
+			       sizeof(Level_metadata_live_certificate));
+			Level_metadata_live_certificate.status =
+			    GUIDEBOT_ROUTE_CERTIFICATE_UNCHECKED;
+			level_metadata_publish_live_route_decision();
 		}
-		Level_metadata_live_route_state_valid =
-		    Level_metadata_live_plan_summary_valid;
-		level_metadata_publish_live_route_decision();
-		level_metadata_run_route_shadow(
-		    view, endpoint_kind, route_target_seg);
+		if (!deferred)
+			level_metadata_run_route_shadow(
+			    view, endpoint_kind, route_target_seg);
+#ifdef __ANDROID__
+		refresh_elapsed_us =
+		    (unsigned long long) (android_profile_monotonic_us() -
+		                          rescan_started_us);
+		live_stage_elapsed_us =
+		    (unsigned long long) (android_profile_monotonic_us() -
+		                          live_stage_started_us);
+		Level_metadata_live_work_summary.last_tick_us =
+		    live_stage_elapsed_us;
+		Level_metadata_live_work_summary.last_refresh_us =
+		    refresh_elapsed_us;
+		Level_metadata_live_work_summary.certifier_ticks++;
+		if (certifier_pending)
+			Level_metadata_live_work_summary.certifier_deferred_ticks++;
+		else
+			Level_metadata_live_work_summary.certifier_completed_ticks++;
+		if (live_stage_elapsed_us > 4000ULL) {
+			Level_metadata_live_work_summary.certifier_overruns++;
+			debug_log(
+			    DLOG_GUIDEBOT,
+			    "route_work_overrun stage=live_refresh elapsed_us=%llu "
+			    "budget_us=2000 pending=%d",
+			    live_stage_elapsed_us, certifier_pending);
+		}
+		if (live_stage_elapsed_us >
+		    Level_metadata_live_work_summary.max_tick_us)
+			Level_metadata_live_work_summary.max_tick_us =
+			    live_stage_elapsed_us;
+		if (refresh_elapsed_us >
+		    Level_metadata_live_work_summary.max_refresh_us)
+			Level_metadata_live_work_summary.max_refresh_us =
+			    refresh_elapsed_us;
+		if (refresh_elapsed_us > 4000ULL) {
+			Level_metadata_live_work_summary.refresh_overruns++;
+			debug_log(
+			    DLOG_GUIDEBOT,
+			    "route_work_overrun stage=refresh elapsed_us=%llu "
+			    "budget_us=4000 pending=%d",
+			    refresh_elapsed_us, certifier_pending);
+		}
+#endif
 	}
 }
 
@@ -3762,6 +4053,43 @@ int level_metadata_get_route_analysis_cache_summary(
 #else
 	return 0;
 #endif
+}
+
+int level_metadata_get_live_work_summary(
+    level_metadata_live_work_summary *summary)
+{
+	if (!summary)
+		return 0;
+	*summary = Level_metadata_live_work_summary;
+	summary->pending = Level_metadata_live_route_work_pending;
+	summary->reachability_cursor =
+	    Level_metadata_route_certifier_workspace.reach_head;
+	summary->firing_candidate_cursor =
+	    Level_metadata_route_certifier_workspace.firing_search_segment;
+	summary->firing_candidate_pass =
+	    Level_metadata_route_certifier_workspace.firing_search_pass;
+	summary->unexplored_candidate_cursor =
+	    Level_metadata_route_certifier_workspace.unexplored_scan_segment;
+	return 1;
+}
+
+int level_metadata_live_route_work_pending(void)
+{
+	return Level_metadata_live_route_work_pending;
+}
+
+void level_metadata_invalidate_live_route_work(void)
+{
+	Level_metadata_live_route_work_pending = 0;
+	Level_metadata_live_work_summary.pending_event_mask = 0;
+	guidebot_route_certifier_reset_job(
+	    &Level_metadata_route_certifier_workspace);
+}
+
+void level_metadata_set_live_work_pending_event_mask(
+    unsigned int event_mask)
+{
+	Level_metadata_live_work_summary.pending_event_mask = event_mask;
 }
 
 static void secret_area_scan_current_level(int allow_expensive_planning)

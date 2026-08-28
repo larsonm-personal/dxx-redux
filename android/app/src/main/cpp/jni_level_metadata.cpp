@@ -182,9 +182,11 @@ struct levelmeta_progress_context {
 
 struct levelmeta_budget_context {
 	std::string cancellation_path;
+	std::string cpu_duty_control_path;
 	unsigned int checks = 0;
 	bool background = false;
 	unsigned int cpu_duty_percent = 100;
+	unsigned long long cpu_duty_last_read_us = 0;
 	unsigned long long wall_start_us = 0;
 	unsigned long long cpu_start_us = 0;
 };
@@ -214,6 +216,20 @@ static int levelmeta_budget_cancelled(void *user)
 		const unsigned long long wall_now = levelmeta_clock_us(CLOCK_MONOTONIC);
 		const unsigned long long cpu_now =
 		    levelmeta_clock_us(CLOCK_THREAD_CPUTIME_ID);
+		if (!context->cpu_duty_control_path.empty() &&
+		    (!context->cpu_duty_last_read_us ||
+		     wall_now - context->cpu_duty_last_read_us >= 100000ULL)) {
+			unsigned int updated_duty = 0;
+			std::ifstream control(context->cpu_duty_control_path);
+			context->cpu_duty_last_read_us = wall_now;
+			if (control >> updated_duty && updated_duty >= 1 &&
+			    updated_duty <= 100 &&
+			    updated_duty != context->cpu_duty_percent) {
+				context->cpu_duty_percent = updated_duty;
+				context->wall_start_us = wall_now;
+				context->cpu_start_us = cpu_now;
+			}
+		}
 		if (!context->wall_start_us || !context->cpu_start_us) {
 			context->wall_start_us = wall_now;
 			context->cpu_start_us = cpu_now;
@@ -1085,6 +1101,8 @@ static LevelScanStatus scan_level(const json &request, json &levels,
 	};
 	levelmeta_budget_context budget_context;
 	budget_context.cancellation_path = request.value("cancellation_path", "");
+	budget_context.cpu_duty_control_path =
+	    request.value("cpu_duty_control_path", "");
 	budget_context.background = request.value("background", false);
 	budget_context.cpu_duty_percent =
 	    request.value("cpu_duty_percent", budget_context.background ? 5u : 100u);
