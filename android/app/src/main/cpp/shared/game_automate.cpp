@@ -1769,6 +1769,7 @@ static int move_player_to_route_guidance(char *reason, size_t reason_size)
 static int clear_level_robots(char *reason, size_t reason_size)
 {
 	int removed = 0;
+	int preserved = 0;
 
 	if (Screen_mode != SCREEN_GAME || Game_wind == NULL) {
 		snprintf(reason, reason_size, "clear_robots: game window is not active");
@@ -1779,14 +1780,21 @@ static int clear_level_robots(char *reason, size_t reason_size)
 		if (Objects[objnum].type != OBJ_ROBOT)
 			continue;
 #ifdef DXX_BUILD_DESCENT_II
-		if (Robot_info[Objects[objnum].id].companion)
+		if (Robot_info[Objects[objnum].id].companion ||
+		    Robot_info[Objects[objnum].id].boss_flag ||
+		    (Objects[objnum].contains_type == OBJ_POWERUP &&
+		     Objects[objnum].contains_id >= POW_KEY_BLUE &&
+		     Objects[objnum].contains_id <= POW_KEY_GOLD &&
+		     Objects[objnum].contains_count > 0)) {
+			preserved++;
 			continue;
+		}
 #endif
 		obj_delete(objnum);
 		removed++;
 	}
 
-	LOGI("clear_robots: removed=%d", removed);
+	LOGI("clear_robots: removed=%d preserved_progression=%d", removed, preserved);
 	return 1;
 }
 

@@ -243,10 +243,19 @@
         "guidebot.route_goal_side": "2",
         "guidebot.route_goal_objective_side": "2"
     }},
+    // The semantic route crosses progression-locked topology that the ordinary
+    // pathfinder cannot traverse. The comparison should differ without changing
+    // the live Guide-Bot or RNG state.
     {"action": "set_debug", "field": "guidebot_path_parity", "value": "true"},
+    {"action": "introspect"},
     {"action": "assert", "expect": {
         "guidebot.path_parity.valid": "true",
-        "guidebot.path_parity.match": "true"
+        "guidebot.path_parity.ai_state_match": "true",
+        "guidebot.path_parity.restored_state_match": "true",
+        "guidebot.path_parity.first_mismatch": {"gte": 0},
+        "guidebot.path_parity.ordinary_length": {"gte": 1},
+        "guidebot.path_parity.route_length": {"gte": 1},
+        "guidebot.path_parity.match": "false"
     }},
     {"action": "log", "message": "=== TEST: Obsidian fly-through GuideBot goal -- PASS ==="},
 

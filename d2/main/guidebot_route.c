@@ -725,10 +725,13 @@ int escort_debug_compare_route_path(void)
 	ailp->goal_segment = saved_route_goal.target_seg;
 
 	escort_route_clear_goal();
+	/* These probes write to dedicated scratch buffers, not Point_segs.  Safety
+	 * insertion assumes its output belongs to the global Point_segs pool and
+	 * may reset every live AI path when given an external buffer. */
 	Escort_path_parity_result.ordinary_result = create_path_points(
 	    objp, objp->segnum, saved_route_goal.target_seg,
 	    Escort_path_parity_ordinary, &ordinary_length,
-	    Max_escort_length, 1, 1, -1);
+	    Max_escort_length, 1, 0, -1);
 	d_rand_get_state(&Escort_path_parity_result.ordinary_rng_state);
 	ordinary_rng_calls_after = d_rand_get_call_count();
 	ordinary_mode_after = ailp->mode;
@@ -748,7 +751,7 @@ int escort_debug_compare_route_path(void)
 	Escort_path_parity_result.route_result = create_guidebot_route_path_points(
 	    objp, objp->segnum, saved_route_goal.target_seg,
 	    Escort_path_parity_route, &route_length,
-	    Max_escort_length, 1, 1);
+	    Max_escort_length, 1, 0);
 	d_rand_get_state(&Escort_path_parity_result.route_rng_state);
 	route_rng_calls_after = d_rand_get_call_count();
 	route_mode_after = ailp->mode;
