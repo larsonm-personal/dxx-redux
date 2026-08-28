@@ -18,6 +18,9 @@ namespace
 
 route_planner_work_summary Work_summary;
 bool Work_tracking_enabled = false;
+constexpr double ROUTE_SWITCH_SHOT_DISTANCE_WEIGHT = 4.0;
+constexpr double ROUTE_SWITCH_STEEP_COSINE = 0.25881904510252074;
+constexpr double ROUTE_SWITCH_MIN_COSINE = 0.01;
 
 bool valid_segment(const route_snapshot &snapshot, int segment);
 bool valid_wall(const route_snapshot &snapshot, int wall);
@@ -1263,10 +1266,31 @@ route_trigger_path_selection select_trigger_firing_path(
 			                           double extra_distance) {
 				auto path = build_route_path(search, segment);
 				path.distance += extra_distance;
-				/* Rank by travel plus shot length, while preserving path.distance as
-				 * the distance the Guide-Bot must actually travel. */
-				const double score = path.distance +
-				                     point_distance(terminal, source.source_position);
+				int incidence = LEVEL_METADATA_SHOT_COSINE_ONE;
+				if (visibility.wall_shot_incidence_cosine)
+					incidence = std::max(
+					    0,
+					    std::min(
+					        LEVEL_METADATA_SHOT_COSINE_ONE,
+					        visibility.wall_shot_incidence_cosine(
+					            visibility.user, terminal,
+					            source.source_wall)));
+				const double incidence_ratio =
+				    static_cast<double>(incidence) /
+				    LEVEL_METADATA_SHOT_COSINE_ONE;
+				const double angle_multiplier =
+				    incidence_ratio < ROUTE_SWITCH_STEEP_COSINE
+				        ? ROUTE_SWITCH_STEEP_COSINE /
+				              std::max(incidence_ratio, ROUTE_SWITCH_MIN_COSINE)
+				        : 1.0;
+				/* A remote line of fire may be technically valid while providing no
+				 * useful switch guidance.  Weight shot length strongly enough that
+				 * Guide-Bot leads the player near the switch.  Steep confirmed shots
+				 * remain valid but lose to similarly useful square-on positions. */
+				const double score =
+				    path.distance +
+				    point_distance(terminal, source.source_position) *
+				        ROUTE_SWITCH_SHOT_DISTANCE_WEIGHT * angle_multiplier;
 				if (candidate.found &&
 				    (score > candidate_score ||
 				     (score == candidate_score &&
@@ -1280,6 +1304,13 @@ route_trigger_path_selection select_trigger_firing_path(
 				candidate.path = std::move(path);
 				candidate.terminal_segment = segment;
 				candidate.terminal_position = terminal;
+				candidate.switch_shot_incidence_cosine = incidence;
+				candidate.switch_shot_quality =
+				    visibility.approximate_shots
+				        ? LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE
+				    : incidence_ratio < ROUTE_SWITCH_STEEP_COSINE
+				        ? LEVEL_METADATA_SWITCH_SHOT_CONFIRMED_STEEP
+				        : LEVEL_METADATA_SWITCH_SHOT_CONFIRMED;
 				candidate.found = true;
 				candidate_score = score;
 			};
@@ -1313,6 +1344,23 @@ route_trigger_path_selection select_trigger_firing_path(
 							keyed_result.path = std::move(path);
 							keyed_result.terminal_segment = source.source_segment;
 							keyed_result.terminal_position = terminal;
+							keyed_result.switch_shot_quality =
+							    LEVEL_METADATA_SWITCH_SHOT_CONFIRMED;
+							keyed_result.switch_shot_incidence_cosine =
+							    visibility.wall_shot_incidence_cosine
+							        ? std::max(
+							              0,
+							              std::min(
+							                  LEVEL_METADATA_SHOT_COSINE_ONE,
+							                  visibility.wall_shot_incidence_cosine(
+							                      visibility.user, terminal,
+							                      source.source_wall)))
+							        : LEVEL_METADATA_SHOT_COSINE_ONE;
+							if (keyed_result.switch_shot_incidence_cosine <
+							    LEVEL_METADATA_SHOT_COSINE_ONE *
+							        ROUTE_SWITCH_STEEP_COSINE)
+								keyed_result.switch_shot_quality =
+								    LEVEL_METADATA_SWITCH_SHOT_CONFIRMED_STEEP;
 							keyed_result.found = true;
 							keyed_shot_distance = shot_distance;
 						}
@@ -2701,8 +2749,20 @@ class dependency_planner
 		    firing_sources.end());
 		const auto firing = select_trigger_firing_path(
 		    snapshot_, query_, state_.progress, firing_sources, visibility_);
-		if (firing.found)
-			source = firing.source;
+		auto selected_firing = firing;
+		if (!selected_firing.found &&
+		    visibility_.wall_potentially_shootable) {
+			auto approximate_visibility = visibility_;
+			approximate_visibility.wall_shootable =
+			    visibility_.wall_potentially_shootable;
+			approximate_visibility.approximate_shots = true;
+			approximate_visibility.sample_cache_namespace ^= 0x80000000u;
+			selected_firing = select_trigger_firing_path(
+			    snapshot_, query_, state_.progress, firing_sources,
+			    approximate_visibility);
+		}
+		if (selected_firing.found)
+			source = selected_firing.source;
 		const bool shootable = valid_wall(snapshot_, source.source_wall) &&
 		                       snapshot_.topology.walls[source.source_wall]
 		                           .shootable_trigger;
@@ -2728,17 +2788,17 @@ class dependency_planner
 		}
 		state_.progress.trigger_in_progress[source.trigger] = 1;
 		const int selected_source_segment = source.source_segment;
-		if (firing.found) {
-			accumulate_path(firing.path);
-			state_.progress.current_segment = firing.terminal_segment;
-			state_.progress.current_position = firing.terminal_position;
+		if (selected_firing.found) {
+			accumulate_path(selected_firing.path);
+			state_.progress.current_segment = selected_firing.terminal_segment;
+			state_.progress.current_position = selected_firing.terminal_position;
 			if (shootable) {
-				source.source_segment = firing.terminal_segment;
-				source.source_position = firing.terminal_position;
+				source.source_segment = selected_firing.terminal_segment;
+				source.source_position = selected_firing.terminal_position;
 				if (source.source_segment != selected_source_segment)
 					source.source_side = -1;
 			} else if (
-			    firing.terminal_segment == source.source_segment &&
+			    selected_firing.terminal_segment == source.source_segment &&
 			    valid_wall(snapshot_, source.source_wall) &&
 			    snapshot_.state.walls[source.source_wall].kind ==
 			        route_wall_kind::open &&
@@ -2753,12 +2813,19 @@ class dependency_planner
 			state_.progress.current_segment = source.source_segment;
 			state_.progress.current_position = source.source_position;
 		}
-		if (!append_trigger_step(source, firing.found && !shootable)) {
+		if (!append_trigger_step(
+		        source, selected_firing.found && !shootable)) {
 			state_.progress.trigger_in_progress[source.trigger] = 0;
 			return false;
 		}
-		if (firing.found && firing.uses_transparent_surface)
+		if (selected_firing.found && selected_firing.uses_transparent_surface)
 			state_.steps.back().uses_transparent_surface = true;
+		if (selected_firing.found && shootable) {
+			state_.steps.back().switch_shot_quality =
+			    selected_firing.switch_shot_quality;
+			state_.steps.back().switch_shot_incidence_cosine =
+			    selected_firing.switch_shot_incidence_cosine;
+		}
 		state_.progress.fired_triggers[source.trigger] = 1;
 		state_.progress.trigger_in_progress[source.trigger] = 0;
 		return true;
@@ -3047,6 +3114,17 @@ int view_wall_shootable(
 	           context->view->user, segment, from.value.data(), wall) != 0;
 }
 
+int view_wall_potentially_shootable(
+    void *user,
+    int segment,
+    const dxx_route::route_position &from,
+    int wall)
+{
+	const auto *context = static_cast<view_visibility_context *>(user);
+	return context->view->wall_potentially_shootable_from_position(
+	           context->view->user, segment, from.value.data(), wall) != 0;
+}
+
 int view_wall_shootable_without_transparency(
     void *user,
     int segment,
@@ -3056,6 +3134,16 @@ int view_wall_shootable_without_transparency(
 	const auto *context = static_cast<view_visibility_context *>(user);
 	return context->view->wall_shootable_without_transparency_from_position(
 	           context->view->user, segment, from.value.data(), wall) != 0;
+}
+
+int view_wall_shot_incidence_cosine(
+    void *user,
+    const dxx_route::route_position &from,
+    int wall)
+{
+	const auto *context = static_cast<view_visibility_context *>(user);
+	return context->view->wall_shot_incidence_cosine(
+	    context->view->user, from.value.data(), wall);
 }
 
 int plan_key_mask(const dxx_route::route_plan_result &plan)
@@ -3188,6 +3276,9 @@ bool project_step(
 	destination.key_carrier_objnum = source.key_carrier_object;
 	destination.can_be_bypassed = source.can_be_bypassed ? 1 : 0;
 	destination.activation_kind = static_cast<int>(source.activation);
+	destination.switch_shot_quality = source.switch_shot_quality;
+	destination.switch_shot_incidence_cosine =
+	    source.switch_shot_incidence_cosine;
 	destination.path_segment_count =
 	    static_cast<int>(source.path.segments.size());
 	destination.path_terminal_segment = source.path.terminal_segment;
@@ -3337,9 +3428,15 @@ extern "C" int route_planner_plan_view(
 			visibility.target_visible = view_target_visible;
 		if (view->wall_shootable_from_position)
 			visibility.wall_shootable = view_wall_shootable;
+		if (view->wall_potentially_shootable_from_position)
+			visibility.wall_potentially_shootable =
+			    view_wall_potentially_shootable;
 		if (view->wall_shootable_without_transparency_from_position)
 			visibility.wall_shootable_without_transparency =
 			    view_wall_shootable_without_transparency;
+		if (view->wall_shot_incidence_cosine)
+			visibility.wall_shot_incidence_cosine =
+			    view_wall_shot_incidence_cosine;
 		visibility.progress_user = view->progress_user;
 		visibility.progress = view->progress;
 		visibility.sample_cache = &sample_cache;
@@ -3355,6 +3452,7 @@ extern "C" int route_planner_plan_view(
 				strict_visibility.sample_cache_namespace++;
 				strict_visibility.wall_shootable =
 				    visibility.wall_shootable_without_transparency;
+				strict_visibility.wall_potentially_shootable = nullptr;
 				auto strict = dxx_route::plan_route(
 				    snapshot, query, strict_visibility);
 				const int result_keys = plan_key_mask(result);
@@ -3441,9 +3539,15 @@ extern "C" int route_planner_segment_reachable_view(
 			visibility.target_visible = view_target_visible;
 		if (view->wall_shootable_from_position)
 			visibility.wall_shootable = view_wall_shootable;
+		if (view->wall_potentially_shootable_from_position)
+			visibility.wall_potentially_shootable =
+			    view_wall_potentially_shootable;
 		if (view->wall_shootable_without_transparency_from_position)
 			visibility.wall_shootable_without_transparency =
 			    view_wall_shootable_without_transparency;
+		if (view->wall_shot_incidence_cosine)
+			visibility.wall_shot_incidence_cosine =
+			    view_wall_shot_incidence_cosine;
 		visibility.progress_user = view->progress_user;
 		visibility.progress = view->progress;
 		visibility.sample_cache = &sample_cache;

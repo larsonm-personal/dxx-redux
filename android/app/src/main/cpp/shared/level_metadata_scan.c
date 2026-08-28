@@ -102,6 +102,16 @@ const char *level_metadata_route_activation_kind_name(int kind)
 	}
 }
 
+const char *level_metadata_switch_shot_quality_name(int quality)
+{
+	switch (quality) {
+		case LEVEL_METADATA_SWITCH_SHOT_CONFIRMED: return "confirmed";
+		case LEVEL_METADATA_SWITCH_SHOT_CONFIRMED_STEEP: return "confirmed_steep";
+		case LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE: return "approximate_only";
+		default: return "none";
+	}
+}
+
 static int level_metadata_route_wall_passable(
     const level_metadata_scan_view *view,
     int wall)

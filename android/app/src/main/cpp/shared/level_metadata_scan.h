@@ -70,6 +70,15 @@ enum level_metadata_route_activation_kind {
 	LEVEL_METADATA_ROUTE_ACTIVATION_UNRESOLVED_TRIGGER = 11
 };
 
+enum level_metadata_switch_shot_quality {
+	LEVEL_METADATA_SWITCH_SHOT_NONE = 0,
+	LEVEL_METADATA_SWITCH_SHOT_CONFIRMED = 1,
+	LEVEL_METADATA_SWITCH_SHOT_CONFIRMED_STEEP = 2,
+	LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE = 3
+};
+
+#define LEVEL_METADATA_SHOT_COSINE_ONE 65536
+
 enum level_metadata_route_edge_cost {
 	LEVEL_METADATA_ROUTE_EDGE_BLOCKED = -1,
 	LEVEL_METADATA_ROUTE_EDGE_PASSABLE = 0,
@@ -96,6 +105,8 @@ typedef struct level_metadata_route_step {
 	int key_carrier_objnum;
 	int can_be_bypassed;
 	int activation_kind;
+	int switch_shot_quality;
+	int switch_shot_incidence_cosine;
 	int path_segment_count;
 	int path_terminal_segment;
 	int activation_pos_valid;
@@ -197,7 +208,9 @@ typedef struct level_metadata_scan_view {
 	int (*trigger_link_side)(void *user, int trigger_num, int link_index);
 	int (*target_visible_from_segment)(void *user, int seg, const int from_pos[3], int target_seg, const int target_pos[3]);
 	int (*wall_shootable_from_position)(void *user, int seg, const int from_pos[3], int wall_num);
+	int (*wall_potentially_shootable_from_position)(void *user, int seg, const int from_pos[3], int wall_num);
 	int (*wall_shootable_without_transparency_from_position)(void *user, int seg, const int from_pos[3], int wall_num);
+	int (*wall_shot_incidence_cosine)(void *user, const int from_pos[3], int wall_num);
 	int (*wall_is_shootable_trigger)(void *user, int wall_num);
 	void *progress_user;
 	level_metadata_progress_callback progress;
@@ -265,6 +278,7 @@ void level_metadata_set_cancel_callback(
 const char *level_metadata_route_status_name(int status);
 const char *level_metadata_route_step_kind_name(int kind);
 const char *level_metadata_route_activation_kind_name(int kind);
+const char *level_metadata_switch_shot_quality_name(int quality);
 int level_metadata_route_step_required_by_world_state(
     const level_metadata_scan_view *view,
     const level_metadata_route_step *step);

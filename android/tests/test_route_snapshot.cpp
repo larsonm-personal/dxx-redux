@@ -300,6 +300,8 @@ struct test_visibility {
 	dxx_route::route_position position;
 	int second_segment = -1;
 	dxx_route::route_position second_position;
+	int incidence_cosine = LEVEL_METADATA_SHOT_COSINE_ONE;
+	int second_incidence_cosine = LEVEL_METADATA_SHOT_COSINE_ONE;
 	int calls = 0;
 };
 
@@ -341,6 +343,25 @@ int wall_shootable(
 	                 position.value == visible.second_position.value))
 	           ? 1
 	           : 0;
+}
+
+int wall_not_shootable(
+    void *, int, const dxx_route::route_position &, int)
+{
+	return 0;
+}
+
+int wall_shot_incidence_cosine(
+    void *user,
+    const dxx_route::route_position &position,
+    int wall)
+{
+	const auto &visible = *static_cast<test_visibility *>(user);
+	if (wall != visible.wall)
+		return LEVEL_METADATA_SHOT_COSINE_ONE;
+	if (position.value == visible.second_position.value)
+		return visible.second_incidence_cosine;
+	return visible.incidence_cosine;
 }
 
 dxx_route::route_snapshot make_nested_trigger_snapshot()
@@ -1109,6 +1130,8 @@ int main()
 	       visible.position.value);
 	assert(reachable_visible_firing.terminal_position.value !=
 	       reachable_visible_sources[0].source_position.value);
+	assert(reachable_visible_firing.switch_shot_quality ==
+	       LEVEL_METADATA_SWITCH_SHOT_CONFIRMED);
 	assert(visible.calls >= 2);
 	assert(firing_progress.calls >= 2);
 	assert(firing_progress.completed == firing_progress.total);
@@ -1228,6 +1251,34 @@ int main()
 	        keyed_shot_sources, visibility);
 	assert(ordinary_remote_firing.found);
 	assert(ordinary_remote_firing.terminal_segment == 0);
+	auto angle_snapshot = reachable_visible_snapshot;
+	angle_snapshot.topology.walls[0].target.value = {
+		100 * 65536,
+		0,
+		0,
+	};
+	test_visibility angle_visible;
+	angle_visible.wall = 0;
+	angle_visible.segment = 0;
+	angle_visible.position = angle_snapshot.topology.segments[0].center;
+	angle_visible.second_segment = 1;
+	angle_visible.second_position =
+	    angle_snapshot.topology.segments[1].center;
+	angle_visible.second_incidence_cosine = 1000;
+	dxx_route::route_visibility_query angle_visibility;
+	angle_visibility.user = &angle_visible;
+	angle_visibility.wall_shootable = wall_shootable;
+	angle_visibility.wall_shot_incidence_cosine =
+	    wall_shot_incidence_cosine;
+	const auto angle_sources = dxx_route::discover_trigger_sources(
+	    angle_snapshot, source_progress, 1, 0);
+	const auto angle_firing = dxx_route::select_trigger_firing_path(
+	    angle_snapshot, planner_query, source_progress, angle_sources,
+	    angle_visibility);
+	assert(angle_firing.found);
+	assert(angle_firing.terminal_segment == 0);
+	assert(angle_firing.switch_shot_quality ==
+	       LEVEL_METADATA_SWITCH_SHOT_CONFIRMED);
 	const auto reachable_visible_dependency =
 	    dxx_route::resolve_trigger_dependency(
 	        reachable_visible_snapshot, planner_query, source_progress, 1, 0,
@@ -1238,12 +1289,27 @@ int main()
 	    reachable_visible_dependency.steps[0];
 	assert(reachable_visible_step.activation ==
 	       dxx_route::route_activation_kind::shoot_switch);
+	assert(reachable_visible_step.segment == 1);
 	assert(reachable_visible_step.activation_position.value ==
-	       visible.position.value);
+	       visible.second_position.value);
 	assert(reachable_visible_step.aim_position.value ==
 	       reachable_visible_snapshot.topology.walls[0].target.value);
 	assert(reachable_visible_step.activation_position.value !=
 	       reachable_visible_step.aim_position.value);
+	assert(reachable_visible_step.switch_shot_quality ==
+	       LEVEL_METADATA_SWITCH_SHOT_CONFIRMED);
+	dxx_route::route_visibility_query approximate_visibility = visibility;
+	approximate_visibility.wall_shootable = wall_not_shootable;
+	approximate_visibility.wall_potentially_shootable = wall_shootable;
+	const auto approximate_dependency = dxx_route::resolve_trigger_dependency(
+	    reachable_visible_snapshot, planner_query, source_progress, 1, 0,
+	    approximate_visibility);
+	assert(approximate_dependency.resolved);
+	assert(approximate_dependency.steps.size() == 1);
+	assert(approximate_dependency.steps[0].activation ==
+	       dxx_route::route_activation_kind::shoot_switch);
+	assert(approximate_dependency.steps[0].switch_shot_quality ==
+	       LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE);
 	visible.position = visible_snapshot.topology.segments[0].center;
 	const auto visible_firing = dxx_route::select_trigger_firing_path(
 	    visible_snapshot, planner_query, source_progress, visible_sources,

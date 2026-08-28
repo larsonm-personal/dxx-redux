@@ -44,6 +44,8 @@ typedef struct escort_route_goal {
 	int objective_trigger;
 	int objective_object;
 	int objective_key_index;
+	int switch_shot_quality;
+	int switch_shot_incidence_cosine;
 	int guidance_mode;
 	int guidance_seg;
 	int guidance_side;

@@ -119,11 +119,21 @@ struct route_visibility_query {
 	    int segment,
 	    const route_position &from,
 	    int wall) = nullptr;
+	int (*wall_potentially_shootable)(
+	    void *user,
+	    int segment,
+	    const route_position &from,
+	    int wall) = nullptr;
 	int (*wall_shootable_without_transparency)(
 	    void *user,
 	    int segment,
 	    const route_position &from,
 	    int wall) = nullptr;
+	int (*wall_shot_incidence_cosine)(
+	    void *user,
+	    const route_position &from,
+	    int wall) = nullptr;
+	bool approximate_shots = false;
 	void *progress_user = nullptr;
 	level_metadata_progress_callback progress = nullptr;
 	void *sample_cache = nullptr;
@@ -144,6 +154,8 @@ struct route_analysis_budget {
 struct route_trigger_path_selection {
 	bool found = false;
 	bool uses_transparent_surface = false;
+	int switch_shot_quality = LEVEL_METADATA_SWITCH_SHOT_NONE;
+	int switch_shot_incidence_cosine = LEVEL_METADATA_SHOT_COSINE_ONE;
 	route_trigger_source source;
 	route_path_result path;
 	int terminal_segment = -1;
@@ -197,6 +209,8 @@ struct route_semantic_step {
 	int key_carrier_object = -1;
 	bool can_be_bypassed = false;
 	bool uses_transparent_surface = false;
+	int switch_shot_quality = LEVEL_METADATA_SWITCH_SHOT_NONE;
+	int switch_shot_incidence_cosine = LEVEL_METADATA_SHOT_COSINE_ONE;
 	route_activation_kind activation = route_activation_kind::none;
 	route_position activation_position;
 	route_position aim_position;

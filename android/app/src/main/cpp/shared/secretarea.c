@@ -444,8 +444,11 @@ enum level_metadata_visibility_target_kind {
 	LEVEL_METADATA_VISIBILITY_TARGET_WALL = 1,
 	LEVEL_METADATA_VISIBILITY_TARGET_POSITION = 2,
 	LEVEL_METADATA_VISIBILITY_TARGET_WALL_STRICT = 3,
-	LEVEL_METADATA_VISIBILITY_POSITION_OCCUPIABLE = 4
+	LEVEL_METADATA_VISIBILITY_POSITION_OCCUPIABLE = 4,
+	LEVEL_METADATA_VISIBILITY_TARGET_WALL_POTENTIAL = 5
 };
+
+#define LEVEL_METADATA_SWITCH_SHOT_MODEL_VERSION 2
 
 typedef struct level_metadata_visibility_key {
 	int kind;
@@ -1778,7 +1781,9 @@ static int level_metadata_wall_shootable_from_position_impl(
 		return 0;
 	}
 	memset(&key, 0, sizeof(key));
-	key.kind = allow_transparency
+	key.kind = allow_transparency == 2
+	               ? LEVEL_METADATA_VISIBILITY_TARGET_WALL_POTENTIAL
+	           : allow_transparency
 	               ? LEVEL_METADATA_VISIBILITY_TARGET_WALL
 	               : LEVEL_METADATA_VISIBILITY_TARGET_WALL_STRICT;
 	key.from_seg = seg;
@@ -1811,8 +1816,10 @@ static int level_metadata_wall_shootable_from_position_impl(
 	query.rad = projectile_radius;
 	query.thisobjnum = -1;
 	query.flags = FQ_GET_SEGLIST;
-	if (allow_transparency)
+	if (allow_transparency == 2)
 		query.flags |= FQ_TRANSWALL;
+	else if (allow_transparency)
+		query.flags |= FQ_TRANSPOINT;
 	route_shot_context.target_wall = wall_num;
 	route_shot_context.allow_transparency = allow_transparency;
 	query.flags |= FQ_PASSABLE_WALL_CALLBACK;
@@ -1909,12 +1916,63 @@ int level_metadata_wall_shootable_from_position(
 	    seg, from_pos, wall_num, 1);
 }
 
+int level_metadata_wall_potentially_shootable_from_position(
+    int seg, const int from_pos[3], int wall_num)
+{
+	return level_metadata_wall_shootable_from_position_impl(
+	    seg, from_pos, wall_num, 2);
+}
+
 static int secret_area_wall_shootable_from_position(
     void *user, int seg, const int from_pos[3], int wall_num)
 {
 	(void) user;
 	return level_metadata_wall_shootable_from_position(
 	    seg, from_pos, wall_num);
+}
+
+static int secret_area_wall_potentially_shootable_from_position(
+    void *user, int seg, const int from_pos[3], int wall_num)
+{
+	(void) user;
+	return level_metadata_wall_potentially_shootable_from_position(
+	    seg, from_pos, wall_num);
+}
+
+static int secret_area_wall_shot_incidence_cosine(
+    void *user, const int from_pos[3], int wall_num)
+{
+	vms_vector direction;
+	vms_vector from;
+	vms_vector target;
+	fix first;
+	fix second;
+	int wall_seg;
+	int wall_side;
+
+	(void) user;
+	if (!from_pos || !secret_area_wall_index_valid(wall_num))
+		return F1_0;
+	wall_seg = Walls[wall_num].segnum;
+	wall_side = Walls[wall_num].sidenum;
+	if (wall_seg < 0 || wall_seg >= Num_segments || wall_side < 0 ||
+	    wall_side >= MAX_SIDES_PER_SEGMENT)
+		return F1_0;
+	from.x = from_pos[0];
+	from.y = from_pos[1];
+	from.z = from_pos[2];
+	compute_center_point_on_side(&target, &Segments[wall_seg], wall_side);
+	if (!vm_vec_normalized_dir(&direction, &target, &from))
+		return F1_0;
+	first = vm_vec_dot(
+	    &direction, &Segments[wall_seg].sides[wall_side].normals[0]);
+	second = vm_vec_dot(
+	    &direction, &Segments[wall_seg].sides[wall_side].normals[1]);
+	if (first < 0)
+		first = -first;
+	if (second < 0)
+		second = -second;
+	return first > second ? first : second;
 }
 
 static int secret_area_wall_shootable_without_transparency_from_position(
@@ -2324,8 +2382,12 @@ static void level_metadata_initialize_scan_view(void)
 	view->target_visible_from_segment = secret_area_target_visible_from_segment;
 	view->wall_shootable_from_position =
 	    secret_area_wall_shootable_from_position;
+	view->wall_potentially_shootable_from_position =
+	    secret_area_wall_potentially_shootable_from_position;
 	view->wall_shootable_without_transparency_from_position =
 	    secret_area_wall_shootable_without_transparency_from_position;
+	view->wall_shot_incidence_cosine =
+	    secret_area_wall_shot_incidence_cosine;
 	view->wall_is_shootable_trigger = secret_area_wall_is_shootable_trigger;
 	Level_metadata_scan_view_initialized = 1;
 }
@@ -2384,6 +2446,8 @@ static unsigned long long level_metadata_analysis_profile_hash(
 	    analysis_profile_hash, view->navigator_radius);
 	analysis_profile_hash = level_metadata_visibility_hash_int(
 	    analysis_profile_hash, level_metadata_switch_projectile_radius());
+	analysis_profile_hash = level_metadata_visibility_hash_int(
+	    analysis_profile_hash, LEVEL_METADATA_SWITCH_SHOT_MODEL_VERSION);
 	return analysis_profile_hash ? analysis_profile_hash : 1;
 }
 
@@ -2958,7 +3022,9 @@ static int level_metadata_try_reuse_canonical_route(
 	    "route_certifier valid=%d prepared_first=%d selected=%d segment=%d "
 	    "fallback=%d blocking=%d blocking_segment=%d blocking_reason=%d "
 	    "start=%d keys=0x%x "
-	    "required=0x%llx evaluated=%u rejected=%u visited=%u\n",
+	    "required=0x%llx evaluated=%u rejected=%u visited=%u "
+	    "firing_evaluated=%u firing_reranked=%d firing_cache_hit=%d "
+	    "firing_approximate=%d firing_steep=%d\n",
 	    valid, Level_metadata_canonical_plan_summary.first_pending_step,
 	    Level_metadata_route_certifier_summary.selected_step,
 	    Level_metadata_route_certifier_summary.selected_segment,
@@ -2970,7 +3036,12 @@ static int level_metadata_try_reuse_canonical_route(
 	    Level_metadata_route_certifier_summary.required_steps_low,
 	    Level_metadata_route_certifier_summary.evaluated_actions,
 	    Level_metadata_route_certifier_summary.rejected_actions,
-	    Level_metadata_route_certifier_summary.visited_segments);
+	    Level_metadata_route_certifier_summary.visited_segments,
+	    Level_metadata_route_certifier_summary.evaluated_firing_positions,
+	    Level_metadata_route_certifier_summary.reranked_firing_position,
+	    Level_metadata_route_certifier_summary.firing_cache_hit,
+	    Level_metadata_route_certifier_summary.approximate_firing_position,
+	    Level_metadata_route_certifier_summary.steep_firing_position);
 	level_metadata_log_connectivity_wall_changes(
 	    &Level_metadata_route_certifier_summary);
 	level_metadata_log_unresolved_completion_evidence(view);

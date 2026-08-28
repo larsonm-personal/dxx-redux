@@ -260,7 +260,11 @@ static int guidebot_build_reachability(
 	    !view->segment_child)
 		return 0;
 	memset(workspace->reachable, 0, sizeof(workspace->reachable));
+	for (tail = 0; tail < view->num_segments; ++tail)
+		workspace->physical_distance[tail] = -1;
+	tail = 0;
 	workspace->reachable[view->start_segment] = 1;
+	workspace->physical_distance[view->start_segment] = 0;
 	workspace->queue[tail++] = view->start_segment;
 	while (head < tail) {
 		int segment = workspace->queue[head++];
@@ -278,6 +282,8 @@ static int guidebot_build_reachability(
 			        view, segment, side))
 				continue;
 			workspace->reachable[child] = 1;
+			workspace->physical_distance[child] =
+			    workspace->physical_distance[segment] + 1;
 			workspace->queue[tail++] = child;
 		}
 	}
@@ -408,11 +414,86 @@ static int guidebot_step_usable(
 	return 1;
 }
 
+static long double guidebot_position_distance_squared(
+    const int left[3],
+    const int right[3])
+{
+	long double result = 0.0;
+	int coordinate;
+
+	for (coordinate = 0; coordinate < 3; ++coordinate) {
+		const long double delta =
+		    (long double) left[coordinate] - right[coordinate];
+		result += delta * delta;
+	}
+	return result;
+}
+
+#define GUIDEBOT_STEEP_SHOT_COSINE 16962
+#define GUIDEBOT_MIN_SHOT_COSINE   655
+
+static int guidebot_shot_incidence_cosine(
+    const level_metadata_scan_view *view,
+    const int firing_pos[3],
+    int wall_num)
+{
+	int incidence = LEVEL_METADATA_SHOT_COSINE_ONE;
+
+	if (view->wall_shot_incidence_cosine)
+		incidence = view->wall_shot_incidence_cosine(
+		    view->user, firing_pos, wall_num);
+	if (incidence < 0)
+		return 0;
+	return incidence > LEVEL_METADATA_SHOT_COSINE_ONE
+	           ? LEVEL_METADATA_SHOT_COSINE_ONE
+	           : incidence;
+}
+
+static long double guidebot_shot_score(
+    long double distance_squared, int incidence)
+{
+	long double multiplier;
+
+	if (incidence >= GUIDEBOT_STEEP_SHOT_COSINE)
+		return distance_squared;
+	if (incidence < GUIDEBOT_MIN_SHOT_COSINE)
+		incidence = GUIDEBOT_MIN_SHOT_COSINE;
+	multiplier =
+	    (long double) GUIDEBOT_STEEP_SHOT_COSINE / incidence;
+	return distance_squared * multiplier * multiplier;
+}
+
+static int guidebot_firing_cache_matches(
+    const level_metadata_scan_view *view,
+    const level_metadata_route_step *step,
+    const guidebot_route_certifier_workspace *workspace)
+{
+	return workspace->firing_cache_valid && step->aim_pos_valid &&
+	       workspace->firing_cache_num_segments == view->num_segments &&
+	       workspace->firing_cache_num_walls == view->num_walls &&
+	       workspace->firing_cache_trigger == step->trigger_num &&
+	       workspace->firing_cache_wall == step->wall_num &&
+	       memcmp(
+	           workspace->firing_cache_aim, step->aim_pos,
+	           sizeof(workspace->firing_cache_aim)) == 0;
+}
+
 static int guidebot_prepare_shoot_switch_position(
     const level_metadata_scan_view *view,
-    level_metadata_route_step *step)
+    level_metadata_route_step *step,
+    guidebot_route_certifier_workspace *workspace,
+    guidebot_route_certifier_summary *summary)
 {
+	long double best_score = 0.0;
+	int best_path_distance;
+	int best_pos[3];
+	int best_segment = -1;
+	int best_incidence = LEVEL_METADATA_SHOT_COSINE_ONE;
+	int best_quality = LEVEL_METADATA_SWITCH_SHOT_NONE;
 	int firing_pos[3];
+	int original_segment;
+	int pass;
+	int segment;
 
 	if (step->activation_kind !=
 	    LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH)
@@ -427,10 +508,163 @@ static int guidebot_prepare_shoot_switch_position(
 		    !view->segment_center(view->user, step->seg, firing_pos))
 			return 0;
 	}
-	if (!view->wall_shootable_from_position(
-	        view->user, step->seg, firing_pos, step->wall_num))
-		return 0;
-	memcpy(step->activation_pos, firing_pos, sizeof(firing_pos));
+	original_segment = step->seg;
+	if (guidebot_firing_cache_matches(view, step, workspace) &&
+	    guidebot_valid_segment(view, workspace->firing_cache_segment) &&
+	    workspace->reachable[workspace->firing_cache_segment] &&
+	    ((workspace->firing_cache_shot_quality !=
+	          LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE &&
+	      view->wall_shootable_from_position(
+	          view->user, workspace->firing_cache_segment,
+	          workspace->firing_cache_position, step->wall_num)) ||
+	     (workspace->firing_cache_shot_quality ==
+	          LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE &&
+	      view->wall_potentially_shootable_from_position &&
+	      view->wall_potentially_shootable_from_position(
+	          view->user, workspace->firing_cache_segment,
+	          workspace->firing_cache_position, step->wall_num)))) {
+		step->seg = workspace->firing_cache_segment;
+		step->path_terminal_segment = workspace->firing_cache_segment;
+		step->path_segment_count =
+		    workspace->firing_cache_path_segment_count;
+		memcpy(
+		    step->activation_pos, workspace->firing_cache_position,
+		    sizeof(step->activation_pos));
+		step->switch_shot_quality = workspace->firing_cache_shot_quality;
+		step->switch_shot_incidence_cosine =
+		    workspace->firing_cache_incidence_cosine;
+		summary->firing_cache_hit = 1;
+		summary->approximate_firing_position =
+		    step->switch_shot_quality ==
+		    LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE;
+		summary->steep_firing_position =
+		    step->switch_shot_quality ==
+		    LEVEL_METADATA_SWITCH_SHOT_CONFIRMED_STEEP;
+		return 1;
+	}
+	best_path_distance = -1;
+	for (pass = 0; pass < 2 && best_segment < 0; ++pass) {
+		int (*shootable)(void *, int, const int[3], int) =
+		    pass == 0 ? view->wall_shootable_from_position
+		              : view->wall_potentially_shootable_from_position;
+		const int quality = pass == 0
+		                        ? LEVEL_METADATA_SWITCH_SHOT_CONFIRMED
+		                        : LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE;
+
+		if (!shootable ||
+		    (pass != 0 && step->switch_shot_quality !=
+		                      LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE))
+			continue;
+		for (segment = -1; segment < view->num_segments; ++segment) {
+			long double distance_squared;
+			long double score;
+			int candidate_pos[3];
+			int candidate_segment;
+			int incidence;
+
+			if (segment < 0) {
+				candidate_segment = original_segment;
+				memcpy(candidate_pos, firing_pos, sizeof(candidate_pos));
+			} else {
+				candidate_segment = segment;
+				if (!view->segment_center ||
+				    !view->segment_center(
+				        view->user, candidate_segment, candidate_pos))
+					continue;
+			}
+			if (!guidebot_valid_segment(view, candidate_segment) ||
+			    !workspace->reachable[candidate_segment])
+				continue;
+			summary->evaluated_firing_positions++;
+			if (!shootable(
+			        view->user, candidate_segment, candidate_pos,
+			        step->wall_num))
+				continue;
+			incidence = guidebot_shot_incidence_cosine(
+			    view, candidate_pos, step->wall_num);
+			distance_squared = step->aim_pos_valid
+			                       ? guidebot_position_distance_squared(
+			                             candidate_pos, step->aim_pos)
+			                       : 0.0;
+			score = guidebot_shot_score(distance_squared, incidence);
+			if (best_segment >= 0 &&
+			    (score > best_score ||
+			     (score == best_score &&
+			      (workspace->physical_distance[candidate_segment] >
+			           best_path_distance ||
+			       (workspace->physical_distance[candidate_segment] ==
+			            best_path_distance &&
+			        candidate_segment >= best_segment)))))
+				continue;
+			best_segment = candidate_segment;
+			best_path_distance =
+			    workspace->physical_distance[candidate_segment];
+			best_score = score;
+			best_incidence = incidence;
+			best_quality =
+			    quality == LEVEL_METADATA_SWITCH_SHOT_CONFIRMED &&
+			            incidence < GUIDEBOT_STEEP_SHOT_COSINE
+			        ? LEVEL_METADATA_SWITCH_SHOT_CONFIRMED_STEEP
+			        : quality;
+			memcpy(best_pos, candidate_pos, sizeof(best_pos));
+		}
+	}
+	if (best_segment < 0) {
+		int (*shootable)(void *, int, const int[3], int) =
+		    view->wall_shootable_from_position;
+
+		best_quality = LEVEL_METADATA_SWITCH_SHOT_CONFIRMED;
+		if (!shootable(
+		        view->user, original_segment, firing_pos, step->wall_num)) {
+			if (step->switch_shot_quality !=
+			        LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE ||
+			    !view->wall_potentially_shootable_from_position)
+				return 0;
+			shootable = view->wall_potentially_shootable_from_position;
+			if (!shootable(
+			        view->user, original_segment, firing_pos,
+			        step->wall_num))
+				return 0;
+			best_quality = LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE;
+		}
+		best_segment = original_segment;
+		best_incidence = guidebot_shot_incidence_cosine(
+		    view, firing_pos, step->wall_num);
+		if (best_quality == LEVEL_METADATA_SWITCH_SHOT_CONFIRMED &&
+		    best_incidence < GUIDEBOT_STEEP_SHOT_COSINE)
+			best_quality = LEVEL_METADATA_SWITCH_SHOT_CONFIRMED_STEEP;
+		memcpy(best_pos, firing_pos, sizeof(best_pos));
+	}
+	step->seg = best_segment;
+	step->path_terminal_segment = best_segment;
+	step->path_segment_count = best_path_distance >= 0
+	                               ? best_path_distance + 1
+	                               : step->path_segment_count;
+	memcpy(step->activation_pos, best_pos, sizeof(step->activation_pos));
+	step->switch_shot_quality = best_quality;
+	step->switch_shot_incidence_cosine = best_incidence;
+	workspace->firing_cache_valid = 1;
+	workspace->firing_cache_num_segments = view->num_segments;
+	workspace->firing_cache_num_walls = view->num_walls;
+	workspace->firing_cache_trigger = step->trigger_num;
+	workspace->firing_cache_wall = step->wall_num;
+	memcpy(
+	    workspace->firing_cache_aim, step->aim_pos,
+	    sizeof(workspace->firing_cache_aim));
+	workspace->firing_cache_segment = best_segment;
+	workspace->firing_cache_path_segment_count = step->path_segment_count;
+	memcpy(
+	    workspace->firing_cache_position, best_pos,
+	    sizeof(workspace->firing_cache_position));
+	workspace->firing_cache_shot_quality = best_quality;
+	workspace->firing_cache_incidence_cosine = best_incidence;
+	summary->reranked_firing_position =
+	    best_segment != original_segment ||
+	    memcmp(best_pos, firing_pos, sizeof(best_pos)) != 0;
+	summary->approximate_firing_position =
+	    best_quality == LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE;
+	summary->steep_firing_position =
+	    best_quality == LEVEL_METADATA_SWITCH_SHOT_CONFIRMED_STEEP;
 	return 1;
 }
 
@@ -593,20 +827,23 @@ int guidebot_route_certify_current_state(
 			    GUIDEBOT_ROUTE_CERTIFIER_REJECTION_INVALID_TARGET;
 			break;
 		}
-		if (!workspace->reachable[target_segment]) {
-			local_summary.rejected_actions++;
-			local_summary.blocking_step = step;
-			local_summary.blocking_segment = target_segment;
-			local_summary.blocking_reason =
-			    GUIDEBOT_ROUTE_CERTIFIER_REJECTION_UNREACHABLE_TARGET;
-			break;
-		}
-		if (!guidebot_prepare_shoot_switch_position(view, candidate)) {
+		if (!guidebot_prepare_shoot_switch_position(
+		        view, candidate, workspace, &local_summary)) {
 			local_summary.rejected_actions++;
 			local_summary.blocking_step = step;
 			local_summary.blocking_segment = target_segment;
 			local_summary.blocking_reason =
 			    GUIDEBOT_ROUTE_CERTIFIER_REJECTION_INVALID_TARGET;
+			break;
+		}
+		target_segment = guidebot_step_target_segment(view, candidate);
+		if (!guidebot_valid_segment(view, target_segment) ||
+		    !workspace->reachable[target_segment]) {
+			local_summary.rejected_actions++;
+			local_summary.blocking_step = step;
+			local_summary.blocking_segment = target_segment;
+			local_summary.blocking_reason =
+			    GUIDEBOT_ROUTE_CERTIFIER_REJECTION_UNREACHABLE_TARGET;
 			break;
 		}
 		selected = step;

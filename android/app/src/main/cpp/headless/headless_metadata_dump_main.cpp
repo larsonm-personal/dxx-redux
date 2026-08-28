@@ -898,6 +898,15 @@ static nlohmann::ordered_json serialize_route_steps(const level_metadata_state *
 		item["index"] = index;
 		item["kind"] = level_metadata_route_step_kind_name(step.kind);
 		item["activation_kind"] = level_metadata_route_activation_kind_name(step.activation_kind);
+		if (step.switch_shot_quality != LEVEL_METADATA_SWITCH_SHOT_NONE &&
+		    step.switch_shot_quality != LEVEL_METADATA_SWITCH_SHOT_CONFIRMED) {
+			item["switch_shot_quality"] =
+			    level_metadata_switch_shot_quality_name(
+			        step.switch_shot_quality);
+			item["switch_shot_incidence_cosine"] =
+			    static_cast<double>(step.switch_shot_incidence_cosine) /
+			    LEVEL_METADATA_SHOT_COSINE_ONE;
+		}
 		if (step.activation_kind ==
 		    LEVEL_METADATA_ROUTE_ACTIVATION_UNRESOLVED_TRIGGER)
 			item["calculated"] = false;

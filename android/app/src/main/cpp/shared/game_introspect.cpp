@@ -797,6 +797,11 @@ static json serialize_level_metadata_route()
 		item["index"] = index;
 		item["kind"] = level_metadata_route_step_kind_name(step->kind);
 		item["activation_kind"] = level_metadata_route_activation_kind_name(step->activation_kind);
+		item["switch_shot_quality"] =
+		    level_metadata_switch_shot_quality_name(step->switch_shot_quality);
+		item["switch_shot_incidence_cosine"] =
+		    static_cast<double>(step->switch_shot_incidence_cosine) /
+		    LEVEL_METADATA_SHOT_COSINE_ONE;
 		item["label"] = step->label;
 		item["seg"] = step->seg;
 		item["side"] = step->side;
@@ -846,6 +851,11 @@ static json serialize_guidebot_route_analysis()
 		item["index"] = index;
 		item["kind"] = level_metadata_route_step_kind_name(step->kind);
 		item["activation_kind"] = level_metadata_route_activation_kind_name(step->activation_kind);
+		item["switch_shot_quality"] =
+		    level_metadata_switch_shot_quality_name(step->switch_shot_quality);
+		item["switch_shot_incidence_cosine"] =
+		    static_cast<double>(step->switch_shot_incidence_cosine) /
+		    LEVEL_METADATA_SHOT_COSINE_ONE;
 		item["label"] = step->label;
 		item["activation_pos"] = step->activation_pos_valid ? json::array({ step->activation_pos[0], step->activation_pos[1], step->activation_pos[2] }) : json(nullptr);
 		item["aim_pos"] = step->aim_pos_valid ? json::array({ step->aim_pos[0], step->aim_pos[1], step->aim_pos[2] }) : json(nullptr);

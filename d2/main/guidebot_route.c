@@ -490,6 +490,8 @@ static void escort_route_goal_initialize(escort_route_goal *goal)
 	goal->objective_trigger = -1;
 	goal->objective_object = -1;
 	goal->objective_key_index = -1;
+	goal->switch_shot_quality = LEVEL_METADATA_SWITCH_SHOT_NONE;
+	goal->switch_shot_incidence_cosine = LEVEL_METADATA_SHOT_COSINE_ONE;
 	goal->guidance_mode = ESCORT_ROUTE_GUIDANCE_NONE;
 	goal->guidance_seg = -1;
 	goal->guidance_side = -1;
@@ -524,6 +526,12 @@ const char *escort_get_route_goal_instruction(void)
 		return "unexplored";
 	switch (Escort_route_goal.activation_kind) {
 		case LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH:
+			if (Escort_route_goal.switch_shot_quality ==
+			    LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE)
+				return "can't confirm a clear shot; follow me toward the marked switch";
+			if (Escort_route_goal.switch_shot_quality ==
+			    LEVEL_METADATA_SWITCH_SHOT_CONFIRMED_STEEP)
+				return "shot is at a steep angle; follow me, then shoot the marked switch";
 			return "follow me, then shoot the marked switch";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER:
 			return "follow me, then fly through the marked opening";
@@ -1351,6 +1359,9 @@ static void escort_route_build_step_goal(
 	goal->objective_trigger = step->trigger_num;
 	goal->objective_object = step->key_carrier_objnum;
 	goal->objective_key_index = step->key_index;
+	goal->switch_shot_quality = step->switch_shot_quality;
+	goal->switch_shot_incidence_cosine =
+	    step->switch_shot_incidence_cosine;
 	goal->guidance_mode = guidance_mode;
 	goal->guidance_seg = target_seg;
 	goal->guidance_side = target_side;
@@ -1708,7 +1719,8 @@ static int escort_route_goal_semantic_equal(
 	       left->objective_wall == right->objective_wall &&
 	       left->objective_trigger == right->objective_trigger &&
 	       left->objective_object == right->objective_object &&
-	       left->objective_key_index == right->objective_key_index;
+	       left->objective_key_index == right->objective_key_index &&
+	       left->switch_shot_quality == right->switch_shot_quality;
 }
 
 void escort_route_monitor_completion(void)

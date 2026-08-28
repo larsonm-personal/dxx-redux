@@ -30,6 +30,12 @@ typedef struct certifier_fixture {
 	int hard_blocked[TEST_WALLS];
 	int control_center_link[TEST_WALLS];
 	int wall_shootable[TEST_WALLS];
+	int position_sensitive_wall;
+	int shootable_segment[TEST_SEGMENTS];
+	int potentially_shootable_segment[TEST_SEGMENTS];
+	int incidence_cosine[TEST_SEGMENTS];
+	int center_x[TEST_SEGMENTS];
+	int wall_shootable_calls;
 	int trigger_flags[TEST_TRIGGERS];
 	int object_dead;
 } certifier_fixture;
@@ -189,8 +195,8 @@ static int object_position(void *user, int object, int xyz[3])
 
 static int segment_center(void *user, int segment, int xyz[3])
 {
-	(void) user;
-	xyz[0] = 100 + segment;
+	certifier_fixture *fixture = (certifier_fixture *) user;
+	xyz[0] = fixture->center_x[segment];
 	xyz[1] = 0;
 	xyz[2] = 0;
 	return 1;
@@ -200,9 +206,35 @@ static int wall_shootable_from_position(
     void *user, int segment, const int from_pos[3], int wall)
 {
 	certifier_fixture *fixture = (certifier_fixture *) user;
-	(void) segment;
 	(void) from_pos;
+	fixture->wall_shootable_calls++;
+	if (wall == fixture->position_sensitive_wall)
+		return fixture->shootable_segment[segment];
 	return fixture->wall_shootable[wall];
+}
+
+static int wall_potentially_shootable_from_position(
+    void *user, int segment, const int from_pos[3], int wall)
+{
+	certifier_fixture *fixture = (certifier_fixture *) user;
+	(void) from_pos;
+	fixture->wall_shootable_calls++;
+	if (wall == fixture->position_sensitive_wall)
+		return fixture->potentially_shootable_segment[segment];
+	return fixture->wall_shootable[wall];
+}
+
+static int wall_shot_incidence_cosine(
+    void *user, const int from_pos[3], int wall)
+{
+	certifier_fixture *fixture = (certifier_fixture *) user;
+	int segment;
+	(void) wall;
+
+	for (segment = 0; segment < TEST_SEGMENTS; ++segment)
+		if (fixture->center_x[segment] == from_pos[0])
+			return fixture->incidence_cosine[segment];
+	return LEVEL_METADATA_SHOT_COSINE_ONE;
 }
 
 static level_metadata_scan_view make_view(certifier_fixture *fixture)
@@ -253,6 +285,9 @@ static level_metadata_scan_view make_view(certifier_fixture *fixture)
 	view.object_position = object_position;
 	view.segment_center = segment_center;
 	view.wall_shootable_from_position = wall_shootable_from_position;
+	view.wall_potentially_shootable_from_position =
+	    wall_potentially_shootable_from_position;
+	view.wall_shot_incidence_cosine = wall_shot_incidence_cosine;
 	return view;
 }
 
@@ -262,6 +297,12 @@ static void initialize_fixture(certifier_fixture *fixture)
 	int side;
 
 	memset(fixture, 0, sizeof(*fixture));
+	fixture->position_sensitive_wall = -1;
+	for (segment = 0; segment < TEST_SEGMENTS; ++segment) {
+		fixture->center_x[segment] = 100 + segment;
+		fixture->incidence_cosine[segment] =
+		    LEVEL_METADATA_SHOT_COSINE_ONE;
+	}
 	for (segment = 0; segment < TEST_SEGMENTS; ++segment)
 		for (side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
 			fixture->child[segment][side] = -1;
@@ -284,6 +325,7 @@ static void initialize_plan(route_planner_plan_summary *plan)
 	level_metadata_route_step *step;
 
 	memset(&Prepared, 0, sizeof(Prepared));
+	memset(&Workspace, 0, sizeof(Workspace));
 	memset(plan, 0, sizeof(*plan));
 	Prepared.route_status = LEVEL_METADATA_ROUTE_OK;
 	Prepared.route_step_count = 5;
@@ -497,9 +539,9 @@ static void test_destroyed_switch_stays_complete_when_link_recloses(void)
 	fixture.wall_shootable[0] = 0;
 	assert(!fixture.wall_open[0]);
 
-	assert(!certify(
+	assert(certify(
 	    &view, &prepared_plan, &live_plan, &certificate, &summary));
-	assert(summary.selected_step == -1);
+	assert(summary.selected_step == 2);
 
 	Prepared.route_steps[1].activation_kind =
 	    LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER;
@@ -535,6 +577,138 @@ static void test_equal_switch_positions_use_segment_center(void)
 	       Live.route_steps[1].aim_pos[0]);
 }
 
+static void test_remote_cached_switch_position_reranks_near_switch(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+	route_planner_plan_summary prepared_plan;
+	route_planner_plan_summary live_plan;
+	guidebot_route_validity_certificate certificate;
+	guidebot_route_certifier_summary summary;
+	int first_call_count;
+
+	initialize_fixture(&fixture);
+	initialize_plan(&prepared_plan);
+	view = make_view(&fixture);
+	view.start_segment = 0;
+	fixture.position_sensitive_wall = 0;
+	fixture.shootable_segment[0] = 1;
+	fixture.shootable_segment[3] = 1;
+	fixture.center_x[0] = 100;
+	fixture.center_x[1] = 200;
+	fixture.center_x[2] = 300;
+	fixture.center_x[3] = 390;
+	Prepared.route_steps[1].activation_pos[0] = 100;
+	Prepared.route_steps[1].aim_pos[0] = 400;
+	fixture.child[0][2] = 1;
+	fixture.child[1][2] = 0;
+	fixture.child[1][3] = 2;
+	fixture.child[2][3] = 1;
+	fixture.child[2][4] = 3;
+	fixture.child[3][4] = 2;
+
+	assert(certify(
+	    &view, &prepared_plan, &live_plan, &certificate, &summary));
+	assert(summary.selected_step == 1);
+	assert(summary.selected_segment == 3);
+	assert(summary.reranked_firing_position);
+	assert(!summary.firing_cache_hit);
+	assert(summary.evaluated_firing_positions == TEST_SEGMENTS + 1);
+	assert(Live.route_steps[1].seg == 3);
+	assert(Live.route_steps[1].activation_pos[0] == 390);
+	assert(live_plan.first_pending_path_terminal_segment == 3);
+	first_call_count = fixture.wall_shootable_calls;
+
+	assert(certify(
+	    &view, &prepared_plan, &live_plan, &certificate, &summary));
+	assert(summary.selected_segment == 3);
+	assert(summary.firing_cache_hit);
+	assert(summary.evaluated_firing_positions == 0);
+	assert(fixture.wall_shootable_calls - first_call_count == 1);
+}
+
+static void test_approximate_switch_position_is_retained_as_warning(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+	route_planner_plan_summary prepared_plan;
+	route_planner_plan_summary live_plan;
+	guidebot_route_validity_certificate certificate;
+	guidebot_route_certifier_summary summary;
+
+	initialize_fixture(&fixture);
+	initialize_plan(&prepared_plan);
+	view = make_view(&fixture);
+	view.start_segment = 0;
+	fixture.position_sensitive_wall = 0;
+	memset(fixture.shootable_segment, 0, sizeof(fixture.shootable_segment));
+	fixture.potentially_shootable_segment[0] = 1;
+	fixture.potentially_shootable_segment[3] = 1;
+	fixture.center_x[0] = 100;
+	fixture.center_x[1] = 200;
+	fixture.center_x[2] = 300;
+	fixture.center_x[3] = 390;
+	Prepared.route_steps[1].activation_pos[0] = 100;
+	Prepared.route_steps[1].aim_pos[0] = 400;
+	Prepared.route_steps[1].switch_shot_quality =
+	    LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE;
+	fixture.child[0][2] = 1;
+	fixture.child[1][2] = 0;
+	fixture.child[1][3] = 2;
+	fixture.child[2][3] = 1;
+	fixture.child[2][4] = 3;
+	fixture.child[3][4] = 2;
+
+	assert(certify(
+	    &view, &prepared_plan, &live_plan, &certificate, &summary));
+	assert(summary.selected_segment == 3);
+	assert(summary.approximate_firing_position);
+	assert(!summary.steep_firing_position);
+	assert(Live.route_steps[1].switch_shot_quality ==
+	       LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE);
+	assert(Live.route_steps[1].activation_pos[0] == 390);
+}
+
+static void test_steep_switch_position_loses_to_square_shot(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+	route_planner_plan_summary prepared_plan;
+	route_planner_plan_summary live_plan;
+	guidebot_route_validity_certificate certificate;
+	guidebot_route_certifier_summary summary;
+
+	initialize_fixture(&fixture);
+	initialize_plan(&prepared_plan);
+	view = make_view(&fixture);
+	view.start_segment = 0;
+	fixture.position_sensitive_wall = 0;
+	fixture.shootable_segment[0] = 1;
+	fixture.shootable_segment[3] = 1;
+	fixture.center_x[0] = 250;
+	fixture.center_x[1] = 200;
+	fixture.center_x[2] = 300;
+	fixture.center_x[3] = 390;
+	fixture.incidence_cosine[3] = 1000;
+	Prepared.route_steps[1].activation_pos[0] = 390;
+	Prepared.route_steps[1].seg = 3;
+	Prepared.route_steps[1].path_terminal_segment = 3;
+	Prepared.route_steps[1].aim_pos[0] = 400;
+	fixture.child[0][2] = 1;
+	fixture.child[1][2] = 0;
+	fixture.child[1][3] = 2;
+	fixture.child[2][3] = 1;
+	fixture.child[2][4] = 3;
+	fixture.child[3][4] = 2;
+
+	assert(certify(
+	    &view, &prepared_plan, &live_plan, &certificate, &summary));
+	assert(summary.selected_segment == 0);
+	assert(!summary.steep_firing_position);
+	assert(Live.route_steps[1].switch_shot_quality ==
+	       LEVEL_METADATA_SWITCH_SHOT_CONFIRMED);
+}
+
 static void test_solid_illusion_wall_is_not_passable(void)
 {
 	certifier_fixture fixture;
@@ -565,6 +739,8 @@ static void test_keyed_buddy_proof_door_keeps_objective_reachable(void)
 	view.initial_key_mask = LEVEL_METADATA_KEY_MASK_BLUE;
 	fixture.wall_key[0] = view.wall_key_blue;
 	fixture.hard_blocked[0] = 1;
+	fixture.position_sensitive_wall = 0;
+	fixture.shootable_segment[1] = 1;
 	Prepared.route_steps[1].seg = 1;
 	Prepared.route_steps[1].path_terminal_segment = 1;
 
@@ -702,6 +878,8 @@ static void test_unreachable_prepared_target_requires_replan(void)
 	initialize_plan(&prepared_plan);
 	view = make_view(&fixture);
 	view.start_segment = 0;
+	fixture.position_sensitive_wall = 0;
+	fixture.shootable_segment[1] = 1;
 	Prepared.route_steps[1].seg = 1;
 	Prepared.route_steps[1].path_terminal_segment = 1;
 	Prepared.route_steps[3].kind = LEVEL_METADATA_ROUTE_HIDDEN_DOOR;
@@ -760,6 +938,9 @@ int main(void)
 	test_disabled_action_uses_reachable_prepared_alternative();
 	test_destroyed_switch_stays_complete_when_link_recloses();
 	test_equal_switch_positions_use_segment_center();
+	test_remote_cached_switch_position_reranks_near_switch();
+	test_approximate_switch_position_is_retained_as_warning();
+	test_steep_switch_position_loses_to_square_shot();
 	test_solid_illusion_wall_is_not_passable();
 	test_keyed_buddy_proof_door_keeps_objective_reachable();
 	test_physical_frontier_follows_strategic_route();

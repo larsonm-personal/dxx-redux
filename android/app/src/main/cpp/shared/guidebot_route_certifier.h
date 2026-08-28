@@ -12,6 +12,17 @@ typedef struct guidebot_route_certifier_workspace {
 	int queue[LEVEL_METADATA_MAX_SEGMENTS];
 	int strategic_distance[LEVEL_METADATA_MAX_SEGMENTS];
 	int physical_distance[LEVEL_METADATA_MAX_SEGMENTS];
+	int firing_cache_valid;
+	int firing_cache_num_segments;
+	int firing_cache_num_walls;
+	int firing_cache_trigger;
+	int firing_cache_wall;
+	int firing_cache_aim[3];
+	int firing_cache_segment;
+	int firing_cache_path_segment_count;
+	int firing_cache_position[3];
+	int firing_cache_shot_quality;
+	int firing_cache_incidence_cosine;
 } guidebot_route_certifier_workspace;
 
 enum guidebot_route_certifier_rejection {
@@ -32,6 +43,11 @@ typedef struct guidebot_route_certifier_summary {
 	unsigned int evaluated_edges;
 	unsigned int evaluated_actions;
 	unsigned int rejected_actions;
+	unsigned int evaluated_firing_positions;
+	int reranked_firing_position;
+	int firing_cache_hit;
+	int approximate_firing_position;
+	int steep_firing_position;
 } guidebot_route_certifier_summary;
 
 int guidebot_route_side_passable_current(
