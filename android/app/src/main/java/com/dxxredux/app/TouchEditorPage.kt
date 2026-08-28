@@ -79,7 +79,7 @@ private val cReticleBright = Color(0xFF20FF20)
 private val cReticleDark = Color(0x99408040)
 private val cMouseEdgeHorizontal = Color(0xFFFFFF00)
 private val cMouseEdgeVertical = Color(0xFF00FF00)
-private const val MOUSE_EDGE_EDITOR_MAX_ALPHA = 0.3f
+private const val MOUSE_EDGE_EDITOR_MAX_ALPHA = 0.18f
 private const val SELECTED_TYPE_STICK_ZONE_EDGE = "stickZoneEdge"
 private const val SELECTED_TYPE_AXIS_REGION_EDGE = "axisRegionEdge"
 private const val SELECTED_TYPE_MORE_ACTIONS = "moreActions"
@@ -1249,6 +1249,29 @@ internal fun editorStickAxisLabels(
         TouchBindings.AXIS_LABELS[axisY] ?: "?",
     )
 
+internal data class EditorStickDirectionLabels(
+    val left: String,
+    val right: String,
+    val top: String,
+    val bottom: String,
+)
+
+internal fun editorStickDirectionLabels(
+    axisX: Int,
+    axisY: Int,
+    invertX: Boolean,
+    invertY: Boolean,
+): EditorStickDirectionLabels {
+    val horizontal = TouchBindings.axisDirectionLabels(axisX, invertX)
+    val vertical = TouchBindings.axisDirectionLabels(axisY, invertY)
+    return EditorStickDirectionLabels(
+        left = horizontal.negative,
+        right = horizontal.positive,
+        top = vertical.negative,
+        bottom = vertical.positive,
+    )
+}
+
 private fun DrawScope.drawEditorStickAxisLabels(
     textMeasurer: androidx.compose.ui.text.TextMeasurer,
     labels: Pair<String, String>,
@@ -1429,8 +1452,15 @@ private fun drawAllControls(
         if (selectedEdge != null && hasEditableZone && !stick.mouseMode) {
             scope.drawSelectedZoneEdge(zoneLeft, zoneTop, zoneRight, zoneBottom, selectedEdge)
         }
+        val directionLabels =
+            editorStickDirectionLabels(
+                axisX = stick.axisX,
+                axisY = stick.axisY,
+                invertX = stick.invertX,
+                invertY = stick.invertY,
+            )
         if (horizontalEdgeBands != null && verticalEdgeBands != null) {
-            val labels = mouseEdgeDirectionLabels(stick.invertX, stick.invertY)
+            val labels = directionLabels
             val textStyle = TextStyle(fontSize = 9.sp, color = cButtonLabel.copy(alpha = alpha))
             scope.drawEditorLabel(
                 textMeasurer,
@@ -1456,6 +1486,13 @@ private fun drawAllControls(
                 Offset((zoneLeft + zoneRight) / 2f, (verticalEdgeBands.positiveRampInnerPx + zoneBottom) / 2f),
                 textStyle,
             )
+        }
+        if (!stick.mouseMode) {
+            val textStyle = TextStyle(fontSize = 8.sp, color = cButtonLabel.copy(alpha = alpha))
+            scope.drawEditorLabel(textMeasurer, directionLabels.left, Offset(cx - r * 0.62f, cy), textStyle)
+            scope.drawEditorLabel(textMeasurer, directionLabels.right, Offset(cx + r * 0.62f, cy), textStyle)
+            scope.drawEditorLabel(textMeasurer, directionLabels.top, Offset(cx, cy - r * 0.62f), textStyle)
+            scope.drawEditorLabel(textMeasurer, directionLabels.bottom, Offset(cx, cy + r * 0.62f), textStyle)
         }
         scope.drawEditorStickAxisLabels(
             textMeasurer = textMeasurer,

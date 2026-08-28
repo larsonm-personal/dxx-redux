@@ -296,6 +296,33 @@ object TouchBindings {
             AXIS_SLIDE_UD to "Slide U/D",
         )
 
+    data class AxisDirectionLabels(
+        val negative: String,
+        val positive: String,
+    )
+
+    private val AXIS_DIRECTION_LABELS =
+        mapOf(
+            AXIS_LEFT_X to AxisDirectionLabels("Strafe Left", "Strafe Right"),
+            AXIS_LEFT_Y to AxisDirectionLabels("Forward", "Back"),
+            AXIS_RIGHT_X to AxisDirectionLabels("Turn Left", "Turn Right"),
+            AXIS_RIGHT_Y to AxisDirectionLabels("Pitch Up", "Pitch Down"),
+            AXIS_BANK to AxisDirectionLabels("Bank Left", "Bank Right"),
+            AXIS_SLIDE_UD to AxisDirectionLabels("Strafe Up", "Strafe Down"),
+        )
+
+    fun axisDirectionLabels(
+        axis: Int,
+        inverted: Boolean,
+    ): AxisDirectionLabels {
+        val base =
+            AXIS_DIRECTION_LABELS[axis] ?: run {
+                val label = AXIS_LABELS[axis] ?: "Axis $axis"
+                AxisDirectionLabels("$label -", "$label +")
+            }
+        return if (inverted) AxisDirectionLabels(base.positive, base.negative) else base
+    }
+
     /** Gyro-specific axis labels: no triggers, reordered for gyro use. */
     val GYRO_AXIS_LABELS =
         linkedMapOf(

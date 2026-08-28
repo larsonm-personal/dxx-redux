@@ -8,24 +8,6 @@ internal data class MouseEdgeAxisVisualBands(
     val maxStrength: Float,
 )
 
-internal data class MouseEdgeDirectionLabels(
-    val left: String,
-    val right: String,
-    val top: String,
-    val bottom: String,
-)
-
-internal fun mouseEdgeDirectionLabels(
-    invertX: Boolean,
-    invertY: Boolean,
-): MouseEdgeDirectionLabels =
-    MouseEdgeDirectionLabels(
-        left = if (invertX) "Stick Right" else "Stick Left",
-        right = if (invertX) "Stick Left" else "Stick Right",
-        top = if (invertY) "Stick Down" else "Stick Up",
-        bottom = if (invertY) "Stick Up" else "Stick Down",
-    )
-
 internal fun mouseEdgeAxisVisualBands(
     enabled: Boolean,
     lowPx: Float,

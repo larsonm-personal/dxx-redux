@@ -171,7 +171,7 @@ class SaveExplorerTest {
 
     @Test
     fun detailRowsIncludeMissionSetAndResumeMetadata() {
-        val rows =
+        val detailRows =
             saveExplorerDetailRows(
                 slot(
                     path = "/files/d2x-redux/Players/save_sets/single/test/obsidian/test.sg8",
@@ -184,14 +184,34 @@ class SaveExplorerTest {
                     levelSeconds = 121L,
                     totalSeconds = 3661L,
                 ),
-            ).associate { it.label to it.value }
+            )
+        val rows = detailRows.associate { it.label to it.value }
 
+        assertEquals("Level Set", detailRows.first().label)
         assertEquals("Descent 2 (d2)", rows["Game"])
         assertEquals("Obsidian (obsidian)", rows["Level Set"])
         assertEquals("Auto-save on exit", rows["Save Kind"])
         assertEquals("CD", rows["Music"])
         assertEquals("2:01", rows["Level Time"])
         assertEquals("1:01:01", rows["Total Time"])
+    }
+
+    @Test
+    fun onlyCustomMissionsGetProminentHeadings() {
+        val base =
+            slot(
+                path = "/files/d2x-redux/Players/test.sg0",
+                relativePath = "d2x-redux/Players/test.sg0",
+                saveKind = "manual",
+                saveTimeUnixSeconds = 1_700_000_100L,
+                slot = 0,
+            )
+        val namedCustom = base.copy(missionKey = "obsidian", missionName = "Obsidian")
+        val unnamedCustom = base.copy(missionKey = "lost_levels", missionName = "")
+
+        assertNull(saveExplorerMissionHeading(base))
+        assertEquals("Obsidian", saveExplorerMissionHeading(namedCustom))
+        assertEquals("lost_levels", saveExplorerMissionHeading(unnamedCustom))
     }
 
     @Test

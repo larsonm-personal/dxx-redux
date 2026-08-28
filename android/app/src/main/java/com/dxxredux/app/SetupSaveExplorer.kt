@@ -529,9 +529,9 @@ private fun SaveExplorerPage(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         SaveExplorerDropdown("Game", selectedGame, gameOptions, onGameSelected)
+                        SaveExplorerDropdown("Level Set", selectedMission, missionOptions, onMissionSelected)
                         SaveExplorerDropdown("Scope", selectedScope, scopeOptions, onScopeSelected)
                         SaveExplorerDropdown("Pilot", selectedPilot, pilotOptions, onPilotSelected)
-                        SaveExplorerDropdown("Level Set", selectedMission, missionOptions, onMissionSelected)
                     }
                     SharedHorizontalScrollArrows(filterScrollState)
                 }
@@ -839,6 +839,16 @@ private fun SaveExplorerSlotRow(
             ) {
                 SaveExplorerThumbnail(thumbnail)
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                    slot?.let(::saveExplorerMissionHeading)?.let { missionName ->
+                        Text(
+                            text = missionName,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                     Text(
                         text = if (slot == null) "Slot ${row.slotIndex}: Empty" else saveExplorerPrimaryLine(slot),
                         fontSize = 11.sp,
@@ -1084,15 +1094,23 @@ internal fun saveExplorerSecondaryLine(slot: SaveExplorerBridge.SaveExplorerSlot
         saveExplorerSize(slot.sizeBytes)
 }
 
-private fun saveExplorerIdentityLine(slot: SaveExplorerBridge.SaveExplorerSlot): String =
-    "${slot.game.ifBlank { "unknown" }} / ${slot.scope.ifBlank { "single" }} / " +
-        "${slot.pilot.ifBlank { slot.callsign.ifBlank { "unknown" } }} / " +
-        "${slot.missionKey.ifBlank { slot.missionName.ifBlank { "unknown" } }} / slot ${slot.slot}"
+private fun saveExplorerIdentityLine(slot: SaveExplorerBridge.SaveExplorerSlot): String {
+    val identity =
+        "${slot.game.ifBlank { "unknown" }} / ${slot.scope.ifBlank { "single" }} / " +
+            "${slot.pilot.ifBlank { slot.callsign.ifBlank { "unknown" } }} / " +
+            "${slot.missionKey.ifBlank { slot.missionName.ifBlank { "unknown" } }} / slot ${slot.slot}"
+    return listOfNotNull(saveExplorerMissionHeading(slot), identity).joinToString(" / ")
+}
 
 internal fun saveExplorerDetailRows(slot: SaveExplorerBridge.SaveExplorerSlot): List<SaveExplorerDetailRow> =
     buildList {
+        if (saveExplorerMissionHeading(slot) != null) {
+            add(SaveExplorerDetailRow("Level Set", saveExplorerMissionSetLabel(slot)))
+        }
         add(SaveExplorerDetailRow("Game", "${resumeGameDisplayName(slot.game)} (${slot.game.ifBlank { "unknown" }})"))
-        add(SaveExplorerDetailRow("Level Set", saveExplorerMissionSetLabel(slot)))
+        if (saveExplorerMissionHeading(slot) == null) {
+            add(SaveExplorerDetailRow("Level Set", saveExplorerMissionSetLabel(slot)))
+        }
         add(SaveExplorerDetailRow("Scope", if (slot.scope == "coop") "Coop" else "Single-player"))
         add(SaveExplorerDetailRow("Pilot", slot.pilot.ifBlank { slot.callsign.ifBlank { "Unknown" } }))
         add(SaveExplorerDetailRow("Description", slot.description.ifBlank { "Save" }))
@@ -1133,8 +1151,17 @@ internal fun saveExplorerStatusMessage(slot: SaveExplorerBridge.SaveExplorerSlot
     }
 }
 
-private fun saveExplorerDetailTitle(slot: SaveExplorerBridge.SaveExplorerSlot): String =
-    "${slot.description.ifBlank { "Save" }} | ${saveExplorerMissionSetLabel(slot)}"
+private fun saveExplorerDetailTitle(slot: SaveExplorerBridge.SaveExplorerSlot): String {
+    val description = slot.description.ifBlank { "Save" }
+    return saveExplorerMissionHeading(slot)?.let { "$it | $description" }
+        ?: "$description | ${saveExplorerMissionSetLabel(slot)}"
+}
+
+internal fun saveExplorerMissionHeading(slot: SaveExplorerBridge.SaveExplorerSlot): String? {
+    val key = slot.missionKey.trim()
+    if (key.isBlank() || key.equals("d1", ignoreCase = true) || key.equals("d2", ignoreCase = true)) return null
+    return slot.missionName.trim().ifBlank { key }
+}
 
 private fun saveExplorerMissionSetLabel(slot: SaveExplorerBridge.SaveExplorerSlot): String {
     val key = slot.missionKey.ifBlank { "unknown" }

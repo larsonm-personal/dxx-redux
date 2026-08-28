@@ -92,14 +92,24 @@ class TouchMouseEdgeMovementTest {
     }
 
     @Test
-    fun editorDirectionLabelsFollowAxisInversion() {
+    fun editorDirectionLabelsUseConfiguredAxesAndFollowInversion() {
         assertEquals(
-            MouseEdgeDirectionLabels("Stick Left", "Stick Right", "Stick Up", "Stick Down"),
-            mouseEdgeDirectionLabels(invertX = false, invertY = false),
+            EditorStickDirectionLabels("Turn Left", "Turn Right", "Pitch Up", "Pitch Down"),
+            editorStickDirectionLabels(
+                axisX = TouchBindings.AXIS_RIGHT_X,
+                axisY = TouchBindings.AXIS_RIGHT_Y,
+                invertX = false,
+                invertY = false,
+            ),
         )
         assertEquals(
-            MouseEdgeDirectionLabels("Stick Right", "Stick Left", "Stick Down", "Stick Up"),
-            mouseEdgeDirectionLabels(invertX = true, invertY = true),
+            EditorStickDirectionLabels("Strafe Right", "Strafe Left", "Back", "Forward"),
+            editorStickDirectionLabels(
+                axisX = TouchBindings.AXIS_LEFT_X,
+                axisY = TouchBindings.AXIS_LEFT_Y,
+                invertX = true,
+                invertY = true,
+            ),
         )
     }
 

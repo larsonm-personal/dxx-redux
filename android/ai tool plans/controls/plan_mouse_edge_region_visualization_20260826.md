@@ -7,17 +7,19 @@ Goal: Make mouse-mode continuous-movement regions understandable in the touch ed
 3. [done] Draw the strength bands and directional labels in the touch editor preview
 4. [done] Add focused geometry tests and complete automated Android verification
 5. [done] Show both configured stick-axis labels at every stick's default editor position
+6. [done] Rename controller mapping, reduce band intensity, and use configured-axis direction labels
 
 ## Intended appearance
 
 - Draw the horizontal-axis regions in yellow and the vertical-axis regions in green
-- Treat 30% alpha as the nominal visual maximum for a 100% movement region. Continue to multiply that cap by the existing layout global opacity and stick opacity, so this addition never makes a control more opaque than its configured overlay
+- Treat 18% alpha as the nominal visual maximum for a 100% movement region. This is 40% less intense than the original 30% cap. Continue to multiply that cap by the existing layout global opacity and stick opacity, so this addition never makes a control more opaque than its configured overlay
 - Fade each ramp linearly from transparent at its inner boundary to its configured movement strength at the outer boundary
 - Keep the screen-edge standoff portion at a uniform value. With `Edge Max Rate` at 100%, that portion uses the full yellow or green color at the 30% alpha cap
 - Scale the entire band by `mouseEdgeMaxRatePct`. For example, a 50% maximum-rate standoff band reaches half of the 30% visual alpha cap
 - Allow horizontal and vertical bands to composite in corners. This communicates that both axes can contribute there without introducing another corner color or special case
-- Draw small labels near the center of the corresponding edge: `Stick Left`, `Stick Right`, `Stick Up`, and `Stick Down`
-- Swap each opposite label pair when that axis is inverted, so the text describes the virtual stick output produced at that physical edge
+- Draw small labels near the center of each mouse-region edge using the configured axis function and direction, such as `Turn Left`, `Turn Right`, `Pitch Up`, and `Pitch Down`
+- Draw the same configured-axis direction labels at the four cardinal positions inside every ordinary touch stick's default editor circle
+- Swap each opposite label pair when that axis is inverted, so the text describes the axis output produced at that physical edge or stick direction
 - Use a small density-aware 9sp label size with a restrained high-contrast text treatment and respect the existing layout/stick opacity
 - In the editor preview, replace the current centered mouse-mode axis abbreviation with the four edge labels while edge continuous movement is enabled
 - Independently draw both configured axis names as a compact two-line label centered on every stick's default `xPct` and `yPct` position, including floating and mouse-mode sticks
@@ -69,7 +71,7 @@ No `TouchOverlayView.kt`, d1, or d2 engine changes are required. This remains An
 2. Run the complete Android unit-test suite
 3. Run `android/run-code-quality.ps1 -Fix` scoped to the changed Kotlin and test files
 4. Build `:app:assembleDebug` with JDK 21
-5. On the emulator, verify a mouse-mode layout with continuous movement enabled at 100% and a non-100% max rate. Confirm the editor's linear fades, 30% alpha ceiling, solid-value standoff bands, corner composition, small labels, slider-driven preview, and unchanged editor hit testing. Launch the game once to confirm none of the new highlighting or labels appear in-game
+5. On the emulator, verify a mouse-mode layout with continuous movement enabled at 100% and a non-100% max rate. Confirm the editor's linear fades, 18% alpha ceiling, solid-value standoff bands, corner composition, configured-axis direction labels, slider-driven preview, and unchanged editor hit testing. Launch the game once to confirm none of the new highlighting or labels appear in-game
 
 Automated verification completed:
 
@@ -78,5 +80,6 @@ Automated verification completed:
 - Full `testDebugUnitTest` passed
 - `assembleDebug` passed for arm64-v8a, armeabi-v7a, and x86_64
 - Focused tests and `assembleDebug` passed again after adding the two-line stick-axis labels
+- Scoped code quality, focused direction-label tests, the full unit suite, and `assembleDebug` passed after the configured-axis label and 18% alpha update
 
 The emulator was available, but visual navigation was not run because it would disturb the existing shared emulator session. The source diff confirms `TouchOverlayView.kt` is unchanged, so the new presentation cannot appear in-game.

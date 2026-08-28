@@ -5530,7 +5530,7 @@ private fun ControllerSection(
         }
     }
 
-    // -- Define Controls button --
+    // -- Controller Mapping button --
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedButton(
             onClick = onDefineControls,
@@ -5551,7 +5551,7 @@ private fun ControllerSection(
                         },
                     ),
         ) {
-            Text("Define Controls", fontSize = 12.sp)
+            Text("Controller Mapping", fontSize = 12.sp)
         }
         OutlinedButton(
             onClick = onEditTouchLayout,
