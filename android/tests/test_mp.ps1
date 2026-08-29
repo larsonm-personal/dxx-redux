@@ -65,18 +65,25 @@ try { [IO.File]::WriteAllText($script:LogFile, [Environment]::NewLine, [Text.UTF
 
 function Get-MpIntrospection {
     param([string]$Serial)
-    # Request introspection, wait, read
+    # Remove the previous snapshot so a delayed broadcast cannot satisfy this
+    # poll with stale lobby state.
+    Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+        "shell", "run-as", $PACKAGE, "rm", "-f", "files/mp_introspect.json"
+    ) -Seconds 10 | Out-Null
     Send-MpCommand -Serial $Serial -Command "introspect"
-    Start-Sleep -Milliseconds 500
-    $json = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
-        "shell", "run-as", $PACKAGE, "cat", "files/mp_introspect.json"
-    ) -Seconds 10
-    if ($json -and $json -match '"status"') {
-        try {
-            return $json | ConvertFrom-Json
-        } catch {
-            return $null
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt 3) {
+        $json = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+            "shell", "run-as", $PACKAGE, "cat", "files/mp_introspect.json"
+        ) -Seconds 10
+        if ($json -and $json -match '"status"') {
+            try {
+                return $json | ConvertFrom-Json
+            } catch {
+                return $null
+            }
         }
+        Start-Sleep -Milliseconds 100
     }
     return $null
 }

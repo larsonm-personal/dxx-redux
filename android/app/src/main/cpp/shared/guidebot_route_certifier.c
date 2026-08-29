@@ -698,7 +698,34 @@ static int guidebot_step_usable(
 	return 1;
 }
 
-static void guidebot_select_compiled_switch_guidance(
+static int guidebot_compiled_switch_fallback(
+    const level_metadata_scan_view *view,
+    level_metadata_route_step *step,
+    guidebot_route_certifier_summary *summary)
+{
+	int position[3];
+
+	if (step->activation_pos_valid &&
+	    (!step->aim_pos_valid ||
+	     memcmp(step->activation_pos, step->aim_pos, sizeof(step->activation_pos)) != 0))
+		return 1;
+	if (!view->segment_center || !guidebot_valid_segment(view, step->seg) ||
+	    !view->segment_center(view->user, step->seg, position) ||
+	    (step->aim_pos_valid &&
+	     memcmp(position, step->aim_pos, sizeof(position)) == 0))
+		return 0;
+	step->activation_pos_valid = 1;
+	memcpy(step->activation_pos, position, sizeof(step->activation_pos));
+	step->path_terminal_segment = step->seg;
+	if (step->path_segment_count <= 0)
+		step->path_segment_count = 1;
+	step->switch_shot_quality = LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE;
+	step->switch_shot_incidence_cosine = LEVEL_METADATA_SHOT_COSINE_ONE;
+	summary->approximate_firing_position = 1;
+	return 1;
+}
+
+static int guidebot_select_compiled_switch_guidance(
     const level_metadata_scan_view *view,
     level_metadata_route_step *step,
     guidebot_route_certifier_summary *summary)
@@ -712,10 +739,11 @@ static void guidebot_select_compiled_switch_guidance(
 	int segment;
 
 	if (step->activation_kind !=
-	        LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH ||
-	    step->switch_guidance_candidate_count <= 0 || !view->segment_child ||
+	    LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH)
+		return 1;
+	if (step->switch_guidance_candidate_count <= 0 || !view->segment_child ||
 	    !guidebot_valid_segment(view, view->start_segment))
-		return;
+		return guidebot_compiled_switch_fallback(view, step, summary);
 	for (segment = 0; segment < view->num_segments; ++segment)
 		distance[segment] = -1;
 	distance[view->start_segment] = 0;
@@ -751,7 +779,11 @@ static void guidebot_select_compiled_switch_guidance(
 		long long score;
 
 		if (!guidebot_valid_segment(view, candidate_segment) ||
-		    distance[candidate_segment] < 0)
+		    distance[candidate_segment] < 0 ||
+		    (step->aim_pos_valid &&
+		     memcmp(
+		         step->switch_guidance_candidate_pos[segment], step->aim_pos,
+		         sizeof(step->aim_pos)) == 0))
 			continue;
 		score = (long long) distance[candidate_segment] *
 		            LEVEL_METADATA_SHOT_COSINE_ONE +
@@ -764,7 +796,7 @@ static void guidebot_select_compiled_switch_guidance(
 		best_score = score;
 	}
 	if (best < 0)
-		return;
+		return guidebot_compiled_switch_fallback(view, step, summary);
 	step->seg = step->switch_guidance_candidate_seg[best];
 	step->path_terminal_segment = step->seg;
 	step->path_segment_count = distance[step->seg] + 1;
@@ -777,6 +809,7 @@ static void guidebot_select_compiled_switch_guidance(
 	step->switch_shot_incidence_cosine =
 	    step->switch_guidance_candidate_incidence[best];
 	summary->reranked_firing_position = best != 0;
+	return 1;
 }
 
 int guidebot_route_select_compiled_current_state(
@@ -831,8 +864,14 @@ int guidebot_route_select_compiled_current_state(
 			    GUIDEBOT_ROUTE_CERTIFIER_REJECTION_INVALID_TARGET;
 			break;
 		}
-		guidebot_select_compiled_switch_guidance(
-		    view, candidate, &local_summary);
+		if (!guidebot_select_compiled_switch_guidance(
+		        view, candidate, &local_summary)) {
+			local_summary.rejected_actions++;
+			local_summary.blocking_step = step;
+			local_summary.blocking_reason =
+			    GUIDEBOT_ROUTE_CERTIFIER_REJECTION_INVALID_TARGET;
+			break;
+		}
 		selected_segment = guidebot_step_target_segment(view, candidate);
 		if ((candidate->kind == LEVEL_METADATA_ROUTE_KEY ||
 		     candidate->kind == LEVEL_METADATA_ROUTE_REACTOR ||
@@ -1235,6 +1274,9 @@ static int guidebot_firing_cache_matches(
     const guidebot_route_certifier_workspace *workspace)
 {
 	return workspace->firing_cache_valid && step->aim_pos_valid &&
+	       memcmp(
+	           workspace->firing_cache_position, step->aim_pos,
+	           sizeof(workspace->firing_cache_position)) != 0 &&
 	       workspace->firing_cache_num_segments == view->num_segments &&
 	       workspace->firing_cache_num_walls == view->num_walls &&
 	       workspace->firing_cache_trigger == step->trigger_num &&
@@ -1378,6 +1420,9 @@ static int guidebot_prepare_shoot_switch_position(
 			if (!guidebot_detailed_firing_sample(
 			        view, candidate_segment, sample, candidate_pos))
 				continue;
+			if (step->aim_pos_valid &&
+			    memcmp(candidate_pos, step->aim_pos, sizeof(candidate_pos)) == 0)
+				continue;
 			workspace->job_evaluated_firing_positions++;
 			if (!shootable(
 			        view->user, candidate_segment, candidate_pos,
@@ -1440,6 +1485,9 @@ static int guidebot_prepare_shoot_switch_position(
 			}
 			if (!guidebot_valid_segment(view, candidate_segment) ||
 			    !workspace->reachable[candidate_segment])
+				continue;
+			if (step->aim_pos_valid &&
+			    memcmp(candidate_pos, step->aim_pos, sizeof(candidate_pos)) == 0)
 				continue;
 			workspace->job_evaluated_firing_positions++;
 			(*tick_work)++;
@@ -1504,7 +1552,11 @@ static int guidebot_prepare_shoot_switch_position(
 		    view->segment_center &&
 		    view->segment_center(
 		        view->user, frontier,
-		        workspace->firing_search_best_position)) {
+		        workspace->firing_search_best_position) &&
+		    (!step->aim_pos_valid ||
+		     memcmp(
+		         workspace->firing_search_best_position, step->aim_pos,
+		         sizeof(workspace->firing_search_best_position)) != 0)) {
 			workspace->firing_search_best_segment = frontier;
 			workspace->firing_search_best_path_distance =
 			    workspace->physical_distance[frontier];
@@ -1518,6 +1570,10 @@ static int guidebot_prepare_shoot_switch_position(
 			workspace->firing_search_best_quality =
 			    LEVEL_METADATA_SWITCH_SHOT_CONFIRMED;
 		}
+		if (workspace->firing_search_best_segment < 0 &&
+		    step->aim_pos_valid &&
+		    memcmp(firing_pos, step->aim_pos, sizeof(firing_pos)) == 0)
+			return GUIDEBOT_ROUTE_CERTIFIER_INVALID;
 		if (workspace->firing_search_best_segment < 0 &&
 		    !shootable(
 		        view->user, original_segment, firing_pos, step->wall_num)) {

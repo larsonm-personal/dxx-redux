@@ -552,6 +552,7 @@ static void test_compiled_selector_chooses_reachable_switch_guidance(void)
 		fixture.wall_open[wall] = 1;
 	step = &Prepared.route_steps[1];
 	step->opened_link_count = 0;
+	step->aim_pos[0] = 25;
 	step->switch_guidance_candidate_count = 3;
 	step->switch_guidance_candidate_seg[0] = 4;
 	step->switch_guidance_candidate_quality[0] =
@@ -580,6 +581,35 @@ static void test_compiled_selector_chooses_reachable_switch_guidance(void)
 	assert(Live.route_steps[1].activation_pos[0] == 20);
 	assert(Live.route_steps[1].switch_shot_quality ==
 	       LEVEL_METADATA_SWITCH_SHOT_CONFIRMED);
+}
+
+static void test_compiled_selector_replaces_switch_aim_with_local_fallback(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+	route_planner_plan_summary compiled_plan;
+	route_planner_plan_summary live_plan;
+	guidebot_route_validity_certificate certificate;
+	guidebot_route_certifier_summary summary;
+
+	initialize_fixture(&fixture);
+	initialize_plan(&compiled_plan);
+	view = make_view(&fixture);
+	view.start_segment = 0;
+	memcpy(
+	    Prepared.route_steps[1].aim_pos,
+	    Prepared.route_steps[1].activation_pos,
+	    sizeof(Prepared.route_steps[1].aim_pos));
+
+	assert(select_compiled(
+	    &view, &compiled_plan, &live_plan, &certificate, &summary));
+	assert(summary.selected_step == 1);
+	assert(summary.approximate_firing_position);
+	assert(Live.route_steps[1].activation_pos[0] == 100);
+	assert(memcmp(
+	           Live.route_steps[1].activation_pos,
+	           Live.route_steps[1].aim_pos,
+	           sizeof(Live.route_steps[1].activation_pos)) != 0);
 }
 
 static void test_current_start_and_accessibility_select_action(void)
@@ -1135,6 +1165,45 @@ static void test_nearby_detailed_switch_pose_avoids_minewide_scan(void)
 	assert(summary.selected_segment == 3);
 	assert(summary.evaluated_firing_positions == 2);
 	assert(fixture.wall_shootable_calls == 2);
+}
+
+static void test_detailed_switch_pose_excludes_aim_point(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+	route_planner_plan_summary prepared_plan;
+	route_planner_plan_summary live_plan;
+	guidebot_route_validity_certificate certificate;
+	guidebot_route_certifier_summary summary;
+
+	initialize_fixture(&fixture);
+	initialize_plan(&prepared_plan);
+	view = make_view(&fixture);
+	view.start_segment = 0;
+	fixture.position_sensitive_wall = 0;
+	fixture.detailed_geometry = 1;
+	fixture.detailed_shootable_segment = 3;
+	fixture.shootable_segment[0] = 1;
+	fixture.center_x[0] = 100;
+	fixture.center_x[1] = 200;
+	fixture.center_x[2] = 300;
+	fixture.center_x[3] = 400;
+	Prepared.route_steps[1].aim_pos[0] = 400;
+	Prepared.route_steps[1].aim_pos[1] = 10;
+	fixture.child[0][2] = 1;
+	fixture.child[1][2] = 0;
+	fixture.child[1][3] = 2;
+	fixture.child[2][3] = 1;
+	fixture.child[2][4] = 3;
+	fixture.child[3][4] = 2;
+
+	assert(certify(
+	    &view, &prepared_plan, &live_plan, &certificate, &summary));
+	assert(summary.selected_segment == 3);
+	assert(memcmp(
+	           Live.route_steps[1].activation_pos,
+	           Live.route_steps[1].aim_pos,
+	           sizeof(Live.route_steps[1].activation_pos)) != 0);
 }
 
 static void test_solid_illusion_wall_is_not_passable(void)
@@ -1899,6 +1968,7 @@ int main(int argc, char **argv)
 	test_compiled_selector_never_restores_collected_key();
 	test_compiled_selector_rebinds_moving_key_object();
 	test_compiled_selector_chooses_reachable_switch_guidance();
+	test_compiled_selector_replaces_switch_aim_with_local_fallback();
 	test_current_start_and_accessibility_select_action();
 	test_first_reachable_required_action_preserves_order();
 	test_identical_state_is_history_independent();
@@ -1914,6 +1984,7 @@ int main(int argc, char **argv)
 	test_rejected_confirmed_switch_degrades_to_approximate_warning();
 	test_steep_switch_position_loses_to_square_shot();
 	test_nearby_detailed_switch_pose_avoids_minewide_scan();
+	test_detailed_switch_pose_excludes_aim_point();
 	test_solid_illusion_wall_is_not_passable();
 	test_visible_unlocked_triggered_door_is_physically_passable();
 	test_keyed_buddy_proof_door_keeps_objective_reachable();

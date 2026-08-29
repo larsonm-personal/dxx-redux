@@ -71,7 +71,7 @@
         "resume_offer_enabled": "true",
         "resume_candidate.game": "d2",
         "resume_candidate.save_kind": "auto_abort",
-        "resume_candidate.description": "[auto] abort",
+        "resume_candidate.description": "[auto] abort L1",
         "resume_candidate.level_num": "1"
     }},
     {"action": "assert_button", "text": "Load Last Save", "enabled": true},

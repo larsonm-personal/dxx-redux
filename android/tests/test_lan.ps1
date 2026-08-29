@@ -1107,7 +1107,7 @@ try {
         # Prove the emulator shared-Wi-Fi path is usable before attributing a
         # later timeout to the game protocol. This also waits out the brief
         # neighbor-discovery window seen after managed emulator startup.
-        $directLanReachable = Wait-ForCondition -Description "Direct LAN reachability" -TimeoutSec 15 -PollMs 1000 -Condition {
+        $directLanReachable = Wait-ForCondition -Description "Direct LAN reachability" -TimeoutSec 60 -PollMs 1000 -Condition {
             $pingResult = Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @(
                 "shell", "ping", "-c", "1", "-W", "2", $script:DirectHostIp
             ) -Seconds 5
