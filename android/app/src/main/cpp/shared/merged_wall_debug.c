@@ -850,13 +850,16 @@ int android_merged_wall_cached_texmerge_render_to_texture(
 	                                                 GL_CLAMP_TO_EDGE);
 	android_merged_wall_cached_texmerge_wrap_texture(overlay_bmp->gltexture,
 	                                                 GL_CLAMP_TO_EDGE);
-	glActiveTexture(GL_TEXTURE0);
+	android_ogl_active_texture(runtime_state ? &runtime_state->bind_state : NULL,
+	                           GL_TEXTURE0);
 	android_ogl_bind_texture_2d(runtime_state ? &runtime_state->bind_state : NULL,
 	                            bottom_bmp->gltexture->handle);
-	glActiveTexture(GL_TEXTURE1);
+	android_ogl_active_texture(runtime_state ? &runtime_state->bind_state : NULL,
+	                           GL_TEXTURE1);
 	android_ogl_bind_texture_2d(runtime_state ? &runtime_state->bind_state : NULL,
 	                            overlay_bmp->gltexture->handle);
-	glActiveTexture(GL_TEXTURE0);
+	android_ogl_active_texture(runtime_state ? &runtime_state->bind_state : NULL,
+	                           GL_TEXTURE0);
 	gles3_shim_use_external(ogl_prog_tex2);
 	ogl_prog_set_tex2_current_matrix(identity, 0);
 	ogl_prog_set_tex2_debug_mode(0);
@@ -896,7 +899,8 @@ int android_merged_wall_cached_texmerge_render_to_texture(
 		glEnable(GL_CULL_FACE);
 	glViewport(old_viewport[0], old_viewport[1], old_viewport[2],
 	           old_viewport[3]);
-	glActiveTexture((GLenum) old_active_tex);
+	android_ogl_active_texture(runtime_state ? &runtime_state->bind_state : NULL,
+	                           (GLenum) old_active_tex);
 	return 1;
 }
 
@@ -1975,7 +1979,8 @@ static int merged_wall_should_clear_secondary_units_for_single(grs_bitmap *bm,
 	return 1;
 }
 
-void android_merged_wall_clear_secondary_units_for_single(grs_bitmap *bm)
+void android_merged_wall_clear_secondary_units_for_single(
+    grs_bitmap *bm, const struct android_ogl_texture_runtime_state *runtime_state)
 {
 	GLint before_prog = -1, after_prog = -1;
 	GLint before_tex0 = -1, before_tex1 = -1, before_tex2 = -1;
@@ -1991,11 +1996,14 @@ void android_merged_wall_clear_secondary_units_for_single(grs_bitmap *bm)
 	if (log_clear)
 		android_merged_wall_get_draw_state(bm->gltexture, &before_prog,
 		                                   &before_tex0, &before_tex1, &before_tex2, &mip1_w);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glActiveTexture(GL_TEXTURE0);
+	android_ogl_active_texture(runtime_state ? &runtime_state->bind_state : NULL,
+	                           GL_TEXTURE1);
+	android_ogl_bind_texture_2d(runtime_state ? &runtime_state->bind_state : NULL, 0);
+	android_ogl_active_texture(runtime_state ? &runtime_state->bind_state : NULL,
+	                           GL_TEXTURE2);
+	android_ogl_bind_texture_2d(runtime_state ? &runtime_state->bind_state : NULL, 0);
+	android_ogl_active_texture(runtime_state ? &runtime_state->bind_state : NULL,
+	                           GL_TEXTURE0);
 	if (!log_clear)
 		return;
 	android_merged_wall_get_draw_state(bm->gltexture, &after_prog,

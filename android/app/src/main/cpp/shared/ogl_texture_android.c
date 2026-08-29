@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #include <android/log.h>
@@ -79,18 +80,48 @@ static void apply_bound_min_mag_filter(ogl_texture *texture, GLenum min_filter,
 void android_ogl_bind_texture_2d(const struct android_ogl_bind_texture_state *state,
                                  GLuint handle)
 {
-	/* GL_TEXTURE_BINDING_2D is scoped to the active texture unit.  The
-	 * legacy scalar cache has no unit identity, so it cannot safely skip a
-	 * bind after glActiveTexture transitions.  Keep the scalar diagnostic
-	 * value synchronized, but bind unconditionally until the caller owns a
-	 * per-unit cache. */
+	GLuint *bound_texture = NULL;
+
+	if (state && state->bound_textures && state->active_texture_unit &&
+	    *state->active_texture_unit >= 0 &&
+	    *state->active_texture_unit < state->bound_texture_count)
+		bound_texture = &state->bound_textures[*state->active_texture_unit];
+	if (bound_texture && *bound_texture == handle) {
+		if (state->texbind_reuse)
+			(*state->texbind_reuse)++;
+		return;
+	}
 	glBindTexture(GL_TEXTURE_2D, handle);
 	if (state) {
-		if (state->last_bound_tex)
-			*state->last_bound_tex = handle;
+		if (bound_texture)
+			*bound_texture = handle;
 		if (state->texbinds)
 			(*state->texbinds)++;
 	}
+}
+
+void android_ogl_active_texture(const struct android_ogl_bind_texture_state *state,
+                                GLenum texture)
+{
+	glActiveTexture(texture);
+	if (!state || !state->active_texture_unit)
+		return;
+	if (texture >= GL_TEXTURE0 &&
+	    texture < GL_TEXTURE0 + state->bound_texture_count)
+		*state->active_texture_unit = (int) (texture - GL_TEXTURE0);
+	else
+		*state->active_texture_unit = -1;
+}
+
+void android_ogl_reset_texture_bindings(const struct android_ogl_bind_texture_state *state)
+{
+	if (!state)
+		return;
+	if (state->bound_textures && state->bound_texture_count > 0)
+		memset(state->bound_textures, 0xff,
+		       sizeof(*state->bound_textures) * state->bound_texture_count);
+	if (state->active_texture_unit)
+		*state->active_texture_unit = 0;
 }
 
 void android_ogl_enable_texture_2d(int *texture_2d_enabled)

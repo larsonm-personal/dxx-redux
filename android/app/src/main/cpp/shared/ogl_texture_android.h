@@ -9,13 +9,17 @@
 #include "ogl_init.h"
 #include "pngfile.h"
 
+#define ANDROID_OGL_TEXTURE_UNIT_COUNT 3
+
 struct android_ogl_texture_list_state {
 	ogl_texture *texture_list;
 	int texture_list_size;
 };
 
 struct android_ogl_bind_texture_state {
-	GLuint *last_bound_tex;
+	GLuint *bound_textures;
+	int bound_texture_count;
+	int *active_texture_unit;
 	int *texbinds;
 	int *texbind_reuse;
 };
@@ -58,6 +62,9 @@ typedef int (*android_ogl_loadtexture_fn)(unsigned char *data, int dxo, int dyo,
 
 void android_ogl_bind_texture_2d(const struct android_ogl_bind_texture_state *state,
                                  GLuint handle);
+void android_ogl_active_texture(const struct android_ogl_bind_texture_state *state,
+                                GLenum texture);
+void android_ogl_reset_texture_bindings(const struct android_ogl_bind_texture_state *state);
 void android_ogl_enable_texture_2d(int *texture_2d_enabled);
 int android_ogl_get_texture_bytes(const struct android_ogl_texture_list_state *state);
 void android_ogl_apply_anisotropy_all(struct android_ogl_texture_anisotropy_state *state);

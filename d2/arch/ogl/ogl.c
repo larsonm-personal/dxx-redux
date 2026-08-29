@@ -250,13 +250,22 @@ int r_water_faces = 0;
 extern int r_mwall_cache_hits;
 extern int r_mwall_cache_misses;
 static GLuint ogl_last_bound_tex = 0;
-#define OGL_BINDTEXTURE(a) do { \
-	glBindTexture(GL_TEXTURE_2D, a); \
-	ogl_last_bound_tex = (a); \
-	r_texbinds++; \
-} while(0)
+static GLuint ogl_bound_textures[ANDROID_OGL_TEXTURE_UNIT_COUNT];
+static int ogl_active_texture_unit = 0;
+static const struct android_ogl_bind_texture_state ogl_bind_texture_state = {
+	ogl_bound_textures, ANDROID_OGL_TEXTURE_UNIT_COUNT, &ogl_active_texture_unit,
+	&r_texbinds, &r_texbind_reuse
+};
+static const struct android_ogl_texture_runtime_state ogl_texture_runtime_state = {
+	{ ogl_bound_textures, ANDROID_OGL_TEXTURE_UNIT_COUNT, &ogl_active_texture_unit,
+	  &r_texbinds, &r_texbind_reuse },
+	&GL_TEXTURE_2D_enabled
+};
+#define OGL_BINDTEXTURE(a) android_ogl_bind_texture_2d(&ogl_bind_texture_state, (a))
+#define OGL_ACTIVETEXTURE(a) android_ogl_active_texture(&ogl_bind_texture_state, (a))
 #else
 #define OGL_BINDTEXTURE(a) glBindTexture(GL_TEXTURE_2D, a);
+#define OGL_ACTIVETEXTURE(a) glActiveTexture(a);
 #endif
 
 
@@ -599,6 +608,7 @@ static void ogl_msaa_destroy_fbo(void);
 static void ogl_android_apply_pending_runtime_options(const char *source)
 {
 	android_ogl_apply_pending_texture_options(&ogl_texture_filter_state, source);
+	android_ogl_reset_texture_bindings(&ogl_bind_texture_state);
 	if (g_msaa_pending_apply) {
 		debug_log(DLOG_GRAPHICS,
 			"graphics apply[%s]: msaa=%d destroy_fbo=%d bound=%d depth=%d size=%dx%d",
@@ -704,19 +714,15 @@ static grs_bitmap *ogl_android_get_cached_plain_texmerge_bitmap(grs_bitmap *bmbo
 	tex_flags = OGL_FLAG_ALPHA;
 	const int load_texfilt = android_ogl_effective_texfilt(GameCfg.TexFilt, ogl_aniso_level);
 	entry->texture = ogl_get_free_texture();
-	const struct android_ogl_texture_runtime_state tex_runtime_state = {
-		{ &ogl_last_bound_tex, &r_texbinds, &r_texbind_reuse },
-		&GL_TEXTURE_2D_enabled
-	};
 	ogl_init_texture(entry->texture, width, height, tex_flags);
 	android_merged_wall_cached_texmerge_setup_output_texture(entry->texture,
-		width, height, tex_flags, load_texfilt, &tex_runtime_state);
+		width, height, tex_flags, load_texfilt, &ogl_texture_runtime_state);
 	tex_set_size(entry->texture);
 	r_texcount++;
 	if (!android_merged_wall_cached_texmerge_finalize_entry(entry, bmbot,
 		bmovl, orient, width, height, load_texfilt, ogl_aniso_level,
 		ogl_maxanisotropy, bmbot->bm_flags & (~BM_FLAG_RLE),
-		bmbot->avg_color, &tex_runtime_state, out_slot, ogl_freetexture))
+		bmbot->avg_color, &ogl_texture_runtime_state, out_slot, ogl_freetexture))
 		return NULL;
 	return &entry->bitmap;
 }
@@ -1287,7 +1293,7 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 	#if defined(ANDROID) && defined(OGL_MERGE)
 		if (g_android_draw_face_ctx.valid && g_android_draw_face_ctx.tmap2 != 0) {
 			gles3_shim_use_external(0);
-			glActiveTexture(GL_TEXTURE0);
+			OGL_ACTIVETEXTURE(GL_TEXTURE0);
 		}
 	#endif
 		ogl_bindbmtex(bm);
@@ -1295,7 +1301,8 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 			return 0;
 		ogl_texwrap(bm->gltexture, GL_REPEAT);
 	#if defined(ANDROID) && defined(OGL_MERGE)
-		android_merged_wall_clear_secondary_units_for_single(bm);
+		android_merged_wall_clear_secondary_units_for_single(
+			bm, &ogl_texture_runtime_state);
 	#endif
 		r_tpolyc++;
 #ifdef ANDROID
@@ -1425,10 +1432,10 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 		return 0;
 	ogl_texwrap(bmbot->gltexture,GL_REPEAT);
 
-	glActiveTexture(GL_TEXTURE1);
+	OGL_ACTIVETEXTURE(GL_TEXTURE1);
 	ogl_bindbmtex(bmovl);
 	if (bmovl->gltexture == NULL) {
-		glActiveTexture(GL_TEXTURE0);
+		OGL_ACTIVETEXTURE(GL_TEXTURE0);
 		return 0;
 	}
 	ogl_texwrap(bmovl->gltexture,GL_REPEAT);
@@ -1452,12 +1459,12 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	#endif
 
 	if (super) {
-		glActiveTexture(GL_TEXTURE2);
+		OGL_ACTIVETEXTURE(GL_TEXTURE2);
 		OGL_BINDTEXTURE(bmovl->gltexture_mask->handle);
 		ogl_texwrap(bmovl->gltexture_mask,GL_REPEAT);
 	}
 
-	glActiveTexture(GL_TEXTURE0);
+	OGL_ACTIVETEXTURE(GL_TEXTURE0);
 	#if defined(ANDROID)
 	if (!super && (bmovl->bm_flags & BM_FLAG_TRANSPARENT)) {
 		if (merged_wall_force_two_pass) {
@@ -2178,6 +2185,7 @@ void ogl_start_frame(void){
 #ifdef ANDROID
 	int msaa_color_clear = 0;
 	r_texbinds=0;r_texbind_reuse=0;ogl_last_bound_tex=0;
+	android_ogl_reset_texture_bindings(&ogl_bind_texture_state);
 	r_shader_switches=0;r_mask_draws=0;
 	r_water_faces=0;
 	r_mwall_cache_hits=0;r_mwall_cache_misses=0;

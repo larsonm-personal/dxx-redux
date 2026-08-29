@@ -76,19 +76,29 @@ class AndroidRendererContractsTest(unittest.TestCase):
             self.assertLess(validation, old_free)
             self.assertLess(old_free, publication)
 
-    def test_texture_binds_do_not_share_cache_across_units(self) -> None:
+    def test_texture_bind_cache_tracks_active_unit(self) -> None:
         shared = (REPO / "android/app/src/main/cpp/shared/ogl_texture_android.c").read_text(encoding="utf-8")
         start = shared.index("void android_ogl_bind_texture_2d")
-        body = shared[start : shared.index("void android_ogl_enable_texture_2d", start)]
+        body = shared[start : shared.index("void android_ogl_active_texture", start)]
         self.assertIn("glBindTexture(GL_TEXTURE_2D, handle);", body)
-        self.assertNotIn("handle != *state->last_bound_tex", body)
+        self.assertIn("state->bound_textures[*state->active_texture_unit]", body)
+        self.assertIn("*bound_texture == handle", body)
+
+        active_start = shared.index("void android_ogl_active_texture")
+        active_body = shared[active_start : shared.index("void android_ogl_reset_texture_bindings", active_start)]
+        self.assertIn("texture - GL_TEXTURE0", active_body)
+        self.assertIn("*state->active_texture_unit = -1", active_body)
+        reset_start = shared.index("void android_ogl_reset_texture_bindings")
+        reset_body = shared[reset_start : shared.index("void android_ogl_enable_texture_2d", reset_start)]
+        self.assertIn("memset(state->bound_textures, 0xff", reset_body)
 
         for game in ("d1", "d2"):
             source = (REPO / game / "arch/ogl/ogl.c").read_text(encoding="utf-8")
             start = source.index("#define OGL_BINDTEXTURE(a)")
             macro = source[start : source.index("#else", start)]
-            self.assertIn("glBindTexture(GL_TEXTURE_2D, a);", macro)
-            self.assertNotIn("!= ogl_last_bound_tex", macro)
+            self.assertIn("ANDROID_OGL_TEXTURE_UNIT_COUNT", source)
+            self.assertIn("android_ogl_bind_texture_2d(&ogl_bind_texture_state", macro)
+            self.assertIn("android_ogl_active_texture(&ogl_bind_texture_state", macro)
 
     def test_texture_extension_lookup_has_one_shared_owner(self) -> None:
         shared = (REPO / "android/app/src/main/cpp/shared/ogl_texture_android.c").read_text(

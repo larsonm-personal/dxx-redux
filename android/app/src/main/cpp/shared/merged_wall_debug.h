@@ -233,7 +233,8 @@ void android_merged_wall_log_state(
     int front_face, int cull_mode, int polygon_offset_enabled,
     float polygon_offset_factor, float polygon_offset_units,
     const unsigned char color_mask[4], int draw_fbo);
-void android_merged_wall_clear_secondary_units_for_single(grs_bitmap *bm);
+void android_merged_wall_clear_secondary_units_for_single(
+    grs_bitmap *bm, const struct android_ogl_texture_runtime_state *runtime_state);
 void android_merged_wall_get_input_codes(const struct g3s_point *const *pointlist,
                                          int nv, g3s_codes *cc, int *input_behind);
 void android_merged_wall_get_point_code_summary(const struct g3s_point *const *pointlist,
