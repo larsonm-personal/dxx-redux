@@ -389,11 +389,14 @@ function Wait-SetupCondition {
     param(
         [Parameter(Mandatory)][scriptblock]$Predicate,
         [int]$TimeoutSeconds = 15,
-        [int]$PollMs = 500
+        [int]$PollMs = 500,
+        [switch]$Lightweight
     )
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
-        Adb-Timeout -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_INTROSPECT") -Seconds 5 | Out-Null
+        $broadcastArgs = @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_INTROSPECT")
+        if ($Lightweight) { $broadcastArgs += @("--ez", "lightweight", "true") }
+        Adb-Timeout -AdbArgs $broadcastArgs -Seconds 5 | Out-Null
         Start-Sleep -Milliseconds $PollMs
         $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/setup_introspect.json") -Seconds 3
         if ($json -and $json -match '^\s*\{') {
@@ -582,7 +585,7 @@ function Wait-SetupReady {
     ) | Out-Null
     return Wait-ForCondition -Description "SetupActivity ready on $Serial" -TimeoutSec $TimeoutSec -PollMs 2000 -Condition {
         Adb-Dev -Serial $Serial -AdbArgs @(
-            "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_INTROSPECT"
+            "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_INTROSPECT", "--ez", "lightweight", "true"
         ) | Out-Null
         Start-Sleep -Milliseconds 500
         $json = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
@@ -831,7 +834,7 @@ function Wait-SetupActivityReady {
     # Returns $true if ready, $false if timed out.
     param([int]$TimeoutSeconds = 30)
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/setup_introspect.json") | Out-Null
-    return (Wait-SetupCondition -TimeoutSeconds $TimeoutSeconds -PollMs 800 -Predicate {
+    return (Wait-SetupCondition -TimeoutSeconds $TimeoutSeconds -PollMs 800 -Lightweight -Predicate {
             param($obj)
             return ($null -ne $obj -and $obj.screen)
         })

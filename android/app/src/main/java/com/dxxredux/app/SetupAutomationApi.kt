@@ -752,6 +752,12 @@ internal fun SetupActivity.writeMpIntrospectJson() {
     }
 }
 
+internal fun SetupActivity.writeReadyIntrospectJson() {
+    val outFile = File(filesDir, "setup_introspect.json")
+    AtomicFilePublication.writeUtf8(outFile, JSONObject().put("screen", "setup").toString())
+    Log.i("DXX-Setup", "Ready introspect written: ${outFile.absolutePath}")
+}
+
 internal fun SetupActivity.writeIntrospectJson(buttons: List<SetupActivity.ButtonInfo>) {
     try {
         val dir = filesDir

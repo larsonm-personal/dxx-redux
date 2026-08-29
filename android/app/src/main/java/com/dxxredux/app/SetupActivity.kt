@@ -85,6 +85,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONObject
 import java.io.File
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicBoolean
 
 internal enum class LauncherPreparationPhase(
     val wireName: String,
@@ -92,6 +93,14 @@ internal enum class LauncherPreparationPhase(
     PREPARING("preparing"),
     PAUSING_METADATA("pausing_metadata"),
     STARTING_GAME("starting_game"),
+}
+
+internal class SetupIntrospectionSingleFlight {
+    private val running = AtomicBoolean(false)
+
+    fun tryEnter(): Boolean = running.compareAndSet(false, true)
+
+    fun exit() = running.set(false)
 }
 
 internal data class LauncherPreparationState(
@@ -215,18 +224,37 @@ class SetupActivity : ComponentActivity() {
     // -- Setup-screen introspection --------------------------------------
     //   adb shell am broadcast -a com.dxxredux.SETUP_INTROSPECT
     //   adb shell run-as com.dxxredux.app cat files/setup_introspect.json
+    private val setupIntrospectionSingleFlight = SetupIntrospectionSingleFlight()
+
     private val introspectReceiver =
         object : BroadcastReceiver() {
             override fun onReceive(
                 ctx: Context?,
                 intent: Intent?,
             ) {
+                val lightweight = intent?.getBooleanExtra("lightweight", false) == true
+                if (lightweight) {
+                    val pendingResult = goAsync()
+                    this@SetupActivity.lifecycleScope.launch(Dispatchers.IO) {
+                        try {
+                            this@SetupActivity.writeReadyIntrospectJson()
+                        } finally {
+                            pendingResult.finish()
+                        }
+                    }
+                    return
+                }
+                if (!setupIntrospectionSingleFlight.tryEnter()) {
+                    Log.i("DXX-Setup", "Introspection already running; coalescing request")
+                    return
+                }
                 val pendingResult = goAsync()
                 val buttons = this@SetupActivity.collectAccessibleButtons()
                 this@SetupActivity.lifecycleScope.launch(Dispatchers.IO) {
                     try {
                         this@SetupActivity.writeIntrospectJson(buttons)
                     } finally {
+                        setupIntrospectionSingleFlight.exit()
                         pendingResult.finish()
                     }
                 }
