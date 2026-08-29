@@ -155,6 +155,14 @@ int level_metadata_route_step_required_by_world_state(
 		case LEVEL_METADATA_ROUTE_BOSS:
 			return view->initial_control_center_destroyed == 0;
 		case LEVEL_METADATA_ROUTE_TRIGGER:
+			/* Repeatable traversal triggers often operate auto-closing doors.
+			 * Once the trigger has actually fired, a later door close must not
+			 * resurrect that completed route step. */
+			if (step->trigger_num >= 0 &&
+			    step->trigger_num < view->num_triggers &&
+			    view->trigger_was_activated &&
+			    view->trigger_was_activated(view->user, step->trigger_num))
+				return 0;
 			if (step->trigger_num >= 0 &&
 			    step->trigger_num < view->num_triggers &&
 			    view->trigger_flags &&

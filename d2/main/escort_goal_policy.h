@@ -75,13 +75,6 @@ static inline int escort_path_has_remaining_point(int path_length,
 	       next_path_index < path_length;
 }
 
-/* Unlike classic patrol paths, a completed semantic route must not reverse. */
-static inline int escort_semantic_route_holds_endpoint(
-	int semantic_route_active, int going_to_object, int path_remaining)
-{
-	return semantic_route_active && going_to_object && !path_remaining;
-}
-
 static inline int escort_audit_replan_should_defer(
 	int audit_only, int last_valid, long long now, long long last,
 	long long interval)

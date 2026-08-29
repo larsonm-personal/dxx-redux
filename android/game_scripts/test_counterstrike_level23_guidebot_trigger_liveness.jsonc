@@ -1,0 +1,97 @@
+// TEST: Counterstrike level 23 traversal progress is monotonic and endpoints stay live
+[
+    {"_info": {
+        "games": ["d2"],
+        "_deps": [
+            {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
+            {"file": "descent2.ham", "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"},
+            {"file": "groupa.pig", "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"},
+            {"file": "descent2.s22", "sha256": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728"},
+            {"file": "alien1.pig", "sha256": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233"},
+            {"file": "alien2.pig", "sha256": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055"},
+            {"file": "fire.pig", "sha256": "26a5a5f4e91456abf31d79578d0922e7bc3348b6aa92489a84033de83f358156"},
+            {"file": "ice.pig", "sha256": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1"},
+            {"file": "water.pig", "sha256": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"}
+        ]
+    }},
+    {"action": "enter_launcher"},
+    {"action": "reset_state"},
+    {"action": "clear_mods"},
+    {"action": "enter_game", "game": "d2"},
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "select", "text": "Ok", "optional": true},
+    {"action": "select", "text": "New game", "timeout_ms": 10000},
+    {"action": "select_mission", "text": "Counterstrike", "timeout_ms": 10000},
+    {"action": "wait_ms", "ms": 300},
+    {"action": "key", "key": "backspace"},
+    {"action": "key", "key": "2"},
+    {"action": "key", "key": "3"},
+    {"action": "select", "text": "Ok", "timeout_ms": 5000},
+    {"action": "select", "text": "Trainee", "optional": true},
+    {"action": "skip_briefing", "timeout_ms": 60000},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "in_game": "true",
+        "current_level_num": "23",
+        "level_metadata_route.status": "ok"
+    }},
+    {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
+    {"action": "set_debug", "field": "player_keys", "value": "all", "post_delay_ms": 100},
+    {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {
+        "guidebot.route_goal_activation_kind_name": "fly_through_trigger",
+        "guidebot.route_goal_objective_trigger": "5",
+        "guidebot.route_goal_objective_seg": "221",
+        "guidebot.route_goal_guidance_seg": "220",
+        "guidebot.route_goal_frontier_player_keyed_door": "true"
+    }},
+
+    // A one-point route at the player-owned keyed door must enter the classic
+    // short return/patrol behavior instead of holding motionless at the point.
+    {"action": "set_debug", "field": "guidebot_segment", "value": "220", "post_delay_ms": 100},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "guidebot.ai_mode": "2",
+        "guidebot.path_length": {"gt": 1}
+    }},
+
+    // Trigger 5 opens an auto-closing door. After it closes, the live route
+    // must retain trigger 5's completion and continue to trigger 3.
+    {"action": "set_debug", "field": "fire_trigger", "value": "5", "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {
+        "guidebot.route_goal_objective_trigger": "3",
+        "guidebot.route_goal_objective_seg": "240"
+    }},
+    {"action": "wait_ms", "ms": 8000},
+    {"action": "assert", "expect": {
+        "guidebot.route_goal_objective_trigger": "3",
+        "guidebot.route_goal_objective_seg": "240"
+    }},
+
+    {"action": "set_debug", "field": "fire_trigger", "value": "3", "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {
+        "guidebot.route_goal_objective_trigger": "4",
+        "guidebot.route_goal_objective_seg": "239"
+    }},
+    {"action": "set_debug", "field": "fire_trigger", "value": "4", "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {
+        "guidebot.route_goal_objective_trigger": "17",
+        "guidebot.route_goal_objective_seg": "242"
+    }},
+    {"action": "set_debug", "field": "fire_trigger", "value": "17", "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {
+        "guidebot.route_goal_activation_kind_name": "fly_through_trigger",
+        "guidebot.route_goal_objective_trigger": "1",
+        "guidebot.route_goal_objective_seg": "254"
+    }},
+    {"action": "set_debug", "field": "fire_trigger", "value": "1", "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {
+        "guidebot.route_goal_objective_trigger": "6",
+        "guidebot.route_goal_objective_seg": "260"
+    }},
+    {"action": "set_debug", "field": "fire_trigger", "value": "6", "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {
+        "guidebot.route_goal_activation_kind_name": "destroy_reactor",
+        "guidebot.route_goal_objective_seg": "5"
+    }},
+    {"action": "log", "message": "=== TEST: Counterstrike level 23 GuideBot trigger liveness -- PASS ==="}
+]

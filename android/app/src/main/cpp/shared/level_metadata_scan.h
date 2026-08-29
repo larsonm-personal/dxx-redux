@@ -209,6 +209,7 @@ typedef struct level_metadata_scan_view {
 	int (*triggered_side_opener_wall_num)(void *user, int seg, int side, int index);
 	int (*trigger_type)(void *user, int trigger_num);
 	int (*trigger_flags)(void *user, int trigger_num);
+	int (*trigger_was_activated)(void *user, int trigger_num);
 	int (*trigger_link_count)(void *user, int trigger_num);
 	int (*trigger_link_segment)(void *user, int trigger_num, int link_index);
 	int (*trigger_link_side)(void *user, int trigger_num, int link_index);

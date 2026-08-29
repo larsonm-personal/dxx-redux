@@ -1249,21 +1249,6 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 	//--Int3_if(((aip->cur_path_index >= 0) && (aip->cur_path_index < aip->path_length)));
 
 	while ((dist_to_goal < threshold_distance) && !forced_break) {
-
-#ifdef __ANDROID__
-		/* The classic path follower treats a completed path as circular.  An
-		 * Android semantic route instead holds its exact endpoint until its
-		 * objective changes or the lost-player timeout recalls Guide-Bot. */
-		if (robptr->companion && escort_semantic_route_holds_endpoint(
-		        escort_get_route_goal_active(), ailp->mode == AIM_GOTO_OBJECT,
-		        escort_path_has_remaining_point(
-		            aip->path_length, aip->cur_path_index, aip->PATH_DIR))) {
-			vm_vec_zero(&objp->mtype.phys_info.velocity);
-			vm_vec_zero(&objp->mtype.phys_info.rotvel);
-			return;
-		}
-#endif
-
 		//	Advance to next point on path.
 		aip->cur_path_index += aip->PATH_DIR;
 

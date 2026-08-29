@@ -2331,6 +2331,14 @@ static int secret_area_trigger_flags(void *user, int trigger_num)
 	return Triggers[trigger_num].flags;
 }
 
+#if defined(DXX_BUILD_DESCENT_II) && defined(__ANDROID__)
+static int secret_area_trigger_was_activated(void *user, int trigger_num)
+{
+	(void) user;
+	return escort_route_trigger_was_activated(trigger_num);
+}
+#endif
+
 static int secret_area_trigger_link_count(void *user, int trigger_num)
 {
 	(void) user;
@@ -2447,6 +2455,9 @@ static void level_metadata_initialize_scan_view(void)
 	view->triggered_side_opener_wall_num = secret_area_metadata_triggered_side_opener_wall_num;
 	view->trigger_type = secret_area_trigger_type;
 	view->trigger_flags = secret_area_trigger_flags;
+#if defined(DXX_BUILD_DESCENT_II) && defined(__ANDROID__)
+	view->trigger_was_activated = secret_area_trigger_was_activated;
+#endif
 	view->trigger_link_count = secret_area_trigger_link_count;
 	view->trigger_link_segment = secret_area_trigger_link_segment;
 	view->trigger_link_side = secret_area_trigger_link_side;

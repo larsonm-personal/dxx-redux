@@ -61,6 +61,7 @@ static int test_segment_special_values[TEST_SEGMENTS];
 static int test_segment_centers[TEST_SEGMENTS][3];
 static int test_trigger_type[TEST_TRIGGERS];
 static int test_trigger_flags[TEST_TRIGGERS];
+static int test_trigger_activated[TEST_TRIGGERS];
 static int test_trigger_link_count[TEST_TRIGGERS];
 static int test_trigger_link_seg[TEST_TRIGGERS][LEVEL_METADATA_MAX_ROUTE_LINKS];
 static int test_trigger_link_sides[TEST_TRIGGERS][LEVEL_METADATA_MAX_ROUTE_LINKS];
@@ -116,6 +117,7 @@ static void test_reset(void)
 	for (trigger = 0; trigger < TEST_TRIGGERS; ++trigger) {
 		test_trigger_type[trigger] = TEST_TRIGGER_OPEN_WALL;
 		test_trigger_flags[trigger] = 0;
+		test_trigger_activated[trigger] = 0;
 		test_trigger_link_count[trigger] = 0;
 		for (link = 0; link < LEVEL_METADATA_MAX_ROUTE_LINKS; ++link) {
 			test_trigger_link_seg[trigger][link] = -1;
@@ -422,6 +424,13 @@ static int test_trigger_flags_at(void *user, int trigger_num)
 	return test_trigger_flags[trigger_num];
 }
 
+static int test_trigger_was_activated(void *user, int trigger_num)
+{
+	(void) user;
+	return trigger_num >= 0 && trigger_num < TEST_TRIGGERS &&
+	       test_trigger_activated[trigger_num];
+}
+
 static int test_wall_is_opening(void *user, int wall)
 {
 	(void) user;
@@ -525,6 +534,7 @@ static level_metadata_scan_view test_view(void)
 	view.wall_clip_flags = test_wall_clip_flags_at;
 	view.wall_trigger = test_wall_trigger_at;
 	view.trigger_flags = test_trigger_flags_at;
+	view.trigger_was_activated = test_trigger_was_activated;
 	view.segment_special = test_segment_special;
 	view.segment_center = test_segment_center;
 	view.side_center = test_side_center;
@@ -1167,6 +1177,33 @@ static int test_opening_wall_completes_trigger_requirement(void)
 	return failures;
 }
 
+static int test_activated_trigger_stays_complete_after_door_closes(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_route_step step;
+	int failures = 0;
+
+	test_reset();
+	memset(&step, 0, sizeof(step));
+	step.kind = LEVEL_METADATA_ROUTE_TRIGGER;
+	step.activation_kind =
+	    LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER;
+	step.trigger_num = 0;
+	step.opened_link_count = 1;
+	step.opened_link_wall[0] = 0;
+	test_wall_type[0] = TEST_WALL_DOOR;
+	test_wall_seg[0] = 0;
+	test_wall_sides[0] = 0;
+	failures += expect_int(
+	    "unfired traversal trigger remains pending", 1,
+	    level_metadata_route_step_required_by_world_state(&view, &step));
+	test_trigger_activated[0] = 1;
+	failures += expect_int(
+	    "fired traversal trigger stays complete after door closes", 0,
+	    level_metadata_route_step_required_by_world_state(&view, &step));
+	return failures;
+}
+
 static int test_segment_route_reuses_trigger_dependencies(void)
 {
 	level_metadata_scan_view view = test_view();
@@ -1707,6 +1744,7 @@ int main(void)
 	failures += test_route_continues_after_unresolved_shootable_trigger();
 	failures += test_unlock_trigger_requirement_uses_all_linked_walls();
 	failures += test_opening_wall_completes_trigger_requirement();
+	failures += test_activated_trigger_stays_complete_after_door_closes();
 	failures += test_segment_route_reuses_trigger_dependencies();
 	failures += test_unexplored_route_acquires_key_for_largest_component();
 	failures += test_unexplored_route_keeps_hidden_wall_dependency();

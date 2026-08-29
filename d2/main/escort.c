@@ -426,6 +426,7 @@ void init_buddy_for_level(void)
 	Escort_route_last_audit_rescan_time = 0;
 	Escort_route_last_audit_rescan_time_valid = 0;
 	Escort_route_completion_check_time = 0;
+	escort_route_reset_activated_triggers();
 #ifdef INTROSPECT_ON
 	Escort_route_notifications_suppressed = 0;
 	Escort_route_certificate_checks_suppressed = 0;
@@ -1998,26 +1999,6 @@ static void escort_route_monitor_path_progress(object *objp, ai_local *ailp,
 	escort_create_path_to_goal(objp);
 }
 
-static int escort_route_at_physical_endpoint(object *objp, ai_local *ailp,
-	ai_static *aip)
-{
-	point_seg *current_point;
-
-	if (!escort_semantic_route_holds_endpoint(
-	        Escort_route_goal.active, ailp->mode == AIM_GOTO_OBJECT,
-	        escort_get_route_goal_path_pending()))
-		return 0;
-	if (aip->hide_index < 0 || aip->path_length <= 0 ||
-	    aip->cur_path_index < 0 || aip->cur_path_index >= aip->path_length)
-		return 0;
-	current_point = &Point_segs[aip->hide_index + aip->cur_path_index];
-	if (Escort_route_goal.path_endpoint_seg >= 0 &&
-	    current_point->segnum != Escort_route_goal.path_endpoint_seg)
-		return 0;
-	if (objp->segnum != current_point->segnum)
-		return 0;
-	return vm_vec_dist_quick(&objp->pos, &current_point->point) <= F1_0 * 4;
-}
 #endif
 
 //	-----------------------------------------------------------------------------
@@ -2458,7 +2439,6 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 	int replay_visit_early_path_gate = 0;
 	int replay_player_seg = -1;
 	int replay_believed_seg = -1;
-	int semantic_route_terminal_hold = 0;
 	int replay_state_probe_active = input_demo_trace_escort_active() &&
 		Robot_info[objp->id].companion;
 	int replay_rng_probe_active = input_demo_trace_escort_active() &&
@@ -2471,11 +2451,7 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 	escort_route_monitor_path_progress(objp, ailp, aip);
 	escort_trace_navigation(objp, ailp, aip, dist_to_player, player_visibility);
 	escort_route_path_recalc_sync_goal();
-	semantic_route_terminal_hold =
-	    escort_route_at_physical_endpoint(objp, ailp, aip);
-	if (semantic_route_terminal_hold)
-		escort_route_path_recalc_cancel_pending();
-	else if (Escort_route_path_recalc_pending &&
+	if (Escort_route_path_recalc_pending &&
 	    GameTime64 >= Escort_route_path_recalc_due_time) {
 		if (!escort_goal_is_pathable(Escort_goal_object))
 			Escort_goal_object = escort_set_goal_object();
@@ -2539,7 +2515,6 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 
 	//	Force checking for new goal every 5 seconds, and create new path, if necessary.
 	if (((Escort_special_goal != ESCORT_GOAL_SCRAM) &&
-	     !semantic_route_terminal_hold &&
 	     ((Escort_last_path_created + F1_0*5) < GameTime64)) ||
 		((Escort_special_goal == ESCORT_GOAL_SCRAM) && ((Escort_last_path_created + F1_0*15) < GameTime64))) {
 		if (replay_state_probe_active)

@@ -113,6 +113,8 @@ extern void escort_route_notify_wall_changed(int wall_num);
 extern void escort_notify_blastable_wall_destroyed(void);
 #endif
 extern void escort_route_notify_trigger_changed(int trigger_num);
+extern int escort_route_trigger_was_activated(int trigger_num);
+extern void escort_route_reset_activated_triggers(void);
 extern void escort_route_notify_object_changed(int objnum);
 extern void escort_route_notify_reactor_changed(void);
 extern void escort_route_notify_automap_changed(int segnum);

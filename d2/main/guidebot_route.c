@@ -134,6 +134,7 @@ static int Escort_nav_trace_last_signature = -1;
 static int Escort_nav_trace_last_goal = ESCORT_GOAL_UNSPECIFIED;
 static int Escort_nav_trace_last_path_index = -1;
 static int Escort_nav_trace_stall_samples;
+static unsigned char Escort_route_activated_triggers[MAX_TRIGGERS];
 int Escort_route_avoid_from_seg = -1;
 int Escort_route_avoid_seg = -1;
 int Escort_route_avoid_from_seg2 = -1;
@@ -1269,6 +1270,12 @@ void escort_route_notify_trigger_changed(int trigger_num)
 	if (Escort_route_notifications_suppressed)
 		return;
 #endif
+	if (trigger_num >= 0 && trigger_num < MAX_TRIGGERS &&
+	    !Escort_route_activated_triggers[trigger_num]) {
+		Escort_route_activated_triggers[trigger_num] = 1;
+		debug_log(DLOG_GUIDEBOT,
+		          "route_trigger_latched trigger=%d", trigger_num);
+	}
 	matches_objective = Escort_route_goal.active && trigger_num >= 0 &&
 	                    (trigger_num == Escort_route_goal.objective_trigger ||
 	                     trigger_num == Escort_route_goal.trigger_num);
@@ -1276,6 +1283,18 @@ void escort_route_notify_trigger_changed(int trigger_num)
 	    ESCORT_ROUTE_EVENT_TRIGGER,
 	    &Escort_route_trigger_generation,
 	    matches_objective);
+}
+
+int escort_route_trigger_was_activated(int trigger_num)
+{
+	return trigger_num >= 0 && trigger_num < MAX_TRIGGERS &&
+	       Escort_route_activated_triggers[trigger_num];
+}
+
+void escort_route_reset_activated_triggers(void)
+{
+	memset(Escort_route_activated_triggers, 0,
+	       sizeof(Escort_route_activated_triggers));
 }
 
 void escort_route_notify_object_changed(int objnum)
