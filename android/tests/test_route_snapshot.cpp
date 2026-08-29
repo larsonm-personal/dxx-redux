@@ -302,6 +302,9 @@ struct test_visibility {
 	dxx_route::route_position second_position;
 	int incidence_cosine = LEVEL_METADATA_SHOT_COSINE_ONE;
 	int second_incidence_cosine = LEVEL_METADATA_SHOT_COSINE_ONE;
+	int conditional_wall = -1;
+	int conditional_segment = -1;
+	int blocker_wall = -1;
 	int calls = 0;
 };
 
@@ -349,6 +352,30 @@ int wall_not_shootable(
     void *, int, const dxx_route::route_position &, int)
 {
 	return 0;
+}
+
+int wall_conditionally_shootable(
+    void *user,
+    int segment,
+    const dxx_route::route_position &position,
+    int wall)
+{
+	const auto &visible = *static_cast<test_visibility *>(user);
+	return wall == visible.conditional_wall &&
+	               segment == visible.conditional_segment &&
+	               position.value == visible.second_position.value
+	           ? 1
+	           : 0;
+}
+
+int wall_first_shot_blocker(
+    void *user,
+    int,
+    const dxx_route::route_position &,
+    int wall)
+{
+	const auto &visible = *static_cast<test_visibility *>(user);
+	return wall == visible.conditional_wall ? visible.blocker_wall : -1;
 }
 
 int wall_shot_incidence_cosine(
@@ -430,6 +457,83 @@ dxx_route::route_snapshot make_nested_trigger_snapshot()
 	}
 	snapshot.topology.triggers[0].links.push_back({ 2, 1 });
 	snapshot.topology.triggers[1].links.push_back({ 1, 1 });
+	snapshot.state.start_segment = 0;
+	snapshot.state.start_position = snapshot.topology.segments[0].center;
+	return snapshot;
+}
+
+dxx_route::route_snapshot make_conditional_hidden_door_snapshot()
+{
+	dxx_route::route_snapshot snapshot;
+	snapshot.topology.segments.resize(4);
+	snapshot.state.segments.resize(4);
+	for (int segment = 0; segment < 4; ++segment) {
+		auto &center = snapshot.topology.segments[segment].center;
+		center.valid = true;
+		center.value = { segment * 10 * 65536, 0, 0 };
+	}
+	auto connect = [&](int from, int side, int to, int reverse) {
+		auto &topology = snapshot.topology.segments[from].sides[side];
+		topology.child = to;
+		topology.reverse_side = reverse;
+		topology.center = snapshot.topology.segments[from].center;
+	};
+	connect(0, 0, 1, 0);
+	connect(1, 0, 0, 0);
+	connect(1, 1, 2, 0);
+	connect(2, 0, 1, 1);
+	connect(2, 1, 3, 0);
+	connect(3, 0, 2, 1);
+	snapshot.state.segments[0].sides[0].flyable = true;
+	snapshot.state.segments[1].sides[0].flyable = true;
+	snapshot.state.segments[1].sides[1].hard_blocked = true;
+	snapshot.state.segments[2].sides[0].hard_blocked = true;
+	snapshot.state.segments[2].sides[1].hard_blocked = true;
+	snapshot.state.segments[3].sides[0].hard_blocked = true;
+
+	snapshot.topology.walls.resize(5);
+	snapshot.state.walls.resize(5);
+	auto source_wall = [&](int wall, int segment, int side, int trigger) {
+		auto &topology = snapshot.topology.walls[wall];
+		topology.segment = segment;
+		topology.side = side;
+		topology.target = snapshot.topology.segments[segment].center;
+		topology.shootable_trigger = true;
+		snapshot.state.walls[wall].kind = dxx_route::route_wall_kind::open;
+		snapshot.state.walls[wall].trigger = trigger;
+	};
+	source_wall(0, 0, 2, 1);
+	source_wall(1, 3, 2, 0);
+	snapshot.topology.segments[1].sides[1].wall = 2;
+	snapshot.topology.segments[1].sides[1].opener_walls = { 1 };
+	snapshot.topology.walls[2].segment = 1;
+	snapshot.topology.walls[2].side = 1;
+	snapshot.state.walls[2].kind = dxx_route::route_wall_kind::other;
+	snapshot.topology.segments[2].sides[1].wall = 3;
+	snapshot.topology.segments[2].sides[1].opener_walls = { 0 };
+	snapshot.topology.walls[3].segment = 2;
+	snapshot.topology.walls[3].side = 1;
+	snapshot.topology.walls[3].target =
+	    snapshot.topology.segments[2].sides[1].center;
+	snapshot.state.walls[3].kind = dxx_route::route_wall_kind::door;
+	snapshot.state.walls[3].hidden = true;
+	snapshot.state.walls[3].locked = true;
+	snapshot.state.walls[3].key = dxx_route::route_key_requirement::none;
+	snapshot.topology.segments[3].sides[0].wall = 4;
+	snapshot.topology.walls[4].segment = 3;
+	snapshot.topology.walls[4].side = 0;
+	snapshot.state.walls[4] = snapshot.state.walls[3];
+
+	snapshot.topology.triggers.resize(2);
+	snapshot.state.triggers.resize(2);
+	snapshot.topology.triggers[0].raw_type = 9;
+	snapshot.topology.triggers[0].kind =
+	    dxx_route::route_trigger_kind::open_wall;
+	snapshot.topology.triggers[0].links.push_back({ 1, 1 });
+	snapshot.topology.triggers[1].raw_type = 7;
+	snapshot.topology.triggers[1].kind =
+	    dxx_route::route_trigger_kind::unlock_door;
+	snapshot.topology.triggers[1].links.push_back({ 2, 1 });
 	snapshot.state.start_segment = 0;
 	snapshot.state.start_position = snapshot.topology.segments[0].center;
 	return snapshot;
@@ -1044,6 +1148,71 @@ int main()
 	assert(nested_dependency.steps[1].path.segments[0] == 0);
 	assert(nested_dependency.steps[1].path.segments[1] == 1);
 	assert(nested_dependency.steps[1].path.segments[2] == 2);
+	const auto conditional_snapshot =
+	    make_conditional_hidden_door_snapshot();
+	dxx_route::route_query conditional_query;
+	conditional_query.start = conditional_snapshot.state.start_position;
+	const auto conditional_progress =
+	    dxx_route::initial_route_progress_state(
+	        conditional_snapshot, conditional_query);
+	test_visibility conditional_visible;
+	conditional_visible.wall = 0;
+	conditional_visible.segment = 0;
+	conditional_visible.position =
+	    conditional_snapshot.topology.segments[0].center;
+	conditional_visible.conditional_wall = 1;
+	conditional_visible.conditional_segment = 1;
+	conditional_visible.second_position =
+	    conditional_snapshot.topology.segments[1].center;
+	conditional_visible.blocker_wall = 3;
+	dxx_route::route_visibility_query conditional_visibility;
+	conditional_visibility.user = &conditional_visible;
+	conditional_visibility.wall_shootable = wall_shootable;
+	conditional_visibility.wall_conditionally_shootable =
+	    wall_conditionally_shootable;
+	conditional_visibility.wall_first_shot_blocker =
+	    wall_first_shot_blocker;
+	const auto conditional_dependency =
+	    dxx_route::resolve_trigger_dependency(
+	        conditional_snapshot, conditional_query, conditional_progress,
+	        1, 1, conditional_visibility);
+	assert(conditional_dependency.attempted);
+	assert(conditional_dependency.resolved);
+	assert(conditional_dependency.problem.empty());
+	assert(conditional_dependency.steps.size() == 3);
+	assert(conditional_dependency.steps[0].kind ==
+	       dxx_route::route_semantic_step_kind::trigger);
+	assert(conditional_dependency.steps[0].trigger == 1);
+	assert(conditional_dependency.steps[1].kind ==
+	       dxx_route::route_semantic_step_kind::hidden_door);
+	assert(conditional_dependency.steps[1].wall == 3);
+	assert(conditional_dependency.steps[1].segment == 1);
+	assert(conditional_dependency.steps[1].side == -1);
+	assert(conditional_dependency.steps[1].opened_links.size() == 2);
+	assert(conditional_dependency.steps[1].opened_links[0].segment == 2);
+	assert(conditional_dependency.steps[1].opened_links[0].side == 1);
+	assert(conditional_dependency.steps[1].activation ==
+	       dxx_route::route_activation_kind::open_hidden_door);
+	assert(conditional_dependency.steps[2].kind ==
+	       dxx_route::route_semantic_step_kind::trigger);
+	assert(conditional_dependency.steps[2].trigger == 0);
+	assert(conditional_dependency.steps[2].segment == 1);
+	assert(conditional_dependency.steps[2].activation ==
+	       dxx_route::route_activation_kind::shoot_switch);
+	assert(conditional_dependency.progress.fired_triggers[0]);
+	assert(conditional_dependency.progress.fired_triggers[1]);
+	assert(conditional_dependency.progress.opened_hidden_walls[3]);
+	auto opaque_blocker_snapshot = conditional_snapshot;
+	opaque_blocker_snapshot.state.walls[3].hidden = false;
+	const auto opaque_dependency = dxx_route::resolve_trigger_dependency(
+	    opaque_blocker_snapshot, conditional_query,
+	    dxx_route::initial_route_progress_state(
+	        opaque_blocker_snapshot, conditional_query),
+	    1, 1, conditional_visibility);
+	assert(opaque_dependency.attempted);
+	assert(!opaque_dependency.resolved);
+	assert(opaque_dependency.problem ==
+	       "conditional shot blocker is not shoot-open");
 	auto work_query = nested_query;
 	work_query.endpoint = dxx_route::route_endpoint_kind::segment;
 	work_query.target_segment = 3;

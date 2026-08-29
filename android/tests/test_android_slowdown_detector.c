@@ -214,6 +214,31 @@ static void test_capture_ends_and_cools_down(void)
 	expect_true("cooldown state", detector.state == ANDROID_SLOWDOWN_COOLDOWN);
 }
 
+static void test_hard_stall_interrupts_cooldown(void)
+{
+	struct android_slowdown_detector detector;
+	struct android_slowdown_frame frame;
+	int events;
+
+	android_slowdown_detector_init(&detector);
+	android_slowdown_detector_set_enabled(&detector, 1);
+	init_frame(&frame, 120);
+	feed_frames(&detector, &frame, 600, 8333, 7000);
+	feed_frames(&detector, &frame, 50, 50000, 50000);
+	feed_frames(&detector, &frame, 1201, 50000, 50000);
+	expect_true("hard-stall test entered cooldown",
+	            detector.state == ANDROID_SLOWDOWN_COOLDOWN);
+
+	events = feed_frames(&detector, &frame, 1, 40000, 1000);
+	expect_false("ordinary cooldown frame remains suppressed",
+	             events & ANDROID_SLOWDOWN_EVENT_TRIGGER);
+	events = feed_frames(&detector, &frame, 1, 300000, 1000);
+	expect_true("hard stall interrupts cooldown",
+	            events & ANDROID_SLOWDOWN_EVENT_TRIGGER);
+	expect_true("hard stall starts a fresh capture",
+	            detector.state == ANDROID_SLOWDOWN_CAPTURING);
+}
+
 int main(void)
 {
 	expect_true("detector memory stays under 128 KiB",
@@ -228,6 +253,7 @@ int main(void)
 	test_resume_frame_is_suppressed();
 	test_network_and_robot_metrics_aggregate();
 	test_capture_ends_and_cools_down();
+	test_hard_stall_interrupts_cooldown();
 
 	if (failures) {
 		fprintf(stderr, "%d slowdown detector test(s) failed\n", failures);

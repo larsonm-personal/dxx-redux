@@ -2451,12 +2451,15 @@ class dependency_planner
 			values[reverse] = value;
 	}
 
-	bool append_hidden_door_step(int segment, int side, int wall)
+	bool append_hidden_door_step(
+	    int segment, int side, int wall, int action_segment = -1)
 	{
 		route_semantic_step step;
 		step.kind = route_semantic_step_kind::hidden_door;
-		step.segment = segment;
-		step.side = side;
+		step.segment = valid_segment(snapshot_, action_segment)
+		                   ? action_segment
+		                   : segment;
+		step.side = step.segment == segment ? side : -1;
 		step.wall = wall;
 		step.activation = route_activation_kind::open_hidden_door;
 		step.label = "Open hidden door";
@@ -2474,12 +2477,15 @@ class dependency_planner
 		return append_step(std::move(step));
 	}
 
-	bool append_blastable_wall_step(int segment, int side, int wall)
+	bool append_blastable_wall_step(
+	    int segment, int side, int wall, int action_segment = -1)
 	{
 		route_semantic_step step;
 		step.kind = route_semantic_step_kind::blastable_wall;
-		step.segment = segment;
-		step.side = side;
+		step.segment = valid_segment(snapshot_, action_segment)
+		                   ? action_segment
+		                   : segment;
+		step.side = step.segment == segment ? side : -1;
 		step.wall = wall;
 		step.activation = route_activation_kind::destroy_blastable_wall;
 		step.label = "Destroy blastable wall";
@@ -2638,6 +2644,65 @@ class dependency_planner
 		}
 		route_progress_open_hidden_wall(snapshot_, state_.progress, wall);
 		set_wall_pair(state_.hidden_door_in_progress, wall, false);
+		return true;
+	}
+
+	bool resolve_shot_blocker(
+	    int wall,
+	    int firing_segment,
+	    const route_position &firing_position,
+	    int depth)
+	{
+		if (!valid_wall(snapshot_, wall) ||
+		    !valid_segment(snapshot_, firing_segment) ||
+		    !firing_position.valid) {
+			set_problem("conditional shot blocker missing");
+			return false;
+		}
+		const auto &topology = snapshot_.topology.walls[wall];
+		if (!valid_segment(snapshot_, topology.segment) || topology.side < 0 ||
+		    topology.side >= LEVEL_METADATA_MAX_SIDES) {
+			set_problem("conditional shot blocker topology invalid");
+			return false;
+		}
+		const auto &wall_state = snapshot_.state.walls[wall];
+		if (wall_state.kind == route_wall_kind::blastable) {
+			if (!move_to_target(
+			        firing_segment, firing_position, depth + 1) ||
+			    !append_blastable_wall_step(
+			        topology.segment, topology.side, wall, firing_segment) ||
+			    !route_progress_destroy_blastable_wall(
+			        snapshot_, state_.progress, wall))
+				return false;
+			return true;
+		}
+		if (wall_state.kind != route_wall_kind::door || !wall_state.hidden ||
+		    wall_state.key != route_key_requirement::none) {
+			set_problem("conditional shot blocker is not shoot-open");
+			return false;
+		}
+		auto edge = evaluate_route_edge(
+		    snapshot_, query_, state_.progress, topology.segment,
+		    topology.side);
+		if (edge.blocker == route_edge_blocker::trigger) {
+			if (!fire_trigger(
+			        topology.segment, topology.side, depth + 1))
+				return false;
+			edge = evaluate_route_edge(
+			    snapshot_, query_, state_.progress, topology.segment,
+			    topology.side);
+		}
+		if (edge.progress_cost == LEVEL_METADATA_ROUTE_EDGE_BLOCKED) {
+			set_problem("conditional hidden door cannot be unlocked");
+			return false;
+		}
+		if (!move_to_target(
+		        firing_segment, firing_position, depth + 1) ||
+		    !append_hidden_door_step(
+		        topology.segment, topology.side, wall, firing_segment) ||
+		    !route_progress_open_hidden_wall(
+		        snapshot_, state_.progress, wall))
+			return false;
 		return true;
 	}
 
@@ -3045,6 +3110,7 @@ class dependency_planner
 		    snapshot_, query_, state_.progress, firing_sources, visibility_,
 		    &switch_guidance_graph_);
 		auto selected_firing = firing;
+		bool conditional_firing = false;
 		if (!selected_firing.found &&
 		    visibility_.wall_potentially_shootable) {
 			auto approximate_visibility = visibility_;
@@ -3055,6 +3121,18 @@ class dependency_planner
 			selected_firing = select_trigger_firing_path_internal(
 			    snapshot_, query_, state_.progress, firing_sources,
 			    approximate_visibility, &switch_guidance_graph_);
+		}
+		if (!selected_firing.found &&
+		    visibility_.wall_conditionally_shootable &&
+		    visibility_.wall_first_shot_blocker) {
+			auto conditional_visibility = visibility_;
+			conditional_visibility.wall_shootable =
+			    visibility_.wall_conditionally_shootable;
+			conditional_visibility.sample_cache_namespace ^= 0x40000000u;
+			selected_firing = select_trigger_firing_path_internal(
+			    snapshot_, query_, state_.progress, firing_sources,
+			    conditional_visibility, &switch_guidance_graph_);
+			conditional_firing = selected_firing.found;
 		}
 		if (selected_firing.found)
 			source = selected_firing.source;
@@ -3083,8 +3161,28 @@ class dependency_planner
 		}
 		state_.progress.trigger_in_progress[source.trigger] = 1;
 		const int selected_source_segment = source.source_segment;
+		if (conditional_firing) {
+			if (!consume_analysis_work(visibility_)) {
+				state_.progress.trigger_in_progress[source.trigger] = 0;
+				set_problem("conditional shot blocker analysis incomplete");
+				return false;
+			}
+			const int blocker = visibility_.wall_first_shot_blocker(
+			    visibility_.user, selected_firing.terminal_segment,
+			    selected_firing.terminal_position, source.source_wall);
+			if (blocker < 0 ||
+			    !resolve_shot_blocker(
+			        blocker, selected_firing.terminal_segment,
+			        selected_firing.terminal_position, depth + 1)) {
+				state_.progress.trigger_in_progress[source.trigger] = 0;
+				if (state_.problem.empty())
+					set_problem("conditional shot blocker unresolved");
+				return false;
+			}
+		}
 		if (selected_firing.found) {
-			accumulate_path(selected_firing.path);
+			if (!conditional_firing)
+				accumulate_path(selected_firing.path);
 			state_.progress.current_segment = selected_firing.terminal_segment;
 			state_.progress.current_position = selected_firing.terminal_position;
 			if (shootable) {
@@ -3490,6 +3588,28 @@ int view_wall_shootable_without_transparency(
 	           context->view->user, segment, from.value.data(), wall) != 0;
 }
 
+int view_wall_conditionally_shootable(
+    void *user,
+    int segment,
+    const dxx_route::route_position &from,
+    int wall)
+{
+	const auto *context = static_cast<view_visibility_context *>(user);
+	return context->view->wall_conditionally_shootable_from_position(
+	           context->view->user, segment, from.value.data(), wall) != 0;
+}
+
+int view_wall_first_shot_blocker(
+    void *user,
+    int segment,
+    const dxx_route::route_position &from,
+    int wall)
+{
+	const auto *context = static_cast<view_visibility_context *>(user);
+	return context->view->wall_first_shot_blocker_from_position(
+	    context->view->user, segment, from.value.data(), wall);
+}
+
 int view_wall_shot_incidence_cosine(
     void *user,
     const dxx_route::route_position &from,
@@ -3805,6 +3925,12 @@ extern "C" int route_planner_plan_view(
 		if (view->wall_shootable_without_transparency_from_position)
 			visibility.wall_shootable_without_transparency =
 			    view_wall_shootable_without_transparency;
+		if (view->wall_conditionally_shootable_from_position)
+			visibility.wall_conditionally_shootable =
+			    view_wall_conditionally_shootable;
+		if (view->wall_first_shot_blocker_from_position)
+			visibility.wall_first_shot_blocker =
+			    view_wall_first_shot_blocker;
 		if (view->wall_shot_incidence_cosine)
 			visibility.wall_shot_incidence_cosine =
 			    view_wall_shot_incidence_cosine;
@@ -3916,6 +4042,12 @@ extern "C" int route_planner_segment_reachable_view(
 		if (view->wall_shootable_without_transparency_from_position)
 			visibility.wall_shootable_without_transparency =
 			    view_wall_shootable_without_transparency;
+		if (view->wall_conditionally_shootable_from_position)
+			visibility.wall_conditionally_shootable =
+			    view_wall_conditionally_shootable;
+		if (view->wall_first_shot_blocker_from_position)
+			visibility.wall_first_shot_blocker =
+			    view_wall_first_shot_blocker;
 		if (view->wall_shot_incidence_cosine)
 			visibility.wall_shot_incidence_cosine =
 			    view_wall_shot_incidence_cosine;

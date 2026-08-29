@@ -47,6 +47,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "rewind_file_compat.h"
 #include "input_demo_hooks.h"
 #ifdef __ANDROID__
+#include "android_log.h"
+#include "android_profile.h"
 #include "escort.h"
 #endif
 
@@ -214,12 +216,22 @@ void do_lock_doors(sbyte trigger_num)
 int do_change_walls(sbyte trigger_num)
 {
 	int i,ret=0;
+#ifdef __ANDROID__
+	const long long profile_started_us = android_profile_monotonic_us();
+	long long profile_transition_us = 0;
+	long long profile_stuck_us = 0;
+#endif
 
 	if (trigger_num != -1) {
 		for (i=0;i<Triggers[trigger_num].num_links;i++) {
 			segment *segp,*csegp;
 			short side,cside;
 			int new_wall_type;
+#ifdef __ANDROID__
+			long long phase_started_us;
+			long long transition_us;
+			long long stuck_us;
+#endif
 
 			segp = &Segments[Triggers[trigger_num].seg[i]];
 			side = Triggers[trigger_num].side[i];
@@ -257,6 +269,9 @@ int do_change_walls(sbyte trigger_num)
 
 			ret = 1;
 
+#ifdef __ANDROID__
+			phase_started_us = android_profile_monotonic_us();
+#endif
 			switch (Triggers[trigger_num].type) {
 
 				case TT_OPEN_WALL:
@@ -298,15 +313,50 @@ int do_change_walls(sbyte trigger_num)
 						Walls[csegp->sides[cside].wall_num].type = new_wall_type;
 					break;
 			}
+#ifdef __ANDROID__
+			transition_us = android_profile_monotonic_us() - phase_started_us;
+			profile_transition_us += transition_us;
+#endif
 			input_demo_log_trigger_probe("change_link_after", segp, side, -1, 0, trigger_num);
 
 
+#ifdef __ANDROID__
+			phase_started_us = android_profile_monotonic_us();
+#endif
 			kill_stuck_objects(segp->sides[side].wall_num);
 			if (cside > -1 && csegp->sides[cside].wall_num > -1)
 				kill_stuck_objects(csegp->sides[cside].wall_num);
+#ifdef __ANDROID__
+			stuck_us = android_profile_monotonic_us() - phase_started_us;
+			profile_stuck_us += stuck_us;
+			if (debug_log_enabled[DLOG_PROFILING])
+				debug_log(
+				    DLOG_PROFILING,
+				    "wall_trigger_link trigger=%d link=%d seg=%d side=%d wall=%d "
+				    "child=%d cside=%d transition_us=%lld stuck_us=%lld",
+				    trigger_num, i, (int) (segp - Segments), side,
+				    segp->sides[side].wall_num, segp->children[side], cside,
+				    transition_us, stuck_us);
+#endif
 
   		}
   	}
+#ifdef __ANDROID__
+	if (debug_log_enabled[DLOG_PROFILING])
+		debug_log(
+		    DLOG_PROFILING,
+		    "wall_trigger_change trigger=%d type=%d links=%d changed=%d "
+		    "total_us=%lld transition_us=%lld stuck_us=%lld",
+		    trigger_num,
+		    trigger_num >= 0 && trigger_num < Num_triggers
+		        ? Triggers[trigger_num].type
+		        : -1,
+		    trigger_num >= 0 && trigger_num < Num_triggers
+		        ? Triggers[trigger_num].num_links
+		        : 0,
+		    ret, android_profile_monotonic_us() - profile_started_us,
+		    profile_transition_us, profile_stuck_us);
+#endif
 
 	return ret;
 }

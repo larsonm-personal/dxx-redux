@@ -243,11 +243,27 @@ int android_slowdown_detector_feed(struct android_slowdown_detector *detector,
 	    frame->end_us >= detector->capture_end_us) {
 		detector->state = ANDROID_SLOWDOWN_COOLDOWN;
 		detector->cooldown_end_us = frame->end_us + COOLDOWN_US;
+		/* A completed capture must not make its own severe frames eligible to
+		 * retrigger.  New hard stalls remain eligible below, even during the
+		 * long anti-spam cooldown. */
+		memset(detector->severe_frame_us, 0, sizeof(detector->severe_frame_us));
+		detector->hard_stall_us = 0;
 		events |= ANDROID_SLOWDOWN_EVENT_CAPTURE_END;
 	} else if (detector->state == ANDROID_SLOWDOWN_COOLDOWN &&
 	           frame->end_us >= detector->cooldown_end_us) {
 		detector->state = ANDROID_SLOWDOWN_ARMED;
 		detector->slow_windows = 0;
+	} else if (detector->state == ANDROID_SLOWDOWN_COOLDOWN &&
+	           frame->end_us >= detector->suppress_until_us &&
+	           frame_stall_us(frame) >= HARD_STALL_US) {
+		/* Cooldown suppresses repeated sustained-slow captures, but it should
+		 * not blind diagnostics to a distinct, user-visible hard freeze. */
+		detector->state = ANDROID_SLOWDOWN_CAPTURING;
+		detector->capture_id++;
+		detector->capture_end_us = frame->end_us + CAPTURE_US;
+		detector->trigger_severe = 1;
+		detector->slow_windows = 0;
+		events |= ANDROID_SLOWDOWN_EVENT_TRIGGER;
 	}
 
 	if (detector->state == ANDROID_SLOWDOWN_ARMED &&

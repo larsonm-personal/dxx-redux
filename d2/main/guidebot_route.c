@@ -1408,6 +1408,14 @@ static int escort_route_step_guidance_mode_from_activation(
 
 int escort_route_step_guidance_mode(const level_metadata_route_step *step)
 {
+	/* Android route metadata can describe a hidden door that must be shot from
+	 * another segment before a switch behind it becomes visible.  Guide to the
+	 * compiled firing pose for that remote action; ordinary adjacent hidden
+	 * doors retain the classic guide-to-door behavior. */
+	if (step && step->kind == LEVEL_METADATA_ROUTE_HIDDEN_DOOR &&
+	    step->activation_pos_valid && escort_valid_wall(step->wall_num) &&
+	    step->seg != Walls[step->wall_num].segnum)
+		return ESCORT_ROUTE_GUIDANCE_REACH_FIRING_POSITION;
 	return step ? escort_route_step_guidance_mode_from_activation(
 	                  step->kind, step->activation_kind)
 	            : ESCORT_ROUTE_GUIDANCE_NONE;

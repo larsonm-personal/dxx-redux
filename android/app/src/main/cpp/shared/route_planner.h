@@ -129,6 +129,16 @@ struct route_visibility_query {
 	    int segment,
 	    const route_position &from,
 	    int wall) = nullptr;
+	int (*wall_conditionally_shootable)(
+	    void *user,
+	    int segment,
+	    const route_position &from,
+	    int wall) = nullptr;
+	int (*wall_first_shot_blocker)(
+	    void *user,
+	    int segment,
+	    const route_position &from,
+	    int wall) = nullptr;
 	int (*wall_shot_incidence_cosine)(
 	    void *user,
 	    const route_position &from,

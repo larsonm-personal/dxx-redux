@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 
+/* args.c includes pstypes.h before args.h through physfsx.h, so match its
+ * structure packing and read the linked GameArg with the same ABI */
+#include "pstypes.h"
 #include "args.h"
 #ifdef DXX_ARGS_TEST_D2
 #include "digi.h"
