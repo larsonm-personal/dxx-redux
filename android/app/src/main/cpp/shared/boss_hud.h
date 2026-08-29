@@ -7,6 +7,8 @@
 
 #define BOSS_HUD_LABEL "boss "
 
+struct object;
+
 typedef struct boss_hud_debug_state {
 	int enabled;
 	int active;
@@ -43,7 +45,9 @@ static inline int boss_hud_green_width(int shields, int maximum_shields, int bar
 	return width > 0 ? width : 1;
 }
 
-void boss_hud_note_active(int objnum);
+void boss_hud_note_shot(int objnum);
+int boss_hud_note_weapon_collision(const struct object *target,
+                                   const struct object *weapon);
 void boss_hud_reset(void);
 void boss_hud_refresh_maximum(void);
 int boss_hud_is_visible(void);

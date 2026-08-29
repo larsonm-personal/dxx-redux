@@ -9,9 +9,6 @@
 #include "object.h"
 #include "playsave.h"
 #include "robot.h"
-#ifdef __ANDROID__
-#include "android_log.h"
-#endif
 
 static int Boss_hud_objnum = -1;
 static int Boss_hud_signature = -1;
@@ -57,7 +54,7 @@ void boss_hud_refresh_maximum(void)
 		Boss_hud_maximum_shields = boss_hud_full_shields(boss);
 }
 
-void boss_hud_note_active(int objnum)
+void boss_hud_note_shot(int objnum)
 {
 	object *boss;
 
@@ -73,6 +70,30 @@ void boss_hud_note_active(int objnum)
 	Boss_hud_maximum_shields = boss_hud_full_shields(boss);
 }
 
+int boss_hud_note_weapon_collision(const object *target, const object *weapon)
+{
+	int boss_objnum = -1;
+
+	if (!target || !weapon || weapon->type != OBJ_WEAPON)
+		return -1;
+	if (target->type == OBJ_ROBOT && Robot_info[target->id].boss_flag &&
+	    weapon->ctype.laser_info.parent_type == OBJ_PLAYER)
+		boss_objnum = target - Objects;
+	else if (target->type == OBJ_PLAYER &&
+	         weapon->ctype.laser_info.parent_type == OBJ_ROBOT &&
+	         weapon->ctype.laser_info.parent_num >= 0 &&
+	         weapon->ctype.laser_info.parent_num <= Highest_object_index) {
+		const object *boss = &Objects[weapon->ctype.laser_info.parent_num];
+
+		if (boss->signature == weapon->ctype.laser_info.parent_signature &&
+		    boss->type == OBJ_ROBOT && Robot_info[boss->id].boss_flag)
+			boss_objnum = weapon->ctype.laser_info.parent_num;
+	}
+	if (boss_objnum >= 0)
+		boss_hud_note_shot(boss_objnum);
+	return boss_objnum;
+}
+
 void boss_hud_reset(void)
 {
 	Boss_hud_objnum = -1;
@@ -81,36 +102,9 @@ void boss_hud_reset(void)
 	Boss_hud_row_y = -1;
 }
 
-static object *boss_hud_find_active_or_damaged(void)
-{
-	object *boss = boss_hud_get_active();
-	int i;
-
-	if (boss)
-		return boss;
-	for (i = 0; i <= Highest_object_index; ++i) {
-		fix maximum;
-
-		boss = &Objects[i];
-		if (boss->type != OBJ_ROBOT || !Robot_info[boss->id].boss_flag || boss->shields <= 0)
-			continue;
-		maximum = boss_hud_full_shields(boss);
-		if (boss->shields < maximum) {
-#ifdef __ANDROID__
-			debug_log(DLOG_GAME,
-			          "boss HUD auto-activate damaged: obj=%d robot=%d shields=%d maximum=%d difficulty=%d",
-			          i, boss->id, boss->shields, maximum, Difficulty_level);
-#endif
-			boss_hud_note_active(i);
-			return boss_hud_get_active();
-		}
-	}
-	return NULL;
-}
-
 int boss_hud_is_visible(void)
 {
-	return PlayerCfg.ShowBossHealthBar && boss_hud_find_active_or_damaged() != NULL;
+	return PlayerCfg.ShowBossHealthBar && boss_hud_get_active() != NULL;
 }
 
 int boss_hud_message_capacity(int normal_capacity)
@@ -121,7 +115,7 @@ int boss_hud_message_capacity(int normal_capacity)
 int boss_hud_prepare_row(int y, int queued_message_capacity,
                          int queued_message_draw_count, hud_layout_rect *rect)
 {
-	object *boss = boss_hud_find_active_or_damaged();
+	object *boss = boss_hud_get_active();
 	const int visible = PlayerCfg.ShowBossHealthBar && boss != NULL;
 
 	memset(&Boss_hud_debug, 0, sizeof(Boss_hud_debug));

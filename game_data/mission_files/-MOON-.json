@@ -5,7 +5,6 @@
     "game": "d2",
     "mission_name": "- MOON 01 -",
     "mission_filename": "-moon01-.mn2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -86,6 +85,10 @@
         "trigger_count": 38,
         "object_count": 318,
         "texture_count": 118,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 128,
+        "reactors": 0,
         "robots": 149,
         "hostages": 5,
         "secrets": 7,
@@ -248,6 +251,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 149,
+      "hostages": 5,
+      "matcens": 13,
+      "guidebots": 1,
+      "powerups": 128,
+      "reactors": 0
+    },
     "mission_path": "-moon01-.mn2",
     "target_index": 0
   },
@@ -257,7 +289,6 @@
     "game": "d2",
     "mission_name": "- MOON 02 -",
     "mission_filename": "-MOON02-.MN2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "5",
     "track_names": [
       {
@@ -338,6 +369,10 @@
         "trigger_count": 32,
         "object_count": 246,
         "texture_count": 104,
+        "player_starts": 1,
+        "coop_only_starts": 4,
+        "powerups": 83,
+        "reactors": 1,
         "robots": 153,
         "hostages": 4,
         "secrets": 2,
@@ -369,6 +404,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 1,
+      "player_start_max": 1,
+      "coop_start_min": 4,
+      "coop_start_max": 4,
+      "robots": 153,
+      "hostages": 4,
+      "matcens": 2,
+      "guidebots": 1,
+      "powerups": 83,
+      "reactors": 1
+    },
     "mission_path": "-MOON02-.MN2",
     "target_index": 1
   },
@@ -378,7 +442,6 @@
     "game": "d2",
     "mission_name": "- MOON 03 -",
     "mission_filename": "-MOON03-.MN2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -459,6 +522,10 @@
         "trigger_count": 26,
         "object_count": 293,
         "texture_count": 117,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 87,
+        "reactors": 0,
         "robots": 177,
         "hostages": 7,
         "secrets": 2,
@@ -467,7 +534,7 @@
         "mine_volume": 26396900.0,
         "mine_volume_normalized": 5.77246,
         "mine_volume_text": "5.8x",
-        "travel_distance": 11484.6,
+        "travel_distance": 11524.2,
         "travel_time_seconds": 230,
         "travel_time_text": "3M:50S",
         "guidebot_count": 1,
@@ -521,8 +588,7 @@
               "z": 26.6
             },
             "distance": 115.3,
-            "key": "blue",
-            "can_be_bypassed": true
+            "key": "blue"
           },
           {
             "index": 3,
@@ -588,14 +654,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 23",
-            "seg": 482,
+            "seg": 483,
+            "side": 2,
             "wall": 68,
             "label_pos": {
               "x": -219.0,
               "y": -508.0,
               "z": 77.0
             },
-            "distance": 1168.4,
+            "distance": 1183.4,
             "trigger": 23,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -645,6 +712,7 @@
               "y": -488.0,
               "z": 76.0
             },
+            "distance": 15.0,
             "opens": [
               {
                 "seg": 482,
@@ -685,7 +753,7 @@
               "y": -165.0,
               "z": -367.2
             },
-            "distance": 2444.0,
+            "distance": 2448.7,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -713,7 +781,7 @@
               "y": -505.0,
               "z": -410.5
             },
-            "distance": 886.9,
+            "distance": 891.6,
             "key": "red"
           },
           {
@@ -789,13 +857,42 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_note": "no reactor, exit exists; blue key can be skipped by shooting through a transparent wall",
+        "route_note": "no reactor, exit exists",
         "notes": [
-          "no reactor, exit exists; blue key can be skipped by shooting through a transparent wall",
+          "no reactor, exit exists",
           "guidebot or guidebot start cage placed in this level"
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 177,
+      "hostages": 7,
+      "matcens": 2,
+      "guidebots": 1,
+      "powerups": 87,
+      "reactors": 0
+    },
     "mission_path": "-MOON03-.MN2",
     "target_index": 2
   },
@@ -805,7 +902,6 @@
     "game": "d2",
     "mission_name": "- MOON 04 -",
     "mission_filename": "-MOON04-.MN2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -886,6 +982,10 @@
         "trigger_count": 36,
         "object_count": 191,
         "texture_count": 129,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 66,
+        "reactors": 1,
         "robots": 110,
         "hostages": 3,
         "secrets": 7,
@@ -894,9 +994,9 @@
         "mine_volume": 18311400.0,
         "mine_volume_normalized": 4.00432,
         "mine_volume_text": "4.0x",
-        "travel_distance": 12736.1,
-        "travel_time_seconds": 255,
-        "travel_time_text": "4M:15S",
+        "travel_distance": 12827.6,
+        "travel_time_seconds": 257,
+        "travel_time_text": "4M:17S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -948,7 +1048,7 @@
               "y": -24.0,
               "z": 347.0
             },
-            "distance": 56.0,
+            "distance": 61.9,
             "trigger": 3,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -978,7 +1078,7 @@
               "y": -34.0,
               "z": 256.0
             },
-            "distance": 156.1,
+            "distance": 161.9,
             "opens": [
               {
                 "seg": 341,
@@ -1071,14 +1171,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 17",
-            "seg": 158,
+            "seg": 160,
+            "side": 2,
             "wall": 100,
             "label_pos": {
               "x": -11.5,
               "y": -478.0,
               "z": -137.5
             },
-            "distance": 783.1,
+            "distance": 823.0,
             "trigger": 17,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -1101,7 +1202,7 @@
               "y": -416.5,
               "z": -128.7
             },
-            "distance": 878.4,
+            "distance": 918.3,
             "key": "gold"
           },
           {
@@ -1208,6 +1309,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 110,
+      "hostages": 3,
+      "matcens": 9,
+      "guidebots": 1,
+      "powerups": 66,
+      "reactors": 1
+    },
     "mission_path": "-MOON04-.MN2",
     "target_index": 3
   },
@@ -1217,7 +1347,6 @@
     "game": "d2",
     "mission_name": "- MOON 05 -",
     "mission_filename": "-MOON05-.MN2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1298,6 +1427,10 @@
         "trigger_count": 30,
         "object_count": 226,
         "texture_count": 93,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 94,
+        "reactors": 0,
         "robots": 111,
         "hostages": 3,
         "secrets": 7,
@@ -1306,9 +1439,9 @@
         "mine_volume": 19942600.0,
         "mine_volume_normalized": 4.36104,
         "mine_volume_text": "4.4x",
-        "travel_distance": 6511.4,
-        "travel_time_seconds": 130,
-        "travel_time_text": "2M:10S",
+        "travel_distance": 6591.4,
+        "travel_time_seconds": 132,
+        "travel_time_text": "2M:12S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1326,14 +1459,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 0",
-            "seg": 151,
+            "seg": 156,
+            "side": 2,
             "wall": 22,
             "label_pos": {
               "x": 25.0,
               "y": -145.0,
               "z": 0.0
             },
-            "distance": 330.2,
+            "distance": 370.2,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1371,7 +1505,7 @@
               "y": 0.0,
               "z": 106.3
             },
-            "distance": 379.5,
+            "distance": 419.5,
             "key": "blue"
           },
           {
@@ -1551,6 +1685,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 111,
+      "hostages": 3,
+      "matcens": 6,
+      "guidebots": 0,
+      "powerups": 94,
+      "reactors": 0
+    },
     "mission_path": "-MOON05-.MN2",
     "target_index": 4
   },
@@ -1560,7 +1723,6 @@
     "game": "d2",
     "mission_name": "- MOON 06 -",
     "mission_filename": "-MOON06-.MN2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1641,6 +1803,10 @@
         "trigger_count": 39,
         "object_count": 207,
         "texture_count": 131,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 65,
+        "reactors": 1,
         "robots": 114,
         "hostages": 8,
         "secrets": 1,
@@ -1672,6 +1838,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 114,
+      "hostages": 8,
+      "matcens": 8,
+      "guidebots": 0,
+      "powerups": 65,
+      "reactors": 1
+    },
     "mission_path": "-MOON06-.MN2",
     "target_index": 5
   },
@@ -1681,7 +1876,6 @@
     "game": "d2",
     "mission_name": "- Moon 07 -",
     "mission_filename": "-MOON07-.MN2",
-    "mission_intent": "single_player_or_coop_and_multiplayer_anarchy",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1762,6 +1956,10 @@
         "trigger_count": 33,
         "object_count": 182,
         "texture_count": 168,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 82,
+        "reactors": 0,
         "robots": 82,
         "hostages": 3,
         "secrets": 11,
@@ -1770,9 +1968,9 @@
         "mine_volume": 13390300.0,
         "mine_volume_normalized": 2.92819,
         "mine_volume_text": "2.9x",
-        "travel_distance": 11674.8,
-        "travel_time_seconds": 233,
-        "travel_time_text": "3M:53S",
+        "travel_distance": 11744.5,
+        "travel_time_seconds": 235,
+        "travel_time_text": "3M:55S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1790,14 +1988,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 28",
-            "seg": 77,
+            "seg": 79,
+            "side": 1,
             "wall": 189,
             "label_pos": {
               "x": 55.5,
               "y": 0.0,
               "z": 248.0
             },
-            "distance": 613.1,
+            "distance": 653.9,
             "trigger": 28,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -1820,7 +2019,7 @@
               "y": -58.0,
               "z": 112.0
             },
-            "distance": 287.7,
+            "distance": 280.8,
             "key": "blue"
           },
           {
@@ -1828,14 +2027,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 29",
-            "seg": 144,
+            "seg": 146,
             "wall": 192,
             "label_pos": {
               "x": 18.8,
               "y": -247.0,
               "z": 312.6
             },
-            "distance": 1169.0,
+            "distance": 1186.9,
             "trigger": 29,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -1858,7 +2057,7 @@
               "y": -267.0,
               "z": 233.8
             },
-            "distance": 548.9,
+            "distance": 566.8,
             "key": "gold"
           },
           {
@@ -2050,6 +2249,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop_and_multiplayer_anarchy",
+      "rule": "descriptor_both",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables campaign/cooperative and competitive modes",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": true,
+        "coop": true,
+        "anarchy": true,
+        "robo_anarchy": true,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 82,
+      "hostages": 3,
+      "matcens": 7,
+      "guidebots": 0,
+      "powerups": 82,
+      "reactors": 0
+    },
     "mission_path": "-MOON07-.MN2",
     "target_index": 6
   },
@@ -2059,7 +2287,6 @@
     "game": "d2",
     "mission_name": "- MOON 08 -",
     "mission_filename": "-MOON08-.MN2",
-    "mission_intent": "single_player_or_coop_and_multiplayer_anarchy",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2140,6 +2367,10 @@
         "trigger_count": 38,
         "object_count": 177,
         "texture_count": 152,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 83,
+        "reactors": 1,
         "robots": 76,
         "hostages": 5,
         "secrets": 2,
@@ -2148,9 +2379,9 @@
         "mine_volume": 32446200.0,
         "mine_volume_normalized": 7.09532,
         "mine_volume_text": "7.1x",
-        "travel_distance": 9781.8,
-        "travel_time_seconds": 196,
-        "travel_time_text": "3M:16S",
+        "travel_distance": 10154.9,
+        "travel_time_seconds": 203,
+        "travel_time_text": "3M:23S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -2251,14 +2482,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 25",
-            "seg": 612,
+            "seg": 631,
+            "side": 2,
             "wall": 125,
             "label_pos": {
               "x": -228.3,
               "y": -704.6,
               "z": 570.6
             },
-            "distance": 1175.2,
+            "distance": 1361.7,
             "trigger": 25,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -2288,7 +2520,7 @@
               "y": -207.2,
               "z": 728.9
             },
-            "distance": 1131.7,
+            "distance": 1318.2,
             "trigger": 19,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -2467,6 +2699,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop_and_multiplayer_anarchy",
+      "rule": "descriptor_both",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables campaign/cooperative and competitive modes",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": true,
+        "coop": true,
+        "anarchy": true,
+        "robo_anarchy": true,
+        "capture_flag": true,
+        "hoard": true
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 76,
+      "hostages": 5,
+      "matcens": 10,
+      "guidebots": 1,
+      "powerups": 83,
+      "reactors": 1
+    },
     "mission_path": "-MOON08-.MN2",
     "target_index": 7
   },
@@ -2476,7 +2737,6 @@
     "game": "d2",
     "mission_name": "- Moon 09 -",
     "mission_filename": "-MOON09-.MN2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2557,6 +2817,10 @@
         "trigger_count": 30,
         "object_count": 255,
         "texture_count": 151,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 118,
+        "reactors": 0,
         "robots": 118,
         "hostages": 4,
         "secrets": 12,
@@ -2565,9 +2829,9 @@
         "mine_volume": 49149800.0,
         "mine_volume_normalized": 10.7481,
         "mine_volume_text": "11x",
-        "travel_distance": 12419.8,
-        "travel_time_seconds": 248,
-        "travel_time_text": "4M:08S",
+        "travel_distance": 12906.3,
+        "travel_time_seconds": 258,
+        "travel_time_text": "4M:18S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -2665,14 +2929,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 0",
-            "seg": 312,
+            "seg": 330,
+            "side": 2,
             "wall": 100,
             "label_pos": {
               "x": 613.0,
               "y": -112.0,
               "z": 270.1
             },
-            "distance": 20.0,
+            "distance": 120.0,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -2694,14 +2959,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 3",
-            "seg": 369,
+            "seg": 373,
+            "side": 2,
             "wall": 107,
             "label_pos": {
               "x": 548.0,
               "y": -212.9,
               "z": 270.1
             },
-            "distance": 251.0,
+            "distance": 291.0,
             "trigger": 3,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -2761,7 +3027,7 @@
               "y": 46.9,
               "z": -14.6
             },
-            "distance": 571.4,
+            "distance": 651.4,
             "opens": [
               {
                 "seg": 237,
@@ -2832,14 +3098,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 8",
-            "seg": 564,
+            "seg": 570,
+            "side": 3,
             "wall": 177,
             "label_pos": {
               "x": 537.7,
               "y": 124.8,
               "z": 536.2
             },
-            "distance": 1450.5,
+            "distance": 1550.7,
             "trigger": 8,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -2856,14 +3123,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 9",
-            "seg": 493,
+            "seg": 573,
+            "side": 5,
             "wall": 180,
             "label_pos": {
               "x": 1234.7,
               "y": 97.1,
               "z": 711.7
             },
-            "distance": 815.2,
+            "distance": 948.4,
             "trigger": 9,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -2888,7 +3156,7 @@
               "y": 122.4,
               "z": 710.5
             },
-            "distance": 143.8,
+            "distance": 176.8,
             "opens": [
               {
                 "seg": 502,
@@ -2975,14 +3243,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 25",
-            "seg": 376,
+            "seg": 387,
             "wall": 206,
             "label_pos": {
               "x": 1005.7,
               "y": 98.8,
               "z": 281.2
             },
-            "distance": 1858.8,
+            "distance": 1879.4,
             "trigger": 25,
             "trigger_type_id": 11,
             "trigger_type": "illusory_wall",
@@ -3020,7 +3288,7 @@
               "y": -10.5,
               "z": 329.4
             },
-            "distance": 1728.8
+            "distance": 1708.2
           },
           {
             "index": 18,
@@ -3049,6 +3317,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "descriptor_campaign",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables normal or cooperative play",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": true,
+        "coop": true,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 118,
+      "hostages": 4,
+      "matcens": 8,
+      "guidebots": 1,
+      "powerups": 118,
+      "reactors": 0
+    },
     "mission_path": "-MOON09-.MN2",
     "target_index": 8
   },
@@ -3058,7 +3355,6 @@
     "game": "d2",
     "mission_name": "- MOON 10 -",
     "mission_filename": "-MOON10-.MN2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3139,6 +3435,10 @@
         "trigger_count": 29,
         "object_count": 255,
         "texture_count": 148,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 133,
+        "reactors": 1,
         "robots": 103,
         "hostages": 5,
         "secrets": 8,
@@ -3147,9 +3447,9 @@
         "mine_volume": 13927200.0,
         "mine_volume_normalized": 3.0456,
         "mine_volume_text": "3.0x",
-        "travel_distance": 10259.6,
-        "travel_time_seconds": 205,
-        "travel_time_text": "3M:25S",
+        "travel_distance": 10442.0,
+        "travel_time_seconds": 209,
+        "travel_time_text": "3M:29S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -3228,7 +3528,7 @@
               "y": -66.0,
               "z": 556.2
             },
-            "distance": 2742.2,
+            "distance": 2747.2,
             "trigger": 2,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -3268,7 +3568,7 @@
               "y": -66.0,
               "z": 610.0
             },
-            "distance": 97.7,
+            "distance": 102.7,
             "opens": [
               {
                 "seg": 527,
@@ -3328,14 +3628,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 3",
-            "seg": 623,
+            "seg": 654,
+            "side": 0,
             "wall": 160,
             "label_pos": {
               "x": -122.0,
               "y": -304.0,
               "z": 336.0
             },
-            "distance": 409.0,
+            "distance": 449.0,
             "trigger": 3,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -3357,14 +3658,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 5",
-            "seg": 641,
+            "seg": 651,
+            "side": 4,
             "wall": 166,
             "label_pos": {
               "x": -252.0,
               "y": -330.0,
               "z": 306.0
             },
-            "distance": 142.8,
+            "distance": 229.1,
             "trigger": 5,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -3402,7 +3704,7 @@
               "y": -304.0,
               "z": 306.0
             },
-            "distance": 30.2
+            "distance": 76.4
           },
           {
             "index": 11,
@@ -3429,6 +3731,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "descriptor_campaign",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables normal or cooperative play",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": true,
+        "coop": true,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 103,
+      "hostages": 5,
+      "matcens": 4,
+      "guidebots": 1,
+      "powerups": 133,
+      "reactors": 1
+    },
     "mission_path": "-MOON10-.MN2",
     "target_index": 9
   },
@@ -3438,7 +3769,6 @@
     "game": "d2",
     "mission_name": "- MOON 11 -",
     "mission_filename": "-MOON11-.MN2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3519,6 +3849,10 @@
         "trigger_count": 48,
         "object_count": 169,
         "texture_count": 97,
+        "player_starts": 1,
+        "coop_only_starts": 3,
+        "powerups": 107,
+        "reactors": 1,
         "robots": 53,
         "hostages": 4,
         "secrets": 2,
@@ -3527,9 +3861,9 @@
         "mine_volume": 27014800.0,
         "mine_volume_normalized": 5.90757,
         "mine_volume_text": "5.9x",
-        "travel_distance": 7777.2,
-        "travel_time_seconds": 156,
-        "travel_time_text": "2M:36S",
+        "travel_distance": 7962.4,
+        "travel_time_seconds": 159,
+        "travel_time_text": "2M:39S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -3619,14 +3953,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 47",
-            "seg": 646,
+            "seg": 655,
+            "side": 2,
             "wall": 149,
             "label_pos": {
               "x": 428.0,
               "y": -226.0,
               "z": -846.1
             },
-            "distance": 705.0,
+            "distance": 797.6,
             "trigger": 47,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -3649,7 +3984,7 @@
               "y": -110.3,
               "z": -1051.0
             },
-            "distance": 786.9
+            "distance": 879.6
           },
           {
             "index": 7,
@@ -3676,6 +4011,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "descriptor_campaign",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables normal or cooperative play",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": true,
+        "coop": true,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 1,
+      "player_start_max": 1,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 53,
+      "hostages": 4,
+      "matcens": 12,
+      "guidebots": 0,
+      "powerups": 107,
+      "reactors": 1
+    },
     "mission_path": "-MOON11-.MN2",
     "target_index": 10
   },
@@ -3685,7 +4049,6 @@
     "game": "d2",
     "mission_name": "- Moon 12 -",
     "mission_filename": "-Moon12-.MN2",
-    "mission_intent": "single_player_or_coop_and_multiplayer_anarchy",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3766,6 +4129,10 @@
         "trigger_count": 72,
         "object_count": 239,
         "texture_count": 113,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 102,
+        "reactors": 1,
         "robots": 116,
         "hostages": 7,
         "secrets": 12,
@@ -4043,6 +4410,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop_and_multiplayer_anarchy",
+      "rule": "descriptor_both",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables campaign/cooperative and competitive modes",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": true,
+        "coop": true,
+        "anarchy": true,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 116,
+      "hostages": 7,
+      "matcens": 7,
+      "guidebots": 0,
+      "powerups": 102,
+      "reactors": 1
+    },
     "mission_path": "-Moon12-.MN2",
     "target_index": 11
   },
@@ -4052,7 +4448,6 @@
     "game": "d2",
     "mission_name": "- MOON 13 -",
     "mission_filename": "-MOON13-.MN2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -4133,6 +4528,10 @@
         "trigger_count": 35,
         "object_count": 209,
         "texture_count": 112,
+        "player_starts": 1,
+        "coop_only_starts": 3,
+        "powerups": 119,
+        "reactors": 1,
         "robots": 80,
         "hostages": 5,
         "secrets": 7,
@@ -4141,9 +4540,9 @@
         "mine_volume": 16298900.0,
         "mine_volume_normalized": 3.56424,
         "mine_volume_text": "3.6x",
-        "travel_distance": 10965.9,
-        "travel_time_seconds": 219,
-        "travel_time_text": "3M:39S",
+        "travel_distance": 11368.2,
+        "travel_time_seconds": 227,
+        "travel_time_text": "3M:47S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -4161,14 +4560,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 12",
-            "seg": 55,
+            "seg": 141,
+            "side": 5,
             "wall": 139,
             "label_pos": {
               "x": 308.0,
               "y": -296.0,
               "z": 246.0
             },
-            "distance": 797.5,
+            "distance": 995.3,
             "trigger": 12,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -4196,7 +4596,7 @@
               "y": -148.0,
               "z": 333.0
             },
-            "distance": 849.5,
+            "distance": 911.8,
             "key": "blue"
           },
           {
@@ -4304,14 +4704,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 1",
-            "seg": 323,
+            "seg": 331,
             "wall": 101,
             "label_pos": {
               "x": -26.0,
               "y": -385.0,
               "z": 68.0
             },
-            "distance": 479.0,
+            "distance": 550.1,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -4339,7 +4739,7 @@
               "y": -430.7,
               "z": 0.0
             },
-            "distance": 387.0,
+            "distance": 458.1,
             "key": "gold"
           },
           {
@@ -4494,6 +4894,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "descriptor_campaign",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables normal or cooperative play",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": true,
+        "coop": true,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 1,
+      "player_start_max": 1,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 80,
+      "hostages": 5,
+      "matcens": 7,
+      "guidebots": 0,
+      "powerups": 119,
+      "reactors": 1
+    },
     "mission_path": "-MOON13-.MN2",
     "target_index": 12
   },
@@ -4503,7 +4932,6 @@
     "game": "d2",
     "mission_name": "- MOON 14 -",
     "mission_filename": "-MOON14-.MN2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -4584,6 +5012,10 @@
         "trigger_count": 34,
         "object_count": 308,
         "texture_count": 118,
+        "player_starts": 1,
+        "coop_only_starts": 3,
+        "powerups": 159,
+        "reactors": 1,
         "robots": 137,
         "hostages": 2,
         "secrets": 0,
@@ -4592,9 +5024,9 @@
         "mine_volume": 21460700.0,
         "mine_volume_normalized": 4.69301,
         "mine_volume_text": "4.7x",
-        "travel_distance": 9654.1,
-        "travel_time_seconds": 193,
-        "travel_time_text": "3M:13S",
+        "travel_distance": 9762.1,
+        "travel_time_seconds": 195,
+        "travel_time_text": "3M:15S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -4685,16 +5117,17 @@
             "index": 4,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 16",
-            "seg": 327,
-            "wall": 169,
+            "label": "Shoot switch trigger 33",
+            "seg": 423,
+            "side": 4,
+            "wall": 188,
             "label_pos": {
-              "x": -155.0,
-              "y": -159.1,
-              "z": 392.6
+              "x": -223.0,
+              "y": -231.1,
+              "z": 381.5
             },
-            "distance": 268.0,
-            "trigger": 16,
+            "distance": 874.0,
+            "trigger": 33,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
             "opens": [
@@ -4702,11 +5135,6 @@
                 "seg": 424,
                 "side": 0,
                 "wall": 165
-              },
-              {
-                "seg": 425,
-                "side": 0,
-                "wall": 167
               }
             ]
           },
@@ -4715,14 +5143,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 4",
-            "seg": 497,
+            "seg": 558,
+            "side": 5,
             "wall": 125,
             "label_pos": {
               "x": -25.8,
               "y": -162.9,
               "z": 550.0
             },
-            "distance": 1188.6,
+            "distance": 656.6,
             "trigger": 4,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -4760,7 +5189,7 @@
               "y": -324.7,
               "z": 732.6
             },
-            "distance": 459.2,
+            "distance": 493.2,
             "key": "gold"
           },
           {
@@ -4912,6 +5341,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "descriptor_campaign",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables normal or cooperative play",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": true,
+        "coop": true,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 1,
+      "player_start_max": 1,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 137,
+      "hostages": 2,
+      "matcens": 7,
+      "guidebots": 0,
+      "powerups": 159,
+      "reactors": 1
+    },
     "mission_path": "-MOON14-.MN2",
     "target_index": 13
   }

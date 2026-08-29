@@ -5,7 +5,6 @@
     "game": "d1",
     "mission_name": "Megalomania 01",
     "mission_filename": "megalo01.msn",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -210,6 +209,10 @@
         "trigger_count": 1,
         "object_count": 51,
         "texture_count": 50,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 9,
+        "reactors": 1,
         "robots": 30,
         "hostages": 0,
         "secrets": 0,
@@ -295,6 +298,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 30,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 9,
+      "reactors": 1
+    },
     "mission_path": "megalo01.msn",
     "target_index": 0
   },
@@ -304,7 +336,6 @@
     "game": "d1",
     "mission_name": "Megalomania 02",
     "mission_filename": "megalo02.msn",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -509,6 +540,10 @@
         "trigger_count": 1,
         "object_count": 88,
         "texture_count": 57,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 40,
+        "reactors": 1,
         "robots": 36,
         "hostages": 0,
         "secrets": 0,
@@ -594,6 +629,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 36,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 40,
+      "reactors": 1
+    },
     "mission_path": "megalo02.msn",
     "target_index": 1
   },
@@ -603,7 +667,6 @@
     "game": "d1",
     "mission_name": "Megalomania 03",
     "mission_filename": "megalo03.msn",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -808,6 +871,10 @@
         "trigger_count": 23,
         "object_count": 95,
         "texture_count": 22,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 44,
+        "reactors": 1,
         "robots": 39,
         "hostages": 0,
         "secrets": 0,
@@ -910,6 +977,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 39,
+      "hostages": 0,
+      "matcens": 16,
+      "guidebots": 0,
+      "powerups": 44,
+      "reactors": 1
+    },
     "mission_path": "megalo03.msn",
     "target_index": 2
   },
@@ -919,7 +1015,6 @@
     "game": "d1",
     "mission_name": "Megalomania 04",
     "mission_filename": "megalo04.msn",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1124,6 +1219,10 @@
         "trigger_count": 7,
         "object_count": 138,
         "texture_count": 37,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 53,
+        "reactors": 1,
         "robots": 73,
         "hostages": 0,
         "secrets": 1,
@@ -1185,6 +1284,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 73,
+      "hostages": 0,
+      "matcens": 2,
+      "guidebots": 0,
+      "powerups": 53,
+      "reactors": 1
+    },
     "mission_path": "megalo04.msn",
     "target_index": 3
   },
@@ -1194,7 +1322,6 @@
     "game": "d1",
     "mission_name": "Megalomania 05",
     "mission_filename": "megalo05.msn",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1399,6 +1526,10 @@
         "trigger_count": 3,
         "object_count": 213,
         "texture_count": 93,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 91,
+        "reactors": 1,
         "robots": 107,
         "hostages": 3,
         "secrets": 0,
@@ -1498,6 +1629,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 107,
+      "hostages": 3,
+      "matcens": 3,
+      "guidebots": 0,
+      "powerups": 91,
+      "reactors": 1
+    },
     "mission_path": "megalo05.msn",
     "target_index": 4
   },
@@ -1507,7 +1667,6 @@
     "game": "d1",
     "mission_name": "Megalomania 06",
     "mission_filename": "megalo06.msn",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1712,6 +1871,10 @@
         "trigger_count": 8,
         "object_count": 202,
         "texture_count": 33,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 127,
+        "reactors": 1,
         "robots": 63,
         "hostages": 0,
         "secrets": 0,
@@ -1811,6 +1974,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 63,
+      "hostages": 0,
+      "matcens": 5,
+      "guidebots": 0,
+      "powerups": 127,
+      "reactors": 1
+    },
     "mission_path": "megalo06.msn",
     "target_index": 5
   },
@@ -1820,7 +2012,6 @@
     "game": "d1",
     "mission_name": "Megalomania 07",
     "mission_filename": "megalo07.msn",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2025,6 +2216,10 @@
         "trigger_count": 22,
         "object_count": 178,
         "texture_count": 44,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 49,
+        "reactors": 1,
         "robots": 111,
         "hostages": 6,
         "secrets": 0,
@@ -2178,6 +2373,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 111,
+      "hostages": 6,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 49,
+      "reactors": 1
+    },
     "mission_path": "megalo07.msn",
     "target_index": 6
   },
@@ -2187,7 +2411,6 @@
     "game": "d1",
     "mission_name": "Megalomania 08",
     "mission_filename": "megalo08.msn",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2392,6 +2615,10 @@
         "trigger_count": 1,
         "object_count": 32,
         "texture_count": 7,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 0,
+        "reactors": 1,
         "robots": 20,
         "hostages": 0,
         "secrets": 0,
@@ -2449,6 +2676,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 20,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 0,
+      "reactors": 1
+    },
     "mission_path": "megalo08.msn",
     "target_index": 7
   },
@@ -2458,7 +2714,6 @@
     "game": "d1",
     "mission_name": "Megalomania 09",
     "mission_filename": "megalo09.msn",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2663,6 +2918,10 @@
         "trigger_count": 50,
         "object_count": 137,
         "texture_count": 17,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 44,
+        "reactors": 1,
         "robots": 81,
         "hostages": 0,
         "secrets": 3,
@@ -3084,6 +3343,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 81,
+      "hostages": 0,
+      "matcens": 3,
+      "guidebots": 0,
+      "powerups": 44,
+      "reactors": 1
+    },
     "mission_path": "megalo09.msn",
     "target_index": 8
   },
@@ -3093,7 +3381,6 @@
     "game": "d1",
     "mission_name": "Megalomania 10",
     "mission_filename": "megalo10.msn",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3298,6 +3585,10 @@
         "trigger_count": 47,
         "object_count": 254,
         "texture_count": 43,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 194,
+        "reactors": 1,
         "robots": 48,
         "hostages": 0,
         "secrets": 0,
@@ -3397,6 +3688,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 48,
+      "hostages": 0,
+      "matcens": 11,
+      "guidebots": 0,
+      "powerups": 194,
+      "reactors": 1
+    },
     "mission_path": "megalo10.msn",
     "target_index": 9
   },
@@ -3406,7 +3726,6 @@
     "game": "d1",
     "mission_name": "Megalomania 11",
     "mission_filename": "megalo11.msn",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3611,6 +3930,10 @@
         "trigger_count": 10,
         "object_count": 147,
         "texture_count": 27,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 69,
+        "reactors": 1,
         "robots": 66,
         "hostages": 0,
         "secrets": 5,
@@ -3680,6 +4003,35 @@
         "route_problem": "route target unreachable"
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 66,
+      "hostages": 0,
+      "matcens": 1,
+      "guidebots": 0,
+      "powerups": 69,
+      "reactors": 1
+    },
     "mission_path": "megalo11.msn",
     "target_index": 10
   },
@@ -3689,7 +4041,6 @@
     "game": "d1",
     "mission_name": "Megalomania 12",
     "mission_filename": "megalo12.msn",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3894,6 +4245,10 @@
         "trigger_count": 2,
         "object_count": 229,
         "texture_count": 5,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 213,
+        "reactors": 0,
         "robots": 5,
         "hostages": 0,
         "secrets": 0,
@@ -3942,6 +4297,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 5,
+      "hostages": 0,
+      "matcens": 1,
+      "guidebots": 0,
+      "powerups": 213,
+      "reactors": 0
+    },
     "mission_path": "megalo12.msn",
     "target_index": 11
   }

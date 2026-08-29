@@ -343,7 +343,7 @@ fun EnginePreferencesPage(
                     Column {
                         Text("Boss health bar", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                         Text(
-                            "Shows boss health after the boss engages a player",
+                            "Shows boss health after the boss and player exchange fire",
                             fontSize = 9.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

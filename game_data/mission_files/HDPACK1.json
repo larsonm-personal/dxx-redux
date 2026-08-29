@@ -5,7 +5,6 @@
     "game": "d1",
     "mission_name": "HDPACK1: Hellion",
     "mission_filename": "HDPACK1.MSN",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -210,6 +209,10 @@
         "trigger_count": 1,
         "object_count": 54,
         "texture_count": 53,
+        "player_starts": 2,
+        "coop_only_starts": 0,
+        "powerups": 6,
+        "reactors": 1,
         "robots": 45,
         "hostages": 0,
         "secrets": 1,
@@ -318,6 +321,10 @@
         "trigger_count": 1,
         "object_count": 52,
         "texture_count": 32,
+        "player_starts": 1,
+        "coop_only_starts": 0,
+        "powerups": 8,
+        "reactors": 1,
         "robots": 42,
         "hostages": 0,
         "secrets": 3,
@@ -427,6 +434,10 @@
         "trigger_count": 2,
         "object_count": 74,
         "texture_count": 59,
+        "player_starts": 1,
+        "coop_only_starts": 0,
+        "powerups": 12,
+        "reactors": 1,
         "robots": 55,
         "hostages": 5,
         "secrets": 1,
@@ -498,6 +509,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "descriptor_campaign",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables normal or cooperative play",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": true,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 3,
+      "campaign_actor_levels": 3,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 1,
+      "player_start_max": 2,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 142,
+      "hostages": 5,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 26,
+      "reactors": 3
+    },
     "mission_path": "HDPACK1/HDPACK1.MSN",
     "target_index": 0
   }

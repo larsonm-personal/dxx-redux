@@ -5,7 +5,6 @@
     "game": "d2",
     "mission_name": "Legacy of Chaos",
     "mission_filename": "legacy.mn2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -86,15 +85,19 @@
         "trigger_count": 14,
         "object_count": 189,
         "texture_count": 52,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 67,
+        "reactors": 1,
         "robots": 110,
         "hostages": 0,
         "secrets": 5,
         "matcens": 5,
         "energy_centers": 5,
-        "mine_volume": 13444234.663020857,
-        "mine_volume_normalized": 2.939978216737058,
+        "mine_volume": 13444200.0,
+        "mine_volume_normalized": 2.93998,
         "mine_volume_text": "2.9x",
-        "travel_distance": 2348.7115183301567,
+        "travel_distance": 2348.7,
         "travel_time_seconds": 47,
         "travel_time_text": "0M:47S",
         "guidebot_count": 0,
@@ -122,7 +125,7 @@
               "y": 40.0,
               "z": 447.5
             },
-            "distance": 668.5177079752518,
+            "distance": 668.5,
             "trigger": 5,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -142,10 +145,10 @@
             "seg": 75,
             "label_pos": {
               "x": 0.0,
-              "y": 73.75,
+              "y": 73.8,
               "z": 467.5
             },
-            "distance": 116.11067977499789,
+            "distance": 116.1,
             "key": "blue"
           },
           {
@@ -161,7 +164,7 @@
               "y": 40.0,
               "z": 327.5
             },
-            "distance": 224.87267704233466,
+            "distance": 224.9,
             "trigger": 2,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -191,7 +194,7 @@
               "y": -57.5,
               "z": 167.5
             },
-            "distance": 234.43947653372777,
+            "distance": 234.4,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -217,9 +220,9 @@
             "label_pos": {
               "x": 0.0,
               "y": 40.0,
-              "z": -6.25
+              "z": -6.2
             },
-            "distance": 354.69629182471897,
+            "distance": 354.7,
             "key": "gold"
           },
           {
@@ -235,7 +238,7 @@
               "y": 60.0,
               "z": 90.0
             },
-            "distance": 524.2660196874338,
+            "distance": 524.3,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -254,11 +257,11 @@
             "label": "red key",
             "seg": 102,
             "label_pos": {
-              "x": -1.52587890625e-05,
+              "x": 0.0,
               "y": 80.0,
-              "z": 25.763565063476562
+              "z": 25.8
             },
-            "distance": 225.80866549169167,
+            "distance": 225.8,
             "key": "red"
           }
         ],
@@ -278,17 +281,21 @@
         "trigger_count": 16,
         "object_count": 229,
         "texture_count": 54,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 93,
+        "reactors": 1,
         "robots": 121,
         "hostages": 3,
         "secrets": 0,
         "matcens": 1,
         "energy_centers": 3,
-        "mine_volume": 18988736.35121161,
-        "mine_volume_normalized": 4.152446951069606,
+        "mine_volume": 18988700.0,
+        "mine_volume_normalized": 4.15245,
         "mine_volume_text": "4.2x",
-        "travel_distance": 3688.029664862654,
-        "travel_time_seconds": 74,
-        "travel_time_text": "1M:14S",
+        "travel_distance": 3945.1,
+        "travel_time_seconds": 79,
+        "travel_time_text": "1M:19S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -306,14 +313,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 0",
-            "seg": 123,
+            "seg": 19,
+            "side": 5,
             "wall": 14,
             "label_pos": {
               "x": 0.0,
               "y": -60.0,
               "z": -230.0
             },
-            "distance": 297.8572601592823,
+            "distance": 423.9,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -343,7 +351,7 @@
               "y": 0.0,
               "z": 150.0
             },
-            "distance": 366.8209210269181,
+            "distance": 492.9,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -383,7 +391,7 @@
               "y": -120.0,
               "z": 210.0
             },
-            "distance": 740.0495302601216,
+            "distance": 740.0,
             "trigger": 4,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -400,14 +408,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 5",
-            "seg": 380,
+            "seg": 379,
+            "side": 3,
             "wall": 47,
             "label_pos": {
-              "x": -0.000274658203125,
-              "y": -169.998779296875,
-              "z": 399.9984436035156
+              "x": 0.0,
+              "y": -170.0,
+              "z": 400.0
             },
-            "distance": 254.64143470285288,
+            "distance": 272.1,
             "trigger": 5,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -433,11 +442,11 @@
             "side": 1,
             "wall": 46,
             "label_pos": {
-              "x": -0.000274658203125,
-              "y": -169.998779296875,
-              "z": 399.9984436035156
+              "x": 0.0,
+              "y": -170.0,
+              "z": 400.0
             },
-            "distance": 30.000045785369956,
+            "distance": 17.5,
             "trigger": 15,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -467,7 +476,7 @@
               "y": -100.0,
               "z": 130.0
             },
-            "distance": 807.3124561288797,
+            "distance": 807.3,
             "trigger": 12,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -496,11 +505,11 @@
             "label": "Reactor",
             "seg": 505,
             "label_pos": {
-              "x": 73.4346923828125,
-              "y": -293.1294250488281,
-              "z": 279.9999084472656
+              "x": 73.4,
+              "y": -293.1,
+              "z": 280.0
             },
-            "distance": 871.5372461091995
+            "distance": 871.5
           },
           {
             "index": 8,
@@ -511,11 +520,11 @@
             "side": 5,
             "wall": 107,
             "label_pos": {
-              "x": -0.001068115234375,
-              "y": -189.99838256835938,
-              "z": 429.998779296875
+              "x": 0.0,
+              "y": -190.0,
+              "z": 430.0
             },
-            "distance": 319.8107706900294,
+            "distance": 319.8,
             "trigger": 14,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -537,15 +546,19 @@
         "trigger_count": 21,
         "object_count": 289,
         "texture_count": 44,
+        "player_starts": 1,
+        "coop_only_starts": 3,
+        "powerups": 137,
+        "reactors": 1,
         "robots": 147,
         "hostages": 0,
         "secrets": 8,
         "matcens": 6,
         "energy_centers": 5,
-        "mine_volume": 18824927.46859691,
-        "mine_volume_normalized": 4.116625310145714,
+        "mine_volume": 18824900.0,
+        "mine_volume_normalized": 4.11663,
         "mine_volume_text": "4.1x",
-        "travel_distance": 7149.521337588259,
+        "travel_distance": 7149.5,
         "travel_time_seconds": 143,
         "travel_time_text": "2M:23S",
         "guidebot_count": 0,
@@ -573,7 +586,7 @@
               "y": 20.0,
               "z": 230.0
             },
-            "distance": 312.5559603090353,
+            "distance": 312.6,
             "trigger": 4,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -592,11 +605,11 @@
             "label": "blue key",
             "seg": 270,
             "label_pos": {
-              "x": -299.81040954589844,
-              "y": 44.999786376953125,
-              "z": 80.1903076171875
+              "x": -299.8,
+              "y": 45.0,
+              "z": 80.2
             },
-            "distance": 687.1400862602103,
+            "distance": 687.1,
             "key": "blue"
           },
           {
@@ -610,7 +623,7 @@
               "y": 200.0,
               "z": 485.0
             },
-            "distance": 1257.8701228814045,
+            "distance": 1257.9,
             "key": "gold"
           },
           {
@@ -626,7 +639,7 @@
               "y": -50.0,
               "z": 10.0
             },
-            "distance": 2074.208911844037,
+            "distance": 2074.2,
             "trigger": 6,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -670,11 +683,11 @@
             "label": "red key",
             "seg": 763,
             "label_pos": {
-              "x": 101.61175537109375,
+              "x": 101.6,
               "y": 280.0,
-              "z": 310.85760498046875
+              "z": 310.9
             },
-            "distance": 1333.0038099289734,
+            "distance": 1333.0,
             "key": "red"
           },
           {
@@ -690,7 +703,7 @@
               "y": 280.0,
               "z": 302.5
             },
-            "distance": 440.9275398103935,
+            "distance": 440.9,
             "trigger": 19,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -715,10 +728,10 @@
             "seg": 483,
             "label_pos": {
               "x": 0.0,
-              "y": 304.7117156982422,
-              "z": -12.0736083984375
+              "y": 304.7,
+              "z": -12.1
             },
-            "distance": 433.5256645445158
+            "distance": 433.5
           },
           {
             "index": 8,
@@ -729,11 +742,11 @@
             "side": 4,
             "wall": 185,
             "label_pos": {
-              "x": 194.59674072265625,
-              "y": 302.29864501953125,
+              "x": 194.6,
+              "y": 302.3,
               "z": 100.0
             },
-            "distance": 610.289242009689,
+            "distance": 610.3,
             "trigger": 10,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -745,6 +758,36 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 3,
+      "campaign_actor_levels": 3,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 1,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 378,
+      "hostages": 3,
+      "matcens": 12,
+      "guidebots": 0,
+      "powerups": 297,
+      "reactors": 3
+    },
+    "mission_path": "legacy.mn2",
     "target_index": 0
   }
 ]

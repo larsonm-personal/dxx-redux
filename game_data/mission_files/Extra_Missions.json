@@ -5,7 +5,6 @@
     "game": "d1",
     "mission_name": "Combat Deluxe",
     "mission_filename": "COMDELUX.MSN",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -210,6 +209,10 @@
         "trigger_count": 5,
         "object_count": 74,
         "texture_count": 37,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 42,
+        "reactors": 1,
         "robots": 20,
         "hostages": 0,
         "secrets": 2,
@@ -267,6 +270,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 20,
+      "hostages": 0,
+      "matcens": 1,
+      "guidebots": 0,
+      "powerups": 42,
+      "reactors": 1
+    },
     "mission_path": "Extra_Missions/COMDELUX.MSN",
     "target_index": 0
   },
@@ -276,7 +308,6 @@
     "game": "d1",
     "mission_name": "Corridor Nine 1.1",
     "mission_filename": "CORR11.MSN",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -481,6 +512,10 @@
         "trigger_count": 5,
         "object_count": 66,
         "texture_count": 36,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 17,
+        "reactors": 1,
         "robots": 37,
         "hostages": 0,
         "secrets": 1,
@@ -583,6 +618,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 37,
+      "hostages": 0,
+      "matcens": 1,
+      "guidebots": 0,
+      "powerups": 17,
+      "reactors": 1
+    },
     "mission_path": "Extra_Missions/CORR11.MSN",
     "target_index": 1
   },
@@ -592,7 +656,6 @@
     "game": "d1",
     "mission_name": "Demon Bridge",
     "mission_filename": "DEMONBRG.MSN",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -797,6 +860,10 @@
         "trigger_count": 3,
         "object_count": 106,
         "texture_count": 94,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 21,
+        "reactors": 1,
         "robots": 73,
         "hostages": 0,
         "secrets": 0,
@@ -883,6 +950,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 73,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 21,
+      "reactors": 1
+    },
     "mission_path": "Extra_Missions/DEMONBRG.MSN",
     "target_index": 2
   },
@@ -892,7 +988,6 @@
     "game": "d1",
     "mission_name": "Outpost Death",
     "mission_filename": "DETHPOST.MSN",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1097,6 +1192,10 @@
         "trigger_count": 10,
         "object_count": 49,
         "texture_count": 62,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 17,
+        "reactors": 1,
         "robots": 20,
         "hostages": 0,
         "secrets": 3,
@@ -1198,6 +1297,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 20,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 17,
+      "reactors": 1
+    },
     "mission_path": "Extra_Missions/DETHPOST.MSN",
     "target_index": 3
   },
@@ -1207,7 +1335,6 @@
     "game": "d1",
     "mission_name": "Duality",
     "mission_filename": "DUALITY.MSN",
-    "mission_intent": "multiplayer_anarchy",
     "track_names": [
       {
         "track": 0,
@@ -1411,6 +1538,10 @@
         "trigger_count": 15,
         "object_count": 33,
         "texture_count": 53,
+        "player_starts": 8,
+        "coop_only_starts": 0,
+        "powerups": 24,
+        "reactors": 1,
         "robots": 0,
         "hostages": 0,
         "secrets": 0,
@@ -1468,6 +1599,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "multiplayer_anarchy",
+      "rule": "descriptor_anarchy_only",
+      "confidence": "high",
+      "reason": "The mission descriptor marks this mission as anarchy-only",
+      "declarations": {
+        "anarchy_only": true,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 0,
+      "arena_like_levels": 1,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 24,
+      "reactors": 1
+    },
     "mission_path": "Extra_Missions/DUALITY.MSN",
     "target_index": 4
   },
@@ -1477,7 +1637,6 @@
     "game": "d1",
     "mission_name": "Earth Strike",
     "mission_filename": "ERTHSTRK.MSN",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1682,6 +1841,10 @@
         "trigger_count": 10,
         "object_count": 89,
         "texture_count": 56,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 14,
+        "reactors": 1,
         "robots": 63,
         "hostages": 0,
         "secrets": 3,
@@ -1838,6 +2001,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 63,
+      "hostages": 0,
+      "matcens": 2,
+      "guidebots": 0,
+      "powerups": 14,
+      "reactors": 1
+    },
     "mission_path": "Extra_Missions/ERTHSTRK.MSN",
     "target_index": 5
   },
@@ -1847,7 +2039,6 @@
     "game": "d1",
     "mission_name": "Firebase Omega",
     "mission_filename": "FBOMEGA.MSN",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2052,6 +2243,10 @@
         "trigger_count": 6,
         "object_count": 87,
         "texture_count": 66,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 14,
+        "reactors": 1,
         "robots": 57,
         "hostages": 4,
         "secrets": 4,
@@ -2140,6 +2335,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 57,
+      "hostages": 4,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 14,
+      "reactors": 1
+    },
     "mission_path": "Extra_Missions/FBOMEGA.MSN",
     "target_index": 6
   },
@@ -2149,7 +2373,6 @@
     "game": "d1",
     "mission_name": "Humility ver1.2",
     "mission_filename": "HUMIL2.MSN",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2354,6 +2577,10 @@
         "trigger_count": 2,
         "object_count": 98,
         "texture_count": 72,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 30,
+        "reactors": 1,
         "robots": 50,
         "hostages": 6,
         "secrets": 4,
@@ -2453,6 +2680,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 50,
+      "hostages": 6,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 30,
+      "reactors": 1
+    },
     "mission_path": "Extra_Missions/HUMIL2.MSN",
     "target_index": 7
   },
@@ -2462,7 +2718,6 @@
     "game": "d1",
     "mission_name": "Lunar Surface Outpost",
     "mission_filename": "LUNAPOST.MSN",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2667,6 +2922,10 @@
         "trigger_count": 13,
         "object_count": 178,
         "texture_count": 79,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 34,
+        "reactors": 1,
         "robots": 128,
         "hostages": 4,
         "secrets": 5,
@@ -2895,6 +3154,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 128,
+      "hostages": 4,
+      "matcens": 1,
+      "guidebots": 0,
+      "powerups": 34,
+      "reactors": 1
+    },
     "mission_path": "Extra_Missions/LUNAPOST.MSN",
     "target_index": 8
   },
@@ -2904,7 +3192,6 @@
     "game": "d1",
     "mission_name": "Mad Decorator!",
     "mission_filename": "MAD.MSN",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3109,6 +3396,10 @@
         "trigger_count": 9,
         "object_count": 102,
         "texture_count": 79,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 55,
+        "reactors": 1,
         "robots": 32,
         "hostages": 3,
         "secrets": 4,
@@ -3235,6 +3526,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 32,
+      "hostages": 3,
+      "matcens": 4,
+      "guidebots": 0,
+      "powerups": 55,
+      "reactors": 1
+    },
     "mission_path": "Extra_Missions/MAD.MSN",
     "target_index": 9
   },
@@ -3244,7 +3564,6 @@
     "game": "d1",
     "mission_name": "Magnum Outpost Four",
     "mission_filename": "MAG4.MSN",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3449,6 +3768,10 @@
         "trigger_count": 16,
         "object_count": 98,
         "texture_count": 64,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 30,
+        "reactors": 1,
         "robots": 52,
         "hostages": 4,
         "secrets": 0,
@@ -3573,6 +3896,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 52,
+      "hostages": 4,
+      "matcens": 6,
+      "guidebots": 0,
+      "powerups": 30,
+      "reactors": 1
+    },
     "mission_path": "Extra_Missions/MAG4.MSN",
     "target_index": 10
   },
@@ -3582,7 +3934,6 @@
     "game": "d1",
     "mission_name": "The Newest Threat",
     "mission_filename": "NEWEST.MSN",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3787,6 +4138,10 @@
         "trigger_count": 3,
         "object_count": 195,
         "texture_count": 76,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 90,
+        "reactors": 1,
         "robots": 89,
         "hostages": 4,
         "secrets": 2,
@@ -3886,6 +4241,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 89,
+      "hostages": 4,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 90,
+      "reactors": 1
+    },
     "mission_path": "Extra_Missions/NEWEST.MSN",
     "target_index": 11
   },
@@ -3895,7 +4279,6 @@
     "game": "d1",
     "mission_name": "The Observatory 1.3",
     "mission_filename": "OBSRV13.MSN",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -4100,6 +4483,10 @@
         "trigger_count": 10,
         "object_count": 82,
         "texture_count": 49,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 22,
+        "reactors": 1,
         "robots": 46,
         "hostages": 2,
         "secrets": 1,
@@ -4225,6 +4612,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 46,
+      "hostages": 2,
+      "matcens": 2,
+      "guidebots": 0,
+      "powerups": 22,
+      "reactors": 1
+    },
     "mission_path": "Extra_Missions/OBSRV13.MSN",
     "target_index": 12
   },
@@ -4234,7 +4650,6 @@
     "game": "d1",
     "mission_name": "Retribution Base 1.0",
     "mission_filename": "RETRIB10.MSN",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -4439,6 +4854,10 @@
         "trigger_count": 7,
         "object_count": 112,
         "texture_count": 50,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 27,
+        "reactors": 1,
         "robots": 68,
         "hostages": 5,
         "secrets": 2,
@@ -4466,6 +4885,35 @@
         "route_problem": "blue key unreachable"
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 68,
+      "hostages": 5,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 27,
+      "reactors": 1
+    },
     "mission_path": "Extra_Missions/RETRIB10.MSN",
     "target_index": 13
   },
@@ -4475,7 +4923,6 @@
     "game": "d1",
     "mission_name": "Retribution Base 1.1",
     "mission_filename": "RETRIB11.MSN",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -4680,6 +5127,10 @@
         "trigger_count": 7,
         "object_count": 112,
         "texture_count": 50,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 27,
+        "reactors": 1,
         "robots": 68,
         "hostages": 5,
         "secrets": 2,
@@ -4707,6 +5158,35 @@
         "route_problem": "blue key unreachable"
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 68,
+      "hostages": 5,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 27,
+      "reactors": 1
+    },
     "mission_path": "Extra_Missions/RETRIB11.MSN",
     "target_index": 14
   },
@@ -4716,7 +5196,6 @@
     "game": "d1",
     "mission_name": "Serenity",
     "mission_filename": "SERENITY.MSN",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -4921,6 +5400,10 @@
         "trigger_count": 3,
         "object_count": 113,
         "texture_count": 95,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 32,
+        "reactors": 1,
         "robots": 65,
         "hostages": 4,
         "secrets": 5,
@@ -5047,6 +5530,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 65,
+      "hostages": 4,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 32,
+      "reactors": 1
+    },
     "mission_path": "Extra_Missions/SERENITY.MSN",
     "target_index": 15
   },
@@ -5056,7 +5568,6 @@
     "game": "d1",
     "mission_name": "Super Station",
     "mission_filename": "SUPER_S.MSN",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -5261,6 +5772,10 @@
         "trigger_count": 12,
         "object_count": 158,
         "texture_count": 81,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 42,
+        "reactors": 1,
         "robots": 104,
         "hostages": 0,
         "secrets": 5,
@@ -5317,6 +5832,35 @@
         "route_problem": "route target unreachable"
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 104,
+      "hostages": 0,
+      "matcens": 4,
+      "guidebots": 0,
+      "powerups": 42,
+      "reactors": 1
+    },
     "mission_path": "Extra_Missions/SUPER_S.MSN",
     "target_index": 16
   },
@@ -5326,7 +5870,6 @@
     "game": "d1",
     "mission_name": "Terminus",
     "mission_filename": "TERMINUS.MSN",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -5531,6 +6074,10 @@
         "trigger_count": 23,
         "object_count": 98,
         "texture_count": 41,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 28,
+        "reactors": 1,
         "robots": 55,
         "hostages": 3,
         "secrets": 5,
@@ -5657,6 +6204,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 55,
+      "hostages": 3,
+      "matcens": 4,
+      "guidebots": 0,
+      "powerups": 28,
+      "reactors": 1
+    },
     "mission_path": "Extra_Missions/TERMINUS.MSN",
     "target_index": 17
   },
@@ -5666,7 +6242,6 @@
     "game": "d1",
     "mission_name": "Sea of Tranquility",
     "mission_filename": "TRANQUIL.MSN",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -5871,6 +6446,10 @@
         "trigger_count": 11,
         "object_count": 111,
         "texture_count": 91,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 36,
+        "reactors": 1,
         "robots": 57,
         "hostages": 6,
         "secrets": 0,
@@ -5997,6 +6576,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 57,
+      "hostages": 6,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 36,
+      "reactors": 1
+    },
     "mission_path": "Extra_Missions/TRANQUIL.MSN",
     "target_index": 18
   }

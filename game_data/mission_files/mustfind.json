@@ -5,7 +5,6 @@
     "game": "d2",
     "mission_name": "Must Find Secret!!!",
     "mission_filename": "MUSTFIND.MN2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -86,6 +85,10 @@
         "trigger_count": 2,
         "object_count": 4,
         "texture_count": 19,
+        "player_starts": 1,
+        "coop_only_starts": 0,
+        "powerups": 0,
+        "reactors": 1,
         "robots": 2,
         "hostages": 0,
         "secrets": 0,
@@ -126,6 +129,10 @@
         "trigger_count": 9,
         "object_count": 159,
         "texture_count": 40,
+        "player_starts": 1,
+        "coop_only_starts": 0,
+        "powerups": 43,
+        "reactors": 1,
         "robots": 109,
         "hostages": 5,
         "secrets": 3,
@@ -134,9 +141,9 @@
         "mine_volume": 16950800.0,
         "mine_volume_normalized": 3.70678,
         "mine_volume_text": "3.7x",
-        "travel_distance": 5886.2,
-        "travel_time_seconds": 118,
-        "travel_time_text": "1M:58S",
+        "travel_distance": 5972.1,
+        "travel_time_seconds": 119,
+        "travel_time_text": "1M:59S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -207,14 +214,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 4",
-            "seg": 639,
+            "seg": 679,
             "wall": 202,
             "label_pos": {
               "x": -239.6,
               "y": 100.2,
               "z": -180.0
             },
-            "distance": 945.0,
+            "distance": 962.9,
             "trigger": 4,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -237,7 +244,7 @@
               "y": 59.0,
               "z": -180.0
             },
-            "distance": 147.1,
+            "distance": 165.0,
             "key": "red"
           },
           {
@@ -258,14 +265,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 7",
-            "seg": 791,
+            "seg": 804,
             "wall": 218,
             "label_pos": {
               "x": 324.0,
               "y": -48.0,
               "z": 364.0
             },
-            "distance": 20.0,
+            "distance": 85.0,
             "trigger": 7,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -290,7 +297,7 @@
               "y": -49.0,
               "z": 509.0
             },
-            "distance": 314.1,
+            "distance": 299.1,
             "trigger": 6,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -302,6 +309,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "descriptor_campaign",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables normal or cooperative play",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": true,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 1,
+      "player_start_max": 1,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 2,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 0,
+      "reactors": 1
+    },
     "mission_path": "MUSTFIND.MN2",
     "target_index": 0
   }

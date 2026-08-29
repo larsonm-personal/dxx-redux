@@ -73,6 +73,7 @@ extern "C" {
 #include "multi.h"
 #include "object.h"
 #include "collide.h"
+#include "boss_hud.h"
 #include "hudmsg.h"
 #include "robot.h"
 #include "coop/coop_save.h"
@@ -2157,6 +2158,54 @@ static int damage_first_boss(const std::string &amount, char *reason, size_t rea
 	return 1;
 }
 
+static int note_first_boss_shot(const std::string &direction, char *reason,
+                                size_t reason_size)
+{
+	object *boss = NULL;
+	object weapon = {};
+	const object *target;
+
+	if (direction == "reset") {
+		boss_hud_reset();
+		return 1;
+	}
+	if (Screen_mode != SCREEN_GAME || Game_wind == NULL || ConsoleObject == NULL) {
+		snprintf(reason, reason_size, "boss_shot: game is not running");
+		return 0;
+	}
+	for (int objnum = 0; objnum <= Highest_object_index; ++objnum) {
+		object *candidate = &Objects[objnum];
+
+		if (candidate->type == OBJ_ROBOT && Robot_info[candidate->id].boss_flag &&
+		    candidate->shields > 0 && !(candidate->flags & OF_SHOULD_BE_DEAD)) {
+			boss = candidate;
+			break;
+		}
+	}
+	if (!boss) {
+		snprintf(reason, reason_size, "boss_shot: no live boss found");
+		return 0;
+	}
+	weapon.type = OBJ_WEAPON;
+	if (direction == "by_player") {
+		weapon.ctype.laser_info.parent_type = OBJ_PLAYER;
+		target = boss;
+	} else if (direction == "player_by_boss") {
+		weapon.ctype.laser_info.parent_type = OBJ_ROBOT;
+		weapon.ctype.laser_info.parent_num = boss - Objects;
+		weapon.ctype.laser_info.parent_signature = boss->signature;
+		target = ConsoleObject;
+	} else {
+		snprintf(reason, reason_size, "boss_shot: unknown direction");
+		return 0;
+	}
+	if (boss_hud_note_weapon_collision(target, &weapon) < 0) {
+		snprintf(reason, reason_size, "boss_shot: collision was not accepted");
+		return 0;
+	}
+	return 1;
+}
+
 /* -- Condition checking ----------------------------------------------- */
 
 extern "C" window *Game_wind;
@@ -3764,6 +3813,13 @@ extern "C" void game_automate_tick(void)
 			} else if (s.field == "damage_boss") {
 				char reason[128];
 				if (!damage_first_boss(s.value, reason, sizeof(reason))) {
+					log_append("set_debug", "fail", reason);
+					stop_script_fail(reason);
+					break;
+				}
+			} else if (s.field == "boss_shot") {
+				char reason[128];
+				if (!note_first_boss_shot(s.value, reason, sizeof(reason))) {
 					log_append("set_debug", "fail", reason);
 					stop_script_fail(reason);
 					break;

@@ -5,7 +5,6 @@
     "game": "d2",
     "mission_name": "Lagrange",
     "mission_filename": "LAGRANGE.MN2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -86,17 +85,21 @@
         "trigger_count": 12,
         "object_count": 99,
         "texture_count": 188,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 9,
+        "reactors": 1,
         "robots": 75,
         "hostages": 3,
         "secrets": 0,
         "matcens": 1,
         "energy_centers": 2,
-        "mine_volume": 9068239.305758307,
-        "mine_volume_normalized": 1.9830378367627906,
+        "mine_volume": 9068240.0,
+        "mine_volume_normalized": 1.98304,
         "mine_volume_text": "2.0x",
-        "travel_distance": 5106.310939668105,
-        "travel_time_seconds": 102,
-        "travel_time_text": "1M:42S",
+        "travel_distance": 5186.1,
+        "travel_time_seconds": 104,
+        "travel_time_text": "1M:44S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -119,10 +122,10 @@
             "wall": 141,
             "label_pos": {
               "x": -60.0,
-              "y": 223.6366424560547,
-              "z": 187.2398223876953
+              "y": 223.6,
+              "z": 187.2
             },
-            "distance": 326.3340949845985,
+            "distance": 326.3,
             "opens": [
               {
                 "seg": 301,
@@ -146,10 +149,10 @@
             "wall": 103,
             "label_pos": {
               "x": -60.0,
-              "y": 379.3951721191406,
-              "z": -17.88055419921875
+              "y": 379.4,
+              "z": -17.9
             },
-            "distance": 287.77253729676323,
+            "distance": 287.8,
             "opens": [
               {
                 "seg": 375,
@@ -173,10 +176,10 @@
             "wall": 92,
             "label_pos": {
               "x": 0.0,
-              "y": 195.0159149169922,
-              "z": -179.9310302734375
+              "y": 195.0,
+              "z": -179.9
             },
-            "distance": 339.34577027578325,
+            "distance": 339.3,
             "opens": [
               {
                 "seg": 317,
@@ -197,11 +200,11 @@
             "label": "gold key",
             "seg": 178,
             "label_pos": {
-              "x": -103.98213195800781,
-              "y": 200.5065460205078,
-              "z": -189.8653564453125
+              "x": -104.0,
+              "y": 200.5,
+              "z": -189.9
             },
-            "distance": 1594.5173517933601,
+            "distance": 1594.5,
             "key": "gold"
           },
           {
@@ -213,11 +216,11 @@
             "side": 2,
             "wall": 156,
             "label_pos": {
-              "x": 9.999984741210938,
-              "y": 232.8914031982422,
-              "z": -185.09535217285156
+              "x": 10.0,
+              "y": 232.9,
+              "z": -185.1
             },
-            "distance": 240.25420681504409,
+            "distance": 240.3,
             "trigger": 10,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -241,11 +244,11 @@
             "label": "blue key",
             "seg": 153,
             "label_pos": {
-              "x": 19.999984741210938,
-              "y": 341.9809265136719,
-              "z": -114.02615356445312
+              "x": 20.0,
+              "y": 342.0,
+              "z": -114.0
             },
-            "distance": 212.8341153851775,
+            "distance": 212.8,
             "key": "blue"
           },
           {
@@ -255,11 +258,11 @@
             "label": "Destroy robot carrying red key",
             "seg": 609,
             "label_pos": {
-              "x": 23.989837646484375,
-              "y": 2.7234344482421875,
-              "z": -58.16558837890625
+              "x": 24.0,
+              "y": 2.7,
+              "z": -58.2
             },
-            "distance": 622.5539116279493,
+            "distance": 622.6,
             "key": "red",
             "key_carrier_objnum": 12
           },
@@ -271,7 +274,7 @@
             "seg": 2,
             "wall": 203,
             "label_pos": {
-              "x": 140.00698852539062,
+              "x": 140.0,
               "y": 190.0,
               "z": 0.0
             },
@@ -299,25 +302,26 @@
             "label": "Reactor",
             "seg": 737,
             "label_pos": {
-              "x": 155.00914001464844,
+              "x": 155.0,
               "y": 190.0,
               "z": 0.0
             },
-            "distance": 795.1613027193491
+            "distance": 795.2
           },
           {
             "index": 10,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 3",
-            "seg": 679,
+            "seg": 692,
+            "side": 0,
             "wall": 197,
             "label_pos": {
               "x": -320.0,
               "y": 190.0,
               "z": -25.0
             },
-            "distance": 561.0376487700792,
+            "distance": 655.9,
             "trigger": 3,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -342,7 +346,7 @@
               "y": 190.0,
               "z": 0.0
             },
-            "distance": 126.5,
+            "distance": 111.5,
             "trigger": 2,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -363,15 +367,19 @@
         "trigger_count": 1,
         "object_count": 30,
         "texture_count": 31,
+        "player_starts": 1,
+        "coop_only_starts": 0,
+        "powerups": 6,
+        "reactors": 0,
         "robots": 23,
         "hostages": 0,
         "secrets": 0,
         "matcens": 0,
         "energy_centers": 0,
-        "mine_volume": 2947295.796684501,
-        "mine_volume_normalized": 0.6445131060057044,
+        "mine_volume": 2947300.0,
+        "mine_volume_normalized": 0.644513,
         "mine_volume_text": "0.64x",
-        "travel_distance": 1570.2854588581893,
+        "travel_distance": 1570.3,
         "travel_time_seconds": 31,
         "travel_time_text": "0M:31S",
         "guidebot_count": 0,
@@ -393,11 +401,11 @@
             "label": "Boss robot",
             "seg": 163,
             "label_pos": {
-              "x": -501.381591796875,
-              "y": -12.03173828125,
-              "z": 669.2095336914062
+              "x": -501.4,
+              "y": -12.0,
+              "z": 669.2
             },
-            "distance": 1423.6699298188041
+            "distance": 1423.7
           },
           {
             "index": 2,
@@ -408,11 +416,11 @@
             "side": 5,
             "wall": 60,
             "label_pos": {
-              "x": -661.381591796875,
-              "y": -12.0318603515625,
-              "z": 669.2095947265625
+              "x": -661.4,
+              "y": -12.0,
+              "z": 669.2
             },
-            "distance": 146.61552903938508,
+            "distance": 146.6,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -424,6 +432,36 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 2,
+      "campaign_actor_levels": 2,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 1,
+      "player_start_max": 8,
+      "coop_start_min": 0,
+      "coop_start_max": 3,
+      "robots": 98,
+      "hostages": 3,
+      "matcens": 1,
+      "guidebots": 0,
+      "powerups": 15,
+      "reactors": 1
+    },
+    "mission_path": "LAGRANGE.MN2",
     "target_index": 0
   }
 ]

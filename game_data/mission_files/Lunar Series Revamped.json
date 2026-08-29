@@ -5,7 +5,6 @@
     "game": "d1",
     "mission_name": "Lunar Series Revamped",
     "mission_filename": "lseries.msn",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -210,6 +209,10 @@
         "trigger_count": 1,
         "object_count": 70,
         "texture_count": 90,
+        "player_starts": 1,
+        "coop_only_starts": 3,
+        "powerups": 23,
+        "reactors": 1,
         "robots": 40,
         "hostages": 2,
         "secrets": 1,
@@ -290,6 +293,10 @@
         "trigger_count": 1,
         "object_count": 101,
         "texture_count": 82,
+        "player_starts": 1,
+        "coop_only_starts": 3,
+        "powerups": 33,
+        "reactors": 1,
         "robots": 61,
         "hostages": 2,
         "secrets": 2,
@@ -384,6 +391,10 @@
         "trigger_count": 9,
         "object_count": 120,
         "texture_count": 114,
+        "player_starts": 1,
+        "coop_only_starts": 3,
+        "powerups": 35,
+        "reactors": 1,
         "robots": 77,
         "hostages": 3,
         "secrets": 4,
@@ -483,6 +494,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 3,
+      "campaign_actor_levels": 3,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 1,
+      "player_start_max": 1,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 178,
+      "hostages": 7,
+      "matcens": 2,
+      "guidebots": 0,
+      "powerups": 91,
+      "reactors": 3
+    },
     "mission_path": "lseries.msn",
     "target_index": 0
   }

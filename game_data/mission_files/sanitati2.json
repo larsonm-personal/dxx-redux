@@ -5,7 +5,6 @@
     "game": "d2",
     "mission_name": "Sanitation",
     "mission_filename": "sanitati.mn2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -86,6 +85,10 @@
         "trigger_count": 14,
         "object_count": 132,
         "texture_count": 52,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 63,
+        "reactors": 1,
         "robots": 52,
         "hostages": 5,
         "secrets": 2,
@@ -235,6 +238,10 @@
         "trigger_count": 15,
         "object_count": 112,
         "texture_count": 45,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 72,
+        "reactors": 1,
         "robots": 25,
         "hostages": 3,
         "secrets": 3,
@@ -243,9 +250,9 @@
         "mine_volume": 31551600.0,
         "mine_volume_normalized": 6.89969,
         "mine_volume_text": "6.9x",
-        "travel_distance": 3397.8,
-        "travel_time_seconds": 68,
-        "travel_time_text": "1M:08S",
+        "travel_distance": 3577.8,
+        "travel_time_seconds": 72,
+        "travel_time_text": "1M:12S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -263,14 +270,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 1",
-            "seg": 247,
+            "seg": 307,
+            "side": 2,
             "wall": 7,
             "label_pos": {
               "x": 55.0,
               "y": 0.0,
               "z": 102.5
             },
-            "distance": 235.0,
+            "distance": 302.5,
             "trigger": 1,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -287,14 +295,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 10",
-            "seg": 590,
+            "seg": 648,
+            "side": 2,
             "wall": 64,
             "label_pos": {
               "x": 345.8,
               "y": 0.0,
               "z": 485.8
             },
-            "distance": 667.0,
+            "distance": 709.5,
             "trigger": 10,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -317,7 +326,7 @@
               "y": 10.0,
               "z": 655.8
             },
-            "distance": 839.9,
+            "distance": 804.9,
             "key": "red"
           },
           {
@@ -325,14 +334,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 5",
-            "seg": 475,
+            "seg": 534,
+            "side": 2,
             "wall": 24,
             "label_pos": {
               "x": -55.0,
               "y": 0.0,
               "z": 759.1
             },
-            "distance": 863.7,
+            "distance": 916.2,
             "trigger": 5,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -355,7 +365,7 @@
               "y": -305.8,
               "z": 430.8
             },
-            "distance": 607.1
+            "distance": 659.6
           },
           {
             "index": 6,
@@ -391,6 +401,10 @@
         "trigger_count": 5,
         "object_count": 138,
         "texture_count": 55,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 57,
+        "reactors": 1,
         "robots": 65,
         "hostages": 4,
         "secrets": 2,
@@ -503,6 +517,10 @@
         "trigger_count": 9,
         "object_count": 194,
         "texture_count": 54,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 89,
+        "reactors": 1,
         "robots": 88,
         "hostages": 5,
         "secrets": 3,
@@ -593,6 +611,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 4,
+      "campaign_actor_levels": 4,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 230,
+      "hostages": 17,
+      "matcens": 12,
+      "guidebots": 0,
+      "powerups": 281,
+      "reactors": 4
+    },
     "mission_path": "sanitati.mn2",
     "target_index": 0
   }

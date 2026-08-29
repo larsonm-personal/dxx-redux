@@ -751,8 +751,6 @@ multi_do_robot_fire(const ubyte *buf)
 	{
 		return;
 	}
-	boss_hud_note_active(botnum);
-	
 	// Do the firing
 	
 	if (gun_num == -1)
@@ -1170,7 +1168,6 @@ multi_do_boss_actions(const ubyte *buf)
 					Int3();  // See Rob
 					return;
 				}
-				boss_hud_note_active(boss_objnum);
 				compute_segment_center(&boss_obj->pos, &Segments[teleport_segnum]);
 				obj_relink(boss_obj-Objects, teleport_segnum);
 				Last_teleport_time = GameTime64;
@@ -1218,6 +1215,9 @@ multi_do_boss_actions(const ubyte *buf)
 			break;
 		case 5:	// Stop effect
 			stop_effect(ECLIP_NUM_BOSS);
+			break;
+		case BOSS_ACTION_HUD_SHOT:
+			boss_hud_note_shot(boss_objnum);
 			break;
 		default:
 			Int3(); // Illegal type to boss actions

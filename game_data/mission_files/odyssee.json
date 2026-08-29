@@ -5,7 +5,6 @@
     "game": "d2",
     "mission_name": "Odyssee",
     "mission_filename": "odyssee.mn2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -86,6 +85,10 @@
         "trigger_count": 24,
         "object_count": 268,
         "texture_count": 107,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 132,
+        "reactors": 1,
         "robots": 124,
         "hostages": 0,
         "secrets": 0,
@@ -94,9 +97,9 @@
         "mine_volume": 47452700.0,
         "mine_volume_normalized": 10.3769,
         "mine_volume_text": "10x",
-        "travel_distance": 18657.9,
-        "travel_time_seconds": 373,
-        "travel_time_text": "6M:13S",
+        "travel_distance": 19104.4,
+        "travel_time_seconds": 382,
+        "travel_time_text": "6M:22S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -114,14 +117,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 6",
-            "seg": 148,
+            "seg": 150,
             "wall": 40,
             "label_pos": {
               "x": 43.5,
               "y": -819.3,
               "z": -12.0
             },
-            "distance": 1081.9,
+            "distance": 1121.1,
             "trigger": 6,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -151,7 +154,7 @@
               "y": -535.5,
               "z": 6.0
             },
-            "distance": 756.3,
+            "distance": 795.5,
             "trigger": 20,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -168,14 +171,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 22",
-            "seg": 690,
+            "seg": 697,
+            "side": 2,
             "wall": 186,
             "label_pos": {
               "x": 363.0,
               "y": -421.3,
               "z": -172.2
             },
-            "distance": 1485.4,
+            "distance": 1559.4,
             "trigger": 22,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -198,7 +202,7 @@
               "y": -500.0,
               "z": -2.0
             },
-            "distance": 1121.4,
+            "distance": 1195.4,
             "key": "red"
           },
           {
@@ -316,14 +320,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 7",
-            "seg": 302,
+            "seg": 305,
             "wall": 51,
             "label_pos": {
               "x": -708.0,
               "y": -680.0,
               "z": -11.4
             },
-            "distance": 455.0,
+            "distance": 565.0,
             "trigger": 7,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -348,7 +352,7 @@
               "y": -363.5,
               "z": -309.0
             },
-            "distance": 2949.6,
+            "distance": 3059.6,
             "trigger": 9,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -407,6 +411,10 @@
         "trigger_count": 35,
         "object_count": 320,
         "texture_count": 101,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 163,
+        "reactors": 1,
         "robots": 145,
         "hostages": 0,
         "secrets": 0,
@@ -415,7 +423,7 @@
         "mine_volume": 87147800.0,
         "mine_volume_normalized": 19.0574,
         "mine_volume_text": "19x",
-        "travel_distance": 7354.3,
+        "travel_distance": 7364.3,
         "travel_time_seconds": 147,
         "travel_time_text": "2M:27S",
         "guidebot_count": 1,
@@ -443,7 +451,7 @@
               "y": 184.2,
               "z": -401.0
             },
-            "distance": 22.0,
+            "distance": 27.0,
             "trigger": 26,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -468,7 +476,7 @@
               "y": 164.2,
               "z": -371.0
             },
-            "distance": 122.6,
+            "distance": 127.6,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -612,6 +620,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 2,
+      "campaign_actor_levels": 2,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 269,
+      "hostages": 0,
+      "matcens": 6,
+      "guidebots": 1,
+      "powerups": 295,
+      "reactors": 2
+    },
     "mission_path": "odyssee/odyssee.mn2",
     "target_index": 0
   }

@@ -38,7 +38,7 @@ for touch sticks, I'd like additional axis labels, visible only when in the touc
 [x] kcxf2 chromaprint decodes for the bundled .oggs decode to mechanical names rather than, well, I thought we had one of those curated files with the actual track names (?). yeah, we do: game_data\mission_files\KCXF2RMv11.tracklist.json
 [x] why is "maths/cmakelists.txt" favored as an apparent dumping ground for added files? I haven't dug into it but it looks like a sub-makelists rather than the appropriate level to put most of this stuff
 [x] a recent error message on android showed "C:\local\dxx-redux\...\some_c_file.c" as a path within the error message. can these be santitized somehow, to make the paths relative to project root maybe?
-[x] boss robot health remaining bar visible while the boss is active (playing sound would be a good "active" indicator)
+[x] boss robot health bar appears only after the boss shoots a player or a player shoots the boss, including invulnerable hits
 [x] android\ai tool plans\CD, installer parsing\on_device_mac_extract.md move ball down the field on this
 [x] coop post-level screen: "press esc to skip or wait N seconds" should allow tap/"a" controller button to skip, like we do on other similar screens
 [x] multiplayer helper view should be hidden by default, or brought in with a swipe

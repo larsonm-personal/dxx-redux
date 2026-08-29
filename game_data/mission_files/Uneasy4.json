@@ -5,7 +5,6 @@
     "game": "d2",
     "mission_name": "Uneasy 4",
     "mission_filename": "Uneasy4.mn2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "1",
     "track_names": [
       {
@@ -86,6 +85,10 @@
         "trigger_count": 23,
         "object_count": 337,
         "texture_count": 209,
+        "player_starts": 1,
+        "coop_only_starts": 0,
+        "powerups": 89,
+        "reactors": 7,
         "robots": 201,
         "hostages": 18,
         "secrets": 4,
@@ -94,9 +97,9 @@
         "mine_volume": 245932000.0,
         "mine_volume_normalized": 53.7803,
         "mine_volume_text": "54x",
-        "travel_distance": 13768.0,
-        "travel_time_seconds": 275,
-        "travel_time_text": "4M:35S",
+        "travel_distance": 14021.8,
+        "travel_time_seconds": 280,
+        "travel_time_text": "4M:40S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": false,
@@ -142,14 +145,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 1",
-            "seg": 43,
+            "seg": 1750,
             "wall": 19,
             "label_pos": {
               "x": 165.0,
               "y": 0.0,
               "z": -240.0
             },
-            "distance": 1298.1,
+            "distance": 1579.6,
             "trigger": 1,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -187,7 +190,7 @@
               "y": -285.0,
               "z": -600.0
             },
-            "distance": 1587.5,
+            "distance": 1514.3,
             "key": "red"
           },
           {
@@ -225,14 +228,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 20",
-            "seg": 8841,
+            "seg": 8844,
+            "side": 5,
             "wall": 249,
             "label_pos": {
               "x": -409.4,
               "y": -7.5,
               "z": -274.4
             },
-            "distance": 660.4,
+            "distance": 683.2,
             "trigger": 20,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -255,7 +259,7 @@
               "y": -41.7,
               "z": 3.1
             },
-            "distance": 715.8
+            "distance": 738.6
           },
           {
             "index": 8,
@@ -284,6 +288,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 1,
+      "player_start_max": 1,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 201,
+      "hostages": 18,
+      "matcens": 4,
+      "guidebots": 1,
+      "powerups": 89,
+      "reactors": 7
+    },
     "mission_path": "Uneasy4.mn2",
     "target_index": 0
   }

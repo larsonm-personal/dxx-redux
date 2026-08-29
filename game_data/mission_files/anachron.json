@@ -5,7 +5,6 @@
     "game": "d1",
     "mission_name": "Anachronistic",
     "mission_filename": "anachron.msn",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -210,6 +209,10 @@
         "trigger_count": 5,
         "object_count": 140,
         "texture_count": 70,
+        "player_starts": 1,
+        "coop_only_starts": 3,
+        "powerups": 47,
+        "reactors": 1,
         "robots": 85,
         "hostages": 3,
         "secrets": 3,
@@ -304,6 +307,10 @@
         "trigger_count": 10,
         "object_count": 230,
         "texture_count": 107,
+        "player_starts": 1,
+        "coop_only_starts": 3,
+        "powerups": 102,
+        "reactors": 1,
         "robots": 116,
         "hostages": 7,
         "secrets": 5,
@@ -412,6 +419,10 @@
         "trigger_count": 12,
         "object_count": 219,
         "texture_count": 98,
+        "player_starts": 1,
+        "coop_only_starts": 3,
+        "powerups": 98,
+        "reactors": 1,
         "robots": 114,
         "hostages": 2,
         "secrets": 5,
@@ -551,6 +562,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "descriptor_campaign",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables normal or cooperative play",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": true,
+        "coop": true,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 3,
+      "campaign_actor_levels": 3,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 1,
+      "player_start_max": 1,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 315,
+      "hostages": 12,
+      "matcens": 20,
+      "guidebots": 0,
+      "powerups": 247,
+      "reactors": 3
+    },
     "mission_path": "anachron.msn",
     "target_index": 0
   }

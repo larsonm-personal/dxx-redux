@@ -5,7 +5,6 @@
     "game": "d2",
     "mission_name": "Vela Mines",
     "mission_filename": "vela.mn2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -86,6 +85,10 @@
         "trigger_count": 47,
         "object_count": 134,
         "texture_count": 121,
+        "player_starts": 1,
+        "coop_only_starts": 3,
+        "powerups": 18,
+        "reactors": 1,
         "robots": 108,
         "hostages": 3,
         "secrets": 3,
@@ -94,9 +97,9 @@
         "mine_volume": 7598830.0,
         "mine_volume_normalized": 1.66171,
         "mine_volume_text": "1.7x",
-        "travel_distance": 9756.4,
-        "travel_time_seconds": 195,
-        "travel_time_text": "3M:15S",
+        "travel_distance": 9803.1,
+        "travel_time_seconds": 196,
+        "travel_time_text": "3M:16S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -221,14 +224,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 29",
-            "seg": 263,
+            "seg": 295,
+            "side": 5,
             "wall": 121,
             "label_pos": {
               "x": -204.0,
               "y": -48.8,
               "z": -243.1
             },
-            "distance": 282.5,
+            "distance": 350.0,
             "trigger": 29,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -253,7 +257,7 @@
               "y": -2.0,
               "z": 74.8
             },
-            "distance": 1192.0,
+            "distance": 1199.5,
             "trigger": 32,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -270,14 +274,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 35",
-            "seg": 440,
+            "seg": 443,
+            "side": 5,
             "wall": 185,
             "label_pos": {
               "x": 503.8,
               "y": -4.5,
               "z": -25.2
             },
-            "distance": 510.2,
+            "distance": 550.2,
             "trigger": 35,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -307,7 +312,7 @@
               "y": -4.5,
               "z": -165.2
             },
-            "distance": 240.0,
+            "distance": 200.0,
             "trigger": 33,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -324,14 +329,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 36",
-            "seg": 472,
+            "seg": 475,
             "wall": 199,
             "label_pos": {
               "x": 43.5,
               "y": -19.5,
               "z": -115.5
             },
-            "distance": 568.2,
+            "distance": 621.1,
             "trigger": 36,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -358,14 +363,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 37",
-            "seg": 482,
+            "seg": 488,
             "wall": 202,
             "label_pos": {
               "x": 43.5,
               "y": -19.5,
               "z": -55.5
             },
-            "distance": 74.1,
+            "distance": 60.0,
             "trigger": 37,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -390,7 +395,7 @@
               "y": -4.5,
               "z": -17.5
             },
-            "distance": 105.1,
+            "distance": 38.0,
             "trigger": 38,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -422,14 +427,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 40",
-            "seg": 773,
+            "seg": 678,
+            "side": 4,
             "wall": 231,
             "label_pos": {
               "x": 433.8,
               "y": -4.5,
               "z": -365.2
             },
-            "distance": 1628.7,
+            "distance": 1688.7,
             "trigger": 40,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -487,7 +493,7 @@
               "y": -4.5,
               "z": -385.2
             },
-            "distance": 150.2,
+            "distance": 90.2,
             "key": "red"
           },
           {
@@ -699,6 +705,10 @@
         "trigger_count": 41,
         "object_count": 178,
         "texture_count": 88,
+        "player_starts": 1,
+        "coop_only_starts": 3,
+        "powerups": 30,
+        "reactors": 1,
         "robots": 140,
         "hostages": 3,
         "secrets": 1,
@@ -707,7 +717,7 @@
         "mine_volume": 7849610.0,
         "mine_volume_normalized": 1.71655,
         "mine_volume_text": "1.7x",
-        "travel_distance": 8440.3,
+        "travel_distance": 8450.2,
         "travel_time_seconds": 169,
         "travel_time_text": "2M:49S",
         "guidebot_count": 0,
@@ -912,7 +922,7 @@
               "y": -105.5,
               "z": -323.0
             },
-            "distance": 1658.2,
+            "distance": 1663.2,
             "trigger": 28,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -950,7 +960,7 @@
               "y": -104.5,
               "z": -322.1
             },
-            "distance": 223.0
+            "distance": 228.0
           },
           {
             "index": 10,
@@ -977,6 +987,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "descriptor_campaign",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables normal or cooperative play",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": true,
+        "coop": true,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 2,
+      "campaign_actor_levels": 2,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 1,
+      "player_start_max": 1,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 248,
+      "hostages": 6,
+      "matcens": 21,
+      "guidebots": 0,
+      "powerups": 48,
+      "reactors": 2
+    },
     "mission_path": "vela.mn2",
     "target_index": 0
   }

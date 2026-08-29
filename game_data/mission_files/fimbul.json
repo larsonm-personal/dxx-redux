@@ -5,7 +5,6 @@
     "game": "d2",
     "mission_name": "Fimbul",
     "mission_filename": "fimbul.mn2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "5",
     "track_names": [
       {
@@ -86,6 +85,10 @@
         "trigger_count": 9,
         "object_count": 91,
         "texture_count": 70,
+        "player_starts": 8,
+        "coop_only_starts": 4,
+        "powerups": 18,
+        "reactors": 1,
         "robots": 56,
         "hostages": 3,
         "secrets": 0,
@@ -225,6 +228,10 @@
         "trigger_count": 19,
         "object_count": 104,
         "texture_count": 96,
+        "player_starts": 8,
+        "coop_only_starts": 4,
+        "powerups": 31,
+        "reactors": 1,
         "robots": 58,
         "hostages": 0,
         "secrets": 6,
@@ -233,9 +240,9 @@
         "mine_volume": 14564000.0,
         "mine_volume_normalized": 3.18485,
         "mine_volume_text": "3.2x",
-        "travel_distance": 9277.4,
-        "travel_time_seconds": 186,
-        "travel_time_text": "3M:06S",
+        "travel_distance": 9588.9,
+        "travel_time_seconds": 192,
+        "travel_time_text": "3M:12S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -282,14 +289,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 1",
-            "seg": 160,
+            "seg": 178,
             "wall": 18,
             "label_pos": {
               "x": 55.0,
               "y": -119.0,
               "z": 685.0
             },
-            "distance": 111.9,
+            "distance": 261.3,
             "trigger": 1,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -319,7 +326,7 @@
               "y": -119.0,
               "z": 590.0
             },
-            "distance": 240.2,
+            "distance": 334.6,
             "trigger": 6,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -365,14 +372,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 2",
-            "seg": 246,
+            "seg": 235,
             "wall": 53,
             "label_pos": {
               "x": -190.0,
               "y": -214.0,
               "z": 522.5
             },
-            "distance": 612.8,
+            "distance": 820.3,
             "trigger": 2,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -395,7 +402,7 @@
               "y": -210.0,
               "z": 1030.0
             },
-            "distance": 1026.4,
+            "distance": 886.5,
             "key": "gold"
           },
           {
@@ -499,6 +506,10 @@
         "trigger_count": 10,
         "object_count": 112,
         "texture_count": 78,
+        "player_starts": 8,
+        "coop_only_starts": 4,
+        "powerups": 27,
+        "reactors": 1,
         "robots": 63,
         "hostages": 3,
         "secrets": 4,
@@ -507,9 +518,9 @@
         "mine_volume": 37726300.0,
         "mine_volume_normalized": 8.24996,
         "mine_volume_text": "8.2x",
-        "travel_distance": 8344.6,
-        "travel_time_seconds": 167,
-        "travel_time_text": "2M:47S",
+        "travel_distance": 8441.5,
+        "travel_time_seconds": 169,
+        "travel_time_text": "2M:49S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -586,14 +597,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 2",
-            "seg": 77,
+            "seg": 80,
             "wall": 61,
             "label_pos": {
               "x": -275.0,
               "y": 0.0,
               "z": 417.5
             },
-            "distance": 174.9,
+            "distance": 223.3,
             "trigger": 2,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -621,7 +632,7 @@
               "y": -65.0,
               "z": -70.0
             },
-            "distance": 555.4,
+            "distance": 603.9,
             "key": "red"
           },
           {
@@ -662,6 +673,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 3,
+      "campaign_actor_levels": 3,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 4,
+      "coop_start_max": 4,
+      "robots": 177,
+      "hostages": 6,
+      "matcens": 4,
+      "guidebots": 1,
+      "powerups": 76,
+      "reactors": 3
+    },
     "mission_path": "fimbul.mn2",
     "target_index": 0
   }

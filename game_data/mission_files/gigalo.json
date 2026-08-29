@@ -5,7 +5,6 @@
     "game": "d2",
     "mission_name": "Gigalomania 01",
     "mission_filename": "gigalo01.mn2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -86,6 +85,10 @@
         "trigger_count": 35,
         "object_count": 150,
         "texture_count": 65,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 70,
+        "reactors": 1,
         "robots": 67,
         "hostages": 1,
         "secrets": 5,
@@ -301,6 +304,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 67,
+      "hostages": 1,
+      "matcens": 1,
+      "guidebots": 0,
+      "powerups": 70,
+      "reactors": 1
+    },
     "mission_path": "gigalo01.mn2",
     "target_index": 0
   },
@@ -310,7 +342,6 @@
     "game": "d2",
     "mission_name": "Gigalomania 02",
     "mission_filename": "gigalo02.mn2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -391,6 +422,10 @@
         "trigger_count": 6,
         "object_count": 113,
         "texture_count": 16,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 58,
+        "reactors": 1,
         "robots": 43,
         "hostages": 0,
         "secrets": 6,
@@ -745,6 +780,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 43,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 58,
+      "reactors": 1
+    },
     "mission_path": "gigalo02.mn2",
     "target_index": 1
   },
@@ -754,7 +818,6 @@
     "game": "d2",
     "mission_name": "Gigalomania 03",
     "mission_filename": "gigalo03.mn2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -835,6 +898,10 @@
         "trigger_count": 11,
         "object_count": 158,
         "texture_count": 73,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 90,
+        "reactors": 1,
         "robots": 56,
         "hostages": 0,
         "secrets": 1,
@@ -843,9 +910,9 @@
         "mine_volume": 22964400.0,
         "mine_volume_normalized": 5.02184,
         "mine_volume_text": "5.0x",
-        "travel_distance": 7457.2,
-        "travel_time_seconds": 149,
-        "travel_time_text": "2M:29S",
+        "travel_distance": 7735.3,
+        "travel_time_seconds": 155,
+        "travel_time_text": "2M:35S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -863,14 +930,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 10",
-            "seg": 399,
+            "seg": 406,
+            "side": 5,
             "wall": 145,
             "label_pos": {
               "x": 308.5,
               "y": -0.5,
               "z": 451.9
             },
-            "distance": 819.1,
+            "distance": 938.1,
             "trigger": 10,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -902,14 +970,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 0",
-            "seg": 94,
+            "seg": 132,
+            "side": 2,
             "wall": 62,
             "label_pos": {
               "x": 156.3,
               "y": -20.0,
               "z": -10.3
             },
-            "distance": 1079.9,
+            "distance": 1219.0,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -962,7 +1031,7 @@
               "y": -85.1,
               "z": -47.0
             },
-            "distance": 129.8,
+            "distance": 149.8,
             "key": "blue"
           },
           {
@@ -1031,6 +1100,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 56,
+      "hostages": 0,
+      "matcens": 2,
+      "guidebots": 0,
+      "powerups": 90,
+      "reactors": 1
+    },
     "mission_path": "gigalo03.mn2",
     "target_index": 2
   },
@@ -1040,7 +1138,6 @@
     "game": "d2",
     "mission_name": "Gigalomania 04",
     "mission_filename": "gigalo04.mn2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1121,6 +1218,10 @@
         "trigger_count": 37,
         "object_count": 170,
         "texture_count": 62,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 103,
+        "reactors": 1,
         "robots": 55,
         "hostages": 0,
         "secrets": 2,
@@ -1332,6 +1433,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 55,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 103,
+      "reactors": 1
+    },
     "mission_path": "gigalo04.mn2",
     "target_index": 3
   },
@@ -1341,7 +1471,6 @@
     "game": "d2",
     "mission_name": "gigalomania 05",
     "mission_filename": "gigalo05.mn2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1422,6 +1551,10 @@
         "trigger_count": 22,
         "object_count": 211,
         "texture_count": 50,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 104,
+        "reactors": 1,
         "robots": 92,
         "hostages": 3,
         "secrets": 0,
@@ -1525,6 +1658,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 92,
+      "hostages": 3,
+      "matcens": 2,
+      "guidebots": 0,
+      "powerups": 104,
+      "reactors": 1
+    },
     "mission_path": "gigalo05.mn2",
     "target_index": 4
   },
@@ -1534,7 +1696,6 @@
     "game": "d2",
     "mission_name": "Gigalomania 06",
     "mission_filename": "gigalo06.mn2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1615,6 +1776,10 @@
         "trigger_count": 6,
         "object_count": 243,
         "texture_count": 18,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 145,
+        "reactors": 1,
         "robots": 81,
         "hostages": 5,
         "secrets": 0,
@@ -1743,6 +1908,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 81,
+      "hostages": 5,
+      "matcens": 3,
+      "guidebots": 0,
+      "powerups": 145,
+      "reactors": 1
+    },
     "mission_path": "gigalo06.mn2",
     "target_index": 5
   },
@@ -1752,7 +1946,6 @@
     "game": "d2",
     "mission_name": "gigalomania 07",
     "mission_filename": "gigalo07.mn2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1833,6 +2026,10 @@
         "trigger_count": 9,
         "object_count": 153,
         "texture_count": 42,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 64,
+        "reactors": 1,
         "robots": 77,
         "hostages": 0,
         "secrets": 4,
@@ -1936,6 +2133,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 77,
+      "hostages": 0,
+      "matcens": 2,
+      "guidebots": 0,
+      "powerups": 64,
+      "reactors": 1
+    },
     "mission_path": "gigalo07.mn2",
     "target_index": 6
   },
@@ -1945,7 +2171,6 @@
     "game": "d2",
     "mission_name": "Gigalomania 08",
     "mission_filename": "gigalo08.mn2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2026,6 +2251,10 @@
         "trigger_count": 6,
         "object_count": 326,
         "texture_count": 81,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 109,
+        "reactors": 1,
         "robots": 193,
         "hostages": 3,
         "secrets": 2,
@@ -2175,6 +2404,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 193,
+      "hostages": 3,
+      "matcens": 1,
+      "guidebots": 0,
+      "powerups": 109,
+      "reactors": 1
+    },
     "mission_path": "gigalo08.mn2",
     "target_index": 7
   },
@@ -2184,7 +2442,6 @@
     "game": "d2",
     "mission_name": "Gigalomania 09",
     "mission_filename": "gigalo09.mn2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2265,6 +2522,10 @@
         "trigger_count": 35,
         "object_count": 192,
         "texture_count": 54,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 105,
+        "reactors": 1,
         "robots": 75,
         "hostages": 0,
         "secrets": 1,
@@ -2273,9 +2534,9 @@
         "mine_volume": 38403000.0,
         "mine_volume_normalized": 8.39796,
         "mine_volume_text": "8.4x",
-        "travel_distance": 6993.6,
-        "travel_time_seconds": 140,
-        "travel_time_text": "2M:20S",
+        "travel_distance": 7363.4,
+        "travel_time_seconds": 147,
+        "travel_time_text": "2M:27S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2346,14 +2607,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 32",
-            "seg": 520,
+            "seg": 641,
+            "side": 2,
             "wall": 188,
             "label_pos": {
               "x": -40.0,
               "y": 120.0,
               "z": 49.6
             },
-            "distance": 1024.3,
+            "distance": 1209.1,
             "trigger": 32,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -2376,7 +2638,7 @@
               "y": 273.6,
               "z": 253.9
             },
-            "distance": 1122.5
+            "distance": 1307.3
           },
           {
             "index": 6,
@@ -2404,6 +2666,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 75,
+      "hostages": 0,
+      "matcens": 2,
+      "guidebots": 0,
+      "powerups": 105,
+      "reactors": 1
+    },
     "mission_path": "gigalo09.mn2",
     "target_index": 8
   },
@@ -2413,7 +2704,6 @@
     "game": "d2",
     "mission_name": "Gigalomania 10",
     "mission_filename": "gigalo10.mn2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2494,6 +2784,10 @@
         "trigger_count": 85,
         "object_count": 165,
         "texture_count": 63,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 82,
+        "reactors": 1,
         "robots": 71,
         "hostages": 0,
         "secrets": 0,
@@ -2502,9 +2796,9 @@
         "mine_volume": 57374800.0,
         "mine_volume_normalized": 12.5467,
         "mine_volume_text": "13x",
-        "travel_distance": 6765.7,
-        "travel_time_seconds": 135,
-        "travel_time_text": "2M:15S",
+        "travel_distance": 6779.8,
+        "travel_time_seconds": 136,
+        "travel_time_text": "2M:16S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2554,7 +2848,7 @@
               "y": -160.0,
               "z": 810.0
             },
-            "distance": 1530.4,
+            "distance": 1537.5,
             "trigger": 76,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -2579,7 +2873,7 @@
               "y": -175.0,
               "z": 665.8
             },
-            "distance": 370.5,
+            "distance": 377.6,
             "trigger": 78,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -2743,6 +3037,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 71,
+      "hostages": 0,
+      "matcens": 5,
+      "guidebots": 0,
+      "powerups": 82,
+      "reactors": 1
+    },
     "mission_path": "gigalo10.mn2",
     "target_index": 9
   },
@@ -2752,7 +3075,6 @@
     "game": "d2",
     "mission_name": "Gigalomania 11",
     "mission_filename": "gigalo11.mn2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2833,6 +3155,10 @@
         "trigger_count": 2,
         "object_count": 22,
         "texture_count": 31,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 5,
+        "reactors": 0,
         "robots": 6,
         "hostages": 0,
         "secrets": 0,
@@ -2953,6 +3279,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 6,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 5,
+      "reactors": 0
+    },
     "mission_path": "gigalo11.mn2",
     "target_index": 10
   },
@@ -2962,7 +3317,6 @@
     "game": "d2",
     "mission_name": "gigalomania 12",
     "mission_filename": "gigalo12.mn2",
-    "mission_intent": "single_player_or_coop",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3043,6 +3397,10 @@
         "trigger_count": 8,
         "object_count": 124,
         "texture_count": 10,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 108,
+        "reactors": 1,
         "robots": 4,
         "hostages": 0,
         "secrets": 0,
@@ -3104,6 +3462,35 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 4,
+      "hostages": 0,
+      "matcens": 8,
+      "guidebots": 0,
+      "powerups": 108,
+      "reactors": 1
+    },
     "mission_path": "gigalo12.mn2",
     "target_index": 11
   }

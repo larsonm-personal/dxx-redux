@@ -926,8 +926,6 @@ int apply_damage_to_robot(object *robot, fix damage, int killer_objnum)
 	if (Robot_info[robot->id].boss_flag)
 		Boss_been_hit = 1;
 
-	if (damage > 0)
-		boss_hud_note_active(robot - Objects);
 	robot->shields -= damage;
 	if (robot->shields < 0) {
 		Players[Player_num].num_kills_level++;
@@ -1006,6 +1004,15 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 
 	if ( (weapon->ctype.laser_info.parent_type==OBJ_PLAYER) && !(robot->flags & OF_EXPLODING) )	{
 		object *expl_obj=NULL;
+		int boss_objnum = boss_hud_note_weapon_collision(robot, weapon);
+
+#ifndef SHAREWARE
+#ifdef NETWORK
+		if (boss_objnum >= 0 && (Game_mode & GM_MULTI_COOP) &&
+		    weapon->ctype.laser_info.parent_num == Players[Player_num].objnum)
+			multi_send_boss_actions(boss_objnum, BOSS_ACTION_HUD_SHOT, 0, 0);
+#endif
+#endif
 
 		input_demo_log_weapon_robot_path_probe("accept", weapon, robot,
 			collision_point);
@@ -1494,6 +1501,7 @@ void collide_player_and_weapon( object * player, object * weapon, vms_vector *co
 {
 	fix		damage = weapon->shields;
 	object * killer=NULL;
+	int boss_objnum;
 
 	if (object_is_observer(player)) {
 		return;
@@ -1525,6 +1533,14 @@ void collide_player_and_weapon( object * player, object * weapon, vms_vector *co
 		else
 			weapon->ctype.laser_info.last_hitobj = player-Objects;
         }
+#endif
+
+	boss_objnum = boss_hud_note_weapon_collision(player, weapon);
+#ifndef SHAREWARE
+#ifdef NETWORK
+	if (boss_objnum >= 0 && (Game_mode & GM_MULTI_COOP) && player->id == Player_num)
+		multi_send_boss_actions(boss_objnum, BOSS_ACTION_HUD_SHOT, 0, 0);
+#endif
 #endif
 
 	if (player->id == Player_num)

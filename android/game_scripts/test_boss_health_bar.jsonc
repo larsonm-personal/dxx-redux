@@ -1,4 +1,4 @@
-// TEST: Native boss health row lifecycle and four-row message budget
+// TEST: Shot-based boss health row lifecycle and four-row message budget
 [
     {"_info": {
         "games": ["d1", "d2"],
@@ -54,6 +54,21 @@
         "hud_layout.queued_message_capacity": "4"
     }},
     {"action": "set_debug", "field": "damage_boss", "value": "half", "post_delay_ms": 100},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "hud_layout.boss_health.active": "false",
+        "hud_layout.boss_health.drawn": "false"
+    }},
+    {"action": "set_debug", "field": "boss_shot", "value": "player_by_boss", "post_delay_ms": 100},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "hud_layout.boss_health.active": "true",
+        "hud_layout.boss_health.drawn": "true"
+    }},
+    {"action": "set_debug", "field": "boss_shot", "value": "reset", "post_delay_ms": 100},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "hud_layout.boss_health.active": "false",
+        "hud_layout.boss_health.drawn": "false"
+    }},
+    {"action": "set_debug", "field": "boss_shot", "value": "by_player", "post_delay_ms": 100},
     {"action": "set_debug", "field": "hud_test_message_burst", "value": "4", "post_delay_ms": 100},
     {"action": "wait_for", "timeout_ms": 5000, "expect": {
         "hud_layout.boss_health.active": "true",

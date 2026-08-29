@@ -5,7 +5,6 @@
     "game": "d2",
     "mission_name": "Magma Facility",
     "mission_filename": "magma.mn2",
-    "mission_intent": "multiplayer_anarchy",
     "coop_starts": "1",
     "track_names": [
       {
@@ -86,13 +85,17 @@
         "trigger_count": 3,
         "object_count": 69,
         "texture_count": 66,
+        "player_starts": 8,
+        "coop_only_starts": 0,
+        "powerups": 60,
+        "reactors": 1,
         "robots": 0,
         "hostages": 0,
         "secrets": 0,
         "matcens": 0,
         "energy_centers": 12,
-        "mine_volume": 8557950.531829733,
-        "mine_volume_normalized": 1.871448154107075,
+        "mine_volume": 8557950.0,
+        "mine_volume_normalized": 1.87145,
         "mine_volume_text": "1.9x",
         "travel_distance": 0.0,
         "travel_time_seconds": 0,
@@ -117,6 +120,36 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "multiplayer_anarchy",
+      "rule": "all_levels_arena_like",
+      "confidence": "medium",
+      "reason": "Every normal level has multiple player starts and no campaign actors",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 0,
+      "arena_like_levels": 1,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 60,
+      "reactors": 1
+    },
+    "mission_path": "magma.mn2",
     "target_index": 0
   },
   {
@@ -125,7 +158,6 @@
     "game": "d2",
     "mission_name": "Mini Magma Facility",
     "mission_filename": "mmagma.mn2",
-    "mission_intent": "multiplayer_anarchy",
     "coop_starts": "1",
     "track_names": [
       {
@@ -206,13 +238,17 @@
         "trigger_count": 2,
         "object_count": 58,
         "texture_count": 66,
+        "player_starts": 8,
+        "coop_only_starts": 0,
+        "powerups": 49,
+        "reactors": 1,
         "robots": 0,
         "hostages": 0,
         "secrets": 0,
         "matcens": 0,
         "energy_centers": 11,
-        "mine_volume": 5053559.833750444,
-        "mine_volume_normalized": 1.105109825929301,
+        "mine_volume": 5053560.0,
+        "mine_volume_normalized": 1.10511,
         "mine_volume_text": "1.1x",
         "travel_distance": 0.0,
         "travel_time_seconds": 0,
@@ -237,6 +273,36 @@
         ]
       }
     ],
+    "mission_intent": {
+      "classification": "multiplayer_anarchy",
+      "rule": "descriptor_competitive",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables competitive multiplayer modes",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": true,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 0,
+      "arena_like_levels": 1,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 49,
+      "reactors": 1
+    },
+    "mission_path": "mmagma.mn2",
     "target_index": 1
   }
 ]
