@@ -17,6 +17,7 @@ function Select-RunAllTestsProfile {
     Write-Host 'DXX-Redux test suite' -ForegroundColor Cyan
     Write-Host '  1. Run the full unattended test suite'
     Write-Host '  T. Resumable hash-ring sample targeting 45 minutes'
+    Write-Host '  B. Regenerate level metadata benchmark history'
     Write-Host '  Q. Cancel'
     while ($true) {
         switch ((& $ReadChoice).Trim().ToLowerInvariant()) {
@@ -25,9 +26,11 @@ function Select-RunAllTestsProfile {
             'full' { return 'Full' }
             't' { return 'Target45' }
             'target' { return 'Target45' }
+            'b' { return 'LevelMetadataBenchmark' }
+            'benchmark' { return 'LevelMetadataBenchmark' }
             'q' { return 'Cancel' }
             'quit' { return 'Cancel' }
-            default { Write-Host 'Enter 1, T, or Q' -ForegroundColor Yellow }
+            default { Write-Host 'Enter 1, T, B, or Q' -ForegroundColor Yellow }
         }
     }
 }

@@ -87,6 +87,8 @@ $profile = Select-RunAllTestsProfile -ReadChoice { $choices.Dequeue() }
 Assert-True ($profile -eq 'Target45') 'The opening menu should expose the T profile'
 Assert-True ((Select-RunAllTestsProfile -ReadChoice { '1' }) -eq 'Full') `
     'The opening menu should preserve the full-suite choice'
+Assert-True ((Select-RunAllTestsProfile -ReadChoice { 'b' }) -eq 'LevelMetadataBenchmark') `
+    'The opening menu should expose focused level metadata benchmark regeneration'
 Assert-True ((Select-RunAllTestsProfile -ReadChoice { 'q' }) -eq 'Cancel') `
     'The opening menu should support cancellation'
 Assert-True (Test-RunAllTestsProfileMenuEnabled -ExplicitParameterCount 0 `

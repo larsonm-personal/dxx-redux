@@ -109,6 +109,7 @@ if (Test-RunAllTestsProfileMenuEnabled -ExplicitParameterCount $explicitParamete
         -UserInteractive ([Environment]::UserInteractive) -InputRedirected $inputRedirected) {
     switch (Select-RunAllTestsProfile) {
         'Target45' { $Target45Minutes = $true }
+        'LevelMetadataBenchmark' { $Filter = 'test_level_metadata_benchmark' }
         'Cancel' {
             Write-Host 'Test suite cancelled' -ForegroundColor Yellow
             exit 0
