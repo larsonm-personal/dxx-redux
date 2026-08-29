@@ -582,6 +582,9 @@ const char *escort_get_route_goal_instruction(void)
 {
 	if (Escort_route_goal.objective_kind == ESCORT_ROUTE_OBJECTIVE_UNEXPLORED)
 		return "unexplored";
+	if (Escort_route_goal.guidance_mode ==
+	    ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT)
+		return "can't reach it yet; follow me as close as possible";
 	switch (Escort_route_goal.activation_kind) {
 		case LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH:
 			if (Escort_route_goal.switch_shot_quality ==
@@ -1343,13 +1346,13 @@ int escort_route_goal_object_for_step(const level_metadata_route_step *step)
 	}
 }
 
-int escort_route_step_guidance_mode(const level_metadata_route_step *step)
+static int escort_route_step_guidance_mode_from_activation(
+    int kind,
+    int activation_kind)
 {
-	if (!step)
-		return ESCORT_ROUTE_GUIDANCE_NONE;
-	switch (step->kind) {
+	switch (kind) {
 		case LEVEL_METADATA_ROUTE_TRIGGER:
-			switch (step->activation_kind) {
+			switch (activation_kind) {
 				case LEVEL_METADATA_ROUTE_ACTIVATION_UNRESOLVED_TRIGGER:
 					return ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT;
 				case LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH:
@@ -1373,6 +1376,13 @@ int escort_route_step_guidance_mode(const level_metadata_route_step *step)
 		default:
 			return ESCORT_ROUTE_GUIDANCE_NONE;
 	}
+}
+
+int escort_route_step_guidance_mode(const level_metadata_route_step *step)
+{
+	return step ? escort_route_step_guidance_mode_from_activation(
+	                  step->kind, step->activation_kind)
+	            : ESCORT_ROUTE_GUIDANCE_NONE;
 }
 
 int escort_route_step_is_targetable(const level_metadata_route_step *step)
@@ -2041,13 +2051,29 @@ int escort_route_physical_target(object *objp, int goal_seg, int max_depth)
 		    Escort_route_avoid_from_seg2, Escort_route_avoid_seg2);
 	if (frontier < 0)
 		return goal_seg;
-	if (frontier != goal_seg)
+	if (frontier != goal_seg) {
+		/* Keep the semantic objective intact so a later door or trigger change
+		 * can extend the route, but publish the physical endpoint as the current
+		 * guidance.  Otherwise Guide-Bot silently holds at a substituted path
+		 * endpoint while the UI continues to claim the unreachable segment. */
+		Escort_route_goal.guidance_mode =
+		    ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT;
+		Escort_route_goal.guidance_seg = frontier;
+		Escort_route_goal.guidance_side = -1;
 		debug_log(
 		    DLOG_GUIDEBOT,
 		    "route_frontier start=%d objective=%d frontier=%d avoid=%d>%d avoid2=%d>%d",
 		    objp->segnum, goal_seg, frontier,
 		    Escort_route_avoid_from_seg, Escort_route_avoid_seg,
 		    Escort_route_avoid_from_seg2, Escort_route_avoid_seg2);
+	} else {
+		Escort_route_goal.guidance_mode =
+		    escort_route_step_guidance_mode_from_activation(
+		        Escort_route_goal.objective_kind,
+		        Escort_route_goal.activation_kind);
+		Escort_route_goal.guidance_seg = goal_seg;
+		Escort_route_goal.guidance_side = Escort_route_goal.target_side;
+	}
 	return frontier;
 }
 

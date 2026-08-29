@@ -1873,6 +1873,49 @@ static int release_guidebot_cage(char *reason, size_t reason_size)
 #endif
 }
 
+static int move_guidebot_to_segment(const char *value, char *reason, size_t reason_size)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	char *end = NULL;
+	const long requested_segment = strtol(value, &end, 10);
+	object *buddy_objp;
+
+	if (Screen_mode != SCREEN_GAME || Game_wind == NULL) {
+		snprintf(reason, reason_size, "guidebot_segment: game is not running");
+		return 0;
+	}
+	if (end == value || *end != '\0' || requested_segment < 0 ||
+	    requested_segment > Highest_segment_index) {
+		snprintf(reason, reason_size, "guidebot_segment: invalid segment");
+		return 0;
+	}
+	if (Buddy_objnum < 0 || Buddy_objnum > Highest_object_index ||
+	    Objects[Buddy_objnum].type != OBJ_ROBOT ||
+	    !Robot_info[Objects[Buddy_objnum].id].companion) {
+		snprintf(reason, reason_size, "guidebot_segment: companion not found");
+		return 0;
+	}
+
+	buddy_objp = &Objects[Buddy_objnum];
+	compute_segment_center(&buddy_objp->pos, &Segments[requested_segment]);
+	buddy_objp->last_pos = buddy_objp->pos;
+	obj_relink(Buddy_objnum, (int) requested_segment);
+	vm_vec_zero(&buddy_objp->mtype.phys_info.velocity);
+	vm_vec_zero(&buddy_objp->mtype.phys_info.thrust);
+	vm_vec_zero(&buddy_objp->mtype.phys_info.rotvel);
+	vm_vec_zero(&buddy_objp->mtype.phys_info.rotthrust);
+	buddy_objp->ctype.ai_info.hide_index = -1;
+	buddy_objp->ctype.ai_info.path_length = 0;
+	buddy_objp->ctype.ai_info.cur_path_index = 0;
+	LOGI("guidebot_segment: obj=%d seg=%ld", Buddy_objnum, requested_segment);
+	return 1;
+#else
+	(void) value;
+	snprintf(reason, reason_size, "guidebot_segment: requires Descent 2");
+	return 0;
+#endif
+}
+
 static int automation_key_flags_from_value(const char *value)
 {
 	char *end = NULL;
@@ -3762,6 +3805,14 @@ extern "C" void game_automate_tick(void)
 				char reason[128];
 				if ((strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) &&
 				    !release_guidebot_cage(reason, sizeof(reason))) {
+					log_append("set_debug", "fail", reason);
+					stop_script_fail(reason);
+					break;
+				}
+			} else if (s.field == "guidebot_segment") {
+				char reason[128];
+				if (!move_guidebot_to_segment(
+				        s.value.c_str(), reason, sizeof(reason))) {
 					log_append("set_debug", "fail", reason);
 					stop_script_fail(reason);
 					break;
