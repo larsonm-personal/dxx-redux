@@ -4324,6 +4324,15 @@ int level_metadata_guidebot_side_passable_current(int segment, int side)
 	    &Level_metadata_scan_view, segment, side);
 }
 
+int level_metadata_guidebot_segment_has_player_openable_keyed_door_current(
+    int segment)
+{
+	if (!Level_metadata_scan_view_initialized)
+		return 0;
+	return guidebot_route_segment_has_player_openable_keyed_door(
+	    &Level_metadata_scan_view, segment);
+}
+
 int level_metadata_guidebot_route_frontier_current(
     int start_segment,
     int goal_segment,

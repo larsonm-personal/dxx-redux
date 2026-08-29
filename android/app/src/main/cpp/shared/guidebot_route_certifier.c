@@ -57,8 +57,11 @@ static int guidebot_route_side_passable(
 	int child;
 	int clearance;
 	int hard_blocked;
+	int local_hard_blocked;
 	int key;
 	int wall;
+	int reverse_hard_blocked;
+	int reverse_wall;
 	int type;
 	int flags;
 	int reverse;
@@ -91,13 +94,26 @@ static int guidebot_route_side_passable(
 	                          view->user, child, reverse))))
 		return view->initial_control_center_destroyed ||
 		       allow_control_center_link;
-	hard_blocked = view->side_is_hard_blocked &&
-	               (view->side_is_hard_blocked(view->user, segment, side) ||
-	                (reverse >= 0 && view->side_is_hard_blocked(
-	                                     view->user, child, reverse)));
+	local_hard_blocked =
+	    view->side_is_hard_blocked &&
+	    view->side_is_hard_blocked(view->user, segment, side);
+	reverse_hard_blocked =
+	    view->side_is_hard_blocked && reverse >= 0 &&
+	    view->side_is_hard_blocked(view->user, child, reverse);
+	hard_blocked = local_hard_blocked || reverse_hard_blocked;
 	if (hard_blocked && !allow_player_keyed_door)
 		return 0;
 	wall = view->wall_num ? view->wall_num(view->user, segment, side) : -1;
+	reverse_wall = view->wall_num && reverse >= 0 ? view->wall_num(view->user, child, reverse) : -1;
+	/* A portal may carry the Buddy-proof keyed door only on its reverse side.
+	 * Once that side supplied the hard block, use the same side for the key and
+	 * door properties instead of incorrectly inspecting an unrelated forward
+	 * wall. */
+	if (reverse_hard_blocked && !local_hard_blocked)
+		wall = reverse_wall;
+	else if ((wall < 0 || wall >= view->num_walls) &&
+	         reverse_wall >= 0 && reverse_wall < view->num_walls)
+		wall = reverse_wall;
 	if (wall < 0 || wall >= view->num_walls)
 		return !hard_blocked;
 	if (hard_blocked && !view->wall_keys)
@@ -120,6 +136,12 @@ static int guidebot_route_side_passable(
 	if (view->wall_clip_flags &&
 	    (view->wall_clip_flags(view->user, wall) & view->wall_clip_hidden) != 0)
 		return 0;
+	/* While pursuing an objective, classic Guide-Bot can plan through keyed
+	 * doors but does not open them on collision.  Keep those doors out of the
+	 * physical route; the strategic route may still cross them when the player
+	 * owns the key. */
+	if (key != view->wall_key_none && !allow_player_keyed_door)
+		return 0;
 	if (view->triggered_side_opener_count &&
 	    (view->triggered_side_opener_count(view->user, segment, side) > 0 ||
 	     (reverse >= 0 && view->triggered_side_opener_count(
@@ -134,7 +156,10 @@ int guidebot_route_side_passable_current(
     int segment,
     int side)
 {
-	return guidebot_route_side_passable(view, segment, side, 0, 0, 0);
+	/* Match the classic companion's physical door handling: a visible,
+	 * unlocked door remains usable even when a trigger also controls it.
+	 * Hidden and locked trigger doors are still rejected below. */
+	return guidebot_route_side_passable(view, segment, side, 0, 0, 1);
 }
 
 int guidebot_route_side_progress_reachable_current(
@@ -143,6 +168,59 @@ int guidebot_route_side_progress_reachable_current(
     int side)
 {
 	return guidebot_route_side_passable(view, segment, side, 1, 0, 0);
+}
+
+static int guidebot_wall_is_player_openable_keyed_door(
+    const level_metadata_scan_view *view,
+    int wall)
+{
+	int flags;
+	int key;
+
+	if (!view || wall < 0 || wall >= view->num_walls || !view->wall_keys ||
+	    !view->wall_type)
+		return 0;
+	key = view->wall_keys(view->user, wall);
+	if (key == view->wall_key_none || !guidebot_key_allowed(view, key) ||
+	    view->wall_type(view->user, wall) != view->wall_type_door)
+		return 0;
+	flags = view->wall_flags ? view->wall_flags(view->user, wall) : 0;
+	if ((flags & (view->wall_flag_door_opened |
+	              view->wall_flag_door_locked)) != 0 ||
+	    (view->wall_is_opening && view->wall_is_opening(view->user, wall)) ||
+	    (view->wall_clip_flags &&
+	     (view->wall_clip_flags(view->user, wall) & view->wall_clip_hidden) != 0))
+		return 0;
+	return 1;
+}
+
+int guidebot_route_segment_has_player_openable_keyed_door(
+    const level_metadata_scan_view *view,
+    int segment)
+{
+	int side;
+
+	if (!guidebot_valid_segment(view, segment) || !view->segment_child ||
+	    !view->wall_num)
+		return 0;
+	for (side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+		const int child = view->segment_child(view->user, segment, side);
+		const int wall = view->wall_num(view->user, segment, side);
+
+		if (guidebot_wall_is_player_openable_keyed_door(view, wall))
+			return 1;
+		if (guidebot_valid_segment(view, child) && view->reverse_side) {
+			const int reverse =
+			    view->reverse_side(view->user, segment, child);
+			const int reverse_wall =
+			    reverse >= 0 && reverse < LEVEL_METADATA_MAX_SIDES ? view->wall_num(view->user, child, reverse) : -1;
+
+			if (guidebot_wall_is_player_openable_keyed_door(
+			        view, reverse_wall))
+				return 1;
+		}
+	}
+	return 0;
 }
 
 static int guidebot_route_best_physical_frontier_internal(

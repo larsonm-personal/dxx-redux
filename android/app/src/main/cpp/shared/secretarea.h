@@ -96,6 +96,8 @@ int level_metadata_get_exit_route_step_current(
     int *step_index,
     int *target_segment);
 int level_metadata_guidebot_side_passable_current(int segment, int side);
+int level_metadata_guidebot_segment_has_player_openable_keyed_door_current(
+    int segment);
 int level_metadata_guidebot_route_frontier_current(
     int start_segment,
     int goal_segment,

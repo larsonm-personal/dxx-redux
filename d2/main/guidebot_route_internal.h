@@ -49,6 +49,7 @@ typedef struct escort_route_goal {
 	int guidance_mode;
 	int guidance_seg;
 	int guidance_side;
+	int frontier_player_keyed_door;
 	int target_pos_valid;
 	vms_vector target_pos;
 	int path_endpoint_seg;

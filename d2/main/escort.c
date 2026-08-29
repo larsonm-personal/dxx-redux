@@ -1900,7 +1900,8 @@ void escort_create_path_to_goal(object *objp)
 			if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT &&
 			    path_goal_seg != goal_seg)
 				buddy_message("Can't reach EXIT yet; navigating as close as possible");
-			else if (path_goal_seg != goal_seg)
+			else if (path_goal_seg != goal_seg &&
+			         !Escort_route_goal.frontier_player_keyed_door)
 				buddy_message("Can't reach next yet; navigating as close as possible");
 			else if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT &&
 			         Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_EXIT)

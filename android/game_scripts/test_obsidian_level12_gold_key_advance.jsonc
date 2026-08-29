@@ -43,7 +43,11 @@
         "level_metadata_route.status": "ok",
         "level_metadata_route.step_count": "16",
         "level_metadata_route.steps[6].key": "gold",
-        "level_metadata_route.steps[7].trigger": "9"
+        "level_metadata_route.steps[7].trigger": "9",
+        "level_metadata_route.steps[8].trigger": "10",
+        "level_metadata_route.steps[9].trigger": "18",
+        "level_metadata_route.steps[10].trigger": "12",
+        "level_metadata_route.steps[11].trigger": "7"
     }},
 
     {"action": "set_debug", "field": "clear_robots", "value": "true", "post_delay_ms": 100},
@@ -80,19 +84,26 @@
         "guidebot.route_goal_seg": "567",
         "guidebot.route_goal_objective_seg": "567",
         "guidebot.route_goal_guidance_mode_name": "nearest_progress_point",
-        "guidebot.route_goal_guidance_seg": "499",
-        "guidebot.route_goal_path_endpoint_seg": "499",
-        "guidebot.route_goal_instruction": {"contains": "as close as possible"},
+        "guidebot.route_goal_guidance_seg": "432",
+        "guidebot.route_goal_path_endpoint_seg": "432",
+        "guidebot.route_goal_frontier_player_keyed_door": "true",
+        "guidebot.route_goal_instruction": "follow me, then fly through the marked opening",
         "guidebot.route_live_work.compiled_selector_failures": "0",
         "guidebot.route_live_work.retained_incumbents": "0"
     }},
-    {"action": "wait_for", "timeout_ms": 30000, "expect": {
-        "guidebot.segment": "499",
-        "guidebot.route_goal_trigger": "9",
-        "guidebot.route_goal_seg": "567",
-        "guidebot.route_goal_guidance_seg": "499",
-        "guidebot.route_goal_path_endpoint_seg": "499",
-        "guidebot.route_goal_path_pending": "false"
+    {"action": "set_debug", "field": "fire_trigger", "value": "9", "post_delay_ms": 100},
+    {"action": "set_debug", "field": "fire_trigger", "value": "10", "post_delay_ms": 100},
+    {"action": "set_debug", "field": "fire_trigger", "value": "18", "post_delay_ms": 100},
+    {"action": "set_debug", "field": "guidebot_segment", "value": "588"},
+    {"action": "set_debug", "field": "fire_trigger", "value": "12", "post_delay_ms": 100},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {
+        "guidebot.route_goal_trigger": "7",
+        "guidebot.route_goal_seg": "473",
+        "guidebot.route_goal_guidance_mode_name": "nearest_progress_point",
+        "guidebot.route_goal_guidance_seg": "429",
+        "guidebot.route_goal_path_endpoint_seg": "429",
+        "guidebot.route_goal_frontier_player_keyed_door": "true",
+        "guidebot.route_goal_instruction": "follow me, then shoot the marked switch"
     }},
     {"action": "log", "message": "=== TEST: Obsidian level 12 gold-key advance -- PASS ==="}
 ]

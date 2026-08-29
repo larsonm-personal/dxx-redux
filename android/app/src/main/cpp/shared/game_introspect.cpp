@@ -966,6 +966,8 @@ static json serialize_guidebot()
 	result["route_goal_guidance_mode_name"] = escort_get_route_goal_guidance_mode_name();
 	result["route_goal_guidance_seg"] = escort_get_route_goal_guidance_seg();
 	result["route_goal_guidance_side"] = escort_get_route_goal_guidance_side();
+	result["route_goal_frontier_player_keyed_door"] =
+	    (bool) escort_get_route_goal_frontier_player_keyed_door();
 	result["route_goal_path_endpoint_seg"] = escort_get_route_goal_path_endpoint_seg();
 	int route_target_pos[3];
 	int route_endpoint_pos[3];
