@@ -1,6 +1,7 @@
 package com.dxxredux.app.multiplayer
 
 import android.content.Context
+import android.util.Log
 import com.dxxredux.app.AtomicFilePublication
 import com.dxxredux.app.FileSetManager
 import com.dxxredux.app.MissionContentIdentity
@@ -33,19 +34,25 @@ internal data class MissionTransferGrant(
 )
 
 internal object MissionTransferService {
+    private const val TAG = "MissionTransfer"
     private const val SOCKET_TIMEOUT_MS = 15_000
     private const val TOKEN_LIFETIME_MS = 30_000L
     private const val MAX_REQUEST_BYTES = 4096
     private const val MAX_HEADER_BYTES = 256 * 1024
     private const val BUFFER_BYTES = 64 * 1024
+    private const val STATUS_REPORT_INTERVAL_NS = 250L * 1000L * 1000L
     private const val MAX_CONCURRENT_TRANSFERS = 7
-    private const val PER_CLIENT_BYTES_PER_SECOND = 2L * 1024L * 1024L
+    private const val PER_CLIENT_BYTES_PER_SECOND = 32L * 1024L * 1024L
 
     private data class Authorization(
         val playerId: String,
         val address: String,
         val expiresAtMs: Long,
     )
+
+    private class MissionFinalizationException(
+        cause: Throwable,
+    ) : Exception(cause)
 
     private data class HostSession(
         val requirement: MissionRequirement,
@@ -135,7 +142,21 @@ internal object MissionTransferService {
                     onFinished(true)
                 } catch (_: CancellationException) {
                     onFinished(false)
-                } catch (_: Exception) {
+                } catch (e: MissionFinalizationException) {
+                    Log.e(TAG, "Mission finalization failed", e.cause)
+                    onStatus(
+                        transferReport(
+                            requirement,
+                            MissionCompatibilityStatus.ERROR,
+                            requirement.sizeBytes ?: 0L,
+                            grant.token,
+                            attempt,
+                            "mission_finalization_failed",
+                        ),
+                    )
+                    onFinished(false)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Mission transfer or finalization failed", e)
                     val offset = resumeOffset(context, requirement)
                     onStatus(
                         transferReport(
@@ -241,6 +262,16 @@ internal object MissionTransferService {
         if (remainingNs > 0L) LockSupport.parkNanos(remainingNs)
     }
 
+    internal fun averageBytesPerSecond(
+        completedBytes: Long,
+        elapsedNanos: Long,
+    ): Long {
+        if (completedBytes <= 0L || elapsedNanos <= 0L) return 0L
+        return (completedBytes.toDouble() * 1_000_000_000.0 / elapsedNanos.toDouble())
+            .toLong()
+            .coerceIn(1L, MAX_REPORTED_TRANSFER_BYTES_PER_SECOND)
+    }
+
     private fun receive(
         context: Context,
         hostAddress: String,
@@ -272,6 +303,8 @@ internal object MissionTransferService {
             require(offset == request.getLong("offset"))
             writePartialManifest(files.sidecar, requirement, chunkSize, chunks, offset)
             onStatus(transferReport(requirement, MissionCompatibilityStatus.DOWNLOADING, offset, grant.token, attempt))
+            val downloadStartedAtNs = System.nanoTime()
+            val downloadStartedBytes = offset
             appendAndVerify(
                 socket.getInputStream(),
                 files.partial,
@@ -281,6 +314,11 @@ internal object MissionTransferService {
                 offset,
             ) { verified ->
                 writePartialManifest(files.sidecar, requirement, chunkSize, chunks, verified)
+                val bytesPerSecond =
+                    averageBytesPerSecond(
+                        verified - downloadStartedBytes,
+                        System.nanoTime() - downloadStartedAtNs,
+                    )
                 onStatus(
                     transferReport(
                         requirement,
@@ -288,31 +326,103 @@ internal object MissionTransferService {
                         verified,
                         grant.token,
                         attempt,
+                        bytesPerSecond = bytesPerSecond,
                     ),
                 )
             }
         }
+        val verificationStartedAtNs = System.nanoTime()
         onStatus(
             transferReport(
                 requirement,
                 MissionCompatibilityStatus.VERIFYING,
-                requirement.sizeBytes ?: 0L,
+                0L,
                 grant.token,
                 attempt,
             ),
         )
-        val identity = MissionContentIdentity.compute(files.partial)
+        val identity =
+            MissionContentIdentity.compute(files.partial) { verified ->
+                val bytesPerSecond = averageBytesPerSecond(verified, System.nanoTime() - verificationStartedAtNs)
+                onStatus(
+                    transferReport(
+                        requirement,
+                        MissionCompatibilityStatus.VERIFYING,
+                        verified,
+                        grant.token,
+                        attempt,
+                        bytesPerSecond = bytesPerSecond,
+                    ),
+                )
+            }
         require(identity.sizeBytes == requirement.sizeBytes && identity.sha256 == requirement.sha256)
+        try {
+            finalizeMission(context, requirement, grant, attempt, files, identity, onStatus)
+        } catch (e: Exception) {
+            throw MissionFinalizationException(e)
+        }
+    }
+
+    private fun finalizeMission(
+        context: Context,
+        requirement: MissionRequirement,
+        grant: MissionTransferGrant,
+        attempt: Int,
+        files: PartialFiles,
+        identity: MissionContentIdentity,
+        onStatus: (MissionStatusReport) -> Unit,
+    ) {
+        val wrapperSize = identity.sizeBytes
+        val importProgressLimit = wrapperSize * 95L / 100L
+        var finalizingBytes = 0L
+        var lastFinalizingReportNs = 0L
+
+        fun reportFinalizing(
+            progressBytes: Long = finalizingBytes,
+            force: Boolean = false,
+        ) {
+            finalizingBytes = progressBytes.coerceIn(finalizingBytes, wrapperSize)
+            val now = System.nanoTime()
+            if (!force && now - lastFinalizingReportNs < STATUS_REPORT_INTERVAL_NS) return
+            lastFinalizingReportNs = now
+            onStatus(
+                transferReport(
+                    requirement,
+                    MissionCompatibilityStatus.FINALIZING,
+                    finalizingBytes,
+                    grant.token,
+                    attempt,
+                ),
+            )
+        }
+        reportFinalizing(force = true)
         val sets = FileSetManager(context.filesDir)
         val setDir = sets.getSetDir(sets.getActive())
         val manager = ModManager(context.filesDir, context, setDir)
-        val imported = manager.importMissionZipFileMovingSource(files.partial, uniqueDownloadName(manager, requirement))
+        val imported =
+            manager.importMissionZipFileMovingSource(
+                files.partial,
+                uniqueDownloadName(manager, requirement),
+                acceptedIdentity = identity,
+                onProgress = { progress ->
+                    val mappedBytes =
+                        if (progress.bytesTotal > 0L) {
+                            (importProgressLimit * progress.bytesDone.toDouble() / progress.bytesTotal.toDouble())
+                                .toLong()
+                                .coerceIn(0L, importProgressLimit)
+                        } else {
+                            finalizingBytes
+                        }
+                    reportFinalizing(mappedBytes, force = mappedBytes == importProgressLimit)
+                },
+            )
         require(imported != null)
+        reportFinalizing(wrapperSize, force = true)
         promoteImportedMission(manager, imported.filename)
         files.sidecar.delete()
         val resolved = MissionCompatibilityResolver.resolve(context, requirement, "coop")
         require(resolved.status == MissionCompatibilityStatus.MATCH)
-        onStatus(resolved.copy(verifiedBytes = requirement.sizeBytes))
+        onStatus(resolved.copy(verifiedBytes = wrapperSize))
     }
 
     private fun appendAndVerify(
@@ -496,6 +606,7 @@ internal object MissionTransferService {
         transferId: String,
         attempt: Int,
         failureCode: String? = null,
+        bytesPerSecond: Long = 0L,
     ): MissionStatusReport =
         MissionStatusReport(
             revision = requirement.revision,
@@ -505,6 +616,7 @@ internal object MissionTransferService {
             transferId = transferId.take(64),
             attempt = attempt,
             failureCode = failureCode,
+            bytesPerSecond = bytesPerSecond,
         )
 
     private fun readLineBounded(

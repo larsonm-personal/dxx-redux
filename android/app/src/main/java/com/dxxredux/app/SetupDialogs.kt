@@ -32,13 +32,7 @@ import java.net.URL
 import java.util.Locale
 
 /** Format byte size as human-readable (KB, MB, GB). */
-private fun formatSize(bytes: Long): String =
-    when {
-        bytes >= 1_073_741_824 -> "%.2f GB".format(bytes / 1_073_741_824.0)
-        bytes >= 1_048_576 -> "%.1f MB".format(bytes / 1_048_576.0)
-        bytes >= 1_024 -> "%.0f KB".format(bytes / 1_024.0)
-        else -> "$bytes B"
-    }
+private fun formatSize(bytes: Long): String = formatBinarySize(bytes)
 
 @Composable
 internal fun SetManagementDialog(

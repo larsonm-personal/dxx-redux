@@ -3,6 +3,7 @@ package com.dxxredux.app.multiplayer
 import android.content.Context
 import com.dxxredux.app.FileSetManager
 import com.dxxredux.app.ModManager
+import com.dxxredux.app.formatBinaryRate
 
 internal object MissionCompatibilityResolver {
     fun resolve(
@@ -122,11 +123,32 @@ internal fun MissionCompatibilityStatus.userLabel(progress: MissionStatusReport?
         MissionCompatibilityStatus.UNSUPPORTED_SOURCE -> "Mission cannot be synchronized"
         MissionCompatibilityStatus.ERROR -> "Mission check failed"
         MissionCompatibilityStatus.QUEUED -> "Mission download queued"
-        MissionCompatibilityStatus.DOWNLOADING -> "Downloading mission ${progress?.percentText().orEmpty()}".trim()
+        MissionCompatibilityStatus.DOWNLOADING -> transferStatusLabel("Downloading mission", progress)
         MissionCompatibilityStatus.PAUSED -> "Mission download paused"
         MissionCompatibilityStatus.RETRYING -> "Retrying mission download"
         MissionCompatibilityStatus.FAILED_RESUMABLE -> "Mission download interrupted"
-        MissionCompatibilityStatus.VERIFYING -> "Verifying mission"
+        MissionCompatibilityStatus.VERIFYING -> transferStatusLabel("Verifying mission", progress)
+        MissionCompatibilityStatus.FINALIZING -> transferStatusLabel("Finalizing mission", progress)
     }
 
 internal fun MissionStatusReport.percentText(): String = "${(progress * 100f).toInt()}%"
+
+private fun transferStatusLabel(
+    prefix: String,
+    report: MissionStatusReport?,
+): String {
+    if (report == null) return prefix
+    val parts = mutableListOf(prefix, report.percentText())
+    report.remainingSeconds()?.let { parts += "${formatRemainingTime(it)} remaining" }
+    if (report.bytesPerSecond > 0L) parts += formatTransferRate(report.bytesPerSecond)
+    return parts.joinToString(" - ")
+}
+
+internal fun formatRemainingTime(seconds: Long): String =
+    when {
+        seconds < 60L -> "${seconds}s"
+        seconds < 3600L -> "${seconds / 60L}m ${seconds % 60L}s"
+        else -> "${seconds / 3600L}h ${(seconds % 3600L) / 60L}m"
+    }
+
+internal fun formatTransferRate(bytesPerSecond: Long): String = formatBinaryRate(bytesPerSecond)

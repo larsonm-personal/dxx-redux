@@ -54,4 +54,13 @@ class MissionTransferResumeTest {
         assertEquals(chunkSize.toLong(), verified)
         assertEquals(chunkSize.toLong(), partial.length())
     }
+
+    @Test
+    fun transferRateUsesElapsedTime() {
+        assertEquals(
+            16L * 1024L * 1024L,
+            MissionTransferService.averageBytesPerSecond(16L * 1024L * 1024L, 1_000_000_000L),
+        )
+        assertEquals(0L, MissionTransferService.averageBytesPerSecond(0L, 1_000_000_000L))
+    }
 }

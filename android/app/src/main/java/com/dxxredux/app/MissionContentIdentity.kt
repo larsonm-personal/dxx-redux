@@ -27,6 +27,7 @@ internal data class MissionContentIdentity(
         fun compute(
             file: File,
             chunkSizeBytes: Int = DEFAULT_CHUNK_SIZE_BYTES,
+            onProgress: (Long) -> Unit = {},
         ): MissionContentIdentity {
             require(file.isFile) { "Mission wrapper is missing: ${file.absolutePath}" }
             require(chunkSizeBytes > 0)
@@ -49,6 +50,7 @@ internal data class MissionContentIdentity(
                     chunk.update(buffer, 0, used)
                     chunks += chunk.digest().toHex()
                     total += used
+                    onProgress(total)
                     if (used < buffer.size) break
                 }
             }

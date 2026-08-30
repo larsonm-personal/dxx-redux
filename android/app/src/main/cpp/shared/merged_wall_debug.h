@@ -291,15 +291,15 @@ extern volatile int g_merged_wall_force_two_pass;
 void android_merged_wall_texmerge_owner_reset(struct merged_wall_texmerge_owner *owner);
 void android_merged_wall_texmerge_owner_note(struct merged_wall_texmerge_owner *owner);
 void android_merged_wall_log_texmerge_owner(const char *event, int slot,
-	int tmap_bottom, int tmap_top, grs_bitmap *bottom_bmp,
-	grs_bitmap *top_bmp, int orient,
-	const struct merged_wall_texmerge_owner *owner);
+                                            int tmap_bottom, int tmap_top, grs_bitmap *bottom_bmp,
+                                            grs_bitmap *top_bmp, int orient,
+                                            const struct merged_wall_texmerge_owner *owner);
 void android_merged_wall_cached_texmerge_clear_cache(void);
 void android_merged_wall_set_draw_face_context(struct segment *segp, int sidenum,
-	int tmap1, int tmap2, int wid_flags, int nv, int face_index);
+                                               int tmap1, int tmap2, int wid_flags, int nv, int face_index);
 void android_merged_wall_clear_draw_face_context(void);
 void android_merged_wall_log_face(struct segment *segp, int sidenum, int tmap1,
-	int tmap2, int wid_flags, float dot, int nv, int face_index);
+                                  int tmap2, int wid_flags, float dot, int nv, int face_index);
 
 #endif /* OGL */
 

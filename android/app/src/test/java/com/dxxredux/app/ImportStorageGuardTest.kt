@@ -30,8 +30,8 @@ class ImportStorageGuardTest {
         val message = ImportStorageGuard.messageForFailure(error)
 
         assertTrue(message.contains("Not enough free space"))
-        assertTrue(message.contains("Required: 75 MiB"))
-        assertTrue(message.contains("Available: 10 MiB"))
+        assertTrue(message.contains("Required: 75 MB"))
+        assertTrue(message.contains("Available: 10 MB"))
         assertTrue(message.contains("stopped before writing"))
     }
 }

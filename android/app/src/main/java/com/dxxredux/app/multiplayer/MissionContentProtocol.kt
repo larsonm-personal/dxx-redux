@@ -54,6 +54,9 @@ enum class MissionCompatibilityStatus {
 
     @SerialName("verifying")
     VERIFYING,
+
+    @SerialName("finalizing")
+    FINALIZING,
 }
 
 @Serializable
@@ -115,6 +118,7 @@ data class MissionStatusReport(
     @SerialName("transfer_id") val transferId: String? = null,
     val attempt: Int = 0,
     @SerialName("failure_code") val failureCode: String? = null,
+    @SerialName("bytes_per_second") val bytesPerSecond: Long = 0L,
 ) {
     val progress: Float
         get() =
@@ -133,7 +137,15 @@ data class MissionStatusReport(
             verifiedBytes <= totalBytes &&
             totalBytes == (requirement.sizeBytes ?: 0L) &&
             attempt in 0..100 &&
+            bytesPerSecond in 0..MAX_REPORTED_TRANSFER_BYTES_PER_SECOND &&
             (failureCode == null || failureCode.length <= 64)
+}
+
+internal const val MAX_REPORTED_TRANSFER_BYTES_PER_SECOND = 1024L * 1024L * 1024L
+
+internal fun MissionStatusReport.remainingSeconds(): Long? {
+    if (bytesPerSecond <= 0L || totalBytes <= verifiedBytes) return null
+    return ((totalBytes - verifiedBytes) + bytesPerSecond - 1L) / bytesPerSecond
 }
 
 internal fun MissionRequirement.toGameInfoFields(): Map<String, JsonElement> =

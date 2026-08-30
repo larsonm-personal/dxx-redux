@@ -33,6 +33,12 @@ internal fun formatMetadataLoadProgress(progress: MetadataLoadProgress): String 
     return "${progress.label} $completed/$total"
 }
 
+internal fun formatMetadataLoadProgressPercent(progress: MetadataLoadProgress): String {
+    val total = progress.total.coerceAtLeast(1)
+    val completed = progress.completed.coerceIn(0, total)
+    return "${progress.label} ${completed.toLong() * 100 / total}%"
+}
+
 @Composable
 internal fun MetadataLoadProgressView(
     progress: MetadataLoadProgress,
@@ -77,7 +83,7 @@ internal fun LevelMetadataAnalysisProgressView(
         MetadataLinearProgress(progress.overall)
         progress.estimatedLevel?.let { estimatedLevel ->
             Spacer(modifier = Modifier.height(10.dp))
-            MetadataLinearProgress(estimatedLevel)
+            MetadataLinearProgress(estimatedLevel, formatMetadataLoadProgressPercent(estimatedLevel))
         }
         progress.currentLevel?.let { currentLevel ->
             Spacer(modifier = Modifier.height(10.dp))
@@ -87,9 +93,12 @@ internal fun LevelMetadataAnalysisProgressView(
 }
 
 @Composable
-private fun MetadataLinearProgress(progress: MetadataLoadProgress) {
+private fun MetadataLinearProgress(
+    progress: MetadataLoadProgress,
+    text: String = if (progress.total > 0) formatMetadataLoadProgress(progress) else progress.label,
+) {
     Text(
-        if (progress.total > 0) formatMetadataLoadProgress(progress) else progress.label,
+        text,
         fontSize = 12.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )

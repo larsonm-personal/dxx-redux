@@ -54,7 +54,77 @@ object LobbyService {
     private const val JOIN_RETRY_COUNT = 3
     private const val JOIN_RETRY_DELAY_MS = 1000L
     private const val JOINED_LOBBY_REFRESH_MS = 3000L
+    private const val ACTIVE_MISSION_PLAYER_EXPIRY_MS = 5L * 60L * 1000L
     private const val BROADCAST_FAILURE_WARNING_THRESHOLD = 3
+    private val MISSION_TRANSFER_REFRESH_STATES =
+        setOf(
+            MissionCompatibilityStatus.QUEUED,
+            MissionCompatibilityStatus.DOWNLOADING,
+            MissionCompatibilityStatus.PAUSED,
+            MissionCompatibilityStatus.RETRYING,
+            MissionCompatibilityStatus.FAILED_RESUMABLE,
+            MissionCompatibilityStatus.VERIFYING,
+            MissionCompatibilityStatus.FINALIZING,
+        )
+    private val MISSION_TERMINAL_STATES =
+        setOf(
+            MissionCompatibilityStatus.MATCH,
+            MissionCompatibilityStatus.INSTALLED_DISABLED,
+            MissionCompatibilityStatus.MISSING,
+            MissionCompatibilityStatus.SIZE_MISMATCH,
+            MissionCompatibilityStatus.HASH_MISMATCH,
+            MissionCompatibilityStatus.UNSUPPORTED_SOURCE,
+            MissionCompatibilityStatus.ERROR,
+            MissionCompatibilityStatus.FAILED_RESUMABLE,
+        )
+    private val MISSION_ACTIVE_LEASE_STATES =
+        setOf(
+            MissionCompatibilityStatus.QUEUED,
+            MissionCompatibilityStatus.DOWNLOADING,
+            MissionCompatibilityStatus.RETRYING,
+            MissionCompatibilityStatus.VERIFYING,
+            MissionCompatibilityStatus.FINALIZING,
+        )
+    private val MISSION_TRANSFER_PHASES =
+        mapOf(
+            MissionCompatibilityStatus.QUEUED to 0,
+            MissionCompatibilityStatus.RETRYING to 0,
+            MissionCompatibilityStatus.DOWNLOADING to 1,
+            MissionCompatibilityStatus.PAUSED to 1,
+            MissionCompatibilityStatus.VERIFYING to 2,
+            MissionCompatibilityStatus.FINALIZING to 3,
+        )
+
+    internal fun shouldResolveMissionAfterRefresh(report: MissionStatusReport?): Boolean =
+        report?.status !in MISSION_TRANSFER_REFRESH_STATES
+
+    internal fun shouldAcceptMissionStatus(
+        previous: MissionStatusReport?,
+        report: MissionStatusReport,
+    ): Boolean {
+        if (previous == null) return true
+        if (report.attempt < previous.attempt) return false
+        if (report.attempt > previous.attempt) return true
+        if (report.status in MISSION_TERMINAL_STATES) return true
+        if (report.transferId != previous.transferId) return previous.transferId == null
+        val previousPhase = MISSION_TRANSFER_PHASES[previous.status] ?: return true
+        val reportPhase = MISSION_TRANSFER_PHASES[report.status] ?: return true
+        return reportPhase > previousPhase ||
+            (reportPhase == previousPhase && report.verifiedBytes >= previous.verifiedBytes)
+    }
+
+    internal fun lanPlayerLeaseExpired(
+        player: LanPlayer,
+        nowMs: Long,
+    ): Boolean {
+        val expiry =
+            if (player.missionStatus?.status in MISSION_ACTIVE_LEASE_STATES) {
+                ACTIVE_MISSION_PLAYER_EXPIRY_MS
+            } else {
+                LOBBY_EXPIRY_MS
+            }
+        return nowMs - player.lastSeenMs > expiry
+    }
 
     // -- Public state --
 
@@ -541,7 +611,14 @@ object LobbyService {
     ) {
         joinedLobbyReady = ready
         val data = buildReady(lobbyId, callsign, ready, localClientId)
-        scope?.launch(Dispatchers.IO) { sendTo(data, hostAddress) }
+        scope?.launch(Dispatchers.IO) {
+            val status = _joinedLobby.value?.missionStatus
+            if (ready && status?.status == MissionCompatibilityStatus.MATCH) {
+                sendTo(buildMissionStatus(lobbyId, callsign, localClientId, status), hostAddress)
+                delay(50L)
+            }
+            sendTo(data, hostAddress)
+        }
     }
 
     /** Send a chat message in the LAN lobby. Clients send to host, host relays to all. */
@@ -1018,19 +1095,7 @@ object LobbyService {
             _hostedLobbyPlayers.value.find { lanPlayerMatchesSender(it, callsign, clientId, senderAddr) }
                 ?: return
         val previous = player.missionStatus
-        if (
-            previous != null &&
-            (
-                report.attempt < previous.attempt ||
-                    (
-                        report.attempt == previous.attempt &&
-                            report.transferId == previous.transferId &&
-                            report.verifiedBytes < previous.verifiedBytes
-                    )
-            )
-        ) {
-            return
-        }
+        if (!shouldAcceptMissionStatus(previous, report)) return
         _hostedLobbyPlayers.value =
             _hostedLobbyPlayers.value.map {
                 if (it === player) {
@@ -1136,6 +1201,10 @@ object LobbyService {
         val player =
             _hostedLobbyPlayers.value.find { lanPlayerMatchesSender(it, callsign, clientId, senderAddr) }
                 ?: return
+        _hostedLobbyPlayers.value =
+            _hostedLobbyPlayers.value.map {
+                if (it === player) it.copy(lastSeenMs = System.currentTimeMillis()) else it
+            }
         val playerId = player.clientId ?: "${player.callsign}@$senderAddr"
         val grant = MissionTransferService.authorize(playerId, senderAddr, revision) ?: return
         sendTo(
@@ -1180,7 +1249,11 @@ object LobbyService {
                 }
             },
             onFinished = { success ->
-                if (!success && attempt < 3) {
+                if (
+                    !success &&
+                    attempt < 3 &&
+                    _joinedLobby.value?.missionStatus?.status == MissionCompatibilityStatus.FAILED_RESUMABLE
+                ) {
                     scope?.launch(Dispatchers.IO) {
                         delay(500L shl (attempt - 1))
                         val current = _joinedLobby.value ?: return@launch
@@ -1243,6 +1316,13 @@ object LobbyService {
         joinRetryJob?.cancel()
         joinRetryJob = null
         val requirement = missionRequirementFromJson(json.optJSONObject("mission_requirement"))
+        val previous = _joinedLobby.value
+        val previousStatus =
+            previous
+                ?.takeIf {
+                    it.lobbyId == lobbyId &&
+                        it.missionRequirement?.revision == requirement?.revision
+                }?.missionStatus
         _joinedLobby.value =
             JoinedLobbyInfo(
                 lobbyId = lobbyId,
@@ -1260,13 +1340,14 @@ object LobbyService {
                 omittedVisualModNames = VisualReplacementPolicy.namesFromJson(json),
                 missionRequirement = requirement,
                 missionStatus =
-                    requirement?.let {
-                        MissionStatusReport(
-                            revision = it.revision,
-                            status = MissionCompatibilityStatus.CHECKING,
-                            totalBytes = it.sizeBytes ?: 0L,
-                        )
-                    },
+                    previousStatus
+                        ?: requirement?.let {
+                            MissionStatusReport(
+                                revision = it.revision,
+                                status = MissionCompatibilityStatus.CHECKING,
+                                totalBytes = it.sizeBytes ?: 0L,
+                            )
+                        },
             )
         NetLog.log("LAN", "JOIN_ACK received for lobby $lobbyId from $senderAddr")
         Log.i(TAG, "JOIN_ACK received for lobby $lobbyId from $senderAddr")
@@ -1275,7 +1356,7 @@ object LobbyService {
         if (requirement == null) {
             val ready = buildReady(lobbyId, hostCallsign, joinedLobbyReady, localClientId)
             scope?.launch(Dispatchers.IO) { sendTo(ready, senderAddr) }
-        } else {
+        } else if (shouldResolveMissionAfterRefresh(previousStatus)) {
             resolveAndReportJoinedMission(requirement, json.optString("mode", "coop"))
         }
     }
@@ -1289,6 +1370,7 @@ object LobbyService {
             val report = MissionCompatibilityResolver.resolve(context, requirement, mode)
             val joined = _joinedLobby.value ?: return@launch
             if (joined.missionRequirement?.revision != requirement.revision) return@launch
+            if (!shouldResolveMissionAfterRefresh(joined.missionStatus)) return@launch
             _joinedLobby.value = joined.copy(missionStatus = report)
             sendTo(buildMissionStatus(joined.lobbyId, hostCallsign, localClientId, report), joined.hostAddr)
         }
@@ -1773,10 +1855,10 @@ object LobbyService {
         val removed = lobbies.entries.removeAll { (now - it.value.lastSeenMs) > LOBBY_EXPIRY_MS }
         if (removed) publishLobbies()
 
-        // A6: prune stale joiners when hosting (no packets for 10s)
+        // Prune idle joiners quickly, but allow bounded time for active mission work
         if (_isHosting.value) {
             val players = _hostedLobbyPlayers.value
-            val stale = players.filter { it.address != "127.0.0.1" && (now - it.lastSeenMs) > LOBBY_EXPIRY_MS }
+            val stale = players.filter { it.address != "127.0.0.1" && lanPlayerLeaseExpired(it, now) }
             if (stale.isNotEmpty()) {
                 val updated = players - stale.toSet()
                 _hostedLobbyPlayers.value = updated
@@ -1868,6 +1950,12 @@ object LobbyService {
                 while (isActive) {
                     val joined = _joinedLobby.value ?: return@launch
                     sendTo(buildJoin(joined.lobbyId, hostCallsign, localClientId), joined.hostAddr)
+                    joined.missionStatus?.let { status ->
+                        sendTo(
+                            buildMissionStatus(joined.lobbyId, hostCallsign, localClientId, status),
+                            joined.hostAddr,
+                        )
+                    }
                     delay(JOINED_LOBBY_REFRESH_MS)
                 }
             }

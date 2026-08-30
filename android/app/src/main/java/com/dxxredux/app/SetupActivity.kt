@@ -5011,7 +5011,7 @@ private fun SetupScreen(
                                     Spacer(modifier = Modifier.height(4.dp))
                                     for (ef in extracted) {
                                         Text(
-                                            text = "\u2022 ${ef.name} (${ef.sizeBytes / 1024} KB)",
+                                            text = "\u2022 ${ef.name} (${formatBinarySize(ef.sizeBytes)})",
                                             fontSize = 12.sp,
                                             color = MaterialTheme.colorScheme.onSecondaryContainer,
                                         )
@@ -5375,13 +5375,7 @@ private fun SetupScreen(
 }
 
 /** Format byte size as human-readable (KB, MB, GB). */
-private fun formatSize(bytes: Long): String =
-    when {
-        bytes >= 1_073_741_824 -> "%.2f GB".format(bytes / 1_073_741_824.0)
-        bytes >= 1_048_576 -> "%.1f MB".format(bytes / 1_048_576.0)
-        bytes >= 1_024 -> "%.0f KB".format(bytes / 1_024.0)
-        else -> "$bytes B"
-    }
+private fun formatSize(bytes: Long): String = formatBinarySize(bytes)
 
 internal fun formatMissionArchiveProgressAmount(
     label: String,

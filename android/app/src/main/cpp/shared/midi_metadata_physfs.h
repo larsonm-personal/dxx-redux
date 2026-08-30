@@ -11,8 +11,8 @@ extern "C" {
 
 int midi_metadata_read_physfs(const char *filename, midi_metadata *metadata);
 int midi_metadata_resolve_physfs(const char *filename, midi_metadata *metadata,
-	                             char *source_filename, size_t source_filename_size,
-	                             int *inherited_from_midi);
+                                 char *source_filename, size_t source_filename_size,
+                                 int *inherited_from_midi);
 
 #ifdef __cplusplus
 }

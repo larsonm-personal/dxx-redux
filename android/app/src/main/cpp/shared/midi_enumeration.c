@@ -264,7 +264,7 @@ static void enumerate_hog_tracks(const char *hog_path, const char *source_id,
 			int peer_length = 0;
 			if (peer_index >= 0 &&
 			    hog_midi_catalog_read(hog_path, &catalog, (size_t) peer_index,
-			                           &peer_data, &peer_length)) {
+			                          &peer_data, &peer_length)) {
 				midi_metadata peer_metadata;
 				midi_metadata_init(&peer_metadata);
 				midi_metadata_parse(peer_data, (size_t) peer_length, 0, &peer_metadata);

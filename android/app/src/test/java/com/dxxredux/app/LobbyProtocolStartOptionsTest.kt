@@ -90,6 +90,7 @@ class LobbyProtocolStartOptionsTest {
                 totalBytes = 42L,
                 transferId = "attempt-token",
                 attempt = 1,
+                bytesPerSecond = 12_345L,
             )
         val statusPacket = buildMissionStatus("lobby", "Wing", "wing-id", status)
         val request = buildMissionTransferRequest("lobby", "Wing", "wing-id", requirement.revision, 1)

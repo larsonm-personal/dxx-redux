@@ -560,13 +560,23 @@ class ModManager(
     internal fun importMissionZipFileMovingSource(
         source: File,
         displayName: String = source.name,
-    ): ModInfo? = importMissionZipFile(source, displayName, moveDirectSource = true)
+        acceptedIdentity: MissionContentIdentity? = null,
+        onProgress: (LauncherCopyProgress) -> Unit = {},
+    ): ModInfo? =
+        importMissionZipFile(
+            source,
+            displayName,
+            moveDirectSource = true,
+            onProgress = onProgress,
+            acceptedIdentity = acceptedIdentity,
+        )
 
     private fun importMissionZipFile(
         source: File,
         displayName: String,
         moveDirectSource: Boolean,
         onProgress: (LauncherCopyProgress) -> Unit = {},
+        acceptedIdentity: MissionContentIdentity? = null,
     ): ModInfo? {
         onProgress(LauncherCopyProgress("Inspecting level pack: $displayName", 0L, 0L))
         val scan = MissionZip.inspect(source)
@@ -578,15 +588,18 @@ class ModManager(
         val dest = File(modsDir, safeName)
         val extractionStore = MissionZipExtractionStore(supportDir)
         extractionStore.removeOwner(safeName)
+        var copiedSource = false
         if (source.absoluteFile != dest.absoluteFile) {
             val moved = moveDirectSource && source.renameTo(dest)
             if (!moved) {
                 ImportStorageGuard.requireFreeSpace(modsDir, source.length(), "import mission zip $displayName")
                 source.copyTo(dest, overwrite = true)
+                copiedSource = true
             }
         }
-        val identity = MissionContentIdentity.compute(dest)
+        val identity: MissionContentIdentity
         try {
+            identity = resolveImportedMissionIdentity(dest, acceptedIdentity, copiedSource)
             if (scan.importMode == "extracted_bundle") {
                 val extractLabel = "Extracting level pack cache for faster launches: $displayName"
                 onProgress(LauncherCopyProgress(extractLabel, 0L, 0L))
@@ -604,6 +617,21 @@ class ModManager(
             throw e
         }
         return registerMissionZip(safeName, identity, scan)
+    }
+
+    internal fun resolveImportedMissionIdentity(
+        destination: File,
+        acceptedIdentity: MissionContentIdentity?,
+        copiedSource: Boolean,
+    ): MissionContentIdentity {
+        if (acceptedIdentity == null) return MissionContentIdentity.compute(destination)
+        if (!copiedSource) {
+            require(acceptedIdentity.sizeBytes == destination.length()) { "Accepted mission identity size changed" }
+            return acceptedIdentity
+        }
+        val copiedIdentity = MissionContentIdentity.compute(destination, acceptedIdentity.chunkSizeBytes)
+        require(copiedIdentity == acceptedIdentity) { "Copied mission identity changed" }
+        return copiedIdentity
     }
 
     private fun importNestedPreferredMissionZip(

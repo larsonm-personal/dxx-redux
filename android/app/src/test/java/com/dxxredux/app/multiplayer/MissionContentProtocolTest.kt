@@ -67,6 +67,22 @@ class MissionContentProtocolTest {
         assertFalse(valid.copy(revision = "stale").validFor(requirement))
     }
 
+    @Test
+    fun transferProgressIncludesAStableTimeRemainingEstimate() {
+        val report =
+            MissionStatusReport(
+                revision = "revision",
+                status = MissionCompatibilityStatus.DOWNLOADING,
+                verifiedBytes = 40L,
+                totalBytes = 100L,
+                bytesPerSecond = 10L,
+            )
+
+        assertEquals(6L, report.remainingSeconds())
+        assertEquals("1m 5s", formatRemainingTime(65L))
+        assertEquals("1.5 MB/s", formatTransferRate(1536L * 1024L))
+    }
+
     private fun wrapperRequirement(
         size: Long,
         offer: Boolean,

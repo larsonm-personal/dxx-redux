@@ -1456,10 +1456,9 @@ private fun DebugLoggingSection(initialLogFiles: List<File>) {
                             }.padding(horizontal = 4.dp, vertical = 2.dp),
                 ) {
                     Text(file.name, fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
-                    val sizeKb = file.length() / 1024
                     val date = dateFmt.format(Date(file.lastModified()))
                     Text(
-                        "$date -- ${sizeKb}KB",
+                        "$date -- ${formatBinarySize(file.length())}",
                         fontSize = 10.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -1605,10 +1604,9 @@ private fun CrashReportsSection(initialCrashFiles: List<File>) {
                             }.padding(horizontal = 4.dp, vertical = 2.dp),
                 ) {
                     Text(file.name, fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
-                    val sizeKb = file.length() / 1024
                     val date = dateFmt.format(Date(file.lastModified()))
                     Text(
-                        "$date -- ${sizeKb}KB",
+                        "$date -- ${formatBinarySize(file.length())}",
                         fontSize = 10.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -2989,12 +2987,7 @@ private fun ImportLocationSection(filesDir: File) {
     }
 }
 
-private fun formatSize(bytes: Long): String =
-    when {
-        bytes < 1024 -> "$bytes B"
-        bytes < 1024 * 1024 -> "${bytes / 1024} KB"
-        else -> String.format(Locale.US, "%.1f MB", bytes / (1024.0 * 1024.0))
-    }
+private fun formatSize(bytes: Long): String = formatBinarySize(bytes)
 
 @Composable
 private fun BoxScope.ScrollArrows(scrollState: ScrollState) {

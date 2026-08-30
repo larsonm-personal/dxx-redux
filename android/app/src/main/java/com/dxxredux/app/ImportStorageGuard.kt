@@ -6,7 +6,6 @@ import android.os.StatFs
 import android.provider.OpenableColumns
 import java.io.File
 import java.io.IOException
-import java.util.Locale
 
 internal class InsufficientStorageException(
     val requiredFreeBytes: Long,
@@ -14,14 +13,13 @@ internal class InsufficientStorageException(
     target: String,
 ) : IOException(
         "Not enough free space for $target " +
-            "(need ${ImportStorageGuard.formatMib(requiredFreeBytes)} free, " +
-            "have ${ImportStorageGuard.formatMib(availableBytes)})",
+            "(need ${ImportStorageGuard.formatMegabytes(requiredFreeBytes)} free, " +
+            "have ${ImportStorageGuard.formatMegabytes(availableBytes)})",
     )
 
 internal object ImportStorageGuard {
     private const val HEADROOM_BYTES = 50L * 1024L * 1024L
     private const val ERROR_FILE_NAME = "last_extract_error.txt"
-    private const val MIB = 1024L * 1024L
 
     fun queryUriSizeBytes(
         contentResolver: ContentResolver,
@@ -72,8 +70,8 @@ internal object ImportStorageGuard {
 
     fun messageForFailure(error: InsufficientStorageException): String =
         "Not enough free space to continue.\n\n" +
-            "Required: ${formatMib(error.requiredFreeBytes)}\n" +
-            "Available: ${formatMib(error.availableBytes)}\n\n" +
+            "Required: ${formatMegabytes(error.requiredFreeBytes)}\n" +
+            "Available: ${formatMegabytes(error.availableBytes)}\n\n" +
             "The operation was stopped before writing more files."
 
     fun recordFailure(
@@ -96,10 +94,7 @@ internal object ImportStorageGuard {
         }
     }
 
-    fun formatMib(bytes: Long): String {
-        val roundedUp = ((bytes.coerceAtLeast(0L) + MIB - 1L) / MIB).coerceAtLeast(1L)
-        return String.format(Locale.US, "%d MiB", roundedUp)
-    }
+    fun formatMegabytes(bytes: Long): String = formatBinaryMegabytesRoundedUp(bytes)
 
     fun archiveEntryBytes(entries: Iterable<Long>): Long {
         var total = 0L

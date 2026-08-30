@@ -592,9 +592,8 @@ class VideoInfoOverlay(
         baselineY += layout.infoLineHeight
 
         // Texture memory
-        val texMb = texMemoryKb / 1024
         canvas.drawText("Tex:", panelLeft + layout.panelPad, baselineY, labelPaint)
-        canvas.drawText("${texMb}MB", valueColumn, baselineY, valuePaint)
+        canvas.drawText(formatBinarySize(texMemoryKb.toLong() * 1024L), valueColumn, baselineY, valuePaint)
         baselineY += layout.infoLineHeight
 
         // Hi-res textures

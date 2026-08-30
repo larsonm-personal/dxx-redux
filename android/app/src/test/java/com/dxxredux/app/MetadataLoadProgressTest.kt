@@ -43,4 +43,24 @@ class MetadataLoadProgressTest {
         assertNull(progress.fraction)
         assertEquals("Locating file metadata 0/1", formatMetadataLoadProgress(progress))
     }
+
+    @Test
+    fun formatsEstimatedProgressAsWholePercent() {
+        assertEquals(
+            "Estimated level progress 11%",
+            formatMetadataLoadProgressPercent(
+                MetadataLoadProgress("Estimated level progress", 119, 1_000),
+            ),
+        )
+    }
+
+    @Test
+    fun estimatedPercentDoesNotReachOneHundredEarly() {
+        assertEquals(
+            "Estimated level progress 99%",
+            formatMetadataLoadProgressPercent(
+                MetadataLoadProgress("Estimated level progress", 999, 1_000),
+            ),
+        )
+    }
 }

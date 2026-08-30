@@ -441,6 +441,7 @@ internal fun MissionStatusReport.toJson(): JSONObject =
         .put("verified_bytes", verifiedBytes)
         .put("total_bytes", totalBytes)
         .put("attempt", attempt)
+        .put("bytes_per_second", bytesPerSecond)
         .apply {
             transferId?.let { put("transfer_id", it) }
             failureCode?.let { put("failure_code", it) }
@@ -459,5 +460,6 @@ internal fun missionStatusFromJson(json: JSONObject?): MissionStatusReport? {
         transferId = json.optString("transfer_id").takeIf(String::isNotBlank),
         attempt = json.optInt("attempt", 0),
         failureCode = json.optString("failure_code").takeIf(String::isNotBlank),
+        bytesPerSecond = json.optLong("bytes_per_second", 0L),
     )
 }

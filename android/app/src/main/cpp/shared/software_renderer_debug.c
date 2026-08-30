@@ -47,7 +47,10 @@ volatile int g_fb_avg_g = -1;
 volatile int g_fb_avg_b = -1;
 volatile int g_fb_avg_a = -1;
 
-int gles3_shim_probe_vbo_arrays(void) { return 0; }
+int gles3_shim_probe_vbo_arrays(void)
+{
+	return 0;
+}
 
 void android_merged_wall_request_snapshot(int request_mode)
 {
@@ -69,9 +72,9 @@ void android_merged_wall_texmerge_owner_note(struct merged_wall_texmerge_owner *
 }
 
 void android_merged_wall_log_texmerge_owner(const char *event, int slot,
-	int tmap_bottom, int tmap_top, grs_bitmap *bottom_bmp,
-	grs_bitmap *top_bmp, int orient,
-	const struct merged_wall_texmerge_owner *owner)
+                                            int tmap_bottom, int tmap_top, grs_bitmap *bottom_bmp,
+                                            grs_bitmap *top_bmp, int orient,
+                                            const struct merged_wall_texmerge_owner *owner)
 {
 	(void) event;
 	(void) slot;
@@ -86,7 +89,7 @@ void android_merged_wall_log_texmerge_owner(const char *event, int slot,
 void android_merged_wall_cached_texmerge_clear_cache(void) {}
 
 void android_merged_wall_set_draw_face_context(struct segment *segp, int sidenum,
-	int tmap1, int tmap2, int wid_flags, int nv, int face_index)
+                                               int tmap1, int tmap2, int wid_flags, int nv, int face_index)
 {
 	(void) segp;
 	(void) sidenum;
@@ -100,7 +103,7 @@ void android_merged_wall_set_draw_face_context(struct segment *segp, int sidenum
 void android_merged_wall_clear_draw_face_context(void) {}
 
 void android_merged_wall_log_face(struct segment *segp, int sidenum, int tmap1,
-	int tmap2, int wid_flags, float dot, int nv, int face_index)
+                                  int tmap2, int wid_flags, float dot, int nv, int face_index)
 {
 	(void) segp;
 	(void) sidenum;
@@ -112,9 +115,18 @@ void android_merged_wall_log_face(struct segment *segp, int sidenum, int tmap1,
 	(void) face_index;
 }
 
-void android_texture_debug_set_target(const char *value) { (void) value; }
-const char *android_texture_debug_get_target_display(void) { return "unavailable"; }
-int android_texture_debug_target_is_crosshair(void) { return 0; }
+void android_texture_debug_set_target(const char *value)
+{
+	(void) value;
+}
+const char *android_texture_debug_get_target_display(void)
+{
+	return "unavailable";
+}
+int android_texture_debug_target_is_crosshair(void)
+{
+	return 0;
+}
 int android_texture_debug_matches_target_name(const char *bitmapname)
 {
 	(void) bitmapname;

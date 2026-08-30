@@ -51,4 +51,5 @@ private val TRANSFER_PROGRESS_STATES =
         MissionCompatibilityStatus.RETRYING,
         MissionCompatibilityStatus.FAILED_RESUMABLE,
         MissionCompatibilityStatus.VERIFYING,
+        MissionCompatibilityStatus.FINALIZING,
     )

@@ -1194,10 +1194,4 @@ private fun saveExplorerTime(unixSeconds: Long): String {
     return SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).format(Date(unixSeconds * 1000L))
 }
 
-private fun saveExplorerSize(bytes: Long): String =
-    when {
-        bytes >= 1024L * 1024L -> String.format(Locale.US, "%.1f MB", bytes / (1024.0 * 1024.0))
-        bytes >= 1024L -> String.format(Locale.US, "%.1f KB", bytes / 1024.0)
-        bytes > 0L -> "$bytes B"
-        else -> "-"
-    }
+private fun saveExplorerSize(bytes: Long): String = if (bytes > 0L) formatBinarySize(bytes) else "-"

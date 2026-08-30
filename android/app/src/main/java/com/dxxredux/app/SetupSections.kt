@@ -2905,13 +2905,7 @@ private fun setupSectionFormatTimestamp(millis: Long): String {
 
 internal fun archiveCompressedSizeText(bytes: Long?): String = bytes?.let(::setupSectionFormatSize) ?: "Unknown"
 
-private fun setupSectionFormatSize(bytes: Long): String =
-    when {
-        bytes >= 1_073_741_824 -> "%.2f GB".format(bytes / 1_073_741_824.0)
-        bytes >= 1_048_576 -> "%.1f MB".format(bytes / 1_048_576.0)
-        bytes >= 1_024 -> "%.0f KB".format(bytes / 1_024.0)
-        else -> "$bytes B"
-    }
+private fun setupSectionFormatSize(bytes: Long): String = formatBinarySize(bytes)
 
 internal fun missionDescriptorForStatus(
     status: FileStatus,

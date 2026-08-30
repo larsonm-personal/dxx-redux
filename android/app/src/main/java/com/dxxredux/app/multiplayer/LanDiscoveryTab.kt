@@ -57,6 +57,7 @@ import com.dxxredux.app.BuildInfo
 import com.dxxredux.app.FileSetManager
 import com.dxxredux.app.ModManager
 import com.dxxredux.app.VisualReplacementPolicy
+import com.dxxredux.app.formatBinarySize
 import com.dxxredux.app.lobby.LobbyService
 import com.dxxredux.app.tvFocusBorder
 import kotlinx.coroutines.Dispatchers
@@ -196,7 +197,8 @@ private fun LanJoinedLobbyView(
         val offeredMission = info.missionRequirement?.takeIf { it.isWrapper && it.offerAvailable }
         if (offeredMission != null && info.missionStatus?.status != MissionCompatibilityStatus.MATCH) {
             Text(
-                "Host offer: ${offeredMission.wrapperFilename} - ${offeredMission.sizeBytes} bytes - " +
+                "Host offer: ${offeredMission.wrapperFilename} - " +
+                    "${formatBinarySize(offeredMission.sizeBytes ?: 0L)} - " +
                     "SHA-256 ${offeredMission.sha256?.take(12)}...",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -220,7 +222,7 @@ private fun LanJoinedLobbyView(
                     MissionCompatibilityStatus.FAILED_RESUMABLE,
                 )
         if (canDownload) {
-            OutlinedButton(
+            Button(
                 onClick = { LobbyService.requestMissionDownload() },
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -258,6 +260,8 @@ private fun LanJoinedLobbyView(
                 val isSelf = player.callsign == callsign
                 val displayName =
                     if (isSelf) "${player.callsign} (self)" else player.callsign
+                val displayedMissionStatus =
+                    missionStatusForPlayerDisplay(isSelf, info.missionStatus, player.missionStatus)
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -265,7 +269,7 @@ private fun LanJoinedLobbyView(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(displayName, style = MaterialTheme.typography.bodyMedium)
-                            MissionStatusIndicator(player.missionStatus)
+                            MissionStatusIndicator(displayedMissionStatus)
                         }
                         Text(
                             if (player.ready) "Ready" else "Not Ready",
@@ -304,7 +308,8 @@ private fun LanJoinedLobbyView(
         // Ready toggle
         val myReady = players.find { it.callsign == callsign }?.ready ?: false
         val myMissionMatches =
-            players.find { it.callsign == callsign }?.missionStatus?.status == MissionCompatibilityStatus.MATCH
+            info.missionStatus?.status == MissionCompatibilityStatus.MATCH ||
+                players.find { it.callsign == callsign }?.missionStatus?.status == MissionCompatibilityStatus.MATCH
         Button(
             onClick = {
                 LobbyService.setReady(info.lobbyId, info.hostAddr, callsign, !myReady)
@@ -320,6 +325,12 @@ private fun LanJoinedLobbyView(
     }
 }
 
+internal fun missionStatusForPlayerDisplay(
+    isSelf: Boolean,
+    localStatus: MissionStatusReport?,
+    hostStatus: MissionStatusReport?,
+): MissionStatusReport? = if (isSelf) localStatus ?: hostStatus else hostStatus
+
 @Composable
 private fun LanDiscoveryView(
     callsign: String,
@@ -333,6 +344,7 @@ private fun LanDiscoveryView(
     val isHosting by LobbyService.isHosting.collectAsState()
     val isDiscovering by LobbyService.isDiscovering.collectAsState()
     val hostedPlayers by LobbyService.hostedLobbyPlayers.collectAsState()
+    val chatMessages by LobbyService.chatMessages.collectAsState()
     val lanLaunchEvent by LobbyService.lanLaunchEvent.collectAsState()
     val diagnostics by LobbyService.diagnostics.collectAsState()
     val broadcastFailing by LobbyService.broadcastFailing.collectAsState()
@@ -843,6 +855,13 @@ private fun LanDiscoveryView(
                 ) {
                     Text("Start Game")
                 }
+                Spacer(Modifier.height(8.dp))
+                ChatArea(
+                    messages = chatMessages,
+                    onSend = { LobbyService.sendChat(callsign, it) },
+                    modifier = Modifier.fillMaxWidth().height(220.dp),
+                    textEntryFallbackFocusRequester = actionFocus,
+                )
                 Spacer(Modifier.height(12.dp))
                 HorizontalDivider()
                 Spacer(Modifier.height(8.dp))
