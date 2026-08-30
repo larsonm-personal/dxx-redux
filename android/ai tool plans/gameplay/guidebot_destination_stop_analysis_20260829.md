@@ -38,3 +38,43 @@ There will be no short-path exception for firing positions. Losing exact pose pl
 - [ ] Run focused host tests first, then the designed emulator scenarios when the emulator is available
 
 Expected behavior change: near a destination or frontier, Guide-Bot can twiddle, wander, or return to the player just as in the original game. It may no longer place itself at a specially calculated switch-firing coordinate. Objective selection, general-area guidance, route continuation after world-state changes, and hints remain upgraded.
+
+## Cleanup and simplification opportunities
+
+Treat route-planning geometry and live escort movement as separate boundaries. The planner may retain activation positions, visibility tests, and shot-quality calculations when they are needed to select a useful general-area segment. Do not copy that exact geometry into the live `escort_route_goal` or physical AI path.
+
+### Definite removals
+
+- [ ] Remove `target_pos_valid` and `target_pos` from `escort_route_goal`
+- [ ] Remove `path_endpoint_pos_valid` and `path_endpoint_pos` from `escort_route_goal`
+- [ ] Delete `escort_route_apply_target_pos` and its call from `escort_create_path_to_goal`
+- [ ] Delete exact target/path-endpoint position getters and the corresponding introspection fields and equality assertion
+- [ ] Remove exact-position comparisons from passive route-adoption logging and decisions
+- [ ] Replace `escort_path_needs_fallback(path_length, semantic_route_active)` with the original direct `path_length < 3` rule, then remove the semantic-specific helper and test cases
+- [ ] Delete `escort_semantic_route_suppresses_midpoint_visit` and its branch in `time_to_visit_player`
+
+### Runtime-state consolidation
+
+- [ ] Remove stored path-endpoint segment bookkeeping; derive the current endpoint from the ordinary AI path when diagnostics need it
+- [ ] Replace route-specific `route_goal_path_pending` plumbing with the already exposed ordinary path length, index, and direction state
+- [ ] Reduce the live route goal to semantic objective identity plus one current segment waypoint; avoid parallel `target`, `guidance`, and `path endpoint` representations of the same movement destination
+- [ ] Consolidate duplicate wall, trigger, and side fields where `target_*` and `objective_*` always identify the same semantic step
+- [ ] Replace `REACH_FIRING_POSITION` as a movement mode with a general switch-area instruction derived from `activation_kind`
+- [ ] Use a single generic find-and-shoot-switch hint at runtime; remove live route-goal shot-quality and incidence fields if they no longer affect that hint or adoption identity
+- [ ] Keep an explicit nearest-progress/frontier marker only if needed for the "as close as possible" hint; do not retain a broad guidance-mode enum solely for introspection
+
+### Keep deliberately
+
+- [ ] Keep planner/certifier activation geometry and line-of-sight analysis when it is required to choose the correct guidance segment
+- [ ] Keep semantic objective ordering, world-state completion monitoring, event invalidation, cache/audit governance, and cooperative authority handling
+- [ ] Keep physical-frontier selection for currently unreachable objectives
+- [ ] Keep different-segment stalled-edge avoidance unless classic movement and new liveness tests prove it redundant
+- [ ] Keep shot-quality data in planner diagnostics and certification tests if it remains useful for route validity, even though it is removed from live movement behavior
+
+### Test cleanup
+
+- [ ] Remove emulator assertions for exact target position, exact path-endpoint position, and endpoint/target coordinate equality
+- [ ] Replace stored route-endpoint assertions with generic AI path and Guide-Bot movement assertions
+- [ ] Rename firing-position expectations to switch-area guidance and assert the selected segment plus the generic find-and-shoot hint
+- [ ] Retain planner-level geometry tests separately from Guide-Bot movement tests so internal route certification is not confused with player-facing precision guidance
+- [ ] Run cleanup after behavior tests are in place, in small compilable steps: remove movement override, restore classic policies, migrate tests/introspection, then collapse redundant state

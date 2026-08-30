@@ -600,7 +600,10 @@ void input_demo_log_weapon_lifetime(const char *step, object *obj)
 
 	if (!step || !obj || obj->type != OBJ_WEAPON)
 		return;
-	snprintf(json, sizeof(json),
+	if (!input_demo_recorder_is_active() && !input_demo_debug_replay_probe_active())
+		return;
+	if (input_demo_recorder_is_active()) {
+		snprintf(json, sizeof(json),
 		"{\"kind\":\"probe_weapon_life\",\"gt\":%lld,\"step\":\"%s\",\"obj\":%d,\"id\":%d,\"sig\":%d,\"seg\":%d,\"life\":%d,\"shields\":%d,\"flags\":%d,\"parent_type\":%d,\"parent\":%d,\"parent_sig\":%d,\"last_hit\":%d,\"track_goal\":%d,\"creation_frame\":%u,\"ctime\":%lld,\"homing\":%s,\"vx\":%d,\"vy\":%d,\"vz\":%d,\"x\":%d,\"y\":%d,\"z\":%d,\"lastx\":%d,\"lasty\":%d,\"lastz\":%d}",
 		(long long)GameTime64,
 		step,
@@ -628,7 +631,8 @@ void input_demo_log_weapon_lifetime(const char *step, object *obj)
 		obj->last_pos.x,
 		obj->last_pos.y,
 		obj->last_pos.z);
-	input_demo_record_frame_event_json_d1(json);
+		input_demo_record_frame_event_json_d1(json);
+	}
 	if (!input_demo_debug_replay_probe_active())
 		return;
 	snprintf(probe, sizeof(probe),
@@ -667,7 +671,10 @@ void input_demo_record_homing_state(const char *step, object *obj,
 
 	if (!obj || obj->type != OBJ_WEAPON || !Weapon_info[obj->id].homing_flag)
 		return;
-	snprintf(json, sizeof(json),
+	if (!input_demo_recorder_is_active() && !input_demo_debug_replay_probe_active())
+		return;
+	if (input_demo_recorder_is_active()) {
+		snprintf(json, sizeof(json),
 		"{\"kind\":\"probe_homing\",\"gt\":%lld,\"step\":\"%s\",\"obj\":%d,\"id\":%d,\"sig\":%d,\"seg\":%d,\"life\":%d,\"parent_type\":%d,\"parent\":%d,\"parent_sig\":%d,\"straight\":%s,\"do_homer_frame\":%s,\"track_goal_before\":%d,\"track_goal_after\":%d,\"dot\":%d,\"ideal_frame_time\":%d,\"homer_frame_count\":%u,\"creation_frame\":%u,\"vx\":%d,\"vy\":%d,\"vz\":%d,\"x\":%d,\"y\":%d,\"z\":%d}",
 		(long long)GameTime64,
 		step ? step : "unset",
@@ -693,7 +700,8 @@ void input_demo_record_homing_state(const char *step, object *obj,
 		obj->pos.x,
 		obj->pos.y,
 		obj->pos.z);
-	input_demo_record_frame_event_json_d1(json);
+		input_demo_record_frame_event_json_d1(json);
+	}
 	if (!input_demo_debug_replay_probe_active())
 		return;
 	snprintf(probe, sizeof(probe),
@@ -807,9 +815,12 @@ void input_demo_log_weapon_robot_path_probe(const char *step, object *weapon,
 
 	if (!step || !weapon || !robot)
 		return;
+	if (!input_demo_recorder_is_active() && !input_demo_debug_replay_probe_active())
+		return;
 	input_demo_debug_log_weapon_robot_path_probe(step, weapon, robot,
 		collision_point);
-	snprintf(json, sizeof(json),
+	if (input_demo_recorder_is_active()) {
+		snprintf(json, sizeof(json),
 		"{\"kind\":\"weapon_robot_path\",\"gt\":%lld,\"step\":\"%s\",\"weapon_obj\":%d,\"weapon_id\":%d,\"weapon_sig\":%d,\"weapon_seg\":%d,\"weapon_flags\":%d,\"parent_type\":%d,\"parent\":%d,\"parent_sig\":%d,\"last_hit\":%d,\"track_goal\":%d,\"robot_obj\":%d,\"robot_id\":%d,\"robot_sig\":%d,\"robot_seg\":%d,\"robot_flags\":%d,\"robot_shields\":%d,\"weapon_vx\":%d,\"weapon_vy\":%d,\"weapon_vz\":%d,\"robot_vx\":%d,\"robot_vy\":%d,\"robot_vz\":%d}",
 		(long long)GameTime64,
 		step,
@@ -835,7 +846,8 @@ void input_demo_log_weapon_robot_path_probe(const char *step, object *weapon,
 		robot->mtype.phys_info.velocity.x,
 		robot->mtype.phys_info.velocity.y,
 		robot->mtype.phys_info.velocity.z);
-	input_demo_record_frame_event_json_d1(json);
+		input_demo_record_frame_event_json_d1(json);
+	}
 	if (!input_demo_debug_replay_probe_active())
 		return;
 	snprintf(probe, sizeof(probe),
