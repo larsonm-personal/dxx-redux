@@ -1,9 +1,13 @@
 package com.dxxredux.app
 
 import com.dxxredux.app.lobby.LAN_BROADCAST_FAILURE_DIAGNOSTIC
+import com.dxxredux.app.lobby.LAN_PEER_TIMEOUT_MS
+import com.dxxredux.app.lobby.LAN_RECONNECT_GRACE_MS
 import com.dxxredux.app.lobby.LanPlayer
+import com.dxxredux.app.lobby.LanPlayerLeaseAction
 import com.dxxredux.app.lobby.lanDiagnosticAfterBroadcastRecovery
 import com.dxxredux.app.lobby.lanLobbyHasClientIdConflict
+import com.dxxredux.app.lobby.lanPlayerLeaseAction
 import com.dxxredux.app.lobby.lanPlayerMatchesJoinIdentity
 import com.dxxredux.app.lobby.lanPlayerMatchesSender
 import com.dxxredux.app.lobby.lanTransportRecoveryReason
@@ -104,5 +108,30 @@ class LobbyDiagnosticsTest {
         assertEquals(host, refreshed[0])
         assertTrue(refreshed[1].ready)
         assertEquals(1000L, refreshed[1].lastSeenMs)
+    }
+
+    @Test
+    fun lanPlayerLeaseAction_marksThenRemovesAfterReconnectGrace() {
+        val connected = LanPlayer("Wing", "192.168.1.20", lastSeenMs = 1_000L)
+        val reconnecting =
+            connected.copy(
+                ready = false,
+                connected = false,
+                disconnectedAtMs = 20_000L,
+            )
+
+        assertEquals(LanPlayerLeaseAction.NONE, lanPlayerLeaseAction(connected, 1_000L + LAN_PEER_TIMEOUT_MS))
+        assertEquals(
+            LanPlayerLeaseAction.MARK_RECONNECTING,
+            lanPlayerLeaseAction(connected, 1_001L + LAN_PEER_TIMEOUT_MS),
+        )
+        assertEquals(
+            LanPlayerLeaseAction.NONE,
+            lanPlayerLeaseAction(reconnecting, 20_000L + LAN_RECONNECT_GRACE_MS),
+        )
+        assertEquals(
+            LanPlayerLeaseAction.REMOVE,
+            lanPlayerLeaseAction(reconnecting, 20_001L + LAN_RECONNECT_GRACE_MS),
+        )
     }
 }

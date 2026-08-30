@@ -2,6 +2,35 @@ package com.dxxredux.app.lobby
 
 internal const val LAN_BROADCAST_FAILURE_DIAGNOSTIC =
     "Broadcasts failing -- check Wi-Fi and Nearby Devices permission"
+internal const val LAN_RECONNECTING_DIAGNOSTIC = "Connection interrupted, reconnecting to host"
+internal const val LAN_PEER_TIMEOUT_MS = 10_000L
+internal const val LAN_RECONNECT_GRACE_MS = 2L * 60L * 1000L
+
+internal enum class LanPlayerLeaseAction {
+    NONE,
+    MARK_RECONNECTING,
+    REMOVE,
+}
+
+internal fun lanPlayerLeaseAction(
+    player: LanPlayer,
+    nowMs: Long,
+): LanPlayerLeaseAction {
+    if (player.address == "127.0.0.1") return LanPlayerLeaseAction.NONE
+    if (player.connected) {
+        return if (nowMs - player.lastSeenMs > LAN_PEER_TIMEOUT_MS) {
+            LanPlayerLeaseAction.MARK_RECONNECTING
+        } else {
+            LanPlayerLeaseAction.NONE
+        }
+    }
+    val disconnectedAtMs = player.disconnectedAtMs ?: return LanPlayerLeaseAction.REMOVE
+    return if (nowMs - disconnectedAtMs > LAN_RECONNECT_GRACE_MS) {
+        LanPlayerLeaseAction.REMOVE
+    } else {
+        LanPlayerLeaseAction.NONE
+    }
+}
 
 internal fun lanDiagnosticAfterBroadcastRecovery(current: String): String =
     if (current == LAN_BROADCAST_FAILURE_DIAGNOSTIC) "" else current

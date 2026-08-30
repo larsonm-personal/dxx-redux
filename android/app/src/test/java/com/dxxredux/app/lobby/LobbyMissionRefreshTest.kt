@@ -59,37 +59,27 @@ class LobbyMissionRefreshTest {
         )
         assertFalse(
             LobbyService.shouldAcceptMissionStatus(
+                report(MissionCompatibilityStatus.MATCH, verifiedBytes = 100L),
+                finalizing,
+            ),
+        )
+        assertFalse(
+            LobbyService.shouldAcceptMissionStatus(
                 verifying,
                 report(MissionCompatibilityStatus.VERIFYING, verifiedBytes = 99L),
             ),
         )
     }
 
-    @Test
-    fun `active mission work receives an extended player lease`() {
-        val active =
-            LanPlayer(
-                callsign = "Wing",
-                address = "192.168.1.2",
-                missionStatus = report(MissionCompatibilityStatus.FINALIZING),
-                lastSeenMs = 1_000L,
-            )
-        val idle = active.copy(missionStatus = report(MissionCompatibilityStatus.MATCH))
-
-        assertFalse(LobbyService.lanPlayerLeaseExpired(active, nowMs = 61_000L))
-        assertTrue(LobbyService.lanPlayerLeaseExpired(idle, nowMs = 61_000L))
-    }
-
     private fun report(
         status: MissionCompatibilityStatus,
         verifiedBytes: Long = 0L,
-    ) =
-        MissionStatusReport(
-            revision = "revision",
-            status = status,
-            verifiedBytes = verifiedBytes,
-            totalBytes = 100L,
-            transferId = "transfer",
-            attempt = 1,
-        )
+    ) = MissionStatusReport(
+        revision = "revision",
+        status = status,
+        verifiedBytes = verifiedBytes,
+        totalBytes = 100L,
+        transferId = "transfer",
+        attempt = 1,
+    )
 }

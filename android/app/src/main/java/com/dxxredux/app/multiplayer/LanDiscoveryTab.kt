@@ -136,6 +136,7 @@ private fun LanJoinedLobbyView(
     val lanLaunchEvent by LobbyService.lanLaunchEvent.collectAsState()
     val isHosting by LobbyService.isHosting.collectAsState()
     val chatMessages by LobbyService.chatMessages.collectAsState()
+    val diagnostics by LobbyService.diagnostics.collectAsState()
     val info = joinedLobby ?: return
     val readyFocus = remember { FocusRequester() }
 
@@ -163,6 +164,15 @@ private fun LanJoinedLobbyView(
             }
         }
         Spacer(Modifier.height(8.dp))
+
+        if (diagnostics.isNotEmpty()) {
+            Text(
+                diagnostics,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+            Spacer(Modifier.height(8.dp))
+        }
 
         // Lobby info
         Text(
@@ -230,7 +240,7 @@ private fun LanJoinedLobbyView(
                     if (info.missionStatus?.status == MissionCompatibilityStatus.FAILED_RESUMABLE) {
                         "Resume mission download"
                     } else {
-                        "Download, enable, and use host mission"
+                        "Download mission from host"
                     },
                 )
             }
@@ -272,10 +282,18 @@ private fun LanJoinedLobbyView(
                             MissionStatusIndicator(displayedMissionStatus)
                         }
                         Text(
-                            if (player.ready) "Ready" else "Not Ready",
+                            if (!player.connected) {
+                                "Reconnecting"
+                            } else if (player.ready) {
+                                "Ready"
+                            } else {
+                                "Not Ready"
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color =
-                                if (player.ready) {
+                                if (!player.connected) {
+                                    MaterialTheme.colorScheme.error
+                                } else if (player.ready) {
                                     MaterialTheme.colorScheme.primary
                                 } else {
                                     MaterialTheme.colorScheme.onSurfaceVariant
@@ -807,10 +825,18 @@ private fun LanDiscoveryView(
                                     MissionStatusIndicator(p.missionStatus)
                                 }
                                 Text(
-                                    if (p.ready) "Ready" else "Not Ready",
+                                    if (!p.connected) {
+                                        "Reconnecting"
+                                    } else if (p.ready) {
+                                        "Ready"
+                                    } else {
+                                        "Not Ready"
+                                    },
                                     style = MaterialTheme.typography.bodySmall,
                                     color =
-                                        if (p.ready) {
+                                        if (!p.connected) {
+                                            MaterialTheme.colorScheme.error
+                                        } else if (p.ready) {
                                             MaterialTheme.colorScheme.primary
                                         } else {
                                             MaterialTheme.colorScheme.onSurfaceVariant
@@ -850,7 +876,8 @@ private fun LanDiscoveryView(
                     enabled =
                         hostedPlayers.size >= 2 &&
                             hostedPlayers.all {
-                                it.ready && it.missionStatus?.status == MissionCompatibilityStatus.MATCH
+                                it.connected && it.ready &&
+                                    it.missionStatus?.status == MissionCompatibilityStatus.MATCH
                             },
                 ) {
                     Text("Start Game")

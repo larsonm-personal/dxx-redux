@@ -1,14 +1,20 @@
 package com.dxxredux.app
 
-import com.dxxredux.app.lobby.buildStart
+import com.dxxredux.app.lobby.LanPlayer
+import com.dxxredux.app.lobby.MSG_JOIN
+import com.dxxredux.app.lobby.MSG_PING
+import com.dxxredux.app.lobby.MSG_READY
 import com.dxxredux.app.lobby.buildAnnounce
 import com.dxxredux.app.lobby.buildJoin
 import com.dxxredux.app.lobby.buildJoinAck
+import com.dxxredux.app.lobby.buildJoinedLobbyHeartbeat
 import com.dxxredux.app.lobby.buildLeave
 import com.dxxredux.app.lobby.buildMissionStatus
 import com.dxxredux.app.lobby.buildMissionTransferGrant
 import com.dxxredux.app.lobby.buildMissionTransferRequest
+import com.dxxredux.app.lobby.buildPlayerList
 import com.dxxredux.app.lobby.buildReady
+import com.dxxredux.app.lobby.buildStart
 import com.dxxredux.app.lobby.missionRequirementFromJson
 import com.dxxredux.app.lobby.missionStatusFromJson
 import com.dxxredux.app.lobby.parsePacket
@@ -63,6 +69,48 @@ class LobbyProtocolStartOptionsTest {
         assertEquals("host-id", parsePacket(joinAck, joinAck.size)?.getString("host_client_id"))
         assertEquals("wing-id", parsePacket(ready, ready.size)?.getString("client_id"))
         assertEquals("wing-id", parsePacket(leave, leave.size)?.getString("client_id"))
+    }
+
+    @Test
+    fun joinedLobbyHeartbeatResendsDesiredReadyState() {
+        val packets =
+            buildJoinedLobbyHeartbeat(
+                "lobby",
+                "Wing",
+                "wing-id",
+                true,
+                missionStatus = null,
+                nowMs = 1234L,
+            )
+        val json = packets.map { parsePacket(it, it.size) ?: error("heartbeat packet did not parse") }
+
+        assertEquals(listOf(MSG_JOIN, MSG_READY, MSG_PING), json.map { it.getString("type") })
+        assertTrue(json[1].getBoolean("ready"))
+        assertEquals("wing-id", json.last().getString("client_id"))
+        assertEquals(1234L, json.last().getLong("ts"))
+    }
+
+    @Test
+    fun playerListPublishesReconnectState() {
+        val packet =
+            buildPlayerList(
+                "lobby",
+                listOf(
+                    LanPlayer(
+                        callsign = "Wing",
+                        address = "192.0.2.2",
+                        ready = false,
+                        connected = false,
+                    ),
+                ),
+            )
+        val player =
+            parsePacket(packet, packet.size)
+                ?.getJSONArray("players")
+                ?.getJSONObject(0)
+                ?: error("player list packet did not parse")
+
+        assertFalse(player.getBoolean("connected"))
     }
 
     @Test

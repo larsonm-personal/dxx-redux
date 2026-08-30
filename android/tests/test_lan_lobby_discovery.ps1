@@ -15,12 +15,14 @@
 #   .\test_lan_lobby_discovery.ps1 -TimeoutSeconds 30
 #   .\test_lan_lobby_discovery.ps1 -ResumeCoverage
 #   .\test_lan_lobby_discovery.ps1 -ResumeCoverage -ScreenOffCoverage
+#   .\test_lan_lobby_discovery.ps1 -ResumeCoverage -ReconnectCoverage
 
 param(
     [int]$TimeoutSeconds = 30,
     [int]$IdleStabilitySeconds = 70,
     [switch]$ResumeCoverage,
-    [switch]$ScreenOffCoverage
+    [switch]$ScreenOffCoverage,
+    [switch]$ReconnectCoverage
 )
 
 $ErrorActionPreference = "Stop"
@@ -159,6 +161,19 @@ try {
                 exit 1
             }
 
+            Send-MpCommand -Serial $EMU1 -Command "lan_send_chat" -Extras @("--es", "text", "host_to_client_check")
+            $hostChatReceived = Wait-ForCondition -Description "host chat delivered to joiner" -TimeoutSec 10 -PollMs 500 -Condition {
+                Send-MpCommand -Serial $EMU2 -Command "lan_lobby_status"
+                Start-Sleep -Milliseconds 250
+                $status = Get-LogcatLines -Serial $EMU2 -Tags @("DXX-MP:*") |
+                    Where-Object { $_ -match 'lan_lobby_status:' } | Select-Object -Last 1
+                return $status -and $status -match 'chat_messages=1'
+            }
+            if (-not $hostChatReceived) {
+                Write-Status "FAIL: Host chat did not reach the joiner" "Red"
+                exit 1
+            }
+
             Send-MpCommand -Serial $EMU2 -Command "lan_set_ready" -Extras @("--ez", "ready", "true")
             $ready = Wait-ForCondition -Description "both LAN players ready" -TimeoutSec 10 -PollMs 500 -Condition {
                 Send-MpCommand -Serial $EMU1 -Command "lan_lobby_status"
@@ -170,6 +185,49 @@ try {
             if (-not $ready) {
                 Write-Status "FAIL: Lobby did not reach ready state" "Red"
                 exit 1
+            }
+            $clientReady = Wait-ForCondition -Description "ready state reflected to joiner" -TimeoutSec 10 -PollMs 500 -Condition {
+                Send-MpCommand -Serial $EMU2 -Command "lan_lobby_status"
+                Start-Sleep -Milliseconds 250
+                $status = Get-LogcatLines -Serial $EMU2 -Tags @("DXX-MP:*") |
+                    Where-Object { $_ -match 'lan_lobby_status:' } | Select-Object -Last 1
+                return $status -and $status -match 'players=2' -and $status -match 'DiscoveryJoin:true'
+            }
+            if (-not $clientReady) {
+                Write-Status "FAIL: Ready state was not reflected back to the joiner" "Red"
+                exit 1
+            }
+
+            if ($ReconnectCoverage) {
+                Write-Status "Disabling joiner Wi-Fi long enough to enter reconnecting state..."
+                Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @("shell", "svc", "wifi", "disable") -Seconds 5 |
+                    Out-Null
+                $reconnecting = Wait-ForCondition -Description "joiner marked reconnecting" -TimeoutSec 20 -PollMs 1000 -Condition {
+                    Send-MpCommand -Serial $EMU1 -Command "lan_lobby_status"
+                    Start-Sleep -Milliseconds 300
+                    $status = Get-LogcatLines -Serial $EMU1 -Tags @("DXX-MP:*") |
+                        Where-Object { $_ -match 'lan_lobby_status:' } | Select-Object -Last 1
+                    return $status -and $status -match 'players=2' -and $status -match 'DiscoveryJoin:false:false'
+                }
+                if (-not $reconnecting) {
+                    Write-Status "FAIL: Joiner was not retained and marked reconnecting" "Red"
+                    exit 1
+                }
+
+                Write-Status "Restoring joiner Wi-Fi..."
+                Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @("shell", "svc", "wifi", "enable") -Seconds 5 |
+                    Out-Null
+                $reconnected = Wait-ForCondition -Description "joiner seamlessly reconnected" -TimeoutSec 30 -PollMs 1000 -Condition {
+                    Send-MpCommand -Serial $EMU1 -Command "lan_lobby_status"
+                    Start-Sleep -Milliseconds 300
+                    $status = Get-LogcatLines -Serial $EMU1 -Tags @("DXX-MP:*") |
+                        Where-Object { $_ -match 'lan_lobby_status:' } | Select-Object -Last 1
+                    return $status -and $status -match 'players=2' -and $status -match 'DiscoveryJoin:true:true'
+                }
+                if (-not $reconnected) {
+                    Write-Status "FAIL: Joiner did not seamlessly reconnect with ready state restored" "Red"
+                    exit 1
+                }
             }
 
             if ($ScreenOffCoverage) {
@@ -202,6 +260,17 @@ try {
                 Write-Status "FAIL: Unready update failed after idle window" "Red"
                 exit 1
             }
+            $clientUnready = Wait-ForCondition -Description "unready state reflected to joiner" -TimeoutSec 10 -PollMs 500 -Condition {
+                Send-MpCommand -Serial $EMU2 -Command "lan_lobby_status"
+                Start-Sleep -Milliseconds 250
+                $status = Get-LogcatLines -Serial $EMU2 -Tags @("DXX-MP:*") |
+                    Where-Object { $_ -match 'lan_lobby_status:' } | Select-Object -Last 1
+                return $status -and $status -match 'players=2' -and $status -match 'DiscoveryJoin:false'
+            }
+            if (-not $clientUnready) {
+                Write-Status "FAIL: Unready state was not reflected back to the joiner" "Red"
+                exit 1
+            }
 
             Send-MpCommand -Serial $EMU2 -Command "lan_set_ready" -Extras @("--ez", "ready", "true")
             Start-Sleep -Milliseconds 300
@@ -212,7 +281,7 @@ try {
                 $status = Get-LogcatLines -Serial $EMU1 -Tags @("DXX-MP:*") |
                     Where-Object { $_ -match 'lan_lobby_status:' } | Select-Object -Last 1
                 return $status -and $status -match 'players=2' -and $status -match 'all_ready=true' -and
-                $status -match 'chat_messages=([1-9]\d*)'
+                $status -match 'chat_messages=([2-9]|[1-9]\d+)'
             }
             if (-not $interactive) {
                 Write-Status "FAIL: Ready or chat failed after idle window" "Red"
@@ -270,6 +339,12 @@ try {
         exit 1
     }
 } finally {
+    if ($ReconnectCoverage) {
+        try {
+            Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @("shell", "svc", "wifi", "enable") -Seconds 5 |
+                Out-Null
+        } catch {}
+    }
     foreach ($emu in @($EMU1, $EMU2)) {
         try {
             Adb-Dev-Timeout -Serial $emu -AdbArgs @(

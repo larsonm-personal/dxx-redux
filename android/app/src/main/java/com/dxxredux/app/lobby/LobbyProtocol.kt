@@ -38,6 +38,8 @@ data class LanPlayer(
     val address: String,
     val clientId: String? = null,
     val ready: Boolean = false,
+    val connected: Boolean = true,
+    val disconnectedAtMs: Long? = null,
     val lastSeenMs: Long = System.currentTimeMillis(),
     val missionStatus: MissionStatusReport? = null,
 )
@@ -211,6 +213,21 @@ fun buildReady(
     return json.toString().toByteArray(Charsets.UTF_8)
 }
 
+internal fun buildJoinedLobbyHeartbeat(
+    lobbyId: String,
+    callsign: String,
+    clientId: String?,
+    ready: Boolean,
+    missionStatus: MissionStatusReport?,
+    nowMs: Long = System.currentTimeMillis(),
+): List<ByteArray> =
+    buildList {
+        add(buildJoin(lobbyId, callsign, clientId))
+        missionStatus?.let { add(buildMissionStatus(lobbyId, callsign, clientId, it)) }
+        add(buildReady(lobbyId, callsign, ready, clientId))
+        add(buildPing(lobbyId, callsign, clientId, nowMs))
+    }
+
 /** Build a PLAYER_LIST packet (sent by host to all players). */
 fun buildPlayerList(
     lobbyId: String,
@@ -226,6 +243,7 @@ fun buildPlayerList(
         pj.put("address", p.address)
         if (!p.clientId.isNullOrBlank()) pj.put("client_id", p.clientId)
         pj.put("ready", p.ready)
+        pj.put("connected", p.connected)
         p.missionStatus?.let { pj.put("mission_status", it.toJson()) }
         arr.put(pj)
     }
@@ -284,12 +302,19 @@ fun buildStart(
     return json.toString().toByteArray(Charsets.UTF_8)
 }
 
-/** Build a PING packet. */
-fun buildPing(lobbyId: String): ByteArray {
+/** Build an identified PING packet from a joined client to its host. */
+fun buildPing(
+    lobbyId: String,
+    callsign: String,
+    clientId: String?,
+    timestampMs: Long = System.currentTimeMillis(),
+): ByteArray {
     val json = JSONObject()
     json.put("type", MSG_PING)
     json.put("lobby_id", lobbyId)
-    json.put("ts", System.currentTimeMillis())
+    json.put("callsign", callsign)
+    if (!clientId.isNullOrBlank()) json.put("client_id", clientId)
+    json.put("ts", timestampMs)
     return json.toString().toByteArray(Charsets.UTF_8)
 }
 

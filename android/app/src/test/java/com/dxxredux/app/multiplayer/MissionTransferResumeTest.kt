@@ -63,4 +63,34 @@ class MissionTransferResumeTest {
         )
         assertEquals(0L, MissionTransferService.averageBytesPerSecond(0L, 1_000_000_000L))
     }
+
+    @Test
+    fun completedTransferReportRetainsOrderingIdentity() {
+        val requirement =
+            MissionRequirement(
+                revision = "revision",
+                game = "d2",
+                missionKey = "castaway",
+                displayName = "Castaway Redux",
+                kind = MissionRequirement.KIND_WRAPPER,
+                wrapperFilename = "castaway.zip",
+                sizeBytes = 180L,
+                sha256 = "0".repeat(64),
+                offerAvailable = true,
+            )
+
+        val report =
+            MissionTransferService.transferReport(
+                requirement,
+                MissionCompatibilityStatus.MATCH,
+                verifiedBytes = 180L,
+                transferId = "transfer-token",
+                attempt = 2,
+            )
+
+        assertEquals(MissionCompatibilityStatus.MATCH, report.status)
+        assertEquals("transfer-token", report.transferId)
+        assertEquals(2, report.attempt)
+        assertEquals(180L, report.verifiedBytes)
+    }
 }

@@ -1721,13 +1721,14 @@ class SetupActivity : ComponentActivity() {
                     "lan_lobby_status" -> {
                         val lobbyService = com.dxxredux.app.lobby.LobbyService
                         val players = lobbyService.hostedLobbyPlayers.value
-                        val playerStatus = players.joinToString(",") { "${it.callsign}:${it.ready}" }
+                        val playerStatus = players.joinToString(",") { "${it.callsign}:${it.ready}:${it.connected}" }
                         Log.i(
                             "DXX-MP",
                             "lan_lobby_status: hosting=${lobbyService.isHosting.value} " +
                                 "joined=${lobbyService.joinedLobby.value != null} players=${players.size} " +
                                 "all_ready=${players.isNotEmpty() && players.all { it.ready }} " +
-                                "chat_messages=${lobbyService.chatMessages.value.size} [$playerStatus]",
+                                "chat_messages=${lobbyService.chatMessages.value.size} " +
+                                "diagnostics=${lobbyService.diagnostics.value} [$playerStatus]",
                         )
                     }
 

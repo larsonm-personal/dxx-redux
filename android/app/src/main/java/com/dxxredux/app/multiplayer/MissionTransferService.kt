@@ -422,7 +422,15 @@ internal object MissionTransferService {
         files.sidecar.delete()
         val resolved = MissionCompatibilityResolver.resolve(context, requirement, "coop")
         require(resolved.status == MissionCompatibilityStatus.MATCH)
-        onStatus(resolved.copy(verifiedBytes = wrapperSize))
+        onStatus(
+            transferReport(
+                requirement,
+                MissionCompatibilityStatus.MATCH,
+                wrapperSize,
+                grant.token,
+                attempt,
+            ),
+        )
     }
 
     private fun appendAndVerify(
@@ -599,7 +607,7 @@ internal object MissionTransferService {
         }
     }
 
-    private fun transferReport(
+    internal fun transferReport(
         requirement: MissionRequirement,
         status: MissionCompatibilityStatus,
         verifiedBytes: Long,
