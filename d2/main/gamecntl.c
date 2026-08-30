@@ -2181,6 +2181,12 @@ int ReadControls(d_event *event)
 				HUD_init_message_literal(HM_DEFAULT, "No Guide-Bot in Multiplayer!");
 			return 1;
 		}
+		if (android_escort_recall_pending) {
+			android_escort_recall_pending = 0;
+			input_demo_record_direct_command_guidebot_goal(KEY_R, 1);
+			input_demo_apply_recorded_guidebot_goal(KEY_R, 1);
+			return 1;
+		}
 		if (android_escort_release_pending) {
 			android_escort_release_pending = 0;
 			input_demo_record_direct_command_escort_release_control();

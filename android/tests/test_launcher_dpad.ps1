@@ -59,7 +59,7 @@ function Wait-ForMainPageDpadReady {
             return $false
         }
         $texts = @($obj.buttons | ForEach-Object { $_.text })
-        return (($texts -contains "Define Controls") -and ($texts -contains "Touch Layout"))
+        return (($texts -contains "Controller Mapping") -and ($texts -contains "Touch Layout"))
     }
 
     if (-not $ready) {
@@ -213,28 +213,28 @@ Start-Sleep -Milliseconds 500
 Info "Test 1: Verify main page buttons..."
 $buttons = Wait-ForMainPageDpadReady -TimeoutSeconds 15 -SettleMs 500
 Info "  Found buttons: $($buttons -join ', ')"
-if (-not (Test-ContainsButton -Buttons $buttons -Text "Define Controls")) {
-    Fail "Main page missing Define Controls button (got: $($buttons -join ', '))"
+if (-not (Test-ContainsButton -Buttons $buttons -Text "Controller Mapping")) {
+    Fail "Main page missing Controller Mapping button (got: $($buttons -join ', '))"
 }
 if (-not (Test-ContainsButton -Buttons $buttons -Text "Touch Layout")) {
     Fail "Main page missing Touch Layout button (got: $($buttons -join ', '))"
 }
 Info "  PASS: Main page has expected buttons"
 
-# --- Test 2: DPAD_CENTER activates Define Controls (initial focus target) ---
-Info "Test 2: DPAD_CENTER on initial focus (Define Controls)..."
+# --- Test 2: DPAD_CENTER activates Controller Mapping (initial focus target) ---
+Info "Test 2: DPAD_CENTER on initial focus (Controller Mapping)..."
 $buttons = Wait-ForMainPageDpadReady
 EnableLauncherDpadMode
-Wait-ForSetupButtonFocus -Text "Define Controls"
+Wait-ForSetupButtonFocus -Text "Controller Mapping"
 & $script:ADB logcat -c
 SendKey 23  # DPAD_CENTER
 $buttons = Wait-ForSetupButtons -Failure "DPAD_CENTER did not navigate to the controller page" -Predicate {
     param($texts)
-    return (($texts -notcontains "Define Controls") -and
+    return (($texts -notcontains "Controller Mapping") -and
         ($texts -contains "Cancel") -and
         (@($texts | Where-Object { $_ -like "Save*" }).Count -gt 0))
 }
-if (($buttons -contains "Define Controls") -or
+if (($buttons -contains "Controller Mapping") -or
     ($buttons -notcontains "Cancel") -or
     (@($buttons | Where-Object { $_ -like "Save*" }).Count -eq 0)) {
     Fail "DPAD_CENTER did not navigate to the controller page (got: $($buttons -join ', '))"
@@ -245,36 +245,36 @@ Info "  PASS: Navigated to sub-page via DPAD_CENTER"
 Info "Test 3: BACK returns to main page..."
 SendKey 4  # KEYCODE_BACK
 $buttons = Wait-ForMainPageDpadReady
-if (($buttons -notcontains "Define Controls") -or ($buttons -notcontains "Touch Layout")) {
+if (($buttons -notcontains "Controller Mapping") -or ($buttons -notcontains "Touch Layout")) {
     Fail "BACK did not return to the main page (got: $($buttons -join ', '))"
 }
 Info "  PASS: Returned to main page"
 
 # --- Test 4: Focus restoration after return - DPAD_CENTER works again ---
 Info "Test 4: Focus restoration after return..."
-Wait-ForSetupButtonFocus -Text "Define Controls"
+Wait-ForSetupButtonFocus -Text "Controller Mapping"
 SendKey 23  # DPAD_CENTER
 $buttons = Wait-ForSetupButtons -Failure "Focus was not restored after returning from the controller page" -Predicate {
     param($texts)
-    return (($texts -notcontains "Define Controls") -and
+    return (($texts -notcontains "Controller Mapping") -and
         ($texts -contains "Cancel") -and
         (@($texts | Where-Object { $_ -like "Save*" }).Count -gt 0))
 }
-if (($buttons -contains "Define Controls") -or
+if (($buttons -contains "Controller Mapping") -or
     ($buttons -notcontains "Cancel") -or
     (@($buttons | Where-Object { $_ -like "Save*" }).Count -eq 0)) {
     Fail "Focus was not restored after returning from the controller page (got: $($buttons -join ', '))"
 }
 Info "  PASS: Focus restored, navigated to sub-page again"
 
-# --- Test 5: DPAD_RIGHT moves from Define Controls to Touch Layout ---
+# --- Test 5: DPAD_RIGHT moves from Controller Mapping to Touch Layout ---
 Info "Test 5: DPAD RIGHT navigation..."
 SendKey 4  # BACK to main
 $buttons = Wait-ForMainPageDpadReady
-if (($buttons -notcontains "Define Controls") -or ($buttons -notcontains "Touch Layout")) {
+if (($buttons -notcontains "Controller Mapping") -or ($buttons -notcontains "Touch Layout")) {
     Fail "Did not return to the main page before DPAD_RIGHT test (got: $($buttons -join ', '))"
 }
-Wait-ForSetupButtonFocus -Text "Define Controls"
+Wait-ForSetupButtonFocus -Text "Controller Mapping"
 SendKey 22  # DPAD_RIGHT to Touch Layout
 SendKey 23  # DPAD_CENTER
 $buttons = Wait-ForSetupButtons -Failure "DPAD_RIGHT + CENTER did not open the Touch Layout editor" -Predicate {

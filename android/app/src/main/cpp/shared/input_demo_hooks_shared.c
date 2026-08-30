@@ -85,11 +85,7 @@ extern void input_demo_capture_current_result_after_powerups_d2(
 
 static int input_demo_collision_trace_enabled(void)
 {
-#ifdef DXX_BUILD_DESCENT_II
 	return input_demo_debug_is_enabled();
-#else
-	return 1;
-#endif
 }
 
 static const char *input_demo_result_game_name(void)

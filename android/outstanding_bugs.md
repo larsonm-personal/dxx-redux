@@ -75,11 +75,11 @@ Descent 3 made some changes to the Guide-Bot to alleviate complaints fans had wi
 [ ] multiplayer: resume saved level isn't working, the 2nd player doesn't join. it was working briefly in the past but not now
 [ ] d1-in-d2: work on identical weapon stats (spreadfire for example) as part of a longer-term goal to get demo compatibility and delete the d1/ folder. `android\ai tool plans\gameplay\plan_d1_in_d2_gameplay_semantics_survey_20260614.md`
 [it does] does the text "cloaked" appear still like it does in the base game, when in fullscreen mode? if not, needs a fix
-[ ] in the level metadata browser, add a feature that can preview the full level (wireframe) in the automap view. this would launch the game in a special mode that would go straight to the automap (with the game set up to display that and exit when done, not do anything else)
+[x] in the level metadata browser, add a feature that can preview the full level (wireframe) in the automap view. this would launch the game in a special mode that would go straight to the automap (with the game set up to display that and exit when done, not do anything else)
 [ ] find and include in releases: "d1 weapon damage mod"
 [ ] include guidebot in descent 1. this is a someday thing after everything is merged. UI support can be from the existing "deploy" option in the guidebot wheel
-[ ] for levels without >N coop starts defined, I'd like to allow >N players and just place them all in non-overlapping spots at the same single start point (or N start points). this may already be implemented in rebirth's code - can you check? and if not, you can use something like the placement code that was added for the warp-to coop feature, but targeting the single start point
-[ ] the left and right icons in this screenshot look neat, plus the enemy health bars: https://sectorgame.com/dxma/mission/?m=51 - are those already in rebirth? or are they d2xxl features?
+[x] for levels without >N coop starts defined, I'd like to allow >N players and just place them all in non-overlapping spots at the same single start point (or N start points). this may already be implemented in rebirth's code - can you check? and if not, you can use something like the placement code that was added for the warp-to coop feature, but targeting the single start point
+[x] the left and right icons in this screenshot look neat, plus the enemy health bars: https://sectorgame.com/dxma/mission/?m=51 - are those already in rebirth? or are they d2xxl features?
 [ ] rear view controls, like most youtubers have set up. make sure it's 90 degrees or whatever the default is, not expanded based on the fov setting
 [ ] multiplayer lifecycle, join/resume/rehost etc. helpers, and progress loading helpers like a quick resume system. this is all partially implemented but needs refinement based on play testing
 [x] move the secrets cheat from to the other overlay menu (?)

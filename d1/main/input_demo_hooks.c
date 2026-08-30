@@ -157,7 +157,7 @@ void input_demo_log_fvi_weapon_robot_check(
 	fix miss_delta;
 	unsigned int frame;
 
-	if (!input_demo_replay_is_loaded() && !input_demo_recorder_is_active())
+	if (!input_demo_debug_activity_probe_active())
 		return;
 	if (weapon_objnum < 0 || robot_objnum < 0)
 		return;
@@ -275,7 +275,7 @@ static void input_demo_append_replay_probe_message_d1(const char *kind,
 	const char *result_path = input_demo_replay_actual_result_path();
 	const int objnum = objp ? (int)(objp - Objects) : -1;
 
-	if (!input_demo_replay_is_loaded() || !kind || !message ||
+	if (!input_demo_debug_replay_probe_active() || !kind || !message ||
 		!result_path || !result_path[0])
 		return;
 
@@ -320,7 +320,7 @@ static void input_demo_record_frame_event_json_d1(const char *json_text)
 
 static int input_demo_trace_motion_probe_active(void)
 {
-	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
+	return input_demo_debug_activity_probe_active();
 }
 
 static unsigned int input_demo_trace_motion_frame_index(void)
@@ -369,7 +369,7 @@ void input_demo_log_replay_physics_fvi_fate(object *obj, int fate,
 	int wall_flags = 0;
 	int doorway_flags = 0;
 
-	if (!input_demo_replay_is_loaded() || !obj || !hit_info || !frame_vec ||
+	if (!input_demo_debug_replay_probe_active() || !obj || !hit_info || !frame_vec ||
 		!new_pos || !result_path || !result_path[0])
 		return;
 	if (hit_objnum >= 0 && hit_objnum <= Highest_object_index)
@@ -571,7 +571,7 @@ void input_demo_log_powerup_spawn_probe(object *source, object *created, int cre
 {
 	char probe[256];
 
-	if (!source || !created)
+	if (!input_demo_debug_replay_probe_active() || !source || !created)
 		return;
 	snprintf(probe, sizeof(probe),
 		"source=%d/%d/%d/%d seg=%d flags=0x%x contains=%d/%d/%d created=%d/%d/%d/%d/%d count=%d",
@@ -629,6 +629,8 @@ void input_demo_log_weapon_lifetime(const char *step, object *obj)
 		obj->last_pos.y,
 		obj->last_pos.z);
 	input_demo_record_frame_event_json_d1(json);
+	if (!input_demo_debug_replay_probe_active())
+		return;
 	snprintf(probe, sizeof(probe),
 		"step=%s id=%d homing=%d parent_type=%d parent=%d parent_sig=%d "
 		"last_hit=%d track_goal=%d life=%d seg=%d vel=(%d,%d,%d) "
@@ -692,6 +694,8 @@ void input_demo_record_homing_state(const char *step, object *obj,
 		obj->pos.y,
 		obj->pos.z);
 	input_demo_record_frame_event_json_d1(json);
+	if (!input_demo_debug_replay_probe_active())
+		return;
 	snprintf(probe, sizeof(probe),
 		"step=%s straight=%d do_homer_frame=%d "
 		"track_goal_before=%d track_goal_after=%d dot=%d "
@@ -724,7 +728,7 @@ void input_demo_log_player_shot_create_probe(object *shooter, object *weapon,
 {
 	char probe[512];
 
-	if (!shooter || !weapon)
+	if (!input_demo_debug_replay_probe_active() || !shooter || !weapon)
 		return;
 	snprintf(probe, sizeof(probe),
 		"shooter=%d laser_type=%d gun=%d harmless=%d sound=%d "
@@ -748,7 +752,7 @@ void input_demo_log_replay_collision_pair(const char *kind, object *obj0,
 {
 	char probe[768];
 
-	if (!kind || !obj0 || !obj1)
+	if (!input_demo_debug_replay_probe_active() || !kind || !obj0 || !obj1)
 		return;
 	snprintf(probe, sizeof(probe),
 		"a=%d/%d/%d sig=%d seg=%d pos=(%d,%d,%d) last=(%d,%d,%d) "
@@ -832,6 +836,8 @@ void input_demo_log_weapon_robot_path_probe(const char *step, object *weapon,
 		robot->mtype.phys_info.velocity.y,
 		robot->mtype.phys_info.velocity.z);
 	input_demo_record_frame_event_json_d1(json);
+	if (!input_demo_debug_replay_probe_active())
+		return;
 	snprintf(probe, sizeof(probe),
 		"step=%s weapon=%d/%d/%d/%d/%d robot=%d/%d/%d/%d/%d "
 		"robot_flags=0x%x robot_shields=%d weapon_flags=0x%x "
@@ -978,7 +984,7 @@ void input_demo_log_robot_fire_probe(object *objp, const vms_vector *fire_vec,
 {
 	unsigned int frame;
 
-	if (!input_demo_replay_is_loaded() || !objp || objp->type != OBJ_ROBOT || !fire_vec)
+	if (!input_demo_debug_replay_probe_active() || !objp || objp->type != OBJ_ROBOT || !fire_vec)
 		return;
 
 	frame = (unsigned int)input_demo_replay_next_frame_index();

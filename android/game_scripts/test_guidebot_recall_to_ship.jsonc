@@ -1,0 +1,58 @@
+// TEST: Guide-Bot recall docks the live companion and permits redeployment
+[
+    {"_info": {
+        "games": ["d2"],
+        "_deps": [
+            {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
+            {"file": "descent2.ham", "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"},
+            {"file": "groupa.pig", "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"}
+        ]
+    }},
+
+    {"action": "enter_launcher"},
+    {"action": "reset_state"},
+    {"action": "clear_mods"},
+    {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
+    {"action": "enter_game", "game": "d2"},
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "select", "text": "Ok", "optional": true},
+    {"action": "select", "text": "New game", "timeout_ms": 10000},
+    {"action": "select", "text": "Counterstrike", "optional": true, "timeout_ms": 1000},
+    {"action": "select", "text": "Ok", "timeout_ms": 5000},
+    {"action": "select", "text": "Rookie", "timeout_ms": 10000},
+    {"action": "skip_briefing", "timeout_ms": 10000},
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
+
+    {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "guidebot.released": "true",
+        "guidebot.docked": "false",
+        "guidebot.object_type": "2"
+    }},
+
+    {"action": "set_debug", "field": "guidebot_segment", "value": "20"},
+    {"action": "meta_action", "id": 1045, "post_delay_ms": 100},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "guidebot.released": "true",
+        "guidebot.docked": "false",
+        "guidebot.recalling": "true"
+    }},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "guidebot.released": "false",
+        "guidebot.docked": "true",
+        "guidebot.recalling": "false",
+        "guidebot.object_type": "12"
+    }},
+
+    {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "guidebot.released": "true",
+        "guidebot.docked": "false",
+        "guidebot.object_type": "2",
+        "guidebot.segment": {"gte": 0}
+    }},
+    {"action": "log", "message": "=== TEST: guidebot recall to ship PASS ==="}
+]

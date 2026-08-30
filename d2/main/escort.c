@@ -127,6 +127,7 @@ static const char *const Escort_goal_text[MAX_ESCORT_GOALS] = {
 	"MARKER 8",
 	"MARKER 9",
 	"SECRET",
+	"PLAYER SHIP",
 // -- too much work -- 	"KAMIKAZE  "
 };
 
@@ -159,6 +160,7 @@ static unsigned int Escort_owner_generation;
 static int Escort_network_target_mode;
 static void escort_apply_multiplayer_owner(int new_owner, int target_mode);
 static int escort_owner_candidate_eligible(int pnum);
+static void escort_request_docked_state(int docked);
 #endif
 
 fix64	Last_buddy_message_time;
@@ -185,11 +187,50 @@ static int escort_find_companion_object(void)
 	return -1;
 }
 
+static int escort_is_docked_object(int objnum)
+{
+	if (objnum < 0 || objnum > Highest_object_index)
+		return 0;
+	return Objects[objnum].type == OBJ_GHOST &&
+	       Objects[objnum].control_type == CT_NONE &&
+	       Objects[objnum].movement_type == MT_NONE &&
+	       Objects[objnum].render_type == RT_NONE &&
+	       Objects[objnum].id < N_robot_types &&
+	       Robot_info[Objects[objnum].id].companion;
+}
+
+static int escort_find_docked_object(void)
+{
+	int i;
+
+	for (i = 0; i <= Highest_object_index; i++)
+		if (escort_is_docked_object(i))
+			return i;
+	return -1;
+}
+
 static int escort_refresh_buddy_objnum(void)
 {
+	if (escort_is_docked_object(Buddy_objnum))
+		return 0;
 	if (!escort_is_companion_object(Buddy_objnum))
 		Buddy_objnum = escort_find_companion_object();
 	return Buddy_objnum != -1;
+}
+
+int escort_buddy_is_docked(void)
+{
+	int docked_objnum;
+
+	if (escort_is_companion_object(Buddy_objnum))
+		return 0;
+	if (escort_is_docked_object(Buddy_objnum))
+		return 1;
+	docked_objnum = escort_find_docked_object();
+	if (docked_objnum == -1)
+		return 0;
+	Buddy_objnum = docked_objnum;
+	return 1;
 }
 
 int escort_buddy_is_active(void)
@@ -203,6 +244,7 @@ int escort_buddy_is_active(void)
 static int escort_reactor_exists(void);
 static int escort_goal_command_allowed(void);
 static int escort_key_owner_player(void);
+static void escort_clear_secret_goal(void);
 int find_exit_segment(void);
 #define STOLEN_ITEM_NONE 255
 #define STOLEN_ITEM_PROXIMITY_MINE 254
@@ -442,11 +484,97 @@ void init_buddy_for_level(void)
 #endif
 
 	Buddy_objnum = escort_find_companion_object();
+	if (Buddy_objnum == -1)
+		Buddy_objnum = escort_find_docked_object();
 
 	Buddy_sorry_time = -F1_0;
 
 	Looking_for_marker = -1;
 	Last_buddy_key = -1;
+}
+
+static object *escort_docking_ship(void)
+{
+#ifdef NETWORK
+	if ((Game_mode & GM_MULTI_COOP) &&
+	    Escort_owner_player >= 0 && Escort_owner_player < MAX_PLAYERS &&
+	    Players[Escort_owner_player].connected == CONNECT_PLAYING) {
+		int objnum = Players[Escort_owner_player].objnum;
+		if (objnum >= 0 && objnum <= Highest_object_index)
+			return &Objects[objnum];
+	}
+#endif
+	return ConsoleObject;
+}
+
+static void escort_apply_docked_state(int docked)
+{
+	object *buddy_objp;
+	object *ship_objp = escort_docking_ship();
+
+	if (!ship_objp)
+		return;
+	if (docked) {
+		if (!escort_refresh_buddy_objnum())
+			return;
+	} else if (!escort_buddy_is_docked()) {
+		return;
+	}
+
+	buddy_objp = &Objects[Buddy_objnum];
+	buddy_objp->last_pos = ship_objp->pos;
+	buddy_objp->pos = ship_objp->pos;
+	buddy_objp->orient = ship_objp->orient;
+	obj_relink(Buddy_objnum, ship_objp->segnum);
+	vm_vec_zero(&buddy_objp->mtype.phys_info.velocity);
+	vm_vec_zero(&buddy_objp->mtype.phys_info.thrust);
+	vm_vec_zero(&buddy_objp->mtype.phys_info.rotvel);
+	vm_vec_zero(&buddy_objp->mtype.phys_info.rotthrust);
+
+	Escort_special_goal = -1;
+	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
+	Escort_goal_index = -1;
+	escort_clear_secret_goal();
+#ifdef __ANDROID__
+	escort_route_clear_goal();
+	escort_route_note_replan(docked ? "guidebot_docked" : "guidebot_deployed");
+#endif
+
+	if (docked) {
+		Buddy_allowed_to_talk = 0;
+#ifdef NETWORK
+		if (Game_mode & GM_MULTI_COOP) {
+			multi_delete_controlled_robot(Buddy_objnum);
+			buddy_objp->ctype.ai_info.REMOTE_OWNER = -1;
+			buddy_objp->ctype.ai_info.REMOTE_SLOT_NUM = 0;
+		}
+#endif
+		buddy_objp->type = OBJ_GHOST;
+		buddy_objp->control_type = CT_NONE;
+		buddy_objp->movement_type = MT_NONE;
+		buddy_objp->render_type = RT_NONE;
+	} else {
+		buddy_objp->type = OBJ_ROBOT;
+		buddy_objp->control_type = CT_AI;
+		buddy_objp->movement_type = MT_PHYSICS;
+		buddy_objp->render_type = RT_POLYOBJ;
+		buddy_objp->rtype.pobj_info.model_num = Robot_info[buddy_objp->id].model_num;
+		buddy_objp->rtype.pobj_info.subobj_flags = 0;
+		buddy_objp->rtype.pobj_info.alt_textures = 0;
+		buddy_objp->size = Polygon_models[buddy_objp->rtype.pobj_info.model_num].rad;
+		buddy_objp->mtype.phys_info.mass = Robot_info[buddy_objp->id].mass;
+		buddy_objp->mtype.phys_info.drag = Robot_info[buddy_objp->id].drag;
+		buddy_objp->mtype.phys_info.flags = PF_LEVELLING;
+		init_ai_object(Buddy_objnum, Robot_info[buddy_objp->id].behavior, -1);
+		Buddy_allowed_to_talk = 1;
+		Buddy_last_seen_player = GameTime64;
+		Buddy_last_player_path_created = GameTime64;
+		Escort_last_path_created = GameTime64;
+#ifdef NETWORK
+		if (Game_mode & GM_MULTI_COOP)
+			multi_restore_companion_robot_control(Buddy_objnum, Escort_owner_player);
+#endif
+	}
 }
 
 void escort_spawn_at_player(void)
@@ -468,6 +596,18 @@ void escort_spawn_at_player(void)
 		HUD_init_message_literal(HM_DEFAULT, "No Guide-Bot in Multiplayer!");
 		return;
 #endif
+	}
+
+	if (escort_buddy_is_docked()) {
+#ifdef NETWORK
+		if (Game_mode & GM_MULTI_COOP) {
+			escort_request_docked_state(0);
+			return;
+		}
+#endif
+		escort_apply_docked_state(0);
+		HUD_init_message(HM_DEFAULT, "%s deployed", PlayerCfg.GuidebotName);
+		return;
 	}
 
 	if (!escort_refresh_buddy_objnum()) {
@@ -665,6 +805,41 @@ void escort_warp_to_player(void)
 	HUD_init_message(HM_DEFAULT, "%s warped to you", PlayerCfg.GuidebotName);
 }
 
+void escort_recall_to_ship(void)
+{
+	object *buddy_objp;
+	ai_static *aip;
+	ai_local *ailp;
+
+#ifdef NETWORK
+	if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player != Player_num) {
+		HUD_init_message_literal(HM_DEFAULT, "Guide-Bot is controlled by another player");
+		return;
+	}
+#endif
+	if (!escort_goal_command_allowed())
+		return;
+
+	buddy_objp = &Objects[Buddy_objnum];
+	aip = &buddy_objp->ctype.ai_info;
+	ailp = &Ai_local_info[Buddy_objnum];
+	Escort_special_goal = ESCORT_GOAL_RECALL;
+	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
+	Escort_goal_index = -1;
+	escort_clear_secret_goal();
+#ifdef __ANDROID__
+	escort_route_clear_goal();
+	escort_route_note_replan("recall_to_ship");
+#endif
+	aip->hide_index = -1;
+	aip->path_length = 0;
+	aip->cur_path_index = 0;
+	ailp->mode = AIM_GOTO_PLAYER;
+	Escort_last_path_created = 0;
+	Last_buddy_message_time = 0;
+	buddy_message("Returning to your ship.");
+}
+
 //	-----------------------------------------------------------------------------
 //	See if segment from curseg through sidenum is reachable.
 //	Return true if it is reachable, else return false.
@@ -776,6 +951,8 @@ int ok_for_buddy_to_talk(void)
 	int		i;
 	segment	*segp;
 
+	if (escort_buddy_is_docked())
+		return 0;
 	if (!escort_refresh_buddy_objnum())
 		return 0;
 
@@ -1227,6 +1404,10 @@ void input_demo_apply_recorded_guidebot_goal(int special_key, int from_menu)
 #endif
 	if (special_key == KEY_0) {
 		escort_resume_default_goal();
+		return;
+	}
+	if (special_key == KEY_R) {
+		escort_recall_to_ship();
 		return;
 	}
 	if (from_menu) {
@@ -2203,10 +2384,18 @@ void escort_rebuild_runtime_state_after_restore(void)
 	Buddy_last_missile_time = 0;
 
 	for (i = 0; i <= Highest_object_index; i++)
-		if ((Objects[i].type == OBJ_ROBOT) && Robot_info[Objects[i].id].companion) {
+		if (escort_is_companion_object(i) || escort_is_docked_object(i)) {
 			Buddy_objnum = i;
 			break;
 		}
+
+	if (escort_buddy_is_docked()) {
+		Buddy_allowed_to_talk = 0;
+		Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
+		Escort_special_goal = -1;
+		Escort_goal_index = -1;
+		return;
+	}
 
 	if (Buddy_objnum != -1) {
 		buddy_objp = &Objects[Buddy_objnum];
@@ -2447,6 +2636,30 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 		replay_rng_call_count = d_rand_get_call_count();
 
 	Buddy_objnum = objp-Objects;
+	if (Escort_special_goal == ESCORT_GOAL_RECALL) {
+		fix dock_distance = objp->size + ConsoleObject->size + F1_0;
+
+		if (objp->segnum == ConsoleObject->segnum && dist_to_player <= dock_distance) {
+#ifdef NETWORK
+			if (Game_mode & GM_MULTI_COOP) {
+				Escort_special_goal = -1;
+				escort_request_docked_state(1);
+			} else
+#endif
+			{
+				escort_apply_docked_state(1);
+				HUD_init_message(HM_DEFAULT, "%s docked", PlayerCfg.GuidebotName);
+			}
+			return;
+		}
+		if (Escort_last_path_created + F1_0 < GameTime64 || aip->path_length == 0) {
+			create_path_to_player(objp, Max_escort_length, 1);
+			aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
+			ailp->mode = AIM_GOTO_PLAYER;
+			Escort_last_path_created = GameTime64;
+		}
+		return;
+	}
 #ifdef __ANDROID__
 	escort_route_monitor_path_progress(objp, ailp, aip);
 	escort_trace_navigation(objp, ailp, aip, dist_to_player, player_visibility);
@@ -3362,7 +3575,7 @@ void drop_stolen_items(object *objp, int remote)
 }
 
 // --------------------------------------------------------------------------------------------------------------
-#define ESCORT_MENU_ITEM_COUNT 11
+#define ESCORT_MENU_ITEM_COUNT 12
 
 typedef struct escort_menu
 {
@@ -3385,7 +3598,8 @@ static int escort_menu_key_for_item(int item)
 		case 7: return KEY_7;
 		case 8: return KEY_8;
 		case 9: return KEY_9;
-		case 10: return KEY_T;
+		case 10: return KEY_R;
+		case 11: return KEY_T;
 		default: return KEY_ESC;
 	}
 }
@@ -3424,6 +3638,9 @@ static void escort_menu_item_text(escort_menu *menu, int item, char *buf, size_t
 			snprintf(buf, bufsz, "9.  Find the exit");
 			break;
 		case 10:
+			snprintf(buf, bufsz, "R.  Recall to Ship");
+			break;
+		case 11:
 			snprintf(buf, bufsz, "T.  %s Messages", menu->message_action);
 			break;
 		default:
@@ -3460,6 +3677,15 @@ static int escort_menu_activate_key(window *wind, int key)
 			Last_buddy_key = -1;
 			set_escort_special_goal(key);
 			Last_buddy_key = -1;
+			window_close(wind);
+			return 1;
+
+		case KEY_R:
+			if (input_demo_recorder_is_active() &&
+			    !input_demo_recorder_stage_direct_command_guidebot_goal(key, 1, error, sizeof(error)) &&
+			    error[0])
+				con_printf(CON_NORMAL, "Input demo recorder guidebot recall event failed: %s\n", error);
+			escort_recall_to_ship();
 			window_close(wind);
 			return 1;
 
@@ -3507,6 +3733,7 @@ int escort_menu_keycommand(window *wind, d_event *event, escort_menu *menu)
 		case KEY_7:
 		case KEY_8:
 		case KEY_9:
+		case KEY_R:
 		case KEY_T:
 			return escort_menu_activate_key(wind, key);
 
@@ -3628,6 +3855,10 @@ void do_escort_menu(void)
 #endif
 	}
 
+	if (escort_buddy_is_docked()) {
+		escort_spawn_at_player();
+		return;
+	}
 	if (!escort_refresh_buddy_objnum()) {
 		HUD_init_message_literal(HM_DEFAULT, "No Guide-Bot present in mine!");
 
@@ -3830,7 +4061,11 @@ static void show_escort_menu(escort_menu *menu)
 // android port: multiplayer coop guidebot support
 enum {
 	ESCORT_OWNER_PACKET_STATE = 0,
-	ESCORT_OWNER_PACKET_REQUEST = 1
+	ESCORT_OWNER_PACKET_REQUEST = 1,
+	ESCORT_DOCK_PACKET_REQUEST = 2,
+	ESCORT_DOCK_PACKET_STATE = 3,
+	ESCORT_DEPLOY_PACKET_REQUEST = 4,
+	ESCORT_DEPLOY_PACKET_STATE = 5
 };
 
 static int escort_route_target_mode_for_network(void)
@@ -3969,6 +4204,26 @@ static unsigned int escort_next_owner_generation(void)
 	return Escort_owner_generation;
 }
 
+static void escort_request_docked_state(int docked)
+{
+	int request_kind = docked ? ESCORT_DOCK_PACKET_REQUEST : ESCORT_DEPLOY_PACKET_REQUEST;
+	int state_kind = docked ? ESCORT_DOCK_PACKET_STATE : ESCORT_DEPLOY_PACKET_STATE;
+	int target_mode = escort_route_target_mode_for_network();
+
+	if (!(Game_mode & GM_MULTI_COOP) || Escort_owner_player != Player_num)
+		return;
+	if (multi_i_am_master()) {
+		unsigned int generation = escort_next_owner_generation();
+		escort_apply_docked_state(docked);
+		escort_send_owner_packet(state_kind, Escort_owner_player, target_mode, generation);
+		HUD_init_message(HM_DEFAULT, "%s %s", PlayerCfg.GuidebotName,
+		                 docked ? "docked" : "deployed");
+	} else {
+		escort_send_owner_packet(request_kind, Escort_owner_player, target_mode,
+		                         Escort_owner_generation);
+	}
+}
+
 unsigned int escort_get_owner_generation(void)
 {
 	return Escort_owner_generation;
@@ -4016,6 +4271,34 @@ void multi_do_escort_owner(const ubyte *buf, int authenticated_sender)
 		return;
 	if (!escort_route_target_mode_valid(target_mode))
 		return;
+
+	if (packet_kind == ESCORT_DOCK_PACKET_REQUEST ||
+	    packet_kind == ESCORT_DEPLOY_PACKET_REQUEST) {
+		int docked = packet_kind == ESCORT_DOCK_PACKET_REQUEST;
+		int state_kind = docked ? ESCORT_DOCK_PACKET_STATE : ESCORT_DEPLOY_PACKET_STATE;
+
+		if (!multi_i_am_master() || sender != Escort_owner_player ||
+		    new_owner != Escort_owner_player || generation != Escort_owner_generation)
+			return;
+		generation = escort_next_owner_generation();
+		escort_apply_docked_state(docked);
+		escort_send_owner_packet(state_kind, Escort_owner_player, target_mode, generation);
+		return;
+	}
+	if (packet_kind == ESCORT_DOCK_PACKET_STATE ||
+	    packet_kind == ESCORT_DEPLOY_PACKET_STATE) {
+		int docked = packet_kind == ESCORT_DOCK_PACKET_STATE;
+
+		if (sender != multi_who_is_master() || new_owner != Escort_owner_player ||
+		    !escort_owner_generation_is_newer(generation, Escort_owner_generation))
+			return;
+		Escort_owner_generation = generation;
+		escort_apply_docked_state(docked);
+		if (Escort_owner_player == Player_num)
+			HUD_init_message(HM_DEFAULT, "%s %s", PlayerCfg.GuidebotName,
+			                 docked ? "docked" : "deployed");
+		return;
+	}
 
 	if (packet_kind == ESCORT_OWNER_PACKET_REQUEST) {
 		if (!multi_i_am_master())

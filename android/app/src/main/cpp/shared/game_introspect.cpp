@@ -888,6 +888,8 @@ static json serialize_guidebot()
 
 	result["buddy_objnum"] = Buddy_objnum;
 	result["released"] = (bool) Buddy_allowed_to_talk;
+	result["docked"] = (bool) escort_buddy_is_docked();
+	result["recalling"] = Escort_special_goal == ESCORT_GOAL_RECALL;
 	result["goal_object"] = Escort_goal_object;
 	result["special_goal"] = Escort_special_goal;
 	result["goal_index"] = Escort_goal_index;

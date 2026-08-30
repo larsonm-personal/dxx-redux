@@ -58,6 +58,7 @@ struct window;
 #define META_GUIDE_WARP_TO_ME      1042
 #define META_GUIDE_FIND_UNEXPLORED 1043
 #define META_COOP_RESTART_LEVEL    1044
+#define META_GUIDE_RECALL          1045
 
 /* Flags for dispatch table entries */
 #define META_FLAG_INSTANT 1 /* inject full press+release on button down, ignore up */
@@ -75,6 +76,9 @@ extern volatile int android_escort_release_pending;
 /* Set to a META_GUIDE_FIND_* action on the UI thread and consumed as a
  * menu-style goal command on the game thread. -1 means no pending command. */
 extern volatile int android_escort_goal_pending;
+
+/* Set by META_GUIDE_RECALL and consumed on the game thread. */
+extern volatile int android_escort_recall_pending;
 
 /* Set on UI thread by META_GUIDE_SPAWN, consumed on the game thread in
  * gamecntl.c to spawn or release the guide-bot at the local player. */

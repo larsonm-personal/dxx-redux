@@ -46,6 +46,7 @@
 volatile int android_force_quit = 0;
 volatile int android_escort_release_pending = 0;
 volatile int android_escort_goal_pending = -1;
+volatile int android_escort_recall_pending = 0;
 volatile int android_escort_spawn_pending = 0;
 volatile int android_escort_find_secret_pending = 0;
 volatile int android_escort_find_unexplored_pending = 0;
@@ -528,6 +529,12 @@ int meta_action_dispatch(int action_id, int pressed)
 	    action_id <= META_GUIDE_CLEAR_GOAL) {
 		if (pressed)
 			android_escort_goal_pending = action_id;
+		return 0;
+	}
+
+	if (action_id == META_GUIDE_RECALL) {
+		if (pressed)
+			android_escort_recall_pending = 1;
 		return 0;
 	}
 #endif

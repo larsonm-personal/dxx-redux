@@ -30,7 +30,7 @@
     {"action": "log", "message": "=== TEST: Launcher button discovery ===", "when": "d2"},
     {"action": "wait_ms", "ms": 500, "when": "d2"},
     {"action": "assert_button", "text": "About", "when": "d2"},
-    {"action": "assert_button", "text": "Define Controls", "when": "d2"},
+    {"action": "assert_button", "text": "Controller Mapping", "when": "d2"},
     {"action": "tap_button", "text": "About", "post_delay_ms": 500, "when": "d2"},
     {"action": "tap_button", "text": "Advanced", "post_delay_ms": 300, "when": "d2"},
     {"action": "log", "message": "Button discovery and tap test passed", "when": "d2"},
