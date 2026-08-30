@@ -2,6 +2,9 @@ package com.dxxredux.app.lobby
 
 import com.dxxredux.app.BuildInfo
 import com.dxxredux.app.VisualReplacementPolicy
+import com.dxxredux.app.multiplayer.MissionCompatibilityStatus
+import com.dxxredux.app.multiplayer.MissionRequirement
+import com.dxxredux.app.multiplayer.MissionStatusReport
 import org.json.JSONObject
 
 // LAN lobby discovery protocol. JSON-over-UDP on port 42400.
@@ -24,6 +27,10 @@ const val MSG_JOIN_REJECT = "JOIN_REJECT"
 const val MSG_QUERY = "QUERY" // ask a host what lobby they're running; host replies with ANNOUNCE
 const val MSG_CHAT = "CHAT" // lobby chat message (relayed through host)
 const val MSG_KICK = "KICK" // host kicks a player from the lobby
+const val MSG_MISSION_STATUS = "MISSION_STATUS"
+const val MSG_MISSION_TRANSFER_REQUEST = "MISSION_TRANSFER_REQUEST"
+const val MSG_MISSION_TRANSFER_GRANT = "MISSION_TRANSFER_GRANT"
+const val LAN_LOBBY_PROTOCOL_VERSION = 2
 
 /** A single player in a LAN lobby. */
 data class LanPlayer(
@@ -32,6 +39,7 @@ data class LanPlayer(
     val clientId: String? = null,
     val ready: Boolean = false,
     val lastSeenMs: Long = System.currentTimeMillis(),
+    val missionStatus: MissionStatusReport? = null,
 )
 
 /** Parsed LAN lobby announcement (received from a host broadcast). */
@@ -58,6 +66,7 @@ data class LanLobbyAnnounce(
     val omittedVisualModCount: Int = 0,
     val omittedVisualTextureCount: Int = 0,
     val omittedVisualModNames: List<String> = emptyList(),
+    val missionRequirement: MissionRequirement? = null,
 )
 
 /** Build a JSON ANNOUNCE packet for broadcasting. */
@@ -79,13 +88,16 @@ fun buildAnnounce(
     omittedVisualModCount: Int = 0,
     omittedVisualTextureCount: Int = 0,
     omittedVisualModNames: List<String> = emptyList(),
+    missionRequirement: MissionRequirement? = null,
 ): ByteArray {
     val json = JSONObject()
     json.put("type", MSG_ANNOUNCE)
+    json.put("protocol_version", LAN_LOBBY_PROTOCOL_VERSION)
     json.put("lobby_id", lobbyId)
     json.put("callsign", callsign)
     json.put("game", game)
     json.put("mission", mission)
+    missionRequirement?.let { json.put("mission_requirement", it.toJson()) }
     json.put("mode", mode)
     json.put("player_count", playerCount)
     json.put("max_players", maxPlayers)
@@ -133,12 +145,15 @@ fun buildJoinAck(
     omittedVisualModCount: Int = 0,
     omittedVisualTextureCount: Int = 0,
     omittedVisualModNames: List<String> = emptyList(),
+    missionRequirement: MissionRequirement? = null,
 ): ByteArray {
     val json = JSONObject()
     json.put("type", MSG_JOIN_ACK)
+    json.put("protocol_version", LAN_LOBBY_PROTOCOL_VERSION)
     json.put("lobby_id", lobbyId)
     json.put("game", game)
     json.put("mission", mission)
+    missionRequirement?.let { json.put("mission_requirement", it.toJson()) }
     json.put("mode", mode)
     json.put("max_players", maxPlayers)
     json.put("build", BuildInfo.GIT_COMMIT_COUNT)
@@ -211,6 +226,7 @@ fun buildPlayerList(
         pj.put("address", p.address)
         if (!p.clientId.isNullOrBlank()) pj.put("client_id", p.clientId)
         pj.put("ready", p.ready)
+        p.missionStatus?.let { pj.put("mission_status", it.toJson()) }
         arr.put(pj)
     }
     json.put("players", arr)
@@ -238,6 +254,7 @@ fun buildStart(
     omittedVisualModCount: Int = 0,
     omittedVisualTextureCount: Int = 0,
     omittedVisualModNames: List<String> = emptyList(),
+    missionRequirement: MissionRequirement? = null,
 ): ByteArray {
     val json = JSONObject()
     json.put("type", MSG_START)
@@ -246,6 +263,7 @@ fun buildStart(
     json.put("host_port", hostPort)
     json.put("game", game)
     json.put("mission", mission)
+    missionRequirement?.let { json.put("mission_requirement", it.toJson()) }
     json.put("mode", mode)
     json.put("difficulty", difficulty)
     json.put("level_num", levelNum)
@@ -332,3 +350,114 @@ fun parsePacket(
     } catch (_: Exception) {
         null
     }
+
+fun buildMissionStatus(
+    lobbyId: String,
+    callsign: String,
+    clientId: String?,
+    report: MissionStatusReport,
+): ByteArray =
+    JSONObject()
+        .put("type", MSG_MISSION_STATUS)
+        .put("lobby_id", lobbyId)
+        .put("callsign", callsign)
+        .apply {
+            if (!clientId.isNullOrBlank()) put("client_id", clientId)
+            put("mission_status", report.toJson())
+        }.toString()
+        .toByteArray(Charsets.UTF_8)
+
+fun buildMissionTransferRequest(
+    lobbyId: String,
+    callsign: String,
+    clientId: String?,
+    revision: String,
+    attempt: Int,
+): ByteArray =
+    JSONObject()
+        .put("type", MSG_MISSION_TRANSFER_REQUEST)
+        .put("lobby_id", lobbyId)
+        .put("callsign", callsign)
+        .put("revision", revision)
+        .put("attempt", attempt)
+        .apply { if (!clientId.isNullOrBlank()) put("client_id", clientId) }
+        .toString()
+        .toByteArray(Charsets.UTF_8)
+
+fun buildMissionTransferGrant(
+    lobbyId: String,
+    token: String,
+    port: Int,
+    revision: String,
+    attempt: Int,
+): ByteArray =
+    JSONObject()
+        .put("type", MSG_MISSION_TRANSFER_GRANT)
+        .put("lobby_id", lobbyId)
+        .put("token", token)
+        .put("port", port)
+        .put("revision", revision)
+        .put("attempt", attempt)
+        .toString()
+        .toByteArray(Charsets.UTF_8)
+
+internal fun MissionRequirement.toJson(): JSONObject =
+    JSONObject()
+        .put("schema", schema)
+        .put("revision", revision)
+        .put("game", game)
+        .put("mission_key", missionKey)
+        .put("display_name", displayName)
+        .put("kind", kind)
+        .put("offer_available", offerAvailable)
+        .apply {
+            descriptorPath?.let { put("descriptor_path", it) }
+            wrapperFilename?.let { put("wrapper_filename", it) }
+            sizeBytes?.let { put("size_bytes", it) }
+            sha256?.let { put("sha256", it) }
+        }
+
+internal fun missionRequirementFromJson(json: JSONObject?): MissionRequirement? {
+    if (json == null) return null
+    return MissionRequirement(
+        schema = json.optInt("schema", 0),
+        revision = json.optString("revision"),
+        game = json.optString("game"),
+        missionKey = json.optString("mission_key"),
+        displayName = json.optString("display_name"),
+        kind = json.optString("kind"),
+        descriptorPath = json.optString("descriptor_path").takeIf(String::isNotBlank),
+        wrapperFilename = json.optString("wrapper_filename").takeIf(String::isNotBlank),
+        sizeBytes = if (json.has("size_bytes")) json.optLong("size_bytes") else null,
+        sha256 = json.optString("sha256").takeIf(String::isNotBlank),
+        offerAvailable = json.optBoolean("offer_available", false),
+    ).takeIf(MissionRequirement::isValid)
+}
+
+internal fun MissionStatusReport.toJson(): JSONObject =
+    JSONObject()
+        .put("revision", revision)
+        .put("status", status.name.lowercase())
+        .put("verified_bytes", verifiedBytes)
+        .put("total_bytes", totalBytes)
+        .put("attempt", attempt)
+        .apply {
+            transferId?.let { put("transfer_id", it) }
+            failureCode?.let { put("failure_code", it) }
+        }
+
+internal fun missionStatusFromJson(json: JSONObject?): MissionStatusReport? {
+    if (json == null) return null
+    val status =
+        runCatching { MissionCompatibilityStatus.valueOf(json.optString("status").uppercase()) }.getOrNull()
+            ?: return null
+    return MissionStatusReport(
+        revision = json.optString("revision"),
+        status = status,
+        verifiedBytes = json.optLong("verified_bytes", 0L),
+        totalBytes = json.optLong("total_bytes", 0L),
+        transferId = json.optString("transfer_id").takeIf(String::isNotBlank),
+        attempt = json.optInt("attempt", 0),
+        failureCode = json.optString("failure_code").takeIf(String::isNotBlank),
+    )
+}

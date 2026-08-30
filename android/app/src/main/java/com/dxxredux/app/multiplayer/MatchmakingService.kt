@@ -416,6 +416,20 @@ object MatchmakingService {
         send(protocolJson.encodeToString(ReadyMsg.serializer(), ReadyMsg(ready = ready)))
     }
 
+    fun reportMissionStatus(report: MissionStatusReport) {
+        val msg =
+            MissionStatusMsg(
+                revision = report.revision,
+                status = report.status,
+                verifiedBytes = report.verifiedBytes,
+                totalBytes = report.totalBytes,
+                transferId = report.transferId,
+                attempt = report.attempt,
+                failureCode = report.failureCode,
+            )
+        send(protocolJson.encodeToString(MissionStatusMsg.serializer(), msg))
+    }
+
     fun startGame() {
         send(protocolJson.encodeToString(StartGameMsg.serializer(), StartGameMsg()))
         state.appendLog("Requesting game start...")
@@ -1088,6 +1102,7 @@ object MatchmakingService {
                                     ?.jsonPrimitive
                                     ?.content
                                     ?.toBooleanStrictOrNull() ?: false,
+                            missionRequirement = missionRequirementFromGameInfo(gs.gameInfo),
                         )
                     state.update { it.copy(gameLaunchInfo = launchInfo) }
                     // Host sends periodic game state updates to the matchmaking server

@@ -68,6 +68,10 @@ class ModManager(
         val category: String? = null,
         val missionTitle: String? = null,
         val importMode: String? = null,
+        val archiveSha256: String? = null,
+        val archiveModifiedAtMs: Long = 0L,
+        val archiveChunkSizeBytes: Int = 0,
+        val archiveChunkSha256: List<String> = emptyList(),
     ) {
         val isLevel: Boolean
             get() = kind == MOD_KIND_MISSION_ZIP || category == MissionZip.CATEGORY_LEVELS
@@ -302,6 +306,47 @@ class ModManager(
     internal fun importDirectory(): File = modsDir
 
     internal fun extractionStore(): MissionZipExtractionStore = MissionZipExtractionStore(supportDir)
+
+    internal fun missionContentIdentity(mod: ModInfo): MissionContentIdentity? {
+        if (mod.kind != MOD_KIND_MISSION_ZIP || mod.archiveSha256 == null || mod.archiveChunkSizeBytes <= 0) return null
+        return runCatching {
+            MissionContentIdentity(
+                mod.sizeBytes,
+                mod.archiveSha256,
+                mod.archiveChunkSizeBytes,
+                mod.archiveChunkSha256,
+            )
+        }.getOrNull()
+    }
+
+    internal fun ensureMissionContentIdentity(filename: String): MissionContentIdentity? {
+        val mod = mods.firstOrNull { it.filename == filename } ?: return null
+        val file = File(modsDir, filename)
+        missionContentIdentity(mod)?.let { identity ->
+            if (file.length() == identity.sizeBytes && file.lastModified() == mod.archiveModifiedAtMs) return identity
+        }
+        if (!file.isFile || mod.kind != MOD_KIND_MISSION_ZIP) return null
+        val identity = MissionContentIdentity.compute(file)
+        updateManifest {
+            mods =
+                mods
+                    .map {
+                        if (it.filename == filename) {
+                            it.copy(
+                                sizeBytes = identity.sizeBytes,
+                                archiveSha256 = identity.sha256,
+                                archiveModifiedAtMs = file.lastModified(),
+                                archiveChunkSizeBytes = identity.chunkSizeBytes,
+                                archiveChunkSha256 = identity.chunkSha256,
+                            )
+                        } else {
+                            it
+                        }
+                    }.toMutableList()
+            save()
+        }
+        return identity
+    }
 
     internal fun musicNamesCacheFile(filename: String): File = MissionZipMusicNames.cacheFile(supportDir, filename)
 
@@ -540,6 +585,7 @@ class ModManager(
                 source.copyTo(dest, overwrite = true)
             }
         }
+        val identity = MissionContentIdentity.compute(dest)
         try {
             if (scan.importMode == "extracted_bundle") {
                 val extractLabel = "Extracting level pack cache for faster launches: $displayName"
@@ -557,7 +603,7 @@ class ModManager(
             extractionStore.removeOwner(safeName)
             throw e
         }
-        return registerMissionZip(safeName, dest.length(), scan)
+        return registerMissionZip(safeName, identity, scan)
     }
 
     private fun importNestedPreferredMissionZip(
@@ -594,6 +640,7 @@ class ModManager(
                         }
                 val extractionStore = MissionZipExtractionStore(supportDir)
                 extractionStore.removeOwner(safeName)
+                val identity = MissionContentIdentity.compute(dest)
                 if (scan.importMode == "extracted_bundle") {
                     val extractLabel = "Extracting level pack cache for faster launches: $safeName"
                     onProgress(LauncherCopyProgress(extractLabel, 0L, 0L))
@@ -606,7 +653,7 @@ class ModManager(
                         LauncherCopyProgress("Cached level pack for faster launches: $safeName", 1L, 1L),
                     )
                 }
-                registerMissionZip(safeName, dest.length(), scan)
+                registerMissionZip(safeName, identity, scan)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to import preferred nested mission ZIP from ${source.absolutePath}", e)
@@ -961,7 +1008,7 @@ class ModManager(
 
     private fun registerMissionZip(
         filename: String,
-        sizeBytes: Long,
+        identity: MissionContentIdentity,
         scan: MissionZip.ScanResult,
     ): ModInfo {
         mods.removeAll { it.filename == filename }
@@ -972,13 +1019,17 @@ class ModManager(
                 displayName = scan.mission.displayName,
                 enabled = true,
                 addedAt = System.currentTimeMillis(),
-                sizeBytes = sizeBytes,
+                sizeBytes = identity.sizeBytes,
                 game = scan.game,
                 order = maxOrder + 1,
                 kind = MOD_KIND_MISSION_ZIP,
                 category = scan.category,
                 missionTitle = scan.mission.displayName,
                 importMode = scan.importMode,
+                archiveSha256 = identity.sha256,
+                archiveModifiedAtMs = File(modsDir, filename).lastModified(),
+                archiveChunkSizeBytes = identity.chunkSizeBytes,
+                archiveChunkSha256 = identity.chunkSha256,
             )
         mods.add(mod)
         save()
@@ -1944,6 +1995,10 @@ class ModManager(
                             category = obj.optString("category").takeIf { it.isNotBlank() },
                             missionTitle = obj.optString("missionTitle").takeIf { it.isNotBlank() },
                             importMode = obj.optString("importMode").takeIf { it.isNotBlank() },
+                            archiveSha256 = obj.optString("archiveSha256").takeIf { it.isNotBlank() },
+                            archiveModifiedAtMs = obj.optLong("archiveModifiedAtMs", 0L),
+                            archiveChunkSizeBytes = obj.optInt("archiveChunkSizeBytes", 0),
+                            archiveChunkSha256 = readStringArray(obj.optJSONArray("archiveChunkSha256")),
                         )
                     }.toMutableList()
         } catch (e: Exception) {
@@ -1968,6 +2023,12 @@ class ModManager(
                     m.category?.let { put("category", it) }
                     m.missionTitle?.let { put("missionTitle", it) }
                     m.importMode?.let { put("importMode", it) }
+                    m.archiveSha256?.let { put("archiveSha256", it) }
+                    if (m.archiveModifiedAtMs > 0L) put("archiveModifiedAtMs", m.archiveModifiedAtMs)
+                    if (m.archiveChunkSizeBytes > 0) put("archiveChunkSizeBytes", m.archiveChunkSizeBytes)
+                    if (m.archiveChunkSha256.isNotEmpty()) {
+                        put("archiveChunkSha256", JSONArray(m.archiveChunkSha256))
+                    }
                 },
             )
         }

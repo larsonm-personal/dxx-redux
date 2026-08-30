@@ -711,6 +711,7 @@ private fun ServerBrowserContent(
             onCreate = {
                 game,
                 mission,
+                missionRequirement,
                 mode,
                 maxPlayers,
                 difficulty,
@@ -740,7 +741,11 @@ private fun ServerBrowserContent(
                             "restrict_noncoop_fov_to_base" to JsonPrimitive(restrictNonCoopFovToBase),
                         )
                     val gameInfo =
-                        JsonObject(baseGameInfo + VisualReplacementPolicy.gameInfoFields(visualSummary))
+                        JsonObject(
+                            baseGameInfo +
+                                missionRequirement.toGameInfoFields() +
+                                VisualReplacementPolicy.gameInfoFields(visualSummary),
+                        )
                     MatchmakingService.createLobby(game, maxPlayers, gameInfo)
                 }
             },

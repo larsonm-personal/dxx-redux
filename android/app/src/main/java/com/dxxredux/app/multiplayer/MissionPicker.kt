@@ -23,10 +23,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
+import com.dxxredux.app.AssetManifest
 import com.dxxredux.app.GameFileFormats
 import com.dxxredux.app.MissionZip
+import com.dxxredux.app.ModManager
+import com.dxxredux.app.SafManifest
 import com.dxxredux.app.dpadTextFieldNavigation
+import com.dxxredux.app.launchDataReadyForGame
 import java.io.File
+import java.util.Locale
 
 /**
  * Scans game data directories for available missions.
@@ -44,7 +49,52 @@ object MissionScanner {
         val levelCount: Int = 0, // 0 = unknown
         val anarchyOnly: Boolean = false,
         val isBuiltin: Boolean = false,
-    )
+        val descriptorPath: String? = null,
+        val wrapperFilename: String? = null,
+        val archiveSizeBytes: Long? = null,
+        val archiveSha256: String? = null,
+        val archiveChunkSizeBytes: Int = 0,
+        val archiveChunkSha256: List<String> = emptyList(),
+    ) {
+        val transferable: Boolean
+            get() =
+                !isBuiltin &&
+                    wrapperFilename != null &&
+                    archiveSha256 != null &&
+                    archiveSizeBytes != null &&
+                    archiveSizeBytes in 1..MISSION_TRANSFER_MAX_BYTES
+    }
+
+    fun requirement(
+        game: String,
+        mission: MissionInfo,
+        offerDownload: Boolean,
+    ): MissionRequirement {
+        val kind =
+            when {
+                mission.isBuiltin -> MissionRequirement.KIND_BUILTIN
+                mission.wrapperFilename != null -> MissionRequirement.KIND_WRAPPER
+                else -> MissionRequirement.KIND_LOOSE
+            }
+        val revision =
+            if (mission.archiveSha256 != null && mission.archiveSizeBytes != null) {
+                "${mission.archiveSha256}:${mission.archiveSizeBytes}:$game:${mission.filename}"
+            } else {
+                "$kind:$game:${mission.filename}"
+            }
+        return MissionRequirement(
+            revision = revision,
+            game = game,
+            missionKey = mission.filename,
+            displayName = mission.displayName,
+            kind = kind,
+            descriptorPath = mission.descriptorPath,
+            wrapperFilename = mission.wrapperFilename,
+            sizeBytes = mission.archiveSizeBytes,
+            sha256 = mission.archiveSha256,
+            offerAvailable = offerDownload && mission.transferable,
+        )
+    }
 
     // -- mirrors d2/main/mission.h --
     private const val D2_SHAREWARE_HOG_SIZE = 2_292_566L
@@ -58,6 +108,7 @@ object MissionScanner {
     internal fun builtins(
         setDir: File,
         game: String,
+        includeD1ForD2: Boolean = true,
     ): List<MissionInfo> {
         val d1 = d1Builtin(setDir, if (game == "d2") "descent" else "")
         if (game != "d2") return listOf(d1)
@@ -86,7 +137,7 @@ object MissionScanner {
                     MissionInfo("d2", "Descent 2: Counterstrike!", levelCount = 24, isBuiltin = true)
                 }
             }
-        return listOf(d2, d1)
+        return if (includeD1ForD2) listOf(d2, d1) else listOf(d2)
     }
 
     private fun d1Builtin(
@@ -105,12 +156,65 @@ object MissionScanner {
     }
 
     fun scan(
+        filesDir: File,
         setDir: File,
         game: String,
+        mode: String,
     ): List<MissionInfo> {
-        val builtins = builtins(setDir, game)
+        val manifest = AssetManifest(setDir)
+        val safManifest = SafManifest.forDir(setDir)
+        val includeD1ForD2 =
+            game != "d2" ||
+                (
+                    launchDataReadyForGame("d1", setDir, manifest, safManifest) &&
+                        launchDataReadyForGame("d2", setDir, manifest, safManifest)
+                )
+        val builtins = builtins(setDir, game, includeD1ForD2)
         val missions = builtins.toMutableList()
-        val seen = builtins.map { it.filename.lowercase() }.toMutableSet()
+        val seen = builtins.map { it.filename.lowercase(Locale.ROOT) }.toMutableSet()
+
+        val modManager = ModManager(filesDir, setDir = setDir)
+        val missionMods =
+            modManager
+                .listMods()
+                .filter { mod ->
+                    mod.enabled &&
+                        mod.kind == ModManager.MOD_KIND_MISSION_ZIP &&
+                        (
+                            mod.game == game ||
+                                mod.game == "both" ||
+                                (game == "d2" && includeD1ForD2 && mod.game == "d1")
+                        )
+                }.sortedBy { it.order }
+        for (mod in missionMods) {
+            val wrapper = modManager.modFile(mod.filename)
+            val scan = runCatching { MissionZip.inspect(wrapper) }.getOrNull() ?: continue
+            val identity = runCatching { modManager.ensureMissionContentIdentity(mod.filename) }.getOrNull()
+            for (missionSet in scan.effectiveMissionSets) {
+                val descriptor = missionSet.mission
+                val compatible =
+                    descriptor.game == game ||
+                        (game == "d2" && includeD1ForD2 && descriptor.game == "d1")
+                if (!compatible) continue
+                val anarchyOnly = descriptor.type.equals("anarchy", ignoreCase = true)
+                if (mode == "coop" && anarchyOnly) continue
+                val basename = File(descriptor.path.replace('/', File.separatorChar)).nameWithoutExtension
+                if (!seen.add(basename.lowercase(Locale.ROOT))) continue
+                missions +=
+                    MissionInfo(
+                        filename = basename,
+                        displayName = descriptor.displayName,
+                        levelCount = descriptor.declaredLevelCount ?: descriptor.levelNames.size,
+                        anarchyOnly = anarchyOnly,
+                        descriptorPath = descriptor.path,
+                        wrapperFilename = mod.filename,
+                        archiveSizeBytes = identity?.sizeBytes,
+                        archiveSha256 = identity?.sha256,
+                        archiveChunkSizeBytes = identity?.chunkSizeBytes ?: 0,
+                        archiveChunkSha256 = identity?.chunkSha256.orEmpty(),
+                    )
+            }
+        }
 
         val dirs = listOf(setDir, File(setDir, "missions"))
 
@@ -119,16 +223,21 @@ object MissionScanner {
             for (file in files) {
                 if (!file.isFile) continue
                 val descriptorGame = GameFileFormats.gameForDescriptor(file.name) ?: continue
-                if (game != "d2" && descriptorGame != game) continue
+                val compatible =
+                    descriptorGame == game ||
+                        (game == "d2" && includeD1ForD2 && descriptorGame == "d1")
+                if (!compatible) continue
                 val basename = file.nameWithoutExtension
-                if (basename.lowercase() in seen) continue
-                seen.add(basename.lowercase())
+                if (basename.lowercase(Locale.ROOT) in seen) continue
                 val info = parseMissionFile(file, basename)
-                if (info != null) missions.add(info)
+                if (info != null && (mode != "coop" || !info.anarchyOnly)) {
+                    seen.add(basename.lowercase(Locale.ROOT))
+                    missions.add(info)
+                }
             }
         }
 
-        return missions.sortedWith(compareBy({ !it.isBuiltin }, { it.displayName.lowercase() }))
+        return missions.sortedWith(compareBy({ !it.isBuiltin }, { it.displayName.lowercase(Locale.ROOT) }))
     }
 
     private fun parseMissionFile(

@@ -44,6 +44,7 @@ fn build_lobby_update(lobby: &Lobby) -> ServerMessage {
             ready: p.ready,
             ping_ms: p.ping_ms,
             connection_type: p.connection_type.as_str().to_string(),
+            mission_status: p.mission_status.clone(),
         })
         .collect();
     ServerMessage::LobbyUpdate {
@@ -65,6 +66,144 @@ fn broadcast_to_lobby(lobby: &Lobby, state: &ServerState, msg: &ServerMessage) {
 fn broadcast_lobby_update(lobby: &Lobby, state: &ServerState) {
     let msg = build_lobby_update(lobby);
     broadcast_to_lobby(lobby, state, &msg);
+}
+
+fn mission_requirement(game_info: &serde_json::Value) -> Option<(&str, u64)> {
+    let requirement = game_info.get("mission_requirement")?.as_object()?;
+    let revision = requirement.get("revision")?.as_str()?;
+    if revision.is_empty() || revision.len() > 160 {
+        return None;
+    }
+    let size = requirement
+        .get("size_bytes")
+        .and_then(serde_json::Value::as_u64)
+        .unwrap_or(0);
+    Some((revision, size))
+}
+
+fn validate_mission_requirement(game_info: &serde_json::Value) -> Result<(), &'static str> {
+    let Some(value) = game_info.get("mission_requirement") else {
+        return Ok(());
+    };
+    let requirement = value
+        .as_object()
+        .ok_or("mission_requirement must be an object")?;
+    if requirement
+        .get("schema")
+        .and_then(serde_json::Value::as_u64)
+        != Some(1)
+    {
+        return Err("unsupported mission requirement schema");
+    }
+    let bounded_string =
+        |name: &str, maximum: usize, allow_empty: bool| -> Result<&str, &'static str> {
+            let value = requirement
+                .get(name)
+                .and_then(serde_json::Value::as_str)
+                .ok_or("mission requirement has a missing string")?;
+            if value.len() > maximum || (!allow_empty && value.is_empty()) {
+                return Err("mission requirement string is out of bounds");
+            }
+            Ok(value)
+        };
+    bounded_string("revision", 160, false)?;
+    let game = bounded_string("game", 2, false)?;
+    if !matches!(game, "d1" | "d2") {
+        return Err("invalid mission game");
+    }
+    if game_info.get("game").and_then(serde_json::Value::as_str) != Some(game) {
+        return Err("mission requirement game does not match game_info");
+    }
+    let mission_key = bounded_string("mission_key", 8, true)?;
+    if mission_key
+        .chars()
+        .any(|value| value.is_control() || matches!(value, '/' | '\\'))
+    {
+        return Err("invalid mission key");
+    }
+    if game_info.get("mission").and_then(serde_json::Value::as_str) != Some(mission_key) {
+        return Err("mission requirement key does not match game_info");
+    }
+    if bounded_string("display_name", 128, true)?
+        .chars()
+        .any(char::is_control)
+    {
+        return Err("invalid mission display name");
+    }
+    if let Some(path) = requirement.get("descriptor_path") {
+        let path = path.as_str().ok_or("invalid descriptor path")?;
+        if path.len() > 512 || path.contains('\0') {
+            return Err("invalid descriptor path");
+        }
+    }
+    let kind = bounded_string("kind", 16, false)?;
+    let offer = requirement
+        .get("offer_available")
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(false);
+    match kind {
+        "wrapper" => {
+            let size = requirement
+                .get("size_bytes")
+                .and_then(serde_json::Value::as_u64)
+                .filter(|size| *size > 0)
+                .ok_or("invalid mission wrapper size")?;
+            let hash = bounded_string("sha256", 64, false)?;
+            if hash.len() != 64
+                || !hash
+                    .as_bytes()
+                    .iter()
+                    .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(byte))
+            {
+                return Err("invalid mission wrapper hash");
+            }
+            let filename = bounded_string("wrapper_filename", 255, false)?;
+            if matches!(filename, "." | "..")
+                || filename
+                    .chars()
+                    .any(|value| value.is_control() || matches!(value, '/' | '\\'))
+            {
+                return Err("invalid mission wrapper filename");
+            }
+            if offer && size > 256 * 1024 * 1024 {
+                return Err("offered mission wrapper exceeds transfer limit");
+            }
+        }
+        "builtin" | "loose" => {
+            if offer
+                || requirement
+                    .get("size_bytes")
+                    .is_some_and(|value| !value.is_null())
+                || requirement
+                    .get("sha256")
+                    .is_some_and(|value| !value.is_null())
+            {
+                return Err("non-wrapper mission cannot be offered or hashed");
+            }
+        }
+        _ => return Err("invalid mission source kind"),
+    }
+    Ok(())
+}
+
+fn valid_mission_status(status: &str) -> bool {
+    matches!(
+        status,
+        "checking"
+            | "match"
+            | "installed_disabled"
+            | "missing"
+            | "size_mismatch"
+            | "hash_mismatch"
+            | "unsupported_source"
+            | "error"
+            | "queued"
+            | "downloading"
+            | "paused"
+            | "retrying"
+            | "failed_resumable"
+            | "verifying"
+    )
 }
 
 /// Build the list of waiting lobbies for LOBBY_LIST responses.
@@ -1295,6 +1434,13 @@ async fn handle_authenticated_message(
                 });
                 return;
             }
+            if let Err(reason) = validate_mission_requirement(&game_info) {
+                let _ = tx.send(ServerMessage::Error {
+                    code: "INVALID_PARAMS".into(),
+                    message: reason.into(),
+                });
+                return;
+            }
             if !state.rate_limiter.check_lobby_create(player_id) {
                 warn!(%player_id, "lobby create rate-limited");
                 let _ = tx.send(ServerMessage::RateLimited {
@@ -1353,6 +1499,13 @@ async fn handle_authenticated_message(
                 });
                 return;
             }
+            if let Err(reason) = validate_mission_requirement(&game_info) {
+                let _ = tx.send(ServerMessage::Error {
+                    code: "INVALID_PARAMS".into(),
+                    message: reason.into(),
+                });
+                return;
+            }
             let lobby_id = state.sessions.get(&player_id).and_then(|s| s.lobby_id);
             if let Some(lobby_id) = lobby_id {
                 if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
@@ -1371,6 +1524,10 @@ async fn handle_authenticated_message(
                         return;
                     }
                     lobby.game_info = game_info;
+                    for p in &mut lobby.players {
+                        p.ready = false;
+                        p.mission_status = None;
+                    }
                     broadcast_lobby_update(&lobby, state);
                 }
             }
@@ -1425,6 +1582,7 @@ async fn handle_authenticated_message(
                         // Reset all players to not-ready
                         for p in &mut lobby.players {
                             p.ready = false;
+                            p.mission_status = None;
                         }
                         info!(%player_id, %lobby_id, "host ended game, lobby reset to Waiting");
                         broadcast_lobby_update(&lobby, state);
@@ -1573,12 +1731,77 @@ async fn handle_authenticated_message(
             if let Some(session) = state.sessions.get(&player_id) {
                 if let Some(lobby_id) = session.lobby_id {
                     if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
+                        let requirement_present = mission_requirement(&lobby.game_info).is_some();
                         if let Some(p) = lobby.players.iter_mut().find(|p| p.player_id == player_id)
                         {
-                            p.ready = ready;
+                            let mission_matches =
+                                p.mission_status.as_ref().map(|s| s.status.as_str())
+                                    == Some("match");
+                            p.ready = ready && (!requirement_present || mission_matches);
                         }
                         broadcast_lobby_update(&lobby, state);
                     }
+                }
+            }
+        }
+
+        ClientMessage::MissionStatus {
+            revision,
+            status,
+            verified_bytes,
+            total_bytes,
+            transfer_id,
+            attempt,
+            failure_code,
+        } => {
+            let lobby_id = state.sessions.get(&player_id).and_then(|s| s.lobby_id);
+            if let Some(lobby_id) = lobby_id {
+                if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
+                    let Some((required_revision, required_size)) =
+                        mission_requirement(&lobby.game_info)
+                    else {
+                        return;
+                    };
+                    let valid = revision == required_revision
+                        && valid_mission_status(&status)
+                        && verified_bytes <= total_bytes
+                        && total_bytes == required_size
+                        && attempt <= 100
+                        && transfer_id.as_ref().is_none_or(|v| v.len() <= 64)
+                        && failure_code.as_ref().is_none_or(|v| v.len() <= 64);
+                    if !valid {
+                        let _ = tx.send(ServerMessage::Error {
+                            code: "INVALID_MISSION_STATUS".into(),
+                            message: "Invalid or stale mission status".into(),
+                        });
+                        return;
+                    }
+                    if let Some(p) = lobby.players.iter_mut().find(|p| p.player_id == player_id) {
+                        let progression_valid = p.mission_status.as_ref().is_none_or(|previous| {
+                            attempt >= previous.attempt
+                                && (attempt > previous.attempt
+                                    || transfer_id != previous.transfer_id
+                                    || verified_bytes >= previous.verified_bytes)
+                        });
+                        if !progression_valid {
+                            let _ = tx.send(ServerMessage::Error {
+                                code: "INVALID_MISSION_STATUS".into(),
+                                message: "Mission progress moved backwards".into(),
+                            });
+                            return;
+                        }
+                        p.ready &= status == "match";
+                        p.mission_status = Some(MissionStatusReport {
+                            revision,
+                            status,
+                            verified_bytes,
+                            total_bytes,
+                            transfer_id,
+                            attempt,
+                            failure_code,
+                        });
+                    }
+                    broadcast_lobby_update(&lobby, state);
                 }
             }
         }
@@ -1592,6 +1815,27 @@ async fn handle_authenticated_message(
                         let _ = tx.send(ServerMessage::Error {
                             code: "NOT_HOST".into(),
                             message: "Only the host can start the game".into(),
+                        });
+                        return;
+                    }
+                    if lobby.players.len() < 2 {
+                        let _ = tx.send(ServerMessage::Error {
+                            code: "NOT_ENOUGH_PLAYERS".into(),
+                            message: "At least two players are required".into(),
+                        });
+                        return;
+                    }
+                    if mission_requirement(&lobby.game_info).is_some()
+                        && lobby.players.iter().any(|p| {
+                            !p.ready
+                                || p.mission_status.as_ref().map(|s| s.status.as_str())
+                                    != Some("match")
+                        })
+                    {
+                        let _ = tx.send(ServerMessage::Error {
+                            code: "MISSION_NOT_READY".into(),
+                            message: "Every player must have the matching mission and be ready"
+                                .into(),
                         });
                         return;
                     }
@@ -1633,14 +1877,11 @@ async fn handle_authenticated_message(
                                         | crate::lobby::ConnectionType::Relay
                                 )
                             };
-                            let conn_type = if state.config.force_relay
-                                && !relay_addr.is_empty()
-                            {
-                                crate::lobby::ConnectionType::Relay
-                            } else if conn_type == crate::lobby::ConnectionType::DirectLan
-                                && !relay_addr.is_empty()
-                                && !confirmed_direct(&lobby.players[i].connection_type)
-                                && !confirmed_direct(&lobby.players[j].connection_type)
+                            let force_or_downgrade_to_relay = state.config.force_relay
+                                || (conn_type == crate::lobby::ConnectionType::DirectLan
+                                    && !confirmed_direct(&lobby.players[i].connection_type)
+                                    && !confirmed_direct(&lobby.players[j].connection_type));
+                            let conn_type = if force_or_downgrade_to_relay && !relay_addr.is_empty()
                             {
                                 crate::lobby::ConnectionType::Relay
                             } else {
@@ -1721,9 +1962,7 @@ async fn handle_authenticated_message(
                             );
 
                             // Force relay when configured (e.g. emulator testing)
-                            let conn_type = if state.config.force_relay
-                                && !relay_addr.is_empty()
-                            {
+                            let conn_type = if state.config.force_relay && !relay_addr.is_empty() {
                                 crate::lobby::ConnectionType::Relay
                             } else {
                                 conn_type
@@ -2639,6 +2878,7 @@ mod tests {
             nat_type: nat_type.map(|s| s.into()),
             connection_type: ConnectionType::Unknown,
             ping_ms: None,
+            mission_status: None,
         }
     }
 

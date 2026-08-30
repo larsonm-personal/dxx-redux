@@ -43,6 +43,8 @@ import com.dxxredux.app.FileSetManager
 import com.dxxredux.app.VisualReplacementPolicy
 import com.dxxredux.app.dpadTextFieldNavigation
 import com.dxxredux.app.tvFocusBorder
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Shared dialog for creating a game/lobby, used by both LAN hosting and
@@ -53,9 +55,11 @@ import com.dxxredux.app.tvFocusBorder
 internal fun CreateGameDialog(
     title: String = "Create Game",
     confirmLabel: String = "Create",
+    missionDownloadSupported: Boolean = false,
     onCreate: (
         game: String,
         mission: String?,
+        missionRequirement: MissionRequirement,
         mode: String,
         maxPlayers: Int,
         difficulty: Int,
@@ -85,8 +89,21 @@ internal fun CreateGameDialog(
     var playerSpewNoExpire by remember { mutableStateOf(defaults.playerSpewNoExpire) }
     var clientsCanRequestRewind by remember { mutableStateOf(defaults.clientsCanRequestRewind) }
     var restrictNonCoopFovToBase by remember { mutableStateOf(defaults.restrictNonCoopFovToBase) }
+    var offerMissionDownload by remember { mutableStateOf(defaults.offerMissionDownload) }
     var textEntryActive by remember { mutableStateOf(false) }
-    val availableMissions = remember(game, activeSetDir) { MissionScanner.scan(activeSetDir, game) }
+    val availableMissions by
+        produceState(
+            initialValue = MissionScanner.builtins(activeSetDir, game),
+            context.filesDir,
+            activeSetDir,
+            game,
+            mode,
+        ) {
+            value =
+                withContext(Dispatchers.IO) {
+                    MissionScanner.scan(context.filesDir, activeSetDir, game, mode)
+                }
+        }
     val selectedMissionInfo =
         remember(mission, availableMissions) {
             resolveMissionSelection(availableMissions, mission)
@@ -478,6 +495,31 @@ internal fun CreateGameDialog(
                             style = MaterialTheme.typography.labelMedium,
                         )
                     }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        val transferable = missionDownloadSupported && selectedMissionInfo?.transferable == true
+                        Switch(
+                            checked = offerMissionDownload && transferable,
+                            onCheckedChange = { offerMissionDownload = it },
+                            enabled = transferable,
+                            modifier = Modifier.tvFocusBorder(),
+                        )
+                        Text(
+                            if (!missionDownloadSupported) {
+                                "Mission download is currently available for LAN hosting"
+                            } else if (transferable) {
+                                "Offer mission download (share only with permission)"
+                            } else if (selectedMissionInfo?.isBuiltin == true) {
+                                "Base missions are never shared"
+                            } else {
+                                "This mission cannot be shared automatically"
+                            },
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
                 }
                 ScrollArrows(scrollState)
             }
@@ -502,6 +544,7 @@ internal fun CreateGameDialog(
                             playerSpewNoExpire = playerSpewNoExpire,
                             clientsCanRequestRewind = clientsCanRequestRewind,
                             restrictNonCoopFovToBase = restrictNonCoopFovToBase,
+                            offerMissionDownload = offerMissionDownload,
                         ),
                     )
                     val restoreSave = restoreSaveForHostedLevel(selectedSave, levelNum)
@@ -527,6 +570,11 @@ internal fun CreateGameDialog(
                     onCreate(
                         game,
                         mission,
+                        MissionScanner.requirement(
+                            game,
+                            checkNotNull(selectedMissionInfo),
+                            offerMissionDownload && missionDownloadSupported,
+                        ),
                         mode,
                         maxPlayers,
                         difficulty,

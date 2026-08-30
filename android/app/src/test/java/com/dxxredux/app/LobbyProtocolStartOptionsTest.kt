@@ -5,8 +5,16 @@ import com.dxxredux.app.lobby.buildAnnounce
 import com.dxxredux.app.lobby.buildJoin
 import com.dxxredux.app.lobby.buildJoinAck
 import com.dxxredux.app.lobby.buildLeave
+import com.dxxredux.app.lobby.buildMissionStatus
+import com.dxxredux.app.lobby.buildMissionTransferGrant
+import com.dxxredux.app.lobby.buildMissionTransferRequest
 import com.dxxredux.app.lobby.buildReady
+import com.dxxredux.app.lobby.missionRequirementFromJson
+import com.dxxredux.app.lobby.missionStatusFromJson
 import com.dxxredux.app.lobby.parsePacket
+import com.dxxredux.app.multiplayer.MissionCompatibilityStatus
+import com.dxxredux.app.multiplayer.MissionRequirement
+import com.dxxredux.app.multiplayer.MissionStatusReport
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -55,5 +63,45 @@ class LobbyProtocolStartOptionsTest {
         assertEquals("host-id", parsePacket(joinAck, joinAck.size)?.getString("host_client_id"))
         assertEquals("wing-id", parsePacket(ready, ready.size)?.getString("client_id"))
         assertEquals("wing-id", parsePacket(leave, leave.size)?.getString("client_id"))
+    }
+
+    @Test
+    fun missionIdentityStatusAndTransferAuthorizationRoundTrip() {
+        val hash = "ab".repeat(32)
+        val requirement =
+            MissionRequirement(
+                revision = "$hash:42:d2:castaway",
+                game = "d2",
+                missionKey = "castaway",
+                displayName = "PTMC Castaway Redux",
+                kind = MissionRequirement.KIND_WRAPPER,
+                descriptorPath = "missions/castaway.mn2",
+                wrapperFilename = "castaway_redux.zip",
+                sizeBytes = 42L,
+                sha256 = hash,
+                offerAvailable = true,
+            )
+        val announce = buildAnnounce("lobby", "Host", "d2", "castaway", "coop", 2, 4, missionRequirement = requirement)
+        val status =
+            MissionStatusReport(
+                revision = requirement.revision,
+                status = MissionCompatibilityStatus.DOWNLOADING,
+                verifiedBytes = 21L,
+                totalBytes = 42L,
+                transferId = "attempt-token",
+                attempt = 1,
+            )
+        val statusPacket = buildMissionStatus("lobby", "Wing", "wing-id", status)
+        val request = buildMissionTransferRequest("lobby", "Wing", "wing-id", requirement.revision, 1)
+        val grant = buildMissionTransferGrant("lobby", "secret-token", 42425, requirement.revision, 1)
+
+        val announceJson = parsePacket(announce, announce.size) ?: error("announce did not parse")
+        val statusJson = parsePacket(statusPacket, statusPacket.size) ?: error("status did not parse")
+        assertEquals(requirement, missionRequirementFromJson(announceJson.getJSONObject("mission_requirement")))
+        assertEquals(status, missionStatusFromJson(statusJson.getJSONObject("mission_status")))
+        assertEquals(requirement.revision, parsePacket(request, request.size)?.getString("revision"))
+        assertEquals("secret-token", parsePacket(grant, grant.size)?.getString("token"))
+        assertTrue(announce.size < 8 * 1024)
+        assertTrue(statusPacket.size < 8 * 1024)
     }
 }

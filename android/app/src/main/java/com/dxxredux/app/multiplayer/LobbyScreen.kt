@@ -22,12 +22,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.dxxredux.app.VisualReplacementPolicy
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -38,8 +43,10 @@ fun LobbyScreen(
 ) {
     val state by MatchmakingStateHolder.state.collectAsState()
     val lobby = state.currentLobby ?: return
+    val context = LocalContext.current
     val myId = state.playerId
     val lobbyFocus = remember { FocusRequester() }
+    val uiScope = rememberCoroutineScope()
     RequestControllerInitialFocus(lobbyFocus, revealFocusOnRequest = false)
 
     // Launch the game when gameLaunchInfo becomes available
@@ -48,6 +55,13 @@ fun LobbyScreen(
         if (launchInfo != null) {
             onLaunchGame(launchInfo)
         }
+    }
+    val missionRequirement = remember(lobby.gameInfo) { missionRequirementFromGameInfo(lobby.gameInfo) }
+    LaunchedEffect(missionRequirement?.revision) {
+        val requirement = missionRequirement ?: return@LaunchedEffect
+        val mode = lobby.gameInfo["mode"]?.jsonPrimitive?.content ?: "coop"
+        val report = withContext(Dispatchers.IO) { MissionCompatibilityResolver.resolve(context, requirement, mode) }
+        MatchmakingService.reportMissionStatus(report)
     }
 
     Column(
@@ -125,6 +139,28 @@ fun LobbyScreen(
         // -- Action buttons --
         val myPlayer = lobby.players.find { it.playerId == myId }
         val myReady = myPlayer?.ready ?: false
+        val myMissionMatches = myPlayer?.missionStatus?.status == MissionCompatibilityStatus.MATCH
+
+        if (
+            missionRequirement != null &&
+            myPlayer?.missionStatus?.status == MissionCompatibilityStatus.INSTALLED_DISABLED
+        ) {
+            OutlinedButton(
+                onClick = {
+                    uiScope.launch {
+                        val report =
+                            withContext(Dispatchers.IO) {
+                                MissionCompatibilityResolver.enableMatchingWrapper(context, missionRequirement, mode)
+                            }
+                        MatchmakingService.reportMissionStatus(report)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Enable matching installed mission")
+            }
+            Spacer(Modifier.height(8.dp))
+        }
 
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -141,6 +177,7 @@ fun LobbyScreen(
                     } else {
                         ButtonDefaults.buttonColors()
                     },
+                enabled = myReady || myMissionMatches,
             ) {
                 Text(if (myReady) "Unready" else "Ready")
             }
@@ -152,7 +189,10 @@ fun LobbyScreen(
                 val game = gi["game"]?.jsonPrimitive?.content ?: "d2"
                 CoopRestoreSelectionSummary(game, level ?: 1)
             }
-            val allReady = lobby.players.all { it.ready }
+            val allReady =
+                lobby.players.all {
+                    it.ready && it.missionStatus?.status == MissionCompatibilityStatus.MATCH
+                }
             val enoughPlayers = lobby.players.size >= 2
             Button(
                 onClick = {
@@ -255,6 +295,7 @@ private fun PlayerCard(
                         )
                     }
                 }
+                MissionStatusIndicator(player.missionStatus)
             }
             if (canKick) {
                 OutlinedButton(

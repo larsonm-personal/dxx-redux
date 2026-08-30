@@ -54,6 +54,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import com.dxxredux.app.BuildInfo
+import com.dxxredux.app.FileSetManager
 import com.dxxredux.app.ModManager
 import com.dxxredux.app.VisualReplacementPolicy
 import com.dxxredux.app.lobby.LobbyService
@@ -191,6 +192,59 @@ private fun LanJoinedLobbyView(
                 color = MaterialTheme.colorScheme.error,
             )
         }
+        MissionStatusIndicator(info.missionStatus, Modifier.fillMaxWidth())
+        val offeredMission = info.missionRequirement?.takeIf { it.isWrapper && it.offerAvailable }
+        if (offeredMission != null && info.missionStatus?.status != MissionCompatibilityStatus.MATCH) {
+            Text(
+                "Host offer: ${offeredMission.wrapperFilename} - ${offeredMission.sizeBytes} bytes - " +
+                    "SHA-256 ${offeredMission.sha256?.take(12)}...",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (info.missionStatus?.status == MissionCompatibilityStatus.INSTALLED_DISABLED) {
+            OutlinedButton(
+                onClick = { LobbyService.enableMatchingMission() },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Enable matching installed mission")
+            }
+        }
+        val canDownload =
+            info.missionRequirement?.offerAvailable == true &&
+                info.missionStatus?.status in
+                setOf(
+                    MissionCompatibilityStatus.MISSING,
+                    MissionCompatibilityStatus.SIZE_MISMATCH,
+                    MissionCompatibilityStatus.HASH_MISMATCH,
+                    MissionCompatibilityStatus.FAILED_RESUMABLE,
+                )
+        if (canDownload) {
+            OutlinedButton(
+                onClick = { LobbyService.requestMissionDownload() },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    if (info.missionStatus?.status == MissionCompatibilityStatus.FAILED_RESUMABLE) {
+                        "Resume mission download"
+                    } else {
+                        "Download, enable, and use host mission"
+                    },
+                )
+            }
+        } else if (info.missionStatus?.status in
+            setOf(
+                MissionCompatibilityStatus.MISSING,
+                MissionCompatibilityStatus.SIZE_MISMATCH,
+                MissionCompatibilityStatus.HASH_MISMATCH,
+            )
+        ) {
+            Text(
+                "The host is not offering this mission for download",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
         Spacer(Modifier.height(12.dp))
 
         // Player list
@@ -209,11 +263,10 @@ private fun LanJoinedLobbyView(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(12.dp),
                     ) {
-                        Text(
-                            displayName,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.weight(1f),
-                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(displayName, style = MaterialTheme.typography.bodyMedium)
+                            MissionStatusIndicator(player.missionStatus)
+                        }
                         Text(
                             if (player.ready) "Ready" else "Not Ready",
                             style = MaterialTheme.typography.bodySmall,
@@ -250,6 +303,8 @@ private fun LanJoinedLobbyView(
 
         // Ready toggle
         val myReady = players.find { it.callsign == callsign }?.ready ?: false
+        val myMissionMatches =
+            players.find { it.callsign == callsign }?.missionStatus?.status == MissionCompatibilityStatus.MATCH
         Button(
             onClick = {
                 LobbyService.setReady(info.lobbyId, info.hostAddr, callsign, !myReady)
@@ -258,6 +313,7 @@ private fun LanJoinedLobbyView(
                 Modifier
                     .fillMaxWidth()
                     .focusRequester(readyFocus),
+            enabled = myReady || myMissionMatches,
         ) {
             Text(if (myReady) "Unready" else "Ready")
         }
@@ -368,12 +424,21 @@ private fun LanDiscoveryView(
             if (!LobbyService.isDiscovering.value) {
                 LobbyService.startDiscovery(context, hostCallsign)
             }
+            val fileSets = FileSetManager(context.filesDir)
+            val setDir = fileSets.getSetDir(fileSets.getActive())
+            val missionInfo =
+                resolveMissionSelection(
+                    MissionScanner.scan(context.filesDir, setDir, record.game, record.mode),
+                    record.mission,
+                ) ?: return@launch
+            val requirement = MissionScanner.requirement(record.game, missionInfo, offerDownload = true)
             LobbyService.hostLobby(
                 hostCallsign,
                 record.game,
                 record.mission,
                 record.mode,
                 record.maxPlayers,
+                missionRequirement = requirement,
                 restrictNonCoopFovToBase = record.restrictNonCoopFovToBase,
                 stockVisualsEnforced = visualSummary.hasOmittedVisuals,
                 omittedVisualModCount = visualSummary.omittedModCount,
@@ -725,11 +790,10 @@ private fun LanDiscoveryView(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.padding(vertical = 2.dp),
                             ) {
-                                Text(
-                                    displayName,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    modifier = Modifier.weight(1f),
-                                )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(displayName, style = MaterialTheme.typography.bodyMedium)
+                                    MissionStatusIndicator(p.missionStatus)
+                                }
                                 Text(
                                     if (p.ready) "Ready" else "Not Ready",
                                     style = MaterialTheme.typography.bodySmall,
@@ -771,7 +835,11 @@ private fun LanDiscoveryView(
                         )
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = hostedPlayers.size >= 2,
+                    enabled =
+                        hostedPlayers.size >= 2 &&
+                            hostedPlayers.all {
+                                it.ready && it.missionStatus?.status == MissionCompatibilityStatus.MATCH
+                            },
                 ) {
                     Text("Start Game")
                 }
@@ -813,9 +881,11 @@ private fun LanDiscoveryView(
         CreateGameDialog(
             title = "Host LAN Game",
             confirmLabel = "Host",
+            missionDownloadSupported = true,
             onCreate = {
                 game,
                 mission,
+                missionRequirement,
                 mode,
                 maxPlayers,
                 difficulty,
@@ -848,6 +918,7 @@ private fun LanDiscoveryView(
                         mission ?: "",
                         mode,
                         maxPlayers,
+                        missionRequirement = missionRequirement,
                         restrictNonCoopFovToBase = restrictNonCoopFovToBase,
                         stockVisualsEnforced = visualSummary.hasOmittedVisuals,
                         omittedVisualModCount = visualSummary.omittedModCount,

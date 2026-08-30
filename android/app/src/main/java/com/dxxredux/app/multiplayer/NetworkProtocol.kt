@@ -61,6 +61,18 @@ data class ReadyMsg(
 )
 
 @Serializable
+data class MissionStatusMsg(
+    val type: String = "MISSION_STATUS",
+    val revision: String,
+    val status: MissionCompatibilityStatus,
+    @SerialName("verified_bytes") val verifiedBytes: Long = 0L,
+    @SerialName("total_bytes") val totalBytes: Long = 0L,
+    @SerialName("transfer_id") val transferId: String? = null,
+    val attempt: Int = 0,
+    @SerialName("failure_code") val failureCode: String? = null,
+)
+
+@Serializable
 data class StartGameMsg(
     val type: String = "START_GAME",
 )
@@ -219,6 +231,7 @@ data class LobbyPlayerInfo(
     val ready: Boolean,
     @SerialName("ping_ms") val pingMs: Int? = null,
     @SerialName("connection_type") val connectionType: String = "unknown",
+    @SerialName("mission_status") val missionStatus: MissionStatusReport? = null,
 )
 
 @Serializable

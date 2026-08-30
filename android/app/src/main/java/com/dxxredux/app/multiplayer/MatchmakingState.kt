@@ -96,6 +96,7 @@ data class GameLaunchInfo(
     val clientsCanRequestRewind: Boolean = false,
     val restrictNonCoopFovToBase: Boolean = false,
     val hostObserver: Boolean = false,
+    val missionRequirement: MissionRequirement? = null,
 )
 
 data class MatchmakingState(
@@ -194,6 +195,7 @@ object HostGameDefaults {
         val playerSpewNoExpire: Boolean = true,
         val clientsCanRequestRewind: Boolean = false,
         val restrictNonCoopFovToBase: Boolean = false,
+        val offerMissionDownload: Boolean = true,
     )
 
     fun load(context: Context): Defaults {
@@ -212,6 +214,7 @@ object HostGameDefaults {
             playerSpewNoExpire = prefs.getBoolean("host_player_spew_no_expire", true),
             clientsCanRequestRewind = prefs.getBoolean("host_clients_can_request_rewind", false),
             restrictNonCoopFovToBase = prefs.getBoolean("host_restrict_noncoop_fov_to_base", false),
+            offerMissionDownload = prefs.getBoolean("host_offer_mission_download", true),
         )
     }
 
@@ -234,6 +237,7 @@ object HostGameDefaults {
             .putBoolean("host_player_spew_no_expire", d.playerSpewNoExpire)
             .putBoolean("host_clients_can_request_rewind", d.clientsCanRequestRewind)
             .putBoolean("host_restrict_noncoop_fov_to_base", d.restrictNonCoopFovToBase)
+            .putBoolean("host_offer_mission_download", d.offerMissionDownload)
             .apply()
     }
 }

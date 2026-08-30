@@ -49,6 +49,7 @@ pub struct LobbyPlayer {
     pub nat_type: Option<String>,
     pub connection_type: ConnectionType,
     pub ping_ms: Option<u32>,
+    pub mission_status: Option<crate::protocol::MissionStatusReport>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -134,6 +135,7 @@ impl Lobby {
             nat_type: None,
             connection_type: ConnectionType::Unknown,
             ping_ms: None,
+            mission_status: None,
         };
         Self {
             id: Uuid::new_v4(),
@@ -207,6 +209,7 @@ impl Lobby {
             nat_type: None,
             connection_type: ConnectionType::Unknown,
             ping_ms: None,
+            mission_status: None,
         });
         true
     }

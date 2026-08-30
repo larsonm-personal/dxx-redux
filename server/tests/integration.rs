@@ -2052,6 +2052,143 @@ async fn test_full_lobby_flow_join_ready_start() {
     assert_eq!(joiner_start["game_info"]["mission"], "Counterstrike!");
 }
 
+#[tokio::test]
+async fn test_mission_requirement_rejects_invalid_base_offer() {
+    let server = TestServer::start().await;
+    let mut host = connect_ws(&server).await;
+    authenticate(&mut host, "HostValid").await;
+
+    let response = send_recv(
+        &mut host,
+        json!({
+            "type": "CREATE_LOBBY",
+            "game": "d2",
+            "max_players": 4,
+            "game_info": {
+                "game": "d2",
+                "mission": "d2",
+                "mission_requirement": {
+                    "schema": 1,
+                    "revision": "builtin:d2:d2",
+                    "game": "d2",
+                    "mission_key": "d2",
+                    "display_name": "Descent 2",
+                    "kind": "builtin",
+                    "offer_available": true
+                }
+            }
+        }),
+    )
+    .await;
+
+    assert_eq!(response["type"], "ERROR");
+    assert_eq!(response["code"], "INVALID_PARAMS");
+}
+
+#[tokio::test]
+async fn test_mission_status_is_authoritative_for_ready_and_start() {
+    let server = TestServer::start().await;
+    let hash = "ab".repeat(32);
+    let revision = format!("{hash}:42:d2:castaway");
+    let requirement = json!({
+        "schema": 1,
+        "revision": revision,
+        "game": "d2",
+        "mission_key": "castaway",
+        "display_name": "PTMC Castaway Redux",
+        "kind": "wrapper",
+        "descriptor_path": "missions/castaway.mn2",
+        "wrapper_filename": "castaway_redux.zip",
+        "size_bytes": 42,
+        "sha256": hash,
+        "offer_available": true
+    });
+
+    let mut host = connect_ws(&server).await;
+    authenticate(&mut host, "MissionHost").await;
+    let created = send_recv(
+        &mut host,
+        json!({
+            "type": "CREATE_LOBBY",
+            "game": "d2",
+            "max_players": 4,
+            "game_info": {
+                "game": "d2",
+                "mission": "castaway",
+                "mode": "coop",
+                "mission_requirement": requirement
+            }
+        }),
+    )
+    .await;
+    let lobby_id = created["lobby_id"].as_str().unwrap().to_string();
+
+    let mut joiner = connect_ws(&server).await;
+    authenticate(&mut joiner, "MissionJoiner").await;
+    send_only(
+        &mut joiner,
+        json!({"type": "JOIN_LOBBY", "lobby_id": lobby_id}),
+    )
+    .await;
+    let _ = recv(&mut joiner).await;
+    let _ = recv(&mut host).await;
+
+    send_only(&mut joiner, json!({"type": "READY", "ready": true})).await;
+    let joiner_not_ready = recv(&mut joiner).await;
+    let _ = recv(&mut host).await;
+    let self_player = joiner_not_ready["players"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|player| player["callsign"] == "MissionJoiner")
+        .unwrap();
+    assert_eq!(self_player["ready"], false);
+
+    let invalid = send_recv(
+        &mut joiner,
+        json!({
+            "type": "MISSION_STATUS",
+            "revision": revision,
+            "status": "match",
+            "verified_bytes": 0,
+            "total_bytes": 41
+        }),
+    )
+    .await;
+    assert_eq!(invalid["type"], "ERROR");
+    assert_eq!(invalid["code"], "INVALID_MISSION_STATUS");
+
+    let blocked = send_recv(&mut host, json!({"type": "START_GAME"})).await;
+    assert_eq!(blocked["type"], "ERROR");
+    assert_eq!(blocked["code"], "MISSION_NOT_READY");
+
+    let matching_status = json!({
+        "type": "MISSION_STATUS",
+        "revision": revision,
+        "status": "match",
+        "verified_bytes": 0,
+        "total_bytes": 42
+    });
+    send_only(&mut host, matching_status.clone()).await;
+    let _ = recv(&mut host).await;
+    let _ = recv(&mut joiner).await;
+    send_only(&mut joiner, matching_status).await;
+    let _ = recv(&mut host).await;
+    let _ = recv(&mut joiner).await;
+
+    send_only(&mut host, json!({"type": "READY", "ready": true})).await;
+    let _ = recv(&mut host).await;
+    let _ = recv(&mut joiner).await;
+    send_only(&mut joiner, json!({"type": "READY", "ready": true})).await;
+    let host_update = recv(&mut host).await;
+    let _ = recv(&mut joiner).await;
+    assert!(host_update["players"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|player| player["ready"] == true && player["mission_status"]["status"] == "match"));
+}
+
 /// Joiner leaves lobby, host gets LOBBY_UPDATE with 1 player.
 #[tokio::test]
 async fn test_leave_lobby_update() {

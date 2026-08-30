@@ -69,6 +69,7 @@ import com.dxxredux.app.multiplayer.MultiplayerResumePrefs
 import com.dxxredux.app.multiplayer.NetworkConstants
 import com.dxxredux.app.multiplayer.PlayGamesAuth
 import com.dxxredux.app.multiplayer.readCoopRestoreSlot
+import com.dxxredux.app.multiplayer.userLabel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -2184,6 +2185,23 @@ class SetupActivity : ComponentActivity() {
                 finishLaunchPreparation("multiplayer_preflight_failed")
                 showLaunchPreflightFailure(preflightMessage)
                 return@launch
+            }
+            val requirement = info.missionRequirement
+            if (requirement != null) {
+                val missionStatus =
+                    withContext(Dispatchers.IO) {
+                        com.dxxredux.app.multiplayer.MissionCompatibilityResolver.resolve(
+                            this@SetupActivity,
+                            requirement,
+                            info.mode,
+                        )
+                    }
+                if (missionStatus.status != com.dxxredux.app.multiplayer.MissionCompatibilityStatus.MATCH) {
+                    mpGameLaunching = false
+                    finishLaunchPreparation("multiplayer_mission_mismatch")
+                    showLaunchPreflightFailure(missionStatus.status.userLabel(missionStatus))
+                    return@launch
+                }
             }
             continueMultiplayerGameLaunch(info)
         }

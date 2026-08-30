@@ -7,8 +7,8 @@ use uuid::Uuid;
 // message schema. Keep MIN_CLIENT_PROTOCOL at the oldest version the
 // server still accepts. Both values must stay in sync with the client
 // constant in NetworkConstants.kt.
-pub const CURRENT_PROTOCOL: u32 = 1;
-pub const MIN_CLIENT_PROTOCOL: u32 = 1;
+pub const CURRENT_PROTOCOL: u32 = 2;
+pub const MIN_CLIENT_PROTOCOL: u32 = 2;
 
 /// Maximum serialized size of a game_info JSON object (5 KB).
 pub const GAME_INFO_MAX_BYTES: usize = 5 * 1024;
@@ -91,6 +91,22 @@ pub enum ClientMessage {
 
     #[serde(rename = "READY")]
     Ready { ready: bool },
+
+    #[serde(rename = "MISSION_STATUS")]
+    MissionStatus {
+        revision: String,
+        status: String,
+        #[serde(default)]
+        verified_bytes: u64,
+        #[serde(default)]
+        total_bytes: u64,
+        #[serde(default)]
+        transfer_id: Option<String>,
+        #[serde(default)]
+        attempt: u8,
+        #[serde(default)]
+        failure_code: Option<String>,
+    },
 
     #[serde(rename = "START_GAME")]
     StartGame {},
@@ -383,6 +399,21 @@ pub struct LobbyPlayerInfo {
     pub ready: bool,
     pub ping_ms: Option<u32>,
     pub connection_type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mission_status: Option<MissionStatusReport>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MissionStatusReport {
+    pub revision: String,
+    pub status: String,
+    pub verified_bytes: u64,
+    pub total_bytes: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transfer_id: Option<String>,
+    pub attempt: u8,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub failure_code: Option<String>,
 }
 
 #[derive(Debug, Serialize, Clone)]
