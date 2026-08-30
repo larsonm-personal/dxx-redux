@@ -16,7 +16,7 @@ enum escort_route_guidance_mode {
 	ESCORT_ROUTE_GUIDANCE_NONE = 0,
 	ESCORT_ROUTE_GUIDANCE_REACH_OBJECTIVE = 1,
 	ESCORT_ROUTE_GUIDANCE_REACH_HIDDEN_DOOR = 2,
-	ESCORT_ROUTE_GUIDANCE_REACH_FIRING_POSITION = 3,
+	ESCORT_ROUTE_GUIDANCE_REACH_SWITCH_AREA = 3,
 	ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT = 4
 };
 
@@ -33,9 +33,6 @@ typedef struct escort_unexplored_route_target {
 typedef struct escort_route_goal {
 	int active;
 	int target_seg;
-	int target_side;
-	int target_wall;
-	int trigger_num;
 	int objective_kind;
 	int activation_kind;
 	int objective_seg;
@@ -44,17 +41,9 @@ typedef struct escort_route_goal {
 	int objective_trigger;
 	int objective_object;
 	int objective_key_index;
-	int switch_shot_quality;
-	int switch_shot_incidence_cosine;
 	int guidance_mode;
 	int guidance_seg;
-	int guidance_side;
 	int frontier_player_keyed_door;
-	int target_pos_valid;
-	vms_vector target_pos;
-	int path_endpoint_seg;
-	int path_endpoint_pos_valid;
-	vms_vector path_endpoint_pos;
 	char label[LEVEL_METADATA_ROUTE_LABEL_LEN];
 } escort_route_goal;
 
@@ -133,6 +122,7 @@ void escort_trace_path(const char *reason, object *objp, ai_local *ailp,
                        ai_static *aip, int goal_seg);
 void escort_trace_navigation(object *objp, ai_local *ailp, ai_static *aip,
                              fix dist_to_player, int player_visibility);
+void escort_update_navigation_liveness(object *objp, ai_local *ailp);
 void escort_trace_navigation_reset(const char *reason, object *objp,
                                    ai_local *ailp, ai_static *aip);
 void escort_route_set_target_mode(int target_mode);
@@ -150,8 +140,6 @@ int escort_route_next_goal(void);
 int escort_route_adopt_exit_command(void);
 int escort_route_physical_target(object *objp, int goal_seg, int max_depth);
 void escort_route_refresh_metadata(void);
-void escort_route_note_path_endpoint(object *objp);
-void escort_route_apply_target_pos(object *objp);
 
 #endif
 

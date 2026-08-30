@@ -1,0 +1,57 @@
+// TEST: Counterstrike level 24 Guide-Bot stays live after reaching the gold-key area
+[
+    {"_info": {
+        "games": ["d2"],
+        "_deps": [
+            {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
+            {"file": "descent2.ham", "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"},
+            {"file": "groupa.pig", "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"},
+            {"file": "descent2.s22", "sha256": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728"},
+            {"file": "alien2.pig", "sha256": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055"}
+        ]
+    }},
+    {"action": "enter_launcher"},
+    {"action": "reset_state"},
+    {"action": "clear_mods"},
+    {"action": "enter_game", "game": "d2"},
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "select", "text": "Ok", "optional": true},
+    {"action": "select", "text": "New game", "timeout_ms": 10000},
+    {"action": "select_mission", "text": "Counterstrike", "timeout_ms": 10000},
+    {"action": "wait_ms", "ms": 300},
+    {"action": "key", "key": "backspace"},
+    {"action": "key", "key": "2"},
+    {"action": "key", "key": "4"},
+    {"action": "select", "text": "Ok", "timeout_ms": 5000},
+    {"action": "select", "text": "Trainee", "optional": true},
+    {"action": "skip_briefing", "timeout_ms": 60000},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "in_game": "true",
+        "current_level_num": "24",
+        "level_metadata_route.status": "ok"
+    }},
+    {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
+    {"action": "set_debug", "field": "player_keys", "value": "blue", "post_delay_ms": 100},
+    {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {
+        "guidebot.route_goal_activation_kind_name": "pickup_key",
+        "guidebot.route_goal_objective_seg": "281",
+        "guidebot.route_goal_instruction": {"contains": "gold key"}
+    }},
+
+    // Reproduce the reported endpoint without collecting the player-owned key.
+    // The original short-path fallback must replace the one-point route.
+    {"action": "set_debug", "field": "guidebot_segment", "value": "281", "post_delay_ms": 100},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "guidebot.path_length": {"gt": 1},
+        "guidebot.simulation_role": "owner"
+    }},
+    {"action": "wait_ms", "ms": 6000},
+    {"action": "assert", "expect": {
+        "guidebot.route_goal_objective_seg": "281",
+        "guidebot.path_length": {"gt": 1},
+        "guidebot.liveness_age_seconds": {"lt": 4}
+    }},
+    {"action": "log", "message": "=== TEST: Counterstrike level 24 Guide-Bot gold-key liveness -- PASS ==="}
+]

@@ -52,29 +52,6 @@ static inline int escort_goal_request_is_pathable(int goal_object, int special_g
 	return escort_goal_is_pathable(special_goal != -1 ? special_goal : goal_object);
 }
 
-/* A short path can be the complete route to a nearby door or objective. */
-static inline int escort_path_needs_fallback(int path_length, int semantic_route_active)
-{
-	return path_length < (semantic_route_active ? 1 : 2);
-}
-
-/* Semantic routes own their physical path until the player is genuinely lost. */
-static inline int escort_semantic_route_suppresses_midpoint_visit(
-	int semantic_route_active, int going_to_object, int lost_player_timeout)
-{
-	return semantic_route_active && going_to_object && !lost_player_timeout;
-}
-
-static inline int escort_path_has_remaining_point(int path_length,
-	int current_path_index, int path_direction)
-{
-	int next_path_index = current_path_index + path_direction;
-
-	return path_length > 0 && current_path_index >= 0 &&
-	       current_path_index < path_length && next_path_index >= 0 &&
-	       next_path_index < path_length;
-}
-
 static inline int escort_audit_replan_should_defer(
 	int audit_only, int last_valid, long long now, long long last,
 	long long interval)

@@ -2066,12 +2066,6 @@ void escort_create_path_to_goal(object *objp)
 			}
 		}
 
-#ifdef __ANDROID__
-		if (using_route_goal) {
-			escort_route_apply_target_pos(objp);
-			escort_route_note_path_endpoint(objp);
-		}
-#endif
 		ailp->mode = AIM_GOTO_OBJECT;
 #ifdef __ANDROID__
 		escort_trace_path("created", objp, ailp, aip, goal_seg);
@@ -2238,24 +2232,6 @@ int escort_set_goal_object(void)
 
 fix64	Buddy_last_seen_player = 0, Buddy_last_player_path_created;
 
-#ifdef __ANDROID__
-int escort_get_route_goal_path_pending(void)
-{
-	ai_local *ailp;
-	ai_static *aip;
-
-	if (!escort_is_companion_object(Buddy_objnum))
-		return 0;
-	ailp = &Ai_local_info[Buddy_objnum];
-	aip = &Objects[Buddy_objnum].ctype.ai_info;
-	if (!Escort_route_goal.active || ailp->mode != AIM_GOTO_OBJECT ||
-	    aip->path_length <= 0)
-		return 0;
-	return escort_path_has_remaining_point(
-	    aip->path_length, aip->cur_path_index, aip->PATH_DIR);
-}
-#endif
-
 //	-----------------------------------------------------------------------------
 int time_to_visit_player(object *objp, ai_local *ailp, ai_static *aip)
 {
@@ -2268,13 +2244,6 @@ int time_to_visit_player(object *objp, ai_local *ailp, ai_static *aip)
 			lost_player_timeout = 1;
 	if (lost_player_timeout)
 		return 1;
-
-#ifdef __ANDROID__
-	if (escort_semantic_route_suppresses_midpoint_visit(
-	        Escort_route_goal.active, ailp->mode == AIM_GOTO_OBJECT,
-	        lost_player_timeout))
-		return 0;
-#endif
 
 	if (ailp->mode == AIM_GOTO_PLAYER)
 		return 0;
@@ -2662,6 +2631,7 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 	}
 #ifdef __ANDROID__
 	escort_route_monitor_path_progress(objp, ailp, aip);
+	escort_update_navigation_liveness(objp, ailp);
 	escort_trace_navigation(objp, ailp, aip, dist_to_player, player_visibility);
 	escort_route_path_recalc_sync_goal();
 	if (Escort_route_path_recalc_pending &&
@@ -2810,11 +2780,7 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 			input_demo_log_escort_rng_progress("after AIM_GOTO_PLAYER escort_create_path_to_goal", &replay_rng_state, &replay_rng_call_count);
 		aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
 			input_demo_log_escort_path_state("AIM_GOTO_PLAYER final", objp);
-#ifdef __ANDROID__
-		if (escort_path_needs_fallback(aip->path_length, Escort_route_goal.active)) {
-#else
 		if (aip->path_length < 3) {
-#endif
 			create_n_segment_path(objp, 5, Believed_player_seg);
 #ifdef __ANDROID__
 			escort_trace_path("short_path_fallback", objp, ailp, aip,
@@ -2843,11 +2809,7 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 				input_demo_log_escort_rng_progress("after unspecified escort_create_path_to_goal", &replay_rng_state, &replay_rng_call_count);
 			aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
 			input_demo_log_escort_path_state("unspecified goal final", objp);
-#ifdef __ANDROID__
-			if (escort_path_needs_fallback(aip->path_length, Escort_route_goal.active)) {
-#else
 			if (aip->path_length < 3) {
-#endif
 				create_n_segment_path(objp, 5, Believed_player_seg);
 #ifdef __ANDROID__
 				escort_trace_path("short_path_fallback", objp, ailp, aip,

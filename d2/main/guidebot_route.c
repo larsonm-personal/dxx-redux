@@ -134,6 +134,9 @@ static int Escort_nav_trace_last_signature = -1;
 static int Escort_nav_trace_last_goal = ESCORT_GOAL_UNSPECIFIED;
 static int Escort_nav_trace_last_path_index = -1;
 static int Escort_nav_trace_stall_samples;
+static vms_vector Escort_nav_liveness_anchor;
+static int Escort_nav_liveness_signature = -1;
+static fix64 Escort_nav_liveness_last_progress_time;
 static unsigned char Escort_route_activated_triggers[MAX_TRIGGERS];
 int Escort_route_avoid_from_seg = -1;
 int Escort_route_avoid_seg = -1;
@@ -267,6 +270,33 @@ void escort_trace_navigation(object *objp, ai_local *ailp, ai_static *aip,
 	Escort_nav_trace_last_signature = objp->signature;
 	Escort_nav_trace_last_goal = Escort_goal_object;
 	Escort_nav_trace_last_path_index = aip->cur_path_index;
+}
+
+void escort_update_navigation_liveness(object *objp, ai_local *ailp)
+{
+	if (!objp || !ailp)
+		return;
+	if (Escort_nav_liveness_signature != objp->signature ||
+	    (ailp->mode != AIM_GOTO_OBJECT && ailp->mode != AIM_GOTO_PLAYER)) {
+		Escort_nav_liveness_anchor = objp->pos;
+		Escort_nav_liveness_signature = objp->signature;
+		Escort_nav_liveness_last_progress_time = GameTime64;
+		return;
+	}
+	if (vm_vec_dist_quick(&objp->pos, &Escort_nav_liveness_anchor) >= F1_0 / 2) {
+		Escort_nav_liveness_anchor = objp->pos;
+		Escort_nav_liveness_last_progress_time = GameTime64;
+	}
+}
+
+fix64 escort_get_navigation_liveness_age(void)
+{
+	fix64 age;
+
+	if (Escort_nav_liveness_signature < 0)
+		return 0;
+	age = GameTime64 - Escort_nav_liveness_last_progress_time;
+	return age > 0 ? age : 0;
 }
 
 void escort_trace_navigation_reset(const char *reason, object *objp,
@@ -537,9 +567,6 @@ static void escort_route_goal_initialize(escort_route_goal *goal)
 {
 	memset(goal, 0, sizeof(*goal));
 	goal->target_seg = -1;
-	goal->target_side = -1;
-	goal->target_wall = -1;
-	goal->trigger_num = -1;
 	goal->objective_kind = -1;
 	goal->activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_NONE;
 	goal->objective_seg = -1;
@@ -548,15 +575,9 @@ static void escort_route_goal_initialize(escort_route_goal *goal)
 	goal->objective_trigger = -1;
 	goal->objective_object = -1;
 	goal->objective_key_index = -1;
-	goal->switch_shot_quality = LEVEL_METADATA_SWITCH_SHOT_NONE;
-	goal->switch_shot_incidence_cosine = LEVEL_METADATA_SHOT_COSINE_ONE;
 	goal->guidance_mode = ESCORT_ROUTE_GUIDANCE_NONE;
 	goal->guidance_seg = -1;
-	goal->guidance_side = -1;
 	goal->frontier_player_keyed_door = 0;
-	goal->target_pos_valid = 0;
-	goal->path_endpoint_seg = -1;
-	goal->path_endpoint_pos_valid = 0;
 }
 
 static void escort_route_consume_cache_improvement(void)
@@ -590,13 +611,7 @@ const char *escort_get_route_goal_instruction(void)
 		return "can't reach it yet; follow me as close as possible";
 	switch (Escort_route_goal.activation_kind) {
 		case LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH:
-			if (Escort_route_goal.switch_shot_quality ==
-			    LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE)
-				return "can't confirm a clear shot; follow me toward the marked switch";
-			if (Escort_route_goal.switch_shot_quality ==
-			    LEVEL_METADATA_SWITCH_SHOT_CONFIRMED_STEEP)
-				return "shot is at a steep angle; follow me, then shoot the marked switch";
-			return "follow me, then shoot the marked switch";
+			return "follow me, find and shoot the marked switch";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER:
 			return "follow me, then fly through the marked opening";
 		case LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER:
@@ -636,17 +651,20 @@ int escort_get_route_goal_seg(void)
 
 int escort_get_route_goal_side(void)
 {
-	return Escort_route_goal.active ? Escort_route_goal.target_side : -1;
+	if (!Escort_route_goal.active ||
+	    Escort_route_goal.target_seg != Escort_route_goal.objective_seg)
+		return -1;
+	return Escort_route_goal.objective_side;
 }
 
 int escort_get_route_goal_wall(void)
 {
-	return Escort_route_goal.active ? Escort_route_goal.target_wall : -1;
+	return Escort_route_goal.active ? Escort_route_goal.objective_wall : -1;
 }
 
 int escort_get_route_goal_trigger(void)
 {
-	return Escort_route_goal.active ? Escort_route_goal.trigger_num : -1;
+	return Escort_route_goal.active ? Escort_route_goal.objective_trigger : -1;
 }
 
 int escort_get_route_goal_objective_kind(void)
@@ -701,7 +719,10 @@ int escort_get_route_goal_guidance_seg(void)
 
 int escort_get_route_goal_guidance_side(void)
 {
-	return Escort_route_goal.active ? Escort_route_goal.guidance_side : -1;
+	if (!Escort_route_goal.active ||
+	    Escort_route_goal.guidance_seg != Escort_route_goal.objective_seg)
+		return -1;
+	return Escort_route_goal.objective_side;
 }
 
 int escort_get_route_goal_frontier_player_keyed_door(void)
@@ -713,28 +734,15 @@ int escort_get_route_goal_frontier_player_keyed_door(void)
 
 int escort_get_route_goal_path_endpoint_seg(void)
 {
-	return Escort_route_goal.active ? Escort_route_goal.path_endpoint_seg : -1;
-}
+	ai_static *aip;
 
-int escort_get_route_goal_target_pos(int pos[3])
-{
-	if (!pos || !Escort_route_goal.active || !Escort_route_goal.target_pos_valid)
-		return 0;
-	pos[0] = Escort_route_goal.target_pos.x;
-	pos[1] = Escort_route_goal.target_pos.y;
-	pos[2] = Escort_route_goal.target_pos.z;
-	return 1;
-}
-
-int escort_get_route_goal_path_endpoint_pos(int pos[3])
-{
-	if (!pos || !Escort_route_goal.active ||
-	    !Escort_route_goal.path_endpoint_pos_valid)
-		return 0;
-	pos[0] = Escort_route_goal.path_endpoint_pos.x;
-	pos[1] = Escort_route_goal.path_endpoint_pos.y;
-	pos[2] = Escort_route_goal.path_endpoint_pos.z;
-	return 1;
+	if (!Escort_route_goal.active || !escort_is_companion_object(Buddy_objnum))
+		return -1;
+	aip = &Objects[Buddy_objnum].ctype.ai_info;
+	if (aip->hide_index < 0 || aip->path_length <= 0 ||
+	    aip->hide_index + aip->path_length > MAX_POINT_SEGS)
+		return -1;
+	return Point_segs[aip->hide_index + aip->path_length - 1].segnum;
 }
 
 #ifdef INTROSPECT_ON
@@ -1204,8 +1212,8 @@ const char *escort_get_route_goal_guidance_mode_name(void)
 			return "reach_objective";
 		case ESCORT_ROUTE_GUIDANCE_REACH_HIDDEN_DOOR:
 			return "reach_hidden_door";
-		case ESCORT_ROUTE_GUIDANCE_REACH_FIRING_POSITION:
-			return "reach_firing_position";
+		case ESCORT_ROUTE_GUIDANCE_REACH_SWITCH_AREA:
+			return "reach_switch_area";
 		case ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT:
 			return "nearest_progress_point";
 		default:
@@ -1254,8 +1262,7 @@ int escort_route_key_flag(int key_index)
 void escort_route_notify_wall_changed(int wall_num)
 {
 	int matches_objective = Escort_route_goal.active && wall_num >= 0 &&
-	                        (wall_num == Escort_route_goal.objective_wall ||
-	                         wall_num == Escort_route_goal.target_wall);
+	                        wall_num == Escort_route_goal.objective_wall;
 	escort_route_record_event(
 	    ESCORT_ROUTE_EVENT_WALL,
 	    &Escort_route_wall_generation,
@@ -1277,8 +1284,7 @@ void escort_route_notify_trigger_changed(int trigger_num)
 		          "route_trigger_latched trigger=%d", trigger_num);
 	}
 	matches_objective = Escort_route_goal.active && trigger_num >= 0 &&
-	                    (trigger_num == Escort_route_goal.objective_trigger ||
-	                     trigger_num == Escort_route_goal.trigger_num);
+	                    trigger_num == Escort_route_goal.objective_trigger;
 	escort_route_record_event(
 	    ESCORT_ROUTE_EVENT_TRIGGER,
 	    &Escort_route_trigger_generation,
@@ -1384,17 +1390,17 @@ static int escort_route_step_guidance_mode_from_activation(
 				case LEVEL_METADATA_ROUTE_ACTIVATION_UNRESOLVED_TRIGGER:
 					return ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT;
 				case LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH:
-					return ESCORT_ROUTE_GUIDANCE_REACH_FIRING_POSITION;
+					return ESCORT_ROUTE_GUIDANCE_REACH_SWITCH_AREA;
 				case LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER:
 				case LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER:
 					return ESCORT_ROUTE_GUIDANCE_REACH_OBJECTIVE;
 				default:
-					return ESCORT_ROUTE_GUIDANCE_REACH_FIRING_POSITION;
+					return ESCORT_ROUTE_GUIDANCE_REACH_SWITCH_AREA;
 			}
 		case LEVEL_METADATA_ROUTE_HIDDEN_DOOR:
 			return ESCORT_ROUTE_GUIDANCE_REACH_HIDDEN_DOOR;
 		case LEVEL_METADATA_ROUTE_BLASTABLE_WALL:
-			return ESCORT_ROUTE_GUIDANCE_REACH_FIRING_POSITION;
+			return ESCORT_ROUTE_GUIDANCE_REACH_SWITCH_AREA;
 		case LEVEL_METADATA_ROUTE_KEY:
 		case LEVEL_METADATA_ROUTE_REACTOR:
 		case LEVEL_METADATA_ROUTE_BOSS:
@@ -1409,13 +1415,12 @@ static int escort_route_step_guidance_mode_from_activation(
 int escort_route_step_guidance_mode(const level_metadata_route_step *step)
 {
 	/* Android route metadata can describe a hidden door that must be shot from
-	 * another segment before a switch behind it becomes visible.  Guide to the
-	 * compiled firing pose for that remote action; ordinary adjacent hidden
-	 * doors retain the classic guide-to-door behavior. */
+	 * another segment before a switch behind it becomes visible.  Guide to that
+	 * general area; ordinary adjacent hidden doors retain classic behavior. */
 	if (step && step->kind == LEVEL_METADATA_ROUTE_HIDDEN_DOOR &&
 	    step->activation_pos_valid && escort_valid_wall(step->wall_num) &&
 	    step->seg != Walls[step->wall_num].segnum)
-		return ESCORT_ROUTE_GUIDANCE_REACH_FIRING_POSITION;
+		return ESCORT_ROUTE_GUIDANCE_REACH_SWITCH_AREA;
 	return step ? escort_route_step_guidance_mode_from_activation(
 	                  step->kind, step->activation_kind)
 	            : ESCORT_ROUTE_GUIDANCE_NONE;
@@ -1455,14 +1460,9 @@ static void escort_route_build_step_goal(
 	     step->activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER) &&
 	    escort_valid_segment(step->seg))
 		target_seg = step->seg;
-	int target_side = target_seg == step->seg ? step->side : -1;
-
 	escort_route_goal_initialize(goal);
 	goal->active = 1;
 	goal->target_seg = target_seg;
-	goal->target_side = target_side;
-	goal->target_wall = step->wall_num;
-	goal->trigger_num = step->trigger_num;
 	goal->objective_kind = step->kind;
 	goal->activation_kind = step->activation_kind;
 	goal->objective_seg = step->seg;
@@ -1471,19 +1471,8 @@ static void escort_route_build_step_goal(
 	goal->objective_trigger = step->trigger_num;
 	goal->objective_object = step->key_carrier_objnum;
 	goal->objective_key_index = step->key_index;
-	goal->switch_shot_quality = step->switch_shot_quality;
-	goal->switch_shot_incidence_cosine =
-	    step->switch_shot_incidence_cosine;
 	goal->guidance_mode = guidance_mode;
 	goal->guidance_seg = target_seg;
-	goal->guidance_side = target_side;
-	if (guidance_mode == ESCORT_ROUTE_GUIDANCE_REACH_FIRING_POSITION &&
-	    step->activation_pos_valid && target_seg == path_terminal_seg) {
-		goal->target_pos_valid = 1;
-		goal->target_pos.x = step->activation_pos[0];
-		goal->target_pos.y = step->activation_pos[1];
-		goal->target_pos.z = step->activation_pos[2];
-	}
 	if (step->kind == LEVEL_METADATA_ROUTE_UNEXPLORED) {
 		goal->objective_kind = ESCORT_ROUTE_OBJECTIVE_UNEXPLORED;
 		if (Escort_unexplored_route_target.active)
@@ -1678,8 +1667,8 @@ static int escort_route_goal_object_for_goal(const escort_route_goal *goal)
 static void escort_route_publish_goal(const escort_route_goal *candidate)
 {
 	if (Escort_route_avoid_seg >= 0 &&
-	    (Escort_route_avoid_trigger != candidate->trigger_num ||
-	     Escort_route_avoid_wall != candidate->target_wall)) {
+	    (Escort_route_avoid_trigger != candidate->objective_trigger ||
+	     Escort_route_avoid_wall != candidate->objective_wall)) {
 		Escort_route_avoid_from_seg = -1;
 		Escort_route_avoid_seg = -1;
 		Escort_route_avoid_from_seg2 = -1;
@@ -1710,12 +1699,7 @@ int escort_route_next_goal(void)
 	if (adoption_action == GUIDEBOT_ROUTE_ADOPTION_RETAIN_PATH) {
 #ifdef __ANDROID__
 		if (cache_improvement && candidate.active &&
-		    (Escort_route_goal.target_seg != candidate.target_seg ||
-		     Escort_route_goal.target_pos_valid != candidate.target_pos_valid ||
-		     (Escort_route_goal.target_pos_valid &&
-		      (Escort_route_goal.target_pos.x != candidate.target_pos.x ||
-		       Escort_route_goal.target_pos.y != candidate.target_pos.y ||
-		       Escort_route_goal.target_pos.z != candidate.target_pos.z))))
+		    Escort_route_goal.target_seg != candidate.target_seg)
 			debug_log(
 			    DLOG_GUIDEBOT,
 			    "route_publish action=retain_incumbent objective=%d "
@@ -1845,8 +1829,7 @@ static int escort_route_goal_semantic_equal(
 	       left->objective_wall == right->objective_wall &&
 	       left->objective_trigger == right->objective_trigger &&
 	       left->objective_object == right->objective_object &&
-	       left->objective_key_index == right->objective_key_index &&
-	       left->switch_shot_quality == right->switch_shot_quality;
+	       left->objective_key_index == right->objective_key_index;
 }
 
 void escort_route_monitor_completion(void)
@@ -2048,26 +2031,6 @@ void escort_route_monitor_completion(void)
 	}
 }
 
-void escort_route_note_path_endpoint(object *objp)
-{
-	ai_static *aip;
-	point_seg *endpoint;
-
-	if (!Escort_route_goal.active || !objp)
-		return;
-	aip = &objp->ctype.ai_info;
-	Escort_route_goal.path_endpoint_seg = -1;
-	Escort_route_goal.path_endpoint_pos_valid = 0;
-	if (aip->hide_index >= 0 && aip->path_length > 0) {
-		endpoint = &Point_segs[aip->hide_index + aip->path_length - 1];
-		Escort_route_goal.path_endpoint_seg = endpoint->segnum;
-		Escort_route_goal.path_endpoint_pos = endpoint->point;
-		Escort_route_goal.path_endpoint_pos_valid = 1;
-	}
-	else if (escort_valid_segment(Escort_route_goal.target_seg))
-		Escort_route_goal.path_endpoint_seg = Escort_route_goal.target_seg;
-}
-
 int escort_route_physical_target(object *objp, int goal_seg, int max_depth)
 {
 	int frontier;
@@ -2096,7 +2059,6 @@ int escort_route_physical_target(object *objp, int goal_seg, int max_depth)
 		Escort_route_goal.guidance_mode =
 		    ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT;
 		Escort_route_goal.guidance_seg = frontier;
-		Escort_route_goal.guidance_side = -1;
 		Escort_route_goal.frontier_player_keyed_door =
 		    level_metadata_guidebot_segment_has_player_openable_keyed_door_current(
 		        frontier);
@@ -2113,27 +2075,8 @@ int escort_route_physical_target(object *objp, int goal_seg, int max_depth)
 		        Escort_route_goal.objective_kind,
 		        Escort_route_goal.activation_kind);
 		Escort_route_goal.guidance_seg = goal_seg;
-		Escort_route_goal.guidance_side = Escort_route_goal.target_side;
 	}
 	return frontier;
-}
-
-void escort_route_apply_target_pos(object *objp)
-{
-	ai_static *aip;
-	point_seg *endpoint;
-
-	if (!Escort_route_goal.active || !Escort_route_goal.target_pos_valid || !objp)
-		return;
-	aip = &objp->ctype.ai_info;
-	if (aip->hide_index < 0 || aip->path_length <= 0)
-		return;
-	endpoint = &Point_segs[aip->hide_index + aip->path_length - 1];
-	if (endpoint->segnum != Escort_route_goal.target_seg ||
-	    find_point_seg(&Escort_route_goal.target_pos, endpoint->segnum) !=
-	        endpoint->segnum)
-		return;
-	endpoint->point = Escort_route_goal.target_pos;
 }
 
 #endif

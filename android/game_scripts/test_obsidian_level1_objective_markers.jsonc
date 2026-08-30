@@ -72,8 +72,7 @@
         "guidebot.route_goal_activation_kind_name": "shoot_switch",
         "guidebot.route_goal_trigger": "6",
         "guidebot.route_goal_seg": "290",
-        "guidebot.route_goal_activation_matches_aim": "false",
-        "guidebot.route_goal_target_matches_activation": "true"
+        "guidebot.route_goal_activation_matches_aim": "false"
     }},
     {"action": "pose_route_guidance", "post_delay_ms": 250},
     {"action": "send_button", "button": 100, "held": 1},
@@ -92,12 +91,10 @@
         "guidebot.route_goal_activation_kind_name": "shoot_switch",
         "guidebot.route_goal_trigger": "5",
         "guidebot.route_goal_seg": "286",
-        "guidebot.route_goal_activation_matches_aim": "false",
-        "guidebot.route_goal_target_matches_activation": "true"
+        "guidebot.route_goal_activation_matches_aim": "false"
     }},
     {"action": "wait_for", "timeout_ms": 60000, "expect": {
         "guidebot.route_goal_path_endpoint_seg": "285",
-        "guidebot.route_goal_path_endpoint_matches_target": "false",
         "guidebot.route_goal_frontier_player_keyed_door": "true"
     }},
     {"action": "pose_route_guidance", "post_delay_ms": 250},
@@ -191,7 +188,7 @@
         "guidebot.route_goal_objective_seg": "231",
         "guidebot.route_goal_objective_wall": "114",
         "guidebot.route_goal_guidance_seg": "231",
-        "guidebot.route_goal_guidance_mode_name": "reach_firing_position"
+        "guidebot.route_goal_guidance_mode_name": "reach_switch_area"
     }},
     {"action": "pose_route_guidance", "post_delay_ms": 250},
     {"action": "send_button", "button": 100, "held": 1},

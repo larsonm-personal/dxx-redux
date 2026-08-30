@@ -40,7 +40,7 @@
         "guidebot.route_goal_label": "Unexplored",
         "guidebot.route_goal_objective_kind": "1000",
         "guidebot.route_goal_path_endpoint_seg": "56",
-        "guidebot.route_goal_path_pending": "true",
+        "guidebot.path_length": {"gt": 1},
         "guidebot.route_metadata_rescan_count": {"gte": 1},
         "guidebot.unexplored_component_size": "1",
         "guidebot.unexplored_target_seg": "56",

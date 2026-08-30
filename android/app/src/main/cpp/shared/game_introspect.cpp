@@ -971,29 +971,6 @@ static json serialize_guidebot()
 	result["route_goal_frontier_player_keyed_door"] =
 	    (bool) escort_get_route_goal_frontier_player_keyed_door();
 	result["route_goal_path_endpoint_seg"] = escort_get_route_goal_path_endpoint_seg();
-	int route_target_pos[3];
-	int route_endpoint_pos[3];
-	const bool route_target_pos_valid =
-	    escort_get_route_goal_target_pos(route_target_pos) != 0;
-	const bool route_endpoint_pos_valid =
-	    escort_get_route_goal_path_endpoint_pos(route_endpoint_pos) != 0;
-	result["route_goal_target_pos"] = route_target_pos_valid
-	                                      ? json::array({ f2fl(route_target_pos[0]),
-	                                                      f2fl(route_target_pos[1]),
-	                                                      f2fl(route_target_pos[2]) })
-	                                      : json(nullptr);
-	result["route_goal_path_endpoint_pos"] =
-	    route_endpoint_pos_valid
-	        ? json::array({ f2fl(route_endpoint_pos[0]),
-	                        f2fl(route_endpoint_pos[1]),
-	                        f2fl(route_endpoint_pos[2]) })
-	        : json(nullptr);
-	result["route_goal_path_endpoint_matches_target"] =
-	    route_target_pos_valid && route_endpoint_pos_valid &&
-	    route_target_pos[0] == route_endpoint_pos[0] &&
-	    route_target_pos[1] == route_endpoint_pos[1] &&
-	    route_target_pos[2] == route_endpoint_pos[2];
-	result["route_goal_path_pending"] = (bool) escort_get_route_goal_path_pending();
 	result["route_goal_instruction"] = escort_get_route_goal_instruction();
 	result["route_target_mode"] = escort_get_route_target_mode();
 	result["route_target_mode_name"] = escort_get_route_target_mode_name();
@@ -1208,12 +1185,6 @@ static json serialize_guidebot()
 	    active_step->activation_pos[0] == active_step->aim_pos[0] &&
 	    active_step->activation_pos[1] == active_step->aim_pos[1] &&
 	    active_step->activation_pos[2] == active_step->aim_pos[2];
-	result["route_goal_target_matches_activation"] =
-	    active_step && active_step->activation_pos_valid &&
-	    route_target_pos_valid &&
-	    active_step->activation_pos[0] == route_target_pos[0] &&
-	    active_step->activation_pos[1] == route_target_pos[1] &&
-	    active_step->activation_pos[2] == route_target_pos[2];
 	escort_path_parity_result path_parity = {};
 	escort_get_path_parity_result(&path_parity);
 	result["path_parity"] = {
@@ -1252,10 +1223,15 @@ static json serialize_guidebot()
 #endif
 	if (Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index) {
 		json path_segments = json::array();
+		const object &buddy = Objects[Buddy_objnum];
 		const ai_static &buddy_ai = Objects[Buddy_objnum].ctype.ai_info;
+		const fix speed = vm_vec_mag_quick(&buddy.mtype.phys_info.velocity);
 
-		result["segment"] = (int) Objects[Buddy_objnum].segnum;
-		result["object_type"] = (int) Objects[Buddy_objnum].type;
+		result["segment"] = (int) buddy.segnum;
+		result["object_type"] = (int) buddy.type;
+		result["position"] = json::array({ f2fl(buddy.pos.x), f2fl(buddy.pos.y), f2fl(buddy.pos.z) });
+		result["velocity"] = json::array({ f2fl(buddy.mtype.phys_info.velocity.x), f2fl(buddy.mtype.phys_info.velocity.y), f2fl(buddy.mtype.phys_info.velocity.z) });
+		result["speed"] = f2fl(speed);
 		result["ai_mode"] = Ai_local_info[Buddy_objnum].mode;
 		result["path_index"] = buddy_ai.cur_path_index;
 		result["path_length"] = buddy_ai.path_length;
@@ -1267,6 +1243,31 @@ static json serialize_guidebot()
 				    Point_segs[buddy_ai.hide_index + index].segnum);
 		result["path_segments"] = std::move(path_segments);
 #ifdef __ANDROID__
+		if (buddy_ai.hide_index >= 0 && buddy_ai.cur_path_index >= 0 &&
+		    buddy_ai.cur_path_index < buddy_ai.path_length &&
+		    buddy_ai.hide_index + buddy_ai.cur_path_index < MAX_POINT_SEGS) {
+			const vms_vector &target =
+			    Point_segs[buddy_ai.hide_index + buddy_ai.cur_path_index].point;
+			result["path_target_position"] =
+			    json::array({ f2fl(target.x), f2fl(target.y), f2fl(target.z) });
+			result["path_target_distance"] =
+			    f2fl(vm_vec_dist_quick(&buddy.pos, &target));
+		} else {
+			result["path_target_position"] = nullptr;
+			result["path_target_distance"] = nullptr;
+		}
+		result["liveness_age_seconds"] =
+		    static_cast<double>(escort_get_navigation_liveness_age()) /
+		    static_cast<double>(F1_0);
+#ifdef NETWORK
+		const bool guidebot_is_replica =
+		    (Game_mode & GM_MULTI_COOP) &&
+		    ((Escort_owner_player >= 0 && Escort_owner_player != Player_num) ||
+		     (Escort_owner_player < 0 && !multi_i_am_master()));
+		result["simulation_role"] = guidebot_is_replica ? "replica" : "owner";
+#else
+		result["simulation_role"] = "owner";
+#endif
 		bool path_currently_passable =
 		    level_metadata_prepare_guidebot_path_view(Buddy_objnum) != 0;
 		if (path_currently_passable && buddy_ai.hide_index >= 0 &&

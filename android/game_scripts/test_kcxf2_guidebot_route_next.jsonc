@@ -66,7 +66,7 @@
         "guidebot.route_goal_objective_seg": "182",
         "guidebot.route_goal_objective_side": "2",
         "guidebot.route_goal_objective_wall": "13",
-        "guidebot.route_goal_guidance_mode_name": "reach_firing_position",
+        "guidebot.route_goal_guidance_mode_name": "reach_switch_area",
         "guidebot.route_goal_instruction": {"contains": "shoot the blastable wall"}
     }},
     // Route paths deliberately use stricter physical passability than the ordinary
@@ -259,7 +259,7 @@
         "guidebot.route_goal_instruction": {"contains": "shoot the marked switch"},
         "guidebot.route_goal_activation_pos[0]": {"range": [-10000, 10000]},
         "guidebot.route_goal_aim_pos[0]": {"range": [-10000, 10000]},
-        "guidebot.route_goal_guidance_mode_name": "reach_firing_position",
+        "guidebot.route_goal_guidance_mode_name": "reach_switch_area",
         "guidebot.route_goal_guidance_seg": {"gte": 0},
         "guidebot.route_first_pending_path_segment_count": {"gt": 0},
         "guidebot.route_first_pending_path_terminal_seg": {"gte": 0}
