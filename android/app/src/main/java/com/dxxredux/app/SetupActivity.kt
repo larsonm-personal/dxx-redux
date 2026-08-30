@@ -1711,6 +1711,13 @@ class SetupActivity : ComponentActivity() {
                         }
                     }
 
+                    "lan_send_chat" -> {
+                        val text = intent.getStringExtra("text") ?: "lobby stability check"
+                        com.dxxredux.app.lobby.LobbyService
+                            .sendChat(mpCallsign, text)
+                        Log.i("DXX-MP", "lan_send_chat: text=$text")
+                    }
+
                     "lan_lobby_status" -> {
                         val lobbyService = com.dxxredux.app.lobby.LobbyService
                         val players = lobbyService.hostedLobbyPlayers.value
@@ -1719,7 +1726,8 @@ class SetupActivity : ComponentActivity() {
                             "DXX-MP",
                             "lan_lobby_status: hosting=${lobbyService.isHosting.value} " +
                                 "joined=${lobbyService.joinedLobby.value != null} players=${players.size} " +
-                                "all_ready=${players.isNotEmpty() && players.all { it.ready }} [$playerStatus]",
+                                "all_ready=${players.isNotEmpty() && players.all { it.ready }} " +
+                                "chat_messages=${lobbyService.chatMessages.value.size} [$playerStatus]",
                         )
                     }
 

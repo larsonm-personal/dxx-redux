@@ -11,12 +11,14 @@ import com.dxxredux.app.multiplayer.MissionRequirement
 import com.dxxredux.app.multiplayer.MissionStatusReport
 import com.dxxredux.app.multiplayer.MissionTransferGrant
 import com.dxxredux.app.multiplayer.MissionTransferService
+import com.dxxredux.app.multiplayer.MultiplayerForegroundService
 import com.dxxredux.app.multiplayer.NetLog
 import com.dxxredux.app.multiplayer.NetworkConstants
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,6 +56,7 @@ object LobbyService {
     private const val JOIN_RETRY_COUNT = 3
     private const val JOIN_RETRY_DELAY_MS = 1000L
     private const val JOINED_LOBBY_REFRESH_MS = 3000L
+    private const val TRANSPORT_WATCHDOG_MS = 2000L
     private const val ACTIVE_MISSION_PLAYER_EXPIRY_MS = 5L * 60L * 1000L
     private const val BROADCAST_FAILURE_WARNING_THRESHOLD = 3
     private val MISSION_TRANSFER_REFRESH_STATES =
@@ -236,11 +239,13 @@ object LobbyService {
     // -- Internal state --
 
     private var scope: CoroutineScope? = null
-    private var socket: DatagramSocket? = null
+
+    @Volatile private var socket: DatagramSocket? = null
     private var multicastLock: WifiManager.MulticastLock? = null
     private var receiveJob: Job? = null
     private var announceJob: Job? = null
     private var pruneJob: Job? = null
+    private var transportWatchdogJob: Job? = null
     private var joinRetryJob: Job? = null
     private var joinedLobbyRefreshJob: Job? = null
     private var missionTransferGrantTimeoutJob: Job? = null
@@ -256,6 +261,8 @@ object LobbyService {
     @Volatile private var appBackgrounded = false
 
     @Volatile private var socketRefreshNeededOnResume = false
+
+    @Volatile private var lanForegroundSessionStarted = false
 
     // Keyed by lobbyId
     private val lobbies = ConcurrentHashMap<String, DiscoveredLobby>()
@@ -351,6 +358,7 @@ object LobbyService {
         hostedMissionRequirement = null
         MissionTransferService.stopHost()
         MissionTransferService.cancelClient()
+        updateLanForegroundSession()
         appContext = null
         joinedLobbyReady = false
         closeSocket()
@@ -432,6 +440,7 @@ object LobbyService {
             )
         _isHosting.value = true
         gameStarted = false
+        updateLanForegroundSession()
 
         restartAnnounceLoop()
         NetLog.log("LAN", "Hosting lobby $hostedLobbyId ($game, $mission, $mode, max=$maxPlayers)")
@@ -454,6 +463,7 @@ object LobbyService {
         hostedOmittedVisualModNames = emptyList()
         _hostedLobbyPlayers.value = emptyList()
         _chatMessages.value = emptyList()
+        updateLanForegroundSession()
         Log.i(TAG, "Stopped hosting LAN lobby")
     }
 
@@ -466,6 +476,7 @@ object LobbyService {
         Log.i(TAG, "joinLobby: lobbyId=$lobbyId host=$hostAddress callsign=$callsign")
         NetLog.log("LAN", "Joining lobby $lobbyId at $hostAddress as $callsign")
         Log.i(TAG, "joinLobby: socket=${socket != null} bound=${socket?.isBound} closed=${socket?.isClosed}")
+        setLanForegroundSessionActive(true)
         joinRetryJob?.cancel()
         joinedLobbyReady = false
         joinRetryJob =
@@ -485,6 +496,7 @@ object LobbyService {
                 if (_joinedLobby.value == null) {
                     Log.w(TAG, "joinLobby: no JOIN_ACK after $JOIN_RETRY_COUNT attempts")
                     _diagnostics.value = "Join failed: no response from $hostAddress"
+                    updateLanForegroundSession()
                 }
             }
     }
@@ -588,6 +600,7 @@ object LobbyService {
         missionTransferGrantTimeoutJob?.cancel()
         missionTransferGrantTimeoutJob = null
         MissionTransferService.cancelClient()
+        updateLanForegroundSession()
         Log.i(TAG, "Left LAN lobby ${info.lobbyId}")
     }
 
@@ -695,9 +708,10 @@ object LobbyService {
     // Internal
     // ------------------------------------------------------------------
 
+    @Synchronized
     private fun openSocket(context: Context) {
         closeSocket()
-        scope = CoroutineScope(Dispatchers.IO + Job())
+        scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
         // Acquire multicast lock so Android doesn't filter broadcast/multicast
         val wifiManager =
@@ -753,12 +767,19 @@ object LobbyService {
                             NetLog.log("LAN", "Receive error: ${e.message}")
                             Log.w(TAG, "receive error: ${e.message}")
                         }
+                        if (socket?.isClosed != false) break
                     }
                 }
                 Log.i(TAG, "Receive loop ended")
             }
+        trackTransportJob("receive", receiveJob) { _isDiscovering.value }
 
-        // Prune stale lobbies
+        startPruneLoop()
+        startTransportWatchdog()
+    }
+
+    private fun startPruneLoop() {
+        pruneJob?.cancel()
         pruneJob =
             scope?.launch(Dispatchers.IO) {
                 while (isActive) {
@@ -766,8 +787,10 @@ object LobbyService {
                     pruneStaleLobbies()
                 }
             }
+        trackTransportJob("prune", pruneJob) { _isDiscovering.value }
     }
 
+    @Synchronized
     private fun closeSocket() {
         // Close socket first to unblock receive() immediately (A8 fix)
         try {
@@ -781,6 +804,7 @@ object LobbyService {
         receiveJob = null
         announceJob = null
         pruneJob = null
+        transportWatchdogJob = null
         joinRetryJob = null
         joinedLobbyRefreshJob = null
         try {
@@ -789,6 +813,76 @@ object LobbyService {
             // ignore
         }
         multicastLock = null
+    }
+
+    private fun startTransportWatchdog() {
+        transportWatchdogJob?.cancel()
+        transportWatchdogJob =
+            scope?.launch(Dispatchers.IO) {
+                while (isActive) {
+                    delay(TRANSPORT_WATCHDOG_MS)
+                    val recoveryReason =
+                        lanTransportRecoveryReason(
+                            isDiscovering = _isDiscovering.value,
+                            appBackgrounded = appBackgrounded,
+                            socketAvailable = !isSocketUnavailable(),
+                            receiveLoopActive = receiveJob?.isActive == true,
+                        )
+                    if (recoveryReason != null) {
+                        recoverTransport(recoveryReason)
+                        return@launch
+                    }
+                    if (_isDiscovering.value && pruneJob?.isActive != true) {
+                        NetLog.log("LAN", "Restarting stopped prune loop")
+                        startPruneLoop()
+                    }
+                    if (_isHosting.value && announceJob?.isActive != true) {
+                        NetLog.log("LAN", "Restarting stopped announce loop")
+                        restartAnnounceLoop()
+                    }
+                    if (_joinedLobby.value != null && joinedLobbyRefreshJob?.isActive != true) {
+                        NetLog.log("LAN", "Restarting stopped joined-lobby heartbeat")
+                        startJoinedLobbyRefresh(immediate = true)
+                    }
+                }
+            }
+    }
+
+    private fun recoverTransport(reason: String) {
+        val context = appContext ?: return
+        NetLog.log("LAN", "Recovering lobby transport: $reason")
+        Log.w(TAG, "Recovering lobby transport: $reason")
+        try {
+            openSocket(context)
+            val now = System.currentTimeMillis()
+            if (_isHosting.value) {
+                _hostedLobbyPlayers.value = refreshLanPlayerLeasesAfterResume(_hostedLobbyPlayers.value, now)
+                restartAnnounceLoop()
+            }
+            if (_joinedLobby.value != null) {
+                lastHostSeenMs = now
+                startJoinedLobbyRefresh(immediate = true)
+            }
+            NetLog.log("LAN", "Lobby transport recovery complete")
+        } catch (e: Exception) {
+            socketRefreshNeededOnResume = true
+            NetLog.log("LAN", "Lobby transport recovery failed: ${e.message}")
+            Log.w(TAG, "Lobby transport recovery failed", e)
+        }
+    }
+
+    private fun trackTransportJob(
+        name: String,
+        job: Job?,
+        expectedActive: () -> Boolean,
+    ) {
+        job?.invokeOnCompletion { cause ->
+            if (expectedActive() && !appBackgrounded && cause !is CancellationException) {
+                val detail = cause?.let { "${it.javaClass.simpleName}: ${it.message}" } ?: "completed"
+                NetLog.log("LAN", "Transport job '$name' ended unexpectedly: $detail")
+                Log.w(TAG, "Transport job '$name' ended unexpectedly: $detail")
+            }
+        }
     }
 
     private fun handlePacket(
@@ -1349,6 +1443,7 @@ object LobbyService {
                             )
                         },
             )
+        updateLanForegroundSession()
         NetLog.log("LAN", "JOIN_ACK received for lobby $lobbyId from $senderAddr")
         Log.i(TAG, "JOIN_ACK received for lobby $lobbyId from $senderAddr")
         lastHostSeenMs = System.currentTimeMillis()
@@ -1391,6 +1486,7 @@ object LobbyService {
             joinedLobbyRefreshJob = null
             joinedLobbyReady = false
         }
+        updateLanForegroundSession()
     }
 
     /**
@@ -1704,6 +1800,7 @@ object LobbyService {
         joinedLobbyRefreshJob?.cancel()
         joinedLobbyRefreshJob = null
         _diagnostics.value = "Kicked from lobby by host"
+        updateLanForegroundSession()
         Log.i(TAG, "Kicked from lobby ${joined.lobbyId}")
     }
 
@@ -1882,7 +1979,24 @@ object LobbyService {
             joinedLobbyReady = false
             joinedLobbyRefreshJob?.cancel()
             joinedLobbyRefreshJob = null
+            updateLanForegroundSession()
         }
+    }
+
+    private fun updateLanForegroundSession() {
+        setLanForegroundSessionActive(_isHosting.value || _joinedLobby.value != null)
+    }
+
+    @Synchronized
+    private fun setLanForegroundSessionActive(active: Boolean) {
+        if (active == lanForegroundSessionStarted) return
+        val context = appContext ?: return
+        if (active) {
+            MultiplayerForegroundService.startLanSession(context)
+        } else {
+            MultiplayerForegroundService.stopLanSession(context)
+        }
+        lanForegroundSessionStarted = active
     }
 
     private fun publishLobbies() {
@@ -1917,6 +2031,7 @@ object LobbyService {
                     delay(NetworkConstants.LAN_ANNOUNCE_INTERVAL_MS)
                 }
             }
+        trackTransportJob("announce", announceJob) { _isHosting.value }
     }
 
     private fun sendJoinAck(
@@ -1959,6 +2074,7 @@ object LobbyService {
                     delay(JOINED_LOBBY_REFRESH_MS)
                 }
             }
+        trackTransportJob("joined-lobby heartbeat", joinedLobbyRefreshJob) { _joinedLobby.value != null }
     }
 
     private fun resetTransientBroadcastFailure() {

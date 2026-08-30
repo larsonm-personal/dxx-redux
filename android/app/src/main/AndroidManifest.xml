@@ -13,6 +13,7 @@
         android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <!-- Some supported 7z mission packs use 192 MiB LZMA2 dictionaries;
          ArchiveFiles enforces a 256 MiB decoder-memory ceiling -->

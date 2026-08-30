@@ -14,10 +14,13 @@
 #   .\test_lan_lobby_discovery.ps1
 #   .\test_lan_lobby_discovery.ps1 -TimeoutSeconds 30
 #   .\test_lan_lobby_discovery.ps1 -ResumeCoverage
+#   .\test_lan_lobby_discovery.ps1 -ResumeCoverage -ScreenOffCoverage
 
 param(
     [int]$TimeoutSeconds = 30,
-    [switch]$ResumeCoverage
+    [int]$IdleStabilitySeconds = 70,
+    [switch]$ResumeCoverage,
+    [switch]$ScreenOffCoverage
 )
 
 $ErrorActionPreference = "Stop"
@@ -91,7 +94,7 @@ try {
     Send-MpCommand -Serial $EMU1 -Command "lan_host_lobby" -Extras @(
         "--es", "callsign", "DiscoveryHost",
         "--es", "game", "d2",
-        "--es", "mission", "Counterstrike!",
+        "--es", "mission", "d2",
         "--es", "mode", "coop",
         "--ei", "max_players", "4"
     )
@@ -169,8 +172,15 @@ try {
                 exit 1
             }
 
-            Write-Status "Waiting past the previous 10-second idle expiry..."
-            Start-Sleep -Seconds 12
+            if ($ScreenOffCoverage) {
+                Write-Status "Turning both displays off while leaving the lobby transport active..."
+                foreach ($emu in @($EMU1, $EMU2)) {
+                    Adb-Dev-Timeout -Serial $emu -AdbArgs @("shell", "input", "keyevent", "KEYCODE_SLEEP") -Seconds 5 |
+                        Out-Null
+                }
+            }
+            Write-Status "Waiting $IdleStabilitySeconds seconds to cover long-lived lobby stability..."
+            Start-Sleep -Seconds $IdleStabilitySeconds
             Send-MpCommand -Serial $EMU1 -Command "lan_lobby_status"
             Start-Sleep -Milliseconds 300
             $idleStatus = Get-LogcatLines -Serial $EMU1 -Tags @("DXX-MP:*") |
@@ -178,6 +188,43 @@ try {
             if (-not ($idleStatus -and $idleStatus -match 'players=2' -and $idleStatus -match 'all_ready=true')) {
                 Write-Status "FAIL: Lobby membership or ready state expired while idle" "Red"
                 exit 1
+            }
+
+            Send-MpCommand -Serial $EMU2 -Command "lan_set_ready" -Extras @("--ez", "ready", "false")
+            $unready = Wait-ForCondition -Description "unready update after idle window" -TimeoutSec 10 -PollMs 500 -Condition {
+                Send-MpCommand -Serial $EMU1 -Command "lan_lobby_status"
+                Start-Sleep -Milliseconds 250
+                $status = Get-LogcatLines -Serial $EMU1 -Tags @("DXX-MP:*") |
+                    Where-Object { $_ -match 'lan_lobby_status:' } | Select-Object -Last 1
+                return $status -and $status -match 'players=2' -and $status -match 'DiscoveryJoin:false'
+            }
+            if (-not $unready) {
+                Write-Status "FAIL: Unready update failed after idle window" "Red"
+                exit 1
+            }
+
+            Send-MpCommand -Serial $EMU2 -Command "lan_set_ready" -Extras @("--ez", "ready", "true")
+            Start-Sleep -Milliseconds 300
+            Send-MpCommand -Serial $EMU2 -Command "lan_send_chat" -Extras @("--es", "text", "long_lived_lobby_check")
+            $interactive = Wait-ForCondition -Description "ready and chat after idle window" -TimeoutSec 10 -PollMs 500 -Condition {
+                Send-MpCommand -Serial $EMU1 -Command "lan_lobby_status"
+                Start-Sleep -Milliseconds 250
+                $status = Get-LogcatLines -Serial $EMU1 -Tags @("DXX-MP:*") |
+                    Where-Object { $_ -match 'lan_lobby_status:' } | Select-Object -Last 1
+                return $status -and $status -match 'players=2' -and $status -match 'all_ready=true' -and
+                $status -match 'chat_messages=([1-9]\d*)'
+            }
+            if (-not $interactive) {
+                Write-Status "FAIL: Ready or chat failed after idle window" "Red"
+                exit 1
+            }
+
+            if ($ScreenOffCoverage) {
+                foreach ($emu in @($EMU1, $EMU2)) {
+                    Adb-Dev-Timeout -Serial $emu -AdbArgs @("shell", "input", "keyevent", "KEYCODE_WAKEUP") -Seconds 5 |
+                        Out-Null
+                    Send-MpCommand -Serial $emu -Command "lan_notify_resumed"
+                }
             }
 
             Write-Status "Backgrounding both apps past the lobby timeout..."

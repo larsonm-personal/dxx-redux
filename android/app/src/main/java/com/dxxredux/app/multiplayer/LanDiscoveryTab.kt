@@ -859,7 +859,10 @@ private fun LanDiscoveryView(
                 ChatArea(
                     messages = chatMessages,
                     onSend = { LobbyService.sendChat(callsign, it) },
-                    modifier = Modifier.fillMaxWidth().height(220.dp),
+                    // This sits inside the host's scrollable lobby content, where weight cannot
+                    // claim the remaining viewport height. Keep enough room for recent messages
+                    // without making the common two-player lobby taller than the screen.
+                    modifier = Modifier.fillMaxWidth().height(140.dp),
                     textEntryFallbackFocusRequester = actionFocus,
                 )
                 Spacer(Modifier.height(12.dp))

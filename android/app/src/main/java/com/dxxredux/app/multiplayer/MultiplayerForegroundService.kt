@@ -1,5 +1,6 @@
 package com.dxxredux.app.multiplayer
 
+import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.app.Notification
 import android.app.NotificationChannel
@@ -15,6 +16,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.Message
 import android.os.Messenger
+import android.os.PowerManager
 import android.os.RemoteException
 import android.os.SystemClock
 import android.util.Log
@@ -32,10 +34,12 @@ import com.dxxredux.app.DebugLogCategory
  */
 class MultiplayerForegroundService : Service() {
     private val runtimeSession = RuntimeIpcSession()
+    private val serviceLeases = MultiplayerServiceLeaseState()
     private val deadline = MultiplayerBackgroundDeadline(BACKGROUND_TIMEOUT_MS)
     private val deadlineHandler = Handler(Looper.getMainLooper())
     private val shutdownHandler = Handler(Looper.getMainLooper())
     private var runtimeClient: Messenger? = null
+    private var wakeLock: PowerManager.WakeLock? = null
     private val messenger =
         Messenger(
             Handler(Looper.getMainLooper()) { message ->
@@ -45,6 +49,18 @@ class MultiplayerForegroundService : Service() {
         )
 
     override fun onBind(intent: Intent?): IBinder = messenger.binder
+
+    @SuppressLint("WakelockTimeout")
+    override fun onCreate() {
+        super.onCreate()
+        wakeLock =
+            getSystemService(PowerManager::class.java)
+                ?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "$packageName:multiplayer")
+                ?.apply {
+                    setReferenceCounted(false)
+                    acquire()
+                }
+    }
 
     override fun onUnbind(intent: Intent?): Boolean {
         disconnectGameProcess()
@@ -57,13 +73,42 @@ class MultiplayerForegroundService : Service() {
         startId: Int,
     ): Int {
         ensureChannel()
-        if (intent?.action == ACTION_BACKGROUND_DEADLINE) {
-            val token = intent.getLongExtra(EXTRA_DEADLINE_TOKEN, -1)
-            if (deadline.expire(token, SystemClock.elapsedRealtime())) {
-                expireBackgroundSession()
-                return START_NOT_STICKY
+        when (intent?.action) {
+            ACTION_START_GAME -> {
+                serviceLeases.setGameActive(true)
+            }
+
+            ACTION_STOP_GAME -> {
+                serviceLeases.setGameActive(false)
+            }
+
+            ACTION_START_LAN -> {
+                serviceLeases.setLanActive(true)
+            }
+
+            ACTION_STOP_LAN -> {
+                serviceLeases.setLanActive(false)
+            }
+
+            ACTION_BACKGROUND_DEADLINE -> {
+                val token = intent.getLongExtra(EXTRA_DEADLINE_TOKEN, -1)
+                if (deadline.expire(token, SystemClock.elapsedRealtime())) expireBackgroundSession()
+            }
+
+            null -> {
+                serviceLeases.setGameActive(true)
             }
         }
+        if (!serviceLeases.active) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        showForegroundNotification()
+        return START_NOT_STICKY
+    }
+
+    private fun showForegroundNotification() {
         val builder =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 Notification.Builder(this, CHANNEL_ID)
@@ -74,12 +119,11 @@ class MultiplayerForegroundService : Service() {
         val notification =
             builder
                 .setContentTitle("DXX-Redux Multiplayer")
-                .setContentText("Multiplayer game in progress")
+                .setContentText(if (serviceLeases.gameActive) "Multiplayer game in progress" else "LAN lobby active")
                 .setSmallIcon(android.R.drawable.ic_menu_compass)
                 .setOngoing(true)
                 .build()
         startForeground(NOTIFICATION_ID, notification)
-        return START_NOT_STICKY
     }
 
     private fun handleRuntimeMessage(message: Message) {
@@ -160,8 +204,13 @@ class MultiplayerForegroundService : Service() {
     private fun forceBackgroundShutdown() {
         DebugLog.log(DebugLogCategory.DORMANCY, "multiplayer background service shutdown")
         disconnectGameProcess()
-        stopForeground(STOP_FOREGROUND_REMOVE)
-        stopSelf()
+        serviceLeases.setGameActive(false)
+        if (serviceLeases.active) {
+            showForegroundNotification()
+        } else {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+        }
     }
 
     private fun sendDiagnostics(request: Message) {
@@ -192,6 +241,8 @@ class MultiplayerForegroundService : Service() {
         cancelBackgroundAlarm()
         deadlineHandler.removeCallbacksAndMessages(null)
         shutdownHandler.removeCallbacksAndMessages(null)
+        wakeLock?.takeIf { it.isHeld }?.release()
+        wakeLock = null
         super.onDestroy()
     }
 
@@ -232,10 +283,25 @@ class MultiplayerForegroundService : Service() {
         private const val ENGINE_DISCONNECT_GRACE_MS = 5_000L
         private const val BACKGROUND_ALARM_REQUEST = 1002
         private const val ACTION_BACKGROUND_DEADLINE = "com.dxxredux.app.MULTIPLAYER_BACKGROUND_DEADLINE"
+        private const val ACTION_START_GAME = "com.dxxredux.app.MULTIPLAYER_START_GAME"
+        private const val ACTION_STOP_GAME = "com.dxxredux.app.MULTIPLAYER_STOP_GAME"
+        private const val ACTION_START_LAN = "com.dxxredux.app.MULTIPLAYER_START_LAN"
+        private const val ACTION_STOP_LAN = "com.dxxredux.app.MULTIPLAYER_STOP_LAN"
         private const val EXTRA_DEADLINE_TOKEN = "deadline_token"
 
         fun start(context: Context) {
-            val intent = Intent(context, MultiplayerForegroundService::class.java)
+            startForegroundAction(context, ACTION_START_GAME)
+        }
+
+        fun startLanSession(context: Context) {
+            startForegroundAction(context, ACTION_START_LAN)
+        }
+
+        private fun startForegroundAction(
+            context: Context,
+            action: String,
+        ) {
+            val intent = Intent(context, MultiplayerForegroundService::class.java).setAction(action)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(intent)
             } else {
@@ -244,7 +310,27 @@ class MultiplayerForegroundService : Service() {
         }
 
         fun stop(context: Context) {
-            context.stopService(Intent(context, MultiplayerForegroundService::class.java))
+            context.startService(Intent(context, MultiplayerForegroundService::class.java).setAction(ACTION_STOP_GAME))
         }
+
+        fun stopLanSession(context: Context) {
+            context.startService(Intent(context, MultiplayerForegroundService::class.java).setAction(ACTION_STOP_LAN))
+        }
+    }
+}
+
+internal class MultiplayerServiceLeaseState {
+    var gameActive: Boolean = false
+        private set
+    var lanActive: Boolean = false
+        private set
+    val active: Boolean get() = gameActive || lanActive
+
+    fun setGameActive(active: Boolean) {
+        gameActive = active
+    }
+
+    fun setLanActive(active: Boolean) {
+        lanActive = active
     }
 }

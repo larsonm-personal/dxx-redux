@@ -6,6 +6,7 @@ import com.dxxredux.app.lobby.lanDiagnosticAfterBroadcastRecovery
 import com.dxxredux.app.lobby.lanLobbyHasClientIdConflict
 import com.dxxredux.app.lobby.lanPlayerMatchesJoinIdentity
 import com.dxxredux.app.lobby.lanPlayerMatchesSender
+import com.dxxredux.app.lobby.lanTransportRecoveryReason
 import com.dxxredux.app.lobby.refreshLanPlayerLeasesAfterResume
 import com.dxxredux.app.lobby.shouldRefreshLanDiscoveryAfterResume
 import com.dxxredux.app.lobby.shouldShowBroadcastFailureWarning
@@ -53,6 +54,20 @@ class LobbyDiagnosticsTest {
     fun shouldShowBroadcastFailureWarning_suppressesBackgroundFailures() {
         assertFalse(shouldShowBroadcastFailureWarning(appBackgrounded = true))
         assertTrue(shouldShowBroadcastFailureWarning(appBackgrounded = false))
+    }
+
+    @Test
+    fun lanTransportRecoveryReason_recoversOnlyAnActiveForegroundTransport() {
+        assertEquals(
+            "socket unavailable",
+            lanTransportRecoveryReason(true, false, socketAvailable = false, receiveLoopActive = true),
+        )
+        assertEquals(
+            "receive loop stopped",
+            lanTransportRecoveryReason(true, false, socketAvailable = true, receiveLoopActive = false),
+        )
+        assertEquals(null, lanTransportRecoveryReason(true, true, false, false))
+        assertEquals(null, lanTransportRecoveryReason(false, false, false, false))
     }
 
     @Test

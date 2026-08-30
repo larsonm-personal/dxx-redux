@@ -14,6 +14,18 @@ internal fun shouldRefreshLanDiscoveryAfterResume(
 
 internal fun shouldShowBroadcastFailureWarning(appBackgrounded: Boolean): Boolean = !appBackgrounded
 
+internal fun lanTransportRecoveryReason(
+    isDiscovering: Boolean,
+    appBackgrounded: Boolean,
+    socketAvailable: Boolean,
+    receiveLoopActive: Boolean,
+): String? {
+    if (!isDiscovering || appBackgrounded) return null
+    if (!socketAvailable) return "socket unavailable"
+    if (!receiveLoopActive) return "receive loop stopped"
+    return null
+}
+
 internal fun lanPlayerMatchesSender(
     player: LanPlayer,
     callsign: String,
