@@ -89,6 +89,59 @@ def canonicalize_mission_metadata(value: object, parent_key: str = "") -> object
     return result
 
 
+def validate_mission_intent(value: object) -> None:
+    if isinstance(value, list):
+        for item in value:
+            validate_mission_intent(item)
+        return
+    if not isinstance(value, dict) or "mission_intent" not in value:
+        return
+    intent = value["mission_intent"]
+    if not isinstance(intent, dict):
+        raise ValueError("mission_intent must be a structured object")
+    required = {
+        "classification",
+        "rule",
+        "confidence",
+        "reason",
+        "declarations",
+        "normal_levels",
+        "campaign_actor_levels",
+        "arena_like_levels",
+        "solo_like_levels",
+        "player_start_min",
+        "player_start_max",
+        "coop_start_min",
+        "coop_start_max",
+        "robots",
+        "hostages",
+        "matcens",
+        "guidebots",
+        "powerups",
+        "reactors",
+    }
+    missing = sorted(required.difference(intent))
+    if missing:
+        raise ValueError(f"mission_intent is missing required fields: {', '.join(missing)}")
+    if not isinstance(intent["declarations"], dict):
+        raise ValueError("mission_intent declarations must be an object")
+    declaration_fields = {
+        "anarchy_only",
+        "normal",
+        "coop",
+        "anarchy",
+        "robo_anarchy",
+        "capture_flag",
+        "hoard",
+    }
+    missing_declarations = sorted(declaration_fields.difference(intent["declarations"]))
+    if missing_declarations:
+        raise ValueError(
+            "mission_intent declarations are missing required fields: "
+            + ", ".join(missing_declarations)
+        )
+
+
 def format_json_text(text: str, sort_keys: bool, mission_metadata: bool = False) -> str:
     value = json.loads(
         text,
@@ -98,6 +151,7 @@ def format_json_text(text: str, sort_keys: bool, mission_metadata: bool = False)
     if mission_metadata:
         if not isinstance(value, (dict, list)):
             raise ValueError("mission metadata root must be an object or array")
+        validate_mission_intent(value)
         value = canonicalize_mission_metadata(value)
     return (
         json.dumps(

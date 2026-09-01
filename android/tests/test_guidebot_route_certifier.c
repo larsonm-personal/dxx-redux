@@ -36,6 +36,7 @@ typedef struct certifier_fixture {
 	int hard_blocked[TEST_WALLS];
 	int control_center_link[TEST_WALLS];
 	int wall_shootable[TEST_WALLS];
+	int wall_trigger[TEST_WALLS];
 	int position_sensitive_wall;
 	int shootable_segment[FIXTURE_SEGMENTS];
 	int potentially_shootable_segment[FIXTURE_SEGMENTS];
@@ -48,6 +49,11 @@ typedef struct certifier_fixture {
 	unsigned int segment_child_calls;
 	unsigned int segment_center_calls;
 	int trigger_flags[TEST_TRIGGERS];
+	int trigger_activated[TEST_TRIGGERS];
+	int trigger_type[TEST_TRIGGERS];
+	int trigger_link_count[TEST_TRIGGERS];
+	int trigger_link_segment[TEST_TRIGGERS][LEVEL_METADATA_MAX_ROUTE_LINKS];
+	int trigger_link_side[TEST_TRIGGERS][LEVEL_METADATA_MAX_ROUTE_LINKS];
 	int object_dead;
 	int object_type;
 	int object_id;
@@ -157,10 +163,46 @@ static int wall_is_shootable_trigger(void *user, int wall)
 	return fixture->wall_shootable[wall];
 }
 
+static int wall_trigger(void *user, int wall)
+{
+	certifier_fixture *fixture = (certifier_fixture *) user;
+	return fixture->wall_trigger[wall];
+}
+
 static int trigger_flags(void *user, int trigger)
 {
 	certifier_fixture *fixture = (certifier_fixture *) user;
 	return fixture->trigger_flags[trigger];
+}
+
+static int trigger_was_activated(void *user, int trigger)
+{
+	certifier_fixture *fixture = (certifier_fixture *) user;
+	return fixture->trigger_activated[trigger];
+}
+
+static int trigger_type(void *user, int trigger)
+{
+	certifier_fixture *fixture = (certifier_fixture *) user;
+	return fixture->trigger_type[trigger];
+}
+
+static int trigger_link_count(void *user, int trigger)
+{
+	certifier_fixture *fixture = (certifier_fixture *) user;
+	return fixture->trigger_link_count[trigger];
+}
+
+static int trigger_link_segment(void *user, int trigger, int link)
+{
+	certifier_fixture *fixture = (certifier_fixture *) user;
+	return fixture->trigger_link_segment[trigger][link];
+}
+
+static int trigger_link_side(void *user, int trigger, int link)
+{
+	certifier_fixture *fixture = (certifier_fixture *) user;
+	return fixture->trigger_link_side[trigger][link];
 }
 
 static int triggered_side_opener_count(void *user, int segment, int side)
@@ -322,7 +364,11 @@ static level_metadata_scan_view make_view(certifier_fixture *fixture)
 	view.powerup_key_red = 20;
 	view.powerup_key_gold = 30;
 	view.trigger_flag_disabled = 1;
+	view.trigger_flag_one_shot = 2;
+	view.trigger_type_open_wall = 9;
 	view.trigger_type_unlock_door = 10;
+	view.trigger_type_close_wall = 11;
+	view.trigger_type_close_door = 12;
 	view.segment_child = segment_child;
 	view.reverse_side = reverse_side;
 	view.side_is_flyable = side_is_flyable;
@@ -337,7 +383,12 @@ static level_metadata_scan_view make_view(certifier_fixture *fixture)
 	view.wall_keys = wall_keys;
 	view.wall_clip_flags = wall_clip_flags;
 	view.wall_is_shootable_trigger = wall_is_shootable_trigger;
+	view.trigger_type = trigger_type;
 	view.trigger_flags = trigger_flags;
+	view.trigger_was_activated = trigger_was_activated;
+	view.trigger_link_count = trigger_link_count;
+	view.trigger_link_segment = trigger_link_segment;
+	view.trigger_link_side = trigger_link_side;
 	view.triggered_side_opener_count = triggered_side_opener_count;
 	view.object_count = object_count;
 	view.object_type = object_type;
@@ -386,7 +437,10 @@ static void initialize_fixture(certifier_fixture *fixture)
 	for (segment = 0; segment < TEST_WALLS; ++segment) {
 		fixture->wall_type[segment] = 1;
 		fixture->wall_shootable[segment] = 1;
+		fixture->wall_trigger[segment] = segment < TEST_TRIGGERS ? segment : -1;
 	}
+	for (segment = 0; segment < TEST_TRIGGERS; ++segment)
+		fixture->trigger_type[segment] = 9;
 }
 
 static void initialize_plan(route_planner_plan_summary *plan)
@@ -501,6 +555,102 @@ static void test_compiled_selector_never_restores_collected_key(void)
 	assert(live_plan.first_pending_step == 2);
 	assert(certificate.source_trigger == 1);
 	assert(fixture.segment_child_calls == 0);
+}
+
+static void test_compiled_selector_blocks_removed_switch_surface(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+	route_planner_plan_summary compiled_plan;
+	route_planner_plan_summary live_plan;
+	guidebot_route_validity_certificate certificate;
+	guidebot_route_certifier_summary summary;
+
+	initialize_fixture(&fixture);
+	initialize_plan(&compiled_plan);
+	view = make_view(&fixture);
+	view.wall_trigger = wall_trigger;
+	Prepared.route_steps[1].opened_link_count = 0;
+	fixture.wall_type[0] = view.wall_type_open;
+
+	assert(!select_compiled(
+	    &view, &compiled_plan, &live_plan, &certificate, &summary));
+	assert(summary.selected_step == -1);
+	assert(summary.blocking_step == 1);
+	assert(certificate.status == GUIDEBOT_ROUTE_CERTIFICATE_INVALID);
+	assert(!certify(
+	    &view, &compiled_plan, &live_plan, &certificate, &summary));
+	assert(summary.selected_step == -1);
+	assert(summary.blocking_step == 1);
+	assert(certificate.status == GUIDEBOT_ROUTE_CERTIFICATE_INVALID);
+}
+
+static void test_compiled_selector_restores_removed_switch_surface(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+	route_planner_plan_summary compiled_plan;
+	route_planner_plan_summary live_plan;
+	guidebot_route_validity_certificate certificate;
+	guidebot_route_certifier_summary summary;
+
+	initialize_fixture(&fixture);
+	initialize_plan(&compiled_plan);
+	view = make_view(&fixture);
+	view.wall_trigger = wall_trigger;
+	Prepared.route_steps[1].opened_link_count = 0;
+	fixture.wall_type[0] = view.wall_type_open;
+	fixture.wall_open[0] = 1;
+	fixture.trigger_type[1] = view.trigger_type_close_wall;
+	fixture.trigger_link_count[1] = 1;
+	fixture.trigger_link_segment[1][0] = 0;
+	fixture.trigger_link_side[1][0] = 0;
+	fixture.wall_shootable[1] = 0;
+	fixture.wall_type[1] = view.wall_type_open;
+	fixture.wall_open[1] = 1;
+
+	assert(select_compiled(
+	    &view, &compiled_plan, &live_plan, &certificate, &summary));
+	assert(summary.selected_step == 1);
+	assert(summary.selected_segment == 1);
+	assert(summary.used_prepared_fallback);
+	assert(Live.route_steps[1].trigger_num == 1);
+	assert(Live.route_steps[1].wall_num == 1);
+	assert(Live.route_steps[1].activation_kind ==
+	       LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER);
+	assert(certificate.source_trigger == 1);
+	assert(certificate.source_wall == 1);
+	assert(certify(
+	    &view, &compiled_plan, &live_plan, &certificate, &summary));
+	assert(summary.selected_step == 1);
+	assert(summary.used_prepared_fallback);
+}
+
+static void test_one_shot_close_trigger_stays_complete_after_reopen(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+	route_planner_plan_summary compiled_plan;
+	route_planner_plan_summary live_plan;
+	guidebot_route_validity_certificate certificate;
+	guidebot_route_certifier_summary summary;
+
+	initialize_fixture(&fixture);
+	initialize_plan(&compiled_plan);
+	view = make_view(&fixture);
+	Prepared.route_steps[1].trigger_type = view.trigger_type_close_wall;
+	fixture.wall_open[0] = 1;
+	fixture.trigger_flags[0] = view.trigger_flag_one_shot;
+	fixture.trigger_activated[0] = 1;
+
+	assert(select_compiled(
+	    &view, &compiled_plan, &live_plan, &certificate, &summary));
+	assert(summary.selected_step == 2);
+	fixture.trigger_flags[0] = view.trigger_flag_disabled;
+	fixture.trigger_activated[0] = 0;
+	assert(select_compiled(
+	    &view, &compiled_plan, &live_plan, &certificate, &summary));
+	assert(summary.selected_step == 2);
 }
 
 static void test_compiled_selector_rebinds_moving_key_object(void)
@@ -760,6 +910,7 @@ static void test_destroyed_switch_stays_complete_when_link_recloses(void)
 	view = make_view(&fixture);
 	view.start_segment = 0;
 	fixture.wall_shootable[0] = 0;
+	fixture.trigger_activated[0] = 1;
 	assert(!fixture.wall_open[0]);
 
 	assert(certify(
@@ -768,6 +919,7 @@ static void test_destroyed_switch_stays_complete_when_link_recloses(void)
 
 	Prepared.route_steps[1].activation_kind =
 	    LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER;
+	fixture.trigger_activated[0] = 0;
 	assert(certify(
 	    &view, &prepared_plan, &live_plan, &certificate, &summary));
 	assert(live_plan.first_pending_step == 1);
@@ -1966,6 +2118,9 @@ int main(int argc, char **argv)
 	if (argc == 2 && !strcmp(argv[1], "--benchmark"))
 		return run_benchmarks();
 	test_compiled_selector_never_restores_collected_key();
+	test_compiled_selector_blocks_removed_switch_surface();
+	test_compiled_selector_restores_removed_switch_surface();
+	test_one_shot_close_trigger_stays_complete_after_reopen();
 	test_compiled_selector_rebinds_moving_key_object();
 	test_compiled_selector_chooses_reachable_switch_guidance();
 	test_compiled_selector_replaces_switch_aim_with_local_fallback();

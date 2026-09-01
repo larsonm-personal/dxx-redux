@@ -23,6 +23,8 @@ struct route_search_node {
 struct route_search_result {
 	int start_segment = -1;
 	std::vector<route_search_node> nodes;
+	std::vector<route_search_node> state_nodes;
+	std::vector<int> best_state_by_segment;
 	std::vector<int> visit_order;
 	std::string problem;
 };
@@ -79,6 +81,7 @@ struct route_target {
 
 struct route_target_inventory {
 	std::array<std::vector<route_target>, 3> keys;
+	int required_key_mask = 0;
 	bool reactor_found = false;
 	route_target reactor;
 	bool boss_found = false;
@@ -265,6 +268,8 @@ struct route_plan_result {
 	route_plan_status status = route_plan_status::failed;
 	route_progress_state progress;
 	std::vector<route_semantic_step> steps;
+	int required_key_mask = 0;
+	int completing_key_mask_set = 0;
 	std::string problem;
 	std::string note;
 	double travel_distance = 0.0;
@@ -300,10 +305,15 @@ bool route_progress_acquire_key(
     route_progress_state &progress,
     route_key_requirement key);
 bool route_progress_fire_trigger(route_progress_state &progress, int trigger);
+bool route_progress_apply_trigger(
+    const route_snapshot &snapshot,
+    route_progress_state &progress,
+    int trigger);
 void route_progress_traverse_path(
     const route_snapshot &snapshot,
     route_progress_state &progress,
-    const route_path_result &path);
+    const route_path_result &path,
+    bool complete_trigger_effects = false);
 bool route_progress_open_hidden_wall(
     const route_snapshot &snapshot,
     route_progress_state &progress,

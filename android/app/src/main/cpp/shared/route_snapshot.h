@@ -14,11 +14,16 @@ namespace dxx_route
 enum class route_trigger_kind {
 	other,
 	open_door,
+	close_door,
+	toggle_door,
 	exit,
 	secret_exit,
 	illusion_off,
+	illusion_on,
 	unlock_door,
+	lock_door,
 	open_wall,
+	close_wall,
 	illusory_wall
 };
 
@@ -28,6 +33,8 @@ enum class route_wall_kind {
 	door,
 	illusion,
 	open,
+	closed,
+	overlay,
 	other
 };
 
@@ -96,6 +103,9 @@ struct route_topology_segment {
 	route_position center;
 	bool control_center = false;
 	std::array<route_position, 8> vertices;
+	std::array<unsigned char, LEVEL_METADATA_MAX_SIDES> transit_exit_masks{
+		{ 0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f }
+	};
 	std::array<route_topology_side, LEVEL_METADATA_MAX_SIDES> sides;
 };
 
@@ -114,6 +124,7 @@ struct route_topology_trigger_link {
 struct route_topology_trigger {
 	int raw_type = -1;
 	route_trigger_kind kind = route_trigger_kind::other;
+	bool one_shot = false;
 	std::vector<route_topology_trigger_link> links;
 };
 
@@ -121,6 +132,7 @@ struct route_topology {
 	std::vector<route_topology_segment> segments;
 	std::vector<route_topology_wall> walls;
 	std::vector<route_topology_trigger> triggers;
+	bool has_switch_reveal_pattern = false;
 	std::uint64_t hash = 0;
 };
 

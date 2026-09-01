@@ -1,5 +1,6 @@
 #include "guidebot_route_certifier.h"
 
+#include <stdio.h>
 #include <string.h>
 
 static int guidebot_certifier_budget_exhausted(
@@ -695,7 +696,171 @@ static int guidebot_step_usable(
 	      (view->trigger_flags(view->user, step->trigger_num) &
 	       view->trigger_flag_disabled) != 0)))
 		return 0;
+	if (step->kind == LEVEL_METADATA_ROUTE_TRIGGER &&
+	    step->activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH) {
+		if (step->wall_num < 0 || step->wall_num >= view->num_walls ||
+		    !view->wall_type ||
+		    view->wall_type(view->user, step->wall_num) == view->wall_type_open ||
+		    (view->wall_is_shootable_trigger &&
+		     !view->wall_is_shootable_trigger(view->user, step->wall_num)) ||
+		    (view->wall_trigger && step->trigger_num >= 0 &&
+		     view->wall_trigger(view->user, step->wall_num) != step->trigger_num))
+			return 0;
+	}
 	return 1;
+}
+
+static int guidebot_trigger_is_spent(
+    const level_metadata_scan_view *view,
+    int trigger)
+{
+	int flags;
+
+	if (trigger < 0 || trigger >= view->num_triggers)
+		return 1;
+	flags = view->trigger_flags
+	            ? view->trigger_flags(view->user, trigger)
+	            : 0;
+	return (view->trigger_flag_disabled != 0 &&
+	        (flags & view->trigger_flag_disabled) != 0) ||
+	       (view->trigger_flag_one_shot != 0 &&
+	        (flags & view->trigger_flag_one_shot) != 0 &&
+	        view->trigger_was_activated &&
+	        view->trigger_was_activated(view->user, trigger));
+}
+
+static int guidebot_prepare_switch_restorer(
+    const level_metadata_scan_view *view,
+    level_metadata_route_step *step,
+    guidebot_route_certifier_summary *summary)
+{
+	int source_wall;
+	int trigger;
+
+	if (!view || !step || !summary ||
+	    step->kind != LEVEL_METADATA_ROUTE_TRIGGER ||
+	    step->activation_kind != LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH ||
+	    step->wall_num < 0 || step->wall_num >= view->num_walls ||
+	    !view->trigger_type || !view->trigger_link_count ||
+	    !view->trigger_link_segment || !view->trigger_link_side ||
+	    !view->wall_num || !view->wall_trigger || !view->wall_segment ||
+	    !view->wall_side)
+		return 0;
+	for (trigger = 0; trigger < view->num_triggers; ++trigger) {
+		const int type = view->trigger_type(view->user, trigger);
+		int restores_target = 0;
+		int link;
+
+		if ((type != view->trigger_type_close_wall &&
+		     type != view->trigger_type_close_door &&
+		     type != view->trigger_type_illusion_on) ||
+		    guidebot_trigger_is_spent(view, trigger))
+			continue;
+		for (link = 0;
+		     link < view->trigger_link_count(view->user, trigger) &&
+		     link < LEVEL_METADATA_MAX_ROUTE_LINKS;
+		     ++link) {
+			const int segment = view->trigger_link_segment(
+			    view->user, trigger, link);
+			const int side = view->trigger_link_side(
+			    view->user, trigger, link);
+
+			if (guidebot_valid_segment(view, segment) && side >= 0 &&
+			    side < LEVEL_METADATA_MAX_SIDES &&
+			    view->wall_num(view->user, segment, side) == step->wall_num) {
+				restores_target = 1;
+				break;
+			}
+		}
+		if (!restores_target)
+			continue;
+		for (source_wall = 0; source_wall < view->num_walls; ++source_wall) {
+			level_metadata_route_step recovery;
+			const int segment = view->wall_segment(view->user, source_wall);
+			const int side = view->wall_side(view->user, source_wall);
+			int position[3];
+
+			if (view->wall_trigger(view->user, source_wall) != trigger ||
+			    !guidebot_valid_segment(view, segment) || side < 0 ||
+			    side >= LEVEL_METADATA_MAX_SIDES)
+				continue;
+			memset(&recovery, 0, sizeof(recovery));
+			recovery.kind = LEVEL_METADATA_ROUTE_TRIGGER;
+			recovery.seg = segment;
+			recovery.side = side;
+			recovery.wall_num = source_wall;
+			recovery.trigger_num = trigger;
+			recovery.trigger_type = type;
+			recovery.key_index = -1;
+			recovery.key_carrier_objnum = -1;
+			recovery.path_segment_count = 1;
+			recovery.path_terminal_segment = segment;
+			if (view->wall_is_shootable_trigger &&
+			    view->wall_is_shootable_trigger(view->user, source_wall))
+				recovery.activation_kind =
+				    LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH;
+			else if ((view->wall_type &&
+			          view->wall_type(view->user, source_wall) ==
+			              view->wall_type_open) ||
+			         (view->side_is_flyable &&
+			          view->side_is_flyable(view->user, segment, side)))
+				recovery.activation_kind =
+				    LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER;
+			else
+				recovery.activation_kind =
+				    LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER;
+			if (view->segment_center &&
+			    view->segment_center(view->user, segment, position)) {
+				recovery.activation_pos_valid = 1;
+				memcpy(recovery.activation_pos, position, sizeof(position));
+			}
+			if (view->side_center &&
+			    view->side_center(view->user, segment, side, position)) {
+				recovery.aim_pos_valid = 1;
+				recovery.label_pos_valid = 1;
+				memcpy(recovery.aim_pos, position, sizeof(position));
+				memcpy(recovery.label_pos, position, sizeof(position));
+			}
+			for (link = 0;
+			     link < view->trigger_link_count(view->user, trigger) &&
+			     link < LEVEL_METADATA_MAX_ROUTE_LINKS;
+			     ++link) {
+				const int target_segment = view->trigger_link_segment(
+				    view->user, trigger, link);
+				const int target_side = view->trigger_link_side(
+				    view->user, trigger, link);
+
+				recovery.opened_link_seg[link] = target_segment;
+				recovery.opened_link_side[link] = target_side;
+				recovery.opened_link_wall[link] =
+				    guidebot_valid_segment(view, target_segment) &&
+				            target_side >= 0 &&
+				            target_side < LEVEL_METADATA_MAX_SIDES
+				        ? view->wall_num(
+				              view->user, target_segment, target_side)
+				        : -1;
+				recovery.opened_link_count++;
+			}
+			if (recovery.activation_kind ==
+			    LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH)
+				snprintf(
+				    recovery.label, sizeof(recovery.label),
+				    "Shoot switch trigger %d", trigger);
+			else if (recovery.activation_kind ==
+			         LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER)
+				snprintf(
+				    recovery.label, sizeof(recovery.label),
+				    "Fly-through trigger %d", trigger);
+			else
+				snprintf(
+				    recovery.label, sizeof(recovery.label),
+				    "Pass through trigger %d", trigger);
+			*step = recovery;
+			summary->used_prepared_fallback = 1;
+			return 1;
+		}
+	}
+	return 0;
 }
 
 static int guidebot_compiled_switch_fallback(
@@ -858,11 +1023,14 @@ int guidebot_route_select_compiled_current_state(
 			local_summary.required_steps_low |= 1ULL << step;
 		local_summary.evaluated_actions++;
 		if (!guidebot_step_usable(view, candidate)) {
-			local_summary.rejected_actions++;
-			local_summary.blocking_step = step;
-			local_summary.blocking_reason =
-			    GUIDEBOT_ROUTE_CERTIFIER_REJECTION_INVALID_TARGET;
-			break;
+			if (!guidebot_prepare_switch_restorer(
+			        view, candidate, &local_summary)) {
+				local_summary.rejected_actions++;
+				local_summary.blocking_step = step;
+				local_summary.blocking_reason =
+				    GUIDEBOT_ROUTE_CERTIFIER_REJECTION_INVALID_TARGET;
+				break;
+			}
 		}
 		if (!guidebot_select_compiled_switch_guidance(
 		        view, candidate, &local_summary)) {
@@ -1813,12 +1981,21 @@ int guidebot_route_certify_current_state_budgeted(
 		    guidebot_later_required_target_reachable(
 		        view, live_state, workspace, step))
 			continue;
-		if ((candidate->kind == LEVEL_METADATA_ROUTE_EXIT &&
-		     requires_control_center &&
-		     !view->initial_control_center_destroyed) ||
-		    !guidebot_step_usable(view, candidate)) {
+		if (candidate->kind == LEVEL_METADATA_ROUTE_EXIT &&
+		    requires_control_center &&
+		    !view->initial_control_center_destroyed) {
 			local_summary.rejected_actions++;
 			continue;
+		}
+		if (!guidebot_step_usable(view, candidate)) {
+			if (!guidebot_prepare_switch_restorer(
+			        view, candidate, &local_summary)) {
+				local_summary.rejected_actions++;
+				local_summary.blocking_step = step;
+				local_summary.blocking_reason =
+				    GUIDEBOT_ROUTE_CERTIFIER_REJECTION_INVALID_TARGET;
+				break;
+			}
 		}
 		/* A usable, still-required action is an ordering barrier.  If its
 		 * prepared target cannot be certified, require a live replan instead

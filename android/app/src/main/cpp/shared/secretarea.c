@@ -382,6 +382,9 @@ static void level_metadata_apply_planned_route(
 	destination->route_status = route->route_status;
 	snprintf(destination->route_problem, sizeof(destination->route_problem), "%s", route->route_problem);
 	snprintf(destination->route_note, sizeof(destination->route_note), "%s", route->route_note);
+	destination->route_required_key_mask = route->route_required_key_mask;
+	destination->route_completing_key_mask_set =
+	    route->route_completing_key_mask_set;
 	destination->unnecessary_key_mask = route->unnecessary_key_mask;
 	destination->route_step_count = route->route_step_count;
 	memset(destination->route_steps, 0, sizeof(destination->route_steps));
@@ -933,6 +936,7 @@ typedef struct level_metadata_opener_entry {
 #define LEVEL_METADATA_MIN_NARROW_COMPONENT_SEGMENTS 3
 
 static vms_vector Level_metadata_segment_centers[LEVEL_METADATA_MAX_SEGMENTS];
+static int Level_metadata_segment_clearance[LEVEL_METADATA_MAX_SEGMENTS];
 static int Level_metadata_side_clearance[LEVEL_METADATA_MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
 static short Level_metadata_opener_first[LEVEL_METADATA_MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
 static level_metadata_opener_entry Level_metadata_opener_entries[LEVEL_METADATA_MAX_OPENER_ENTRIES];
@@ -1013,6 +1017,93 @@ static int secret_area_side_is_flyable(void *user, int seg, int side)
 }
 
 static int secret_area_player_radius(void);
+
+static int secret_area_geometry_portal_passable(void *user, int seg, int side)
+{
+	(void) user;
+	return seg >= 0 && seg < Num_segments && side >= 0 &&
+	       side < MAX_SIDES_PER_SEGMENT && Segments[seg].children[side] >= 0;
+}
+
+static int secret_area_segment_transit_passable(
+    void *user, int seg, int entry_side, int exit_side)
+{
+	fvi_info hit_data;
+	fvi_query query;
+	vms_vector entry;
+	vms_vector entry_offset;
+	vms_vector exit;
+	vms_vector exit_offset;
+	int entry_seg;
+	int exit_seg;
+	int radius;
+
+	(void) user;
+	if (seg < 0 || seg >= Num_segments || entry_side < 0 ||
+	    entry_side >= MAX_SIDES_PER_SEGMENT || exit_side < 0 ||
+	    exit_side >= MAX_SIDES_PER_SEGMENT || entry_side == exit_side)
+		return 0;
+	entry_seg = Segments[seg].children[entry_side];
+	exit_seg = Segments[seg].children[exit_side];
+	if (entry_seg < 0 || entry_seg >= Num_segments || exit_seg < 0 ||
+	    exit_seg >= Num_segments)
+		return 0;
+	radius = secret_area_player_radius();
+	if (radius <= 0)
+		return 0;
+	compute_center_point_on_side(&entry, &Segments[seg], entry_side);
+	compute_center_point_on_side(&exit, &Segments[seg], exit_side);
+	vm_vec_sub(
+	    &entry_offset, &entry, &Level_metadata_segment_centers[entry_seg]);
+	vm_vec_sub(
+	    &exit_offset, &exit, &Level_metadata_segment_centers[exit_seg]);
+	entry_offset.x /= 16;
+	entry_offset.y /= 16;
+	entry_offset.z /= 16;
+	exit_offset.x /= 16;
+	exit_offset.y /= 16;
+	exit_offset.z /= 16;
+	vm_vec_add2(&entry, &entry_offset);
+	vm_vec_add2(&exit, &exit_offset);
+	if (find_point_seg(&entry, seg) != seg || find_point_seg(&exit, seg) != seg)
+		return 0;
+	memset(&query, 0, sizeof(query));
+	memset(&hit_data, 0, sizeof(hit_data));
+	query.p0 = &entry;
+	query.p1 = &exit;
+	query.startseg = seg;
+	query.rad = radius;
+	query.thisobjnum = -1;
+	query.flags = FQ_PASSABLE_WALL_CALLBACK;
+	query.wall_is_passable = secret_area_geometry_portal_passable;
+	return find_vector_intersection(&query, &hit_data) == HIT_NONE;
+}
+
+static unsigned int secret_area_segment_transit_mask(
+    void *user, int seg, int entry_side)
+{
+	unsigned int mask = 0;
+	int exit_side;
+
+	(void) user;
+	if (seg < 0 || seg >= Num_segments ||
+	    seg >= LEVEL_METADATA_MAX_SEGMENTS || entry_side < 0 ||
+	    entry_side >= MAX_SIDES_PER_SEGMENT ||
+	    Segments[seg].children[entry_side] < 0)
+		return 0;
+	for (exit_side = 0; exit_side < MAX_SIDES_PER_SEGMENT; ++exit_side) {
+		if (exit_side == entry_side || Segments[seg].children[exit_side] < 0)
+			continue;
+		if (Level_metadata_segment_clearance[seg] >=
+		        secret_area_player_radius() ||
+		    secret_area_segment_transit_passable(
+		        NULL, seg, entry_side, exit_side) ||
+		    secret_area_segment_transit_passable(
+		        NULL, seg, exit_side, entry_side))
+			mask |= 1u << exit_side;
+	}
+	return mask;
+}
 
 static int secret_area_compute_segment_clearance_radius(int seg, int radius)
 {
@@ -2188,7 +2279,6 @@ static void secret_area_rebuild_level_topology(void)
 {
 	unsigned char clearance_seen[LEVEL_METADATA_MAX_SEGMENTS];
 	int clearance_queue[LEVEL_METADATA_MAX_SEGMENTS];
-	int segment_clearance[LEVEL_METADATA_MAX_SEGMENTS];
 	short opener_last[LEVEL_METADATA_MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
 	int player_radius = secret_area_player_radius();
 	int seg;
@@ -2202,19 +2292,22 @@ static void secret_area_rebuild_level_topology(void)
 	memset(opener_last, 0xff, sizeof(opener_last));
 	memset(Level_metadata_side_clearance, 0,
 	       sizeof(Level_metadata_side_clearance));
-	memset(segment_clearance, 0, sizeof(segment_clearance));
+	memset(
+	    Level_metadata_segment_clearance, 0,
+	    sizeof(Level_metadata_segment_clearance));
 	memset(clearance_seen, 0, sizeof(clearance_seen));
 	for (seg = 0; seg < Num_segments && seg < LEVEL_METADATA_MAX_SEGMENTS; ++seg)
 		compute_segment_center(&Level_metadata_segment_centers[seg], &Segments[seg]);
 	for (seg = 0; seg < Num_segments && seg < LEVEL_METADATA_MAX_SEGMENTS; ++seg)
-		segment_clearance[seg] =
+		Level_metadata_segment_clearance[seg] =
 		    secret_area_compute_segment_clearance_radius(seg, player_radius);
 	/* Isolated bad centers occur in otherwise navigable skewed geometry. */
 	for (seg = 0; seg < Num_segments && seg < LEVEL_METADATA_MAX_SEGMENTS; ++seg) {
 		int head = 0;
 		int tail = 0;
-		if (clearance_seen[seg] || segment_clearance[seg] <= 0 ||
-		    segment_clearance[seg] >= player_radius)
+		if (clearance_seen[seg] ||
+		    Level_metadata_segment_clearance[seg] <= 0 ||
+		    Level_metadata_segment_clearance[seg] >= player_radius)
 			continue;
 		clearance_seen[seg] = 1;
 		clearance_queue[tail++] = seg;
@@ -2224,8 +2317,8 @@ static void secret_area_rebuild_level_topology(void)
 				int child = Segments[component_seg].children[side];
 				if (child < 0 || child >= Num_segments ||
 				    child >= LEVEL_METADATA_MAX_SEGMENTS || clearance_seen[child] ||
-				    segment_clearance[child] <= 0 ||
-				    segment_clearance[child] >= player_radius)
+				    Level_metadata_segment_clearance[child] <= 0 ||
+				    Level_metadata_segment_clearance[child] >= player_radius)
 					continue;
 				clearance_seen[child] = 1;
 				clearance_queue[tail++] = child;
@@ -2233,14 +2326,16 @@ static void secret_area_rebuild_level_topology(void)
 		}
 		if (tail < LEVEL_METADATA_MIN_NARROW_COMPONENT_SEGMENTS)
 			for (head = 0; head < tail; ++head)
-				segment_clearance[clearance_queue[head]] = player_radius;
+				Level_metadata_segment_clearance[clearance_queue[head]] =
+				    player_radius;
 	}
 	for (seg = 0; seg < Num_segments && seg < LEVEL_METADATA_MAX_SEGMENTS; ++seg) {
 		for (side = 0; side < MAX_SIDES_PER_SEGMENT; ++side)
 			if (Segments[seg].children[side] >= 0 &&
 			    Segments[seg].children[side] < LEVEL_METADATA_MAX_SEGMENTS)
 				Level_metadata_side_clearance[seg][side] =
-				    segment_clearance[Segments[seg].children[side]];
+				    Level_metadata_segment_clearance
+				        [Segments[seg].children[side]];
 	}
 	for (trigger_num = 0; trigger_num < Num_triggers; ++trigger_num) {
 		int link;
@@ -2417,6 +2512,8 @@ static int secret_area_trigger_type(void *user, int trigger_num)
 		return TRIGGER_CONTROL_DOORS;
 	if (flags & TRIGGER_ILLUSION_OFF)
 		return TRIGGER_ILLUSION_OFF;
+	if (flags & TRIGGER_ILLUSION_ON)
+		return TRIGGER_ILLUSION_ON;
 	if (flags & TRIGGER_EXIT)
 		return TRIGGER_EXIT;
 	if (flags & TRIGGER_SECRET_EXIT)
@@ -2482,6 +2579,12 @@ static void level_metadata_initialize_scan_view(void)
 	view->wall_type_door = WALL_DOOR;
 	view->wall_type_illusion = WALL_ILLUSION;
 	view->wall_type_open = WALL_OPEN;
+	view->wall_type_closed = WALL_CLOSED;
+#ifdef DXX_BUILD_DESCENT_II
+	view->wall_type_overlay = WALL_OVERLAY;
+#else
+	view->wall_type_overlay = -1;
+#endif
 	view->wall_flag_door_locked = WALL_DOOR_LOCKED;
 	view->wall_flag_door_opened = WALL_DOOR_OPENED;
 #ifdef DXX_BUILD_DESCENT_II
@@ -2501,27 +2604,41 @@ static void level_metadata_initialize_scan_view(void)
 	view->powerup_key_gold = POW_KEY_GOLD;
 #ifdef DXX_BUILD_DESCENT_II
 	view->trigger_type_open_door = TT_OPEN_DOOR;
+	view->trigger_type_close_door = TT_CLOSE_DOOR;
+	view->trigger_type_toggle_door = -1;
 	view->trigger_type_exit = TT_EXIT;
 	view->trigger_type_secret_exit = TT_SECRET_EXIT;
 	view->trigger_type_illusion_off = TT_ILLUSION_OFF;
+	view->trigger_type_illusion_on = TT_ILLUSION_ON;
 	view->trigger_type_unlock_door = TT_UNLOCK_DOOR;
+	view->trigger_type_lock_door = TT_LOCK_DOOR;
 	view->trigger_type_open_wall = TT_OPEN_WALL;
+	view->trigger_type_close_wall = TT_CLOSE_WALL;
 	view->trigger_type_illusory_wall = TT_ILLUSORY_WALL;
+	view->trigger_flag_one_shot = TF_ONE_SHOT;
 	view->trigger_flag_disabled = TF_DISABLED;
 #else
-	view->trigger_type_open_door = TRIGGER_CONTROL_DOORS;
+	view->trigger_type_open_door = -1;
+	view->trigger_type_close_door = -1;
+	view->trigger_type_toggle_door = TRIGGER_CONTROL_DOORS;
 	view->trigger_type_exit = TRIGGER_EXIT;
 	view->trigger_type_secret_exit = TRIGGER_SECRET_EXIT;
 	view->trigger_type_illusion_off = TRIGGER_ILLUSION_OFF;
+	view->trigger_type_illusion_on = TRIGGER_ILLUSION_ON;
 	view->trigger_type_unlock_door = -2;
-	view->trigger_type_open_wall = -3;
-	view->trigger_type_illusory_wall = -4;
+	view->trigger_type_lock_door = -3;
+	view->trigger_type_open_wall = -4;
+	view->trigger_type_close_wall = -5;
+	view->trigger_type_illusory_wall = -6;
+	view->trigger_flag_one_shot = TRIGGER_ONE_SHOT;
+	view->trigger_flag_disabled = 0;
 #endif
 	view->segment_child = secret_area_segment_child;
 	view->segment_is_explored = secret_area_segment_is_explored;
 	view->reverse_side = secret_area_reverse_side;
 	view->side_is_flyable = secret_area_side_is_flyable;
 	view->side_clearance_radius = secret_area_side_clearance_radius;
+	view->segment_transit_mask = secret_area_segment_transit_mask;
 	view->side_is_hard_blocked = secret_area_side_is_hard_blocked;
 	view->side_is_control_center_link = secret_area_side_is_control_center_link;
 	view->wall_num = secret_area_wall_num;
@@ -3156,7 +3273,7 @@ static int level_metadata_select_compiled_route(
 	    DLOG_GUIDEBOT,
 	    "route_compiled_selector valid=%d compiled_first=%d selected=%d "
 	    "segment=%d blocking=%d blocking_reason=%d start=%d keys=0x%x "
-	    "required=0x%llx evaluated=%u rejected=%u\n",
+	    "required=0x%llx evaluated=%u rejected=%u prepared=%d\n",
 	    valid, Level_metadata_canonical_plan_summary.first_pending_step,
 	    Level_metadata_route_certifier_summary.selected_step,
 	    Level_metadata_route_certifier_summary.selected_segment,
@@ -3165,7 +3282,8 @@ static int level_metadata_select_compiled_route(
 	    view->start_segment, view->initial_key_mask,
 	    Level_metadata_route_certifier_summary.required_steps_low,
 	    Level_metadata_route_certifier_summary.evaluated_actions,
-	    Level_metadata_route_certifier_summary.rejected_actions);
+	    Level_metadata_route_certifier_summary.rejected_actions,
+	    Level_metadata_route_certifier_summary.used_prepared_fallback);
 	level_metadata_log_unresolved_completion_evidence(view);
 #endif
 	if (valid == GUIDEBOT_ROUTE_CERTIFIER_VALID) {

@@ -551,8 +551,7 @@ class AudioSourceManager(
         source: AudioSource,
         activeSetDir: File?,
     ): Boolean {
-        val externalCue = source.cueContentUri?.takeUnless(::isLocalCdContentPath)
-        if (externalCue == null && resolveExistingFile(source.cuePath, activeSetDir) == null) return false
+        if (resolveExistingFile(source.cuePath, activeSetDir) == null) return false
         val contentBins = source.binContentUriList()
         val localBins =
             if (contentBins.isEmpty()) source.binPaths else contentBins.filter(::isLocalCdContentPath)

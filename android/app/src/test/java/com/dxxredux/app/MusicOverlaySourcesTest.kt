@@ -105,6 +105,62 @@ class MusicOverlaySourcesTest {
     }
 
     @Test
+    fun copiedCueDoesNotRequireOriginalSafUri() {
+        val filesDir = freshDir("build/test-music-overlay-copied-cue")
+        val setDir = FileSetManager(filesDir).getSetDir(FileSetManager.DEFAULT_SET)
+        File(setDir, ".content/audio/audio_sources.json").apply {
+            parentFile?.mkdirs()
+        }.writeText(
+            """
+            {"sources":[{"id":"disc","cue":"disc.cue","bins":["disc.bin"],
+            "label":"Disc","disc_id":"unknown","track_count":2,
+            "audio_track_count":1,"legacy_disc_id":0,"enabled":true,
+            "bin_content_uri":"content://disc.bin",
+            "cue_content_uri":"content://original-disc.cue"}]}
+            """.trimIndent(),
+        )
+        File(setDir, "disc.cue").writeText("FILE \"disc.bin\" BINARY\n")
+
+        assertEquals(
+            listOf(
+                MusicOverlaySourceOption("cd", "CD"),
+                MusicOverlaySourceOption("midi", "Base game MIDI"),
+            ),
+            musicOverlaySourceOptions(filesDir, "d2") { uri, _ -> uri == "content://disc.bin" },
+        )
+    }
+
+    @Test
+    fun oneUnavailableCdSourceDoesNotHideUsableSource() {
+        val filesDir = freshDir("build/test-music-overlay-mixed-cd")
+        val setDir = FileSetManager(filesDir).getSetDir(FileSetManager.DEFAULT_SET)
+        File(setDir, ".content/audio/audio_sources.json").apply {
+            parentFile?.mkdirs()
+        }.writeText(
+            """
+            {"sources":[
+              {"id":"missing","cue":"missing.cue","bins":["missing.bin"],
+               "label":"Missing","disc_id":"unknown","track_count":2,
+               "audio_track_count":1,"legacy_disc_id":0,"enabled":true},
+              {"id":"usable","cue":"usable.cue","bins":["usable.bin"],
+               "label":"Usable","disc_id":"unknown","track_count":2,
+               "audio_track_count":1,"legacy_disc_id":0,"enabled":true}
+            ]}
+            """.trimIndent(),
+        )
+        File(setDir, "usable.cue").writeText("FILE \"usable.bin\" BINARY\n")
+        File(setDir, "usable.bin").writeText("audio")
+
+        assertEquals(
+            listOf(
+                MusicOverlaySourceOption("cd", "CD"),
+                MusicOverlaySourceOption("midi", "Base game MIDI"),
+            ),
+            musicOverlaySourceOptions(filesDir, "d2"),
+        )
+    }
+
+    @Test
     fun cdOptionRequiresCompleteAccessiblePlaylist() {
         val filesDir = freshDir("build/test-music-overlay-invalid-cd")
         val setDir = FileSetManager(filesDir).getSetDir(FileSetManager.DEFAULT_SET)

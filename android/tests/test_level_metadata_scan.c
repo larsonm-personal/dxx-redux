@@ -26,7 +26,13 @@
 #define TEST_TRIGGER_OPEN_WALL     9
 #define TEST_TRIGGER_UNLOCK_DOOR   7
 #define TEST_TRIGGER_EXIT          3
+#define TEST_TRIGGER_CLOSE_DOOR    10
+#define TEST_TRIGGER_TOGGLE_DOOR   11
+#define TEST_TRIGGER_ILLUSION_ON   12
+#define TEST_TRIGGER_LOCK_DOOR     13
+#define TEST_TRIGGER_CLOSE_WALL    14
 #define TEST_TRIGGER_FLAG_DISABLED 4
+#define TEST_TRIGGER_FLAG_ONE_SHOT 8
 #define TEST_OBJ_POWERUP           1
 #define TEST_OBJ_CONTROL_CENTER    2
 #define TEST_OBJ_ROBOT             3
@@ -501,6 +507,8 @@ static level_metadata_scan_view test_view(void)
 	view.wall_type_door = TEST_WALL_DOOR;
 	view.wall_type_illusion = TEST_WALL_ILLUSION;
 	view.wall_type_open = TEST_WALL_OPEN;
+	view.wall_type_closed = TEST_WALL_CLOSED;
+	view.wall_type_overlay = 6;
 	view.wall_flag_door_locked = TEST_WALL_FLAG_DOOR_LOCKED;
 	view.wall_flag_door_opened = TEST_WALL_FLAG_DOOR_OPENED;
 	view.wall_key_none = TEST_KEY_NONE;
@@ -515,8 +523,14 @@ static level_metadata_scan_view test_view(void)
 	view.powerup_key_red = TEST_POWERUP_RED_KEY;
 	view.powerup_key_gold = TEST_POWERUP_GOLD_KEY;
 	view.trigger_type_open_wall = TEST_TRIGGER_OPEN_WALL;
+	view.trigger_type_close_door = TEST_TRIGGER_CLOSE_DOOR;
+	view.trigger_type_toggle_door = TEST_TRIGGER_TOGGLE_DOOR;
+	view.trigger_type_illusion_on = TEST_TRIGGER_ILLUSION_ON;
 	view.trigger_type_unlock_door = TEST_TRIGGER_UNLOCK_DOOR;
+	view.trigger_type_lock_door = TEST_TRIGGER_LOCK_DOOR;
+	view.trigger_type_close_wall = TEST_TRIGGER_CLOSE_WALL;
 	view.trigger_type_exit = TEST_TRIGGER_EXIT;
+	view.trigger_flag_one_shot = TEST_TRIGGER_FLAG_ONE_SHOT;
 	view.trigger_flag_disabled = TEST_TRIGGER_FLAG_DISABLED;
 	view.segment_child = test_segment_child;
 	view.segment_is_explored = test_segment_is_explored;
@@ -1107,8 +1121,8 @@ static int test_route_continues_after_unresolved_shootable_trigger(void)
 	view.wall_shootable_from_position = test_wall_not_shootable_from_position;
 	view.wall_is_shootable_trigger = test_wall_is_shootable_trigger;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("unresolved trigger route status", "ok", level_metadata_route_status_name(state.route_status));
-	failures += expect_string("unresolved trigger route problem", "", state.route_problem);
+	failures += expect_string("unresolved trigger route status", "partial", level_metadata_route_status_name(state.route_status));
+	failures += expect_string("unresolved trigger route problem", "switch activation route unresolved", state.route_problem);
 	failures += expect_int("unresolved trigger route steps", 3, state.route_step_count);
 	failures += expect_string("unresolved trigger route step", "trigger", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	failures += expect_string("unresolved trigger route activation", "unresolved_trigger", level_metadata_route_activation_kind_name(state.route_steps[1].activation_kind));
@@ -1200,6 +1214,36 @@ static int test_activated_trigger_stays_complete_after_door_closes(void)
 	test_trigger_activated[0] = 1;
 	failures += expect_int(
 	    "fired traversal trigger stays complete after door closes", 0,
+	    level_metadata_route_step_required_by_world_state(&view, &step));
+	return failures;
+}
+
+static int test_close_wall_trigger_tracks_expected_closed_state(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_route_step step;
+	int failures = 0;
+
+	test_reset();
+	memset(&step, 0, sizeof(step));
+	step.kind = LEVEL_METADATA_ROUTE_TRIGGER;
+	step.trigger_num = 0;
+	step.trigger_type = TEST_TRIGGER_CLOSE_WALL;
+	step.opened_link_count = 1;
+	step.opened_link_wall[0] = 0;
+	test_wall_type[0] = TEST_WALL_OPEN;
+	test_wall_seg[0] = 0;
+	test_wall_sides[0] = 0;
+	failures += expect_int(
+	    "open wall keeps close trigger pending", 1,
+	    level_metadata_route_step_required_by_world_state(&view, &step));
+	test_trigger_activated[0] = 1;
+	failures += expect_int(
+	    "historical activation does not hide required re-close", 1,
+	    level_metadata_route_step_required_by_world_state(&view, &step));
+	test_wall_type[0] = TEST_WALL_CLOSED;
+	failures += expect_int(
+	    "closed wall completes close trigger", 0,
 	    level_metadata_route_step_required_by_world_state(&view, &step));
 	return failures;
 }
@@ -1745,6 +1789,7 @@ int main(void)
 	failures += test_unlock_trigger_requirement_uses_all_linked_walls();
 	failures += test_opening_wall_completes_trigger_requirement();
 	failures += test_activated_trigger_stays_complete_after_door_closes();
+	failures += test_close_wall_trigger_tracks_expected_closed_state();
 	failures += test_segment_route_reuses_trigger_dependencies();
 	failures += test_unexplored_route_acquires_key_for_largest_component();
 	failures += test_unexplored_route_keeps_hidden_wall_dependency();

@@ -3,8 +3,8 @@
   "record_count": 1715,
   "status_counts": {
     "failed": 85,
-    "ok": 1561,
-    "partial": 69
+    "ok": 1562,
+    "partial": 68
   },
   "records": [
     {
@@ -633,9 +633,9 @@
     },
     {
       "key": "castaway_redux.json|0|2|rupture.rl2",
-      "hash": "2d00bd38c5504fcb3e399adb8876a78d1e7a37020ab92ddde89f63574f582c78",
-      "status": "partial",
-      "step_count": 3
+      "hash": "4a6e896835c82c9843d65496f7cb749fc90bb162060d9edbec9dc53ce29a96b7",
+      "status": "ok",
+      "step_count": 12
     },
     {
       "key": "castaway_redux.json|0|3|sable.rl2",

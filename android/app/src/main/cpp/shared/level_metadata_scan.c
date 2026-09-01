@@ -155,6 +155,37 @@ int level_metadata_route_step_required_by_world_state(
 		case LEVEL_METADATA_ROUTE_BOSS:
 			return view->initial_control_center_destroyed == 0;
 		case LEVEL_METADATA_ROUTE_TRIGGER:
+			/* A fired one-shot trigger remains complete even if another trigger
+			 * later reverses its wall effect. Disabled triggers cannot be used to
+			 * restore that effect either. */
+			if (step->trigger_num >= 0 &&
+			    step->trigger_num < view->num_triggers &&
+			    view->trigger_flags) {
+				const int flags = view->trigger_flags(
+				    view->user, step->trigger_num);
+
+				if ((view->trigger_flag_disabled != 0 &&
+				     (flags & view->trigger_flag_disabled) != 0) ||
+				    (view->trigger_flag_one_shot != 0 &&
+				     (flags & view->trigger_flag_one_shot) != 0 &&
+				     view->trigger_was_activated &&
+				     view->trigger_was_activated(
+				         view->user, step->trigger_num)))
+					return 0;
+			}
+			/* A close transition is complete only while its linked surface is
+			 * currently closed. This lets a prepared route deliberately restore
+			 * a switch surface that an earlier open-wall trigger removed. */
+			if (step->trigger_type == view->trigger_type_close_wall ||
+			    step->trigger_type == view->trigger_type_close_door) {
+				if (step->opened_link_count <= 0)
+					return 1;
+				for (link = 0; link < step->opened_link_count; ++link)
+					if (level_metadata_route_wall_passable(
+					        view, step->opened_link_wall[link]))
+						return 1;
+				return 0;
+			}
 			/* Repeatable traversal triggers often operate auto-closing doors.
 			 * Once the trigger has actually fired, a later door close must not
 			 * resurrect that completed route step. */
@@ -168,12 +199,6 @@ int level_metadata_route_step_required_by_world_state(
 			    view->trigger_flags &&
 			    (view->trigger_flags(view->user, step->trigger_num) &
 			     view->trigger_flag_disabled) != 0)
-				return 0;
-			if (step->activation_kind ==
-			        LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH &&
-			    step->wall_num >= 0 && step->wall_num < view->num_walls &&
-			    view->wall_is_shootable_trigger &&
-			    !view->wall_is_shootable_trigger(view->user, step->wall_num))
 				return 0;
 			if (step->opened_link_count <= 0)
 				return 1;
@@ -594,6 +619,9 @@ int level_metadata_scan_level(const level_metadata_scan_view *view, level_metada
 	         route.route_problem);
 	snprintf(state->route_note, sizeof(state->route_note), "%s",
 	         route.route_note);
+	state->route_required_key_mask = route.route_required_key_mask;
+	state->route_completing_key_mask_set =
+	    route.route_completing_key_mask_set;
 	state->unnecessary_key_mask = route.unnecessary_key_mask;
 	state->route_step_count = route.route_step_count;
 	memcpy(state->route_steps, route.route_steps,

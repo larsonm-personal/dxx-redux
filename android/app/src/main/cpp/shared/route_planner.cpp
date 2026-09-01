@@ -23,6 +23,8 @@ bool Work_tracking_enabled = false;
 constexpr double ROUTE_SWITCH_SHOT_DISTANCE_WEIGHT = 4.0;
 constexpr double ROUTE_SWITCH_STEEP_COSINE = 0.25881904510252074;
 constexpr double ROUTE_SWITCH_MIN_COSINE = 0.01;
+constexpr int ROUTE_ENTRY_STATE_COUNT = LEVEL_METADATA_MAX_SIDES + 1;
+constexpr int ROUTE_CANONICAL_ENTRY_STATE = LEVEL_METADATA_MAX_SIDES;
 
 bool valid_segment(const route_snapshot &snapshot, int segment);
 bool valid_wall(const route_snapshot &snapshot, int wall);
@@ -382,10 +384,64 @@ bool state_flag(const std::vector<unsigned char> &values, int index)
 	       values[index] != 0;
 }
 
+bool trigger_effect_needed(
+    const route_snapshot &snapshot,
+    const route_progress_state &progress,
+    int trigger)
+{
+	if (!valid_trigger(snapshot, trigger))
+		return false;
+	const auto kind = snapshot.topology.triggers[trigger].kind;
+	auto wall_needs_effect = [&](int wall) {
+		if (!valid_wall(snapshot, wall))
+			return false;
+		switch (kind) {
+			case route_trigger_kind::open_door:
+			case route_trigger_kind::toggle_door:
+				return !route_progress_wall_opened(snapshot, progress, wall);
+			case route_trigger_kind::close_door:
+				return route_progress_wall_opened(snapshot, progress, wall);
+			case route_trigger_kind::illusion_off:
+			case route_trigger_kind::open_wall:
+				return route_progress_wall_kind(snapshot, progress, wall) !=
+				       route_wall_kind::open;
+			case route_trigger_kind::illusion_on:
+			case route_trigger_kind::illusory_wall:
+				return route_progress_wall_kind(snapshot, progress, wall) !=
+				       route_wall_kind::illusion;
+			case route_trigger_kind::unlock_door:
+				return route_progress_wall_locked(snapshot, progress, wall);
+			case route_trigger_kind::lock_door:
+				return !route_progress_wall_locked(snapshot, progress, wall);
+			case route_trigger_kind::close_wall:
+				return route_progress_wall_kind(snapshot, progress, wall) !=
+				       route_wall_kind::closed;
+			default: return false;
+		}
+	};
+	for (const auto &link : snapshot.topology.triggers[trigger].links) {
+		if (!valid_segment(snapshot, link.segment) || link.side < 0 ||
+		    link.side >= LEVEL_METADATA_MAX_SIDES)
+			continue;
+		const auto &side = snapshot.topology.segments[link.segment].sides[link.side];
+		if (wall_needs_effect(side.wall))
+			return true;
+		if (valid_segment(snapshot, side.child) && side.reverse_side >= 0 &&
+		    side.reverse_side < LEVEL_METADATA_MAX_SIDES &&
+		    wall_needs_effect(snapshot.topology.segments[side.child]
+		                          .sides[side.reverse_side]
+		                          .wall))
+			return true;
+	}
+	return false;
+}
+
 bool trigger_source_wall_valid(
     const route_snapshot &snapshot,
     const route_progress_state &progress,
-    int wall)
+    int wall,
+    bool require_path_opener = true,
+    bool require_exposed = true)
 {
 	if (!valid_wall(snapshot, wall))
 		return false;
@@ -402,8 +458,15 @@ bool trigger_source_wall_valid(
 	const int trigger = snapshot.state.walls[wall].trigger;
 	return valid_trigger(snapshot, trigger) &&
 	       !snapshot.state.triggers[trigger].disabled &&
-	       route_trigger_opens_path(snapshot.topology.triggers[trigger].kind) &&
-	       !state_flag(progress.fired_triggers, trigger);
+	       (!require_path_opener || route_trigger_changes_navigation(
+	                                    snapshot.topology.triggers[trigger].kind)) &&
+	       (!snapshot.topology.has_switch_reveal_pattern ||
+	        trigger_effect_needed(snapshot, progress, trigger)) &&
+	       !state_flag(progress.consumed_one_shot_triggers, trigger) &&
+	       !state_flag(progress.fired_triggers, trigger) &&
+	       (!require_exposed || !topology.shootable_trigger ||
+	        route_progress_wall_kind(snapshot, progress, wall) !=
+	            route_wall_kind::open);
 }
 
 bool trigger_source_fits_navigator(
@@ -422,21 +485,6 @@ bool trigger_source_fits_navigator(
 	                          .clearance_radius;
 	return query.navigator.radius <= 0 || clearance <= 0 ||
 	       clearance >= query.navigator.radius;
-}
-
-bool side_has_trigger_source(
-    const route_snapshot &snapshot,
-    const route_progress_state &progress,
-    int segment,
-    int side)
-{
-	if (!valid_segment(snapshot, segment) || side < 0 ||
-	    side >= LEVEL_METADATA_MAX_SIDES)
-		return false;
-	for (const int wall : snapshot.topology.segments[segment].sides[side].opener_walls)
-		if (trigger_source_wall_valid(snapshot, progress, wall))
-			return true;
-	return false;
 }
 
 route_position weighted_position(
@@ -745,7 +793,8 @@ std::vector<route_trigger_source> discover_trigger_sources_internal(
     const route_progress_state &progress,
     int segment,
     int side,
-    bool include_in_progress)
+    bool include_in_progress,
+    bool include_unexposed = false)
 {
 	std::vector<route_trigger_source> result;
 	if (!valid_segment(snapshot, segment) || side < 0 ||
@@ -757,17 +806,29 @@ std::vector<route_trigger_source> discover_trigger_sources_internal(
 		return result;
 	int target_segment = segment;
 	int target_side = side;
-	if (!side_has_trigger_source(snapshot, progress, target_segment, target_side)) {
+	auto side_has_candidate = [&](int candidate_segment, int candidate_side) {
+		if (!valid_segment(snapshot, candidate_segment) || candidate_side < 0 ||
+		    candidate_side >= LEVEL_METADATA_MAX_SIDES)
+			return false;
+		for (const int wall : snapshot.topology.segments[candidate_segment]
+		                          .sides[candidate_side]
+		                          .opener_walls)
+			if (trigger_source_wall_valid(
+			        snapshot, progress, wall, true, !include_unexposed))
+				return true;
+		return false;
+	};
+	if (!side_has_candidate(target_segment, target_side)) {
 		target_segment = child;
 		target_side = requested_side.reverse_side;
-		if (!side_has_trigger_source(
-		        snapshot, progress, target_segment, target_side))
+		if (!side_has_candidate(target_segment, target_side))
 			return result;
 	}
 	const auto &target =
 	    snapshot.topology.segments[target_segment].sides[target_side];
 	for (const int source_wall : target.opener_walls) {
-		if (!trigger_source_wall_valid(snapshot, progress, source_wall))
+		if (!trigger_source_wall_valid(
+		        snapshot, progress, source_wall, true, !include_unexposed))
 			continue;
 		const int trigger = snapshot.state.walls[source_wall].trigger;
 		if (!include_in_progress &&
@@ -794,6 +855,73 @@ std::vector<route_trigger_source> discover_trigger_sources_internal(
 		result.push_back(source);
 	}
 	return result;
+}
+
+std::vector<route_trigger_source> discover_sources_for_trigger(
+    const route_snapshot &snapshot,
+    const route_progress_state &progress,
+    int trigger,
+    bool include_unexposed)
+{
+	std::vector<route_trigger_source> result;
+	if (!valid_trigger(snapshot, trigger))
+		return result;
+	for (int wall = 0; wall < static_cast<int>(snapshot.topology.walls.size());
+	     ++wall) {
+		if (snapshot.state.walls[wall].trigger != trigger ||
+		    !trigger_source_wall_valid(
+		        snapshot, progress, wall, false, !include_unexposed))
+			continue;
+		const auto &source_topology = snapshot.topology.walls[wall];
+		route_position source_position = source_topology.target;
+		if (!source_position.valid && valid_segment(snapshot, source_topology.segment))
+			source_position = snapshot.topology.segments[source_topology.segment].center;
+		if (!source_position.valid)
+			continue;
+		route_trigger_source source;
+		source.source_wall = wall;
+		source.source_segment = source_topology.segment;
+		source.source_side = source_topology.side;
+		source.trigger = trigger;
+		source.trigger_kind = snapshot.topology.triggers[trigger].kind;
+		source.source_position = source_position;
+		if (!snapshot.topology.triggers[trigger].links.empty()) {
+			const auto &link = snapshot.topology.triggers[trigger].links.front();
+			source.target_segment = link.segment;
+			source.target_side = link.side;
+			if (valid_segment(snapshot, link.segment) && link.side >= 0 &&
+			    link.side < LEVEL_METADATA_MAX_SIDES)
+				source.target_wall = snapshot.topology.segments[link.segment]
+				                         .sides[link.side]
+				                         .wall;
+		}
+		result.push_back(source);
+	}
+	return result;
+}
+
+bool trigger_targets_wall(
+    const route_snapshot &snapshot,
+    int trigger,
+    int target_wall)
+{
+	if (!valid_trigger(snapshot, trigger) || !valid_wall(snapshot, target_wall))
+		return false;
+	for (const auto &link : snapshot.topology.triggers[trigger].links) {
+		if (!valid_segment(snapshot, link.segment) || link.side < 0 ||
+		    link.side >= LEVEL_METADATA_MAX_SIDES)
+			continue;
+		const auto &side = snapshot.topology.segments[link.segment].sides[link.side];
+		if (side.wall == target_wall)
+			return true;
+		if (valid_segment(snapshot, side.child) && side.reverse_side >= 0 &&
+		    side.reverse_side < LEVEL_METADATA_MAX_SIDES &&
+		    snapshot.topology.segments[side.child]
+		            .sides[side.reverse_side]
+		            .wall == target_wall)
+			return true;
+	}
+	return false;
 }
 
 int key_index(route_key_requirement key)
@@ -835,8 +963,14 @@ route_progress_state initial_route_progress_state(
 	result.key_mask = query.progression.key_mask;
 	result.control_center_destroyed = snapshot.state.control_center_destroyed;
 	result.fired_triggers.resize(snapshot.state.triggers.size());
+	result.consumed_one_shot_triggers.resize(snapshot.state.triggers.size());
 	result.trigger_in_progress.resize(snapshot.state.triggers.size());
 	result.avoided_triggers.resize(snapshot.state.triggers.size());
+	for (const auto &wall : snapshot.state.walls) {
+		result.wall_kinds.push_back(wall.kind);
+		result.wall_locked.push_back(wall.locked ? 1 : 0);
+		result.wall_opened.push_back(wall.opened ? 1 : 0);
+	}
 	result.opened_hidden_walls.resize(snapshot.state.walls.size());
 	result.destroyed_blastable_walls.resize(snapshot.state.walls.size());
 	return result;
@@ -861,10 +995,121 @@ bool route_progress_fire_trigger(route_progress_state &progress, int trigger)
 	return true;
 }
 
+bool route_progress_apply_trigger(
+    const route_snapshot &snapshot,
+    route_progress_state &progress,
+    int trigger)
+{
+	if (progress.fired_triggers.size() != snapshot.state.triggers.size())
+		progress.fired_triggers.resize(snapshot.state.triggers.size());
+	if (progress.consumed_one_shot_triggers.size() !=
+	    snapshot.state.triggers.size())
+		progress.consumed_one_shot_triggers.resize(
+		    snapshot.state.triggers.size());
+	if (progress.wall_kinds.size() != snapshot.state.walls.size() ||
+	    progress.wall_locked.size() != snapshot.state.walls.size() ||
+	    progress.wall_opened.size() != snapshot.state.walls.size()) {
+		progress.wall_kinds.clear();
+		progress.wall_locked.clear();
+		progress.wall_opened.clear();
+		for (const auto &wall : snapshot.state.walls) {
+			progress.wall_kinds.push_back(wall.kind);
+			progress.wall_locked.push_back(wall.locked ? 1 : 0);
+			progress.wall_opened.push_back(wall.opened ? 1 : 0);
+		}
+	}
+	if (!valid_trigger(snapshot, trigger) ||
+	    snapshot.state.triggers[trigger].disabled ||
+	    state_flag(progress.consumed_one_shot_triggers, trigger))
+		return false;
+	const auto kind = snapshot.topology.triggers[trigger].kind;
+	if (!route_trigger_changes_navigation(kind))
+		return route_progress_fire_trigger(progress, trigger);
+	std::vector<int> changed_walls;
+	auto apply_wall = [&](int wall) {
+		if (!valid_wall(snapshot, wall))
+			return;
+		const auto previous_kind = progress.wall_kinds[wall];
+		const auto previous_locked = progress.wall_locked[wall];
+		const auto previous_opened = progress.wall_opened[wall];
+		switch (kind) {
+			case route_trigger_kind::open_door:
+				progress.wall_opened[wall] = 1;
+				break;
+			case route_trigger_kind::close_door:
+				progress.wall_opened[wall] = 0;
+				break;
+			case route_trigger_kind::toggle_door:
+				progress.wall_opened[wall] =
+				    progress.wall_opened[wall] ? 0 : 1;
+				break;
+			case route_trigger_kind::illusion_off:
+			case route_trigger_kind::open_wall:
+				progress.wall_kinds[wall] = route_wall_kind::open;
+				break;
+			case route_trigger_kind::illusion_on:
+			case route_trigger_kind::illusory_wall:
+				progress.wall_kinds[wall] = route_wall_kind::illusion;
+				break;
+			case route_trigger_kind::unlock_door:
+				progress.wall_locked[wall] = 0;
+				break;
+			case route_trigger_kind::lock_door:
+				progress.wall_locked[wall] = 1;
+				break;
+			case route_trigger_kind::close_wall:
+				progress.wall_kinds[wall] = route_wall_kind::closed;
+				break;
+			default: break;
+		}
+		if ((previous_kind != progress.wall_kinds[wall] ||
+		     previous_locked != progress.wall_locked[wall] ||
+		     previous_opened != progress.wall_opened[wall]) &&
+		    std::find(changed_walls.begin(), changed_walls.end(), wall) ==
+		        changed_walls.end())
+			changed_walls.push_back(wall);
+	};
+	for (const auto &link : snapshot.topology.triggers[trigger].links) {
+		if (!valid_segment(snapshot, link.segment) || link.side < 0 ||
+		    link.side >= LEVEL_METADATA_MAX_SIDES)
+			continue;
+		const auto &side = snapshot.topology.segments[link.segment].sides[link.side];
+		apply_wall(side.wall);
+		if (!valid_segment(snapshot, side.child) || side.reverse_side < 0 ||
+		    side.reverse_side >= LEVEL_METADATA_MAX_SIDES)
+			continue;
+		apply_wall(snapshot.topology.segments[side.child]
+		               .sides[side.reverse_side]
+		               .wall);
+	}
+	/* A contrary transition rearms only the previously fired actions whose
+	 * linked effect is needed again. This permits useful open/close cycles
+	 * without making a trigger recursively available while routing to it. */
+	for (int candidate = 0;
+	     candidate < static_cast<int>(snapshot.topology.triggers.size());
+	     ++candidate) {
+		if (candidate == trigger ||
+		    !state_flag(progress.fired_triggers, candidate) ||
+		    !trigger_effect_needed(snapshot, progress, candidate))
+			continue;
+		if (std::any_of(
+		        changed_walls.begin(), changed_walls.end(), [&](int wall) {
+			        return snapshot.topology.walls[wall].shootable_trigger &&
+			               trigger_targets_wall(snapshot, candidate, wall);
+		        }))
+			progress.fired_triggers[candidate] = 0;
+	}
+	progress.fired_triggers[trigger] = 1;
+	if (snapshot.topology.triggers[trigger].one_shot)
+		progress.consumed_one_shot_triggers[trigger] = 1;
+	return true;
+}
+
 void route_progress_traverse_path(
     const route_snapshot &snapshot,
     route_progress_state &progress,
-    const route_path_result &path)
+    const route_path_result &path,
+    bool complete_trigger_effects)
 {
 	for (std::size_t index = 0;
 	     index < path.sides.size() && index < path.segments.size(); ++index) {
@@ -879,10 +1124,13 @@ void route_progress_traverse_path(
 			continue;
 		const int trigger = snapshot.state.walls[wall].trigger;
 		if (!valid_trigger(snapshot, trigger) ||
-		    snapshot.state.triggers[trigger].disabled ||
-		    !route_trigger_opens_path(snapshot.topology.triggers[trigger].kind))
+		    snapshot.state.triggers[trigger].disabled)
 			continue;
-		route_progress_fire_trigger(progress, trigger);
+		if (complete_trigger_effects)
+			route_progress_apply_trigger(snapshot, progress, trigger);
+		else if (route_trigger_opens_path(
+		             snapshot.topology.triggers[trigger].kind))
+			route_progress_fire_trigger(progress, trigger);
 	}
 }
 
@@ -968,6 +1216,8 @@ route_search_result search_routes(
 	result.start_segment = progress.current_segment;
 	const int count = static_cast<int>(snapshot.topology.segments.size());
 	result.nodes.resize(count);
+	result.state_nodes.resize(count * ROUTE_ENTRY_STATE_COUNT);
+	result.best_state_by_segment.resize(count, -1);
 	if (!valid_segment(snapshot, result.start_segment)) {
 		result.problem = "route start segment is invalid";
 		return result;
@@ -984,29 +1234,57 @@ route_search_result search_routes(
 		node.distance = infinity;
 		node.progress_weight = max_progress;
 	}
-	std::vector<unsigned char> closed(count, 0);
+	for (auto &node : result.state_nodes) {
+		node.distance = infinity;
+		node.progress_weight = max_progress;
+	}
+	std::vector<unsigned char> closed(result.state_nodes.size(), 0);
+	const int start_state =
+	    result.start_segment * ROUTE_ENTRY_STATE_COUNT +
+	    ROUTE_CANONICAL_ENTRY_STATE;
 	auto &start_node = result.nodes[result.start_segment];
 	start_node.reachable = true;
 	start_node.distance = point_distance(start, start_center);
 	start_node.progress_weight = 0;
-	route_heap heap(result.nodes, options.prioritize_progress);
-	heap.push(result.start_segment);
+	result.state_nodes[start_state] = start_node;
+	result.best_state_by_segment[result.start_segment] = start_state;
+	route_heap heap(result.state_nodes, options.prioritize_progress);
+	heap.push(start_state);
 	while (!heap.empty()) {
-		const int current = heap.pop();
+		const int current_state = heap.pop();
+		const int current = current_state / ROUTE_ENTRY_STATE_COUNT;
+		const int entry_side = current_state % ROUTE_ENTRY_STATE_COUNT;
 		if (Work_tracking_enabled)
 			++Work_summary.visited_segments;
 		result.visit_order.push_back(current);
-		closed[current] = 1;
+		closed[current_state] = 1;
 		for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
 			if (Work_tracking_enabled)
 				++Work_summary.considered_edges;
-			const int child = snapshot.topology.segments[current].sides[side].child;
-			if (!valid_segment(snapshot, child) || closed[child])
+			const auto &current_topology =
+			    snapshot.topology.segments[current];
+			if (entry_side < LEVEL_METADATA_MAX_SIDES &&
+			    !(current_topology.transit_exit_masks[entry_side] &
+			      (1u << side)))
 				continue;
-			const int clearance =
-			    snapshot.topology.segments[current].sides[side].clearance_radius;
+			const auto &topology_side = current_topology.sides[side];
+			const int child = topology_side.child;
+			if (!valid_segment(snapshot, child))
+				continue;
+			const int clearance = topology_side.clearance_radius;
+			int child_entry = ROUTE_CANONICAL_ENTRY_STATE;
 			if (query.navigator.radius > 0 && clearance > 0 &&
-			    clearance < query.navigator.radius)
+			    clearance < query.navigator.radius) {
+				child_entry = topology_side.reverse_side;
+				if (child_entry < 0 ||
+				    child_entry >= LEVEL_METADATA_MAX_SIDES ||
+				    snapshot.topology.segments[child]
+				            .transit_exit_masks[child_entry] == 0)
+					continue;
+			}
+			const int child_state =
+			    child * ROUTE_ENTRY_STATE_COUNT + child_entry;
+			if (closed[child_state])
 				continue;
 			const auto edge = evaluate_route_edge(
 			    snapshot, query, progress, options.forbidden_missing_key,
@@ -1017,15 +1295,16 @@ route_search_result search_routes(
 			    (!options.optimistic &&
 			     edge.progress_cost == LEVEL_METADATA_ROUTE_EDGE_PROGRESS))
 				continue;
-			const auto &current_center = snapshot.topology.segments[current].center;
+			const auto &current_center = current_topology.center;
 			const auto &child_center = snapshot.topology.segments[child].center;
 			if (!current_center.valid || !child_center.valid)
 				continue;
-			const double distance = result.nodes[current].distance +
+			const double distance = result.state_nodes[current_state].distance +
 			                        point_distance(current_center, child_center);
-			const int progress = result.nodes[current].progress_weight +
-			                     (edge.progress_cost == LEVEL_METADATA_ROUTE_EDGE_PROGRESS ? 1 : 0);
-			auto &node = result.nodes[child];
+			const int progress =
+			    result.state_nodes[current_state].progress_weight +
+			    (edge.progress_cost == LEVEL_METADATA_ROUTE_EDGE_PROGRESS ? 1 : 0);
+			auto &node = result.state_nodes[child_state];
 			if (options.prioritize_progress &&
 			    progress > node.progress_weight)
 				continue;
@@ -1036,13 +1315,24 @@ route_search_result search_routes(
 			node.reachable = true;
 			node.distance = distance;
 			node.progress_weight = progress;
-			node.parent_segment = current;
+			node.parent_segment = current_state;
 			node.parent_side = side;
 			node.incoming_edge = edge;
-			if (heap.contains(child))
-				heap.decrease(child);
+			auto &best = result.nodes[child];
+			if (!best.reachable ||
+			    (options.prioritize_progress &&
+			     progress < best.progress_weight) ||
+			    ((!options.prioritize_progress ||
+			      progress == best.progress_weight) &&
+			     distance < best.distance)) {
+				best = node;
+				best.parent_segment = current;
+				result.best_state_by_segment[child] = child_state;
+			}
+			if (heap.contains(child_state))
+				heap.decrease(child_state);
 			else
-				heap.push(child);
+				heap.push(child_state);
 		}
 	}
 	return result;
@@ -1061,13 +1351,21 @@ route_path_result build_route_path(
 	result.progress_weight = search.nodes[target_segment].progress_weight;
 	std::vector<int> reverse_segments;
 	std::vector<int> reverse_sides;
-	for (int current = target_segment;
-	     current >= 0 && current < static_cast<int>(search.nodes.size());
-	     current = search.nodes[current].parent_segment) {
+	std::vector<route_edge_decision> reverse_edges;
+	int current_state =
+	    target_segment < static_cast<int>(search.best_state_by_segment.size())
+	        ? search.best_state_by_segment[target_segment]
+	        : -1;
+	for (; current_state >= 0 &&
+	       current_state < static_cast<int>(search.state_nodes.size());
+	     current_state = search.state_nodes[current_state].parent_segment) {
+		const int current = current_state / ROUTE_ENTRY_STATE_COUNT;
 		reverse_segments.push_back(current);
 		if (current == search.start_segment)
 			break;
-		reverse_sides.push_back(search.nodes[current].parent_side);
+		reverse_sides.push_back(search.state_nodes[current_state].parent_side);
+		reverse_edges.push_back(
+		    search.state_nodes[current_state].incoming_edge);
 	}
 	if (reverse_segments.empty() || reverse_segments.back() != search.start_segment) {
 		result = route_path_result{};
@@ -1075,8 +1373,9 @@ route_path_result build_route_path(
 	}
 	result.segments.assign(reverse_segments.rbegin(), reverse_segments.rend());
 	result.sides.assign(reverse_sides.rbegin(), reverse_sides.rend());
+	std::reverse(reverse_edges.begin(), reverse_edges.end());
 	for (std::size_t index = 1; index < result.segments.size(); ++index) {
-		const auto &edge = search.nodes[result.segments[index]].incoming_edge;
+		const auto &edge = reverse_edges[index - 1];
 		if (edge.progress_cost == LEVEL_METADATA_ROUTE_EDGE_PROGRESS) {
 			result.has_obstruction = true;
 			result.first_obstruction_segment = result.segments[index - 1];
@@ -1748,6 +2047,11 @@ route_trigger_path_selection select_trigger_firing_path(
 route_target_inventory discover_route_targets(const route_snapshot &snapshot)
 {
 	route_target_inventory result;
+	for (const auto &wall : snapshot.state.walls) {
+		const int key = key_index(wall.key);
+		if (key >= 0)
+			result.required_key_mask |= 1 << key;
+	}
 	for (std::size_t object_index = 0;
 	     object_index < snapshot.state.objects.size(); ++object_index) {
 		const auto &object = snapshot.state.objects[object_index];
@@ -1863,11 +2167,16 @@ const char *dependency_trigger_type_name(route_trigger_kind kind)
 {
 	switch (kind) {
 		case route_trigger_kind::open_door: return "open_door";
+		case route_trigger_kind::close_door: return "close_door";
+		case route_trigger_kind::toggle_door: return "toggle_door";
 		case route_trigger_kind::exit: return "exit";
 		case route_trigger_kind::secret_exit: return "secret_exit";
 		case route_trigger_kind::illusion_off: return "illusion_off";
+		case route_trigger_kind::illusion_on: return "illusion_on";
 		case route_trigger_kind::unlock_door: return "unlock_door";
+		case route_trigger_kind::lock_door: return "lock_door";
 		case route_trigger_kind::open_wall: return "open_wall";
+		case route_trigger_kind::close_wall: return "close_wall";
 		case route_trigger_kind::illusory_wall: return "illusory_wall";
 		default: return "unknown";
 	}
@@ -2009,13 +2318,19 @@ class dependency_planner
 	    const route_query &query,
 	    const route_progress_state &progress,
 	    const route_visibility_query &visibility,
-	    bool allow_unresolved_triggers = false)
+	    bool allow_unresolved_triggers = false,
+	    int semantic_key_mask = -1,
+	    std::array<int, 3> semantic_key_order = { { 0, 2, 1 } })
 	    : snapshot_(snapshot), query_(query), visibility_(visibility),
 	      targets_(discover_route_targets(snapshot)),
 	      switch_guidance_graph_(build_switch_guidance_graph(snapshot, query)),
-	      allow_unresolved_triggers_(allow_unresolved_triggers)
+	      allow_unresolved_triggers_(allow_unresolved_triggers),
+	      semantic_key_mask_(semantic_key_mask),
+	      semantic_key_order_(semantic_key_order)
 	{
 		state_.progress = progress;
+		if (semantic_key_mask_ >= 0)
+			state_.progress.wall_state_authoritative = true;
 		state_.hidden_door_in_progress.resize(snapshot.state.walls.size());
 	}
 
@@ -2024,7 +2339,7 @@ class dependency_planner
 		route_dependency_result result;
 		result.progress = state_.progress;
 		const auto sources = discover_trigger_sources_internal(
-		    snapshot_, state_.progress, segment, side, true);
+		    snapshot_, state_.progress, segment, side, true, true);
 		if (sources.empty())
 			return result;
 		result.attempted = true;
@@ -2050,6 +2365,19 @@ class dependency_planner
 		if (targets_.exits.empty()) {
 			set_problem("missing exit");
 			return finish_partial("route incomplete");
+		}
+		for (const int key : semantic_key_order_) {
+			const int bit = 1 << key;
+			if (semantic_key_mask_ < 0 ||
+			    !(semantic_key_mask_ & bit) ||
+			    targets_.keys[key].empty() ||
+			    (state_.progress.key_mask & bit) != 0)
+				continue;
+			const auto before_key = state_;
+			const bool acquired = acquire_key(key, 0);
+			if (!acquired) {
+				state_ = before_key;
+			}
 		}
 		bool progressed = false;
 		if (!progress_primary(progressed))
@@ -2376,7 +2704,9 @@ class dependency_planner
 
 	void accumulate_path(const route_path_result &path)
 	{
-		route_progress_traverse_path(snapshot_, state_.progress, path);
+		route_progress_traverse_path(
+		    snapshot_, state_.progress, path,
+		    state_.progress.wall_state_authoritative);
 		state_.pending_distance += path.distance;
 		state_.pending_path.reached = true;
 		state_.pending_path.distance += path.distance;
@@ -2787,6 +3117,13 @@ class dependency_planner
 		const int bit = 1 << key;
 		if ((state_.progress.key_mask & bit) != 0)
 			return true;
+		if (semantic_key_mask_ >= 0 && !(semantic_key_mask_ & bit)) {
+			set_problem(
+			    std::string(dependency_key_name(key)) +
+			    " key excluded from prerequisite trial");
+			state_.failed_key = key;
+			return false;
+		}
 		if ((state_.progress.key_in_progress & bit) != 0) {
 			set_problem(
 			    std::string(dependency_key_name(key)) +
@@ -3004,7 +3341,8 @@ class dependency_planner
 		         snapshot_.topology.walls[source.source_wall].shootable_trigger)
 			step.activation = route_activation_kind::shoot_switch;
 		else if (valid_wall(snapshot_, source.source_wall) &&
-		         snapshot_.state.walls[source.source_wall].kind ==
+		         route_progress_wall_kind(
+		             snapshot_, state_.progress, source.source_wall) ==
 		             route_wall_kind::open)
 			step.activation = route_activation_kind::fly_through_trigger;
 		else
@@ -3071,7 +3409,7 @@ class dependency_planner
 		if (!find_unresolved_trigger_source(segment, side, trigger, source))
 			return false;
 		if (!append_trigger_step(source, false, true) ||
-		    !route_progress_fire_trigger(state_.progress, trigger))
+		    !route_progress_apply_trigger(snapshot_, state_.progress, trigger))
 			return false;
 		state_.unresolved_action = true;
 		if (state_.unresolved_action_problem.empty())
@@ -3082,10 +3420,132 @@ class dependency_planner
 		return true;
 	}
 
-	bool fire_trigger(int segment, int side, int depth)
+	bool expose_trigger_source(
+	    const route_trigger_source &hidden_source,
+	    int depth)
 	{
-		auto raw_sources = discover_trigger_sources_internal(
-		    snapshot_, state_.progress, segment, side, true);
+		if (!valid_wall(snapshot_, hidden_source.source_wall))
+			return false;
+		const auto exposure_start = state_;
+		std::string last_problem;
+		for (int trigger = 0;
+		     trigger < static_cast<int>(snapshot_.topology.triggers.size());
+		     ++trigger) {
+			const auto kind = snapshot_.topology.triggers[trigger].kind;
+			if (kind != route_trigger_kind::close_wall &&
+			    kind != route_trigger_kind::illusion_on &&
+			    kind != route_trigger_kind::close_door)
+				continue;
+			if (!trigger_targets_wall(
+			        snapshot_, trigger, hidden_source.source_wall))
+				continue;
+			auto sources = discover_sources_for_trigger(
+			    snapshot_, state_.progress, trigger, false);
+			sources.erase(
+			    std::remove_if(
+			        sources.begin(), sources.end(), [&](const auto &source) {
+				        return !trigger_source_fits_navigator(
+				            snapshot_, query_, source);
+			        }),
+			    sources.end());
+			if (sources.empty())
+				continue;
+			state_ = exposure_start;
+			const auto &link = snapshot_.topology.triggers[trigger].links.front();
+			if (!fire_trigger(
+			        link.segment, link.side, depth + 1, &sources)) {
+				if (!state_.problem.empty())
+					last_problem = state_.problem;
+				continue;
+			}
+			if (route_progress_wall_kind(
+			        snapshot_, state_.progress, hidden_source.source_wall) !=
+			    route_wall_kind::open)
+				return true;
+		}
+		state_ = exposure_start;
+		if (!last_problem.empty())
+			state_.problem = last_problem;
+		return false;
+	}
+
+	bool prepare_unreachable_trigger_source(
+	    const route_trigger_source &source,
+	    int depth)
+	{
+		if (!valid_wall(snapshot_, source.source_wall))
+			return false;
+		bool has_restorer = false;
+		for (int trigger = 0;
+		     trigger < static_cast<int>(snapshot_.topology.triggers.size());
+		     ++trigger) {
+			const auto kind = snapshot_.topology.triggers[trigger].kind;
+			if (kind != route_trigger_kind::close_wall &&
+			    kind != route_trigger_kind::illusion_on &&
+			    kind != route_trigger_kind::close_door)
+				continue;
+			if (!trigger_targets_wall(snapshot_, trigger, source.source_wall))
+				continue;
+			has_restorer = true;
+			break;
+		}
+		if (!has_restorer)
+			return false;
+		const auto preparation_start = state_;
+		const auto initial_kind = route_progress_wall_kind(
+		    snapshot_, state_.progress, source.source_wall);
+		std::string last_problem;
+		for (int trigger = 0;
+		     trigger < static_cast<int>(snapshot_.topology.triggers.size());
+		     ++trigger) {
+			if (trigger == source.trigger ||
+			    !route_trigger_opens_path(
+			        snapshot_.topology.triggers[trigger].kind) ||
+			    !trigger_targets_wall(snapshot_, trigger, source.source_wall) ||
+			    !trigger_effect_needed(snapshot_, state_.progress, trigger))
+				continue;
+			auto sources = discover_sources_for_trigger(
+			    snapshot_, state_.progress, trigger, false);
+			sources.erase(
+			    std::remove_if(
+			        sources.begin(), sources.end(), [&](const auto &candidate) {
+				        return !trigger_source_fits_navigator(
+				            snapshot_, query_, candidate);
+			        }),
+			    sources.end());
+			if (sources.empty() ||
+			    snapshot_.topology.triggers[trigger].links.empty())
+				continue;
+			state_ = preparation_start;
+			state_.problem.clear();
+			const auto &link = snapshot_.topology.triggers[trigger].links.front();
+			if (!fire_trigger(
+			        link.segment, link.side, depth + 1, &sources)) {
+				if (!state_.problem.empty())
+					last_problem = state_.problem;
+				continue;
+			}
+			if (route_progress_wall_kind(
+			        snapshot_, state_.progress, source.source_wall) != initial_kind)
+				return true;
+		}
+		state_ = preparation_start;
+		if (!last_problem.empty())
+			state_.problem = last_problem;
+		return false;
+	}
+
+	bool fire_trigger(
+	    int segment,
+	    int side,
+	    int depth,
+	    const std::vector<route_trigger_source> *forced_sources = nullptr)
+	{
+		auto raw_sources = forced_sources
+		                       ? *forced_sources
+		                       : discover_trigger_sources_internal(
+		                             snapshot_, state_.progress, segment, side,
+		                             true, true);
 		raw_sources.erase(
 		    std::remove_if(
 		        raw_sources.begin(), raw_sources.end(), [&](const auto &source) {
@@ -3097,15 +3557,50 @@ class dependency_planner
 			return false;
 		}
 		auto source = raw_sources.front();
-		auto firing_sources = discover_trigger_sources_internal(
-		    snapshot_, state_.progress, segment, side, false);
+		auto firing_sources = raw_sources;
 		firing_sources.erase(
 		    std::remove_if(
 		        firing_sources.begin(), firing_sources.end(), [&](const auto &candidate) {
 			        return !trigger_source_fits_navigator(
-			            snapshot_, query_, candidate);
+			                   snapshot_, query_, candidate) ||
+			               !trigger_source_wall_valid(
+			                   snapshot_, state_.progress,
+			                   candidate.source_wall, false, true);
 		        }),
 		    firing_sources.end());
+		if (firing_sources.empty() &&
+		    valid_wall(snapshot_, source.source_wall) &&
+		    snapshot_.topology.walls[source.source_wall].shootable_trigger &&
+		    route_progress_wall_kind(
+		        snapshot_, state_.progress, source.source_wall) ==
+		        route_wall_kind::open) {
+			if (state_flag(
+			        state_.progress.trigger_in_progress, source.trigger)) {
+				set_problem(
+				    "trigger exposure dependency loop: trigger " +
+				    std::to_string(source.trigger));
+				state_.failed_trigger = source.trigger;
+				return false;
+			}
+			state_.progress.trigger_in_progress[source.trigger] = 1;
+			const bool exposed = expose_trigger_source(source, depth + 1);
+			state_.progress.trigger_in_progress[source.trigger] = 0;
+			if (!exposed) {
+				set_problem(
+				    "switch surface restoration unresolved: trigger " +
+				    std::to_string(source.trigger) + " wall " +
+				    std::to_string(source.source_wall));
+				state_.failed_trigger = source.trigger;
+				return false;
+			}
+			if (forced_sources) {
+				auto exposed_sources = discover_sources_for_trigger(
+				    snapshot_, state_.progress, source.trigger, false);
+				return fire_trigger(
+				    segment, side, depth + 1, &exposed_sources);
+			}
+			return fire_trigger(segment, side, depth + 1);
+		}
 		const auto firing = select_trigger_firing_path_internal(
 		    snapshot_, query_, state_.progress, firing_sources, visibility_,
 		    &switch_guidance_graph_);
@@ -3139,6 +3634,9 @@ class dependency_planner
 		const bool shootable = valid_wall(snapshot_, source.source_wall) &&
 		                       snapshot_.topology.walls[source.source_wall]
 		                           .shootable_trigger;
+		/* A fired bit denotes an effect that is still active. Contrary wall
+		 * transitions clear that bit when they restore a shootable surface, so
+		 * only a genuinely rearmed trigger reaches the firing path again. */
 		if (state_flag(state_.progress.fired_triggers, source.trigger))
 			return true;
 		if (state_flag(state_.progress.trigger_in_progress, source.trigger)) {
@@ -3159,6 +3657,7 @@ class dependency_planner
 			state_.failed_trigger = source.trigger;
 			return false;
 		}
+		const auto activation_start = state_;
 		state_.progress.trigger_in_progress[source.trigger] = 1;
 		const int selected_source_segment = source.source_segment;
 		if (conditional_firing) {
@@ -3193,14 +3692,22 @@ class dependency_planner
 			} else if (
 			    selected_firing.terminal_segment == source.source_segment &&
 			    valid_wall(snapshot_, source.source_wall) &&
-			    snapshot_.state.walls[source.source_wall].kind ==
+			    route_progress_wall_kind(
+			        snapshot_, state_.progress, source.source_wall) ==
 			        route_wall_kind::open &&
 			    snapshot_.topology.segments[source.source_segment].center.valid)
 				state_.progress.current_position =
 				    snapshot_.topology.segments[source.source_segment].center;
 		} else if (!move_to_target(
 		               source.source_segment, source.source_position, depth + 1)) {
-			state_.progress.trigger_in_progress[source.trigger] = 0;
+			const std::string activation_problem = state_.problem;
+			state_ = activation_start;
+			state_.problem.clear();
+			if (prepare_unreachable_trigger_source(source, depth + 1))
+				return fire_trigger(segment, side, depth + 1, forced_sources);
+			state_ = activation_start;
+			if (!activation_problem.empty())
+				state_.problem = activation_problem;
 			return false;
 		} else {
 			state_.progress.current_segment = source.source_segment;
@@ -3277,7 +3784,12 @@ class dependency_planner
 				append_unique(candidate);
 			}
 		}
-		state_.progress.fired_triggers[source.trigger] = 1;
+		if (!route_progress_apply_trigger(
+		        snapshot_, state_.progress, source.trigger)) {
+			state_.progress.trigger_in_progress[source.trigger] = 0;
+			set_problem("trigger state transition failed");
+			return false;
+		}
 		state_.progress.trigger_in_progress[source.trigger] = 0;
 		return true;
 	}
@@ -3460,6 +3972,8 @@ class dependency_planner
 	route_target_inventory targets_;
 	switch_guidance_graph switch_guidance_graph_;
 	bool allow_unresolved_triggers_;
+	int semantic_key_mask_;
+	std::array<int, 3> semantic_key_order_;
 	dependency_state state_;
 };
 
@@ -3482,28 +3996,134 @@ route_plan_result plan_route(
     const route_query &query,
     const route_visibility_query &visibility)
 {
-	auto plan_once = [&](const route_query &attempt, bool allow_unresolved) {
+	auto plan_once = [&](const route_query &attempt, bool allow_unresolved,
+	                     int semantic_key_mask,
+	                     const std::array<int, 3> &semantic_key_order) {
 		dependency_planner planner(
 		    snapshot, attempt,
 		    initial_route_progress_state(snapshot, attempt), visibility,
-		    allow_unresolved);
+		    allow_unresolved, semantic_key_mask, semantic_key_order);
 		if (attempt.endpoint == route_endpoint_kind::end_of_level)
 			return planner.plan_end_level();
 		if (attempt.endpoint == route_endpoint_kind::unexplored)
 			return planner.plan_unexplored();
 		return planner.plan_segment(attempt.target_segment);
 	};
-	auto result = plan_once(query, false);
-	if (result.status != route_plan_status::ok && query.navigator.radius > 0) {
-		route_query relaxed = query;
-		relaxed.navigator.radius = 0;
-		result = plan_once(relaxed, false);
+	auto plan_mode = [&](int semantic_key_mask,
+	                     const std::array<int, 3> &semantic_key_order,
+	                     bool allow_relaxed, bool allow_unresolved) {
+		auto result = plan_once(
+		    query, false, semantic_key_mask, semantic_key_order);
+		if (allow_relaxed && result.status != route_plan_status::ok &&
+		    query.navigator.radius > 0) {
+			route_query relaxed = query;
+			relaxed.navigator.radius = 0;
+			result = plan_once(
+			    relaxed, false, semantic_key_mask, semantic_key_order);
+		}
+		if (result.status == route_plan_status::ok ||
+		    query.endpoint != route_endpoint_kind::end_of_level)
+			return result;
+		if (!allow_unresolved)
+			return result;
+		auto continued = plan_once(
+		    query, true, semantic_key_mask, semantic_key_order);
+		return continued.steps.size() > result.steps.size() ? continued : result;
+	};
+	const std::array<int, 3> default_key_order = { { 0, 2, 1 } };
+	if (query.endpoint != route_endpoint_kind::end_of_level)
+		return plan_mode(-1, default_key_order, true, true);
+	const int relevant_key_mask =
+	    discover_route_targets(snapshot).required_key_mask;
+	std::vector<route_plan_result> completing_plans;
+	route_plan_result best_partial;
+	bool have_partial = false;
+	auto key_step_mask = [](const route_plan_result &plan) {
+		int mask = 0;
+		for (const auto &step : plan.steps) {
+			if (step.kind != route_semantic_step_kind::key)
+				continue;
+			const int key = key_index(step.key);
+			if (key >= 0)
+				mask |= 1 << key;
+		}
+		return mask;
+	};
+	auto has_unresolved_trigger = [](const route_plan_result &plan) {
+		return std::any_of(
+		    plan.steps.begin(), plan.steps.end(), [](const auto &step) {
+			    return step.activation ==
+			           route_activation_kind::unresolved_trigger;
+		    });
+	};
+	for (int allowed_key_mask = 0; allowed_key_mask < 8;
+	     ++allowed_key_mask) {
+		if ((allowed_key_mask & ~relevant_key_mask) != 0)
+			continue;
+		std::vector<int> selected_keys;
+		for (int key = 0; key < 3; ++key)
+			if (allowed_key_mask & (1 << key))
+				selected_keys.push_back(key);
+		do {
+			std::array<int, 3> key_order = default_key_order;
+			int order_index = 0;
+			for (const int key : selected_keys)
+				key_order[order_index++] = key;
+			for (const int key : default_key_order)
+				if (!(allowed_key_mask & (1 << key)))
+					key_order[order_index++] = key;
+			auto candidate = plan_mode(
+			    allowed_key_mask, key_order, false, false);
+			if (candidate.status == route_plan_status::ok)
+				completing_plans.push_back(std::move(candidate));
+			else if (!have_partial ||
+			         candidate.steps.size() > best_partial.steps.size()) {
+				best_partial = std::move(candidate);
+				have_partial = true;
+			}
+		} while (std::next_permutation(
+		    selected_keys.begin(), selected_keys.end()));
 	}
-	if (result.status == route_plan_status::ok ||
-	    query.endpoint != route_endpoint_kind::end_of_level)
-		return result;
-	auto continued = plan_once(query, true);
-	return continued.steps.size() > result.steps.size() ? continued : result;
+	if (completing_plans.empty()) {
+		auto diagnostic = plan_mode(
+		    relevant_key_mask, default_key_order, false, true);
+		if (has_unresolved_trigger(diagnostic)) {
+			diagnostic.status = route_plan_status::partial;
+			if (diagnostic.problem.empty())
+				diagnostic.problem = "switch activation route unresolved";
+		}
+		if (!have_partial ||
+		    diagnostic.steps.size() > best_partial.steps.size())
+			return diagnostic;
+		return best_partial;
+	}
+	auto bit_count = [](int mask) {
+		int count = 0;
+		for (; mask; mask >>= 1)
+			count += mask & 1;
+		return count;
+	};
+	auto best = std::min_element(
+	    completing_plans.begin(), completing_plans.end(),
+	    [&](const route_plan_result &left, const route_plan_result &right) {
+		    const int left_keys = bit_count(key_step_mask(left));
+		    const int right_keys = bit_count(key_step_mask(right));
+		    if (left_keys != right_keys)
+			    return left_keys < right_keys;
+		    if (left.travel_distance != right.travel_distance)
+			    return left.travel_distance < right.travel_distance;
+		    return left.steps.size() < right.steps.size();
+	    });
+	int required_key_mask = relevant_key_mask;
+	int completing_key_mask_set = 0;
+	for (const auto &candidate : completing_plans) {
+		const int acquired_key_mask = key_step_mask(candidate);
+		required_key_mask &= acquired_key_mask;
+		completing_key_mask_set |= 1 << acquired_key_mask;
+	}
+	best->required_key_mask = required_key_mask;
+	best->completing_key_mask_set = completing_key_mask_set;
+	return std::move(*best);
 }
 
 } // namespace dxx_route
@@ -3819,6 +4439,9 @@ bool project_plan(
 	std::snprintf(
 	    destination.route_note, sizeof(destination.route_note), "%s",
 	    source.note.c_str());
+	destination.route_required_key_mask = source.required_key_mask;
+	destination.route_completing_key_mask_set =
+	    source.completing_key_mask_set;
 	destination.route_step_count = static_cast<int>(source.steps.size());
 	destination.travel_distance = source.travel_distance;
 	destination.travel_time_seconds = static_cast<int>(std::floor(

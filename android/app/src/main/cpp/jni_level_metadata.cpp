@@ -784,7 +784,10 @@ static json serialize_route_steps(const level_metadata_state *metadata)
 					open["wall"] = step.opened_link_wall[link];
 				opened.push_back(open);
 			}
-			item["opens"] = opened;
+			const bool closes =
+			    strcmp(step.trigger_type_name, "close_wall") == 0 ||
+			    strcmp(step.trigger_type_name, "close_door") == 0;
+			item[closes ? "closes" : "opens"] = opened;
 		}
 		steps.push_back(item);
 	}

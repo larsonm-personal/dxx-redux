@@ -24,18 +24,16 @@ internal fun musicOverlaySourceOptions(
         val cdSources = audioSourceManager.getEnabledSources()
         val cdAvailable =
             runCatching {
-                requireAudioPlaylistCapacity(cdSources)
-                cdSources.isNotEmpty() &&
-                    cdSources.all { source ->
+                val availableSources =
+                    cdSources.filter { source ->
                         audioSourceManager.sourceFilesAvailable(source) &&
-                            source.cueContentUri
-                                ?.takeUnless(::isLocalCdContentPath)
-                                ?.let { canAccessUri(it, false) } != false &&
                             source
                                 .binContentUriList()
                                 .filterNot(::isLocalCdContentPath)
                                 .all { canAccessUri(it, true) }
                     }
+                requireAudioPlaylistCapacity(availableSources)
+                availableSources.isNotEmpty()
             }.getOrDefault(false)
         if (cdAvailable || activeSource == "cd") {
             add(MusicOverlaySourceOption("cd", "CD"))

@@ -1229,6 +1229,8 @@ class LauncherScriptExecutor(
                     .put("guidebot_placed", row.guidebotPlaced)
                     .put("guidebot_accessible", row.guidebotAccessible)
                     .put("route_status", row.routeStatus)
+                    .put("route_required_key_mask", row.routeRequiredKeyMask)
+                    .put("route_completing_key_mask_set", row.routeCompletingKeyMaskSet)
                     .put("route_steps", levelMetadataRouteStepsJson(row.routeSteps))
                     .put("replacements", levelMetadataReplacementsJson(row.replacements))
                     .put("replacement_groups", levelMetadataReplacementGroupsJson(row.replacementGroups))

@@ -120,6 +120,12 @@ class RegressionToolContractsTest(unittest.TestCase):
                 result = normalize(text, "--mission-metadata")
                 self.assertEqual(0, result.returncode, result.stderr)
                 self.assertIn("1.0", result.stdout)
+        scalar_intent = normalize(
+            '{"mission_filename":"example.mn2","mission_intent":"single_player_or_coop"}',
+            "--mission-metadata",
+        )
+        self.assertNotEqual(0, scalar_intent.returncode)
+        self.assertIn("mission_intent must be a structured object", scalar_intent.stderr)
 
         batch_source = (ROOT / "android/helpers/run_mission_zip_batch.ps1").read_text(
             encoding="utf-8"

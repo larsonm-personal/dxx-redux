@@ -43,6 +43,10 @@ static int route_analysis_cache_state_valid(
 
 	if (state->route_status < LEVEL_METADATA_ROUTE_OK ||
 	    state->route_status > LEVEL_METADATA_ROUTE_FAILED ||
+	    (state->route_required_key_mask &
+	     ~(LEVEL_METADATA_KEY_MASK_BLUE | LEVEL_METADATA_KEY_MASK_RED |
+	       LEVEL_METADATA_KEY_MASK_GOLD)) != 0 ||
+	    (state->route_completing_key_mask_set & ~0xff) != 0 ||
 	    (state->unnecessary_key_mask &
 	     ~(LEVEL_METADATA_KEY_MASK_BLUE | LEVEL_METADATA_KEY_MASK_RED |
 	       LEVEL_METADATA_KEY_MASK_GOLD)) != 0 ||

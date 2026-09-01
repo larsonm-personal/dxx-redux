@@ -4,7 +4,8 @@ param(
     [switch]$NoRegressionCopy,
     [switch]$CdSourcesOnly,
     [string]$ArchiveName = "",
-    [string[]]$CdSourceIds
+    [string[]]$CdSourceIds,
+    [ValidateRange(1, [int]::MaxValue)][int]$ArchiveTimeoutSeconds = 120
 )
 
 $ErrorActionPreference = "Stop"
@@ -235,6 +236,48 @@ function Add-IfString {
     }
 }
 
+function ConvertTo-CheckedInMissionIntentJson {
+    param($Intent)
+
+    $classification = Get-StringProp $Intent "classification"
+    $rule = Get-StringProp $Intent "rule"
+    $confidence = Get-StringProp $Intent "confidence"
+    $reason = Get-StringProp $Intent "reason"
+    if (-not $classification -or -not $rule -or -not $confidence -or -not $reason) {
+        throw "Headless metadata mission_intent is missing its structured classification evidence. Rebuild the host metadata executables before regenerating regression files."
+    }
+    $declarations = Get-Prop $Intent "declarations" $null
+    return [ordered]@{
+        classification = $classification
+        rule = $rule
+        confidence = $confidence
+        reason = $reason
+        declarations = [ordered]@{
+            anarchy_only = [bool](Get-Prop $declarations "anarchy_only" $false)
+            normal = [bool](Get-Prop $declarations "normal" $false)
+            coop = [bool](Get-Prop $declarations "coop" $false)
+            anarchy = [bool](Get-Prop $declarations "anarchy" $false)
+            robo_anarchy = [bool](Get-Prop $declarations "robo_anarchy" $false)
+            capture_flag = [bool](Get-Prop $declarations "capture_flag" $false)
+            hoard = [bool](Get-Prop $declarations "hoard" $false)
+        }
+        normal_levels = [int](Get-Prop $Intent "normal_levels" 0)
+        campaign_actor_levels = [int](Get-Prop $Intent "campaign_actor_levels" 0)
+        arena_like_levels = [int](Get-Prop $Intent "arena_like_levels" 0)
+        solo_like_levels = [int](Get-Prop $Intent "solo_like_levels" 0)
+        player_start_min = [int](Get-Prop $Intent "player_start_min" 0)
+        player_start_max = [int](Get-Prop $Intent "player_start_max" 0)
+        coop_start_min = [int](Get-Prop $Intent "coop_start_min" 0)
+        coop_start_max = [int](Get-Prop $Intent "coop_start_max" 0)
+        robots = [int](Get-Prop $Intent "robots" 0)
+        hostages = [int](Get-Prop $Intent "hostages" 0)
+        matcens = [int](Get-Prop $Intent "matcens" 0)
+        guidebots = [int](Get-Prop $Intent "guidebots" 0)
+        powerups = [int](Get-Prop $Intent "powerups" 0)
+        reactors = [int](Get-Prop $Intent "reactors" 0)
+    }
+}
+
 function ConvertTo-CheckedInLevelJson {
     param($Level)
 
@@ -260,6 +303,10 @@ function ConvertTo-CheckedInLevelJson {
         trigger_count = [int](Get-Prop $Level "trigger_count" 0)
         object_count = [int](Get-Prop $Level "object_count" 0)
         texture_count = [int](Get-Prop $Level "texture_count" 0)
+        player_starts = [int](Get-Prop $Level "player_start_count" 0)
+        coop_only_starts = [int](Get-Prop $Level "coop_only_start_count" 0)
+        powerups = [int](Get-Prop $Level "powerup_count" 0)
+        reactors = [int](Get-Prop $Level "reactor_count" 0)
         robots = [int](Get-Prop $Level "robot_count" 0)
         hostages = [int](Get-Prop $Level "hostage_count" 0)
         secrets = [int](Get-Prop $Level "secret_count" 0)
@@ -275,6 +322,8 @@ function ConvertTo-CheckedInLevelJson {
         guidebot_placed = [bool](Get-Prop $Level "guidebot_placed" $false)
         guidebot_accessible = [bool](Get-Prop $Level "guidebot_accessible" $false)
         route_status = $routeStatus
+        route_required_key_mask = [int](Get-Prop $Level "route_required_key_mask" 0)
+        route_completing_key_mask_set = [int](Get-Prop $Level "route_completing_key_mask_set" 0)
         route_steps = @(Get-ArrayValue (Get-Prop $Level "route_steps" @()))
     }
     Add-IfString -Target $row -Name "guidebot_placement_note" -Value (Get-StringProp $Level "guidebot_placement_note")
@@ -309,8 +358,7 @@ function ConvertTo-CheckedInMissionJson {
         mission_name = $missionName
         mission_filename = $filename
     }
-    $missionIntent = Get-Prop $Raw "mission_intent" $null
-    Add-IfString -Target $result -Name "mission_intent" -Value (Get-StringProp $missionIntent "classification")
+    $result["mission_intent"] = ConvertTo-CheckedInMissionIntentJson -Intent (Get-Prop $Raw "mission_intent" $null)
     Add-IfString -Target $result -Name "coop_starts" -Value (Get-StringProp $Raw "coop_starts")
     $musicTracks = @(Get-ArrayValue (Get-Prop $Raw "music_tracks" @()))
     if ($musicTracks.Count -gt 0) {
@@ -969,7 +1017,7 @@ if (-not $CdSourcesOnly) {
                     $logPath = Join-Path $logsDir "$label.$($descriptor.BaseName).log"
                     $descriptorInfo = Get-MissionDescriptorInfo -Descriptor $descriptor
                     $missionPath = Get-RawMissionDescriptorPath -RawDirPath $rawArchiveDir -StagedDescriptor $descriptor -VariantSelection $variantSelection
-                    $raw = Invoke-HeadlessScan -Descriptor $descriptor -StageDir $stageDir -Executables $executables -DataDirs $dataDirs -RawOutputPath $rawOutputPath -LogPath $logPath
+                    $raw = Invoke-HeadlessScan -Descriptor $descriptor -StageDir $stageDir -Executables $executables -DataDirs $dataDirs -RawOutputPath $rawOutputPath -LogPath $logPath -TimeoutSeconds $ArchiveTimeoutSeconds
                     $missions += ConvertTo-CheckedInMissionJson -Raw $raw -TargetIndex $targetIndex -SourceName $descriptorInfo.DisplayName -MissionFilename $descriptorInfo.Filename -MissionPath $missionPath
                     $targetIndex++
                 }

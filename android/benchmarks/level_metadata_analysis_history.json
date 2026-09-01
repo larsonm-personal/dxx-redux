@@ -3043,6 +3043,693 @@
               }
             }
           ]
+        },
+        {
+          "recorded_utc": "2026-08-30T21:11:27Z",
+          "source_revision": "254e7ea5dfc6783176fc9d669209c73db871e865",
+          "environment": {
+            "os": "Microsoft Windows NT 10.0.26200.0",
+            "architecture": "X64",
+            "cpu": "Intel(R) Core(TM) Ultra 9 285H",
+            "compiler": "cl.exe",
+            "build": "RelWithDebInfo-x86"
+          },
+          "measured_runs": 3,
+          "elapsed_wall_seconds": 29.0180354,
+          "aggregate_cpu_seconds": 2.146,
+          "aggregate_wall_seconds": 2.1472175,
+          "guidebot_live_calculations": {
+            "schema": "dxx-guidebot-live-calculation-benchmark-v3",
+            "segments": 900,
+            "cases": {
+              "ordinary_certification": {
+                "wall_us": 26,
+                "slices": 11,
+                "evaluated_edges": 5400,
+                "evaluated_firing_positions": 0,
+                "shootability_calls": 0,
+                "segment_child_calls": 7198,
+                "segment_center_calls": 0,
+                "max_callbacks_per_slice": 684
+              },
+              "detailed_switch_search": {
+                "wall_us": 110,
+                "slices": 13,
+                "evaluated_edges": 5400,
+                "evaluated_firing_positions": 2,
+                "shootability_calls": 2,
+                "segment_child_calls": 7198,
+                "segment_center_calls": 902,
+                "max_callbacks_per_slice": 684
+              },
+              "cached_switch_reuse": {
+                "wall_us": 26,
+                "slices": 11,
+                "evaluated_edges": 5400,
+                "evaluated_firing_positions": 0,
+                "shootability_calls": 1,
+                "segment_child_calls": 7198,
+                "segment_center_calls": 0,
+                "max_callbacks_per_slice": 684
+              },
+              "unreachable_switch_frontier": {
+                "wall_us": 139,
+                "slices": 26,
+                "evaluated_edges": 2700,
+                "evaluated_firing_positions": 1428,
+                "shootability_calls": 1428,
+                "segment_child_calls": 10798,
+                "segment_center_calls": 2782,
+                "max_callbacks_per_slice": 1474
+              },
+              "unreachable_switch_frontier_unsliced": {
+                "wall_us": 102,
+                "slices": 1,
+                "evaluated_edges": 2700,
+                "evaluated_firing_positions": 1428,
+                "shootability_calls": 1428,
+                "segment_child_calls": 10798,
+                "segment_center_calls": 2782,
+                "max_callbacks_per_slice": 15008
+              },
+              "largest_unexplored_area": {
+                "wall_us": 34,
+                "slices": 20,
+                "evaluated_edges": 0,
+                "evaluated_firing_positions": 0,
+                "shootability_calls": 0,
+                "segment_child_calls": 9898,
+                "segment_center_calls": 0,
+                "max_callbacks_per_slice": 684
+              },
+              "compiled_action_selection": {
+                "wall_us": 2,
+                "slices": 0,
+                "evaluated_edges": 0,
+                "evaluated_firing_positions": 0,
+                "shootability_calls": 0,
+                "segment_child_calls": 0,
+                "segment_center_calls": 0,
+                "max_callbacks_per_slice": 0
+              },
+              "compiled_switch_guidance": {
+                "wall_us": 21,
+                "slices": 0,
+                "evaluated_edges": 5400,
+                "evaluated_firing_positions": 0,
+                "shootability_calls": 0,
+                "segment_child_calls": 7198,
+                "segment_center_calls": 0,
+                "max_callbacks_per_slice": 0
+              }
+            }
+          },
+          "levels": [
+            {
+              "id": "d1-first-strike-01",
+              "metadata_sha256": "a38b15efe1332070ec95b4bd3be10fb4e308d0991cc1ef04c161737023068dae",
+              "median_total_cpu_seconds": 0.004,
+              "median_total_wall_seconds": 0.0042489,
+              "phases": {
+                "level_summary": {
+                  "cpu_seconds": 0.0,
+                  "wall_seconds": 9.66E-05,
+                  "tasks": 1
+                },
+                "level_topology": {
+                  "cpu_seconds": 0.0,
+                  "wall_seconds": 0.0004287,
+                  "tasks": 1
+                },
+                "load_level": {
+                  "cpu_seconds": 0.002,
+                  "wall_seconds": 0.0019591,
+                  "tasks": 1
+                },
+                "route_planning": {
+                  "cpu_seconds": 0.001,
+                  "wall_seconds": 0.0007806,
+                  "tasks": 1
+                },
+                "secret_areas": {
+                  "cpu_seconds": 0.0,
+                  "wall_seconds": 0.0003436,
+                  "tasks": 1
+                },
+                "serialize_output": {
+                  "cpu_seconds": 0.0,
+                  "wall_seconds": 0.0002099,
+                  "tasks": 1
+                }
+              },
+              "work": {
+                "collision_queries": 0,
+                "visibility_cache_hits": 0,
+                "visibility_cache_misses": 0,
+                "visibility_cache_entries": 0,
+                "visibility_cache_bypasses": 0,
+                "route_searches": 7,
+                "route_visited_segments": 1544,
+                "route_considered_edges": 9264,
+                "route_evaluated_edges": 1932
+              }
+            },
+            {
+              "id": "d1-first-strike-10",
+              "metadata_sha256": "3abbbac5e4b58b487ed50eee269e6453486612102b853dc48b4df54e4d882c73",
+              "median_total_cpu_seconds": 0.008,
+              "median_total_wall_seconds": 0.0077006,
+              "phases": {
+                "level_summary": {
+                  "cpu_seconds": 0.0,
+                  "wall_seconds": 0.0001282,
+                  "tasks": 1
+                },
+                "level_topology": {
+                  "cpu_seconds": 0.001,
+                  "wall_seconds": 0.0007286,
+                  "tasks": 1
+                },
+                "load_level": {
+                  "cpu_seconds": 0.002,
+                  "wall_seconds": 0.0027994,
+                  "tasks": 1
+                },
+                "route_planning": {
+                  "cpu_seconds": 0.003,
+                  "wall_seconds": 0.0026626,
+                  "tasks": 1
+                },
+                "route_visibility": {
+                  "cpu_seconds": 0.0,
+                  "wall_seconds": 1.85E-05,
+                  "tasks": 2
+                },
+                "secret_areas": {
+                  "cpu_seconds": 0.0,
+                  "wall_seconds": 0.0004641,
+                  "tasks": 1
+                },
+                "serialize_output": {
+                  "cpu_seconds": 0.001,
+                  "wall_seconds": 0.0003668,
+                  "tasks": 1
+                }
+              },
+              "work": {
+                "collision_queries": 1,
+                "visibility_cache_hits": 1,
+                "visibility_cache_misses": 1,
+                "visibility_cache_entries": 1,
+                "visibility_cache_bypasses": 0,
+                "route_searches": 44,
+                "route_visited_segments": 12686,
+                "route_considered_edges": 76116,
+                "route_evaluated_edges": 14532
+              }
+            },
+            {
+              "id": "d1-first-strike-21",
+              "metadata_sha256": "0e471084a4bdf74b5c70c8f64a9107c73e0b8f61625f9b5bd5ca176854198703",
+              "median_total_cpu_seconds": 0.012,
+              "median_total_wall_seconds": 0.0122673,
+              "phases": {
+                "level_summary": {
+                  "cpu_seconds": 0.001,
+                  "wall_seconds": 0.0001615,
+                  "tasks": 1
+                },
+                "level_topology": {
+                  "cpu_seconds": 0.001,
+                  "wall_seconds": 0.0009565,
+                  "tasks": 1
+                },
+                "load_level": {
+                  "cpu_seconds": 0.005,
+                  "wall_seconds": 0.0045195,
+                  "tasks": 1
+                },
+                "route_planning": {
+                  "cpu_seconds": 0.005,
+                  "wall_seconds": 0.0049083,
+                  "tasks": 1
+                },
+                "route_visibility": {
+                  "cpu_seconds": 0.0,
+                  "wall_seconds": 1.2400000000000002E-05,
+                  "tasks": 12
+                },
+                "secret_areas": {
+                  "cpu_seconds": 0.001,
+                  "wall_seconds": 0.0008319,
+                  "tasks": 1
+                },
+                "serialize_output": {
+                  "cpu_seconds": 0.0,
+                  "wall_seconds": 0.0002984,
+                  "tasks": 1
+                }
+              },
+              "work": {
+                "collision_queries": 1,
+                "visibility_cache_hits": 1,
+                "visibility_cache_misses": 1,
+                "visibility_cache_entries": 1,
+                "visibility_cache_bypasses": 0,
+                "route_searches": 60,
+                "route_visited_segments": 33244,
+                "route_considered_edges": 199464,
+                "route_evaluated_edges": 39302
+              }
+            },
+            {
+              "id": "d2-counterstrike-01",
+              "metadata_sha256": "4dda73c892639ae5f9009f612b8920255f93f2ed4731400932804480a9d338a2",
+              "median_total_cpu_seconds": 0.007,
+              "median_total_wall_seconds": 0.0071049,
+              "phases": {
+                "level_summary": {
+                  "cpu_seconds": 0.0,
+                  "wall_seconds": 0.0006338,
+                  "tasks": 1
+                },
+                "level_topology": {
+                  "cpu_seconds": 0.001,
+                  "wall_seconds": 0.0003537,
+                  "tasks": 1
+                },
+                "load_level": {
+                  "cpu_seconds": 0.002,
+                  "wall_seconds": 0.0019318,
+                  "tasks": 1
+                },
+                "route_planning": {
+                  "cpu_seconds": 0.001,
+                  "wall_seconds": 0.0005622,
+                  "tasks": 1
+                },
+                "secret_areas": {
+                  "cpu_seconds": 0.0,
+                  "wall_seconds": 0.0003981,
+                  "tasks": 1
+                },
+                "serialize_output": {
+                  "cpu_seconds": 0.002,
+                  "wall_seconds": 0.0024368,
+                  "tasks": 1
+                }
+              },
+              "work": {
+                "collision_queries": 0,
+                "visibility_cache_hits": 0,
+                "visibility_cache_misses": 0,
+                "visibility_cache_entries": 0,
+                "visibility_cache_bypasses": 0,
+                "route_searches": 10,
+                "route_visited_segments": 1655,
+                "route_considered_edges": 9930,
+                "route_evaluated_edges": 2006
+              }
+            },
+            {
+              "id": "d2-counterstrike-02",
+              "metadata_sha256": "8a237b22b78b589650d853d08ffc731a15654b6fc130a46faf3e071120f5be62",
+              "median_total_cpu_seconds": 0.26,
+              "median_total_wall_seconds": 0.2597605,
+              "phases": {
+                "level_summary": {
+                  "cpu_seconds": 0.001,
+                  "wall_seconds": 0.001252,
+                  "tasks": 1
+                },
+                "level_topology": {
+                  "cpu_seconds": 0.001,
+                  "wall_seconds": 0.0008151,
+                  "tasks": 1
+                },
+                "load_level": {
+                  "cpu_seconds": 0.009,
+                  "wall_seconds": 0.008099,
+                  "tasks": 1
+                },
+                "route_planning": {
+                  "cpu_seconds": 0.243,
+                  "wall_seconds": 0.2429817,
+                  "tasks": 1
+                },
+                "route_target_visibility": {
+                  "cpu_seconds": 0.027,
+                  "wall_seconds": 0.025069799999999996,
+                  "tasks": 6
+                },
+                "route_visibility": {
+                  "cpu_seconds": 0.20600000000000002,
+                  "wall_seconds": 0.20873429999999993,
+                  "tasks": 43
+                },
+                "secret_areas": {
+                  "cpu_seconds": 0.001,
+                  "wall_seconds": 0.000728,
+                  "tasks": 1
+                },
+                "serialize_output": {
+                  "cpu_seconds": 0.003,
+                  "wall_seconds": 0.002993,
+                  "tasks": 1
+                }
+              },
+              "work": {
+                "collision_queries": 56637,
+                "visibility_cache_hits": 62,
+                "visibility_cache_misses": 56622,
+                "visibility_cache_entries": 77234,
+                "visibility_cache_bypasses": 0,
+                "route_searches": 163,
+                "route_visited_segments": 51670,
+                "route_considered_edges": 310020,
+                "route_evaluated_edges": 65089
+              }
+            },
+            {
+              "id": "d2-counterstrike-12",
+              "metadata_sha256": "81571a5b26597ae784ed90e3d673047cd1744bb180c9b34aac09220adba25a40",
+              "median_total_cpu_seconds": 0.034,
+              "median_total_wall_seconds": 0.0345914,
+              "phases": {
+                "level_summary": {
+                  "cpu_seconds": 0.002,
+                  "wall_seconds": 0.0012683,
+                  "tasks": 1
+                },
+                "level_topology": {
+                  "cpu_seconds": 0.0,
+                  "wall_seconds": 0.000737,
+                  "tasks": 1
+                },
+                "load_level": {
+                  "cpu_seconds": 0.004,
+                  "wall_seconds": 0.0040001,
+                  "tasks": 1
+                },
+                "route_planning": {
+                  "cpu_seconds": 0.024,
+                  "wall_seconds": 0.0240674,
+                  "tasks": 1
+                },
+                "route_visibility": {
+                  "cpu_seconds": 0.022,
+                  "wall_seconds": 0.0214733,
+                  "tasks": 11
+                },
+                "secret_areas": {
+                  "cpu_seconds": 0.001,
+                  "wall_seconds": 0.0005011,
+                  "tasks": 1
+                },
+                "serialize_output": {
+                  "cpu_seconds": 0.003,
+                  "wall_seconds": 0.0033365,
+                  "tasks": 1
+                }
+              },
+              "work": {
+                "collision_queries": 5297,
+                "visibility_cache_hits": 0,
+                "visibility_cache_misses": 5297,
+                "visibility_cache_entries": 5812,
+                "visibility_cache_bypasses": 0,
+                "route_searches": 35,
+                "route_visited_segments": 8574,
+                "route_considered_edges": 51444,
+                "route_evaluated_edges": 10214
+              }
+            },
+            {
+              "id": "d2-counterstrike-secret-03",
+              "metadata_sha256": "c20d86c92c451c82c79947f76802d1b34aa02027125653a31728e62f86a12bc3",
+              "median_total_cpu_seconds": 0.011,
+              "median_total_wall_seconds": 0.0106417,
+              "phases": {
+                "level_summary": {
+                  "cpu_seconds": 0.0,
+                  "wall_seconds": 0.0001384,
+                  "tasks": 1
+                },
+                "level_topology": {
+                  "cpu_seconds": 0.001,
+                  "wall_seconds": 0.0009348,
+                  "tasks": 1
+                },
+                "load_level": {
+                  "cpu_seconds": 0.003,
+                  "wall_seconds": 0.0035008,
+                  "tasks": 1
+                },
+                "route_planning": {
+                  "cpu_seconds": 0.001,
+                  "wall_seconds": 0.0012074,
+                  "tasks": 1
+                },
+                "secret_areas": {
+                  "cpu_seconds": 0.001,
+                  "wall_seconds": 0.000761,
+                  "tasks": 1
+                },
+                "serialize_output": {
+                  "cpu_seconds": 0.003,
+                  "wall_seconds": 0.0025272,
+                  "tasks": 1
+                }
+              },
+              "work": {
+                "collision_queries": 0,
+                "visibility_cache_hits": 0,
+                "visibility_cache_misses": 0,
+                "visibility_cache_entries": 0,
+                "visibility_cache_bypasses": 0,
+                "route_searches": 3,
+                "route_visited_segments": 1108,
+                "route_considered_edges": 6648,
+                "route_evaluated_edges": 1510
+              }
+            },
+            {
+              "id": "d2-kcxf2-03",
+              "metadata_sha256": "e30eb1f3c95b30c751f61c006934965872e06bda24c24adcedad375a4e03d966",
+              "median_total_cpu_seconds": 0.197,
+              "median_total_wall_seconds": 0.1969463,
+              "phases": {
+                "level_summary": {
+                  "cpu_seconds": 0.0,
+                  "wall_seconds": 0.0001185,
+                  "tasks": 1
+                },
+                "level_topology": {
+                  "cpu_seconds": 0.001,
+                  "wall_seconds": 0.0005486,
+                  "tasks": 1
+                },
+                "load_level": {
+                  "cpu_seconds": 0.003,
+                  "wall_seconds": 0.0025543,
+                  "tasks": 1
+                },
+                "route_planning": {
+                  "cpu_seconds": 0.189,
+                  "wall_seconds": 0.1896513,
+                  "tasks": 1
+                },
+                "route_visibility": {
+                  "cpu_seconds": 0.188,
+                  "wall_seconds": 0.18724849999999998,
+                  "tasks": 14
+                },
+                "secret_areas": {
+                  "cpu_seconds": 0.0,
+                  "wall_seconds": 0.0003406,
+                  "tasks": 1
+                },
+                "serialize_output": {
+                  "cpu_seconds": 0.003,
+                  "wall_seconds": 0.0027255,
+                  "tasks": 1
+                }
+              },
+              "work": {
+                "collision_queries": 45788,
+                "visibility_cache_hits": 6,
+                "visibility_cache_misses": 45788,
+                "visibility_cache_entries": 51881,
+                "visibility_cache_bypasses": 0,
+                "route_searches": 38,
+                "route_visited_segments": 7741,
+                "route_considered_edges": 46446,
+                "route_evaluated_edges": 8740
+              }
+            },
+            {
+              "id": "d2-obsidian-06",
+              "metadata_sha256": "6e081ffa7c02d6ede2231e02832b8c47d394d17c5489ca80b2990880b965894c",
+              "median_total_cpu_seconds": 0.238,
+              "median_total_wall_seconds": 0.2377017,
+              "phases": {
+                "level_summary": {
+                  "cpu_seconds": 0.001,
+                  "wall_seconds": 0.0001844,
+                  "tasks": 1
+                },
+                "level_topology": {
+                  "cpu_seconds": 0.001,
+                  "wall_seconds": 0.0011585,
+                  "tasks": 1
+                },
+                "load_level": {
+                  "cpu_seconds": 0.006,
+                  "wall_seconds": 0.0055459,
+                  "tasks": 1
+                },
+                "route_planning": {
+                  "cpu_seconds": 0.225,
+                  "wall_seconds": 0.2254999,
+                  "tasks": 1
+                },
+                "route_visibility": {
+                  "cpu_seconds": 0.22099999999999997,
+                  "wall_seconds": 0.2213118,
+                  "tasks": 11
+                },
+                "secret_areas": {
+                  "cpu_seconds": 0.0,
+                  "wall_seconds": 0.0004893,
+                  "tasks": 1
+                },
+                "serialize_output": {
+                  "cpu_seconds": 0.004,
+                  "wall_seconds": 0.0034771,
+                  "tasks": 1
+                }
+              },
+              "work": {
+                "collision_queries": 62219,
+                "visibility_cache_hits": 0,
+                "visibility_cache_misses": 62207,
+                "visibility_cache_entries": 74781,
+                "visibility_cache_bypasses": 0,
+                "route_searches": 31,
+                "route_visited_segments": 11354,
+                "route_considered_edges": 68124,
+                "route_evaluated_edges": 15934
+              }
+            },
+            {
+              "id": "d2-obsidian-11",
+              "metadata_sha256": "ce18be1b7674f38df40bc8c0ec67ff81219edcac8766398ad91eee84444a86a3",
+              "median_total_cpu_seconds": 0.645,
+              "median_total_wall_seconds": 0.6456381,
+              "phases": {
+                "level_summary": {
+                  "cpu_seconds": 0.0,
+                  "wall_seconds": 0.0001042,
+                  "tasks": 1
+                },
+                "level_topology": {
+                  "cpu_seconds": 0.001,
+                  "wall_seconds": 0.0005274,
+                  "tasks": 1
+                },
+                "load_level": {
+                  "cpu_seconds": 0.002,
+                  "wall_seconds": 0.0021188,
+                  "tasks": 1
+                },
+                "route_planning": {
+                  "cpu_seconds": 0.638,
+                  "wall_seconds": 0.6381,
+                  "tasks": 1
+                },
+                "route_visibility": {
+                  "cpu_seconds": 0.6290000000000003,
+                  "wall_seconds": 0.6302768,
+                  "tasks": 53
+                },
+                "secret_areas": {
+                  "cpu_seconds": 0.0,
+                  "wall_seconds": 0.0003642,
+                  "tasks": 1
+                },
+                "serialize_output": {
+                  "cpu_seconds": 0.004,
+                  "wall_seconds": 0.0038517,
+                  "tasks": 1
+                }
+              },
+              "work": {
+                "collision_queries": 196112,
+                "visibility_cache_hits": 52766,
+                "visibility_cache_misses": 196056,
+                "visibility_cache_entries": 183500,
+                "visibility_cache_bypasses": 55772,
+                "route_searches": 155,
+                "route_visited_segments": 33140,
+                "route_considered_edges": 198840,
+                "route_evaluated_edges": 42318
+              }
+            },
+            {
+              "id": "d2-obsidian-12",
+              "metadata_sha256": "101184220b2fa65160cbf9b7f017e59e5ec2d635dfbc321311bcb7527ee74996",
+              "median_total_cpu_seconds": 0.73,
+              "median_total_wall_seconds": 0.7306161,
+              "phases": {
+                "level_summary": {
+                  "cpu_seconds": 0.0,
+                  "wall_seconds": 0.0001744,
+                  "tasks": 1
+                },
+                "level_topology": {
+                  "cpu_seconds": 0.001,
+                  "wall_seconds": 0.0011074,
+                  "tasks": 1
+                },
+                "load_level": {
+                  "cpu_seconds": 0.004,
+                  "wall_seconds": 0.0041258,
+                  "tasks": 1
+                },
+                "route_planning": {
+                  "cpu_seconds": 0.719,
+                  "wall_seconds": 0.7185365,
+                  "tasks": 1
+                },
+                "route_visibility": {
+                  "cpu_seconds": 0.7090000000000001,
+                  "wall_seconds": 0.7096646999999999,
+                  "tasks": 24
+                },
+                "secret_areas": {
+                  "cpu_seconds": 0.001,
+                  "wall_seconds": 0.0006031,
+                  "tasks": 1
+                },
+                "serialize_output": {
+                  "cpu_seconds": 0.004,
+                  "wall_seconds": 0.0044239,
+                  "tasks": 1
+                }
+              },
+              "work": {
+                "collision_queries": 213746,
+                "visibility_cache_hits": 12,
+                "visibility_cache_misses": 213644,
+                "visibility_cache_entries": 183500,
+                "visibility_cache_bypasses": 63476,
+                "route_searches": 62,
+                "route_visited_segments": 35347,
+                "route_considered_edges": 212082,
+                "route_evaluated_edges": 47279
+              }
+            }
+          ]
         }
       ]
     }

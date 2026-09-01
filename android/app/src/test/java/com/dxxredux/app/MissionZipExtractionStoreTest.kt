@@ -100,6 +100,7 @@ class MissionZipExtractionStoreTest {
 
         assertNotNull(target)
         assertEquals("Detailed Preview Title", target!!.missionDisplayName)
+        assertEquals(setOf("normal", "coop"), target.missionModeFlags)
     }
 
     @Test
@@ -236,6 +237,8 @@ class MissionZipExtractionStoreTest {
         """
         name = $name
         type = normal
+        normal = yes
+        coop = yes
         num_levels = 1
         preview.rl2
         """.trimIndent()

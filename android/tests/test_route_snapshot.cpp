@@ -429,7 +429,7 @@ dxx_route::route_snapshot make_nested_trigger_snapshot()
 		topology.target = snapshot.topology.segments[segment].center;
 		topology.shootable_trigger = true;
 		snapshot.topology.segments[segment].sides[side].wall = wall;
-		snapshot.state.walls[wall].kind = dxx_route::route_wall_kind::open;
+		snapshot.state.walls[wall].kind = dxx_route::route_wall_kind::overlay;
 		snapshot.state.walls[wall].trigger = trigger;
 	};
 	auto target_wall = [&](int wall, int segment, int side, int source) {
@@ -457,6 +457,161 @@ dxx_route::route_snapshot make_nested_trigger_snapshot()
 	}
 	snapshot.topology.triggers[0].links.push_back({ 2, 1 });
 	snapshot.topology.triggers[1].links.push_back({ 1, 1 });
+	snapshot.state.start_segment = 0;
+	snapshot.state.start_position = snapshot.topology.segments[0].center;
+	return snapshot;
+}
+
+dxx_route::route_snapshot make_restored_switch_snapshot()
+{
+	auto snapshot = make_nested_trigger_snapshot();
+	/* Trigger 0's shootable source has been removed by an earlier open-wall
+	 * transition. Trigger 2 restores that surface so trigger 0 can be fired. */
+	snapshot.state.walls[2].kind = dxx_route::route_wall_kind::open;
+	snapshot.topology.walls.resize(5);
+	snapshot.state.walls.resize(5);
+	auto &restore_source = snapshot.topology.walls[4];
+	restore_source.segment = 0;
+	restore_source.side = 3;
+	restore_source.target = snapshot.topology.segments[0].center;
+	restore_source.shootable_trigger = true;
+	snapshot.topology.segments[0].sides[3].wall = 4;
+	snapshot.state.walls[4].kind = dxx_route::route_wall_kind::overlay;
+	snapshot.state.walls[4].trigger = 2;
+	snapshot.topology.triggers.resize(3);
+	snapshot.state.triggers.resize(3);
+	snapshot.topology.triggers[2].raw_type = 76;
+	snapshot.topology.triggers[2].kind =
+	    dxx_route::route_trigger_kind::close_wall;
+	snapshot.topology.triggers[2].one_shot = true;
+	snapshot.topology.triggers[2].links.push_back({ 2, 2 });
+	return snapshot;
+}
+
+dxx_route::route_snapshot make_doubled_restored_switch_snapshot()
+{
+	auto snapshot = make_restored_switch_snapshot();
+	snapshot.topology.segments.resize(5);
+	snapshot.state.segments.resize(5);
+	snapshot.topology.segments[4].center.valid = true;
+	snapshot.topology.segments[4].center.value = { 40 * 65536, 0, 0 };
+	auto connect = [&](int from, int side, int to, int reverse) {
+		auto &topology = snapshot.topology.segments[from].sides[side];
+		topology.child = to;
+		topology.reverse_side = reverse;
+		topology.center = snapshot.topology.segments[from].center;
+	};
+	connect(3, 1, 4, 0);
+	connect(4, 0, 3, 1);
+	snapshot.state.segments[3].sides[1].hard_blocked = true;
+	snapshot.state.segments[4].sides[0].hard_blocked = true;
+	snapshot.topology.walls.resize(9);
+	snapshot.state.walls.resize(9);
+	auto &hidden_source = snapshot.topology.walls[5];
+	hidden_source.segment = 3;
+	hidden_source.side = 2;
+	hidden_source.target = snapshot.topology.segments[3].center;
+	hidden_source.shootable_trigger = true;
+	snapshot.topology.segments[3].sides[2].wall = 5;
+	snapshot.state.walls[5].kind = dxx_route::route_wall_kind::open;
+	snapshot.state.walls[5].trigger = 3;
+	snapshot.topology.segments[3].sides[1].wall = 6;
+	snapshot.topology.segments[3].sides[1].opener_walls = { 5 };
+	snapshot.topology.walls[6].segment = 3;
+	snapshot.topology.walls[6].side = 1;
+	snapshot.state.walls[6].kind = dxx_route::route_wall_kind::door;
+	snapshot.topology.segments[4].sides[0].wall = 7;
+	snapshot.topology.walls[7].segment = 4;
+	snapshot.topology.walls[7].side = 0;
+	snapshot.state.walls[7].kind = dxx_route::route_wall_kind::door;
+	auto &restore_source = snapshot.topology.walls[8];
+	restore_source.segment = 0;
+	restore_source.side = 4;
+	restore_source.target = snapshot.topology.segments[0].center;
+	restore_source.shootable_trigger = true;
+	snapshot.topology.segments[0].sides[4].wall = 8;
+	snapshot.state.walls[8].kind = dxx_route::route_wall_kind::overlay;
+	snapshot.state.walls[8].trigger = 4;
+	snapshot.topology.triggers.resize(5);
+	snapshot.state.triggers.resize(5);
+	snapshot.topology.triggers[3].raw_type = 70;
+	snapshot.topology.triggers[3].kind =
+	    dxx_route::route_trigger_kind::open_door;
+	snapshot.topology.triggers[3].links.push_back({ 3, 1 });
+	snapshot.topology.triggers[4].raw_type = 76;
+	snapshot.topology.triggers[4].kind =
+	    dxx_route::route_trigger_kind::close_wall;
+	snapshot.topology.triggers[4].one_shot = true;
+	snapshot.topology.triggers[4].links.push_back({ 3, 2 });
+	return snapshot;
+}
+
+dxx_route::route_snapshot make_prepared_restored_switch_snapshot()
+{
+	dxx_route::route_snapshot snapshot;
+	snapshot.topology.segments.resize(3);
+	snapshot.state.segments.resize(3);
+	for (int segment = 0; segment < 3; ++segment) {
+		auto &center = snapshot.topology.segments[segment].center;
+		center.valid = true;
+		center.value = { segment * 10 * 65536, 0, 0 };
+	}
+	auto connect = [&](int from, int side, int to, int reverse) {
+		auto &topology = snapshot.topology.segments[from].sides[side];
+		topology.child = to;
+		topology.reverse_side = reverse;
+		topology.center = snapshot.topology.segments[from].center;
+	};
+	connect(0, 0, 1, 0);
+	connect(1, 0, 0, 0);
+	connect(1, 1, 2, 0);
+	connect(2, 0, 1, 1);
+	snapshot.state.segments[0].sides[0].hard_blocked = true;
+	snapshot.state.segments[1].sides[0].hard_blocked = true;
+	snapshot.state.segments[1].sides[1].hard_blocked = true;
+	snapshot.state.segments[2].sides[0].hard_blocked = true;
+
+	snapshot.topology.walls.resize(5);
+	snapshot.state.walls.resize(5);
+	auto source_wall = [&](int wall, int segment, int side, int trigger) {
+		auto &topology = snapshot.topology.walls[wall];
+		topology.segment = segment;
+		topology.side = side;
+		topology.target = snapshot.topology.segments[segment].center;
+		topology.shootable_trigger = true;
+		snapshot.topology.segments[segment].sides[side].wall = wall;
+		snapshot.state.walls[wall].kind = dxx_route::route_wall_kind::overlay;
+		snapshot.state.walls[wall].trigger = trigger;
+	};
+	source_wall(0, 1, 2, 0);
+	source_wall(2, 0, 2, 2);
+	source_wall(3, 0, 3, 1);
+	auto target_wall = [&](int wall, int segment, int side) {
+		snapshot.topology.walls[wall].segment = segment;
+		snapshot.topology.walls[wall].side = side;
+		snapshot.topology.segments[segment].sides[side].wall = wall;
+		snapshot.state.walls[wall].kind = dxx_route::route_wall_kind::door;
+	};
+	target_wall(1, 0, 0);
+	target_wall(4, 1, 1);
+	/* Keep the preparation route represented by effective wall state even after
+	 * the closer rearms trigger 2 by restoring wall 0. */
+	snapshot.topology.walls[1].shootable_trigger = true;
+	snapshot.topology.segments[0].sides[0].opener_walls = { 0, 2 };
+	snapshot.topology.segments[1].sides[1].opener_walls = { 0 };
+
+	snapshot.topology.triggers.resize(3);
+	snapshot.state.triggers.resize(3);
+	snapshot.topology.triggers[0].kind =
+	    dxx_route::route_trigger_kind::open_door;
+	snapshot.topology.triggers[0].links.push_back({ 1, 1 });
+	snapshot.topology.triggers[1].kind =
+	    dxx_route::route_trigger_kind::close_wall;
+	snapshot.topology.triggers[1].links.push_back({ 1, 2 });
+	snapshot.topology.triggers[2].kind =
+	    dxx_route::route_trigger_kind::open_wall;
+	snapshot.topology.triggers[2].links.push_back({ 1, 2 });
+	snapshot.topology.triggers[2].links.push_back({ 0, 0 });
 	snapshot.state.start_segment = 0;
 	snapshot.state.start_position = snapshot.topology.segments[0].center;
 	return snapshot;
@@ -499,7 +654,7 @@ dxx_route::route_snapshot make_conditional_hidden_door_snapshot()
 		topology.side = side;
 		topology.target = snapshot.topology.segments[segment].center;
 		topology.shootable_trigger = true;
-		snapshot.state.walls[wall].kind = dxx_route::route_wall_kind::open;
+		snapshot.state.walls[wall].kind = dxx_route::route_wall_kind::overlay;
 		snapshot.state.walls[wall].trigger = trigger;
 	};
 	source_wall(0, 0, 2, 1);
@@ -609,6 +764,8 @@ level_metadata_scan_view make_view(test_level &level)
 	view.wall_type_door = 11;
 	view.wall_type_illusion = 12;
 	view.wall_type_open = 13;
+	view.wall_type_closed = 14;
+	view.wall_type_overlay = 15;
 	view.wall_flag_door_locked = 1;
 	view.wall_flag_door_opened = 4;
 	view.wall_flag_buddy_proof = 8;
@@ -644,6 +801,14 @@ level_metadata_scan_view make_view(test_level &level)
 	view.wall_clip_flags = wall_clip_flags;
 	view.wall_trigger = wall_trigger;
 	view.trigger_type_open_door = 70;
+	view.trigger_type_close_door = 71;
+	view.trigger_type_toggle_door = 72;
+	view.trigger_type_illusion_on = 73;
+	view.trigger_type_lock_door = 74;
+	view.trigger_type_open_wall = 75;
+	view.trigger_type_close_wall = 76;
+	view.trigger_type_illusory_wall = 77;
+	view.trigger_flag_one_shot = 2;
 	view.trigger_flag_disabled = 4;
 	view.triggered_side_opener_count = opener_count;
 	view.triggered_side_opener_wall_num = opener_wall;
@@ -783,7 +948,7 @@ int main()
 	edge_cases.state.walls[1].key =
 	    dxx_route::route_key_requirement::none;
 	assert(dxx_route::evaluate_route_edge(edge_cases, edge_query, 1, 0)
-	           .progress_cost == LEVEL_METADATA_ROUTE_EDGE_BLOCKED);
+	           .progress_cost == LEVEL_METADATA_ROUTE_EDGE_PASSABLE);
 	edge_cases.state.segments[1].sides[0].flyable = true;
 	assert(dxx_route::evaluate_route_edge(edge_cases, edge_query, 1, 0)
 	           .progress_cost == LEVEL_METADATA_ROUTE_EDGE_PASSABLE);
@@ -876,15 +1041,91 @@ int main()
 	const auto key_gated_exit_plan = dxx_route::plan_route(
 	    key_gated_exit_snapshot, destroyed_query);
 	assert(key_gated_exit_plan.status == dxx_route::route_plan_status::ok);
+	assert(key_gated_exit_plan.required_key_mask ==
+	       LEVEL_METADATA_KEY_MASK_RED);
+	assert(key_gated_exit_plan.completing_key_mask_set ==
+	       (1 << LEVEL_METADATA_KEY_MASK_RED));
 	assert(key_gated_exit_plan.steps.size() == 4);
 	assert(key_gated_exit_plan.steps[1].kind ==
-	       dxx_route::route_semantic_step_kind::reactor);
-	assert(key_gated_exit_plan.steps[2].kind ==
 	       dxx_route::route_semantic_step_kind::key);
-	assert(key_gated_exit_plan.steps[2].key ==
+	assert(key_gated_exit_plan.steps[1].key ==
 	       dxx_route::route_key_requirement::red);
+	assert(key_gated_exit_plan.steps[2].kind ==
+	       dxx_route::route_semantic_step_kind::reactor);
 	assert(key_gated_exit_plan.steps[3].kind ==
 	       dxx_route::route_semantic_step_kind::exit);
+	auto alternative_key_snapshot = destroyed_snapshot;
+	alternative_key_snapshot.state.segments[1].sides[0].exit_trigger = false;
+	alternative_key_snapshot.topology.segments[1].sides[2].child = -2;
+	alternative_key_snapshot.topology.segments[1].sides[2].center =
+	    alternative_key_snapshot.topology.segments[1].center;
+	alternative_key_snapshot.state.walls[0].kind =
+	    dxx_route::route_wall_kind::door;
+	alternative_key_snapshot.state.walls[0].key =
+	    dxx_route::route_key_requirement::blue;
+	alternative_key_snapshot.state.walls[0].flags = 0;
+	alternative_key_snapshot.state.walls[0].opened = false;
+	alternative_key_snapshot.state.walls[0].hidden = false;
+	alternative_key_snapshot.state.segments[0].sides[0].flyable = false;
+	alternative_key_snapshot.state.segments[0].sides[0].control_center_link =
+	    false;
+	alternative_key_snapshot.state.segments[1].sides[0].control_center_link =
+	    false;
+	alternative_key_snapshot.topology.segments[1].sides[0].wall = 0;
+	alternative_key_snapshot.topology.segments[0].sides[0].opener_walls.clear();
+	alternative_key_snapshot.topology.segments[1].sides[0].opener_walls.clear();
+	alternative_key_snapshot.topology.segments[0].sides[1] =
+	    alternative_key_snapshot.topology.segments[0].sides[0];
+	alternative_key_snapshot.topology.segments[0].sides[1].reverse_side = 1;
+	alternative_key_snapshot.topology.segments[0].sides[1].wall = 2;
+	alternative_key_snapshot.topology.segments[1].sides[1] =
+	    alternative_key_snapshot.topology.segments[1].sides[0];
+	alternative_key_snapshot.topology.segments[1].sides[1].reverse_side = 1;
+	alternative_key_snapshot.topology.segments[1].sides[1].wall = 2;
+	alternative_key_snapshot.topology.segments[0].sides[1].opener_walls.clear();
+	alternative_key_snapshot.topology.segments[1].sides[1].opener_walls.clear();
+	alternative_key_snapshot.state.segments[0].sides[1] =
+	    alternative_key_snapshot.state.segments[0].sides[0];
+	alternative_key_snapshot.state.segments[1].sides[1] =
+	    alternative_key_snapshot.state.segments[1].sides[0];
+	alternative_key_snapshot.topology.walls.push_back({});
+	alternative_key_snapshot.topology.walls[2].segment = 0;
+	alternative_key_snapshot.topology.walls[2].side = 1;
+	alternative_key_snapshot.state.walls.push_back({});
+	alternative_key_snapshot.state.walls[2].kind =
+	    dxx_route::route_wall_kind::door;
+	alternative_key_snapshot.state.walls[2].key =
+	    dxx_route::route_key_requirement::red;
+	dxx_route::route_state_object blue_key = red_key;
+	blue_key.segment = 0;
+	blue_key.key = dxx_route::route_key_requirement::blue;
+	blue_key.position = alternative_key_snapshot.topology.segments[0].center;
+	red_key.segment = 0;
+	red_key.position = alternative_key_snapshot.topology.segments[0].center;
+	alternative_key_snapshot.state.objects = { blue_key, red_key };
+	const auto alternative_key_plan = dxx_route::plan_route(
+	    alternative_key_snapshot, destroyed_query);
+	assert(alternative_key_plan.status == dxx_route::route_plan_status::ok);
+	assert(alternative_key_plan.required_key_mask == 0);
+	assert(!(alternative_key_plan.completing_key_mask_set & 1));
+	assert(alternative_key_plan.completing_key_mask_set &
+	       (1 << LEVEL_METADATA_KEY_MASK_BLUE));
+	assert(alternative_key_plan.completing_key_mask_set &
+	       (1 << LEVEL_METADATA_KEY_MASK_RED));
+	auto optional_key_snapshot = key_gated_exit_snapshot;
+	optional_key_snapshot.state.walls.push_back({});
+	optional_key_snapshot.state.walls.back().kind =
+	    dxx_route::route_wall_kind::door;
+	optional_key_snapshot.state.walls.back().key =
+	    dxx_route::route_key_requirement::blue;
+	blue_key.segment = 1;
+	blue_key.position = optional_key_snapshot.topology.segments[1].center;
+	optional_key_snapshot.state.objects.push_back(blue_key);
+	const auto optional_key_plan = dxx_route::plan_route(
+	    optional_key_snapshot, destroyed_query);
+	assert(optional_key_plan.status == dxx_route::route_plan_status::ok);
+	assert(optional_key_plan.required_key_mask ==
+	       LEVEL_METADATA_KEY_MASK_RED);
 	auto blast_query = planner_query;
 	blast_query.endpoint = dxx_route::route_endpoint_kind::segment;
 	blast_query.target_segment = 1;
@@ -928,9 +1169,54 @@ int main()
 	assert(!direct_path.has_obstruction);
 	auto clearance_query = planner_query;
 	clearance_query.navigator.radius = level.side_clearance + 1;
+	auto uncertified_clearance_snapshot = first;
+	uncertified_clearance_snapshot.topology.segments[1]
+	    .transit_exit_masks[first.topology.segments[0].sides[0].reverse_side] = 0;
 	const auto clearance_search = dxx_route::search_routes(
-	    first, clearance_query, false);
+	    uncertified_clearance_snapshot, clearance_query, false);
 	assert(!clearance_search.nodes[1].reachable);
+	auto transit_snapshot = first;
+	transit_snapshot.topology.segments.resize(4);
+	transit_snapshot.state.segments.resize(4);
+	for (int segment = 0; segment < 4; ++segment) {
+		auto &topology_segment = transit_snapshot.topology.segments[segment];
+		topology_segment.center.valid = true;
+		topology_segment.center.value = { { segment * 100, 0, 0 } };
+		topology_segment.transit_exit_masks.fill(0);
+		for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+			topology_segment.sides[side] = {};
+			transit_snapshot.state.segments[segment].sides[side] = {};
+		}
+	}
+	auto connect_transit = [&](int from, int side, int to, int reverse,
+	                           int clearance) {
+		auto &forward = transit_snapshot.topology.segments[from].sides[side];
+		forward.child = to;
+		forward.reverse_side = reverse;
+		forward.clearance_radius = clearance;
+		transit_snapshot.state.segments[from].sides[side].flyable = true;
+	};
+	connect_transit(0, 0, 1, 0, 1);
+	connect_transit(1, 0, 0, 0, level.side_clearance);
+	connect_transit(1, 1, 2, 0, level.side_clearance);
+	connect_transit(2, 0, 1, 1, 1);
+	connect_transit(1, 2, 3, 0, level.side_clearance);
+	connect_transit(3, 0, 1, 2, 1);
+	transit_snapshot.topology.segments[1].transit_exit_masks[0] = 1u << 1;
+	auto transit_query = planner_query;
+	transit_query.navigator.radius = level.navigator_radius;
+	transit_query.start = transit_snapshot.topology.segments[0].center;
+	const auto certified_transit = dxx_route::search_routes(
+	    transit_snapshot, transit_query, false);
+	assert(certified_transit.nodes[2].reachable);
+	assert(!certified_transit.nodes[3].reachable);
+	const auto certified_transit_path = dxx_route::build_route_path(
+	    certified_transit, 2);
+	assert((certified_transit_path.segments == std::vector<int>{ 0, 1, 2 }));
+	transit_snapshot.topology.segments[1].transit_exit_masks[0] |= 1u << 2;
+	const auto expanded_transit = dxx_route::search_routes(
+	    transit_snapshot, transit_query, false);
+	assert(expanded_transit.nodes[3].reachable);
 	clearance_query.endpoint = dxx_route::route_endpoint_kind::segment;
 	clearance_query.target_segment = 1;
 	const auto clearance_fallback = dxx_route::plan_route(
@@ -983,13 +1269,100 @@ int main()
 	assert(dxx_route::route_progress_acquire_key(
 	    progress, dxx_route::route_key_requirement::blue));
 	assert((progress.key_mask & LEVEL_METADATA_KEY_MASK_BLUE) != 0);
+	auto transition_snapshot = triggered_snapshot;
+	transition_snapshot.topology.triggers[0].one_shot = false;
+	auto transition_progress = dxx_route::initial_route_progress_state(
+	    transition_snapshot, planner_query);
+	transition_progress.wall_kinds[0] = dxx_route::route_wall_kind::open;
+	transition_progress.wall_kinds[1] = dxx_route::route_wall_kind::open;
+	transition_snapshot.topology.triggers[0].kind =
+	    dxx_route::route_trigger_kind::close_wall;
+	assert(dxx_route::route_progress_apply_trigger(
+	    transition_snapshot, transition_progress, 0));
+	assert(transition_progress.wall_kinds[0] ==
+	       dxx_route::route_wall_kind::closed);
+	assert(transition_progress.wall_kinds[1] ==
+	       dxx_route::route_wall_kind::closed);
+	transition_snapshot.topology.triggers[0].kind =
+	    dxx_route::route_trigger_kind::open_wall;
+	assert(dxx_route::route_progress_apply_trigger(
+	    transition_snapshot, transition_progress, 0));
+	assert(transition_progress.wall_kinds[0] ==
+	       dxx_route::route_wall_kind::open);
+	assert(transition_progress.wall_kinds[1] ==
+	       dxx_route::route_wall_kind::open);
+	transition_snapshot.topology.triggers[0].kind =
+	    dxx_route::route_trigger_kind::illusion_on;
+	assert(dxx_route::route_progress_apply_trigger(
+	    transition_snapshot, transition_progress, 0));
+	assert(transition_progress.wall_kinds[0] ==
+	       dxx_route::route_wall_kind::illusion);
+	assert(transition_progress.wall_kinds[1] ==
+	       dxx_route::route_wall_kind::illusion);
+	transition_snapshot.topology.triggers[0].kind =
+	    dxx_route::route_trigger_kind::illusion_off;
+	assert(dxx_route::route_progress_apply_trigger(
+	    transition_snapshot, transition_progress, 0));
+	assert(transition_progress.wall_kinds[0] ==
+	       dxx_route::route_wall_kind::open);
+	assert(transition_progress.wall_kinds[1] ==
+	       dxx_route::route_wall_kind::open);
+	transition_snapshot.topology.triggers[0].kind =
+	    dxx_route::route_trigger_kind::lock_door;
+	assert(dxx_route::route_progress_apply_trigger(
+	    transition_snapshot, transition_progress, 0));
+	assert(transition_progress.wall_locked[0]);
+	assert(transition_progress.wall_locked[1]);
+	transition_snapshot.topology.triggers[0].kind =
+	    dxx_route::route_trigger_kind::unlock_door;
+	assert(dxx_route::route_progress_apply_trigger(
+	    transition_snapshot, transition_progress, 0));
+	assert(!transition_progress.wall_locked[0]);
+	assert(!transition_progress.wall_locked[1]);
+	auto rearm_snapshot = transition_snapshot;
+	rearm_snapshot.topology.triggers.resize(2);
+	rearm_snapshot.state.triggers.resize(2);
+	rearm_snapshot.topology.triggers[0].kind =
+	    dxx_route::route_trigger_kind::open_wall;
+	rearm_snapshot.topology.triggers[0].one_shot = false;
+	rearm_snapshot.topology.triggers[1].kind =
+	    dxx_route::route_trigger_kind::close_wall;
+	rearm_snapshot.topology.triggers[1].links =
+	    rearm_snapshot.topology.triggers[0].links;
+	/* This is specifically the reveal cycle: the wall restored by the close
+	 * transition is itself a shootable trigger surface. */
+	rearm_snapshot.topology.walls[0].shootable_trigger = true;
+	auto rearm_progress = dxx_route::initial_route_progress_state(
+	    rearm_snapshot, planner_query);
+	rearm_progress.wall_kinds[0] = dxx_route::route_wall_kind::closed;
+	rearm_progress.wall_kinds[1] = dxx_route::route_wall_kind::closed;
+	assert(dxx_route::route_progress_apply_trigger(
+	    rearm_snapshot, rearm_progress, 0));
+	assert(rearm_progress.fired_triggers[0]);
+	assert(dxx_route::route_progress_apply_trigger(
+	    rearm_snapshot, rearm_progress, 1));
+	assert(!rearm_progress.fired_triggers[0]);
+	assert(rearm_progress.fired_triggers[1]);
+	assert(dxx_route::route_progress_apply_trigger(
+	    rearm_snapshot, rearm_progress, 0));
+	assert(rearm_progress.fired_triggers[0]);
+	assert(!rearm_progress.fired_triggers[1]);
+	auto one_shot_progress = dxx_route::initial_route_progress_state(
+	    transition_snapshot, planner_query);
+	transition_snapshot.topology.triggers[0].one_shot = true;
+	assert(dxx_route::route_progress_apply_trigger(
+	    transition_snapshot, one_shot_progress, 0));
+	assert(!dxx_route::route_progress_apply_trigger(
+	    transition_snapshot, one_shot_progress, 0));
 	auto trigger_progress = dxx_route::initial_route_progress_state(
 	    triggered_snapshot, planner_query);
-	assert(dxx_route::route_progress_fire_trigger(trigger_progress, 0));
+	assert(dxx_route::route_progress_apply_trigger(
+	    triggered_snapshot, trigger_progress, 0));
 	assert(dxx_route::evaluate_route_edge(
 	           triggered_snapshot, planner_query, trigger_progress, 1, 0)
 	           .progress_cost == LEVEL_METADATA_ROUTE_EDGE_PASSABLE);
 	trigger_progress.fired_triggers[0] = 0;
+	trigger_progress.wall_opened[1] = 0;
 	trigger_progress.avoided_triggers[0] = 1;
 	assert(dxx_route::evaluate_route_edge(
 	           triggered_snapshot, planner_query, trigger_progress, 1, 0)
@@ -1074,6 +1447,8 @@ int main()
 	auto fly_through_snapshot = triggered_snapshot;
 	fly_through_snapshot.state.walls[0].kind =
 	    dxx_route::route_wall_kind::open;
+	fly_through_snapshot.topology.walls[0].shootable_trigger = false;
+	fly_through_snapshot.topology.triggers[0].one_shot = true;
 	fly_through_snapshot.topology.segments[1].center =
 	    fly_through_snapshot.topology.segments[0].center;
 	fly_through_snapshot.topology.walls[0].target =
@@ -1082,13 +1457,15 @@ int main()
 	fly_through_snapshot.topology.segments[0].vertices[6].value = { 0, 100, 0 };
 	fly_through_snapshot.topology.segments[0].vertices[2].value = { 0, 200, 0 };
 	fly_through_snapshot.topology.segments[0].vertices[3].value = { 0, 0, 100 };
+	const auto fly_through_progress = dxx_route::initial_route_progress_state(
+	    fly_through_snapshot, planner_query);
 	const auto fly_through_sources = dxx_route::discover_trigger_sources(
-	    fly_through_snapshot, source_progress, 1, 0);
+	    fly_through_snapshot, fly_through_progress, 1, 0);
 	assert(fly_through_sources.size() == 1);
 	assert(fly_through_sources[0].source_position.value ==
 	       fly_through_snapshot.topology.segments[0].center.value);
 	const auto fly_through_dependency = dxx_route::resolve_trigger_dependency(
-	    fly_through_snapshot, planner_query, source_progress, 1, 0);
+	    fly_through_snapshot, planner_query, fly_through_progress, 1, 0);
 	assert(fly_through_dependency.resolved);
 	assert(fly_through_dependency.steps.size() == 1);
 	const auto &fly_through_step = fly_through_dependency.steps[0];
@@ -1105,11 +1482,14 @@ int main()
 	auto narrow_trigger_query = planner_query;
 	narrow_trigger_query.navigator.radius = 2;
 	const auto narrow_trigger_dependency = dxx_route::resolve_trigger_dependency(
-	    narrow_trigger_snapshot, narrow_trigger_query, source_progress, 1, 0);
+	    narrow_trigger_snapshot, narrow_trigger_query,
+	    dxx_route::initial_route_progress_state(
+	        narrow_trigger_snapshot, narrow_trigger_query),
+	    1, 0);
 	assert(narrow_trigger_dependency.attempted);
 	assert(!narrow_trigger_dependency.resolved);
 	assert(narrow_trigger_dependency.problem == "trigger source missing");
-	auto traversed_progress = source_progress;
+	auto traversed_progress = fly_through_progress;
 	const auto traversed_search = dxx_route::search_routes(
 	    fly_through_snapshot, planner_query, traversed_progress, false);
 	const auto traversed_path = dxx_route::build_route_path(traversed_search, 1);
@@ -1125,7 +1505,10 @@ int main()
 	external_trigger_snapshot.topology.segments[0].sides[2].wall = 0;
 	external_trigger_snapshot.topology.segments[0].sides[2].child = -1;
 	assert(dxx_route::discover_trigger_sources(
-	           external_trigger_snapshot, source_progress, 1, 0)
+	           external_trigger_snapshot,
+	           dxx_route::initial_route_progress_state(
+	               external_trigger_snapshot, planner_query),
+	           1, 0)
 	           .empty());
 	const auto nested_snapshot = make_nested_trigger_snapshot();
 	dxx_route::route_query nested_query;
@@ -1148,6 +1531,72 @@ int main()
 	assert(nested_dependency.steps[1].path.segments[0] == 0);
 	assert(nested_dependency.steps[1].path.segments[1] == 1);
 	assert(nested_dependency.steps[1].path.segments[2] == 2);
+	const auto restored_switch_snapshot = make_restored_switch_snapshot();
+	dxx_route::route_query restored_switch_query;
+	restored_switch_query.start = restored_switch_snapshot.state.start_position;
+	const auto restored_switch_dependency =
+	    dxx_route::resolve_trigger_dependency(
+	        restored_switch_snapshot, restored_switch_query,
+	        dxx_route::initial_route_progress_state(
+	            restored_switch_snapshot, restored_switch_query),
+	        2, 1);
+	assert(restored_switch_dependency.attempted);
+	assert(restored_switch_dependency.resolved);
+	assert(restored_switch_dependency.problem.empty());
+	assert(restored_switch_dependency.steps.size() == 3);
+	assert(restored_switch_dependency.steps[0].trigger == 2);
+	assert(restored_switch_dependency.steps[1].trigger == 1);
+	assert(restored_switch_dependency.steps[2].trigger == 0);
+	assert(restored_switch_dependency.progress.fired_triggers[0]);
+	assert(restored_switch_dependency.progress.fired_triggers[1]);
+	assert(restored_switch_dependency.progress.fired_triggers[2]);
+	assert(restored_switch_dependency.progress.consumed_one_shot_triggers[2]);
+	assert(dxx_route::route_progress_wall_kind(
+	           restored_switch_snapshot, restored_switch_dependency.progress, 2) ==
+	       dxx_route::route_wall_kind::closed);
+	const auto doubled_switch_snapshot =
+	    make_doubled_restored_switch_snapshot();
+	dxx_route::route_query doubled_switch_query;
+	doubled_switch_query.start = doubled_switch_snapshot.state.start_position;
+	const auto doubled_switch_dependency =
+	    dxx_route::resolve_trigger_dependency(
+	        doubled_switch_snapshot, doubled_switch_query,
+	        dxx_route::initial_route_progress_state(
+	            doubled_switch_snapshot, doubled_switch_query),
+	        3, 1);
+	assert(doubled_switch_dependency.attempted);
+	assert(doubled_switch_dependency.resolved);
+	assert(doubled_switch_dependency.problem.empty());
+	assert(doubled_switch_dependency.steps.size() == 5);
+	auto doubled_trigger_index = [&](int trigger) {
+		const auto found = std::find_if(
+		    doubled_switch_dependency.steps.begin(),
+		    doubled_switch_dependency.steps.end(), [&](const auto &step) {
+			    return step.trigger == trigger;
+		    });
+		assert(found != doubled_switch_dependency.steps.end());
+		return static_cast<int>(
+		    found - doubled_switch_dependency.steps.begin());
+	};
+	assert(doubled_trigger_index(2) < doubled_trigger_index(0));
+	assert(doubled_trigger_index(4) < doubled_trigger_index(3));
+	const auto prepared_switch_snapshot =
+	    make_prepared_restored_switch_snapshot();
+	dxx_route::route_query prepared_switch_query;
+	prepared_switch_query.start = prepared_switch_snapshot.state.start_position;
+	const auto prepared_switch_dependency =
+	    dxx_route::resolve_trigger_dependency(
+	        prepared_switch_snapshot, prepared_switch_query,
+	        dxx_route::initial_route_progress_state(
+	            prepared_switch_snapshot, prepared_switch_query),
+	        1, 1);
+	assert(prepared_switch_dependency.attempted);
+	assert(prepared_switch_dependency.resolved);
+	assert(prepared_switch_dependency.problem.empty());
+	assert(prepared_switch_dependency.steps.size() == 3);
+	assert(prepared_switch_dependency.steps[0].trigger == 2);
+	assert(prepared_switch_dependency.steps[1].trigger == 1);
+	assert(prepared_switch_dependency.steps[2].trigger == 0);
 	const auto conditional_snapshot =
 	    make_conditional_hidden_door_snapshot();
 	dxx_route::route_query conditional_query;
@@ -1500,10 +1949,17 @@ int main()
 	    visible_pass_through_snapshot, planner_query, source_progress,
 	    visible_pass_through_sources, visibility);
 	assert(!visible_pass_through.found);
-	source_progress.fired_triggers[0] = 1;
+	auto active_source_progress = source_progress;
+	assert(dxx_route::route_progress_apply_trigger(
+	    triggered_snapshot, active_source_progress, 0));
+	assert(dxx_route::discover_trigger_sources(
+	           triggered_snapshot, active_source_progress, 1, 0)
+	           .empty());
+	source_progress.consumed_one_shot_triggers[0] = 1;
 	assert(dxx_route::discover_trigger_sources(
 	           triggered_snapshot, source_progress, 1, 0)
 	           .empty());
+	source_progress.consumed_one_shot_triggers[0] = 0;
 	source_progress.fired_triggers[0] = 0;
 	source_progress.trigger_in_progress[0] = 1;
 	assert(dxx_route::discover_trigger_sources(

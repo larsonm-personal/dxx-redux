@@ -514,9 +514,13 @@ static void trace_wall_inventory(int level_num, const char *level_file)
 		int source_wall;
 
 		if (Triggers[trigger_num].type != TT_OPEN_DOOR &&
+		    Triggers[trigger_num].type != TT_CLOSE_DOOR &&
 		    Triggers[trigger_num].type != TT_ILLUSION_OFF &&
+		    Triggers[trigger_num].type != TT_ILLUSION_ON &&
 		    Triggers[trigger_num].type != TT_UNLOCK_DOOR &&
+		    Triggers[trigger_num].type != TT_LOCK_DOOR &&
 		    Triggers[trigger_num].type != TT_OPEN_WALL &&
+		    Triggers[trigger_num].type != TT_CLOSE_WALL &&
 		    Triggers[trigger_num].type != TT_ILLUSORY_WALL)
 			continue;
 		for (source_wall = 0; source_wall < Num_walls; ++source_wall) {
@@ -946,7 +950,10 @@ static nlohmann::ordered_json serialize_route_steps(const level_metadata_state *
 					open["wall"] = step.opened_link_wall[link];
 				opened.push_back(open);
 			}
-			item["opens"] = opened;
+			const bool closes =
+			    strcmp(step.trigger_type_name, "close_wall") == 0 ||
+			    strcmp(step.trigger_type_name, "close_door") == 0;
+			item[closes ? "closes" : "opens"] = opened;
 		}
 		steps.push_back(item);
 	}
@@ -1059,6 +1066,8 @@ static nlohmann::ordered_json serialize_current_level(
 	result["route_status"] = metadata ? level_metadata_route_status_name(metadata->route_status) : "failed";
 	result["route_problem"] = metadata && metadata->route_problem[0] ? metadata->route_problem : "";
 	result["route_note"] = metadata && metadata->route_note[0] ? metadata->route_note : "";
+	result["route_required_key_mask"] = metadata ? metadata->route_required_key_mask : 0;
+	result["route_completing_key_mask_set"] = metadata ? metadata->route_completing_key_mask_set : 0;
 	result["route_steps"] = serialize_route_steps(metadata);
 #ifdef DXX_BUILD_DESCENT_II
 	result["replacements"] = nlohmann::ordered_json::array();

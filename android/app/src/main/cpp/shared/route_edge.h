@@ -43,14 +43,32 @@ struct route_progress_state {
 	int key_in_progress = 0;
 	int avoided_key_mask = 0;
 	bool control_center_destroyed = false;
+	bool wall_state_authoritative = false;
 	std::vector<unsigned char> fired_triggers;
+	std::vector<unsigned char> consumed_one_shot_triggers;
 	std::vector<unsigned char> trigger_in_progress;
 	std::vector<unsigned char> avoided_triggers;
+	std::vector<route_wall_kind> wall_kinds;
+	std::vector<unsigned char> wall_locked;
+	std::vector<unsigned char> wall_opened;
 	std::vector<unsigned char> opened_hidden_walls;
 	std::vector<unsigned char> destroyed_blastable_walls;
 };
 
 bool route_trigger_opens_path(route_trigger_kind kind);
+bool route_trigger_changes_navigation(route_trigger_kind kind);
+route_wall_kind route_progress_wall_kind(
+    const route_snapshot &snapshot,
+    const route_progress_state &progress,
+    int wall);
+bool route_progress_wall_locked(
+    const route_snapshot &snapshot,
+    const route_progress_state &progress,
+    int wall);
+bool route_progress_wall_opened(
+    const route_snapshot &snapshot,
+    const route_progress_state &progress,
+    int wall);
 
 route_edge_decision evaluate_route_edge(
     const route_snapshot &snapshot,

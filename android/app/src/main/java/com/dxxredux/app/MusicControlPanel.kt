@@ -122,7 +122,6 @@ class MusicControlPanel(
 
     init {
         isFocusable = true
-        refreshSourceOptions()
         refreshState()
     }
 
@@ -770,7 +769,12 @@ class MusicControlPanel(
         }
         if (source == "cd") {
             try {
-                AudioSourceManager.forActiveSet(a.filesDir).writePlaylist(a.contentResolver)
+                if (!AudioSourceManager.forActiveSet(a.filesDir).writePlaylist(a.contentResolver)) {
+                    Toast.makeText(a, "No readable CD audio source", Toast.LENGTH_LONG).show()
+                    refreshSourceOptions()
+                    invalidate()
+                    return
+                }
             } catch (e: Exception) {
                 Log.e("DXX-MusicPanel", "Could not select CD audio", e)
                 Toast.makeText(a, "Could not select CD audio: ${e.message}", Toast.LENGTH_LONG).show()

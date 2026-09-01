@@ -92,16 +92,26 @@ route_trigger_kind normalize_trigger_kind(
 {
 	if (raw_type == view.trigger_type_open_door)
 		return route_trigger_kind::open_door;
+	if (raw_type == view.trigger_type_close_door)
+		return route_trigger_kind::close_door;
+	if (raw_type == view.trigger_type_toggle_door)
+		return route_trigger_kind::toggle_door;
 	if (raw_type == view.trigger_type_exit)
 		return route_trigger_kind::exit;
 	if (raw_type == view.trigger_type_secret_exit)
 		return route_trigger_kind::secret_exit;
 	if (raw_type == view.trigger_type_illusion_off)
 		return route_trigger_kind::illusion_off;
+	if (raw_type == view.trigger_type_illusion_on)
+		return route_trigger_kind::illusion_on;
 	if (raw_type == view.trigger_type_unlock_door)
 		return route_trigger_kind::unlock_door;
+	if (raw_type == view.trigger_type_lock_door)
+		return route_trigger_kind::lock_door;
 	if (raw_type == view.trigger_type_open_wall)
 		return route_trigger_kind::open_wall;
+	if (raw_type == view.trigger_type_close_wall)
+		return route_trigger_kind::close_wall;
 	if (raw_type == view.trigger_type_illusory_wall)
 		return route_trigger_kind::illusory_wall;
 	return route_trigger_kind::other;
@@ -120,6 +130,10 @@ route_wall_kind normalize_wall_kind(const level_metadata_scan_view &view,
 		return route_wall_kind::illusion;
 	if (raw_type == view.wall_type_open)
 		return route_wall_kind::open;
+	if (raw_type == view.wall_type_closed)
+		return route_wall_kind::closed;
+	if (raw_type == view.wall_type_overlay)
+		return route_wall_kind::overlay;
 	return route_wall_kind::other;
 }
 
@@ -173,6 +187,8 @@ std::uint64_t hash_topology(const route_topology &topology)
 		hasher.add_bool(segment.control_center);
 		for (const auto &vertex : segment.vertices)
 			hash_position(hasher, vertex);
+		for (const auto transit_exit_mask : segment.transit_exit_masks)
+			hasher.add_int(transit_exit_mask);
 		for (const auto &side : segment.sides) {
 			hasher.add_int(side.child);
 			hasher.add_int(side.reverse_side);
@@ -193,12 +209,14 @@ std::uint64_t hash_topology(const route_topology &topology)
 	for (const auto &trigger : topology.triggers) {
 		hasher.add_int(trigger.raw_type);
 		hasher.add_int(static_cast<int>(trigger.kind));
+		hasher.add_bool(trigger.one_shot);
 		hasher.add_int(static_cast<int>(trigger.links.size()));
 		for (const auto &link : trigger.links) {
 			hasher.add_int(link.segment);
 			hasher.add_int(link.side);
 		}
 	}
+	hasher.add_bool(topology.has_switch_reveal_pattern);
 	return hasher.value();
 }
 
@@ -641,6 +659,14 @@ bool build_route_snapshot(const level_metadata_scan_view &view,
 		for (int vertex = 0; vertex < 8; ++vertex)
 			topology_segment.vertices[vertex] =
 			    read_segment_vertex(view, segment_index, vertex);
+		if (view.segment_transit_mask)
+			for (int entry_side = 0;
+			     entry_side < LEVEL_METADATA_MAX_SIDES; ++entry_side)
+				topology_segment.transit_exit_masks[entry_side] =
+				    static_cast<unsigned char>(
+				        view.segment_transit_mask(
+				            view.user, segment_index, entry_side) &
+				        ((1u << LEVEL_METADATA_MAX_SIDES) - 1));
 		state_segment.explored = view.segment_is_explored &&
 		                         view.segment_is_explored(
 		                             view.user, segment_index) != 0;
@@ -708,6 +734,9 @@ bool build_route_snapshot(const level_metadata_scan_view &view,
 		    view, topology_trigger.raw_type);
 		if (view.trigger_flags)
 			state_trigger.flags = view.trigger_flags(view.user, trigger_index);
+		topology_trigger.one_shot = view.trigger_flag_one_shot != 0 &&
+		                            (state_trigger.flags &
+		                             view.trigger_flag_one_shot) != 0;
 		state_trigger.disabled = view.trigger_flag_disabled != 0 &&
 		                         (state_trigger.flags &
 		                          view.trigger_flag_disabled) != 0;
@@ -802,6 +831,58 @@ bool build_route_snapshot(const level_metadata_scan_view &view,
 		                          view.wall_flag_buddy_proof) != 0;
 	}
 
+	for (int source_wall = 0;
+	     source_wall < static_cast<int>(next.topology.walls.size()) &&
+	     !next.topology.has_switch_reveal_pattern;
+	     ++source_wall) {
+		/* Enable the stateful reveal planner only when a switch surface is
+		 * actually absent in this snapshot. A merely potential open/close pair
+		 * is common in ordinary levels and should retain legacy route behavior. */
+		if (!next.topology.walls[source_wall].shootable_trigger ||
+		    next.state.walls[source_wall].kind != route_wall_kind::open)
+			continue;
+		const int source_trigger = next.state.walls[source_wall].trigger;
+		if (source_trigger < 0 ||
+		    source_trigger >= static_cast<int>(next.topology.triggers.size()))
+			continue;
+		const auto source_kind =
+		    next.topology.triggers[source_trigger].kind;
+		if (source_kind != route_trigger_kind::open_door &&
+		    source_kind != route_trigger_kind::toggle_door &&
+		    source_kind != route_trigger_kind::open_wall &&
+		    source_kind != route_trigger_kind::illusory_wall &&
+		    source_kind != route_trigger_kind::illusion_off &&
+		    source_kind != route_trigger_kind::unlock_door)
+			continue;
+		for (const auto &trigger : next.topology.triggers) {
+			if (trigger.kind != route_trigger_kind::close_wall)
+				continue;
+			for (const auto &link : trigger.links) {
+				if (link.segment < 0 ||
+				    link.segment >= static_cast<int>(next.topology.segments.size()) ||
+				    link.side < 0 || link.side >= LEVEL_METADATA_MAX_SIDES)
+					continue;
+				const auto &side =
+				    next.topology.segments[link.segment].sides[link.side];
+				if (side.wall == source_wall) {
+					next.topology.has_switch_reveal_pattern = true;
+					break;
+				}
+				if (side.child >= 0 &&
+				    side.child < static_cast<int>(next.topology.segments.size()) &&
+				    side.reverse_side >= 0 &&
+				    side.reverse_side < LEVEL_METADATA_MAX_SIDES &&
+				    next.topology.segments[side.child]
+				            .sides[side.reverse_side]
+				            .wall == source_wall) {
+					next.topology.has_switch_reveal_pattern = true;
+					break;
+				}
+			}
+			if (next.topology.has_switch_reveal_pattern)
+				break;
+		}
+	}
 	next.topology.hash = hash_topology(next.topology);
 	next.state.fingerprints = fingerprint_state(next.state);
 	next.state.hash = hash_state(next.state);

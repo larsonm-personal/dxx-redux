@@ -147,6 +147,8 @@ typedef struct level_metadata_scan_view {
 	int wall_type_door;
 	int wall_type_illusion;
 	int wall_type_open;
+	int wall_type_closed;
+	int wall_type_overlay;
 	int wall_flag_door_locked;
 	int wall_flag_door_opened;
 	int wall_flag_buddy_proof;
@@ -163,12 +165,18 @@ typedef struct level_metadata_scan_view {
 	int powerup_key_red;
 	int powerup_key_gold;
 	int trigger_type_open_door;
+	int trigger_type_close_door;
+	int trigger_type_toggle_door;
 	int trigger_type_exit;
 	int trigger_type_secret_exit;
 	int trigger_type_illusion_off;
+	int trigger_type_illusion_on;
 	int trigger_type_unlock_door;
+	int trigger_type_lock_door;
 	int trigger_type_open_wall;
+	int trigger_type_close_wall;
 	int trigger_type_illusory_wall;
+	int trigger_flag_one_shot;
 	int trigger_flag_disabled;
 	void *user;
 	int (*segment_child)(void *user, int seg, int side);
@@ -176,6 +184,7 @@ typedef struct level_metadata_scan_view {
 	int (*reverse_side)(void *user, int seg, int child);
 	int (*side_is_flyable)(void *user, int seg, int side);
 	int (*side_clearance_radius)(void *user, int seg, int side);
+	unsigned int (*segment_transit_mask)(void *user, int seg, int entry_side);
 	int (*side_is_hard_blocked)(void *user, int seg, int side);
 	int (*side_is_control_center_link)(void *user, int seg, int side);
 	int (*wall_num)(void *user, int seg, int side);
@@ -268,6 +277,8 @@ typedef struct level_metadata_state {
 	int route_status;
 	char route_problem[128];
 	char route_note[128];
+	int route_required_key_mask;
+	int route_completing_key_mask_set;
 	int unnecessary_key_mask;
 	int route_step_count;
 	level_metadata_route_step route_steps[LEVEL_METADATA_MAX_ROUTE_STEPS];

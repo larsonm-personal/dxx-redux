@@ -61,6 +61,22 @@ if ($secondPass -cne $androidNormalized) {
     throw "Mission metadata normalization is not idempotent"
 }
 
+$structuredIntent = '{"mission_filename":"example.mn2","mission_intent":{' +
+'"classification":"single_player_or_coop","rule":"campaign_actors","confidence":"high",' +
+'"reason":"Campaign actors","declarations":{"anarchy_only":false,"normal":false,"coop":false,' +
+'"anarchy":false,"robo_anarchy":false,"capture_flag":false,"hoard":false},' +
+'"normal_levels":1,"campaign_actor_levels":1,' +
+'"arena_like_levels":0,"solo_like_levels":0,"player_start_min":1,"player_start_max":1,' +
+'"coop_start_min":3,"coop_start_max":3,"robots":10,"hostages":0,"matcens":1,' +
+'"guidebots":1,"powerups":20,"reactors":1}}'
+[void](Invoke-MetadataNormalizer -Text $structuredIntent)
+try {
+    [void](Invoke-MetadataNormalizer -Text '{"mission_filename":"example.mn2","mission_intent":"single_player_or_coop"}')
+    throw "Scalar mission_intent unexpectedly passed mission metadata validation"
+} catch {
+    if ($_.Exception.Message -notmatch 'JSON formatter failed') { throw }
+}
+
 $variantInput = '[{"mission_filename":"ULTERIOR.MN2","mission_path":"REBIRTH/ULTERIOR.MN2","target_index":9},' +
 '{"mission_filename":"ULTERIOR.MN2","mission_path":"D2X/ULTERIOR.MN2","target_index":8},' +
 '{"mission_filename":"ULTERIOR.MN2","mission_path":"DOS/ULTERIOR.MN2","target_index":7}]'
