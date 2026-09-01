@@ -53,10 +53,29 @@ wall state.
 - [x] Define compact successful objective-timing metadata
 - [x] Define planner-to-simulator feedback and regression status rules
 - [x] Produce a staged implementation and validation plan
-- [ ] Implement the shared route-confirmation feature gate and engine controller
-- [ ] Implement headed and headless front ends
+- [x] Implement the shared route-confirmation feature gate and initial engine controller
+- [x] Implement headed automation and headless executable front ends
+- [x] Fix canonical seed 1, 60 Hz rational timestep, Hotshot difficulty, and D-tick boundary
+- [x] Record compact objective seconds plus detailed radius and RNG evidence
+- [x] Confirm Counterstrike levels 1-3 twice with byte-identical headless results
+- [x] Confirm Counterstrike level 1 twice through the maintained Android headed fixture
 - [ ] Integrate confirmed results into mission regression generation
 - [ ] Regenerate and audit the mission corpus
+
+The implemented initial controller now covers direct keys, key carriers,
+shootable switches, fly-through triggers, hidden and blastable walls, keyed and
+automatic door frontiers, reactors, bosses, and exact exit-side dispatch.  The
+canonical sandbox removes ordinary robots, freezes retained bosses and key
+carriers, kills a selected carrier after three fixed simulation seconds, and
+pauses the reactor countdown after proving reactor destruction.  Counterstrike
+level 2 exposed and now covers repeated restorer objectives and extension of a
+single semantic goal through temporarily opened physical frontiers.
+
+The two Android headed level 1 runs were exact within the platform: seed `1`,
+fixed Hz `60`, `3237` frames, and cumulative objective seconds `20.583328`,
+`49.166656`, and `53.949997`.  Windows headless level 1 follows the same three
+semantic objectives and confirms at frame `2980`; platform-specific engine
+physics timing is therefore recorded, not treated as cross-platform RNG drift.
 
 ## Executive conclusion
 

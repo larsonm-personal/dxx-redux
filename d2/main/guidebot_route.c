@@ -67,6 +67,13 @@
 #define ANDROID_DPAD_DOWN_BUTTON 23
 #define ANDROID_DPAD_LEFT_BUTTON 24
 #define ANDROID_DPAD_RIGHT_BUTTON 25
+#elif defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+static const int Escort_route_debug_log_enabled[1] = { 0 };
+#define debug_log_enabled Escort_route_debug_log_enabled
+#define DLOG_GAME 0
+#define DLOG_GUIDEBOT 0
+#define debug_log(...) ((void)0)
+#define ESCORT_DIAG(...) ((void)0)
 #else
 #define ESCORT_DIAG(fmt, ...) ((void)0)
 #endif
@@ -78,7 +85,7 @@
 #include "guidebot_route_internal.h"
 
 extern fix64 Buddy_last_seen_player, Buddy_last_player_path_created;
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 escort_route_goal Escort_route_goal;
 escort_unexplored_route_target Escort_unexplored_route_target;
 int Escort_route_target_mode = ESCORT_ROUTE_TARGET_END_OF_LEVEL;

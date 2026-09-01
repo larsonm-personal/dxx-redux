@@ -42,7 +42,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "deterministic_math.h"
 #include "d1_in_d2.h"
 #include "input_demo_hooks.h"
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 #include "escort.h"
 #include "escort_goal_policy.h"
 #include "guidebot_route_internal.h"
@@ -384,7 +384,7 @@ if ((objp->type == OBJ_ROBOT) && (objp->ctype.ai_info.behavior == AIB_RUN_FROM))
 
 			if (random_flag)
 				snum = random_xlate[sidenum];
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 			if (guidebot_route)
 				side_passable = level_metadata_guidebot_side_passable_current(
 				    cur_seg, snum);
@@ -603,7 +603,7 @@ int create_path_points(object *objp, int start_seg, int end_seg, point_seg *pseg
 	                                   avoid_seg, -1, -1, -1, -1, -1, 0);
 }
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 int create_guidebot_route_path_points(object *objp, int start_seg, int end_seg, point_seg *psegs, short *num_points, int max_depth, int random_flag, int safety_flag)
 {
 	if (!level_metadata_prepare_guidebot_path_view(objp - Objects)) {
@@ -849,7 +849,7 @@ static int create_path_to_segment_internal(object *objp, int goalseg, int max_le
 	if (end_seg == -1) {
 		;
 	} else {
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 		if (guidebot_route &&
 		    !level_metadata_prepare_guidebot_path_view(objp - Objects))
 			return 0;
@@ -890,7 +890,7 @@ void create_path_to_segment(object *objp, int goalseg, int max_length, int safet
 
 }
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 void create_guidebot_route_path_to_segment(object *objp, int goalseg, int max_length, int safety_flag)
 {
 	create_path_to_segment_internal(objp, goalseg, max_length, safety_flag,

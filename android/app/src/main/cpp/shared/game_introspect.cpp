@@ -74,6 +74,7 @@ extern "C" {
 #ifdef DXX_BUILD_DESCENT_II
 #include "ai.h"
 #include "escort.h"
+#include "route_confirmation.h"
 #include "multibot.h"
 #include "d1_custom.h"
 #include "d1_in_d2.h"
@@ -1629,6 +1630,25 @@ extern "C" char *game_introspect_get_state(void)
 	}
 #ifdef DXX_BUILD_DESCENT_II
 	j["level_metadata_route"] = serialize_level_metadata_route();
+	{
+		const route_confirmation_summary *summary =
+		    route_confirmation_get_summary();
+		json objective_seconds = json::array();
+		for (int index = 0; index < summary->objective_count; ++index)
+			objective_seconds.push_back(
+			    (double) summary->objectives[index].completed_ticks /
+			    (double) F1_0);
+		j["route_confirmation_status"] =
+		    route_confirmation_status_name(summary->status);
+		j["route_confirmation"] = {
+			{ "status", route_confirmation_status_name(summary->status) },
+			{ "seed", summary->seed },
+			{ "fixed_hz", summary->fixed_hz },
+			{ "frames", summary->frame_count },
+			{ "objective_seconds", objective_seconds },
+			{ "problem", summary->problem }
+		};
+	}
 #endif
 
 	bool in_game = (Game_wind != NULL && Screen_mode == SCREEN_GAME);

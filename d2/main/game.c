@@ -78,6 +78,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gamepal.h"
 #include "mission.h"
 #include "input_demo_debug_logging.h"
+#include "route_confirmation.h"
 
 #include "multi.h"
 #include "cntrlcen.h"
@@ -1409,6 +1410,7 @@ int game_handler(window *wind, d_event *event, void *data)
 					android_rewind_maybe_capture_frame();
 					android_profile_bucket_begin(ANDROID_PROFILE_BUCKET_SIM);
 					#endif
+					route_confirmation_prepare_frame_time();
 					calc_game_time();
 					GameProcessFrame();
 					#ifdef __ANDROID__
@@ -1583,6 +1585,7 @@ void GameProcessFrame(void)
 {
 	fix player_shields = Players[Player_num].shields;
 	int player_was_dead = Player_is_dead;
+	route_confirmation_before_frame();
 	Game_simulation_frame_id++;
 
 	input_demo_update_rng_trace_context();
@@ -1804,6 +1807,7 @@ void GameProcessFrame(void)
 	wake_up_missile_camera_robots();
 
 	input_demo_debug_log_player_motion_state("exit");
+	route_confirmation_after_frame();
 
 #ifdef __ANDROID__
 	state_android_maybe_periodic_autosave();

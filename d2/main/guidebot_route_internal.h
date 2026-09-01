@@ -7,7 +7,7 @@ enum escort_route_target_mode {
 	ESCORT_ROUTE_TARGET_EXIT = 2
 };
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 
 #include "level_metadata_scan.h"
 #include "vecmat.h"
@@ -137,6 +137,8 @@ int escort_valid_segment(int segnum);
 int escort_route_key_flag(int key_index);
 int escort_route_next_waypoint_pending(void);
 int escort_route_next_goal(void);
+int escort_route_select_next_goal(escort_route_goal *candidate,
+                                  int *selected_index);
 int escort_route_adopt_exit_command(void);
 int escort_route_physical_target(object *objp, int goal_seg, int max_depth);
 void escort_route_refresh_metadata(void);

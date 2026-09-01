@@ -1,0 +1,47 @@
+// TEST: Headed engine-confirmed GuideBot route reproduction
+// Runs the same shared controller as the headless verifier and waits for the
+// actual Counterstrike level 1 exit trigger to be crossed.
+[
+    {"_info": {
+        "games": ["d2"],
+        "vars": {
+            "d2": {"GAME": "d2", "MISSION": "Counterstrike", "LEVEL": "1"}
+        },
+        "_deps": [
+            {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
+            {"file": "descent2.ham", "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"},
+            {"file": "groupa.pig", "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"}
+        ]
+    }},
+
+    {"action": "enter_launcher"},
+    {"action": "reset_state"},
+    {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
+    {"action": "enter_game", "game": "${GAME}"},
+    {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select_mission", "text": "${MISSION}", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "wait_ms", "ms": 300},
+    {"action": "key", "key": "backspace", "post_delay_ms": 100},
+    {"action": "key", "key": "${LEVEL}", "post_delay_ms": 100},
+    {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 10000},
+    {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 100},
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+
+    {"action": "set_debug", "field": "start_route_confirmation", "value": "true"},
+    {"action": "wait_for", "field": "route_confirmation_status", "value": "confirmed", "timeout_ms": 180000},
+    {"action": "assert", "expect": {
+        "route_confirmation.status": "confirmed",
+        "route_confirmation.seed": "1",
+        "route_confirmation.fixed_hz": "60",
+        "route_confirmation.frames": {"gt": 0}
+    }},
+    {"action": "introspect"}
+]

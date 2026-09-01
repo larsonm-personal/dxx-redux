@@ -83,6 +83,7 @@ set(D2X_MAIN_SOURCES
     ../../android/app/src/main/cpp/shared/route_edge.cpp
     ../../android/app/src/main/cpp/shared/route_planner.cpp
     ../../android/app/src/main/cpp/shared/route_analysis_cache.c
+    ../../android/app/src/main/cpp/shared/route_confirmation.cpp
     ../../android/app/src/main/cpp/shared/guidebot_route_decision.c
     ../../android/app/src/main/cpp/shared/guidebot_route_certifier.c
     ../../android/app/src/main/cpp/shared/secretarea.c
@@ -310,6 +311,13 @@ if(NOT ANDROID)
         PRIVATE_DEFINITIONS DXX_BUILD_DESCENT_II
         PRIVATE_LIBRARIES ${DXX_TARGET_PREFIX}libmve
         AUDIO_TAG_METADATA
+        INCLUDE_GAME_DIR)
+    dxx_add_headless_target(
+        dxx-redux-d2-headless-route
+        ../../android/app/src/main/cpp/headless/route_confirmation_headless_main.cpp
+        GAME_SOURCES ${D2X_HEADLESS_SOURCES}
+        PRIVATE_DEFINITIONS DXX_BUILD_DESCENT_II DXX_GUIDEBOT_ROUTE_PLANNER
+        PRIVATE_LIBRARIES ${DXX_TARGET_PREFIX}libmve
         INCLUDE_GAME_DIR)
 endif()
 

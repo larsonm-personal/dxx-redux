@@ -64,6 +64,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "d1_in_d2.h"
 #include "d1_in_d2_semantics.h"
 #include "input_demo_hooks.h"
+#include "route_confirmation.h"
 #ifdef __ANDROID__
 #include "guidebot_route_internal.h"
 #endif
@@ -356,6 +357,8 @@ void do_ai_frame(object *obj)
 	vms_vector  vis_vec_pos;
 	fix         schedule_dist_to_player = 0;
 	int         retry_recovery_allowed = !(Game_mode & GM_MULTI);
+	if (route_confirmation_drive_companion(obj))
+		return;
 #ifdef NETWORK
 	/* android port: remote guidebots are pose replicas.  Returning here keeps
 	 * local path following, flare creation, and simulation RNG owner-only. */

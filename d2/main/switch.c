@@ -46,6 +46,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include "rewind_file_compat.h"
 #include "input_demo_hooks.h"
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+#include "guidebot_extensions.h"
+#include "route_confirmation.h"
+#endif
 #ifdef __ANDROID__
 #include "android_log.h"
 #include "android_profile.h"
@@ -663,7 +667,7 @@ int check_trigger_sub(int trigger_num, int pnum,int shot)
 			break;
 	}
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	escort_route_notify_trigger_changed(trigger_num);
 #endif
 
@@ -701,6 +705,12 @@ void check_trigger(segment *seg, short side, short objnum,int shot)
 			input_demo_log_trigger_probe("skip_no_trigger", seg, side, objnum, shot, -1);
 			return;
 		}
+
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+		if (Triggers[trigger_num].type == TT_EXIT &&
+		    route_confirmation_handle_exit_trigger(objnum))
+			return;
+#endif
 
 		input_demo_log_trigger_probe("before_sub", seg, side, objnum, shot, trigger_num);
 

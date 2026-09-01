@@ -84,6 +84,11 @@ extern int create_path_points(object *objp, int start_seg, int end_seg, point_se
 extern void create_all_paths(void);
 extern void create_path_to_station(object *objp, int max_length);
 extern void ai_follow_path(object *objp, int player_visibility, int previous_visibility, vms_vector *vec_to_player);
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+extern void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point,
+                                       int player_visibility,
+                                       vms_vector *vec_to_player);
+#endif
 extern void ai_turn_towards_vector(vms_vector *vec_to_player, object *obj, fix rate);
 extern void ai_turn_towards_vel_vec(object *objp, fix rate);
 extern void init_ai_objects(void);
@@ -94,7 +99,7 @@ extern void make_random_vector(vms_vector *vec);
 extern void init_robots_for_level(void);
 extern int ai_behavior_to_mode(int behavior);
 extern void create_path_to_segment(object *objp, int goalseg, int max_length, int safety_flag);
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 extern void create_guidebot_route_path_to_segment(object *objp, int goalseg, int max_length, int safety_flag);
 extern int create_path_to_segment_avoiding(object *objp, int goalseg, int max_length, int safety_flag, int avoid_seg, int avoid_seg2);
 extern int create_path_to_segment_avoiding_edges(object *objp, int goalseg, int max_length, int safety_flag, int avoid_from, int avoid_to, int avoid_from2, int avoid_to2);

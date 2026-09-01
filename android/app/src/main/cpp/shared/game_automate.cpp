@@ -83,6 +83,7 @@ extern "C" {
 #include "cntrlcen.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "escort.h"
+#include "route_confirmation.h"
 #endif
 #ifdef ANDROID
 void android_automation_start_endlevel_sequence(void);
@@ -4056,6 +4057,22 @@ extern "C" void game_automate_tick(void)
 					stop_script_fail(reason);
 					break;
 				}
+			} else if (s.field == "start_route_confirmation") {
+#ifdef DXX_BUILD_DESCENT_II
+				if ((strcasecmp(s.value.c_str(), "true") != 0 &&
+				     strtol(s.value.c_str(), NULL, 10) == 0) ||
+				    !route_confirmation_start()) {
+					stop_script_fail(
+					    route_confirmation_get_summary()->problem[0]
+					        ? route_confirmation_get_summary()->problem
+					        : "start_route_confirmation: start rejected");
+					break;
+				}
+#else
+				stop_script_fail(
+				    "start_route_confirmation: requires Descent 2");
+				break;
+#endif
 			} else if (s.field == "merged_wall_snapshot") {
 				int request_mode = (int) strtol(s.value.c_str(), NULL, 10);
 

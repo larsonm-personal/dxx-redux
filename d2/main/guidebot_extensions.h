@@ -14,7 +14,7 @@ extern void escort_find_unexplored_goal(void);
 extern int escort_get_secret_goal_display_index(void);
 extern int escort_get_secret_goal_seg(void);
 extern int escort_get_secret_goal_side(void);
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 extern int escort_get_looking_for_marker(void);
 extern int escort_get_last_buddy_key(void);
 #ifdef INTROSPECT_ON
