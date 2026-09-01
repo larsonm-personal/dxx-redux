@@ -71,7 +71,7 @@ object CrashLog {
                 Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
                     putExtra(Intent.EXTRA_STREAM, uri)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    attachReadGrant(uri)
                 }
             val chooser = Intent.createChooser(intent, "Share Crash Report")
             chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

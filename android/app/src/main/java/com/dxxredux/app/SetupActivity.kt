@@ -2635,7 +2635,15 @@ class SetupActivity : ComponentActivity() {
         }
         val returningFromLevelPreview = LevelPreviewReturnRefreshGate.consumeReturn()
         mpGameLaunching = false
-        gameRunningFlag = hasReturnableGameActivity()
+        val returnableGame = returnableGameActivityState()
+        val rawGamePid = runningGameProcessPid()
+        gameRunningFlag = returnableGame != null
+        DebugLog.log(
+            DebugLogCategory.LAUNCHER,
+            "launcher onResume game_returnable=$gameRunningFlag " +
+                "state_pid=${returnableGame?.pid ?: -1} raw_game_pid=${rawGamePid ?: -1} " +
+                "returning_preview=$returningFromLevelPreview",
+        )
         if (gameRunningFlag) {
             routeMetadataCoordinator.stop()
         } else {

@@ -3,6 +3,10 @@
 #include <stdio.h>
 #include <string.h>
 
+static long double guidebot_position_distance_squared(
+    const int left[3],
+    const int right[3]);
+
 static int guidebot_certifier_budget_exhausted(
     const guidebot_route_certifier_budget *budget,
     unsigned int work)
@@ -53,7 +57,8 @@ static int guidebot_route_side_passable(
     int side,
     int allow_player_keyed_door,
     int allow_control_center_link,
-    int allow_triggered_link)
+    int allow_triggered_link,
+    int check_clearance)
 {
 	int child;
 	int clearance;
@@ -77,7 +82,7 @@ static int guidebot_route_side_passable(
 			return 0;
 	} else
 		reverse = -1;
-	if (view->side_clearance_radius) {
+	if (check_clearance && view->side_clearance_radius) {
 		clearance = view->side_clearance_radius(view->user, segment, side);
 		if (view->navigator_radius > 0 && clearance > 0 &&
 		    clearance < view->navigator_radius)
@@ -159,8 +164,10 @@ int guidebot_route_side_passable_current(
 {
 	/* Match the classic companion's physical door handling: a visible,
 	 * unlocked door remains usable even when a trigger also controls it.
-	 * Hidden and locked trigger doors are still rejected below. */
-	return guidebot_route_side_passable(view, segment, side, 0, 0, 1);
+	 * Hidden and locked trigger doors are still rejected below.  The engine
+	 * pathfinder does not apply the metadata clearance estimate, so the live
+	 * physical frontier must not split an otherwise pathable component on it */
+	return guidebot_route_side_passable(view, segment, side, 0, 0, 1, 0);
 }
 
 int guidebot_route_side_progress_reachable_current(
@@ -168,7 +175,7 @@ int guidebot_route_side_progress_reachable_current(
     int segment,
     int side)
 {
-	return guidebot_route_side_passable(view, segment, side, 1, 0, 0);
+	return guidebot_route_side_passable(view, segment, side, 1, 0, 0, 1);
 }
 
 static int guidebot_wall_is_player_openable_keyed_door(
@@ -238,7 +245,11 @@ static int guidebot_route_best_physical_frontier_internal(
 {
 	int best_remaining;
 	int best_segment;
+	long double best_distance_squared = 0.0;
+	int goal_center[3];
+	int goal_center_valid;
 	int head;
+	int has_strategic_route;
 	int segment;
 	int side;
 	int tail;
@@ -270,31 +281,67 @@ static int guidebot_route_best_physical_frontier_internal(
 			if (reverse < 0 || reverse >= LEVEL_METADATA_MAX_SIDES ||
 			    !guidebot_route_side_passable(
 			        view, child, reverse, 1,
-			        allow_control_center_link, 1))
+			        allow_control_center_link, 1, 1))
 				continue;
 			workspace->strategic_distance[child] =
 			    workspace->strategic_distance[segment] + 1;
 			workspace->queue[tail++] = child;
 		}
 	}
-	if (workspace->strategic_distance[start_segment] < 0)
-		return -1;
+	has_strategic_route =
+	    workspace->strategic_distance[start_segment] >= 0;
+	/* A missing strategic chain can be temporary while the player works a
+	 * switch or door.  Still use the physical component to approach the goal */
+	goal_center_valid =
+	    view->segment_center &&
+	    view->segment_center(view->user, goal_segment, goal_center);
 	head = 0;
 	tail = 0;
 	best_segment = start_segment;
-	best_remaining = workspace->strategic_distance[start_segment];
+	best_remaining = has_strategic_route
+	                     ? workspace->strategic_distance[start_segment]
+	                     : -1;
+	if (!has_strategic_route && goal_center_valid) {
+		int start_center[3];
+
+		if (view->segment_center(
+		        view->user, start_segment, start_center))
+			best_distance_squared = guidebot_position_distance_squared(
+			    start_center, goal_center);
+		else
+			goal_center_valid = 0;
+	}
 	workspace->physical_distance[start_segment] = 0;
 	workspace->queue[tail++] = start_segment;
 	while (head < tail) {
 		int child;
 
 		segment = workspace->queue[head++];
-		if (workspace->strategic_distance[segment] >= 0 &&
+		if (has_strategic_route &&
+		    workspace->strategic_distance[segment] >= 0 &&
 		    workspace->strategic_distance[segment] < best_remaining) {
 			best_segment = segment;
 			best_remaining = workspace->strategic_distance[segment];
+		} else if (!has_strategic_route && goal_center_valid) {
+			int center[3];
+			long double distance_squared;
+
+			if (view->segment_center(view->user, segment, center)) {
+				distance_squared = guidebot_position_distance_squared(
+				    center, goal_center);
+				if (distance_squared < best_distance_squared ||
+				    (distance_squared == best_distance_squared &&
+				     (workspace->physical_distance[segment] <
+				          workspace->physical_distance[best_segment] ||
+				      (workspace->physical_distance[segment] ==
+				           workspace->physical_distance[best_segment] &&
+				       segment < best_segment)))) {
+					best_segment = segment;
+					best_distance_squared = distance_squared;
+				}
+			}
 		}
-		if (best_remaining == 0)
+		if (has_strategic_route && best_remaining == 0)
 			break;
 		if (max_depth > 0 &&
 		    workspace->physical_distance[segment] + 1 >= max_depth)
@@ -314,7 +361,7 @@ static int guidebot_route_best_physical_frontier_internal(
 			workspace->queue[tail++] = child;
 		}
 	}
-	return best_segment;
+	return has_strategic_route || goal_center_valid ? best_segment : -1;
 }
 
 int guidebot_route_best_physical_frontier(
@@ -1340,7 +1387,7 @@ static int guidebot_firing_frontier_budgeted(
 					if (reverse < 0 ||
 					    reverse >= LEVEL_METADATA_MAX_SIDES ||
 					    !guidebot_route_side_passable(
-					        view, child, reverse, 1, 0, 1))
+					        view, child, reverse, 1, 0, 1, 1))
 						continue;
 					workspace->strategic_distance[child] =
 					    workspace->strategic_distance[segment] + 1;

@@ -2036,31 +2036,44 @@ void escort_create_path_to_goal(object *objp)
 			input_demo_log_escort_path_state("escort_create_path_to_goal to_segment", objp);
 			if ((aip->path_length > 0) && (Point_segs[aip->hide_index + aip->path_length - 1].segnum != path_goal_seg)) {
 				{
-					fix	dist_to_player;
-					Last_buddy_message_time = 0;	//	Force this message to get through.
 #ifdef __ANDROID__
-					if (using_route_goal)
-						if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT)
-							buddy_message("Can't reach EXIT.");
-						else
-							buddy_message("Can't reach next: %s.", escort_route_goal_label());
-					else
+					int partial_seg = Point_segs[aip->hide_index + aip->path_length - 1].segnum;
+
+					if (using_route_goal) {
+						debug_log(
+						    DLOG_GUIDEBOT,
+						    "route_partial_path obj=%d start=%d requested=%d endpoint=%d semantic=%d len=%d",
+						    objnum, objp->segnum, path_goal_seg, partial_seg,
+						    goal_seg, aip->path_length);
+						/* Keep the semantic objective active and follow the usable
+						 * portion of the path.  A later trigger, door, or key event
+						 * can then extend it without replacing the route with SCRAM. */
+						Escort_route_goal.guidance_mode =
+						    ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT;
+						Escort_route_goal.guidance_seg = partial_seg;
+						Escort_route_goal.frontier_player_keyed_door = 0;
+						path_goal_seg = partial_seg;
+					} else
 #endif
-					if (Escort_goal_object == ESCORT_GOAL_SECRET)
-						buddy_message("Can't reach any secrets.");
-					else
-						buddy_message("Can't reach %s.", Escort_goal_text[Escort_goal_object-1]);
-					Looking_for_marker = -1;
-					Escort_goal_object = ESCORT_GOAL_SCRAM;
-					escort_clear_secret_goal();
-					dist_to_player = find_connected_distance(&objp->pos, objp->segnum, &Believed_player_pos, Believed_player_seg, 100, WID_FLY_FLAG);
-					if (dist_to_player > MIN_ESCORT_DISTANCE)
-						create_path_to_player(objp, Max_escort_length, 1);	//	MK!: Last parm used to be 1!
-					else {
-						// SIM RNG: this changes the live fallback scram path the guidebot follows
-						create_n_segment_path(objp, 8 + d_rand() * 8, -1);
-						aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
-						input_demo_log_escort_path_state("escort_create_path_to_goal fallback_scram", objp);
+					{
+						fix	dist_to_player;
+						Last_buddy_message_time = 0;	//	Force this message to get through.
+						if (Escort_goal_object == ESCORT_GOAL_SECRET)
+							buddy_message("Can't reach any secrets.");
+						else
+							buddy_message("Can't reach %s.", Escort_goal_text[Escort_goal_object-1]);
+						Looking_for_marker = -1;
+						Escort_goal_object = ESCORT_GOAL_SCRAM;
+						escort_clear_secret_goal();
+						dist_to_player = find_connected_distance(&objp->pos, objp->segnum, &Believed_player_pos, Believed_player_seg, 100, WID_FLY_FLAG);
+						if (dist_to_player > MIN_ESCORT_DISTANCE)
+							create_path_to_player(objp, Max_escort_length, 1);	//	MK!: Last parm used to be 1!
+						else {
+							// SIM RNG: this changes the live fallback scram path the guidebot follows
+							create_n_segment_path(objp, 8 + d_rand() * 8, -1);
+							aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
+							input_demo_log_escort_path_state("escort_create_path_to_goal fallback_scram", objp);
+						}
 					}
 				}
 			}

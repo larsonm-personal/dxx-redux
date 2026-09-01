@@ -17,6 +17,15 @@ int main(void)
 	      MULTI_SAVE_TRANSFER_HOST_APPLY_NOW);
 	CHECK(multi_save_transfer_host_action_for_rewind(1) ==
 	      MULTI_SAVE_TRANSFER_HOST_WAIT_FOR_CLIENTS);
+
+	CHECK(multi_save_transfer_client_apply_action_for_context(
+	          0, 1, 1, 964, 964) == MULTI_SAVE_TRANSFER_CLIENT_WAIT);
+	CHECK(multi_save_transfer_client_apply_action_for_context(
+	          1, 1, 1, 963, 964) == MULTI_SAVE_TRANSFER_CLIENT_WAIT);
+	CHECK(multi_save_transfer_client_apply_action_for_context(
+	          1, 1, 0, 964, 964) == MULTI_SAVE_TRANSFER_CLIENT_WAIT);
+	CHECK(multi_save_transfer_client_apply_action_for_context(
+	          1, 1, 1, 964, 964) == MULTI_SAVE_TRANSFER_CLIENT_APPLY);
 	puts("multi save transfer policy tests passed");
 	return 0;
 }

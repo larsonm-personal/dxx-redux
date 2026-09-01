@@ -128,6 +128,10 @@ add_executable(
                                 "${DXX_TEST_SHARED_SOURCE_DIR}/net/net_udp_reconnect_auth.c")
 target_include_directories(test_net_udp_reconnect_auth PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}/net")
 
+add_executable(test_net_udp_initial_sync_retry test_net_udp_initial_sync_retry.c)
+target_include_directories(test_net_udp_initial_sync_retry
+                           PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}/net")
+
 add_executable(
     test_coop_host_migration_policy
     test_coop_host_migration_policy.c
@@ -328,6 +332,7 @@ set(DXX_HOST_TEST_TARGETS
     test_android_render_fov
     test_android_slowdown_detector
     test_net_udp_reconnect_auth
+    test_net_udp_initial_sync_retry
     test_coop_host_migration_policy
     test_coop_player_session
     test_multi_save_transfer_policy

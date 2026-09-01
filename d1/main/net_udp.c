@@ -63,6 +63,7 @@
 #include "coop_indicator_lines.h"
 #include "coop/coop_powerup_duplication.h"
 #include "coop/coop_player_session.h"
+#include "net_udp_initial_sync_retry.h"
 #include <android/log.h>
 #define MPDIAG(fmt, ...) do { \
 	char _mpdiag_buf[256]; \
@@ -83,6 +84,7 @@ static void mpdiag_pkt_dump(const char *label, const ubyte *buf, int len)
 static int net_auto_start_when_full = 0;
 static int android_resync_request_pending = 0;
 static fix64 android_resync_last_request_time = 0;
+static android_net_udp_initial_sync_retry_state android_initial_sync_retry;
 #else
 #define MPDIAG(fmt, ...) con_printf(CON_NORMAL, "MPDIAG: " fmt, ##__VA_ARGS__)
 #endif
@@ -1877,6 +1879,7 @@ void net_udp_init()
 #ifdef __ANDROID__
 	android_net_udp_auth_reset(
 	    Player_num, ANDROID_NET_UDP_RECONNECT_GAME_D1);
+	android_net_udp_initial_sync_retry_reset(&android_initial_sync_retry);
 #endif
 	net_udp_flush();
 	
@@ -4029,12 +4032,13 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 		{
 			UDP_sequence_packet reconnect_request;
 			int reconnect_player_num;
+			fix64 reconnect_time = timer_query();
 
 			memset(&reconnect_request, 0,
 			       sizeof(reconnect_request));
 			if (android_net_udp_auth_finish_challenge(
 			        data, length, netgame_token, &sender_addr,
-			        is_proxy, Network_status, timer_query(),
+			        is_proxy, Network_status, reconnect_time,
 			        &reconnect_request, &reconnect_player_num)) {
 				if (Network_status == NETSTAT_STARTING)
 					net_udp_add_player(
@@ -4042,10 +4046,37 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 				else if (Network_status == NETSTAT_WAITING)
 					net_udp_process_request(
 					    &reconnect_request, reconnect_player_num);
-				else if (Network_status == NETSTAT_PLAYING)
-					net_udp_welcome_player(
-					    &reconnect_request, reconnect_player_num,
-					    1, is_proxy);
+				else if (Network_status == NETSTAT_PLAYING) {
+					if (android_net_udp_initial_sync_retry_should_resend(
+					        &android_initial_sync_retry,
+					        reconnect_player_num, reconnect_time)) {
+						android_net_udp_prepare_reconnect_player(
+						    reconnect_player_num,
+						    &reconnect_request.player.protocol.udp.addr,
+						    is_proxy,
+						    is_proxy ? find_player_by_address(
+						                   reconnect_request.player.protocol.udp.addr)
+						             : -1,
+						    multi_i_am_master(), connection_statuses,
+						    update_address_for_player);
+						net_udp_update_netgame();
+						Netgame.game_status = NETSTAT_PLAYING;
+						Netgame.segments_checksum = my_segments_checksum;
+						Netgame.players[reconnect_player_num].LastPacketTime =
+						    reconnect_time;
+						MPDIAG("initial sync retry: resending SYNC to player %d",
+						       reconnect_player_num);
+						net_udp_send_game_info_to_player(
+						    reconnect_player_num,
+						    reconnect_request.player.protocol.udp.addr,
+						    UPID_SYNC, 0,
+						    player_tokens[reconnect_player_num]);
+					} else {
+						net_udp_welcome_player(
+						    &reconnect_request, reconnect_player_num,
+						    1, is_proxy);
+					}
+				}
 			}
 			break;
 		}
@@ -5591,6 +5622,10 @@ int net_udp_send_sync(void)
 		net_udp_send_game_info_to_player(
 		    i, Netgame.players[i].protocol.udp.addr, UPID_SYNC, 0,
 		    player_tokens[i]);
+#ifdef __ANDROID__
+		android_net_udp_initial_sync_retry_arm(
+		    &android_initial_sync_retry, i, timer_query(), UDP_TIMEOUT);
+#endif
 #ifndef __ANDROID__
 		connection_statuses[i].type = CONNT_DIRECT; 
 #endif
@@ -7772,6 +7807,10 @@ void net_udp_read_pdata_packet(UDP_frame_info *pd)
 
 	if (multi_i_am_master())
 	{
+#ifdef __ANDROID__
+		android_net_udp_initial_sync_retry_confirm(
+		    &android_initial_sync_retry, TheirPlayernum);
+#endif
 		// latecoming player seems to successfully have synced
 		if ( VerifyPlayerJoined != -1 && TheirPlayernum == VerifyPlayerJoined )
 			VerifyPlayerJoined=-1;
@@ -7944,7 +7983,7 @@ void net_udp_process_p2p_ping(ubyte *data, struct _sockaddr sender_addr, int dat
 	fix64 time;
 	memcpy(&time, data + len, 8); len += 8; 
 	int direct_ping = data[len]; len++;
-	Netgame.players[from_player].rx_loss = data[len]; len++; 
+	ubyte rx_loss = data[len]; len++;
 
 	// This is an observer heartbeat	
 
@@ -7962,6 +8001,14 @@ void net_udp_process_p2p_ping(ubyte *data, struct _sockaddr sender_addr, int dat
 		}
 		return;
 	}
+	if (from_player >= MAX_PLAYERS) {
+		char log_comment[80];
+		snprintf(log_comment, sizeof(log_comment),
+		         "Dropped P2P ping from invalid player %d", from_player);
+		net_log_comment(log_comment);
+		return;
+	}
+	Netgame.players[from_player].rx_loss = rx_loss;
 
 	// Prevent clients from timing out the host during level sync or other
 	// periods when PDATA isn't flowing. Pings prove the host is reachable.
@@ -7971,22 +8018,13 @@ void net_udp_process_p2p_ping(ubyte *data, struct _sockaddr sender_addr, int dat
 	
 	// If I can hear a direct ping, I can probably reply
 	if(direct_ping) {
-		// Don't update master, non-existent player, or me
-		if( (from_player == multi_who_is_master()) || 
-			(from_player > MAX_PLAYERS) || 
-			(from_player == Player_num)) {
-
-			char log_comment[100];
-			snprintf(log_comment, 100, "Cannot update address -- illegal player num %d (==%d, >%d, == %d)", from_player,
-				multi_who_is_master(), MAX_PLAYERS, Player_num); 
-			net_log_comment(log_comment); 
-		} else {
+		// The host and local player are valid peers, but their routes are authoritative.
+		if (from_player != multi_who_is_master() && from_player != Player_num) {
 			update_address_for_player(from_player, sender_addr);
-		}
 
-		// Restablish direct attempt, if we aren't already doing that
-		if(connection_statuses[from_player].type == CONNT_PROXY) {
-			reattemptDirect(from_player); 
+			// Reestablish a direct attempt, if we are not already doing that.
+			if(connection_statuses[from_player].type == CONNT_PROXY)
+				reattemptDirect(from_player);
 		}
 		
 	}	

@@ -213,7 +213,7 @@ static void multi_rewind_send_ready(int phase)
 	                       multi_who_is_master(), 2);
 }
 
-static void multi_rewind_apply_received_transfer(void)
+static void multi_rewind_apply_received_transfer(int at_frame_boundary)
 {
 	android_rewind_authoritative_restore restore;
 	rewind_memory_buffer buffer;
@@ -221,10 +221,18 @@ static void multi_rewind_apply_received_transfer(void)
 	int status;
 	int restored;
 
-	if (!Rewind_save_transfer.active ||
-	    !Rewind_save_transfer.apply_pending ||
-	    Rewind_save_transfer.chunks_received != Rewind_save_transfer.total_chunks)
+	if (multi_save_transfer_client_apply_action_for_context(
+	        at_frame_boundary, Rewind_save_transfer.active,
+	        Rewind_save_transfer.apply_pending,
+	        Rewind_save_transfer.chunks_received,
+	        Rewind_save_transfer.total_chunks) !=
+	    MULTI_SAVE_TRANSFER_CLIENT_APPLY)
 		return;
+	COOPLOG("save transfer applying at frame boundary: kind=%d id=%u bytes=%u chunks=%d",
+	        Rewind_save_transfer.transfer_kind,
+	        Rewind_save_transfer.transfer_id,
+	        Rewind_save_transfer.total_size,
+	        Rewind_save_transfer.total_chunks);
 	checksum = multi_rewind_checksum(Rewind_save_transfer.data,
 	                                 Rewind_save_transfer.total_size);
 	if (checksum != Rewind_save_transfer.checksum) {
@@ -443,6 +451,11 @@ void multi_save_transfer_frame(void)
 	int chunks_sent = 0;
 	ubyte restore_slot;
 	uint restore_game_id;
+
+	/* A restore tears down and rebuilds the current level.  Packet handlers
+	 * only mark it pending so the UDP parser can finish against the state with
+	 * which it began.  Apply here, at the next game-frame boundary. */
+	multi_rewind_apply_received_transfer(1);
 
 	if (Rewind_save_transfer.active &&
 	    (Rewind_save_transfer.transfer_kind == MULTI_SAVE_TRANSFER_KIND_RESTORE ||
@@ -965,7 +978,7 @@ void multi_do_rewind_save_chunk(const ubyte *buf)
 		Rewind_save_transfer.chunk_received[chunk_index] = 1;
 		Rewind_save_transfer.chunks_received++;
 	}
-	multi_rewind_apply_received_transfer();
+	multi_rewind_apply_received_transfer(0);
 }
 
 void multi_do_rewind_save_apply(const ubyte *buf)
@@ -975,7 +988,7 @@ void multi_do_rewind_save_apply(const ubyte *buf)
 		return;
 	Rewind_save_transfer.apply_pending = 1;
 	Rewind_save_transfer.rewound_seconds = buf[3];
-	multi_rewind_apply_received_transfer();
+	multi_rewind_apply_received_transfer(0);
 }
 
 #endif /* __ANDROID__ */

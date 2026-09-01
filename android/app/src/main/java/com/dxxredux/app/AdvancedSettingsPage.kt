@@ -3077,7 +3077,7 @@ private fun shareFile(
             Intent(Intent.ACTION_SEND).apply {
                 type = mimeType
                 putExtra(Intent.EXTRA_STREAM, uri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                attachReadGrant(uri)
             }
         val chooser = Intent.createChooser(intent, chooserTitle)
         chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -3098,7 +3098,7 @@ private fun shareFiles(
             Intent(Intent.ACTION_SEND_MULTIPLE).apply {
                 type = mimeType
                 putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                attachReadGrant(uris)
             }
         val chooser = Intent.createChooser(intent, chooserTitle)
         chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

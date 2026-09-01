@@ -37,6 +37,8 @@ typedef struct certifier_fixture {
 	int control_center_link[TEST_WALLS];
 	int wall_shootable[TEST_WALLS];
 	int wall_trigger[TEST_WALLS];
+	int narrow_wall;
+	int narrow_clearance;
 	int position_sensitive_wall;
 	int shootable_segment[FIXTURE_SEGMENTS];
 	int potentially_shootable_segment[FIXTURE_SEGMENTS];
@@ -91,9 +93,11 @@ static int side_is_flyable(void *user, int segment, int side)
 
 static int side_clearance(void *user, int segment, int side)
 {
-	(void) user;
-	(void) segment;
-	(void) side;
+	certifier_fixture *fixture = (certifier_fixture *) user;
+	int wall = fixture->wall[segment][side];
+
+	if (wall == fixture->narrow_wall)
+		return fixture->narrow_clearance;
 	return 100;
 }
 
@@ -416,6 +420,7 @@ static void initialize_fixture(certifier_fixture *fixture)
 	fixture->num_segments = TEST_SEGMENTS;
 	fixture->object_type = 3;
 	fixture->object_segment = 2;
+	fixture->narrow_wall = -1;
 	fixture->position_sensitive_wall = -1;
 	fixture->detailed_shootable_segment = -1;
 	for (segment = 0; segment < TEST_SEGMENTS; ++segment) {
@@ -1498,7 +1503,7 @@ static void test_physical_frontier_follows_strategic_route(void)
 	assert(!guidebot_route_segment_has_player_openable_keyed_door(&view, 1));
 	assert(
 	    guidebot_route_best_physical_frontier(
-	        &view, 0, 3, 200, -1, -1, -1, -1, &Workspace) == -1);
+	        &view, 0, 3, 200, -1, -1, -1, -1, &Workspace) == 4);
 }
 
 static void test_exit_projection_skips_only_countdown_steps(void)
@@ -1559,7 +1564,7 @@ static void test_deferred_countdown_frontier_stops_before_closed_link(void)
 
 	assert(
 	    guidebot_route_best_physical_frontier(
-	        &view, 0, 3, 200, -1, -1, -1, -1, &Workspace) == -1);
+	        &view, 0, 3, 200, -1, -1, -1, -1, &Workspace) == 1);
 	assert(
 	    guidebot_route_best_deferred_countdown_frontier(
 	        &view, 0, 3, 200, -1, -1, -1, -1, &Workspace) == 1);
@@ -1580,6 +1585,23 @@ static void test_physical_frontier_can_plan_toward_triggered_link(void)
 	    guidebot_route_best_physical_frontier(
 	        &view, 0, 3, 200, -1, -1, -1, -1, &Workspace) == 3);
 	fixture.wall_open[0] = 1;
+	assert(
+	    guidebot_route_best_physical_frontier(
+	        &view, 0, 3, 200, -1, -1, -1, -1, &Workspace) == 3);
+}
+
+static void test_physical_frontier_matches_engine_across_narrow_portal(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+
+	initialize_fixture(&fixture);
+	view = make_view(&fixture);
+	fixture.narrow_wall = 0;
+	fixture.narrow_clearance = view.navigator_radius - 1;
+
+	assert(!guidebot_route_side_progress_reachable_current(&view, 0, 0));
+	assert(guidebot_route_side_passable_current(&view, 0, 0));
 	assert(
 	    guidebot_route_best_physical_frontier(
 	        &view, 0, 3, 200, -1, -1, -1, -1, &Workspace) == 3);
@@ -2149,6 +2171,7 @@ int main(int argc, char **argv)
 	test_exit_projection_skips_only_countdown_steps();
 	test_deferred_countdown_frontier_stops_before_closed_link();
 	test_physical_frontier_can_plan_toward_triggered_link();
+	test_physical_frontier_matches_engine_across_narrow_portal();
 	test_unreachable_switch_uses_physical_frontier();
 	test_switch_frontier_prefers_square_nearby_approach();
 	test_reclosed_hidden_door_behind_start_does_not_regress_route();

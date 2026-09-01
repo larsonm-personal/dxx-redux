@@ -1037,7 +1037,13 @@ class MainActivity :
                         val dx = e2.x - e1.x
                         val dy = kotlin.math.abs(e2.y - e1.y)
                         if (dx > 30 * density && dy < dx * 1.5f) { // roughly horizontal
-                            openSetupScreen()
+                            DebugLog.log(
+                                DebugLogCategory.GAME,
+                                "game activity navigation source=left_edge_fling " +
+                                    "dx=${dx.roundToInt()} dy=${dy.roundToInt()} " +
+                                    "velocity_x=${velocityX.roundToInt()}",
+                            )
+                            openSetupScreen("left_edge_fling")
                             return true
                         }
                         return false
@@ -2113,6 +2119,11 @@ class MainActivity :
     }
 
     override fun onPause() {
+        DebugLog.log(
+            DebugLogCategory.GAME,
+            "game activity onPause finishing=$isFinishing " +
+                "changing_config=$isChangingConfigurations started=$gameStarted",
+        )
         super.onPause()
         requestMinimizeAutosave()
     }
@@ -2123,6 +2134,11 @@ class MainActivity :
     }
 
     override fun onStop() {
+        DebugLog.log(
+            DebugLogCategory.GAME,
+            "game activity onStop finishing=$isFinishing " +
+                "changing_config=$isChangingConfigurations started=$gameStarted",
+        )
         super.onStop()
         isActivityResumed = false
         gyroManager?.pause()
@@ -2941,6 +2957,11 @@ class MainActivity :
     }
 
     override fun onDestroy() {
+        DebugLog.log(
+            DebugLogCategory.GAME,
+            "game activity onDestroy finishing=$isFinishing " +
+                "changing_config=$isChangingConfigurations started=$gameStarted",
+        )
         quickLoadDialog?.setOnDismissListener(null)
         quickLoadDialog?.dismiss()
         quickLoadDialog = null
@@ -3105,7 +3126,8 @@ class MainActivity :
         }
 
     /** Open the setup screen (game pauses automatically via onStop). */
-    private fun openSetupScreen() {
+    private fun openSetupScreen(source: String) {
+        DebugLog.log(DebugLogCategory.GAME, "game activity opening setup source=$source")
         resetTouchOverlayForSuspend()
         val intent = Intent(this, SetupActivity::class.java)
         intent.putExtra("gameRunning", true)
