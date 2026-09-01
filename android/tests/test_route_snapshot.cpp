@@ -617,6 +617,72 @@ dxx_route::route_snapshot make_prepared_restored_switch_snapshot()
 	return snapshot;
 }
 
+dxx_route::route_snapshot make_passive_close_replan_snapshot()
+{
+	dxx_route::route_snapshot snapshot;
+	snapshot.topology.segments.resize(4);
+	snapshot.state.segments.resize(4);
+	for (int segment = 0; segment < 4; ++segment) {
+		auto &center = snapshot.topology.segments[segment].center;
+		center.valid = true;
+		center.value = { segment == 3 ? 10 * 65536 : segment * 10 * 65536,
+		                 segment == 3 ? 10 * 65536 : 0, 0 };
+	}
+	auto connect = [&](int from, int side, int to, int reverse, int wall) {
+		auto &topology_side = snapshot.topology.segments[from].sides[side];
+		topology_side.child = to;
+		topology_side.reverse_side = reverse;
+		topology_side.wall = wall;
+		topology_side.center = snapshot.topology.segments[from].center;
+	};
+	connect(0, 0, 1, 0, 0);
+	connect(1, 0, 0, 0, 1);
+	connect(1, 1, 2, 0, 2);
+	connect(2, 0, 1, 1, 3);
+	connect(1, 2, 3, 0, -1);
+	connect(3, 0, 1, 2, -1);
+	for (int segment = 0; segment < 4; ++segment)
+		for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side)
+			if (snapshot.topology.segments[segment].sides[side].child >= 0)
+				snapshot.state.segments[segment].sides[side].flyable = true;
+	snapshot.topology.segments[2].sides[5].child = -2;
+	snapshot.topology.segments[2].sides[5].center =
+	    snapshot.topology.segments[2].center;
+
+	snapshot.topology.walls.resize(5);
+	snapshot.state.walls.resize(5);
+	for (int wall = 0; wall < 4; ++wall) {
+		auto &topology_wall = snapshot.topology.walls[wall];
+		topology_wall.segment = wall == 0 ? 0 : wall == 1 ? 1 : wall == 2 ? 1 : 2;
+		topology_wall.side = wall < 2 ? 0 : wall == 2 ? 1 : 0;
+		snapshot.state.walls[wall].kind = dxx_route::route_wall_kind::open;
+	}
+	snapshot.state.walls[0].trigger = 0;
+	snapshot.topology.segments[1].sides[1].opener_walls = { 4 };
+	snapshot.topology.segments[2].sides[0].opener_walls = { 4 };
+	auto &switch_wall = snapshot.topology.walls[4];
+	switch_wall.segment = 3;
+	switch_wall.side = 2;
+	switch_wall.target = snapshot.topology.segments[3].center;
+	switch_wall.shootable_trigger = true;
+	snapshot.topology.segments[3].sides[2].wall = 4;
+	snapshot.state.walls[4].kind = dxx_route::route_wall_kind::overlay;
+	snapshot.state.walls[4].trigger = 1;
+
+	snapshot.topology.triggers.resize(2);
+	snapshot.state.triggers.resize(2);
+	snapshot.topology.triggers[0].kind =
+	    dxx_route::route_trigger_kind::close_wall;
+	snapshot.topology.triggers[0].one_shot = true;
+	snapshot.topology.triggers[0].links.push_back({ 1, 1 });
+	snapshot.topology.triggers[1].kind =
+	    dxx_route::route_trigger_kind::open_wall;
+	snapshot.topology.triggers[1].links.push_back({ 1, 1 });
+	snapshot.state.start_segment = 0;
+	snapshot.state.start_position = snapshot.topology.segments[0].center;
+	return snapshot;
+}
+
 dxx_route::route_snapshot make_conditional_hidden_door_snapshot()
 {
 	dxx_route::route_snapshot snapshot;
@@ -1597,6 +1663,26 @@ int main()
 	assert(prepared_switch_dependency.steps[0].trigger == 2);
 	assert(prepared_switch_dependency.steps[1].trigger == 1);
 	assert(prepared_switch_dependency.steps[2].trigger == 0);
+	const auto passive_close_snapshot = make_passive_close_replan_snapshot();
+	dxx_route::route_query passive_close_query;
+	passive_close_query.start = passive_close_snapshot.state.start_position;
+	passive_close_query.endpoint = dxx_route::route_endpoint_kind::end_of_level;
+	const auto passive_close_plan = dxx_route::plan_route(
+	    passive_close_snapshot, passive_close_query);
+	assert(passive_close_plan.status == dxx_route::route_plan_status::ok);
+	assert(passive_close_plan.problem.empty());
+	assert(passive_close_plan.steps.size() == 3);
+	assert(passive_close_plan.steps[1].kind ==
+	       dxx_route::route_semantic_step_kind::trigger);
+	assert(passive_close_plan.steps[1].trigger == 1);
+	assert(passive_close_plan.steps[1].path.segments.size() == 3);
+	assert(passive_close_plan.steps[1].path.segments[0] == 0);
+	assert(passive_close_plan.steps[1].path.segments[1] == 1);
+	assert(passive_close_plan.steps[1].path.segments[2] == 3);
+	assert(passive_close_plan.steps[2].kind ==
+	       dxx_route::route_semantic_step_kind::exit);
+	assert(passive_close_plan.progress.fired_triggers[0]);
+	assert(passive_close_plan.progress.fired_triggers[1]);
 	const auto conditional_snapshot =
 	    make_conditional_hidden_door_snapshot();
 	dxx_route::route_query conditional_query;

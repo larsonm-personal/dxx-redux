@@ -2320,13 +2320,15 @@ class dependency_planner
 	    const route_visibility_query &visibility,
 	    bool allow_unresolved_triggers = false,
 	    int semantic_key_mask = -1,
-	    std::array<int, 3> semantic_key_order = { { 0, 2, 1 } })
+	    std::array<int, 3> semantic_key_order = { { 0, 2, 1 } },
+	    bool transition_aware_paths = true)
 	    : snapshot_(snapshot), query_(query), visibility_(visibility),
 	      targets_(discover_route_targets(snapshot)),
 	      switch_guidance_graph_(build_switch_guidance_graph(snapshot, query)),
 	      allow_unresolved_triggers_(allow_unresolved_triggers),
 	      semantic_key_mask_(semantic_key_mask),
-	      semantic_key_order_(semantic_key_order)
+	      semantic_key_order_(semantic_key_order),
+	      transition_aware_paths_(transition_aware_paths)
 	{
 		state_.progress = progress;
 		if (semantic_key_mask_ >= 0)
@@ -2702,11 +2704,8 @@ class dependency_planner
 		return {};
 	}
 
-	void accumulate_path(const route_path_result &path)
+	void append_pending_path(const route_path_result &path)
 	{
-		route_progress_traverse_path(
-		    snapshot_, state_.progress, path,
-		    state_.progress.wall_state_authoritative);
 		state_.pending_distance += path.distance;
 		state_.pending_path.reached = true;
 		state_.pending_path.distance += path.distance;
@@ -2730,6 +2729,71 @@ class dependency_planner
 		    path.segments.end());
 		state_.pending_path.sides.insert(
 		    state_.pending_path.sides.end(), path.sides.begin(), path.sides.end());
+	}
+
+	route_path_result path_prefix_through_edge(
+	    const route_path_result &path,
+	    std::size_t edge) const
+	{
+		route_path_result prefix;
+		if (edge >= path.sides.size() || edge + 1 >= path.segments.size())
+			return prefix;
+		prefix.reached = true;
+		prefix.segments.assign(
+		    path.segments.begin(), path.segments.begin() + edge + 2);
+		prefix.sides.assign(
+		    path.sides.begin(), path.sides.begin() + edge + 1);
+		prefix.terminal_segment = prefix.segments.back();
+		prefix.terminal_position =
+		    snapshot_.topology.segments[prefix.terminal_segment].center;
+		prefix.distance = point_distance(
+		    state_.progress.current_position,
+		    snapshot_.topology.segments[prefix.segments.front()].center);
+		for (std::size_t index = 0; index <= edge; ++index)
+			prefix.distance += point_distance(
+			    snapshot_.topology.segments[prefix.segments[index]].center,
+			    snapshot_.topology.segments[prefix.segments[index + 1]].center);
+		return prefix;
+	}
+
+	bool accumulate_path(const route_path_result &path)
+	{
+		if (!state_.progress.wall_state_authoritative || !transition_aware_paths_) {
+			route_progress_traverse_path(snapshot_, state_.progress, path, false);
+			append_pending_path(path);
+			return true;
+		}
+		for (std::size_t index = 0;
+		     index < path.sides.size() && index < path.segments.size(); ++index) {
+			const int segment = path.segments[index];
+			const int side = path.sides[index];
+			if (!valid_segment(snapshot_, segment) || side < 0 ||
+			    side >= LEVEL_METADATA_MAX_SIDES)
+				continue;
+			const int wall = snapshot_.topology.segments[segment].sides[side].wall;
+			if (!valid_wall(snapshot_, wall) ||
+			    snapshot_.topology.walls[wall].shootable_trigger)
+				continue;
+			const int trigger = snapshot_.state.walls[wall].trigger;
+			if (!valid_trigger(snapshot_, trigger) ||
+			    snapshot_.state.triggers[trigger].disabled)
+				continue;
+			const bool navigation_transition = route_trigger_changes_navigation(
+			    snapshot_.topology.triggers[trigger].kind);
+			if (!route_progress_apply_trigger(
+			        snapshot_, state_.progress, trigger) ||
+			    !navigation_transition || index + 1 == path.sides.size())
+				continue;
+			const auto prefix = path_prefix_through_edge(path, index);
+			if (!prefix.reached || !prefix.terminal_position.valid)
+				return false;
+			append_pending_path(prefix);
+			state_.progress.current_segment = prefix.terminal_segment;
+			state_.progress.current_position = prefix.terminal_position;
+			return false;
+		}
+		append_pending_path(path);
+		return true;
 	}
 
 	void finish_step(route_semantic_step &step)
@@ -2929,7 +2993,7 @@ class dependency_planner
 			    state_.unresolved_obstruction_segment,
 			    state_.unresolved_obstruction_side, true);
 			if (!sources.empty())
-				append_trigger_step(sources.front());
+				append_trigger_step(sources.front(), false, true);
 		} else if (state_.unresolved_obstruction.blocker ==
 		           route_edge_blocker::hidden_door)
 			append_hidden_door_step(
@@ -3227,7 +3291,8 @@ class dependency_planner
 			    !saved_problem.empty() ? saved_problem : "route target unreachable");
 			return false;
 		}
-		accumulate_path(visible);
+		if (!accumulate_path(visible))
+			return move_to_target_or_visible(target, depth + 1);
 		if (visible.waits_for_player)
 			state_.note =
 			    "Guide-Bot waits at the buddy-proof wall outside the boss";
@@ -3680,8 +3745,12 @@ class dependency_planner
 			}
 		}
 		if (selected_firing.found) {
-			if (!conditional_firing)
-				accumulate_path(selected_firing.path);
+			if (!conditional_firing &&
+			    !accumulate_path(selected_firing.path)) {
+				state_.progress.trigger_in_progress[source.trigger] = 0;
+				return fire_trigger(
+				    segment, side, depth + 1, forced_sources);
+			}
 			state_.progress.current_segment = selected_firing.terminal_segment;
 			state_.progress.current_position = selected_firing.terminal_position;
 			if (shootable) {
@@ -3830,7 +3899,8 @@ class dependency_planner
 						return false;
 					continue;
 				}
-				accumulate_path(direct);
+				if (!accumulate_path(direct))
+					continue;
 				state_.progress.current_segment = goal_segment;
 				state_.progress.current_position = goal_position;
 				state_.progress.avoided_key_mask = saved_avoided_keys;
@@ -3974,6 +4044,7 @@ class dependency_planner
 	bool allow_unresolved_triggers_;
 	int semantic_key_mask_;
 	std::array<int, 3> semantic_key_order_;
+	bool transition_aware_paths_;
 	dependency_state state_;
 };
 
@@ -3994,15 +4065,18 @@ route_dependency_result resolve_trigger_dependency(
 route_plan_result plan_route(
     const route_snapshot &snapshot,
     const route_query &query,
-    const route_visibility_query &visibility)
+    const route_visibility_query &visibility,
+    bool allow_transition_compatibility)
 {
 	auto plan_once = [&](const route_query &attempt, bool allow_unresolved,
 	                     int semantic_key_mask,
-	                     const std::array<int, 3> &semantic_key_order) {
+	                     const std::array<int, 3> &semantic_key_order,
+	                     bool transition_aware_paths) {
 		dependency_planner planner(
 		    snapshot, attempt,
 		    initial_route_progress_state(snapshot, attempt), visibility,
-		    allow_unresolved, semantic_key_mask, semantic_key_order);
+		    allow_unresolved, semantic_key_mask, semantic_key_order,
+		    transition_aware_paths);
 		if (attempt.endpoint == route_endpoint_kind::end_of_level)
 			return planner.plan_end_level();
 		if (attempt.endpoint == route_endpoint_kind::unexplored)
@@ -4011,15 +4085,18 @@ route_plan_result plan_route(
 	};
 	auto plan_mode = [&](int semantic_key_mask,
 	                     const std::array<int, 3> &semantic_key_order,
-	                     bool allow_relaxed, bool allow_unresolved) {
+	                     bool allow_relaxed, bool allow_unresolved,
+	                     bool transition_aware_paths = true) {
 		auto result = plan_once(
-		    query, false, semantic_key_mask, semantic_key_order);
+		    query, false, semantic_key_mask, semantic_key_order,
+		    transition_aware_paths);
 		if (allow_relaxed && result.status != route_plan_status::ok &&
 		    query.navigator.radius > 0) {
 			route_query relaxed = query;
 			relaxed.navigator.radius = 0;
 			result = plan_once(
-			    relaxed, false, semantic_key_mask, semantic_key_order);
+			    relaxed, false, semantic_key_mask, semantic_key_order,
+			    transition_aware_paths);
 		}
 		if (result.status == route_plan_status::ok ||
 		    query.endpoint != route_endpoint_kind::end_of_level)
@@ -4027,7 +4104,8 @@ route_plan_result plan_route(
 		if (!allow_unresolved)
 			return result;
 		auto continued = plan_once(
-		    query, true, semantic_key_mask, semantic_key_order);
+		    query, true, semantic_key_mask, semantic_key_order,
+		    transition_aware_paths);
 		return continued.steps.size() > result.steps.size() ? continued : result;
 	};
 	const std::array<int, 3> default_key_order = { { 0, 2, 1 } };
@@ -4056,34 +4134,41 @@ route_plan_result plan_route(
 			           route_activation_kind::unresolved_trigger;
 		    });
 	};
-	for (int allowed_key_mask = 0; allowed_key_mask < 8;
-	     ++allowed_key_mask) {
-		if ((allowed_key_mask & ~relevant_key_mask) != 0)
-			continue;
-		std::vector<int> selected_keys;
-		for (int key = 0; key < 3; ++key)
-			if (allowed_key_mask & (1 << key))
-				selected_keys.push_back(key);
-		do {
-			std::array<int, 3> key_order = default_key_order;
-			int order_index = 0;
-			for (const int key : selected_keys)
-				key_order[order_index++] = key;
-			for (const int key : default_key_order)
-				if (!(allowed_key_mask & (1 << key)))
+	auto collect_completing_plans = [&](bool transition_aware_paths) {
+		for (int allowed_key_mask = 0; allowed_key_mask < 8;
+		     ++allowed_key_mask) {
+			if ((allowed_key_mask & ~relevant_key_mask) != 0)
+				continue;
+			std::vector<int> selected_keys;
+			for (int key = 0; key < 3; ++key)
+				if (allowed_key_mask & (1 << key))
+					selected_keys.push_back(key);
+			do {
+				std::array<int, 3> key_order = default_key_order;
+				int order_index = 0;
+				for (const int key : selected_keys)
 					key_order[order_index++] = key;
-			auto candidate = plan_mode(
-			    allowed_key_mask, key_order, false, false);
-			if (candidate.status == route_plan_status::ok)
-				completing_plans.push_back(std::move(candidate));
-			else if (!have_partial ||
-			         candidate.steps.size() > best_partial.steps.size()) {
-				best_partial = std::move(candidate);
-				have_partial = true;
-			}
-		} while (std::next_permutation(
-		    selected_keys.begin(), selected_keys.end()));
-	}
+				for (const int key : default_key_order)
+					if (!(allowed_key_mask & (1 << key)))
+						key_order[order_index++] = key;
+				auto candidate = plan_mode(
+				    allowed_key_mask, key_order, false, false,
+				    transition_aware_paths);
+				if (candidate.status == route_plan_status::ok)
+					completing_plans.push_back(std::move(candidate));
+				else if (transition_aware_paths &&
+				         (!have_partial ||
+				          candidate.steps.size() > best_partial.steps.size())) {
+					best_partial = std::move(candidate);
+					have_partial = true;
+				}
+			} while (std::next_permutation(
+			    selected_keys.begin(), selected_keys.end()));
+		}
+	};
+	collect_completing_plans(true);
+	if (allow_transition_compatibility && completing_plans.empty())
+		collect_completing_plans(false);
 	if (completing_plans.empty()) {
 		auto diagnostic = plan_mode(
 		    relevant_key_mask, default_key_order, false, true);
@@ -4574,7 +4659,7 @@ extern "C" int route_planner_plan_view(
 				    visibility.wall_shootable_without_transparency;
 				strict_visibility.wall_potentially_shootable = nullptr;
 				auto strict = dxx_route::plan_route(
-				    snapshot, query, strict_visibility);
+				    snapshot, query, strict_visibility, false);
 				const int result_keys = plan_key_mask(result);
 				const int strict_keys = plan_key_mask(strict);
 				const int bypassable_keys =

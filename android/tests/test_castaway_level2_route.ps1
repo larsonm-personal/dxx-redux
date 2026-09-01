@@ -5,10 +5,34 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $metadataPath = Join-Path $repoRoot 'game_data\mission_files\castaway_redux.json'
 $mission = @(Get-Content -LiteralPath $metadataPath -Raw | ConvertFrom-Json)
+$level1 = @($mission[0].levels | Where-Object { $_.level_num -eq 1 })
 $level = @($mission[0].levels | Where-Object { $_.level_num -eq 2 })
 
+if ($level1.Count -ne 1) {
+    throw "Expected exactly one Castaway level 1 record, found $($level1.Count)"
+}
 if ($level.Count -ne 1) {
     throw "Expected exactly one Castaway level 2 record, found $($level.Count)"
+}
+if ($level1[0].route_status -ne 'ok' -or
+    -not [string]::IsNullOrEmpty([string]$level1[0].route_problem)) {
+    throw "Castaway level 1 route is $($level1[0].route_status): $($level1[0].route_problem)"
+}
+$level1Objectives = @(
+    $level1[0].route_steps | ForEach-Object {
+        if ($_.kind -eq 'trigger') {
+            "trigger:$($_.trigger)"
+        } else {
+            [string]$_.kind
+        }
+    }
+)
+$level1Trigger2 = [Array]::IndexOf($level1Objectives, 'trigger:2')
+$level1Reactor = [Array]::IndexOf($level1Objectives, 'reactor')
+$level1Exit = [Array]::IndexOf($level1Objectives, 'exit')
+if ($level1Trigger2 -lt 0 -or $level1Reactor -le $level1Trigger2 -or
+    $level1Exit -le $level1Reactor) {
+    throw "Castaway level 1 route does not reopen trigger 2 before reactor and exit: $($level1Objectives -join ',')"
 }
 if ($level[0].route_status -ne 'ok' -or
     -not [string]::IsNullOrEmpty([string]$level[0].route_problem)) {
@@ -32,6 +56,7 @@ $objectives = @(
 )
 $expected = @(
     'start'
+    'trigger:0'
     'trigger:1'
     'trigger:6'
     'trigger:3'
@@ -66,4 +91,4 @@ if (($keys -join ',') -ne ($expectedKeys -join ',')) {
     throw "Castaway level 2 key route is $($keys -join ','), expected $($expectedKeys -join ',')"
 }
 
-Write-Host 'PASS: Castaway level 2 derives blue, gold, and red prerequisites'
+Write-Host 'PASS: Castaway levels 1 and 2 retain strict completion routes'
