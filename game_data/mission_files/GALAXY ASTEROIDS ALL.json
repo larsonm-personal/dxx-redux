@@ -5,6 +5,35 @@
     "game": "d2",
     "mission_name": "GALAXY ASTEROIDS ALL",
     "mission_filename": "GSTROIDS.MN2",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 6,
+      "campaign_actor_levels": 6,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 2,
+      "coop_start_max": 3,
+      "robots": 419,
+      "hostages": 23,
+      "matcens": 6,
+      "guidebots": 6,
+      "powerups": 262,
+      "reactors": 6
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -104,6 +133,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -272,6 +303,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -439,6 +472,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -582,6 +617,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -747,6 +784,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -782,6 +821,33 @@
           },
           {
             "index": 2,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 279,
+            "side": 2,
+            "wall": 33,
+            "label_pos": {
+              "x": -82.4,
+              "y": -22.5,
+              "z": 324.6
+            },
+            "distance": 203.0,
+            "opens": [
+              {
+                "seg": 279,
+                "side": 2,
+                "wall": 33
+              },
+              {
+                "seg": 293,
+                "side": 0,
+                "wall": 32
+              }
+            ]
+          },
+          {
+            "index": 3,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 5",
@@ -793,7 +859,7 @@
               "y": -82.4,
               "z": 482.6
             },
-            "distance": 674.5,
+            "distance": 471.5,
             "trigger": 5,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -806,7 +872,7 @@
             ]
           },
           {
-            "index": 3,
+            "index": 4,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 0",
@@ -831,7 +897,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "blue key",
@@ -845,7 +911,7 @@
             "key": "blue"
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -860,7 +926,7 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "red key missing",
+        "route_problem": "red key excluded from prerequisite trial",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
         ]
@@ -894,6 +960,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -904,7 +972,7 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "blue key unreachable",
+        "route_problem": "blue key excluded from prerequisite trial",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
         ]
@@ -938,6 +1006,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 4,
         "route_steps": [
           {
             "index": 0,
@@ -1037,35 +1107,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": false,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 6,
-      "campaign_actor_levels": 6,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 2,
-      "coop_start_max": 3,
-      "robots": 419,
-      "hostages": 23,
-      "matcens": 6,
-      "guidebots": 6,
-      "powerups": 262,
-      "reactors": 6
-    },
     "mission_path": "GALAXY ASTEROIDS ALL/GSTROIDS.MN2",
     "target_index": 0
   }

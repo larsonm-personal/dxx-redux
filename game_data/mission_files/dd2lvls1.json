@@ -5,6 +5,35 @@
     "game": "d2",
     "mission_name": "Descer's d2 stages 1",
     "mission_filename": "DD2LVLS1.MN2",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 9,
+      "campaign_actor_levels": 9,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 1112,
+      "hostages": 59,
+      "matcens": 2,
+      "guidebots": 9,
+      "powerups": 472,
+      "reactors": 9
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -104,6 +133,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -324,6 +355,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -465,6 +498,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -582,6 +617,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -732,6 +769,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -825,6 +864,33 @@
           },
           {
             "index": 5,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 421,
+            "side": 3,
+            "wall": 100,
+            "label_pos": {
+              "x": 100.0,
+              "y": 34.8,
+              "z": 260.0
+            },
+            "distance": 245.7,
+            "opens": [
+              {
+                "seg": 421,
+                "side": 3,
+                "wall": 100
+              },
+              {
+                "seg": 424,
+                "side": 1,
+                "wall": 101
+              }
+            ]
+          },
+          {
+            "index": 6,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -834,11 +900,11 @@
               "y": 119.9,
               "z": 220.2
             },
-            "distance": 377.6,
+            "distance": 131.8,
             "key": "red"
           },
           {
-            "index": 6,
+            "index": 7,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -851,7 +917,7 @@
             "distance": 1005.1
           },
           {
-            "index": 7,
+            "index": 8,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -903,6 +969,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -1113,6 +1181,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -1178,7 +1248,7 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "red key unreachable",
+        "route_problem": "red key excluded from prerequisite trial",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
         ]
@@ -1212,6 +1282,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -1328,6 +1400,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -1421,6 +1495,33 @@
           },
           {
             "index": 5,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 421,
+            "side": 3,
+            "wall": 100,
+            "label_pos": {
+              "x": 100.0,
+              "y": 34.8,
+              "z": 260.0
+            },
+            "distance": 245.7,
+            "opens": [
+              {
+                "seg": 421,
+                "side": 3,
+                "wall": 100
+              },
+              {
+                "seg": 424,
+                "side": 1,
+                "wall": 101
+              }
+            ]
+          },
+          {
+            "index": 6,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -1430,11 +1531,11 @@
               "y": 119.9,
               "z": 220.2
             },
-            "distance": 377.6,
+            "distance": 131.8,
             "key": "red"
           },
           {
-            "index": 6,
+            "index": 7,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -1447,7 +1548,7 @@
             "distance": 1005.1
           },
           {
-            "index": 7,
+            "index": 8,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -1471,35 +1572,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": false,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 9,
-      "campaign_actor_levels": 9,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 1112,
-      "hostages": 59,
-      "matcens": 2,
-      "guidebots": 9,
-      "powerups": 472,
-      "reactors": 9
-    },
     "mission_path": "DD2LVLS1.MN2",
     "target_index": 0
   }

@@ -5,6 +5,35 @@
     "game": "d1",
     "mission_name": "Colossus",
     "mission_filename": "COLOSSUS.MSN",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 4,
+      "campaign_actor_levels": 4,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 1,
+      "player_start_max": 1,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 226,
+      "hostages": 16,
+      "matcens": 8,
+      "guidebots": 0,
+      "powerups": 76,
+      "reactors": 0
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -228,6 +257,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -237,7 +268,7 @@
             "seg": 661
           }
         ],
-        "route_problem": "gold key missing",
+        "route_problem": "red key excluded from prerequisite trial",
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists"
@@ -272,6 +303,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 4,
+        "route_completing_key_mask_set": 48,
         "route_steps": [
           {
             "index": 0,
@@ -296,7 +329,7 @@
             "distance": 2288.6,
             "trigger": 13,
             "trigger_type_id": 1,
-            "trigger_type": "open_door",
+            "trigger_type": "toggle_door",
             "opens": [
               {
                 "seg": 300,
@@ -474,13 +507,15 @@
         "mine_volume": 18126800.0,
         "mine_volume_normalized": 3.96395,
         "mine_volume_text": "4.0x",
-        "travel_distance": 2877.6,
-        "travel_time_seconds": 58,
-        "travel_time_text": "0M:58S",
+        "travel_distance": 2196.7,
+        "travel_time_seconds": 44,
+        "travel_time_text": "0M:44S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 6,
+        "route_completing_key_mask_set": 192,
         "route_steps": [
           {
             "index": 0,
@@ -491,6 +526,20 @@
           },
           {
             "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 154,
+            "label_pos": {
+              "x": -268.5,
+              "y": -62.2,
+              "z": 631.7
+            },
+            "distance": 5.9,
+            "key": "gold"
+          },
+          {
+            "index": 2,
             "kind": "trigger",
             "activation_kind": "pass_through_trigger",
             "label": "Pass through trigger 31",
@@ -502,10 +551,10 @@
               "y": -72.8,
               "z": 324.6
             },
-            "distance": 352.3,
+            "distance": 354.8,
             "trigger": 31,
             "trigger_type_id": 1,
-            "trigger_type": "open_door",
+            "trigger_type": "toggle_door",
             "opens": [
               {
                 "seg": 217,
@@ -513,20 +562,6 @@
                 "wall": 151
               }
             ]
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
-            "seg": 154,
-            "label_pos": {
-              "x": -268.5,
-              "y": -62.2,
-              "z": 631.7
-            },
-            "distance": 354.8,
-            "key": "gold"
           },
           {
             "index": 3,
@@ -541,10 +576,10 @@
               "y": -173.3,
               "z": -73.7
             },
-            "distance": 1483.6,
+            "distance": 1149.0,
             "trigger": 18,
             "trigger_type_id": 1,
-            "trigger_type": "open_door",
+            "trigger_type": "toggle_door",
             "opens": [
               {
                 "seg": 565,
@@ -619,13 +654,15 @@
         "mine_volume": 10784400.0,
         "mine_volume_normalized": 2.35833,
         "mine_volume_text": "2.4x",
-        "travel_distance": 12.0,
+        "travel_distance": 0.0,
         "travel_time_seconds": 0,
         "travel_time_text": "0M:00S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
+        "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -633,82 +670,11 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 622
-          },
-          {
-            "index": 1,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "blue key",
-            "seg": 622,
-            "label_pos": {
-              "x": 20.0,
-              "y": -2.0,
-              "z": 60.0
-            },
-            "distance": 2.0,
-            "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
-            "seg": 622,
-            "label_pos": {
-              "x": 20.0,
-              "y": 3.0,
-              "z": 60.0
-            },
-            "distance": 5.0,
-            "key": "gold"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 622,
-            "label_pos": {
-              "x": 18.2,
-              "y": 0.0,
-              "z": 59.2
-            },
-            "distance": 5.0,
-            "key": "red"
           }
         ],
-        "route_problem": "route target unreachable"
+        "route_problem": "blue key excluded from prerequisite trial"
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": false,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 4,
-      "campaign_actor_levels": 4,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 1,
-      "coop_start_min": 0,
-      "coop_start_max": 0,
-      "robots": 226,
-      "hostages": 16,
-      "matcens": 8,
-      "guidebots": 0,
-      "powerups": 76,
-      "reactors": 0
-    },
     "mission_path": "COLOSSUS.MSN",
     "target_index": 0
   }

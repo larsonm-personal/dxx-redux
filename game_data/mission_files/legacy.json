@@ -5,6 +5,35 @@
     "game": "d2",
     "mission_name": "Legacy of Chaos",
     "mission_filename": "legacy.mn2",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 3,
+      "campaign_actor_levels": 3,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 1,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 378,
+      "hostages": 3,
+      "matcens": 12,
+      "guidebots": 0,
+      "powerups": 297,
+      "reactors": 3
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -97,13 +126,15 @@
         "mine_volume": 13444200.0,
         "mine_volume_normalized": 2.93998,
         "mine_volume_text": "2.9x",
-        "travel_distance": 2348.7,
+        "travel_distance": 2345.0,
         "travel_time_seconds": 47,
         "travel_time_text": "0M:47S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -194,7 +225,7 @@
               "y": -57.5,
               "z": 167.5
             },
-            "distance": 234.4,
+            "distance": 232.6,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -222,7 +253,7 @@
               "y": 40.0,
               "z": -6.2
             },
-            "distance": 354.7,
+            "distance": 352.8,
             "key": "gold"
           },
           {
@@ -300,6 +331,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 5,
         "route_steps": [
           {
             "index": 0,
@@ -436,14 +469,14 @@
           {
             "index": 5,
             "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 15",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 15",
             "seg": 378,
             "side": 1,
             "wall": 46,
             "label_pos": {
               "x": 0.0,
-              "y": -170.0,
+              "y": -165.0,
               "z": 400.0
             },
             "distance": 17.5,
@@ -558,13 +591,15 @@
         "mine_volume": 18824900.0,
         "mine_volume_normalized": 4.11663,
         "mine_volume_text": "4.1x",
-        "travel_distance": 7149.5,
+        "travel_distance": 7143.2,
         "travel_time_seconds": 143,
         "travel_time_text": "2M:23S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -639,7 +674,7 @@
               "y": -50.0,
               "z": 10.0
             },
-            "distance": 2074.2,
+            "distance": 2071.0,
             "trigger": 6,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -687,7 +722,7 @@
               "y": 280.0,
               "z": 310.9
             },
-            "distance": 1333.0,
+            "distance": 1329.8,
             "key": "red"
           },
           {
@@ -758,35 +793,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": false,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 3,
-      "campaign_actor_levels": 3,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 378,
-      "hostages": 3,
-      "matcens": 12,
-      "guidebots": 0,
-      "powerups": 297,
-      "reactors": 3
-    },
     "mission_path": "legacy.mn2",
     "target_index": 0
   }

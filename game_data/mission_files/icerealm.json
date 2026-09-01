@@ -5,6 +5,35 @@
     "game": "d1",
     "mission_name": "Ice's Realm",
     "mission_filename": "icerealm.msn",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 9,
+      "campaign_actor_levels": 9,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 7,
+      "player_start_max": 8,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 534,
+      "hostages": 47,
+      "matcens": 6,
+      "guidebots": 0,
+      "powerups": 545,
+      "reactors": 9
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -221,13 +250,15 @@
         "mine_volume": 12780800.0,
         "mine_volume_normalized": 2.79489,
         "mine_volume_text": "2.8x",
-        "travel_distance": 5674.8,
+        "travel_distance": 5664.9,
         "travel_time_seconds": 113,
         "travel_time_text": "1M:53S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 6,
+        "route_completing_key_mask_set": 64,
         "route_steps": [
           {
             "index": 0,
@@ -238,66 +269,6 @@
           },
           {
             "index": 1,
-            "kind": "trigger",
-            "activation_kind": "fly_through_trigger",
-            "label": "Fly-through trigger 1",
-            "seg": 218,
-            "side": 0,
-            "wall": 50,
-            "label_pos": {
-              "x": 49.0,
-              "y": -126.0,
-              "z": -513.6
-            },
-            "distance": 614.0,
-            "trigger": 1,
-            "trigger_type_id": 1,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 194,
-                "side": 0,
-                "wall": 43
-              },
-              {
-                "seg": 221,
-                "side": 3,
-                "wall": 42
-              },
-              {
-                "seg": 192,
-                "side": 0,
-                "wall": 47
-              },
-              {
-                "seg": 213,
-                "side": 3,
-                "wall": 48
-              },
-              {
-                "seg": 193,
-                "side": 0,
-                "wall": 49
-              },
-              {
-                "seg": 207,
-                "side": 3,
-                "wall": 45
-              },
-              {
-                "seg": 201,
-                "side": 3,
-                "wall": 46
-              },
-              {
-                "seg": 191,
-                "side": 0,
-                "wall": 44
-              }
-            ]
-          },
-          {
-            "index": 2,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -307,11 +278,11 @@
               "y": -126.0,
               "z": -547.7
             },
-            "distance": 386.4,
+            "distance": 990.4,
             "key": "gold"
           },
           {
-            "index": 3,
+            "index": 2,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -325,7 +296,7 @@
             "key": "red"
           },
           {
-            "index": 4,
+            "index": 3,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -338,7 +309,7 @@
             "distance": 2324.4
           },
           {
-            "index": 5,
+            "index": 4,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -386,6 +357,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -498,6 +471,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -610,6 +585,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -722,6 +699,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -763,33 +742,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
             "seg": 278,
-            "side": 4,
-            "wall": 70,
-            "label_pos": {
-              "x": -88.0,
-              "y": 20.0,
-              "z": 190.0
-            },
-            "distance": 14.0,
-            "opens": [
-              {
-                "seg": 278,
-                "side": 4,
-                "wall": 70
-              },
-              {
-                "seg": 238,
-                "side": 0,
-                "wall": 71
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Open hidden door",
-            "seg": 278,
             "side": 1,
             "wall": 61,
             "label_pos": {
@@ -797,6 +749,7 @@
               "y": 30.0,
               "z": 180.0
             },
+            "distance": 14.0,
             "opens": [
               {
                 "seg": 278,
@@ -811,7 +764,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 3,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "blue key",
@@ -823,6 +776,33 @@
             },
             "distance": 170.0,
             "key": "blue"
+          },
+          {
+            "index": 4,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 278,
+            "side": 4,
+            "wall": 70,
+            "label_pos": {
+              "x": -88.0,
+              "y": 20.0,
+              "z": 190.0
+            },
+            "distance": 170.0,
+            "opens": [
+              {
+                "seg": 278,
+                "side": 4,
+                "wall": 70
+              },
+              {
+                "seg": 238,
+                "side": 0,
+                "wall": 71
+              }
+            ]
           },
           {
             "index": 5,
@@ -837,7 +817,7 @@
               "y": -130.0,
               "z": 130.0
             },
-            "distance": 543.9,
+            "distance": 373.9,
             "opens": [
               {
                 "seg": 200,
@@ -968,6 +948,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -1080,6 +1062,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -1192,6 +1176,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -1298,7 +1284,7 @@
             "distance": 407.2,
             "trigger": 4,
             "trigger_type_id": 1,
-            "trigger_type": "open_door",
+            "trigger_type": "toggle_door",
             "opens": [
               {
                 "seg": 123,
@@ -1383,6 +1369,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -1470,35 +1458,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": false,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 9,
-      "campaign_actor_levels": 9,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 7,
-      "player_start_max": 8,
-      "coop_start_min": 0,
-      "coop_start_max": 0,
-      "robots": 534,
-      "hostages": 47,
-      "matcens": 6,
-      "guidebots": 0,
-      "powerups": 545,
-      "reactors": 9
-    },
     "mission_path": "icerealm/icerealm.msn",
     "target_index": 0
   }

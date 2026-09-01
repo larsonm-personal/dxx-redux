@@ -5,6 +5,35 @@
     "game": "d1",
     "mission_name": "The Rogue Missions",
     "mission_filename": "ROG.MSN",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 5,
+      "campaign_actor_levels": 5,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 1,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 392,
+      "hostages": 25,
+      "matcens": 12,
+      "guidebots": 0,
+      "powerups": 193,
+      "reactors": 5
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -228,6 +257,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 12,
         "route_steps": [
           {
             "index": 0,
@@ -293,7 +324,7 @@
             "distance": 631.3,
             "trigger": 7,
             "trigger_type_id": 1,
-            "trigger_type": "open_door",
+            "trigger_type": "toggle_door",
             "opens": [
               {
                 "seg": 29,
@@ -318,7 +349,7 @@
             "distance": 180.0,
             "trigger": 6,
             "trigger_type_id": 1,
-            "trigger_type": "open_door",
+            "trigger_type": "toggle_door",
             "opens": [
               {
                 "seg": 21,
@@ -370,7 +401,7 @@
             "distance": 45.0,
             "trigger": 8,
             "trigger_type_id": 1,
-            "trigger_type": "open_door",
+            "trigger_type": "toggle_door",
             "opens": [
               {
                 "seg": 364,
@@ -444,6 +475,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -453,7 +486,7 @@
             "seg": 595
           }
         ],
-        "route_problem": "blue key unreachable"
+        "route_problem": "blue key excluded from prerequisite trial"
       },
       {
         "level_num": 3,
@@ -484,6 +517,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -493,7 +528,7 @@
             "seg": 798
           }
         ],
-        "route_problem": "blue key unreachable"
+        "route_problem": "blue key excluded from prerequisite trial"
       },
       {
         "level_num": 4,
@@ -524,6 +559,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -533,7 +570,7 @@
             "seg": 549
           }
         ],
-        "route_problem": "blue key unreachable"
+        "route_problem": "blue key excluded from prerequisite trial"
       },
       {
         "level_num": 5,
@@ -564,6 +601,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -573,38 +612,9 @@
             "seg": 751
           }
         ],
-        "route_problem": "gold key unreachable"
+        "route_problem": "blue key excluded from prerequisite trial"
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": false,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 5,
-      "campaign_actor_levels": 5,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 392,
-      "hostages": 25,
-      "matcens": 12,
-      "guidebots": 0,
-      "powerups": 193,
-      "reactors": 5
-    },
     "mission_path": "ROG.MSN",
     "target_index": 0
   }

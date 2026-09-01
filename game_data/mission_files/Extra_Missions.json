@@ -5,6 +5,35 @@
     "game": "d1",
     "mission_name": "Combat Deluxe",
     "mission_filename": "COMDELUX.MSN",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 20,
+      "hostages": 0,
+      "matcens": 1,
+      "guidebots": 0,
+      "powerups": 42,
+      "reactors": 1
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -228,6 +257,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -270,6 +301,15 @@
         ]
       }
     ],
+    "mission_path": "Extra_Missions/COMDELUX.MSN",
+    "target_index": 0
+  },
+  {
+    "status": "ok",
+    "source": "Corridor Nine 1.1",
+    "game": "d1",
+    "mission_name": "Corridor Nine 1.1",
+    "mission_filename": "CORR11.MSN",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -292,22 +332,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 20,
+      "robots": 37,
       "hostages": 0,
       "matcens": 1,
       "guidebots": 0,
-      "powerups": 42,
+      "powerups": 17,
       "reactors": 1
     },
-    "mission_path": "Extra_Missions/COMDELUX.MSN",
-    "target_index": 0
-  },
-  {
-    "status": "ok",
-    "source": "Corridor Nine 1.1",
-    "game": "d1",
-    "mission_name": "Corridor Nine 1.1",
-    "mission_filename": "CORR11.MSN",
     "coop_starts": "4",
     "track_names": [
       {
@@ -531,6 +562,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -618,6 +651,15 @@
         ]
       }
     ],
+    "mission_path": "Extra_Missions/CORR11.MSN",
+    "target_index": 1
+  },
+  {
+    "status": "ok",
+    "source": "Demon Bridge",
+    "game": "d1",
+    "mission_name": "Demon Bridge",
+    "mission_filename": "DEMONBRG.MSN",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -640,22 +682,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 37,
+      "robots": 73,
       "hostages": 0,
-      "matcens": 1,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 17,
+      "powerups": 21,
       "reactors": 1
     },
-    "mission_path": "Extra_Missions/CORR11.MSN",
-    "target_index": 1
-  },
-  {
-    "status": "ok",
-    "source": "Demon Bridge",
-    "game": "d1",
-    "mission_name": "Demon Bridge",
-    "mission_filename": "DEMONBRG.MSN",
     "coop_starts": "4",
     "track_names": [
       {
@@ -879,6 +912,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 3,
+        "route_completing_key_mask_set": 8,
         "route_steps": [
           {
             "index": 0,
@@ -950,6 +985,15 @@
         ]
       }
     ],
+    "mission_path": "Extra_Missions/DEMONBRG.MSN",
+    "target_index": 2
+  },
+  {
+    "status": "ok",
+    "source": "Outpost Death",
+    "game": "d1",
+    "mission_name": "Outpost Death",
+    "mission_filename": "DETHPOST.MSN",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -972,22 +1016,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 73,
+      "robots": 20,
       "hostages": 0,
       "matcens": 0,
       "guidebots": 0,
-      "powerups": 21,
+      "powerups": 17,
       "reactors": 1
     },
-    "mission_path": "Extra_Missions/DEMONBRG.MSN",
-    "target_index": 2
-  },
-  {
-    "status": "ok",
-    "source": "Outpost Death",
-    "game": "d1",
-    "mission_name": "Outpost Death",
-    "mission_filename": "DETHPOST.MSN",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1211,6 +1246,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 68,
         "route_steps": [
           {
             "index": 0,
@@ -1297,35 +1334,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": false,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 20,
-      "hostages": 0,
-      "matcens": 0,
-      "guidebots": 0,
-      "powerups": 17,
-      "reactors": 1
-    },
     "mission_path": "Extra_Missions/DETHPOST.MSN",
     "target_index": 3
   },
@@ -1335,6 +1343,36 @@
     "game": "d1",
     "mission_name": "Duality",
     "mission_filename": "DUALITY.MSN",
+    "mission_intent": {
+      "classification": "multiplayer_anarchy",
+      "rule": "descriptor_anarchy_only",
+      "confidence": "high",
+      "reason": "The mission descriptor marks this mission as anarchy-only",
+      "declarations": {
+        "anarchy_only": true,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 0,
+      "arena_like_levels": 1,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 24,
+      "reactors": 1
+    },
+    "coop_starts": "1",
     "track_names": [
       {
         "track": 0,
@@ -1557,6 +1595,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -1599,35 +1639,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "multiplayer_anarchy",
-      "rule": "descriptor_anarchy_only",
-      "confidence": "high",
-      "reason": "The mission descriptor marks this mission as anarchy-only",
-      "declarations": {
-        "anarchy_only": true,
-        "normal": false,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 1,
-      "campaign_actor_levels": 0,
-      "arena_like_levels": 1,
-      "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 0,
-      "coop_start_max": 0,
-      "robots": 0,
-      "hostages": 0,
-      "matcens": 0,
-      "guidebots": 0,
-      "powerups": 24,
-      "reactors": 1
-    },
     "mission_path": "Extra_Missions/DUALITY.MSN",
     "target_index": 4
   },
@@ -1637,6 +1648,35 @@
     "game": "d1",
     "mission_name": "Earth Strike",
     "mission_filename": "ERTHSTRK.MSN",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 63,
+      "hostages": 0,
+      "matcens": 2,
+      "guidebots": 0,
+      "powerups": 14,
+      "reactors": 1
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -1860,6 +1900,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -1953,7 +1995,7 @@
             "distance": 1045.6,
             "trigger": 7,
             "trigger_type_id": 1,
-            "trigger_type": "open_door",
+            "trigger_type": "toggle_door",
             "opens": [
               {
                 "seg": 173,
@@ -2001,6 +2043,15 @@
         ]
       }
     ],
+    "mission_path": "Extra_Missions/ERTHSTRK.MSN",
+    "target_index": 5
+  },
+  {
+    "status": "ok",
+    "source": "Firebase Omega",
+    "game": "d1",
+    "mission_name": "Firebase Omega",
+    "mission_filename": "FBOMEGA.MSN",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -2023,22 +2074,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 63,
-      "hostages": 0,
-      "matcens": 2,
+      "robots": 57,
+      "hostages": 4,
+      "matcens": 0,
       "guidebots": 0,
       "powerups": 14,
       "reactors": 1
     },
-    "mission_path": "Extra_Missions/ERTHSTRK.MSN",
-    "target_index": 5
-  },
-  {
-    "status": "ok",
-    "source": "Firebase Omega",
-    "game": "d1",
-    "mission_name": "Firebase Omega",
-    "mission_filename": "FBOMEGA.MSN",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2262,6 +2304,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 3,
+        "route_completing_key_mask_set": 136,
         "route_steps": [
           {
             "index": 0,
@@ -2335,6 +2379,15 @@
         ]
       }
     ],
+    "mission_path": "Extra_Missions/FBOMEGA.MSN",
+    "target_index": 6
+  },
+  {
+    "status": "ok",
+    "source": "Humility ver1.2",
+    "game": "d1",
+    "mission_name": "Humility ver1.2",
+    "mission_filename": "HUMIL2.MSN",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -2357,22 +2410,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 57,
-      "hostages": 4,
+      "robots": 50,
+      "hostages": 6,
       "matcens": 0,
       "guidebots": 0,
-      "powerups": 14,
+      "powerups": 30,
       "reactors": 1
     },
-    "mission_path": "Extra_Missions/FBOMEGA.MSN",
-    "target_index": 6
-  },
-  {
-    "status": "ok",
-    "source": "Humility ver1.2",
-    "game": "d1",
-    "mission_name": "Humility ver1.2",
-    "mission_filename": "HUMIL2.MSN",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2596,6 +2640,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -2680,6 +2726,15 @@
         ]
       }
     ],
+    "mission_path": "Extra_Missions/HUMIL2.MSN",
+    "target_index": 7
+  },
+  {
+    "status": "ok",
+    "source": "Lunar Surface Outpost",
+    "game": "d1",
+    "mission_name": "Lunar Surface Outpost",
+    "mission_filename": "LUNAPOST.MSN",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -2702,22 +2757,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 50,
-      "hostages": 6,
-      "matcens": 0,
+      "robots": 128,
+      "hostages": 4,
+      "matcens": 1,
       "guidebots": 0,
-      "powerups": 30,
+      "powerups": 34,
       "reactors": 1
     },
-    "mission_path": "Extra_Missions/HUMIL2.MSN",
-    "target_index": 7
-  },
-  {
-    "status": "ok",
-    "source": "Lunar Surface Outpost",
-    "game": "d1",
-    "mission_name": "Lunar Surface Outpost",
-    "mission_filename": "LUNAPOST.MSN",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2934,13 +2980,15 @@
         "mine_volume": 35219500.0,
         "mine_volume_normalized": 7.70179,
         "mine_volume_text": "7.7x",
-        "travel_distance": 12446.9,
+        "travel_distance": 12436.1,
         "travel_time_seconds": 249,
         "travel_time_text": "4M:09S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -3033,7 +3081,7 @@
             "distance": 70.0,
             "trigger": 11,
             "trigger_type_id": 1,
-            "trigger_type": "open_door",
+            "trigger_type": "toggle_door",
             "opens": [
               {
                 "seg": 507,
@@ -3058,7 +3106,7 @@
             "distance": 450.0,
             "trigger": 10,
             "trigger_type_id": 1,
-            "trigger_type": "open_door",
+            "trigger_type": "toggle_door",
             "opens": [
               {
                 "seg": 477,
@@ -3092,7 +3140,7 @@
               "y": 10.0,
               "z": 480.0
             },
-            "distance": 3855.8,
+            "distance": 3850.4,
             "key": "red"
           },
           {
@@ -3108,10 +3156,10 @@
               "y": 10.8,
               "z": 812.0
             },
-            "distance": 2582.8,
+            "distance": 2577.4,
             "trigger": 9,
             "trigger_type_id": 1,
-            "trigger_type": "open_door",
+            "trigger_type": "toggle_door",
             "opens": [
               {
                 "seg": 43,
@@ -3154,6 +3202,15 @@
         ]
       }
     ],
+    "mission_path": "Extra_Missions/LUNAPOST.MSN",
+    "target_index": 8
+  },
+  {
+    "status": "ok",
+    "source": "Mad Decorator!",
+    "game": "d1",
+    "mission_name": "Mad Decorator!",
+    "mission_filename": "MAD.MSN",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -3176,22 +3233,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 128,
-      "hostages": 4,
-      "matcens": 1,
+      "robots": 32,
+      "hostages": 3,
+      "matcens": 4,
       "guidebots": 0,
-      "powerups": 34,
+      "powerups": 55,
       "reactors": 1
     },
-    "mission_path": "Extra_Missions/LUNAPOST.MSN",
-    "target_index": 8
-  },
-  {
-    "status": "ok",
-    "source": "Mad Decorator!",
-    "game": "d1",
-    "mission_name": "Mad Decorator!",
-    "mission_filename": "MAD.MSN",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3415,6 +3463,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -3526,6 +3576,15 @@
         ]
       }
     ],
+    "mission_path": "Extra_Missions/MAD.MSN",
+    "target_index": 9
+  },
+  {
+    "status": "ok",
+    "source": "Magnum Outpost Four",
+    "game": "d1",
+    "mission_name": "Magnum Outpost Four",
+    "mission_filename": "MAG4.MSN",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -3548,22 +3607,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 32,
-      "hostages": 3,
-      "matcens": 4,
+      "robots": 52,
+      "hostages": 4,
+      "matcens": 6,
       "guidebots": 0,
-      "powerups": 55,
+      "powerups": 30,
       "reactors": 1
     },
-    "mission_path": "Extra_Missions/MAD.MSN",
-    "target_index": 9
-  },
-  {
-    "status": "ok",
-    "source": "Magnum Outpost Four",
-    "game": "d1",
-    "mission_name": "Magnum Outpost Four",
-    "mission_filename": "MAG4.MSN",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3787,6 +3837,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -3839,7 +3891,7 @@
             "distance": 1138.7,
             "trigger": 12,
             "trigger_type_id": 1,
-            "trigger_type": "open_door",
+            "trigger_type": "toggle_door",
             "opens": [
               {
                 "seg": 332,
@@ -3896,6 +3948,15 @@
         ]
       }
     ],
+    "mission_path": "Extra_Missions/MAG4.MSN",
+    "target_index": 10
+  },
+  {
+    "status": "ok",
+    "source": "The Newest Threat",
+    "game": "d1",
+    "mission_name": "The Newest Threat",
+    "mission_filename": "NEWEST.MSN",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -3918,22 +3979,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 52,
+      "robots": 89,
       "hostages": 4,
-      "matcens": 6,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 30,
+      "powerups": 90,
       "reactors": 1
     },
-    "mission_path": "Extra_Missions/MAG4.MSN",
-    "target_index": 10
-  },
-  {
-    "status": "ok",
-    "source": "The Newest Threat",
-    "game": "d1",
-    "mission_name": "The Newest Threat",
-    "mission_filename": "NEWEST.MSN",
     "coop_starts": "4",
     "track_names": [
       {
@@ -4157,6 +4209,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -4241,6 +4295,15 @@
         ]
       }
     ],
+    "mission_path": "Extra_Missions/NEWEST.MSN",
+    "target_index": 11
+  },
+  {
+    "status": "ok",
+    "source": "The Observatory 1.3",
+    "game": "d1",
+    "mission_name": "The Observatory 1.3",
+    "mission_filename": "OBSRV13.MSN",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -4263,22 +4326,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 89,
-      "hostages": 4,
-      "matcens": 0,
+      "robots": 46,
+      "hostages": 2,
+      "matcens": 2,
       "guidebots": 0,
-      "powerups": 90,
+      "powerups": 22,
       "reactors": 1
     },
-    "mission_path": "Extra_Missions/NEWEST.MSN",
-    "target_index": 11
-  },
-  {
-    "status": "ok",
-    "source": "The Observatory 1.3",
-    "game": "d1",
-    "mission_name": "The Observatory 1.3",
-    "mission_filename": "OBSRV13.MSN",
     "coop_starts": "4",
     "track_names": [
       {
@@ -4502,6 +4556,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -4555,7 +4611,7 @@
             "distance": 10.0,
             "trigger": 9,
             "trigger_type_id": 1,
-            "trigger_type": "open_door",
+            "trigger_type": "toggle_door",
             "opens": [
               {
                 "seg": 92,
@@ -4612,6 +4668,15 @@
         ]
       }
     ],
+    "mission_path": "Extra_Missions/OBSRV13.MSN",
+    "target_index": 12
+  },
+  {
+    "status": "ok",
+    "source": "Retribution Base 1.0",
+    "game": "d1",
+    "mission_name": "Retribution Base 1.0",
+    "mission_filename": "RETRIB10.MSN",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -4634,22 +4699,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 46,
-      "hostages": 2,
-      "matcens": 2,
+      "robots": 68,
+      "hostages": 5,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 22,
+      "powerups": 27,
       "reactors": 1
     },
-    "mission_path": "Extra_Missions/OBSRV13.MSN",
-    "target_index": 12
-  },
-  {
-    "status": "ok",
-    "source": "Retribution Base 1.0",
-    "game": "d1",
-    "mission_name": "Retribution Base 1.0",
-    "mission_filename": "RETRIB10.MSN",
     "coop_starts": "4",
     "track_names": [
       {
@@ -4873,6 +4929,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -4882,9 +4940,18 @@
             "seg": 375
           }
         ],
-        "route_problem": "blue key unreachable"
+        "route_problem": "blue key excluded from prerequisite trial"
       }
     ],
+    "mission_path": "Extra_Missions/RETRIB10.MSN",
+    "target_index": 13
+  },
+  {
+    "status": "ok",
+    "source": "Retribution Base 1.1",
+    "game": "d1",
+    "mission_name": "Retribution Base 1.1",
+    "mission_filename": "RETRIB11.MSN",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -4914,15 +4981,6 @@
       "powerups": 27,
       "reactors": 1
     },
-    "mission_path": "Extra_Missions/RETRIB10.MSN",
-    "target_index": 13
-  },
-  {
-    "status": "ok",
-    "source": "Retribution Base 1.1",
-    "game": "d1",
-    "mission_name": "Retribution Base 1.1",
-    "mission_filename": "RETRIB11.MSN",
     "coop_starts": "4",
     "track_names": [
       {
@@ -5146,6 +5204,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -5155,9 +5215,18 @@
             "seg": 375
           }
         ],
-        "route_problem": "blue key unreachable"
+        "route_problem": "blue key excluded from prerequisite trial"
       }
     ],
+    "mission_path": "Extra_Missions/RETRIB11.MSN",
+    "target_index": 14
+  },
+  {
+    "status": "ok",
+    "source": "Serenity",
+    "game": "d1",
+    "mission_name": "Serenity",
+    "mission_filename": "SERENITY.MSN",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -5180,22 +5249,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 68,
-      "hostages": 5,
+      "robots": 65,
+      "hostages": 4,
       "matcens": 0,
       "guidebots": 0,
-      "powerups": 27,
+      "powerups": 32,
       "reactors": 1
     },
-    "mission_path": "Extra_Missions/RETRIB11.MSN",
-    "target_index": 14
-  },
-  {
-    "status": "ok",
-    "source": "Serenity",
-    "game": "d1",
-    "mission_name": "Serenity",
-    "mission_filename": "SERENITY.MSN",
     "coop_starts": "4",
     "track_names": [
       {
@@ -5419,6 +5479,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -5530,6 +5592,15 @@
         ]
       }
     ],
+    "mission_path": "Extra_Missions/SERENITY.MSN",
+    "target_index": 15
+  },
+  {
+    "status": "ok",
+    "source": "Super Station",
+    "game": "d1",
+    "mission_name": "Super Station",
+    "mission_filename": "SUPER_S.MSN",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -5552,22 +5623,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 65,
-      "hostages": 4,
-      "matcens": 0,
+      "robots": 104,
+      "hostages": 0,
+      "matcens": 4,
       "guidebots": 0,
-      "powerups": 32,
+      "powerups": 42,
       "reactors": 1
     },
-    "mission_path": "Extra_Missions/SERENITY.MSN",
-    "target_index": 15
-  },
-  {
-    "status": "ok",
-    "source": "Super Station",
-    "game": "d1",
-    "mission_name": "Super Station",
-    "mission_filename": "SUPER_S.MSN",
     "coop_starts": "4",
     "track_names": [
       {
@@ -5791,6 +5853,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -5832,6 +5896,15 @@
         "route_problem": "route target unreachable"
       }
     ],
+    "mission_path": "Extra_Missions/SUPER_S.MSN",
+    "target_index": 16
+  },
+  {
+    "status": "ok",
+    "source": "Terminus",
+    "game": "d1",
+    "mission_name": "Terminus",
+    "mission_filename": "TERMINUS.MSN",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -5854,22 +5927,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 104,
-      "hostages": 0,
+      "robots": 55,
+      "hostages": 3,
       "matcens": 4,
       "guidebots": 0,
-      "powerups": 42,
+      "powerups": 28,
       "reactors": 1
     },
-    "mission_path": "Extra_Missions/SUPER_S.MSN",
-    "target_index": 16
-  },
-  {
-    "status": "ok",
-    "source": "Terminus",
-    "game": "d1",
-    "mission_name": "Terminus",
-    "mission_filename": "TERMINUS.MSN",
     "coop_starts": "4",
     "track_names": [
       {
@@ -6086,13 +6150,15 @@
         "mine_volume": 68473800.0,
         "mine_volume_normalized": 14.9738,
         "mine_volume_text": "15x",
-        "travel_distance": 6661.1,
-        "travel_time_seconds": 133,
-        "travel_time_text": "2M:13S",
+        "travel_distance": 5517.4,
+        "travel_time_seconds": 110,
+        "travel_time_text": "1M:50S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -6105,20 +6171,6 @@
             "index": 1,
             "kind": "key",
             "activation_kind": "pickup_key",
-            "label": "blue key",
-            "seg": 498,
-            "label_pos": {
-              "x": -502.0,
-              "y": -14.7,
-              "z": -40.0
-            },
-            "distance": 908.2,
-            "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 270,
             "label_pos": {
@@ -6126,11 +6178,11 @@
               "y": -22.5,
               "z": -320.0
             },
-            "distance": 2290.2,
+            "distance": 1480.0,
             "key": "gold"
           },
           {
-            "index": 3,
+            "index": 2,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
@@ -6157,7 +6209,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 3,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -6171,6 +6223,20 @@
             "key": "red"
           },
           {
+            "index": 4,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 498,
+            "label_pos": {
+              "x": -502.0,
+              "y": -14.7,
+              "z": -40.0
+            },
+            "distance": 1301.5,
+            "key": "blue"
+          },
+          {
             "index": 5,
             "kind": "boss",
             "activation_kind": "destroy_boss",
@@ -6181,7 +6247,7 @@
               "y": -115.0,
               "z": -39.8
             },
-            "distance": 1510.7
+            "distance": 783.9
           },
           {
             "index": 6,
@@ -6204,6 +6270,15 @@
         ]
       }
     ],
+    "mission_path": "Extra_Missions/TERMINUS.MSN",
+    "target_index": 17
+  },
+  {
+    "status": "ok",
+    "source": "Sea of Tranquility",
+    "game": "d1",
+    "mission_name": "Sea of Tranquility",
+    "mission_filename": "TRANQUIL.MSN",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -6226,22 +6301,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 55,
-      "hostages": 3,
-      "matcens": 4,
+      "robots": 57,
+      "hostages": 6,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 28,
+      "powerups": 36,
       "reactors": 1
     },
-    "mission_path": "Extra_Missions/TERMINUS.MSN",
-    "target_index": 17
-  },
-  {
-    "status": "ok",
-    "source": "Sea of Tranquility",
-    "game": "d1",
-    "mission_name": "Sea of Tranquility",
-    "mission_filename": "TRANQUIL.MSN",
     "coop_starts": "4",
     "track_names": [
       {
@@ -6465,6 +6531,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -6576,35 +6644,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": false,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 57,
-      "hostages": 6,
-      "matcens": 0,
-      "guidebots": 0,
-      "powerups": 36,
-      "reactors": 1
-    },
     "mission_path": "Extra_Missions/TRANQUIL.MSN",
     "target_index": 18
   }

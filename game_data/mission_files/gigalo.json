@@ -5,6 +5,35 @@
     "game": "d2",
     "mission_name": "Gigalomania 01",
     "mission_filename": "gigalo01.mn2",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 67,
+      "hostages": 1,
+      "matcens": 1,
+      "guidebots": 0,
+      "powerups": 70,
+      "reactors": 1
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -97,13 +126,15 @@
         "mine_volume": 49884700.0,
         "mine_volume_normalized": 10.9088,
         "mine_volume_text": "11x",
-        "travel_distance": 8347.8,
+        "travel_distance": 8337.8,
         "travel_time_seconds": 167,
         "travel_time_text": "2M:47S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -219,7 +250,7 @@
               "y": -78.3,
               "z": 1140.0
             },
-            "distance": 1771.4,
+            "distance": 1766.4,
             "trigger": 10,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -277,7 +308,7 @@
               "y": -213.4,
               "z": 1098.0
             },
-            "distance": 2332.5
+            "distance": 2327.5
           },
           {
             "index": 8,
@@ -304,6 +335,15 @@
         ]
       }
     ],
+    "mission_path": "gigalo01.mn2",
+    "target_index": 0
+  },
+  {
+    "status": "ok",
+    "source": "Gigalomania 02",
+    "game": "d2",
+    "mission_name": "Gigalomania 02",
+    "mission_filename": "gigalo02.mn2",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -326,22 +366,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 67,
-      "hostages": 1,
-      "matcens": 1,
+      "robots": 43,
+      "hostages": 0,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 70,
+      "powerups": 58,
       "reactors": 1
     },
-    "mission_path": "gigalo01.mn2",
-    "target_index": 0
-  },
-  {
-    "status": "ok",
-    "source": "Gigalomania 02",
-    "game": "d2",
-    "mission_name": "Gigalomania 02",
-    "mission_filename": "gigalo02.mn2",
     "coop_starts": "4",
     "track_names": [
       {
@@ -441,6 +472,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 5,
+        "route_completing_key_mask_set": 32,
         "route_steps": [
           {
             "index": 0,
@@ -780,6 +813,15 @@
         ]
       }
     ],
+    "mission_path": "gigalo02.mn2",
+    "target_index": 1
+  },
+  {
+    "status": "ok",
+    "source": "Gigalomania 03",
+    "game": "d2",
+    "mission_name": "Gigalomania 03",
+    "mission_filename": "gigalo03.mn2",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -802,22 +844,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 43,
+      "robots": 56,
       "hostages": 0,
-      "matcens": 0,
+      "matcens": 2,
       "guidebots": 0,
-      "powerups": 58,
+      "powerups": 90,
       "reactors": 1
     },
-    "mission_path": "gigalo02.mn2",
-    "target_index": 1
-  },
-  {
-    "status": "ok",
-    "source": "Gigalomania 03",
-    "game": "d2",
-    "mission_name": "Gigalomania 03",
-    "mission_filename": "gigalo03.mn2",
     "coop_starts": "4",
     "track_names": [
       {
@@ -910,13 +943,15 @@
         "mine_volume": 22964400.0,
         "mine_volume_normalized": 5.02184,
         "mine_volume_text": "5.0x",
-        "travel_distance": 7735.3,
-        "travel_time_seconds": 155,
-        "travel_time_text": "2M:35S",
+        "travel_distance": 6274.5,
+        "travel_time_seconds": 125,
+        "travel_time_text": "2M:05S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -929,46 +964,6 @@
             "index": 1,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 10",
-            "seg": 406,
-            "side": 5,
-            "wall": 145,
-            "label_pos": {
-              "x": 308.5,
-              "y": -0.5,
-              "z": 451.9
-            },
-            "distance": 938.1,
-            "trigger": 10,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 412,
-                "side": 4,
-                "wall": 144
-              },
-              {
-                "seg": 417,
-                "side": 4,
-                "wall": 141
-              },
-              {
-                "seg": 415,
-                "side": 4,
-                "wall": 140
-              },
-              {
-                "seg": 413,
-                "side": 4,
-                "wall": 137
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "trigger",
-            "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 0",
             "seg": 132,
             "side": 2,
@@ -978,7 +973,7 @@
               "y": -20.0,
               "z": -10.3
             },
-            "distance": 1219.0,
+            "distance": 516.8,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1021,7 +1016,7 @@
             ]
           },
           {
-            "index": 3,
+            "index": 2,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "blue key",
@@ -1035,7 +1030,7 @@
             "key": "blue"
           },
           {
-            "index": 4,
+            "index": 3,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -1049,7 +1044,7 @@
             "key": "gold"
           },
           {
-            "index": 5,
+            "index": 4,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -1063,6 +1058,46 @@
             "key": "red"
           },
           {
+            "index": 5,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 10",
+            "seg": 406,
+            "side": 5,
+            "wall": 145,
+            "label_pos": {
+              "x": 308.5,
+              "y": -0.5,
+              "z": 451.9
+            },
+            "distance": 752.1,
+            "trigger": 10,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 412,
+                "side": 4,
+                "wall": 144
+              },
+              {
+                "seg": 417,
+                "side": 4,
+                "wall": 141
+              },
+              {
+                "seg": 415,
+                "side": 4,
+                "wall": 140
+              },
+              {
+                "seg": 413,
+                "side": 4,
+                "wall": 137
+              }
+            ]
+          },
+          {
             "index": 6,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
@@ -1073,7 +1108,7 @@
               "y": -152.0,
               "z": 125.9
             },
-            "distance": 1266.4
+            "distance": 693.9
           },
           {
             "index": 7,
@@ -1100,6 +1135,15 @@
         ]
       }
     ],
+    "mission_path": "gigalo03.mn2",
+    "target_index": 2
+  },
+  {
+    "status": "ok",
+    "source": "Gigalomania 04",
+    "game": "d2",
+    "mission_name": "Gigalomania 04",
+    "mission_filename": "gigalo04.mn2",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -1122,22 +1166,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 56,
+      "robots": 55,
       "hostages": 0,
-      "matcens": 2,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 90,
+      "powerups": 103,
       "reactors": 1
     },
-    "mission_path": "gigalo03.mn2",
-    "target_index": 2
-  },
-  {
-    "status": "ok",
-    "source": "Gigalomania 04",
-    "game": "d2",
-    "mission_name": "Gigalomania 04",
-    "mission_filename": "gigalo04.mn2",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1237,6 +1272,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -1433,6 +1470,15 @@
         ]
       }
     ],
+    "mission_path": "gigalo04.mn2",
+    "target_index": 3
+  },
+  {
+    "status": "ok",
+    "source": "gigalomania 05",
+    "game": "d2",
+    "mission_name": "gigalomania 05",
+    "mission_filename": "gigalo05.mn2",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -1455,22 +1501,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 55,
-      "hostages": 0,
-      "matcens": 0,
+      "robots": 92,
+      "hostages": 3,
+      "matcens": 2,
       "guidebots": 0,
-      "powerups": 103,
+      "powerups": 104,
       "reactors": 1
     },
-    "mission_path": "gigalo04.mn2",
-    "target_index": 3
-  },
-  {
-    "status": "ok",
-    "source": "gigalomania 05",
-    "game": "d2",
-    "mission_name": "gigalomania 05",
-    "mission_filename": "gigalo05.mn2",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1570,6 +1607,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -1658,6 +1697,15 @@
         ]
       }
     ],
+    "mission_path": "gigalo05.mn2",
+    "target_index": 4
+  },
+  {
+    "status": "ok",
+    "source": "Gigalomania 06",
+    "game": "d2",
+    "mission_name": "Gigalomania 06",
+    "mission_filename": "gigalo06.mn2",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -1680,22 +1728,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 92,
-      "hostages": 3,
-      "matcens": 2,
+      "robots": 81,
+      "hostages": 5,
+      "matcens": 3,
       "guidebots": 0,
-      "powerups": 104,
+      "powerups": 145,
       "reactors": 1
     },
-    "mission_path": "gigalo05.mn2",
-    "target_index": 4
-  },
-  {
-    "status": "ok",
-    "source": "Gigalomania 06",
-    "game": "d2",
-    "mission_name": "Gigalomania 06",
-    "mission_filename": "gigalo06.mn2",
     "coop_starts": "4",
     "track_names": [
       {
@@ -1788,13 +1827,15 @@
         "mine_volume": 229486000.0,
         "mine_volume_normalized": 50.1838,
         "mine_volume_text": "50x",
-        "travel_distance": 4083.2,
-        "travel_time_seconds": 82,
-        "travel_time_text": "1M:22S",
+        "travel_distance": 4063.2,
+        "travel_time_seconds": 81,
+        "travel_time_text": "1M:21S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -1858,7 +1899,7 @@
               "y": 44.7,
               "z": 30.0
             },
-            "distance": 384.9,
+            "distance": 374.9,
             "trigger": 1,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -1881,7 +1922,7 @@
               "y": -424.0,
               "z": 0.0
             },
-            "distance": 584.1
+            "distance": 574.1
           },
           {
             "index": 6,
@@ -1908,6 +1949,15 @@
         ]
       }
     ],
+    "mission_path": "gigalo06.mn2",
+    "target_index": 5
+  },
+  {
+    "status": "ok",
+    "source": "gigalomania 07",
+    "game": "d2",
+    "mission_name": "gigalomania 07",
+    "mission_filename": "gigalo07.mn2",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -1930,22 +1980,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 81,
-      "hostages": 5,
-      "matcens": 3,
+      "robots": 77,
+      "hostages": 0,
+      "matcens": 2,
       "guidebots": 0,
-      "powerups": 145,
+      "powerups": 64,
       "reactors": 1
     },
-    "mission_path": "gigalo06.mn2",
-    "target_index": 5
-  },
-  {
-    "status": "ok",
-    "source": "gigalomania 07",
-    "game": "d2",
-    "mission_name": "gigalomania 07",
-    "mission_filename": "gigalo07.mn2",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2038,13 +2079,15 @@
         "mine_volume": 20839100.0,
         "mine_volume_normalized": 4.55707,
         "mine_volume_text": "4.6x",
-        "travel_distance": 7011.6,
-        "travel_time_seconds": 140,
-        "travel_time_text": "2M:20S",
+        "travel_distance": 2494.9,
+        "travel_time_seconds": 50,
+        "travel_time_text": "0M:50S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 140,
         "route_steps": [
           {
             "index": 0,
@@ -2057,34 +2100,6 @@
             "index": 1,
             "kind": "key",
             "activation_kind": "pickup_key",
-            "label": "blue key",
-            "seg": 452,
-            "label_pos": {
-              "x": 564.5,
-              "y": 45.0,
-              "z": -220.0
-            },
-            "distance": 1441.1,
-            "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
-            "seg": 533,
-            "label_pos": {
-              "x": 690.6,
-              "y": 0.0,
-              "z": -220.0
-            },
-            "distance": 2258.3,
-            "key": "gold"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 483,
             "label_pos": {
@@ -2092,11 +2107,11 @@
               "y": 60.0,
               "z": 230.6
             },
-            "distance": 1759.4,
+            "distance": 942.1,
             "key": "red"
           },
           {
-            "index": 4,
+            "index": 2,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -2109,7 +2124,7 @@
             "distance": 1314.1
           },
           {
-            "index": 5,
+            "index": 3,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -2129,10 +2144,21 @@
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
+          "blue key not necessary",
+          "gold key not necessary",
           "no guidebot or guidebot start cage placed in this level"
         ]
       }
     ],
+    "mission_path": "gigalo07.mn2",
+    "target_index": 6
+  },
+  {
+    "status": "ok",
+    "source": "Gigalomania 08",
+    "game": "d2",
+    "mission_name": "Gigalomania 08",
+    "mission_filename": "gigalo08.mn2",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -2155,22 +2181,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 77,
-      "hostages": 0,
-      "matcens": 2,
+      "robots": 193,
+      "hostages": 3,
+      "matcens": 1,
       "guidebots": 0,
-      "powerups": 64,
+      "powerups": 109,
       "reactors": 1
     },
-    "mission_path": "gigalo07.mn2",
-    "target_index": 6
-  },
-  {
-    "status": "ok",
-    "source": "Gigalomania 08",
-    "game": "d2",
-    "mission_name": "Gigalomania 08",
-    "mission_filename": "gigalo08.mn2",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2263,13 +2280,15 @@
         "mine_volume": 93739900.0,
         "mine_volume_normalized": 20.499,
         "mine_volume_text": "20x",
-        "travel_distance": 11009.5,
-        "travel_time_seconds": 220,
-        "travel_time_text": "3M:40S",
+        "travel_distance": 1378.1,
+        "travel_time_seconds": 28,
+        "travel_time_text": "0M:28S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 255,
         "route_steps": [
           {
             "index": 0,
@@ -2307,65 +2326,6 @@
           },
           {
             "index": 2,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
-            "seg": 674,
-            "label_pos": {
-              "x": 344.4,
-              "y": 70.0,
-              "z": 124.1
-            },
-            "distance": 4073.0,
-            "key": "gold"
-          },
-          {
-            "index": 3,
-            "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 1",
-            "seg": 519,
-            "side": 4,
-            "wall": 146,
-            "label_pos": {
-              "x": -685.4,
-              "y": 107.5,
-              "z": 226.7
-            },
-            "distance": 3206.4,
-            "trigger": 1,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 11,
-                "side": 0,
-                "wall": 9
-              },
-              {
-                "seg": 9,
-                "side": 3,
-                "wall": 10
-              },
-              {
-                "seg": 9,
-                "side": 0,
-                "wall": 12
-              },
-              {
-                "seg": 9,
-                "side": 1,
-                "wall": 6
-              },
-              {
-                "seg": 680,
-                "side": 4,
-                "wall": 182
-              }
-            ]
-          },
-          {
-            "index": 4,
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
@@ -2375,10 +2335,10 @@
               "y": 0.0,
               "z": 630.0
             },
-            "distance": 2742.0
+            "distance": 500.0
           },
           {
-            "index": 5,
+            "index": 3,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -2390,7 +2350,7 @@
               "y": 0.0,
               "z": 1070.0
             },
-            "distance": 550.1,
+            "distance": 440.1,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -2400,10 +2360,20 @@
         "notes": [
           "blue key not necessary",
           "red key not necessary",
+          "gold key not necessary",
           "no guidebot or guidebot start cage placed in this level"
         ]
       }
     ],
+    "mission_path": "gigalo08.mn2",
+    "target_index": 7
+  },
+  {
+    "status": "ok",
+    "source": "Gigalomania 09",
+    "game": "d2",
+    "mission_name": "Gigalomania 09",
+    "mission_filename": "gigalo09.mn2",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -2426,22 +2396,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 193,
-      "hostages": 3,
-      "matcens": 1,
+      "robots": 75,
+      "hostages": 0,
+      "matcens": 2,
       "guidebots": 0,
-      "powerups": 109,
+      "powerups": 105,
       "reactors": 1
     },
-    "mission_path": "gigalo08.mn2",
-    "target_index": 7
-  },
-  {
-    "status": "ok",
-    "source": "Gigalomania 09",
-    "game": "d2",
-    "mission_name": "Gigalomania 09",
-    "mission_filename": "gigalo09.mn2",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2534,13 +2495,15 @@
         "mine_volume": 38403000.0,
         "mine_volume_normalized": 8.39796,
         "mine_volume_text": "8.4x",
-        "travel_distance": 7363.4,
-        "travel_time_seconds": 147,
-        "travel_time_text": "2M:27S",
+        "travel_distance": 7163.1,
+        "travel_time_seconds": 143,
+        "travel_time_text": "2M:23S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 6,
+        "route_completing_key_mask_set": 64,
         "route_steps": [
           {
             "index": 0,
@@ -2553,20 +2516,6 @@
             "index": 1,
             "kind": "key",
             "activation_kind": "pickup_key",
-            "label": "gold key",
-            "seg": 350,
-            "label_pos": {
-              "x": 228.6,
-              "y": -69.8,
-              "z": 88.2
-            },
-            "distance": 1228.9,
-            "key": "gold"
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 392,
             "label_pos": {
@@ -2574,8 +2523,22 @@
               "y": -140.6,
               "z": 253.9
             },
-            "distance": 322.5,
+            "distance": 956.4,
             "key": "red"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 350,
+            "label_pos": {
+              "x": 228.6,
+              "y": -69.8,
+              "z": 88.2
+            },
+            "distance": 322.5,
+            "key": "gold"
           },
           {
             "index": 3,
@@ -2590,7 +2553,7 @@
               "y": 60.0,
               "z": 49.6
             },
-            "distance": 2022.3,
+            "distance": 2094.5,
             "trigger": 31,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -2604,6 +2567,33 @@
           },
           {
             "index": 4,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 504,
+            "side": 1,
+            "wall": 183,
+            "label_pos": {
+              "x": -40.0,
+              "y": 90.0,
+              "z": 219.6
+            },
+            "distance": 253.1,
+            "opens": [
+              {
+                "seg": 504,
+                "side": 1,
+                "wall": 183
+              },
+              {
+                "seg": 505,
+                "side": 3,
+                "wall": 184
+              }
+            ]
+          },
+          {
+            "index": 5,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 32",
@@ -2615,7 +2605,7 @@
               "y": 120.0,
               "z": 49.6
             },
-            "distance": 1209.1,
+            "distance": 956.0,
             "trigger": 32,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -2628,7 +2618,34 @@
             ]
           },
           {
-            "index": 5,
+            "index": 6,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 642,
+            "side": 1,
+            "wall": 186,
+            "label_pos": {
+              "x": 40.0,
+              "y": 210.0,
+              "z": 139.6
+            },
+            "distance": 836.0,
+            "opens": [
+              {
+                "seg": 642,
+                "side": 1,
+                "wall": 186
+              },
+              {
+                "seg": 643,
+                "side": 3,
+                "wall": 187
+              }
+            ]
+          },
+          {
+            "index": 7,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -2638,10 +2655,10 @@
               "y": 273.6,
               "z": 253.9
             },
-            "distance": 1307.3
+            "distance": 471.3
           },
           {
-            "index": 6,
+            "index": 8,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -2666,6 +2683,15 @@
         ]
       }
     ],
+    "mission_path": "gigalo09.mn2",
+    "target_index": 8
+  },
+  {
+    "status": "ok",
+    "source": "Gigalomania 10",
+    "game": "d2",
+    "mission_name": "Gigalomania 10",
+    "mission_filename": "gigalo10.mn2",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -2688,22 +2714,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 75,
+      "robots": 71,
       "hostages": 0,
-      "matcens": 2,
+      "matcens": 5,
       "guidebots": 0,
-      "powerups": 105,
+      "powerups": 82,
       "reactors": 1
     },
-    "mission_path": "gigalo09.mn2",
-    "target_index": 8
-  },
-  {
-    "status": "ok",
-    "source": "Gigalomania 10",
-    "game": "d2",
-    "mission_name": "Gigalomania 10",
-    "mission_filename": "gigalo10.mn2",
     "coop_starts": "4",
     "track_names": [
       {
@@ -2803,6 +2820,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 4,
         "route_steps": [
           {
             "index": 0,
@@ -3037,6 +3056,15 @@
         ]
       }
     ],
+    "mission_path": "gigalo10.mn2",
+    "target_index": 9
+  },
+  {
+    "status": "ok",
+    "source": "Gigalomania 11",
+    "game": "d2",
+    "mission_name": "Gigalomania 11",
+    "mission_filename": "gigalo11.mn2",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -3059,22 +3087,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 71,
+      "robots": 6,
       "hostages": 0,
-      "matcens": 5,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 82,
-      "reactors": 1
+      "powerups": 5,
+      "reactors": 0
     },
-    "mission_path": "gigalo10.mn2",
-    "target_index": 9
-  },
-  {
-    "status": "ok",
-    "source": "Gigalomania 11",
-    "game": "d2",
-    "mission_name": "Gigalomania 11",
-    "mission_filename": "gigalo11.mn2",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3174,6 +3193,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -3279,6 +3300,15 @@
         ]
       }
     ],
+    "mission_path": "gigalo11.mn2",
+    "target_index": 10
+  },
+  {
+    "status": "ok",
+    "source": "gigalomania 12",
+    "game": "d2",
+    "mission_name": "gigalomania 12",
+    "mission_filename": "gigalo12.mn2",
     "mission_intent": {
       "classification": "single_player_or_coop",
       "rule": "campaign_actors",
@@ -3301,22 +3331,13 @@
       "player_start_max": 8,
       "coop_start_min": 3,
       "coop_start_max": 3,
-      "robots": 6,
+      "robots": 4,
       "hostages": 0,
-      "matcens": 0,
+      "matcens": 8,
       "guidebots": 0,
-      "powerups": 5,
-      "reactors": 0
+      "powerups": 108,
+      "reactors": 1
     },
-    "mission_path": "gigalo11.mn2",
-    "target_index": 10
-  },
-  {
-    "status": "ok",
-    "source": "gigalomania 12",
-    "game": "d2",
-    "mission_name": "gigalomania 12",
-    "mission_filename": "gigalo12.mn2",
     "coop_starts": "4",
     "track_names": [
       {
@@ -3416,6 +3437,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -3462,35 +3485,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": false,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 4,
-      "hostages": 0,
-      "matcens": 8,
-      "guidebots": 0,
-      "powerups": 108,
-      "reactors": 1
-    },
     "mission_path": "gigalo12.mn2",
     "target_index": 11
   }

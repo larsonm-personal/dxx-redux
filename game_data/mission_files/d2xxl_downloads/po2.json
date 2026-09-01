@@ -5,7 +5,35 @@
     "game": "d2",
     "mission_name": "Dark Matter",
     "mission_filename": "darkmatr.mn2",
-    "mission_intent": "multiplayer_anarchy",
+    "mission_intent": {
+      "classification": "multiplayer_anarchy",
+      "rule": "all_levels_arena_like",
+      "confidence": "medium",
+      "reason": "Every normal level has multiple player starts and no campaign actors",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 0,
+      "arena_like_levels": 1,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 38,
+      "reactors": 1
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -72,6 +100,38 @@
         "filename": "game04.hmp",
         "format": "hmp",
         "length_s": 188
+      },
+      {
+        "track": 9,
+        "name": "MIDI Track 5",
+        "filename": "game05.hmp",
+        "format": "hmp",
+        "length_s": 0,
+        "parse_status": "invalid_midi"
+      },
+      {
+        "track": 10,
+        "name": "MIDI Track 6",
+        "filename": "game06.hmp",
+        "format": "hmp",
+        "length_s": 0,
+        "parse_status": "invalid_midi"
+      },
+      {
+        "track": 11,
+        "name": "MIDI Track 7",
+        "filename": "game07.hmp",
+        "format": "hmp",
+        "length_s": 0,
+        "parse_status": "invalid_midi"
+      },
+      {
+        "track": 12,
+        "name": "MIDI Track 8",
+        "filename": "game08.hmp",
+        "format": "hmp",
+        "length_s": 0,
+        "parse_status": "invalid_midi"
       }
     ],
     "level_count": 1,
@@ -86,13 +146,17 @@
         "trigger_count": 1,
         "object_count": 55,
         "texture_count": 35,
+        "player_starts": 8,
+        "coop_only_starts": 0,
+        "powerups": 38,
+        "reactors": 1,
         "robots": 0,
         "hostages": 0,
         "secrets": 0,
         "matcens": 0,
         "energy_centers": 8,
-        "mine_volume": 46949877.35409932,
-        "mine_volume_normalized": 10.266974666783558,
+        "mine_volume": 46949900.0,
+        "mine_volume_normalized": 10.267,
         "mine_volume_text": "10x",
         "travel_distance": 0.0,
         "travel_time_seconds": 0,
@@ -101,6 +165,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -117,6 +183,7 @@
         ]
       }
     ],
+    "mission_path": "missions/single/darkmatr.mn2",
     "target_index": 0
   },
   {
@@ -125,7 +192,35 @@
     "game": "d2",
     "mission_name": "Pluton Outbreak 2",
     "mission_filename": "pluton2.mn2",
-    "mission_intent": "single_player_or_coop",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 8,
+      "campaign_actor_levels": 8,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 426,
+      "hostages": 13,
+      "matcens": 0,
+      "guidebots": 35,
+      "powerups": 386,
+      "reactors": 6
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -192,6 +287,35 @@
         "filename": "game04.hmp",
         "format": "hmp",
         "length_s": 188
+      },
+      {
+        "track": 9,
+        "name": "MIDI Track 5",
+        "filename": "game05.hmp",
+        "format": "hmp",
+        "length_s": 163
+      },
+      {
+        "track": 10,
+        "name": "MIDI Track 6",
+        "filename": "game06.hmp",
+        "format": "hmp",
+        "length_s": 0,
+        "parse_status": "duration_unavailable"
+      },
+      {
+        "track": 11,
+        "name": "MIDI Track 7",
+        "filename": "game07.hmp",
+        "format": "hmp",
+        "length_s": 399
+      },
+      {
+        "track": 12,
+        "name": "MIDI Track 8",
+        "filename": "game08.hmp",
+        "format": "hmp",
+        "length_s": 116
       }
     ],
     "level_count": 9,
@@ -206,21 +330,27 @@
         "trigger_count": 2,
         "object_count": 66,
         "texture_count": 60,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 18,
+        "reactors": 1,
         "robots": 33,
         "hostages": 3,
         "secrets": 0,
         "matcens": 0,
         "energy_centers": 2,
-        "mine_volume": 108093543.11451325,
-        "mine_volume_normalized": 23.637839571537977,
+        "mine_volume": 108094000.0,
+        "mine_volume_normalized": 23.6378,
         "mine_volume_text": "24x",
-        "travel_distance": 2220.8664992175104,
+        "travel_distance": 2220.9,
         "travel_time_seconds": 44,
         "travel_time_text": "0M:44S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 3,
+        "route_completing_key_mask_set": 8,
         "route_steps": [
           {
             "index": 0,
@@ -238,9 +368,9 @@
             "side": 4,
             "wall": 38,
             "label_pos": {
-              "x": -1.695892333984375,
-              "y": -30.0126953125,
-              "z": -282.9999237060547
+              "x": -1.7,
+              "y": -30.0,
+              "z": -283.0
             },
             "distance": 27.5,
             "trigger": 1,
@@ -261,11 +391,11 @@
             "label": "blue key",
             "seg": 204,
             "label_pos": {
-              "x": -0.1957244873046875,
-              "y": -10.012741088867188,
-              "z": 117.9998779296875
+              "x": -0.2,
+              "y": -10.0,
+              "z": 118.0
             },
-            "distance": 458.1104126354319,
+            "distance": 458.1,
             "key": "blue"
           },
           {
@@ -275,11 +405,11 @@
             "label": "red key",
             "seg": 383,
             "label_pos": {
-              "x": -1.6962432861328125,
-              "y": -3.5128326416015625,
-              "z": 292.1454620361328
+              "x": -1.7,
+              "y": -3.5,
+              "z": 292.1
             },
-            "distance": 985.5048856500816,
+            "distance": 985.5,
             "key": "red"
           },
           {
@@ -289,11 +419,11 @@
             "label": "Reactor",
             "seg": 388,
             "label_pos": {
-              "x": -1.695892333984375,
-              "y": 3.9873199462890625,
-              "z": 98.00009155273438
+              "x": -1.7,
+              "y": 4.0,
+              "z": 98.0
             },
-            "distance": 683.7511704144189
+            "distance": 683.8
           },
           {
             "index": 5,
@@ -304,11 +434,11 @@
             "side": 1,
             "wall": 34,
             "label_pos": {
-              "x": -1.695892333984375,
-              "y": 33.98731994628906,
-              "z": 58.000091552734375
+              "x": -1.7,
+              "y": 34.0,
+              "z": 58.0
             },
-            "distance": 66.00003051757812,
+            "distance": 66.0,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -329,21 +459,27 @@
         "trigger_count": 5,
         "object_count": 121,
         "texture_count": 70,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 34,
+        "reactors": 1,
         "robots": 75,
         "hostages": 0,
         "secrets": 2,
         "matcens": 0,
         "energy_centers": 6,
-        "mine_volume": 969014279.5196761,
-        "mine_volume_normalized": 211.90353671310228,
+        "mine_volume": 969014000.0,
+        "mine_volume_normalized": 211.904,
         "mine_volume_text": "210x",
-        "travel_distance": 15134.461001057476,
-        "travel_time_seconds": 303,
-        "travel_time_text": "5M:03S",
+        "travel_distance": 14179.9,
+        "travel_time_seconds": 284,
+        "travel_time_text": "4M:44S",
         "guidebot_count": 6,
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -361,11 +497,11 @@
             "side": 2,
             "wall": 6,
             "label_pos": {
-              "x": -252.9477081298828,
-              "y": -38.92823791503906,
-              "z": -344.0957794189453
+              "x": -252.9,
+              "y": -38.9,
+              "z": -344.1
             },
-            "distance": 2563.590485460627,
+            "distance": 2563.6,
             "trigger": 0,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -382,37 +518,15 @@
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
-            "seg": 392,
-            "side": 2,
-            "wall": 13,
-            "label_pos": {
-              "x": 90.90066528320312,
-              "y": 87.32862854003906,
-              "z": -551.8017883300781
-            },
-            "distance": 1912.8104314074458,
-            "opens": [
-              {
-                "seg": 392,
-                "side": 2,
-                "wall": 13
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Open hidden door",
             "seg": 519,
             "side": 2,
             "wall": 40,
             "label_pos": {
-              "x": 159.79806518554688,
-              "y": -167.76205444335938,
-              "z": -246.5821075439453
+              "x": 159.8,
+              "y": -167.8,
+              "z": -246.6
             },
-            "distance": 821.6158906944406,
+            "distance": 1779.8,
             "opens": [
               {
                 "seg": 519,
@@ -427,7 +541,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 3,
             "kind": "trigger",
             "activation_kind": "pass_through_trigger",
             "label": "Pass through trigger 4",
@@ -435,11 +549,11 @@
             "side": 4,
             "wall": 65,
             "label_pos": {
-              "x": -72.86354064941406,
-              "y": -40.12553405761719,
-              "z": 274.5167694091797
+              "x": -72.9,
+              "y": -40.1,
+              "z": 274.5
             },
-            "distance": 986.3815757921336,
+            "distance": 986.4,
             "trigger": 4,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -452,21 +566,21 @@
             ]
           },
           {
-            "index": 5,
+            "index": 4,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 547,
             "label_pos": {
-              "x": 168.44882202148438,
-              "y": -186.02767944335938,
-              "z": -590.3545379638672
+              "x": 168.4,
+              "y": -186.0,
+              "z": -590.4
             },
-            "distance": 1366.622665218937,
+            "distance": 1366.6,
             "key": "blue"
           },
           {
-            "index": 6,
+            "index": 5,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
@@ -474,11 +588,11 @@
             "side": 5,
             "wall": 18,
             "label_pos": {
-              "x": -293.28684997558594,
-              "y": 63.43963623046875,
-              "z": -273.3191223144531
+              "x": -293.3,
+              "y": 63.4,
+              "z": -273.3
             },
-            "distance": 1604.64280941741,
+            "distance": 1604.6,
             "opens": [
               {
                 "seg": 411,
@@ -493,32 +607,54 @@
             ]
           },
           {
-            "index": 7,
+            "index": 6,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 492,
             "label_pos": {
-              "x": -290.3463897705078,
-              "y": -29.7908935546875,
-              "z": -283.8607482910156
+              "x": -290.3,
+              "y": -29.8,
+              "z": -283.9
             },
-            "distance": 777.1170583998716,
+            "distance": 777.1,
             "key": "gold"
           },
           {
-            "index": 8,
+            "index": 7,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 517,
             "label_pos": {
-              "x": -229.36329650878906,
-              "y": 49.164398193359375,
-              "z": -648.5177307128906
+              "x": -229.4,
+              "y": 49.2,
+              "z": -648.5
             },
-            "distance": 988.8123595813055,
+            "distance": 988.8,
             "key": "red"
+          },
+          {
+            "index": 8,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 392,
+            "side": 2,
+            "wall": 13,
+            "label_pos": {
+              "x": 90.9,
+              "y": 87.3,
+              "z": -551.8
+            },
+            "distance": 1359.9,
+            "opens": [
+              {
+                "seg": 392,
+                "side": 2,
+                "wall": 13
+              }
+            ]
           },
           {
             "index": 9,
@@ -527,11 +663,11 @@
             "label": "Reactor",
             "seg": 399,
             "label_pos": {
-              "x": 55.91847229003906,
-              "y": 101.53456115722656,
-              "z": -683.6871185302734
+              "x": 55.9,
+              "y": 101.5,
+              "z": -683.7
             },
-            "distance": 1517.1705736539523
+            "distance": 157.3
           },
           {
             "index": 10,
@@ -542,11 +678,11 @@
             "side": 5,
             "wall": 29,
             "label_pos": {
-              "x": -72.86334228515625,
-              "y": 17.691207885742188,
-              "z": -705.1880035400391
+              "x": -72.9,
+              "y": 17.7,
+              "z": -705.2
             },
-            "distance": 2595.697151431353,
+            "distance": 2595.7,
             "trigger": 1,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -567,21 +703,27 @@
         "trigger_count": 8,
         "object_count": 153,
         "texture_count": 67,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 60,
+        "reactors": 1,
         "robots": 81,
         "hostages": 0,
         "secrets": 1,
         "matcens": 0,
         "energy_centers": 5,
-        "mine_volume": 354387799.3953647,
-        "mine_volume_normalized": 77.49733894228578,
+        "mine_volume": 354388000.0,
+        "mine_volume_normalized": 77.4973,
         "mine_volume_text": "77x",
-        "travel_distance": 9902.579574485528,
-        "travel_time_seconds": 198,
-        "travel_time_text": "3M:18S",
+        "travel_distance": 9862.6,
+        "travel_time_seconds": 197,
+        "travel_time_text": "3M:17S",
         "guidebot_count": 3,
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 6,
+        "route_completing_key_mask_set": 64,
         "route_steps": [
           {
             "index": 0,
@@ -599,11 +741,11 @@
             "side": 2,
             "wall": 35,
             "label_pos": {
-              "x": -365.1680603027344,
-              "y": 46.42454528808594,
-              "z": -268.3224334716797
+              "x": -365.2,
+              "y": 46.4,
+              "z": -268.3
             },
-            "distance": 1807.889608008111,
+            "distance": 1807.9,
             "trigger": 0,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -624,11 +766,11 @@
             "side": 5,
             "wall": 61,
             "label_pos": {
-              "x": -91.32162475585938,
-              "y": 37.4677734375,
-              "z": 125.5048828125
+              "x": -91.3,
+              "y": 37.5,
+              "z": 125.5
             },
-            "distance": 1453.3092077682325,
+            "distance": 1453.3,
             "trigger": 1,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -649,11 +791,11 @@
             "side": 5,
             "wall": 60,
             "label_pos": {
-              "x": 90.11109924316406,
-              "y": 35.76002502441406,
-              "z": 124.72499084472656
+              "x": 90.1,
+              "y": 35.8,
+              "z": 124.7
             },
-            "distance": 576.0404299374354,
+            "distance": 576.0,
             "trigger": 2,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -672,35 +814,32 @@
             "label": "gold key",
             "seg": 557,
             "label_pos": {
-              "x": -240.68679809570312,
-              "y": 153.59988403320312,
-              "z": -10.058792114257812
+              "x": -240.7,
+              "y": 153.6,
+              "z": -10.1
             },
-            "distance": 924.5931268154607,
+            "distance": 924.6,
             "key": "gold"
           },
           {
             "index": 5,
-            "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 5",
-            "seg": 665,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 663,
             "side": 5,
-            "wall": 88,
+            "wall": 87,
             "label_pos": {
-              "x": 31.429122924804688,
-              "y": 49.54084777832031,
-              "z": -69.36561584472656
+              "x": 26.9,
+              "y": 51.8,
+              "z": -30.6
             },
-            "distance": 1690.0178285843865,
-            "trigger": 5,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
+            "distance": 1641.3,
             "opens": [
               {
-                "seg": 658,
-                "side": 2,
-                "wall": 85
+                "seg": 663,
+                "side": 5,
+                "wall": 87
               }
             ]
           },
@@ -711,11 +850,11 @@
             "label": "red key",
             "seg": 666,
             "label_pos": {
-              "x": 32.59381103515625,
-              "y": 48.96588134765625,
-              "z": -79.28094482421875
+              "x": 32.6,
+              "y": 49.0,
+              "z": -79.3
             },
-            "distance": 30.000126833805915,
+            "distance": 58.7,
             "key": "red"
           },
           {
@@ -727,11 +866,11 @@
             "side": 5,
             "wall": 111,
             "label_pos": {
-              "x": 371.4605407714844,
-              "y": 37.4677734375,
-              "z": -397.75
+              "x": 371.5,
+              "y": 37.5,
+              "z": -397.8
             },
-            "distance": 1244.865174516028,
+            "distance": 1234.9,
             "trigger": 7,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -750,11 +889,11 @@
             "label": "Boss robot",
             "seg": 701,
             "label_pos": {
-              "x": 102.76873779296875,
-              "y": 30.34271240234375,
-              "z": -265.1287384033203
+              "x": 102.8,
+              "y": 30.3,
+              "z": -265.1
             },
-            "distance": 671.5845226059341
+            "distance": 661.6
           },
           {
             "index": 9,
@@ -766,10 +905,10 @@
             "wall": 63,
             "label_pos": {
               "x": -394.0,
-              "y": 37.4677734375,
-              "z": 80.25
+              "y": 37.5,
+              "z": 80.2
             },
-            "distance": 1504.2795494161348,
+            "distance": 1504.3,
             "trigger": 4,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -790,21 +929,27 @@
         "trigger_count": 12,
         "object_count": 108,
         "texture_count": 81,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 37,
+        "reactors": 0,
         "robots": 60,
         "hostages": 0,
         "secrets": 0,
         "matcens": 0,
         "energy_centers": 6,
-        "mine_volume": 251922795.96287483,
-        "mine_volume_normalized": 55.09034548969457,
+        "mine_volume": 251923000.0,
+        "mine_volume_normalized": 55.0903,
         "mine_volume_text": "55x",
-        "travel_distance": 10555.684802466405,
-        "travel_time_seconds": 211,
-        "travel_time_text": "3M:31S",
+        "travel_distance": 13195.5,
+        "travel_time_seconds": 264,
+        "travel_time_text": "4M:24S",
         "guidebot_count": 4,
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 4,
         "route_steps": [
           {
             "index": 0,
@@ -817,15 +962,15 @@
             "index": 1,
             "kind": "trigger",
             "activation_kind": "unresolved_trigger",
+            "calculated": false,
             "label": "Locate and activate switch trigger 3",
             "seg": 311,
             "wall": 63,
             "label_pos": {
-              "x": -144.74671936035156,
-              "y": -23.716644287109375,
-              "z": -239.14479064941406
+              "x": -144.7,
+              "y": -23.7,
+              "z": -239.1
             },
-            "calculated": false,
             "trigger": 3,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -847,14 +992,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 1",
-            "seg": 0,
+            "seg": 358,
             "wall": 31,
             "label_pos": {
-              "x": -174.38735961914062,
-              "y": -146.21913146972656,
-              "z": -684.0570068359375
+              "x": -174.4,
+              "y": -146.2,
+              "z": -684.1
             },
-            "distance": 1.52587890625e-05,
+            "distance": 1621.4,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -871,14 +1016,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 2",
-            "seg": 322,
+            "seg": 327,
+            "side": 0,
             "wall": 17,
             "label_pos": {
-              "x": 51.417327880859375,
-              "y": 35.888519287109375,
-              "z": -512.6122894287109
+              "x": 51.4,
+              "y": 35.9,
+              "z": -512.6
             },
-            "distance": 1330.267291877588,
+            "distance": 1554.7,
             "trigger": 2,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -897,11 +1043,11 @@
             "label": "red key",
             "seg": 543,
             "label_pos": {
-              "x": 222.55177307128906,
-              "y": 82.35758972167969,
-              "z": 849.4310913085938
+              "x": 222.6,
+              "y": 82.4,
+              "z": 849.4
             },
-            "distance": 1700.4632324718693,
+            "distance": 2494.3,
             "key": "red"
           },
           {
@@ -913,11 +1059,11 @@
             "side": 4,
             "wall": 57,
             "label_pos": {
-              "x": 157.5602264404297,
-              "y": -23.60894775390625,
-              "z": -205.75205993652344
+              "x": 157.6,
+              "y": -23.6,
+              "z": -205.8
             },
-            "distance": 2917.504937829535,
+            "distance": 2917.5,
             "trigger": 10,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -936,11 +1082,11 @@
             "label": "Boss robot",
             "seg": 567,
             "label_pos": {
-              "x": -150.01443481445312,
-              "y": 133.24365234375,
-              "z": 645.8764190673828
+              "x": -150.0,
+              "y": 133.2,
+              "z": 645.9
             },
-            "distance": 2610.9678544624467
+            "distance": 2611.0
           },
           {
             "index": 7,
@@ -951,11 +1097,11 @@
             "side": 5,
             "wall": 12,
             "label_pos": {
-              "x": 21.428466796875,
-              "y": -0.1591339111328125,
-              "z": -645.6613464355469
+              "x": 21.4,
+              "y": -0.2,
+              "z": -645.7
             },
-            "distance": 1996.481470566176,
+            "distance": 1996.5,
             "trigger": 11,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -976,13 +1122,17 @@
         "trigger_count": 9,
         "object_count": 156,
         "texture_count": 72,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 68,
+        "reactors": 1,
         "robots": 76,
         "hostages": 0,
         "secrets": 3,
         "matcens": 0,
         "energy_centers": 4,
-        "mine_volume": 638504468.773141,
-        "mine_volume_normalized": 139.62782386160063,
+        "mine_volume": 638504000.0,
+        "mine_volume_normalized": 139.628,
         "mine_volume_text": "140x",
         "travel_distance": 0.0,
         "travel_time_seconds": 0,
@@ -991,6 +1141,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -1001,7 +1153,7 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "route target unreachable",
+        "route_problem": "red key excluded from prerequisite trial",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
         ]
@@ -1016,13 +1168,17 @@
         "trigger_count": 7,
         "object_count": 59,
         "texture_count": 33,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 25,
+        "reactors": 0,
         "robots": 19,
         "hostages": 4,
         "secrets": 0,
         "matcens": 0,
         "energy_centers": 2,
-        "mine_volume": 274184499.42667097,
-        "mine_volume_normalized": 59.95852318009458,
+        "mine_volume": 274184000.0,
+        "mine_volume_normalized": 59.9585,
         "mine_volume_text": "60x",
         "travel_distance": 0.0,
         "travel_time_seconds": 0,
@@ -1031,6 +1187,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -1058,21 +1216,27 @@
         "trigger_count": 9,
         "object_count": 239,
         "texture_count": 71,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 144,
+        "reactors": 1,
         "robots": 77,
         "hostages": 6,
         "secrets": 1,
         "matcens": 0,
         "energy_centers": 7,
-        "mine_volume": 695773088.1544291,
-        "mine_volume_normalized": 152.15129564736912,
+        "mine_volume": 695773000.0,
+        "mine_volume_normalized": 152.151,
         "mine_volume_text": "150x",
-        "travel_distance": 11930.174721997666,
-        "travel_time_seconds": 239,
-        "travel_time_text": "3M:59S",
+        "travel_distance": 13400.5,
+        "travel_time_seconds": 268,
+        "travel_time_text": "4M:28S",
         "guidebot_count": 9,
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -1086,14 +1250,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 8",
-            "seg": 579,
+            "seg": 589,
+            "side": 5,
             "wall": 188,
             "label_pos": {
               "x": -444.0,
-              "y": 16.962371826171875,
-              "z": -495.63832092285156
+              "y": 17.0,
+              "z": -495.6
             },
-            "distance": 1842.0146300978656,
+            "distance": 2066.0,
             "trigger": 8,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -1115,10 +1280,10 @@
             "wall": 41,
             "label_pos": {
               "x": -178.0,
-              "y": 16.962371826171875,
-              "z": -369.63832092285156
+              "y": 17.0,
+              "z": -369.6
             },
-            "distance": 699.6958798338748,
+            "distance": 750.0,
             "trigger": 2,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -1140,10 +1305,10 @@
             "wall": 39,
             "label_pos": {
               "x": 216.0,
-              "y": -75.03762817382812,
-              "z": -620.6383209228516
+              "y": -75.0,
+              "z": -620.6
             },
-            "distance": 1254.8423906844655,
+            "distance": 1070.8,
             "opens": [
               {
                 "seg": 598,
@@ -1159,11 +1324,11 @@
             "label": "blue key",
             "seg": 616,
             "label_pos": {
-              "x": 216.90798950195312,
-              "y": -73.16354370117188,
-              "z": 376.27392578125
+              "x": 216.9,
+              "y": -73.2,
+              "z": 376.3
             },
-            "distance": 1023.2564500276205,
+            "distance": 1023.3,
             "key": "blue"
           },
           {
@@ -1175,11 +1340,11 @@
             "side": 2,
             "wall": 122,
             "label_pos": {
-              "x": 400.3591003417969,
-              "y": 13.212371826171875,
-              "z": -352.0371856689453
+              "x": 400.4,
+              "y": 13.2,
+              "z": -352.0
             },
-            "distance": 1949.5471599448347,
+            "distance": 1949.5,
             "trigger": 3,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -1203,15 +1368,29 @@
             "label": "gold key",
             "seg": 683,
             "label_pos": {
-              "x": 181.6807098388672,
-              "y": -37.28767395019531,
-              "z": -388.4026184082031
+              "x": 181.7,
+              "y": -37.3,
+              "z": -388.4
             },
-            "distance": 846.2666837159455,
+            "distance": 846.3,
             "key": "gold"
           },
           {
             "index": 7,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 711,
+            "label_pos": {
+              "x": -25.3,
+              "y": 64.7,
+              "z": -101.6
+            },
+            "distance": 1402.8,
+            "key": "red"
+          },
+          {
+            "index": 8,
             "kind": "trigger",
             "activation_kind": "pass_through_trigger",
             "label": "Pass through trigger 5",
@@ -1219,11 +1398,11 @@
             "side": 2,
             "wall": 132,
             "label_pos": {
-              "x": 38.02880859375,
-              "y": 9.155426025390625,
-              "z": -100.21035766601562
+              "x": 38.0,
+              "y": 9.2,
+              "z": -100.2
             },
-            "distance": 1355.5337863094314,
+            "distance": 1332.8,
             "trigger": 5,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -1241,31 +1420,17 @@
             ]
           },
           {
-            "index": 8,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 711,
-            "label_pos": {
-              "x": -25.27264404296875,
-              "y": 64.67021179199219,
-              "z": -101.57003784179688
-            },
-            "distance": 1332.7587269950034,
-            "key": "red"
-          },
-          {
             "index": 9,
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
             "seg": 825,
             "label_pos": {
-              "x": -7.8384246826171875,
-              "y": -99.64176940917969,
-              "z": -153.29568481445312
+              "x": -7.8,
+              "y": -99.6,
+              "z": -153.3
             },
-            "distance": 1305.738366557278
+            "distance": 2638.5
           },
           {
             "index": 10,
@@ -1276,11 +1441,11 @@
             "side": 2,
             "wall": 184,
             "label_pos": {
-              "x": -16.931076049804688,
-              "y": -2.4960479736328125,
-              "z": -307.69970703125
+              "x": -16.9,
+              "y": -2.5,
+              "z": -307.7
             },
-            "distance": 320.5206478313472,
+            "distance": 320.5,
             "trigger": 7,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -1301,21 +1466,27 @@
         "trigger_count": 6,
         "object_count": 17,
         "texture_count": 9,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 0,
+        "reactors": 1,
         "robots": 5,
         "hostages": 0,
         "secrets": 0,
         "matcens": 0,
         "energy_centers": 0,
-        "mine_volume": 575401876.8960143,
-        "mine_volume_normalized": 125.8285820164188,
+        "mine_volume": 575402000.0,
+        "mine_volume_normalized": 125.829,
         "mine_volume_text": "130x",
-        "travel_distance": 2071.208127617617,
+        "travel_distance": 2071.2,
         "travel_time_seconds": 41,
         "travel_time_text": "0M:41S",
         "guidebot_count": 4,
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -1333,7 +1504,7 @@
             "label_pos": {
               "x": -46.0,
               "y": 0.0,
-              "z": -1238.0372161865234
+              "z": -1238.0
             },
             "distance": 46.0
           },
@@ -1348,9 +1519,9 @@
             "label_pos": {
               "x": 46.0,
               "y": 0.0,
-              "z": 703.9627990722656
+              "z": 704.0
             },
-            "distance": 2025.2081276176166,
+            "distance": 2025.2,
             "trigger": 2,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -1371,21 +1542,27 @@
         "trigger_count": 1,
         "object_count": 43,
         "texture_count": 35,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 22,
+        "reactors": 1,
         "robots": 9,
         "hostages": 0,
         "secrets": 0,
         "matcens": 0,
         "energy_centers": 1,
-        "mine_volume": 14192452.403082797,
-        "mine_volume_normalized": 3.1035980814816733,
+        "mine_volume": 14192500.0,
+        "mine_volume_normalized": 3.1036,
         "mine_volume_text": "3.1x",
-        "travel_distance": 1059.309499233757,
+        "travel_distance": 1059.3,
         "travel_time_seconds": 21,
         "travel_time_text": "0M:21S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -1402,10 +1579,10 @@
             "seg": 125,
             "label_pos": {
               "x": -37.0,
-              "y": -43.57429504394531,
-              "z": 19.831085205078125
+              "y": -43.6,
+              "z": 19.8
             },
-            "distance": 711.9452609868654
+            "distance": 711.9
           },
           {
             "index": 2,
@@ -1416,11 +1593,11 @@
             "side": 4,
             "wall": 45,
             "label_pos": {
-              "x": -111.6864013671875,
-              "y": -29.1318359375,
-              "z": -167.4834442138672
+              "x": -111.7,
+              "y": -29.1,
+              "z": -167.5
             },
-            "distance": 347.36423824689143,
+            "distance": 347.4,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -1432,6 +1609,7 @@
         ]
       }
     ],
+    "mission_path": "missions/single/pluton2.mn2",
     "target_index": 1
   },
   {
@@ -1440,7 +1618,35 @@
     "game": "d2",
     "mission_name": "Vanhuta Tower",
     "mission_filename": "space1.mn2",
-    "mission_intent": "multiplayer_anarchy",
+    "mission_intent": {
+      "classification": "multiplayer_anarchy",
+      "rule": "all_levels_arena_like",
+      "confidence": "medium",
+      "reason": "Every normal level has multiple player starts and no campaign actors",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 0,
+      "arena_like_levels": 1,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 88,
+      "reactors": 0
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -1507,6 +1713,38 @@
         "filename": "game04.hmp",
         "format": "hmp",
         "length_s": 188
+      },
+      {
+        "track": 9,
+        "name": "MIDI Track 5",
+        "filename": "game05.hmp",
+        "format": "hmp",
+        "length_s": 0,
+        "parse_status": "invalid_midi"
+      },
+      {
+        "track": 10,
+        "name": "MIDI Track 6",
+        "filename": "game06.hmp",
+        "format": "hmp",
+        "length_s": 0,
+        "parse_status": "invalid_midi"
+      },
+      {
+        "track": 11,
+        "name": "MIDI Track 7",
+        "filename": "game07.hmp",
+        "format": "hmp",
+        "length_s": 0,
+        "parse_status": "invalid_midi"
+      },
+      {
+        "track": 12,
+        "name": "MIDI Track 8",
+        "filename": "game08.hmp",
+        "format": "hmp",
+        "length_s": 0,
+        "parse_status": "invalid_midi"
       }
     ],
     "level_count": 1,
@@ -1521,13 +1759,17 @@
         "trigger_count": 0,
         "object_count": 96,
         "texture_count": 58,
+        "player_starts": 8,
+        "coop_only_starts": 0,
+        "powerups": 88,
+        "reactors": 0,
         "robots": 0,
         "hostages": 0,
         "secrets": 0,
         "matcens": 0,
         "energy_centers": 4,
-        "mine_volume": 136595594.27177504,
-        "mine_volume_normalized": 29.870653237395732,
+        "mine_volume": 136596000.0,
+        "mine_volume_normalized": 29.8707,
         "mine_volume_text": "30x",
         "travel_distance": 0.0,
         "travel_time_seconds": 0,
@@ -1536,6 +1778,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -1554,6 +1798,7 @@
         ]
       }
     ],
+    "mission_path": "missions/single/space1.mn2",
     "target_index": 2
   }
 ]

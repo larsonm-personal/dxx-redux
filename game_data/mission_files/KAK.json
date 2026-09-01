@@ -5,6 +5,35 @@
     "game": "d2",
     "mission_name": "Konflict at Karon",
     "mission_filename": "KAK.MN2",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 4,
+      "campaign_actor_levels": 4,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 170,
+      "hostages": 2,
+      "matcens": 4,
+      "guidebots": 0,
+      "powerups": 129,
+      "reactors": 4
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -97,13 +126,15 @@
         "mine_volume": 12978900.0,
         "mine_volume_normalized": 2.83822,
         "mine_volume_text": "2.8x",
-        "travel_distance": 4625.8,
-        "travel_time_seconds": 93,
-        "travel_time_text": "1M:33S",
+        "travel_distance": 4615.5,
+        "travel_time_seconds": 92,
+        "travel_time_text": "1M:32S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -168,6 +199,46 @@
           },
           {
             "index": 3,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 5",
+            "seg": 359,
+            "side": 0,
+            "wall": 48,
+            "label_pos": {
+              "x": 306.8,
+              "y": -133.1,
+              "z": -227.7
+            },
+            "distance": 1652.4,
+            "trigger": 5,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 420,
+                "side": 0,
+                "wall": 78
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying red key",
+            "seg": 419,
+            "label_pos": {
+              "x": 102.1,
+              "y": -113.0,
+              "z": -102.6
+            },
+            "distance": 1278.2,
+            "key": "red",
+            "key_carrier_objnum": 60
+          },
+          {
+            "index": 5,
             "kind": "blastable_wall",
             "activation_kind": "destroy_blastable_wall",
             "label": "Destroy blastable wall",
@@ -179,7 +250,7 @@
               "y": -112.8,
               "z": -89.0
             },
-            "distance": 698.3,
+            "distance": 324.2,
             "opens": [
               {
                 "seg": 132,
@@ -194,7 +265,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 6,
             "kind": "key",
             "activation_kind": "destroy_key_carrier",
             "label": "Destroy robot carrying gold key",
@@ -207,46 +278,6 @@
             "distance": 253.5,
             "key": "gold",
             "key_carrier_objnum": 59
-          },
-          {
-            "index": 5,
-            "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 5",
-            "seg": 359,
-            "side": 0,
-            "wall": 48,
-            "label_pos": {
-              "x": 306.8,
-              "y": -133.1,
-              "z": -227.7
-            },
-            "distance": 1288.5,
-            "trigger": 5,
-            "trigger_type_id": 7,
-            "trigger_type": "unlock_door",
-            "opens": [
-              {
-                "seg": 420,
-                "side": 0,
-                "wall": 78
-              }
-            ]
-          },
-          {
-            "index": 6,
-            "kind": "key",
-            "activation_kind": "destroy_key_carrier",
-            "label": "Destroy robot carrying red key",
-            "seg": 419,
-            "label_pos": {
-              "x": 102.1,
-              "y": -113.0,
-              "z": -102.6
-            },
-            "distance": 1278.2,
-            "key": "red",
-            "key_carrier_objnum": 60
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
@@ -284,6 +315,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -328,6 +361,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -372,6 +407,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -418,35 +455,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": false,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 4,
-      "campaign_actor_levels": 4,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 170,
-      "hostages": 2,
-      "matcens": 4,
-      "guidebots": 0,
-      "powerups": 129,
-      "reactors": 4
-    },
     "mission_path": "KAK.MN2",
     "target_index": 0
   }

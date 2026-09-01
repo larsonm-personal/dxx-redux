@@ -3,8 +3,37 @@
     "status": "ok",
     "source": "Entropy 2: Vengeance",
     "game": "d2",
-    "mission_name": "Entropy 2: Vengeance",
+    "mission_name": "entropy 2: vengeance",
     "mission_filename": "ENTROPY2.MN2",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 6,
+      "campaign_actor_levels": 6,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 479,
+      "hostages": 5,
+      "matcens": 0,
+      "guidebots": 1,
+      "powerups": 409,
+      "reactors": 5
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -104,6 +133,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -285,13 +316,15 @@
         "mine_volume": 33161300.0,
         "mine_volume_normalized": 7.2517,
         "mine_volume_text": "7.3x",
-        "travel_distance": 4991.7,
-        "travel_time_seconds": 100,
-        "travel_time_text": "1M:40S",
+        "travel_distance": 4966.5,
+        "travel_time_seconds": 99,
+        "travel_time_text": "1M:39S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -328,17 +361,17 @@
           {
             "index": 2,
             "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 5",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 5",
             "seg": 58,
             "side": 1,
             "wall": 26,
             "label_pos": {
               "x": -157.0,
-              "y": -415.0,
+              "y": -396.0,
               "z": -70.0
             },
-            "distance": 680.1,
+            "distance": 677.8,
             "trigger": 5,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -353,17 +386,17 @@
           {
             "index": 3,
             "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 14",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 14",
             "seg": 23,
             "side": 2,
             "wall": 16,
             "label_pos": {
-              "x": 0.0,
+              "x": 10.0,
               "y": -190.0,
               "z": -70.0
             },
-            "distance": 405.0,
+            "distance": 395.1,
             "trigger": 14,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -401,7 +434,7 @@
               "y": 197.0,
               "z": -562.5
             },
-            "distance": 1127.3,
+            "distance": 1114.2,
             "trigger": 15,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -441,6 +474,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -532,13 +567,15 @@
         "mine_volume": 25275000.0,
         "mine_volume_normalized": 5.52713,
         "mine_volume_text": "5.5x",
-        "travel_distance": 5893.8,
-        "travel_time_seconds": 118,
-        "travel_time_text": "1M:58S",
+        "travel_distance": 5851.3,
+        "travel_time_seconds": 117,
+        "travel_time_text": "1M:57S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 1,
+        "route_completing_key_mask_set": 2,
         "route_steps": [
           {
             "index": 0,
@@ -660,7 +697,7 @@
               "y": -25.0,
               "z": -1326.5
             },
-            "distance": 495.1,
+            "distance": 473.9,
             "trigger": 2,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -683,7 +720,7 @@
               "y": -106.0,
               "z": -432.0
             },
-            "distance": 1025.2
+            "distance": 1003.9
           },
           {
             "index": 6,
@@ -738,6 +775,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 4,
         "route_steps": [
           {
             "index": 0,
@@ -980,13 +1019,15 @@
         "mine_volume": 32365200.0,
         "mine_volume_normalized": 7.07761,
         "mine_volume_text": "7.1x",
-        "travel_distance": 15650.8,
-        "travel_time_seconds": 313,
-        "travel_time_text": "5M:13S",
+        "travel_distance": 14969.5,
+        "travel_time_seconds": 299,
+        "travel_time_text": "4M:59S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -1284,7 +1325,7 @@
               "y": 25.0,
               "z": -930.0
             },
-            "distance": 2062.4,
+            "distance": 1381.1,
             "trigger": 6,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1386,35 +1427,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": false,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 6,
-      "campaign_actor_levels": 6,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 479,
-      "hostages": 5,
-      "matcens": 0,
-      "guidebots": 1,
-      "powerups": 409,
-      "reactors": 5
-    },
     "mission_path": "ENTROPY2.MN2",
     "target_index": 0
   }

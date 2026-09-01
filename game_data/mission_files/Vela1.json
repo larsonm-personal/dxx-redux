@@ -5,6 +5,35 @@
     "game": "d2",
     "mission_name": "Vela Mines",
     "mission_filename": "vela.mn2",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "descriptor_campaign",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables normal or cooperative play",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": true,
+        "coop": true,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 2,
+      "campaign_actor_levels": 2,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 1,
+      "player_start_max": 1,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 248,
+      "hostages": 6,
+      "matcens": 21,
+      "guidebots": 0,
+      "powerups": 48,
+      "reactors": 2
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -97,13 +126,15 @@
         "mine_volume": 7598830.0,
         "mine_volume_normalized": 1.66171,
         "mine_volume_text": "1.7x",
-        "travel_distance": 9803.1,
-        "travel_time_seconds": 196,
-        "travel_time_text": "3M:16S",
+        "travel_distance": 9715.1,
+        "travel_time_seconds": 194,
+        "travel_time_text": "3M:14S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -114,60 +145,6 @@
           },
           {
             "index": 1,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Open hidden door",
-            "seg": 4,
-            "side": 4,
-            "wall": 4,
-            "label_pos": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 58.0
-            },
-            "distance": 48.0,
-            "opens": [
-              {
-                "seg": 4,
-                "side": 4,
-                "wall": 4
-              },
-              {
-                "seg": 12,
-                "side": 5,
-                "wall": 5
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Open hidden door",
-            "seg": 12,
-            "side": 4,
-            "wall": 6,
-            "label_pos": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 78.0
-            },
-            "distance": 20.0,
-            "opens": [
-              {
-                "seg": 12,
-                "side": 4,
-                "wall": 6
-              },
-              {
-                "seg": 13,
-                "side": 5,
-                "wall": 7
-              }
-            ]
-          },
-          {
-            "index": 3,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "blue key",
@@ -177,11 +154,11 @@
               "y": -77.1,
               "z": -199.4
             },
-            "distance": 1142.8,
+            "distance": 1122.8,
             "key": "blue"
           },
           {
-            "index": 4,
+            "index": 2,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 28",
@@ -206,7 +183,7 @@
             ]
           },
           {
-            "index": 5,
+            "index": 3,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -220,7 +197,7 @@
             "key": "gold"
           },
           {
-            "index": 6,
+            "index": 4,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 29",
@@ -245,7 +222,7 @@
             ]
           },
           {
-            "index": 7,
+            "index": 5,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 32",
@@ -270,7 +247,7 @@
             ]
           },
           {
-            "index": 8,
+            "index": 6,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 35",
@@ -300,7 +277,7 @@
             ]
           },
           {
-            "index": 9,
+            "index": 7,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 33",
@@ -325,7 +302,7 @@
             ]
           },
           {
-            "index": 10,
+            "index": 8,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 36",
@@ -359,7 +336,7 @@
             ]
           },
           {
-            "index": 11,
+            "index": 9,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 37",
@@ -383,7 +360,7 @@
             ]
           },
           {
-            "index": 12,
+            "index": 10,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 38",
@@ -423,7 +400,7 @@
             ]
           },
           {
-            "index": 13,
+            "index": 11,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 40",
@@ -483,7 +460,7 @@
             ]
           },
           {
-            "index": 14,
+            "index": 12,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -495,6 +472,60 @@
             },
             "distance": 90.2,
             "key": "red"
+          },
+          {
+            "index": 13,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 4,
+            "side": 4,
+            "wall": 4,
+            "label_pos": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 58.0
+            },
+            "distance": 1196.3,
+            "opens": [
+              {
+                "seg": 4,
+                "side": 4,
+                "wall": 4
+              },
+              {
+                "seg": 12,
+                "side": 5,
+                "wall": 5
+              }
+            ]
+          },
+          {
+            "index": 14,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 12,
+            "side": 4,
+            "wall": 6,
+            "label_pos": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 78.0
+            },
+            "distance": 20.0,
+            "opens": [
+              {
+                "seg": 12,
+                "side": 4,
+                "wall": 6
+              },
+              {
+                "seg": 13,
+                "side": 5,
+                "wall": 7
+              }
+            ]
           },
           {
             "index": 15,
@@ -509,7 +540,7 @@
               "y": 0.0,
               "z": 98.0
             },
-            "distance": 1256.3,
+            "distance": 40.0,
             "opens": [
               {
                 "seg": 14,
@@ -724,6 +755,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -987,35 +1020,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "descriptor_campaign",
-      "confidence": "high",
-      "reason": "The mission descriptor explicitly enables normal or cooperative play",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": true,
-        "coop": true,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 2,
-      "campaign_actor_levels": 2,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 1,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 248,
-      "hostages": 6,
-      "matcens": 21,
-      "guidebots": 0,
-      "powerups": 48,
-      "reactors": 2
-    },
     "mission_path": "vela.mn2",
     "target_index": 0
   }

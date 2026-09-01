@@ -5,6 +5,35 @@
     "game": "d1",
     "mission_name": "The Outer Reaches",
     "mission_filename": "outerrch.msn",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "descriptor_campaign",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables normal or cooperative play",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": true,
+        "coop": true,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 6,
+      "campaign_actor_levels": 6,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 1,
+      "player_start_max": 1,
+      "coop_start_min": 2,
+      "coop_start_max": 2,
+      "robots": 340,
+      "hostages": 29,
+      "matcens": 25,
+      "guidebots": 0,
+      "powerups": 246,
+      "reactors": 5
+    },
     "coop_starts": "3",
     "track_names": [
       {
@@ -228,6 +257,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 4,
         "route_steps": [
           {
             "index": 0,
@@ -312,6 +343,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 3,
+        "route_completing_key_mask_set": 8,
         "route_steps": [
           {
             "index": 0,
@@ -437,6 +470,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 3,
+        "route_completing_key_mask_set": 8,
         "route_steps": [
           {
             "index": 0,
@@ -535,6 +570,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 6,
+        "route_completing_key_mask_set": 64,
         "route_steps": [
           {
             "index": 0,
@@ -640,7 +677,7 @@
             "distance": 496.8,
             "trigger": 1,
             "trigger_type_id": 1,
-            "trigger_type": "open_door",
+            "trigger_type": "toggle_door",
             "opens": [
               {
                 "seg": 54,
@@ -732,13 +769,15 @@
         "mine_volume": 36463700.0,
         "mine_volume_normalized": 7.97387,
         "mine_volume_text": "8.0x",
-        "travel_distance": 6727.1,
-        "travel_time_seconds": 135,
-        "travel_time_text": "2M:15S",
+        "travel_distance": 6225.4,
+        "travel_time_seconds": 125,
+        "travel_time_text": "2M:05S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -749,30 +788,17 @@
           },
           {
             "index": 1,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Open hidden door",
-            "seg": 139,
-            "side": 3,
-            "wall": 9,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 292,
             "label_pos": {
-              "x": -184.0,
-              "y": -17.1,
+              "x": -517.0,
+              "y": 3.4,
               "z": 69.0
             },
-            "distance": 969.2,
-            "opens": [
-              {
-                "seg": 139,
-                "side": 3,
-                "wall": 9
-              },
-              {
-                "seg": 186,
-                "side": 1,
-                "wall": 8
-              }
-            ]
+            "distance": 1414.1,
+            "key": "blue"
           },
           {
             "index": 2,
@@ -787,7 +813,7 @@
               "y": -17.1,
               "z": 79.0
             },
-            "distance": 150.1,
+            "distance": 796.5,
             "opens": [
               {
                 "seg": 103,
@@ -805,20 +831,6 @@
             "index": 3,
             "kind": "key",
             "activation_kind": "pickup_key",
-            "label": "blue key",
-            "seg": 292,
-            "label_pos": {
-              "x": -517.0,
-              "y": 3.4,
-              "z": 69.0
-            },
-            "distance": 796.5,
-            "key": "blue"
-          },
-          {
-            "index": 4,
-            "kind": "key",
-            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 306,
             "label_pos": {
@@ -826,8 +838,35 @@
               "y": -89.9,
               "z": 79.0
             },
-            "distance": 1090.2,
+            "distance": 293.8,
             "key": "gold"
+          },
+          {
+            "index": 4,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 139,
+            "side": 3,
+            "wall": 9,
+            "label_pos": {
+              "x": -184.0,
+              "y": -17.1,
+              "z": 69.0
+            },
+            "distance": 443.8,
+            "opens": [
+              {
+                "seg": 139,
+                "side": 3,
+                "wall": 9
+              },
+              {
+                "seg": 186,
+                "side": 1,
+                "wall": 8
+              }
+            ]
           },
           {
             "index": 5,
@@ -840,7 +879,7 @@
               "y": -295.4,
               "z": 289.0
             },
-            "distance": 1174.0,
+            "distance": 730.2,
             "key": "red"
           },
           {
@@ -905,6 +944,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -1021,6 +1062,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -1075,35 +1118,6 @@
         "route_problem": "route target unreachable"
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "descriptor_campaign",
-      "confidence": "high",
-      "reason": "The mission descriptor explicitly enables normal or cooperative play",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": true,
-        "coop": true,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 6,
-      "campaign_actor_levels": 6,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 1,
-      "coop_start_min": 2,
-      "coop_start_max": 2,
-      "robots": 340,
-      "hostages": 29,
-      "matcens": 25,
-      "guidebots": 0,
-      "powerups": 246,
-      "reactors": 5
-    },
     "mission_path": "outerrch.msn",
     "target_index": 0
   }

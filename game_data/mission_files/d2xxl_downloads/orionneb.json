@@ -5,7 +5,35 @@
     "game": "d1",
     "mission_name": "Orion Nebula Project",
     "mission_filename": "orionneb.msn",
-    "mission_intent": "single_player_or_coop",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 7,
+      "campaign_actor_levels": 7,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 642,
+      "hostages": 24,
+      "matcens": 5,
+      "guidebots": 0,
+      "powerups": 384,
+      "reactors": 7
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -18,9 +46,9 @@
       {
         "track": 1,
         "name": "MIDI Track 1",
-        "filename": "briefing.hmp",
+        "filename": "roll.hmp",
         "format": "hmp",
-        "length_s": 176
+        "length_s": 104
       },
       {
         "track": 2,
@@ -32,9 +60,9 @@
       {
         "track": 3,
         "name": "MIDI Track 3",
-        "filename": "endgame.hmp",
+        "filename": "astntion.hmp",
         "format": "hmp",
-        "length_s": 131
+        "length_s": 108
       },
       {
         "track": 4,
@@ -46,51 +74,51 @@
       {
         "track": 5,
         "name": "MIDI Track 1",
-        "filename": "game01.hmp",
+        "filename": "extenton.hmp",
         "format": "hmp",
-        "length_s": 204
+        "length_s": 235
       },
       {
         "track": 6,
         "name": "MIDI Track 2",
-        "filename": "game02.hmp",
+        "filename": "space.hmp",
         "format": "hmp",
-        "length_s": 226
+        "length_s": 183
       },
       {
         "track": 7,
         "name": "MIDI Track 3",
-        "filename": "game03.hmp",
+        "filename": "voyager.hmp",
         "format": "hmp",
-        "length_s": 213
+        "length_s": 166
       },
       {
         "track": 8,
         "name": "MIDI Track 4",
-        "filename": "game04.hmp",
+        "filename": "desert.hmp",
         "format": "hmp",
-        "length_s": 151
+        "length_s": 120
       },
       {
         "track": 9,
         "name": "MIDI Track 5",
-        "filename": "game05.hmp",
+        "filename": "extenton.hmp",
         "format": "hmp",
-        "length_s": 185
+        "length_s": 235
       },
       {
         "track": 10,
         "name": "MIDI Track 6",
-        "filename": "game06.hmp",
+        "filename": "webspin.hmp",
         "format": "hmp",
-        "length_s": 159
+        "length_s": 88
       },
       {
         "track": 11,
         "name": "MIDI Track 7",
-        "filename": "game07.hmp",
+        "filename": "shrpmldy.hmp",
         "format": "hmp",
-        "length_s": 179
+        "length_s": 165
       },
       {
         "track": 12,
@@ -210,6 +238,10 @@
         "trigger_count": 11,
         "object_count": 148,
         "texture_count": 80,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 43,
+        "reactors": 1,
         "robots": 90,
         "hostages": 3,
         "secrets": 1,
@@ -225,6 +257,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -262,7 +296,7 @@
             "key": "gold"
           }
         ],
-        "route_problem": "red key unreachable"
+        "route_problem": "red key excluded from prerequisite trial"
       },
       {
         "level_num": 2,
@@ -274,6 +308,10 @@
         "trigger_count": 3,
         "object_count": 136,
         "texture_count": 66,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 41,
+        "reactors": 1,
         "robots": 79,
         "hostages": 4,
         "secrets": 1,
@@ -282,13 +320,15 @@
         "mine_volume": 30383100.0,
         "mine_volume_normalized": 6.64416,
         "mine_volume_text": "6.6x",
-        "travel_distance": 5894.3,
-        "travel_time_seconds": 118,
-        "travel_time_text": "1M:58S",
+        "travel_distance": 2506.6,
+        "travel_time_seconds": 50,
+        "travel_time_text": "0M:50S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
+        "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -324,53 +364,9 @@
             },
             "distance": 1231.6,
             "key": "gold"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 135,
-            "label_pos": {
-              "x": 658.4,
-              "y": -281.2,
-              "z": 185.4
-            },
-            "distance": 1672.9,
-            "key": "red"
-          },
-          {
-            "index": 4,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 81,
-            "label_pos": {
-              "x": 440.6,
-              "y": -249.8,
-              "z": -160.0
-            },
-            "distance": 1070.1
-          },
-          {
-            "index": 5,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 62,
-            "side": 4,
-            "wall": 58,
-            "label_pos": {
-              "x": 415.2,
-              "y": -628.0,
-              "z": -40.5
-            },
-            "distance": 644.8,
-            "trigger": 2,
-            "trigger_type_id": 8,
-            "trigger_type": "exit"
           }
-        ]
+        ],
+        "route_problem": "red key excluded from prerequisite trial"
       },
       {
         "level_num": 3,
@@ -382,6 +378,10 @@
         "trigger_count": 2,
         "object_count": 155,
         "texture_count": 68,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 51,
+        "reactors": 1,
         "robots": 92,
         "hostages": 0,
         "secrets": 2,
@@ -397,6 +397,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 3,
+        "route_completing_key_mask_set": 8,
         "route_steps": [
           {
             "index": 0,
@@ -476,6 +478,10 @@
         "trigger_count": 6,
         "object_count": 259,
         "texture_count": 111,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 100,
+        "reactors": 1,
         "robots": 143,
         "hostages": 4,
         "secrets": 13,
@@ -491,6 +497,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -584,6 +592,10 @@
         "trigger_count": 2,
         "object_count": 121,
         "texture_count": 52,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 41,
+        "reactors": 1,
         "robots": 65,
         "hostages": 3,
         "secrets": 4,
@@ -599,6 +611,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -692,6 +706,10 @@
         "trigger_count": 1,
         "object_count": 138,
         "texture_count": 50,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 49,
+        "reactors": 1,
         "robots": 73,
         "hostages": 4,
         "secrets": 2,
@@ -707,6 +725,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -771,7 +791,7 @@
             "key": "gold"
           }
         ],
-        "route_problem": "red key unreachable"
+        "route_problem": "red key excluded from prerequisite trial"
       },
       {
         "level_num": 7,
@@ -783,6 +803,10 @@
         "trigger_count": 6,
         "object_count": 177,
         "texture_count": 67,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 59,
+        "reactors": 1,
         "robots": 100,
         "hostages": 6,
         "secrets": 4,
@@ -798,6 +822,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -891,6 +917,10 @@
         "trigger_count": 5,
         "object_count": 117,
         "texture_count": 86,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 34,
+        "reactors": 1,
         "robots": 65,
         "hostages": 6,
         "secrets": 2,
@@ -899,13 +929,15 @@
         "mine_volume": 11276700.0,
         "mine_volume_normalized": 2.46599,
         "mine_volume_text": "2.5x",
-        "travel_distance": 6381.5,
-        "travel_time_seconds": 128,
-        "travel_time_text": "2M:08S",
+        "travel_distance": 6374.4,
+        "travel_time_seconds": 127,
+        "travel_time_text": "2M:07S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -925,7 +957,7 @@
               "y": 100.3,
               "z": 94.8
             },
-            "distance": 603.0,
+            "distance": 599.4,
             "key": "blue"
           },
           {
@@ -939,7 +971,7 @@
               "y": -152.0,
               "z": 245.0
             },
-            "distance": 1943.0,
+            "distance": 1939.4,
             "key": "gold"
           },
           {

@@ -5,6 +5,35 @@
     "game": "d1",
     "mission_name": "Insane Mission Pack Ultra",
     "mission_filename": "insanem3.msn",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 8,
+      "campaign_actor_levels": 8,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 846,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 450,
+      "reactors": 4
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -228,6 +257,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -298,6 +329,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 4,
         "route_steps": [
           {
             "index": 0,
@@ -383,6 +416,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 3,
+        "route_completing_key_mask_set": 8,
         "route_steps": [
           {
             "index": 0,
@@ -483,6 +518,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -557,6 +594,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 17,
         "route_steps": [
           {
             "index": 0,
@@ -630,6 +669,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 12,
         "route_steps": [
           {
             "index": 0,
@@ -713,13 +754,15 @@
         "mine_volume": 27926900.0,
         "mine_volume_normalized": 6.10705,
         "mine_volume_text": "6.1x",
-        "travel_distance": 2884.6,
-        "travel_time_seconds": 58,
-        "travel_time_text": "0M:58S",
+        "travel_distance": 1664.6,
+        "travel_time_seconds": 33,
+        "travel_time_text": "0M:33S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 4,
         "route_steps": [
           {
             "index": 0,
@@ -730,19 +773,6 @@
           },
           {
             "index": 1,
-            "kind": "boss",
-            "activation_kind": "destroy_boss",
-            "label": "Boss robot",
-            "seg": 55,
-            "label_pos": {
-              "x": -170.6,
-              "y": 26.7,
-              "z": -49.6
-            },
-            "distance": 1399.5
-          },
-          {
-            "index": 2,
             "kind": "key",
             "activation_kind": "destroy_key_carrier",
             "label": "Destroy robot carrying red key",
@@ -752,9 +782,22 @@
               "y": -57.4,
               "z": 116.5
             },
-            "distance": 610.0,
+            "distance": 789.5,
             "key": "red",
             "key_carrier_objnum": 105
+          },
+          {
+            "index": 2,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 55,
+            "label_pos": {
+              "x": -170.6,
+              "y": 26.7,
+              "z": -49.6
+            },
+            "distance": 610.0
           },
           {
             "index": 3,
@@ -769,7 +812,7 @@
               "y": 90.1,
               "z": -22.8
             },
-            "distance": 875.1,
+            "distance": 265.1,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -809,6 +852,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -855,35 +900,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": false,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 8,
-      "campaign_actor_levels": 8,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 846,
-      "hostages": 0,
-      "matcens": 0,
-      "guidebots": 0,
-      "powerups": 450,
-      "reactors": 4
-    },
     "mission_path": "insanem3.msn",
     "target_index": 0
   }

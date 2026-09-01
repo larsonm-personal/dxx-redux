@@ -5,7 +5,35 @@
     "game": "d2",
     "mission_name": "Technical Terror",
     "mission_filename": "TT.MN2",
-    "mission_intent": "single_player_or_coop_and_multiplayer_anarchy",
+    "mission_intent": {
+      "classification": "single_player_or_coop_and_multiplayer_anarchy",
+      "rule": "descriptor_both",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables campaign/cooperative and competitive modes",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": true,
+        "coop": true,
+        "anarchy": true,
+        "robo_anarchy": true,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 138,
+      "hostages": 4,
+      "matcens": 5,
+      "guidebots": 0,
+      "powerups": 58,
+      "reactors": 0
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -86,21 +114,27 @@
         "trigger_count": 28,
         "object_count": 211,
         "texture_count": 106,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 58,
+        "reactors": 0,
         "robots": 138,
         "hostages": 4,
         "secrets": 1,
         "matcens": 5,
         "energy_centers": 3,
-        "mine_volume": 35737395.69997868,
-        "mine_volume_normalized": 7.81503503281174,
+        "mine_volume": 35737400.0,
+        "mine_volume_normalized": 7.81504,
         "mine_volume_text": "7.8x",
-        "travel_distance": 10688.960365655099,
-        "travel_time_seconds": 214,
-        "travel_time_text": "3M:34S",
+        "travel_distance": 10737.8,
+        "travel_time_seconds": 215,
+        "travel_time_text": "3M:35S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -114,14 +148,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 0",
-            "seg": 448,
+            "seg": 453,
             "wall": 110,
             "label_pos": {
-              "x": -156.1471405029297,
+              "x": -156.1,
               "y": 80.0,
-              "z": 269.91236877441406
+              "z": 269.9
             },
-            "distance": 597.7068910669682,
+            "distance": 686.0,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -145,11 +179,11 @@
             "label": "gold key",
             "seg": 405,
             "label_pos": {
-              "x": -90.27273559570312,
+              "x": -90.3,
               "y": 80.0,
-              "z": 377.27276611328125
+              "z": 377.3
             },
-            "distance": 530.2734473641289,
+            "distance": 618.5,
             "key": "gold"
           },
           {
@@ -161,11 +195,11 @@
             "side": 0,
             "wall": 159,
             "label_pos": {
-              "x": 504.82183837890625,
+              "x": 504.8,
               "y": 240.0,
-              "z": -681.2250823974609
+              "z": -681.2
             },
-            "distance": 2301.4813062776357,
+            "distance": 2301.5,
             "trigger": 11,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -211,11 +245,11 @@
             "side": 0,
             "wall": 167,
             "label_pos": {
-              "x": 575.5241241455078,
+              "x": 575.5,
               "y": 240.0,
-              "z": -699.5854187011719
+              "z": -699.6
             },
-            "distance": 149.05827239391033,
+            "distance": 149.1,
             "trigger": 13,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -259,11 +293,11 @@
             "label": "blue key",
             "seg": 833,
             "label_pos": {
-              "x": 316.8946838378906,
-              "y": 79.39227294921875,
-              "z": -357.78472900390625
+              "x": 316.9,
+              "y": 79.4,
+              "z": -357.8
             },
-            "distance": 1201.7465994608158,
+            "distance": 1201.7,
             "key": "blue"
           },
           {
@@ -275,11 +309,11 @@
             "side": 1,
             "wall": 136,
             "label_pos": {
-              "x": -626.6015625,
-              "y": -195.57847595214844,
-              "z": -751.9858093261719
+              "x": -626.6,
+              "y": -195.6,
+              "z": -752.0
             },
-            "distance": 2407.7278300608123,
+            "distance": 2407.7,
             "trigger": 7,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -303,11 +337,11 @@
             "label": "red key",
             "seg": 514,
             "label_pos": {
-              "x": -418.4422149658203,
-              "y": -66.18490600585938,
-              "z": -818.8763580322266
+              "x": -418.4,
+              "y": -66.2,
+              "z": -818.9
             },
-            "distance": 1282.0967899726625,
+            "distance": 1154.4,
             "key": "red"
           },
           {
@@ -321,7 +355,7 @@
               "y": 50.0,
               "z": -153.0
             },
-            "distance": 1832.3620900792776
+            "distance": 1832.4
           },
           {
             "index": 9,
@@ -332,11 +366,11 @@
             "side": 4,
             "wall": 195,
             "label_pos": {
-              "x": 235.50686645507812,
+              "x": 235.5,
               "y": 0.0,
-              "z": 142.50686645507812
+              "z": 142.5
             },
-            "distance": 386.5071389788876,
+            "distance": 386.5,
             "trigger": 18,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -350,6 +384,7 @@
         ]
       }
     ],
+    "mission_path": "TT.MN2",
     "target_index": 0
   }
 ]

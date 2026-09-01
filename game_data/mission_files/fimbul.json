@@ -5,6 +5,35 @@
     "game": "d2",
     "mission_name": "Fimbul",
     "mission_filename": "fimbul.mn2",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 3,
+      "campaign_actor_levels": 3,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 4,
+      "coop_start_max": 4,
+      "robots": 177,
+      "hostages": 6,
+      "matcens": 4,
+      "guidebots": 1,
+      "powerups": 76,
+      "reactors": 3
+    },
     "coop_starts": "5",
     "track_names": [
       {
@@ -104,6 +133,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -247,6 +278,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -518,13 +551,15 @@
         "mine_volume": 37726300.0,
         "mine_volume_normalized": 8.24996,
         "mine_volume_text": "8.2x",
-        "travel_distance": 8441.5,
-        "travel_time_seconds": 169,
-        "travel_time_text": "2M:49S",
+        "travel_distance": 8010.8,
+        "travel_time_seconds": 160,
+        "travel_time_text": "2M:40S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -564,19 +599,33 @@
           },
           {
             "index": 3,
-            "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 3",
-            "seg": 45,
-            "side": 2,
-            "wall": 66,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 363,
             "label_pos": {
-              "x": -410.0,
-              "y": 7.5,
-              "z": 250.0
+              "x": -227.5,
+              "y": -65.0,
+              "z": -70.0
             },
-            "distance": 2403.1,
-            "trigger": 3,
+            "distance": 2776.2,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 5",
+            "seg": 343,
+            "side": 4,
+            "wall": 65,
+            "label_pos": {
+              "x": -275.0,
+              "y": -35.0,
+              "z": 200.0
+            },
+            "distance": 382.9,
+            "trigger": 5,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
             "opens": [
@@ -593,7 +642,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 2",
@@ -604,7 +653,7 @@
               "y": 0.0,
               "z": 417.5
             },
-            "distance": 223.3,
+            "distance": 230.5,
             "trigger": 2,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -622,20 +671,6 @@
             ]
           },
           {
-            "index": 5,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 363,
-            "label_pos": {
-              "x": -227.5,
-              "y": -65.0,
-              "z": -70.0
-            },
-            "distance": 603.9,
-            "key": "red"
-          },
-          {
             "index": 6,
             "kind": "boss",
             "activation_kind": "destroy_boss",
@@ -646,7 +681,7 @@
               "y": -64.4,
               "z": 627.5
             },
-            "distance": 1297.9
+            "distance": 707.8
           },
           {
             "index": 7,
@@ -673,35 +708,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": false,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 3,
-      "campaign_actor_levels": 3,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 4,
-      "coop_start_max": 4,
-      "robots": 177,
-      "hostages": 6,
-      "matcens": 4,
-      "guidebots": 1,
-      "powerups": 76,
-      "reactors": 3
-    },
     "mission_path": "fimbul.mn2",
     "target_index": 0
   }

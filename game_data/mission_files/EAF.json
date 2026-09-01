@@ -5,6 +5,35 @@
     "game": "d2",
     "mission_name": "Enounter At Farpiont",
     "mission_filename": "ENCOUN.MN2",
+    "mission_intent": {
+      "classification": "single_player_or_coop_and_multiplayer_anarchy",
+      "rule": "descriptor_both",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables campaign/cooperative and competitive modes",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": true,
+        "coop": false,
+        "anarchy": true,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 5,
+      "campaign_actor_levels": 4,
+      "arena_like_levels": 0,
+      "solo_like_levels": 1,
+      "player_start_min": 1,
+      "player_start_max": 1,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 302,
+      "hostages": 2,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 128,
+      "reactors": 4
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -104,6 +133,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -333,6 +364,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -370,13 +403,15 @@
         "mine_volume": 54821800.0,
         "mine_volume_normalized": 11.9884,
         "mine_volume_text": "12x",
-        "travel_distance": 8133.5,
-        "travel_time_seconds": 163,
-        "travel_time_text": "2M:43S",
+        "travel_distance": 8679.8,
+        "travel_time_seconds": 174,
+        "travel_time_text": "2M:54S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 6,
+        "route_completing_key_mask_set": 64,
         "route_steps": [
           {
             "index": 0,
@@ -389,6 +424,20 @@
             "index": 1,
             "kind": "key",
             "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 511,
+            "label_pos": {
+              "x": 693.8,
+              "y": -65.7,
+              "z": 355.6
+            },
+            "distance": 1519.5,
+            "key": "gold"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 689,
             "label_pos": {
@@ -396,11 +445,11 @@
               "y": -65.7,
               "z": 354.8
             },
-            "distance": 1518.6,
+            "distance": 2285.9,
             "key": "red"
           },
           {
-            "index": 2,
+            "index": 3,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 0",
@@ -412,7 +461,7 @@
               "y": -140.0,
               "z": 355.2
             },
-            "distance": 925.2,
+            "distance": 915.2,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -425,7 +474,7 @@
             ]
           },
           {
-            "index": 3,
+            "index": 4,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 2",
@@ -437,7 +486,7 @@
               "y": -140.0,
               "z": 75.0
             },
-            "distance": 448.7,
+            "distance": 438.7,
             "trigger": 2,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -465,20 +514,6 @@
             ]
           },
           {
-            "index": 4,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
-            "seg": 511,
-            "label_pos": {
-              "x": 693.8,
-              "y": -65.7,
-              "z": 355.6
-            },
-            "distance": 1383.9,
-            "key": "gold"
-          },
-          {
             "index": 5,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
@@ -491,7 +526,7 @@
               "y": -140.0,
               "z": 355.2
             },
-            "distance": 925.2,
+            "distance": 598.7,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -516,7 +551,7 @@
               "y": -140.0,
               "z": 75.0
             },
-            "distance": 448.7,
+            "distance": 438.7,
             "trigger": 3,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -594,6 +629,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -773,6 +810,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -791,35 +830,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop_and_multiplayer_anarchy",
-      "rule": "descriptor_both",
-      "confidence": "high",
-      "reason": "The mission descriptor explicitly enables campaign/cooperative and competitive modes",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": true,
-        "coop": false,
-        "anarchy": true,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 5,
-      "campaign_actor_levels": 4,
-      "arena_like_levels": 0,
-      "solo_like_levels": 1,
-      "player_start_min": 1,
-      "player_start_max": 1,
-      "coop_start_min": 0,
-      "coop_start_max": 0,
-      "robots": 302,
-      "hostages": 2,
-      "matcens": 0,
-      "guidebots": 0,
-      "powerups": 128,
-      "reactors": 4
-    },
     "mission_path": "ENCOUN.MN2",
     "target_index": 0
   }

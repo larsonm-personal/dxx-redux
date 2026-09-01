@@ -5,6 +5,35 @@
     "game": "d2",
     "mission_name": "Orion Nebula Project",
     "mission_filename": "ORION-D2.MN2",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 7,
+      "campaign_actor_levels": 7,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 4,
+      "robots": 663,
+      "hostages": 29,
+      "matcens": 5,
+      "guidebots": 0,
+      "powerups": 410,
+      "reactors": 7
+    },
     "coop_starts": "4-5",
     "track_names": [
       {
@@ -71,6 +100,27 @@
         "filename": "game04.hmp",
         "format": "hmp",
         "length_s": 88
+      },
+      {
+        "track": 9,
+        "name": "MIDI Track 5",
+        "filename": "game01.hmp",
+        "format": "hmp",
+        "length_s": 235
+      },
+      {
+        "track": 10,
+        "name": "MIDI Track 6",
+        "filename": "game06.hmp",
+        "format": "hmp",
+        "length_s": 120
+      },
+      {
+        "track": 11,
+        "name": "MIDI Track 7",
+        "filename": "game07.hmp",
+        "format": "hmp",
+        "length_s": 165
       }
     ],
     "level_count": 8,
@@ -104,6 +154,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -297,13 +349,15 @@
         "mine_volume": 30097200.0,
         "mine_volume_normalized": 6.58165,
         "mine_volume_text": "6.6x",
-        "travel_distance": 5609.0,
-        "travel_time_seconds": 112,
-        "travel_time_text": "1M:52S",
+        "travel_distance": 2508.4,
+        "travel_time_seconds": 50,
+        "travel_time_text": "0M:50S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
+        "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -339,54 +393,10 @@
             },
             "distance": 1233.5,
             "key": "gold"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 130,
-            "label_pos": {
-              "x": 658.4,
-              "y": -281.2,
-              "z": 185.4
-            },
-            "distance": 1674.9,
-            "key": "red"
-          },
-          {
-            "index": 4,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 76,
-            "label_pos": {
-              "x": 440.6,
-              "y": -249.8,
-              "z": -160.0
-            },
-            "distance": 1070.2
-          },
-          {
-            "index": 5,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 109,
-            "side": 4,
-            "wall": 61,
-            "label_pos": {
-              "x": 485.0,
-              "y": -263.2,
-              "z": 13.2
-            },
-            "distance": 355.4,
-            "trigger": 2,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_problem": "red key excluded from prerequisite trial",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -420,6 +430,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 3,
+        "route_completing_key_mask_set": 8,
         "route_steps": [
           {
             "index": 0,
@@ -522,6 +534,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -638,6 +652,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -754,6 +770,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -819,7 +837,7 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "red key unreachable",
+        "route_problem": "red key excluded from prerequisite trial",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -846,13 +864,15 @@
         "mine_volume": 37377000.0,
         "mine_volume_normalized": 8.17358,
         "mine_volume_text": "8.2x",
-        "travel_distance": 7141.5,
+        "travel_distance": 7141.0,
         "travel_time_seconds": 143,
         "travel_time_text": "2M:23S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -872,7 +892,7 @@
               "y": 47.4,
               "z": 86.4
             },
-            "distance": 1580.2,
+            "distance": 1579.9,
             "key": "blue"
           },
           {
@@ -886,7 +906,7 @@
               "y": -67.5,
               "z": 179.2
             },
-            "distance": 2237.2,
+            "distance": 2236.9,
             "key": "gold"
           },
           {
@@ -962,13 +982,15 @@
         "mine_volume": 12380100.0,
         "mine_volume_normalized": 2.70727,
         "mine_volume_text": "2.7x",
-        "travel_distance": 6381.8,
-        "travel_time_seconds": 128,
-        "travel_time_text": "2M:08S",
+        "travel_distance": 6374.7,
+        "travel_time_seconds": 127,
+        "travel_time_text": "2M:07S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -988,7 +1010,7 @@
               "y": 100.5,
               "z": 94.8
             },
-            "distance": 603.1,
+            "distance": 599.6,
             "key": "blue"
           },
           {
@@ -1002,7 +1024,7 @@
               "y": -152.0,
               "z": 245.0
             },
-            "distance": 1943.1,
+            "distance": 1939.6,
             "key": "gold"
           },
           {
@@ -1057,35 +1079,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": false,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 7,
-      "campaign_actor_levels": 7,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 4,
-      "robots": 663,
-      "hostages": 29,
-      "matcens": 5,
-      "guidebots": 0,
-      "powerups": 410,
-      "reactors": 7
-    },
     "mission_path": "ORION-D2.MN2",
     "target_index": 0
   }

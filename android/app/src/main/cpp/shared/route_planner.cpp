@@ -4172,6 +4172,18 @@ route_plan_result plan_route(
 	if (completing_plans.empty()) {
 		auto diagnostic = plan_mode(
 		    relevant_key_mask, default_key_order, false, true);
+		/* An unresolved trigger is a localized calculation gap, represented by
+		 * calculated=false on that objective.  If the diagnostic continuation
+		 * still identifies the complete end-level sequence, preserve the route's
+		 * established OK status while leaving that objective explicitly
+		 * unresolved.  Live GuideBot certification remains partial at the gap. */
+		if (diagnostic.status == route_plan_status::ok &&
+		    has_unresolved_trigger(diagnostic)) {
+			const int diagnostic_key_mask = key_step_mask(diagnostic);
+			diagnostic.required_key_mask = diagnostic_key_mask;
+			diagnostic.completing_key_mask_set = 1 << diagnostic_key_mask;
+			return diagnostic;
+		}
 		if (has_unresolved_trigger(diagnostic)) {
 			diagnostic.status = route_plan_status::partial;
 			if (diagnostic.problem.empty())

@@ -5,7 +5,35 @@
     "game": "d2",
     "mission_name": "Phobos Encounter",
     "mission_filename": "phobos-e.mn2",
-    "mission_intent": "single_player_or_coop_and_multiplayer_anarchy",
+    "mission_intent": {
+      "classification": "single_player_or_coop_and_multiplayer_anarchy",
+      "rule": "descriptor_both",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables campaign/cooperative and competitive modes",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": true,
+        "coop": true,
+        "anarchy": true,
+        "robo_anarchy": true,
+        "capture_flag": true,
+        "hoard": true
+      },
+      "normal_levels": 4,
+      "campaign_actor_levels": 4,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 326,
+      "hostages": 16,
+      "matcens": 4,
+      "guidebots": 2,
+      "powerups": 140,
+      "reactors": 4
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -86,6 +114,10 @@
         "trigger_count": 4,
         "object_count": 125,
         "texture_count": 60,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 37,
+        "reactors": 1,
         "robots": 74,
         "hostages": 2,
         "secrets": 0,
@@ -94,13 +126,15 @@
         "mine_volume": 21755200.0,
         "mine_volume_normalized": 4.75742,
         "mine_volume_text": "4.8x",
-        "travel_distance": 9205.1,
-        "travel_time_seconds": 184,
-        "travel_time_text": "3M:04S",
+        "travel_distance": 8679.5,
+        "travel_time_seconds": 174,
+        "travel_time_text": "2M:54S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -111,17 +145,31 @@
           },
           {
             "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 300,
+            "label_pos": {
+              "x": 0.0,
+              "y": -87.0,
+              "z": -4.0
+            },
+            "distance": 1348.3,
+            "key": "blue"
+          },
+          {
+            "index": 2,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 1",
-            "seg": 3,
+            "seg": 151,
             "wall": 9,
             "label_pos": {
               "x": 27.0,
               "y": -127.0,
               "z": -24.0
             },
-            "distance": 869.2,
+            "distance": 1108.7,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -139,20 +187,6 @@
             ]
           },
           {
-            "index": 2,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "blue key",
-            "seg": 300,
-            "label_pos": {
-              "x": 0.0,
-              "y": -87.0,
-              "z": -4.0
-            },
-            "distance": 1008.2,
-            "key": "blue"
-          },
-          {
             "index": 3,
             "kind": "key",
             "activation_kind": "pickup_key",
@@ -163,7 +197,7 @@
               "y": -175.8,
               "z": -343.4
             },
-            "distance": 1900.7,
+            "distance": 795.5,
             "key": "gold"
           },
           {
@@ -227,6 +261,10 @@
         "trigger_count": 7,
         "object_count": 162,
         "texture_count": 72,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 37,
+        "reactors": 1,
         "robots": 103,
         "hostages": 10,
         "secrets": 1,
@@ -242,6 +280,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -339,6 +379,10 @@
         "trigger_count": 9,
         "object_count": 136,
         "texture_count": 65,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 35,
+        "reactors": 1,
         "robots": 85,
         "hostages": 4,
         "secrets": 5,
@@ -347,13 +391,15 @@
         "mine_volume": 27769400.0,
         "mine_volume_normalized": 6.0726,
         "mine_volume_text": "6.1x",
-        "travel_distance": 11074.8,
-        "travel_time_seconds": 221,
-        "travel_time_text": "3M:41S",
+        "travel_distance": 11082.1,
+        "travel_time_seconds": 222,
+        "travel_time_text": "3M:42S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -381,14 +427,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 1",
-            "seg": 336,
+            "seg": 355,
             "wall": 69,
             "label_pos": {
               "x": 0.0,
               "y": 270.0,
               "z": -390.0
             },
-            "distance": 2359.3,
+            "distance": 2491.1,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -456,7 +502,7 @@
               "y": 260.0,
               "z": -390.0
             },
-            "distance": 182.8,
+            "distance": 51.0,
             "key": "gold"
           },
           {
@@ -464,14 +510,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 0",
-            "seg": 308,
+            "seg": 321,
             "wall": 56,
             "label_pos": {
               "x": 0.0,
               "y": 140.0,
               "z": 621.0
             },
-            "distance": 2154.6,
+            "distance": 2238.4,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -499,7 +545,7 @@
               "y": 30.0,
               "z": 611.0
             },
-            "distance": 171.5,
+            "distance": 95.0,
             "key": "red"
           },
           {
@@ -549,6 +595,10 @@
         "trigger_count": 3,
         "object_count": 107,
         "texture_count": 51,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 31,
+        "reactors": 1,
         "robots": 64,
         "hostages": 0,
         "secrets": 4,
@@ -557,13 +607,15 @@
         "mine_volume": 35557100.0,
         "mine_volume_normalized": 7.77562,
         "mine_volume_text": "7.8x",
-        "travel_distance": 4894.1,
-        "travel_time_seconds": 98,
-        "travel_time_text": "1M:38S",
+        "travel_distance": 4330.1,
+        "travel_time_seconds": 87,
+        "travel_time_text": "1M:27S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 1,
+        "route_completing_key_mask_set": 10,
         "route_steps": [
           {
             "index": 0,
@@ -588,20 +640,6 @@
           },
           {
             "index": 2,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 259,
-            "label_pos": {
-              "x": 0.0,
-              "y": 84.0,
-              "z": 702.5
-            },
-            "distance": 2312.0,
-            "key": "red"
-          },
-          {
-            "index": 3,
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
@@ -611,10 +649,10 @@
               "y": 84.0,
               "z": 370.0
             },
-            "distance": 282.0
+            "distance": 2030.0
           },
           {
-            "index": 4,
+            "index": 3,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -636,6 +674,7 @@
         "route_note": "Guide-Bot waits at the buddy-proof wall outside the boss",
         "notes": [
           "Guide-Bot waits at the buddy-proof wall outside the boss",
+          "red key not necessary",
           "no guidebot or guidebot start cage placed in this level"
         ]
       },
@@ -649,6 +688,10 @@
         "trigger_count": 5,
         "object_count": 118,
         "texture_count": 33,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 41,
+        "reactors": 1,
         "robots": 62,
         "hostages": 3,
         "secrets": 7,
@@ -664,6 +707,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -719,6 +764,10 @@
         "trigger_count": 2,
         "object_count": 143,
         "texture_count": 53,
+        "player_starts": 1,
+        "coop_only_starts": 3,
+        "powerups": 41,
+        "reactors": 1,
         "robots": 84,
         "hostages": 0,
         "secrets": 0,
@@ -734,6 +783,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,

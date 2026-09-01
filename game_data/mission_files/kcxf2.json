@@ -5,6 +5,35 @@
     "game": "d2",
     "mission_name": "KC-XF2",
     "mission_filename": "KCXF2.MN2",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 5,
+      "campaign_actor_levels": 5,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 448,
+      "hostages": 7,
+      "matcens": 13,
+      "guidebots": 1,
+      "powerups": 335,
+      "reactors": 4
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -71,6 +100,13 @@
         "filename": "game04.hmp",
         "format": "hmp",
         "length_s": 212
+      },
+      {
+        "track": 9,
+        "name": "MIDI Track 5",
+        "filename": "game05.hmp",
+        "format": "hmp",
+        "length_s": 226
       }
     ],
     "level_count": 5,
@@ -104,6 +140,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -224,6 +262,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -282,6 +322,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 4,
         "route_steps": [
           {
             "index": 0,
@@ -540,7 +582,7 @@
         "wall_count": 112,
         "trigger_count": 25,
         "object_count": 202,
-        "texture_count": 74,
+        "texture_count": 76,
         "player_starts": 8,
         "coop_only_starts": 3,
         "powerups": 93,
@@ -560,6 +602,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": false,
         "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -571,7 +615,7 @@
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "guidebot_note": "guidebot is present but not reachable from the start",
-        "route_problem": "blue key unreachable",
+        "route_problem": "blue key excluded from prerequisite trial",
         "notes": [
           "guidebot or guidebot start cage placed in this level",
           "guidebot is present but not reachable from the start"
@@ -606,6 +650,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -700,6 +746,33 @@
           },
           {
             "index": 4,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 352,
+            "side": 2,
+            "wall": 162,
+            "label_pos": {
+              "x": 227.5,
+              "y": -81.5,
+              "z": 219.9
+            },
+            "distance": 2240.2,
+            "opens": [
+              {
+                "seg": 352,
+                "side": 2,
+                "wall": 162
+              },
+              {
+                "seg": 753,
+                "side": 0,
+                "wall": 161
+              }
+            ]
+          },
+          {
+            "index": 5,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 27",
@@ -711,7 +784,7 @@
               "y": -110.9,
               "z": 389.1
             },
-            "distance": 2922.5,
+            "distance": 682.3,
             "trigger": 27,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -734,7 +807,7 @@
             ]
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -747,7 +820,7 @@
             "distance": 214.3
           },
           {
-            "index": 6,
+            "index": 7,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -771,35 +844,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": false,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 5,
-      "campaign_actor_levels": 5,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 448,
-      "hostages": 7,
-      "matcens": 13,
-      "guidebots": 1,
-      "powerups": 335,
-      "reactors": 4
-    },
     "mission_path": "KCXF2.MN2",
     "target_index": 0
   }

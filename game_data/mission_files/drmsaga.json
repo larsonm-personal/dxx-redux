@@ -3,8 +3,37 @@
     "status": "ok",
     "source": "Dr. Moreau's Saga of Death",
     "game": "d2",
-    "mission_name": "Dr. Moreau's Saga of Death",
+    "mission_name": "Dr. Moreau's Saga of Deat",
     "mission_filename": "Drmsaga.mn2",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "descriptor_campaign",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables normal or cooperative play",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": true,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 4,
+      "campaign_actor_levels": 4,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 278,
+      "hostages": 1,
+      "matcens": 40,
+      "guidebots": 2,
+      "powerups": 275,
+      "reactors": 2
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -104,6 +133,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -272,6 +303,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -448,13 +481,15 @@
         "mine_volume": 5474800000.0,
         "mine_volume_normalized": 1197.23,
         "mine_volume_text": "1200x",
-        "travel_distance": 8591.3,
-        "travel_time_seconds": 172,
-        "travel_time_text": "2M:52S",
+        "travel_distance": 8554.6,
+        "travel_time_seconds": 171,
+        "travel_time_text": "2M:51S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -531,7 +566,7 @@
               "y": -68.0,
               "z": 325.4
             },
-            "distance": 1095.2,
+            "distance": 1058.4,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -571,6 +606,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -581,7 +618,7 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "blue key missing",
+        "route_problem": "blue key excluded from prerequisite trial",
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",
@@ -617,6 +654,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -629,6 +668,8 @@
             "index": 1,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
+            "switch_shot_quality": "approximate_only",
+            "switch_shot_incidence_cosine": 0.5952301025390625,
             "label": "Shoot switch trigger 2",
             "seg": 354,
             "wall": 132,
@@ -702,35 +743,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "descriptor_campaign",
-      "confidence": "high",
-      "reason": "The mission descriptor explicitly enables normal or cooperative play",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": true,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 4,
-      "campaign_actor_levels": 4,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 278,
-      "hostages": 1,
-      "matcens": 40,
-      "guidebots": 2,
-      "powerups": 275,
-      "reactors": 2
-    },
     "mission_path": "Drmsaga.mn2",
     "target_index": 0
   }

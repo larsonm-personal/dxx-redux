@@ -5,6 +5,35 @@
     "game": "d2",
     "mission_name": "Revenge O Dravis 2",
     "mission_filename": "revdrav2.mn2",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 5,
+      "campaign_actor_levels": 5,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 1,
+      "player_start_max": 1,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 253,
+      "hostages": 17,
+      "matcens": 4,
+      "guidebots": 3,
+      "powerups": 129,
+      "reactors": 4
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -104,6 +133,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 1,
+        "route_completing_key_mask_set": 2,
         "route_steps": [
           {
             "index": 0,
@@ -192,6 +223,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 5,
+        "route_completing_key_mask_set": 32,
         "route_steps": [
           {
             "index": 0,
@@ -294,6 +327,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -483,6 +518,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -604,6 +641,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -715,13 +754,15 @@
         "mine_volume": 1663020.0,
         "mine_volume_normalized": 0.363669,
         "mine_volume_text": "0.36x",
-        "travel_distance": 1459.4,
-        "travel_time_seconds": 29,
-        "travel_time_text": "0M:29S",
+        "travel_distance": 1376.4,
+        "travel_time_seconds": 28,
+        "travel_time_text": "0M:28S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -741,7 +782,7 @@
               "y": 71.3,
               "z": 55.1
             },
-            "distance": 1133.4
+            "distance": 1050.4
           },
           {
             "index": 2,
@@ -768,35 +809,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": false,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 5,
-      "campaign_actor_levels": 5,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 1,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 253,
-      "hostages": 17,
-      "matcens": 4,
-      "guidebots": 3,
-      "powerups": 129,
-      "reactors": 4
-    },
     "mission_path": "revdrav2.mn2",
     "target_index": 0
   }

@@ -5,6 +5,35 @@
     "game": "d2",
     "mission_name": "Kryllidian Krusade",
     "mission_filename": "KKR.MN2",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 5,
+      "campaign_actor_levels": 5,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 1,
+      "player_start_max": 8,
+      "coop_start_min": 0,
+      "coop_start_max": 3,
+      "robots": 273,
+      "hostages": 14,
+      "matcens": 13,
+      "guidebots": 0,
+      "powerups": 226,
+      "reactors": 4
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -104,6 +133,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 3,
+        "route_completing_key_mask_set": 8,
         "route_steps": [
           {
             "index": 0,
@@ -368,6 +399,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -380,6 +413,8 @@
             "index": 1,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
+            "switch_shot_quality": "approximate_only",
+            "switch_shot_incidence_cosine": 0.99993896484375,
             "label": "Shoot switch trigger 0",
             "seg": 315,
             "wall": 34,
@@ -672,6 +707,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -682,7 +719,7 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "blue key unreachable",
+        "route_problem": "blue key excluded from prerequisite trial",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -709,13 +746,15 @@
         "mine_volume": 41454100.0,
         "mine_volume_normalized": 9.06516,
         "mine_volume_text": "9.1x",
-        "travel_distance": 12531.9,
-        "travel_time_seconds": 251,
-        "travel_time_text": "4M:11S",
+        "travel_distance": 11946.7,
+        "travel_time_seconds": 239,
+        "travel_time_text": "3M:59S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -764,7 +803,7 @@
               "y": 226.9,
               "z": -456.6
             },
-            "distance": 1530.7,
+            "distance": 1523.0,
             "key": "blue"
           },
           {
@@ -786,14 +825,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 10",
-            "seg": 611,
+            "seg": 614,
+            "side": 3,
             "wall": 98,
             "label_pos": {
               "x": -26.4,
               "y": -133.2,
               "z": 9.8
             },
-            "distance": 2230.5,
+            "distance": 2258.6,
             "trigger": 10,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -818,17 +858,17 @@
           {
             "index": 5,
             "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 0",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 0",
             "seg": 213,
             "side": 0,
             "wall": 74,
             "label_pos": {
-              "x": -486.3,
+              "x": -484.4,
               "y": 95.5,
-              "z": 201.1
+              "z": 204.0
             },
-            "distance": 1689.4,
+            "distance": 1717.5,
             "trigger": 0,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -852,66 +892,6 @@
           },
           {
             "index": 6,
-            "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 18",
-            "seg": 177,
-            "side": 4,
-            "wall": 175,
-            "label_pos": {
-              "x": -516.1,
-              "y": 97.0,
-              "z": 461.4
-            },
-            "distance": 322.5,
-            "trigger": 18,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 194,
-                "side": 4,
-                "wall": 3
-              },
-              {
-                "seg": 193,
-                "side": 4,
-                "wall": 2
-              },
-              {
-                "seg": 195,
-                "side": 4,
-                "wall": 4
-              }
-            ]
-          },
-          {
-            "index": 7,
-            "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 14",
-            "seg": 143,
-            "side": 4,
-            "wall": 85,
-            "label_pos": {
-              "x": -182.6,
-              "y": -29.5,
-              "z": 514.5
-            },
-            "distance": 515.5,
-            "trigger": 14,
-            "trigger_type_id": 7,
-            "trigger_type": "unlock_door",
-            "opens": [
-              {
-                "seg": 474,
-                "side": 5,
-                "wall": 84
-              }
-            ]
-          },
-          {
-            "index": 8,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -921,11 +901,11 @@
               "y": 155.0,
               "z": 359.7
             },
-            "distance": 557.2,
+            "distance": 252.0,
             "key": "red"
           },
           {
-            "index": 9,
+            "index": 7,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 12",
@@ -937,7 +917,7 @@
               "y": -32.7,
               "z": 754.8
             },
-            "distance": 1993.4,
+            "distance": 2502.9,
             "trigger": 12,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -955,7 +935,7 @@
             ]
           },
           {
-            "index": 10,
+            "index": 8,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -968,7 +948,7 @@
             "distance": 809.9
           },
           {
-            "index": 11,
+            "index": 9,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -1013,13 +993,15 @@
         "mine_volume": 29981500.0,
         "mine_volume_normalized": 6.55633,
         "mine_volume_text": "6.6x",
-        "travel_distance": 4307.4,
+        "travel_distance": 4282.4,
         "travel_time_seconds": 86,
         "travel_time_text": "1M:26S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 3,
+        "route_completing_key_mask_set": 8,
         "route_steps": [
           {
             "index": 0,
@@ -1056,7 +1038,7 @@
               "y": -387.5,
               "z": -42.4
             },
-            "distance": 301.3,
+            "distance": 288.8,
             "trigger": 4,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1096,7 +1078,7 @@
               "y": -387.5,
               "z": 10.7
             },
-            "distance": 119.1,
+            "distance": 106.6,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1243,6 +1225,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -1324,35 +1308,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": false,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 5,
-      "campaign_actor_levels": 5,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 8,
-      "coop_start_min": 0,
-      "coop_start_max": 3,
-      "robots": 273,
-      "hostages": 14,
-      "matcens": 13,
-      "guidebots": 0,
-      "powerups": 226,
-      "reactors": 4
-    },
     "mission_path": "KKR.MN2",
     "target_index": 0
   }

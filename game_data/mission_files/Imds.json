@@ -5,7 +5,35 @@
     "game": "d2",
     "mission_name": "IMD Strike",
     "mission_filename": "imds.MN2",
-    "mission_intent": "single_player_or_coop_and_multiplayer_anarchy",
+    "mission_intent": {
+      "classification": "single_player_or_coop_and_multiplayer_anarchy",
+      "rule": "descriptor_both",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables campaign/cooperative and competitive modes",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": true,
+        "coop": true,
+        "anarchy": true,
+        "robo_anarchy": true,
+        "capture_flag": true,
+        "hoard": true
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 1,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 70,
+      "hostages": 0,
+      "matcens": 6,
+      "guidebots": 0,
+      "powerups": 24,
+      "reactors": 1
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -86,21 +114,27 @@
         "trigger_count": 14,
         "object_count": 132,
         "texture_count": 83,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 24,
+        "reactors": 1,
         "robots": 70,
         "hostages": 0,
         "secrets": 0,
         "matcens": 6,
         "energy_centers": 3,
-        "mine_volume": 14641839.071414063,
-        "mine_volume_normalized": 3.201869723482981,
+        "mine_volume": 14641800.0,
+        "mine_volume_normalized": 3.20187,
         "mine_volume_text": "3.2x",
-        "travel_distance": 2453.0387463595516,
-        "travel_time_seconds": 49,
-        "travel_time_text": "0M:49S",
+        "travel_distance": 2573.0,
+        "travel_time_seconds": 51,
+        "travel_time_text": "0M:51S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -114,14 +148,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 0",
-            "seg": 183,
+            "seg": 186,
+            "side": 5,
             "wall": 30,
             "label_pos": {
               "x": -120.0,
               "y": 110.0,
               "z": 70.0
             },
-            "distance": 1032.398590235698,
+            "distance": 1092.4,
             "trigger": 0,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -144,12 +179,12 @@
               "y": 0.0,
               "z": -160.0
             },
-            "distance": 1420.6401561238533,
+            "distance": 1480.6,
             "key": "blue"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "gold key unreachable",
+        "route_problem": "gold key excluded from prerequisite trial",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -164,21 +199,27 @@
         "trigger_count": 2,
         "object_count": 36,
         "texture_count": 37,
+        "player_starts": 1,
+        "coop_only_starts": 0,
+        "powerups": 19,
+        "reactors": 1,
         "robots": 15,
         "hostages": 0,
         "secrets": 0,
         "matcens": 0,
         "energy_centers": 1,
-        "mine_volume": 2004236.6535498681,
-        "mine_volume_normalized": 0.4382854249658413,
+        "mine_volume": 2004240.0,
+        "mine_volume_normalized": 0.438285,
         "mine_volume_text": "0.44x",
-        "travel_distance": 1147.241545098606,
-        "travel_time_seconds": 23,
-        "travel_time_text": "0M:23S",
+        "travel_distance": 1387.2,
+        "travel_time_seconds": 28,
+        "travel_time_text": "0M:28S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -192,14 +233,15 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 1",
-            "seg": 48,
+            "seg": 46,
+            "side": 4,
             "wall": 20,
             "label_pos": {
-              "x": 139.99993896484375,
-              "y": -60.00006103515625,
-              "z": 299.99981689453125
+              "x": 140.0,
+              "y": -60.0,
+              "z": 300.0
             },
-            "distance": 534.1383696347966,
+            "distance": 654.1,
             "trigger": 1,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -222,7 +264,7 @@
               "y": -120.0,
               "z": 0.0
             },
-            "distance": 547.1031754638093
+            "distance": 667.1
           },
           {
             "index": 3,
@@ -249,6 +291,7 @@
         ]
       }
     ],
+    "mission_path": "imds.MN2",
     "target_index": 0
   }
 ]

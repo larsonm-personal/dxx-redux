@@ -5,6 +5,35 @@
     "game": "d1",
     "mission_name": "Eris rebellion v 1.0",
     "mission_filename": "erisreb.msn",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 9,
+      "campaign_actor_levels": 9,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 942,
+      "hostages": 48,
+      "matcens": 40,
+      "guidebots": 0,
+      "powerups": 363,
+      "reactors": 9
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -228,6 +257,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -340,6 +371,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -452,6 +485,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -564,6 +599,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -676,6 +713,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -788,6 +827,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -900,6 +941,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -1012,6 +1055,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -1117,13 +1162,15 @@
         "mine_volume": 14518500.0,
         "mine_volume_normalized": 3.17489,
         "mine_volume_text": "3.2x",
-        "travel_distance": 2603.8,
-        "travel_time_seconds": 52,
-        "travel_time_text": "0M:52S",
+        "travel_distance": 2352.7,
+        "travel_time_seconds": 47,
+        "travel_time_text": "0M:47S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -1136,21 +1183,6 @@
             "index": 1,
             "kind": "key",
             "activation_kind": "destroy_key_carrier",
-            "label": "Destroy robot carrying blue key",
-            "seg": 627,
-            "label_pos": {
-              "x": -55.1,
-              "y": -109.3,
-              "z": 125.7
-            },
-            "distance": 384.2,
-            "key": "blue",
-            "key_carrier_objnum": 13
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "activation_kind": "destroy_key_carrier",
             "label": "Destroy robot carrying gold key",
             "seg": 162,
             "label_pos": {
@@ -1158,9 +1190,24 @@
               "y": 39.5,
               "z": 39.1
             },
-            "distance": 509.7,
+            "distance": 346.3,
             "key": "gold",
             "key_carrier_objnum": 15
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying blue key",
+            "seg": 627,
+            "label_pos": {
+              "x": -55.1,
+              "y": -109.3,
+              "z": 125.7
+            },
+            "distance": 509.7,
+            "key": "blue",
+            "key_carrier_objnum": 13
           },
           {
             "index": 3,
@@ -1173,7 +1220,7 @@
               "y": -82.0,
               "z": 281.1
             },
-            "distance": 537.6,
+            "distance": 324.4,
             "key": "red",
             "key_carrier_objnum": 14
           },
@@ -1211,35 +1258,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": false,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 9,
-      "campaign_actor_levels": 9,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 942,
-      "hostages": 48,
-      "matcens": 40,
-      "guidebots": 0,
-      "powerups": 363,
-      "reactors": 9
-    },
     "mission_path": "erisreb.msn",
     "target_index": 0
   }

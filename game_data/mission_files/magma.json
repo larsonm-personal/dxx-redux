@@ -5,6 +5,35 @@
     "game": "d2",
     "mission_name": "Magma Facility",
     "mission_filename": "magma.mn2",
+    "mission_intent": {
+      "classification": "multiplayer_anarchy",
+      "rule": "all_levels_arena_like",
+      "confidence": "medium",
+      "reason": "Every normal level has multiple player starts and no campaign actors",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 1,
+      "campaign_actor_levels": 0,
+      "arena_like_levels": 1,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 60,
+      "reactors": 1
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -104,6 +133,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -120,16 +151,25 @@
         ]
       }
     ],
+    "mission_path": "magma.mn2",
+    "target_index": 0
+  },
+  {
+    "status": "ok",
+    "source": "Mini Magma Facility",
+    "game": "d2",
+    "mission_name": "Mini Magma Facility",
+    "mission_filename": "mmagma.mn2",
     "mission_intent": {
       "classification": "multiplayer_anarchy",
-      "rule": "all_levels_arena_like",
-      "confidence": "medium",
-      "reason": "Every normal level has multiple player starts and no campaign actors",
+      "rule": "descriptor_competitive",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables competitive multiplayer modes",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
         "coop": false,
-        "anarchy": false,
+        "anarchy": true,
         "robo_anarchy": false,
         "capture_flag": false,
         "hoard": false
@@ -146,18 +186,9 @@
       "hostages": 0,
       "matcens": 0,
       "guidebots": 0,
-      "powerups": 60,
+      "powerups": 49,
       "reactors": 1
     },
-    "mission_path": "magma.mn2",
-    "target_index": 0
-  },
-  {
-    "status": "ok",
-    "source": "Mini Magma Facility",
-    "game": "d2",
-    "mission_name": "Mini Magma Facility",
-    "mission_filename": "mmagma.mn2",
     "coop_starts": "1",
     "track_names": [
       {
@@ -257,6 +288,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -273,35 +306,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "multiplayer_anarchy",
-      "rule": "descriptor_competitive",
-      "confidence": "high",
-      "reason": "The mission descriptor explicitly enables competitive multiplayer modes",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": false,
-        "coop": false,
-        "anarchy": true,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 1,
-      "campaign_actor_levels": 0,
-      "arena_like_levels": 1,
-      "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 0,
-      "coop_start_max": 0,
-      "robots": 0,
-      "hostages": 0,
-      "matcens": 0,
-      "guidebots": 0,
-      "powerups": 49,
-      "reactors": 1
-    },
     "mission_path": "mmagma.mn2",
     "target_index": 1
   }

@@ -5,6 +5,35 @@
     "game": "d1",
     "mission_name": "Lunar Series Revamped",
     "mission_filename": "lseries.msn",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 3,
+      "campaign_actor_levels": 3,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 1,
+      "player_start_max": 1,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 178,
+      "hostages": 7,
+      "matcens": 2,
+      "guidebots": 0,
+      "powerups": 91,
+      "reactors": 3
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -221,13 +250,15 @@
         "mine_volume": 5997030.0,
         "mine_volume_normalized": 1.31143,
         "mine_volume_text": "1.3x",
-        "travel_distance": 2335.6,
+        "travel_distance": 2341.2,
         "travel_time_seconds": 47,
         "travel_time_text": "0M:47S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 4,
         "route_steps": [
           {
             "index": 0,
@@ -261,7 +292,7 @@
               "y": -90.0,
               "z": -264.7
             },
-            "distance": 1283.9
+            "distance": 1289.4
           },
           {
             "index": 3,
@@ -312,6 +343,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 3,
+        "route_completing_key_mask_set": 8,
         "route_steps": [
           {
             "index": 0,
@@ -410,6 +443,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -494,35 +529,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": false,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 3,
-      "campaign_actor_levels": 3,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 1,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 178,
-      "hostages": 7,
-      "matcens": 2,
-      "guidebots": 0,
-      "powerups": 91,
-      "reactors": 3
-    },
     "mission_path": "lseries.msn",
     "target_index": 0
   }

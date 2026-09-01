@@ -5,6 +5,35 @@
     "game": "d2",
     "mission_name": "Chasm",
     "mission_filename": "CHASM.MN2",
+    "mission_intent": {
+      "classification": "single_player_or_coop_and_multiplayer_anarchy",
+      "rule": "descriptor_both",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables campaign/cooperative and competitive modes",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": true,
+        "coop": true,
+        "anarchy": true,
+        "robo_anarchy": false,
+        "capture_flag": true,
+        "hoard": true
+      },
+      "normal_levels": 5,
+      "campaign_actor_levels": 5,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 343,
+      "hostages": 17,
+      "matcens": 8,
+      "guidebots": 0,
+      "powerups": 109,
+      "reactors": 5
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -111,6 +140,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 4,
         "route_steps": [
           {
             "index": 0,
@@ -259,6 +290,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -535,6 +568,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -681,6 +716,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 3,
+        "route_completing_key_mask_set": 8,
         "route_steps": [
           {
             "index": 0,
@@ -853,6 +890,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -927,6 +966,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -1103,6 +1144,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -1151,35 +1194,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop_and_multiplayer_anarchy",
-      "rule": "descriptor_both",
-      "confidence": "high",
-      "reason": "The mission descriptor explicitly enables campaign/cooperative and competitive modes",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": true,
-        "coop": true,
-        "anarchy": true,
-        "robo_anarchy": false,
-        "capture_flag": true,
-        "hoard": true
-      },
-      "normal_levels": 5,
-      "campaign_actor_levels": 5,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 343,
-      "hostages": 17,
-      "matcens": 8,
-      "guidebots": 0,
-      "powerups": 109,
-      "reactors": 5
-    },
     "mission_path": "CHASM.MN2",
     "target_index": 0
   }

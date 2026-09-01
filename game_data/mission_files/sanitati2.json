@@ -5,6 +5,35 @@
     "game": "d2",
     "mission_name": "Sanitation",
     "mission_filename": "sanitati.mn2",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "campaign_actors",
+      "confidence": "high",
+      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 4,
+      "campaign_actor_levels": 4,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 230,
+      "hostages": 17,
+      "matcens": 12,
+      "guidebots": 0,
+      "powerups": 281,
+      "reactors": 4
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -97,13 +126,15 @@
         "mine_volume": 30224000.0,
         "mine_volume_normalized": 6.60937,
         "mine_volume_text": "6.6x",
-        "travel_distance": 7460.4,
-        "travel_time_seconds": 149,
-        "travel_time_text": "2M:29S",
+        "travel_distance": 5752.1,
+        "travel_time_seconds": 115,
+        "travel_time_text": "1M:55S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 3,
+        "route_completing_key_mask_set": 8,
         "route_steps": [
           {
             "index": 0,
@@ -123,21 +154,35 @@
               "y": 20.0,
               "z": 192.5
             },
-            "distance": 1180.7,
+            "distance": 1160.8,
             "key": "red"
           },
           {
             "index": 2,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 443,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 48,
+            "side": 3,
+            "wall": 14,
             "label_pos": {
-              "x": 964.4,
-              "y": 8.5,
-              "z": 542.5
+              "x": 140.0,
+              "y": -10.0,
+              "z": 200.0
             },
-            "distance": 2624.4
+            "distance": 1305.7,
+            "opens": [
+              {
+                "seg": 48,
+                "side": 3,
+                "wall": 14
+              },
+              {
+                "seg": 75,
+                "side": 1,
+                "wall": 15
+              }
+            ]
           },
           {
             "index": 3,
@@ -150,61 +195,24 @@
               "y": -106.6,
               "z": 168.1
             },
-            "distance": 1554.4,
+            "distance": 282.5,
             "key": "blue"
           },
           {
             "index": 4,
-            "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 9",
-            "seg": 377,
-            "side": 0,
-            "wall": 43,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 443,
             "label_pos": {
-              "x": 591.1,
-              "y": 85.8,
-              "z": 850.3
+              "x": 964.4,
+              "y": 8.5,
+              "z": 542.5
             },
-            "distance": 1322.5,
-            "trigger": 9,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 366,
-                "side": 5,
-                "wall": 40
-              }
-            ]
+            "distance": 1581.3
           },
           {
             "index": 5,
-            "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 8",
-            "seg": 378,
-            "side": 0,
-            "wall": 42,
-            "label_pos": {
-              "x": 591.0,
-              "y": 85.8,
-              "z": 735.8
-            },
-            "distance": 273.2,
-            "trigger": 8,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 365,
-                "side": 5,
-                "wall": 39
-              }
-            ]
-          },
-          {
-            "index": 6,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -216,7 +224,7 @@
               "y": -40.0,
               "z": 763.0
             },
-            "distance": 505.1,
+            "distance": 1421.9,
             "trigger": 13,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -257,6 +265,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 4,
         "route_steps": [
           {
             "index": 0,
@@ -420,6 +430,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -529,13 +541,15 @@
         "mine_volume": 25165400.0,
         "mine_volume_normalized": 5.50315,
         "mine_volume_text": "5.5x",
-        "travel_distance": 7388.2,
-        "travel_time_seconds": 148,
-        "travel_time_text": "2M:28S",
+        "travel_distance": 7099.5,
+        "travel_time_seconds": 142,
+        "travel_time_text": "2M:22S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 1,
+        "route_completing_key_mask_set": 170,
         "route_steps": [
           {
             "index": 0,
@@ -548,18 +562,99 @@
             "index": 1,
             "kind": "key",
             "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 778,
+            "label": "blue key",
+            "seg": 378,
             "label_pos": {
-              "x": 50.0,
-              "y": 9.6,
-              "z": 771.4
+              "x": -255.0,
+              "y": 64.5,
+              "z": 805.0
             },
-            "distance": 1316.1,
-            "key": "red"
+            "distance": 2429.5,
+            "key": "blue"
           },
           {
             "index": 2,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 284,
+            "side": 0,
+            "wall": 122,
+            "label_pos": {
+              "x": -620.0,
+              "y": 115.0,
+              "z": 600.0
+            },
+            "distance": 848.5,
+            "opens": [
+              {
+                "seg": 284,
+                "side": 0,
+                "wall": 122
+              },
+              {
+                "seg": 865,
+                "side": 2,
+                "wall": 123
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 889,
+            "side": 0,
+            "wall": 126,
+            "label_pos": {
+              "x": -629.0,
+              "y": 157.1,
+              "z": 557.9
+            },
+            "distance": 76.8,
+            "opens": [
+              {
+                "seg": 889,
+                "side": 0,
+                "wall": 126
+              },
+              {
+                "seg": 891,
+                "side": 2,
+                "wall": 127
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 883,
+            "side": 2,
+            "wall": 125,
+            "label_pos": {
+              "x": -519.6,
+              "y": 140.0,
+              "z": 562.7
+            },
+            "distance": 156.2,
+            "opens": [
+              {
+                "seg": 883,
+                "side": 2,
+                "wall": 125
+              },
+              {
+                "seg": 879,
+                "side": 0,
+                "wall": 124
+              }
+            ]
+          },
+          {
+            "index": 5,
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
@@ -569,24 +664,10 @@
               "y": 15.0,
               "z": 140.0
             },
-            "distance": 2983.4
+            "distance": 1001.6
           },
           {
-            "index": 3,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "blue key",
-            "seg": 378,
-            "label_pos": {
-              "x": -255.0,
-              "y": 64.5,
-              "z": 805.0
-            },
-            "distance": 1555.9,
-            "key": "blue"
-          },
-          {
-            "index": 4,
+            "index": 6,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -598,7 +679,7 @@
               "y": 0.0,
               "z": 731.8
             },
-            "distance": 1532.7,
+            "distance": 2586.8,
             "trigger": 4,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -606,40 +687,12 @@
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
+          "red key not necessary",
           "gold key not necessary",
           "no guidebot or guidebot start cage placed in this level"
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": false,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 4,
-      "campaign_actor_levels": 4,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 230,
-      "hostages": 17,
-      "matcens": 12,
-      "guidebots": 0,
-      "powerups": 281,
-      "reactors": 4
-    },
     "mission_path": "sanitati.mn2",
     "target_index": 0
   }

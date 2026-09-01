@@ -5,6 +5,35 @@
     "game": "d1",
     "mission_name": "HDPACK1: Hellion",
     "mission_filename": "HDPACK1.MSN",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "descriptor_campaign",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables normal or cooperative play",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": true,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 3,
+      "campaign_actor_levels": 3,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 1,
+      "player_start_max": 2,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 142,
+      "hostages": 5,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 26,
+      "reactors": 3
+    },
     "coop_starts": "1",
     "track_names": [
       {
@@ -228,6 +257,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -333,13 +364,15 @@
         "mine_volume": 2854350.0,
         "mine_volume_normalized": 0.624187,
         "mine_volume_text": "0.62x",
-        "travel_distance": 3150.3,
+        "travel_distance": 3149.4,
         "travel_time_seconds": 63,
         "travel_time_text": "1M:03S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -359,7 +392,7 @@
               "y": -274.1,
               "z": 186.1
             },
-            "distance": 833.9,
+            "distance": 833.0,
             "key": "blue"
           },
           {
@@ -453,6 +486,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 4,
         "route_steps": [
           {
             "index": 0,
@@ -509,35 +544,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "descriptor_campaign",
-      "confidence": "high",
-      "reason": "The mission descriptor explicitly enables normal or cooperative play",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": true,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 3,
-      "campaign_actor_levels": 3,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 2,
-      "coop_start_min": 0,
-      "coop_start_max": 0,
-      "robots": 142,
-      "hostages": 5,
-      "matcens": 0,
-      "guidebots": 0,
-      "powerups": 26,
-      "reactors": 3
-    },
     "mission_path": "HDPACK1/HDPACK1.MSN",
     "target_index": 0
   }

@@ -5,6 +5,35 @@
     "game": "d2",
     "mission_name": "Entropy Experiment",
     "mission_filename": "ENTROPY.MN2",
+    "mission_intent": {
+      "classification": "single_player_or_coop_and_multiplayer_anarchy",
+      "rule": "descriptor_both",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables campaign/cooperative and competitive modes",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": true,
+        "coop": true,
+        "anarchy": true,
+        "robo_anarchy": false,
+        "capture_flag": true,
+        "hoard": true
+      },
+      "normal_levels": 4,
+      "campaign_actor_levels": 4,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 415,
+      "hostages": 18,
+      "matcens": 4,
+      "guidebots": 0,
+      "powerups": 348,
+      "reactors": 2
+    },
     "coop_starts": "1-4",
     "track_names": [
       {
@@ -97,13 +126,15 @@
         "mine_volume": 24904600.0,
         "mine_volume_normalized": 5.44613,
         "mine_volume_text": "5.4x",
-        "travel_distance": 8861.6,
-        "travel_time_seconds": 177,
-        "travel_time_text": "2M:57S",
+        "travel_distance": 8821.2,
+        "travel_time_seconds": 176,
+        "travel_time_text": "2M:56S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 4,
         "route_steps": [
           {
             "index": 0,
@@ -218,7 +249,7 @@
               "y": -80.0,
               "z": 490.0
             },
-            "distance": 1896.7,
+            "distance": 1876.5,
             "trigger": 2,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -248,7 +279,7 @@
               "y": -180.0,
               "z": 182.5
             },
-            "distance": 1108.4,
+            "distance": 1088.2,
             "trigger": 3,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -496,6 +527,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 4,
         "route_steps": [
           {
             "index": 0,
@@ -814,6 +847,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 4,
         "route_steps": [
           {
             "index": 0,
@@ -920,13 +955,15 @@
         "mine_volume": 34814800.0,
         "mine_volume_normalized": 7.61328,
         "mine_volume_text": "7.6x",
-        "travel_distance": 11115.5,
-        "travel_time_seconds": 222,
-        "travel_time_text": "3M:42S",
+        "travel_distance": 9810.1,
+        "travel_time_seconds": 196,
+        "travel_time_text": "3M:16S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -954,59 +991,38 @@
             "index": 2,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 12",
-            "seg": 323,
-            "side": 0,
-            "wall": 16,
+            "label": "Shoot switch trigger 5",
+            "seg": 317,
+            "wall": 23,
             "label_pos": {
-              "x": 60.0,
-              "y": -250.0,
-              "z": 135.0
+              "x": 0.0,
+              "y": -215.0,
+              "z": -310.0
             },
-            "distance": 1175.1,
-            "trigger": 12,
+            "distance": 1199.6,
+            "trigger": 5,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
             "opens": [
               {
-                "seg": 133,
-                "side": 4,
-                "wall": 42
+                "seg": 283,
+                "side": 5,
+                "wall": 64
               },
               {
-                "seg": 123,
+                "seg": 283,
                 "side": 4,
-                "wall": 36
+                "wall": 63
+              },
+              {
+                "seg": 278,
+                "side": 3,
+                "wall": 25
               }
             ]
           },
           {
             "index": 3,
-            "kind": "trigger",
-            "activation_kind": "fly_through_trigger",
-            "label": "Fly-through trigger 1",
-            "seg": 315,
-            "side": 4,
-            "wall": 61,
-            "label_pos": {
-              "x": 0.0,
-              "y": -227.5,
-              "z": -270.0
-            },
-            "distance": 483.9,
-            "trigger": 1,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 316,
-                "side": 5,
-                "wall": 22
-              }
-            ]
-          },
-          {
-            "index": 4,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 4",
@@ -1018,7 +1034,7 @@
               "y": -215.0,
               "z": -430.0
             },
-            "distance": 255.1,
+            "distance": 240.1,
             "trigger": 4,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1036,7 +1052,7 @@
             ]
           },
           {
-            "index": 5,
+            "index": 4,
             "kind": "key",
             "activation_kind": "destroy_key_carrier",
             "label": "Destroy robot carrying red key",
@@ -1051,7 +1067,76 @@
             "key_carrier_objnum": 13
           },
           {
+            "index": 5,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 9",
+            "seg": 229,
+            "wall": 70,
+            "label_pos": {
+              "x": 355.0,
+              "y": -445.0,
+              "z": -40.0
+            },
+            "distance": 1242.3,
+            "trigger": 9,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 222,
+                "side": 2,
+                "wall": 67
+              }
+            ]
+          },
+          {
             "index": 6,
+            "kind": "key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying blue key",
+            "seg": 221,
+            "label_pos": {
+              "x": 275.0,
+              "y": -445.0,
+              "z": 5.0
+            },
+            "distance": 150.0,
+            "key": "blue",
+            "key_carrier_objnum": 11
+          },
+          {
+            "index": 7,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 12",
+            "seg": 323,
+            "side": 0,
+            "wall": 16,
+            "label_pos": {
+              "x": 60.0,
+              "y": -250.0,
+              "z": 135.0
+            },
+            "distance": 1282.2,
+            "trigger": 12,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 133,
+                "side": 4,
+                "wall": 42
+              },
+              {
+                "seg": 123,
+                "side": 4,
+                "wall": 36
+              }
+            ]
+          },
+          {
+            "index": 8,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 13",
@@ -1063,7 +1148,7 @@
               "y": -250.0,
               "z": 195.0
             },
-            "distance": 1074.0,
+            "distance": 110.0,
             "trigger": 13,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1081,46 +1166,6 @@
             ]
           },
           {
-            "index": 7,
-            "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 8",
-            "seg": 207,
-            "side": 0,
-            "wall": 72,
-            "label_pos": {
-              "x": 195.0,
-              "y": -445.0,
-              "z": 50.0
-            },
-            "distance": 1164.3,
-            "trigger": 8,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 202,
-                "side": 0,
-                "wall": 68
-              }
-            ]
-          },
-          {
-            "index": 8,
-            "kind": "key",
-            "activation_kind": "destroy_key_carrier",
-            "label": "Destroy robot carrying blue key",
-            "seg": 221,
-            "label_pos": {
-              "x": 275.0,
-              "y": -445.0,
-              "z": 5.0
-            },
-            "distance": 195.0,
-            "key": "blue",
-            "key_carrier_objnum": 11
-          },
-          {
             "index": 9,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
@@ -1133,7 +1178,7 @@
               "y": -250.0,
               "z": 135.0
             },
-            "distance": 1287.2,
+            "distance": 110.0,
             "trigger": 14,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1163,7 +1208,7 @@
               "y": -345.0,
               "z": 510.0
             },
-            "distance": 1647.0,
+            "distance": 1642.0,
             "trigger": 18,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -1277,6 +1322,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -1376,35 +1423,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop_and_multiplayer_anarchy",
-      "rule": "descriptor_both",
-      "confidence": "high",
-      "reason": "The mission descriptor explicitly enables campaign/cooperative and competitive modes",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": true,
-        "coop": true,
-        "anarchy": true,
-        "robo_anarchy": false,
-        "capture_flag": true,
-        "hoard": true
-      },
-      "normal_levels": 4,
-      "campaign_actor_levels": 4,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 415,
-      "hostages": 18,
-      "matcens": 4,
-      "guidebots": 0,
-      "powerups": 348,
-      "reactors": 2
-    },
     "mission_path": "ENTROPY.MN2",
     "target_index": 0
   }

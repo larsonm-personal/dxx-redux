@@ -5,6 +5,35 @@
     "game": "d2",
     "mission_name": "Encounter 2: Dimensions",
     "mission_filename": "EAF2.MN2",
+    "mission_intent": {
+      "classification": "single_player_or_coop",
+      "rule": "descriptor_campaign",
+      "confidence": "high",
+      "reason": "The mission descriptor explicitly enables normal or cooperative play",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": true,
+        "coop": true,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 8,
+      "campaign_actor_levels": 8,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 8,
+      "player_start_max": 8,
+      "coop_start_min": 3,
+      "coop_start_max": 3,
+      "robots": 347,
+      "hostages": 0,
+      "matcens": 39,
+      "guidebots": 0,
+      "powerups": 299,
+      "reactors": 8
+    },
     "coop_starts": "4",
     "track_names": [
       {
@@ -71,6 +100,34 @@
         "filename": "game04.hmp",
         "format": "hmp",
         "length_s": 155
+      },
+      {
+        "track": 9,
+        "name": "MIDI Track 5",
+        "filename": "game05.hmp",
+        "format": "hmp",
+        "length_s": 130
+      },
+      {
+        "track": 10,
+        "name": "MIDI Track 6",
+        "filename": "game06.hmp",
+        "format": "hmp",
+        "length_s": 157
+      },
+      {
+        "track": 11,
+        "name": "MIDI Track 7",
+        "filename": "game07.hmp",
+        "format": "hmp",
+        "length_s": 150
+      },
+      {
+        "track": 12,
+        "name": "MIDI Track 8",
+        "filename": "game08.hmp",
+        "format": "hmp",
+        "length_s": 193
       }
     ],
     "level_count": 10,
@@ -97,13 +154,15 @@
         "mine_volume": 16319400.0,
         "mine_volume_normalized": 3.56871,
         "mine_volume_text": "3.6x",
-        "travel_distance": 6917.5,
+        "travel_distance": 6907.4,
         "travel_time_seconds": 138,
         "travel_time_text": "2M:18S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 3,
+        "route_completing_key_mask_set": 8,
         "route_steps": [
           {
             "index": 0,
@@ -139,7 +198,7 @@
               "y": 0.0,
               "z": 169.9
             },
-            "distance": 1125.7,
+            "distance": 1123.2,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -167,7 +226,7 @@
               "y": -95.4,
               "z": 257.5
             },
-            "distance": 1078.8,
+            "distance": 1076.3,
             "key": "blue"
           },
           {
@@ -183,7 +242,7 @@
               "y": -252.6,
               "z": 204.9
             },
-            "distance": 265.1,
+            "distance": 262.5,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -206,7 +265,7 @@
               "y": 350.3,
               "z": 411.6
             },
-            "distance": 1606.0
+            "distance": 1603.5
           },
           {
             "index": 6,
@@ -254,13 +313,15 @@
         "mine_volume": 36606500.0,
         "mine_volume_normalized": 8.00509,
         "mine_volume_text": "8.0x",
-        "travel_distance": 5081.9,
-        "travel_time_seconds": 102,
-        "travel_time_text": "1M:42S",
+        "travel_distance": 5409.1,
+        "travel_time_seconds": 108,
+        "travel_time_text": "1M:48S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -356,6 +417,21 @@
           },
           {
             "index": 4,
+            "kind": "key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying red key",
+            "seg": 288,
+            "label_pos": {
+              "x": 1.4,
+              "y": 51.2,
+              "z": 292.2
+            },
+            "distance": 1847.1,
+            "key": "red",
+            "key_carrier_objnum": 65
+          },
+          {
+            "index": 5,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 4",
@@ -367,7 +443,7 @@
               "y": 15.0,
               "z": 50.0
             },
-            "distance": 1045.3,
+            "distance": 886.4,
             "trigger": 4,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -395,7 +471,7 @@
             ]
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "key",
             "activation_kind": "destroy_key_carrier",
             "label": "Destroy robot carrying gold key",
@@ -408,21 +484,6 @@
             "distance": 970.7,
             "key": "gold",
             "key_carrier_objnum": 70
-          },
-          {
-            "index": 6,
-            "kind": "key",
-            "activation_kind": "destroy_key_carrier",
-            "label": "Destroy robot carrying red key",
-            "seg": 288,
-            "label_pos": {
-              "x": 1.4,
-              "y": 51.2,
-              "z": 292.2
-            },
-            "distance": 1361.1,
-            "key": "red",
-            "key_carrier_objnum": 65
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
@@ -460,6 +521,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -764,6 +827,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -808,6 +873,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -1132,6 +1199,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -1294,13 +1363,15 @@
         "mine_volume": 30610900.0,
         "mine_volume_normalized": 6.69397,
         "mine_volume_text": "6.7x",
-        "travel_distance": 8191.9,
+        "travel_distance": 8181.9,
         "travel_time_seconds": 164,
         "travel_time_text": "2M:44S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -1367,7 +1438,7 @@
               "y": 164.8,
               "z": -77.5
             },
-            "distance": 435.3,
+            "distance": 432.8,
             "trigger": 24,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1395,7 +1466,7 @@
               "y": 272.7,
               "z": 162.1
             },
-            "distance": 960.3,
+            "distance": 957.8,
             "key": "gold",
             "key_carrier_objnum": 12
           },
@@ -1412,7 +1483,7 @@
               "y": 165.2,
               "z": 77.7
             },
-            "distance": 436.0,
+            "distance": 433.5,
             "trigger": 25,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1460,7 +1531,7 @@
               "y": -184.9,
               "z": 0.0
             },
-            "distance": 1624.8,
+            "distance": 1622.3,
             "key": "red",
             "key_carrier_objnum": 13
           },
@@ -1555,6 +1626,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -1826,6 +1899,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -2010,6 +2085,8 @@
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -2056,35 +2133,6 @@
         ]
       }
     ],
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "descriptor_campaign",
-      "confidence": "high",
-      "reason": "The mission descriptor explicitly enables normal or cooperative play",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": true,
-        "coop": true,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 8,
-      "campaign_actor_levels": 8,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 347,
-      "hostages": 0,
-      "matcens": 39,
-      "guidebots": 0,
-      "powerups": 299,
-      "reactors": 8
-    },
     "mission_path": "EAF2.MN2",
     "target_index": 0
   }
