@@ -1634,18 +1634,57 @@ extern "C" char *game_introspect_get_state(void)
 		const route_confirmation_summary *summary =
 		    route_confirmation_get_summary();
 		json objective_seconds = json::array();
-		for (int index = 0; index < summary->objective_count; ++index)
+		json objectives = json::array();
+		for (int index = 0; index < summary->objective_count; ++index) {
+			const route_confirmation_objective_result &objective =
+			    summary->objectives[index];
 			objective_seconds.push_back(
-			    (double) summary->objectives[index].completed_ticks /
-			    (double) F1_0);
+			    (double) objective.completed_ticks / (double) F1_0);
+			objectives.push_back({ { "route_step_index", objective.route_step_index },
+			                       { "kind", level_metadata_route_step_kind_name(objective.kind) },
+			                       { "activation_kind",
+			                         level_metadata_route_activation_kind_name(
+			                             objective.activation_kind) },
+			                       { "label", objective.label },
+			                       { "frame", objective.completed_frame },
+			                       { "seconds", (double) objective.completed_ticks / (double) F1_0 } });
+		}
 		j["route_confirmation_status"] =
 		    route_confirmation_status_name(summary->status);
+		j["route_confirmation_terminal"] =
+		    route_confirmation_is_terminal() != 0;
 		j["route_confirmation"] = {
 			{ "status", route_confirmation_status_name(summary->status) },
 			{ "seed", summary->seed },
 			{ "fixed_hz", summary->fixed_hz },
+			{ "difficulty", Difficulty_level },
 			{ "frames", summary->frame_count },
+			{ "simulation_seconds",
+			  (double) summary->elapsed_ticks / (double) F1_0 },
+			{ "current_route_step_index",
+			  summary->current_route_step_index },
+			{ "current_kind",
+			  level_metadata_route_step_kind_name(summary->current_kind) },
+			{ "objectives", objectives },
 			{ "objective_seconds", objective_seconds },
+			{ "rng_start",
+			  { { "simulation",
+			      { { "state", summary->rng_start.simulation.state },
+			        { "calls", summary->rng_start.simulation.call_count } } },
+			    { "effects",
+			      { { "state", summary->rng_start.effects.state },
+			        { "calls", summary->rng_start.effects.call_count } } } } },
+			{ "rng_end",
+			  { { "simulation",
+			      { { "state", summary->rng_end.simulation.state },
+			        { "calls", summary->rng_end.simulation.call_count } } },
+			    { "effects",
+			      { { "state", summary->rng_end.effects.state },
+			        { "calls", summary->rng_end.effects.call_count } } } } },
+			{ "actor_segment",
+			  Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index
+			      ? Objects[Buddy_objnum].segnum
+			      : -1 },
 			{ "problem", summary->problem }
 		};
 	}

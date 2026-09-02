@@ -1,0 +1,99 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "entropy.mn2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "unsupported": 5
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "entropy1.rl2",
+      "route_input_sha256": "3E5939168C42C1BACB95075081C6579A025995521C8789847EDECED7BBC30E3C",
+      "status": "unsupported",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 1,
+        "calls": 0
+      },
+      "problem": "level has no active Guide-Bot verification actor"
+    },
+    {
+      "level_num": 2,
+      "level_file": "entropy2.rl2",
+      "route_input_sha256": "07B69EA76ADC2AA9DD184AC7F11DCCF60D7A49A74A0C8C543F62E0E180F27DA4",
+      "status": "unsupported",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 1,
+        "calls": 0
+      },
+      "problem": "level has no active Guide-Bot verification actor"
+    },
+    {
+      "level_num": 3,
+      "level_file": "entropy3.rl2",
+      "route_input_sha256": "E763848FB717028B469CD044CA530971816444B792456BDF0DA436E81E6D887D",
+      "status": "unsupported",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 1,
+        "calls": 0
+      },
+      "problem": "level has no active Guide-Bot verification actor"
+    },
+    {
+      "level_num": 4,
+      "level_file": "entropy4.rl2",
+      "route_input_sha256": "FAEB5691FE086707D66215CC4DADBF39CB4F87ABBDDCA42FB3C92EB37A8786E7",
+      "status": "unsupported",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 1,
+        "calls": 0
+      },
+      "problem": "level has no active Guide-Bot verification actor"
+    },
+    {
+      "level_num": -1,
+      "level_file": "entropys.rl2",
+      "route_input_sha256": "5D27CA338D4BCA5A1242562FF7CB6815CE5CD6DA7BFEBDAC174349C9D2AC92BE",
+      "status": "unsupported",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 1,
+        "calls": 0
+      },
+      "problem": "level has no active Guide-Bot verification actor"
+    }
+  ]
+}

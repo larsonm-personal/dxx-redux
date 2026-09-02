@@ -90,6 +90,9 @@ char copyright[] = "DESCENT II  COPYRIGHT (C) 1994-1996 PARALLAX SOFTWARE CORPOR
 #include "android_level_preview.h"
 #endif
 #include "input_demo_start.h"
+#ifdef DXX_GUIDEBOT_ROUTE_DESKTOP
+#include "route_confirmation_desktop.h"
+#endif
 #include "collide.h"
 #include "newdemo.h"
 #include "joy.h"
@@ -541,7 +544,11 @@ int main(int argc, char *argv[])
 	init_movies();		//init movie libraries
 	CHECKPOINT("movies init done");
 
-	if (!startup_find_cmd_arg("-resume-save")) {
+	if (!startup_find_cmd_arg("-resume-save")
+#ifdef DXX_GUIDEBOT_ROUTE_DESKTOP
+	    && !startup_find_cmd_arg("-route-confirm-json-out")
+#endif
+	) {
 		show_titles();
 		CHECKPOINT("titles shown");
 	}
@@ -621,6 +628,13 @@ int main(int argc, char *argv[])
 	else
 #endif
 	{
+		#ifdef DXX_GUIDEBOT_ROUTE_DESKTOP
+		int route_result = route_confirmation_desktop_maybe_start();
+		if (route_result > 0)
+			return route_result;
+		if (route_result < 0)
+		#endif
+		{
 		int replay_result = input_demo_maybe_start_replay_from_cmdline();
 
 		if (replay_result > 0)
@@ -633,10 +647,15 @@ int main(int argc, char *argv[])
 				CHECKPOINT("DoMenu returned");
 			}
 		}
+		}
 	}
 
 	setjmp(LeaveEvents);
-	while (window_get_front())
+	while (window_get_front()
+#ifdef DXX_GUIDEBOT_ROUTE_DESKTOP
+	       && !route_confirmation_desktop_should_exit()
+#endif
+	)
 		// Send events to windows and the default handler
 		event_process();
 	

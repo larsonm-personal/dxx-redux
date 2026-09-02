@@ -1,0 +1,31 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "helium.mn2",
+  "target_index": 9,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "timeout": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "helium.rl2",
+      "route_input_sha256": "96223A1398988A8C5C58C6C4CB5E88F653103C123231D083A986186C69F4C3BB",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 1291,
+      "rng_end": {
+        "state": 2213412917,
+        "calls": 716
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    }
+  ]
+}

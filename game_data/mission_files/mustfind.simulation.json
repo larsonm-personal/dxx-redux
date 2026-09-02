@@ -1,0 +1,70 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "MUSTFIND.MN2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "failed": 1,
+    "timeout": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "lockdoor.rl2",
+      "route_input_sha256": "93523BA7D9940509F003D397161A458B09CCA39ED3052D3C5938BF5420A4E2DD",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 3794901700,
+        "calls": 19
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": -1,
+      "level_file": "level.rl2",
+      "route_input_sha256": "058E2C912920FEC4590F82D33CD621019439E8A2BEBA87323FA0273D19CB23D9",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 25
+        },
+        {
+          "n": "switch 3",
+          "s": 53
+        },
+        {
+          "n": "gold key",
+          "s": 63
+        },
+        {
+          "n": "switch 4",
+          "s": 86
+        },
+        {
+          "n": "red key",
+          "s": 89
+        }
+      ],
+      "total_frames": 6238,
+      "rng_end": {
+        "state": 3208794827,
+        "calls": 3134
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    }
+  ]
+}

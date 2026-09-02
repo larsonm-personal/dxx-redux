@@ -1,0 +1,134 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "ex0core.mn2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 2,
+    "timeout": 1,
+    "unsupported": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "sphasm.rl2",
+      "route_input_sha256": "4FBE966123544B1029E5EB13DC3F2AC357F8ABB15C610ABFB9043D34D587D48A",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 4",
+          "s": 21
+        },
+        {
+          "n": "red key",
+          "s": 31
+        },
+        {
+          "n": "switch 3",
+          "s": 32
+        },
+        {
+          "n": "reactor",
+          "s": 48
+        },
+        {
+          "n": "exit",
+          "s": 84
+        }
+      ],
+      "total_frames": 5039,
+      "rng_end": {
+        "state": 1837008845,
+        "calls": 1268
+      }
+    },
+    {
+      "level_num": 2,
+      "level_file": "pharioka.rl2",
+      "route_input_sha256": "80066162E9D7CF7A03F6CB402EF3ED4D8B3AF97EC62CCF9625EC2579FD53F8E8",
+      "status": "unsupported",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 4",
+          "s": 2
+        },
+        {
+          "n": "blue key",
+          "s": 14
+        }
+      ],
+      "total_frames": 1446,
+      "rng_end": {
+        "state": 1531119703,
+        "calls": 402
+      },
+      "problem": "route objective activation is not supported"
+    },
+    {
+      "level_num": 3,
+      "level_file": "shremple.rl2",
+      "route_input_sha256": "2B572DE3690296CA9B21603299D46FB5C8FA59A79A15DF3B3E612E93DF98C578",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 8",
+          "s": 6
+        },
+        {
+          "n": "blue key",
+          "s": 12
+        },
+        {
+          "n": "switch 28",
+          "s": 14
+        }
+      ],
+      "total_frames": 6801,
+      "rng_end": {
+        "state": 1310676484,
+        "calls": 979
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": -1,
+      "level_file": "diamond.rl2",
+      "route_input_sha256": "F3A308414F4DB122F3E74399B10EFFDE72DDA7D4A1E6C7F78BB9286F1D74E1FC",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "reactor",
+          "s": 9
+        },
+        {
+          "n": "exit",
+          "s": 20
+        }
+      ],
+      "total_frames": 1180,
+      "rng_end": {
+        "state": 2822133894,
+        "calls": 417
+      }
+    }
+  ]
+}

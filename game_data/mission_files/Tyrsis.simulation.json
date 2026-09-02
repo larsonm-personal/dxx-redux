@@ -1,0 +1,86 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "TYRSIS.MN2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "timeout": 2
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "myrian1.rl2",
+      "route_input_sha256": "19007D7DE1E8EAB03FAC716F6BDFF6E1FB7AEF5156AA8EEDBC227F83B2F4E955",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 15
+        },
+        {
+          "n": "switch 15",
+          "s": 22
+        },
+        {
+          "n": "switch 13",
+          "s": 22
+        },
+        {
+          "n": "gold key",
+          "s": 59
+        }
+      ],
+      "total_frames": 6672,
+      "rng_end": {
+        "state": 1417643261,
+        "calls": 2116
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 2,
+      "level_file": "aerillia.rl2",
+      "route_input_sha256": "5737D1DCAF7AE12CF13FA7E69298B46B177593C86B05187A61A2EF4DBA4990DE",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 31
+        },
+        {
+          "n": "gold key",
+          "s": 67
+        },
+        {
+          "n": "switch 14",
+          "s": 79
+        },
+        {
+          "n": "switch 13",
+          "s": 80
+        },
+        {
+          "n": "switch 11",
+          "s": 80
+        }
+      ],
+      "total_frames": 5475,
+      "rng_end": {
+        "state": 2768380204,
+        "calls": 1291
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    }
+  ]
+}

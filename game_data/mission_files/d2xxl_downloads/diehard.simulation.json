@@ -1,0 +1,432 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "diehard.mn2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "timeout": 18,
+    "unsupported": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "DH01.RL2",
+      "route_input_sha256": "4DC9900DDA9DD38B023250EC84BC81BB26A0D073478D3F577214D8A67900F7B4",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 553,
+      "rng_end": {
+        "state": 1116175964,
+        "calls": 27
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 2,
+      "level_file": "DH02.RL2",
+      "route_input_sha256": "25ECC45BEFEBB02F3F17B4062789DDA3062B889AB89BBE7CECEA72CAF5EDCE47",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "pass-through 1",
+          "s": 1
+        },
+        {
+          "n": "switch 4",
+          "s": 4
+        },
+        {
+          "n": "red key",
+          "s": 42
+        },
+        {
+          "n": "switch 9",
+          "s": 42
+        },
+        {
+          "n": "boss",
+          "s": 76
+        }
+      ],
+      "total_frames": 4575,
+      "rng_end": {
+        "state": 1075938638,
+        "calls": 1145
+      },
+      "problem": "semantic objective repeated without route advancement"
+    },
+    {
+      "level_num": 3,
+      "level_file": "DH03.RL2",
+      "route_input_sha256": "78D49C136BEAC1755BFE839C10C3ED83F82BA730C5BD0D06B02045517023F73F",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "pass-through 2",
+          "s": 23
+        },
+        {
+          "n": "blue key",
+          "s": 43
+        }
+      ],
+      "total_frames": 4488,
+      "rng_end": {
+        "state": 1491536401,
+        "calls": 624
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 4,
+      "level_file": "DH04.RL2",
+      "route_input_sha256": "5566DD389E84319124D3422C9D96464EB9FBE8C9E05D869004CC95A41A552DB5",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 4",
+          "s": 64
+        }
+      ],
+      "total_frames": 11397,
+      "rng_end": {
+        "state": 1485101483,
+        "calls": 1374
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 5,
+      "level_file": "DH05.RL2",
+      "route_input_sha256": "57E7284C7384004FED0E7E4452FA9E03637DFCA76E7CD44AE2F7F5ECA49739C2",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4201,
+      "rng_end": {
+        "state": 2720662152,
+        "calls": 223
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 6,
+      "level_file": "DH06.RL2",
+      "route_input_sha256": "0F265428F94444D0CD5BF62CB16FC8719F3A5CD91388F65A7517D2FC7490C82B",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 0",
+          "s": 30
+        }
+      ],
+      "total_frames": 2530,
+      "rng_end": {
+        "state": 2839975927,
+        "calls": 1010
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 7,
+      "level_file": "DH07.RL2",
+      "route_input_sha256": "8A202D87102363ED57EB54AF7ECCF306A1D7A9C26D538CB15A5ED3C26DEAF344",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 1",
+          "s": 30
+        },
+        {
+          "n": "blue key",
+          "s": 61
+        },
+        {
+          "n": "switch 3",
+          "s": 61
+        }
+      ],
+      "total_frames": 4553,
+      "rng_end": {
+        "state": 1400661050,
+        "calls": 1565
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 8,
+      "level_file": "DH08.RL2",
+      "route_input_sha256": "95F3348EB6BEF2F7C5FEAE68AE29FE07453F8E62468AE554119B2413363B83EF",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 3601,
+      "rng_end": {
+        "state": 684462146,
+        "calls": 53
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 9,
+      "level_file": "DH09.RL2",
+      "route_input_sha256": "97AAD5E05654B226ADEF93CB9CBBBC5028ABFF140C292B49478D6C5B11E55343",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 948,
+      "rng_end": {
+        "state": 3075635823,
+        "calls": 122
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 10,
+      "level_file": "DH10.RL2",
+      "route_input_sha256": "8B36D7728F2C8F779267FE5D02539EEB9955F4AA043F80EB6962A7365CD0CD76",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 13
+        }
+      ],
+      "total_frames": 5218,
+      "rng_end": {
+        "state": 754839821,
+        "calls": 436
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 11,
+      "level_file": "DH11.RL2",
+      "route_input_sha256": "CB95C65394D24C8B955C2B84FE449D57D3892541420997A84E9BD4DF18013CAA",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 578,
+      "rng_end": {
+        "state": 3025925713,
+        "calls": 48
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 12,
+      "level_file": "DH12.RL2",
+      "route_input_sha256": "B86CC908D52FF8401BAFDA998E8CEB8B3DE4B1CA5C80A203F5DD9497EC7A5AAD",
+      "status": "unsupported",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 0",
+          "s": 0
+        },
+        {
+          "n": "pass-through 4",
+          "s": 4
+        }
+      ],
+      "total_frames": 575,
+      "rng_end": {
+        "state": 1185738822,
+        "calls": 225
+      },
+      "problem": "route objective activation is not supported"
+    },
+    {
+      "level_num": 13,
+      "level_file": "DH13.RL2",
+      "route_input_sha256": "827BFB7331CC1FC2171555026D78251146A9E8AFCB9B00E53179CF9D7144E157",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "boss",
+          "s": 23
+        }
+      ],
+      "total_frames": 1428,
+      "rng_end": {
+        "state": 2180910217,
+        "calls": 568
+      },
+      "problem": "semantic objective repeated without route advancement"
+    },
+    {
+      "level_num": 14,
+      "level_file": "DH14.RL2",
+      "route_input_sha256": "0AAD0BDEE46E7FA5F256529DD70C4B3695A128CBEA1E581E8DB92514853AA5CD",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "pass-through 9",
+          "s": 6
+        },
+        {
+          "n": "switch 10",
+          "s": 19
+        },
+        {
+          "n": "hidden door",
+          "s": 38
+        }
+      ],
+      "total_frames": 6063,
+      "rng_end": {
+        "state": 2822133894,
+        "calls": 417
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 15,
+      "level_file": "DH15.RL2",
+      "route_input_sha256": "8935E76A521FDA92B1924EFFCE21CF41D60CD3CB2C6E1F26DD9BD98503B5D57A",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "pass-through 12",
+          "s": 20
+        },
+        {
+          "n": "switch 14",
+          "s": 44
+        }
+      ],
+      "total_frames": 4365,
+      "rng_end": {
+        "state": 3315874115,
+        "calls": 838
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 16,
+      "level_file": "DH16.RL2",
+      "route_input_sha256": "C78903BE30A553E17FF41B4A985832B35341402822940F99FA5A91591D2B57BD",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 871,
+      "rng_end": {
+        "state": 300568396,
+        "calls": 107
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 17,
+      "level_file": "DH17.RL2",
+      "route_input_sha256": "146BA90E1ECE3CB737133164C386F4F98B666538D55EA56DF1EA145CEFE87067",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 1004,
+      "rng_end": {
+        "state": 2881533255,
+        "calls": 418
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 18,
+      "level_file": "DH18.RL2",
+      "route_input_sha256": "41CB346F2AD8CDE4F425405785C2F299F8A590B77F7686865158FA371053E515",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 812,
+      "rng_end": {
+        "state": 357089484,
+        "calls": 235
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 19,
+      "level_file": "DH19.RL2",
+      "route_input_sha256": "0631D2A1D285A85C54A42DEE36830FC6E046E4D637601570EC912BE84EF3087F",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 521,
+      "rng_end": {
+        "state": 3008955749,
+        "calls": 28
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    }
+  ]
+}

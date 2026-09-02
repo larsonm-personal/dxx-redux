@@ -21,7 +21,7 @@ try {
 Assert-True $unknownArgumentRejected 'Master regeneration should reject unsupported arguments before running stages'
 
 $stages = @(Get-RegressionDataStages -RepoRoot $repoRoot)
-Assert-True ($stages.Count -eq 3) 'Master regeneration should contain exactly three wrapper stages'
+Assert-True ($stages.Count -eq 4) 'Master regeneration should contain exactly four wrapper stages'
 Assert-True ($stages[0].Script -eq (Join-Path $repoRoot 'game_data\run_all_cd_regressions.ps1')) `
     'The first stage should use the canonical CD regression wrapper'
 Assert-True (($stages[0].Arguments -join ',') -eq '-RefreshOracle') `
@@ -32,12 +32,19 @@ Assert-True (($stages[1].Arguments -join ',') -eq '-Force') `
     'The fingerprint stage should force a complete refresh'
 Assert-True ($stages[2].Script -eq (Join-Path $repoRoot 'android\helpers\regenerate_all_mission_metadata.ps1')) `
     'The third stage should use the canonical Android mission metadata wrapper'
+Assert-True ($stages[3].Script -eq (Join-Path $repoRoot 'android\helpers\regenerate_all_guidebot_simulations.ps1')) `
+    'The fourth stage should use the canonical GuideBot simulation wrapper'
+Assert-True (($stages[3].Arguments -join ' ') -eq '-Mode Headless -WriteRegression') `
+    'All-category simulation should use canonical headless regression output'
 Assert-True (@(Get-RegressionDataStages -RepoRoot $repoRoot -Category Cd).Count -eq 1) `
     'CD-only selection should contain one stage'
 Assert-True ((Get-RegressionDataStages -RepoRoot $repoRoot -Category Fingerprints)[0].Key -eq 'Fingerprints') `
     'Fingerprint-only selection should select the fingerprint stage'
 Assert-True ((Get-RegressionDataStages -RepoRoot $repoRoot -Category Metadata)[0].Key -eq 'Metadata') `
     'Metadata-only selection should select the metadata stage'
+$headedSimulation = @(Get-RegressionDataStages -RepoRoot $repoRoot -Category Simulation -SimulationMode Headed)
+Assert-True ($headedSimulation.Count -eq 1 -and ($headedSimulation[0].Arguments -join ' ') -eq '-Mode Headed') `
+    'Simulation-only selection should allow noncanonical headed mode'
 $missingMetadataStage = @(Get-RegressionDataStages -RepoRoot $repoRoot -Category MissingMetadata)
 Assert-True ($missingMetadataStage.Count -eq 1 -and $missingMetadataStage[0].Key -eq 'Metadata') `
     'Missing-metadata selection should contain only the metadata stage'
@@ -45,18 +52,18 @@ Assert-True (($missingMetadataStage[0].Arguments -join ',') -eq '-MissingOnly') 
     'Missing-metadata selection should request missing archive JSON only'
 
 $sampleStages = @(Get-RegressionDataStages -RepoRoot $repoRoot)
-$sampleEstimates = @(600, 1200, 1800)
+$sampleEstimates = @(600, 1200, 1800, 2400)
 for ($index = 0; $index -lt $sampleStages.Count; $index++) {
     $sampleStages[$index] | Add-Member -NotePropertyName EstimatedRuntime -NotePropertyValue $sampleEstimates[$index]
 }
 $targetedSample = Set-RegressionDataTargetSample -Stages $sampleStages -TargetSeconds 1800 -Seed 12
-Assert-True ($targetedSample.Stages.Count -eq 3 -and $targetedSample.EstimatedSeconds -eq 1801) `
+Assert-True ($targetedSample.Stages.Count -eq 4 -and $targetedSample.EstimatedSeconds -eq 1801) `
     'Targeted regeneration should use the first predicted completion past its budget across every category'
 Assert-True ($targetedSample.Seed -eq 12) 'Targeted regeneration should preserve the requested seed'
-Assert-True ([Math]::Abs($targetedSample.Fraction - 0.5) -lt 0.0001) `
+Assert-True ([Math]::Abs($targetedSample.Fraction - 0.3) -lt 0.0001) `
     'Targeted regeneration should derive one common percentage from full-run history'
 foreach ($stage in $targetedSample.Stages) {
-    Assert-True (($stage.Arguments -join ' ') -match '-SampleFraction 0.5 -SampleSeed 12') `
+    Assert-True (($stage.Arguments -join ' ') -match '-SampleFraction 0.3 -SampleSeed 12') `
         'Every regeneration stage should receive the same sample percentage and seed'
     Assert-True (($stage.Arguments -join ' ') -match '-SampleStatePath') `
         'Every regeneration stage should receive the shared hash-ring cursor path'

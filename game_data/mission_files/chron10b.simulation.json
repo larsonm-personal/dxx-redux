@@ -1,0 +1,108 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "chron10b.mn2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "timeout": 4
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "dropship.rl2",
+      "route_input_sha256": "8B85BEEAFFB67DF469356BD33C101F7D5720B91A1437243D4AAC2B6572F41475",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 4",
+          "s": 20
+        },
+        {
+          "n": "hidden door",
+          "s": 35
+        },
+        {
+          "n": "switch 16",
+          "s": 64
+        },
+        {
+          "n": "blue key",
+          "s": 113
+        }
+      ],
+      "total_frames": 11733,
+      "rng_end": {
+        "state": 3164801743,
+        "calls": 2586
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 2,
+      "level_file": "reactorc.rl2",
+      "route_input_sha256": "C6D481878E935F77A7A08B304100E5D1B37EDBDC446ECD01A30494AB6C1B0DD5",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4869,
+      "rng_end": {
+        "state": 1151748123,
+        "calls": 238
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 3,
+      "level_file": "specimen.rl2",
+      "route_input_sha256": "FA5E5A1062A2F28EC62C87F1508E854330DEC4FD3919A9016B38DBE2EA20DB9A",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 2",
+          "s": 14
+        },
+        {
+          "n": "switch 1",
+          "s": 23
+        }
+      ],
+      "total_frames": 5109,
+      "rng_end": {
+        "state": 2060492003,
+        "calls": 934
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": -1,
+      "level_file": "secret1a.rl2",
+      "route_input_sha256": "EA2D3156EE925F88A2090F832C5CC017C23115605F8DA68DA38FBF23B467AC57",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 915,
+      "rng_end": {
+        "state": 519488550,
+        "calls": 129
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    }
+  ]
+}

@@ -1,0 +1,666 @@
+[
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "-moon01-.mn2",
+    "target_index": 0,
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "route_mismatch": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "MOON01.RL2",
+        "route_input_sha256": "3BF4E611F10D8375D0260042E783980B9F63BD2E6B834CDD16AB7D6D19E77732",
+        "status": "route_mismatch",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 24
+          },
+          {
+            "n": "gold key",
+            "s": 88
+          },
+          {
+            "n": "red key",
+            "s": 145
+          }
+        ],
+        "total_frames": 11684,
+        "rng_end": {
+          "state": 3093135043,
+          "calls": 3526
+        },
+        "problem": "live objective sequence differs from route input"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "-MOON02-.MN2",
+    "target_index": 1,
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "failed": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "MOON02.RL2",
+        "route_input_sha256": "F1F84174D5D2D9A2B3CEAA39EAF57B7F3BBC76B2B38C3597F6CB4886638EDA19",
+        "status": "failed",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 0,
+        "rng_end": {
+          "state": 1,
+          "calls": 0
+        },
+        "problem": "live Guide-Bot route has no actionable goal"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "-MOON03-.MN2",
+    "target_index": 2,
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "MOON03.RL2",
+        "route_input_sha256": "65F35D08B5196DC4BF6DEE1E220A6CC1ADC6C1A976BBCF57CE1FD8EF09371EA4",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 24
+          },
+          {
+            "n": "blue key",
+            "s": 27
+          },
+          {
+            "n": "switch 9",
+            "s": 53
+          },
+          {
+            "n": "gold key",
+            "s": 120
+          },
+          {
+            "n": "switch 11",
+            "s": 184
+          },
+          {
+            "n": "switch 23",
+            "s": 233
+          },
+          {
+            "n": "switch 1",
+            "s": 282
+          }
+        ],
+        "total_frames": 22107,
+        "rng_end": {
+          "state": 1790626690,
+          "calls": 3573
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "-MOON04-.MN2",
+    "target_index": 3,
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "-MOON04-.RL2",
+        "route_input_sha256": "FD94232118DAD5F9840F177005B8ED98E7B302F52FA3AE7F7FDCB6A42786658D",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 16
+          },
+          {
+            "n": "switch 3",
+            "s": 18
+          },
+          {
+            "n": "hidden door",
+            "s": 21
+          },
+          {
+            "n": "switch 16",
+            "s": 22
+          },
+          {
+            "n": "blue key",
+            "s": 99
+          },
+          {
+            "n": "switch 10",
+            "s": 138
+          },
+          {
+            "n": "switch 17",
+            "s": 183
+          },
+          {
+            "n": "gold key",
+            "s": 260
+          }
+        ],
+        "total_frames": 20955,
+        "rng_end": {
+          "state": 841718948,
+          "calls": 4275
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "-MOON05-.MN2",
+    "target_index": 4,
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "-moon05-.rl2",
+        "route_input_sha256": "FB132615B7E17E0911FF72204504284CC973C064EA9FD0761C76DD28C23C5D63",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 0",
+            "s": 8
+          },
+          {
+            "n": "blue key",
+            "s": 17
+          },
+          {
+            "n": "gold key",
+            "s": 45
+          }
+        ],
+        "total_frames": 4186,
+        "rng_end": {
+          "state": 2058375196,
+          "calls": 859
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "-MOON06-.MN2",
+    "target_index": 5,
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "failed": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "-MOON06-.RL2",
+        "route_input_sha256": "8786CA277C7778F9890B9BE52EDB72FA84D9505B4B62EDF6BA8999D742F4A0E1",
+        "status": "failed",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 0,
+        "rng_end": {
+          "state": 1303003706,
+          "calls": 29
+        },
+        "problem": "live Guide-Bot route has no actionable goal"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "-MOON07-.MN2",
+    "target_index": 6,
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "-moon07-.rl2",
+        "route_input_sha256": "273032ADFE3D74242C3C2E8933CB4D5F0A9940C457EB3746BE8636EC8B254907",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 28",
+            "s": 15
+          },
+          {
+            "n": "hidden door",
+            "s": 16
+          },
+          {
+            "n": "blue key",
+            "s": 21
+          },
+          {
+            "n": "switch 29",
+            "s": 25
+          }
+        ],
+        "total_frames": 2791,
+        "rng_end": {
+          "state": 2078627975,
+          "calls": 610
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "-MOON08-.MN2",
+    "target_index": 7,
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "-moon08-.rl2",
+        "route_input_sha256": "F894E657A98C9B20D5D4FB7FC94CB34124AE2FADC33EF716983281A27899D7C8",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 16
+          },
+          {
+            "n": "switch 37",
+            "s": 29
+          }
+        ],
+        "total_frames": 2699,
+        "rng_end": {
+          "state": 836234953,
+          "calls": 504
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "-MOON09-.MN2",
+    "target_index": 8,
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "-moon09-.rl2",
+        "route_input_sha256": "A99B166327E9E70454C6B6A7CCF30575A3C20EFB7B6EE76424BC773BB34B3603",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 21
+          },
+          {
+            "n": "switch 2",
+            "s": 33
+          },
+          {
+            "n": "hidden door",
+            "s": 45
+          },
+          {
+            "n": "gold key",
+            "s": 55
+          }
+        ],
+        "total_frames": 4256,
+        "rng_end": {
+          "state": 636212583,
+          "calls": 898
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "-MOON10-.MN2",
+    "target_index": 9,
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "-moon10-.rl2",
+        "route_input_sha256": "2B8E7F40193CDCBC78ED6A779D68B21F939F347E5AC39D2F94CA379213B4EAFA",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 32
+          },
+          {
+            "n": "switch 17",
+            "s": 37
+          },
+          {
+            "n": "gold key",
+            "s": 80
+          },
+          {
+            "n": "switch 2",
+            "s": 115
+          },
+          {
+            "n": "hidden door",
+            "s": 143
+          },
+          {
+            "n": "red key",
+            "s": 144
+          }
+        ],
+        "total_frames": 10948,
+        "rng_end": {
+          "state": 4247056874,
+          "calls": 3117
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "-MOON11-.MN2",
+    "target_index": 10,
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "moon11.rl2",
+        "route_input_sha256": "0732F6C483383B34575F4D47A972419B5972A8B992046167D5011DCCD5DC0ED1",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 15
+          },
+          {
+            "n": "gold key",
+            "s": 48
+          },
+          {
+            "n": "red key",
+            "s": 84
+          },
+          {
+            "n": "switch 33",
+            "s": 96
+          },
+          {
+            "n": "switch 47",
+            "s": 96
+          },
+          {
+            "n": "reactor",
+            "s": 148
+          },
+          {
+            "n": "exit",
+            "s": 159
+          }
+        ],
+        "total_frames": 9558,
+        "rng_end": {
+          "state": 3264649439,
+          "calls": 3338
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "-Moon12-.MN2",
+    "target_index": 11,
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "moon12.rl2",
+        "route_input_sha256": "4745A838B30FDDA627324E0616E6375E795C3476FAF5FA62BF49FC8892522BF7",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "pass-through 7",
+            "s": 5
+          },
+          {
+            "n": "blue key",
+            "s": 17
+          },
+          {
+            "n": "switch 1",
+            "s": 37
+          },
+          {
+            "n": "switch 69",
+            "s": 64
+          },
+          {
+            "n": "gold key",
+            "s": 75
+          }
+        ],
+        "total_frames": 6398,
+        "rng_end": {
+          "state": 1047531210,
+          "calls": 2253
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "-MOON13-.MN2",
+    "target_index": 12,
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "MOON13.RL2",
+        "route_input_sha256": "DD497D88BB7D8C768B25F5954814468ABF9ABFFCFB97BE49289B8BA61215C713",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 12",
+            "s": 19
+          },
+          {
+            "n": "blue key",
+            "s": 38
+          },
+          {
+            "n": "switch 23",
+            "s": 67
+          },
+          {
+            "n": "switch 0",
+            "s": 83
+          },
+          {
+            "n": "switch 1",
+            "s": 93
+          },
+          {
+            "n": "gold key",
+            "s": 102
+          }
+        ],
+        "total_frames": 8139,
+        "rng_end": {
+          "state": 1386401222,
+          "calls": 2401
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "-MOON14-.MN2",
+    "target_index": 13,
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "MOON14.RL2",
+        "route_input_sha256": "4B0A6899F5373D26F6F7AA98270704C19517D83FE85F4C812CE83C3C9A6A4E65",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 4283,
+        "rng_end": {
+          "state": 2005546136,
+          "calls": 655
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  }
+]

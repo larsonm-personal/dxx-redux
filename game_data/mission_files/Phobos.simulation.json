@@ -1,0 +1,161 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "phobos-e.mn2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "timeout": 5,
+    "route_mismatch": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "phobos1.rl2",
+      "route_input_sha256": "8EC6AD1135ED0BFE5B55407F75E430DD68267916067AE1538D3A4C4208561F79",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 26
+        },
+        {
+          "n": "switch 1",
+          "s": 43
+        },
+        {
+          "n": "gold key",
+          "s": 91
+        }
+      ],
+      "total_frames": 8126,
+      "rng_end": {
+        "state": 1469258790,
+        "calls": 2177
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 2,
+      "level_file": "phobos2.rl2",
+      "route_input_sha256": "C2D418D7CFCB76273C5F75ADE01BA7D9643628D90C754AD375186A6A4F5CB77C",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 32
+        },
+        {
+          "n": "gold key",
+          "s": 78
+        }
+      ],
+      "total_frames": 8395,
+      "rng_end": {
+        "state": 43509826,
+        "calls": 2101
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 3,
+      "level_file": "phobos3.rl2",
+      "route_input_sha256": "F9FC6A4E0AAB107DA67271A057ED481C40FC8026428F4363ED743BDB83DB2581",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 35
+        },
+        {
+          "n": "switch 1",
+          "s": 67
+        },
+        {
+          "n": "gold key",
+          "s": 89
+        }
+      ],
+      "total_frames": 8000,
+      "rng_end": {
+        "state": 1466968295,
+        "calls": 2050
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 4,
+      "level_file": "phobos4.rl2",
+      "route_input_sha256": "7F266D21CB9034B6E079FEF281C030D9740281AD5D54A54E356022DB3AC904D7",
+      "status": "route_mismatch",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 26
+        },
+        {
+          "n": "red key",
+          "s": 77
+        }
+      ],
+      "total_frames": 6601,
+      "rng_end": {
+        "state": 4068126521,
+        "calls": 1800
+      },
+      "problem": "live objective sequence differs from route input"
+    },
+    {
+      "level_num": -1,
+      "level_file": "phoscrt1.rl2",
+      "route_input_sha256": "A82584DF112650F1451B986DC0C0A2944F0F713ECB6196A9661542B952B2A3D2",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 2850,
+      "rng_end": {
+        "state": 1788460815,
+        "calls": 474
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": -2,
+      "level_file": "phoscrt2.rl2",
+      "route_input_sha256": "E87C08522C6C81D513E4DFCE3140D64A09ADF1CBDF701356E5C204958B4A3414",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 1425,
+      "rng_end": {
+        "state": 1282664340,
+        "calls": 259
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    }
+  ]
+}

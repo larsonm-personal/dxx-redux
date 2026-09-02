@@ -1,0 +1,164 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "harqyjia.MN2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "failed": 1,
+    "timeout": 3,
+    "route_mismatch": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "HARQYJ01.RL2",
+      "route_input_sha256": "62A345A2090174C8C713414038639B436A41DF0C8A2889DD024EAC29BC9C9AE9",
+      "status": "route_mismatch",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 0",
+          "s": 2
+        },
+        {
+          "n": "blue key",
+          "s": 10
+        },
+        {
+          "n": "switch 16",
+          "s": 25
+        },
+        {
+          "n": "switch 1",
+          "s": 66
+        },
+        {
+          "n": "switch 2",
+          "s": 69
+        },
+        {
+          "n": "switch 8",
+          "s": 75
+        },
+        {
+          "n": "gold key",
+          "s": 85
+        },
+        {
+          "n": "red key",
+          "s": 136
+        }
+      ],
+      "total_frames": 10979,
+      "rng_end": {
+        "state": 560387257,
+        "calls": 3464
+      },
+      "problem": "live objective sequence differs from route input"
+    },
+    {
+      "level_num": 2,
+      "level_file": "HARQYJ02.RL2",
+      "route_input_sha256": "1ABF909E01825041FA0A0B8804FFFB86F99A944A49976833AD07763635D3B313",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 6669,
+      "rng_end": {
+        "state": 2058375196,
+        "calls": 859
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 3,
+      "level_file": "harqyj03.rl2",
+      "route_input_sha256": "D74E9AA0DBAD35FFA2BECD59E7816218678CE2A1F6891516FF2FC44E476ADD0D",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 4200531631,
+        "calls": 58
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 4,
+      "level_file": "harqyj04.rl2",
+      "route_input_sha256": "5A52E2DB3A8025ACDEB05050999EE3B782087842A3D0DC883199C6A2D29442BF",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 33
+        },
+        {
+          "n": "switch 3",
+          "s": 37
+        },
+        {
+          "n": "blue key",
+          "s": 60
+        },
+        {
+          "n": "switch 15",
+          "s": 88
+        },
+        {
+          "n": "gold key",
+          "s": 136
+        }
+      ],
+      "total_frames": 16750,
+      "rng_end": {
+        "state": 1612101980,
+        "calls": 2331
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": -1,
+      "level_file": "HARQYJIA.rl2",
+      "route_input_sha256": "0B0602BA4113B1DBB146A99A16AEB0BB159A916488C761660570890438D24C22",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 10",
+          "s": 49
+        },
+        {
+          "n": "boss",
+          "s": 90
+        }
+      ],
+      "total_frames": 5433,
+      "rng_end": {
+        "state": 2617328035,
+        "calls": 1766
+      },
+      "problem": "semantic objective repeated without route advancement"
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "odyssee.mn2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "timeout": 1,
+    "route_mismatch": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "1.rl2",
+      "route_input_sha256": "FC3A61469D132DE43B053B3F425B9516BCA1D7D2A25457615E56E3C5187235D9",
+      "status": "route_mismatch",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 5",
+          "s": 17
+        },
+        {
+          "n": "blue key",
+          "s": 46
+        },
+        {
+          "n": "switch 8",
+          "s": 48
+        },
+        {
+          "n": "gold key",
+          "s": 57
+        },
+        {
+          "n": "switch 7",
+          "s": 57
+        },
+        {
+          "n": "switch 6",
+          "s": 96
+        },
+        {
+          "n": "switch 22",
+          "s": 125
+        },
+        {
+          "n": "hidden door",
+          "s": 148
+        },
+        {
+          "n": "red key",
+          "s": 152
+        },
+        {
+          "n": "switch 20",
+          "s": 180
+        },
+        {
+          "n": "hidden door",
+          "s": 240
+        }
+      ],
+      "total_frames": 36001,
+      "rng_end": {
+        "state": 3942082548,
+        "calls": 14627
+      },
+      "problem": "live objective sequence differs from route input"
+    },
+    {
+      "level_num": 2,
+      "level_file": "2.rl2",
+      "route_input_sha256": "097ECF89C7AD694FE3D98939F153CFA341541624DFBA7D4AE1D11A16F59CB312",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 26",
+          "s": 0
+        },
+        {
+          "n": "fly-through 0",
+          "s": 3
+        },
+        {
+          "n": "fly-through 2",
+          "s": 5
+        },
+        {
+          "n": "hidden door",
+          "s": 7
+        },
+        {
+          "n": "blue key",
+          "s": 32
+        },
+        {
+          "n": "gold key",
+          "s": 97
+        }
+      ],
+      "total_frames": 7097,
+      "rng_end": {
+        "state": 2980907859,
+        "calls": 3382
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    }
+  ]
+}

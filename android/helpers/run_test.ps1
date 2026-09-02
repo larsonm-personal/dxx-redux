@@ -18,6 +18,7 @@ param(
     [Parameter(Mandatory = $true, Position = 0)]
     [string]$ScriptName,
     [switch]$Install,
+    [switch]$LeaveRunning,
     [int]$TimeoutSeconds = 300,
     [ValidateSet("d1", "d2")]
     [string]$Game,
@@ -89,7 +90,11 @@ function Resolve-GameDataDepsWithEmulatorRecovery {
 
 # -- Preflight script metadata --------------------------------
 
-$scriptPath = Join-RegressionPath $scriptDir "game_scripts" $ScriptName
+$scriptPath = if ([IO.Path]::IsPathRooted($ScriptName)) {
+    [IO.Path]::GetFullPath($ScriptName)
+} else {
+    Join-RegressionPath $scriptDir "game_scripts" $ScriptName
+}
 $gameList = Get-ScriptGameInfo -ScriptPath $scriptPath
 $isStandaloneScript = Get-ScriptStandalone -ScriptPath $scriptPath
 
@@ -150,6 +155,7 @@ $script:runTestCleanupDone = $false
 function Invoke-RunTestCleanup {
     if ($script:runTestCleanupDone) { return }
     $script:runTestCleanupDone = $true
+    if ($LeaveRunning) { return }
     try { Stop-AppAndWait } catch {}
 }
 Register-EngineEvent PowerShell.Exiting -Action { Invoke-RunTestCleanup } | Out-Null
@@ -201,7 +207,7 @@ foreach ($gameId in $gameList) {
 
     $resolvedPath = Resolve-TestScript -ScriptPath $scriptPath -GameId $gameId -Params $resolvedParams
     $runId = [guid]::NewGuid().ToString("N")
-    $scriptStem = [System.IO.Path]::GetFileNameWithoutExtension($ScriptName)
+    $scriptStem = [System.IO.Path]::GetFileNameWithoutExtension($scriptPath)
     $pushName = "$scriptStem.run-$runId.jsonc"
     if ($resolvedPath -ne $scriptPath) {
         # Push the resolved file instead, but keep the original name on device

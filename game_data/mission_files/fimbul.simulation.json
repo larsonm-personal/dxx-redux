@@ -1,0 +1,115 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "fimbul.mn2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 1,
+    "timeout": 2
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "icepris1.rl2",
+      "route_input_sha256": "A4AE1447E570475B5D74BF6C55000BEF731AE9814A154BA56B6976EA3BDEA97C",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 22
+        },
+        {
+          "n": "blastable wall",
+          "s": 58
+        }
+      ],
+      "total_frames": 3503,
+      "rng_end": {
+        "state": 2772374610,
+        "calls": 1381
+      },
+      "problem": "semantic objective repeated without route advancement"
+    },
+    {
+      "level_num": 2,
+      "level_file": "icecave3.rl2",
+      "route_input_sha256": "F6D501AAE2CBCAC8EF0D4359014410ECDB544B9B1A6C5ADA375A7808AA0CB82F",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 0",
+          "s": 26
+        },
+        {
+          "n": "switch 1",
+          "s": 41
+        },
+        {
+          "n": "switch 6",
+          "s": 65
+        },
+        {
+          "n": "blue key",
+          "s": 76
+        },
+        {
+          "n": "switch 2",
+          "s": 96
+        },
+        {
+          "n": "gold key",
+          "s": 143
+        },
+        {
+          "n": "switch 13",
+          "s": 190
+        },
+        {
+          "n": "red key",
+          "s": 211
+        },
+        {
+          "n": "reactor",
+          "s": 235
+        },
+        {
+          "n": "exit",
+          "s": 257
+        }
+      ],
+      "total_frames": 15435,
+      "rng_end": {
+        "state": 715118442,
+        "calls": 5293
+      }
+    },
+    {
+      "level_num": 3,
+      "level_file": "icemaid1.rl2",
+      "route_input_sha256": "DD141B2570CBFF2301B77A35E8960DA6698ECA7C1D27DAE7F0B05EEE2FCA4EDF",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 5439,
+      "rng_end": {
+        "state": 2620297113,
+        "calls": 424
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    }
+  ]
+}

@@ -1,0 +1,178 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "MANDRILL.MN2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 2,
+    "failed": 2,
+    "timeout": 3
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "mplevel1.rl2",
+      "route_input_sha256": "A07424E7897E64182823D00869C3C6CFF22B640ECB2CEC4804D7AF59B7ACD4FA",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 34
+        }
+      ],
+      "total_frames": 2499,
+      "rng_end": {
+        "state": 2956328239,
+        "calls": 442
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 2,
+      "level_file": "mplevel2.rl2",
+      "route_input_sha256": "DA45BA3F69F16610B270FE05B5A0234AF56329591CA57B7505BE41D173EB4C2E",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 1",
+          "s": 11
+        }
+      ],
+      "total_frames": 5551,
+      "rng_end": {
+        "state": 2100073167,
+        "calls": 538
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 3,
+      "level_file": "mplevel3.rl2",
+      "route_input_sha256": "211B0D993351A00636C8689EC7FE3D2CFC9468F83864D125098D9B59E4B98644",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 3",
+          "s": 15
+        },
+        {
+          "n": "switch 1",
+          "s": 29
+        },
+        {
+          "n": "blastable wall",
+          "s": 50
+        }
+      ],
+      "total_frames": 3035,
+      "rng_end": {
+        "state": 1469804762,
+        "calls": 1533
+      },
+      "problem": "semantic objective repeated without route advancement"
+    },
+    {
+      "level_num": 4,
+      "level_file": "mplevel4.rl2",
+      "route_input_sha256": "4CF451A5E7934071706947D477A760630B41E87F6882D6A37CB83D5F46679B2A",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 1,
+        "calls": 0
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 5,
+      "level_file": "mplevel5.rl2",
+      "route_input_sha256": "8957323E01391C3D40B0511139280F55A61AF79AB46C0F44CC210340CB6658F2",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 835903122,
+        "calls": 37
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": -1,
+      "level_file": "mpslvl1.rl2",
+      "route_input_sha256": "1E852B6BD240DCE2388A9AEEC7B7B3AB69F1BD654B27E124B7443583BAB799DA",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 4",
+          "s": 29
+        },
+        {
+          "n": "reactor",
+          "s": 41
+        },
+        {
+          "n": "exit",
+          "s": 55
+        }
+      ],
+      "total_frames": 3271,
+      "rng_end": {
+        "state": 3045852315,
+        "calls": 1134
+      }
+    },
+    {
+      "level_num": -2,
+      "level_file": "mpslvl2.rl2",
+      "route_input_sha256": "54B60FFA344D6389245799750EFF104AB31321C03418581794F64247EE922BF1",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "reactor",
+          "s": 4
+        },
+        {
+          "n": "exit",
+          "s": 9
+        }
+      ],
+      "total_frames": 539,
+      "rng_end": {
+        "state": 1021417993,
+        "calls": 184
+      }
+    }
+  ]
+}

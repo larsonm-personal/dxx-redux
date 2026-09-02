@@ -1,0 +1,204 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "OMICPROJ.MN2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 1,
+    "failed": 1,
+    "timeout": 4,
+    "route_mismatch": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "virus2.rl2",
+      "route_input_sha256": "E419C163D3B84A5BDACF720D74C00242432EBBB55DA649F443748DB7AD655B86",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 7
+        },
+        {
+          "n": "gold key",
+          "s": 21
+        },
+        {
+          "n": "red key",
+          "s": 31
+        }
+      ],
+      "total_frames": 2738,
+      "rng_end": {
+        "state": 1801414595,
+        "calls": 1222
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 2,
+      "level_file": "darknite.rl2",
+      "route_input_sha256": "708CC3C396009BDF02B04F923EFB7BC736AB14608089BF8E8CC0DA345755B4F8",
+      "status": "route_mismatch",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 19
+        },
+        {
+          "n": "gold key",
+          "s": 69
+        }
+      ],
+      "total_frames": 6255,
+      "rng_end": {
+        "state": 675639828,
+        "calls": 1155
+      },
+      "problem": "live objective sequence differs from route input"
+    },
+    {
+      "level_num": 3,
+      "level_file": "shakoram.rl2",
+      "route_input_sha256": "3387CDEAFC0EA195F4B9466CF23402E39B57ADB3246C876D2DC430D4C10B317E",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 20
+        },
+        {
+          "n": "gold key",
+          "s": 50
+        },
+        {
+          "n": "red key",
+          "s": 81
+        },
+        {
+          "n": "reactor",
+          "s": 100
+        },
+        {
+          "n": "exit",
+          "s": 119
+        }
+      ],
+      "total_frames": 7169,
+      "rng_end": {
+        "state": 3104832301,
+        "calls": 1684
+      }
+    },
+    {
+      "level_num": 4,
+      "level_file": "omicron.rl2",
+      "route_input_sha256": "3A2CA592AA1030E77D42E1A6B352648FA839C9990F3060EFC724312A15AC11CD",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 5740,
+      "rng_end": {
+        "state": 3172130721,
+        "calls": 352
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 5,
+      "level_file": "shi4evr.rl2",
+      "route_input_sha256": "2D9BBDEE5B51EB098C7E264CD3085DE7DBDF10EE476338496FFBF58455DF8B33",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4270,
+      "rng_end": {
+        "state": 3809232873,
+        "calls": 472
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 6,
+      "level_file": "dartdet2.rl2",
+      "route_input_sha256": "FF159BD967110C4441FC0B81B7925D5DA70CD43813AEC5337EFEEF085861B2B5",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 7
+        },
+        {
+          "n": "blue key",
+          "s": 20
+        }
+      ],
+      "total_frames": 8845,
+      "rng_end": {
+        "state": 2946671141,
+        "calls": 1372
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 7,
+      "level_file": "pyromax.rl2",
+      "route_input_sha256": "EDF4E028384BDE374924C1ACE349F6DC0AEA7166D5D58F608B81E83DBB16AEEF",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 0",
+          "s": 0
+        },
+        {
+          "n": "switch 10",
+          "s": 2
+        },
+        {
+          "n": "switch 22",
+          "s": 7
+        },
+        {
+          "n": "reactor",
+          "s": 10
+        }
+      ],
+      "total_frames": 594,
+      "rng_end": {
+        "state": 3494321052,
+        "calls": 475
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    }
+  ]
+}

@@ -1,0 +1,184 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "eaf.mn2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 3,
+    "failed": 2
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "encoun1.rl2",
+      "route_input_sha256": "2CE5ADCFA47E9E0F60A226414E56C3FEA56F1292FC55C921CC5B58BC0F23EDF7",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 0",
+          "s": 6
+        },
+        {
+          "n": "switch 1",
+          "s": 29
+        },
+        {
+          "n": "switch 2",
+          "s": 59
+        },
+        {
+          "n": "switch 3",
+          "s": 92
+        },
+        {
+          "n": "switch 4",
+          "s": 122
+        },
+        {
+          "n": "reactor",
+          "s": 139
+        },
+        {
+          "n": "exit",
+          "s": 182
+        }
+      ],
+      "total_frames": 10916,
+      "rng_end": {
+        "state": 4077546514,
+        "calls": 4261
+      }
+    },
+    {
+      "level_num": 2,
+      "level_file": "encoun2.rl2",
+      "route_input_sha256": "CC4A3ED99E947970DE29041A315F37AD8291EAD2782AC230D995E781314DBAE7",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2058258651,
+        "calls": 46
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 3,
+      "level_file": "encoun3.rl2",
+      "route_input_sha256": "5651612C0FE07B3DC10925BF21479C79BE999EEC2C1449E3E6BBBC9A1C694E6C",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "gold key",
+          "s": 35
+        },
+        {
+          "n": "red key",
+          "s": 86
+        },
+        {
+          "n": "switch 0",
+          "s": 105
+        },
+        {
+          "n": "switch 2",
+          "s": 113
+        },
+        {
+          "n": "switch 1",
+          "s": 113
+        },
+        {
+          "n": "switch 3",
+          "s": 118
+        },
+        {
+          "n": "reactor",
+          "s": 135
+        },
+        {
+          "n": "exit",
+          "s": 175
+        }
+      ],
+      "total_frames": 10501,
+      "rng_end": {
+        "state": 1931707851,
+        "calls": 6462
+      }
+    },
+    {
+      "level_num": 4,
+      "level_file": "encoun4.rl2",
+      "route_input_sha256": "95D6FF6D6DC609568DCF5D99DCE6615074D87868DD356B47DA4C309256279777",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 1",
+          "s": 31
+        },
+        {
+          "n": "switch 2",
+          "s": 93
+        },
+        {
+          "n": "switch 3",
+          "s": 160
+        },
+        {
+          "n": "switch 4",
+          "s": 227
+        },
+        {
+          "n": "reactor",
+          "s": 279
+        },
+        {
+          "n": "exit",
+          "s": 303
+        }
+      ],
+      "total_frames": 18160,
+      "rng_end": {
+        "state": 4239663187,
+        "calls": 6198
+      }
+    },
+    {
+      "level_num": 5,
+      "level_file": "encoun5.rl2",
+      "route_input_sha256": "39E7480EC5C48E989F401DA1DA777EFB64B805A0D547CA61428CBC4F2F2AB5EB",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2058258651,
+        "calls": 46
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    }
+  ]
+}

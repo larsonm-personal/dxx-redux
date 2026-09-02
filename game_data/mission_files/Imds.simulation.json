@@ -1,0 +1,70 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "imds.MN2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 1,
+    "failed": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "Volcano.rl2",
+      "route_input_sha256": "42AFA19BDC454A58CD0EF5022B1A0DF9556323D57E334F12DE7943433208A843",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 0",
+          "s": 20
+        },
+        {
+          "n": "blue key",
+          "s": 46
+        }
+      ],
+      "total_frames": 2742,
+      "rng_end": {
+        "state": 1835933489,
+        "calls": 592
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": -1,
+      "level_file": "Secret.rl2",
+      "route_input_sha256": "91DC2E441069AF4E274A02F6A5D1B085F337FC36DA5BA676930D18DF5AFB9451",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 1",
+          "s": 11
+        },
+        {
+          "n": "reactor",
+          "s": 23
+        },
+        {
+          "n": "exit",
+          "s": 26
+        }
+      ],
+      "total_frames": 1563,
+      "rng_end": {
+        "state": 2822133894,
+        "calls": 417
+      }
+    }
+  ]
+}

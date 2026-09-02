@@ -1,0 +1,57 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "U3AAH.mn2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "timeout": 2
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "U3AAH.rl2",
+      "route_input_sha256": "AA1EF7F2CFCFE60566A1494E23DA3A0BAAFB4805CA020E0716F9F8126938C772",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 3937,
+      "rng_end": {
+        "state": 2144619499,
+        "calls": 798
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 2,
+      "level_file": "Vapobloc.rl2",
+      "route_input_sha256": "C06F18D53FBE9DBC696C8D25515107A3F943839028760E1B3582E19324958D45",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 6
+        },
+        {
+          "n": "hidden door",
+          "s": 13
+        }
+      ],
+      "total_frames": 14232,
+      "rng_end": {
+        "state": 4019657970,
+        "calls": 15685
+      },
+      "problem": "semantic objective repeated without route advancement"
+    }
+  ]
+}

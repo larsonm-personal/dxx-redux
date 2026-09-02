@@ -84,6 +84,7 @@ set(D2X_MAIN_SOURCES
     ../../android/app/src/main/cpp/shared/route_planner.cpp
     ../../android/app/src/main/cpp/shared/route_analysis_cache.c
     ../../android/app/src/main/cpp/shared/route_confirmation.cpp
+    ../../android/app/src/main/cpp/shared/route_confirmation_result.cpp
     ../../android/app/src/main/cpp/shared/guidebot_route_decision.c
     ../../android/app/src/main/cpp/shared/guidebot_route_certifier.c
     ../../android/app/src/main/cpp/shared/secretarea.c
@@ -179,6 +180,7 @@ if(NOT ANDROID)
 
     target_compile_features(dxx-redux-d2 PRIVATE cxx_std_11)
     target_sources(dxx-redux-d2 PRIVATE
+        ../../android/app/src/main/cpp/shared/route_confirmation_desktop.cpp
         ../../android/app/src/main/cpp/shared/input_demo_rng_mode.c
         ../../android/app/src/main/cpp/shared/input_demo_controls.cpp
         ../../android/app/src/main/cpp/shared/input_demo_fixture.cpp
@@ -188,6 +190,9 @@ if(NOT ANDROID)
         ../../android/app/src/main/cpp/shared/input_demo_recorder.cpp
         ../../android/app/src/main/cpp/shared/input_demo_replay.cpp
         ../../android/app/src/main/cpp/shared/input_demo_direct_command_policy.c)
+    target_compile_definitions(dxx-redux-d2 PRIVATE
+        DXX_GUIDEBOT_ROUTE_DESKTOP
+        DXX_GUIDEBOT_ROUTE_PLANNER)
     target_include_directories(dxx-redux-d2 PRIVATE ../../android/app/src/main/cpp/shared)
     target_link_libraries(dxx-redux-d2 PRIVATE nlohmann_json::nlohmann_json)
     target_link_libraries(dxx-redux-d2 PRIVATE ZLIB::ZLIB)

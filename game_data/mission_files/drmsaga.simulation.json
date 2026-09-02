@@ -1,0 +1,128 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "Drmsaga.mn2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "failed": 1,
+    "timeout": 4
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "drmtower.rl2",
+      "route_input_sha256": "F6AFC7900759779E0664B413EE5CE21F21FE96A6536A19E92ADBE8FB1696E057",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blastable wall",
+          "s": 12
+        }
+      ],
+      "total_frames": 757,
+      "rng_end": {
+        "state": 1456828036,
+        "calls": 339
+      },
+      "problem": "semantic objective repeated without route advancement"
+    },
+    {
+      "level_num": 2,
+      "level_file": "drmrvrt2.rl2",
+      "route_input_sha256": "36007DC396E4EBECADAFA8C752EFA22D60D2A86BAA901A557A2842C993F572EC",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "fly-through 3",
+          "s": 1
+        }
+      ],
+      "total_frames": 4797,
+      "rng_end": {
+        "state": 3926199050,
+        "calls": 397
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 3,
+      "level_file": "drmorcrn.rl2",
+      "route_input_sha256": "FA7778107657FD4D4BCF33DF631D5333889CB7D6A73F95BA2015583F91819863",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 51
+        },
+        {
+          "n": "gold key",
+          "s": 81
+        }
+      ],
+      "total_frames": 5867,
+      "rng_end": {
+        "state": 3514138965,
+        "calls": 1196
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 4,
+      "level_file": "area51.rl2",
+      "route_input_sha256": "F63CCBFB6677795D650DCA27503D74DF825F533442270FD0D03E5DC41FD16A52",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 541269159,
+        "calls": 66
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": -1,
+      "level_file": "ar51scrt.rl2",
+      "route_input_sha256": "A2AE27BAF19EC4EC2F10BC5E92D8EE99E4A3AC34F69A75C891C46573965B36A6",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 2",
+          "s": 7
+        },
+        {
+          "n": "boss",
+          "s": 10
+        }
+      ],
+      "total_frames": 639,
+      "rng_end": {
+        "state": 3682954967,
+        "calls": 786
+      },
+      "problem": "semantic objective repeated without route advancement"
+    }
+  ]
+}

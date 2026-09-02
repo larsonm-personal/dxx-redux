@@ -1,0 +1,172 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "KKR.MN2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "failed": 1,
+    "timeout": 4,
+    "unsupported": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "kk1.rl2",
+      "route_input_sha256": "39398B8234DB89D8C9B17A4DE433BCBB7E4A60A0B8091A7B1BD6E2E6F336DE22",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 12",
+          "s": 7
+        },
+        {
+          "n": "blue key",
+          "s": 26
+        },
+        {
+          "n": "switch 0",
+          "s": 36
+        },
+        {
+          "n": "fly-through 3",
+          "s": 42
+        },
+        {
+          "n": "switch 5",
+          "s": 46
+        },
+        {
+          "n": "red key",
+          "s": 56
+        },
+        {
+          "n": "switch 1",
+          "s": 62
+        },
+        {
+          "n": "boss",
+          "s": 123
+        }
+      ],
+      "total_frames": 7424,
+      "rng_end": {
+        "state": 3668115037,
+        "calls": 3044
+      },
+      "problem": "semantic objective repeated without route advancement"
+    },
+    {
+      "level_num": 2,
+      "level_file": "kk2.rl2",
+      "route_input_sha256": "03AABEE5470F4C6B49BE65B379ED3AA3B92AF22CD88704D783E7B7149F12D7B2",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 0",
+          "s": 13
+        },
+        {
+          "n": "switch 2",
+          "s": 17
+        },
+        {
+          "n": "blue key",
+          "s": 28
+        },
+        {
+          "n": "switch 6",
+          "s": 37
+        },
+        {
+          "n": "switch 5",
+          "s": 37
+        }
+      ],
+      "total_frames": 3444,
+      "rng_end": {
+        "state": 1310676484,
+        "calls": 979
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 3,
+      "level_file": "kk3.rl2",
+      "route_input_sha256": "D6851120B5DD0E27C15059320B129CF56C1BDF03C0F60F8B0735559EA0765F1E",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 835903122,
+        "calls": 37
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 4,
+      "level_file": "kk4.rl2",
+      "route_input_sha256": "27E1B24BDAE419A3235CCB646ACB7481B5C5C1534976D10DCC1848E14F8D99BE",
+      "status": "unsupported",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 1,
+        "calls": 0
+      },
+      "problem": "level has no active Guide-Bot verification actor"
+    },
+    {
+      "level_num": 5,
+      "level_file": "kk5.rl2",
+      "route_input_sha256": "0085C2296398A5911F7DCAFCF87E4F8D13265F19F0D6A9706EB2ABC0C25E2150",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4893,
+      "rng_end": {
+        "state": 153870853,
+        "calls": 636
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": -1,
+      "level_file": "secret1.rl2",
+      "route_input_sha256": "BDD2FAA9E018AB87BFB1EC4A622A5C98B303DFC393A981D49F4475E781CD2A9A",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 3688,
+      "rng_end": {
+        "state": 2122112351,
+        "calls": 138
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    }
+  ]
+}

@@ -1,0 +1,266 @@
+[
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "darkmatr.mn2",
+    "target_index": 0,
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "failed": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "darkmatr.rl2",
+        "route_input_sha256": "6A984CB517FA1D9D4BECBAC28CA9F459B173AFE5B0A8BBF5119392A027BB8D9E",
+        "status": "failed",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 0,
+        "rng_end": {
+          "state": 2058258651,
+          "calls": 46
+        },
+        "problem": "live Guide-Bot route has no actionable goal"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "pluton2.mn2",
+    "target_index": 1,
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "partial",
+    "level_counts": {
+      "ok": 2,
+      "failed": 3,
+      "timeout": 4
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "eliter.rl2",
+        "route_input_sha256": "13AE26C66A4647274E7337782C9662ECBC64E42A8E114017D0C01246C91A811F",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "pass-through 1",
+            "s": 0
+          },
+          {
+            "n": "blue key",
+            "s": 7
+          },
+          {
+            "n": "red key",
+            "s": 31
+          },
+          {
+            "n": "reactor",
+            "s": 42
+          },
+          {
+            "n": "exit",
+            "s": 46
+          }
+        ],
+        "total_frames": 2756,
+        "rng_end": {
+          "state": 3949664430,
+          "calls": 1689
+        }
+      },
+      {
+        "level_num": 2,
+        "level_file": "titan.rl2",
+        "route_input_sha256": "763DD41EC80BEFA41883DCF38192C86BC6F2136070B224EAFC2817D38BB997B5",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 1361,
+        "rng_end": {
+          "state": 1923026025,
+          "calls": 344
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      },
+      {
+        "level_num": 3,
+        "level_file": "ship4.rl2",
+        "route_input_sha256": "3C2F1C8D5B2AC01408458E46CD96B2BC8D6AD2613460287F9D19E9A6E34E2D7E",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 1571,
+        "rng_end": {
+          "state": 2709554285,
+          "calls": 852
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      },
+      {
+        "level_num": 4,
+        "level_file": "mam.rl2",
+        "route_input_sha256": "AC89678E4FB2851B2E5734A2CC371BCE2EC1BABB90A01EB2702942EEE523A34D",
+        "status": "failed",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 0,
+        "rng_end": {
+          "state": 1,
+          "calls": 0
+        },
+        "problem": "live Guide-Bot route has no actionable goal"
+      },
+      {
+        "level_num": 5,
+        "level_file": "shi5.rl2",
+        "route_input_sha256": "F2F3CF53DFDA163877BAD2836281D32B6F241C47E61C5D1C78BABE18510CEBCB",
+        "status": "failed",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 0,
+        "rng_end": {
+          "state": 1,
+          "calls": 0
+        },
+        "problem": "live Guide-Bot route has no actionable goal"
+      },
+      {
+        "level_num": 6,
+        "level_file": "asteroid.rl2",
+        "route_input_sha256": "66EF72F0B7D45D50AAA3D55E9D61A0C5AB9BA61DA3F66BD84D17CDB4B27F1618",
+        "status": "failed",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 0,
+        "rng_end": {
+          "state": 1,
+          "calls": 0
+        },
+        "problem": "live Guide-Bot route has no actionable goal"
+      },
+      {
+        "level_num": 7,
+        "level_file": "lucifer.rl2",
+        "route_input_sha256": "43B3D8F1BDB776E9C647FA2A58D6962DE196CC19C7C5BF9869FE8FABEE3CD032",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 2667,
+        "rng_end": {
+          "state": 2134449477,
+          "calls": 1340
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      },
+      {
+        "level_num": 8,
+        "level_file": "escape.rl2",
+        "route_input_sha256": "C09727A7C59A6E2631C0899AD3E8D8D4E36E0DC5D775230F9702C476D8B53E53",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "boss",
+            "s": 1
+          }
+        ],
+        "total_frames": 66,
+        "rng_end": {
+          "state": 3949672138,
+          "calls": 205
+        },
+        "problem": "semantic objective repeated without route advancement"
+      },
+      {
+        "level_num": -1,
+        "level_file": "mp.rl2",
+        "route_input_sha256": "FE1E8D364BB43668CE41F925926243A8B137F5AF9CCDD761A3FA138F982FCDB5",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 14
+          },
+          {
+            "n": "exit",
+            "s": 22
+          }
+        ],
+        "total_frames": 1327,
+        "rng_end": {
+          "state": 4194562402,
+          "calls": 405
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "space1.mn2",
+    "target_index": 2,
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "failed": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "van.rl2",
+        "route_input_sha256": "BD33979A234693C28E77DAD1EA4508626D185ED383CEAF053C2C74FE7E4DFCEB",
+        "status": "failed",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 0,
+        "rng_end": {
+          "state": 3172130721,
+          "calls": 352
+        },
+        "problem": "live Guide-Bot route has no actionable goal"
+      }
+    ]
+  }
+]

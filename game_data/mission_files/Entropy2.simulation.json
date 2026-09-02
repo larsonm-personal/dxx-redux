@@ -1,0 +1,148 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "ENTROPY2.MN2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "timeout": 6
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "e2v-1.rl2",
+      "route_input_sha256": "86FF4928A58EECC100EBB3001DF54E5FE34062FA3AEBCEAA512B256E92FF7AAB",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4122,
+      "rng_end": {
+        "state": 4178395768,
+        "calls": 303
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 2,
+      "level_file": "e2v-2.rl2",
+      "route_input_sha256": "668511F1DBDC207A1EF758C1197683BA32280EAB2566D20134ACF1523CAE5BE5",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "pass-through 4",
+          "s": 8
+        },
+        {
+          "n": "fly-through 5",
+          "s": 16
+        }
+      ],
+      "total_frames": 1740,
+      "rng_end": {
+        "state": 2760187110,
+        "calls": 705
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 3,
+      "level_file": "e2v-3.rl2",
+      "route_input_sha256": "DBB0EB3979BD0DF503856E58CA6D64C60142BA082D4C19E12CAF49402612F1C5",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 0",
+          "s": 0
+        },
+        {
+          "n": "boss",
+          "s": 3
+        }
+      ],
+      "total_frames": 214,
+      "rng_end": {
+        "state": 4047683572,
+        "calls": 291
+      },
+      "problem": "semantic objective repeated without route advancement"
+    },
+    {
+      "level_num": 4,
+      "level_file": "e2v-4.rl2",
+      "route_input_sha256": "745974C3168E25E11B2980BFFE70D24787CE838E18A13ED8520EA8DACF1B7AA7",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 0",
+          "s": 0
+        },
+        {
+          "n": "blastable wall",
+          "s": 25
+        }
+      ],
+      "total_frames": 1520,
+      "rng_end": {
+        "state": 2848809862,
+        "calls": 673
+      },
+      "problem": "semantic objective repeated without route advancement"
+    },
+    {
+      "level_num": 5,
+      "level_file": "e2v-5.rl2",
+      "route_input_sha256": "432EE48E6C1C82AF3C9082F49933ACEC927F504E4E62C48E08D5AC0DFBAA7E8A",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 5201,
+      "rng_end": {
+        "state": 3453706785,
+        "calls": 736
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 6,
+      "level_file": "e2v-6.rl2",
+      "route_input_sha256": "F3F1BF4DBE1AEFF96BD8A0160288FAA5DB3333AAB751122F9ECA882447E9C811",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "pass-through 13",
+          "s": 26
+        }
+      ],
+      "total_frames": 5788,
+      "rng_end": {
+        "state": 2002720982,
+        "calls": 657
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "KAK.MN2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "failed": 2,
+    "timeout": 2
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "toro_s.rl2",
+      "route_input_sha256": "4B4B2001F2B713B11C390565143841AC11463A5970418EC53AF6DB546E648F71",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 1",
+          "s": 17
+        }
+      ],
+      "total_frames": 4954,
+      "rng_end": {
+        "state": 3429849900,
+        "calls": 779
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 2,
+      "level_file": "fearon.rl2",
+      "route_input_sha256": "AA29AB32807316CC15BB99CD48057C7750AFFE5946D4668B3C0895E926D48302",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 1627576247,
+        "calls": 50
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 3,
+      "level_file": "deadmine.rl2",
+      "route_input_sha256": "5DEB30C961BD4E9261323DFAB8E33983C04A4BE1426453C2C6983AF57E130197",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 3012060019,
+        "calls": 278
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 4,
+      "level_file": "main_gen.rl2",
+      "route_input_sha256": "DEB69EA5856635D673600D3867E79953A70048CD3F090CAEC3E228A41F49CEE5",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "boss",
+          "s": 40
+        }
+      ],
+      "total_frames": 2436,
+      "rng_end": {
+        "state": 1460531239,
+        "calls": 1218
+      },
+      "problem": "semantic objective repeated without route advancement"
+    }
+  ]
+}

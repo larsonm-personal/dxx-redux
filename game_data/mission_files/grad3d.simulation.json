@@ -1,0 +1,152 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "GRADIUS.MN2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "timeout": 6
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "gradius1.rl2",
+      "route_input_sha256": "2164F1C1103BBD232BA2A044109323C8D6122B51DEAE7674C2FCBDF87EFD96AE",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4298,
+      "rng_end": {
+        "state": 2395636337,
+        "calls": 272
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 2,
+      "level_file": "gradius2.rl2",
+      "route_input_sha256": "A95E8B27BBC2FE1CC1986A969DBB6286B5EE354D91F6EACC475C311AA8F035D2",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 68
+        },
+        {
+          "n": "switch 1",
+          "s": 111
+        },
+        {
+          "n": "gold key",
+          "s": 128
+        }
+      ],
+      "total_frames": 9426,
+      "rng_end": {
+        "state": 602400160,
+        "calls": 2535
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 3,
+      "level_file": "aquatica.rl2",
+      "route_input_sha256": "3E491E121260718E07BF6215FF99D3F8C4292235CBC364576EF2F2F1859A8CC2",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 78
+        },
+        {
+          "n": "gold key",
+          "s": 194
+        }
+      ],
+      "total_frames": 16948,
+      "rng_end": {
+        "state": 3736456474,
+        "calls": 3773
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 4,
+      "level_file": "grnhouse.rl2",
+      "route_input_sha256": "65C101C13A97631E63BFE1207F91F49EEFD0271F5F5D59B8AFAE653567BE4246",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 35
+        }
+      ],
+      "total_frames": 6201,
+      "rng_end": {
+        "state": 428930093,
+        "calls": 1428
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 5,
+      "level_file": "ice.rl2",
+      "route_input_sha256": "9E9549297E6F19A398C83418A72E336FE14B451036AE23501CFDA885740E50B4",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 66
+        },
+        {
+          "n": "gold key",
+          "s": 142
+        }
+      ],
+      "total_frames": 10858,
+      "rng_end": {
+        "state": 3668876471,
+        "calls": 2866
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 6,
+      "level_file": "iwihml.rl2",
+      "route_input_sha256": "23D8E678735FF6B0BF851CA9A73AA5CFC0425F35F55AC3A5A15603AF98169201",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 9410,
+      "rng_end": {
+        "state": 1400661050,
+        "calls": 1565
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    }
+  ]
+}

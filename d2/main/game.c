@@ -79,6 +79,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "mission.h"
 #include "input_demo_debug_logging.h"
 #include "route_confirmation.h"
+#ifdef DXX_GUIDEBOT_ROUTE_DESKTOP
+#include "route_confirmation_desktop.h"
+#endif
 
 #include "multi.h"
 #include "cntrlcen.h"
@@ -1343,9 +1346,17 @@ int game_handler(window *wind, d_event *event, void *data)
 		case EVENT_IDLE:
 			if (input_demo_replay_is_loaded())
 				return 1;
+			#ifdef DXX_GUIDEBOT_ROUTE_DESKTOP
+			if (route_confirmation_desktop_is_active())
+				return 1;
+			#endif
 			return ReadControls(event);
 
 		case EVENT_KEY_COMMAND:
+			#ifdef DXX_GUIDEBOT_ROUTE_DESKTOP
+			if (route_confirmation_desktop_is_active())
+				return 1;
+			#endif
 			if (input_demo_replay_is_loaded()) {
 				int replay_key = event_key_get(event) & 0xFF;
 
@@ -1808,6 +1819,9 @@ void GameProcessFrame(void)
 
 	input_demo_debug_log_player_motion_state("exit");
 	route_confirmation_after_frame();
+#ifdef DXX_GUIDEBOT_ROUTE_DESKTOP
+	route_confirmation_desktop_after_frame();
+#endif
 
 #ifdef __ANDROID__
 	state_android_maybe_periodic_autosave();

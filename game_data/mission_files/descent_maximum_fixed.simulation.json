@@ -1,0 +1,1116 @@
+[
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "max_f.mn2",
+    "target_index": 0,
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "partial",
+    "level_counts": {
+      "ok": 7,
+      "failed": 1,
+      "timeout": 20,
+      "route_mismatch": 2
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "psx01.rl2",
+        "route_input_sha256": "9537C05D0A1DF9B6D77CB580A87FE46542547F3BD66E9C3325FEA3CB3C98A124",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "red key",
+            "s": 13
+          },
+          {
+            "n": "reactor",
+            "s": 30
+          },
+          {
+            "n": "exit",
+            "s": 34
+          }
+        ],
+        "total_frames": 2031,
+        "rng_end": {
+          "state": 3711619106,
+          "calls": 469
+        }
+      },
+      {
+        "level_num": 2,
+        "level_file": "psx02.rl2",
+        "route_input_sha256": "A5180C6BDF939CF38E3E82E8D5520F367FFCDA151ED7454929022111566B0B77",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 12
+          },
+          {
+            "n": "switch 1",
+            "s": 15
+          },
+          {
+            "n": "red key",
+            "s": 40
+          },
+          {
+            "n": "reactor",
+            "s": 57
+          },
+          {
+            "n": "exit",
+            "s": 60
+          }
+        ],
+        "total_frames": 3581,
+        "rng_end": {
+          "state": 1557948821,
+          "calls": 620
+        }
+      },
+      {
+        "level_num": 3,
+        "level_file": "psx03.rl2",
+        "route_input_sha256": "20747E48D4C514EB29878790DCD4ACACC4EE333AF757199EBC2364462C6E91F8",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 10
+          },
+          {
+            "n": "gold key",
+            "s": 30
+          },
+          {
+            "n": "red key",
+            "s": 58
+          },
+          {
+            "n": "reactor",
+            "s": 81
+          },
+          {
+            "n": "exit",
+            "s": 87
+          }
+        ],
+        "total_frames": 5204,
+        "rng_end": {
+          "state": 3494937857,
+          "calls": 768
+        }
+      },
+      {
+        "level_num": 4,
+        "level_file": "psx04.rl2",
+        "route_input_sha256": "DEA653D7DDEF3830DA41F8CC0A476093E4AA2E0F7361E0686662B9406A28D8F6",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 16
+          },
+          {
+            "n": "switch 1",
+            "s": 18
+          }
+        ],
+        "total_frames": 2144,
+        "rng_end": {
+          "state": 3536284836,
+          "calls": 179
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      },
+      {
+        "level_num": 5,
+        "level_file": "psx05.rl2",
+        "route_input_sha256": "B05EFEE773CC8660BB41EBA68F039C71485A64A24D3CA8DC7DB3E2F2A265218D",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 9
+          },
+          {
+            "n": "gold key",
+            "s": 35
+          }
+        ],
+        "total_frames": 4918,
+        "rng_end": {
+          "state": 2836888651,
+          "calls": 702
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      },
+      {
+        "level_num": 6,
+        "level_file": "psx06.rl2",
+        "route_input_sha256": "AC769A89C772C6596F531F8F5D6F61E3C6493BC731C9F4DAC52A8E3D965C691B",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 0",
+            "s": 13
+          },
+          {
+            "n": "blue key",
+            "s": 15
+          },
+          {
+            "n": "gold key",
+            "s": 32
+          }
+        ],
+        "total_frames": 3773,
+        "rng_end": {
+          "state": 3998796594,
+          "calls": 1029
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      },
+      {
+        "level_num": 7,
+        "level_file": "psx07.rl2",
+        "route_input_sha256": "122C84793853A45429C82F3CF8518845A1F7A88389901494F2D35B090CBB04F6",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 12
+          },
+          {
+            "n": "gold key",
+            "s": 46
+          }
+        ],
+        "total_frames": 4613,
+        "rng_end": {
+          "state": 1835933489,
+          "calls": 592
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      },
+      {
+        "level_num": 8,
+        "level_file": "psx08.rl2",
+        "route_input_sha256": "A8CE6F5BA3CA92284D327894FF0B28093ED157F7A718BC72E98A0953470F3F92",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 23
+          },
+          {
+            "n": "gold key",
+            "s": 63
+          },
+          {
+            "n": "switch 0",
+            "s": 71
+          }
+        ],
+        "total_frames": 4960,
+        "rng_end": {
+          "state": 3308648524,
+          "calls": 875
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      },
+      {
+        "level_num": 9,
+        "level_file": "psx09.rl2",
+        "route_input_sha256": "D50DC6A14F1A1FBC5EACAE50E18D2FAA05E7E2AAE4A890E7D98C983693957138",
+        "status": "route_mismatch",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "fly-through 10",
+            "s": 4
+          },
+          {
+            "n": "switch 6",
+            "s": 6
+          },
+          {
+            "n": "blue key",
+            "s": 9
+          },
+          {
+            "n": "switch 3",
+            "s": 9
+          },
+          {
+            "n": "gold key",
+            "s": 39
+          },
+          {
+            "n": "switch 0",
+            "s": 49
+          },
+          {
+            "n": "red key",
+            "s": 83
+          },
+          {
+            "n": "fly-through 8",
+            "s": 108
+          },
+          {
+            "n": "reactor",
+            "s": 110
+          },
+          {
+            "n": "exit",
+            "s": 119
+          }
+        ],
+        "total_frames": 7149,
+        "rng_end": {
+          "state": 3000572320,
+          "calls": 1511
+        },
+        "problem": "live objective sequence differs from route input"
+      },
+      {
+        "level_num": 10,
+        "level_file": "psx10.rl2",
+        "route_input_sha256": "A9CD251803F0B381DECB96E442D2169B62859F83681C9BCEBA0330BE1018472F",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 22
+          },
+          {
+            "n": "gold key",
+            "s": 63
+          }
+        ],
+        "total_frames": 5778,
+        "rng_end": {
+          "state": 565006067,
+          "calls": 1430
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      },
+      {
+        "level_num": 11,
+        "level_file": "psx11.rl2",
+        "route_input_sha256": "9489702DFF9729880A104BD5ADB2759081E72013385EF14DA5F514520C58B6B2",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 7",
+            "s": 2
+          }
+        ],
+        "total_frames": 962,
+        "rng_end": {
+          "state": 3545811950,
+          "calls": 89
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      },
+      {
+        "level_num": 12,
+        "level_file": "psx12.rl2",
+        "route_input_sha256": "FE1EC656813947F23103FFAD77D25BED15C50AF8471A81E09FE55568F4C5A731",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 1",
+            "s": 9
+          },
+          {
+            "n": "blue key",
+            "s": 22
+          },
+          {
+            "n": "switch 6",
+            "s": 22
+          },
+          {
+            "n": "switch 3",
+            "s": 22
+          },
+          {
+            "n": "gold key",
+            "s": 39
+          }
+        ],
+        "total_frames": 3399,
+        "rng_end": {
+          "state": 4138452763,
+          "calls": 494
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      },
+      {
+        "level_num": 13,
+        "level_file": "psx13.rl2",
+        "route_input_sha256": "CA0473D8AA0178856244E54D6C3047732243111B7B9DF0E86B9699989F30B5CE",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 10
+          }
+        ],
+        "total_frames": 1700,
+        "rng_end": {
+          "state": 43796357,
+          "calls": 252
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      },
+      {
+        "level_num": 14,
+        "level_file": "psx14.rl2",
+        "route_input_sha256": "C1BD96A223CFB9F259E46D302436ABA0EC0D380D74548CBCC64006F30EDC894D",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 21
+          },
+          {
+            "n": "gold key",
+            "s": 56
+          },
+          {
+            "n": "red key",
+            "s": 78
+          },
+          {
+            "n": "switch 3",
+            "s": 87
+          }
+        ],
+        "total_frames": 6812,
+        "rng_end": {
+          "state": 675639828,
+          "calls": 1155
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      },
+      {
+        "level_num": 15,
+        "level_file": "psx15.rl2",
+        "route_input_sha256": "82B7ABF9C66B4395B81B8E01B0A240F76DEC3B524C0696D9F42FE0E4A25B4D8D",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 1",
+            "s": 14
+          },
+          {
+            "n": "blue key",
+            "s": 23
+          },
+          {
+            "n": "gold key",
+            "s": 49
+          },
+          {
+            "n": "switch 0",
+            "s": 74
+          },
+          {
+            "n": "red key",
+            "s": 104
+          },
+          {
+            "n": "reactor",
+            "s": 110
+          },
+          {
+            "n": "exit",
+            "s": 118
+          }
+        ],
+        "total_frames": 7055,
+        "rng_end": {
+          "state": 3144035676,
+          "calls": 1307
+        }
+      },
+      {
+        "level_num": 16,
+        "level_file": "psx16.rl2",
+        "route_input_sha256": "4799F671B78B7B6AE1E6744C74F5148067ED009AF3B38423189A168FA9D29681",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 1",
+            "s": 21
+          },
+          {
+            "n": "switch 3",
+            "s": 37
+          },
+          {
+            "n": "switch 4",
+            "s": 42
+          },
+          {
+            "n": "boss",
+            "s": 59
+          }
+        ],
+        "total_frames": 3570,
+        "rng_end": {
+          "state": 66838317,
+          "calls": 660
+        },
+        "problem": "semantic objective repeated without route advancement"
+      },
+      {
+        "level_num": 17,
+        "level_file": "psx17.rl2",
+        "route_input_sha256": "4613EE6E91C7F61BE8AAAF7C5B34F4C27885A9CE5F0E1BA97249B0A4FEE5C7F5",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 0",
+            "s": 12
+          },
+          {
+            "n": "red key",
+            "s": 30
+          },
+          {
+            "n": "switch 12",
+            "s": 35
+          },
+          {
+            "n": "reactor",
+            "s": 75
+          },
+          {
+            "n": "exit",
+            "s": 116
+          }
+        ],
+        "total_frames": 6970,
+        "rng_end": {
+          "state": 3502149975,
+          "calls": 2194
+        }
+      },
+      {
+        "level_num": 18,
+        "level_file": "psx18.rl2",
+        "route_input_sha256": "EA4BF484912A57D1125F3F1E9E9406A5615A677F584E0B123E264197DE722B7A",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 3838,
+        "rng_end": {
+          "state": 3885567453,
+          "calls": 100
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      },
+      {
+        "level_num": 19,
+        "level_file": "psx19.rl2",
+        "route_input_sha256": "074881F5DA1C2B4758378ECC4E1D7E409AC402B6C07D6F82E35AAA542CE856CC",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 4955,
+        "rng_end": {
+          "state": 3102103705,
+          "calls": 168
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      },
+      {
+        "level_num": 20,
+        "level_file": "psx20.rl2",
+        "route_input_sha256": "5B720C78EC95B73D0D3D81E6C919849CCC996617E5BAF447C0EE8FF39F705A6D",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 3728,
+        "rng_end": {
+          "state": 2077067425,
+          "calls": 96
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      },
+      {
+        "level_num": 21,
+        "level_file": "psx21.rl2",
+        "route_input_sha256": "C1D8F85C15D24158DB445F5909AC4D660860FEDC3B068BCB095F70973CC0AE97",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 46
+          },
+          {
+            "n": "gold key",
+            "s": 73
+          }
+        ],
+        "total_frames": 6146,
+        "rng_end": {
+          "state": 1940439335,
+          "calls": 962
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      },
+      {
+        "level_num": 22,
+        "level_file": "psx22.rl2",
+        "route_input_sha256": "95C0FD9C776C64788F3CADCE8A30770B872F854CCFB61DA956664C1B4C01C1B0",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 17
+          },
+          {
+            "n": "blue key",
+            "s": 19
+          },
+          {
+            "n": "switch 24",
+            "s": 22
+          },
+          {
+            "n": "fly-through 6",
+            "s": 44
+          },
+          {
+            "n": "fly-through 2",
+            "s": 95
+          }
+        ],
+        "total_frames": 12477,
+        "rng_end": {
+          "state": 2265035884,
+          "calls": 2251
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      },
+      {
+        "level_num": 23,
+        "level_file": "psx23.rl2",
+        "route_input_sha256": "6F05CB14DC3BC81A359DDF1586139B094120EF7AE67B0F5E2F2581D1A7AC6A70",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 19
+          },
+          {
+            "n": "switch 1",
+            "s": 35
+          },
+          {
+            "n": "fly-through 2",
+            "s": 37
+          },
+          {
+            "n": "gold key",
+            "s": 58
+          }
+        ],
+        "total_frames": 4404,
+        "rng_end": {
+          "state": 2234146244,
+          "calls": 275
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      },
+      {
+        "level_num": 24,
+        "level_file": "psx24.rl2",
+        "route_input_sha256": "8F75EB7A8774EC983213F94DABFB1D7E6C08255F662FA730002282E71D347F89",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 24
+          },
+          {
+            "n": "switch 4",
+            "s": 44
+          },
+          {
+            "n": "gold key",
+            "s": 49
+          }
+        ],
+        "total_frames": 5038,
+        "rng_end": {
+          "state": 1823622174,
+          "calls": 1769
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      },
+      {
+        "level_num": -1,
+        "level_file": "psxs1a.rl2",
+        "route_input_sha256": "89AEAA0D467465B24F59CD502F833E3BD9E9188B6777AD746A133F4E1EE58D50",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 3868,
+        "rng_end": {
+          "state": 3871495338,
+          "calls": 109
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      },
+      {
+        "level_num": -2,
+        "level_file": "psxs2a.rl2",
+        "route_input_sha256": "C737AB1093CDDAECEDACDE6B6CC8A323416BD051A620C967045DDEA90377B0AA",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 2",
+            "s": 3
+          },
+          {
+            "n": "switch 3",
+            "s": 14
+          },
+          {
+            "n": "switch 4",
+            "s": 51
+          },
+          {
+            "n": "reactor",
+            "s": 81
+          },
+          {
+            "n": "exit",
+            "s": 86
+          }
+        ],
+        "total_frames": 5158,
+        "rng_end": {
+          "state": 1834109764,
+          "calls": 1427
+        }
+      },
+      {
+        "level_num": -3,
+        "level_file": "psxs3a.rl2",
+        "route_input_sha256": "225EE9AA01656FB4C51BD8DE44175395600F77F2DA15C0EB9F56AD2986BB7621",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 0",
+            "s": 11
+          },
+          {
+            "n": "switch 2",
+            "s": 17
+          },
+          {
+            "n": "switch 5",
+            "s": 47
+          },
+          {
+            "n": "switch 8",
+            "s": 74
+          },
+          {
+            "n": "switch 7",
+            "s": 83
+          },
+          {
+            "n": "reactor",
+            "s": 115
+          },
+          {
+            "n": "exit",
+            "s": 122
+          }
+        ],
+        "total_frames": 7341,
+        "rng_end": {
+          "state": 3340639529,
+          "calls": 1688
+        }
+      },
+      {
+        "level_num": -4,
+        "level_file": "psxs4a.rl2",
+        "route_input_sha256": "61C6A7819738D6F2A34D82D8940C769D651D98234B84347267FCB5D273C9E6BC",
+        "status": "route_mismatch",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 7",
+            "s": 5
+          },
+          {
+            "n": "switch 2",
+            "s": 13
+          },
+          {
+            "n": "fly-through 4",
+            "s": 15
+          },
+          {
+            "n": "switch 3",
+            "s": 15
+          },
+          {
+            "n": "switch 1",
+            "s": 27
+          },
+          {
+            "n": "switch 5",
+            "s": 28
+          },
+          {
+            "n": "reactor",
+            "s": 50
+          },
+          {
+            "n": "exit",
+            "s": 55
+          }
+        ],
+        "total_frames": 3279,
+        "rng_end": {
+          "state": 1416820665,
+          "calls": 648
+        },
+        "problem": "live objective sequence differs from route input"
+      },
+      {
+        "level_num": -5,
+        "level_file": "psxs5a.rl2",
+        "route_input_sha256": "0B274AAE8F72E5E25E7B7EBC15AE8B04AB9420802C165EB986F2760A414EEE4F",
+        "status": "failed",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 0,
+        "rng_end": {
+          "state": 3794901700,
+          "calls": 19
+        },
+        "problem": "live Guide-Bot route has no actionable goal"
+      },
+      {
+        "level_num": -6,
+        "level_file": "psxs6a.rl2",
+        "route_input_sha256": "0E65A33A5732A135EBD30FD69602CB56C1603B859F625B96267AE0EB3662E163",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 4",
+            "s": 14
+          },
+          {
+            "n": "switch 3",
+            "s": 28
+          }
+        ],
+        "total_frames": 6372,
+        "rng_end": {
+          "state": 1992798444,
+          "calls": 587
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "maxlnk_f.mn2",
+    "target_index": 1,
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "partial",
+    "level_counts": {
+      "ok": 5,
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "psxlink1.rl2",
+        "route_input_sha256": "0359B83CCADC469A2683002B608A8ED790D77E178A9E7E6CD8AA4BD38F9966D9",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 1",
+            "s": 2
+          },
+          {
+            "n": "reactor",
+            "s": 15
+          },
+          {
+            "n": "exit",
+            "s": 25
+          }
+        ],
+        "total_frames": 1527,
+        "rng_end": {
+          "state": 1809320643,
+          "calls": 454
+        }
+      },
+      {
+        "level_num": 2,
+        "level_file": "psxlink2.rl2",
+        "route_input_sha256": "4FF1380A9D893560B2ADFCAD65FDAFC57E39992D304E712119FD3F51329B669E",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 8",
+            "s": 7
+          },
+          {
+            "n": "reactor",
+            "s": 21
+          },
+          {
+            "n": "exit",
+            "s": 40
+          }
+        ],
+        "total_frames": 2422,
+        "rng_end": {
+          "state": 3339064652,
+          "calls": 619
+        }
+      },
+      {
+        "level_num": 3,
+        "level_file": "psxlink3.rl2",
+        "route_input_sha256": "6F29E461CE40C5864A4787E466EF3F474A7F48B37A126941409DA9930CDDA137",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "fly-through 3",
+            "s": 13
+          },
+          {
+            "n": "reactor",
+            "s": 14
+          },
+          {
+            "n": "exit",
+            "s": 31
+          }
+        ],
+        "total_frames": 1881,
+        "rng_end": {
+          "state": 1395459970,
+          "calls": 501
+        }
+      },
+      {
+        "level_num": 4,
+        "level_file": "psxlink4.rl2",
+        "route_input_sha256": "9EB4C4A9E5A58362279A46E7207B4B320F88B8244D6262D387FED1D4C7B7C51D",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 10
+          },
+          {
+            "n": "exit",
+            "s": 18
+          }
+        ],
+        "total_frames": 1054,
+        "rng_end": {
+          "state": 3768274707,
+          "calls": 374
+        }
+      },
+      {
+        "level_num": 5,
+        "level_file": "psxlink5.rl2",
+        "route_input_sha256": "00A57CE9A808DA9C572A8C36869B343C72D0CD2EB73959DE62DDCB0AAB6D7B4E",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 3640,
+        "rng_end": {
+          "state": 2029357497,
+          "calls": 136
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      },
+      {
+        "level_num": 6,
+        "level_file": "psxlink6.rl2",
+        "route_input_sha256": "E562C9F9760478A917E8AD7122D5BCB89242421AE1F402249EE9DB377CB86EBD",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 13
+          },
+          {
+            "n": "exit",
+            "s": 21
+          }
+        ],
+        "total_frames": 1266,
+        "rng_end": {
+          "state": 1758946598,
+          "calls": 897
+        }
+      }
+    ]
+  }
+]

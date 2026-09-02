@@ -2,17 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <fstream>
-#include <cmath>
 #include <string>
 
-#include <nlohmann/json.hpp>
 #include <physfs.h>
 #include <SDL.h>
 
 /* Include this before the legacy engine headers, some of which intentionally
  * change structure packing for on-disk formats. */
 #include "route_confirmation.h"
+#include "route_confirmation_result.h"
 
 extern "C" {
 #include "args.h"
@@ -26,9 +24,11 @@ extern "C" {
 #include "gr.h"
 #include "inferno.h"
 #include "input_demo_start.h"
+#include "level_metadata_scan.h"
 #include "maths.h"
 #include "messagebox.h"
 #include "mission.h"
+#include "newdemo.h"
 #include "physfsx.h"
 #include "piggy.h"
 #include "player.h"
@@ -166,62 +166,6 @@ int load_requested_mission(const char *requested, char *error,
 	return 0;
 }
 
-double fixed_seconds(int64_t ticks)
-{
-	const double seconds =
-	    static_cast<double>(ticks) / static_cast<double>(F1_0);
-	return std::round(seconds * 1000000.0) / 1000000.0;
-}
-
-nlohmann::ordered_json serialize_result(const route_confirmation_summary &summary,
-                                        const char *mission, int level)
-{
-	nlohmann::ordered_json result;
-	nlohmann::ordered_json objectives = nlohmann::ordered_json::array();
-	nlohmann::ordered_json objective_seconds = nlohmann::ordered_json::array();
-	result["schema"] = "dxx-guidebot-route-confirmation-v1";
-	result["mission"] = mission && *mission ? mission : "d2";
-	result["level"] = level;
-	result["status"] = route_confirmation_status_name(summary.status);
-	result["seed"] = summary.seed;
-	result["fixed_hz"] = summary.fixed_hz;
-	result["frames"] = summary.frame_count;
-	result["simulation_seconds"] = fixed_seconds(summary.elapsed_ticks);
-	result["rng_state"] = summary.rng_state;
-	result["rng_call_count"] = summary.rng_call_count;
-	result["radius"] = {
-		{ "player", summary.player_radius },
-		{ "guidebot", summary.guidebot_radius },
-		{ "effective", summary.effective_radius }
-	};
-	if (summary.problem[0])
-		result["problem"] = summary.problem;
-	for (int index = 0; index < summary.objective_count; ++index) {
-		const route_confirmation_objective_result &objective =
-		    summary.objectives[index];
-		nlohmann::ordered_json item;
-		item["route_step_index"] = objective.route_step_index;
-		item["kind"] = objective.kind;
-		item["activation_kind"] = objective.activation_kind;
-		item["label"] = objective.label;
-		item["frame"] = objective.completed_frame;
-		item["seconds"] = fixed_seconds(objective.completed_ticks);
-		objectives.push_back(item);
-		objective_seconds.push_back(fixed_seconds(objective.completed_ticks));
-	}
-	result["objectives"] = objectives;
-	if (summary.status == ROUTE_CONFIRMATION_CONFIRMED) {
-		result["route_confirmation"] = {
-			{ "status", "confirmed" },
-			{ "generation", 1 },
-			{ "seed", ROUTE_CONFIRMATION_CANONICAL_SEED },
-			{ "fixed_hz", ROUTE_CONFIRMATION_FIXED_HZ },
-			{ "objective_seconds", objective_seconds },
-			{ "total_seconds", fixed_seconds(summary.elapsed_ticks) }
-		};
-	}
-	return result;
-}
 } // namespace
 
 int main(int argc, char *argv[])
@@ -229,6 +173,7 @@ int main(int argc, char *argv[])
 	char error[256] = "";
 	const char *output = find_arg_value(argc, argv, "-route-confirm-json-out");
 	const char *mission = find_arg_value(argc, argv, "-mission");
+	const char *extra_dir = find_arg_value(argc, argv, "-extra-dir");
 	const char *level_text = find_arg_value(argc, argv, "-level");
 	int level = 0;
 	if (!output || !parse_level(level_text, &level)) {
@@ -238,10 +183,19 @@ int main(int argc, char *argv[])
 		        argc > 0 ? argv[0] : "dxx-redux-d2-headless-route");
 		return 1;
 	}
-	if (!init_headless_runtime(argc, argv, error, sizeof(error)) ||
-	    !load_requested_mission(mission, error, sizeof(error))) {
+	if (!init_headless_runtime(argc, argv, error, sizeof(error))) {
 		fprintf(stderr, "ROUTE-CONFIRM FAIL init %s\n",
 		        error[0] ? error : "runtime initialization failed");
+		return 1;
+	}
+	if (extra_dir && *extra_dir && !PHYSFS_addToSearchPath(extra_dir, 0)) {
+		fprintf(stderr, "ROUTE-CONFIRM FAIL could not mount extra dir %s\n",
+		        extra_dir);
+		return 1;
+	}
+	if (!load_requested_mission(mission, error, sizeof(error))) {
+		fprintf(stderr, "ROUTE-CONFIRM FAIL mission %s\n",
+		        error[0] ? error : "mission load failed");
 		return 1;
 	}
 	if ((level > 0 && level > Last_level) ||
@@ -256,7 +210,14 @@ int main(int argc, char *argv[])
 	d_rand_reset_stream_call_count(D_RNG_FX);
 	Difficulty_level = 2;
 	input_demo_set_skip_level_intro(1);
+	/* Secret-level startup normally opens a modal stars-screen message.  Mark
+	 * only the load itself as demo playback so the no-window executable takes
+	 * the existing noninteractive branch, then restore normal simulation. */
+	if (level < 0)
+		Newdemo_state = ND_STATE_PLAYBACK;
 	StartNewGame(level);
+	if (level < 0)
+		Newdemo_state = ND_STATE_NORMAL;
 	if (!route_confirmation_start()) {
 		fprintf(stderr, "ROUTE-CONFIRM FAIL start %s\n",
 		        route_confirmation_get_summary()->problem);
@@ -269,16 +230,9 @@ int main(int argc, char *argv[])
 	{
 		const route_confirmation_summary *summary =
 		    route_confirmation_get_summary();
-		std::ofstream stream(output);
-		if (!stream) {
-			fprintf(stderr, "ROUTE-CONFIRM FAIL could not open output %s\n",
-			        output);
-			return 1;
-		}
-		stream << serialize_result(*summary, mission, level).dump(2) << "\n";
-		if (!stream) {
-			fprintf(stderr, "ROUTE-CONFIRM FAIL could not write output %s\n",
-			        output);
+		if (!route_confirmation_write_json(output, mission, level, error,
+		                                   sizeof(error))) {
+			fprintf(stderr, "ROUTE-CONFIRM FAIL %s\n", error);
 			return 1;
 		}
 		printf("ROUTE-CONFIRM %s mission=%s level=%d frames=%u out=%s\n",

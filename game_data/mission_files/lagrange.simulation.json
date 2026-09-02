@@ -1,0 +1,57 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "LAGRANGE.MN2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "timeout": 2
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "lagrange.rl2",
+      "route_input_sha256": "F1D2AC7F5D70BDF45FB25987A8B926369AD89C4BBF3419A5C32A95447A399579",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 6
+        },
+        {
+          "n": "hidden door",
+          "s": 11
+        }
+      ],
+      "total_frames": 15155,
+      "rng_end": {
+        "state": 2944040588,
+        "calls": 6187
+      },
+      "problem": "semantic objective repeated without route advancement"
+    },
+    {
+      "level_num": 2,
+      "level_file": "roberts.rl2",
+      "route_input_sha256": "6AEB628F79E5BFF9C5338FFBA2416454DA1C48666D3825076990300355962D93",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 2271,
+      "rng_end": {
+        "state": 1151322306,
+        "calls": 437
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    }
+  ]
+}

@@ -1,0 +1,149 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "sanitati.mn2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 2,
+    "timeout": 2
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "eirefire.rl2",
+      "route_input_sha256": "04775EED5488F905F2195382E164C5659FD73382C13A5FE22BC997ABAE296C74",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "red key",
+          "s": 22
+        },
+        {
+          "n": "hidden door",
+          "s": 52
+        },
+        {
+          "n": "blue key",
+          "s": 58
+        },
+        {
+          "n": "reactor",
+          "s": 92
+        },
+        {
+          "n": "exit",
+          "s": 130
+        }
+      ],
+      "total_frames": 7773,
+      "rng_end": {
+        "state": 3822105863,
+        "calls": 3554
+      }
+    },
+    {
+      "level_num": 2,
+      "level_file": "rubidium.rl2",
+      "route_input_sha256": "6268BD0A8E16331E1A56512555C0964CDA90E634D96358952E52BCD671CDC5CA",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 1",
+          "s": 6
+        },
+        {
+          "n": "switch 10",
+          "s": 22
+        }
+      ],
+      "total_frames": 5960,
+      "rng_end": {
+        "state": 2893168165,
+        "calls": 2396
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 3,
+      "level_file": "verne.rl2",
+      "route_input_sha256": "BB1FB82A489D9821D3EE1FC02C8E64C0A95502BAEE15BB891432B16AADA9DDA5",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 19
+        },
+        {
+          "n": "gold key",
+          "s": 50
+        },
+        {
+          "n": "red key",
+          "s": 97
+        },
+        {
+          "n": "reactor",
+          "s": 135
+        },
+        {
+          "n": "exit",
+          "s": 142
+        }
+      ],
+      "total_frames": 8494,
+      "rng_end": {
+        "state": 1186396109,
+        "calls": 5364
+      }
+    },
+    {
+      "level_num": 4,
+      "level_file": "kega.rl2",
+      "route_input_sha256": "5D05AE8A5CA84C63E156259413BFBADF0F49987B2D47F6B288EDFF43E90550AD",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 48
+        },
+        {
+          "n": "hidden door",
+          "s": 64
+        },
+        {
+          "n": "hidden door",
+          "s": 66
+        },
+        {
+          "n": "hidden door",
+          "s": 70
+        }
+      ],
+      "total_frames": 8007,
+      "rng_end": {
+        "state": 986697615,
+        "calls": 2394
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    }
+  ]
+}

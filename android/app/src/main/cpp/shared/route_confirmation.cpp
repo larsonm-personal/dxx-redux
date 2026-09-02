@@ -16,6 +16,7 @@ extern "C" {
 #include "guidebot_extensions.h"
 #include "guidebot_route_internal.h"
 #include "inferno.h"
+#include "laser.h"
 #include "maths.h"
 #include "object.h"
 #include "player.h"
@@ -48,6 +49,7 @@ struct controller_state {
 	int target_objnum;
 	int target_seg;
 	int semantic_target_seg;
+	int frontier_wall_num;
 	vms_vector target_pos;
 	int target_pos_valid;
 	int previous_actor_seg;
@@ -56,12 +58,25 @@ struct controller_state {
 	unsigned int no_progress_frames;
 	unsigned int wait_frames;
 	unsigned int frontier_extension_count;
+	unsigned int duplicate_objective_count;
 	unsigned int frame_time_remainder;
 	int64_t carrier_armed_ticks;
+	int64_t next_flare_ticks;
 	fix best_distance;
 };
 
 controller_state State = {};
+
+void capture_rng_boundary(route_confirmation_rng_boundary *boundary)
+{
+	if (!boundary)
+		return;
+	d_rand_get_stream_state(D_RNG_SIM, &boundary->simulation.state);
+	boundary->simulation.call_count =
+	    d_rand_get_stream_call_count(D_RNG_SIM);
+	d_rand_get_stream_state(D_RNG_FX, &boundary->effects.state);
+	boundary->effects.call_count = d_rand_get_stream_call_count(D_RNG_FX);
+}
 
 int valid_object(int objnum)
 {
@@ -132,6 +147,7 @@ void remove_ordinary_robots(void)
 
 void fail(int status, const char *problem)
 {
+	capture_rng_boundary(&State.summary.rng_end);
 	State.summary.status = status;
 	snprintf(State.summary.problem, sizeof(State.summary.problem), "%s",
 	         problem ? problem : "route confirmation failed");
@@ -143,6 +159,7 @@ void set_target_position(const level_metadata_route_step &step)
 	State.target_pos_valid = 0;
 	State.target_objnum = -1;
 	State.target_seg = State.goal.target_seg;
+	State.frontier_wall_num = -1;
 
 	if (step.activation_kind ==
 	    LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_KEY_CARRIER) {
@@ -427,9 +444,9 @@ int extend_current_goal_from_frontier(void)
 		fail(ROUTE_CONFIRMATION_FAILED, "Guide-Bot object is no longer valid");
 		return 0;
 	}
-	if (++State.frontier_extension_count > 12) {
+	if (++State.frontier_extension_count >= 8) {
 		fail(ROUTE_CONFIRMATION_TIMEOUT,
-		     "physical route frontier did not open after 12 interaction attempts");
+		     "physical route frontier did not open after 8 interaction attempts");
 		return 0;
 	}
 	actor = &Objects[State.actor_objnum];
@@ -454,6 +471,19 @@ int extend_current_goal_from_frontier(void)
 		State.wait_frames = 0;
 		State.best_distance =
 		    vm_vec_dist_quick(&actor->pos, &State.target_pos);
+		return 1;
+	}
+	/* Door and trigger animation gets a chance to settle every frame.  A full
+	 * live metadata refresh is only needed periodically while the same physical
+	 * frontier remains closed; rebuilding it every simulated second can exhaust
+	 * the legacy Guide-Bot planner's shared path workspace. */
+	if (State.frontier_extension_count > 1 &&
+	    State.frontier_extension_count != 4 &&
+	    State.frontier_extension_count != 8) {
+		vm_vec_zero(&actor->mtype.phys_info.velocity);
+		vm_vec_zero(&actor->mtype.phys_info.thrust);
+		State.no_progress_frames = 0;
+		State.wait_frames = 0;
 		return 1;
 	}
 	if (!level_metadata_prepare_guidebot_path_view(State.actor_objnum)) {
@@ -491,11 +521,17 @@ int extend_current_goal_from_frontier(void)
 		     "frontier extension has no valid physical target segment");
 		return 0;
 	}
-	create_guidebot_route_path_to_segment(actor, State.target_seg,
-	                                      Max_escort_length, 1);
+	/* A closed one-sided frontier can legitimately leave the actor in the same
+	 * physical target segment for several interaction retries.  Rebuilding a
+	 * zero-length Guide-Bot path each second needlessly consumes the shared path
+	 * pool and eventually corrupts it. */
+	if (actor->segnum != State.target_seg) {
+		create_guidebot_route_path_to_segment(actor, State.target_seg,
+		                                      Max_escort_length, 1);
+		refine_last_path_point(actor);
+	}
 	actor->ctype.ai_info.SKIP_AI_COUNT = 0;
 	Ai_local_info[State.actor_objnum].mode = AIM_GOTO_OBJECT;
-	refine_last_path_point(actor);
 	if (actor->segnum != State.target_seg &&
 	    actor->ctype.ai_info.path_length <= 0) {
 		fail(ROUTE_CONFIRMATION_FAILED,
@@ -599,6 +635,25 @@ int actor_swept_contacted_object(const object *actor, const object *target)
 void record_objective_and_replan(void)
 {
 	route_confirmation_objective_result *result;
+	for (int index = 0; index < State.summary.objective_count; ++index) {
+		const route_confirmation_objective_result *completed =
+		    &State.summary.objectives[index];
+		if (completed->route_step_index ==
+		        State.summary.current_route_step_index &&
+		    completed->kind == State.step.kind &&
+		    completed->activation_kind == State.step.activation_kind) {
+			/* Restorer triggers can reactivate an already completed semantic
+			 * step while later prerequisites are being resolved.  Execute and
+			 * replan it, but keep one timing entry per authored objective. */
+			if (++State.duplicate_objective_count > 32)
+				fail(ROUTE_CONFIRMATION_TIMEOUT,
+				     "semantic objective repeated without route advancement");
+			else
+				prepare_next_goal();
+			return;
+		}
+	}
+	State.duplicate_objective_count = 0;
 	if (State.summary.objective_count >= ROUTE_CONFIRMATION_MAX_OBJECTIVES) {
 		fail(ROUTE_CONFIRMATION_FAILED, "route objective result capacity exceeded");
 		return;
@@ -617,9 +672,8 @@ void record_objective_and_replan(void)
 	        result->route_step_index, result->completed_frame,
 	        (long long) result->completed_ticks, result->label);
 #endif
-	d_rand_get_state(&State.summary.rng_state);
-	State.summary.rng_call_count = d_rand_get_call_count();
 	if (State.step.kind == LEVEL_METADATA_ROUTE_EXIT) {
+		capture_rng_boundary(&State.summary.rng_end);
 		State.summary.status = ROUTE_CONFIRMATION_CONFIRMED;
 		State.phase = PHASE_IDLE;
 		return;
@@ -659,6 +713,137 @@ void shoot_path_door(object *actor)
 		                 Player_num, ConsoleObject);
 }
 
+int wall_accepts_route_flare(int wall_num)
+{
+	const wall *wallp;
+	if (wall_num < 0 || wall_num >= Num_walls)
+		return 0;
+	wallp = &Walls[wall_num];
+	if (wallp->type == WALL_BLASTABLE)
+		return !(wallp->flags & WALL_BLASTED);
+	if (wallp->type != WALL_DOOR || wallp->state != WALL_DOOR_CLOSED ||
+	    (wallp->flags & WALL_DOOR_LOCKED) ||
+	    wallp->clip_num < 0 || wallp->clip_num >= Num_wall_anims ||
+	    (WallAnims[wallp->clip_num].flags & WCF_HIDDEN))
+		return 0;
+	return wallp->keys == KEY_NONE ||
+	       (wallp->keys & Players[Player_num].flags);
+}
+
+int set_visible_flare_target(const object *actor, int segnum, int sidenum,
+                             vms_vector *direction)
+{
+	fvi_query query = {};
+	fvi_info hit = {};
+	vms_vector start;
+	vms_vector target;
+	vms_vector end;
+	int fate;
+	if (!actor || !direction || segnum < 0 || segnum >= Num_segments ||
+	    sidenum < 0 || sidenum >= MAX_SIDES_PER_SEGMENT)
+		return 0;
+	compute_center_point_on_side(&target, &Segments[segnum], sidenum);
+	vm_vec_sub(direction, &target, &actor->pos);
+	if (!vm_vec_normalize_quick(direction))
+		return 0;
+	start = actor->pos;
+	end = target;
+	vm_vec_scale_add2(&end, direction, F1_0);
+	query.p0 = &start;
+	query.p1 = &end;
+	query.startseg = actor->segnum;
+	query.rad = 0;
+	query.thisobjnum = (short) (actor - Objects);
+	query.flags = FQ_IGNORE_POWERUPS;
+	fate = find_vector_intersection(&query, &hit);
+	return fate == HIT_WALL && hit.hit_side_seg == segnum &&
+	       hit.hit_side == sidenum;
+}
+
+int find_route_flare_target(object *actor, int *segnum, int *sidenum,
+                            int *wall_num, vms_vector *direction)
+{
+	ai_static *aip;
+	int previous_seg;
+	if (!actor || !segnum || !sidenum || !wall_num || !direction)
+		return 0;
+	aip = &actor->ctype.ai_info;
+	previous_seg = actor->segnum;
+	for (int lookahead = 0; aip->hide_index >= 0 && lookahead < 3;
+	     ++lookahead) {
+		const int path_offset =
+		    aip->cur_path_index + (lookahead + 1) * aip->PATH_DIR;
+		const int path_index = aip->hide_index + path_offset;
+		int side;
+		if (path_offset < 0 || path_offset >= aip->path_length)
+			break;
+		const int next_seg = Point_segs[path_index].segnum;
+		if (next_seg == previous_seg)
+			continue;
+		side = find_connect_side(&Segments[next_seg], &Segments[previous_seg]);
+		if (side >= 0) {
+			const int candidate_wall =
+			    Segments[previous_seg].sides[side].wall_num;
+			if (wall_accepts_route_flare(candidate_wall) &&
+			    set_visible_flare_target(actor, previous_seg, side,
+			                             direction)) {
+				*segnum = previous_seg;
+				*sidenum = side;
+				*wall_num = candidate_wall;
+				return 1;
+			}
+		}
+		previous_seg = next_seg;
+	}
+	if (State.target_seg != State.semantic_target_seg &&
+	    actor->segnum == State.target_seg) {
+		for (int side = 0; side < MAX_SIDES_PER_SEGMENT; ++side) {
+			const int candidate_wall =
+			    Segments[actor->segnum].sides[side].wall_num;
+			if (Escort_route_goal.frontier_player_keyed_door &&
+			    candidate_wall >= 0 && candidate_wall < Num_walls &&
+			    Walls[candidate_wall].keys == KEY_NONE)
+				continue;
+			if (wall_accepts_route_flare(candidate_wall) &&
+			    set_visible_flare_target(actor, actor->segnum, side,
+			                             direction)) {
+				*segnum = actor->segnum;
+				*sidenum = side;
+				*wall_num = candidate_wall;
+				State.frontier_wall_num = candidate_wall;
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+void fire_path_flare(object *actor)
+{
+	int segnum;
+	int sidenum;
+	int wall_num;
+	vms_vector direction;
+	if (!actor || State.summary.elapsed_ticks < State.next_flare_ticks ||
+	    !find_route_flare_target(actor, &segnum, &sidenum, &wall_num,
+	                             &direction))
+		return;
+	Laser_create_new_easy(&direction, &actor->pos,
+	                      (int) (actor - Objects), FLARE_ID, 1);
+	State.next_flare_ticks = State.summary.elapsed_ticks + F1_0 / 2;
+#if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	fprintf(stderr,
+	        "ROUTE-CONFIRM flare wall=%d seg=%d side=%d actor_seg=%d\n",
+	        wall_num, segnum, sidenum, actor->segnum);
+#endif
+}
+
+void speed_up_actor(object *actor)
+{
+	if (actor)
+		vm_vec_scale(&actor->mtype.phys_info.velocity, 8 * F1_0 / 5);
+}
+
 void shoot_frontier_door(object *actor)
 {
 	if (!actor || State.target_seg == State.semantic_target_seg ||
@@ -679,6 +864,19 @@ void shoot_frontier_door(object *actor)
 		wall_hit_process(&Segments[actor->segnum], side, i2f(1000),
 		                 Player_num, ConsoleObject);
 	}
+}
+
+int frontier_door_is_opening(void)
+{
+	const wall *wallp;
+	if (State.frontier_wall_num < 0 ||
+	    State.frontier_wall_num >= Num_walls)
+		return 0;
+	wallp = &Walls[State.frontier_wall_num];
+	return wallp->type == WALL_OPEN ||
+	       (wallp->flags & (WALL_BLASTED | WALL_DOOR_OPENED)) ||
+	       wallp->state == WALL_DOOR_OPENING ||
+	       wallp->state == WALL_DOOR_CLOAKING;
 }
 
 void apply_objective_action(object *actor)
@@ -825,6 +1023,8 @@ extern "C" int route_confirmation_start(void)
 	d_srand_stream(D_RNG_FX, ROUTE_CONFIRMATION_CANONICAL_SEED);
 	d_rand_reset_stream_call_count(D_RNG_SIM);
 	d_rand_reset_stream_call_count(D_RNG_FX);
+	capture_rng_boundary(&State.summary.rng_start);
+	State.summary.rng_end = State.summary.rng_start;
 	game_set_d_tick_state(&tick_state);
 	Difficulty_level = 2;
 	if (Game_mode != GM_NORMAL) {
@@ -840,6 +1040,11 @@ extern "C" int route_confirmation_start(void)
 	}
 	State.actor_objnum = Buddy_objnum;
 	actor = &Objects[State.actor_objnum];
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_DESKTOP)
+	/* Manual headed confirmation watches from the simulated actor so the
+	 * visible game follows the route instead of remaining at player start. */
+	Viewer = actor;
+#endif
 	/* Headed automation can start several presentation frames after level load.
 	 * Always begin from the authored player start, not the player's incidental
 	 * gravity-adjusted position at the instant the command was dispatched. */
@@ -889,8 +1094,11 @@ extern "C" void route_confirmation_before_frame(void)
 	if (reactor_countdown_is_active() && !Reactor_countdown_paused)
 		reactor_countdown_set_paused(1, Countdown_timer);
 	if (valid_object(State.actor_objnum))
+		fire_path_flare(&Objects[State.actor_objnum]);
+	if (valid_object(State.actor_objnum))
 		shoot_path_door(&Objects[State.actor_objnum]);
 	if (valid_object(State.actor_objnum) &&
+	    State.wait_frames == 0 &&
 	    actor_reached_target(&Objects[State.actor_objnum]))
 		shoot_frontier_door(&Objects[State.actor_objnum]);
 }
@@ -903,9 +1111,9 @@ extern "C" void route_confirmation_after_frame(void)
 		return;
 	State.summary.frame_count++;
 	State.summary.elapsed_ticks += FrameTime;
-	if (State.summary.frame_count > 360000) {
+	if (State.summary.frame_count > ROUTE_CONFIRMATION_FIXED_HZ * 600) {
 		fail(ROUTE_CONFIRMATION_TIMEOUT,
-		     "route confirmation exceeded the total frame budget");
+		     "route confirmation exceeded 10 simulation minutes");
 		return;
 	}
 	if (!valid_object(State.actor_objnum)) {
@@ -972,10 +1180,14 @@ extern "C" void route_confirmation_after_frame(void)
 	if (State.summary.status == ROUTE_CONFIRMATION_RUNNING &&
 	    actor_reached_target(actor) &&
 	    State.target_seg != State.semantic_target_seg) {
-		vm_vec_zero(&actor->mtype.phys_info.velocity);
-		vm_vec_zero(&actor->mtype.phys_info.thrust);
-		if (++State.wait_frames >= ROUTE_CONFIRMATION_FIXED_HZ)
+		if (frontier_door_is_opening())
 			extend_current_goal_from_frontier();
+		else {
+			vm_vec_zero(&actor->mtype.phys_info.velocity);
+			vm_vec_zero(&actor->mtype.phys_info.thrust);
+			if (++State.wait_frames >= ROUTE_CONFIRMATION_FIXED_HZ)
+				extend_current_goal_from_frontier();
+		}
 	}
 	if (State.summary.status == ROUTE_CONFIRMATION_RUNNING)
 		State.previous_actor_seg = actor->segnum;
@@ -1010,11 +1222,13 @@ extern "C" int route_confirmation_drive_companion(object *objp)
 	    objp->ctype.ai_info.cur_path_index >=
 	        objp->ctype.ai_info.path_length - 1) {
 		ai_path_set_orient_and_vel(objp, &State.target_pos, 2, NULL);
+		speed_up_actor(objp);
 		return 1;
 	}
 	objp->ctype.ai_info.SKIP_AI_COUNT = 0;
 	Ai_local_info[State.actor_objnum].mode = AIM_GOTO_OBJECT;
 	ai_follow_path(objp, 2, 2, NULL);
+	speed_up_actor(objp);
 	return 1;
 }
 

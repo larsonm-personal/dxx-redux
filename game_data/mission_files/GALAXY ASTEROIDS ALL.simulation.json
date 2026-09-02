@@ -1,0 +1,234 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "GSTROIDS.MN2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 2,
+    "failed": 1,
+    "timeout": 4
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "EROS01.RL2",
+      "route_input_sha256": "9FAC836CA0A9FEA9BBB01C842C7B87967F1E85F0F926D08AE005EB0BFAEA1F26",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 25
+        },
+        {
+          "n": "gold key",
+          "s": 57
+        }
+      ],
+      "total_frames": 4688,
+      "rng_end": {
+        "state": 2135432520,
+        "calls": 799
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 2,
+      "level_file": "ICARUS02.RL2",
+      "route_input_sha256": "66ABAEECEA63C2482D40BDD1F2F2196EC964238315288161E49F5401F367191A",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 46
+        },
+        {
+          "n": "blue key",
+          "s": 47
+        },
+        {
+          "n": "gold key",
+          "s": 117
+        },
+        {
+          "n": "switch 3",
+          "s": 240
+        },
+        {
+          "n": "red key",
+          "s": 311
+        },
+        {
+          "n": "boss",
+          "s": 433
+        },
+        {
+          "n": "exit",
+          "s": 524
+        }
+      ],
+      "total_frames": 31422,
+      "rng_end": {
+        "state": 2857101049,
+        "calls": 11592
+      }
+    },
+    {
+      "level_num": 3,
+      "level_file": "JUNO03.RL2",
+      "route_input_sha256": "532C12AFD7EE09D53FD167D5E897AE4B2F55787CD0FD2294C1ECFAC7D5823C6C",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 50
+        },
+        {
+          "n": "blue key",
+          "s": 54
+        },
+        {
+          "n": "gold key",
+          "s": 115
+        },
+        {
+          "n": "red key",
+          "s": 220
+        },
+        {
+          "n": "reactor",
+          "s": 315
+        },
+        {
+          "n": "exit",
+          "s": 397
+        }
+      ],
+      "total_frames": 23836,
+      "rng_end": {
+        "state": 2719589668,
+        "calls": 7731
+      }
+    },
+    {
+      "level_num": 4,
+      "level_file": "VESTA04.RL2",
+      "route_input_sha256": "319513900C4CA30C1BFC586269BAD8E923972A4C1E467696D39941C2EF1E7F5C",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 22",
+          "s": 41
+        },
+        {
+          "n": "blue key",
+          "s": 44
+        },
+        {
+          "n": "gold key",
+          "s": 109
+        },
+        {
+          "n": "switch 24",
+          "s": 126
+        }
+      ],
+      "total_frames": 9907,
+      "rng_end": {
+        "state": 3264987429,
+        "calls": 3676
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 5,
+      "level_file": "PSYCHE5D.RL2",
+      "route_input_sha256": "43084A38A647E9FDA836FC8229E75E4DA8D192F8057DD45BFF2E694B42175D01",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 2",
+          "s": 12
+        },
+        {
+          "n": "hidden door",
+          "s": 14
+        },
+        {
+          "n": "fly-through 5",
+          "s": 24
+        },
+        {
+          "n": "fly-through 0",
+          "s": 74
+        },
+        {
+          "n": "blue key",
+          "s": 155
+        }
+      ],
+      "total_frames": 13072,
+      "rng_end": {
+        "state": 1469258790,
+        "calls": 2177
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 6,
+      "level_file": "HYGEIA6B.RL2",
+      "route_input_sha256": "5D0B1390850F9D812B4B77C4142E90A34E9EA100020B576EA65B282DF5B52AAB",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 1,
+        "calls": 0
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": -1,
+      "level_file": "PSYCHE5S.RL2",
+      "route_input_sha256": "30A2B3F423B94285267851A7C3339A7A2BB3AF56264F295B0A38BDD9869C4C74",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 3888,
+      "rng_end": {
+        "state": 924723277,
+        "calls": 116
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    }
+  ]
+}

@@ -1,0 +1,122 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "KCXF2.MN2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "failed": 1,
+    "timeout": 4
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "kcxf201.rl2",
+      "route_input_sha256": "CC76AA757B72FCBE824507F660287D48318275904E4F5A54311FD7060B81E8DB",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "fly-through 1",
+          "s": 61
+        },
+        {
+          "n": "blastable wall",
+          "s": 77
+        }
+      ],
+      "total_frames": 4643,
+      "rng_end": {
+        "state": 2411544559,
+        "calls": 762
+      },
+      "problem": "semantic objective repeated without route advancement"
+    },
+    {
+      "level_num": 2,
+      "level_file": "kcxf202.rl2",
+      "route_input_sha256": "F46DC55E3BDA2883E53CF9F0C737F0E9450E1DEF40B2959A12AC0ACE3758C0F7",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 6383,
+      "rng_end": {
+        "state": 1474561927,
+        "calls": 866
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 3,
+      "level_file": "kcxf203.rl2",
+      "route_input_sha256": "22A48079675B55745F13B3C47AC08F11ACC8B88A1EB919F94DD1939122F06C5D",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "fly-through 0",
+          "s": 34
+        },
+        {
+          "n": "switch 2",
+          "s": 44
+        },
+        {
+          "n": "switch 3",
+          "s": 73
+        }
+      ],
+      "total_frames": 10167,
+      "rng_end": {
+        "state": 1075938638,
+        "calls": 1145
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 4,
+      "level_file": "kcxf204.rl2",
+      "route_input_sha256": "A8FD360FF680775DA4E2FAC7A921F384A29905689DD7380F1039E66AA1E97DE9",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 1,
+        "calls": 0
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 5,
+      "level_file": "kcxf205.rl2",
+      "route_input_sha256": "5E9FAA1EF1983DCA03FBECB343063971CD6A19F4C567D1157ADB6033A7A699C5",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 6622,
+      "rng_end": {
+        "state": 1187025327,
+        "calls": 1338
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "TT.MN2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "timeout": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "TT.rl2",
+      "route_input_sha256": "AE48832238DEA665FE881DDC414D37B489799C1D2B01E04ECCAEDCBF498BDDDC",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 0",
+          "s": 26
+        },
+        {
+          "n": "gold key",
+          "s": 42
+        }
+      ],
+      "total_frames": 7707,
+      "rng_end": {
+        "state": 2036597667,
+        "calls": 1254
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    }
+  ]
+}

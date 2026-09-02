@@ -1,0 +1,177 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "revdrav2.mn2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 2,
+    "timeout": 4
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "2drav1.rl2",
+      "route_input_sha256": "D5875AD4215D341B3A6DAF4667253B8F63F6F104F6FAE8C3F35BD0E044E48211",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 21
+        },
+        {
+          "n": "reactor",
+          "s": 59
+        },
+        {
+          "n": "exit",
+          "s": 76
+        }
+      ],
+      "total_frames": 4582,
+      "rng_end": {
+        "state": 1591783502,
+        "calls": 1401
+      }
+    },
+    {
+      "level_num": 2,
+      "level_file": "2drav2.rl2",
+      "route_input_sha256": "FC4827A35AA81F62B46EC87ECB1736F4D5DCB3DBDE336A529102C16B00D769E3",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 31
+        },
+        {
+          "n": "gold key",
+          "s": 76
+        }
+      ],
+      "total_frames": 6002,
+      "rng_end": {
+        "state": 4099008512,
+        "calls": 1543
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 3,
+      "level_file": "2drav3.rl2",
+      "route_input_sha256": "F224C76B2F9311BF9B50D3E9B6345B106642A80FD5218AAE0BD63150F992D1EF",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 0",
+          "s": 31
+        },
+        {
+          "n": "blue key",
+          "s": 33
+        },
+        {
+          "n": "gold key",
+          "s": 60
+        }
+      ],
+      "total_frames": 4802,
+      "rng_end": {
+        "state": 1410849802,
+        "calls": 1165
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 4,
+      "level_file": "2drav4.rl2",
+      "route_input_sha256": "953EDF94E0DCADDB0C00E3217E9B8B650550398294455A82640DAE0344C924DD",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "red key",
+          "s": 30
+        },
+        {
+          "n": "gold key",
+          "s": 66
+        }
+      ],
+      "total_frames": 6406,
+      "rng_end": {
+        "state": 3135950983,
+        "calls": 2658
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 5,
+      "level_file": "2drav5.rl2",
+      "route_input_sha256": "5B4996EB4223F966FB2A9F1804118C5C0C21130679690A864272FC0C2D316B5B",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 18
+        },
+        {
+          "n": "gold key",
+          "s": 77
+        }
+      ],
+      "total_frames": 8612,
+      "rng_end": {
+        "state": 4233227405,
+        "calls": 2612
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": -1,
+      "level_file": "2dravs1.rl2",
+      "route_input_sha256": "40D458B8384A5B64F9CB19F6F9ABD9A9AD0BB7A682A02E7080B8CF2FD09BCEB6",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "reactor",
+          "s": 24
+        },
+        {
+          "n": "exit",
+          "s": 32
+        }
+      ],
+      "total_frames": 1890,
+      "rng_end": {
+        "state": 4203085098,
+        "calls": 493
+      }
+    }
+  ]
+}

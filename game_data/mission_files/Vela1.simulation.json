@@ -1,0 +1,78 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "vela.mn2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "timeout": 2
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "level01.rl2",
+      "route_input_sha256": "3AE7B8F9CFA3A8053240233091E35537698895283C13091C6D614AD3D1439065",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 21
+        },
+        {
+          "n": "switch 28",
+          "s": 44
+        },
+        {
+          "n": "gold key",
+          "s": 60
+        },
+        {
+          "n": "switch 29",
+          "s": 67
+        }
+      ],
+      "total_frames": 5282,
+      "rng_end": {
+        "state": 1804597305,
+        "calls": 1544
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 2,
+      "level_file": "level02.rl2",
+      "route_input_sha256": "46BB5E3CC4C639AA45DB7587E0CA62FD670C6A2FF08ECAE57C0C9A795856DE46",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 10
+        },
+        {
+          "n": "switch 8",
+          "s": 28
+        },
+        {
+          "n": "gold key",
+          "s": 43
+        }
+      ],
+      "total_frames": 3617,
+      "rng_end": {
+        "state": 3998796594,
+        "calls": 1029
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    }
+  ]
+}

@@ -1,0 +1,156 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "KCXF2RM.mn2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 1,
+    "failed": 3,
+    "timeout": 3,
+    "unsupported": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "kcxf2_n1.rl2",
+      "route_input_sha256": "B6B74AB465EE4746728FA52508F2BCCD97992E80430B371ECF681E790152F847",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 3601,
+      "rng_end": {
+        "state": 4291593908,
+        "calls": 867
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 2,
+      "level_file": "kcxf2_n2.rl2",
+      "route_input_sha256": "D3019F37FD613196284332EED519BB0B89F49B95D1365A968EC3DC69505289C5",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 6649,
+      "rng_end": {
+        "state": 1243781576,
+        "calls": 1183
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 3,
+      "level_file": "kcxf2_n3.rl2",
+      "route_input_sha256": "441394D8E53576547924EFE5DA0F81D6D2FDE7EDD7C12F501F5D5238A91083EF",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 1621937922,
+        "calls": 117
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 4,
+      "level_file": "kcxf2_n4.rl2",
+      "route_input_sha256": "99FD1F9F6B064E7CB6AC5E6AD44FE0B1BF359E43915ED044C6A4DCE74573E784",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 43
+        },
+        {
+          "n": "gold key",
+          "s": 105
+        }
+      ],
+      "total_frames": 9296,
+      "rng_end": {
+        "state": 1101144515,
+        "calls": 2758
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 5,
+      "level_file": "kcxf2_n5.rl2",
+      "route_input_sha256": "BB6411BF56DF3124AAE07E802B1D83DD2B5771C39E02409A60E526BC8FF467BF",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 3822763702,
+        "calls": 49
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 6,
+      "level_file": "kcxf2_n6.rl2",
+      "route_input_sha256": "BC45B30F89BB1254E40EE37D0D5CD3B13BBB3F796E317DD1700FBCAAA0A043A4",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 4008331270,
+        "calls": 33
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": -1,
+      "level_file": "kcxf2_s0.rl2",
+      "route_input_sha256": "FC350A23CFEFAB6B51ABABF64B7B239D88122824CD571041A6B1971E1E647003",
+      "status": "unsupported",
+      "problem": "level file is missing"
+    },
+    {
+      "level_num": -2,
+      "level_file": "kcxf2_sc.rl2",
+      "route_input_sha256": "4B0B80FD9610926E2C7EAD8B3D991D693A15E24CAE5D58F59F3F4849BB5FF016",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "exit",
+          "s": 2
+        }
+      ],
+      "total_frames": 125,
+      "rng_end": {
+        "state": 1848832019,
+        "calls": 118
+      }
+    }
+  ]
+}

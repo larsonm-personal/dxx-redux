@@ -12,7 +12,7 @@
   report used by later full and partial runs for remaining-time estimates.
 
 .PARAMETER Category
-  Menu, All, Cd, Fingerprints, Metadata, or MissingMetadata. Menu is the
+  Menu, All, Cd, Fingerprints, Metadata, MissingMetadata, or Simulation. Menu is the
   interactive default.
 
 .PARAMETER ReportDir
@@ -36,8 +36,10 @@
 
 [CmdletBinding()]
 param(
-    [ValidateSet('Menu', 'All', 'Cd', 'Fingerprints', 'Metadata', 'MissingMetadata')]
+    [ValidateSet('Menu', 'All', 'Cd', 'Fingerprints', 'Metadata', 'MissingMetadata', 'Simulation')]
     [string]$Category = 'Menu',
+    [ValidateSet('Headless', 'Headed')]
+    [string]$SimulationMode = 'Headless',
     [string]$ReportDir,
     [switch]$Target45Minutes,
     [ValidateRange(0, [int]::MaxValue)]
@@ -53,8 +55,10 @@ $script:HelpersDir = Join-Path $PSScriptRoot 'helpers'
 function Get-RegressionDataStages {
     param(
         [string]$RepoRoot,
-        [ValidateSet('All', 'Cd', 'Fingerprints', 'Metadata', 'MissingMetadata')]
-        [string]$Category = 'All'
+        [ValidateSet('All', 'Cd', 'Fingerprints', 'Metadata', 'MissingMetadata', 'Simulation')]
+        [string]$Category = 'All',
+        [ValidateSet('Headless', 'Headed')]
+        [string]$SimulationMode = 'Headless'
     )
 
     $stages = @(
@@ -81,6 +85,14 @@ function Get-RegressionDataStages {
             Script = Join-Path $RepoRoot 'android\helpers\regenerate_all_mission_metadata.ps1'
             Arguments = @()
             DefaultEstimatedRuntime = 3312
+        },
+        [pscustomobject]@{
+            Key = 'Simulation'
+            Name = 'GuideBot engine route simulations'
+            Description = 'Deterministic engine confirmation for mission route metadata'
+            Script = Join-Path $RepoRoot 'android\helpers\regenerate_all_guidebot_simulations.ps1'
+            Arguments = if ($SimulationMode -eq 'Headed') { @('-Mode', 'Headed') } else { @('-Mode', 'Headless', '-WriteRegression') }
+            DefaultEstimatedRuntime = 7200
         }
     )
     if ($Category -eq 'All') {
@@ -104,6 +116,8 @@ function Select-RegressionDataCategory {
     Write-Host '  3. Disc and music fingerprints, hashes, tags, and AcoustID data'
     Write-Host '  4. Mission level metadata'
     Write-Host '  5. Missing mission archive metadata only'
+    Write-Host '  6. GuideBot engine route simulations'
+    Write-Host '  M. Search for and watch one GuideBot route'
     Write-Host '  T. Resumable hash-ring sample targeting 45 minutes'
     Write-Host '  Q. Cancel'
     while ($true) {
@@ -119,11 +133,15 @@ function Select-RegressionDataCategory {
             '5' { return 'MissingMetadata' }
             'missing' { return 'MissingMetadata' }
             'missingmetadata' { return 'MissingMetadata' }
+            '6' { return 'Simulation' }
+            'simulation' { return 'Simulation' }
+            'm' { return 'ManualSimulation' }
+            'manual' { return 'ManualSimulation' }
             't' { return 'Target45' }
             'target' { return 'Target45' }
             'q' { return $null }
             'quit' { return $null }
-            default { Write-Host 'Enter 1, 2, 3, 4, 5, T, or Q' -ForegroundColor Yellow }
+            default { Write-Host 'Enter 1, 2, 3, 4, 5, 6, M, T, or Q' -ForegroundColor Yellow }
         }
     }
 }
@@ -428,15 +446,30 @@ if ($MyInvocation.InvocationName -ne '.') {
     }
     New-Item -ItemType Directory -Path $ReportDir -Force | Out-Null
 
-    $selectedCategory = if ($Category -eq 'Menu' -and -not $Target45Minutes) { Select-RegressionDataCategory } else { $Category }
+    do {
+        $selectedCategory = if ($Category -eq 'Menu' -and -not $Target45Minutes) { Select-RegressionDataCategory } else { $Category }
+        if ($selectedCategory -eq 'ManualSimulation') {
+            & (Join-Path $script:HelpersDir 'watch_guidebot_simulation.ps1')
+        }
+    } while ($selectedCategory -eq 'ManualSimulation')
     if (-not $selectedCategory) {
         Write-Host 'Regression data regeneration cancelled' -ForegroundColor Yellow
         exit 0
     }
 
+    if ($Category -eq 'Menu' -and $selectedCategory -eq 'Simulation') {
+        while ($true) {
+            $modeChoice = (Read-Host 'Simulation mode: H for headless canonical output, V for visible headed diagnostics').Trim().ToLowerInvariant()
+            if ($modeChoice -in @('', 'h', 'headless')) { $SimulationMode = 'Headless'; break }
+            if ($modeChoice -in @('v', 'headed', 'visible')) { $SimulationMode = 'Headed'; break }
+            Write-Host 'Enter H or V' -ForegroundColor Yellow
+        }
+    }
+
     $targetedSample = $Target45Minutes -or $selectedCategory -eq 'Target45'
     $stageCategory = if ($selectedCategory -eq 'Target45' -or $selectedCategory -eq 'Menu') { 'All' } else { $selectedCategory }
-    $stages = @(Get-RegressionDataStages -RepoRoot $script:RepoRoot -Category $stageCategory)
+    $effectiveSimulationMode = if ($stageCategory -eq 'All') { 'Headless' } else { $SimulationMode }
+    $stages = @(Get-RegressionDataStages -RepoRoot $script:RepoRoot -Category $stageCategory -SimulationMode $effectiveSimulationMode)
     $stages = @(Set-RegressionDataStageEstimates -Stages $stages -ReportDir $ReportDir)
     if ($targetedSample) {
         $sampleStatePath = Join-Path $ReportDir 'runtime_sample_state.json'

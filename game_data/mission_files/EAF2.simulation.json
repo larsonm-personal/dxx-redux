@@ -1,0 +1,345 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "EAF2.MN2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 5,
+    "failed": 1,
+    "timeout": 4
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "Enc2-1.rl2",
+      "route_input_sha256": "351E606545D7B9B8EE5572F1B49954EFBE1770D9827EF63366D21AB21C15D588",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "red key",
+          "s": 22
+        },
+        {
+          "n": "switch 0",
+          "s": 44
+        },
+        {
+          "n": "blue key",
+          "s": 66
+        },
+        {
+          "n": "switch 1",
+          "s": 66
+        },
+        {
+          "n": "reactor",
+          "s": 98
+        },
+        {
+          "n": "exit",
+          "s": 131
+        }
+      ],
+      "total_frames": 7868,
+      "rng_end": {
+        "state": 2158105776,
+        "calls": 5271
+      }
+    },
+    {
+      "level_num": 2,
+      "level_file": "Enc2-2.rl2",
+      "route_input_sha256": "90FCE38C58E352BEBEBEB31A7FA6344D77FD763A555241130A9E3F306FA9375A",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 3",
+          "s": 9
+        },
+        {
+          "n": "switch 5",
+          "s": 24
+        }
+      ],
+      "total_frames": 5444,
+      "rng_end": {
+        "state": 254896484,
+        "calls": 1267
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 3,
+      "level_file": "Enc2-3.rl2",
+      "route_input_sha256": "8DFF6A15D0F5C4641008DF14573B290EB6E8314AA6C3CF1B207623C9ECF3FD8E",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "fly-through 14",
+          "s": 30
+        },
+        {
+          "n": "fly-through 15",
+          "s": 62
+        },
+        {
+          "n": "fly-through 13",
+          "s": 92
+        },
+        {
+          "n": "fly-through 11",
+          "s": 109
+        },
+        {
+          "n": "fly-through 12",
+          "s": 133
+        },
+        {
+          "n": "reactor",
+          "s": 147
+        },
+        {
+          "n": "exit",
+          "s": 193
+        }
+      ],
+      "total_frames": 11575,
+      "rng_end": {
+        "state": 4288631289,
+        "calls": 6728
+      }
+    },
+    {
+      "level_num": 4,
+      "level_file": "Enc2-4.rl2",
+      "route_input_sha256": "11970E9C6BF5CDAF5979A3973BACB7425EFCD838A2B7AD2B09EEC8DD8BBD722C",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 1047820095,
+        "calls": 170
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 5,
+      "level_file": "Enc2-5.rl2",
+      "route_input_sha256": "37B67F052FBF2AD7018C46DF69D93313C091E7704B6CD82CA0EA79B0FAA8E2A8",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 25",
+          "s": 10
+        },
+        {
+          "n": "switch 26",
+          "s": 16
+        },
+        {
+          "n": "switch 27",
+          "s": 25
+        },
+        {
+          "n": "switch 29",
+          "s": 42
+        },
+        {
+          "n": "switch 30",
+          "s": 63
+        },
+        {
+          "n": "switch 28",
+          "s": 83
+        },
+        {
+          "n": "switch 24",
+          "s": 102
+        },
+        {
+          "n": "reactor",
+          "s": 113
+        },
+        {
+          "n": "exit",
+          "s": 139
+        }
+      ],
+      "total_frames": 8348,
+      "rng_end": {
+        "state": 3864424111,
+        "calls": 6202
+      }
+    },
+    {
+      "level_num": 6,
+      "level_file": "Enc2-6.rl2",
+      "route_input_sha256": "0E5F330589AF0099209AB37BE2119C27E0C9B35A532F7F46B7869DEC2A048580",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "fly-through 18",
+          "s": 10
+        },
+        {
+          "n": "fly-through 16",
+          "s": 31
+        },
+        {
+          "n": "fly-through 17",
+          "s": 54
+        },
+        {
+          "n": "reactor",
+          "s": 87
+        },
+        {
+          "n": "exit",
+          "s": 98
+        }
+      ],
+      "total_frames": 5851,
+      "rng_end": {
+        "state": 1761389047,
+        "calls": 4594
+      }
+    },
+    {
+      "level_num": 7,
+      "level_file": "Enc2-7.rl2",
+      "route_input_sha256": "1221B1C2ABD7757D2874181438160EA7EBC8C12DB9AF2C55A5E865EA41E1BF6D",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 23",
+          "s": 10
+        }
+      ],
+      "total_frames": 5317,
+      "rng_end": {
+        "state": 2444550581,
+        "calls": 1356
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 8,
+      "level_file": "Enc2-8.rl2",
+      "route_input_sha256": "A972AB576E690CF5E71D33F92B8C5FFCE4A585B1BD4A3DF56569DCDB53525D1B",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 24",
+          "s": 16
+        },
+        {
+          "n": "blue key",
+          "s": 36
+        },
+        {
+          "n": "switch 0",
+          "s": 36
+        }
+      ],
+      "total_frames": 36001,
+      "rng_end": {
+        "state": 1586148989,
+        "calls": 2756
+      },
+      "problem": "route confirmation exceeded 10 simulation minutes"
+    },
+    {
+      "level_num": -1,
+      "level_file": "Enc2-s1.rl2",
+      "route_input_sha256": "AFDA37A97BBC372A580A6CCDD6C8485266CFE8631B8F1E0B3FD14FD57A9D119F",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "fly-through 19",
+          "s": 14
+        },
+        {
+          "n": "switch 5",
+          "s": 35
+        },
+        {
+          "n": "fly-through 21",
+          "s": 56
+        },
+        {
+          "n": "switch 6",
+          "s": 77
+        },
+        {
+          "n": "reactor",
+          "s": 86
+        },
+        {
+          "n": "exit",
+          "s": 97
+        }
+      ],
+      "total_frames": 5846,
+      "rng_end": {
+        "state": 2742603247,
+        "calls": 5370
+      }
+    },
+    {
+      "level_num": -2,
+      "level_file": "Enc2-s2.rl2",
+      "route_input_sha256": "32B6AB8C17320DCF570B7911508DEC1226ACD38DA417A2F94CCADD78B9724965",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 509,
+      "rng_end": {
+        "state": 2780109717,
+        "calls": 108
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    }
+  ]
+}

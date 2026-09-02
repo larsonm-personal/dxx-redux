@@ -1,0 +1,31 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "norep.mn2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "timeout": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "sammy.rl2",
+      "route_input_sha256": "C6E1DB93D63830B00F6ED00CEF00515C5FAA05B142B4691DE967055923577AEA",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4224,
+      "rng_end": {
+        "state": 1823798819,
+        "calls": 614
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    }
+  ]
+}

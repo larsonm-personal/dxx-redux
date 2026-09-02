@@ -1,0 +1,172 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "SATURN_E.MN2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 3,
+    "failed": 1,
+    "timeout": 3
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "SATELIT.RL2",
+      "route_input_sha256": "BF7ADC0AC3538A648B9F58F08A40E84A8D31D840E3421171E6147D869D873576",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 2",
+          "s": 0
+        },
+        {
+          "n": "reactor",
+          "s": 31
+        },
+        {
+          "n": "switch 15",
+          "s": 65
+        },
+        {
+          "n": "exit",
+          "s": 76
+        }
+      ],
+      "total_frames": 4565,
+      "rng_end": {
+        "state": 3990430617,
+        "calls": 3496
+      }
+    },
+    {
+      "level_num": 2,
+      "level_file": "PROM-NO.RL2",
+      "route_input_sha256": "4F87E3D15544E1F35397C0DE349E780073B835A8284BB9879D13F1D8A20D4CA6",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 663,
+      "rng_end": {
+        "state": 3297241969,
+        "calls": 16
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 3,
+      "level_file": "TUNNEL.RL2",
+      "route_input_sha256": "30C80E06E42D17D206820A046DE49EC120D2EBD78B77AA691A0C94854DE6F1BB",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 753,
+      "rng_end": {
+        "state": 3791773014,
+        "calls": 17
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 4,
+      "level_file": "PROM-SW.RL2",
+      "route_input_sha256": "90BC9D0BE958AD274FAA67F577BCA6DC4EEDDF5D5F4F3EC12CDB5B647D48DF0C",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 3
+        },
+        {
+          "n": "switch 41",
+          "s": 13
+        }
+      ],
+      "total_frames": 1769,
+      "rng_end": {
+        "state": 1061815741,
+        "calls": 388
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 5,
+      "level_file": "TRANSPO.RL2",
+      "route_input_sha256": "DECA4EC42633BC322206481F397BEFF6BF1E8498BF87D133E303388DABF3C3D3",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "exit",
+          "s": 21
+        }
+      ],
+      "total_frames": 1275,
+      "rng_end": {
+        "state": 3553385367,
+        "calls": 594
+      }
+    },
+    {
+      "level_num": 6,
+      "level_file": "MOND-TIT.RL2",
+      "route_input_sha256": "E925EB684849C0188564DA3B50152C47FF98813C8227BB4691464B2B53E66B1F",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 1,
+        "calls": 0
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": -1,
+      "level_file": "SECRET1.RL2",
+      "route_input_sha256": "0BC3D2272079DA88B55AEB19DA68D858AD6B23699BA3DE7EE412521C0FA7566A",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "reactor",
+          "s": 34
+        },
+        {
+          "n": "exit",
+          "s": 38
+        }
+      ],
+      "total_frames": 2252,
+      "rng_end": {
+        "state": 808381751,
+        "calls": 690
+      }
+    }
+  ]
+}

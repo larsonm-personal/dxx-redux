@@ -1,0 +1,36 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "Uneasy4.mn2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "timeout": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "Uneasy4.rl2",
+      "route_input_sha256": "B6174AA43900D7451A8BED4D7053567B5343EC25BE47AC521098F41E00FA7AFD",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 52
+        }
+      ],
+      "total_frames": 4463,
+      "rng_end": {
+        "state": 1474188028,
+        "calls": 2811
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    }
+  ]
+}

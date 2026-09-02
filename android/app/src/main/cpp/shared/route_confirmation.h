@@ -32,6 +32,16 @@ typedef struct route_confirmation_objective_result {
 	char label[64];
 } route_confirmation_objective_result;
 
+typedef struct route_confirmation_rng_stream {
+	unsigned int state;
+	unsigned int call_count;
+} route_confirmation_rng_stream;
+
+typedef struct route_confirmation_rng_boundary {
+	route_confirmation_rng_stream simulation;
+	route_confirmation_rng_stream effects;
+} route_confirmation_rng_boundary;
+
 typedef struct route_confirmation_summary {
 	int status;
 	unsigned int seed;
@@ -42,8 +52,8 @@ typedef struct route_confirmation_summary {
 	int current_route_step_index;
 	int current_kind;
 	int current_activation_kind;
-	unsigned int rng_state;
-	unsigned int rng_call_count;
+	route_confirmation_rng_boundary rng_start;
+	route_confirmation_rng_boundary rng_end;
 	int player_radius;
 	int guidebot_radius;
 	int effective_radius;

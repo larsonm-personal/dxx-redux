@@ -1,0 +1,96 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "SIRIUS2.MN2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 1,
+    "timeout": 2
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "Sirius1.rl2",
+      "route_input_sha256": "B29FC94519C4BC5F098E6BBAD44DDDB3E31846617D74D40CE3870240D20047BB",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "red key",
+          "s": 20
+        },
+        {
+          "n": "reactor",
+          "s": 64
+        },
+        {
+          "n": "exit",
+          "s": 106
+        }
+      ],
+      "total_frames": 6361,
+      "rng_end": {
+        "state": 4099008512,
+        "calls": 1543
+      }
+    },
+    {
+      "level_num": 2,
+      "level_file": "Sirius2.rl2",
+      "route_input_sha256": "1125B72636EA703553C138D7E8F7F53794D5D84D83112BBB79B69731ADA830B0",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 29
+        },
+        {
+          "n": "gold key",
+          "s": 86
+        }
+      ],
+      "total_frames": 7481,
+      "rng_end": {
+        "state": 1382522462,
+        "calls": 1449
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 3,
+      "level_file": "Sirius3.rl2",
+      "route_input_sha256": "2CA43CFEFD5E4974A0A9C399800B36F5172073565DD1F4132BBA76E91BBBFEBE",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 11
+        },
+        {
+          "n": "gold key",
+          "s": 45
+        }
+      ],
+      "total_frames": 5700,
+      "rng_end": {
+        "state": 3866165955,
+        "calls": 2502
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    }
+  ]
+}
