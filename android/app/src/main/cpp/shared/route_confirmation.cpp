@@ -1180,7 +1180,10 @@ extern "C" void route_confirmation_after_frame(void)
 	if (State.summary.status == ROUTE_CONFIRMATION_RUNNING &&
 	    actor_reached_target(actor) &&
 	    State.target_seg != State.semantic_target_seg) {
-		if (frontier_door_is_opening())
+		if ((State.step.activation_kind ==
+		         LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT &&
+		     actor->segnum == State.step.seg) ||
+		    frontier_door_is_opening())
 			extend_current_goal_from_frontier();
 		else {
 			vm_vec_zero(&actor->mtype.phys_info.velocity);

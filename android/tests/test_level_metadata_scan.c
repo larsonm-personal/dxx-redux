@@ -1121,10 +1121,8 @@ static int test_route_continues_after_unresolved_shootable_trigger(void)
 	view.wall_shootable_from_position = test_wall_not_shootable_from_position;
 	view.wall_is_shootable_trigger = test_wall_is_shootable_trigger;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("unresolved trigger route status", "ok", level_metadata_route_status_name(state.route_status));
-	failures += expect_string("unresolved trigger route problem", "", state.route_problem);
-	failures += expect_int("unresolved trigger required key mask", 0, state.route_required_key_mask);
-	failures += expect_int("unresolved trigger completing key masks", 1, state.route_completing_key_mask_set);
+	failures += expect_string("unresolved trigger route status", "partial", level_metadata_route_status_name(state.route_status));
+	failures += expect_string("unresolved trigger route problem", "switch activation route unresolved", state.route_problem);
 	failures += expect_int("unresolved trigger route steps", 3, state.route_step_count);
 	failures += expect_string("unresolved trigger route step", "trigger", level_metadata_route_step_kind_name(state.route_steps[1].kind));
 	failures += expect_string("unresolved trigger route activation", "unresolved_trigger", level_metadata_route_activation_kind_name(state.route_steps[1].activation_kind));

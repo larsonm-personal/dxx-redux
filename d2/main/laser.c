@@ -2071,6 +2071,13 @@ void do_laser_firing_player(void)
 
 	if (Player_is_dead)
 		return;
+	if (Players[Player_num].primary_weapon < 0 ||
+	    Players[Player_num].primary_weapon >= MAX_PRIMARY_WEAPONS) {
+		con_printf(CON_URGENT, "Invalid primary weapon %d; resetting selection\n",
+		           Players[Player_num].primary_weapon);
+		Players[Player_num].primary_weapon = LASER_INDEX;
+		return;
+	}
 
 	weapon_id = Primary_weapon_to_weapon_info[Players[Player_num].primary_weapon];
 	energy_used = Weapon_info[weapon_id].energy_usage;
@@ -2730,6 +2737,13 @@ void do_missile_firing(int drop_bomb)
 
 	Network_laser_track = -1;
 
+	if (weapon < 0 || weapon >= MAX_SECONDARY_WEAPONS) {
+		con_printf(CON_URGENT, "Invalid secondary weapon %d; resetting selection\n",
+		           weapon);
+		if (!drop_bomb)
+			Players[Player_num].secondary_weapon = CONCUSSION_INDEX;
+		return;
+	}
 	Assert(weapon < MAX_SECONDARY_WEAPONS);
 
 	if (GameTime64 - Next_missile_fire_time <= FrameTime) // if firing is prolonged by FrameTime overhead, let's try to fix that.

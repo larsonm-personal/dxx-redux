@@ -140,6 +140,9 @@ target_include_directories(test_coop_host_migration_policy
                            PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}/coop")
 
 add_executable(test_coop_player_session test_coop_player_session.c)
+if(DXX_TEST_GAME STREQUAL "d2")
+    target_compile_definitions(test_coop_player_session PRIVATE DXX_BUILD_DESCENT_II=1)
+endif()
 target_include_directories(
     test_coop_player_session PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}/coop" ${PHYSFS_INCLUDE_DIR}
                                      ${SDL_INCLUDE_DIR})

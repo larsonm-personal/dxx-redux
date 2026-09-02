@@ -46,10 +46,14 @@ extern sbyte PKilledFlags[MAX_PLAYERS];
 
 extern fix ThisLevelTime;
 
+static void coop_apply_record_runtime_state(int pnum,
+                                            const coop_player_record *rec);
+
 #ifdef ANDROID
 int coop_remap_restored_players(rewind_file *file,
                                 const player restore_players[MAX_PLAYERS],
                                 const object restore_objects[MAX_PLAYERS],
+                                const unsigned char restore_object_valid[MAX_PLAYERS],
                                 int coop_player_got[MAX_PLAYERS])
 {
 	coop_save_metadata meta_early;
@@ -60,6 +64,7 @@ int coop_remap_restored_players(rewind_file *file,
 
 	for (i = 0; i < MAX_PLAYERS; i++) {
 		object *obj;
+		const coop_player_record *saved_record = NULL;
 		int saved_slot = -1;
 		int saved_objnum;
 
@@ -70,23 +75,32 @@ int coop_remap_restored_players(rewind_file *file,
 		if (have_meta) {
 			int meta_idx = coop_find_player_in_metadata(Players[i].callsign,
 			                                            Netgame.players[i].client_id, &meta_early);
-			if (meta_idx >= 0 && meta_idx < meta_early.num_active_players)
+			if (meta_idx >= 0 && meta_idx < meta_early.num_active_players) {
 				saved_slot = meta_early.active_players[meta_idx].original_slot;
+				saved_record = &meta_early.active_players[meta_idx];
+			}
 		}
 
 		if (saved_slot < 0 || saved_slot >= MAX_PLAYERS ||
 		    restore_players[saved_slot].connected != CONNECT_PLAYING ||
-		    claimed_slots[saved_slot]) {
+		    !restore_object_valid[saved_slot] || claimed_slots[saved_slot]) {
 			COOPLOG("P%d '%s' not found in save -- spawning fresh", i,
 			        Players[i].callsign);
 			HUD_init_message(HM_MULTI, "'%s' not in save -- spawning fresh",
 			                 Players[i].callsign);
 			continue;
 		}
+		if (Players[i].objnum < 0 || Players[i].objnum > Highest_object_index) {
+			COOPLOG("P%d '%s' has invalid live objnum %d during restore", i,
+			        Players[i].callsign, Players[i].objnum);
+			continue;
+		}
 		claimed_slots[saved_slot] = 1;
 
 		saved_objnum = Players[i].objnum;
 		coop_restore_player_game_state(&Players[i], &restore_players[saved_slot]);
+		if (saved_record)
+			coop_apply_record_runtime_state(i, saved_record);
 		coop_player_got[i] = 1;
 		got_players++;
 		COOPLOG("mapped P%d '%s' <- save slot %d '%s', objnum=%d", i,
@@ -330,6 +344,12 @@ void coop_snapshot_player(int pnum, coop_player_record *rec)
 	rec->laser_level = p->laser_level;
 	rec->primary_weapon_flags = p->primary_weapon_flags;
 	rec->secondary_weapon_flags = p->secondary_weapon_flags;
+	rec->primary_weapon = p->primary_weapon;
+	rec->secondary_weapon = p->secondary_weapon;
+#ifdef DXX_BUILD_DESCENT_II
+	rec->afterburner_charge = p->afterburner_charge;
+#endif
+	rec->kill_goal_count = p->KillGoalCount;
 	for (i = 0; i < MAX_PRIMARY_WEAPONS && i < COOP_SAVE_MAX_WEAPONS; i++)
 		rec->primary_ammo[i] = p->primary_ammo[i];
 	for (i = 0; i < MAX_SECONDARY_WEAPONS && i < COOP_SAVE_MAX_WEAPONS; i++)
@@ -709,6 +729,32 @@ void coop_load_absent_from_metadata(const coop_save_metadata *meta)
 #define COOP_RESTORE_FLAGS_KEYS ( \
 	PLAYER_FLAGS_BLUE_KEY | PLAYER_FLAGS_RED_KEY | PLAYER_FLAGS_GOLD_KEY)
 
+static void coop_apply_record_runtime_state(int pnum,
+                                            const coop_player_record *rec)
+{
+	player *p = &Players[pnum];
+	int primary = coop_restore_weapon_index(rec->primary_weapon,
+	                                        MAX_PRIMARY_WEAPONS);
+	int secondary = coop_restore_weapon_index(rec->secondary_weapon,
+	                                          MAX_SECONDARY_WEAPONS);
+
+	if (primary != rec->primary_weapon || secondary != rec->secondary_weapon)
+		COOP_SAVE_LOG(CON_URGENT,
+		              "coop_save: corrected invalid weapon selection for P%d (primary=%d secondary=%d)\n",
+		              pnum, rec->primary_weapon, rec->secondary_weapon);
+	p->primary_weapon = (sbyte) primary;
+	p->secondary_weapon = (sbyte) secondary;
+#ifdef DXX_BUILD_DESCENT_II
+	p->afterburner_charge =
+	    coop_restore_afterburner_charge(rec->afterburner_charge);
+	if (p->afterburner_charge != rec->afterburner_charge)
+		COOP_SAVE_LOG(CON_URGENT,
+		              "coop_save: corrected invalid afterburner charge for P%d (%d)\n",
+		              pnum, rec->afterburner_charge);
+#endif
+	p->KillGoalCount = rec->kill_goal_count;
+}
+
 void coop_apply_record_to_player(int pnum, const coop_player_record *rec,
                                  int same_level)
 {
@@ -721,6 +767,7 @@ void coop_apply_record_to_player(int pnum, const coop_player_record *rec,
 	p->laser_level = rec->laser_level;
 	p->primary_weapon_flags = rec->primary_weapon_flags;
 	p->secondary_weapon_flags = rec->secondary_weapon_flags;
+	coop_apply_record_runtime_state(pnum, rec);
 	for (i = 0; i < MAX_PRIMARY_WEAPONS && i < COOP_SAVE_MAX_WEAPONS; i++)
 		p->primary_ammo[i] = rec->primary_ammo[i];
 	for (i = 0; i < MAX_SECONDARY_WEAPONS && i < COOP_SAVE_MAX_WEAPONS; i++)

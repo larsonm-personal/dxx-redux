@@ -5157,8 +5157,12 @@ void multi_send_ship_status_for_frame()
 		multi_send_data_direct( multibuf, 45, multi_who_is_master(), 2);
 }
 
-void multi_do_ship_status( const ubyte *buf )
+void multi_do_ship_status( const ubyte *buf, int authenticated_sender )
 {
+	if (buf[1] >= MAX_PLAYERS || buf[8] >= MAX_PRIMARY_WEAPONS ||
+	    buf[20] >= MAX_SECONDARY_WEAPONS ||
+	    (authenticated_sender >= 0 && buf[1] != authenticated_sender))
+		return;
 	if (is_observer())
 	{
 		Players[buf[1]].laser_level = buf[2];
@@ -5838,7 +5842,7 @@ multi_process_data_from_player(const ubyte *buf, int len, int authenticated_send
 		case MULTI_REPAIR:
 			multi_do_repair(buf); break;
 		case MULTI_SHIP_STATUS:
-			multi_do_ship_status(buf); break;
+			multi_do_ship_status(buf, authenticated_sender); break;
 		case MULTI_CREATE_EXPLOSION2:
 			multi_do_create_explosion2(buf); break;
 #ifdef __ANDROID__
@@ -5847,7 +5851,7 @@ multi_process_data_from_player(const ubyte *buf, int len, int authenticated_send
 		case MULTI_COOP_PEER_STATUS:
 			coop_do_peer_status(buf); break;
 		case MULTI_COOP_RESTORE_INV:
-			coop_do_restore_inventory(buf); break;
+			coop_do_restore_inventory(buf, authenticated_sender); break;
 		case MULTI_REWIND_REQUEST:
 			multi_do_rewind_request(buf); break;
 		case MULTI_REWIND_RESULT:

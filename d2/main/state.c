@@ -1896,6 +1896,9 @@ void state_player_to_player_rw(player *pl, player_rw *pl_rw)
 void state_player_rw_to_player(player_rw *pl_rw, player *pl)
 {
 	int i=0;
+	/* player_rw omits newer runtime fields, so initialize them deterministically. */
+	memset(pl, 0, sizeof(*pl));
+	pl->shields_certain = 1;
 	memcpy(pl->callsign, pl_rw->callsign, CALLSIGN_LEN+1);
 	memcpy(pl->net_address, pl_rw->net_address, 6);
 	pl->connected                 = pl_rw->connected;
@@ -3081,7 +3084,11 @@ int state_restore_all_sub(char *filename, int secret_restore)
 			player	dummy_player;
 			player_rw *pl_rw;
 			MALLOC(pl_rw, player_rw, 1);
-			PHYSFS_read(fp, pl_rw, sizeof(player_rw), 1);
+			if (PHYSFS_read(fp, pl_rw, sizeof(player_rw), 1) != 1) {
+				d_free(pl_rw);
+				PHYSFS_close(fp);
+				return 0;
+			}
 			player_rw_swap(pl_rw, swap);
 			state_player_rw_to_player(pl_rw, &dummy_player);
 			d_free(pl_rw);
@@ -3107,7 +3114,11 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		} else {
 			player_rw *pl_rw;
 			MALLOC(pl_rw, player_rw, 1);
-			PHYSFS_read(fp, pl_rw, sizeof(player_rw), 1);
+			if (PHYSFS_read(fp, pl_rw, sizeof(player_rw), 1) != 1) {
+				d_free(pl_rw);
+				PHYSFS_close(fp);
+				return 0;
+			}
 			player_rw_swap(pl_rw, swap);
 			state_player_rw_to_player(pl_rw, &Players[Player_num]);
 			d_free(pl_rw);
@@ -3120,6 +3131,12 @@ int state_restore_all_sub(char *filename, int secret_restore)
 // Restore the weapon states
 	PHYSFS_read(fp, &Players[Player_num].primary_weapon, sizeof(sbyte), 1);
 	PHYSFS_read(fp, &Players[Player_num].secondary_weapon, sizeof(sbyte), 1);
+	if (Players[Player_num].primary_weapon < 0 ||
+	    Players[Player_num].primary_weapon >= MAX_PRIMARY_WEAPONS)
+		Players[Player_num].primary_weapon = LASER_INDEX;
+	if (Players[Player_num].secondary_weapon < 0 ||
+	    Players[Player_num].secondary_weapon >= MAX_SECONDARY_WEAPONS)
+		Players[Player_num].secondary_weapon = CONCUSSION_INDEX;
 
 	select_weapon(Players[Player_num].primary_weapon, 0, 0, 0);
 	select_weapon(Players[Player_num].secondary_weapon, 1, 0, 0);
@@ -3357,6 +3374,10 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		else {
 			PHYSFSX_readSXE32(fp, swap);
 		}
+		if (Players[Player_num].afterburner_charge < 0)
+			Players[Player_num].afterburner_charge = 0;
+		else if (Players[Player_num].afterburner_charge > F1_0)
+			Players[Player_num].afterburner_charge = F1_0;
 	}
 	if (version>=12) {
 		//read last was super information
@@ -3424,6 +3445,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	{
 		player restore_players[MAX_PLAYERS];
 		object restore_objects[MAX_PLAYERS];
+		ubyte restore_object_valid[MAX_PLAYERS] = { 0 };
 		int coop_got_nplayers = 0;
 
 		for (i = 0; i < MAX_PLAYERS; i++) 
@@ -3436,16 +3458,24 @@ int state_restore_all_sub(char *filename, int secret_restore)
 
 			// read the stored players
 			MALLOC(pl_rw, player_rw, 1);
-			PHYSFS_read(fp, pl_rw, sizeof(player_rw), 1);
+			if (PHYSFS_read(fp, pl_rw, sizeof(player_rw), 1) != 1) {
+				d_free(pl_rw);
+				PHYSFS_close(fp);
+				return 0;
+			}
 			player_rw_swap(pl_rw, swap);
 			state_player_rw_to_player(pl_rw, &restore_players[i]);
 			d_free(pl_rw);
 			
 			// make all (previous) player objects to ghosts but store them first for later remapping
-			obj = &Objects[restore_players[i].objnum];
-			if (restore_players[i].connected == CONNECT_PLAYING && obj->type == OBJ_PLAYER)
+			obj = NULL;
+			if (restore_players[i].objnum >= 0 &&
+			    restore_players[i].objnum <= Highest_object_index)
+				obj = &Objects[restore_players[i].objnum];
+			if (restore_players[i].connected == CONNECT_PLAYING && obj && obj->type == OBJ_PLAYER)
 			{
 				memcpy(&restore_objects[i], obj, sizeof(object));
+				restore_object_valid[i] = 1;
 				obj->type = OBJ_GHOST;
 				multi_reset_player_object(obj);
 			}
@@ -3463,14 +3493,14 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		#endif
 #ifdef __ANDROID__
 		coop_got_nplayers = coop_remap_restored_players(fp, restore_players,
-			restore_objects, coop_player_got);
+			restore_objects, restore_object_valid, coop_player_got);
 #else
 		for (i = 0; i < MAX_PLAYERS; i++) // copy restored players to the current slots
 		{
 			for (j = 0; j < MAX_PLAYERS; j++)
 			{
 				// map stored players to current players depending on their unique (which we made sure) callsign
-				if (Players[i].connected == CONNECT_PLAYING && restore_players[j].connected == CONNECT_PLAYING && !strcmp(Players[i].callsign, restore_players[j].callsign))
+				if (Players[i].connected == CONNECT_PLAYING && Players[i].objnum >= 0 && Players[i].objnum <= Highest_object_index && restore_players[j].connected == CONNECT_PLAYING && restore_object_valid[j] && !strcmp(Players[i].callsign, restore_players[j].callsign))
 				{
 					object *obj;
 					int sav_objnum = Players[i].objnum;

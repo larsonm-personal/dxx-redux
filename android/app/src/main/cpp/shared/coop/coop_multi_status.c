@@ -151,11 +151,15 @@ void coop_send_restore_inventory(int pnum)
 	PUT_INTEL_INT(multibuf + 71, rec.time_total);
 	multibuf[75] = (ubyte) rec.hours_total;
 	PUT_INTEL_SHORT(multibuf + 76, source_level);
+	multibuf[78] = (ubyte) rec.primary_weapon;
+	multibuf[79] = (ubyte) rec.secondary_weapon;
+	PUT_INTEL_INT(multibuf + 80, rec.afterburner_charge);
+	PUT_INTEL_SHORT(multibuf + 84, rec.kill_goal_count);
 
-	multi_send_data_direct(multibuf, 78, pnum, 2);
+	multi_send_data_direct(multibuf, 86, pnum, 2);
 }
 
-void coop_do_restore_inventory(const ubyte *buf)
+void coop_do_restore_inventory(const ubyte *buf, int authenticated_sender)
 {
 	int pnum = buf[1];
 	int i;
@@ -165,6 +169,9 @@ void coop_do_restore_inventory(const ubyte *buf)
 	if (pnum != Player_num)
 		return;
 	if (!(Game_mode & GM_MULTI_COOP))
+		return;
+	if (authenticated_sender >= 0 &&
+	    authenticated_sender != multi_who_is_master())
 		return;
 
 	/* Unpack the network packet into a coop_player_record */
@@ -188,6 +195,10 @@ void coop_do_restore_inventory(const ubyte *buf)
 	rec.hours_total = buf[75];
 
 	saved_level = GET_INTEL_SHORT(buf + 76);
+	rec.primary_weapon = (sbyte) buf[78];
+	rec.secondary_weapon = (sbyte) buf[79];
+	rec.afterburner_charge = GET_INTEL_INT(buf + 80);
+	rec.kill_goal_count = GET_INTEL_SHORT(buf + 84);
 	coop_apply_record_to_player(pnum, &rec, saved_level == Current_level_num);
 }
 #endif

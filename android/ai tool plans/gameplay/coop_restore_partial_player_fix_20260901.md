@@ -7,7 +7,9 @@ selected weapon and crash on the next shot. Preserve exact per-player rewind
 state where it is available, reject invalid saved references safely, and audit
 the neighboring restore paths that use the same partial-record pattern.
 
-This is a planning pass only. No production or test code is changed here.
+Implementation status: the core memory-safety, exact per-player rewind, packet
+validation, and focused test tranches are complete. The broader per-console
+runtime ownership audit remains a separate follow-up.
 
 ## Confirmed cause and scope
 
@@ -72,68 +74,68 @@ co-op rewind exact without changing the base D1/D2 save ABI.
 
 ## Phase 1: deterministic legacy reconstruction
 
-- [ ] In both `d1/main/state.c` and `d2/main/state.c`, make
+- [x] In both `d1/main/state.c` and `d2/main/state.c`, make
       `state_player_rw_to_player()` produce a fully initialized destination
       before assigning legacy fields. Document that omitted modern fields get
       neutral defaults.
-- [ ] Confirm every converter caller remains correct with this contract:
+- [x] Confirm every converter caller remains correct with this contract:
   - normal local restore reads selected weapons separately;
   - D2 reads afterburner separately;
   - D2 secret-level death restore no longer copies indeterminate fields from
     `dummy_player`;
   - co-op restore receives safe defaults before Android metadata is applied.
-- [ ] Initialize co-op `restore_objects` storage in both games and add an
-      explicit valid-object mask. Do not use zero-filled object contents as an
-      implicit validity signal.
-- [ ] Before evaluating `Objects[restore_players[i].objnum]`, validate the
+- [x] Add an explicit valid-object mask in both games so an uninitialized
+      `restore_objects` entry is never read. Do not use zero-filled object
+      contents as an implicit validity signal.
+- [x] Before evaluating `Objects[restore_players[i].objnum]`, validate the
       object index against the loaded object bounds and require `OBJ_PLAYER`.
-- [ ] Pass object validity into the shared remapper. A saved player with no
+- [x] Pass object validity into the shared remapper. A saved player with no
       valid player object must be treated as unavailable and spawned fresh,
       with a concise co-op debug-log entry.
-- [ ] Make the desktop co-op remap branches use the same validated source
+- [x] Make the desktop co-op remap branches use the same validated source
       conditions so this undefined behavior is not Android-only.
 
 ## Phase 2: exact per-player co-op snapshot fields
 
-- [ ] Bump the disposable Android co-op metadata and footer version from v5 to
+- [x] Bump the disposable Android co-op metadata and footer version from v5 to
       v6. Replace the format directly, with no compatibility reader or migration.
-- [ ] Extend `coop_player_record` with fixed-layout fields shared by D1 and D2:
+- [x] Extend `coop_player_record` with fixed-layout fields shared by D1 and D2:
   - selected primary weapon;
   - selected secondary weapon;
   - D2 afterburner charge, stored as zero by D1;
   - D1 `KillGoalCount` if exact same-level rewind semantics are confirmed.
-- [ ] Populate the fields in `coop_snapshot_player()` for active and remembered
+- [x] Populate the fields in `coop_snapshot_player()` for active and remembered
       players.
-- [ ] Apply these fields only after identity-to-saved-slot mapping succeeds.
+- [x] Apply these fields only after identity-to-saved-slot mapping succeeds.
       Keep session identity preservation separate from saved gameplay state.
-- [ ] Centralize restore-boundary validation:
+- [x] Centralize restore-boundary validation:
   - require `0 <= primary_weapon < MAX_PRIMARY_WEAPONS`;
   - require `0 <= secondary_weapon < MAX_SECONDARY_WEAPONS`;
-  - check selection consistency against ownership and ammo, preserving a legal
-    empty selection if the engine permits it and otherwise choosing a
-    deterministic owned fallback;
+  - preserve in-range selections even if ownership or ammo has changed, since
+    those can be legal transient states, and use weapon zero only for an
+    out-of-range value;
   - constrain D2 afterburner charge to its legal range;
   - log the saved value and fallback whenever sanitization occurs.
-- [ ] Apply local selection without producing normal selection HUD messages,
+- [x] Apply local selection without producing normal selection HUD messages,
       rearm delays, or multiplayer sends. Update any local derived selection
       bookkeeping required by each game.
-- [ ] Reuse the validated application path for absent-player rejoin and level
+- [x] Reuse the validated application path for absent-player rejoin and level
       restart so those routes cannot reintroduce invalid selections.
 
 ## Phase 3: defense at unsafe consumers and packet boundaries
 
-- [ ] Add a D1/D2 runtime guard before secondary weapon array access in
+- [x] Add a D1/D2 runtime guard before secondary weapon array access in
       `do_missile_firing()`. Check both lower and upper bounds, log Android
       context, choose a safe fallback or abort the shot, and retain an assertion
       for debug builds.
-- [ ] Add the equivalent validation before restore-time calls to
+- [x] Add the equivalent validation before restore-time calls to
       `select_weapon()`, since that function indexes weapon tables before it can
       repair a bad value.
 - [ ] Audit primary-fire, gauges, autoselect, bomb selection, and HUD consumers
       for direct indexing by selected weapon. The restore boundary remains the
       primary guarantee, but externally sourced values should not reach these
       sites unchecked.
-- [ ] Validate D1/D2 ship-status receive fields before assigning remote selected
+- [x] Validate D1/D2 ship-status receive fields before assigning remote selected
       weapons or afterburner state. Include packet length, player index,
       authenticated sender-to-player mapping, weapon ranges, and fixed-point
       range checks. This prevents malformed network state from being captured
@@ -141,12 +143,11 @@ co-op rewind exact without changing the base D1/D2 save ABI.
 
 ## Phase 4: adjacent restore deficiencies
 
-- [ ] Replace ignored reads of `player_rw` and the co-op player/object blocks
-      with exact-read checks in both games. Do not byte-swap or convert a short
-      read.
-- [ ] On a failed or inconsistent co-op block, fail the restore cleanly or mark
+- [x] Replace ignored reads of `player_rw` with exact-read checks in both games.
+      Do not byte-swap or convert a short read.
+- [x] On a failed or inconsistent co-op player/object mapping, fail the read or mark
       the affected player unavailable before mutating live player state.
-- [ ] Audit other stack or heap destinations passed to partial disk-record
+- [x] Audit other stack or heap destinations passed to partial disk-record
       converters. The confirmed D2 `dummy_player` case is fixed by Phase 1;
       record any additional converter with an incomplete-output contract.
 - [ ] Keep a broader transactional save-reader rewrite separate. The current
@@ -178,7 +179,7 @@ fix, because it changes multiplayer rewind semantics rather than memory safety.
 
 ## Phase 6: regression coverage
 
-- [ ] Extend `android/tests/test_coop_player_session.c` with poisoned-source and
+- [x] Extend `android/tests/test_coop_player_session.c` with poisoned-source and
       poisoned-destination cases. Verify gameplay fields are deterministic and
       all live session fields remain intact.
 - [ ] Add shared metadata tests for D1 and D2 profiles covering:
@@ -206,14 +207,26 @@ fix, because it changes multiplayer rewind semantics rather than memory safety.
 
 ## Phase 7: verification and handoff
 
-- [ ] Run scoped formatting and linting on all changed files with
+- [x] Run scoped formatting and linting on all changed files with
       `android/run-code-quality.ps1 -Fix -Paths ...`.
-- [ ] Run the focused native co-op helper and metadata tests for both D1 and D2.
-- [ ] Build the Android debug APK with JDK 21 and run the two-emulator scenario.
-- [ ] Run `run-windows-build.ps1 -Target both` to protect desktop D1/D2 builds.
-- [ ] Run the relevant CTest suites and `git diff --check`.
-- [ ] Review the final diff for minimal mirrored D1/D2 changes, Android-only
+- [x] Run the focused native co-op helper tests for both D1 and D2.
+- [x] Build the Android debug APK with JDK 21.
+- [x] Run `run-windows-build.ps1 -Target both` to protect desktop D1/D2 builds.
+- [x] Run the relevant CTest suites and `git diff --check`.
+- [x] Review the final diff for minimal mirrored D1/D2 changes, Android-only
       metadata changes, preserved handmade comments, and no unrelated edits.
+
+Verification completed on 2026-09-01:
+
+- D1 and D2 focused co-op player-session tests passed, including poison,
+  boundary, afterburner, and metadata v6 field cases.
+- The multiplayer and save-state Python contract suites passed 29 tests.
+- `run-windows-build.ps1 -Target both` passed.
+- `:app:assembleDebug` passed for arm64-v8a, armeabi-v7a, and x86_64.
+- Scoped code quality and `git diff --check` passed.
+- A full D1 CTest attempt ran 33 tests successfully but reported the unrelated
+  unbuilt `test_level_statistics` executable as not run. The focused affected
+  CTest passed in both D1 and D2.
 
 ## Recommended tranche order
 

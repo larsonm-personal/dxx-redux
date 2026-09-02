@@ -155,7 +155,7 @@ extern int multi_protocol; // set and determinate used protocol
 	VALUE(MULTI_WARP_TO_PLAYER       , 17)  \
 	VALUE(MULTI_COOP_PEER_STATUS     , 8)   \
 	VALUE(MULTI_ESCORT_OWNER         , 9)   \
-	VALUE(MULTI_COOP_RESTORE_INV     , 78)  \
+	VALUE(MULTI_COOP_RESTORE_INV     , 86)  \
 	VALUE(MULTI_REWIND_REQUEST       , 3)   \
 	VALUE(MULTI_REWIND_RESULT        , 4)   \
 	VALUE(MULTI_REWIND_SAVE_BEGIN    , MULTI_REWIND_SAVE_BEGIN_LEN)   \
@@ -327,7 +327,7 @@ void multi_do_damage( const ubyte *buf );
 void multi_send_repair(fix repair, fix shields, ubyte sourcetype);
 void multi_do_repair(const ubyte *buf);
 void multi_send_ship_status();
-void multi_do_ship_status( const ubyte *buf );
+void multi_do_ship_status( const ubyte *buf, int authenticated_sender );
 void multi_send_create_explosion2(int segnum, vms_vector *pos, fix size, int type);
 void multi_do_create_explosion2( const ubyte *buf );
 

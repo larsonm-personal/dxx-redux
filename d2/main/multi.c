@@ -6756,8 +6756,14 @@ void multi_send_ship_status_for_frame()
 		multi_send_data_direct( multibuf, 70, multi_who_is_master(), 2);
 }
 
-void multi_do_ship_status( const ubyte *buf )
+void multi_do_ship_status( const ubyte *buf, int authenticated_sender )
 {
+	fix afterburner_charge = GET_INTEL_INT(buf + 39);
+	if (buf[1] >= MAX_PLAYERS || buf[8] >= MAX_PRIMARY_WEAPONS ||
+	    buf[30] >= MAX_SECONDARY_WEAPONS || afterburner_charge < 0 ||
+	    afterburner_charge > F1_0 ||
+	    (authenticated_sender >= 0 && buf[1] != authenticated_sender))
+		return;
 	if (is_observer())
 	{
 		Players[buf[1]].laser_level = buf[2];
@@ -6779,7 +6785,7 @@ void multi_do_ship_status( const ubyte *buf )
 		Players[buf[1]].secondary_weapon = (sbyte)buf[30];
 		Players[buf[1]].energy = GET_INTEL_INT(buf + 31);
 		Players[buf[1]].homing_object_dist = GET_INTEL_INT(buf + 35);
-		Players[buf[1]].afterburner_charge = GET_INTEL_INT(buf + 39);
+		Players[buf[1]].afterburner_charge = afterburner_charge;
 		Players[buf[1]].shields = GET_INTEL_INT(buf + 43);
 		Players[buf[1]].score = GET_INTEL_INT(buf + 47);
 		Players[buf[1]].primary_ammo[0] = GET_INTEL_SHORT(buf + 51);
@@ -6806,7 +6812,7 @@ void multi_do_ship_status( const ubyte *buf )
 		Players[pnum].secondary_weapon_flags = buf[29];
 		Players[pnum].secondary_weapon = (sbyte)buf[30];
 		Players[pnum].energy = GET_INTEL_INT(buf + 31);
-		Players[pnum].afterburner_charge = GET_INTEL_INT(buf + 39);
+		Players[pnum].afterburner_charge = afterburner_charge;
 		Players[pnum].shields = GET_INTEL_INT(buf + 43);
 		Players[pnum].score = GET_INTEL_INT(buf + 47);
 		Players[pnum].primary_ammo[0] = GET_INTEL_SHORT(buf + 51);
@@ -7738,7 +7744,7 @@ multi_process_data_from_player(const ubyte *buf, int len, int authenticated_send
 		case MULTI_REPAIR:
 			multi_do_repair(buf); break;
 		case MULTI_SHIP_STATUS:
-			multi_do_ship_status(buf); break;
+			multi_do_ship_status(buf, authenticated_sender); break;
 		case MULTI_CREATE_EXPLOSION2:
 			multi_do_create_explosion2(buf); break;
 #ifdef __ANDROID__
@@ -7747,7 +7753,7 @@ multi_process_data_from_player(const ubyte *buf, int len, int authenticated_send
 		case MULTI_COOP_PEER_STATUS:
 			coop_do_peer_status(buf); break;
 		case MULTI_COOP_RESTORE_INV:
-			coop_do_restore_inventory(buf); break;
+			coop_do_restore_inventory(buf, authenticated_sender); break;
 		case MULTI_REWIND_REQUEST:
 			multi_do_rewind_request(buf); break;
 		case MULTI_REWIND_RESULT:

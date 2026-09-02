@@ -4154,8 +4154,43 @@ route_plan_result plan_route(
 				auto candidate = plan_mode(
 				    allowed_key_mask, key_order, false, false,
 				    transition_aware_paths);
-				if (candidate.status == route_plan_status::ok)
+				if (candidate.status == route_plan_status::ok) {
+#if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+					fprintf(
+					    stderr,
+					    "ROUTE-PLAN completing transition=%d keys=%d steps=%zu\n",
+					    transition_aware_paths, allowed_key_mask,
+					    candidate.steps.size());
+					for (const auto &step : candidate.steps) {
+						fprintf(stderr, "ROUTE-PLAN step kind=%d activation=%d",
+						        static_cast<int>(step.kind),
+						        static_cast<int>(step.activation));
+						for (std::size_t edge = 0;
+						     edge < step.path.sides.size() &&
+						     edge < step.path.segments.size();
+						     ++edge) {
+							const int segment = step.path.segments[edge];
+							const int side = step.path.sides[edge];
+							const int wall =
+							    valid_segment(snapshot, segment) && side >= 0 &&
+							            side < LEVEL_METADATA_MAX_SIDES
+							        ? snapshot.topology.segments[segment]
+							              .sides[side]
+							              .wall
+							        : -1;
+							const int trigger =
+							    valid_wall(snapshot, wall)
+							        ? snapshot.state.walls[wall].trigger
+							        : -1;
+							if (wall >= 0 || trigger >= 0)
+								fprintf(stderr, " %d:%d:w%d:t%d", segment,
+								        side, wall, trigger);
+						}
+						fprintf(stderr, "\n");
+					}
+#endif
 					completing_plans.push_back(std::move(candidate));
+				}
 				else if (transition_aware_paths &&
 				         (!have_partial ||
 				          candidate.steps.size() > best_partial.steps.size())) {
@@ -4172,18 +4207,6 @@ route_plan_result plan_route(
 	if (completing_plans.empty()) {
 		auto diagnostic = plan_mode(
 		    relevant_key_mask, default_key_order, false, true);
-		/* An unresolved trigger is a localized calculation gap, represented by
-		 * calculated=false on that objective.  If the diagnostic continuation
-		 * still identifies the complete end-level sequence, preserve the route's
-		 * established OK status while leaving that objective explicitly
-		 * unresolved.  Live GuideBot certification remains partial at the gap. */
-		if (diagnostic.status == route_plan_status::ok &&
-		    has_unresolved_trigger(diagnostic)) {
-			const int diagnostic_key_mask = key_step_mask(diagnostic);
-			diagnostic.required_key_mask = diagnostic_key_mask;
-			diagnostic.completing_key_mask_set = 1 << diagnostic_key_mask;
-			return diagnostic;
-		}
 		if (has_unresolved_trigger(diagnostic)) {
 			diagnostic.status = route_plan_status::partial;
 			if (diagnostic.problem.empty())

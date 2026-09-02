@@ -355,7 +355,7 @@ route_plan_result plan_route(
     const route_snapshot &snapshot,
     const route_query &query,
     const route_visibility_query &visibility = {},
-    bool allow_transition_compatibility = true);
+    bool allow_transition_compatibility = false);
 
 route_target_selection select_route_target(
     const route_snapshot &snapshot,

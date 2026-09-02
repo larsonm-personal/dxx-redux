@@ -31,8 +31,8 @@
 
 /* --- constants --- */
 #define COOP_SAVE_META_TAG          0x434F4F50 /* "COOP" */
-#define COOP_SAVE_META_VER          5
-#define COOP_SAVE_FOOTER_TAG        0x35504643 /* "CFP5" */
+#define COOP_SAVE_META_VER          6
+#define COOP_SAVE_FOOTER_TAG        0x36504643 /* "CFP6" */
 #define COOP_MAX_REMEMBERED_PLAYERS 16
 #define COOP_CLIENT_ID_LEN          36         /* UUID without null */
 #define COOP_SAVE_MAX_WEAPONS       10         /* max(d1=5, d2=10) */
@@ -54,6 +54,10 @@ typedef struct coop_player_record {
 	uint8_t laser_level;
 	uint16_t primary_weapon_flags;
 	uint16_t secondary_weapon_flags;
+	int8_t primary_weapon;
+	int8_t secondary_weapon;
+	fix afterburner_charge; /* zero in D1 */
+	int16_t kill_goal_count;
 	uint16_t primary_ammo[COOP_SAVE_MAX_WEAPONS];
 	uint16_t secondary_ammo[COOP_SAVE_MAX_WEAPONS];
 	uint32_t flags; /* player flags (keys, powerups) */
