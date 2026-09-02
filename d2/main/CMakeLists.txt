@@ -318,6 +318,14 @@ if(NOT ANDROID)
         AUDIO_TAG_METADATA
         INCLUDE_GAME_DIR)
     dxx_add_headless_target(
+        dxx-redux-d2-metadata-worker
+        ../../android/app/src/main/cpp/headless/level_metadata_worker_main.cpp
+        GAME_SOURCES ${D2X_HEADLESS_SOURCES} ../../android/app/src/main/cpp/jni_level_metadata.cpp
+        PRIVATE_DEFINITIONS DXX_BUILD_DESCENT_II
+        PRIVATE_LIBRARIES ${DXX_TARGET_PREFIX}libmve
+        AUDIO_TAG_METADATA
+        INCLUDE_GAME_DIR)
+    dxx_add_headless_target(
         dxx-redux-d2-headless-route
         ../../android/app/src/main/cpp/headless/route_confirmation_headless_main.cpp
         GAME_SOURCES ${D2X_HEADLESS_SOURCES}

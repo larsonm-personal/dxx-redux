@@ -3,7 +3,9 @@
 param(
     [switch]$NoRegressionCopy,
     [switch]$CdSourcesOnly,
+    [switch]$NoBuild,
     [string]$ArchiveName = "",
+    [string[]]$ArchiveNames,
     [string[]]$CdSourceIds,
     [ValidateRange(1, [int]::MaxValue)][int]$ArchiveTimeoutSeconds = 120
 )
@@ -32,10 +34,8 @@ $stagesDir = Join-Path $outDir "stages"
 $summaryJsonl = Join-Path $outDir "summary.jsonl"
 $largeZipBytes = 524288000
 $largeZipIncludePatterns = @("ewithin-versions.zip")
-# Host-side mirror of MissionVariantPolicy.kt. The host generator cannot execute
-# Android Kotlin, so keep this directory order synchronized with
-# MISSION_VARIANT_MASK_PRECEDENCE.
-$missionVariantDirectoryMaskPrecedence = @("REBIRTH", "DOS", "D2X")
+$hasArchiveFilter = -not [string]::IsNullOrWhiteSpace($ArchiveName) -or @($ArchiveNames).Count -gt 0
+$missionVariantDirectoryMaskPrecedence = @()
 $invariantCulture = [System.Globalization.CultureInfo]::InvariantCulture
 $d1DataCandidates = @(
     (Join-Path $repoRoot "game_data\extracted\d1 mac extracted"),
@@ -65,7 +65,7 @@ function Get-HostExecutable {
     param([Parameter(Mandatory = $true)][ValidateSet("d1", "d2")][string]$Game)
 
     $buildDir = if ($Game -eq "d1") { "buildd1" } else { "buildd2" }
-    $base = "dxx-redux-$Game-headless-metadata"
+    $base = "dxx-redux-$Game-metadata-worker"
     foreach ($name in @("$base.exe", $base)) {
         $candidate = Join-Path $repoRoot "$buildDir\main\$name"
         if (Test-Path -LiteralPath $candidate -PathType Leaf) {
@@ -91,22 +91,39 @@ function Get-PowerShellPath {
 }
 
 function Initialize-HostExecutable {
+    if (-not $NoBuild) {
+        Write-Status "Incrementally building Windows metadata executables"
+        if ($env:OS -eq "Windows_NT") {
+            $powershell = Get-PowerShellPath
+            & $powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File (Join-Path $repoRoot "run-windows-build.ps1") -Target both 2>&1 |
+                ForEach-Object { Write-Host ([string]$_) }
+        } else {
+            $bash = Get-Command bash -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (-not $bash) { throw "bash not found for host build" }
+            & $bash.Source (Join-Path $repoRoot "run-linux-build.sh") --target both 2>&1 |
+                ForEach-Object { Write-Host ([string]$_) }
+        }
+        if ($LASTEXITCODE -ne 0) { throw "Host build failed with exit code $LASTEXITCODE" }
+    }
+
     $d1 = Get-HostExecutable -Game d1
     $d2 = Get-HostExecutable -Game d2
     if ($d1 -and $d2) {
         return @{ d1 = $d1; d2 = $d2 }
     }
 
-    Write-Status "Building host metadata executables"
+    Write-Status "Building missing host metadata executables"
     if ($env:OS -eq "Windows_NT") {
         $powershell = Get-PowerShellPath
-        & $powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File (Join-Path $repoRoot "run-windows-build.ps1") -Target both
+        & $powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File (Join-Path $repoRoot "run-windows-build.ps1") -Target both 2>&1 |
+            ForEach-Object { Write-Host ([string]$_) }
     } else {
         $bash = Get-Command bash -ErrorAction SilentlyContinue | Select-Object -First 1
         if (-not $bash) {
             throw "bash not found for host build"
         }
-        & $bash.Source (Join-Path $repoRoot "run-linux-build.sh") --target both
+        & $bash.Source (Join-Path $repoRoot "run-linux-build.sh") --target both 2>&1 |
+            ForEach-Object { Write-Host ([string]$_) }
     }
     if ($LASTEXITCODE -ne 0) {
         throw "Host build failed with exit code $LASTEXITCODE"
@@ -118,6 +135,22 @@ function Initialize-HostExecutable {
         throw "Host metadata executables were not found after build"
     }
     return @{ d1 = $d1; d2 = $d2 }
+}
+
+function Initialize-MetadataKotlinCli {
+    $cli = Join-Path $androidRoot 'mission-metadata-cli\build\install\mission-metadata-cli\bin\mission-metadata-cli.bat'
+    $jdkHome = 'C:\local\jdk-21'
+    if (Test-Path -LiteralPath $jdkHome -PathType Container) {
+        $env:JAVA_HOME = $jdkHome
+        $env:Path = "$jdkHome\bin;$env:Path"
+    }
+    if (-not $NoBuild) {
+        & (Join-Path $androidRoot 'gradlew.bat') -p $androidRoot :mission-metadata-cli:installDist --console=plain 2>&1 |
+            ForEach-Object { Write-Host ([string]$_) }
+        if ($LASTEXITCODE -ne 0) { throw "Mission metadata Kotlin CLI build failed with exit code $LASTEXITCODE" }
+    }
+    if (-not (Test-Path -LiteralPath $cli -PathType Leaf)) { throw "Mission metadata Kotlin CLI not found: $cli" }
+    return $cli
 }
 
 function Get-SafeLabel {
@@ -192,6 +225,15 @@ function Get-StringProp {
     $value = Get-Prop $Object $Name $Default
     if ($null -eq $value) { return $Default }
     return [string]$value
+}
+
+function Get-FirstProp {
+    param($Object, [string[]]$Names, $Default = $null)
+    foreach ($name in $Names) {
+        $property = if ($null -ne $Object) { $Object.PSObject.Properties[$name] } else { $null }
+        if ($property) { return $property.Value }
+    }
+    return $Default
 }
 
 function Get-ArrayValue {
@@ -303,15 +345,15 @@ function ConvertTo-CheckedInLevelJson {
         trigger_count = [int](Get-Prop $Level "trigger_count" 0)
         object_count = [int](Get-Prop $Level "object_count" 0)
         texture_count = [int](Get-Prop $Level "texture_count" 0)
-        player_starts = [int](Get-Prop $Level "player_start_count" 0)
-        coop_only_starts = [int](Get-Prop $Level "coop_only_start_count" 0)
-        powerups = [int](Get-Prop $Level "powerup_count" 0)
-        reactors = [int](Get-Prop $Level "reactor_count" 0)
-        robots = [int](Get-Prop $Level "robot_count" 0)
-        hostages = [int](Get-Prop $Level "hostage_count" 0)
-        secrets = [int](Get-Prop $Level "secret_count" 0)
-        matcens = [int](Get-Prop $Level "matcen_count" 0)
-        energy_centers = [int](Get-Prop $Level "energy_center_count" 0)
+        player_starts = [int](Get-FirstProp $Level @("player_starts", "player_start_count") 0)
+        coop_only_starts = [int](Get-FirstProp $Level @("coop_only_starts", "coop_only_start_count") 0)
+        powerups = [int](Get-FirstProp $Level @("powerups", "powerup_count") 0)
+        reactors = [int](Get-FirstProp $Level @("reactors", "reactor_count") 0)
+        robots = [int](Get-FirstProp $Level @("robots", "robot_count") 0)
+        hostages = [int](Get-FirstProp $Level @("hostages", "hostage_count") 0)
+        secrets = [int](Get-FirstProp $Level @("secrets", "secret_count") 0)
+        matcens = [int](Get-FirstProp $Level @("matcens", "matcen_count") 0)
+        energy_centers = [int](Get-FirstProp $Level @("energy_centers", "energy_center_count") 0)
         mine_volume = [double](Get-Prop $Level "mine_volume" 0.0)
         mine_volume_normalized = $mineVolumeNormalized
         mine_volume_text = Format-LevelMultiplier -Value $mineVolumeNormalized
@@ -392,6 +434,20 @@ function ConvertTo-CheckedInMissionJson {
     Add-IfString -Target $result -Name "mission_path" -Value $MissionPath
     $result["target_index"] = $TargetIndex
     return $result
+}
+
+function Get-CheckedInMissionJson {
+    param(
+        [Parameter(Mandatory = $true)][string]$RawPath,
+        [int]$TargetIndex,
+        [string]$SourceName = '',
+        [string]$MissionFilename = '',
+        [string]$MissionPath = ''
+    )
+    return Invoke-MetadataKotlinWorker -Worker $script:metadataKotlinWorker -Request ([ordered]@{
+            op = 'project'; raw_path = $RawPath; target_index = $TargetIndex
+            source_name = $SourceName; mission_filename = $MissionFilename; mission_path = $MissionPath
+        })
 }
 
 function Copy-StageAlias {
@@ -628,6 +684,52 @@ function Get-HeadlessFailureSummary {
     return "headless metadata failed for ${Mission}: $tail; log=$LogPath"
 }
 
+function New-MetadataWorker {
+    param([Parameter(Mandatory = $true)][string]$Executable)
+
+    $startInfo = [Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = $Executable
+    $startInfo.RedirectStandardInput = $true
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+    $process = [Diagnostics.Process]::Start($startInfo)
+    return @{ Process = $process; ErrorTask = $process.StandardError.ReadToEndAsync() }
+}
+
+function Invoke-MetadataWorker {
+    param(
+        [Parameter(Mandatory = $true)]$Worker,
+        [Parameter(Mandatory = $true)][System.Collections.IDictionary]$Request,
+        [Parameter(Mandatory = $true)][string]$RawOutputPath,
+        [Parameter(Mandatory = $true)][string]$LogPath,
+        [int]$TimeoutSeconds = 120
+    )
+
+    $process = $Worker.Process
+    if ($process.HasExited) { throw "metadata worker exited with code $($process.ExitCode)" }
+    $process.StandardInput.WriteLine(($Request | ConvertTo-Json -Depth 20 -Compress))
+    $process.StandardInput.Flush()
+    $logLines = [Collections.Generic.List[string]]::new()
+    while ($true) {
+        $readTask = $process.StandardOutput.ReadLineAsync()
+        if (-not $readTask.Wait($TimeoutSeconds * 1000)) {
+            try { $process.Kill($true) } catch { try { $process.Kill() } catch {} }
+            throw "metadata worker timed out after $TimeoutSeconds seconds"
+        }
+        $line = $readTask.Result
+        if ($null -eq $line) { throw "metadata worker closed its output unexpectedly" }
+        if ($line.StartsWith("DXXMETA`t", [StringComparison]::Ordinal)) {
+            $json = $line.Substring(8)
+            Write-Utf8NoBomTextAtomically -Path $RawOutputPath -Text ($json + "`n")
+            Write-Utf8NoBomTextAtomically -Path $LogPath -Text (($logLines -join "`n") + $(if ($logLines.Count) { "`n" } else { "" }))
+            return $json | ConvertFrom-Json
+        }
+        $logLines.Add($line)
+    }
+}
+
 function Expand-MissionArchive {
     param(
         [Parameter(Mandatory = $true)][System.IO.FileInfo]$Archive,
@@ -670,45 +772,47 @@ function Get-CleanMissionDescriptorValue {
 
 function Get-MissionDescriptorInfo {
     param([Parameter(Mandatory = $true)][System.IO.FileInfo]$Descriptor)
-
-    $values = @{}
-    $descriptorText = [IO.File]::ReadAllText($Descriptor.FullName)
-    foreach ($line in [regex]::Split($descriptorText, "`r`n|`n|`r")) {
-        $trimmed = $line.Trim()
-        if (-not $trimmed -or $trimmed.StartsWith(";") -or $trimmed.StartsWith("#")) {
-            continue
-        }
-        $eq = $trimmed.IndexOf("=")
-        if ($eq -lt 0) {
-            continue
-        }
-        $key = $trimmed.Substring(0, $eq).Trim().ToLowerInvariant()
-        $values[$key] = Get-CleanMissionDescriptorValue -Value $trimmed.Substring($eq + 1)
-    }
-    $name = if ($values.ContainsKey("name")) { $values["name"] } else { "" }
-    $enhancedName = ""
-    foreach ($key in @("xname", "zname", "!name")) {
-        if ($values.ContainsKey($key) -and $values[$key]) {
-            $enhancedName = $values[$key]
-            break
-        }
-    }
-    $displayName = if ($enhancedName -and $name -ieq $Descriptor.BaseName) { $enhancedName } elseif ($name) { $name } else { $enhancedName }
-    if (-not $displayName) {
-        $displayName = $Descriptor.BaseName
-    }
-    $modeFlags = @(
-        foreach ($key in @("normal", "coop", "anarchy", "robo_anarchy", "capture_flag", "hoard")) {
-            if ($values.ContainsKey($key) -and $values[$key].ToLowerInvariant() -in @("yes", "true", "1")) {
-                $key
-            }
-        }
-    )
+    $parsed = Invoke-MetadataKotlinWorker -Worker $script:metadataKotlinWorker -Request ([ordered]@{ op = 'descriptor'; path = $Descriptor.FullName })
+    if (-not [bool]$parsed.valid) { throw "Invalid mission descriptor $($Descriptor.Name): $($parsed.problem)" }
     return [pscustomobject]@{
-        DisplayName = $displayName
-        Filename = $Descriptor.Name
-        Type = if ($values.ContainsKey("type")) { $values["type"].ToLowerInvariant() } else { "normal" }
-        ModeFlags = $modeFlags
+        DisplayName = [string]$parsed.display_name
+        Filename = [string]$parsed.filename
+        Type = [string]$parsed.type
+        ModeFlags = @($parsed.mode_flags)
+        NormalLevelFiles = @($parsed.normal_level_files)
+        SecretLevelFiles = @($parsed.secret_level_files)
+    }
+}
+
+function New-MetadataKotlinWorker {
+    param([Parameter(Mandatory = $true)][string]$CliPath)
+    $startInfo = [Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = $env:ComSpec
+    $startInfo.ArgumentList.Add('/d')
+    $startInfo.ArgumentList.Add('/c')
+    $startInfo.ArgumentList.Add($CliPath)
+    $startInfo.ArgumentList.Add('--server')
+    $startInfo.RedirectStandardInput = $true
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+    $process = [Diagnostics.Process]::Start($startInfo)
+    return @{ Process = $process; ErrorTask = $process.StandardError.ReadToEndAsync() }
+}
+
+function Invoke-MetadataKotlinWorker {
+    param([Parameter(Mandatory = $true)]$Worker, [Parameter(Mandatory = $true)][System.Collections.IDictionary]$Request)
+    $process = $Worker.Process
+    if ($process.HasExited) { throw "Kotlin metadata worker exited with code $($process.ExitCode)" }
+    $process.StandardInput.WriteLine(($Request | ConvertTo-Json -Compress))
+    $process.StandardInput.Flush()
+    while ($true) {
+        $line = $process.StandardOutput.ReadLine()
+        if ($null -eq $line) { throw 'Kotlin metadata worker closed its output unexpectedly' }
+        if ($line.StartsWith("DXXKOTLIN`t", [StringComparison]::Ordinal)) {
+            return $line.Substring(10) | ConvertFrom-Json
+        }
     }
 }
 
@@ -762,22 +866,18 @@ function Invoke-HeadlessScan {
     $game = if ($Descriptor.Extension.Equals(".msn", [StringComparison]::OrdinalIgnoreCase)) { "d1" } else { "d2" }
     $mission = [IO.Path]::GetFileNameWithoutExtension($Descriptor.Name)
     $descriptorInfo = Get-MissionDescriptorInfo -Descriptor $Descriptor
-    $exe = $Executables[$game]
     $dataDir = $DataDirs[$game]
-    $arguments = @(
-        "-hogdir", $dataDir,
-        "-extra-dir", $StageDir,
-        "-mission", $mission,
-        "-secretarea-json-out", $RawOutputPath
-    )
-    if ($descriptorInfo.ModeFlags.Count -gt 0) {
-        $arguments += @("-mission-mode-flags", ($descriptorInfo.ModeFlags -join ","))
+    $missionHogs = @(Get-ChildItem -LiteralPath $StageDir -File -Filter '*.hog' | ForEach-Object { $_.FullName })
+    $request = [ordered]@{
+        schema = 'dxx-level-metadata-request-v1'; request_id = [guid]::NewGuid().ToString('N')
+        game = $game; source_name = $descriptorInfo.DisplayName; source_type = 'mission_files'
+        data_dir = $dataDir; extra_data_dir = $StageDir; mission_name = $mission
+        mission_display_name = $descriptorInfo.DisplayName; mission_filename = $descriptorInfo.Filename
+        mission_type = $descriptorInfo.Type; mission_mode_flags = @($descriptorInfo.ModeFlags)
+        level_file = ''; level_num = 0; hog_path = ''; hog_paths = @($missionHogs)
+        normal_level_files = @($descriptorInfo.NormalLevelFiles); secret_level_files = @($descriptorInfo.SecretLevelFiles)
     }
-    $exitCode = Invoke-HeadlessMetadataProcess -Executable $exe -Arguments $arguments -LogPath $LogPath -TimeoutSeconds $TimeoutSeconds
-    if ($exitCode -ne 0) {
-        throw (Get-HeadlessFailureSummary -Mission $mission -LogPath $LogPath)
-    }
-    return Get-Content -LiteralPath $RawOutputPath -Raw | ConvertFrom-Json
+    return Invoke-MetadataWorker -Worker $Executables[$game] -Request $request -RawOutputPath $RawOutputPath -LogPath $LogPath -TimeoutSeconds $TimeoutSeconds
 }
 
 function Invoke-BuiltinHeadlessScan {
@@ -789,14 +889,15 @@ function Invoke-BuiltinHeadlessScan {
         [Parameter(Mandatory = $true)][string]$LogPath
     )
 
-    $exitCode = Invoke-HeadlessMetadataProcess -Executable $Executables[$Game] -Arguments @(
-        "-hogdir", $DataDirs[$Game],
-        "-secretarea-json-out", $RawOutputPath
-    ) -LogPath $LogPath
-    if ($exitCode -ne 0) {
-        throw (Get-HeadlessFailureSummary -Mission $Game -LogPath $LogPath)
+    $request = [ordered]@{
+        schema = 'dxx-level-metadata-request-v1'; request_id = [guid]::NewGuid().ToString('N')
+        game = $Game; source_name = $(if ($Game -eq 'd1') { 'Descent' } else { 'Descent 2' })
+        source_type = 'base_game'; data_dir = $DataDirs[$Game]; extra_data_dir = ''
+        mission_name = ''; mission_display_name = ''; mission_filename = ''
+        mission_type = 'normal'; mission_mode_flags = @(); level_file = ''; level_num = 0
+        hog_path = ''; hog_paths = @(); normal_level_files = @(); secret_level_files = @()
     }
-    return Get-Content -LiteralPath $RawOutputPath -Raw | ConvertFrom-Json
+    return Invoke-MetadataWorker -Worker $Executables[$Game] -Request $request -RawOutputPath $RawOutputPath -LogPath $LogPath
 }
 
 function Write-SummaryRecord {
@@ -811,7 +912,14 @@ if (-not (Test-Path -LiteralPath $zipDir -PathType Container)) {
     throw "Mission metadata source directory not found: $zipDir"
 }
 
-$executables = Initialize-HostExecutable
+$metadataKotlinCli = Initialize-MetadataKotlinCli
+$missionVariantDirectoryMaskPrecedence = @(& $metadataKotlinCli --directory-precedence)
+if ($LASTEXITCODE -ne 0 -or $missionVariantDirectoryMaskPrecedence.Count -eq 0) {
+    throw 'Mission variant precedence could not be loaded from the shared Kotlin policy'
+}
+$script:metadataKotlinWorker = New-MetadataKotlinWorker -CliPath $metadataKotlinCli
+$workerExecutables = Initialize-HostExecutable
+$executables = @{ d1 = New-MetadataWorker -Executable $workerExecutables.d1; d2 = New-MetadataWorker -Executable $workerExecutables.d2 }
 $standardDeps = @(Get-StandardGameDataDeps)
 $d1Dependencies = @($standardDeps | Where-Object { $_.file -in @("descent.hog", "descent.pig") })
 $d2Dependencies = @($standardDeps | Where-Object { $_.file -in @("descent2.hog", "descent2.ham", "groupa.pig") })
@@ -835,7 +943,7 @@ $batchStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 $seenCdDescriptorHashes = @{}
 
 $allCdSources =
-if ($ArchiveName) {
+if ($hasArchiveFilter) {
     @()
 } else {
     @(Resolve-CdLevelMetadataSources -RepoRoot $repoRoot -ManifestPath $cdSourceManifest -OutputDir $zipDir)
@@ -893,7 +1001,7 @@ foreach ($source in $allCdSources) {
                 Write-Status "  UNANALYZABLE $($descriptor.Name): $reason" "Yellow"
                 continue
             }
-            $missions += ConvertTo-CheckedInMissionJson -Raw $raw -TargetIndex $missions.Count -SourceName $descriptorInfo.DisplayName -MissionFilename $descriptorInfo.Filename
+            $missions += Get-CheckedInMissionJson -RawPath $rawOutputPath -TargetIndex $missions.Count -SourceName $descriptorInfo.DisplayName -MissionFilename $descriptorInfo.Filename
         }
         if ($missions.Count -eq 0) {
             throw "CD metadata source has no new non-anarchy mission descriptors"
@@ -927,14 +1035,14 @@ foreach ($source in $allCdSources) {
 }
 
 if (-not $CdSourcesOnly) {
-    if (-not $ArchiveName) {
+    if (-not $hasArchiveFilter) {
         $counterstrikeRawPath = Join-Path $rawDir "Counterstrike.metadata.json"
         $counterstrikeLogPath = Join-Path $logsDir "Counterstrike.log"
         $counterstrikeMetadataPath = Join-Path $metadataDir "Counterstrike.json"
         $counterstrikeRegressionPath = Join-Path $zipDir "Counterstrike.json"
         Write-Status "Host metadata: built-in Counterstrike"
         $counterstrikeRaw = Invoke-BuiltinHeadlessScan -Game d2 -Executables $executables -DataDirs $dataDirs -RawOutputPath $counterstrikeRawPath -LogPath $counterstrikeLogPath
-        $counterstrike = ConvertTo-CheckedInMissionJson -Raw $counterstrikeRaw -TargetIndex 0 -SourceName "descent2.hog" -MissionFilename "d2"
+        $counterstrike = Get-CheckedInMissionJson -RawPath $counterstrikeRawPath -TargetIndex 0 -SourceName "descent2.hog" -MissionFilename "d2"
         Write-JsonValue -Path $counterstrikeMetadataPath -Value $counterstrike -MissionMetadata
         if (-not $NoRegressionCopy) {
             Write-Utf8NoBomTextAtomically -Path $counterstrikeRegressionPath -Text ([System.IO.File]::ReadAllText($counterstrikeMetadataPath))
@@ -949,15 +1057,17 @@ if (-not $CdSourcesOnly) {
                 ForEach-Object { [pscustomobject]@{ Archive = $_; Source = $source } }
             }
         ) | Sort-Object @{ Expression = { $_.Source.Id } }, @{ Expression = { $_.Archive.Name } }
-        if ($ArchiveName) {
+        $requestedArchiveNames = if ($ArchiveNames) { @($ArchiveNames) } elseif ($ArchiveName) { @($ArchiveName) } else { @() }
+        if ($requestedArchiveNames.Count -gt 0) {
+            $requestedArchiveSet = [Collections.Generic.HashSet[string]]::new([string[]]$requestedArchiveNames, [StringComparer]::OrdinalIgnoreCase)
             $archives = @(
                 $archives | Where-Object {
-                    $_.Archive.Name.Equals($ArchiveName, [StringComparison]::OrdinalIgnoreCase)
+                    $requestedArchiveSet.Contains($_.Archive.Name)
                 }
             )
         }
         if ($archives.Count -eq 0) {
-            throw $(if ($ArchiveName) { "Mission archive not found: $ArchiveName" } else { "No mission archives found in $zipDir" })
+            throw $(if ($requestedArchiveNames.Count -gt 0) { "Requested mission archives not found: $($requestedArchiveNames -join ', ')" } else { "No mission archives found in $zipDir" })
         }
 
         $index = 0
@@ -1018,7 +1128,7 @@ if (-not $CdSourcesOnly) {
                     $descriptorInfo = Get-MissionDescriptorInfo -Descriptor $descriptor
                     $missionPath = Get-RawMissionDescriptorPath -RawDirPath $rawArchiveDir -StagedDescriptor $descriptor -VariantSelection $variantSelection
                     $raw = Invoke-HeadlessScan -Descriptor $descriptor -StageDir $stageDir -Executables $executables -DataDirs $dataDirs -RawOutputPath $rawOutputPath -LogPath $logPath -TimeoutSeconds $ArchiveTimeoutSeconds
-                    $missions += ConvertTo-CheckedInMissionJson -Raw $raw -TargetIndex $targetIndex -SourceName $descriptorInfo.DisplayName -MissionFilename $descriptorInfo.Filename -MissionPath $missionPath
+                    $missions += Get-CheckedInMissionJson -RawPath $rawOutputPath -TargetIndex $targetIndex -SourceName $descriptorInfo.DisplayName -MissionFilename $descriptorInfo.Filename -MissionPath $missionPath
                     $targetIndex++
                 }
                 Write-JsonValue -Path $metadataPath -Value ([object[]]$missions) -MissionMetadata

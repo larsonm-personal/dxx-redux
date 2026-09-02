@@ -1211,6 +1211,11 @@ static int secret_area_player_radius(void)
 	return 0;
 }
 
+int level_metadata_player_radius_current(void)
+{
+	return secret_area_player_radius();
+}
+
 static int secret_area_navigator_radius(int start_objnum)
 {
 	int objnum;

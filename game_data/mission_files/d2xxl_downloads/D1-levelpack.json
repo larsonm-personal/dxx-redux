@@ -6,10 +6,10 @@
     "mission_name": "Arakian Mine 1",
     "mission_filename": "arakian.msn",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -19,19 +19,19 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
+      "player_start_min": 0,
+      "player_start_max": 0,
       "coop_start_min": 0,
       "coop_start_max": 0,
-      "robots": 58,
-      "hostages": 4,
-      "matcens": 6,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 44,
+      "powerups": 0,
       "reactors": 0
     },
     "coop_starts": "1",
@@ -76,7 +76,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 204
+        "length_s": 206
       },
       {
         "track": 6,
@@ -229,7 +229,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Arakian Mine 1",
         "level_file": "arakian.rdl",
@@ -366,20 +366,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 86,
-      "hostages": 4,
-      "matcens": 4,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 34,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -576,7 +576,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Aurora Outpost",
         "level_file": "aurora.rdl",
@@ -711,10 +711,10 @@
     "mission_name": "Caverns Of Croix 1.1",
     "mission_filename": "CAVERN11.MSN",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -724,20 +724,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 58,
-      "hostages": 14,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
       "matcens": 0,
       "guidebots": 0,
-      "powerups": 33,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -781,7 +781,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 204
+        "length_s": 206
       },
       {
         "track": 6,
@@ -934,7 +934,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Spelunker's Splatterfest",
         "level_file": "cavern11.rdl",
@@ -1139,10 +1139,10 @@
     "mission_name": "checkpoint charlie",
     "mission_filename": "CHARLIE.MSN",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -1152,20 +1152,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 61,
-      "hostages": 6,
-      "matcens": 1,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 72,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -1209,7 +1209,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 204
+        "length_s": 206
       },
       {
         "track": 6,
@@ -1362,7 +1362,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "checkpoint charlie",
         "level_file": "CHARLIE.RDL",
@@ -1428,10 +1428,10 @@
     "mission_name": "CorkScrew",
     "mission_filename": "CORKSCRW.MSN",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -1441,20 +1441,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 219,
-      "hostages": 6,
-      "matcens": 5,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 59,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -1498,7 +1498,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 204
+        "length_s": 206
       },
       {
         "track": 6,
@@ -1651,7 +1651,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "The Corkscrew",
         "level_file": "CORKSCRW.RDL",
@@ -1879,10 +1879,10 @@
     "mission_name": "Disc Fun Park",
     "mission_filename": "DISCS.MSN",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -1892,20 +1892,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
+      "player_start_min": 0,
+      "player_start_max": 0,
       "coop_start_min": 0,
       "coop_start_max": 0,
-      "robots": 53,
-      "hostages": 6,
-      "matcens": 7,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 40,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "1",
     "track_names": [
@@ -1949,7 +1949,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 204
+        "length_s": 206
       },
       {
         "track": 6,
@@ -2102,7 +2102,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Ptmc secret outpost",
         "level_file": "DISCS.RDL",
@@ -2123,15 +2123,15 @@
         "mine_volume": 6730230.0,
         "mine_volume_normalized": 1.47176,
         "mine_volume_text": "1.5x",
-        "travel_distance": 3266.0,
-        "travel_time_seconds": 65,
-        "travel_time_text": "1M:05S",
+        "travel_distance": 5391.9,
+        "travel_time_seconds": 108,
+        "travel_time_text": "1M:48S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
-        "route_required_key_mask": 5,
-        "route_completing_key_mask_set": 160,
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -2197,6 +2197,20 @@
           },
           {
             "index": 4,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 243,
+            "label_pos": {
+              "x": -195.1,
+              "y": -122.4,
+              "z": -204.1
+            },
+            "distance": 1293.9,
+            "key": "red"
+          },
+          {
+            "index": 5,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -2206,10 +2220,10 @@
               "y": 25.9,
               "z": -261.0
             },
-            "distance": 531.9
+            "distance": 1494.9
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -2221,14 +2235,11 @@
               "y": -41.3,
               "z": -475.9
             },
-            "distance": 589.4,
+            "distance": 458.4,
             "trigger": 20,
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ],
-        "notes": [
-          "red key not necessary"
         ]
       }
     ],
@@ -2242,10 +2253,10 @@
     "mission_name": "Dragon Fortress",
     "mission_filename": "DRAGON.MSN",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -2255,20 +2266,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 137,
-      "hostages": 4,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
       "matcens": 0,
       "guidebots": 0,
-      "powerups": 55,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -2312,7 +2323,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 204
+        "length_s": 206
       },
       {
         "track": 6,
@@ -2465,7 +2476,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Dragon Fortress",
         "level_file": "DRAGON.RDL",
@@ -2643,10 +2654,10 @@
     "mission_name": "Earth Strike",
     "mission_filename": "ERTHSTRK.MSN",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -2656,20 +2667,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 63,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
       "hostages": 0,
-      "matcens": 2,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 14,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -2713,7 +2724,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 204
+        "length_s": 206
       },
       {
         "track": 6,
@@ -2866,7 +2877,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Earth Strike",
         "level_file": "level01.rdl",
@@ -3047,10 +3058,10 @@
     "mission_name": "Galileo Orbiter",
     "mission_filename": "GALILEO.MSN",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -3060,20 +3071,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 1,
+      "player_start_min": 0,
+      "player_start_max": 0,
       "coop_start_min": 0,
       "coop_start_max": 0,
-      "robots": 42,
-      "hostages": 5,
-      "matcens": 14,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 29,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "1",
     "track_names": [
@@ -3117,7 +3128,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 204
+        "length_s": 206
       },
       {
         "track": 6,
@@ -3270,7 +3281,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Galileo Orbiter",
         "level_file": "galileo.rdl",
@@ -3497,10 +3508,10 @@
     "mission_name": "Helium",
     "mission_filename": "helium.mn2",
     "mission_intent": {
-      "classification": "multiplayer_anarchy",
-      "rule": "all_levels_arena_like",
-      "confidence": "medium",
-      "reason": "Every normal level has multiple player starts and no campaign actors",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -3510,20 +3521,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
+      "normal_levels": 0,
       "campaign_actor_levels": 0,
-      "arena_like_levels": 1,
+      "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
       "robots": 0,
       "hostages": 0,
       "matcens": 0,
       "guidebots": 0,
-      "powerups": 63,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -3569,7 +3580,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 157
+        "length_s": 206
       },
       {
         "track": 6,
@@ -3596,7 +3607,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Helium",
         "level_file": "helium.rl2",
@@ -3617,15 +3628,15 @@
         "mine_volume": 4252310.0,
         "mine_volume_normalized": 0.929893,
         "mine_volume_text": "0.93x",
-        "travel_distance": 716.5,
-        "travel_time_seconds": 14,
-        "travel_time_text": "0M:14S",
+        "travel_distance": 0.0,
+        "travel_time_seconds": 0,
+        "travel_time_text": "0M:00S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
+        "route_status": "failed",
         "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 1,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -3633,40 +3644,10 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 0
-          },
-          {
-            "index": 1,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 196,
-            "label_pos": {
-              "x": 60.0,
-              "y": -25.0,
-              "z": 405.0
-            },
-            "distance": 599.6
-          },
-          {
-            "index": 2,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 194,
-            "side": 4,
-            "wall": 15,
-            "label_pos": {
-              "x": 60.0,
-              "y": -25.0,
-              "z": 522.5
-            },
-            "distance": 116.9,
-            "trigger": 1,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_problem": "route target unreachable",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -3682,10 +3663,10 @@
     "mission_name": "The Miasma Mausoleum",
     "mission_filename": "MIASMAM.MSN",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -3695,20 +3676,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 89,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
       "hostages": 0,
       "matcens": 0,
       "guidebots": 0,
-      "powerups": 28,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -3752,7 +3733,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 204
+        "length_s": 206
       },
       {
         "track": 6,
@@ -3905,7 +3886,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "The Miasma Mausoleum",
         "level_file": "MIASMAM.RDL",
@@ -4029,10 +4010,10 @@
     "mission_name": "No Way Out",
     "mission_filename": "nwo.msn",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -4042,20 +4023,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 1,
+      "player_start_min": 0,
+      "player_start_max": 0,
       "coop_start_min": 0,
       "coop_start_max": 0,
-      "robots": 57,
-      "hostages": 6,
-      "matcens": 1,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 33,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "1",
     "track_names": [
@@ -4099,7 +4080,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 204
+        "length_s": 206
       },
       {
         "track": 6,
@@ -4252,7 +4233,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Orion SMA",
         "level_file": "nwo.rdl",
@@ -4376,10 +4357,10 @@
     "mission_name": "Saturn15",
     "mission_filename": "SATURN15.MSN",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -4389,20 +4370,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 71,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
       "hostages": 0,
-      "matcens": 2,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 54,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -4446,7 +4427,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 204
+        "length_s": 206
       },
       {
         "track": 6,
@@ -4599,7 +4580,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Destination Saturn",
         "level_file": "saturn15.rdl",
@@ -4750,10 +4731,10 @@
     "mission_name": "Shockwave",
     "mission_filename": "SHOKWAVE.MSN",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -4763,20 +4744,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 1,
+      "player_start_min": 0,
+      "player_start_max": 0,
       "coop_start_min": 0,
       "coop_start_max": 0,
-      "robots": 111,
-      "hostages": 3,
-      "matcens": 4,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 83,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "1",
     "track_names": [
@@ -4820,7 +4801,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 204
+        "length_s": 206
       },
       {
         "track": 6,
@@ -4973,7 +4954,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Shokwave",
         "level_file": "SHOKWAVE.RDL",
@@ -5432,10 +5413,10 @@
     "mission_name": "Super Station",
     "mission_filename": "SUPER_S.MSN",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -5445,20 +5426,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 104,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
       "hostages": 0,
-      "matcens": 4,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 42,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -5502,7 +5483,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 204
+        "length_s": 206
       },
       {
         "track": 6,
@@ -5655,7 +5636,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Super Station",
         "level_file": "super_s.rdl",
@@ -5736,10 +5717,10 @@
     "mission_name": "tribyss omega",
     "mission_filename": "TRIBYSS.MSN",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -5749,20 +5730,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 118,
-      "hostages": 8,
-      "matcens": 3,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 100,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -5806,7 +5787,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 204
+        "length_s": 206
       },
       {
         "track": 6,
@@ -5959,7 +5940,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "tribyss omega",
         "level_file": "TRIBYSS.RDL",
@@ -6083,10 +6064,10 @@
     "mission_name": "Turncoat",
     "mission_filename": "TURNCOAT.MSN",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -6096,19 +6077,19 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 1,
+      "player_start_min": 0,
+      "player_start_max": 0,
       "coop_start_min": 0,
       "coop_start_max": 0,
-      "robots": 112,
-      "hostages": 5,
-      "matcens": 11,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 123,
+      "powerups": 0,
       "reactors": 0
     },
     "coop_starts": "1",
@@ -6153,7 +6134,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 204
+        "length_s": 206
       },
       {
         "track": 6,
@@ -6306,7 +6287,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Turncoat",
         "level_file": "turncoat.RDL",

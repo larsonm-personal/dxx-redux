@@ -6,10 +6,10 @@
     "mission_name": "norlige elektro, depri",
     "mission_filename": "norep.mn2",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -19,20 +19,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 1,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 129,
-      "hostages": 4,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
       "matcens": 0,
       "guidebots": 0,
-      "powerups": 128,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -105,7 +105,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "norlige elektro, depri",
         "level_file": "sammy.rl2",

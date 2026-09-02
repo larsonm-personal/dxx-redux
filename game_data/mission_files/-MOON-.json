@@ -6,10 +6,10 @@
     "mission_name": "- MOON 01 -",
     "mission_filename": "-moon01-.mn2",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -19,19 +19,19 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 149,
-      "hostages": 5,
-      "matcens": 13,
-      "guidebots": 1,
-      "powerups": 128,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 0,
       "reactors": 0
     },
     "coop_starts": "4",
@@ -78,7 +78,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 157
+        "length_s": 185
       },
       {
         "track": 6,
@@ -105,7 +105,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Mond 7",
         "level_file": "MOON01.RL2",
@@ -287,10 +287,10 @@
     "mission_name": "- MOON 02 -",
     "mission_filename": "-MOON02-.MN2",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -300,20 +300,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 1,
-      "coop_start_min": 4,
-      "coop_start_max": 4,
-      "robots": 153,
-      "hostages": 4,
-      "matcens": 2,
-      "guidebots": 1,
-      "powerups": 83,
-      "reactors": 1
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "5",
     "track_names": [
@@ -359,7 +359,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 157
+        "length_s": 185
       },
       {
         "track": 6,
@@ -386,7 +386,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Mond 8",
         "level_file": "MOON02.RL2",
@@ -442,10 +442,10 @@
     "mission_name": "- MOON 03 -",
     "mission_filename": "-MOON03-.MN2",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -455,19 +455,19 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 177,
-      "hostages": 7,
-      "matcens": 2,
-      "guidebots": 1,
-      "powerups": 87,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 0,
       "reactors": 0
     },
     "coop_starts": "4",
@@ -514,7 +514,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 157
+        "length_s": 185
       },
       {
         "track": 6,
@@ -541,7 +541,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Pluto the dog",
         "level_file": "MOON03.RL2",
@@ -877,10 +877,10 @@
     "mission_name": "- MOON 04 -",
     "mission_filename": "-MOON04-.MN2",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -890,20 +890,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 110,
-      "hostages": 3,
-      "matcens": 9,
-      "guidebots": 1,
-      "powerups": 66,
-      "reactors": 1
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -949,7 +949,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 157
+        "length_s": 185
       },
       {
         "track": 6,
@@ -976,7 +976,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Mond 9",
         "level_file": "-MOON04-.RL2",
@@ -1324,10 +1324,10 @@
     "mission_name": "- MOON 05 -",
     "mission_filename": "-MOON05-.MN2",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -1337,19 +1337,19 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 111,
-      "hostages": 3,
-      "matcens": 6,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 94,
+      "powerups": 0,
       "reactors": 0
     },
     "coop_starts": "4",
@@ -1396,7 +1396,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 157
+        "length_s": 185
       },
       {
         "track": 6,
@@ -1423,7 +1423,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "MOON Serie",
         "level_file": "-moon05-.rl2",
@@ -1702,10 +1702,10 @@
     "mission_name": "- MOON 06 -",
     "mission_filename": "-MOON06-.MN2",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -1715,20 +1715,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 114,
-      "hostages": 8,
-      "matcens": 8,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 65,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -1774,7 +1774,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 157
+        "length_s": 185
       },
       {
         "track": 6,
@@ -1801,7 +1801,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "- MOON Serie -",
         "level_file": "-MOON06-.RL2",
@@ -1870,19 +1870,19 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 82,
-      "hostages": 3,
-      "matcens": 7,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 82,
+      "powerups": 0,
       "reactors": 0
     },
     "coop_starts": "4",
@@ -1929,7 +1929,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 157
+        "length_s": 185
       },
       {
         "track": 6,
@@ -1956,7 +1956,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "-Moon07-",
         "level_file": "-moon07-.rl2",
@@ -2312,20 +2312,20 @@
         "capture_flag": true,
         "hoard": true
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 76,
-      "hostages": 5,
-      "matcens": 10,
-      "guidebots": 1,
-      "powerups": 83,
-      "reactors": 1
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -2371,7 +2371,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 157
+        "length_s": 185
       },
       {
         "track": 6,
@@ -2398,7 +2398,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "mars02",
         "level_file": "-moon08-.rl2",
@@ -2764,19 +2764,19 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 118,
-      "hostages": 4,
-      "matcens": 8,
-      "guidebots": 1,
-      "powerups": 118,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 0,
       "reactors": 0
     },
     "coop_starts": "4",
@@ -2823,7 +2823,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 157
+        "length_s": 185
       },
       {
         "track": 6,
@@ -2850,7 +2850,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "- Moon09 -",
         "level_file": "-moon09-.rl2",
@@ -3438,20 +3438,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 103,
-      "hostages": 5,
-      "matcens": 4,
-      "guidebots": 1,
-      "powerups": 133,
-      "reactors": 1
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -3497,7 +3497,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 157
+        "length_s": 185
       },
       {
         "track": 6,
@@ -3524,7 +3524,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "MOON10",
         "level_file": "-moon10-.rl2",
@@ -3854,20 +3854,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 1,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 53,
-      "hostages": 4,
-      "matcens": 12,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 107,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -3940,7 +3940,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "- MOON 11 -",
         "level_file": "moon11.rl2",
@@ -4136,20 +4136,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 116,
-      "hostages": 7,
-      "matcens": 7,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 102,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -4222,7 +4222,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "- MOON 12 -",
         "level_file": "moon12.rl2",
@@ -4577,20 +4577,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 1,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 80,
-      "hostages": 5,
-      "matcens": 7,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 119,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -4636,7 +4636,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 157
+        "length_s": 185
       },
       {
         "track": 6,
@@ -4663,7 +4663,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Moon 13",
         "level_file": "MOON13.RL2",
@@ -5063,20 +5063,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 1,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 137,
-      "hostages": 2,
-      "matcens": 7,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 159,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -5122,7 +5122,7 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 157
+        "length_s": 185
       },
       {
         "track": 6,
@@ -5149,7 +5149,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "- MOON 14 -",
         "level_file": "MOON14.RL2",

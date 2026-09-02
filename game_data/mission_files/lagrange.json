@@ -132,9 +132,9 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_required_key_mask": 7,
-        "route_completing_key_mask_set": 128,
+        "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -384,6 +384,7 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_problem": "switch activation route unresolved",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -410,7 +411,7 @@
         "mine_volume": 2947300.0,
         "mine_volume_normalized": 0.644513,
         "mine_volume_text": "0.64x",
-        "travel_distance": 1570.3,
+        "travel_distance": 1529.1,
         "travel_time_seconds": 31,
         "travel_time_text": "0M:31S",
         "guidebot_count": 0,
@@ -438,7 +439,7 @@
               "y": -12.0,
               "z": 669.2
             },
-            "distance": 1423.7
+            "distance": 1453.1
           },
           {
             "index": 2,
@@ -453,7 +454,7 @@
               "y": -12.0,
               "z": 669.2
             },
-            "distance": 146.6,
+            "distance": 76.0,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"

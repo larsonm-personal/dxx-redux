@@ -2638,7 +2638,7 @@ class dependency_planner
 			const int segment = search.visit_order[index];
 			double extra_distance = 0.0;
 			route_position terminal;
-			if (!visible_source_position(
+			if (!visible_source_center_position(
 			        snapshot_, state_.progress, visibility_target,
 			        visibility_, segment, terminal, extra_distance)) {
 				if ((index & 63) == 63)
@@ -2647,6 +2647,28 @@ class dependency_planner
 					    total);
 				continue;
 			}
+			/* Guide-Bot path following stops within roughly its collision radius
+			 * of a waypoint.  A single-pixel sight line from the exact segment
+			 * center is therefore not a reproducible reactor or boss firing point.
+			 * Require a radius-wide unobstructed firing neighborhood before using
+			 * visibility as a substitute for entering the target segment. */
+			bool robust_visibility = true;
+			const int radius = query_.navigator.radius;
+			for (int coordinate = 0;
+			     robust_visibility && radius > 0 && coordinate < 3;
+			     ++coordinate)
+				for (int direction = -1; direction <= 1; direction += 2) {
+					auto nearby = terminal;
+					nearby.value[coordinate] += direction * radius;
+					if (!source_visible_from_position(
+					        snapshot_, visibility_target, visibility_, segment,
+					        nearby)) {
+						robust_visibility = false;
+						break;
+					}
+				}
+			if (!robust_visibility)
+				continue;
 			auto path = build_route_path(search, segment);
 			path.distance += extra_distance;
 			path.progress_weight = 0;
@@ -4190,10 +4212,9 @@ route_plan_result plan_route(
 					}
 #endif
 					completing_plans.push_back(std::move(candidate));
-				}
-				else if (transition_aware_paths &&
-				         (!have_partial ||
-				          candidate.steps.size() > best_partial.steps.size())) {
+				} else if (transition_aware_paths &&
+				           (!have_partial ||
+				            candidate.steps.size() > best_partial.steps.size())) {
 					best_partial = std::move(candidate);
 					have_partial = true;
 				}

@@ -2,7 +2,7 @@ package com.dxxredux.app
 
 import java.util.Locale
 
-internal data class MissionVariantPreference(
+data class MissionVariantPreference(
     val id: String,
     val displayName: String,
     val directoryNames: Set<String>,
@@ -10,7 +10,7 @@ internal data class MissionVariantPreference(
     val supportedByRedux: Boolean = true,
 )
 
-internal val MISSION_VARIANT_MASK_PRECEDENCE =
+val MISSION_VARIANT_MASK_PRECEDENCE =
     arrayOf(
         MissionVariantPreference("rebirth", "Rebirth", setOf("REBIRTH"), setOf("rebirth")),
         MissionVariantPreference("dos", "DOS", setOf("DOS"), setOf("dos")),
@@ -24,17 +24,17 @@ internal val MISSION_VARIANT_MASK_PRECEDENCE =
         ),
     )
 
-internal data class PreferredMissionVariant<T>(
+data class PreferredMissionVariant<T>(
     val value: T,
     val preference: MissionVariantPreference,
 )
 
-internal fun missionVariantForDirectoryName(name: String): MissionVariantPreference? {
+fun missionVariantForDirectoryName(name: String): MissionVariantPreference? {
     val normalized = name.uppercase(Locale.US)
     return MISSION_VARIANT_MASK_PRECEDENCE.firstOrNull { normalized in it.directoryNames }
 }
 
-internal fun missionVariantForArchiveFilename(filename: String): MissionVariantPreference? {
+fun missionVariantForArchiveFilename(filename: String): MissionVariantPreference? {
     val normalized =
         filename
             .substringAfterLast('/')
@@ -48,7 +48,7 @@ internal fun missionVariantForArchiveFilename(filename: String): MissionVariantP
     }
 }
 
-internal fun <T> selectPreferredMissionVariant(
+fun <T> selectPreferredMissionVariant(
     candidates: List<T>,
     preferenceOf: (T) -> MissionVariantPreference?,
 ): PreferredMissionVariant<T>? {

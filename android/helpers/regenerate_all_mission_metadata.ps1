@@ -1,9 +1,12 @@
 #!/usr/bin/env pwsh
 
 param(
+    [ValidateSet('Windows', 'Emulator')][string]$Engine = 'Windows',
     [ValidateRange(0.000001, 1.0)][double]$SampleFraction = 1.0,
     [ValidateRange(0, [int]::MaxValue)][int]$SampleSeed = 0,
     [string]$SampleStatePath,
+    [string[]]$ArchiveNames,
+    [switch]$NoBuild,
     [switch]$MissingOnly
 )
 
@@ -51,6 +54,36 @@ $eligibleArchiveCount = @($archiveItemsBySource.Values | ForEach-Object { $_ }).
 if ($MissingOnly -and $eligibleArchiveCount -eq 0) {
     Write-Status "All mission archives already have regression JSON files" "Green"
     exit 0
+}
+
+if ($Engine -eq 'Windows') {
+    $hostArgs = @{}
+    if ($NoBuild) { $hostArgs.NoBuild = $true }
+    if ($ArchiveNames) {
+        $hostArgs.ArchiveNames = @($ArchiveNames)
+        $hostArgs.CdSourceIds = @('__none__')
+    } elseif ($MissingOnly) {
+        $hostArgs.ArchiveNames = @($archiveItemsBySource.Values | ForEach-Object { $_ } | Select-Object -ExpandProperty Name)
+        $hostArgs.CdSourceIds = @('__none__')
+    } elseif ($SampleFraction -lt 1.0) {
+        if ($SampleSeed -eq 0) { $SampleSeed = Get-Random -Minimum 1 -Maximum ([int]::MaxValue) }
+        $selectedNames = @()
+        foreach ($source in $archiveSources) {
+            $items = @($archiveItemsBySource[$source.Id])
+            $selectedNames += @(Select-RuntimeHashRingFractionItems -Items $items -Fraction $SampleFraction `
+                    -Seed ($SampleSeed -bxor 401) -StatePath $SampleStatePath `
+                    -RingName "regenerate:metadata:archives:$($source.Id)" | Select-Object -ExpandProperty Name)
+        }
+        if ($selectedNames.Count -eq 0) {
+            Write-Status 'Windows metadata sample selected no mission archives' 'Yellow'
+            exit 0
+        }
+        $hostArgs.ArchiveNames = $selectedNames
+        $hostArgs.CdSourceIds = @('__none__')
+    }
+    Write-Status 'Using Windows-native mission metadata regeneration'
+    & $hostBatch @hostArgs
+    exit $LASTEXITCODE
 }
 
 if (Test-Path -LiteralPath $jdkHome -PathType Container) {

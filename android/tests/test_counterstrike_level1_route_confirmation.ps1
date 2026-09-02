@@ -27,6 +27,12 @@ $log = Get-Content -LiteralPath $logFile.FullName -Raw
 if ($result.status -ne 'confirmed' -or @($result.objectives).Count -ne 3) {
     throw "Counterstrike level 1 route was not confirmed: status=$($result.status) objectives=$(@($result.objectives).Count)"
 }
+$reactor = @($result.objectives | Where-Object { $_.label -eq 'Reactor' })[0]
+$exit = @($result.objectives | Where-Object { $_.label -eq 'Exit' })[0]
+if (-not $reactor -or -not $exit -or
+    ([int] $exit.frame - [int] $reactor.frame) -ge 180) {
+    throw "Counterstrike level 1 paused before its exit: reactor=$($reactor.frame) exit=$($exit.frame)"
+}
 if ($log -notmatch 'ROUTE-CONFIRM flare wall=\d+ seg=120' -or
     $log -notmatch 'ROUTE-CONFIRM extend_frontier attempt=1 actor_seg=120 semantic=159 navigation=159') {
     throw 'Counterstrike level 1 did not flare and immediately route through its red-door frontier'

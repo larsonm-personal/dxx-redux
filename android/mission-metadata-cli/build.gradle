@@ -1,0 +1,20 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm'
+    id 'application'
+}
+
+def toolVersions = new Properties()
+toolVersions.load(new FileInputStream(rootProject.file('get_deps/tool_versions.conf')))
+
+kotlin {
+    jvmToolchain(21)
+}
+
+dependencies {
+    implementation project(':mission-metadata-core')
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:${toolVersions['KOTLINX_SERIALIZATION_VERSION']}"
+}
+
+application {
+    mainClass = 'com.dxxredux.metadata.cli.MainKt'
+}

@@ -126,15 +126,15 @@
         "mine_volume": 9928270.0,
         "mine_volume_normalized": 2.17111,
         "mine_volume_text": "2.2x",
-        "travel_distance": 4221.1,
-        "travel_time_seconds": 84,
-        "travel_time_text": "1M:24S",
+        "travel_distance": 1264.0,
+        "travel_time_seconds": 25,
+        "travel_time_text": "0M:25S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_required_key_mask": 2,
-        "route_completing_key_mask_set": 4,
+        "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -156,70 +156,10 @@
             },
             "distance": 1264.0,
             "key": "red"
-          },
-          {
-            "index": 2,
-            "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 2",
-            "seg": 542,
-            "side": 0,
-            "wall": 34,
-            "label_pos": {
-              "x": -93.3,
-              "y": -294.6,
-              "z": 670.5
-            },
-            "distance": 453.4,
-            "trigger": 2,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 542,
-                "side": 0,
-                "wall": 34
-              },
-              {
-                "seg": 127,
-                "side": 5,
-                "wall": 32
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "boss",
-            "activation_kind": "destroy_boss",
-            "label": "Boss robot",
-            "seg": 436,
-            "label_pos": {
-              "x": 153.2,
-              "y": -314.6,
-              "z": 686.7
-            },
-            "distance": 699.6
-          },
-          {
-            "index": 4,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 64,
-            "side": 2,
-            "wall": 16,
-            "label_pos": {
-              "x": 70.2,
-              "y": -20.0,
-              "z": -12.7
-            },
-            "distance": 1804.1,
-            "trigger": 0,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_problem": "trigger route dependency loop: trigger 2 source 542:0 wall 34 target 127:5",
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",

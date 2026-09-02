@@ -86,6 +86,16 @@ def canonicalize_mission_metadata(value: object, parent_key: str = "") -> object
                 decimal_places=MISSION_METADATA_LINEAR_DECIMAL_PLACES,
             )
         result[key] = normalized
+    # Host and Android writers construct this field at different times
+    if "mission_filename" in result and "mission_intent" in result:
+        ordered: dict[str, object] = {}
+        for key, item in result.items():
+            if key == "mission_intent":
+                continue
+            ordered[key] = item
+            if key == "mission_filename":
+                ordered["mission_intent"] = result["mission_intent"]
+        result = ordered
     return result
 
 

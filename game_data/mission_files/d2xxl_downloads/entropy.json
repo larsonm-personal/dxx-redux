@@ -907,7 +907,7 @@
               "y": -260.0,
               "z": 260.0
             },
-            "distance": 813.6
+            "distance": 883.6
           },
           {
             "index": 4,
@@ -922,7 +922,7 @@
               "y": -260.0,
               "z": 710.0
             },
-            "distance": 116.0,
+            "distance": 46.0,
             "trigger": 28,
             "trigger_type_id": 3,
             "trigger_type": "exit"

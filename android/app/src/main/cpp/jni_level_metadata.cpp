@@ -1,10 +1,14 @@
+#ifdef __ANDROID__
 #include <jni.h>
+#endif
 
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <chrono>
 #include <cstdio>
 #include <cstring>
+#include <ctime>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -17,8 +21,10 @@
 #include <SDL.h>
 
 extern "C" {
+#ifdef __ANDROID__
 #include "android_crash_handler.h"
 #include "jni_string.h"
+#endif
 #include "args.h"
 #include "bm.h"
 #include "config.h"
@@ -60,6 +66,14 @@ static level_metadata_base_definitions Level_metadata_base_definitions = {};
 #endif
 
 using json = nlohmann::ordered_json;
+
+#ifdef __ANDROID__
+using levelmeta_env = JNIEnv *;
+using levelmeta_context = jobject;
+#else
+using levelmeta_env = void *;
+using levelmeta_context = void *;
+#endif
 
 static unsigned char *levelmeta_screen_pixels = NULL;
 static int levelmeta_runtime_ready = 0;
@@ -118,6 +132,7 @@ static std::string request_metadata_source_file(const json &request)
 
 static void breadcrumb_metadata_request(const json &request, const char *stage)
 {
+#ifdef __ANDROID__
 	const std::string game = request.value("game", "");
 	const std::string source_type = request.value("source_type", "");
 	const std::string file = request_metadata_source_file(request);
@@ -128,14 +143,24 @@ static void breadcrumb_metadata_request(const json &request, const char *stage)
 	                   stage ? stage : "", game.c_str(), source_type.c_str(), file.c_str());
 	if (!mission.empty() || !level_file.empty())
 		crash_breadcrumb_v("levelmeta detail mission=%s level=%s", mission.c_str(), level_file.c_str());
+#else
+	(void) request;
+	(void) stage;
+#endif
 }
 
 static void breadcrumb_metadata_level(const json &request, int level_num, const char *level_file)
 {
+#ifdef __ANDROID__
 	const std::string source = request_metadata_source_file(request);
 	const std::string level = leaf_name(level_file ? level_file : "");
 
 	crash_breadcrumb_v("levelmeta level n=%d file=%s source=%s", level_num, level.c_str(), source.c_str());
+#else
+	(void) request;
+	(void) level_num;
+	(void) level_file;
+#endif
 }
 
 static void write_checkpoint_progress(const json &request, const char *stage,
@@ -191,14 +216,32 @@ struct levelmeta_budget_context {
 	unsigned long long cpu_start_us = 0;
 };
 
-static unsigned long long levelmeta_clock_us(clockid_t clock_id)
+static unsigned long long levelmeta_wall_clock_us()
 {
+#ifdef _WIN32
+	return (unsigned long long) std::chrono::duration_cast<std::chrono::microseconds>(
+	           std::chrono::steady_clock::now().time_since_epoch())
+	    .count();
+#else
 	struct timespec value;
-
-	if (clock_gettime(clock_id, &value))
+	if (clock_gettime(CLOCK_MONOTONIC, &value))
 		return 0;
 	return (unsigned long long) value.tv_sec * 1000000ULL +
 	       (unsigned long long) value.tv_nsec / 1000ULL;
+#endif
+}
+
+static unsigned long long levelmeta_cpu_clock_us()
+{
+#ifdef _WIN32
+	return (unsigned long long) std::clock() * 1000000ULL / CLOCKS_PER_SEC;
+#else
+	struct timespec value;
+	if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &value))
+		return 0;
+	return (unsigned long long) value.tv_sec * 1000000ULL +
+	       (unsigned long long) value.tv_nsec / 1000ULL;
+#endif
 }
 
 static int levelmeta_budget_cancelled(void *user)
@@ -213,9 +256,8 @@ static int levelmeta_budget_cancelled(void *user)
 			return 1;
 	}
 	if (context->background && (++context->checks & 7u) == 0) {
-		const unsigned long long wall_now = levelmeta_clock_us(CLOCK_MONOTONIC);
-		const unsigned long long cpu_now =
-		    levelmeta_clock_us(CLOCK_THREAD_CPUTIME_ID);
+		const unsigned long long wall_now = levelmeta_wall_clock_us();
+		const unsigned long long cpu_now = levelmeta_cpu_clock_us();
 		if (!context->cpu_duty_control_path.empty() &&
 		    (!context->cpu_duty_last_read_us ||
 		     wall_now - context->cpu_duty_last_read_us >= 100000ULL)) {
@@ -246,9 +288,8 @@ static int levelmeta_budget_cancelled(void *user)
 				SDL_Delay((Uint32) ((delay_us + 999ULL) / 1000ULL));
 			}
 			if (wall_used >= 1000000ULL) {
-				context->wall_start_us = levelmeta_clock_us(CLOCK_MONOTONIC);
-				context->cpu_start_us =
-				    levelmeta_clock_us(CLOCK_THREAD_CPUTIME_ID);
+				context->wall_start_us = levelmeta_wall_clock_us();
+				context->cpu_start_us = levelmeta_cpu_clock_us();
 			}
 		}
 	}
@@ -364,7 +405,7 @@ static std::vector<std::string> build_runtime_args(const std::string &data_dir)
 	return args;
 }
 
-static int init_levelmeta_runtime(JNIEnv *env, jobject context, const json &request, char *error, size_t error_size)
+static int init_levelmeta_runtime(levelmeta_env env, levelmeta_context context, const json &request, char *error, size_t error_size)
 {
 	const std::string requested_data_dir = request.value("data_dir", "");
 	std::vector<std::string> arg_storage = build_runtime_args(requested_data_dir);
@@ -872,6 +913,8 @@ static json serialize_current_level_row(int level_num, const char *level_file,
 	}
 	row["route_problem"] = metadata && metadata->route_problem[0] ? metadata->route_problem : "";
 	row["route_note"] = metadata && metadata->route_note[0] ? metadata->route_note : "";
+	row["route_required_key_mask"] = metadata ? metadata->route_required_key_mask : 0;
+	row["route_completing_key_mask_set"] = metadata ? metadata->route_completing_key_mask_set : 0;
 	row["route_steps"] = serialize_route_steps(metadata);
 #ifdef DXX_BUILD_DESCENT_II
 	row["replacements"] = json::array();
@@ -1043,6 +1086,8 @@ static json failed_level_row(int level_num, const char *level_file,
 	row["failure_kind"] = failure_kind ? failure_kind : "analysis_failed";
 	row["route_problem"] = problem;
 	row["route_note"] = "";
+	row["route_required_key_mask"] = 0;
+	row["route_completing_key_mask_set"] = 0;
 	row["route_steps"] = json::array();
 	row["status"] = "failed";
 	row["problems"] = json::array({ problem });
@@ -1258,7 +1303,7 @@ static json failed_result(const json &request, const char *problem)
 	return root;
 }
 
-static json analyze_request(JNIEnv *env, jobject context, const json &request)
+static json analyze_request(levelmeta_env env, levelmeta_context context, const json &request)
 {
 	char error[256] = "";
 	const std::string source_type = request.value("source_type", "");
@@ -1359,6 +1404,7 @@ static json analyze_request(JNIEnv *env, jobject context, const json &request)
 	return finish_levelmeta_request(mounts, request, analyze_loaded_mission(request), error, sizeof(error));
 }
 
+#ifdef __ANDROID__
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_dxxredux_app_LevelMetadataNativeBridge_nativeAnalyzeLevelMetadata(JNIEnv *env,
                                                                            jobject thiz,
@@ -1396,3 +1442,21 @@ Java_com_dxxredux_app_LevelMetadataNativeBridge_nativeAnalyzeLevelMetadata(JNIEn
 	dumped = dump_metadata_json(result);
 	return dxx_jni_string_from_utf8_n(env, dumped.data(), dumped.size());
 }
+#else
+extern "C" const char *dxx_level_metadata_analyze_json(const char *request_text)
+{
+	static thread_local std::string dumped;
+	json request;
+	json result;
+	try {
+		request = json::parse(request_text ? request_text : "{}");
+		write_checkpoint(request, "begin", request.value("source_name", "").c_str());
+		result = analyze_request(nullptr, nullptr, request);
+		write_checkpoint(request, "done", result.value("status", "").c_str());
+	} catch (const std::exception &e) {
+		result = failed_result(request, e.what());
+	}
+	dumped = result.dump(-1, ' ', false, json::error_handler_t::replace);
+	return dumped.c_str();
+}
+#endif

@@ -266,8 +266,8 @@
         "guidebot_placed": true,
         "guidebot_accessible": true,
         "route_status": "ok",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 172,
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 140,
         "route_steps": [
           {
             "index": 0,

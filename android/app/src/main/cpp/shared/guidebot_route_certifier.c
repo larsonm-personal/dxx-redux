@@ -1088,9 +1088,7 @@ int guidebot_route_select_compiled_current_state(
 			break;
 		}
 		selected_segment = guidebot_step_target_segment(view, candidate);
-		if ((candidate->kind == LEVEL_METADATA_ROUTE_KEY ||
-		     candidate->kind == LEVEL_METADATA_ROUTE_REACTOR ||
-		     candidate->kind == LEVEL_METADATA_ROUTE_BOSS) &&
+		if (candidate->kind == LEVEL_METADATA_ROUTE_KEY &&
 		    guidebot_valid_segment(view, candidate->seg))
 			selected_segment = candidate->seg;
 		if (!guidebot_valid_segment(view, selected_segment)) {

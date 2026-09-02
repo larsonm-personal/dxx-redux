@@ -481,6 +481,7 @@ internal data class LevelMetadataResult(
     val diagnostics: List<String> = emptyList(),
     val failureKind: String = "",
     val missionIntent: MissionIntentSummary? = null,
+    val nativeJson: String = "",
 ) {
     companion object {
         fun fromJson(text: String): LevelMetadataResult {
@@ -599,6 +600,7 @@ internal data class LevelMetadataResult(
                 diagnostics = obj.optStringList("diagnostics"),
                 failureKind = obj.optString("failure_kind"),
                 missionIntent = obj.optMissionIntent("mission_intent"),
+                nativeJson = text,
             )
         }
 

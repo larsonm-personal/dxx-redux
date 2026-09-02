@@ -6,10 +6,10 @@
     "mission_name": "Gigalomania 01",
     "mission_filename": "gigalo01.mn2",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -19,20 +19,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 67,
-      "hostages": 1,
-      "matcens": 1,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 70,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -105,7 +105,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Alice's Ni Mine",
         "level_file": "gigaloma.rl2",
@@ -345,10 +345,10 @@
     "mission_name": "Gigalomania 02",
     "mission_filename": "gigalo02.mn2",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -358,20 +358,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 43,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
       "hostages": 0,
       "matcens": 0,
       "guidebots": 0,
-      "powerups": 58,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -444,7 +444,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Pandora Vertigo Colony",
         "level_file": "gigalo02.rl2",
@@ -823,10 +823,10 @@
     "mission_name": "Gigalomania 03",
     "mission_filename": "gigalo03.mn2",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -836,20 +836,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 56,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
       "hostages": 0,
-      "matcens": 2,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 90,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -922,7 +922,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Senex Smelting Complex",
         "level_file": "gigaloma.rl2",
@@ -1145,10 +1145,10 @@
     "mission_name": "Gigalomania 04",
     "mission_filename": "gigalo04.mn2",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -1158,20 +1158,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 55,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
       "hostages": 0,
       "matcens": 0,
       "guidebots": 0,
-      "powerups": 103,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -1244,7 +1244,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Mel Superdeep Borehole",
         "level_file": "gigaloma.rl2",
@@ -1265,15 +1265,15 @@
         "mine_volume": 114522000.0,
         "mine_volume_normalized": 25.0436,
         "mine_volume_text": "25x",
-        "travel_distance": 7167.7,
-        "travel_time_seconds": 143,
-        "travel_time_text": "2M:23S",
+        "travel_distance": 0.0,
+        "travel_time_seconds": 0,
+        "travel_time_text": "0M:00S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_required_key_mask": 7,
-        "route_completing_key_mask_set": 128,
+        "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -1281,190 +1281,10 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 0
-          },
-          {
-            "index": 1,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Open hidden door",
-            "seg": 36,
-            "side": 2,
-            "wall": 33,
-            "label_pos": {
-              "x": 130.0,
-              "y": 0.0,
-              "z": 70.0
-            },
-            "distance": 180.4,
-            "opens": [
-              {
-                "seg": 36,
-                "side": 2,
-                "wall": 33
-              },
-              {
-                "seg": 37,
-                "side": 0,
-                "wall": 32
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Open hidden door",
-            "seg": 304,
-            "side": 0,
-            "wall": 123,
-            "label_pos": {
-              "x": 170.0,
-              "y": -560.0,
-              "z": 130.0
-            },
-            "distance": 770.1,
-            "opens": [
-              {
-                "seg": 304,
-                "side": 0,
-                "wall": 123
-              },
-              {
-                "seg": 311,
-                "side": 2,
-                "wall": 124
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
-            "seg": 442,
-            "label_pos": {
-              "x": -414.1,
-              "y": -510.3,
-              "z": -226.1
-            },
-            "distance": 874.1,
-            "key": "gold"
-          },
-          {
-            "index": 4,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "blue key",
-            "seg": 395,
-            "label_pos": {
-              "x": 183.0,
-              "y": -524.5,
-              "z": 585.9
-            },
-            "distance": 1336.7,
-            "key": "blue"
-          },
-          {
-            "index": 5,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Open hidden door",
-            "seg": 459,
-            "side": 0,
-            "wall": 169,
-            "label_pos": {
-              "x": 170.0,
-              "y": -1080.0,
-              "z": 130.0
-            },
-            "distance": 1404.9,
-            "opens": [
-              {
-                "seg": 459,
-                "side": 0,
-                "wall": 169
-              },
-              {
-                "seg": 466,
-                "side": 2,
-                "wall": 168
-              }
-            ]
-          },
-          {
-            "index": 6,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 537,
-            "label_pos": {
-              "x": 385.1,
-              "y": -1000.6,
-              "z": 87.3
-            },
-            "distance": 440.4,
-            "key": "red"
-          },
-          {
-            "index": 7,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Open hidden door",
-            "seg": 546,
-            "side": 4,
-            "wall": 208,
-            "label_pos": {
-              "x": -186.3,
-              "y": -1064.0,
-              "z": -63.4
-            },
-            "distance": 732.6,
-            "opens": [
-              {
-                "seg": 546,
-                "side": 4,
-                "wall": 208
-              },
-              {
-                "seg": 547,
-                "side": 4,
-                "wall": 209
-              }
-            ]
-          },
-          {
-            "index": 8,
-            "kind": "boss",
-            "activation_kind": "destroy_boss",
-            "label": "Boss robot",
-            "seg": 552,
-            "label_pos": {
-              "x": -444.6,
-              "y": -1019.8,
-              "z": 112.2
-            },
-            "distance": 408.1
-          },
-          {
-            "index": 9,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 461,
-            "side": 4,
-            "wall": 178,
-            "label_pos": {
-              "x": 230.0,
-              "y": -1080.0,
-              "z": 170.0
-            },
-            "distance": 1020.3,
-            "trigger": 36,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_problem": "blue key excluded from prerequisite trial",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -1480,10 +1300,10 @@
     "mission_name": "gigalomania 05",
     "mission_filename": "gigalo05.mn2",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -1493,20 +1313,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 92,
-      "hostages": 3,
-      "matcens": 2,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 104,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -1579,7 +1399,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Hallpike Vertigo Testing Facility",
         "level_file": "gigalo05.rl2",
@@ -1707,10 +1527,10 @@
     "mission_name": "Gigalomania 06",
     "mission_filename": "gigalo06.mn2",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -1720,20 +1540,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 81,
-      "hostages": 5,
-      "matcens": 3,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 145,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -1806,7 +1626,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Uskup Colony",
         "level_file": "gigaloma.rl2",
@@ -1959,10 +1779,10 @@
     "mission_name": "gigalomania 07",
     "mission_filename": "gigalo07.mn2",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -1972,20 +1792,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 77,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
       "hostages": 0,
-      "matcens": 2,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 64,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -2058,7 +1878,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Lupus II Black Labs",
         "level_file": "gigaloma.rl2",
@@ -2079,15 +1899,15 @@
         "mine_volume": 20839100.0,
         "mine_volume_normalized": 4.55707,
         "mine_volume_text": "4.6x",
-        "travel_distance": 2494.9,
-        "travel_time_seconds": 50,
-        "travel_time_text": "0M:50S",
+        "travel_distance": 3699.9,
+        "travel_time_seconds": 74,
+        "travel_time_text": "1M:14S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_required_key_mask": 2,
-        "route_completing_key_mask_set": 140,
+        "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -2100,6 +1920,20 @@
             "index": 1,
             "kind": "key",
             "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 452,
+            "label_pos": {
+              "x": 564.5,
+              "y": 45.0,
+              "z": -220.0
+            },
+            "distance": 1441.1,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 483,
             "label_pos": {
@@ -2107,45 +1941,27 @@
               "y": 60.0,
               "z": 230.6
             },
-            "distance": 942.1,
+            "distance": 499.4,
             "key": "red"
           },
           {
-            "index": 2,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 716,
-            "label_pos": {
-              "x": -250.0,
-              "y": 0.0,
-              "z": 160.0
-            },
-            "distance": 1314.1
-          },
-          {
             "index": 3,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 635,
-            "side": 0,
-            "wall": 171,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 533,
             "label_pos": {
-              "x": 0.0,
+              "x": 690.6,
               "y": 0.0,
-              "z": 170.0
+              "z": -220.0
             },
-            "distance": 238.6,
-            "trigger": 7,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
+            "distance": 1759.4,
+            "key": "gold"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_problem": "route target unreachable",
         "notes": [
-          "blue key not necessary",
-          "gold key not necessary",
           "no guidebot or guidebot start cage placed in this level"
         ]
       }
@@ -2160,10 +1976,10 @@
     "mission_name": "Gigalomania 08",
     "mission_filename": "gigalo08.mn2",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -2173,20 +1989,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 193,
-      "hostages": 3,
-      "matcens": 1,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 109,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -2259,7 +2075,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "The Brain",
         "level_file": "gigaloma.rl2",
@@ -2280,15 +2096,15 @@
         "mine_volume": 93739900.0,
         "mine_volume_normalized": 20.499,
         "mine_volume_text": "20x",
-        "travel_distance": 1378.1,
-        "travel_time_seconds": 28,
-        "travel_time_text": "0M:28S",
+        "travel_distance": 13249.0,
+        "travel_time_seconds": 265,
+        "travel_time_text": "4M:25S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 255,
+        "route_required_key_mask": 4,
+        "route_completing_key_mask_set": 240,
         "route_steps": [
           {
             "index": 0,
@@ -2299,6 +2115,20 @@
           },
           {
             "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 674,
+            "label_pos": {
+              "x": 344.4,
+              "y": 70.0,
+              "z": 124.1
+            },
+            "distance": 3761.9,
+            "key": "gold"
+          },
+          {
+            "index": 2,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
@@ -2310,7 +2140,7 @@
               "y": 10.0,
               "z": 200.0
             },
-            "distance": 438.0,
+            "distance": 4073.0,
             "opens": [
               {
                 "seg": 17,
@@ -2325,7 +2155,52 @@
             ]
           },
           {
-            "index": 2,
+            "index": 3,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 1",
+            "seg": 519,
+            "side": 4,
+            "wall": 146,
+            "label_pos": {
+              "x": -685.4,
+              "y": 107.5,
+              "z": 226.7
+            },
+            "distance": 2127.0,
+            "trigger": 1,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 11,
+                "side": 0,
+                "wall": 9
+              },
+              {
+                "seg": 9,
+                "side": 3,
+                "wall": 10
+              },
+              {
+                "seg": 9,
+                "side": 0,
+                "wall": 12
+              },
+              {
+                "seg": 9,
+                "side": 1,
+                "wall": 6
+              },
+              {
+                "seg": 680,
+                "side": 4,
+                "wall": 182
+              }
+            ]
+          },
+          {
+            "index": 4,
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
@@ -2335,10 +2210,10 @@
               "y": 0.0,
               "z": 630.0
             },
-            "distance": 500.0
+            "distance": 2737.0
           },
           {
-            "index": 3,
+            "index": 5,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -2350,7 +2225,7 @@
               "y": 0.0,
               "z": 1070.0
             },
-            "distance": 440.1,
+            "distance": 550.1,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -2360,7 +2235,6 @@
         "notes": [
           "blue key not necessary",
           "red key not necessary",
-          "gold key not necessary",
           "no guidebot or guidebot start cage placed in this level"
         ]
       }
@@ -2375,10 +2249,10 @@
     "mission_name": "Gigalomania 09",
     "mission_filename": "gigalo09.mn2",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -2388,20 +2262,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 75,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
       "hostages": 0,
-      "matcens": 2,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 105,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -2474,7 +2348,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Fischer Observatory",
         "level_file": "gigaloma.rl2",
@@ -2693,10 +2567,10 @@
     "mission_name": "Gigalomania 10",
     "mission_filename": "gigalo10.mn2",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -2706,20 +2580,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 71,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
       "hostages": 0,
-      "matcens": 5,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 82,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -2792,7 +2666,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "UltraSpace Shipyard",
         "level_file": "gigaloma.rl2",
@@ -3066,10 +2940,10 @@
     "mission_name": "Gigalomania 11",
     "mission_filename": "gigalo11.mn2",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -3079,19 +2953,19 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 6,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
       "hostages": 0,
       "matcens": 0,
       "guidebots": 0,
-      "powerups": 5,
+      "powerups": 0,
       "reactors": 0
     },
     "coop_starts": "4",
@@ -3165,7 +3039,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Riviera Waste Disposal",
         "level_file": "gigaloma.rl2",
@@ -3310,10 +3184,10 @@
     "mission_name": "gigalomania 12",
     "mission_filename": "gigalo12.mn2",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -3323,20 +3197,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 4,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
       "hostages": 0,
-      "matcens": 8,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 108,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -3409,7 +3283,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "The Underworld",
         "level_file": "gigaloma.rl2",
@@ -3430,7 +3304,7 @@
         "mine_volume": 63415800.0,
         "mine_volume_normalized": 13.8677,
         "mine_volume_text": "14x",
-        "travel_distance": 1204.3,
+        "travel_distance": 1200.1,
         "travel_time_seconds": 24,
         "travel_time_text": "0M:24S",
         "guidebot_count": 0,
@@ -3458,7 +3332,7 @@
               "y": -100.7,
               "z": 655.8
             },
-            "distance": 863.2
+            "distance": 886.0
           },
           {
             "index": 2,
@@ -3473,7 +3347,7 @@
               "y": -229.3,
               "z": 934.0
             },
-            "distance": 341.0,
+            "distance": 314.2,
             "trigger": 1,
             "trigger_type_id": 3,
             "trigger_type": "exit"

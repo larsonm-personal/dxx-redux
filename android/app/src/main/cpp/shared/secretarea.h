@@ -63,6 +63,7 @@ int level_metadata_wall_potentially_shootable_from_position(int seg, const int f
 int level_metadata_wall_conditionally_shootable_from_position(int seg, const int from_pos[3], int wall_num);
 int level_metadata_wall_first_shot_blocker_from_position(int seg, const int from_pos[3], int wall_num);
 int level_metadata_target_visible_from_position(int seg, const int from_pos[3], int target_seg, const int target_pos[3]);
+int level_metadata_player_radius_current(void);
 int level_metadata_get_visibility_cache_summary(level_metadata_visibility_cache_summary *summary);
 int level_metadata_get_route_start_objnum(void);
 int level_metadata_get_route_start_seg(void);

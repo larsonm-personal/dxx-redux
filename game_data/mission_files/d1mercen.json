@@ -6,10 +6,10 @@
     "mission_name": "Descent:Mercenary01",
     "mission_filename": "merc01.msn",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -19,20 +19,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 1,
+      "player_start_min": 0,
+      "player_start_max": 0,
       "coop_start_min": 0,
       "coop_start_max": 0,
-      "robots": 38,
+      "robots": 0,
       "hostages": 0,
       "matcens": 0,
       "guidebots": 0,
-      "powerups": 15,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "1",
     "track_names": [
@@ -229,7 +229,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "PTMC Smelting Facility",
         "level_file": "merc01.rdl",
@@ -353,10 +353,10 @@
     "mission_name": "Descent:Mercenary02",
     "mission_filename": "merc02.msn",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -366,20 +366,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 1,
+      "player_start_min": 0,
+      "player_start_max": 0,
       "coop_start_min": 0,
       "coop_start_max": 0,
-      "robots": 18,
+      "robots": 0,
       "hostages": 0,
       "matcens": 0,
       "guidebots": 0,
-      "powerups": 7,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "1",
     "track_names": [
@@ -576,7 +576,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "ptmc particle research",
         "level_file": "merc02.rdl",
@@ -686,10 +686,10 @@
     "mission_name": "descent:mercenary03",
     "mission_filename": "merc03.msn",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -699,20 +699,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 1,
+      "player_start_min": 0,
+      "player_start_max": 0,
       "coop_start_min": 0,
       "coop_start_max": 0,
-      "robots": 36,
+      "robots": 0,
       "hostages": 0,
-      "matcens": 1,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 2,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "1",
     "track_names": [
@@ -909,7 +909,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "callisto terra-firma lab",
         "level_file": "merc03.rdl",
@@ -930,15 +930,15 @@
         "mine_volume": 41493200.0,
         "mine_volume_normalized": 9.07371,
         "mine_volume_text": "9.1x",
-        "travel_distance": 9004.1,
-        "travel_time_seconds": 180,
-        "travel_time_text": "3M:00S",
+        "travel_distance": 7277.1,
+        "travel_time_seconds": 146,
+        "travel_time_text": "2M:26S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_required_key_mask": 3,
-        "route_completing_key_mask_set": 8,
+        "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -974,39 +974,9 @@
             },
             "distance": 3953.2,
             "key": "red"
-          },
-          {
-            "index": 3,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 233,
-            "label_pos": {
-              "x": 440.0,
-              "y": 20.0,
-              "z": 240.0
-            },
-            "distance": 1553.9
-          },
-          {
-            "index": 4,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 236,
-            "side": 5,
-            "wall": 16,
-            "label_pos": {
-              "x": 560.0,
-              "y": 0.0,
-              "z": 230.0
-            },
-            "distance": 173.1,
-            "trigger": 0,
-            "trigger_type_id": 8,
-            "trigger_type": "exit"
           }
-        ]
+        ],
+        "route_problem": "route target unreachable"
       }
     ],
     "mission_path": "merc03.msn",
@@ -1019,10 +989,10 @@
     "mission_name": "descent:mercenary04",
     "mission_filename": "merc04.msn",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -1032,20 +1002,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 1,
+      "player_start_min": 0,
+      "player_start_max": 0,
       "coop_start_min": 0,
       "coop_start_max": 0,
-      "robots": 34,
+      "robots": 0,
       "hostages": 0,
       "matcens": 0,
       "guidebots": 0,
-      "powerups": 9,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "1",
     "track_names": [
@@ -1242,7 +1212,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "ptmc weapons testing",
         "level_file": "merc04.rdl",
@@ -1393,10 +1363,10 @@
     "mission_name": "descent:mercenary05",
     "mission_filename": "merc05.msn",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -1406,20 +1376,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 1,
+      "player_start_min": 0,
+      "player_start_max": 0,
       "coop_start_min": 0,
       "coop_start_max": 0,
-      "robots": 9,
+      "robots": 0,
       "hostages": 0,
       "matcens": 0,
       "guidebots": 0,
       "powerups": 0,
-      "reactors": 1
+      "reactors": 0
     },
     "coop_starts": "1",
     "track_names": [
@@ -1616,7 +1586,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "aukidanus water tunnels",
         "level_file": "merc05.rdl",
@@ -1698,10 +1668,10 @@
     "mission_name": "descent:mercenary06",
     "mission_filename": "merc06.msn",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -1711,20 +1681,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 1,
+      "player_start_min": 0,
+      "player_start_max": 0,
       "coop_start_min": 0,
       "coop_start_max": 0,
-      "robots": 22,
+      "robots": 0,
       "hostages": 0,
       "matcens": 0,
       "guidebots": 0,
-      "powerups": 8,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "1",
     "track_names": [
@@ -1921,7 +1891,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "oberon military post",
         "level_file": "merc06.rdl",
@@ -1973,10 +1943,10 @@
     "mission_name": "descent:mercenary07",
     "mission_filename": "merc07.msn",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -1986,20 +1956,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 1,
-      "player_start_max": 1,
+      "player_start_min": 0,
+      "player_start_max": 0,
       "coop_start_min": 0,
       "coop_start_max": 0,
-      "robots": 25,
-      "hostages": 3,
+      "robots": 0,
+      "hostages": 0,
       "matcens": 0,
       "guidebots": 0,
-      "powerups": 13,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "1",
     "track_names": [
@@ -2196,7 +2166,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "europa tower colony",
         "level_file": "merc07.rdl",

@@ -70,6 +70,21 @@ $structuredIntent = '{"mission_filename":"example.mn2","mission_intent":{' +
 '"coop_start_min":3,"coop_start_max":3,"robots":10,"hostages":0,"matcens":1,' +
 '"guidebots":1,"powerups":20,"reactors":1}}'
 [void](Invoke-MetadataNormalizer -Text $structuredIntent)
+$intentBody = ($structuredIntent | ConvertFrom-Json).mission_intent |
+    ConvertTo-Json -Compress -Depth 20
+$hostOrdered = '{"status":"ok","mission_filename":"example.mn2","mission_intent":' +
+$intentBody + ',"level_count":0,"levels":[]}'
+$androidOrdered = '{"status":"ok","mission_filename":"example.mn2","level_count":0,"levels":[],' +
+'"mission_intent":' + $intentBody + '}'
+if ((Invoke-MetadataNormalizer -Text $hostOrdered) -cne
+    (Invoke-MetadataNormalizer -Text $androidOrdered)) {
+    throw "Host and Android mission_intent locations did not normalize identically"
+}
+$arrayOrdered = Invoke-MetadataNormalizer -Text ("[$androidOrdered]")
+if ($arrayOrdered.IndexOf('"mission_filename"') -gt $arrayOrdered.IndexOf('"mission_intent"') -or
+    $arrayOrdered.IndexOf('"mission_intent"') -gt $arrayOrdered.IndexOf('"level_count"')) {
+    throw "Array mission output did not place mission_intent after mission_filename"
+}
 try {
     [void](Invoke-MetadataNormalizer -Text '{"mission_filename":"example.mn2","mission_intent":"single_player_or_coop"}')
     throw "Scalar mission_intent unexpectedly passed mission metadata validation"

@@ -688,6 +688,34 @@ static void test_compiled_selector_rebinds_moving_key_object(void)
 	assert(live_plan.first_pending_path_terminal_segment == 4);
 }
 
+static void test_compiled_selector_preserves_reactor_firing_segment(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+	route_planner_plan_summary compiled_plan;
+	route_planner_plan_summary live_plan;
+	guidebot_route_validity_certificate certificate;
+	guidebot_route_certifier_summary summary;
+
+	initialize_fixture(&fixture);
+	initialize_plan(&compiled_plan);
+	view = make_view(&fixture);
+	Prepared.route_step_count = 2;
+	Prepared.route_steps[1] = Prepared.route_steps[3];
+	Prepared.route_steps[1].seg = 4;
+	Prepared.route_steps[1].path_terminal_segment = 2;
+	Prepared.route_steps[1].activation_pos_valid = 1;
+	compiled_plan.route_step_count = 2;
+	compiled_plan.first_pending_step = 1;
+	compiled_plan.first_pending_path_terminal_segment = 2;
+
+	assert(select_compiled(
+	    &view, &compiled_plan, &live_plan, &certificate, &summary));
+	assert(summary.selected_step == 1);
+	assert(summary.selected_segment == 2);
+	assert(live_plan.first_pending_path_terminal_segment == 2);
+}
+
 static void test_compiled_selector_chooses_reachable_switch_guidance(void)
 {
 	certifier_fixture fixture;
@@ -2144,6 +2172,7 @@ int main(int argc, char **argv)
 	test_compiled_selector_restores_removed_switch_surface();
 	test_one_shot_close_trigger_stays_complete_after_reopen();
 	test_compiled_selector_rebinds_moving_key_object();
+	test_compiled_selector_preserves_reactor_firing_segment();
 	test_compiled_selector_chooses_reachable_switch_guidance();
 	test_compiled_selector_replaces_switch_aim_with_local_fallback();
 	test_current_start_and_accessibility_select_action();

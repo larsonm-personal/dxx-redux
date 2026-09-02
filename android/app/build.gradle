@@ -449,6 +449,7 @@ tasks.withType(Test).configureEach {
 }
 
 dependencies {
+    implementation project(':mission-metadata-core')
     implementation "androidx.core:core-ktx:${toolVersions['CORE_KTX_VERSION']}"
     implementation "androidx.appcompat:appcompat:${toolVersions['APPCOMPAT_VERSION']}"
     implementation "androidx.activity:activity-compose:${toolVersions['ACTIVITY_COMPOSE_VERSION']}"

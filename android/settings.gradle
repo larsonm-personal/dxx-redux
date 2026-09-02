@@ -12,6 +12,7 @@ pluginManagement {
         id 'com.android.application' version toolVersions['AGP_VERSION']
         id 'org.jetbrains.kotlin.plugin.compose' version toolVersions['KOTLIN_VERSION']
         id 'org.jetbrains.kotlin.plugin.serialization' version toolVersions['KOTLIN_VERSION']
+        id 'org.jetbrains.kotlin.jvm' version toolVersions['KOTLIN_VERSION']
     }
 }
 dependencyResolutionManagement {
@@ -34,3 +35,5 @@ if (!localPropsFile.exists()) {
 
 rootProject.name = "dxx-redux"
 include ':app'
+include ':mission-metadata-core'
+include ':mission-metadata-cli'

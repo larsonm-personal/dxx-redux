@@ -203,8 +203,16 @@ void set_target_position(const level_metadata_route_step &step)
 	} else if (step.kind == LEVEL_METADATA_ROUTE_REACTOR) {
 		State.target_objnum = find_object_in_segment(OBJ_CNTRLCEN, step.seg);
 		if (valid_object(State.target_objnum)) {
-			State.target_seg = Objects[State.target_objnum].segnum;
-			State.target_pos = Objects[State.target_objnum].pos;
+			if (step.activation_pos_valid && State.goal.target_seg >= 0 &&
+			    State.goal.target_seg < Num_segments) {
+				State.target_seg = State.goal.target_seg;
+				State.target_pos.x = step.activation_pos[0];
+				State.target_pos.y = step.activation_pos[1];
+				State.target_pos.z = step.activation_pos[2];
+			} else {
+				State.target_seg = Objects[State.target_objnum].segnum;
+				State.target_pos = Objects[State.target_objnum].pos;
+			}
 			State.target_pos_valid = 1;
 		}
 	} else if (step.kind == LEVEL_METADATA_ROUTE_BOSS) {
@@ -213,8 +221,16 @@ void set_target_position(const level_metadata_route_step &step)
 			    Robot_info[Objects[objnum].id].boss_flag &&
 			    (step.seg < 0 || Objects[objnum].segnum == step.seg)) {
 				State.target_objnum = objnum;
-				State.target_seg = Objects[objnum].segnum;
-				State.target_pos = Objects[objnum].pos;
+				if (step.activation_pos_valid && State.goal.target_seg >= 0 &&
+				    State.goal.target_seg < Num_segments) {
+					State.target_seg = State.goal.target_seg;
+					State.target_pos.x = step.activation_pos[0];
+					State.target_pos.y = step.activation_pos[1];
+					State.target_pos.z = step.activation_pos[2];
+				} else {
+					State.target_seg = Objects[objnum].segnum;
+					State.target_pos = Objects[objnum].pos;
+				}
 				State.target_pos_valid = 1;
 				break;
 			}
@@ -332,9 +348,11 @@ int prepare_next_goal(void)
 #if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	fprintf(stderr,
 	        "ROUTE-CONFIRM goal step=%d kind=%d activation=%d actor_seg=%d "
-	        "goal_seg=%d step_seg=%d wall=%d trigger=%d label=%s\n",
+	        "goal_seg=%d step_seg=%d path_terminal=%d activation_pos=%d "
+	        "wall=%d trigger=%d label=%s\n",
 	        selected_index, State.step.kind, State.step.activation_kind,
 	        actor->segnum, State.goal.target_seg, State.step.seg,
+	        State.step.path_terminal_segment, State.step.activation_pos_valid,
 	        State.step.wall_num, State.step.trigger_num, State.step.label);
 #endif
 	State.summary.current_route_step_index = selected_index;
@@ -1052,14 +1070,21 @@ extern "C" int route_confirmation_start(void)
 	actor->last_pos = actor->pos;
 	actor->orient = Player_init[Player_num].orient;
 	obj_relink(State.actor_objnum, Player_init[Player_num].segnum);
+	if (ConsoleObject) {
+		ConsoleObject->pos = Player_init[Player_num].pos;
+		ConsoleObject->last_pos = ConsoleObject->pos;
+		ConsoleObject->orient = Player_init[Player_num].orient;
+		obj_relink((int) (ConsoleObject - Objects),
+		           Player_init[Player_num].segnum);
+	}
 	vm_vec_zero(&actor->mtype.phys_info.velocity);
 	vm_vec_zero(&actor->mtype.phys_info.thrust);
 	vm_vec_zero(&actor->mtype.phys_info.rotvel);
 	vm_vec_zero(&actor->mtype.phys_info.rotthrust);
-	State.summary.player_radius = ConsoleObject ? ConsoleObject->size : 0;
+	State.summary.player_radius = level_metadata_player_radius_current();
 	State.summary.guidebot_radius = actor->size;
-	if (ConsoleObject && ConsoleObject->size > actor->size)
-		actor->size = ConsoleObject->size;
+	if (State.summary.player_radius > actor->size)
+		actor->size = State.summary.player_radius;
 	State.summary.effective_radius = actor->size;
 	/* Build the canonical level plan once.  Subsequent objective selection must
 	 * refresh only the live view from the verification actor; rebuilding the

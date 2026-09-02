@@ -1197,6 +1197,9 @@ class LauncherScriptExecutor(
     }
 
     private fun levelMetadataResultJson(result: LevelMetadataResult): JSONObject {
+        if (result.nativeJson.isNotBlank()) {
+            return JSONObject(MissionMetadataProjection.project(result.nativeJson))
+        }
         val levels = JSONArray()
         result.levels.forEach { row ->
             val rowJson =

@@ -432,7 +432,7 @@ object MissionZip {
     internal fun parseMissionDescriptor(
         path: String,
         bytes: ByteArray,
-    ): GameFileFormats.MissionDescriptor = GameFileFormats.parseMissionDescriptor(path, decodeLegacyText(bytes))
+    ): GameFileFormats.MissionDescriptor = GameFileFormats.parseMissionDescriptor(path, MissionDescriptorPolicy.decode(bytes))
 
     private fun buildResult(
         constituents: List<Constituent>,

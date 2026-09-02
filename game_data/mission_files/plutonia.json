@@ -308,15 +308,15 @@
         "mine_volume": 2936750.0,
         "mine_volume_normalized": 0.642208,
         "mine_volume_text": "0.64x",
-        "travel_distance": 4883.1,
-        "travel_time_seconds": 98,
-        "travel_time_text": "1M:38S",
+        "travel_distance": 3004.4,
+        "travel_time_seconds": 60,
+        "travel_time_text": "1M:00S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_required_key_mask": 7,
-        "route_completing_key_mask_set": 128,
+        "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -425,7 +425,7 @@
               "y": -90.0,
               "z": 44.3
             },
-            "distance": 417.7,
+            "distance": 422.9,
             "trigger": 4,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -448,82 +448,12 @@
               "y": -45.0,
               "z": -66.2
             },
-            "distance": 519.1,
+            "distance": 524.3,
             "key": "red"
-          },
-          {
-            "index": 7,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 238,
-            "label_pos": {
-              "x": 15.0,
-              "y": -35.0,
-              "z": 168.8
-            },
-            "distance": 701.0
-          },
-          {
-            "index": 8,
-            "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 2",
-            "seg": 96,
-            "side": 2,
-            "wall": 45,
-            "label_pos": {
-              "x": -207.0,
-              "y": -45.0,
-              "z": -66.2
-            },
-            "distance": 816.6,
-            "trigger": 2,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 31,
-                "side": 2,
-                "wall": 23
-              },
-              {
-                "seg": 33,
-                "side": 0,
-                "wall": 25
-              },
-              {
-                "seg": 38,
-                "side": 5,
-                "wall": 19
-              },
-              {
-                "seg": 27,
-                "side": 4,
-                "wall": 21
-              }
-            ]
-          },
-          {
-            "index": 9,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 61,
-            "side": 1,
-            "wall": 16,
-            "label_pos": {
-              "x": 0.0,
-              "y": -17.5,
-              "z": -66.2
-            },
-            "distance": 371.6,
-            "trigger": 0,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_problem": "route target unreachable",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -3217,9 +3147,9 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_required_key_mask": 7,
-        "route_completing_key_mask_set": 128,
+        "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -3619,6 +3549,7 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_problem": "switch activation route unresolved",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -4557,9 +4488,9 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_required_key_mask": 7,
-        "route_completing_key_mask_set": 128,
+        "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -4833,6 +4764,7 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_problem": "switch activation route unresolved",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -5782,15 +5714,15 @@
         "mine_volume": 36869500.0,
         "mine_volume_normalized": 8.06261,
         "mine_volume_text": "8.1x",
-        "travel_distance": 8559.4,
-        "travel_time_seconds": 171,
-        "travel_time_text": "2M:51S",
+        "travel_distance": 5013.2,
+        "travel_time_seconds": 100,
+        "travel_time_text": "1M:40S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_required_key_mask": 7,
-        "route_completing_key_mask_set": 128,
+        "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -5803,20 +5735,6 @@
             "index": 1,
             "kind": "key",
             "activation_kind": "pickup_key",
-            "label": "gold key",
-            "seg": 830,
-            "label_pos": {
-              "x": -41.8,
-              "y": -25.1,
-              "z": 401.6
-            },
-            "distance": 1745.7,
-            "key": "gold"
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "activation_kind": "pickup_key",
             "label": "blue key",
             "seg": 328,
             "label_pos": {
@@ -5824,11 +5742,11 @@
               "y": 139.1,
               "z": -746.8
             },
-            "distance": 2249.8,
+            "distance": 1604.3,
             "key": "blue"
           },
           {
-            "index": 3,
+            "index": 2,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -5842,38 +5760,22 @@
             "key": "red"
           },
           {
-            "index": 4,
-            "kind": "boss",
-            "activation_kind": "destroy_boss",
-            "label": "Boss robot",
-            "seg": 263,
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 830,
             "label_pos": {
-              "x": -106.8,
-              "y": -45.1,
-              "z": -102.6
+              "x": -41.8,
+              "y": -25.1,
+              "z": 401.6
             },
-            "distance": 364.4
-          },
-          {
-            "index": 5,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 780,
-            "side": 4,
-            "wall": 195,
-            "label_pos": {
-              "x": -106.8,
-              "y": -55.1,
-              "z": 714.9
-            },
-            "distance": 2598.2,
-            "trigger": 1,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
+            "distance": 1807.6,
+            "key": "gold"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_problem": "route target unreachable",
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",

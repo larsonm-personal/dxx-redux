@@ -6,10 +6,10 @@
     "mission_name": "Megalomania 01",
     "mission_filename": "megalo01.msn",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -19,20 +19,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 30,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
       "hostages": 0,
       "matcens": 0,
       "guidebots": 0,
-      "powerups": 9,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -229,7 +229,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Capella IV Au Mine",
         "level_file": "megaloma.rdl",
@@ -339,10 +339,10 @@
     "mission_name": "Megalomania 02",
     "mission_filename": "megalo02.msn",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -352,20 +352,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 36,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
       "hostages": 0,
       "matcens": 0,
       "guidebots": 0,
-      "powerups": 40,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -562,7 +562,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Capella IV Refinery",
         "level_file": "megaloma.rdl",
@@ -672,10 +672,10 @@
     "mission_name": "Megalomania 03",
     "mission_filename": "megalo03.msn",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -685,20 +685,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 39,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
       "hostages": 0,
-      "matcens": 16,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 44,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -895,7 +895,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Onkerfeldt Generating Station",
         "level_file": "megaloma.rdl",
@@ -1022,10 +1022,10 @@
     "mission_name": "Megalomania 04",
     "mission_filename": "megalo04.msn",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -1035,20 +1035,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 73,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
       "hostages": 0,
-      "matcens": 2,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 53,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -1245,7 +1245,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Aquincum",
         "level_file": "megaloma.rdl",
@@ -1331,10 +1331,10 @@
     "mission_name": "Megalomania 05",
     "mission_filename": "megalo05.msn",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -1344,20 +1344,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 107,
-      "hostages": 3,
-      "matcens": 3,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 91,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -1554,7 +1554,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Pegasus MHD Lab",
         "level_file": "megaloma.rdl",
@@ -1678,10 +1678,10 @@
     "mission_name": "Megalomania 06",
     "mission_filename": "megalo06.msn",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -1691,20 +1691,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 63,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
       "hostages": 0,
-      "matcens": 5,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 127,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -1901,7 +1901,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Heaviside Missile Base",
         "level_file": "megaloma.rdl",
@@ -2025,10 +2025,10 @@
     "mission_name": "Megalomania 07",
     "mission_filename": "megalo07.msn",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -2038,20 +2038,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 111,
-      "hostages": 6,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
       "matcens": 0,
       "guidebots": 0,
-      "powerups": 49,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -2248,7 +2248,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Kliskowsky Shield Battery",
         "level_file": "megaloma.rdl",
@@ -2426,10 +2426,10 @@
     "mission_name": "Megalomania 08",
     "mission_filename": "megalo08.msn",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -2439,20 +2439,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 20,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
       "hostages": 0,
       "matcens": 0,
       "guidebots": 0,
       "powerups": 0,
-      "reactors": 1
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -2649,7 +2649,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Amberstream",
         "level_file": "megaloma.rdl",
@@ -2731,10 +2731,10 @@
     "mission_name": "Megalomania 09",
     "mission_filename": "megalo09.msn",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -2744,20 +2744,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 81,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
       "hostages": 0,
-      "matcens": 3,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 44,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "4",
     "track_names": [
@@ -2954,7 +2954,7 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Anomaly 12 Observation Vessel",
         "level_file": "megaloma.rdl",
@@ -3400,10 +3400,10 @@
     "mission_name": "Megalomania 10",
     "mission_filename": "megalo10.msn",
     "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -3413,683 +3413,19 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
       "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 48,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
       "hostages": 0,
-      "matcens": 11,
+      "matcens": 0,
       "guidebots": 0,
-      "powerups": 194,
-      "reactors": 1
-    },
-    "coop_starts": "4",
-    "track_names": [
-      {
-        "track": 0,
-        "name": "MIDI Track 0",
-        "filename": "descent.hmp",
-        "format": "hmp",
-        "length_s": 233
-      },
-      {
-        "track": 1,
-        "name": "MIDI Track 1",
-        "filename": "briefing.hmp",
-        "format": "hmp",
-        "length_s": 176
-      },
-      {
-        "track": 2,
-        "name": "MIDI Track 2",
-        "filename": "endlevel.hmp",
-        "format": "hmp",
-        "length_s": 19
-      },
-      {
-        "track": 3,
-        "name": "MIDI Track 3",
-        "filename": "endgame.hmp",
-        "format": "hmp",
-        "length_s": 131
-      },
-      {
-        "track": 4,
-        "name": "MIDI Track 4",
-        "filename": "credits.hmp",
-        "format": "hmp",
-        "length_s": 132
-      },
-      {
-        "track": 5,
-        "name": "MIDI Track 1",
-        "filename": "game01.hmp",
-        "format": "hmp",
-        "length_s": 204
-      },
-      {
-        "track": 6,
-        "name": "MIDI Track 2",
-        "filename": "game02.hmp",
-        "format": "hmp",
-        "length_s": 226
-      },
-      {
-        "track": 7,
-        "name": "MIDI Track 3",
-        "filename": "game03.hmp",
-        "format": "hmp",
-        "length_s": 213
-      },
-      {
-        "track": 8,
-        "name": "MIDI Track 4",
-        "filename": "game04.hmp",
-        "format": "hmp",
-        "length_s": 151
-      },
-      {
-        "track": 9,
-        "name": "MIDI Track 5",
-        "filename": "game05.hmp",
-        "format": "hmp",
-        "length_s": 185
-      },
-      {
-        "track": 10,
-        "name": "MIDI Track 6",
-        "filename": "game06.hmp",
-        "format": "hmp",
-        "length_s": 159
-      },
-      {
-        "track": 11,
-        "name": "MIDI Track 7",
-        "filename": "game07.hmp",
-        "format": "hmp",
-        "length_s": 179
-      },
-      {
-        "track": 12,
-        "name": "MIDI Track 8",
-        "filename": "game08.hmp",
-        "format": "hmp",
-        "length_s": 176
-      },
-      {
-        "track": 13,
-        "name": "MIDI Track 9",
-        "filename": "game09.hmp",
-        "format": "hmp",
-        "length_s": 211
-      },
-      {
-        "track": 14,
-        "name": "MIDI Track 10",
-        "filename": "game10.hmp",
-        "format": "hmp",
-        "length_s": 304
-      },
-      {
-        "track": 15,
-        "name": "MIDI Track 11",
-        "filename": "game11.hmp",
-        "format": "hmp",
-        "length_s": 181
-      },
-      {
-        "track": 16,
-        "name": "MIDI Track 12",
-        "filename": "game12.hmp",
-        "format": "hmp",
-        "length_s": 183
-      },
-      {
-        "track": 17,
-        "name": "MIDI Track 13",
-        "filename": "game13.hmp",
-        "format": "hmp",
-        "length_s": 206
-      },
-      {
-        "track": 18,
-        "name": "MIDI Track 14",
-        "filename": "game14.hmp",
-        "format": "hmp",
-        "length_s": 235
-      },
-      {
-        "track": 19,
-        "name": "MIDI Track 15",
-        "filename": "game15.hmp",
-        "format": "hmp",
-        "length_s": 188
-      },
-      {
-        "track": 20,
-        "name": "MIDI Track 16",
-        "filename": "game16.hmp",
-        "format": "hmp",
-        "length_s": 191
-      },
-      {
-        "track": 21,
-        "name": "MIDI Track 17",
-        "filename": "game17.hmp",
-        "format": "hmp",
-        "length_s": 192
-      },
-      {
-        "track": 22,
-        "name": "MIDI Track 18",
-        "filename": "game18.hmp",
-        "format": "hmp",
-        "length_s": 244
-      },
-      {
-        "track": 23,
-        "name": "MIDI Track 19",
-        "filename": "game19.hmp",
-        "format": "hmp",
-        "length_s": 164
-      },
-      {
-        "track": 24,
-        "name": "MIDI Track 20",
-        "filename": "game20.hmp",
-        "format": "hmp",
-        "length_s": 193
-      },
-      {
-        "track": 25,
-        "name": "MIDI Track 21",
-        "filename": "game21.hmp",
-        "format": "hmp",
-        "length_s": 184
-      },
-      {
-        "track": 26,
-        "name": "MIDI Track 22",
-        "filename": "game22.hmp",
-        "format": "hmp",
-        "length_s": 176
-      }
-    ],
-    "level_count": 1,
-    "levels": [
-      {
-        "level_num": 1,
-        "secret": false,
-        "level_name": "Atsutomo Robot Factory",
-        "level_file": "megaloma.rdl",
-        "segment_count": 731,
-        "wall_count": 92,
-        "trigger_count": 47,
-        "object_count": 254,
-        "texture_count": 43,
-        "player_starts": 8,
-        "coop_only_starts": 3,
-        "powerups": 194,
-        "reactors": 1,
-        "robots": 48,
-        "hostages": 0,
-        "secrets": 0,
-        "matcens": 11,
-        "energy_centers": 2,
-        "mine_volume": 34561700.0,
-        "mine_volume_normalized": 7.55794,
-        "mine_volume_text": "7.6x",
-        "travel_distance": 4011.1,
-        "travel_time_seconds": 80,
-        "travel_time_text": "1M:20S",
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_required_key_mask": 7,
-        "route_completing_key_mask_set": 128,
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "activation_kind": "none",
-            "label": "Start",
-            "seg": 0
-          },
-          {
-            "index": 1,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "blue key",
-            "seg": 198,
-            "label_pos": {
-              "x": -20.0,
-              "y": 0.0,
-              "z": 720.0
-            },
-            "distance": 781.1,
-            "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
-            "seg": 545,
-            "label_pos": {
-              "x": -480.0,
-              "y": 0.0,
-              "z": 140.0
-            },
-            "distance": 1040.0,
-            "key": "gold"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 552,
-            "label_pos": {
-              "x": -480.0,
-              "y": 0.0,
-              "z": 900.4
-            },
-            "distance": 760.4,
-            "key": "red"
-          },
-          {
-            "index": 4,
-            "kind": "boss",
-            "activation_kind": "destroy_boss",
-            "label": "Boss robot",
-            "seg": 532,
-            "label_pos": {
-              "x": -320.0,
-              "y": 42.5,
-              "z": 620.0
-            },
-            "distance": 481.7
-          },
-          {
-            "index": 5,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 61,
-            "side": 2,
-            "wall": 4,
-            "label_pos": {
-              "x": 90.0,
-              "y": 0.0,
-              "z": 120.0
-            },
-            "distance": 947.9,
-            "trigger": 0,
-            "trigger_type_id": 8,
-            "trigger_type": "exit"
-          }
-        ]
-      }
-    ],
-    "mission_path": "megalo10.msn",
-    "target_index": 9
-  },
-  {
-    "status": "ok",
-    "source": "Megalomania 11",
-    "game": "d1",
-    "mission_name": "Megalomania 11",
-    "mission_filename": "megalo11.msn",
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": false,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 66,
-      "hostages": 0,
-      "matcens": 1,
-      "guidebots": 0,
-      "powerups": 69,
-      "reactors": 1
-    },
-    "coop_starts": "4",
-    "track_names": [
-      {
-        "track": 0,
-        "name": "MIDI Track 0",
-        "filename": "descent.hmp",
-        "format": "hmp",
-        "length_s": 233
-      },
-      {
-        "track": 1,
-        "name": "MIDI Track 1",
-        "filename": "briefing.hmp",
-        "format": "hmp",
-        "length_s": 176
-      },
-      {
-        "track": 2,
-        "name": "MIDI Track 2",
-        "filename": "endlevel.hmp",
-        "format": "hmp",
-        "length_s": 19
-      },
-      {
-        "track": 3,
-        "name": "MIDI Track 3",
-        "filename": "endgame.hmp",
-        "format": "hmp",
-        "length_s": 131
-      },
-      {
-        "track": 4,
-        "name": "MIDI Track 4",
-        "filename": "credits.hmp",
-        "format": "hmp",
-        "length_s": 132
-      },
-      {
-        "track": 5,
-        "name": "MIDI Track 1",
-        "filename": "game01.hmp",
-        "format": "hmp",
-        "length_s": 204
-      },
-      {
-        "track": 6,
-        "name": "MIDI Track 2",
-        "filename": "game02.hmp",
-        "format": "hmp",
-        "length_s": 226
-      },
-      {
-        "track": 7,
-        "name": "MIDI Track 3",
-        "filename": "game03.hmp",
-        "format": "hmp",
-        "length_s": 213
-      },
-      {
-        "track": 8,
-        "name": "MIDI Track 4",
-        "filename": "game04.hmp",
-        "format": "hmp",
-        "length_s": 151
-      },
-      {
-        "track": 9,
-        "name": "MIDI Track 5",
-        "filename": "game05.hmp",
-        "format": "hmp",
-        "length_s": 185
-      },
-      {
-        "track": 10,
-        "name": "MIDI Track 6",
-        "filename": "game06.hmp",
-        "format": "hmp",
-        "length_s": 159
-      },
-      {
-        "track": 11,
-        "name": "MIDI Track 7",
-        "filename": "game07.hmp",
-        "format": "hmp",
-        "length_s": 179
-      },
-      {
-        "track": 12,
-        "name": "MIDI Track 8",
-        "filename": "game08.hmp",
-        "format": "hmp",
-        "length_s": 176
-      },
-      {
-        "track": 13,
-        "name": "MIDI Track 9",
-        "filename": "game09.hmp",
-        "format": "hmp",
-        "length_s": 211
-      },
-      {
-        "track": 14,
-        "name": "MIDI Track 10",
-        "filename": "game10.hmp",
-        "format": "hmp",
-        "length_s": 304
-      },
-      {
-        "track": 15,
-        "name": "MIDI Track 11",
-        "filename": "game11.hmp",
-        "format": "hmp",
-        "length_s": 181
-      },
-      {
-        "track": 16,
-        "name": "MIDI Track 12",
-        "filename": "game12.hmp",
-        "format": "hmp",
-        "length_s": 183
-      },
-      {
-        "track": 17,
-        "name": "MIDI Track 13",
-        "filename": "game13.hmp",
-        "format": "hmp",
-        "length_s": 206
-      },
-      {
-        "track": 18,
-        "name": "MIDI Track 14",
-        "filename": "game14.hmp",
-        "format": "hmp",
-        "length_s": 235
-      },
-      {
-        "track": 19,
-        "name": "MIDI Track 15",
-        "filename": "game15.hmp",
-        "format": "hmp",
-        "length_s": 188
-      },
-      {
-        "track": 20,
-        "name": "MIDI Track 16",
-        "filename": "game16.hmp",
-        "format": "hmp",
-        "length_s": 191
-      },
-      {
-        "track": 21,
-        "name": "MIDI Track 17",
-        "filename": "game17.hmp",
-        "format": "hmp",
-        "length_s": 192
-      },
-      {
-        "track": 22,
-        "name": "MIDI Track 18",
-        "filename": "game18.hmp",
-        "format": "hmp",
-        "length_s": 244
-      },
-      {
-        "track": 23,
-        "name": "MIDI Track 19",
-        "filename": "game19.hmp",
-        "format": "hmp",
-        "length_s": 164
-      },
-      {
-        "track": 24,
-        "name": "MIDI Track 20",
-        "filename": "game20.hmp",
-        "format": "hmp",
-        "length_s": 193
-      },
-      {
-        "track": 25,
-        "name": "MIDI Track 21",
-        "filename": "game21.hmp",
-        "format": "hmp",
-        "length_s": 184
-      },
-      {
-        "track": 26,
-        "name": "MIDI Track 22",
-        "filename": "game22.hmp",
-        "format": "hmp",
-        "length_s": 176
-      }
-    ],
-    "level_count": 1,
-    "levels": [
-      {
-        "level_num": 1,
-        "secret": false,
-        "level_name": "Uaxactunia",
-        "level_file": "megaloma.rdl",
-        "segment_count": 788,
-        "wall_count": 69,
-        "trigger_count": 10,
-        "object_count": 147,
-        "texture_count": 27,
-        "player_starts": 8,
-        "coop_only_starts": 3,
-        "powerups": 69,
-        "reactors": 1,
-        "robots": 66,
-        "hostages": 0,
-        "secrets": 5,
-        "matcens": 1,
-        "energy_centers": 1,
-        "mine_volume": 52629400.0,
-        "mine_volume_normalized": 11.509,
-        "mine_volume_text": "12x",
-        "travel_distance": 3368.2,
-        "travel_time_seconds": 67,
-        "travel_time_text": "1M:07S",
-        "guidebot_count": 0,
-        "guidebot_placed": false,
-        "guidebot_accessible": false,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "activation_kind": "none",
-            "label": "Start",
-            "seg": 0
-          },
-          {
-            "index": 1,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "blue key",
-            "seg": 747,
-            "label_pos": {
-              "x": 280.0,
-              "y": 0.0,
-              "z": 320.0
-            },
-            "distance": 602.5,
-            "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 744,
-            "label_pos": {
-              "x": 175.0,
-              "y": 320.0,
-              "z": -200.0
-            },
-            "distance": 1310.3,
-            "key": "red"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
-            "seg": 774,
-            "label_pos": {
-              "x": 0.0,
-              "y": 80.0,
-              "z": 862.1
-            },
-            "distance": 1455.5,
-            "key": "gold"
-          }
-        ],
-        "route_problem": "route target unreachable"
-      }
-    ],
-    "mission_path": "megalo11.msn",
-    "target_index": 10
-  },
-  {
-    "status": "ok",
-    "source": "Megalomania 12",
-    "game": "d1",
-    "mission_name": "Megalomania 12",
-    "mission_filename": "megalo12.msn",
-    "mission_intent": {
-      "classification": "single_player_or_coop",
-      "rule": "campaign_actors",
-      "confidence": "high",
-      "reason": "At least one normal level contains robots, hostages, matcens, or Guide-Bots",
-      "declarations": {
-        "anarchy_only": false,
-        "normal": false,
-        "coop": false,
-        "anarchy": false,
-        "robo_anarchy": false,
-        "capture_flag": false,
-        "hoard": false
-      },
-      "normal_levels": 1,
-      "campaign_actor_levels": 1,
-      "arena_like_levels": 0,
-      "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
-      "coop_start_min": 3,
-      "coop_start_max": 3,
-      "robots": 5,
-      "hostages": 0,
-      "matcens": 1,
-      "guidebots": 0,
-      "powerups": 213,
+      "powerups": 0,
       "reactors": 0
     },
     "coop_starts": "4",
@@ -4287,7 +3623,671 @@
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
+        "secret": false,
+        "level_name": "Atsutomo Robot Factory",
+        "level_file": "megaloma.rdl",
+        "segment_count": 731,
+        "wall_count": 92,
+        "trigger_count": 47,
+        "object_count": 254,
+        "texture_count": 43,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 194,
+        "reactors": 1,
+        "robots": 48,
+        "hostages": 0,
+        "secrets": 0,
+        "matcens": 11,
+        "energy_centers": 2,
+        "mine_volume": 34561700.0,
+        "mine_volume_normalized": 7.55794,
+        "mine_volume_text": "7.6x",
+        "travel_distance": 4011.1,
+        "travel_time_seconds": 80,
+        "travel_time_text": "1M:20S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 198,
+            "label_pos": {
+              "x": -20.0,
+              "y": 0.0,
+              "z": 720.0
+            },
+            "distance": 781.1,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 545,
+            "label_pos": {
+              "x": -480.0,
+              "y": 0.0,
+              "z": 140.0
+            },
+            "distance": 1040.0,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 552,
+            "label_pos": {
+              "x": -480.0,
+              "y": 0.0,
+              "z": 900.4
+            },
+            "distance": 760.4,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 532,
+            "label_pos": {
+              "x": -320.0,
+              "y": 42.5,
+              "z": 620.0
+            },
+            "distance": 481.7
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 61,
+            "side": 2,
+            "wall": 4,
+            "label_pos": {
+              "x": 90.0,
+              "y": 0.0,
+              "z": 120.0
+            },
+            "distance": 947.9,
+            "trigger": 0,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
+          }
+        ]
+      }
+    ],
+    "mission_path": "megalo10.msn",
+    "target_index": 9
+  },
+  {
+    "status": "ok",
+    "source": "Megalomania 11",
+    "game": "d1",
+    "mission_name": "Megalomania 11",
+    "mission_filename": "megalo11.msn",
+    "mission_intent": {
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 0,
+      "reactors": 0
+    },
+    "coop_starts": "4",
+    "track_names": [
+      {
+        "track": 0,
+        "name": "MIDI Track 0",
+        "filename": "descent.hmp",
+        "format": "hmp",
+        "length_s": 233
+      },
+      {
+        "track": 1,
+        "name": "MIDI Track 1",
+        "filename": "briefing.hmp",
+        "format": "hmp",
+        "length_s": 176
+      },
+      {
+        "track": 2,
+        "name": "MIDI Track 2",
+        "filename": "endlevel.hmp",
+        "format": "hmp",
+        "length_s": 19
+      },
+      {
+        "track": 3,
+        "name": "MIDI Track 3",
+        "filename": "endgame.hmp",
+        "format": "hmp",
+        "length_s": 131
+      },
+      {
+        "track": 4,
+        "name": "MIDI Track 4",
+        "filename": "credits.hmp",
+        "format": "hmp",
+        "length_s": 132
+      },
+      {
+        "track": 5,
+        "name": "MIDI Track 1",
+        "filename": "game01.hmp",
+        "format": "hmp",
+        "length_s": 204
+      },
+      {
+        "track": 6,
+        "name": "MIDI Track 2",
+        "filename": "game02.hmp",
+        "format": "hmp",
+        "length_s": 226
+      },
+      {
+        "track": 7,
+        "name": "MIDI Track 3",
+        "filename": "game03.hmp",
+        "format": "hmp",
+        "length_s": 213
+      },
+      {
+        "track": 8,
+        "name": "MIDI Track 4",
+        "filename": "game04.hmp",
+        "format": "hmp",
+        "length_s": 151
+      },
+      {
+        "track": 9,
+        "name": "MIDI Track 5",
+        "filename": "game05.hmp",
+        "format": "hmp",
+        "length_s": 185
+      },
+      {
+        "track": 10,
+        "name": "MIDI Track 6",
+        "filename": "game06.hmp",
+        "format": "hmp",
+        "length_s": 159
+      },
+      {
+        "track": 11,
+        "name": "MIDI Track 7",
+        "filename": "game07.hmp",
+        "format": "hmp",
+        "length_s": 179
+      },
+      {
+        "track": 12,
+        "name": "MIDI Track 8",
+        "filename": "game08.hmp",
+        "format": "hmp",
+        "length_s": 176
+      },
+      {
+        "track": 13,
+        "name": "MIDI Track 9",
+        "filename": "game09.hmp",
+        "format": "hmp",
+        "length_s": 211
+      },
+      {
+        "track": 14,
+        "name": "MIDI Track 10",
+        "filename": "game10.hmp",
+        "format": "hmp",
+        "length_s": 304
+      },
+      {
+        "track": 15,
+        "name": "MIDI Track 11",
+        "filename": "game11.hmp",
+        "format": "hmp",
+        "length_s": 181
+      },
+      {
+        "track": 16,
+        "name": "MIDI Track 12",
+        "filename": "game12.hmp",
+        "format": "hmp",
+        "length_s": 183
+      },
+      {
+        "track": 17,
+        "name": "MIDI Track 13",
+        "filename": "game13.hmp",
+        "format": "hmp",
+        "length_s": 206
+      },
+      {
+        "track": 18,
+        "name": "MIDI Track 14",
+        "filename": "game14.hmp",
+        "format": "hmp",
+        "length_s": 235
+      },
+      {
+        "track": 19,
+        "name": "MIDI Track 15",
+        "filename": "game15.hmp",
+        "format": "hmp",
+        "length_s": 188
+      },
+      {
+        "track": 20,
+        "name": "MIDI Track 16",
+        "filename": "game16.hmp",
+        "format": "hmp",
+        "length_s": 191
+      },
+      {
+        "track": 21,
+        "name": "MIDI Track 17",
+        "filename": "game17.hmp",
+        "format": "hmp",
+        "length_s": 192
+      },
+      {
+        "track": 22,
+        "name": "MIDI Track 18",
+        "filename": "game18.hmp",
+        "format": "hmp",
+        "length_s": 244
+      },
+      {
+        "track": 23,
+        "name": "MIDI Track 19",
+        "filename": "game19.hmp",
+        "format": "hmp",
+        "length_s": 164
+      },
+      {
+        "track": 24,
+        "name": "MIDI Track 20",
+        "filename": "game20.hmp",
+        "format": "hmp",
+        "length_s": 193
+      },
+      {
+        "track": 25,
+        "name": "MIDI Track 21",
+        "filename": "game21.hmp",
+        "format": "hmp",
+        "length_s": 184
+      },
+      {
+        "track": 26,
+        "name": "MIDI Track 22",
+        "filename": "game22.hmp",
+        "format": "hmp",
+        "length_s": 176
+      }
+    ],
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 0,
+        "secret": false,
+        "level_name": "Uaxactunia",
+        "level_file": "megaloma.rdl",
+        "segment_count": 788,
+        "wall_count": 69,
+        "trigger_count": 10,
+        "object_count": 147,
+        "texture_count": 27,
+        "player_starts": 8,
+        "coop_only_starts": 3,
+        "powerups": 69,
+        "reactors": 1,
+        "robots": 66,
+        "hostages": 0,
+        "secrets": 5,
+        "matcens": 1,
+        "energy_centers": 1,
+        "mine_volume": 52629400.0,
+        "mine_volume_normalized": 11.509,
+        "mine_volume_text": "12x",
+        "travel_distance": 3368.2,
+        "travel_time_seconds": 67,
+        "travel_time_text": "1M:07S",
+        "guidebot_count": 0,
+        "guidebot_placed": false,
+        "guidebot_accessible": false,
+        "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
+        "route_steps": [
+          {
+            "index": 0,
+            "kind": "start",
+            "activation_kind": "none",
+            "label": "Start",
+            "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 747,
+            "label_pos": {
+              "x": 280.0,
+              "y": 0.0,
+              "z": 320.0
+            },
+            "distance": 602.5,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 744,
+            "label_pos": {
+              "x": 175.0,
+              "y": 320.0,
+              "z": -200.0
+            },
+            "distance": 1310.3,
+            "key": "red"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 774,
+            "label_pos": {
+              "x": 0.0,
+              "y": 80.0,
+              "z": 862.1
+            },
+            "distance": 1455.5,
+            "key": "gold"
+          }
+        ],
+        "route_problem": "route target unreachable"
+      }
+    ],
+    "mission_path": "megalo11.msn",
+    "target_index": 10
+  },
+  {
+    "status": "ok",
+    "source": "Megalomania 12",
+    "game": "d1",
+    "mission_name": "Megalomania 12",
+    "mission_filename": "megalo12.msn",
+    "mission_intent": {
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
+      "declarations": {
+        "anarchy_only": false,
+        "normal": false,
+        "coop": false,
+        "anarchy": false,
+        "robo_anarchy": false,
+        "capture_flag": false,
+        "hoard": false
+      },
+      "normal_levels": 0,
+      "campaign_actor_levels": 0,
+      "arena_like_levels": 0,
+      "solo_like_levels": 0,
+      "player_start_min": 0,
+      "player_start_max": 0,
+      "coop_start_min": 0,
+      "coop_start_max": 0,
+      "robots": 0,
+      "hostages": 0,
+      "matcens": 0,
+      "guidebots": 0,
+      "powerups": 0,
+      "reactors": 0
+    },
+    "coop_starts": "4",
+    "track_names": [
+      {
+        "track": 0,
+        "name": "MIDI Track 0",
+        "filename": "descent.hmp",
+        "format": "hmp",
+        "length_s": 233
+      },
+      {
+        "track": 1,
+        "name": "MIDI Track 1",
+        "filename": "briefing.hmp",
+        "format": "hmp",
+        "length_s": 176
+      },
+      {
+        "track": 2,
+        "name": "MIDI Track 2",
+        "filename": "endlevel.hmp",
+        "format": "hmp",
+        "length_s": 19
+      },
+      {
+        "track": 3,
+        "name": "MIDI Track 3",
+        "filename": "endgame.hmp",
+        "format": "hmp",
+        "length_s": 131
+      },
+      {
+        "track": 4,
+        "name": "MIDI Track 4",
+        "filename": "credits.hmp",
+        "format": "hmp",
+        "length_s": 132
+      },
+      {
+        "track": 5,
+        "name": "MIDI Track 1",
+        "filename": "game01.hmp",
+        "format": "hmp",
+        "length_s": 204
+      },
+      {
+        "track": 6,
+        "name": "MIDI Track 2",
+        "filename": "game02.hmp",
+        "format": "hmp",
+        "length_s": 226
+      },
+      {
+        "track": 7,
+        "name": "MIDI Track 3",
+        "filename": "game03.hmp",
+        "format": "hmp",
+        "length_s": 213
+      },
+      {
+        "track": 8,
+        "name": "MIDI Track 4",
+        "filename": "game04.hmp",
+        "format": "hmp",
+        "length_s": 151
+      },
+      {
+        "track": 9,
+        "name": "MIDI Track 5",
+        "filename": "game05.hmp",
+        "format": "hmp",
+        "length_s": 185
+      },
+      {
+        "track": 10,
+        "name": "MIDI Track 6",
+        "filename": "game06.hmp",
+        "format": "hmp",
+        "length_s": 159
+      },
+      {
+        "track": 11,
+        "name": "MIDI Track 7",
+        "filename": "game07.hmp",
+        "format": "hmp",
+        "length_s": 179
+      },
+      {
+        "track": 12,
+        "name": "MIDI Track 8",
+        "filename": "game08.hmp",
+        "format": "hmp",
+        "length_s": 176
+      },
+      {
+        "track": 13,
+        "name": "MIDI Track 9",
+        "filename": "game09.hmp",
+        "format": "hmp",
+        "length_s": 211
+      },
+      {
+        "track": 14,
+        "name": "MIDI Track 10",
+        "filename": "game10.hmp",
+        "format": "hmp",
+        "length_s": 304
+      },
+      {
+        "track": 15,
+        "name": "MIDI Track 11",
+        "filename": "game11.hmp",
+        "format": "hmp",
+        "length_s": 181
+      },
+      {
+        "track": 16,
+        "name": "MIDI Track 12",
+        "filename": "game12.hmp",
+        "format": "hmp",
+        "length_s": 183
+      },
+      {
+        "track": 17,
+        "name": "MIDI Track 13",
+        "filename": "game13.hmp",
+        "format": "hmp",
+        "length_s": 206
+      },
+      {
+        "track": 18,
+        "name": "MIDI Track 14",
+        "filename": "game14.hmp",
+        "format": "hmp",
+        "length_s": 235
+      },
+      {
+        "track": 19,
+        "name": "MIDI Track 15",
+        "filename": "game15.hmp",
+        "format": "hmp",
+        "length_s": 188
+      },
+      {
+        "track": 20,
+        "name": "MIDI Track 16",
+        "filename": "game16.hmp",
+        "format": "hmp",
+        "length_s": 191
+      },
+      {
+        "track": 21,
+        "name": "MIDI Track 17",
+        "filename": "game17.hmp",
+        "format": "hmp",
+        "length_s": 192
+      },
+      {
+        "track": 22,
+        "name": "MIDI Track 18",
+        "filename": "game18.hmp",
+        "format": "hmp",
+        "length_s": 244
+      },
+      {
+        "track": 23,
+        "name": "MIDI Track 19",
+        "filename": "game19.hmp",
+        "format": "hmp",
+        "length_s": 164
+      },
+      {
+        "track": 24,
+        "name": "MIDI Track 20",
+        "filename": "game20.hmp",
+        "format": "hmp",
+        "length_s": 193
+      },
+      {
+        "track": 25,
+        "name": "MIDI Track 21",
+        "filename": "game21.hmp",
+        "format": "hmp",
+        "length_s": 184
+      },
+      {
+        "track": 26,
+        "name": "MIDI Track 22",
+        "filename": "game22.hmp",
+        "format": "hmp",
+        "length_s": 176
+      }
+    ],
+    "level_count": 1,
+    "levels": [
+      {
+        "level_num": 0,
         "secret": false,
         "level_name": "Progenitor",
         "level_file": "megaloma.rdl",

@@ -1787,7 +1787,9 @@
         "route_completing_key_mask_set": 0,
         "route_steps": [],
         "route_problem": "level file is missing",
-        "problems": "level file is missing",
+        "problems": [
+          "level file is missing"
+        ],
         "status": "failed"
       },
       {
@@ -1856,7 +1858,9 @@
         ]
       }
     ],
-    "problems": "one or more secret levels are referenced but missing",
+    "problems": [
+      "one or more secret levels are referenced but missing"
+    ],
     "mission_path": "KCXF2RM.mn2",
     "target_index": 0
   }

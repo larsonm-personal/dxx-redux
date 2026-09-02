@@ -288,6 +288,12 @@ if(NOT ANDROID)
         GAME_SOURCES ${D1X_SECRET_AREA_SOURCES}
         AUDIO_TAG_METADATA
         INCLUDE_GAME_DIR)
+    dxx_add_headless_target(
+        dxx-redux-d1-metadata-worker
+        ../../android/app/src/main/cpp/headless/level_metadata_worker_main.cpp
+        GAME_SOURCES ${D1X_SECRET_AREA_SOURCES} ../../android/app/src/main/cpp/jni_level_metadata.cpp
+        AUDIO_TAG_METADATA
+        INCLUDE_GAME_DIR)
 endif()
 
 install(TARGETS dxx-redux-d1 RUNTIME DESTINATION .)

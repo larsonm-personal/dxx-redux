@@ -3,7 +3,7 @@
     "status": "ok",
     "source": "Descent 2: Enemy Vignettes",
     "game": "d2",
-    "mission_name": "Descent 2: Enemy Vignette",
+    "mission_name": "Descent 2: Enemy Vignettes",
     "mission_filename": "vignett2.mn2",
     "mission_intent": {
       "classification": "single_player_or_coop",
@@ -1123,9 +1123,9 @@
         "mine_volume": 2642140.0,
         "mine_volume_normalized": 0.577781,
         "mine_volume_text": "0.58x",
-        "travel_distance": 1997.5,
-        "travel_time_seconds": 40,
-        "travel_time_text": "0M:40S",
+        "travel_distance": 2051.4,
+        "travel_time_seconds": 41,
+        "travel_time_text": "0M:41S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1179,7 +1179,7 @@
               "y": -5.1,
               "z": -218.4
             },
-            "distance": 431.1
+            "distance": 458.0
           },
           {
             "index": 4,
@@ -1194,7 +1194,7 @@
               "y": 113.7,
               "z": 42.0
             },
-            "distance": 467.0,
+            "distance": 493.9,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -1727,15 +1727,15 @@
         "mine_volume": 46220100.0,
         "mine_volume_normalized": 10.1074,
         "mine_volume_text": "10x",
-        "travel_distance": 1029.0,
-        "travel_time_seconds": 21,
-        "travel_time_text": "0M:21S",
+        "travel_distance": 3205.0,
+        "travel_time_seconds": 64,
+        "travel_time_text": "1M:04S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 11,
+        "route_required_key_mask": 3,
+        "route_completing_key_mask_set": 8,
         "route_steps": [
           {
             "index": 0,
@@ -1746,6 +1746,34 @@
           },
           {
             "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 126,
+            "label_pos": {
+              "x": 16.1,
+              "y": -63.8,
+              "z": -40.2
+            },
+            "distance": 698.5,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 449,
+            "label_pos": {
+              "x": 22.7,
+              "y": -188.6,
+              "z": 405.3
+            },
+            "distance": 895.4,
+            "key": "red"
+          },
+          {
+            "index": 3,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -1755,10 +1783,10 @@
               "y": -26.7,
               "z": 550.0
             },
-            "distance": 782.1
+            "distance": 957.9
           },
           {
-            "index": 2,
+            "index": 4,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -1770,7 +1798,7 @@
               "y": -27.3,
               "z": 39.0
             },
-            "distance": 246.9,
+            "distance": 653.1,
             "trigger": 1,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -1778,8 +1806,6 @@
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
-          "blue key not necessary",
-          "red key not necessary",
           "no guidebot or guidebot start cage placed in this level"
         ]
       },
@@ -2008,15 +2034,15 @@
         "mine_volume": 14614900.0,
         "mine_volume_normalized": 3.19598,
         "mine_volume_text": "3.2x",
-        "travel_distance": 1768.3,
-        "travel_time_seconds": 35,
-        "travel_time_text": "0M:35S",
+        "travel_distance": 2557.0,
+        "travel_time_seconds": 51,
+        "travel_time_text": "0M:51S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_required_key_mask": 2,
-        "route_completing_key_mask_set": 4,
+        "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -2041,6 +2067,35 @@
           },
           {
             "index": 2,
+            "kind": "trigger",
+            "activation_kind": "unresolved_trigger",
+            "calculated": false,
+            "label": "Locate and activate switch trigger 4",
+            "seg": 292,
+            "wall": 55,
+            "label_pos": {
+              "x": -27.6,
+              "y": -190.0,
+              "z": 347.5
+            },
+            "trigger": 4,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 298,
+                "side": 1,
+                "wall": 31
+              },
+              {
+                "seg": 292,
+                "side": 3,
+                "wall": 30
+              }
+            ]
+          },
+          {
+            "index": 3,
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
@@ -2050,10 +2105,10 @@
               "y": -170.0,
               "z": 347.5
             },
-            "distance": 617.0
+            "distance": 1151.3
           },
           {
-            "index": 3,
+            "index": 4,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -2065,13 +2120,14 @@
               "y": -80.0,
               "z": 507.5
             },
-            "distance": 296.0,
+            "distance": 550.4,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_problem": "switch activation route unresolved",
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",

@@ -256,15 +256,15 @@
         "mine_volume": 5482420.0,
         "mine_volume_normalized": 1.19889,
         "mine_volume_text": "1.2x",
-        "travel_distance": 3648.4,
-        "travel_time_seconds": 73,
-        "travel_time_text": "1M:13S",
+        "travel_distance": 1904.6,
+        "travel_time_seconds": 38,
+        "travel_time_text": "0M:38S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_required_key_mask": 3,
-        "route_completing_key_mask_set": 8,
+        "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -349,40 +349,10 @@
             },
             "distance": 475.0,
             "key": "red"
-          },
-          {
-            "index": 5,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 332,
-            "label_pos": {
-              "x": 160.0,
-              "y": -91.0,
-              "z": 340.0
-            },
-            "distance": 954.9
-          },
-          {
-            "index": 6,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 282,
-            "side": 5,
-            "wall": 103,
-            "label_pos": {
-              "x": 140.0,
-              "y": -60.0,
-              "z": -391.0
-            },
-            "distance": 788.9,
-            "trigger": 1,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_problem": "route target unreachable",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -2051,15 +2021,15 @@
         "mine_volume": 11100300.0,
         "mine_volume_normalized": 2.4274,
         "mine_volume_text": "2.4x",
-        "travel_distance": 3198.3,
-        "travel_time_seconds": 64,
-        "travel_time_text": "1M:04S",
+        "travel_distance": 1862.3,
+        "travel_time_seconds": 37,
+        "travel_time_text": "0M:37S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_required_key_mask": 6,
-        "route_completing_key_mask_set": 64,
+        "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -2130,40 +2100,10 @@
             },
             "distance": 1325.3,
             "key": "red"
-          },
-          {
-            "index": 4,
-            "kind": "boss",
-            "activation_kind": "destroy_boss",
-            "label": "Boss robot",
-            "seg": 376,
-            "label_pos": {
-              "x": -240.0,
-              "y": 80.0,
-              "z": 584.0
-            },
-            "distance": 826.8
-          },
-          {
-            "index": 5,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 256,
-            "side": 1,
-            "wall": 99,
-            "label_pos": {
-              "x": -40.0,
-              "y": 250.0,
-              "z": 630.0
-            },
-            "distance": 509.2,
-            "trigger": 6,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_problem": "route target unreachable",
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",
@@ -2933,9 +2873,9 @@
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_required_key_mask": 7,
-        "route_completing_key_mask_set": 128,
+        "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -3078,6 +3018,7 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_problem": "switch activation route unresolved",
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",

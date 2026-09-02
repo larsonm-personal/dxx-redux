@@ -6,7 +6,8 @@ $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $metadataRoot = Join-Path $repoRoot "game_data\mission_files"
 $missionCount = 0
 
-foreach ($file in Get-ChildItem -LiteralPath $metadataRoot -Filter "*.json" -File -Recurse) {
+foreach ($file in Get-ChildItem -LiteralPath $metadataRoot -Filter "*.json" -File -Recurse |
+        Where-Object { $_.Name -notlike "*.simulation.json" }) {
     try {
         $items = @(Get-Content -LiteralPath $file.FullName -Raw | ConvertFrom-Json)
     } catch {
@@ -15,6 +16,12 @@ foreach ($file in Get-ChildItem -LiteralPath $metadataRoot -Filter "*.json" -Fil
     foreach ($mission in $items) {
         if (-not $mission.mission_filename) { continue }
         $missionCount++
+        $propertyNames = @($mission.PSObject.Properties.Name)
+        $filenameIndex = [Array]::IndexOf($propertyNames, "mission_filename")
+        $intentIndex = [Array]::IndexOf($propertyNames, "mission_intent")
+        if ($intentIndex -ne ($filenameIndex + 1)) {
+            throw "$($file.FullName): $($mission.mission_filename) mission_intent is not immediately after mission_filename"
+        }
         $intent = $mission.mission_intent
         if ($null -eq $intent -or $intent -is [string]) {
             throw "$($file.FullName): $($mission.mission_filename) mission_intent is not a structured object"
@@ -38,4 +45,4 @@ foreach ($file in Get-ChildItem -LiteralPath $metadataRoot -Filter "*.json" -Fil
 }
 if ($missionCount -eq 0) { throw "No checked mission metadata entries were found" }
 
-Write-Host "PASS: $missionCount checked missions use structured mission_intent output"
+Write-Host "PASS: $missionCount checked missions use canonically ordered structured mission_intent output"

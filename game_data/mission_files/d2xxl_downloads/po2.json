@@ -6,10 +6,10 @@
     "mission_name": "Dark Matter",
     "mission_filename": "darkmatr.mn2",
     "mission_intent": {
-      "classification": "multiplayer_anarchy",
-      "rule": "all_levels_arena_like",
-      "confidence": "medium",
-      "reason": "Every normal level has multiple player starts and no campaign actors",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -19,20 +19,20 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
+      "normal_levels": 0,
       "campaign_actor_levels": 0,
-      "arena_like_levels": 1,
+      "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
+      "player_start_min": 0,
+      "player_start_max": 0,
       "coop_start_min": 0,
       "coop_start_max": 0,
       "robots": 0,
       "hostages": 0,
       "matcens": 0,
       "guidebots": 0,
-      "powerups": 38,
-      "reactors": 1
+      "powerups": 0,
+      "reactors": 0
     },
     "coop_starts": "1",
     "track_names": [
@@ -71,14 +71,14 @@
         "name": "MIDI Track 4",
         "filename": "credits.hmp",
         "format": "hmp",
-        "length_s": 145
+        "length_s": 116
       },
       {
         "track": 5,
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 157
+        "length_s": 249
       },
       {
         "track": 6,
@@ -89,10 +89,10 @@
       },
       {
         "track": 7,
-        "name": "MIDI Track 3",
+        "name": "Troy Martin",
         "filename": "game03.hmp",
         "format": "hmp",
-        "length_s": 278
+        "length_s": 174
       },
       {
         "track": 8,
@@ -106,8 +106,7 @@
         "name": "MIDI Track 5",
         "filename": "game05.hmp",
         "format": "hmp",
-        "length_s": 0,
-        "parse_status": "invalid_midi"
+        "length_s": 163
       },
       {
         "track": 10,
@@ -115,29 +114,27 @@
         "filename": "game06.hmp",
         "format": "hmp",
         "length_s": 0,
-        "parse_status": "invalid_midi"
+        "parse_status": "duration_unavailable"
       },
       {
         "track": 11,
         "name": "MIDI Track 7",
         "filename": "game07.hmp",
         "format": "hmp",
-        "length_s": 0,
-        "parse_status": "invalid_midi"
+        "length_s": 399
       },
       {
         "track": 12,
         "name": "MIDI Track 8",
         "filename": "game08.hmp",
         "format": "hmp",
-        "length_s": 0,
-        "parse_status": "invalid_midi"
+        "length_s": 116
       }
     ],
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Dark Matter",
         "level_file": "darkmatr.rl2",
@@ -947,9 +944,9 @@
         "guidebot_count": 4,
         "guidebot_placed": true,
         "guidebot_accessible": true,
-        "route_status": "ok",
-        "route_required_key_mask": 2,
-        "route_completing_key_mask_set": 4,
+        "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -1108,6 +1105,7 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "route_problem": "switch activation route unresolved",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
         ]
@@ -1619,10 +1617,10 @@
     "mission_name": "Vanhuta Tower",
     "mission_filename": "space1.mn2",
     "mission_intent": {
-      "classification": "multiplayer_anarchy",
-      "rule": "all_levels_arena_like",
-      "confidence": "medium",
-      "reason": "Every normal level has multiple player starts and no campaign actors",
+      "classification": "ambiguous",
+      "rule": "mixed_or_missing_evidence",
+      "confidence": "low",
+      "reason": "The normal levels contain mixed or incomplete structural evidence",
       "declarations": {
         "anarchy_only": false,
         "normal": false,
@@ -1632,19 +1630,19 @@
         "capture_flag": false,
         "hoard": false
       },
-      "normal_levels": 1,
+      "normal_levels": 0,
       "campaign_actor_levels": 0,
-      "arena_like_levels": 1,
+      "arena_like_levels": 0,
       "solo_like_levels": 0,
-      "player_start_min": 8,
-      "player_start_max": 8,
+      "player_start_min": 0,
+      "player_start_max": 0,
       "coop_start_min": 0,
       "coop_start_max": 0,
       "robots": 0,
       "hostages": 0,
       "matcens": 0,
       "guidebots": 0,
-      "powerups": 88,
+      "powerups": 0,
       "reactors": 0
     },
     "coop_starts": "1",
@@ -1684,14 +1682,14 @@
         "name": "MIDI Track 4",
         "filename": "credits.hmp",
         "format": "hmp",
-        "length_s": 145
+        "length_s": 116
       },
       {
         "track": 5,
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 157
+        "length_s": 249
       },
       {
         "track": 6,
@@ -1702,10 +1700,10 @@
       },
       {
         "track": 7,
-        "name": "MIDI Track 3",
+        "name": "Troy Martin",
         "filename": "game03.hmp",
         "format": "hmp",
-        "length_s": 278
+        "length_s": 174
       },
       {
         "track": 8,
@@ -1719,8 +1717,7 @@
         "name": "MIDI Track 5",
         "filename": "game05.hmp",
         "format": "hmp",
-        "length_s": 0,
-        "parse_status": "invalid_midi"
+        "length_s": 163
       },
       {
         "track": 10,
@@ -1728,29 +1725,27 @@
         "filename": "game06.hmp",
         "format": "hmp",
         "length_s": 0,
-        "parse_status": "invalid_midi"
+        "parse_status": "duration_unavailable"
       },
       {
         "track": 11,
         "name": "MIDI Track 7",
         "filename": "game07.hmp",
         "format": "hmp",
-        "length_s": 0,
-        "parse_status": "invalid_midi"
+        "length_s": 399
       },
       {
         "track": 12,
         "name": "MIDI Track 8",
         "filename": "game08.hmp",
         "format": "hmp",
-        "length_s": 0,
-        "parse_status": "invalid_midi"
+        "length_s": 116
       }
     ],
     "level_count": 1,
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "secret": false,
         "level_name": "Vanhuta Tower",
         "level_file": "van.rl2",
