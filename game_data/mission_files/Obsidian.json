@@ -4438,7 +4438,7 @@
         "guidebot_accessible": false,
         "route_status": "ok",
         "route_required_key_mask": 2,
-        "route_completing_key_mask_set": 4,
+        "route_completing_key_mask_set": 12,
         "route_steps": [
           {
             "index": 0,

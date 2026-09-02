@@ -1662,15 +1662,15 @@
         "mine_volume": 7461890.0,
         "mine_volume_normalized": 1.63176,
         "mine_volume_text": "1.6x",
-        "travel_distance": 2781.7,
-        "travel_time_seconds": 56,
-        "travel_time_text": "0M:56S",
+        "travel_distance": 4084.8,
+        "travel_time_seconds": 82,
+        "travel_time_text": "1M:22S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -1720,9 +1720,39 @@
             },
             "distance": 1410.0,
             "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 5,
+            "label_pos": {
+              "x": 120.2,
+              "y": -172.4,
+              "z": -166.3
+            },
+            "distance": 989.0
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 7,
+            "side": 1,
+            "wall": 2,
+            "label_pos": {
+              "x": 120.2,
+              "y": 73.6,
+              "z": -90.3
+            },
+            "distance": 314.0,
+            "trigger": 0,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
         ],
-        "route_problem": "route target unreachable",
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists"

@@ -1609,6 +1609,28 @@ static int test_route_prefers_boss_over_reactor_object(void)
 	return failures;
 }
 
+static int test_route_uses_reactor_when_boss_is_unreachable(void)
+{
+	level_metadata_scan_view view = test_view();
+	level_metadata_state state;
+	int failures = 0;
+
+	test_reset();
+	test_object_count_value = 2;
+	test_object_type[0] = TEST_OBJ_CONTROL_CENTER;
+	test_object_seg[0] = 1;
+	test_object_type[1] = TEST_OBJ_ROBOT;
+	test_object_id[1] = TEST_ROBOT_BOSS;
+	test_object_seg[1] = 3;
+	level_metadata_scan_level(&view, &state);
+	failures += expect_string("unreachable boss reactor route status", "ok", level_metadata_route_status_name(state.route_status));
+	failures += expect_int("unreachable boss reactor route steps", 3, state.route_step_count);
+	failures += expect_string("unreachable boss reactor route step", "reactor", level_metadata_route_step_kind_name(state.route_steps[1].kind));
+	failures += expect_string("unreachable boss reactor route activation", "destroy_reactor", level_metadata_route_activation_kind_name(state.route_steps[1].activation_kind));
+	failures += expect_string("unreachable boss reactor route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[2].kind));
+	return failures;
+}
+
 static int check_energy_center_distance(
     const char *label,
     const int first[3],
@@ -1801,6 +1823,7 @@ int main(void)
 	failures += test_route_visible_reactor_step();
 	failures += test_route_prefers_boss_over_control_center_segment();
 	failures += test_route_prefers_boss_over_reactor_object();
+	failures += test_route_uses_reactor_when_boss_is_unreachable();
 	failures += test_energy_center_distance_bounds();
 	failures += test_guidebot_missing_note();
 	failures += test_guidebot_accessible();

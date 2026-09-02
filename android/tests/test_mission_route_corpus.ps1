@@ -83,6 +83,7 @@ function Get-CurrentRouteManifest {
     $records = [Collections.Generic.List[object]]::new()
 
     @($missionSources | ForEach-Object { Get-MissionMetadataFiles -Source $_ }) |
+        Where-Object { $_.Name -notlike '*.simulation.json' } |
         Sort-Object MissionMetadataKey |
         ForEach-Object {
             $metadataFile = $_

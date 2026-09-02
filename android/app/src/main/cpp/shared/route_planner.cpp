@@ -3355,13 +3355,28 @@ class dependency_planner
 		if (state_.progress.control_center_destroyed)
 			return true;
 		if (targets_.boss_found) {
-			if (!move_primary_with_key_recovery(targets_.boss) ||
-			    !append_target_step(
+			/* A custom level can provide both control-center actors while making
+			 * only one of them reachable.  Prefer its boss, but do not reject a
+			 * valid reactor completion when the boss route cannot be built. */
+			const auto before_primary = state_;
+			if (move_primary_with_key_recovery(targets_.boss) &&
+			    append_target_step(
 			        route_semantic_step_kind::boss, targets_.boss,
-			        "Boss robot"))
+			        "Boss robot")) {
+				state_.progress.control_center_destroyed = true;
+				progressed = true;
+			} else if (targets_.reactor_found) {
+				state_ = before_primary;
+				state_.problem.clear();
+				if (!move_primary_with_key_recovery(targets_.reactor) ||
+				    !append_target_step(
+				        route_semantic_step_kind::reactor, targets_.reactor,
+				        "Reactor"))
+					return false;
+				state_.progress.control_center_destroyed = true;
+				progressed = true;
+			} else
 				return false;
-			state_.progress.control_center_destroyed = true;
-			progressed = true;
 		} else if (targets_.reactor_found) {
 			if (!move_primary_with_key_recovery(targets_.reactor) ||
 			    !append_target_step(

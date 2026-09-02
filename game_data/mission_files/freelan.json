@@ -352,15 +352,15 @@
         "mine_volume": 2565670.0,
         "mine_volume_normalized": 0.561059,
         "mine_volume_text": "0.56x",
-        "travel_distance": 1940.1,
-        "travel_time_seconds": 39,
-        "travel_time_text": "0M:39S",
+        "travel_distance": 4064.7,
+        "travel_time_seconds": 81,
+        "travel_time_text": "1M:21S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -410,9 +410,39 @@
             },
             "distance": 700.0,
             "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 289,
+            "label_pos": {
+              "x": 280.0,
+              "y": 160.0,
+              "z": 340.0
+            },
+            "distance": 1049.3
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 27,
+            "side": 4,
+            "wall": 2,
+            "label_pos": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 170.0
+            },
+            "distance": 1075.4,
+            "trigger": 0,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
-        ],
-        "route_problem": "route target unreachable"
+        ]
       },
       {
         "level_num": 3,
@@ -436,9 +466,9 @@
         "mine_volume": 5209330.0,
         "mine_volume_normalized": 1.13917,
         "mine_volume_text": "1.1x",
-        "travel_distance": 3046.4,
-        "travel_time_seconds": 61,
-        "travel_time_text": "1M:01S",
+        "travel_distance": 3020.6,
+        "travel_time_seconds": 60,
+        "travel_time_text": "1M:00S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -506,7 +536,7 @@
               "y": 60.0,
               "z": -160.0
             },
-            "distance": 805.6
+            "distance": 792.6
           },
           {
             "index": 5,
@@ -521,7 +551,7 @@
               "y": 40.0,
               "z": 4.0
             },
-            "distance": 403.9,
+            "distance": 391.0,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"

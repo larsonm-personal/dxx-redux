@@ -930,15 +930,15 @@
         "mine_volume": 41493200.0,
         "mine_volume_normalized": 9.07371,
         "mine_volume_text": "9.1x",
-        "travel_distance": 7277.1,
-        "travel_time_seconds": 146,
-        "travel_time_text": "2M:26S",
+        "travel_distance": 9004.1,
+        "travel_time_seconds": 180,
+        "travel_time_text": "3M:00S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 3,
+        "route_completing_key_mask_set": 8,
         "route_steps": [
           {
             "index": 0,
@@ -974,9 +974,39 @@
             },
             "distance": 3953.2,
             "key": "red"
+          },
+          {
+            "index": 3,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 233,
+            "label_pos": {
+              "x": 440.0,
+              "y": 20.0,
+              "z": 240.0
+            },
+            "distance": 1553.9
+          },
+          {
+            "index": 4,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 236,
+            "side": 5,
+            "wall": 16,
+            "label_pos": {
+              "x": 560.0,
+              "y": 0.0,
+              "z": 230.0
+            },
+            "distance": 173.1,
+            "trigger": 0,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
-        ],
-        "route_problem": "route target unreachable"
+        ]
       }
     ],
     "mission_path": "merc03.msn",

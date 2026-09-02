@@ -1922,15 +1922,15 @@
         "mine_volume": 46011500.0,
         "mine_volume_normalized": 10.0618,
         "mine_volume_text": "10x",
-        "travel_distance": 4210.1,
-        "travel_time_seconds": 84,
-        "travel_time_text": "1M:24S",
+        "travel_distance": 3155.9,
+        "travel_time_seconds": 63,
+        "travel_time_text": "1M:03S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
-        "route_required_key_mask": 7,
-        "route_completing_key_mask_set": 128,
+        "route_required_key_mask": 5,
+        "route_completing_key_mask_set": 160,
         "route_steps": [
           {
             "index": 0,
@@ -1969,33 +1969,19 @@
           },
           {
             "index": 3,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 325,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 341,
             "label_pos": {
               "x": -197.0,
-              "y": -170.0,
+              "y": -200.0,
               "z": 317.1
             },
-            "distance": 917.7,
-            "key": "red"
+            "distance": 947.7
           },
           {
             "index": 4,
-            "kind": "boss",
-            "activation_kind": "destroy_boss",
-            "label": "Boss robot",
-            "seg": 439,
-            "label_pos": {
-              "x": -339.6,
-              "y": -250.0,
-              "z": -75.4
-            },
-            "distance": 736.6
-          },
-          {
-            "index": 5,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -2007,11 +1993,14 @@
               "y": -200.0,
               "z": 306.0
             },
-            "distance": 784.2,
+            "distance": 436.6,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
+        ],
+        "notes": [
+          "red key not necessary"
         ]
       }
     ],
