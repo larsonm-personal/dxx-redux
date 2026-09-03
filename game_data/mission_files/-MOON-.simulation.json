@@ -6,16 +6,40 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "failed",
     "level_counts": {
-      "not_run": 1
+      "route_mismatch": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "MOON01.RL2",
         "route_input_sha256": "EDEC998843E74F3E832AA0FFAF386C77C7C03A42C38F6473B18BD08AE4297247",
-        "status": "not_run"
+        "status": "route_mismatch",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 16
+          },
+          {
+            "n": "gold key",
+            "s": 57
+          },
+          {
+            "n": "red key",
+            "s": 93
+          }
+        ],
+        "total_frames": 7849,
+        "rng_end": {
+          "state": 1001246830,
+          "calls": 3545
+        },
+        "problem": "live objective sequence differs from route input"
       }
     ]
   },
@@ -26,16 +50,27 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "failed",
     "level_counts": {
-      "not_run": 1
+      "failed": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "MOON02.RL2",
         "route_input_sha256": "5F5512E28A30B62780C7F0B4FA097B78E51BBCC906CD5E7B29EEB1EF2E3C27F6",
-        "status": "not_run"
+        "status": "failed",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 0,
+        "rng_end": {
+          "state": 1,
+          "calls": 0
+        },
+        "problem": "live Guide-Bot route has no actionable goal"
       }
     ]
   },
@@ -46,16 +81,71 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "ok",
     "level_counts": {
-      "not_run": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "MOON03.RL2",
         "route_input_sha256": "626D31A0F8F2E66FDD2E2CF81FF61DDF48283981879DFF3DC3133C6B12D7F6F5",
-        "status": "not_run"
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 17
+          },
+          {
+            "n": "blue key",
+            "s": 18
+          },
+          {
+            "n": "switch 9",
+            "s": 35
+          },
+          {
+            "n": "gold key",
+            "s": 45
+          },
+          {
+            "n": "switch 11",
+            "s": 55
+          },
+          {
+            "n": "switch 23",
+            "s": 70
+          },
+          {
+            "n": "switch 1",
+            "s": 85
+          },
+          {
+            "n": "red key",
+            "s": 113
+          },
+          {
+            "n": "switch 20",
+            "s": 143
+          },
+          {
+            "n": "boss",
+            "s": 181
+          },
+          {
+            "n": "exit",
+            "s": 190
+          }
+        ],
+        "total_frames": 11406,
+        "rng_end": {
+          "state": 2070643602,
+          "calls": 7973
+        }
       }
     ]
   },
@@ -66,16 +156,79 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "ok",
     "level_counts": {
-      "not_run": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "-MOON04-.RL2",
         "route_input_sha256": "3D5F30F06F9C4F3672E64D1E51EA05E6ECAC7C1CD633DB7C302D968BB8ED5508",
-        "status": "not_run"
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 11
+          },
+          {
+            "n": "switch 3",
+            "s": 12
+          },
+          {
+            "n": "hidden door",
+            "s": 15
+          },
+          {
+            "n": "switch 16",
+            "s": 15
+          },
+          {
+            "n": "blue key",
+            "s": 27
+          },
+          {
+            "n": "switch 10",
+            "s": 41
+          },
+          {
+            "n": "switch 17",
+            "s": 41
+          },
+          {
+            "n": "gold key",
+            "s": 60
+          },
+          {
+            "n": "hidden door",
+            "s": 84
+          },
+          {
+            "n": "switch 19",
+            "s": 86
+          },
+          {
+            "n": "red key",
+            "s": 112
+          },
+          {
+            "n": "reactor",
+            "s": 153
+          },
+          {
+            "n": "exit",
+            "s": 169
+          }
+        ],
+        "total_frames": 10113,
+        "rng_end": {
+          "state": 1194686363,
+          "calls": 4462
+        }
       }
     ]
   },
@@ -86,16 +239,40 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "failed",
     "level_counts": {
-      "not_run": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "-moon05-.rl2",
         "route_input_sha256": "8B0DF5783B479D2E2C790E67CCA51BEF4415F2D1889A2DD0D2A7013CC70A1259",
-        "status": "not_run"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 0",
+            "s": 5
+          },
+          {
+            "n": "blue key",
+            "s": 12
+          },
+          {
+            "n": "gold key",
+            "s": 29
+          }
+        ],
+        "total_frames": 6388,
+        "rng_end": {
+          "state": 675639828,
+          "calls": 1155
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },
@@ -106,16 +283,27 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "failed",
     "level_counts": {
-      "not_run": 1
+      "failed": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "-MOON06-.RL2",
         "route_input_sha256": "E4D06FD14F4FD0DC692CCE7888B096EE74354A031226DF6CCE97B3AB374128E9",
-        "status": "not_run"
+        "status": "failed",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 0,
+        "rng_end": {
+          "state": 1303003706,
+          "calls": 29
+        },
+        "problem": "live Guide-Bot route has no actionable goal"
       }
     ]
   },
@@ -126,16 +314,44 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "failed",
     "level_counts": {
-      "not_run": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "-moon07-.rl2",
         "route_input_sha256": "6B0DE946EE4011359377B310231F7A5A00EE0E95C30C7EF5D0C7ED21C1FB5B0A",
-        "status": "not_run"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 28",
+            "s": 10
+          },
+          {
+            "n": "hidden door",
+            "s": 11
+          },
+          {
+            "n": "blue key",
+            "s": 14
+          },
+          {
+            "n": "switch 29",
+            "s": 17
+          }
+        ],
+        "total_frames": 1980,
+        "rng_end": {
+          "state": 3058329110,
+          "calls": 593
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
       }
     ]
   },
@@ -146,16 +362,36 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "failed",
     "level_counts": {
-      "not_run": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "-moon08-.rl2",
         "route_input_sha256": "5C4D4FEE17290A841F1C185E047AEA55FDB0737D135B68AA3A92866388D22C23",
-        "status": "not_run"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 11
+          },
+          {
+            "n": "switch 37",
+            "s": 17
+          }
+        ],
+        "total_frames": 1851,
+        "rng_end": {
+          "state": 836234953,
+          "calls": 504
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
       }
     ]
   },
@@ -166,16 +402,96 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "failed",
     "level_counts": {
-      "not_run": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "-moon09-.rl2",
         "route_input_sha256": "6E6FDFF38D0A1975EB4AB257F5E074C758250B0B8CBE00D6DE5A365AC67E49EF",
-        "status": "not_run"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 14
+          },
+          {
+            "n": "switch 2",
+            "s": 22
+          },
+          {
+            "n": "hidden door",
+            "s": 28
+          },
+          {
+            "n": "gold key",
+            "s": 34
+          },
+          {
+            "n": "hidden door",
+            "s": 41
+          },
+          {
+            "n": "switch 0",
+            "s": 41
+          },
+          {
+            "n": "switch 3",
+            "s": 45
+          },
+          {
+            "n": "hidden door",
+            "s": 54
+          },
+          {
+            "n": "hidden door",
+            "s": 56
+          },
+          {
+            "n": "switch 4",
+            "s": 57
+          },
+          {
+            "n": "switch 8",
+            "s": 78
+          },
+          {
+            "n": "switch 9",
+            "s": 88
+          },
+          {
+            "n": "hidden door",
+            "s": 91
+          },
+          {
+            "n": "hidden door",
+            "s": 92
+          },
+          {
+            "n": "hidden door",
+            "s": 93
+          },
+          {
+            "n": "hidden door",
+            "s": 97
+          },
+          {
+            "n": "red key",
+            "s": 104
+          }
+        ],
+        "total_frames": 6967,
+        "rng_end": {
+          "state": 3129815363,
+          "calls": 2886
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
       }
     ]
   },
@@ -186,16 +502,71 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "ok",
     "level_counts": {
-      "not_run": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "-moon10-.rl2",
         "route_input_sha256": "4DFCFF35F6A347666F58C5923A78DD46EA6162F672BD607BE3DD532489B95F87",
-        "status": "not_run"
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 22
+          },
+          {
+            "n": "switch 17",
+            "s": 25
+          },
+          {
+            "n": "gold key",
+            "s": 52
+          },
+          {
+            "n": "switch 2",
+            "s": 75
+          },
+          {
+            "n": "hidden door",
+            "s": 92
+          },
+          {
+            "n": "red key",
+            "s": 92
+          },
+          {
+            "n": "hidden door",
+            "s": 120
+          },
+          {
+            "n": "switch 3",
+            "s": 125
+          },
+          {
+            "n": "switch 5",
+            "s": 129
+          },
+          {
+            "n": "reactor",
+            "s": 130
+          },
+          {
+            "n": "exit",
+            "s": 150
+          }
+        ],
+        "total_frames": 8999,
+        "rng_end": {
+          "state": 1766810192,
+          "calls": 4215
+        }
       }
     ]
   },
@@ -206,16 +577,55 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "ok",
     "level_counts": {
-      "not_run": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "moon11.rl2",
         "route_input_sha256": "D30061C543A539784A30840CA48CE019F223DD1F59E8DC4025162AC360FE7063",
-        "status": "not_run"
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 10
+          },
+          {
+            "n": "gold key",
+            "s": 30
+          },
+          {
+            "n": "red key",
+            "s": 52
+          },
+          {
+            "n": "switch 33",
+            "s": 61
+          },
+          {
+            "n": "switch 47",
+            "s": 61
+          },
+          {
+            "n": "reactor",
+            "s": 93
+          },
+          {
+            "n": "exit",
+            "s": 100
+          }
+        ],
+        "total_frames": 6004,
+        "rng_end": {
+          "state": 4222898646,
+          "calls": 3473
+        }
       }
     ]
   },
@@ -226,16 +636,67 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "ok",
     "level_counts": {
-      "not_run": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "moon12.rl2",
         "route_input_sha256": "968E05CDE92B8DECA17981F6E76BE25B7F8B51B272C2C78235F2FBC4355052F5",
-        "status": "not_run"
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "pass-through 7",
+            "s": 4
+          },
+          {
+            "n": "blue key",
+            "s": 11
+          },
+          {
+            "n": "switch 1",
+            "s": 24
+          },
+          {
+            "n": "switch 69",
+            "s": 40
+          },
+          {
+            "n": "gold key",
+            "s": 47
+          },
+          {
+            "n": "switch 19",
+            "s": 75
+          },
+          {
+            "n": "red key",
+            "s": 77
+          },
+          {
+            "n": "switch 65",
+            "s": 90
+          },
+          {
+            "n": "reactor",
+            "s": 99
+          },
+          {
+            "n": "exit",
+            "s": 103
+          }
+        ],
+        "total_frames": 6189,
+        "rng_end": {
+          "state": 4283357347,
+          "calls": 4070
+        }
       }
     ]
   },
@@ -246,16 +707,52 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "failed",
     "level_counts": {
-      "not_run": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "MOON13.RL2",
         "route_input_sha256": "21B5E68F80C066C027DAD2583A7F6C994CBFF3B5978E03525EF850C7BF9B73DA",
-        "status": "not_run"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 12",
+            "s": 13
+          },
+          {
+            "n": "blue key",
+            "s": 25
+          },
+          {
+            "n": "switch 23",
+            "s": 44
+          },
+          {
+            "n": "switch 0",
+            "s": 53
+          },
+          {
+            "n": "switch 1",
+            "s": 60
+          },
+          {
+            "n": "gold key",
+            "s": 65
+          }
+        ],
+        "total_frames": 36001,
+        "rng_end": {
+          "state": 3957494530,
+          "calls": 3189
+        },
+        "problem": "route confirmation exceeded 10 simulation minutes"
       }
     ]
   },
@@ -266,16 +763,27 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "failed",
     "level_counts": {
-      "not_run": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "MOON14.RL2",
         "route_input_sha256": "B089060A1105F46F485105604B11DA6F0B68353D95B0C33AA1B4C4E06F4875DF",
-        "status": "not_run"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 4055,
+        "rng_end": {
+          "state": 1486026583,
+          "calls": 658
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   }

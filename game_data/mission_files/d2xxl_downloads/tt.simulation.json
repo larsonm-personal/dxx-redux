@@ -5,16 +5,36 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "not_run",
+  "status": "failed",
   "level_counts": {
-    "not_run": 1
+    "timeout": 1
   },
   "levels": [
     {
       "level_num": 0,
       "level_file": "TT.rl2",
       "route_input_sha256": "C837D874E419A297F7C8C0CAA3C1A9F44A7F013B2C2C6CF7119FA363D875008F",
-      "status": "not_run"
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 0",
+          "s": 11
+        },
+        {
+          "n": "gold key",
+          "s": 22
+        }
+      ],
+      "total_frames": 5020,
+      "rng_end": {
+        "state": 3486738872,
+        "calls": 1263
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }
   ]
 }

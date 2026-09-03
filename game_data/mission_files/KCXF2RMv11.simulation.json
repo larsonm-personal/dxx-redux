@@ -41,8 +41,8 @@
       "objectives": [],
       "total_frames": 5588,
       "rng_end": {
-        "state": 2569938794,
-        "calls": 1197
+        "state": 2930066523,
+        "calls": 1198
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -79,29 +79,29 @@
         },
         {
           "n": "gold key",
-          "s": 62
+          "s": 63
         },
         {
           "n": "red key",
-          "s": 109
+          "s": 110
         },
         {
           "n": "hidden door",
-          "s": 137
+          "s": 138
         },
         {
           "n": "boss",
-          "s": 158
+          "s": 165
         },
         {
           "n": "exit",
-          "s": 212
+          "s": 174
         }
       ],
-      "total_frames": 12710,
+      "total_frames": 10433,
       "rng_end": {
-        "state": 1461006422,
-        "calls": 6417
+        "state": 819313084,
+        "calls": 5435
       }
     },
     {
@@ -141,10 +141,10 @@
           "s": 10
         }
       ],
-      "total_frames": 1355,
+      "total_frames": 1372,
       "rng_end": {
-        "state": 4195295428,
-        "calls": 531
+        "state": 3228750693,
+        "calls": 540
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

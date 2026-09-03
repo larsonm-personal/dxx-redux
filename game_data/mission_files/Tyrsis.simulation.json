@@ -5,9 +5,10 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
-    "timeout": 2
+    "ok": 1,
+    "timeout": 1
   },
   "levels": [
     {
@@ -52,7 +53,7 @@
       "level_num": 2,
       "level_file": "aerillia.rl2",
       "route_input_sha256": "5737D1DCAF7AE12CF13FA7E69298B46B177593C86B05187A61A2EF4DBA4990DE",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -88,15 +89,22 @@
         },
         {
           "n": "boss",
-          "s": 73
+          "s": 79
+        },
+        {
+          "n": "switch 10",
+          "s": 81
+        },
+        {
+          "n": "exit",
+          "s": 82
         }
       ],
-      "total_frames": 4417,
+      "total_frames": 4945,
       "rng_end": {
-        "state": 2350638019,
-        "calls": 2246
-      },
-      "problem": "semantic objective repeated without route advancement"
+        "state": 3783851011,
+        "calls": 2182
+      }
     }
   ]
 }

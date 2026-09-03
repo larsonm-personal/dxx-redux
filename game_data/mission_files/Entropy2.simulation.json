@@ -5,9 +5,10 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
-    "timeout": 6
+    "ok": 1,
+    "timeout": 5
   },
   "levels": [
     {
@@ -48,8 +49,8 @@
       ],
       "total_frames": 1331,
       "rng_end": {
-        "state": 3456600346,
-        "calls": 701
+        "state": 4150480084,
+        "calls": 707
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -57,7 +58,7 @@
       "level_num": 3,
       "level_file": "e2v-3.rl2",
       "route_input_sha256": "DBB0EB3979BD0DF503856E58CA6D64C60142BA082D4C19E12CAF49402612F1C5",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -69,15 +70,18 @@
         },
         {
           "n": "boss",
-          "s": 3
+          "s": 9
+        },
+        {
+          "n": "exit",
+          "s": 20
         }
       ],
-      "total_frames": 227,
+      "total_frames": 1197,
       "rng_end": {
-        "state": 4047683572,
-        "calls": 291
-      },
-      "problem": "semantic objective repeated without route advancement"
+        "state": 4131908619,
+        "calls": 766
+      }
     },
     {
       "level_num": 4,

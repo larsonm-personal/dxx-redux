@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
-    "timeout": 5
+    "ok": 4,
+    "timeout": 3
   },
   "levels": [
     {
@@ -68,7 +68,7 @@
         },
         {
           "n": "switch 11",
-          "s": 87
+          "s": 88
         },
         {
           "n": "gold key",
@@ -76,29 +76,29 @@
         },
         {
           "n": "switch 1",
-          "s": 133
+          "s": 134
         },
         {
           "n": "red key",
-          "s": 177
+          "s": 178
         },
         {
           "n": "fly-through 4",
-          "s": 234
+          "s": 236
         },
         {
           "n": "reactor",
-          "s": 246
+          "s": 247
         },
         {
           "n": "exit",
-          "s": 252
+          "s": 253
         }
       ],
-      "total_frames": 15092,
+      "total_frames": 15207,
       "rng_end": {
-        "state": 3411913598,
-        "calls": 3337
+        "state": 1425954287,
+        "calls": 3322
       }
     },
     {
@@ -117,14 +117,14 @@
         },
         {
           "n": "gold key",
-          "s": 60
+          "s": 61
         },
         {
           "n": "switch 0",
           "s": 70
         }
       ],
-      "total_frames": 5399,
+      "total_frames": 5468,
       "rng_end": {
         "state": 738479860,
         "calls": 1571
@@ -143,18 +143,18 @@
       "objectives": [
         {
           "n": "switch 1",
-          "s": 31
+          "s": 32
         },
         {
           "n": "blue key",
-          "s": 50
+          "s": 51
         },
         {
           "n": "switch 8",
-          "s": 50
+          "s": 51
         }
       ],
-      "total_frames": 4569,
+      "total_frames": 4654,
       "rng_end": {
         "state": 2049409536,
         "calls": 1031
@@ -165,7 +165,7 @@
       "level_num": 5,
       "level_file": "refinery.rl2",
       "route_input_sha256": "A42768C3513E3AD1A94E7CE079ABDE6EB6B2ABC3DF22D1ECBAB711E41487BE7C",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -173,15 +173,18 @@
       "objectives": [
         {
           "n": "boss",
-          "s": 26
+          "s": 24
+        },
+        {
+          "n": "exit",
+          "s": 33
         }
       ],
-      "total_frames": 1570,
+      "total_frames": 1977,
       "rng_end": {
-        "state": 1727524364,
-        "calls": 683
-      },
-      "problem": "semantic objective repeated without route advancement"
+        "state": 4069223089,
+        "calls": 720
+      }
     },
     {
       "level_num": -1,
@@ -217,7 +220,7 @@
       "level_num": -2,
       "level_file": "secret2a.rl2",
       "route_input_sha256": "55A3BC21F770BC12C6A30195EE3C434E83E8CDA74D9304415D9F773971571DFB",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -225,15 +228,18 @@
       "objectives": [
         {
           "n": "boss",
-          "s": 9
+          "s": 15
+        },
+        {
+          "n": "exit",
+          "s": 19
         }
       ],
-      "total_frames": 552,
+      "total_frames": 1163,
       "rng_end": {
-        "state": 2564655003,
-        "calls": 366
-      },
-      "problem": "semantic objective repeated without route advancement"
+        "state": 898405676,
+        "calls": 267
+      }
     }
   ]
 }

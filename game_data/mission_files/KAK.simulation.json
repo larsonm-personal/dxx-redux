@@ -84,15 +84,15 @@
       "objectives": [
         {
           "n": "boss",
-          "s": 35
+          "s": 41
         }
       ],
-      "total_frames": 2108,
+      "total_frames": 8099,
       "rng_end": {
-        "state": 3420633278,
-        "calls": 1225
+        "state": 1935767572,
+        "calls": 1667
       },
-      "problem": "semantic objective repeated without route advancement"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }
   ]
 }

@@ -5,10 +5,11 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
+    "ok": 2,
     "failed": 3,
-    "timeout": 15,
+    "timeout": 13,
     "route_mismatch": 1
   },
   "levels": [
@@ -72,7 +73,7 @@
       "level_num": 4,
       "level_file": "largafv.rl2",
       "route_input_sha256": "C80474B9784E5CF764182A8D300BC422E4A4CB3BA60D4E45DA98E9E1FDD3BE06",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -88,15 +89,18 @@
         },
         {
           "n": "boss",
-          "s": 89
+          "s": 95
+        },
+        {
+          "n": "exit",
+          "s": 119
         }
       ],
-      "total_frames": 5400,
+      "total_frames": 7113,
       "rng_end": {
-        "state": 4103300773,
-        "calls": 3292
-      },
-      "problem": "semantic objective repeated without route advancement"
+        "state": 3605725861,
+        "calls": 4316
+      }
     },
     {
       "level_num": 5,
@@ -291,7 +295,7 @@
       "level_num": 14,
       "level_file": "xaotau.rl2",
       "route_input_sha256": "A1D51F946F6FC3250A1B01A9885D99432673885EF029D548C08E7693BF276AD5",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -307,15 +311,18 @@
         },
         {
           "n": "boss",
-          "s": 74
+          "s": 80
+        },
+        {
+          "n": "exit",
+          "s": 82
         }
       ],
-      "total_frames": 4492,
+      "total_frames": 4916,
       "rng_end": {
-        "state": 1483342298,
-        "calls": 2301
-      },
-      "problem": "semantic objective repeated without route advancement"
+        "state": 1130859006,
+        "calls": 2185
+      }
     },
     {
       "level_num": 15,

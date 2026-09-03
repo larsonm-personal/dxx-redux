@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 13,
+    "ok": 16,
     "failed": 1,
-    "timeout": 12,
+    "timeout": 9,
     "route_mismatch": 4
   },
   "levels": [
@@ -25,7 +25,7 @@
       "objectives": [
         {
           "n": "red key",
-          "s": 14
+          "s": 13
         },
         {
           "n": "reactor",
@@ -33,10 +33,10 @@
         },
         {
           "n": "exit",
-          "s": 33
+          "s": 32
         }
       ],
-      "total_frames": 1960,
+      "total_frames": 1923,
       "rng_end": {
         "state": 2100293115,
         "calls": 782
@@ -62,7 +62,7 @@
         },
         {
           "n": "hidden door",
-          "s": 22
+          "s": 21
         },
         {
           "n": "switch 21",
@@ -70,33 +70,33 @@
         },
         {
           "n": "red key",
-          "s": 23
+          "s": 22
         },
         {
           "n": "switch 19",
-          "s": 26
+          "s": 35
         },
         {
           "n": "fly-through 20",
-          "s": 55
+          "s": 77
         },
         {
           "n": "switch 3",
-          "s": 122
+          "s": 146
         },
         {
           "n": "reactor",
-          "s": 191
+          "s": 219
         },
         {
           "n": "exit",
-          "s": 266
+          "s": 298
         }
       ],
-      "total_frames": 15933,
+      "total_frames": 17868,
       "rng_end": {
-        "state": 3801350644,
-        "calls": 5923
+        "state": 2784727109,
+        "calls": 6716
       }
     },
     {
@@ -134,7 +134,7 @@
           "s": 108
         }
       ],
-      "total_frames": 6467,
+      "total_frames": 6472,
       "rng_end": {
         "state": 1353055912,
         "calls": 2111
@@ -144,7 +144,7 @@
       "level_num": 4,
       "level_file": "d2leva-4.rl2",
       "route_input_sha256": "BA14AB57F3758A9594C05691076174AA469CC9CC597BCE08E3DFBD27CE8EDDF6",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -160,7 +160,7 @@
         },
         {
           "n": "hidden door",
-          "s": 17
+          "s": 18
         },
         {
           "n": "red key",
@@ -168,19 +168,22 @@
         },
         {
           "n": "fly-through 24",
-          "s": 64
+          "s": 49
         },
         {
           "n": "boss",
-          "s": 65
+          "s": 56
+        },
+        {
+          "n": "exit",
+          "s": 62
         }
       ],
-      "total_frames": 3932,
+      "total_frames": 3742,
       "rng_end": {
-        "state": 2349060121,
-        "calls": 1320
-      },
-      "problem": "semantic objective repeated without route advancement"
+        "state": 3082456714,
+        "calls": 1037
+      }
     },
     {
       "level_num": 5,
@@ -262,25 +265,25 @@
         },
         {
           "n": "red key",
-          "s": 105
+          "s": 104
         },
         {
           "n": "reactor",
-          "s": 143
+          "s": 141
         },
         {
           "n": "switch 14",
-          "s": 145
+          "s": 144
         },
         {
           "n": "exit",
-          "s": 152
+          "s": 150
         }
       ],
-      "total_frames": 9100,
+      "total_frames": 9015,
       "rng_end": {
-        "state": 3399618196,
-        "calls": 3587
+        "state": 1160364752,
+        "calls": 3575
       }
     },
     {
@@ -303,13 +306,17 @@
         },
         {
           "n": "boss",
-          "s": 35
+          "s": 41
+        },
+        {
+          "n": "exit",
+          "s": 55
         }
       ],
-      "total_frames": 2103,
+      "total_frames": 3295,
       "rng_end": {
-        "state": 488159273,
-        "calls": 920
+        "state": 3318864716,
+        "calls": 1131
       },
       "problem": "live objective sequence differs from route input"
     },
@@ -325,7 +332,7 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 13
+          "s": 14
         },
         {
           "n": "hidden door",
@@ -333,15 +340,19 @@
         },
         {
           "n": "hidden door",
-          "s": 22
+          "s": 21
+        },
+        {
+          "n": "blue key",
+          "s": 37
         }
       ],
-      "total_frames": 2162,
+      "total_frames": 7315,
       "rng_end": {
-        "state": 3740753246,
-        "calls": 681
+        "state": 3935930555,
+        "calls": 2126
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 10,
@@ -444,25 +455,25 @@
         },
         {
           "n": "gold key",
-          "s": 41
+          "s": 40
         },
         {
           "n": "red key",
-          "s": 53
+          "s": 52
         },
         {
           "n": "reactor",
-          "s": 85
+          "s": 84
         },
         {
           "n": "exit",
           "s": 101
         }
       ],
-      "total_frames": 6086,
+      "total_frames": 6059,
       "rng_end": {
-        "state": 2767085146,
-        "calls": 1661
+        "state": 1892333986,
+        "calls": 1621
       }
     },
     {
@@ -497,10 +508,10 @@
         },
         {
           "n": "exit",
-          "s": 117
+          "s": 111
         }
       ],
-      "total_frames": 7003,
+      "total_frames": 6684,
       "rng_end": {
         "state": 1740406361,
         "calls": 2280
@@ -522,22 +533,22 @@
         },
         {
           "n": "gold key",
-          "s": 45
+          "s": 48
         },
         {
           "n": "red key",
-          "s": 94
+          "s": 97
         },
         {
           "n": "reactor",
-          "s": 153
+          "s": 156
         },
         {
           "n": "exit",
-          "s": 167
+          "s": 169
         }
       ],
-      "total_frames": 9997,
+      "total_frames": 10150,
       "rng_end": {
         "state": 2816012112,
         "calls": 3959
@@ -547,7 +558,7 @@
       "level_num": 16,
       "level_file": "d2levd-4.rl2",
       "route_input_sha256": "2EA9F04CC0BA770A36EA95641C54EE484E36B5A34A3714D0529597C49A9E0377",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -583,15 +594,18 @@
         },
         {
           "n": "boss",
-          "s": 182
+          "s": 188
+        },
+        {
+          "n": "exit",
+          "s": 201
         }
       ],
-      "total_frames": 10980,
+      "total_frames": 12043,
       "rng_end": {
-        "state": 2548546395,
-        "calls": 3502
-      },
-      "problem": "semantic objective repeated without route advancement"
+        "state": 2734573263,
+        "calls": 3610
+      }
     },
     {
       "level_num": 17,
@@ -634,7 +648,7 @@
         },
         {
           "n": "hidden door",
-          "s": 36
+          "s": 37
         },
         {
           "n": "gold key",
@@ -646,21 +660,21 @@
         },
         {
           "n": "switch 8",
-          "s": 71
+          "s": 63
         },
         {
           "n": "reactor",
-          "s": 107
+          "s": 71
         },
         {
           "n": "exit",
-          "s": 142
+          "s": 76
         }
       ],
-      "total_frames": 8519,
+      "total_frames": 4585,
       "rng_end": {
-        "state": 1845645418,
-        "calls": 4013
+        "state": 3361628676,
+        "calls": 2003
       }
     },
     {
@@ -760,7 +774,7 @@
       "level_num": 22,
       "level_file": "d2levf-2.rl2",
       "route_input_sha256": "4298C67986F381117A911A5A77694FBEC5EE3BBF4ECC9A6F671015F1C04903CE",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -776,23 +790,34 @@
         },
         {
           "n": "gold key",
-          "s": 42
+          "s": 41
         },
         {
           "n": "red key",
-          "s": 73
+          "s": 72
         },
         {
           "n": "reactor",
-          "s": 104
+          "s": 117
+        },
+        {
+          "n": "fly-through 11",
+          "s": 119
+        },
+        {
+          "n": "switch 10",
+          "s": 121
+        },
+        {
+          "n": "exit",
+          "s": 133
         }
       ],
-      "total_frames": 9988,
+      "total_frames": 8009,
       "rng_end": {
-        "state": 947473064,
-        "calls": 3135
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3070251760,
+        "calls": 3415
+      }
     },
     {
       "level_num": 23,
@@ -837,24 +862,12 @@
         {
           "n": "gold key",
           "s": 26
-        },
-        {
-          "n": "switch 0",
-          "s": 38
-        },
-        {
-          "n": "red key",
-          "s": 41
-        },
-        {
-          "n": "boss",
-          "s": 46
         }
       ],
-      "total_frames": 2805,
+      "total_frames": 5132,
       "rng_end": {
-        "state": 509228274,
-        "calls": 1349
+        "state": 1523903762,
+        "calls": 933
       },
       "problem": "live objective sequence differs from route input"
     },

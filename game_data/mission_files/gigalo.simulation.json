@@ -6,16 +6,27 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "failed",
     "level_counts": {
-      "not_run": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "gigaloma.rl2",
         "route_input_sha256": "DC7C6B44F845F1E3A77EBB193C55778FC0DC203139CA06A4DEF2A93BA211D6C4",
-        "status": "not_run"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 4031,
+        "rng_end": {
+          "state": 216294423,
+          "calls": 466
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },
@@ -26,16 +37,40 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "failed",
     "level_counts": {
-      "not_run": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "gigalo02.rl2",
         "route_input_sha256": "5E78DD822A2A2F3468C1007BA5121A94C6B4920C7197E6F93121D6A7B51B4529",
-        "status": "not_run"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 2
+          },
+          {
+            "n": "hidden door",
+            "s": 2
+          },
+          {
+            "n": "blue key",
+            "s": 2
+          }
+        ],
+        "total_frames": 734,
+        "rng_end": {
+          "state": 769681363,
+          "calls": 182
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
       }
     ]
   },
@@ -46,16 +81,55 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "ok",
     "level_counts": {
-      "not_run": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "gigaloma.rl2",
         "route_input_sha256": "E7B5B1A7D24F398C961766663C881BC4B603F1A0D9C9946EE0CBBBC916FD3B44",
-        "status": "not_run"
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 0",
+            "s": 7
+          },
+          {
+            "n": "blue key",
+            "s": 10
+          },
+          {
+            "n": "gold key",
+            "s": 31
+          },
+          {
+            "n": "red key",
+            "s": 61
+          },
+          {
+            "n": "switch 10",
+            "s": 70
+          },
+          {
+            "n": "reactor",
+            "s": 80
+          },
+          {
+            "n": "exit",
+            "s": 91
+          }
+        ],
+        "total_frames": 5457,
+        "rng_end": {
+          "state": 3540364135,
+          "calls": 3458
+        }
       }
     ]
   },
@@ -66,16 +140,27 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "failed",
     "level_counts": {
-      "not_run": 1
+      "failed": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "gigaloma.rl2",
         "route_input_sha256": "2864BCD12BB964AE70A3FF1563DCFBD4C52170438C38719440FEA179D9E4F8FF",
-        "status": "not_run"
+        "status": "failed",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 0,
+        "rng_end": {
+          "state": 3545811950,
+          "calls": 89
+        },
+        "problem": "live Guide-Bot route has no actionable goal"
       }
     ]
   },
@@ -86,16 +171,40 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "failed",
     "level_counts": {
-      "not_run": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "gigalo05.rl2",
         "route_input_sha256": "FBA44B137F1D24F90D9023D83193635ACB76305A6A9158D76C83FA568C049BF9",
-        "status": "not_run"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 11
+          },
+          {
+            "n": "gold key",
+            "s": 24
+          },
+          {
+            "n": "red key",
+            "s": 40
+          }
+        ],
+        "total_frames": 36001,
+        "rng_end": {
+          "state": 575072123,
+          "calls": 2446
+        },
+        "problem": "route confirmation exceeded 10 simulation minutes"
       }
     ]
   },
@@ -106,16 +215,44 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "failed",
     "level_counts": {
-      "not_run": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "gigaloma.rl2",
         "route_input_sha256": "0D08CBD68CE431AAF11E2FC12685FC889A395156D4A0B793EFCE4645C715CF45",
-        "status": "not_run"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 14
+          },
+          {
+            "n": "gold key",
+            "s": 22
+          },
+          {
+            "n": "red key",
+            "s": 37
+          },
+          {
+            "n": "switch 1",
+            "s": 39
+          }
+        ],
+        "total_frames": 36001,
+        "rng_end": {
+          "state": 1754798457,
+          "calls": 3784
+        },
+        "problem": "route confirmation exceeded 10 simulation minutes"
       }
     ]
   },
@@ -126,16 +263,27 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "failed",
     "level_counts": {
-      "not_run": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "gigaloma.rl2",
         "route_input_sha256": "AFD8EA9EB69181A5D36EABE23CE686A6000B69E742A1CA0717894820A88364A8",
-        "status": "not_run"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 3902,
+        "rng_end": {
+          "state": 860264306,
+          "calls": 1221
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },
@@ -146,16 +294,27 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "failed",
     "level_counts": {
-      "not_run": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "gigaloma.rl2",
         "route_input_sha256": "7A7275E45695B233C7241C055F399715B7022300EA3F7E539570F6ACECAF7BCE",
-        "status": "not_run"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 6999,
+        "rng_end": {
+          "state": 1083933530,
+          "calls": 1405
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },
@@ -166,16 +325,32 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "failed",
     "level_counts": {
-      "not_run": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "gigaloma.rl2",
         "route_input_sha256": "93613BA75972E2FDBCA15D2F1F3E6E8AE9B6FED98B38BA36B50B6FC4655E3038",
-        "status": "not_run"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "red key",
+            "s": 13
+          }
+        ],
+        "total_frames": 4467,
+        "rng_end": {
+          "state": 3543880471,
+          "calls": 722
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },
@@ -186,16 +361,67 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "ok",
     "level_counts": {
-      "not_run": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "gigaloma.rl2",
         "route_input_sha256": "0C7368F7B7046CF236925B3996A4394E7EDBD5503428BC8791B061490AD253BC",
-        "status": "not_run"
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "fly-through 14",
+            "s": 2
+          },
+          {
+            "n": "switch 76",
+            "s": 22
+          },
+          {
+            "n": "switch 78",
+            "s": 25
+          },
+          {
+            "n": "switch 79",
+            "s": 31
+          },
+          {
+            "n": "switch 80",
+            "s": 55
+          },
+          {
+            "n": "switch 81",
+            "s": 59
+          },
+          {
+            "n": "red key",
+            "s": 69
+          },
+          {
+            "n": "fly-through 37",
+            "s": 85
+          },
+          {
+            "n": "boss",
+            "s": 95
+          },
+          {
+            "n": "exit",
+            "s": 106
+          }
+        ],
+        "total_frames": 6333,
+        "rng_end": {
+          "state": 3916630447,
+          "calls": 3386
+        }
       }
     ]
   },
@@ -206,16 +432,27 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "failed",
     "level_counts": {
-      "not_run": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "gigaloma.rl2",
         "route_input_sha256": "45232BD20B3E18E9A073652F8B020DACFFC6DD5156BB390CD6118ED9CCD21C7D",
-        "status": "not_run"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 5829,
+        "rng_end": {
+          "state": 865933928,
+          "calls": 1407
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },
@@ -226,16 +463,27 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "failed",
     "level_counts": {
-      "not_run": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "gigaloma.rl2",
         "route_input_sha256": "299A06688BBB494065180A592E8F19FEAFBBB67CCAB09DE2FF856FB65B7B3192",
-        "status": "not_run"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 4283,
+        "rng_end": {
+          "state": 2901314047,
+          "calls": 490
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   }

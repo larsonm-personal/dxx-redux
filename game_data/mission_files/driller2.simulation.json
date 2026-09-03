@@ -26,10 +26,10 @@
           "s": 7
         }
       ],
-      "total_frames": 450,
+      "total_frames": 462,
       "rng_end": {
-        "state": 3532007224,
-        "calls": 367
+        "state": 274854673,
+        "calls": 368
       },
       "problem": "semantic objective repeated without route advancement"
     },
@@ -75,17 +75,17 @@
         },
         {
           "n": "gold key",
-          "s": 22
+          "s": 23
         },
         {
           "n": "red key",
-          "s": 34
+          "s": 35
         }
       ],
-      "total_frames": 2017,
+      "total_frames": 2100,
       "rng_end": {
-        "state": 861086236,
-        "calls": 2395
+        "state": 3965243816,
+        "calls": 2367
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -182,7 +182,7 @@
           "s": 10
         }
       ],
-      "total_frames": 1385,
+      "total_frames": 1447,
       "rng_end": {
         "state": 2057323293,
         "calls": 292

@@ -36,13 +36,13 @@
         },
         {
           "n": "exit",
-          "s": 49
+          "s": 50
         }
       ],
-      "total_frames": 2957,
+      "total_frames": 2984,
       "rng_end": {
-        "state": 2102026063,
-        "calls": 3482
+        "state": 3827994298,
+        "calls": 3485
       }
     },
     {
@@ -91,17 +91,25 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 2
+          "s": 3
         },
         {
           "n": "switch 41",
           "s": 9
+        },
+        {
+          "n": "switch 33",
+          "s": 11
+        },
+        {
+          "n": "switch 26",
+          "s": 17
         }
       ],
-      "total_frames": 1351,
+      "total_frames": 1992,
       "rng_end": {
-        "state": 1061815741,
-        "calls": 388
+        "state": 3029282076,
+        "calls": 603
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

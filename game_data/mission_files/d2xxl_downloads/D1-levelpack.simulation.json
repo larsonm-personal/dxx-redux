@@ -5,16 +5,27 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "not_run",
+  "status": "failed",
   "level_counts": {
-    "not_run": 1
+    "failed": 1
   },
   "levels": [
     {
       "level_num": 0,
       "level_file": "helium.rl2",
       "route_input_sha256": "CB3EB28919FDEBBF99BC6CA7728FB1B9EA272E06BFD16154EB32184FED45BDE2",
-      "status": "not_run"
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2805861856,
+        "calls": 167
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
     }
   ]
 }

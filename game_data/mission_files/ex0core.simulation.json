@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
-    "timeout": 1,
+    "ok": 1,
+    "timeout": 2,
     "unsupported": 1
   },
   "levels": [
@@ -16,7 +16,7 @@
       "level_num": 1,
       "level_file": "sphasm.rl2",
       "route_input_sha256": "4FBE966123544B1029E5EB13DC3F2AC357F8ABB15C610ABFB9043D34D587D48A",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -37,17 +37,14 @@
         {
           "n": "reactor",
           "s": 56
-        },
-        {
-          "n": "exit",
-          "s": 77
         }
       ],
-      "total_frames": 4634,
+      "total_frames": 7340,
       "rng_end": {
-        "state": 2819228775,
-        "calls": 1154
-      }
+        "state": 3899512905,
+        "calls": 1144
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 2,

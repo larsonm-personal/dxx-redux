@@ -88,7 +88,7 @@
         },
         {
           "n": "hidden door",
-          "s": 14
+          "s": 15
         },
         {
           "n": "blue key",
@@ -96,27 +96,43 @@
         },
         {
           "n": "hidden door",
-          "s": 21
+          "s": 23
         },
         {
           "n": "switch 2",
-          "s": 38
+          "s": 23
         },
         {
           "n": "gold key",
-          "s": 42
+          "s": 26
         },
         {
           "n": "hidden door",
-          "s": 57
+          "s": 36
+        },
+        {
+          "n": "switch 11",
+          "s": 36
+        },
+        {
+          "n": "red key",
+          "s": 45
+        },
+        {
+          "n": "hidden door",
+          "s": 67
+        },
+        {
+          "n": "reactor",
+          "s": 72
         }
       ],
-      "total_frames": 10591,
+      "total_frames": 5669,
       "rng_end": {
-        "state": 717649719,
-        "calls": 6322
+        "state": 134241830,
+        "calls": 3713
       },
-      "problem": "semantic objective repeated without route advancement"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": -1,

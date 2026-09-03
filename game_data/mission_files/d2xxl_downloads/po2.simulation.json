@@ -6,16 +6,27 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "failed",
     "level_counts": {
-      "not_run": 1
+      "failed": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "darkmatr.rl2",
         "route_input_sha256": "10A1E857F0A160478DAC7C25F6E15D656D9B05C3F039E21E64AF49B21EDFB5E8",
-        "status": "not_run"
+        "status": "failed",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 0,
+        "rng_end": {
+          "state": 2058258651,
+          "calls": 46
+        },
+        "problem": "live Guide-Bot route has no actionable goal"
       }
     ]
   },
@@ -28,9 +39,9 @@
     "seed": 1,
     "status": "partial",
     "level_counts": {
-      "ok": 2,
+      "ok": 3,
       "failed": 3,
-      "timeout": 4
+      "timeout": 3
     },
     "levels": [
       {
@@ -176,7 +187,7 @@
         "level_num": 8,
         "level_file": "escape.rl2",
         "route_input_sha256": "C09727A7C59A6E2631C0899AD3E8D8D4E36E0DC5D775230F9702C476D8B53E53",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -184,15 +195,18 @@
         "objectives": [
           {
             "n": "boss",
-            "s": 0
+            "s": 6
+          },
+          {
+            "n": "exit",
+            "s": 27
           }
         ],
-        "total_frames": 54,
+        "total_frames": 1598,
         "rng_end": {
-          "state": 3949672138,
-          "calls": 205
-        },
-        "problem": "semantic objective repeated without route advancement"
+          "state": 2429993800,
+          "calls": 1311
+        }
       },
       {
         "level_num": -1,
@@ -228,16 +242,27 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "not_run",
+    "status": "failed",
     "level_counts": {
-      "not_run": 1
+      "failed": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "van.rl2",
         "route_input_sha256": "2BDF514EAE2285ABD4541B551377338FFA79A12DF4B20C6C9ADED9DC06489549",
-        "status": "not_run"
+        "status": "failed",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 0,
+        "rng_end": {
+          "state": 3172130721,
+          "calls": 352
+        },
+        "problem": "live Guide-Bot route has no actionable goal"
       }
     ]
   }

@@ -81,12 +81,16 @@
         {
           "n": "gold key",
           "s": 27
+        },
+        {
+          "n": "fly-through 11",
+          "s": 37
         }
       ],
-      "total_frames": 5762,
+      "total_frames": 6391,
       "rng_end": {
-        "state": 2049409536,
-        "calls": 1031
+        "state": 511420316,
+        "calls": 1499
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 14,
+    "ok": 16,
     "failed": 1,
-    "timeout": 11
+    "timeout": 9
   },
   "levels": [
     {
@@ -44,10 +44,10 @@
         },
         {
           "n": "switch 8",
-          "s": 143
+          "s": 144
         }
       ],
-      "total_frames": 13199,
+      "total_frames": 13594,
       "rng_end": {
         "state": 2744037299,
         "calls": 7382
@@ -108,22 +108,22 @@
         },
         {
           "n": "gold key",
-          "s": 80
+          "s": 78
         },
         {
           "n": "red key",
-          "s": 104
+          "s": 102
         },
         {
           "n": "reactor",
-          "s": 128
+          "s": 126
         },
         {
           "n": "exit",
-          "s": 143
+          "s": 140
         }
       ],
-      "total_frames": 8554,
+      "total_frames": 8396,
       "rng_end": {
         "state": 1221926509,
         "calls": 6484
@@ -306,7 +306,7 @@
           "s": 159
         }
       ],
-      "total_frames": 9516,
+      "total_frames": 9545,
       "rng_end": {
         "state": 1590052191,
         "calls": 6282
@@ -391,18 +391,18 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 31
+          "s": 33
         },
         {
           "n": "gold key",
-          "s": 48
+          "s": 50
         },
         {
           "n": "red key",
-          "s": 68
+          "s": 69
         }
       ],
-      "total_frames": 5597,
+      "total_frames": 5720,
       "rng_end": {
         "state": 2862470210,
         "calls": 3125
@@ -467,22 +467,22 @@
         },
         {
           "n": "gold key",
-          "s": 85
+          "s": 83
         },
         {
           "n": "red key",
-          "s": 128
+          "s": 125
         },
         {
           "n": "reactor",
-          "s": 172
+          "s": 169
         },
         {
           "n": "exit",
-          "s": 190
+          "s": 188
         }
       ],
-      "total_frames": 11422,
+      "total_frames": 11265,
       "rng_end": {
         "state": 4139747924,
         "calls": 5955
@@ -529,7 +529,7 @@
       "level_num": 15,
       "level_file": "lvl15.rl2",
       "route_input_sha256": "F44ED767720D8EDDB52AC4B759651D2E6DC6A94AC51A939DFF6135A363C0F618",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -549,15 +549,18 @@
         },
         {
           "n": "boss",
-          "s": 129
+          "s": 135
+        },
+        {
+          "n": "exit",
+          "s": 136
         }
       ],
-      "total_frames": 7798,
+      "total_frames": 8185,
       "rng_end": {
-        "state": 3971537023,
-        "calls": 2922
-      },
-      "problem": "semantic objective repeated without route advancement"
+        "state": 1217776522,
+        "calls": 2829
+      }
     },
     {
       "level_num": 16,
@@ -620,11 +623,11 @@
         },
         {
           "n": "switch 1",
-          "s": 85
+          "s": 86
         },
         {
           "n": "gold key",
-          "s": 96
+          "s": 97
         },
         {
           "n": "switch 3",
@@ -640,17 +643,17 @@
         },
         {
           "n": "reactor",
-          "s": 131
+          "s": 132
         },
         {
           "n": "exit",
-          "s": 144
+          "s": 145
         }
       ],
-      "total_frames": 8645,
+      "total_frames": 8697,
       "rng_end": {
-        "state": 884224172,
-        "calls": 3979
+        "state": 1926244580,
+        "calls": 3955
       }
     },
     {
@@ -722,14 +725,14 @@
         },
         {
           "n": "reactor",
-          "s": 161
+          "s": 162
         },
         {
           "n": "exit",
-          "s": 163
+          "s": 164
         }
       ],
-      "total_frames": 9789,
+      "total_frames": 9815,
       "rng_end": {
         "state": 3876553063,
         "calls": 6018
@@ -810,7 +813,7 @@
       "level_num": 23,
       "level_file": "lvl22b.rl2",
       "route_input_sha256": "7423709FCA7160197FE45AD7714DB450253CC3F25BC678F51030ADCAD672B3A1",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -842,15 +845,18 @@
         },
         {
           "n": "boss",
-          "s": 134
+          "s": 140
+        },
+        {
+          "n": "exit",
+          "s": 148
         }
       ],
-      "total_frames": 8071,
+      "total_frames": 8909,
       "rng_end": {
-        "state": 834261362,
-        "calls": 4805
-      },
-      "problem": "semantic objective repeated without route advancement"
+        "state": 3776019221,
+        "calls": 5356
+      }
     },
     {
       "level_num": -1,
@@ -864,7 +870,7 @@
       "objectives": [
         {
           "n": "switch 5",
-          "s": 11
+          "s": 12
         },
         {
           "n": "pass-through 6",
@@ -872,22 +878,22 @@
         },
         {
           "n": "fly-through 7",
-          "s": 24
+          "s": 23
         },
         {
           "n": "switch 10",
-          "s": 33
+          "s": 32
         },
         {
           "n": "reactor",
-          "s": 43
+          "s": 42
         },
         {
           "n": "exit",
           "s": 45
         }
       ],
-      "total_frames": 2729,
+      "total_frames": 2702,
       "rng_end": {
         "state": 1425948058,
         "calls": 2109

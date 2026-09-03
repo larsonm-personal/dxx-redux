@@ -5,9 +5,9 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
-    "timeout": 1,
+    "ok": 1,
     "route_mismatch": 1
   },
   "levels": [
@@ -55,7 +55,7 @@
         },
         {
           "n": "red key",
-          "s": 94
+          "s": 93
         },
         {
           "n": "switch 20",
@@ -63,13 +63,29 @@
         },
         {
           "n": "hidden door",
-          "s": 148
+          "s": 131
+        },
+        {
+          "n": "switch 9",
+          "s": 164
+        },
+        {
+          "n": "hidden door",
+          "s": 205
+        },
+        {
+          "n": "reactor",
+          "s": 205
+        },
+        {
+          "n": "exit",
+          "s": 230
         }
       ],
-      "total_frames": 36001,
+      "total_frames": 13822,
       "rng_end": {
-        "state": 4036749098,
-        "calls": 24557
+        "state": 713893745,
+        "calls": 9232
       },
       "problem": "live objective sequence differs from route input"
     },
@@ -77,7 +93,7 @@
       "level_num": 2,
       "level_file": "2.rl2",
       "route_input_sha256": "097ECF89C7AD694FE3D98939F153CFA341541624DFBA7D4AE1D11A16F59CB312",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -97,19 +113,34 @@
         },
         {
           "n": "hidden door",
-          "s": 5
+          "s": 6
         },
         {
           "n": "blue key",
-          "s": 21
+          "s": 22
+        },
+        {
+          "n": "gold key",
+          "s": 46
+        },
+        {
+          "n": "red key",
+          "s": 74
+        },
+        {
+          "n": "boss",
+          "s": 93
+        },
+        {
+          "n": "exit",
+          "s": 107
         }
       ],
-      "total_frames": 5700,
+      "total_frames": 6414,
       "rng_end": {
-        "state": 3187595609,
-        "calls": 1512
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1034905829,
+        "calls": 4252
+      }
     }
   ]
 }

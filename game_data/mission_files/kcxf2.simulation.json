@@ -30,7 +30,7 @@
           "s": 49
         }
       ],
-      "total_frames": 2977,
+      "total_frames": 2994,
       "rng_end": {
         "state": 4202225626,
         "calls": 765
@@ -77,10 +77,10 @@
           "s": 48
         }
       ],
-      "total_frames": 7853,
+      "total_frames": 8026,
       "rng_end": {
-        "state": 2063363091,
-        "calls": 1142
+        "state": 2954493520,
+        "calls": 1143
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -111,7 +111,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 5611,
+      "total_frames": 5647,
       "rng_end": {
         "state": 2915528778,
         "calls": 1357

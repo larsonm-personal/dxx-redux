@@ -27,7 +27,7 @@
         },
         {
           "n": "hidden door",
-          "s": 34
+          "s": 35
         },
         {
           "n": "blue key",
@@ -39,13 +39,13 @@
         },
         {
           "n": "exit",
-          "s": 82
+          "s": 83
         }
       ],
-      "total_frames": 4948,
+      "total_frames": 4958,
       "rng_end": {
-        "state": 1479255279,
-        "calls": 3578
+        "state": 3157820037,
+        "calls": 3580
       }
     },
     {
@@ -85,8 +85,8 @@
       ],
       "total_frames": 3299,
       "rng_end": {
-        "state": 2844557587,
-        "calls": 3958
+        "state": 1013734990,
+        "calls": 3961
       }
     },
     {
@@ -109,7 +109,7 @@
         },
         {
           "n": "red key",
-          "s": 61
+          "s": 62
         },
         {
           "n": "reactor",
@@ -120,7 +120,7 @@
           "s": 91
         }
       ],
-      "total_frames": 5437,
+      "total_frames": 5458,
       "rng_end": {
         "state": 754197396,
         "calls": 5379
@@ -142,21 +142,21 @@
         },
         {
           "n": "hidden door",
-          "s": 44
+          "s": 45
         },
         {
           "n": "hidden door",
-          "s": 46
+          "s": 47
         },
         {
           "n": "hidden door",
           "s": 49
         }
       ],
-      "total_frames": 7733,
+      "total_frames": 6742,
       "rng_end": {
-        "state": 986697615,
-        "calls": 2394
+        "state": 2437141959,
+        "calls": 2338
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

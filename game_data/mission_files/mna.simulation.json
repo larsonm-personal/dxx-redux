@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
-    "timeout": 2
+    "ok": 4,
+    "timeout": 1
   },
   "levels": [
     {
@@ -114,7 +114,7 @@
       "level_num": 4,
       "level_file": "mnalvl4.rl2",
       "route_input_sha256": "492A3BF20A0C69449AD48FB4F7B34C91D57C85223043A21329A6288269EB2916",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -154,15 +154,18 @@
         },
         {
           "n": "boss",
-          "s": 120
+          "s": 126
+        },
+        {
+          "n": "exit",
+          "s": 149
         }
       ],
-      "total_frames": 7216,
+      "total_frames": 8934,
       "rng_end": {
-        "state": 3940970178,
-        "calls": 5045
-      },
-      "problem": "semantic objective repeated without route advancement"
+        "state": 1605186651,
+        "calls": 5294
+      }
     },
     {
       "level_num": -1,

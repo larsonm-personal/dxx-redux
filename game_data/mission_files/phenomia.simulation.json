@@ -5,11 +5,10 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "failed",
   "level_counts": {
-    "ok": 1,
     "failed": 3,
-    "timeout": 8,
+    "timeout": 9,
     "unsupported": 2
   },
   "levels": [
@@ -55,21 +54,21 @@
         },
         {
           "n": "hidden door",
-          "s": 24
+          "s": 25
         },
         {
           "n": "switch 16",
-          "s": 43
+          "s": 45
         },
         {
           "n": "blue key",
-          "s": 78
+          "s": 56
         }
       ],
-      "total_frames": 9359,
+      "total_frames": 8291,
       "rng_end": {
-        "state": 1506573249,
-        "calls": 2624
+        "state": 242789525,
+        "calls": 1900
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -114,7 +113,7 @@
         },
         {
           "n": "switch 5",
-          "s": 54
+          "s": 55
         },
         {
           "n": "blue key",
@@ -136,7 +135,7 @@
       "level_num": 5,
       "level_file": "sphasm.rl2",
       "route_input_sha256": "2DFCCDD4903309CA15945654CDDEAF8E24463B82A33F288FDA7322372D7641B6",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -157,17 +156,14 @@
         {
           "n": "reactor",
           "s": 32
-        },
-        {
-          "n": "exit",
-          "s": 53
         }
       ],
-      "total_frames": 3177,
+      "total_frames": 5883,
       "rng_end": {
-        "state": 2819228775,
-        "calls": 1154
-      }
+        "state": 3899512905,
+        "calls": 1144
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 6,
@@ -301,7 +297,7 @@
         },
         {
           "n": "hidden door",
-          "s": 14
+          "s": 15
         },
         {
           "n": "blue key",
@@ -309,27 +305,43 @@
         },
         {
           "n": "hidden door",
-          "s": 21
+          "s": 23
         },
         {
           "n": "switch 2",
-          "s": 38
+          "s": 23
         },
         {
           "n": "gold key",
-          "s": 42
+          "s": 26
         },
         {
           "n": "hidden door",
-          "s": 57
+          "s": 36
+        },
+        {
+          "n": "switch 11",
+          "s": 36
+        },
+        {
+          "n": "red key",
+          "s": 45
+        },
+        {
+          "n": "hidden door",
+          "s": 67
+        },
+        {
+          "n": "reactor",
+          "s": 72
         }
       ],
-      "total_frames": 10591,
+      "total_frames": 5669,
       "rng_end": {
-        "state": 717649719,
-        "calls": 6322
+        "state": 134241830,
+        "calls": 3713
       },
-      "problem": "semantic objective repeated without route advancement"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": -1,

@@ -51,7 +51,7 @@
         },
         {
           "n": "switch 3",
-          "s": 6
+          "s": 7
         },
         {
           "n": "gold key",
@@ -59,10 +59,10 @@
         },
         {
           "n": "red key",
-          "s": 14
+          "s": 15
         }
       ],
-      "total_frames": 1552,
+      "total_frames": 1586,
       "rng_end": {
         "state": 3166007986,
         "calls": 645
@@ -253,13 +253,13 @@
         },
         {
           "n": "red key",
-          "s": 37
+          "s": 38
         }
       ],
-      "total_frames": 7427,
+      "total_frames": 7458,
       "rng_end": {
-        "state": 1850151498,
-        "calls": 2893
+        "state": 1689723728,
+        "calls": 2935
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -275,29 +275,29 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 6
+          "s": 7
         },
         {
           "n": "hidden door",
-          "s": 8
+          "s": 9
         },
         {
           "n": "blue key",
-          "s": 12
+          "s": 13
         },
         {
           "n": "switch 4",
-          "s": 35
+          "s": 28
         },
         {
           "n": "gold key",
-          "s": 57
+          "s": 31
         }
       ],
-      "total_frames": 4088,
+      "total_frames": 1861,
       "rng_end": {
-        "state": 331846640,
-        "calls": 2135
+        "state": 3954638605,
+        "calls": 948
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },

@@ -5,9 +5,10 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
-    "timeout": 5,
+    "ok": 3,
+    "timeout": 2,
     "route_mismatch": 1
   },
   "levels": [
@@ -15,7 +16,7 @@
       "level_num": 1,
       "level_file": "phobos1.rl2",
       "route_input_sha256": "8EC6AD1135ED0BFE5B55407F75E430DD68267916067AE1538D3A4C4208561F79",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -39,21 +40,24 @@
         },
         {
           "n": "boss",
-          "s": 121
+          "s": 128
+        },
+        {
+          "n": "exit",
+          "s": 141
         }
       ],
-      "total_frames": 7300,
+      "total_frames": 8487,
       "rng_end": {
-        "state": 4202398093,
-        "calls": 3380
-      },
-      "problem": "semantic objective repeated without route advancement"
+        "state": 1589490602,
+        "calls": 3437
+      }
     },
     {
       "level_num": 2,
       "level_file": "phobos2.rl2",
       "route_input_sha256": "C2D418D7CFCB76273C5F75ADE01BA7D9643628D90C754AD375186A6A4F5CB77C",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -73,15 +77,18 @@
         },
         {
           "n": "boss",
-          "s": 134
+          "s": 142
+        },
+        {
+          "n": "exit",
+          "s": 148
         }
       ],
-      "total_frames": 8102,
+      "total_frames": 8853,
       "rng_end": {
-        "state": 3841189821,
-        "calls": 3972
-      },
-      "problem": "semantic objective repeated without route advancement"
+        "state": 1246998880,
+        "calls": 3879
+      }
     },
     {
       "level_num": 3,
@@ -99,22 +106,22 @@
         },
         {
           "n": "switch 1",
-          "s": 43
+          "s": 44
         },
         {
           "n": "gold key",
-          "s": 56
+          "s": 57
         },
         {
           "n": "switch 0",
-          "s": 86
+          "s": 87
         },
         {
           "n": "red key",
-          "s": 88
+          "s": 89
         }
       ],
-      "total_frames": 6568,
+      "total_frames": 6624,
       "rng_end": {
         "state": 2049385582,
         "calls": 2521
@@ -168,7 +175,7 @@
       "level_num": -2,
       "level_file": "phoscrt2.rl2",
       "route_input_sha256": "59AB2C520E18AD6D5EF8FAFBE8DE25ACC64BB127AE0BA0C2CB5EF93635FBD065",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -176,15 +183,18 @@
       "objectives": [
         {
           "n": "boss",
-          "s": 8
+          "s": 14
+        },
+        {
+          "n": "exit",
+          "s": 17
         }
       ],
-      "total_frames": 485,
+      "total_frames": 1033,
       "rng_end": {
-        "state": 2168839595,
-        "calls": 350
-      },
-      "problem": "semantic objective repeated without route advancement"
+        "state": 3320089730,
+        "calls": 245
+      }
     }
   ]
 }

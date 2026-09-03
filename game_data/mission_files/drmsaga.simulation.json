@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 1,
+    "ok": 2,
     "failed": 1,
-    "timeout": 3
+    "timeout": 2
   },
   "levels": [
     {
@@ -80,14 +80,14 @@
         },
         {
           "n": "reactor",
-          "s": 97
+          "s": 98
         },
         {
           "n": "exit",
           "s": 113
         }
       ],
-      "total_frames": 6753,
+      "total_frames": 6771,
       "rng_end": {
         "state": 4178164351,
         "calls": 2410
@@ -114,7 +114,7 @@
       "level_num": -1,
       "level_file": "ar51scrt.rl2",
       "route_input_sha256": "A2AE27BAF19EC4EC2F10BC5E92D8EE99E4A3AC34F69A75C891C46573965B36A6",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -126,15 +126,18 @@
         },
         {
           "n": "boss",
-          "s": 7
+          "s": 13
+        },
+        {
+          "n": "exit",
+          "s": 17
         }
       ],
-      "total_frames": 428,
+      "total_frames": 1012,
       "rng_end": {
-        "state": 3682954967,
-        "calls": 786
-      },
-      "problem": "semantic objective repeated without route advancement"
+        "state": 2049409536,
+        "calls": 1031
+      }
     }
   ]
 }

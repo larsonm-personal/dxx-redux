@@ -216,6 +216,25 @@ int level_metadata_route_step_required_by_world_state(
 			}
 			return 0;
 		case LEVEL_METADATA_ROUTE_HIDDEN_DOOR:
+			/* Once both sides have been visited, this is a discovered,
+			 * reopenable door rather than an unfinished route objective. */
+			if (step->wall_num >= 0 && step->wall_num < view->num_walls &&
+			    view->wall_segment && view->wall_side && view->segment_child &&
+			    view->segment_is_explored) {
+				const int segment =
+				    view->wall_segment(view->user, step->wall_num);
+				const int side = view->wall_side(view->user, step->wall_num);
+				const int child = segment >= 0 && segment < view->num_segments &&
+				                          side >= 0 && side < 6
+				                      ? view->segment_child(view->user, segment, side)
+				                      : -1;
+
+				if (child >= 0 && child < view->num_segments &&
+				    view->segment_is_explored(view->user, segment) &&
+				    view->segment_is_explored(view->user, child))
+					return 0;
+			}
+			return !level_metadata_route_wall_passable(view, step->wall_num);
 		case LEVEL_METADATA_ROUTE_BLASTABLE_WALL:
 			return !level_metadata_route_wall_passable(view, step->wall_num);
 		default:

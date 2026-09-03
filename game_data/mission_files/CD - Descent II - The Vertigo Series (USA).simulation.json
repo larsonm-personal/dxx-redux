@@ -256,7 +256,7 @@
           },
           {
             "n": "gold key",
-            "s": 45
+            "s": 46
           },
           {
             "n": "red key",
@@ -264,10 +264,10 @@
           },
           {
             "n": "reactor",
-            "s": 98
+            "s": 97
           }
         ],
-        "total_frames": 10948,
+        "total_frames": 10794,
         "rng_end": {
           "state": 2558451567,
           "calls": 2938
@@ -331,10 +331,10 @@
           },
           {
             "n": "red key",
-            "s": 72
+            "s": 73
           }
         ],
-        "total_frames": 5974,
+        "total_frames": 6009,
         "rng_end": {
           "state": 185854590,
           "calls": 2569
@@ -398,7 +398,7 @@
             "s": 121
           }
         ],
-        "total_frames": 7266,
+        "total_frames": 7271,
         "rng_end": {
           "state": 1422864722,
           "calls": 3173
@@ -420,7 +420,7 @@
           },
           {
             "n": "gold key",
-            "s": 36
+            "s": 37
           },
           {
             "n": "red key",
@@ -435,7 +435,7 @@
             "s": 114
           }
         ],
-        "total_frames": 6816,
+        "total_frames": 6814,
         "rng_end": {
           "state": 890570627,
           "calls": 3334
@@ -668,13 +668,17 @@
           },
           {
             "n": "boss",
-            "s": 27
+            "s": 33
+          },
+          {
+            "n": "exit",
+            "s": 44
           }
         ],
-        "total_frames": 1654,
+        "total_frames": 2662,
         "rng_end": {
-          "state": 89540803,
-          "calls": 966
+          "state": 3224114648,
+          "calls": 1103
         },
         "problem": "live objective sequence differs from route input"
       },

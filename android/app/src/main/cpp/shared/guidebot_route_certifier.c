@@ -140,7 +140,10 @@ static int guidebot_route_side_passable(
 	if ((flags & view->wall_flag_door_locked) != 0)
 		return 0;
 	if (view->wall_clip_flags &&
-	    (view->wall_clip_flags(view->user, wall) & view->wall_clip_hidden) != 0)
+	    (view->wall_clip_flags(view->user, wall) & view->wall_clip_hidden) != 0 &&
+	    (!view->segment_is_explored ||
+	     !view->segment_is_explored(view->user, segment) ||
+	     !view->segment_is_explored(view->user, child)))
 		return 0;
 	/* While pursuing an objective, classic Guide-Bot can plan through keyed
 	 * doors but does not open them on collision.  Keep those doors out of the

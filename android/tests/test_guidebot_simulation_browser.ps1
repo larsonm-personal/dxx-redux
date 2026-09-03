@@ -4,6 +4,14 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $browser = Join-Path $repoRoot 'android\helpers\watch_guidebot_simulation.ps1'
 $pwsh = (Get-Process -Id $PID).Path
+$browserSource = [IO.File]::ReadAllText($browser)
+
+if ($browserSource -notmatch "function Invoke-GuidebotBrowserBuild" -or
+    $browserSource -notmatch "Invoke-GuidebotBrowserBuild\s+New-Item" -or
+    $browserSource -notmatch "'-LevelTimeoutSeconds', '900', '-NoBuild'" -or
+    $browserSource -match 'desktopBuildReady') {
+    throw 'Every visible route run must check the build before starting a no-build child process'
+}
 
 function Get-BrowserResults {
     param([string]$Query, [string[]]$MissionJson, [int[]]$Level)

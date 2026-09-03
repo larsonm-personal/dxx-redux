@@ -5,16 +5,48 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "not_run",
+  "status": "failed",
   "level_counts": {
-    "not_run": 1
+    "timeout": 1
   },
   "levels": [
     {
       "level_num": 0,
       "level_file": "sammy.rl2",
       "route_input_sha256": "1D04D2BCE82EA194BDFFBD88E3EBB41F49D42A57AA6E37CA4D71D568CE4DA59E",
-      "status": "not_run"
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 8",
+          "s": 26
+        },
+        {
+          "n": "switch 0",
+          "s": 33
+        },
+        {
+          "n": "switch 1",
+          "s": 35
+        },
+        {
+          "n": "switch 14",
+          "s": 39
+        },
+        {
+          "n": "blue key",
+          "s": 45
+        }
+      ],
+      "total_frames": 3749,
+      "rng_end": {
+        "state": 2919826395,
+        "calls": 1326
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     }
   ]
 }

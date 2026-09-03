@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
-    "failed": 5,
-    "timeout": 15,
+    "ok": 6,
+    "failed": 6,
+    "timeout": 11,
     "unsupported": 2
   },
   "levels": [
@@ -68,7 +68,7 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 10
+          "s": 9
         },
         {
           "n": "gold key",
@@ -76,21 +76,21 @@
         },
         {
           "n": "red key",
-          "s": 47
+          "s": 48
         },
         {
           "n": "reactor",
-          "s": 67
+          "s": 68
         },
         {
           "n": "exit",
-          "s": 78
+          "s": 79
         }
       ],
-      "total_frames": 4667,
+      "total_frames": 4733,
       "rng_end": {
-        "state": 3825414692,
-        "calls": 3379
+        "state": 4139053045,
+        "calls": 3340
       }
     },
     {
@@ -240,7 +240,7 @@
       "level_num": 8,
       "level_file": "lost08.rl2",
       "route_input_sha256": "517D29FDEE1F0DA0D44679CFE490A5A633DCF76B70B2ADB969430E81A5E6D925",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -276,15 +276,18 @@
         },
         {
           "n": "boss",
-          "s": 37
+          "s": 43
+        },
+        {
+          "n": "exit",
+          "s": 48
         }
       ],
-      "total_frames": 2225,
+      "total_frames": 2854,
       "rng_end": {
-        "state": 1452639656,
-        "calls": 1343
-      },
-      "problem": "semantic objective repeated without route advancement"
+        "state": 1889151071,
+        "calls": 1418
+      }
     },
     {
       "level_num": 9,
@@ -452,24 +455,33 @@
       "level_num": 15,
       "level_file": "lost15.rl2",
       "route_input_sha256": "04459196F04276A39B0700A7366276FB15240843A4B8C11ECE7D2FDF9DC8E73B",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 5210,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 24
+        },
+        {
+          "n": "gold key",
+          "s": 56
+        }
+      ],
+      "total_frames": 3388,
       "rng_end": {
-        "state": 4285726105,
-        "calls": 936
+        "state": 3085454742,
+        "calls": 2257
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 16,
       "level_file": "lost16.rl2",
       "route_input_sha256": "21846C9B0A4660A77989265F7184809FECDA9F1DC2CEA8032F4EA166C5C75F48",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -509,15 +521,18 @@
         },
         {
           "n": "boss",
-          "s": 99
+          "s": 105
+        },
+        {
+          "n": "exit",
+          "s": 106
         }
       ],
-      "total_frames": 5976,
+      "total_frames": 6367,
       "rng_end": {
-        "state": 3401330750,
-        "calls": 2889
-      },
-      "problem": "semantic objective repeated without route advancement"
+        "state": 1586148989,
+        "calls": 2756
+      }
     },
     {
       "level_num": 17,
@@ -620,7 +635,7 @@
       "level_num": 20,
       "level_file": "lost20.rl2",
       "route_input_sha256": "B0B8107D2B5D0BDF6354995C1FDAF89864BC6D00080F9B2031C744D1A872EA0C",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -664,15 +679,18 @@
         },
         {
           "n": "boss",
-          "s": 74
+          "s": 80
+        },
+        {
+          "n": "exit",
+          "s": 84
         }
       ],
-      "total_frames": 4449,
+      "total_frames": 5049,
       "rng_end": {
-        "state": 3597349124,
-        "calls": 3283
-      },
-      "problem": "semantic objective repeated without route advancement"
+        "state": 4221922778,
+        "calls": 3325
+      }
     },
     {
       "level_num": 21,
@@ -762,18 +780,18 @@
         },
         {
           "n": "switch 16",
-          "s": 59
+          "s": 60
         },
         {
           "n": "switch 17",
-          "s": 77
+          "s": 78
         },
         {
           "n": "switch 18",
-          "s": 95
+          "s": 96
         }
       ],
-      "total_frames": 10856,
+      "total_frames": 14211,
       "rng_end": {
         "state": 1966484275,
         "calls": 4438

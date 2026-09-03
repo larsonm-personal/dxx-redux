@@ -5,6 +5,7 @@
 
 extern "C" {
 #include "ai.h"
+#include "automap.h"
 #include "collide.h"
 #include "cntrlcen.h"
 #include "controls.h"
@@ -62,10 +63,22 @@ struct controller_state {
 	unsigned int frame_time_remainder;
 	int64_t carrier_armed_ticks;
 	int64_t next_flare_ticks;
+	int flare_fallback_wall_num;
+	int64_t flare_fallback_ticks;
 	fix best_distance;
+	int player_objnum;
+	int player_control_type;
+	int player_movement_type;
+	int player_was_invulnerable;
+	fix64 player_invulnerable_time;
+	physics_info player_physics;
+	int player_sandbox_active;
 };
 
 controller_state State = {};
+
+int set_visible_flare_target(const object *actor, int segnum, int sidenum,
+                             vms_vector *direction);
 
 void capture_rng_boundary(route_confirmation_rng_boundary *boundary)
 {
@@ -145,6 +158,47 @@ void remove_ordinary_robots(void)
 	}
 }
 
+void restore_player_sandbox(void)
+{
+	if (!State.player_sandbox_active)
+		return;
+	if (valid_object(State.player_objnum) &&
+	    Objects[State.player_objnum].type == OBJ_PLAYER) {
+		object *player = &Objects[State.player_objnum];
+		player->control_type = State.player_control_type;
+		player->movement_type = State.player_movement_type;
+		player->mtype.phys_info = State.player_physics;
+	}
+	if (State.player_was_invulnerable)
+		Players[Player_num].flags |= PLAYER_FLAGS_INVULNERABLE;
+	else
+		Players[Player_num].flags &= ~PLAYER_FLAGS_INVULNERABLE;
+	Players[Player_num].invulnerable_time = State.player_invulnerable_time;
+	State.player_sandbox_active = 0;
+}
+
+void sandbox_player(object *player)
+{
+	if (!player)
+		return;
+	State.player_objnum = (int) (player - Objects);
+	State.player_control_type = player->control_type;
+	State.player_movement_type = player->movement_type;
+	State.player_physics = player->mtype.phys_info;
+	State.player_was_invulnerable =
+	    (Players[Player_num].flags & PLAYER_FLAGS_INVULNERABLE) != 0;
+	State.player_invulnerable_time = Players[Player_num].invulnerable_time;
+	State.player_sandbox_active = 1;
+	player->control_type = CT_NONE;
+	player->movement_type = MT_NONE;
+	vm_vec_zero(&player->mtype.phys_info.velocity);
+	vm_vec_zero(&player->mtype.phys_info.thrust);
+	vm_vec_zero(&player->mtype.phys_info.rotvel);
+	vm_vec_zero(&player->mtype.phys_info.rotthrust);
+	Players[Player_num].flags |= PLAYER_FLAGS_INVULNERABLE;
+	Players[Player_num].invulnerable_time = GameTime64;
+}
+
 void fail(int status, const char *problem)
 {
 	capture_rng_boundary(&State.summary.rng_end);
@@ -152,6 +206,7 @@ void fail(int status, const char *problem)
 	snprintf(State.summary.problem, sizeof(State.summary.problem), "%s",
 	         problem ? problem : "route confirmation failed");
 	State.phase = PHASE_IDLE;
+	restore_player_sandbox();
 }
 
 void set_target_position(const level_metadata_route_step &step)
@@ -160,6 +215,7 @@ void set_target_position(const level_metadata_route_step &step)
 	State.target_objnum = -1;
 	State.target_seg = State.goal.target_seg;
 	State.frontier_wall_num = -1;
+	State.flare_fallback_wall_num = -1;
 
 	if (step.activation_kind ==
 	    LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_KEY_CARRIER) {
@@ -694,12 +750,56 @@ void record_objective_and_replan(void)
 		capture_rng_boundary(&State.summary.rng_end);
 		State.summary.status = ROUTE_CONFIRMATION_CONFIRMED;
 		State.phase = PHASE_IDLE;
+		restore_player_sandbox();
 		return;
 	}
 	prepare_next_goal();
 }
 
-void shoot_path_door(object *actor)
+int actor_is_close_to_side(const object *actor, int segnum, int sidenum)
+{
+	vms_vector center;
+	fix radius = 0;
+	int vertices[4];
+	if (!actor || segnum < 0 || segnum >= Num_segments || sidenum < 0 ||
+	    sidenum >= MAX_SIDES_PER_SEGMENT)
+		return 0;
+	compute_center_point_on_side(&center, &Segments[segnum], sidenum);
+	get_side_verts(vertices, segnum, sidenum);
+	for (int vertex = 0; vertex < 4; ++vertex) {
+		const fix distance =
+		    vm_vec_dist_quick(&center, &Vertices[vertices[vertex]]);
+		if (distance > radius)
+			radius = distance;
+	}
+	return vm_vec_dist_quick(&actor->pos, &center) <=
+	       radius + actor->size + i2f(2);
+}
+
+int apply_flare_fallback(object *actor, int segnum, int sidenum, int wall_num)
+{
+	vms_vector direction;
+	if (!actor || wall_num < 0 || wall_num >= Num_walls ||
+	    wall_num != State.flare_fallback_wall_num ||
+	    State.summary.elapsed_ticks < State.flare_fallback_ticks ||
+	    Walls[wall_num].type != WALL_DOOR ||
+	    Walls[wall_num].state != WALL_DOOR_CLOSED ||
+	    !actor_is_close_to_side(actor, segnum, sidenum) ||
+	    !set_visible_flare_target(actor, segnum, sidenum, &direction))
+		return 0;
+	wall_hit_process(&Segments[segnum], sidenum, i2f(1000), Player_num,
+	                 ConsoleObject);
+	State.flare_fallback_wall_num = -1;
+#if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	fprintf(stderr,
+	        "ROUTE-CONFIRM close flare fallback wall=%d seg=%d side=%d "
+	        "actor_seg=%d\n",
+	        wall_num, segnum, sidenum, actor->segnum);
+#endif
+	return Walls[wall_num].state != WALL_DOOR_CLOSED;
+}
+
+void recover_path_door(object *actor)
 {
 	ai_static *aip;
 	int next_index;
@@ -725,15 +825,14 @@ void shoot_path_door(object *actor)
 	wall_num = Segments[actor->segnum].sides[side].wall_num;
 	if (wall_num < 0 || wall_num >= Num_walls)
 		return;
-	if (Walls[wall_num].type == WALL_DOOR ||
-	    Walls[wall_num].type == WALL_BLASTABLE)
-		wall_hit_process(&Segments[actor->segnum], side, i2f(1000),
-		                 Player_num, ConsoleObject);
+	if (Walls[wall_num].type == WALL_DOOR)
+		apply_flare_fallback(actor, actor->segnum, side, wall_num);
 }
 
 int wall_accepts_route_flare(int wall_num)
 {
 	const wall *wallp;
+	int child;
 	if (wall_num < 0 || wall_num >= Num_walls)
 		return 0;
 	wallp = &Walls[wall_num];
@@ -741,9 +840,14 @@ int wall_accepts_route_flare(int wall_num)
 		return !(wallp->flags & WALL_BLASTED);
 	if (wallp->type != WALL_DOOR || wallp->state != WALL_DOOR_CLOSED ||
 	    (wallp->flags & WALL_DOOR_LOCKED) ||
-	    wallp->clip_num < 0 || wallp->clip_num >= Num_wall_anims ||
-	    (WallAnims[wallp->clip_num].flags & WCF_HIDDEN))
+	    wallp->clip_num < 0 || wallp->clip_num >= Num_wall_anims)
 		return 0;
+	if (WallAnims[wallp->clip_num].flags & WCF_HIDDEN) {
+		child = Segments[wallp->segnum].children[wallp->sidenum];
+		if (child < 0 || child >= Num_segments ||
+		    !Automap_visited[wallp->segnum] || !Automap_visited[child])
+			return 0;
+	}
 	return wallp->keys == KEY_NONE ||
 	       (wallp->keys & Players[Player_num].flags);
 }
@@ -786,6 +890,24 @@ int find_route_flare_target(object *actor, int *segnum, int *sidenum,
 	if (!actor || !segnum || !sidenum || !wall_num || !direction)
 		return 0;
 	aip = &actor->ctype.ai_info;
+	if (!State.action_applied &&
+	    State.step.activation_kind ==
+	        LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR &&
+	    objective_source(segnum, sidenum)) {
+		const int objective_wall =
+		    Segments[*segnum].sides[*sidenum].wall_num;
+		if (objective_wall >= 0 && objective_wall < Num_walls &&
+		    Walls[objective_wall].type == WALL_DOOR &&
+		    Walls[objective_wall].state == WALL_DOOR_CLOSED &&
+		    !(Walls[objective_wall].flags & WALL_DOOR_LOCKED) &&
+		    Walls[objective_wall].clip_num >= 0 &&
+		    Walls[objective_wall].clip_num < Num_wall_anims &&
+		    (WallAnims[Walls[objective_wall].clip_num].flags & WCF_HIDDEN) &&
+		    set_visible_flare_target(actor, *segnum, *sidenum, direction)) {
+			*wall_num = objective_wall;
+			return 1;
+		}
+	}
 	previous_seg = actor->segnum;
 	for (int lookahead = 0; aip->hide_index >= 0 && lookahead < 3;
 	     ++lookahead) {
@@ -841,13 +963,32 @@ void fire_path_flare(object *actor)
 	int segnum;
 	int sidenum;
 	int wall_num;
+	int weapon_objnum;
 	vms_vector direction;
+	vms_vector target;
+	if (State.flare_fallback_wall_num >= 0 &&
+	    State.flare_fallback_wall_num < Num_walls &&
+	    Walls[State.flare_fallback_wall_num].state != WALL_DOOR_CLOSED)
+		State.flare_fallback_wall_num = -1;
 	if (!actor || State.summary.elapsed_ticks < State.next_flare_ticks ||
 	    !find_route_flare_target(actor, &segnum, &sidenum, &wall_num,
 	                             &direction))
 		return;
-	Laser_create_new_easy(&direction, &actor->pos,
-	                      (int) (actor - Objects), FLARE_ID, 1);
+	weapon_objnum = Laser_create_new_easy(
+	    &direction, &actor->pos, (int) (actor - Objects), FLARE_ID, 1);
+	if (weapon_objnum < 0)
+		return;
+	if (State.flare_fallback_wall_num != wall_num) {
+		const fix speed =
+		    vm_vec_mag_quick(&Objects[weapon_objnum].mtype.phys_info.velocity);
+		compute_center_point_on_side(&target, &Segments[segnum], sidenum);
+		State.flare_fallback_wall_num = wall_num;
+		State.flare_fallback_ticks =
+		    State.summary.elapsed_ticks +
+		    (speed > 0 ? fixdiv(vm_vec_dist_quick(&actor->pos, &target), speed)
+		               : i2f(2)) +
+		    F1_0 / 4;
+	}
 	State.next_flare_ticks = State.summary.elapsed_ticks + F1_0 / 2;
 #if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	fprintf(stderr,
@@ -875,12 +1016,9 @@ void shoot_frontier_door(object *actor)
 		    (Walls[wall_num].type != WALL_DOOR &&
 		     Walls[wall_num].type != WALL_BLASTABLE))
 			continue;
-		/* This is the authoritative interaction path.  It checks keys, locks,
-		 * blastability, and the current wall state; the controller does not mutate
-		 * wall state itself.  Normal Guide-Bot flare behavior also probes ordinary
-		 * doors when it arrives at the end of a path. */
-		wall_hit_process(&Segments[actor->segnum], side, i2f(1000),
-		                 Player_num, ConsoleObject);
+		/* Recover only after a real flare aimed at this door had enough time to
+		 * arrive.  wall_hit_process remains authoritative for keys and locks. */
+		apply_flare_fallback(actor, actor->segnum, side, wall_num);
 	}
 }
 
@@ -901,7 +1039,12 @@ void apply_objective_action(object *actor)
 {
 	int segnum;
 	int sidenum;
-	if (!actor || State.action_applied)
+	if (!actor ||
+	    (State.action_applied &&
+	     State.step.activation_kind !=
+	         LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR &&
+	     State.step.activation_kind !=
+	         LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BOSS))
 		return;
 	switch (State.step.activation_kind) {
 		case LEVEL_METADATA_ROUTE_ACTIVATION_PICKUP_KEY:
@@ -929,6 +1072,50 @@ void apply_objective_action(object *actor)
 			break;
 
 		case LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR:
+			if (objective_source(&segnum, &sidenum)) {
+				const int child = Segments[segnum].children[sidenum];
+				const int wall_num =
+				    Segments[segnum].sides[sidenum].wall_num;
+				if (!State.action_applied &&
+				    ((wall_num >= 0 && wall_num < Num_walls &&
+				      (Walls[wall_num].state == WALL_DOOR_OPENING ||
+				       Walls[wall_num].state == WALL_DOOR_WAITING ||
+				       Walls[wall_num].state == WALL_DOOR_OPEN)) ||
+				     actor_reached_target(actor))) {
+					if (wall_num >= 0 && wall_num < Num_walls &&
+					    Walls[wall_num].state == WALL_DOOR_CLOSED &&
+					    !apply_flare_fallback(actor, segnum, sidenum,
+					                          wall_num))
+						break;
+					if (child < 0 || child >= Num_segments) {
+						fail(ROUTE_CONFIRMATION_FAILED,
+						     "hidden door has no traversable child segment");
+						break;
+					}
+					State.action_applied = 1;
+					State.target_seg = child;
+					compute_segment_center(&State.target_pos,
+					                       &Segments[child]);
+					State.target_pos_valid = 1;
+					create_guidebot_route_path_to_segment(
+					    actor, child, Max_escort_length, 1);
+					actor->ctype.ai_info.SKIP_AI_COUNT = 0;
+					Ai_local_info[State.actor_objnum].mode =
+					    AIM_GOTO_OBJECT;
+					refine_last_path_point(actor);
+					State.best_distance = vm_vec_dist_quick(
+					    &actor->pos, &State.target_pos);
+					State.no_progress_frames = 0;
+				}
+				if (State.action_applied &&
+				    ((State.previous_actor_seg == segnum &&
+				      actor->segnum == child) ||
+				     (State.previous_actor_seg == child &&
+				      actor->segnum == segnum)))
+					record_objective_and_replan();
+			}
+			break;
+
 		case LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BLASTABLE_WALL:
 			if (actor_reached_target(actor) &&
 			    State.target_seg == State.semantic_target_seg &&
@@ -968,14 +1155,19 @@ void apply_objective_action(object *actor)
 			break;
 
 		case LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BOSS:
-			if (actor_reached_target(actor) && valid_object(State.target_objnum) &&
+			if (!State.action_applied && actor_reached_target(actor) &&
+			    valid_object(State.target_objnum) &&
 			    target_is_visible(actor, &Objects[State.target_objnum])) {
 				State.action_applied = 1;
 				apply_damage_to_robot(&Objects[State.target_objnum],
 				                      Objects[State.target_objnum].shields + F1_0,
 				                      ConsoleObject - Objects);
-				record_objective_and_replan();
 			}
+			/* A boss with negative shields remains the live primary objective
+			 * throughout its death roll.  Wait for the normal engine transition
+			 * that opens the exit before rescanning the route. */
+			if (State.action_applied && Control_center_destroyed)
+				record_objective_and_replan();
 			break;
 
 		case LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_KEY_CARRIER:
@@ -1036,6 +1228,7 @@ extern "C" int route_confirmation_start(void)
 	State.summary.current_route_step_index = -1;
 	State.actor_objnum = -1;
 	State.target_objnum = -1;
+	State.flare_fallback_wall_num = -1;
 	State.best_distance = 0x7fffffff;
 	d_srand_stream(D_RNG_SIM, ROUTE_CONFIRMATION_CANONICAL_SEED);
 	d_srand_stream(D_RNG_FX, ROUTE_CONFIRMATION_CANONICAL_SEED);
@@ -1076,6 +1269,7 @@ extern "C" int route_confirmation_start(void)
 		ConsoleObject->orient = Player_init[Player_num].orient;
 		obj_relink((int) (ConsoleObject - Objects),
 		           Player_init[Player_num].segnum);
+		sandbox_player(ConsoleObject);
 	}
 	vm_vec_zero(&actor->mtype.phys_info.velocity);
 	vm_vec_zero(&actor->mtype.phys_info.thrust);
@@ -1112,6 +1306,10 @@ extern "C" void route_confirmation_before_frame(void)
 	if (State.summary.status != ROUTE_CONFIRMATION_RUNNING)
 		return;
 	memset(&Controls, 0, sizeof(Controls));
+	if (State.player_sandbox_active) {
+		Players[Player_num].flags |= PLAYER_FLAGS_INVULNERABLE;
+		Players[Player_num].invulnerable_time = GameTime64;
+	}
 	remove_ordinary_robots();
 	/* The route proof must be allowed to finish after demonstrating that the
 	 * reactor can be destroyed.  Pause the normal escape countdown through its
@@ -1121,7 +1319,7 @@ extern "C" void route_confirmation_before_frame(void)
 	if (valid_object(State.actor_objnum))
 		fire_path_flare(&Objects[State.actor_objnum]);
 	if (valid_object(State.actor_objnum))
-		shoot_path_door(&Objects[State.actor_objnum]);
+		recover_path_door(&Objects[State.actor_objnum]);
 	if (valid_object(State.actor_objnum) &&
 	    State.wait_frames == 0 &&
 	    actor_reached_target(&Objects[State.actor_objnum]))
@@ -1146,6 +1344,8 @@ extern "C" void route_confirmation_after_frame(void)
 		return;
 	}
 	actor = &Objects[State.actor_objnum];
+	if (actor->segnum >= 0 && actor->segnum < Num_segments)
+		Automap_visited[actor->segnum] = 1;
 	if (State.target_pos_valid) {
 		distance = vm_vec_dist_quick(&actor->pos, &State.target_pos);
 		if (distance + F1_0 / 4 < State.best_distance) {

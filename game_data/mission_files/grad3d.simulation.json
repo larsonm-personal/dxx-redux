@@ -5,10 +5,11 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
+    "ok": 1,
     "failed": 1,
-    "timeout": 5
+    "timeout": 4
   },
   "levels": [
     {
@@ -32,7 +33,7 @@
       "level_num": 2,
       "level_file": "gradius2.rl2",
       "route_input_sha256": "A95E8B27BBC2FE1CC1986A969DBB6286B5EE354D91F6EACC475C311AA8F035D2",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -48,23 +49,26 @@
         },
         {
           "n": "gold key",
-          "s": 82
+          "s": 83
         },
         {
           "n": "red key",
-          "s": 110
+          "s": 112
         },
         {
           "n": "boss",
-          "s": 142
+          "s": 150
+        },
+        {
+          "n": "exit",
+          "s": 152
         }
       ],
-      "total_frames": 8581,
+      "total_frames": 9113,
       "rng_end": {
-        "state": 1681218017,
-        "calls": 4384
-      },
-      "problem": "semantic objective repeated without route advancement"
+        "state": 3628576993,
+        "calls": 4640
+      }
     },
     {
       "level_num": 3,
@@ -115,7 +119,7 @@
           "s": 79
         }
       ],
-      "total_frames": 8121,
+      "total_frames": 8129,
       "rng_end": {
         "state": 3707538854,
         "calls": 3329
@@ -141,10 +145,10 @@
           "s": 97
         }
       ],
-      "total_frames": 11473,
+      "total_frames": 11480,
       "rng_end": {
-        "state": 202834805,
-        "calls": 3468
+        "state": 2822522611,
+        "calls": 3478
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -158,7 +162,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 7325,
+      "total_frames": 7403,
       "rng_end": {
         "state": 2920974234,
         "calls": 1597

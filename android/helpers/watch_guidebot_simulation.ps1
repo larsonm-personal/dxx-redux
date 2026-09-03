@@ -174,8 +174,16 @@ function Stop-GuidebotBrowserRun {
     if (-not $Process.HasExited) { $Process.Kill($true); $Process.WaitForExit() }
 }
 
+function Invoke-GuidebotBrowserBuild {
+    if ($NoBuild) { return }
+    Write-Host 'Building Windows GuideBot runner' -ForegroundColor Cyan
+    & (Join-Path $repoRoot 'run-windows-build.ps1') -Target d2
+    if ($LASTEXITCODE -ne 0) { throw "D2 build failed with exit code $LASTEXITCODE" }
+}
+
 function Invoke-GuidebotBrowserRun {
     param([object]$Item)
+    Invoke-GuidebotBrowserBuild
     New-Item -ItemType Directory -Path $manualRoot -Force | Out-Null
     $stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
     $manualRunRoot = Join-Path $manualRoot $stamp
@@ -184,9 +192,8 @@ function Invoke-GuidebotBrowserRun {
     $stderr = Join-Path $manualRunRoot 'runner.stderr.log'
     $runner = Join-Path $scriptDir 'regenerate_all_guidebot_simulations.ps1'
     $arguments = @('-NoProfile', '-File', $runner, '-Mode', 'Desktop', '-MissionJson', $Item.MissionJson,
-        '-Level', [string]$Item.Level, '-Repeat', '1', '-LevelTimeoutSeconds', '900')
+        '-Level', [string]$Item.Level, '-Repeat', '1', '-LevelTimeoutSeconds', '900', '-NoBuild')
     $arguments += @('-OutputRoot', $manualRunRoot)
-    if ($NoBuild) { $arguments += '-NoBuild' }
     $processArguments = @($arguments | ForEach-Object {
             $argument = [string]$_
             if ($argument -match '[\s"]') { '"' + $argument.Replace('"', '\"') + '"' } else { $argument }

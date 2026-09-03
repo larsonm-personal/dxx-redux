@@ -28,14 +28,14 @@
         },
         {
           "n": "switch 12",
-          "s": 40
+          "s": 45
         },
         {
           "n": "gold key",
-          "s": 46
+          "s": 52
         }
       ],
-      "total_frames": 7950,
+      "total_frames": 8269,
       "rng_end": {
         "state": 2855847558,
         "calls": 2977
@@ -113,7 +113,7 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 15
+          "s": 14
         },
         {
           "n": "gold key",
@@ -121,18 +121,18 @@
         },
         {
           "n": "red key",
-          "s": 57
+          "s": 56
         },
         {
           "n": "reactor",
-          "s": 91
+          "s": 90
         },
         {
           "n": "exit",
-          "s": 103
+          "s": 102
         }
       ],
-      "total_frames": 6155,
+      "total_frames": 6117,
       "rng_end": {
         "state": 1017304121,
         "calls": 2568
@@ -195,13 +195,13 @@
         },
         {
           "n": "gold key",
-          "s": 63
+          "s": 62
         }
       ],
-      "total_frames": 3778,
+      "total_frames": 3716,
       "rng_end": {
-        "state": 4269624625,
-        "calls": 1104
+        "state": 868726942,
+        "calls": 1129
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },

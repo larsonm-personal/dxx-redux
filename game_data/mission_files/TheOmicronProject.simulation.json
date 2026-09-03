@@ -66,13 +66,13 @@
         },
         {
           "n": "gold key",
-          "s": 43
+          "s": 47
         }
       ],
-      "total_frames": 5010,
+      "total_frames": 5258,
       "rng_end": {
-        "state": 1025635708,
-        "calls": 1659
+        "state": 1657337217,
+        "calls": 1664
       },
       "problem": "live objective sequence differs from route input"
     },
@@ -164,17 +164,17 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 5
+          "s": 6
         },
         {
           "n": "blue key",
-          "s": 13
+          "s": 14
         }
       ],
-      "total_frames": 7220,
+      "total_frames": 7735,
       "rng_end": {
-        "state": 841404032,
-        "calls": 1415
+        "state": 80133407,
+        "calls": 1226
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -198,17 +198,17 @@
         },
         {
           "n": "switch 22",
-          "s": 5
+          "s": 6
         },
         {
           "n": "reactor",
           "s": 8
         }
       ],
-      "total_frames": 474,
+      "total_frames": 453,
       "rng_end": {
-        "state": 1788460815,
-        "calls": 474
+        "state": 3386287052,
+        "calls": 491
       },
       "problem": "live Guide-Bot route has no actionable goal"
     }

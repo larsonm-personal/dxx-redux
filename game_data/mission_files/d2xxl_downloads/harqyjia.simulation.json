@@ -5,10 +5,11 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
+    "ok": 1,
     "failed": 1,
-    "timeout": 3,
+    "timeout": 2,
     "route_mismatch": 1
   },
   "levels": [
@@ -112,25 +113,25 @@
         },
         {
           "n": "switch 3",
-          "s": 25
+          "s": 24
         },
         {
           "n": "blue key",
-          "s": 39
+          "s": 40
         },
         {
           "n": "switch 15",
-          "s": 58
+          "s": 48
         },
         {
           "n": "gold key",
-          "s": 90
+          "s": 63
         }
       ],
-      "total_frames": 9486,
+      "total_frames": 11593,
       "rng_end": {
-        "state": 1295416093,
-        "calls": 2340
+        "state": 693418230,
+        "calls": 1777
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -138,7 +139,7 @@
       "level_num": -1,
       "level_file": "HARQYJIA.rl2",
       "route_input_sha256": "0B0602BA4113B1DBB146A99A16AEB0BB159A916488C761660570890438D24C22",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -146,19 +147,22 @@
       "objectives": [
         {
           "n": "switch 10",
-          "s": 32
+          "s": 33
         },
         {
           "n": "boss",
-          "s": 58
+          "s": 64
+        },
+        {
+          "n": "exit",
+          "s": 67
         }
       ],
-      "total_frames": 3511,
+      "total_frames": 4029,
       "rng_end": {
-        "state": 2914670869,
-        "calls": 1772
-      },
-      "problem": "semantic objective repeated without route advancement"
+        "state": 3340639529,
+        "calls": 1688
+      }
     }
   ]
 }

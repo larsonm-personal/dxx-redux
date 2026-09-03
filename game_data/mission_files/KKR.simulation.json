@@ -49,18 +49,14 @@
         {
           "n": "switch 1",
           "s": 41
-        },
-        {
-          "n": "boss",
-          "s": 140
         }
       ],
-      "total_frames": 8436,
+      "total_frames": 11373,
       "rng_end": {
-        "state": 3012100774,
-        "calls": 3073
+        "state": 3374144444,
+        "calls": 2875
       },
-      "problem": "semantic objective repeated without route advancement"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 2,

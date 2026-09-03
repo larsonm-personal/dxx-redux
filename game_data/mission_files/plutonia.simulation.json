@@ -84,7 +84,7 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 9
+          "s": 10
         },
         {
           "n": "switch 2",
@@ -99,12 +99,12 @@
           "s": 44
         }
       ],
-      "total_frames": 6261,
+      "total_frames": 4328,
       "rng_end": {
-        "state": 2017309445,
-        "calls": 2428
+        "state": 3073190825,
+        "calls": 3096
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 4,
@@ -237,7 +237,7 @@
       "level_num": 8,
       "level_file": "map08.rl2",
       "route_input_sha256": "FE26B21C22914EA9D0F86B3515BF5772C735B00098C9793A1EDB5F8A4F4C6FA8",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -257,54 +257,39 @@
         },
         {
           "n": "pass-through 37",
-          "s": 22
+          "s": 36
         },
         {
           "n": "pass-through 40",
-          "s": 23
+          "s": 37
         },
         {
           "n": "pass-through 16",
-          "s": 25
+          "s": 38
         },
         {
           "n": "pass-through 22",
-          "s": 26
-        },
-        {
-          "n": "pass-through 6",
-          "s": 27
-        },
-        {
-          "n": "pass-through 3",
           "s": 40
         },
         {
+          "n": "pass-through 6",
+          "s": 41
+        },
+        {
+          "n": "pass-through 3",
+          "s": 42
+        },
+        {
           "n": "fly-through 43",
-          "s": 56
-        },
-        {
-          "n": "gold key",
-          "s": 88
-        },
-        {
-          "n": "red key",
-          "s": 132
-        },
-        {
-          "n": "reactor",
-          "s": 182
-        },
-        {
-          "n": "exit",
-          "s": 228
+          "s": 44
         }
       ],
-      "total_frames": 13650,
+      "total_frames": 7554,
       "rng_end": {
-        "state": 1007928939,
-        "calls": 10398
-      }
+        "state": 1382109136,
+        "calls": 3319
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 9,
@@ -361,13 +346,13 @@
         },
         {
           "n": "red key",
-          "s": 40
+          "s": 41
         }
       ],
-      "total_frames": 2424,
+      "total_frames": 2430,
       "rng_end": {
-        "state": 3930101884,
-        "calls": 1915
+        "state": 3621709061,
+        "calls": 1916
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -614,14 +599,14 @@
         },
         {
           "n": "reactor",
-          "s": 102
+          "s": 103
         },
         {
           "n": "exit",
-          "s": 112
+          "s": 113
         }
       ],
-      "total_frames": 6744,
+      "total_frames": 6759,
       "rng_end": {
         "state": 1919816455,
         "calls": 4066
@@ -631,7 +616,7 @@
       "level_num": 20,
       "level_file": "map20.rl2",
       "route_input_sha256": "B27E4A7DA26B39DFB580488AD413CF29D4696CAB44EA31D2F52ACC373B103B7C",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -663,15 +648,18 @@
         },
         {
           "n": "boss",
-          "s": 125
+          "s": 131
+        },
+        {
+          "n": "exit",
+          "s": 140
         }
       ],
-      "total_frames": 7556,
+      "total_frames": 8392,
       "rng_end": {
-        "state": 1099679833,
-        "calls": 3816
-      },
-      "problem": "semantic objective repeated without route advancement"
+        "state": 1242478572,
+        "calls": 3915
+      }
     },
     {
       "level_num": 21,
@@ -728,13 +716,13 @@
       "objectives": [
         {
           "n": "blastable wall",
-          "s": 8
+          "s": 9
         }
       ],
-      "total_frames": 532,
+      "total_frames": 554,
       "rng_end": {
-        "state": 232049766,
-        "calls": 321
+        "state": 3066448807,
+        "calls": 322
       },
       "problem": "semantic objective repeated without route advancement"
     },

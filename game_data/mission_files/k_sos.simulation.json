@@ -121,16 +121,12 @@
         {
           "n": "reactor",
           "s": 309
-        },
-        {
-          "n": "exit",
-          "s": 369
         }
       ],
-      "total_frames": 22132,
+      "total_frames": 22354,
       "rng_end": {
-        "state": 2907687695,
-        "calls": 13786
+        "state": 1896209291,
+        "calls": 13182
       },
       "problem": "live objective sequence differs from route input"
     },

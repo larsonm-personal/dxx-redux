@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
+    "ok": 2,
     "failed": 2,
-    "timeout": 2
+    "timeout": 3
   },
   "levels": [
     {
@@ -28,10 +28,10 @@
         },
         {
           "n": "gold key",
-          "s": 35
+          "s": 36
         }
       ],
-      "total_frames": 3112,
+      "total_frames": 3145,
       "rng_end": {
         "state": 51885617,
         "calls": 848
@@ -54,7 +54,7 @@
         },
         {
           "n": "blue key",
-          "s": 28
+          "s": 27
         },
         {
           "n": "gold key",
@@ -62,32 +62,32 @@
         },
         {
           "n": "switch 3",
-          "s": 112
+          "s": 87
         },
         {
           "n": "red key",
-          "s": 157
+          "s": 127
         },
         {
           "n": "boss",
-          "s": 228
+          "s": 170
         },
         {
           "n": "exit",
-          "s": 284
+          "s": 191
         }
       ],
-      "total_frames": 17037,
+      "total_frames": 11461,
       "rng_end": {
-        "state": 2402802414,
-        "calls": 11609
+        "state": 855019456,
+        "calls": 8007
       }
     },
     {
       "level_num": 3,
       "level_file": "JUNO03.RL2",
       "route_input_sha256": "532C12AFD7EE09D53FD167D5E897AE4B2F55787CD0FD2294C1ECFAC7D5823C6C",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -95,34 +95,19 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 33
+          "s": 34
         },
         {
           "n": "blue key",
           "s": 36
-        },
-        {
-          "n": "gold key",
-          "s": 74
-        },
-        {
-          "n": "red key",
-          "s": 140
-        },
-        {
-          "n": "reactor",
-          "s": 198
-        },
-        {
-          "n": "exit",
-          "s": 250
         }
       ],
-      "total_frames": 15004,
+      "total_frames": 8074,
       "rng_end": {
-        "state": 4126407567,
-        "calls": 7514
-      }
+        "state": 3155324965,
+        "calls": 1884
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 4,
@@ -185,7 +170,7 @@
         },
         {
           "n": "hidden door",
-          "s": 9
+          "s": 10
         },
         {
           "n": "fly-through 5",
@@ -193,21 +178,21 @@
         },
         {
           "n": "fly-through 0",
-          "s": 51
+          "s": 34
         },
         {
           "n": "blue key",
-          "s": 105
+          "s": 35
         },
         {
           "n": "gold key",
-          "s": 155
+          "s": 82
         }
       ],
-      "total_frames": 10479,
+      "total_frames": 4944,
       "rng_end": {
-        "state": 3765822570,
-        "calls": 2989
+        "state": 3650357819,
+        "calls": 1742
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },

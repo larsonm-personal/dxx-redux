@@ -1409,9 +1409,13 @@ static void test_visible_unlocked_triggered_door_is_physically_passable(void)
 {
 	certifier_fixture fixture;
 	level_metadata_scan_view view;
+	level_metadata_route_step step;
 
 	initialize_fixture(&fixture);
 	view = make_view(&fixture);
+	memset(&step, 0, sizeof(step));
+	step.kind = LEVEL_METADATA_ROUTE_HIDDEN_DOOR;
+	step.wall_num = 0;
 	assert(fixture.wall_type[0] == view.wall_type_door);
 	assert(fixture.wall_key[0] == view.wall_key_none);
 	assert(triggered_side_opener_count(&fixture, 0, 0) > 0);
@@ -1421,6 +1425,11 @@ static void test_visible_unlocked_triggered_door_is_physically_passable(void)
 	fixture.wall_extra_flags[0] = 0;
 	fixture.wall_clip[0] = view.wall_clip_hidden;
 	assert(!guidebot_route_side_passable_current(&view, 0, 0));
+	assert(level_metadata_route_step_required_by_world_state(&view, &step));
+	fixture.explored[0] = 1;
+	fixture.explored[1] = 1;
+	assert(guidebot_route_side_passable_current(&view, 0, 0));
+	assert(!level_metadata_route_step_required_by_world_state(&view, &step));
 }
 
 static void test_keyed_buddy_proof_door_keeps_objective_reachable(void)
