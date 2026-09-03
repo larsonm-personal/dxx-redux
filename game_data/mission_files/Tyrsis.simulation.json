@@ -5,17 +5,16 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 1,
-    "timeout": 1
+    "ok": 2
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "myrian1.rl2",
       "route_input_sha256": "19007D7DE1E8EAB03FAC716F6BDFF6E1FB7AEF5156AA8EEDBC227F83B2F4E955",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -40,14 +39,25 @@
         {
           "n": "red key",
           "s": 75
+        },
+        {
+          "n": "fly-through 22",
+          "s": 90
+        },
+        {
+          "n": "reactor",
+          "s": 92
+        },
+        {
+          "n": "exit",
+          "s": 103
         }
       ],
-      "total_frames": 8999,
+      "total_frames": 6207,
       "rng_end": {
-        "state": 2487320074,
-        "calls": 2701
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1318885705,
+        "calls": 2936
+      }
     },
     {
       "level_num": 2,

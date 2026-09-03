@@ -7,10 +7,10 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
+    "ok": 3,
     "failed": 3,
-    "timeout": 13,
-    "route_mismatch": 1
+    "timeout": 11,
+    "route_mismatch": 2
   },
   "levels": [
     {
@@ -45,12 +45,12 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 3968,
+      "total_frames": 846,
       "rng_end": {
-        "state": 1151748123,
-        "calls": 238
+        "state": 4112870923,
+        "calls": 254
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 3,
@@ -174,7 +174,7 @@
       "level_num": 8,
       "level_file": "serropa.rl2",
       "route_input_sha256": "1A9674E114BE2EDE2CD3089E60CA518D1AB2E461B81D7FB3D43D4977F7C5F8B9",
-      "status": "timeout",
+      "status": "route_mismatch",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -187,14 +187,18 @@
         {
           "n": "blue key",
           "s": 37
+        },
+        {
+          "n": "fly-through 12",
+          "s": 61
         }
       ],
-      "total_frames": 7226,
+      "total_frames": 5706,
       "rng_end": {
-        "state": 1725722493,
-        "calls": 2500
+        "state": 3399618196,
+        "calls": 3587
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live objective sequence differs from route input"
     },
     {
       "level_num": 9,
@@ -374,13 +378,13 @@
         },
         {
           "n": "fly-through 7",
-          "s": 28
+          "s": 29
         }
       ],
-      "total_frames": 5791,
+      "total_frames": 8837,
       "rng_end": {
-        "state": 3576833760,
-        "calls": 935
+        "state": 376285238,
+        "calls": 3249
       },
       "problem": "live objective sequence differs from route input"
     },
@@ -388,18 +392,38 @@
       "level_num": 17,
       "level_file": "dhulabs.rl2",
       "route_input_sha256": "F279AB4A4A49AFAABB58AA10CDD599F50299629FA1536D01AFFB7B1C390F9025",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4002,
+      "objectives": [
+        {
+          "n": "pass-through 1",
+          "s": 7
+        },
+        {
+          "n": "fly-through 4",
+          "s": 13
+        },
+        {
+          "n": "switch 5",
+          "s": 28
+        },
+        {
+          "n": "boss",
+          "s": 39
+        },
+        {
+          "n": "exit",
+          "s": 59
+        }
+      ],
+      "total_frames": 3548,
       "rng_end": {
-        "state": 1344117138,
-        "calls": 293
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 743471179,
+        "calls": 1726
+      }
     },
     {
       "level_num": 18,
@@ -427,11 +451,16 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 3746,
+      "objectives": [
+        {
+          "n": "fly-through 4",
+          "s": 3
+        }
+      ],
+      "total_frames": 7909,
       "rng_end": {
-        "state": 769681363,
-        "calls": 182
+        "state": 4194562402,
+        "calls": 405
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

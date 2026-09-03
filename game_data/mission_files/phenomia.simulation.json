@@ -81,11 +81,28 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4399,
+      "objectives": [
+        {
+          "n": "fly-through 18",
+          "s": 13
+        },
+        {
+          "n": "switch 4",
+          "s": 18
+        },
+        {
+          "n": "blue key",
+          "s": 44
+        },
+        {
+          "n": "switch 19",
+          "s": 60
+        }
+      ],
+      "total_frames": 7681,
       "rng_end": {
-        "state": 2225544632,
-        "calls": 239
+        "state": 2134449477,
+        "calls": 1340
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },

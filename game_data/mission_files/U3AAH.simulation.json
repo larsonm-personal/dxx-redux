@@ -44,12 +44,20 @@
         {
           "n": "hidden door",
           "s": 8
+        },
+        {
+          "n": "fly-through 3",
+          "s": 14
+        },
+        {
+          "n": "red key",
+          "s": 24
         }
       ],
-      "total_frames": 4427,
+      "total_frames": 6208,
       "rng_end": {
-        "state": 1643098370,
-        "calls": 1653
+        "state": 1562800523,
+        "calls": 7550
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

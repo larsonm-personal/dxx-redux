@@ -56,10 +56,10 @@
           "s": 85
         }
       ],
-      "total_frames": 7080,
+      "total_frames": 10756,
       "rng_end": {
-        "state": 3850386194,
-        "calls": 3493
+        "state": 986287298,
+        "calls": 3509
       },
       "problem": "live objective sequence differs from route input"
     },

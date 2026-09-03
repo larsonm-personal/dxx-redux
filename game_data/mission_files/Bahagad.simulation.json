@@ -140,17 +140,17 @@
         },
         {
           "n": "reactor",
-          "s": 141
+          "s": 140
         },
         {
           "n": "exit",
-          "s": 164
+          "s": 162
         }
       ],
-      "total_frames": 9815,
+      "total_frames": 9745,
       "rng_end": {
-        "state": 911792307,
-        "calls": 5078
+        "state": 1475257833,
+        "calls": 5080
       }
     },
     {
@@ -198,8 +198,8 @@
       ],
       "total_frames": 36001,
       "rng_end": {
-        "state": 4159101130,
-        "calls": 1741
+        "state": 4071541263,
+        "calls": 1754
       },
       "problem": "live objective sequence differs from route input"
     },
@@ -346,10 +346,10 @@
           "s": 0
         }
       ],
-      "total_frames": 3771,
+      "total_frames": 3778,
       "rng_end": {
-        "state": 638160107,
-        "calls": 542
+        "state": 2678191699,
+        "calls": 566
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

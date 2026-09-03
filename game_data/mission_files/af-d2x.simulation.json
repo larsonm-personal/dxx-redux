@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
+    "ok": 5,
     "timeout": 9,
-    "route_mismatch": 2
+    "route_mismatch": 1
   },
   "levels": [
     {
@@ -123,7 +123,7 @@
       "level_num": 4,
       "level_file": "chacshir.rl2",
       "route_input_sha256": "DF632E79285B2987183FFD12F1DEC9D8FF9A7FECE86B064EC1AD46142A042728",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -156,20 +156,31 @@
         {
           "n": "switch 5",
           "s": 52
+        },
+        {
+          "n": "pass-through 9",
+          "s": 71
+        },
+        {
+          "n": "reactor",
+          "s": 105
+        },
+        {
+          "n": "exit",
+          "s": 111
         }
       ],
-      "total_frames": 8437,
+      "total_frames": 6676,
       "rng_end": {
-        "state": 2914670869,
-        "calls": 1772
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 2189816399,
+        "calls": 2714
+      }
     },
     {
       "level_num": 5,
       "level_file": "tefoleg.rl2",
       "route_input_sha256": "63F42B917374CF8FE26F9901B2CCD6318F47C1DAB4D20E822AC3479C16660B60",
-      "status": "route_mismatch",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -186,22 +197,14 @@
         {
           "n": "gold key",
           "s": 75
-        },
-        {
-          "n": "pass-through 3",
-          "s": 135
-        },
-        {
-          "n": "switch 2",
-          "s": 154
         }
       ],
-      "total_frames": 36001,
+      "total_frames": 11561,
       "rng_end": {
-        "state": 865347585,
-        "calls": 6144
+        "state": 3456028837,
+        "calls": 4828
       },
-      "problem": "live objective sequence differs from route input"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 6,
@@ -262,7 +265,7 @@
         },
         {
           "n": "blue key",
-          "s": 12
+          "s": 13
         },
         {
           "n": "gold key",
@@ -270,17 +273,17 @@
         },
         {
           "n": "red key",
-          "s": 51
+          "s": 52
         },
         {
           "n": "reactor",
-          "s": 66
+          "s": 67
         }
       ],
-      "total_frames": 7662,
+      "total_frames": 7672,
       "rng_end": {
-        "state": 3999804390,
-        "calls": 4033
+        "state": 643223998,
+        "calls": 4041
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -313,8 +316,8 @@
       ],
       "total_frames": 5190,
       "rng_end": {
-        "state": 1049440712,
-        "calls": 3231
+        "state": 1026127875,
+        "calls": 3206
       },
       "problem": "live objective sequence differs from route input"
     },
@@ -354,13 +357,13 @@
         },
         {
           "n": "exit",
-          "s": 82
+          "s": 83
         }
       ],
-      "total_frames": 4948,
+      "total_frames": 4971,
       "rng_end": {
-        "state": 2189816399,
-        "calls": 2714
+        "state": 1820422358,
+        "calls": 2705
       }
     },
     {
@@ -388,12 +391,16 @@
         {
           "n": "gold key",
           "s": 44
+        },
+        {
+          "n": "fly-through 10",
+          "s": 48
         }
       ],
-      "total_frames": 6461,
+      "total_frames": 8777,
       "rng_end": {
-        "state": 3274223484,
-        "calls": 1147
+        "state": 3111176122,
+        "calls": 2205
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -470,18 +477,18 @@
       "objectives": [
         {
           "n": "pass-through 16",
-          "s": 42
+          "s": 40
         },
         {
           "n": "boss",
-          "s": 64
+          "s": 62
         },
         {
           "n": "exit",
-          "s": 116
+          "s": 114
         }
       ],
-      "total_frames": 6972,
+      "total_frames": 6820,
       "rng_end": {
         "state": 3381675222,
         "calls": 1681

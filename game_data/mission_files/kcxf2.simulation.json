@@ -30,10 +30,10 @@
           "s": 49
         }
       ],
-      "total_frames": 2994,
+      "total_frames": 2991,
       "rng_end": {
-        "state": 4202225626,
-        "calls": 765
+        "state": 4131908619,
+        "calls": 766
       },
       "problem": "semantic objective repeated without route advancement"
     },
@@ -66,7 +66,7 @@
       "objectives": [
         {
           "n": "fly-through 0",
-          "s": 22
+          "s": 23
         },
         {
           "n": "switch 2",
@@ -74,15 +74,35 @@
         },
         {
           "n": "switch 3",
-          "s": 48
+          "s": 49
+        },
+        {
+          "n": "fly-through 4",
+          "s": 74
+        },
+        {
+          "n": "reactor",
+          "s": 90
+        },
+        {
+          "n": "fly-through 6",
+          "s": 103
+        },
+        {
+          "n": "switch 8",
+          "s": 120
+        },
+        {
+          "n": "red key",
+          "s": 145
         }
       ],
-      "total_frames": 8026,
+      "total_frames": 10016,
       "rng_end": {
-        "state": 2954493520,
-        "calls": 1143
+        "state": 3130548163,
+        "calls": 3270
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 4,

@@ -361,16 +361,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "ok",
+    "status": "failed",
     "level_counts": {
-      "ok": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "gigaloma.rl2",
         "route_input_sha256": "0C7368F7B7046CF236925B3996A4394E7EDBD5503428BC8791B061490AD253BC",
-        "status": "ok",
+        "status": "timeout",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -390,38 +390,15 @@
           },
           {
             "n": "switch 79",
-            "s": 31
-          },
-          {
-            "n": "switch 80",
-            "s": 55
-          },
-          {
-            "n": "switch 81",
-            "s": 59
-          },
-          {
-            "n": "red key",
-            "s": 69
-          },
-          {
-            "n": "fly-through 37",
-            "s": 85
-          },
-          {
-            "n": "boss",
-            "s": 95
-          },
-          {
-            "n": "exit",
-            "s": 106
+            "s": 32
           }
         ],
-        "total_frames": 6333,
+        "total_frames": 5892,
         "rng_end": {
-          "state": 3916630447,
-          "calls": 3386
-        }
+          "state": 1189090888,
+          "calls": 1567
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },
@@ -449,8 +426,8 @@
         "objectives": [],
         "total_frames": 5829,
         "rng_end": {
-          "state": 865933928,
-          "calls": 1407
+          "state": 1440254347,
+          "calls": 1406
         },
         "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }

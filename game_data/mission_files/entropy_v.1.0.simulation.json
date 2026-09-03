@@ -82,29 +82,29 @@
         },
         {
           "n": "gold key",
-          "s": 69
+          "s": 70
         },
         {
           "n": "switch 1",
-          "s": 90
+          "s": 91
         },
         {
           "n": "switch 9",
-          "s": 136
+          "s": 137
         },
         {
           "n": "reactor",
-          "s": 162
+          "s": 163
         },
         {
           "n": "exit",
-          "s": 191
+          "s": 192
         }
       ],
-      "total_frames": 11483,
+      "total_frames": 11542,
       "rng_end": {
-        "state": 3028159101,
-        "calls": 5828
+        "state": 4131499580,
+        "calls": 5819
       }
     },
     {
@@ -206,13 +206,13 @@
         },
         {
           "n": "exit",
-          "s": 51
+          "s": 50
         }
       ],
-      "total_frames": 3059,
+      "total_frames": 3023,
       "rng_end": {
-        "state": 1812430396,
-        "calls": 1723
+        "state": 2011972136,
+        "calls": 1727
       },
       "problem": "live objective sequence differs from route input"
     },
@@ -240,21 +240,21 @@
         },
         {
           "n": "fly-through 6",
-          "s": 127
+          "s": 129
         },
         {
           "n": "boss",
-          "s": 143
+          "s": 144
         },
         {
           "n": "exit",
-          "s": 146
+          "s": 148
         }
       ],
-      "total_frames": 8757,
+      "total_frames": 8850,
       "rng_end": {
-        "state": 2916624664,
-        "calls": 3087
+        "state": 3409486077,
+        "calls": 3140
       }
     },
     {

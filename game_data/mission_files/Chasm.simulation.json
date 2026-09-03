@@ -64,41 +64,41 @@
         },
         {
           "n": "fly-through 3",
-          "s": 81
+          "s": 82
         },
         {
           "n": "switch 11",
-          "s": 88
+          "s": 89
         },
         {
           "n": "gold key",
-          "s": 95
+          "s": 96
         },
         {
           "n": "switch 1",
-          "s": 134
+          "s": 135
         },
         {
           "n": "red key",
-          "s": 178
+          "s": 180
         },
         {
           "n": "fly-through 4",
-          "s": 236
+          "s": 239
         },
         {
           "n": "reactor",
-          "s": 247
+          "s": 250
         },
         {
           "n": "exit",
-          "s": 253
+          "s": 256
         }
       ],
-      "total_frames": 15207,
+      "total_frames": 15346,
       "rng_end": {
-        "state": 1425954287,
-        "calls": 3322
+        "state": 3306922665,
+        "calls": 3352
       }
     },
     {

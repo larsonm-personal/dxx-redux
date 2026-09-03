@@ -56,19 +56,19 @@
         "objectives": [
           {
             "n": "pass-through 1",
-            "s": 0
+            "s": 2
           },
           {
             "n": "blue key",
-            "s": 4
+            "s": 6
           },
           {
             "n": "red key",
-            "s": 18
+            "s": 19
           },
           {
             "n": "reactor",
-            "s": 28
+            "s": 29
           },
           {
             "n": "exit",
@@ -77,8 +77,8 @@
         ],
         "total_frames": 1793,
         "rng_end": {
-          "state": 582137423,
-          "calls": 1690
+          "state": 1110170446,
+          "calls": 1657
         }
       },
       {
@@ -108,10 +108,10 @@
           "calls": 0
         },
         "objectives": [],
-        "total_frames": 1170,
+        "total_frames": 1029,
         "rng_end": {
-          "state": 2709554285,
-          "calls": 852
+          "state": 2213412917,
+          "calls": 716
         },
         "problem": "physical route frontier did not open after 8 interaction attempts"
       },

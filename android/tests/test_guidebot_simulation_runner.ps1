@@ -32,6 +32,15 @@ try {
         $runnerSource -match '(?s)function Invoke-GuidebotDesktopLevel.*?Start-Process.*?-NoNewWindow') {
         throw 'Headless runs must reuse the parent console while Desktop runs retain their visible game window'
     }
+    if ($runnerSource -notmatch '\[int\]\$Repeat\s*=\s*1') {
+        throw 'Corpus runs must default to one deterministic execution per level'
+    }
+    $levelLoop = $runnerSource.IndexOf('foreach ($item in $selectedItems) {')
+    $incrementalWrite = $runnerSource.IndexOf('Write-GuidebotSimulationFile -MetadataFile $item.MetadataFile', $levelLoop)
+    $finalWriteLoop = $runnerSource.IndexOf('foreach ($file in $files) {', $incrementalWrite)
+    if ($levelLoop -lt 0 -or $incrementalWrite -lt $levelLoop -or $finalWriteLoop -lt $incrementalWrite) {
+        throw 'Each completed level must be published before final corpus aggregation'
+    }
     $filtered = @(Invoke-DryRun -Name filtered -MissionJson Counterstrike.json -Level 1, 3)
     if ($filtered.Count -ne 2 -or ($filtered.identity -join ',') -notmatch '\|1\|' -or
         ($filtered.identity -join ',') -notmatch '\|3\|') {

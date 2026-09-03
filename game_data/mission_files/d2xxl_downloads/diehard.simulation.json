@@ -8,8 +8,9 @@
   "status": "partial",
   "level_counts": {
     "ok": 2,
-    "timeout": 16,
-    "unsupported": 1
+    "timeout": 15,
+    "unsupported": 1,
+    "route_mismatch": 1
   },
   "levels": [
     {
@@ -45,29 +46,29 @@
         },
         {
           "n": "switch 4",
-          "s": 3
+          "s": 2
         },
         {
           "n": "red key",
-          "s": 28
+          "s": 27
         },
         {
           "n": "switch 9",
-          "s": 28
+          "s": 27
         },
         {
           "n": "boss",
-          "s": 55
+          "s": 54
         },
         {
           "n": "exit",
-          "s": 74
+          "s": 73
         }
       ],
-      "total_frames": 4413,
+      "total_frames": 4379,
       "rng_end": {
-        "state": 2444571206,
-        "calls": 1761
+        "state": 2895563420,
+        "calls": 1755
       }
     },
     {
@@ -91,8 +92,8 @@
       ],
       "total_frames": 36001,
       "rng_end": {
-        "state": 1519971579,
-        "calls": 1038
+        "state": 844481342,
+        "calls": 1097
       },
       "problem": "route confirmation exceeded 10 simulation minutes"
     },
@@ -127,11 +128,20 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 3982,
+      "objectives": [
+        {
+          "n": "pass-through 5",
+          "s": 7
+        },
+        {
+          "n": "boss",
+          "s": 24
+        }
+      ],
+      "total_frames": 5845,
       "rng_end": {
-        "state": 2720662152,
-        "calls": 223
+        "state": 4025157543,
+        "calls": 1346
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -150,12 +160,12 @@
           "s": 18
         }
       ],
-      "total_frames": 1713,
+      "total_frames": 5046,
       "rng_end": {
-        "state": 2839975927,
-        "calls": 1010
+        "state": 1684271235,
+        "calls": 1030
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 7,
@@ -234,14 +244,22 @@
         {
           "n": "hidden door",
           "s": 8
+        },
+        {
+          "n": "pass-through 0",
+          "s": 15
+        },
+        {
+          "n": "pass-through 6",
+          "s": 16
         }
       ],
-      "total_frames": 4508,
+      "total_frames": 1774,
       "rng_end": {
-        "state": 875936247,
-        "calls": 498
+        "state": 3818017060,
+        "calls": 563
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 11,
@@ -276,13 +294,13 @@
         },
         {
           "n": "pass-through 4",
-          "s": 3
+          "s": 4
         }
       ],
-      "total_frames": 403,
+      "total_frames": 461,
       "rng_end": {
-        "state": 1185738822,
-        "calls": 225
+        "state": 1814397249,
+        "calls": 192
       },
       "problem": "route objective activation is not supported"
     },
@@ -327,7 +345,7 @@
       "level_num": 14,
       "level_file": "DH14.RL2",
       "route_input_sha256": "0AAD0BDEE46E7FA5F256529DD70C4B3695A128CBEA1E581E8DB92514853AA5CD",
-      "status": "timeout",
+      "status": "route_mismatch",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -335,23 +353,59 @@
       "objectives": [
         {
           "n": "pass-through 9",
-          "s": 4
+          "s": 5
         },
         {
           "n": "switch 10",
-          "s": 10
+          "s": 11
         },
         {
           "n": "hidden door",
-          "s": 21
+          "s": 23
+        },
+        {
+          "n": "pass-through 6",
+          "s": 29
+        },
+        {
+          "n": "switch 8",
+          "s": 32
+        },
+        {
+          "n": "hidden door",
+          "s": 36
+        },
+        {
+          "n": "switch 5",
+          "s": 36
+        },
+        {
+          "n": "hidden door",
+          "s": 41
+        },
+        {
+          "n": "switch 4",
+          "s": 42
+        },
+        {
+          "n": "hidden door",
+          "s": 44
+        },
+        {
+          "n": "blue key",
+          "s": 45
+        },
+        {
+          "n": "switch 14",
+          "s": 46
         }
       ],
-      "total_frames": 5044,
+      "total_frames": 3401,
       "rng_end": {
-        "state": 3702394683,
-        "calls": 462
+        "state": 2706250699,
+        "calls": 830
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live objective sequence differs from route input"
     },
     {
       "level_num": 15,
@@ -365,17 +419,17 @@
       "objectives": [
         {
           "n": "pass-through 12",
-          "s": 11
+          "s": 13
         },
         {
           "n": "switch 14",
-          "s": 27
+          "s": 29
         }
       ],
-      "total_frames": 2873,
+      "total_frames": 3011,
       "rng_end": {
-        "state": 3375450775,
-        "calls": 850
+        "state": 3061904516,
+        "calls": 851
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

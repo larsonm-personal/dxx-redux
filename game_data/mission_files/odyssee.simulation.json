@@ -109,37 +109,37 @@
         },
         {
           "n": "fly-through 2",
-          "s": 4
+          "s": 5
         },
         {
           "n": "hidden door",
-          "s": 6
+          "s": 7
         },
         {
           "n": "blue key",
-          "s": 22
+          "s": 23
         },
         {
           "n": "gold key",
-          "s": 46
+          "s": 47
         },
         {
           "n": "red key",
-          "s": 74
+          "s": 76
         },
         {
           "n": "boss",
-          "s": 93
+          "s": 94
         },
         {
           "n": "exit",
-          "s": 107
+          "s": 108
         }
       ],
-      "total_frames": 6414,
+      "total_frames": 6507,
       "rng_end": {
-        "state": 1034905829,
-        "calls": 4252
+        "state": 3634113817,
+        "calls": 4136
       }
     }
   ]

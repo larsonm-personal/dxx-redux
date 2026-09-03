@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 18,
+    "ok": 19,
     "failed": 1,
-    "timeout": 8,
+    "timeout": 7,
     "unsupported": 1,
     "route_mismatch": 2
   },
@@ -184,7 +184,7 @@
       "level_num": 6,
       "level_file": "level06.rl2",
       "route_input_sha256": "5640BAC387165F387D741CECBCDEE61D2EC101687A755F32B2472E11145E130F",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -197,14 +197,21 @@
         {
           "n": "reactor",
           "s": 21
+        },
+        {
+          "n": "pass-through 1",
+          "s": 24
+        },
+        {
+          "n": "exit",
+          "s": 26
         }
       ],
-      "total_frames": 5016,
+      "total_frames": 1570,
       "rng_end": {
-        "state": 2134449477,
-        "calls": 1340
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3163278055,
+        "calls": 1538
+      }
     },
     {
       "level_num": 7,
@@ -525,26 +532,26 @@
         },
         {
           "n": "blue key",
-          "s": 16
+          "s": 15
         },
         {
           "n": "gold key",
-          "s": 34
+          "s": 33
         },
         {
           "n": "red key",
-          "s": 58
+          "s": 57
         },
         {
           "n": "reactor",
-          "s": 78
+          "s": 76
         },
         {
           "n": "exit",
-          "s": 79
+          "s": 78
         }
       ],
-      "total_frames": 4743,
+      "total_frames": 4662,
       "rng_end": {
         "state": 2024437016,
         "calls": 4111
@@ -667,12 +674,12 @@
           "s": 25
         }
       ],
-      "total_frames": 2091,
+      "total_frames": 6188,
       "rng_end": {
-        "state": 2839112181,
-        "calls": 780
+        "state": 1474561927,
+        "calls": 866
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 21,
@@ -810,14 +817,14 @@
       "objectives": [
         {
           "n": "fly-through 0",
-          "s": 2
+          "s": 3
         },
         {
           "n": "blue key",
-          "s": 11
+          "s": 12
         }
       ],
-      "total_frames": 1619,
+      "total_frames": 1673,
       "rng_end": {
         "state": 2881533255,
         "calls": 418

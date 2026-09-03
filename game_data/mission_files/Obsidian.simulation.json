@@ -39,21 +39,21 @@
         },
         {
           "n": "fly-through 8",
-          "s": 148
-        },
-        {
-          "n": "reactor",
           "s": 149
         },
         {
+          "n": "reactor",
+          "s": 150
+        },
+        {
           "n": "exit",
-          "s": 155
+          "s": 157
         }
       ],
-      "total_frames": 9325,
+      "total_frames": 9398,
       "rng_end": {
-        "state": 1742575053,
-        "calls": 1780
+        "state": 1326565041,
+        "calls": 1744
       }
     },
     {
@@ -133,12 +133,12 @@
           "s": 35
         }
       ],
-      "total_frames": 2868,
+      "total_frames": 7780,
       "rng_end": {
-        "state": 2540048041,
-        "calls": 280
+        "state": 890859284,
+        "calls": 899
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 5,
@@ -180,7 +180,7 @@
         },
         {
           "n": "switch 10",
-          "s": 46
+          "s": 45
         },
         {
           "n": "blue key",
@@ -192,10 +192,10 @@
         },
         {
           "n": "exit",
-          "s": 77
+          "s": 76
         }
       ],
-      "total_frames": 4602,
+      "total_frames": 4579,
       "rng_end": {
         "state": 3022733088,
         "calls": 2663
@@ -282,7 +282,7 @@
         },
         {
           "n": "switch 10",
-          "s": 76
+          "s": 77
         },
         {
           "n": "gold key",
@@ -306,13 +306,13 @@
         },
         {
           "n": "exit",
-          "s": 183
+          "s": 133
         }
       ],
-      "total_frames": 11008,
+      "total_frames": 7987,
       "rng_end": {
-        "state": 3169057466,
-        "calls": 4509
+        "state": 3868356151,
+        "calls": 4530
       }
     },
     {
@@ -413,12 +413,12 @@
           "s": 58
         }
       ],
-      "total_frames": 4813,
+      "total_frames": 9255,
       "rng_end": {
-        "state": 990408728,
-        "calls": 2319
+        "state": 3141127599,
+        "calls": 2362
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 12,
@@ -456,45 +456,45 @@
         },
         {
           "n": "fly-through 9",
-          "s": 48
-        },
-        {
-          "n": "switch 10",
           "s": 49
         },
         {
+          "n": "switch 10",
+          "s": 51
+        },
+        {
           "n": "fly-through 18",
-          "s": 56
+          "s": 59
         },
         {
           "n": "switch 12",
-          "s": 57
+          "s": 60
         },
         {
           "n": "switch 7",
-          "s": 72
+          "s": 76
         },
         {
           "n": "switch 6",
-          "s": 83
+          "s": 86
         },
         {
           "n": "red key",
-          "s": 89
+          "s": 92
         },
         {
           "n": "boss",
-          "s": 112
+          "s": 114
         },
         {
           "n": "exit",
           "s": 133
         }
       ],
-      "total_frames": 7957,
+      "total_frames": 7978,
       "rng_end": {
-        "state": 2799315091,
-        "calls": 6134
+        "state": 2079333788,
+        "calls": 6107
       }
     },
     {
@@ -532,12 +532,16 @@
         {
           "n": "fly-through 2",
           "s": 14
+        },
+        {
+          "n": "fly-through 15",
+          "s": 25
         }
       ],
-      "total_frames": 5057,
+      "total_frames": 6483,
       "rng_end": {
-        "state": 3014832133,
-        "calls": 1148
+        "state": 3830697710,
+        "calls": 2393
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -574,17 +578,17 @@
         },
         {
           "n": "fly-through 8",
-          "s": 26
+          "s": 24
         },
         {
           "n": "exit",
-          "s": 28
+          "s": 26
         }
       ],
-      "total_frames": 1667,
+      "total_frames": 1535,
       "rng_end": {
-        "state": 1198449905,
-        "calls": 656
+        "state": 4099402313,
+        "calls": 632
       }
     },
     {

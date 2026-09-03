@@ -112,12 +112,12 @@
           "s": 11
         }
       ],
-      "total_frames": 1375,
+      "total_frames": 6328,
       "rng_end": {
-        "state": 1923026025,
-        "calls": 344
+        "state": 2407154291,
+        "calls": 534
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 4,
@@ -135,37 +135,37 @@
         },
         {
           "n": "fly-through 14",
-          "s": 59
+          "s": 60
         },
         {
           "n": "switch 12",
-          "s": 61
+          "s": 62
         },
         {
           "n": "switch 11",
-          "s": 68
+          "s": 69
         },
         {
           "n": "switch 9",
-          "s": 72
+          "s": 74
         },
         {
           "n": "switch 2",
-          "s": 79
+          "s": 81
         },
         {
           "n": "reactor",
-          "s": 96
+          "s": 97
         },
         {
           "n": "exit",
-          "s": 98
+          "s": 99
         }
       ],
-      "total_frames": 5854,
+      "total_frames": 5935,
       "rng_end": {
-        "state": 858169495,
-        "calls": 3410
+        "state": 3436895623,
+        "calls": 3426
       }
     },
     {
@@ -840,10 +840,10 @@
           "s": 89
         }
       ],
-      "total_frames": 5316,
+      "total_frames": 5313,
       "rng_end": {
-        "state": 3386125618,
-        "calls": 2565
+        "state": 1431170862,
+        "calls": 2585
       }
     },
     {
@@ -893,8 +893,8 @@
       ],
       "total_frames": 6115,
       "rng_end": {
-        "state": 2100566895,
-        "calls": 3962
+        "state": 3547271501,
+        "calls": 3956
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },

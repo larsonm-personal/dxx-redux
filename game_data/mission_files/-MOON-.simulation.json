@@ -267,12 +267,12 @@
             "s": 29
           }
         ],
-        "total_frames": 6388,
+        "total_frames": 2585,
         "rng_end": {
-          "state": 675639828,
-          "calls": 1155
+          "state": 1307976050,
+          "calls": 709
         },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "problem": "physical route frontier did not open after 8 interaction attempts"
       }
     ]
   },
@@ -657,7 +657,7 @@
           },
           {
             "n": "blue key",
-            "s": 11
+            "s": 12
           },
           {
             "n": "switch 1",
@@ -677,11 +677,11 @@
           },
           {
             "n": "red key",
-            "s": 77
+            "s": 78
           },
           {
             "n": "switch 65",
-            "s": 90
+            "s": 91
           },
           {
             "n": "reactor",
@@ -692,7 +692,7 @@
             "s": 103
           }
         ],
-        "total_frames": 6189,
+        "total_frames": 6208,
         "rng_end": {
           "state": 4283357347,
           "calls": 4070

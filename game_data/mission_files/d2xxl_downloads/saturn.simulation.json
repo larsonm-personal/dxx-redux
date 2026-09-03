@@ -55,12 +55,12 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 594,
+      "total_frames": 3722,
       "rng_end": {
-        "state": 3297241969,
-        "calls": 16
+        "state": 675780521,
+        "calls": 24
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 3,

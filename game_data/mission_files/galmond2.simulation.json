@@ -355,10 +355,10 @@
           "s": 97
         }
       ],
-      "total_frames": 7010,
+      "total_frames": 7011,
       "rng_end": {
-        "state": 632486099,
-        "calls": 4022
+        "state": 880484466,
+        "calls": 4037
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -402,25 +402,25 @@
         },
         {
           "n": "red key",
-          "s": 128
+          "s": 129
         },
         {
           "n": "switch 8",
-          "s": 163
+          "s": 164
         },
         {
           "n": "reactor",
-          "s": 182
+          "s": 184
         },
         {
           "n": "exit",
-          "s": 206
+          "s": 207
         }
       ],
-      "total_frames": 12334,
+      "total_frames": 12412,
       "rng_end": {
-        "state": 3497648333,
-        "calls": 9204
+        "state": 1501453266,
+        "calls": 9189
       }
     },
     {
@@ -481,21 +481,21 @@
         },
         {
           "n": "fly-through 1",
-          "s": 152
+          "s": 153
         },
         {
           "n": "reactor",
-          "s": 154
+          "s": 155
         },
         {
           "n": "exit",
-          "s": 176
+          "s": 177
         }
       ],
-      "total_frames": 10570,
+      "total_frames": 10617,
       "rng_end": {
-        "state": 3657463003,
-        "calls": 5166
+        "state": 1512517728,
+        "calls": 5159
       }
     }
   ]

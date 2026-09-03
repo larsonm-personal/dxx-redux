@@ -96,37 +96,37 @@
         },
         {
           "n": "pass-through 16",
-          "s": 61
-        },
-        {
-          "n": "switch 15",
           "s": 62
         },
         {
+          "n": "switch 15",
+          "s": 63
+        },
+        {
           "n": "gold key",
-          "s": 74
+          "s": 75
         },
         {
           "n": "switch 20",
-          "s": 99
+          "s": 102
         },
         {
           "n": "switch 22",
-          "s": 169
+          "s": 170
         },
         {
           "n": "red key",
-          "s": 238
+          "s": 242
         },
         {
           "n": "reactor",
-          "s": 309
+          "s": 315
         }
       ],
-      "total_frames": 22354,
+      "total_frames": 22731,
       "rng_end": {
-        "state": 1896209291,
-        "calls": 13182
+        "state": 2646752983,
+        "calls": 13074
       },
       "problem": "live objective sequence differs from route input"
     },
@@ -195,7 +195,7 @@
           "s": 97
         }
       ],
-      "total_frames": 7023,
+      "total_frames": 7019,
       "rng_end": {
         "state": 2171916648,
         "calls": 4735
@@ -215,14 +215,30 @@
         {
           "n": "switch 0",
           "s": 12
+        },
+        {
+          "n": "fly-through 4",
+          "s": 29
+        },
+        {
+          "n": "blue key",
+          "s": 30
+        },
+        {
+          "n": "gold key",
+          "s": 58
+        },
+        {
+          "n": "red key",
+          "s": 94
         }
       ],
-      "total_frames": 5309,
+      "total_frames": 6815,
       "rng_end": {
-        "state": 3863668915,
-        "calls": 982
+        "state": 109601073,
+        "calls": 4176
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": -1,
@@ -236,25 +252,25 @@
       "objectives": [
         {
           "n": "fly-through 1",
-          "s": 9
-        },
-        {
-          "n": "fly-through 10",
           "s": 10
         },
         {
+          "n": "fly-through 10",
+          "s": 12
+        },
+        {
           "n": "reactor",
-          "s": 19
+          "s": 21
         },
         {
           "n": "exit",
-          "s": 31
+          "s": 33
         }
       ],
-      "total_frames": 1878,
+      "total_frames": 1974,
       "rng_end": {
-        "state": 3483296817,
-        "calls": 1360
+        "state": 2783425680,
+        "calls": 1335
       }
     }
   ]

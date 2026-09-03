@@ -7,16 +7,16 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 1,
+    "ok": 2,
     "failed": 2,
-    "timeout": 8
+    "timeout": 7
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "susami.rl2",
       "route_input_sha256": "13284622BCEFB142F14E7CADCC278F2DE85BEA0DA860D22BD4F1720297455350",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -36,15 +36,22 @@
         },
         {
           "n": "red key",
-          "s": 53
+          "s": 52
+        },
+        {
+          "n": "reactor",
+          "s": 88
+        },
+        {
+          "n": "exit",
+          "s": 120
         }
       ],
-      "total_frames": 7879,
+      "total_frames": 7214,
       "rng_end": {
-        "state": 1556637809,
-        "calls": 2832
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 946902191,
+        "calls": 4666
+      }
     },
     {
       "level_num": 2,
@@ -219,14 +226,14 @@
         },
         {
           "n": "fly-through 2",
-          "s": 56
+          "s": 57
         },
         {
           "n": "red key",
-          "s": 61
+          "s": 62
         }
       ],
-      "total_frames": 4558,
+      "total_frames": 4585,
       "rng_end": {
         "state": 4272688370,
         "calls": 3397
@@ -320,10 +327,10 @@
           "s": 46
         }
       ],
-      "total_frames": 6854,
+      "total_frames": 6866,
       "rng_end": {
-        "state": 4156328835,
-        "calls": 2310
+        "state": 273132294,
+        "calls": 2337
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },

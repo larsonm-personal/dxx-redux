@@ -23,11 +23,11 @@
       "objectives": [
         {
           "n": "fly-through 3",
-          "s": 13
+          "s": 14
         },
         {
           "n": "switch 0",
-          "s": 18
+          "s": 19
         },
         {
           "n": "switch 1",
@@ -35,25 +35,25 @@
         },
         {
           "n": "red key",
-          "s": 39
+          "s": 40
         },
         {
           "n": "switch 4",
-          "s": 56
+          "s": 57
         },
         {
           "n": "reactor",
-          "s": 66
+          "s": 67
         },
         {
           "n": "exit",
-          "s": 72
+          "s": 74
         }
       ],
-      "total_frames": 4343,
+      "total_frames": 4416,
       "rng_end": {
-        "state": 1151372233,
-        "calls": 3320
+        "state": 3264649439,
+        "calls": 3338
       }
     },
     {
@@ -161,10 +161,10 @@
           "s": 149
         }
       ],
-      "total_frames": 8934,
+      "total_frames": 8928,
       "rng_end": {
-        "state": 1605186651,
-        "calls": 5294
+        "state": 1153884174,
+        "calls": 5305
       }
     },
     {

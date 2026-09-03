@@ -73,21 +73,21 @@
         },
         {
           "n": "fly-through 1",
-          "s": 42
+          "s": 41
         },
         {
           "n": "gold key",
-          "s": 48
+          "s": 47
         },
         {
           "n": "red key",
-          "s": 80
+          "s": 79
         }
       ],
-      "total_frames": 6433,
+      "total_frames": 6275,
       "rng_end": {
-        "state": 467846444,
-        "calls": 4363
+        "state": 4091201998,
+        "calls": 4601
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },

@@ -8,8 +8,8 @@
   "status": "failed",
   "level_counts": {
     "failed": 1,
-    "timeout": 4,
-    "unsupported": 1
+    "timeout": 3,
+    "unsupported": 2
   },
   "levels": [
     {
@@ -36,25 +36,25 @@
         },
         {
           "n": "fly-through 3",
-          "s": 29
+          "s": 30
         },
         {
           "n": "switch 5",
-          "s": 31
+          "s": 33
         },
         {
           "n": "red key",
-          "s": 38
+          "s": 39
         },
         {
           "n": "switch 1",
-          "s": 41
+          "s": 42
         }
       ],
-      "total_frames": 11373,
+      "total_frames": 7051,
       "rng_end": {
-        "state": 3374144444,
-        "calls": 2875
+        "state": 2096108236,
+        "calls": 1771
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -151,18 +151,23 @@
       "level_num": -1,
       "level_file": "secret1.rl2",
       "route_input_sha256": "86F025966EFE824B2F12DF640829B0702FA6C8ED666C26A4C99CBB4550565946",
-      "status": "timeout",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 3800,
+      "objectives": [
+        {
+          "n": "fly-through 12",
+          "s": 6
+        }
+      ],
+      "total_frames": 623,
       "rng_end": {
-        "state": 2122112351,
-        "calls": 138
+        "state": 1344117138,
+        "calls": 293
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "route objective activation is not supported"
     }
   ]
 }

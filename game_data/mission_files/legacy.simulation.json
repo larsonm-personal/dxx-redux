@@ -7,25 +7,55 @@
   "seed": 1,
   "status": "failed",
   "level_counts": {
-    "timeout": 3
+    "failed": 1,
+    "timeout": 2
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "pyrstatn.rl2",
       "route_input_sha256": "6142B54CFEF1EAED9C21C9DC439BCB910F5EEBE9E0F3AAAB2182DA806195018E",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4091,
+      "objectives": [
+        {
+          "n": "fly-through 5",
+          "s": 8
+        },
+        {
+          "n": "blue key",
+          "s": 10
+        },
+        {
+          "n": "pass-through 2",
+          "s": 19
+        },
+        {
+          "n": "switch 0",
+          "s": 22
+        },
+        {
+          "n": "gold key",
+          "s": 28
+        },
+        {
+          "n": "switch 1",
+          "s": 29
+        },
+        {
+          "n": "red key",
+          "s": 39
+        }
+      ],
+      "total_frames": 2357,
       "rng_end": {
-        "state": 3949672138,
-        "calls": 205
+        "state": 1259199996,
+        "calls": 1019
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 2,
@@ -46,12 +76,12 @@
           "s": 11
         }
       ],
-      "total_frames": 1822,
+      "total_frames": 4954,
       "rng_end": {
-        "state": 1071068649,
-        "calls": 984
+        "state": 3328140451,
+        "calls": 998
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 3,
@@ -65,25 +95,25 @@
       "objectives": [
         {
           "n": "fly-through 4",
-          "s": 5
+          "s": 6
         },
         {
           "n": "blue key",
-          "s": 15
+          "s": 17
         },
         {
           "n": "gold key",
-          "s": 33
+          "s": 34
         },
         {
           "n": "switch 6",
-          "s": 50
+          "s": 51
         }
       ],
-      "total_frames": 4078,
+      "total_frames": 4108,
       "rng_end": {
-        "state": 1426074426,
-        "calls": 2845
+        "state": 1551731513,
+        "calls": 2824
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     }

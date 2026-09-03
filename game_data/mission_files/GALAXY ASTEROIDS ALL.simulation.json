@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
+    "ok": 3,
     "failed": 2,
-    "timeout": 3
+    "timeout": 2
   },
   "levels": [
     {
@@ -178,21 +178,21 @@
         },
         {
           "n": "fly-through 0",
-          "s": 34
-        },
-        {
-          "n": "blue key",
           "s": 35
         },
         {
+          "n": "blue key",
+          "s": 37
+        },
+        {
           "n": "gold key",
-          "s": 82
+          "s": 83
         }
       ],
-      "total_frames": 4944,
+      "total_frames": 5003,
       "rng_end": {
-        "state": 3650357819,
-        "calls": 1742
+        "state": 4120562848,
+        "calls": 1767
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -217,18 +217,34 @@
       "level_num": -1,
       "level_file": "PSYCHE5S.RL2",
       "route_input_sha256": "30A2B3F423B94285267851A7C3339A7A2BB3AF56264F295B0A38BDD9869C4C74",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 3787,
+      "objectives": [
+        {
+          "n": "fly-through 3",
+          "s": 3
+        },
+        {
+          "n": "switch 1",
+          "s": 7
+        },
+        {
+          "n": "red key",
+          "s": 14
+        },
+        {
+          "n": "exit",
+          "s": 24
+        }
+      ],
+      "total_frames": 1438,
       "rng_end": {
-        "state": 924723277,
-        "calls": 116
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 2100293115,
+        "calls": 782
+      }
     }
   ]
 }

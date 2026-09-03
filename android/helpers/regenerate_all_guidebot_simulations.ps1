@@ -8,7 +8,7 @@ param(
     [ValidateRange(0.000001, 1.0)][double]$SampleFraction = 1.0,
     [ValidateRange(0, [int]::MaxValue)][int]$SampleSeed = 0,
     [string]$SampleStatePath,
-    [ValidateRange(1, 20)][int]$Repeat = 2,
+    [ValidateRange(1, 20)][int]$Repeat = 1,
     [ValidateRange(10, 7200)][int]$LevelTimeoutSeconds = 180,
     [string]$HogDir = 'game_data/CD images/Descent II (USA) (v1.1)/data_tracks/d2data',
     [string]$OutputRoot,
@@ -529,6 +529,71 @@ function Get-ExistingGuidebotLevelMap {
     return $map
 }
 
+function Write-GuidebotSimulationFile {
+    param(
+        [Parameter(Mandatory)][IO.FileInfo]$MetadataFile,
+        [Parameter(Mandatory)][hashtable]$ResultsByIdentity,
+        [Parameter(Mandatory)][string]$Destination,
+        [Collections.Generic.List[object]]$HeadedComparisons,
+        [string]$ComparisonIdentity
+    )
+
+    $entries = @(Get-GuidebotMissionEntries -Path $MetadataFile.FullName)
+    $simulationPath = Join-Path $MetadataFile.DirectoryName ($MetadataFile.BaseName + '.simulation.json')
+    $relative = $MetadataFile.FullName.Substring($missionRoot.Length).TrimStart('\', '/').Replace('\', '/')
+    $simulationEntries = foreach ($mission in $entries) {
+        if ([string](Get-GuidebotPropertyValue $mission 'game' '') -ne 'd2') { continue }
+        $targetIndex = [int](Get-GuidebotPropertyValue $mission 'target_index' 0)
+        $existing = Get-ExistingGuidebotLevelMap -Path $simulationPath -TargetIndex $targetIndex
+        $levels = foreach ($levelRecord in @($mission.levels)) {
+            $levelNumber = [int]$levelRecord.level_num
+            $levelFile = [string]$levelRecord.level_file
+            $identity = "$relative|$targetIndex|$levelNumber|$levelFile"
+            if ($ResultsByIdentity.ContainsKey($identity)) {
+                if ($Mode -eq 'Headed' -and $null -ne $HeadedComparisons -and $identity -eq $ComparisonIdentity) {
+                    $existingKey = "$levelNumber|$levelFile"
+                    $canonical = if ($existing.ContainsKey($existingKey)) { $existing[$existingKey] } else { $null }
+                    $headed = $ResultsByIdentity[$identity]
+                    $HeadedComparisons.Add([ordered]@{
+                            identity = $identity
+                            canonical_present = $null -ne $canonical
+                            semantic_match = $null -ne $canonical -and
+                            [string]$canonical.route_input_sha256 -eq [string]$headed.route_input_sha256 -and
+                            [string]$canonical.status -eq [string]$headed.status -and
+                            (@($canonical.objectives.n) -join "`0") -ceq
+                            (@($headed.objectives.n) -join "`0")
+                            canonical_status = if ($canonical) { [string]$canonical.status } else { '' }
+                            headed_status = [string]$headed.status
+                            canonical_frames = if ($canonical) { Get-GuidebotPropertyValue $canonical 'total_frames' $null } else { $null }
+                            headed_frames = Get-GuidebotPropertyValue $headed 'total_frames' $null
+                        })
+                }
+                $ResultsByIdentity[$identity]
+                continue
+            }
+            $existingKey = "$levelNumber|$levelFile"
+            $currentHash = Get-GuidebotRouteInputHash -Mission $mission -Level $levelRecord
+            if ($existing.ContainsKey($existingKey)) {
+                $old = $existing[$existingKey]
+                $currentContract = [bool]$existing['__contract_current'] -and
+                [string]$old.route_input_sha256 -eq $currentHash
+                if ($currentContract) { $old } else { New-GuidebotNotRunResult -Mission $mission -LevelRecord $levelRecord -Status stale }
+            } else {
+                New-GuidebotNotRunResult -Mission $mission -LevelRecord $levelRecord
+            }
+        }
+        $record = New-GuidebotMissionSimulationRecord -Mission $mission -Levels @($levels)
+        Test-GuidebotMissionSimulationRecord -Record $record -ThrowOnError | Out-Null
+        $record
+    }
+    $outputValue = if ([IO.File]::ReadAllText($MetadataFile.FullName).TrimStart().StartsWith('[')) {
+        @($simulationEntries)
+    } else {
+        $simulationEntries[0]
+    }
+    Write-GuidebotSimulationJson -Path $Destination -Value $outputValue
+}
+
 $hogPath = if ([IO.Path]::IsPathRooted($HogDir)) { $HogDir } else { Join-Path $repoRoot $HogDir }
 $resolvedHogDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($hogPath)
 $files = @(Get-GuidebotMissionFiles)
@@ -579,6 +644,8 @@ $selectedByIdentity = @{}
 foreach ($item in $selectedItems) { $selectedByIdentity[$item.Identity] = $item }
 $resultsByIdentity = @{}
 $infrastructureFailures = [Collections.Generic.List[object]]::new()
+$changedFiles = [Collections.Generic.List[string]]::new()
+$headedComparisons = [Collections.Generic.List[object]]::new()
 $stageByMetadata = @{}
 $index = 0
 $installHeaded = $Mode -eq 'Headed' -and -not $NoBuild
@@ -591,17 +658,17 @@ foreach ($item in $selectedItems) {
             $resultsByIdentity[$item.Identity] = New-GuidebotUnsupportedResult `
                 -Mission $item.Mission -LevelRecord $item.Level
             Write-GuidebotStatus "UNSUPPORTED: $($item.Identity): $($resultsByIdentity[$item.Identity].problem)" 'Yellow'
-            continue
+        } else {
+            if (-not $stageByMetadata.ContainsKey($metadataKey)) {
+                $stageByMetadata[$metadataKey] = Initialize-GuidebotMissionStage -MetadataFile $item.MetadataFile
+            }
+            $resultsByIdentity[$item.Identity] = switch ($Mode) {
+                'Headless' { Invoke-GuidebotHeadlessLevel -WorkItem $item -Stage $stageByMetadata[$metadataKey] }
+                'Desktop' { Invoke-GuidebotDesktopLevel -WorkItem $item -Stage $stageByMetadata[$metadataKey] }
+                default { Invoke-GuidebotHeadedLevel -WorkItem $item -Stage $stageByMetadata[$metadataKey] -Install:$installHeaded }
+            }
+            $installHeaded = $false
         }
-        if (-not $stageByMetadata.ContainsKey($metadataKey)) {
-            $stageByMetadata[$metadataKey] = Initialize-GuidebotMissionStage -MetadataFile $item.MetadataFile
-        }
-        $resultsByIdentity[$item.Identity] = switch ($Mode) {
-            'Headless' { Invoke-GuidebotHeadlessLevel -WorkItem $item -Stage $stageByMetadata[$metadataKey] }
-            'Desktop' { Invoke-GuidebotDesktopLevel -WorkItem $item -Stage $stageByMetadata[$metadataKey] }
-            default { Invoke-GuidebotHeadedLevel -WorkItem $item -Stage $stageByMetadata[$metadataKey] -Install:$installHeaded }
-        }
-        $installHeaded = $false
     } catch {
         $problem = $_.Exception.Message
         Write-GuidebotStatus "FAILED: $($item.Identity): $problem" 'Red'
@@ -609,66 +676,24 @@ foreach ($item in $selectedItems) {
             -Mission $item.Mission -LevelRecord $item.Level -Problem $problem
         $infrastructureFailures.Add([ordered]@{ identity = $item.Identity; problem = $problem })
     }
+    $simulationPath = Join-Path $item.MetadataFile.DirectoryName ($item.MetadataFile.BaseName + '.simulation.json')
+    $incrementalPath = if ($WriteRegression) {
+        $simulationPath
+    } else {
+        Join-Path $resultRoot $item.MetadataFile.Name.Replace('.json', '.simulation.json')
+    }
+    Write-GuidebotSimulationFile -MetadataFile $item.MetadataFile `
+        -ResultsByIdentity $resultsByIdentity -Destination $incrementalPath `
+        -HeadedComparisons $headedComparisons -ComparisonIdentity $item.Identity
+    if ($WriteRegression -and -not $changedFiles.Contains($simulationPath)) { $changedFiles.Add($simulationPath) }
 }
 
-$changedFiles = [Collections.Generic.List[string]]::new()
-$headedComparisons = [Collections.Generic.List[object]]::new()
 foreach ($file in $files) {
-    $entries = @(Get-GuidebotMissionEntries -Path $file.FullName)
     $simulationPath = Join-Path $file.DirectoryName ($file.BaseName + '.simulation.json')
-    $simulationEntries = foreach ($mission in $entries) {
-        if ([string](Get-GuidebotPropertyValue $mission 'game' '') -ne 'd2') { continue }
-        $targetIndex = [int](Get-GuidebotPropertyValue $mission 'target_index' 0)
-        $existing = Get-ExistingGuidebotLevelMap -Path $simulationPath -TargetIndex $targetIndex
-        $levels = foreach ($levelRecord in @($mission.levels)) {
-            $levelNumber = [int]$levelRecord.level_num
-            $levelFile = [string]$levelRecord.level_file
-            $identity = "$($file.FullName.Substring($missionRoot.Length).TrimStart('\', '/').Replace('\', '/'))|$targetIndex|$levelNumber|$levelFile"
-            if ($resultsByIdentity.ContainsKey($identity)) {
-                if ($Mode -eq 'Headed') {
-                    $existingKey = "$levelNumber|$levelFile"
-                    $canonical = if ($existing.ContainsKey($existingKey)) { $existing[$existingKey] } else { $null }
-                    $headed = $resultsByIdentity[$identity]
-                    $headedComparisons.Add([ordered]@{
-                            identity = $identity
-                            canonical_present = $null -ne $canonical
-                            semantic_match = $null -ne $canonical -and
-                            [string]$canonical.route_input_sha256 -eq [string]$headed.route_input_sha256 -and
-                            [string]$canonical.status -eq [string]$headed.status -and
-                            (@($canonical.objectives.n) -join "`0") -ceq
-                            (@($headed.objectives.n) -join "`0")
-                            canonical_status = if ($canonical) { [string]$canonical.status } else { '' }
-                            headed_status = [string]$headed.status
-                            canonical_frames = if ($canonical) { Get-GuidebotPropertyValue $canonical 'total_frames' $null } else { $null }
-                            headed_frames = Get-GuidebotPropertyValue $headed 'total_frames' $null
-                        })
-                }
-                $resultsByIdentity[$identity]
-                continue
-            }
-            $existingKey = "$levelNumber|$levelFile"
-            $currentHash = Get-GuidebotRouteInputHash -Mission $mission -Level $levelRecord
-            if ($existing.ContainsKey($existingKey)) {
-                $old = $existing[$existingKey]
-                $currentContract = [bool]$existing['__contract_current'] -and
-                [string]$old.route_input_sha256 -eq $currentHash
-                if ($currentContract) { $old } else { New-GuidebotNotRunResult -Mission $mission -LevelRecord $levelRecord -Status stale }
-            } else {
-                New-GuidebotNotRunResult -Mission $mission -LevelRecord $levelRecord
-            }
-        }
-        $record = New-GuidebotMissionSimulationRecord -Mission $mission -Levels @($levels)
-        Test-GuidebotMissionSimulationRecord -Record $record -ThrowOnError | Out-Null
-        $record
-    }
-    $outputValue = if ([IO.File]::ReadAllText($file.FullName).TrimStart().StartsWith('[')) {
-        @($simulationEntries)
-    } else {
-        $simulationEntries[0]
-    }
     $targetPath = if ($WriteRegression) { $simulationPath } else { Join-Path $resultRoot $file.Name.Replace('.json', '.simulation.json') }
-    Write-GuidebotSimulationJson -Path $targetPath -Value $outputValue
-    if ($WriteRegression) { $changedFiles.Add($simulationPath) }
+    Write-GuidebotSimulationFile -MetadataFile $file -ResultsByIdentity $resultsByIdentity `
+        -Destination $targetPath
+    if ($WriteRegression -and -not $changedFiles.Contains($simulationPath)) { $changedFiles.Add($simulationPath) }
 }
 
 $summary = [ordered]@{
