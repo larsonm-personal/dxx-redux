@@ -9,15 +9,14 @@
   "level_counts": {
     "ok": 1,
     "failed": 1,
-    "timeout": 2,
-    "route_mismatch": 1
+    "timeout": 3
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "HARQYJ01.RL2",
       "route_input_sha256": "62A345A2090174C8C713414038639B436A41DF0C8A2889DD024EAC29BC9C9AE9",
-      "status": "route_mismatch",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -40,6 +39,10 @@
           "s": 40
         },
         {
+          "n": "hidden door",
+          "s": 40
+        },
+        {
           "n": "switch 2",
           "s": 42
         },
@@ -49,19 +52,19 @@
         },
         {
           "n": "gold key",
-          "s": 54
+          "s": 53
         },
         {
           "n": "red key",
           "s": 85
         }
       ],
-      "total_frames": 10756,
+      "total_frames": 10431,
       "rng_end": {
         "state": 986287298,
         "calls": 3509
       },
-      "problem": "live objective sequence differs from route input"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 2,
@@ -73,7 +76,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 5664,
+      "total_frames": 5685,
       "rng_end": {
         "state": 3866404266,
         "calls": 877
@@ -117,18 +120,18 @@
         },
         {
           "n": "blue key",
-          "s": 40
+          "s": 39
         },
         {
           "n": "switch 15",
-          "s": 48
+          "s": 46
         },
         {
           "n": "gold key",
-          "s": 63
+          "s": 62
         }
       ],
-      "total_frames": 11593,
+      "total_frames": 7729,
       "rng_end": {
         "state": 693418230,
         "calls": 1777
@@ -158,7 +161,7 @@
           "s": 67
         }
       ],
-      "total_frames": 4029,
+      "total_frames": 4034,
       "rng_end": {
         "state": 3340639529,
         "calls": 1688

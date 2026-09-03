@@ -9,8 +9,7 @@
   "level_counts": {
     "ok": 3,
     "failed": 3,
-    "timeout": 11,
-    "route_mismatch": 2
+    "timeout": 13
   },
   "levels": [
     {
@@ -28,7 +27,7 @@
           "s": 17
         }
       ],
-      "total_frames": 1013,
+      "total_frames": 1017,
       "rng_end": {
         "state": 3740753246,
         "calls": 681
@@ -62,10 +61,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 4801,
+      "total_frames": 4948,
       "rng_end": {
-        "state": 1897087126,
-        "calls": 465
+        "state": 3108881716,
+        "calls": 739
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -85,21 +84,21 @@
         },
         {
           "n": "red key",
-          "s": 58
+          "s": 57
         },
         {
           "n": "boss",
-          "s": 95
+          "s": 93
         },
         {
           "n": "exit",
-          "s": 119
+          "s": 116
         }
       ],
-      "total_frames": 7113,
+      "total_frames": 6975,
       "rng_end": {
-        "state": 3605725861,
-        "calls": 4316
+        "state": 1850998843,
+        "calls": 4302
       }
     },
     {
@@ -129,7 +128,7 @@
           "s": 51
         }
       ],
-      "total_frames": 4377,
+      "total_frames": 4456,
       "rng_end": {
         "state": 2108581043,
         "calls": 2006
@@ -163,7 +162,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 5193,
+      "total_frames": 5455,
       "rng_end": {
         "state": 3433853922,
         "calls": 277
@@ -174,7 +173,7 @@
       "level_num": 8,
       "level_file": "serropa.rl2",
       "route_input_sha256": "1A9674E114BE2EDE2CD3089E60CA518D1AB2E461B81D7FB3D43D4977F7C5F8B9",
-      "status": "route_mismatch",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -182,23 +181,27 @@
       "objectives": [
         {
           "n": "red key",
-          "s": 17
+          "s": 16
         },
         {
           "n": "blue key",
-          "s": 37
+          "s": 36
+        },
+        {
+          "n": "fly-through 7",
+          "s": 36
         },
         {
           "n": "fly-through 12",
-          "s": 61
+          "s": 60
         }
       ],
-      "total_frames": 5706,
+      "total_frames": 5659,
       "rng_end": {
         "state": 3399618196,
         "calls": 3587
       },
-      "problem": "live objective sequence differs from route input"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 9,
@@ -227,7 +230,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 4497,
+      "total_frames": 6955,
       "rng_end": {
         "state": 2479256406,
         "calls": 529
@@ -251,8 +254,8 @@
       ],
       "total_frames": 385,
       "rng_end": {
-        "state": 1547223264,
-        "calls": 423
+        "state": 2620297113,
+        "calls": 424
       },
       "problem": "semantic objective repeated without route advancement"
     },
@@ -260,7 +263,7 @@
       "level_num": 12,
       "level_file": "ptmc1.rl2",
       "route_input_sha256": "AB38BC37A5E46F2F81A0AD3C481880DBA14D8DA93CB757BB9B5F6EA390C763DF",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -269,14 +272,29 @@
         {
           "n": "blue key",
           "s": 9
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 21
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 38
+        },
+        {
+          "n": "boss",
+          "s": 54
+        },
+        {
+          "n": "exit",
+          "s": 55
         }
       ],
-      "total_frames": 36001,
+      "total_frames": 3329,
       "rng_end": {
-        "state": 1165359753,
-        "calls": 1080
-      },
-      "problem": "route confirmation exceeded 10 simulation minutes"
+        "state": 1992682662,
+        "calls": 2561
+      }
     },
     {
       "level_num": 13,
@@ -299,7 +317,7 @@
       "level_num": 14,
       "level_file": "xaotau.rl2",
       "route_input_sha256": "A1D51F946F6FC3250A1B01A9885D99432673885EF029D548C08E7693BF276AD5",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -307,26 +325,19 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 24
+          "s": 25
         },
         {
           "n": "red key",
-          "s": 54
-        },
-        {
-          "n": "boss",
-          "s": 80
-        },
-        {
-          "n": "exit",
-          "s": 82
+          "s": 57
         }
       ],
-      "total_frames": 4916,
+      "total_frames": 8452,
       "rng_end": {
-        "state": 1130859006,
-        "calls": 2185
-      }
+        "state": 725026699,
+        "calls": 1918
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 15,
@@ -344,14 +355,14 @@
         },
         {
           "n": "gold key",
-          "s": 45
+          "s": 47
         },
         {
           "n": "red key",
-          "s": 85
+          "s": 87
         }
       ],
-      "total_frames": 5876,
+      "total_frames": 5995,
       "rng_end": {
         "state": 2397063065,
         "calls": 2472
@@ -362,7 +373,7 @@
       "level_num": 16,
       "level_file": "nytro.rl2",
       "route_input_sha256": "D6BF370E5E672F977007654F056F27056625399AB87EAAFC00E8C27B56D89405",
-      "status": "route_mismatch",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -370,23 +381,31 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 16
+          "s": 6
         },
         {
           "n": "fly-through 1",
-          "s": 19
+          "s": 9
+        },
+        {
+          "n": "hidden door",
+          "s": 9
+        },
+        {
+          "n": "switch 2",
+          "s": 9
         },
         {
           "n": "fly-through 7",
-          "s": 29
+          "s": 19
         }
       ],
-      "total_frames": 8837,
+      "total_frames": 12243,
       "rng_end": {
-        "state": 376285238,
-        "calls": 3249
+        "state": 1190715726,
+        "calls": 6265
       },
-      "problem": "live objective sequence differs from route input"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 17,
@@ -419,7 +438,7 @@
           "s": 59
         }
       ],
-      "total_frames": 3548,
+      "total_frames": 3569,
       "rng_end": {
         "state": 743471179,
         "calls": 1726
@@ -435,7 +454,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 1046,
+      "total_frames": 1058,
       "rng_end": {
         "state": 3863712643,
         "calls": 262

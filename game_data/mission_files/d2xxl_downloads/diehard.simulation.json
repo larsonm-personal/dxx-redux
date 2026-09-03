@@ -7,10 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
+    "ok": 3,
     "timeout": 15,
-    "unsupported": 1,
-    "route_mismatch": 1
+    "unsupported": 1
   },
   "levels": [
     {
@@ -23,7 +22,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 528,
+      "total_frames": 529,
       "rng_end": {
         "state": 1116175964,
         "calls": 27
@@ -65,7 +64,7 @@
           "s": 73
         }
       ],
-      "total_frames": 4379,
+      "total_frames": 4370,
       "rng_end": {
         "state": 2895563420,
         "calls": 1755
@@ -88,14 +87,22 @@
         {
           "n": "blue key",
           "s": 28
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 56
+        },
+        {
+          "n": "switch 17",
+          "s": 68
         }
       ],
-      "total_frames": 36001,
+      "total_frames": 4913,
       "rng_end": {
-        "state": 844481342,
-        "calls": 1097
+        "state": 696687669,
+        "calls": 1740
       },
-      "problem": "route confirmation exceeded 10 simulation minutes"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 4,
@@ -109,10 +116,10 @@
       "objectives": [
         {
           "n": "switch 4",
-          "s": 39
+          "s": 42
         }
       ],
-      "total_frames": 6691,
+      "total_frames": 7622,
       "rng_end": {
         "state": 4028954632,
         "calls": 1375
@@ -123,7 +130,7 @@
       "level_num": 5,
       "level_file": "DH05.RL2",
       "route_input_sha256": "57E7284C7384004FED0E7E4452FA9E03637DFCA76E7CD44AE2F7F5ECA49739C2",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -136,14 +143,17 @@
         {
           "n": "boss",
           "s": 24
+        },
+        {
+          "n": "exit",
+          "s": 37
         }
       ],
-      "total_frames": 5845,
+      "total_frames": 2247,
       "rng_end": {
-        "state": 4025157543,
-        "calls": 1346
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3984842223,
+        "calls": 1274
+      }
     },
     {
       "level_num": 6,
@@ -160,7 +170,7 @@
           "s": 18
         }
       ],
-      "total_frames": 5046,
+      "total_frames": 5048,
       "rng_end": {
         "state": 1684271235,
         "calls": 1030
@@ -190,7 +200,7 @@
           "s": 40
         }
       ],
-      "total_frames": 2878,
+      "total_frames": 2865,
       "rng_end": {
         "state": 4158889185,
         "calls": 1568
@@ -224,7 +234,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 794,
+      "total_frames": 801,
       "rng_end": {
         "state": 3075635823,
         "calls": 122
@@ -243,21 +253,21 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 8
+          "s": 9
         },
         {
           "n": "pass-through 0",
-          "s": 15
+          "s": 17
         },
         {
           "n": "pass-through 6",
-          "s": 16
+          "s": 17
         }
       ],
-      "total_frames": 1774,
+      "total_frames": 1847,
       "rng_end": {
-        "state": 3818017060,
-        "calls": 563
+        "state": 699525189,
+        "calls": 572
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -271,7 +281,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 524,
+      "total_frames": 525,
       "rng_end": {
         "state": 3040535893,
         "calls": 172
@@ -335,7 +345,7 @@
           "s": 67
         }
       ],
-      "total_frames": 4025,
+      "total_frames": 4032,
       "rng_end": {
         "state": 868726942,
         "calls": 1129
@@ -345,7 +355,7 @@
       "level_num": 14,
       "level_file": "DH14.RL2",
       "route_input_sha256": "0AAD0BDEE46E7FA5F256529DD70C4B3695A128CBEA1E581E8DB92514853AA5CD",
-      "status": "route_mismatch",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -365,6 +375,14 @@
         },
         {
           "n": "pass-through 6",
+          "s": 29
+        },
+        {
+          "n": "hidden door",
+          "s": 29
+        },
+        {
+          "n": "hidden door",
           "s": 29
         },
         {
@@ -405,7 +423,7 @@
         "state": 2706250699,
         "calls": 830
       },
-      "problem": "live objective sequence differs from route input"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 15,
@@ -426,7 +444,7 @@
           "s": 29
         }
       ],
-      "total_frames": 3011,
+      "total_frames": 3016,
       "rng_end": {
         "state": 3061904516,
         "calls": 851
@@ -443,7 +461,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 718,
+      "total_frames": 720,
       "rng_end": {
         "state": 3885567453,
         "calls": 100
@@ -460,7 +478,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 825,
+      "total_frames": 832,
       "rng_end": {
         "state": 2881533255,
         "calls": 418
@@ -477,7 +495,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 681,
+      "total_frames": 687,
       "rng_end": {
         "state": 43796357,
         "calls": 252

@@ -25,14 +25,14 @@
       "objectives": [
         {
           "n": "switch 0",
-          "s": 22
+          "s": 20
         },
         {
           "n": "blue key",
-          "s": 26
+          "s": 24
         }
       ],
-      "total_frames": 1552,
+      "total_frames": 1455,
       "rng_end": {
         "state": 3251531490,
         "calls": 533
@@ -55,29 +55,29 @@
         },
         {
           "n": "blue key",
-          "s": 45
+          "s": 46
         },
         {
           "n": "switch 11",
-          "s": 62
+          "s": 63
         },
         {
           "n": "red key",
-          "s": 81
+          "s": 82
         },
         {
           "n": "reactor",
-          "s": 106
+          "s": 107
         },
         {
           "n": "exit",
-          "s": 109
+          "s": 110
         }
       ],
-      "total_frames": 6543,
+      "total_frames": 6624,
       "rng_end": {
-        "state": 1762431335,
-        "calls": 1922
+        "state": 726760212,
+        "calls": 1923
       }
     },
     {
@@ -100,7 +100,7 @@
         },
         {
           "n": "blue key",
-          "s": 33
+          "s": 34
         },
         {
           "n": "hidden door",
@@ -112,17 +112,17 @@
         },
         {
           "n": "hidden door",
-          "s": 66
+          "s": 65
         },
         {
           "n": "switch 29",
-          "s": 67
+          "s": 65
         }
       ],
-      "total_frames": 5336,
+      "total_frames": 5350,
       "rng_end": {
-        "state": 1344649010,
-        "calls": 2053
+        "state": 3949761703,
+        "calls": 2114
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -150,17 +150,17 @@
         },
         {
           "n": "red key",
-          "s": 91
+          "s": 92
         },
         {
           "n": "blastable wall",
-          "s": 106
+          "s": 108
         }
       ],
-      "total_frames": 6406,
+      "total_frames": 6515,
       "rng_end": {
-        "state": 3321593968,
-        "calls": 2519
+        "state": 2640020766,
+        "calls": 2537
       },
       "problem": "live objective sequence differs from route input"
     },
@@ -209,18 +209,18 @@
         },
         {
           "n": "switch 2",
-          "s": 13
+          "s": 14
         },
         {
           "n": "reactor",
-          "s": 20
+          "s": 21
         },
         {
           "n": "exit",
-          "s": 23
+          "s": 24
         }
       ],
-      "total_frames": 1394,
+      "total_frames": 1438,
       "rng_end": {
         "state": 882003441,
         "calls": 400
@@ -236,7 +236,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 5809,
+      "total_frames": 5854,
       "rng_end": {
         "state": 494981584,
         "calls": 759

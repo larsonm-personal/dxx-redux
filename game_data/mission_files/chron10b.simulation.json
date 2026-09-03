@@ -30,14 +30,14 @@
         },
         {
           "n": "switch 16",
-          "s": 44
+          "s": 45
         },
         {
           "n": "blue key",
           "s": 55
         }
       ],
-      "total_frames": 9315,
+      "total_frames": 10760,
       "rng_end": {
         "state": 242789525,
         "calls": 1900
@@ -56,7 +56,7 @@
       "objectives": [
         {
           "n": "fly-through 18",
-          "s": 13
+          "s": 14
         },
         {
           "n": "switch 4",
@@ -68,13 +68,13 @@
         },
         {
           "n": "switch 19",
-          "s": 60
+          "s": 61
         }
       ],
-      "total_frames": 7681,
+      "total_frames": 7710,
       "rng_end": {
-        "state": 2134449477,
-        "calls": 1340
+        "state": 2142376787,
+        "calls": 1334
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -90,25 +90,25 @@
       "objectives": [
         {
           "n": "switch 2",
-          "s": 10
+          "s": 11
         },
         {
           "n": "switch 1",
-          "s": 16
+          "s": 17
         },
         {
           "n": "switch 4",
-          "s": 37
+          "s": 39
         },
         {
           "n": "switch 3",
-          "s": 55
+          "s": 57
         }
       ],
-      "total_frames": 8442,
+      "total_frames": 7952,
       "rng_end": {
-        "state": 3816552852,
-        "calls": 1795
+        "state": 1061480236,
+        "calls": 1803
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },

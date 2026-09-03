@@ -22,14 +22,14 @@
       "objectives": [
         {
           "n": "switch 0",
-          "s": 11
+          "s": 12
         },
         {
           "n": "gold key",
           "s": 22
         }
       ],
-      "total_frames": 5020,
+      "total_frames": 5114,
       "rng_end": {
         "state": 3486738872,
         "calls": 1263

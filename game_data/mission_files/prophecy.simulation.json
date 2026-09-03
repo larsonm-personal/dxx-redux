@@ -8,8 +8,7 @@
   "status": "partial",
   "level_counts": {
     "ok": 1,
-    "timeout": 3,
-    "route_mismatch": 1
+    "timeout": 4
   },
   "levels": [
     {
@@ -32,11 +31,11 @@
         },
         {
           "n": "hidden door",
-          "s": 51
+          "s": 52
         },
         {
           "n": "switch 1",
-          "s": 53
+          "s": 55
         },
         {
           "n": "gold key",
@@ -44,29 +43,29 @@
         },
         {
           "n": "hidden door",
-          "s": 83
+          "s": 84
         },
         {
           "n": "switch 2",
-          "s": 87
+          "s": 88
         },
         {
           "n": "red key",
-          "s": 89
+          "s": 90
         },
         {
           "n": "reactor",
-          "s": 109
+          "s": 110
         },
         {
           "n": "exit",
-          "s": 111
+          "s": 112
         }
       ],
-      "total_frames": 6644,
+      "total_frames": 6718,
       "rng_end": {
-        "state": 2189816399,
-        "calls": 2714
+        "state": 738489466,
+        "calls": 2781
       }
     },
     {
@@ -81,7 +80,7 @@
       "objectives": [
         {
           "n": "switch 1",
-          "s": 18
+          "s": 17
         },
         {
           "n": "blue key",
@@ -96,7 +95,7 @@
           "s": 33
         }
       ],
-      "total_frames": 3124,
+      "total_frames": 3118,
       "rng_end": {
         "state": 4131678334,
         "calls": 1033
@@ -113,7 +112,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 6180,
+      "total_frames": 6702,
       "rng_end": {
         "state": 1187663298,
         "calls": 181
@@ -132,7 +131,7 @@
       "objectives": [
         {
           "n": "switch 8",
-          "s": 11
+          "s": 12
         },
         {
           "n": "blue key",
@@ -140,29 +139,33 @@
         },
         {
           "n": "switch 10",
-          "s": 19
+          "s": 20
         },
         {
           "n": "gold key",
-          "s": 46
+          "s": 45
         },
         {
           "n": "switch 6",
-          "s": 65
+          "s": 68
         },
         {
           "n": "switch 4",
-          "s": 65
+          "s": 68
         },
         {
           "n": "fly-through 5",
-          "s": 73
+          "s": 75
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 78
         }
       ],
-      "total_frames": 8101,
+      "total_frames": 8367,
       "rng_end": {
-        "state": 3144462281,
-        "calls": 2296
+        "state": 3938177000,
+        "calls": 2559
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -170,7 +173,7 @@
       "level_num": 5,
       "level_file": "hyperion.rl2",
       "route_input_sha256": "AB15E6741A5DDF93D152C1F005FE11AD6280F102E5217E78A8CCBCD70EC2AC2A",
-      "status": "route_mismatch",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -181,11 +184,23 @@
           "s": 6
         },
         {
+          "n": "hidden door",
+          "s": 6
+        },
+        {
           "n": "switch 0",
           "s": 9
         },
         {
+          "n": "hidden door",
+          "s": 9
+        },
+        {
           "n": "switch 1",
+          "s": 12
+        },
+        {
+          "n": "hidden door",
           "s": 12
         },
         {
@@ -206,11 +221,11 @@
         },
         {
           "n": "switch 15",
-          "s": 66
+          "s": 67
         },
         {
           "n": "gold key",
-          "s": 87
+          "s": 88
         },
         {
           "n": "fly-through 3",
@@ -233,12 +248,12 @@
           "s": 148
         }
       ],
-      "total_frames": 13486,
+      "total_frames": 13687,
       "rng_end": {
-        "state": 132042248,
-        "calls": 5983
+        "state": 3966786373,
+        "calls": 5948
       },
-      "problem": "live objective sequence differs from route input"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }
   ]
 }

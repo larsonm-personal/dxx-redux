@@ -23,7 +23,7 @@
       "objectives": [
         {
           "n": "fly-through 5",
-          "s": 8
+          "s": 9
         },
         {
           "n": "blue key",
@@ -31,26 +31,26 @@
         },
         {
           "n": "pass-through 2",
-          "s": 19
+          "s": 20
         },
         {
           "n": "switch 0",
-          "s": 22
+          "s": 23
         },
         {
           "n": "gold key",
-          "s": 28
-        },
-        {
-          "n": "switch 1",
           "s": 29
         },
         {
+          "n": "switch 1",
+          "s": 30
+        },
+        {
           "n": "red key",
-          "s": 39
+          "s": 40
         }
       ],
-      "total_frames": 2357,
+      "total_frames": 2413,
       "rng_end": {
         "state": 1259199996,
         "calls": 1019
@@ -76,7 +76,7 @@
           "s": 11
         }
       ],
-      "total_frames": 4954,
+      "total_frames": 7941,
       "rng_end": {
         "state": 3328140451,
         "calls": 998
@@ -103,17 +103,17 @@
         },
         {
           "n": "gold key",
-          "s": 34
+          "s": 35
         },
         {
           "n": "switch 6",
-          "s": 51
+          "s": 52
         }
       ],
-      "total_frames": 4108,
+      "total_frames": 4244,
       "rng_end": {
-        "state": 1551731513,
-        "calls": 2824
+        "state": 1729774571,
+        "calls": 2846
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     }

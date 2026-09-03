@@ -69,6 +69,7 @@ void route_confirmation_stop(void);
 int route_confirmation_is_terminal(void);
 int route_confirmation_drive_companion(struct object *objp);
 int route_confirmation_handle_exit_trigger(int objnum);
+int route_confirmation_handle_final_boss_endlevel(void);
 const route_confirmation_summary *route_confirmation_get_summary(void);
 const char *route_confirmation_status_name(int status);
 

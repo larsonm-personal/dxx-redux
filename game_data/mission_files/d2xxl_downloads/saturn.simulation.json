@@ -28,7 +28,7 @@
         },
         {
           "n": "reactor",
-          "s": 20
+          "s": 21
         },
         {
           "n": "switch 15",
@@ -39,7 +39,7 @@
           "s": 50
         }
       ],
-      "total_frames": 2984,
+      "total_frames": 3007,
       "rng_end": {
         "state": 3827994298,
         "calls": 3485
@@ -170,7 +170,7 @@
           "s": 24
         }
       ],
-      "total_frames": 1420,
+      "total_frames": 1426,
       "rng_end": {
         "state": 808381751,
         "calls": 690

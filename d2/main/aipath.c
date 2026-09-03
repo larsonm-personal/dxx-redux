@@ -1248,7 +1248,18 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 
 	//--Int3_if(((aip->cur_path_index >= 0) && (aip->cur_path_index < aip->path_length)));
 
-	while ((dist_to_goal < threshold_distance) && !forced_break) {
+	/* Route paths can fold back through geometrically close rooms separated by
+	 * solid walls.  Do not consume a waypoint assigned to a later segment until
+	 * physics has actually moved the companion into that segment.  Otherwise a
+	 * fast companion can advance several nearby points in one frame and then
+	 * steer directly at the later point through the intervening wall. */
+	while ((dist_to_goal < threshold_distance) && !forced_break
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	       && (!Escort_route_goal.active ||
+	           Point_segs[aip->hide_index + aip->cur_path_index].segnum ==
+	               objp->segnum)
+#endif
+	) {
 		//	Advance to next point on path.
 		aip->cur_path_index += aip->PATH_DIR;
 

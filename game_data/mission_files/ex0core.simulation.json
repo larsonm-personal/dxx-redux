@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 1,
-    "timeout": 2,
+    "ok": 2,
+    "timeout": 1,
     "unsupported": 1
   },
   "levels": [
@@ -16,7 +16,7 @@
       "level_num": 1,
       "level_file": "sphasm.rl2",
       "route_input_sha256": "4FBE966123544B1029E5EB13DC3F2AC357F8ABB15C610ABFB9043D34D587D48A",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -28,23 +28,26 @@
         },
         {
           "n": "red key",
-          "s": 47
+          "s": 31
         },
         {
           "n": "switch 3",
-          "s": 48
+          "s": 32
         },
         {
           "n": "reactor",
-          "s": 56
+          "s": 50
+        },
+        {
+          "n": "exit",
+          "s": 72
         }
       ],
-      "total_frames": 7340,
+      "total_frames": 4301,
       "rng_end": {
-        "state": 3899512905,
-        "calls": 1144
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 675639828,
+        "calls": 1155
+      }
     },
     {
       "level_num": 2,
@@ -62,10 +65,10 @@
         },
         {
           "n": "blue key",
-          "s": 9
+          "s": 10
         }
       ],
-      "total_frames": 973,
+      "total_frames": 985,
       "rng_end": {
         "state": 3396130861,
         "calls": 404
@@ -88,17 +91,17 @@
         },
         {
           "n": "blue key",
-          "s": 8
+          "s": 9
         },
         {
           "n": "switch 28",
           "s": 10
         }
       ],
-      "total_frames": 5697,
+      "total_frames": 5185,
       "rng_end": {
-        "state": 3580241508,
-        "calls": 1011
+        "state": 114462447,
+        "calls": 1018
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -118,10 +121,10 @@
         },
         {
           "n": "exit",
-          "s": 12
+          "s": 15
         }
       ],
-      "total_frames": 727,
+      "total_frames": 903,
       "rng_end": {
         "state": 2822133894,
         "calls": 417

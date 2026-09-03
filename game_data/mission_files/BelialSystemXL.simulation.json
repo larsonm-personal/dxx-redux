@@ -7,9 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 12,
-    "timeout": 4,
-    "route_mismatch": 1
+    "ok": 13,
+    "timeout": 4
   },
   "levels": [
     {
@@ -51,7 +50,7 @@
           "s": 151
         }
       ],
-      "total_frames": 9057,
+      "total_frames": 9080,
       "rng_end": {
         "state": 2744742440,
         "calls": 5823
@@ -69,52 +68,52 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 34
+          "s": 35
         },
         {
           "n": "switch 6",
-          "s": 42
+          "s": 43
         },
         {
           "n": "switch 7",
-          "s": 83
+          "s": 84
         },
         {
           "n": "gold key",
-          "s": 96
+          "s": 97
         },
         {
           "n": "switch 10",
-          "s": 121
+          "s": 122
         },
         {
           "n": "red key",
-          "s": 131
+          "s": 132
         },
         {
           "n": "switch 11",
-          "s": 146
+          "s": 147
         },
         {
           "n": "reactor",
-          "s": 172
+          "s": 174
         },
         {
           "n": "exit",
-          "s": 201
+          "s": 205
         }
       ],
-      "total_frames": 12081,
+      "total_frames": 12307,
       "rng_end": {
-        "state": 1669694193,
-        "calls": 5264
+        "state": 1624680465,
+        "calls": 5232
       }
     },
     {
       "level_num": 3,
       "level_file": "03castor.rl2",
       "route_input_sha256": "9983045E9683F2DF8D468A916CCC1334409C1417F618710BABD1AC2A12CD7E59",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -123,53 +122,14 @@
         {
           "n": "switch 1",
           "s": 19
-        },
-        {
-          "n": "blue key",
-          "s": 25
-        },
-        {
-          "n": "switch 5",
-          "s": 37
-        },
-        {
-          "n": "gold key",
-          "s": 52
-        },
-        {
-          "n": "switch 12",
-          "s": 71
-        },
-        {
-          "n": "switch 8",
-          "s": 88
-        },
-        {
-          "n": "hidden door",
-          "s": 89
-        },
-        {
-          "n": "hidden door",
-          "s": 92
-        },
-        {
-          "n": "red key",
-          "s": 109
-        },
-        {
-          "n": "boss",
-          "s": 131
-        },
-        {
-          "n": "exit",
-          "s": 141
         }
       ],
-      "total_frames": 8478,
+      "total_frames": 5158,
       "rng_end": {
-        "state": 3229202267,
-        "calls": 4526
-      }
+        "state": 3702394683,
+        "calls": 462
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 4,
@@ -183,7 +143,7 @@
       "objectives": [
         {
           "n": "switch 1",
-          "s": 15
+          "s": 14
         },
         {
           "n": "blue key",
@@ -203,14 +163,14 @@
         },
         {
           "n": "boss",
-          "s": 114
+          "s": 115
         },
         {
           "n": "exit",
-          "s": 127
+          "s": 128
         }
       ],
-      "total_frames": 7642,
+      "total_frames": 7670,
       "rng_end": {
         "state": 4066062720,
         "calls": 5767
@@ -244,17 +204,17 @@
         },
         {
           "n": "switch 8",
-          "s": 69
+          "s": 68
         },
         {
           "n": "red key",
-          "s": 84
+          "s": 85
         }
       ],
-      "total_frames": 6499,
+      "total_frames": 6556,
       "rng_end": {
-        "state": 2980907859,
-        "calls": 3382
+        "state": 2488673912,
+        "calls": 3375
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -278,7 +238,7 @@
         },
         {
           "n": "switch 16",
-          "s": 39
+          "s": 40
         },
         {
           "n": "gold key",
@@ -286,7 +246,7 @@
         },
         {
           "n": "switch 7",
-          "s": 92
+          "s": 93
         },
         {
           "n": "red key",
@@ -294,18 +254,18 @@
         },
         {
           "n": "switch 22",
-          "s": 131
+          "s": 134
         },
         {
           "n": "boss",
-          "s": 154
+          "s": 157
         },
         {
           "n": "exit",
-          "s": 177
+          "s": 180
         }
       ],
-      "total_frames": 10611,
+      "total_frames": 10774,
       "rng_end": {
         "state": 2993644132,
         "calls": 6131
@@ -343,7 +303,7 @@
         },
         {
           "n": "switch 6",
-          "s": 124
+          "s": 125
         },
         {
           "n": "red key",
@@ -362,7 +322,7 @@
           "s": 190
         }
       ],
-      "total_frames": 11404,
+      "total_frames": 11428,
       "rng_end": {
         "state": 3710778997,
         "calls": 6796
@@ -388,7 +348,7 @@
         },
         {
           "n": "switch 4",
-          "s": 47
+          "s": 48
         },
         {
           "n": "gold key",
@@ -396,15 +356,15 @@
         },
         {
           "n": "switch 3",
-          "s": 76
+          "s": 77
         },
         {
           "n": "red key",
-          "s": 84
+          "s": 85
         },
         {
           "n": "switch 8",
-          "s": 113
+          "s": 114
         },
         {
           "n": "boss",
@@ -412,10 +372,10 @@
         },
         {
           "n": "exit",
-          "s": 162
+          "s": 163
         }
       ],
-      "total_frames": 9737,
+      "total_frames": 9791,
       "rng_end": {
         "state": 3223304534,
         "calls": 5137
@@ -441,30 +401,30 @@
         },
         {
           "n": "switch 6",
-          "s": 55
+          "s": 56
         },
         {
           "n": "gold key",
-          "s": 66
+          "s": 67
         },
         {
           "n": "fly-through 5",
-          "s": 91
+          "s": 93
         },
         {
           "n": "red key",
-          "s": 101
+          "s": 103
         },
         {
           "n": "boss",
-          "s": 145
+          "s": 146
         },
         {
           "n": "exit",
-          "s": 166
+          "s": 167
         }
       ],
-      "total_frames": 9967,
+      "total_frames": 10018,
       "rng_end": {
         "state": 3860517742,
         "calls": 5849
@@ -486,10 +446,10 @@
         },
         {
           "n": "gold key",
-          "s": 58
+          "s": 59
         }
       ],
-      "total_frames": 10961,
+      "total_frames": 10063,
       "rng_end": {
         "state": 4159927135,
         "calls": 2698
@@ -512,15 +472,15 @@
         },
         {
           "n": "switch 3",
-          "s": 39
+          "s": 38
         },
         {
           "n": "blue key",
-          "s": 52
+          "s": 50
         },
         {
           "n": "gold key",
-          "s": 87
+          "s": 85
         },
         {
           "n": "switch 4",
@@ -536,17 +496,17 @@
         },
         {
           "n": "boss",
-          "s": 173
+          "s": 174
         },
         {
           "n": "exit",
-          "s": 186
+          "s": 187
         }
       ],
-      "total_frames": 11179,
+      "total_frames": 11218,
       "rng_end": {
-        "state": 4191522967,
-        "calls": 7506
+        "state": 44191,
+        "calls": 7498
       }
     },
     {
@@ -559,7 +519,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 4537,
+      "total_frames": 4538,
       "rng_end": {
         "state": 1487930586,
         "calls": 509
@@ -590,26 +550,26 @@
         },
         {
           "n": "switch 2",
-          "s": 84
+          "s": 83
         },
         {
           "n": "gold key",
-          "s": 111
+          "s": 110
         },
         {
           "n": "red key",
-          "s": 148
+          "s": 147
         },
         {
           "n": "boss",
-          "s": 172
+          "s": 171
         },
         {
           "n": "exit",
-          "s": 178
+          "s": 177
         }
       ],
-      "total_frames": 10670,
+      "total_frames": 10607,
       "rng_end": {
         "state": 917813531,
         "calls": 4078
@@ -640,7 +600,7 @@
       "level_num": -2,
       "level_file": "cargoca.rl2",
       "route_input_sha256": "4B8497AFE8187543C9EE3CF11009A2E19FBC613A94953F0A0C8ED0C85677A0AF",
-      "status": "route_mismatch",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -660,19 +620,22 @@
         },
         {
           "n": "fly-through 4",
-          "s": 52
+          "s": 53
+        },
+        {
+          "n": "switch 2",
+          "s": 53
         },
         {
           "n": "exit",
           "s": 54
         }
       ],
-      "total_frames": 3236,
+      "total_frames": 3263,
       "rng_end": {
         "state": 1684271235,
         "calls": 1030
-      },
-      "problem": "live objective sequence differs from route input"
+      }
     },
     {
       "level_num": -3,
@@ -690,10 +653,10 @@
         },
         {
           "n": "exit",
-          "s": 32
+          "s": 33
         }
       ],
-      "total_frames": 1933,
+      "total_frames": 1976,
       "rng_end": {
         "state": 3260609084,
         "calls": 699
@@ -703,18 +666,34 @@
       "level_num": -4,
       "level_file": "luna.rl2",
       "route_input_sha256": "3FF5A543D5FB839E11CFD089BE2B9B4153A7475BAA033CE0E51254CB4DA32E09",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4043,
+      "objectives": [
+        {
+          "n": "switch 1",
+          "s": 14
+        },
+        {
+          "n": "switch 0",
+          "s": 24
+        },
+        {
+          "n": "switch 2",
+          "s": 32
+        },
+        {
+          "n": "exit",
+          "s": 60
+        }
+      ],
+      "total_frames": 3628,
       "rng_end": {
-        "state": 382657182,
-        "calls": 617
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3842066470,
+        "calls": 3201
+      }
     }
   ]
 }

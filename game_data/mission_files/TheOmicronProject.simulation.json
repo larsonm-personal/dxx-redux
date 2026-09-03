@@ -7,10 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
+    "ok": 2,
     "failed": 1,
-    "timeout": 2,
-    "route_mismatch": 1
+    "timeout": 4
   },
   "levels": [
     {
@@ -37,14 +36,14 @@
         },
         {
           "n": "reactor",
-          "s": 27
+          "s": 28
         },
         {
           "n": "exit",
           "s": 36
         }
       ],
-      "total_frames": 2139,
+      "total_frames": 2186,
       "rng_end": {
         "state": 612968979,
         "calls": 1654
@@ -54,7 +53,7 @@
       "level_num": 2,
       "level_file": "darknite.rl2",
       "route_input_sha256": "708CC3C396009BDF02B04F923EFB7BC736AB14608089BF8E8CC0DA345755B4F8",
-      "status": "route_mismatch",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -62,6 +61,10 @@
       "objectives": [
         {
           "n": "blue key",
+          "s": 12
+        },
+        {
+          "n": "pass-through 9",
           "s": 12
         },
         {
@@ -74,7 +77,7 @@
         "state": 1657337217,
         "calls": 1664
       },
-      "problem": "live objective sequence differs from route input"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 3,
@@ -92,7 +95,7 @@
         },
         {
           "n": "gold key",
-          "s": 31
+          "s": 32
         },
         {
           "n": "red key",
@@ -107,7 +110,7 @@
           "s": 73
         }
       ],
-      "total_frames": 4383,
+      "total_frames": 4402,
       "rng_end": {
         "state": 3381675222,
         "calls": 1681
@@ -123,7 +126,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 7936,
+      "total_frames": 4491,
       "rng_end": {
         "state": 1090693511,
         "calls": 354
@@ -134,38 +137,18 @@
       "level_num": 5,
       "level_file": "shi4evr.rl2",
       "route_input_sha256": "2D9BBDEE5B51EB098C7E264CD3085DE7DBDF10EE476338496FFBF58455DF8B33",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [
-        {
-          "n": "switch 0",
-          "s": 23
-        },
-        {
-          "n": "fly-through 26",
-          "s": 35
-        },
-        {
-          "n": "fly-through 16",
-          "s": 57
-        },
-        {
-          "n": "reactor",
-          "s": 59
-        },
-        {
-          "n": "exit",
-          "s": 82
-        }
-      ],
-      "total_frames": 4924,
+      "objectives": [],
+      "total_frames": 7577,
       "rng_end": {
-        "state": 3406052777,
-        "calls": 2584
-      }
+        "state": 827968622,
+        "calls": 473
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 6,
@@ -186,7 +169,7 @@
           "s": 14
         }
       ],
-      "total_frames": 7735,
+      "total_frames": 7745,
       "rng_end": {
         "state": 80133407,
         "calls": 1226

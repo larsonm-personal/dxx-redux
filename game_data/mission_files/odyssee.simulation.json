@@ -5,17 +5,16 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 1,
-    "route_mismatch": 1
+    "ok": 2
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "1.rl2",
       "route_input_sha256": "FC3A61469D132DE43B053B3F425B9516BCA1D7D2A25457615E56E3C5187235D9",
-      "status": "route_mismatch",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -27,7 +26,7 @@
         },
         {
           "n": "blue key",
-          "s": 29
+          "s": 30
         },
         {
           "n": "switch 8",
@@ -39,55 +38,58 @@
         },
         {
           "n": "switch 7",
-          "s": 40
+          "s": 41
         },
         {
           "n": "switch 6",
-          "s": 58
+          "s": 59
         },
         {
           "n": "switch 22",
-          "s": 76
+          "s": 77
         },
         {
           "n": "hidden door",
-          "s": 91
+          "s": 92
         },
         {
           "n": "red key",
-          "s": 93
+          "s": 94
         },
         {
           "n": "switch 20",
-          "s": 112
+          "s": 113
+        },
+        {
+          "n": "switch 19",
+          "s": 113
         },
         {
           "n": "hidden door",
-          "s": 131
+          "s": 132
         },
         {
           "n": "switch 9",
-          "s": 164
+          "s": 165
         },
         {
           "n": "hidden door",
-          "s": 205
+          "s": 206
         },
         {
           "n": "reactor",
-          "s": 205
+          "s": 207
         },
         {
           "n": "exit",
-          "s": 230
+          "s": 232
         }
       ],
-      "total_frames": 13822,
+      "total_frames": 13903,
       "rng_end": {
         "state": 713893745,
         "calls": 9232
-      },
-      "problem": "live objective sequence differs from route input"
+      }
     },
     {
       "level_num": 2,
@@ -121,11 +123,11 @@
         },
         {
           "n": "gold key",
-          "s": 47
+          "s": 46
         },
         {
           "n": "red key",
-          "s": 76
+          "s": 75
         },
         {
           "n": "boss",
@@ -136,7 +138,7 @@
           "s": 108
         }
       ],
-      "total_frames": 6507,
+      "total_frames": 6488,
       "rng_end": {
         "state": 3634113817,
         "calls": 4136

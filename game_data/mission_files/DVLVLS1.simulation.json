@@ -8,8 +8,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 2,
-    "failed": 2,
-    "timeout": 7
+    "failed": 1,
+    "timeout": 8
   },
   "levels": [
     {
@@ -36,7 +36,7 @@
         },
         {
           "n": "red key",
-          "s": 52
+          "s": 53
         },
         {
           "n": "reactor",
@@ -44,10 +44,10 @@
         },
         {
           "n": "exit",
-          "s": 120
+          "s": 122
         }
       ],
-      "total_frames": 7214,
+      "total_frames": 7291,
       "rng_end": {
         "state": 946902191,
         "calls": 4666
@@ -121,14 +121,14 @@
         },
         {
           "n": "red key",
-          "s": 50
+          "s": 51
         },
         {
           "n": "reactor",
-          "s": 75
+          "s": 69
         }
       ],
-      "total_frames": 8169,
+      "total_frames": 7825,
       "rng_end": {
         "state": 1416728504,
         "calls": 1775
@@ -151,22 +151,22 @@
         },
         {
           "n": "gold key",
-          "s": 37
+          "s": 38
         },
         {
           "n": "red key",
-          "s": 67
+          "s": 68
         },
         {
           "n": "reactor",
-          "s": 98
+          "s": 100
         },
         {
           "n": "exit",
-          "s": 116
+          "s": 118
         }
       ],
-      "total_frames": 6989,
+      "total_frames": 7103,
       "rng_end": {
         "state": 559608138,
         "calls": 6221
@@ -176,35 +176,18 @@
       "level_num": 6,
       "level_file": "likipho.rl2",
       "route_input_sha256": "880F5DFDAFC1405F3935FE6BF22C3F2C000C82D68D77D09C45ADD281CB1522FE",
-      "status": "failed",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [
-        {
-          "n": "blue key",
-          "s": 13
-        },
-        {
-          "n": "switch 1",
-          "s": 23
-        },
-        {
-          "n": "gold key",
-          "s": 30
-        },
-        {
-          "n": "red key",
-          "s": 44
-        }
-      ],
-      "total_frames": 2659,
+      "objectives": [],
+      "total_frames": 13498,
       "rng_end": {
-        "state": 2033797896,
-        "calls": 1631
+        "state": 875936247,
+        "calls": 498
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 7,
@@ -218,7 +201,7 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 18
+          "s": 17
         },
         {
           "n": "gold key",
@@ -226,17 +209,17 @@
         },
         {
           "n": "fly-through 2",
-          "s": 57
+          "s": 56
         },
         {
           "n": "red key",
-          "s": 62
+          "s": 61
         }
       ],
-      "total_frames": 4585,
+      "total_frames": 4593,
       "rng_end": {
-        "state": 4272688370,
-        "calls": 3397
+        "state": 1793688730,
+        "calls": 3389
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -256,11 +239,11 @@
         },
         {
           "n": "blue key",
-          "s": 12
+          "s": 11
         },
         {
           "n": "switch 2",
-          "s": 12
+          "s": 11
         },
         {
           "n": "gold key",
@@ -271,10 +254,10 @@
           "s": 53
         }
       ],
-      "total_frames": 3177,
+      "total_frames": 3164,
       "rng_end": {
-        "state": 2937489548,
-        "calls": 1579
+        "state": 2457533397,
+        "calls": 1580
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -324,10 +307,10 @@
         },
         {
           "n": "gold key",
-          "s": 46
+          "s": 47
         }
       ],
-      "total_frames": 6866,
+      "total_frames": 6882,
       "rng_end": {
         "state": 273132294,
         "calls": 2337
@@ -354,14 +337,14 @@
         },
         {
           "n": "gold key",
-          "s": 36
+          "s": 38
         },
         {
           "n": "red key",
-          "s": 58
+          "s": 60
         }
       ],
-      "total_frames": 4563,
+      "total_frames": 4718,
       "rng_end": {
         "state": 3916767301,
         "calls": 2620

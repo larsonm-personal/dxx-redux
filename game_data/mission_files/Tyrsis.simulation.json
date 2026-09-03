@@ -34,26 +34,26 @@
         },
         {
           "n": "gold key",
-          "s": 37
+          "s": 38
         },
         {
           "n": "red key",
-          "s": 75
+          "s": 77
         },
         {
           "n": "fly-through 22",
-          "s": 90
-        },
-        {
-          "n": "reactor",
           "s": 92
         },
         {
+          "n": "reactor",
+          "s": 94
+        },
+        {
           "n": "exit",
-          "s": 103
+          "s": 105
         }
       ],
-      "total_frames": 6207,
+      "total_frames": 6310,
       "rng_end": {
         "state": 1318885705,
         "calls": 2936
@@ -91,7 +91,7 @@
         },
         {
           "n": "switch 12",
-          "s": 57
+          "s": 58
         },
         {
           "n": "red key",

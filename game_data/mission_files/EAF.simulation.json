@@ -23,34 +23,34 @@
       "objectives": [
         {
           "n": "switch 0",
-          "s": 4
+          "s": 6
         },
         {
           "n": "switch 1",
-          "s": 19
+          "s": 21
         },
         {
           "n": "switch 2",
-          "s": 38
+          "s": 40
         },
         {
           "n": "switch 3",
-          "s": 59
+          "s": 61
         },
         {
           "n": "switch 4",
-          "s": 79
+          "s": 81
         },
         {
           "n": "reactor",
-          "s": 90
+          "s": 92
         },
         {
           "n": "exit",
-          "s": 119
+          "s": 134
         }
       ],
-      "total_frames": 7119,
+      "total_frames": 8044,
       "rng_end": {
         "state": 841718948,
         "calls": 4275
@@ -113,13 +113,13 @@
         },
         {
           "n": "exit",
-          "s": 116
+          "s": 118
         }
       ],
-      "total_frames": 6987,
+      "total_frames": 7081,
       "rng_end": {
-        "state": 1393353846,
-        "calls": 6513
+        "state": 4167929940,
+        "calls": 6467
       }
     },
     {
@@ -138,7 +138,7 @@
         },
         {
           "n": "switch 2",
-          "s": 61
+          "s": 62
         },
         {
           "n": "switch 3",
@@ -150,14 +150,14 @@
         },
         {
           "n": "reactor",
-          "s": 183
+          "s": 184
         },
         {
           "n": "exit",
           "s": 198
         }
       ],
-      "total_frames": 11866,
+      "total_frames": 11906,
       "rng_end": {
         "state": 2262560154,
         "calls": 6205

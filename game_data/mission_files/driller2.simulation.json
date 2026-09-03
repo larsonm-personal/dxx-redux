@@ -5,10 +5,11 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
-    "failed": 3,
-    "timeout": 7
+    "ok": 1,
+    "failed": 4,
+    "timeout": 5
   },
   "levels": [
     {
@@ -26,7 +27,7 @@
           "s": 7
         }
       ],
-      "total_frames": 462,
+      "total_frames": 463,
       "rng_end": {
         "state": 274854673,
         "calls": 368
@@ -37,7 +38,7 @@
       "level_num": 2,
       "level_file": "dtest.rl2",
       "route_input_sha256": "70362042AE2647A8A1FCC704B8E0DA7BBBE86D0D8892924AD923BAEBD0E166BF",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -46,14 +47,18 @@
         {
           "n": "blue key",
           "s": 2
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 13
         }
       ],
-      "total_frames": 36001,
+      "total_frames": 784,
       "rng_end": {
-        "state": 1788460815,
-        "calls": 474
+        "state": 3228750693,
+        "calls": 540
       },
-      "problem": "route confirmation exceeded 10 simulation minutes"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 3,
@@ -82,7 +87,7 @@
           "s": 35
         }
       ],
-      "total_frames": 2100,
+      "total_frames": 2091,
       "rng_end": {
         "state": 3965243816,
         "calls": 2367
@@ -108,10 +113,10 @@
           "s": 8
         }
       ],
-      "total_frames": 1239,
+      "total_frames": 1227,
       "rng_end": {
-        "state": 37870666,
-        "calls": 2381
+        "state": 4273677855,
+        "calls": 3018
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -119,7 +124,7 @@
       "level_num": 5,
       "level_file": "irock.rl2",
       "route_input_sha256": "6996A0FCC452D3076878BD63AA96F61941CB7AC0E2CE1C551DD24E621B666F31",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -128,14 +133,37 @@
         {
           "n": "blue key",
           "s": 17
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 36
+        },
+        {
+          "n": "fly-through 2",
+          "s": 45
+        },
+        {
+          "n": "fly-through 3",
+          "s": 48
+        },
+        {
+          "n": "red key",
+          "s": 57
+        },
+        {
+          "n": "reactor",
+          "s": 75
+        },
+        {
+          "n": "exit",
+          "s": 84
         }
       ],
-      "total_frames": 36001,
+      "total_frames": 5026,
       "rng_end": {
-        "state": 3984703090,
-        "calls": 2501
-      },
-      "problem": "route confirmation exceeded 10 simulation minutes"
+        "state": 856272373,
+        "calls": 7948
+      }
     },
     {
       "level_num": 6,
@@ -160,7 +188,7 @@
           "s": 18
         }
       ],
-      "total_frames": 1091,
+      "total_frames": 1098,
       "rng_end": {
         "state": 3244467800,
         "calls": 463
@@ -182,7 +210,7 @@
           "s": 10
         }
       ],
-      "total_frames": 1447,
+      "total_frames": 1448,
       "rng_end": {
         "state": 2057323293,
         "calls": 292
@@ -198,13 +226,18 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 3667,
+      "objectives": [
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 3
+        }
+      ],
+      "total_frames": 779,
       "rng_end": {
-        "state": 1344117138,
-        "calls": 293
+        "state": 3113566325,
+        "calls": 2188
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 9,

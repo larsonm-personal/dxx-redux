@@ -23,14 +23,14 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 14
+          "s": 16
         },
         {
           "n": "blastable wall",
-          "s": 36
+          "s": 38
         }
       ],
-      "total_frames": 2218,
+      "total_frames": 2309,
       "rng_end": {
         "state": 2946671141,
         "calls": 1372
@@ -53,42 +53,42 @@
         },
         {
           "n": "switch 1",
-          "s": 28
+          "s": 29
         },
         {
           "n": "switch 6",
-          "s": 45
+          "s": 46
         },
         {
           "n": "blue key",
-          "s": 52
+          "s": 54
         },
         {
           "n": "switch 2",
-          "s": 66
+          "s": 68
         },
         {
           "n": "gold key",
-          "s": 95
+          "s": 98
         },
         {
           "n": "switch 13",
-          "s": 125
+          "s": 128
         },
         {
           "n": "red key",
-          "s": 137
+          "s": 141
         },
         {
           "n": "reactor",
-          "s": 151
+          "s": 155
         },
         {
           "n": "exit",
-          "s": 164
+          "s": 168
         }
       ],
-      "total_frames": 9850,
+      "total_frames": 10107,
       "rng_end": {
         "state": 759157142,
         "calls": 5329
@@ -104,10 +104,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 4826,
+      "total_frames": 5721,
       "rng_end": {
-        "state": 3810069260,
-        "calls": 427
+        "state": 78769249,
+        "calls": 672
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

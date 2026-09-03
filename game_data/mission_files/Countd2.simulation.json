@@ -26,10 +26,10 @@
         },
         {
           "n": "red key",
-          "s": 14
+          "s": 15
         }
       ],
-      "total_frames": 5407,
+      "total_frames": 5429,
       "rng_end": {
         "state": 1639207252,
         "calls": 1091
@@ -56,10 +56,10 @@
         },
         {
           "n": "red key",
-          "s": 41
+          "s": 42
         }
       ],
-      "total_frames": 7857,
+      "total_frames": 7488,
       "rng_end": {
         "state": 2990018150,
         "calls": 1857
@@ -82,14 +82,14 @@
         },
         {
           "n": "blue key",
-          "s": 29
+          "s": 30
         },
         {
           "n": "gold key",
-          "s": 62
+          "s": 64
         }
       ],
-      "total_frames": 8241,
+      "total_frames": 9878,
       "rng_end": {
         "state": 1130859006,
         "calls": 2185
@@ -116,10 +116,10 @@
         },
         {
           "n": "gold key",
-          "s": 48
+          "s": 49
         }
       ],
-      "total_frames": 8056,
+      "total_frames": 8228,
       "rng_end": {
         "state": 3647053058,
         "calls": 2677
@@ -135,26 +135,13 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [
-        {
-          "n": "reactor",
-          "s": 19
-        },
-        {
-          "n": "blue key",
-          "s": 34
-        },
-        {
-          "n": "gold key",
-          "s": 51
-        }
-      ],
-      "total_frames": 36001,
+      "objectives": [],
+      "total_frames": 4160,
       "rng_end": {
-        "state": 3770705409,
-        "calls": 2560
+        "state": 3720683301,
+        "calls": 92
       },
-      "problem": "route confirmation exceeded 10 simulation minutes"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 6,
@@ -168,22 +155,22 @@
       "objectives": [
         {
           "n": "reactor",
-          "s": 7
+          "s": 9
         },
         {
           "n": "blue key",
-          "s": 26
+          "s": 28
         },
         {
           "n": "gold key",
-          "s": 52
+          "s": 54
         },
         {
           "n": "red key",
-          "s": 70
+          "s": 72
         }
       ],
-      "total_frames": 10011,
+      "total_frames": 8667,
       "rng_end": {
         "state": 892686396,
         "calls": 3259
@@ -205,7 +192,7 @@
           "s": 14
         }
       ],
-      "total_frames": 4469,
+      "total_frames": 4483,
       "rng_end": {
         "state": 1252116776,
         "calls": 959

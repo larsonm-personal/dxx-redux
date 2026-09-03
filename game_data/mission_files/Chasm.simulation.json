@@ -23,7 +23,7 @@
       "objectives": [
         {
           "n": "switch 0",
-          "s": 16
+          "s": 17
         },
         {
           "n": "switch 2",
@@ -42,7 +42,7 @@
           "s": 67
         }
       ],
-      "total_frames": 3990,
+      "total_frames": 3994,
       "rng_end": {
         "state": 1519971579,
         "calls": 1038
@@ -95,7 +95,7 @@
           "s": 256
         }
       ],
-      "total_frames": 15346,
+      "total_frames": 15353,
       "rng_end": {
         "state": 3306922665,
         "calls": 3352
@@ -124,10 +124,10 @@
           "s": 70
         }
       ],
-      "total_frames": 5468,
+      "total_frames": 5419,
       "rng_end": {
-        "state": 738479860,
-        "calls": 1571
+        "state": 2100243043,
+        "calls": 1574
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -143,7 +143,7 @@
       "objectives": [
         {
           "n": "switch 1",
-          "s": 32
+          "s": 30
         },
         {
           "n": "blue key",
@@ -154,7 +154,7 @@
           "s": 51
         }
       ],
-      "total_frames": 4654,
+      "total_frames": 4612,
       "rng_end": {
         "state": 2049409536,
         "calls": 1031
@@ -173,14 +173,14 @@
       "objectives": [
         {
           "n": "boss",
-          "s": 24
+          "s": 31
         },
         {
           "n": "exit",
-          "s": 33
+          "s": 38
         }
       ],
-      "total_frames": 1977,
+      "total_frames": 2309,
       "rng_end": {
         "state": 4069223089,
         "calls": 720
@@ -202,14 +202,14 @@
         },
         {
           "n": "gold key",
-          "s": 37
+          "s": 38
         },
         {
           "n": "switch 0",
-          "s": 64
+          "s": 65
         }
       ],
-      "total_frames": 5334,
+      "total_frames": 5400,
       "rng_end": {
         "state": 1720652085,
         "calls": 2508

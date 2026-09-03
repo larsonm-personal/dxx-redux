@@ -22,10 +22,10 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 36
+          "s": 37
         }
       ],
-      "total_frames": 3196,
+      "total_frames": 3322,
       "rng_end": {
         "state": 393197530,
         "calls": 2813

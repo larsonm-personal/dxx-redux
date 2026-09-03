@@ -29,11 +29,11 @@
         },
         {
           "n": "switch 1",
-          "s": 30
+          "s": 29
         },
         {
           "n": "gold key",
-          "s": 61
+          "s": 60
         },
         {
           "n": "red key",
@@ -41,14 +41,14 @@
         },
         {
           "n": "boss",
-          "s": 127
+          "s": 128
         },
         {
           "n": "exit",
           "s": 141
         }
       ],
-      "total_frames": 8449,
+      "total_frames": 8435,
       "rng_end": {
         "state": 1589490602,
         "calls": 3437
@@ -85,7 +85,7 @@
           "s": 148
         }
       ],
-      "total_frames": 8853,
+      "total_frames": 8859,
       "rng_end": {
         "state": 1246998880,
         "calls": 3879
@@ -119,10 +119,10 @@
         },
         {
           "n": "red key",
-          "s": 88
+          "s": 89
         }
       ],
-      "total_frames": 6613,
+      "total_frames": 6622,
       "rng_end": {
         "state": 2049385582,
         "calls": 2521
@@ -145,13 +145,13 @@
         },
         {
           "n": "red key",
-          "s": 48
+          "s": 49
         }
       ],
       "total_frames": 36001,
       "rng_end": {
-        "state": 3901011787,
-        "calls": 1982
+        "state": 2715074907,
+        "calls": 1966
       },
       "problem": "live objective sequence differs from route input"
     },
@@ -165,7 +165,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 5122,
+      "total_frames": 5153,
       "rng_end": {
         "state": 2303754503,
         "calls": 482

@@ -129,6 +129,29 @@ int find_object_in_segment(int type, int segnum)
 	return -1;
 }
 
+void set_key_target_position(const object *actor, int key_objnum)
+{
+	vms_vector segment_center;
+	vms_vector contact_offset;
+	const object *key = &Objects[key_objnum];
+	State.target_objnum = key_objnum;
+	State.target_seg = key->segnum;
+	State.target_pos = key->pos;
+	/* Aim for a deterministic point on the pickup contact shell on the
+	 * segment-center side of the key.  Steering a large actor at the key center
+	 * can pin it against the wall before the two collision spheres overlap. */
+	if (actor) {
+		compute_segment_center(&segment_center, &Segments[State.target_seg]);
+		vm_vec_sub(&contact_offset, &segment_center, &key->pos);
+		if (vm_vec_normalize_quick(&contact_offset)) {
+			vm_vec_scale(&contact_offset,
+			             actor->size + key->size - F1_0 / 8);
+			vm_vec_add(&State.target_pos, &key->pos, &contact_offset);
+		}
+	}
+	State.target_pos_valid = 1;
+}
+
 int robot_carries_key(const object *objp)
 {
 	return objp && objp->type == OBJ_ROBOT && objp->contains_count > 0 &&
@@ -230,32 +253,11 @@ void set_target_position(const level_metadata_route_step &step)
 		}
 	} else if (step.kind == LEVEL_METADATA_ROUTE_KEY) {
 		State.target_objnum = find_key_object(step.key_index);
-		if (valid_object(State.target_objnum)) {
-			vms_vector segment_center;
-			vms_vector contact_offset;
-			const object *actor = valid_object(State.actor_objnum)
-			                          ? &Objects[State.actor_objnum]
-			                          : NULL;
-			const object *key = &Objects[State.target_objnum];
-			State.target_seg = Objects[State.target_objnum].segnum;
-			State.target_pos = key->pos;
-			/* Aim for a deterministic point on the pickup contact shell on
-			 * the segment-center side of the key.  Steering a large actor at
-			 * the key center can pin it against the wall before the two collision
-			 * spheres overlap. */
-			if (actor) {
-				compute_segment_center(&segment_center,
-				                       &Segments[State.target_seg]);
-				vm_vec_sub(&contact_offset, &segment_center, &key->pos);
-				if (vm_vec_normalize_quick(&contact_offset)) {
-					vm_vec_scale(&contact_offset,
-					             actor->size + key->size - F1_0 / 8);
-					vm_vec_add(&State.target_pos, &key->pos,
-					           &contact_offset);
-				}
-			}
-			State.target_pos_valid = 1;
-		}
+		if (valid_object(State.target_objnum))
+			set_key_target_position(
+			    valid_object(State.actor_objnum) ? &Objects[State.actor_objnum]
+			                                     : NULL,
+			    State.target_objnum);
 	} else if (step.kind == LEVEL_METADATA_ROUTE_REACTOR) {
 		State.target_objnum = find_object_in_segment(OBJ_CNTRLCEN, step.seg);
 		if (valid_object(State.target_objnum)) {
@@ -343,6 +345,52 @@ void set_target_position(const level_metadata_route_step &step)
 	}
 }
 
+int record_implicitly_completed_steps(const level_metadata_state *metadata,
+                                      int first_index, int selected_index)
+{
+	for (int step_index = first_index; step_index < selected_index;
+	     ++step_index) {
+		const level_metadata_route_step *step;
+		route_confirmation_objective_result *result;
+		int already_recorded = 0;
+		if (step_index < 0 || step_index >= metadata->route_step_count)
+			continue;
+		step = &metadata->route_steps[step_index];
+		if (step->kind == LEVEL_METADATA_ROUTE_START)
+			continue;
+		for (int result_index = 0;
+		     result_index < State.summary.objective_count; ++result_index)
+			if (State.summary.objectives[result_index].route_step_index ==
+			    step_index) {
+				already_recorded = 1;
+				break;
+			}
+		if (already_recorded)
+			continue;
+		if (State.summary.objective_count >=
+		    ROUTE_CONFIRMATION_MAX_OBJECTIVES) {
+			fail(ROUTE_CONFIRMATION_FAILED,
+			     "route objective result capacity exceeded");
+			return 0;
+		}
+		result = &State.summary.objectives[State.summary.objective_count++];
+		memset(result, 0, sizeof(*result));
+		result->route_step_index = step_index;
+		result->kind = step->kind;
+		result->activation_kind = step->activation_kind;
+		result->completed_ticks = State.summary.elapsed_ticks;
+		result->completed_frame = State.summary.frame_count;
+		snprintf(result->label, sizeof(result->label), "%s", step->label);
+#if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+		fprintf(stderr,
+		        "ROUTE-CONFIRM implicit step=%d frame=%u ticks=%lld label=%s\n",
+		        result->route_step_index, result->completed_frame,
+		        (long long) result->completed_ticks, result->label);
+#endif
+	}
+	return 1;
+}
+
 void refine_last_path_point(object *actor)
 {
 	ai_static *aip;
@@ -401,6 +449,10 @@ int prepare_next_goal(void)
 		fail(ROUTE_CONFIRMATION_FAILED, "live Guide-Bot route has no actionable goal");
 		return 0;
 	}
+	if (!record_implicitly_completed_steps(
+	        metadata, State.summary.current_route_step_index + 1,
+	        selected_index))
+		return 0;
 	State.step = metadata->route_steps[selected_index];
 	/* Publish exactly the selected live goal before asking the same physical
 	 * frontier logic used by the in-game Guide-Bot to choose this leg's
@@ -419,6 +471,7 @@ int prepare_next_goal(void)
 	State.summary.current_route_step_index = selected_index;
 	State.summary.current_kind = State.step.kind;
 	State.summary.current_activation_kind = State.step.activation_kind;
+	State.action_applied = 0;
 	set_target_position(State.step);
 	{
 		const int semantic_target_seg = State.target_seg;
@@ -741,7 +794,7 @@ void record_objective_and_replan(void)
 	memset(result, 0, sizeof(*result));
 	result->route_step_index = State.summary.current_route_step_index;
 	result->kind = State.step.kind;
-	result->activation_kind = State.step.activation_kind;
+	result->activation_kind = State.summary.current_activation_kind;
 	result->completed_ticks = State.summary.elapsed_ticks;
 	result->completed_frame = State.summary.frame_count;
 	snprintf(result->label, sizeof(result->label), "%s", State.step.label);
@@ -1053,7 +1106,9 @@ void apply_objective_action(object *actor)
 	     State.step.activation_kind !=
 	         LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER &&
 	     State.step.activation_kind !=
-	         LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BOSS))
+	         LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BOSS &&
+	     State.step.activation_kind !=
+	         LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_KEY_CARRIER))
 		return;
 	switch (State.step.activation_kind) {
 		case LEVEL_METADATA_ROUTE_ACTIVATION_PICKUP_KEY:
@@ -1214,9 +1269,40 @@ void apply_objective_action(object *actor)
 				    Objects[State.target_objnum].shields + F1_0,
 				    ConsoleObject - Objects);
 			}
-			if (State.action_applied &&
-			    find_key_object(State.step.key_index) >= 0)
-				record_objective_and_replan();
+			if (State.action_applied) {
+				const int key_objnum = find_key_object(State.step.key_index);
+				if (!valid_object(key_objnum))
+					break;
+				State.step.activation_kind =
+				    LEVEL_METADATA_ROUTE_ACTIVATION_PICKUP_KEY;
+				State.action_applied = 0;
+				set_target_position(State.step);
+				State.semantic_target_seg = State.target_seg;
+				{
+					const int physical_target_seg =
+					    escort_route_physical_target(
+					        actor, State.semantic_target_seg,
+					        Max_escort_length);
+					if (physical_target_seg >= 0 &&
+					    physical_target_seg < Num_segments &&
+					    physical_target_seg != State.semantic_target_seg) {
+						State.target_seg = physical_target_seg;
+						compute_segment_center(
+						    &State.target_pos, &Segments[physical_target_seg]);
+					}
+				}
+				create_guidebot_route_path_to_segment(
+				    actor, State.target_seg, Max_escort_length, 1);
+				actor->ctype.ai_info.SKIP_AI_COUNT = 0;
+				Ai_local_info[State.actor_objnum].mode = AIM_GOTO_OBJECT;
+				refine_last_path_point(actor);
+				State.previous_actor_pos = actor->pos;
+				State.no_progress_frames = 0;
+				State.wait_frames = 0;
+				State.best_distance = vm_vec_dist_quick(
+				    &actor->pos, &State.target_pos);
+				State.carrier_armed_ticks = -1;
+			}
 			break;
 
 		case LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT:
@@ -1507,6 +1593,17 @@ extern "C" int route_confirmation_handle_exit_trigger(int objnum)
 	return 1;
 }
 
+extern "C" int route_confirmation_handle_final_boss_endlevel(void)
+{
+	if (State.summary.status != ROUTE_CONFIRMATION_RUNNING ||
+	    State.step.kind != LEVEL_METADATA_ROUTE_EXIT ||
+	    State.step.activation_kind !=
+	        LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT)
+		return 0;
+	record_objective_and_replan();
+	return 1;
+}
+
 extern "C" const route_confirmation_summary *route_confirmation_get_summary(void)
 {
 	return &State.summary;
@@ -1531,6 +1628,10 @@ extern "C" int route_confirmation_drive_companion(object *)
 	return 0;
 }
 extern "C" int route_confirmation_handle_exit_trigger(int)
+{
+	return 0;
+}
+extern "C" int route_confirmation_handle_final_boss_endlevel(void)
 {
 	return 0;
 }

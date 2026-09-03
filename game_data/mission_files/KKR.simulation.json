@@ -21,40 +21,11 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [
-        {
-          "n": "switch 12",
-          "s": 6
-        },
-        {
-          "n": "blue key",
-          "s": 17
-        },
-        {
-          "n": "switch 0",
-          "s": 25
-        },
-        {
-          "n": "fly-through 3",
-          "s": 30
-        },
-        {
-          "n": "switch 5",
-          "s": 33
-        },
-        {
-          "n": "red key",
-          "s": 39
-        },
-        {
-          "n": "switch 1",
-          "s": 42
-        }
-      ],
-      "total_frames": 7051,
+      "objectives": [],
+      "total_frames": 4092,
       "rng_end": {
-        "state": 2096108236,
-        "calls": 1771
+        "state": 2225544632,
+        "calls": 239
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -78,7 +49,7 @@
         },
         {
           "n": "blue key",
-          "s": 17
+          "s": 18
         },
         {
           "n": "switch 6",
@@ -89,7 +60,7 @@
           "s": 24
         }
       ],
-      "total_frames": 2373,
+      "total_frames": 2398,
       "rng_end": {
         "state": 1520764909,
         "calls": 980
@@ -140,10 +111,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 4448,
+      "total_frames": 4532,
       "rng_end": {
-        "state": 153870853,
-        "calls": 636
+        "state": 1601123481,
+        "calls": 1192
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -159,13 +130,13 @@
       "objectives": [
         {
           "n": "fly-through 12",
-          "s": 6
+          "s": 4
         }
       ],
-      "total_frames": 623,
+      "total_frames": 516,
       "rng_end": {
-        "state": 1344117138,
-        "calls": 293
+        "state": 4199616355,
+        "calls": 294
       },
       "problem": "route objective activation is not supported"
     }

@@ -21,28 +21,11 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [
-        {
-          "n": "blue key",
-          "s": 11
-        },
-        {
-          "n": "switch 12",
-          "s": 45
-        },
-        {
-          "n": "gold key",
-          "s": 52
-        },
-        {
-          "n": "fly-through 0",
-          "s": 78
-        }
-      ],
-      "total_frames": 13853,
+      "objectives": [],
+      "total_frames": 3813,
       "rng_end": {
-        "state": 2820277553,
-        "calls": 3152
+        "state": 2335462546,
+        "calls": 549
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -62,13 +45,13 @@
         },
         {
           "n": "gold key",
-          "s": 37
+          "s": 38
         }
       ],
-      "total_frames": 2218,
+      "total_frames": 2262,
       "rng_end": {
-        "state": 2706250699,
-        "calls": 830
+        "state": 1141114331,
+        "calls": 814
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -88,7 +71,7 @@
         },
         {
           "n": "red key",
-          "s": 31
+          "s": 32
         },
         {
           "n": "reactor",
@@ -99,7 +82,7 @@
           "s": 69
         }
       ],
-      "total_frames": 4136,
+      "total_frames": 4135,
       "rng_end": {
         "state": 1222673608,
         "calls": 3487
@@ -121,7 +104,7 @@
         },
         {
           "n": "gold key",
-          "s": 38
+          "s": 37
         },
         {
           "n": "red key",
@@ -129,14 +112,14 @@
         },
         {
           "n": "reactor",
-          "s": 90
+          "s": 91
         },
         {
           "n": "exit",
-          "s": 102
+          "s": 103
         }
       ],
-      "total_frames": 6117,
+      "total_frames": 6155,
       "rng_end": {
         "state": 1017304121,
         "calls": 2568
@@ -158,7 +141,7 @@
         },
         {
           "n": "gold key",
-          "s": 31
+          "s": 30
         },
         {
           "n": "red key",
@@ -173,7 +156,7 @@
           "s": 80
         }
       ],
-      "total_frames": 4794,
+      "total_frames": 4784,
       "rng_end": {
         "state": 743471179,
         "calls": 1726
@@ -191,7 +174,7 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 29
+          "s": 30
         },
         {
           "n": "hidden door",
@@ -202,7 +185,7 @@
           "s": 62
         }
       ],
-      "total_frames": 3716,
+      "total_frames": 3737,
       "rng_end": {
         "state": 868726942,
         "calls": 1129
@@ -225,10 +208,10 @@
         },
         {
           "n": "gold key",
-          "s": 67
+          "s": 68
         }
       ],
-      "total_frames": 8600,
+      "total_frames": 8569,
       "rng_end": {
         "state": 1268650872,
         "calls": 3119

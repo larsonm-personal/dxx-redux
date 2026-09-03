@@ -30,10 +30,10 @@
         },
         {
           "n": "blastable wall",
-          "s": 13
+          "s": 14
         }
       ],
-      "total_frames": 837,
+      "total_frames": 845,
       "rng_end": {
         "state": 2174576902,
         "calls": 801
@@ -50,7 +50,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 4755,
+      "total_frames": 4744,
       "rng_end": {
         "state": 2324426550,
         "calls": 433

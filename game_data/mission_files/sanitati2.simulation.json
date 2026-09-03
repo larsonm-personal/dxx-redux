@@ -23,29 +23,29 @@
       "objectives": [
         {
           "n": "red key",
-          "s": 15
+          "s": 16
         },
         {
           "n": "hidden door",
-          "s": 35
+          "s": 36
         },
         {
           "n": "blue key",
-          "s": 38
+          "s": 39
         },
         {
           "n": "reactor",
-          "s": 61
+          "s": 63
         },
         {
           "n": "exit",
-          "s": 83
+          "s": 84
         }
       ],
-      "total_frames": 4958,
+      "total_frames": 5034,
       "rng_end": {
-        "state": 3157820037,
-        "calls": 3580
+        "state": 1179259537,
+        "calls": 3568
       }
     },
     {
@@ -68,22 +68,22 @@
         },
         {
           "n": "red key",
-          "s": 30
+          "s": 27
         },
         {
           "n": "switch 5",
-          "s": 43
+          "s": 40
         },
         {
           "n": "reactor",
-          "s": 53
+          "s": 50
         },
         {
           "n": "exit",
-          "s": 55
+          "s": 52
         }
       ],
-      "total_frames": 3299,
+      "total_frames": 3131,
       "rng_end": {
         "state": 1013734990,
         "calls": 3961
@@ -113,14 +113,14 @@
         },
         {
           "n": "reactor",
-          "s": 87
+          "s": 89
         },
         {
           "n": "exit",
-          "s": 91
+          "s": 92
         }
       ],
-      "total_frames": 5458,
+      "total_frames": 5546,
       "rng_end": {
         "state": 754197396,
         "calls": 5379
@@ -142,7 +142,7 @@
         },
         {
           "n": "hidden door",
-          "s": 45
+          "s": 46
         },
         {
           "n": "hidden door",
@@ -150,13 +150,13 @@
         },
         {
           "n": "hidden door",
-          "s": 49
+          "s": 50
         }
       ],
-      "total_frames": 6742,
+      "total_frames": 12408,
       "rng_end": {
-        "state": 2437141959,
-        "calls": 2338
+        "state": 1376061655,
+        "calls": 2322
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

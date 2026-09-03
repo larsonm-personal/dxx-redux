@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
-    "timeout": 4
+    "ok": 4,
+    "timeout": 2
   },
   "levels": [
     {
@@ -34,7 +34,7 @@
           "s": 46
         }
       ],
-      "total_frames": 2731,
+      "total_frames": 2744,
       "rng_end": {
         "state": 2201537524,
         "calls": 1315
@@ -44,7 +44,7 @@
       "level_num": 2,
       "level_file": "2drav2.rl2",
       "route_input_sha256": "FC4827A35AA81F62B46EC87ECB1736F4D5DCB3DBDE336A529102C16B00D769E3",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -52,19 +52,26 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 20
+          "s": 21
         },
         {
           "n": "gold key",
-          "s": 51
+          "s": 50
+        },
+        {
+          "n": "reactor",
+          "s": 66
+        },
+        {
+          "n": "exit",
+          "s": 70
         }
       ],
-      "total_frames": 8419,
+      "total_frames": 4199,
       "rng_end": {
-        "state": 888719559,
-        "calls": 1570
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3370890238,
+        "calls": 1673
+      }
     },
     {
       "level_num": 3,
@@ -97,10 +104,10 @@
           "s": 52
         }
       ],
-      "total_frames": 8193,
+      "total_frames": 8230,
       "rng_end": {
-        "state": 4267900891,
-        "calls": 2350
+        "state": 3965243816,
+        "calls": 2367
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -108,7 +115,7 @@
       "level_num": 4,
       "level_file": "2drav4.rl2",
       "route_input_sha256": "2816C9797E0E4A80B03F596BEB25064C35651CFB476C3C24090EECFADA1FB454",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -117,20 +124,39 @@
         {
           "n": "red key",
           "s": 20
+        },
+        {
+          "n": "gold key",
+          "s": 42
+        },
+        {
+          "n": "blue key",
+          "s": 75
+        },
+        {
+          "n": "switch 4",
+          "s": 85
+        },
+        {
+          "n": "reactor",
+          "s": 103
+        },
+        {
+          "n": "exit",
+          "s": 107
         }
       ],
-      "total_frames": 5659,
+      "total_frames": 6402,
       "rng_end": {
-        "state": 3436339941,
-        "calls": 1692
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 2055525430,
+        "calls": 4273
+      }
     },
     {
       "level_num": 5,
       "level_file": "2drav5.rl2",
       "route_input_sha256": "5B4996EB4223F966FB2A9F1804118C5C0C21130679690A864272FC0C2D316B5B",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -143,39 +169,42 @@
         {
           "n": "gold key",
           "s": 51
+        },
+        {
+          "n": "red key",
+          "s": 100
+        },
+        {
+          "n": "boss",
+          "s": 125
+        },
+        {
+          "n": "exit",
+          "s": 133
         }
       ],
-      "total_frames": 9065,
+      "total_frames": 8005,
       "rng_end": {
-        "state": 3191487575,
-        "calls": 3474
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3169057466,
+        "calls": 4509
+      }
     },
     {
       "level_num": -1,
       "level_file": "2dravs1.rl2",
       "route_input_sha256": "40D458B8384A5B64F9CB19F6F9ABD9A9AD0BB7A682A02E7080B8CF2FD09BCEB6",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [
-        {
-          "n": "reactor",
-          "s": 15
-        },
-        {
-          "n": "exit",
-          "s": 20
-        }
-      ],
-      "total_frames": 1204,
+      "objectives": [],
+      "total_frames": 3765,
       "rng_end": {
-        "state": 934293688,
-        "calls": 495
-      }
+        "state": 3507574849,
+        "calls": 448
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }
   ]
 }

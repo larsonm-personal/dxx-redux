@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
+    "ok": 2,
     "failed": 2,
-    "timeout": 2
+    "timeout": 3
   },
   "levels": [
     {
@@ -31,7 +31,7 @@
           "s": 36
         }
       ],
-      "total_frames": 3145,
+      "total_frames": 3168,
       "rng_end": {
         "state": 51885617,
         "calls": 848
@@ -42,7 +42,7 @@
       "level_num": 2,
       "level_file": "ICARUS02.RL2",
       "route_input_sha256": "66ABAEECEA63C2482D40BDD1F2F2196EC964238315288161E49F5401F367191A",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -54,7 +54,7 @@
         },
         {
           "n": "blue key",
-          "s": 27
+          "s": 28
         },
         {
           "n": "gold key",
@@ -63,31 +63,20 @@
         {
           "n": "switch 3",
           "s": 87
-        },
-        {
-          "n": "red key",
-          "s": 127
-        },
-        {
-          "n": "boss",
-          "s": 170
-        },
-        {
-          "n": "exit",
-          "s": 191
         }
       ],
-      "total_frames": 11461,
+      "total_frames": 10119,
       "rng_end": {
-        "state": 855019456,
-        "calls": 8007
-      }
+        "state": 2490122385,
+        "calls": 4080
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 3,
       "level_file": "JUNO03.RL2",
       "route_input_sha256": "532C12AFD7EE09D53FD167D5E897AE4B2F55787CD0FD2294C1ECFAC7D5823C6C",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -100,20 +89,35 @@
         {
           "n": "blue key",
           "s": 36
+        },
+        {
+          "n": "gold key",
+          "s": 78
+        },
+        {
+          "n": "red key",
+          "s": 104
+        },
+        {
+          "n": "reactor",
+          "s": 121
+        },
+        {
+          "n": "exit",
+          "s": 136
         }
       ],
-      "total_frames": 8074,
+      "total_frames": 8139,
       "rng_end": {
-        "state": 3155324965,
-        "calls": 1884
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1026013445,
+        "calls": 4988
+      }
     },
     {
       "level_num": 4,
       "level_file": "VESTA04.RL2",
       "route_input_sha256": "319513900C4CA30C1BFC586269BAD8E923972A4C1E467696D39941C2EF1E7F5C",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -129,7 +133,7 @@
         },
         {
           "n": "gold key",
-          "s": 69
+          "s": 70
         },
         {
           "n": "switch 24",
@@ -137,22 +141,15 @@
         },
         {
           "n": "red key",
-          "s": 118
-        },
-        {
-          "n": "reactor",
-          "s": 166
-        },
-        {
-          "n": "exit",
-          "s": 192
+          "s": 117
         }
       ],
-      "total_frames": 11536,
+      "total_frames": 13845,
       "rng_end": {
-        "state": 3415271039,
-        "calls": 7530
-      }
+        "state": 2476294361,
+        "calls": 6760
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 5,
@@ -186,10 +183,10 @@
         },
         {
           "n": "gold key",
-          "s": 83
+          "s": 84
         }
       ],
-      "total_frames": 5003,
+      "total_frames": 5038,
       "rng_end": {
         "state": 4120562848,
         "calls": 1767
@@ -240,7 +237,7 @@
           "s": 24
         }
       ],
-      "total_frames": 1438,
+      "total_frames": 1411,
       "rng_end": {
         "state": 2100293115,
         "calls": 782

@@ -23,14 +23,14 @@
       "objectives": [
         {
           "n": "fly-through 1",
-          "s": 39
+          "s": 40
         },
         {
           "n": "blastable wall",
-          "s": 49
+          "s": 50
         }
       ],
-      "total_frames": 2991,
+      "total_frames": 3050,
       "rng_end": {
         "state": 4131908619,
         "calls": 766
@@ -47,10 +47,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 5458,
+      "total_frames": 5480,
       "rng_end": {
-        "state": 4031738486,
-        "calls": 881
+        "state": 66576503,
+        "calls": 882
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -78,29 +78,29 @@
         },
         {
           "n": "fly-through 4",
-          "s": 74
+          "s": 75
         },
         {
           "n": "reactor",
-          "s": 90
+          "s": 91
         },
         {
           "n": "fly-through 6",
-          "s": 103
+          "s": 104
         },
         {
           "n": "switch 8",
-          "s": 120
+          "s": 121
         },
         {
           "n": "red key",
-          "s": 145
+          "s": 146
         }
       ],
-      "total_frames": 10016,
+      "total_frames": 10104,
       "rng_end": {
-        "state": 3130548163,
-        "calls": 3270
+        "state": 3175747774,
+        "calls": 3273
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -131,7 +131,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 5647,
+      "total_frames": 5658,
       "rng_end": {
         "state": 2915528778,
         "calls": 1357

@@ -80,6 +80,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
 #include "input_demo_debug_logging.h"
+#include "route_confirmation.h"
 #ifdef EDITOR
 #include "editor/editor.h"
 #endif
@@ -1474,6 +1475,8 @@ void do_final_boss_frame(void)
 
 	Final_boss_countdown_time -= FrameTime;
 	if (Final_boss_countdown_time > 0)
+		return;
+	if (route_confirmation_handle_final_boss_endlevel())
 		return;
 
 	start_endlevel_sequence();		//pretend we hit the exit trigger

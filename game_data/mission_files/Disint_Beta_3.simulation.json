@@ -47,25 +47,25 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 4
+          "s": 5
         },
         {
           "n": "switch 3",
-          "s": 7
+          "s": 9
         },
         {
           "n": "gold key",
-          "s": 11
+          "s": 13
         },
         {
           "n": "red key",
-          "s": 15
+          "s": 17
         }
       ],
-      "total_frames": 1586,
+      "total_frames": 1744,
       "rng_end": {
-        "state": 3166007986,
-        "calls": 645
+        "state": 1866814940,
+        "calls": 667
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -108,7 +108,7 @@
           "s": 34
         }
       ],
-      "total_frames": 2046,
+      "total_frames": 2045,
       "rng_end": {
         "state": 1987473253,
         "calls": 1564
@@ -165,8 +165,8 @@
       ],
       "total_frames": 999,
       "rng_end": {
-        "state": 4069223089,
-        "calls": 720
+        "state": 3308648524,
+        "calls": 875
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -203,17 +203,17 @@
         },
         {
           "n": "gold key",
-          "s": 21
+          "s": 22
         },
         {
           "n": "red key",
-          "s": 45
+          "s": 46
         }
       ],
-      "total_frames": 4111,
+      "total_frames": 4136,
       "rng_end": {
-        "state": 3499212410,
-        "calls": 2269
+        "state": 570149541,
+        "calls": 2268
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -246,10 +246,10 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 8
+          "s": 9
         }
       ],
-      "total_frames": 697,
+      "total_frames": 717,
       "rng_end": {
         "state": 274854673,
         "calls": 368
@@ -272,10 +272,10 @@
         },
         {
           "n": "red key",
-          "s": 38
+          "s": 39
         }
       ],
-      "total_frames": 7458,
+      "total_frames": 7532,
       "rng_end": {
         "state": 1689723728,
         "calls": 2935
@@ -310,10 +310,10 @@
         },
         {
           "n": "gold key",
-          "s": 31
+          "s": 32
         }
       ],
-      "total_frames": 1861,
+      "total_frames": 1894,
       "rng_end": {
         "state": 3954638605,
         "calls": 948
@@ -344,18 +344,18 @@
         },
         {
           "n": "red key",
-          "s": 78
+          "s": 79
         },
         {
           "n": "switch 8",
-          "s": 84
+          "s": 85
         },
         {
           "n": "switch 9",
-          "s": 84
+          "s": 85
         }
       ],
-      "total_frames": 5808,
+      "total_frames": 5792,
       "rng_end": {
         "state": 1905430783,
         "calls": 2794
@@ -385,7 +385,7 @@
           "s": 15
         }
       ],
-      "total_frames": 925,
+      "total_frames": 928,
       "rng_end": {
         "state": 4020018141,
         "calls": 612
