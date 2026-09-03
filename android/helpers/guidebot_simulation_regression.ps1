@@ -11,6 +11,7 @@ $script:GuidebotSimulationStatuses = @(
     'unsupported',
     'route_mismatch',
     'nondeterministic',
+    'infrastructure_error',
     'not_run',
     'stale'
 )

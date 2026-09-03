@@ -28,21 +28,21 @@
         },
         {
           "n": "reactor",
-          "s": 31
+          "s": 20
         },
         {
           "n": "switch 15",
-          "s": 65
+          "s": 43
         },
         {
           "n": "exit",
-          "s": 76
+          "s": 49
         }
       ],
-      "total_frames": 4565,
+      "total_frames": 2957,
       "rng_end": {
-        "state": 3990430617,
-        "calls": 3496
+        "state": 2102026063,
+        "calls": 3482
       }
     },
     {
@@ -55,7 +55,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 663,
+      "total_frames": 594,
       "rng_end": {
         "state": 3297241969,
         "calls": 16
@@ -72,10 +72,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 753,
+      "total_frames": 659,
       "rng_end": {
-        "state": 3791773014,
-        "calls": 17
+        "state": 4008331270,
+        "calls": 33
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -91,14 +91,14 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 3
+          "s": 2
         },
         {
           "n": "switch 41",
-          "s": 13
+          "s": 9
         }
       ],
-      "total_frames": 1769,
+      "total_frames": 1351,
       "rng_end": {
         "state": 1061815741,
         "calls": 388
@@ -117,10 +117,10 @@
       "objectives": [
         {
           "n": "exit",
-          "s": 21
+          "s": 13
         }
       ],
-      "total_frames": 1275,
+      "total_frames": 808,
       "rng_end": {
         "state": 3553385367,
         "calls": 594
@@ -155,14 +155,14 @@
       "objectives": [
         {
           "n": "reactor",
-          "s": 34
+          "s": 22
         },
         {
           "n": "exit",
-          "s": 38
+          "s": 24
         }
       ],
-      "total_frames": 2252,
+      "total_frames": 1420,
       "rng_end": {
         "state": 808381751,
         "calls": 690

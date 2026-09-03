@@ -22,27 +22,31 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 15
+          "s": 10
         },
         {
           "n": "switch 15",
-          "s": 22
+          "s": 15
         },
         {
           "n": "switch 13",
-          "s": 22
+          "s": 15
         },
         {
           "n": "gold key",
-          "s": 59
+          "s": 37
+        },
+        {
+          "n": "red key",
+          "s": 75
         }
       ],
-      "total_frames": 6672,
+      "total_frames": 8999,
       "rng_end": {
-        "state": 1417643261,
-        "calls": 2116
+        "state": 2487320074,
+        "calls": 2701
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 2,
@@ -56,31 +60,43 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 31
+          "s": 20
         },
         {
           "n": "gold key",
-          "s": 67
+          "s": 42
         },
         {
           "n": "switch 14",
-          "s": 79
+          "s": 50
         },
         {
           "n": "switch 13",
-          "s": 80
+          "s": 50
         },
         {
           "n": "switch 11",
-          "s": 80
+          "s": 50
+        },
+        {
+          "n": "switch 12",
+          "s": 57
+        },
+        {
+          "n": "red key",
+          "s": 61
+        },
+        {
+          "n": "boss",
+          "s": 73
         }
       ],
-      "total_frames": 5475,
+      "total_frames": 4417,
       "rng_end": {
-        "state": 2768380204,
-        "calls": 1291
+        "state": 2350638019,
+        "calls": 2246
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "semantic objective repeated without route advancement"
     }
   ]
 }

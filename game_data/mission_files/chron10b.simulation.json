@@ -22,25 +22,25 @@
       "objectives": [
         {
           "n": "switch 4",
-          "s": 20
+          "s": 13
         },
         {
           "n": "hidden door",
-          "s": 35
+          "s": 23
         },
         {
           "n": "switch 16",
-          "s": 64
+          "s": 43
         },
         {
           "n": "blue key",
-          "s": 113
+          "s": 77
         }
       ],
-      "total_frames": 11733,
+      "total_frames": 9425,
       "rng_end": {
-        "state": 3164801743,
-        "calls": 2586
+        "state": 1506573249,
+        "calls": 2624
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -54,10 +54,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 4869,
+      "total_frames": 4399,
       "rng_end": {
-        "state": 1151748123,
-        "calls": 238
+        "state": 2225544632,
+        "calls": 239
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -73,17 +73,25 @@
       "objectives": [
         {
           "n": "switch 2",
-          "s": 14
+          "s": 10
         },
         {
           "n": "switch 1",
-          "s": 23
+          "s": 16
+        },
+        {
+          "n": "switch 4",
+          "s": 37
+        },
+        {
+          "n": "switch 3",
+          "s": 54
         }
       ],
-      "total_frames": 5109,
+      "total_frames": 9433,
       "rng_end": {
-        "state": 2060492003,
-        "calls": 934
+        "state": 3823704832,
+        "calls": 1799
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -97,12 +105,12 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 915,
+      "total_frames": 3670,
       "rng_end": {
-        "state": 519488550,
-        "calls": 129
+        "state": 916896761,
+        "calls": 72
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }
   ]
 }

@@ -7,7 +7,8 @@
   "seed": 1,
   "status": "failed",
   "level_counts": {
-    "timeout": 5,
+    "failed": 1,
+    "timeout": 4,
     "route_mismatch": 1
   },
   "levels": [
@@ -23,23 +24,31 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 26
+          "s": 17
         },
         {
           "n": "switch 1",
-          "s": 43
+          "s": 30
         },
         {
           "n": "gold key",
-          "s": 91
+          "s": 61
+        },
+        {
+          "n": "red key",
+          "s": 96
+        },
+        {
+          "n": "boss",
+          "s": 120
         }
       ],
-      "total_frames": 8126,
+      "total_frames": 7262,
       "rng_end": {
-        "state": 1469258790,
-        "calls": 2177
+        "state": 4202398093,
+        "calls": 3380
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "semantic objective repeated without route advancement"
     },
     {
       "level_num": 2,
@@ -53,19 +62,27 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 32
+          "s": 21
         },
         {
           "n": "gold key",
-          "s": 78
+          "s": 49
+        },
+        {
+          "n": "red key",
+          "s": 92
+        },
+        {
+          "n": "boss",
+          "s": 134
         }
       ],
-      "total_frames": 8395,
+      "total_frames": 8102,
       "rng_end": {
-        "state": 43509826,
-        "calls": 2101
+        "state": 3841189821,
+        "calls": 3972
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "semantic objective repeated without route advancement"
     },
     {
       "level_num": 3,
@@ -79,21 +96,29 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 35
+          "s": 23
         },
         {
           "n": "switch 1",
-          "s": 67
+          "s": 43
         },
         {
           "n": "gold key",
-          "s": 89
+          "s": 56
+        },
+        {
+          "n": "switch 0",
+          "s": 85
+        },
+        {
+          "n": "red key",
+          "s": 87
         }
       ],
-      "total_frames": 8000,
+      "total_frames": 6522,
       "rng_end": {
-        "state": 1466968295,
-        "calls": 2050
+        "state": 2049385582,
+        "calls": 2521
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -109,17 +134,17 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 26
+          "s": 16
         },
         {
           "n": "red key",
-          "s": 77
+          "s": 48
         }
       ],
-      "total_frames": 6601,
+      "total_frames": 36001,
       "rng_end": {
-        "state": 4068126521,
-        "calls": 1800
+        "state": 3901011787,
+        "calls": 1982
       },
       "problem": "live objective sequence differs from route input"
     },
@@ -133,29 +158,29 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 2850,
+      "total_frames": 5122,
       "rng_end": {
-        "state": 1788460815,
-        "calls": 474
+        "state": 2303754503,
+        "calls": 482
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": -2,
       "level_file": "phoscrt2.rl2",
-      "route_input_sha256": "E87C08522C6C81D513E4DFCE3140D64A09ADF1CBDF701356E5C204958B4A3414",
-      "status": "timeout",
+      "route_input_sha256": "578C24B787DC6E7D55F43BB0947B16D32B89C3AD9ADEC102A273C89BEAFA91AE",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 1425,
+      "total_frames": 0,
       "rng_end": {
-        "state": 1282664340,
-        "calls": 259
+        "state": 4015624929,
+        "calls": 32
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "live Guide-Bot route has no actionable goal"
     }
   ]
 }

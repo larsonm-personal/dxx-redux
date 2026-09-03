@@ -20,10 +20,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 4122,
+      "total_frames": 3968,
       "rng_end": {
-        "state": 4178395768,
-        "calls": 303
+        "state": 4122348881,
+        "calls": 304
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -39,17 +39,17 @@
       "objectives": [
         {
           "n": "pass-through 4",
-          "s": 8
+          "s": 6
         },
         {
           "n": "fly-through 5",
-          "s": 16
+          "s": 11
         }
       ],
-      "total_frames": 1740,
+      "total_frames": 1331,
       "rng_end": {
-        "state": 2760187110,
-        "calls": 705
+        "state": 3456600346,
+        "calls": 701
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -72,7 +72,7 @@
           "s": 3
         }
       ],
-      "total_frames": 214,
+      "total_frames": 227,
       "rng_end": {
         "state": 4047683572,
         "calls": 291
@@ -95,13 +95,13 @@
         },
         {
           "n": "blastable wall",
-          "s": 25
+          "s": 16
         }
       ],
-      "total_frames": 1520,
+      "total_frames": 1012,
       "rng_end": {
-        "state": 2848809862,
-        "calls": 673
+        "state": 3765068871,
+        "calls": 674
       },
       "problem": "semantic objective repeated without route advancement"
     },
@@ -115,7 +115,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 5201,
+      "total_frames": 4661,
       "rng_end": {
         "state": 3453706785,
         "calls": 736
@@ -134,13 +134,17 @@
       "objectives": [
         {
           "n": "pass-through 13",
-          "s": 26
+          "s": 20
+        },
+        {
+          "n": "switch 17",
+          "s": 25
         }
       ],
-      "total_frames": 5788,
+      "total_frames": 5520,
       "rng_end": {
-        "state": 2002720982,
-        "calls": 657
+        "state": 2760187110,
+        "calls": 705
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

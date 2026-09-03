@@ -23,35 +23,35 @@
       "objectives": [
         {
           "n": "switch 0",
-          "s": 21
+          "s": 15
         },
         {
           "n": "blue key",
-          "s": 34
+          "s": 23
         },
         {
           "n": "hidden door",
-          "s": 78
+          "s": 51
         },
         {
           "n": "switch 1",
-          "s": 83
+          "s": 54
         },
         {
           "n": "gold key",
-          "s": 93
+          "s": 63
         },
         {
           "n": "hidden door",
-          "s": 136
+          "s": 90
         }
       ],
-      "total_frames": 36001,
+      "total_frames": 23537,
       "rng_end": {
-        "state": 2955174371,
-        "calls": 7846
+        "state": 3768794572,
+        "calls": 8171
       },
-      "problem": "route confirmation exceeded 10 simulation minutes"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 2,
@@ -65,19 +65,27 @@
       "objectives": [
         {
           "n": "switch 1",
-          "s": 25
+          "s": 18
         },
         {
           "n": "blue key",
-          "s": 39
+          "s": 28
+        },
+        {
+          "n": "switch 7",
+          "s": 33
+        },
+        {
+          "n": "switch 2",
+          "s": 33
         }
       ],
-      "total_frames": 7604,
+      "total_frames": 3124,
       "rng_end": {
-        "state": 697145729,
-        "calls": 640
+        "state": 4131678334,
+        "calls": 1033
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 3,
@@ -89,10 +97,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 4281,
+      "total_frames": 6180,
       "rng_end": {
-        "state": 3536284836,
-        "calls": 179
+        "state": 1187663298,
+        "calls": 181
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -108,37 +116,37 @@
       "objectives": [
         {
           "n": "switch 8",
-          "s": 17
+          "s": 11
         },
         {
           "n": "blue key",
-          "s": 27
+          "s": 19
         },
         {
           "n": "switch 10",
-          "s": 27
+          "s": 19
         },
         {
           "n": "gold key",
-          "s": 68
+          "s": 46
         },
         {
           "n": "switch 6",
-          "s": 100
+          "s": 65
         },
         {
           "n": "switch 4",
-          "s": 100
+          "s": 65
         },
         {
           "n": "fly-through 5",
-          "s": 113
+          "s": 73
         }
       ],
-      "total_frames": 10524,
+      "total_frames": 8123,
       "rng_end": {
-        "state": 3144462281,
-        "calls": 2296
+        "state": 1771500082,
+        "calls": 2309
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -154,45 +162,65 @@
       "objectives": [
         {
           "n": "switch 13",
-          "s": 8
+          "s": 6
         },
         {
           "n": "switch 0",
-          "s": 14
+          "s": 9
         },
         {
           "n": "switch 1",
-          "s": 18
+          "s": 12
         },
         {
           "n": "switch 2",
-          "s": 22
+          "s": 15
         },
         {
           "n": "blue key",
-          "s": 27
+          "s": 18
         },
         {
           "n": "switch 14",
-          "s": 33
+          "s": 22
         },
         {
           "n": "hidden door",
-          "s": 69
+          "s": 44
         },
         {
           "n": "switch 15",
-          "s": 105
+          "s": 67
         },
         {
           "n": "gold key",
-          "s": 140
+          "s": 91
+        },
+        {
+          "n": "fly-through 3",
+          "s": 126
+        },
+        {
+          "n": "switch 7",
+          "s": 201
+        },
+        {
+          "n": "fly-through 5",
+          "s": 274
+        },
+        {
+          "n": "switch 8",
+          "s": 349
+        },
+        {
+          "n": "red key",
+          "s": 417
         }
       ],
-      "total_frames": 11054,
+      "total_frames": 33117,
       "rng_end": {
-        "state": 3302693797,
-        "calls": 4060
+        "state": 877954880,
+        "calls": 18887
       },
       "problem": "live objective sequence differs from route input"
     }

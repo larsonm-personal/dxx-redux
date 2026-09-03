@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "failed",
   "level_counts": {
-    "failed": 2,
-    "timeout": 2,
+    "failed": 3,
+    "timeout": 1,
     "unsupported": 1
   },
   "levels": [
@@ -49,7 +49,7 @@
     {
       "level_num": 3,
       "level_file": "sativa.rl2",
-      "route_input_sha256": "A9A2BCCEC0411C6A64DC12DDEAAFBD80A55099B935D01C5B24C68B5101A41CBA",
+      "route_input_sha256": "F438D69EBE698926A39FFF2DA1A3C6A35EE7EE9A35D4F5CC48FF3BC8A653E95F",
       "status": "unsupported",
       "rng_start": {
         "state": 1,
@@ -58,13 +58,13 @@
       "objectives": [
         {
           "n": "switch 0",
-          "s": 5
+          "s": 3
         }
       ],
-      "total_frames": 1093,
+      "total_frames": 730,
       "rng_end": {
-        "state": 1151748123,
-        "calls": 238
+        "state": 2225544632,
+        "calls": 239
       },
       "problem": "route objective activation is not supported"
     },
@@ -80,48 +80,60 @@
       "objectives": [
         {
           "n": "switch 0",
-          "s": 7
+          "s": 5
         },
         {
           "n": "hidden door",
-          "s": 18
+          "s": 12
+        },
+        {
+          "n": "hidden door",
+          "s": 14
+        },
+        {
+          "n": "blue key",
+          "s": 15
         },
         {
           "n": "hidden door",
           "s": 21
         },
         {
-          "n": "blue key",
-          "s": 23
+          "n": "switch 2",
+          "s": 38
+        },
+        {
+          "n": "gold key",
+          "s": 42
         },
         {
           "n": "hidden door",
-          "s": 30
+          "s": 57
         }
       ],
-      "total_frames": 14518,
+      "total_frames": 10591,
       "rng_end": {
-        "state": 842528799,
-        "calls": 6602
+        "state": 717649719,
+        "calls": 6322
       },
       "problem": "semantic objective repeated without route advancement"
     },
     {
       "level_num": -1,
       "level_file": "hash.rl2",
-      "route_input_sha256": "5D93ABDD3C3AB3A9B5F9F05516736FBA5BFCE7797F061699EA02190B0A2B2658",
-      "status": "timeout",
+      "route_input_sha256": "6EE957886271AAB28EE10C641CD0627DBE0135DD8EFCA02B238F2AEA10676C02",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 581,
+      "total_frames": 0,
       "rng_end": {
-        "state": 1452336924,
-        "calls": 91
+        "state": 1448521415,
+        "calls": 34
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "live Guide-Bot route has no actionable goal"
     }
   ]
 }

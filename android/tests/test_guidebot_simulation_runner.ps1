@@ -46,12 +46,40 @@ try {
     if ($multiDescriptor.Count -ne 14 -or @($multiDescriptor.identity | Select-Object -Unique).Count -ne 14) {
         throw 'Multi-descriptor mission work item expansion is incorrect'
     }
+    if (@($multiDescriptor | Where-Object { $_.identity -notmatch '\|0\|' -or $_.engine_level -ne 1 }).Count) {
+        throw 'Level-zero metadata must retain its identity while launching engine level 1'
+    }
     $sampleA = @(Invoke-DryRun -Name sample_a -MissionJson Counterstrike.json -SampleFraction 0.25 `
             -SampleSeed 717 -SampleStatePath (Join-Path $tempRoot 'sample_a_state.json'))
     $sampleB = @(Invoke-DryRun -Name sample_b -MissionJson Counterstrike.json -SampleFraction 0.25 `
             -SampleSeed 717 -SampleStatePath (Join-Path $tempRoot 'sample_b_state.json'))
     if ($sampleA.Count -eq 0 -or ($sampleA.identity -join ',') -cne ($sampleB.identity -join ',')) {
         throw 'Hash-ring dry-run selection is not deterministic from equal fresh state'
+    }
+
+    $failureRoot = Join-Path $tempRoot 'infrastructure_failure'
+    $pwsh = (Get-Process -Id $PID).Path
+    $failureLog = Join-Path $tempRoot 'infrastructure_failure.log'
+    $failureArguments = @(
+        '-NoProfile', '-File', $runner,
+        '-Mode', 'Headless', '-MissionJson', 'Counterstrike.json', '-Level', '1',
+        '-Repeat', '1', '-NoBuild', '-OutputRoot', $failureRoot,
+        '-HeadlessExecutable', $pwsh
+    ) | ForEach-Object {
+        $argument = [string]$_
+        if ($argument -match '[\s"]') { '"' + $argument.Replace('"', '\"') + '"' } else { $argument }
+    }
+    $failureProcess = Start-Process -FilePath $pwsh -ArgumentList ($failureArguments -join ' ') `
+        -Wait -PassThru -NoNewWindow -RedirectStandardOutput $failureLog -RedirectStandardError "$failureLog.stderr"
+    if ($failureProcess.ExitCode -eq 0) {
+        throw 'Injected route engine failure unexpectedly succeeded'
+    }
+    $failureOutput = Get-Content -LiteralPath (Join-Path $failureRoot 'results\Counterstrike.simulation.json') `
+        -Raw | ConvertFrom-Json
+    $failedLevel = @($failureOutput.levels | Where-Object { $_.level_num -eq 1 })
+    if ($failedLevel.Count -ne 1 -or $failedLevel[0].status -ne 'infrastructure_error' -or
+        -not [string]$failedLevel[0].problem) {
+        throw 'Infrastructure failure was not published in the level regression result'
     }
     Write-Host 'GuideBot simulation runner discovery and sampling passed'
 } finally {

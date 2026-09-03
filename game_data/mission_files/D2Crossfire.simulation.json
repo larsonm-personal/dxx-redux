@@ -7,15 +7,16 @@
   "seed": 1,
   "status": "failed",
   "level_counts": {
-    "failed": 2,
-    "timeout": 17
+    "failed": 3,
+    "timeout": 15,
+    "route_mismatch": 1
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "crikgul.rl2",
-      "route_input_sha256": "F462AFBA04018BAF8BD9D78BA6AE3827AE4B40E49F7FDC68BCEA349E9CBD32B0",
-      "status": "timeout",
+      "route_input_sha256": "24581A239F7755F9C67F8D263E998A073206234FC3D4D275228D6715628F4EDC",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -23,23 +24,15 @@
       "objectives": [
         {
           "n": "red key",
-          "s": 27
-        },
-        {
-          "n": "switch 2",
-          "s": 36
-        },
-        {
-          "n": "boss",
-          "s": 53
+          "s": 17
         }
       ],
-      "total_frames": 3206,
+      "total_frames": 1013,
       "rng_end": {
-        "state": 541680798,
-        "calls": 2153
+        "state": 3740753246,
+        "calls": 681
       },
-      "problem": "semantic objective repeated without route advancement"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 2,
@@ -51,7 +44,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 4173,
+      "total_frames": 3968,
       "rng_end": {
         "state": 1151748123,
         "calls": 238
@@ -68,7 +61,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 5441,
+      "total_frames": 4801,
       "rng_end": {
         "state": 1897087126,
         "calls": 465
@@ -87,19 +80,23 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 41
+          "s": 26
         },
         {
           "n": "red key",
-          "s": 91
+          "s": 58
+        },
+        {
+          "n": "boss",
+          "s": 89
         }
       ],
-      "total_frames": 7257,
+      "total_frames": 5400,
       "rng_end": {
-        "state": 2406486900,
-        "calls": 1955
+        "state": 4103300773,
+        "calls": 3292
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "semantic objective repeated without route advancement"
     },
     {
       "level_num": 5,
@@ -113,21 +110,25 @@
       "objectives": [
         {
           "n": "switch 0",
-          "s": 18
+          "s": 12
         },
         {
           "n": "switch 1",
-          "s": 26
+          "s": 17
         },
         {
           "n": "blue key",
-          "s": 34
+          "s": 23
+        },
+        {
+          "n": "gold key",
+          "s": 51
         }
       ],
-      "total_frames": 4134,
+      "total_frames": 4377,
       "rng_end": {
-        "state": 3899512905,
-        "calls": 1144
+        "state": 2108581043,
+        "calls": 2006
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -141,7 +142,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 3661,
+      "total_frames": 3602,
       "rng_end": {
         "state": 3826077128,
         "calls": 159
@@ -158,10 +159,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 6307,
+      "total_frames": 5193,
       "rng_end": {
-        "state": 3466718254,
-        "calls": 281
+        "state": 3433853922,
+        "calls": 277
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -177,19 +178,19 @@
       "objectives": [
         {
           "n": "red key",
-          "s": 24
+          "s": 17
         },
         {
           "n": "blue key",
-          "s": 58
+          "s": 37
         }
       ],
-      "total_frames": 5197,
+      "total_frames": 7226,
       "rng_end": {
-        "state": 4014904168,
-        "calls": 2175
+        "state": 1725722493,
+        "calls": 2500
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 9,
@@ -218,7 +219,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 4854,
+      "total_frames": 4497,
       "rng_end": {
         "state": 2479256406,
         "calls": 529
@@ -237,13 +238,13 @@
       "objectives": [
         {
           "n": "blastable wall",
-          "s": 11
+          "s": 6
         }
       ],
-      "total_frames": 675,
+      "total_frames": 385,
       "rng_end": {
-        "state": 432627427,
-        "calls": 422
+        "state": 1547223264,
+        "calls": 423
       },
       "problem": "semantic objective repeated without route advancement"
     },
@@ -259,13 +260,13 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 13
+          "s": 9
         }
       ],
       "total_frames": 36001,
       "rng_end": {
-        "state": 3298422062,
-        "calls": 1049
+        "state": 1165359753,
+        "calls": 1080
       },
       "problem": "route confirmation exceeded 10 simulation minutes"
     },
@@ -298,19 +299,23 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 37
+          "s": 24
         },
         {
           "n": "red key",
-          "s": 86
+          "s": 54
+        },
+        {
+          "n": "boss",
+          "s": 74
         }
       ],
-      "total_frames": 6467,
+      "total_frames": 4492,
       "rng_end": {
-        "state": 868962217,
-        "calls": 2072
+        "state": 1483342298,
+        "calls": 2301
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "semantic objective repeated without route advancement"
     },
     {
       "level_num": 15,
@@ -324,17 +329,21 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 32
+          "s": 22
         },
         {
           "n": "gold key",
-          "s": 70
+          "s": 45
+        },
+        {
+          "n": "red key",
+          "s": 85
         }
       ],
-      "total_frames": 7341,
+      "total_frames": 5876,
       "rng_end": {
-        "state": 1114955951,
-        "calls": 1594
+        "state": 2397063065,
+        "calls": 2472
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -342,18 +351,31 @@
       "level_num": 16,
       "level_file": "nytro.rl2",
       "route_input_sha256": "D6BF370E5E672F977007654F056F27056625399AB87EAAFC00E8C27B56D89405",
-      "status": "timeout",
+      "status": "route_mismatch",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4074,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 16
+        },
+        {
+          "n": "fly-through 1",
+          "s": 19
+        },
+        {
+          "n": "fly-through 7",
+          "s": 28
+        }
+      ],
+      "total_frames": 5791,
       "rng_end": {
-        "state": 1621937922,
-        "calls": 117
+        "state": 3576833760,
+        "calls": 935
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live objective sequence differs from route input"
     },
     {
       "level_num": 17,
@@ -365,7 +387,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 4193,
+      "total_frames": 4002,
       "rng_end": {
         "state": 1344117138,
         "calls": 293
@@ -382,10 +404,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 1325,
+      "total_frames": 1046,
       "rng_end": {
-        "state": 1282664340,
-        "calls": 259
+        "state": 3863712643,
+        "calls": 262
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -399,7 +421,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 3815,
+      "total_frames": 3746,
       "rng_end": {
         "state": 769681363,
         "calls": 182

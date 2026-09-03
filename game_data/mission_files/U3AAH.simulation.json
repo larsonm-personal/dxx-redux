@@ -20,7 +20,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 3937,
+      "total_frames": 3833,
       "rng_end": {
         "state": 2144619499,
         "calls": 798
@@ -39,19 +39,19 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 6
+          "s": 4
         },
         {
           "n": "hidden door",
-          "s": 13
+          "s": 10
         }
       ],
-      "total_frames": 14232,
+      "total_frames": 10538,
       "rng_end": {
-        "state": 4019657970,
-        "calls": 15685
+        "state": 3023339926,
+        "calls": 9425
       },
-      "problem": "semantic objective repeated without route advancement"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }
   ]
 }

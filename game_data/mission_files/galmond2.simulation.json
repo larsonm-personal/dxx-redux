@@ -5,17 +5,18 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
+    "ok": 3,
     "failed": 1,
-    "timeout": 11
+    "timeout": 8
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "CALSTO19.RL2",
       "route_input_sha256": "87DE078C2BE84AFF4873067705B2E01559F3D777DFAD9C43DC7C93D5E0F8152E",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -23,35 +24,42 @@
       "objectives": [
         {
           "n": "switch 2",
-          "s": 14
+          "s": 10
         },
         {
           "n": "blue key",
-          "s": 36
+          "s": 25
         },
         {
           "n": "switch 3",
-          "s": 48
+          "s": 33
         },
         {
           "n": "gold key",
-          "s": 93
+          "s": 61
         },
         {
           "n": "switch 6",
-          "s": 106
+          "s": 69
         },
         {
           "n": "red key",
-          "s": 147
+          "s": 95
+        },
+        {
+          "n": "reactor",
+          "s": 124
+        },
+        {
+          "n": "exit",
+          "s": 134
         }
       ],
-      "total_frames": 11342,
+      "total_frames": 8069,
       "rng_end": {
-        "state": 3556353613,
-        "calls": 4724
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 3177100444,
+        "calls": 5339
+      }
     },
     {
       "level_num": 2,
@@ -65,33 +73,29 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 9
+          "s": 6
         },
         {
           "n": "blue key",
-          "s": 18
+          "s": 12
         },
         {
           "n": "hidden door",
-          "s": 29
-        },
-        {
-          "n": "hidden door",
-          "s": 41
+          "s": 21
         }
       ],
-      "total_frames": 18345,
+      "total_frames": 5161,
       "rng_end": {
-        "state": 1191668195,
-        "calls": 5798
+        "state": 1444590749,
+        "calls": 932
       },
-      "problem": "semantic objective repeated without route advancement"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 3,
       "level_file": "ARIEL21.RL2",
       "route_input_sha256": "93DE9D5CCC0A85640631CBBA01C9101790DD2C1AAF877F8DBEDB6A6F15065170",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -99,35 +103,46 @@
       "objectives": [
         {
           "n": "switch 9",
-          "s": 27
+          "s": 18
         },
         {
           "n": "switch 8",
-          "s": 40
+          "s": 27
         },
         {
           "n": "blue key",
-          "s": 42
+          "s": 28
         },
         {
           "n": "switch 10",
-          "s": 42
+          "s": 28
         },
         {
           "n": "gold key",
-          "s": 111
+          "s": 72
         },
         {
           "n": "switch 16",
-          "s": 111
+          "s": 72
+        },
+        {
+          "n": "red key",
+          "s": 106
+        },
+        {
+          "n": "reactor",
+          "s": 139
+        },
+        {
+          "n": "exit",
+          "s": 167
         }
       ],
-      "total_frames": 9218,
+      "total_frames": 10006,
       "rng_end": {
-        "state": 1307638625,
-        "calls": 2976
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 3017708399,
+        "calls": 6010
+      }
     },
     {
       "level_num": 4,
@@ -141,25 +156,25 @@
       "objectives": [
         {
           "n": "switch 1",
-          "s": 24
+          "s": 16
         },
         {
           "n": "blue key",
-          "s": 28
+          "s": 18
         },
         {
           "n": "switch 4",
-          "s": 54
+          "s": 35
         },
         {
           "n": "gold key",
-          "s": 73
+          "s": 46
         }
       ],
-      "total_frames": 9692,
+      "total_frames": 7492,
       "rng_end": {
-        "state": 851953472,
-        "calls": 2503
+        "state": 2049385582,
+        "calls": 2521
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -175,29 +190,37 @@
       "objectives": [
         {
           "n": "switch 3",
-          "s": 59
+          "s": 39
         },
         {
           "n": "blue key",
-          "s": 60
+          "s": 40
         },
         {
           "n": "switch 2",
-          "s": 60
+          "s": 40
         },
         {
           "n": "switch 1",
-          "s": 122
+          "s": 78
         },
         {
           "n": "gold key",
-          "s": 127
+          "s": 82
+        },
+        {
+          "n": "red key",
+          "s": 119
+        },
+        {
+          "n": "switch 0",
+          "s": 142
         }
       ],
-      "total_frames": 9446,
+      "total_frames": 9139,
       "rng_end": {
-        "state": 3056436300,
-        "calls": 1899
+        "state": 4116360776,
+        "calls": 3615
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -213,13 +236,13 @@
       "objectives": [
         {
           "n": "switch 3",
-          "s": 9
+          "s": 6
         }
       ],
-      "total_frames": 5485,
+      "total_frames": 4957,
       "rng_end": {
-        "state": 2947464898,
-        "calls": 949
+        "state": 155373836,
+        "calls": 939
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -252,17 +275,17 @@
       "objectives": [
         {
           "n": "switch 3",
-          "s": 16
+          "s": 11
         },
         {
           "n": "blastable wall",
-          "s": 52
+          "s": 36
         }
       ],
-      "total_frames": 3182,
+      "total_frames": 2176,
       "rng_end": {
-        "state": 361845844,
-        "calls": 1347
+        "state": 509228274,
+        "calls": 1349
       },
       "problem": "semantic objective repeated without route advancement"
     },
@@ -278,29 +301,29 @@
       "objectives": [
         {
           "n": "fly-through 9",
-          "s": 21
+          "s": 14
         },
         {
           "n": "blue key",
-          "s": 43
+          "s": 28
         },
         {
           "n": "switch 13",
-          "s": 57
+          "s": 38
         },
         {
           "n": "gold key",
-          "s": 105
+          "s": 66
         },
         {
           "n": "switch 11",
-          "s": 152
+          "s": 95
         }
       ],
-      "total_frames": 10675,
+      "total_frames": 6912,
       "rng_end": {
-        "state": 1702288081,
-        "calls": 4016
+        "state": 641079677,
+        "calls": 4036
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -316,19 +339,19 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 11
+          "s": 7
         },
         {
           "n": "hidden door",
-          "s": 29
+          "s": 19
         }
       ],
-      "total_frames": 36001,
+      "total_frames": 29055,
       "rng_end": {
-        "state": 3557319284,
-        "calls": 19619
+        "state": 3574055977,
+        "calls": 22424
       },
-      "problem": "route confirmation exceeded 10 simulation minutes"
+      "problem": "semantic objective repeated without route advancement"
     },
     {
       "level_num": 11,
@@ -342,17 +365,17 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 28
+          "s": 19
         },
         {
           "n": "switch 7",
-          "s": 62
+          "s": 42
         }
       ],
-      "total_frames": 4302,
+      "total_frames": 3077,
       "rng_end": {
-        "state": 3177921657,
-        "calls": 968
+        "state": 2142186641,
+        "calls": 1008
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -360,7 +383,7 @@
       "level_num": 12,
       "level_file": "PHOEBE30.RL2",
       "route_input_sha256": "E17B2CFCE5D42F6962C8C9A35FA96389F38DF95A393874C1C41B068B441AF8A0",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -368,27 +391,42 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 46
+          "s": 29
         },
         {
           "n": "switch 5",
-          "s": 87
+          "s": 56
         },
         {
           "n": "gold key",
-          "s": 105
+          "s": 65
         },
         {
           "n": "switch 2",
-          "s": 114
+          "s": 71
+        },
+        {
+          "n": "red key",
+          "s": 108
+        },
+        {
+          "n": "fly-through 1",
+          "s": 152
+        },
+        {
+          "n": "reactor",
+          "s": 154
+        },
+        {
+          "n": "exit",
+          "s": 176
         }
       ],
-      "total_frames": 9627,
+      "total_frames": 10560,
       "rng_end": {
-        "state": 2796163638,
-        "calls": 2737
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 3657463003,
+        "calls": 5166
+      }
     }
   ]
 }

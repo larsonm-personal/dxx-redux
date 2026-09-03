@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
-    "timeout": 3
+    "ok": 3,
+    "timeout": 2
   },
   "levels": [
     {
@@ -23,44 +23,44 @@
       "objectives": [
         {
           "n": "fly-through 3",
-          "s": 21
+          "s": 13
         },
         {
           "n": "switch 0",
-          "s": 28
+          "s": 18
         },
         {
           "n": "switch 1",
-          "s": 44
+          "s": 29
         },
         {
           "n": "red key",
-          "s": 60
+          "s": 39
         },
         {
           "n": "switch 4",
-          "s": 85
+          "s": 56
         },
         {
           "n": "reactor",
-          "s": 102
+          "s": 66
         },
         {
           "n": "exit",
-          "s": 114
+          "s": 72
         }
       ],
-      "total_frames": 6822,
+      "total_frames": 4343,
       "rng_end": {
-        "state": 890570627,
-        "calls": 3334
+        "state": 1151372233,
+        "calls": 3320
       }
     },
     {
       "level_num": 2,
       "level_file": "mnalvl2.rl2",
       "route_input_sha256": "A29219721D7D42B7E9D30C3AF768E253934803949B55F7C6664030F34C44D91B",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -68,23 +68,30 @@
       "objectives": [
         {
           "n": "switch 1",
-          "s": 34
+          "s": 22
         },
         {
           "n": "blue key",
-          "s": 64
+          "s": 43
         },
         {
           "n": "red key",
-          "s": 140
+          "s": 90
+        },
+        {
+          "n": "reactor",
+          "s": 144
+        },
+        {
+          "n": "exit",
+          "s": 159
         }
       ],
-      "total_frames": 10815,
+      "total_frames": 9543,
       "rng_end": {
-        "state": 707932710,
-        "calls": 2689
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 917813531,
+        "calls": 4078
+      }
     },
     {
       "level_num": 3,
@@ -96,10 +103,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 5410,
+      "total_frames": 4833,
       "rng_end": {
-        "state": 338887028,
-        "calls": 419
+        "state": 2668590866,
+        "calls": 421
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -115,45 +122,45 @@
       "objectives": [
         {
           "n": "switch 1",
-          "s": 10
+          "s": 7
         },
         {
           "n": "blue key",
-          "s": 43
+          "s": 28
         },
         {
           "n": "switch 0",
-          "s": 72
+          "s": 47
         },
         {
           "n": "red key",
-          "s": 95
+          "s": 60
         },
         {
           "n": "switch 2",
-          "s": 131
+          "s": 81
         },
         {
           "n": "switch 3",
-          "s": 131
+          "s": 81
         },
         {
           "n": "fly-through 10",
-          "s": 143
+          "s": 89
         },
         {
           "n": "switch 4",
-          "s": 150
+          "s": 94
         },
         {
           "n": "boss",
-          "s": 190
+          "s": 120
         }
       ],
-      "total_frames": 11426,
+      "total_frames": 7216,
       "rng_end": {
-        "state": 2537516813,
-        "calls": 5044
+        "state": 3940970178,
+        "calls": 5045
       },
       "problem": "semantic objective repeated without route advancement"
     },
@@ -169,22 +176,22 @@
       "objectives": [
         {
           "n": "switch 2",
-          "s": 3
+          "s": 2
         },
         {
           "n": "switch 6",
-          "s": 9
+          "s": 6
         },
         {
           "n": "reactor",
-          "s": 17
+          "s": 11
         },
         {
           "n": "exit",
-          "s": 29
+          "s": 19
         }
       ],
-      "total_frames": 1746,
+      "total_frames": 1110,
       "rng_end": {
         "state": 4069223089,
         "calls": 720

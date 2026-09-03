@@ -13,7 +13,7 @@
     {
       "level_num": 1,
       "level_file": "lagrange.rl2",
-      "route_input_sha256": "F1D2AC7F5D70BDF45FB25987A8B926369AD89C4BBF3419A5C32A95447A399579",
+      "route_input_sha256": "6C55D930847BC8310CA66F9D01C3CAD9E13E6A8C94B2162F6DDD430D82A9369F",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -22,19 +22,23 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 6
+          "s": 4
         },
         {
           "n": "hidden door",
-          "s": 11
+          "s": 8
+        },
+        {
+          "n": "blastable wall",
+          "s": 14
         }
       ],
-      "total_frames": 15155,
+      "total_frames": 1752,
       "rng_end": {
-        "state": 2944040588,
-        "calls": 6187
+        "state": 2002496997,
+        "calls": 924
       },
-      "problem": "semantic objective repeated without route advancement"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 2,
@@ -46,12 +50,12 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 2271,
+      "total_frames": 4755,
       "rng_end": {
-        "state": 1151322306,
-        "calls": 437
+        "state": 2324426550,
+        "calls": 433
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }
   ]
 }

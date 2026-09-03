@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 1,
-    "timeout": 2
+    "ok": 2,
+    "timeout": 1
   },
   "levels": [
     {
@@ -23,21 +23,21 @@
       "objectives": [
         {
           "n": "red key",
-          "s": 20
+          "s": 13
         },
         {
           "n": "reactor",
-          "s": 64
+          "s": 41
         },
         {
           "n": "exit",
-          "s": 106
+          "s": 68
         }
       ],
-      "total_frames": 6361,
+      "total_frames": 4105,
       "rng_end": {
-        "state": 4099008512,
-        "calls": 1543
+        "state": 3614462044,
+        "calls": 1563
       }
     },
     {
@@ -52,25 +52,21 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 29
-        },
-        {
-          "n": "gold key",
-          "s": 86
+          "s": 19
         }
       ],
-      "total_frames": 7481,
+      "total_frames": 5963,
       "rng_end": {
-        "state": 1382522462,
-        "calls": 1449
+        "state": 2558705196,
+        "calls": 1035
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 3,
       "level_file": "Sirius3.rl2",
       "route_input_sha256": "2CA43CFEFD5E4974A0A9C399800B36F5172073565DD1F4132BBA76E91BBBFEBE",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -78,19 +74,30 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 11
+          "s": 7
         },
         {
           "n": "gold key",
-          "s": 45
+          "s": 28
+        },
+        {
+          "n": "red key",
+          "s": 71
+        },
+        {
+          "n": "reactor",
+          "s": 107
+        },
+        {
+          "n": "exit",
+          "s": 121
         }
       ],
-      "total_frames": 5700,
+      "total_frames": 7252,
       "rng_end": {
-        "state": 3866165955,
-        "calls": 2502
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 1605186651,
+        "calls": 5294
+      }
     }
   ]
 }

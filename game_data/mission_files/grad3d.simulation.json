@@ -7,7 +7,8 @@
   "seed": 1,
   "status": "failed",
   "level_counts": {
-    "timeout": 6
+    "failed": 1,
+    "timeout": 5
   },
   "levels": [
     {
@@ -20,7 +21,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 4298,
+      "total_frames": 4048,
       "rng_end": {
         "state": 2395636337,
         "calls": 272
@@ -39,29 +40,37 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 68
+          "s": 43
         },
         {
           "n": "switch 1",
-          "s": 111
+          "s": 72
         },
         {
           "n": "gold key",
-          "s": 128
+          "s": 82
+        },
+        {
+          "n": "red key",
+          "s": 110
+        },
+        {
+          "n": "boss",
+          "s": 142
         }
       ],
-      "total_frames": 9426,
+      "total_frames": 8581,
       "rng_end": {
-        "state": 602400160,
-        "calls": 2535
+        "state": 1681218017,
+        "calls": 4384
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "semantic objective repeated without route advancement"
     },
     {
       "level_num": 3,
       "level_file": "aquatica.rl2",
       "route_input_sha256": "3E491E121260718E07BF6215FF99D3F8C4292235CBC364576EF2F2F1859A8CC2",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -69,19 +78,23 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 78
+          "s": 51
         },
         {
           "n": "gold key",
-          "s": 194
+          "s": 123
+        },
+        {
+          "n": "red key",
+          "s": 205
         }
       ],
-      "total_frames": 16948,
+      "total_frames": 12274,
       "rng_end": {
-        "state": 3736456474,
-        "calls": 3773
+        "state": 2599568550,
+        "calls": 4609
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 4,
@@ -95,13 +108,17 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 35
+          "s": 23
+        },
+        {
+          "n": "red key",
+          "s": 79
         }
       ],
-      "total_frames": 6201,
+      "total_frames": 8121,
       "rng_end": {
-        "state": 428930093,
-        "calls": 1428
+        "state": 3707538854,
+        "calls": 3329
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -117,19 +134,19 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 66
+          "s": 43
         },
         {
           "n": "gold key",
-          "s": 142
+          "s": 97
         }
       ],
-      "total_frames": 10858,
+      "total_frames": 11473,
       "rng_end": {
-        "state": 3668876471,
-        "calls": 2866
+        "state": 202834805,
+        "calls": 3468
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 6,
@@ -141,10 +158,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 9410,
+      "total_frames": 7325,
       "rng_end": {
-        "state": 1400661050,
-        "calls": 1565
+        "state": 2920974234,
+        "calls": 1597
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

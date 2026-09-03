@@ -6,27 +6,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "not_run",
     "level_counts": {
-      "failed": 1
+      "not_run": 1
     },
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "level_file": "magma.rl2",
-        "route_input_sha256": "83224192AC327DB972702BFE50F56DC603E4426D665EBDC22CCBA3292F48129B",
-        "status": "failed",
-        "rng_start": {
-          "state": 1,
-          "calls": 0
-        },
-        "objectives": [],
-        "total_frames": 0,
-        "rng_end": {
-          "state": 1047820095,
-          "calls": 170
-        },
-        "problem": "live Guide-Bot route has no actionable goal"
+        "route_input_sha256": "E967562B68442BF0AE6EA6527CBCB500A92EDEE166523AABBE48F74A7E9206AD",
+        "status": "not_run"
       }
     ]
   },
@@ -37,27 +26,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "not_run",
     "level_counts": {
-      "failed": 1
+      "not_run": 1
     },
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "level_file": "mmagma.rl2",
-        "route_input_sha256": "6605E857F1E094B8120FB667431B35BC43BB7547230F421AB8C1E0655531720F",
-        "status": "failed",
-        "rng_start": {
-          "state": 1,
-          "calls": 0
-        },
-        "objectives": [],
-        "total_frames": 0,
-        "rng_end": {
-          "state": 1047820095,
-          "calls": 170
-        },
-        "problem": "live Guide-Bot route has no actionable goal"
+        "route_input_sha256": "A6AFCEC2242F9ECE08DDC814445B48F329AD963B8C5EAEECD295D299F59ECFE3",
+        "status": "not_run"
       }
     ]
   }

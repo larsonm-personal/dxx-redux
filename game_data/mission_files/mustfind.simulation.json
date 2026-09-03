@@ -40,29 +40,29 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 25
+          "s": 17
         },
         {
           "n": "switch 3",
-          "s": 53
+          "s": 35
         },
         {
           "n": "gold key",
-          "s": 63
+          "s": 39
         },
         {
           "n": "switch 4",
-          "s": 86
+          "s": 53
         },
         {
           "n": "red key",
-          "s": 89
+          "s": 56
         }
       ],
-      "total_frames": 6238,
+      "total_frames": 4116,
       "rng_end": {
-        "state": 3208794827,
-        "calls": 3134
+        "state": 1186941160,
+        "calls": 3327
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     }

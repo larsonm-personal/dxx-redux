@@ -5,27 +5,16 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "not_run",
   "level_counts": {
-    "timeout": 1
+    "not_run": 1
   },
   "levels": [
     {
-      "level_num": 1,
+      "level_num": 0,
       "level_file": "helium.rl2",
-      "route_input_sha256": "96223A1398988A8C5C58C6C4CB5E88F653103C123231D083A986186C69F4C3BB",
-      "status": "timeout",
-      "rng_start": {
-        "state": 1,
-        "calls": 0
-      },
-      "objectives": [],
-      "total_frames": 1291,
-      "rng_end": {
-        "state": 2213412917,
-        "calls": 716
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "route_input_sha256": "CB3EB28919FDEBBF99BC6CA7728FB1B9EA272E06BFD16154EB32184FED45BDE2",
+      "status": "not_run"
     }
   ]
 }

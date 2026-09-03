@@ -5,10 +5,11 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
+    "ok": 1,
     "failed": 1,
-    "timeout": 4
+    "timeout": 3
   },
   "levels": [
     {
@@ -23,10 +24,10 @@
       "objectives": [
         {
           "n": "blastable wall",
-          "s": 12
+          "s": 8
         }
       ],
-      "total_frames": 757,
+      "total_frames": 486,
       "rng_end": {
         "state": 1456828036,
         "calls": 339
@@ -48,10 +49,10 @@
           "s": 1
         }
       ],
-      "total_frames": 4797,
+      "total_frames": 6638,
       "rng_end": {
-        "state": 3926199050,
-        "calls": 397
+        "state": 1759879576,
+        "calls": 399
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -59,7 +60,7 @@
       "level_num": 3,
       "level_file": "drmorcrn.rl2",
       "route_input_sha256": "FA7778107657FD4D4BCF33DF631D5333889CB7D6A73F95BA2015583F91819863",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -67,19 +68,30 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 51
+          "s": 32
         },
         {
           "n": "gold key",
-          "s": 81
+          "s": 50
+        },
+        {
+          "n": "red key",
+          "s": 60
+        },
+        {
+          "n": "reactor",
+          "s": 97
+        },
+        {
+          "n": "exit",
+          "s": 113
         }
       ],
-      "total_frames": 5867,
+      "total_frames": 6753,
       "rng_end": {
-        "state": 3514138965,
-        "calls": 1196
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 4178164351,
+        "calls": 2410
+      }
     },
     {
       "level_num": 4,
@@ -110,14 +122,14 @@
       "objectives": [
         {
           "n": "switch 2",
-          "s": 7
+          "s": 4
         },
         {
           "n": "boss",
-          "s": 10
+          "s": 7
         }
       ],
-      "total_frames": 639,
+      "total_frames": 428,
       "rng_end": {
         "state": 3682954967,
         "calls": 786

@@ -7,14 +7,14 @@
   "seed": 1,
   "status": "failed",
   "level_counts": {
-    "failed": 2,
-    "timeout": 2
+    "failed": 1,
+    "timeout": 3
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "toro_s.rl2",
-      "route_input_sha256": "4B4B2001F2B713B11C390565143841AC11463A5970418EC53AF6DB546E648F71",
+      "route_input_sha256": "5E3F6E93B36C3A3FE1E9DC282C0A8A6F1992CF5332025598BE7677E6D22C43F5",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -23,13 +23,13 @@
       "objectives": [
         {
           "n": "switch 1",
-          "s": 17
+          "s": 11
         }
       ],
-      "total_frames": 4954,
+      "total_frames": 4461,
       "rng_end": {
-        "state": 3429849900,
-        "calls": 779
+        "state": 2839112181,
+        "calls": 780
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -53,19 +53,24 @@
     {
       "level_num": 3,
       "level_file": "deadmine.rl2",
-      "route_input_sha256": "5DEB30C961BD4E9261323DFAB8E33983C04A4BE1426453C2C6983AF57E130197",
-      "status": "failed",
+      "route_input_sha256": "4DCD7B45D7D9CC220233A255C9B52DE18E09A33D4C36A9532E0E351AD4D5093E",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "switch 0",
+          "s": 11
+        }
+      ],
+      "total_frames": 1115,
       "rng_end": {
-        "state": 3012060019,
-        "calls": 278
+        "state": 4024132204,
+        "calls": 715
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 4,
@@ -79,13 +84,13 @@
       "objectives": [
         {
           "n": "boss",
-          "s": 40
+          "s": 35
         }
       ],
-      "total_frames": 2436,
+      "total_frames": 2108,
       "rng_end": {
-        "state": 1460531239,
-        "calls": 1218
+        "state": 3420633278,
+        "calls": 1225
       },
       "problem": "semantic objective repeated without route advancement"
     }

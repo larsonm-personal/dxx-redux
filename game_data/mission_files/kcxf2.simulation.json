@@ -23,17 +23,17 @@
       "objectives": [
         {
           "n": "fly-through 1",
-          "s": 61
+          "s": 39
         },
         {
           "n": "blastable wall",
-          "s": 77
+          "s": 49
         }
       ],
-      "total_frames": 4643,
+      "total_frames": 2977,
       "rng_end": {
-        "state": 2411544559,
-        "calls": 762
+        "state": 4202225626,
+        "calls": 765
       },
       "problem": "semantic objective repeated without route advancement"
     },
@@ -47,10 +47,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 6383,
+      "total_frames": 5458,
       "rng_end": {
-        "state": 1474561927,
-        "calls": 866
+        "state": 4031738486,
+        "calls": 881
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -66,21 +66,21 @@
       "objectives": [
         {
           "n": "fly-through 0",
-          "s": 34
+          "s": 22
         },
         {
           "n": "switch 2",
-          "s": 44
+          "s": 29
         },
         {
           "n": "switch 3",
-          "s": 73
+          "s": 48
         }
       ],
-      "total_frames": 10167,
+      "total_frames": 7853,
       "rng_end": {
-        "state": 1075938638,
-        "calls": 1145
+        "state": 2063363091,
+        "calls": 1142
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -111,10 +111,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 6622,
+      "total_frames": 5611,
       "rng_end": {
-        "state": 1187025327,
-        "calls": 1338
+        "state": 2915528778,
+        "calls": 1357
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

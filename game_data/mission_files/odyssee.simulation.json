@@ -23,53 +23,53 @@
       "objectives": [
         {
           "n": "switch 5",
-          "s": 17
+          "s": 11
         },
         {
           "n": "blue key",
-          "s": 46
+          "s": 29
         },
         {
           "n": "switch 8",
-          "s": 48
+          "s": 31
         },
         {
           "n": "gold key",
-          "s": 57
+          "s": 35
         },
         {
           "n": "switch 7",
-          "s": 57
+          "s": 40
         },
         {
           "n": "switch 6",
-          "s": 96
+          "s": 58
         },
         {
           "n": "switch 22",
-          "s": 125
+          "s": 76
+        },
+        {
+          "n": "hidden door",
+          "s": 91
+        },
+        {
+          "n": "red key",
+          "s": 94
+        },
+        {
+          "n": "switch 20",
+          "s": 112
         },
         {
           "n": "hidden door",
           "s": 148
-        },
-        {
-          "n": "red key",
-          "s": 152
-        },
-        {
-          "n": "switch 20",
-          "s": 180
-        },
-        {
-          "n": "hidden door",
-          "s": 240
         }
       ],
       "total_frames": 36001,
       "rng_end": {
-        "state": 3942082548,
-        "calls": 14627
+        "state": 4036749098,
+        "calls": 24557
       },
       "problem": "live objective sequence differs from route input"
     },
@@ -93,27 +93,23 @@
         },
         {
           "n": "fly-through 2",
-          "s": 5
+          "s": 4
         },
         {
           "n": "hidden door",
-          "s": 7
+          "s": 5
         },
         {
           "n": "blue key",
-          "s": 32
-        },
-        {
-          "n": "gold key",
-          "s": 97
+          "s": 21
         }
       ],
-      "total_frames": 7097,
+      "total_frames": 5700,
       "rng_end": {
-        "state": 2980907859,
-        "calls": 3382
+        "state": 3187595609,
+        "calls": 1512
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }
   ]
 }

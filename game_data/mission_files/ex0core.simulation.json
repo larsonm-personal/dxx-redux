@@ -24,35 +24,35 @@
       "objectives": [
         {
           "n": "switch 4",
-          "s": 21
+          "s": 14
         },
         {
           "n": "red key",
-          "s": 31
+          "s": 47
         },
         {
           "n": "switch 3",
-          "s": 32
-        },
-        {
-          "n": "reactor",
           "s": 48
         },
         {
+          "n": "reactor",
+          "s": 56
+        },
+        {
           "n": "exit",
-          "s": 84
+          "s": 77
         }
       ],
-      "total_frames": 5039,
+      "total_frames": 4634,
       "rng_end": {
-        "state": 1837008845,
-        "calls": 1268
+        "state": 2819228775,
+        "calls": 1154
       }
     },
     {
       "level_num": 2,
       "level_file": "pharioka.rl2",
-      "route_input_sha256": "80066162E9D7CF7A03F6CB402EF3ED4D8B3AF97EC62CCF9625EC2579FD53F8E8",
+      "route_input_sha256": "3594BC1587EAB2D8E4ED293B50DA89F3CA659F59578A5B7F126E91A4191E3F38",
       "status": "unsupported",
       "rng_start": {
         "state": 1,
@@ -61,17 +61,17 @@
       "objectives": [
         {
           "n": "switch 4",
-          "s": 2
+          "s": 1
         },
         {
           "n": "blue key",
-          "s": 14
+          "s": 9
         }
       ],
-      "total_frames": 1446,
+      "total_frames": 973,
       "rng_end": {
-        "state": 1531119703,
-        "calls": 402
+        "state": 3396130861,
+        "calls": 404
       },
       "problem": "route objective activation is not supported"
     },
@@ -87,21 +87,21 @@
       "objectives": [
         {
           "n": "switch 8",
-          "s": 6
+          "s": 4
         },
         {
           "n": "blue key",
-          "s": 12
+          "s": 8
         },
         {
           "n": "switch 28",
-          "s": 14
+          "s": 10
         }
       ],
-      "total_frames": 6801,
+      "total_frames": 5697,
       "rng_end": {
-        "state": 1310676484,
-        "calls": 979
+        "state": 3580241508,
+        "calls": 1011
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -117,14 +117,14 @@
       "objectives": [
         {
           "n": "reactor",
-          "s": 9
+          "s": 6
         },
         {
           "n": "exit",
-          "s": 20
+          "s": 12
         }
       ],
-      "total_frames": 1180,
+      "total_frames": 727,
       "rng_end": {
         "state": 2822133894,
         "calls": 417

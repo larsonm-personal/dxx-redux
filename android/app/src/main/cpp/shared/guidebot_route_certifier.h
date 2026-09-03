@@ -7,6 +7,10 @@
 extern "C" {
 #endif
 
+#ifdef _MSC_VER
+#pragma pack(push, 8)
+#endif
+
 typedef struct guidebot_route_certifier_workspace {
 	unsigned char reachable[LEVEL_METADATA_MAX_SEGMENTS];
 	int queue[LEVEL_METADATA_MAX_SEGMENTS];
@@ -113,6 +117,17 @@ typedef struct guidebot_route_certifier_summary {
 	int approximate_firing_position;
 	int steep_firing_position;
 } guidebot_route_certifier_summary;
+
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
+
+#if defined(__cplusplus)
+static_assert(sizeof(guidebot_route_certifier_summary) == 72,
+              "guidebot route certifier ABI packing changed");
+#elif defined(_MSC_VER)
+typedef char guidebot_route_certifier_summary_size_must_be_72[sizeof(guidebot_route_certifier_summary) == 72 ? 1 : -1];
+#endif
 
 int guidebot_route_side_passable_current(
     const level_metadata_scan_view *view,

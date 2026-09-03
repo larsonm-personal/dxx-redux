@@ -24,41 +24,41 @@
       "objectives": [
         {
           "n": "switch 0",
-          "s": 2
+          "s": 1
         },
         {
           "n": "blue key",
-          "s": 10
+          "s": 7
         },
         {
           "n": "switch 16",
-          "s": 25
+          "s": 17
         },
         {
           "n": "switch 1",
-          "s": 66
+          "s": 40
         },
         {
           "n": "switch 2",
-          "s": 69
+          "s": 42
         },
         {
           "n": "switch 8",
-          "s": 75
+          "s": 47
         },
         {
           "n": "gold key",
-          "s": 85
+          "s": 54
         },
         {
           "n": "red key",
-          "s": 136
+          "s": 85
         }
       ],
-      "total_frames": 10979,
+      "total_frames": 7080,
       "rng_end": {
-        "state": 560387257,
-        "calls": 3464
+        "state": 3850386194,
+        "calls": 3493
       },
       "problem": "live objective sequence differs from route input"
     },
@@ -72,10 +72,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 6669,
+      "total_frames": 5664,
       "rng_end": {
-        "state": 2058375196,
-        "calls": 859
+        "state": 3866404266,
+        "calls": 877
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -108,29 +108,29 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 33
+          "s": 22
         },
         {
           "n": "switch 3",
-          "s": 37
+          "s": 25
         },
         {
           "n": "blue key",
-          "s": 60
+          "s": 39
         },
         {
           "n": "switch 15",
-          "s": 88
+          "s": 58
         },
         {
           "n": "gold key",
-          "s": 136
+          "s": 90
         }
       ],
-      "total_frames": 16750,
+      "total_frames": 9486,
       "rng_end": {
-        "state": 1612101980,
-        "calls": 2331
+        "state": 1295416093,
+        "calls": 2340
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -146,17 +146,17 @@
       "objectives": [
         {
           "n": "switch 10",
-          "s": 49
+          "s": 32
         },
         {
           "n": "boss",
-          "s": 90
+          "s": 58
         }
       ],
-      "total_frames": 5433,
+      "total_frames": 3511,
       "rng_end": {
-        "state": 2617328035,
-        "calls": 1766
+        "state": 2914670869,
+        "calls": 1772
       },
       "problem": "semantic objective repeated without route advancement"
     }

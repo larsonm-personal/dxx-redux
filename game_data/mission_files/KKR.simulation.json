@@ -24,41 +24,41 @@
       "objectives": [
         {
           "n": "switch 12",
-          "s": 7
+          "s": 6
         },
         {
           "n": "blue key",
-          "s": 26
+          "s": 17
         },
         {
           "n": "switch 0",
-          "s": 36
+          "s": 25
         },
         {
           "n": "fly-through 3",
-          "s": 42
+          "s": 29
         },
         {
           "n": "switch 5",
-          "s": 46
+          "s": 31
         },
         {
           "n": "red key",
-          "s": 56
+          "s": 38
         },
         {
           "n": "switch 1",
-          "s": 62
+          "s": 41
         },
         {
           "n": "boss",
-          "s": 123
+          "s": 140
         }
       ],
-      "total_frames": 7424,
+      "total_frames": 8436,
       "rng_end": {
-        "state": 3668115037,
-        "calls": 3044
+        "state": 3012100774,
+        "calls": 3073
       },
       "problem": "semantic objective repeated without route advancement"
     },
@@ -74,29 +74,29 @@
       "objectives": [
         {
           "n": "switch 0",
-          "s": 13
+          "s": 8
         },
         {
           "n": "switch 2",
-          "s": 17
+          "s": 10
         },
         {
           "n": "blue key",
-          "s": 28
+          "s": 17
         },
         {
           "n": "switch 6",
-          "s": 37
+          "s": 24
         },
         {
           "n": "switch 5",
-          "s": 37
+          "s": 24
         }
       ],
-      "total_frames": 3444,
+      "total_frames": 2373,
       "rng_end": {
-        "state": 1310676484,
-        "calls": 979
+        "state": 1520764909,
+        "calls": 980
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -144,7 +144,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 4893,
+      "total_frames": 4448,
       "rng_end": {
         "state": 153870853,
         "calls": 636
@@ -154,14 +154,14 @@
     {
       "level_num": -1,
       "level_file": "secret1.rl2",
-      "route_input_sha256": "BDD2FAA9E018AB87BFB1EC4A622A5C98B303DFC393A981D49F4475E781CD2A9A",
+      "route_input_sha256": "86F025966EFE824B2F12DF640829B0702FA6C8ED666C26A4C99CBB4550565946",
       "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 3688,
+      "total_frames": 3800,
       "rng_end": {
         "state": 2122112351,
         "calls": 138

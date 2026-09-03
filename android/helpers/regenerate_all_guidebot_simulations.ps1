@@ -16,6 +16,7 @@ param(
     [switch]$WriteRegression,
     [switch]$DryRun,
     [string]$DryRunJsonOut,
+    [string]$HeadlessExecutable,
     [switch]$LeaveHeadedRunning
 )
 
@@ -34,7 +35,11 @@ $rawRoot = Join-Path $runRoot 'raw'
 $stageRoot = Join-Path $runRoot 'stages'
 $logRoot = Join-Path $runRoot 'logs'
 $resultRoot = Join-Path $runRoot 'results'
-$exe = Join-Path $repoRoot 'buildd2\main\dxx-redux-d2-headless-route.exe'
+$exe = if ($HeadlessExecutable) {
+    $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($HeadlessExecutable)
+} else {
+    Join-Path $repoRoot 'buildd2\main\dxx-redux-d2-headless-route.exe'
+}
 $desktopExe = Join-Path $repoRoot 'buildd2\main\d2x-redux.exe'
 $batchStart = [DateTime]::UtcNow
 . (Join-Path $scriptDir 'guidebot_simulation_regression.ps1')
@@ -109,6 +114,7 @@ function Get-GuidebotWorkItems {
                     Mission = $mission
                     Level = $levelRecord
                     LevelNumber = $levelNumber
+                    EngineLevelNumber = if ($levelNumber -eq 0) { 1 } else { $levelNumber }
                     RouteHash = Get-GuidebotRouteInputHash -Mission $mission -Level $levelRecord
                 }
             }
@@ -231,6 +237,22 @@ function New-GuidebotUnsupportedResult {
     }
 }
 
+function New-GuidebotInfrastructureErrorResult {
+    param(
+        [Parameter(Mandatory)][object]$Mission,
+        [Parameter(Mandatory)][object]$LevelRecord,
+        [Parameter(Mandatory)][string]$Problem
+    )
+
+    return [pscustomobject][ordered]@{
+        level_num = [int](Get-GuidebotPropertyValue $LevelRecord 'level_num' 0)
+        level_file = [string](Get-GuidebotPropertyValue $LevelRecord 'level_file' '')
+        route_input_sha256 = Get-GuidebotRouteInputHash -Mission $Mission -Level $LevelRecord
+        status = 'infrastructure_error'
+        problem = $Problem
+    }
+}
+
 function Invoke-GuidebotHeadlessLevel {
     param(
         [Parameter(Mandatory)][object]$WorkItem,
@@ -249,7 +271,7 @@ function Invoke-GuidebotHeadlessLevel {
         $arguments = @(
             '-hogdir', $resolvedHogDir,
             '-mission', $missionName,
-            '-level', [string]$WorkItem.LevelNumber,
+            '-level', [string]$WorkItem.EngineLevelNumber,
             '-route-confirm-json-out', $output
         )
         if ($Stage.ExtraDir) { $arguments += @('-extra-dir', $Stage.ExtraDir) }
@@ -306,7 +328,7 @@ function Invoke-GuidebotDesktopLevel {
         '-window', '-nomovies', '-nosound', '-nomusic',
         '-hogdir', $resolvedHogDir,
         '-mission', $missionName,
-        '-level', [string]$WorkItem.LevelNumber,
+        '-level', [string]$WorkItem.EngineLevelNumber,
         '-route-confirm-json-out', $output
     )
     if ($Stage.ExtraDir) { $arguments += @('-extra-dir', $Stage.ExtraDir) }
@@ -416,7 +438,7 @@ function New-GuidebotHeadedScript {
     $steps.Add([ordered]@{ action = 'select_mission'; text = $missionName; post_delay_ms = 100; timeout_ms = 10000 })
     $steps.Add([ordered]@{ action = 'wait_ms'; ms = 300 })
     $steps.Add([ordered]@{ action = 'key'; key = 'backspace'; post_delay_ms = 100 })
-    foreach ($digit in ([string]$WorkItem.LevelNumber).ToCharArray()) {
+    foreach ($digit in ([string]$WorkItem.EngineLevelNumber).ToCharArray()) {
         $steps.Add([ordered]@{ action = 'key'; key = [string]$digit; post_delay_ms = 100 })
     }
     $steps.Add([ordered]@{ action = 'select'; text = 'Ok'; post_delay_ms = 100; timeout_ms = 5000 })
@@ -523,7 +545,11 @@ Write-GuidebotStatus "GuideBot simulation work: $($selectedItems.Count)/$($allIt
 if ($DryRun) {
     if ($DryRunJsonOut) {
         Write-GuidebotSimulationJson -Path $DryRunJsonOut -Value @($selectedItems | ForEach-Object {
-                [ordered]@{ identity = $_.Identity; route_input_sha256 = $_.RouteHash }
+                [ordered]@{
+                    identity = $_.Identity
+                    engine_level = $_.EngineLevelNumber
+                    route_input_sha256 = $_.RouteHash
+                }
             })
     }
     $selectedItems | Select-Object Identity, RouteHash
@@ -577,8 +603,11 @@ foreach ($item in $selectedItems) {
         }
         $installHeaded = $false
     } catch {
-        Write-GuidebotStatus "FAILED: $($item.Identity): $($_.Exception.Message)" 'Red'
-        $infrastructureFailures.Add([ordered]@{ identity = $item.Identity; problem = $_.Exception.Message })
+        $problem = $_.Exception.Message
+        Write-GuidebotStatus "FAILED: $($item.Identity): $problem" 'Red'
+        $resultsByIdentity[$item.Identity] = New-GuidebotInfrastructureErrorResult `
+            -Mission $item.Mission -LevelRecord $item.Level -Problem $problem
+        $infrastructureFailures.Add([ordered]@{ identity = $item.Identity; problem = $problem })
     }
 }
 

@@ -23,17 +23,17 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 22
+          "s": 14
         },
         {
           "n": "blastable wall",
-          "s": 58
+          "s": 36
         }
       ],
-      "total_frames": 3503,
+      "total_frames": 2218,
       "rng_end": {
-        "state": 2772374610,
-        "calls": 1381
+        "state": 2946671141,
+        "calls": 1372
       },
       "problem": "semantic objective repeated without route advancement"
     },
@@ -49,49 +49,49 @@
       "objectives": [
         {
           "n": "switch 0",
-          "s": 26
+          "s": 17
         },
         {
           "n": "switch 1",
-          "s": 41
+          "s": 28
         },
         {
           "n": "switch 6",
-          "s": 65
+          "s": 45
         },
         {
           "n": "blue key",
-          "s": 76
+          "s": 52
         },
         {
           "n": "switch 2",
-          "s": 96
+          "s": 66
         },
         {
           "n": "gold key",
-          "s": 143
+          "s": 95
         },
         {
           "n": "switch 13",
-          "s": 190
+          "s": 125
         },
         {
           "n": "red key",
-          "s": 211
+          "s": 137
         },
         {
           "n": "reactor",
-          "s": 235
+          "s": 151
         },
         {
           "n": "exit",
-          "s": 257
+          "s": 164
         }
       ],
-      "total_frames": 15435,
+      "total_frames": 9850,
       "rng_end": {
-        "state": 715118442,
-        "calls": 5293
+        "state": 759157142,
+        "calls": 5329
       }
     },
     {
@@ -104,10 +104,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 5439,
+      "total_frames": 4826,
       "rng_end": {
-        "state": 2620297113,
-        "calls": 424
+        "state": 3056141887,
+        "calls": 426
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

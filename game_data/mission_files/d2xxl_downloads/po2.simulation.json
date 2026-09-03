@@ -6,27 +6,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "not_run",
     "level_counts": {
-      "failed": 1
+      "not_run": 1
     },
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "level_file": "darkmatr.rl2",
-        "route_input_sha256": "6A984CB517FA1D9D4BECBAC28CA9F459B173AFE5B0A8BBF5119392A027BB8D9E",
-        "status": "failed",
-        "rng_start": {
-          "state": 1,
-          "calls": 0
-        },
-        "objectives": [],
-        "total_frames": 0,
-        "rng_end": {
-          "state": 2058258651,
-          "calls": 46
-        },
-        "problem": "live Guide-Bot route has no actionable goal"
+        "route_input_sha256": "10A1E857F0A160478DAC7C25F6E15D656D9B05C3F039E21E64AF49B21EDFB5E8",
+        "status": "not_run"
       }
     ]
   },
@@ -60,25 +49,25 @@
           },
           {
             "n": "blue key",
-            "s": 7
+            "s": 4
           },
           {
             "n": "red key",
-            "s": 31
+            "s": 18
           },
           {
             "n": "reactor",
-            "s": 42
+            "s": 28
           },
           {
             "n": "exit",
-            "s": 46
+            "s": 30
           }
         ],
-        "total_frames": 2756,
+        "total_frames": 1793,
         "rng_end": {
-          "state": 3949664430,
-          "calls": 1689
+          "state": 582137423,
+          "calls": 1690
         }
       },
       {
@@ -91,7 +80,7 @@
           "calls": 0
         },
         "objectives": [],
-        "total_frames": 1361,
+        "total_frames": 1041,
         "rng_end": {
           "state": 1923026025,
           "calls": 344
@@ -101,14 +90,14 @@
       {
         "level_num": 3,
         "level_file": "ship4.rl2",
-        "route_input_sha256": "3C2F1C8D5B2AC01408458E46CD96B2BC8D6AD2613460287F9D19E9A6E34E2D7E",
+        "route_input_sha256": "662D44BD05075EF3E2D7BBEC4B17FC63930CE625C45FA9078D2DE507C9FE5C9F",
         "status": "timeout",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
         "objectives": [],
-        "total_frames": 1571,
+        "total_frames": 1170,
         "rng_end": {
           "state": 2709554285,
           "calls": 852
@@ -118,7 +107,7 @@
       {
         "level_num": 4,
         "level_file": "mam.rl2",
-        "route_input_sha256": "AC89678E4FB2851B2E5734A2CC371BCE2EC1BABB90A01EB2702942EEE523A34D",
+        "route_input_sha256": "6159C7BD0195E9470BBEC10145A9DE3E6DC0683693FA5EF38B5E42360A635076",
         "status": "failed",
         "rng_start": {
           "state": 1,
@@ -176,7 +165,7 @@
           "calls": 0
         },
         "objectives": [],
-        "total_frames": 2667,
+        "total_frames": 1860,
         "rng_end": {
           "state": 2134449477,
           "calls": 1340
@@ -195,10 +184,10 @@
         "objectives": [
           {
             "n": "boss",
-            "s": 1
+            "s": 0
           }
         ],
-        "total_frames": 66,
+        "total_frames": 54,
         "rng_end": {
           "state": 3949672138,
           "calls": 205
@@ -217,17 +206,17 @@
         "objectives": [
           {
             "n": "reactor",
-            "s": 14
+            "s": 10
           },
           {
             "n": "exit",
-            "s": 22
+            "s": 15
           }
         ],
-        "total_frames": 1327,
+        "total_frames": 876,
         "rng_end": {
-          "state": 4194562402,
-          "calls": 405
+          "state": 770427433,
+          "calls": 408
         }
       }
     ]
@@ -239,27 +228,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "not_run",
     "level_counts": {
-      "failed": 1
+      "not_run": 1
     },
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "level_file": "van.rl2",
-        "route_input_sha256": "BD33979A234693C28E77DAD1EA4508626D185ED383CEAF053C2C74FE7E4DFCEB",
-        "status": "failed",
-        "rng_start": {
-          "state": 1,
-          "calls": 0
-        },
-        "objectives": [],
-        "total_frames": 0,
-        "rng_end": {
-          "state": 3172130721,
-          "calls": 352
-        },
-        "problem": "live Guide-Bot route has no actionable goal"
+        "route_input_sha256": "2BDF514EAE2285ABD4541B551377338FFA79A12DF4B20C6C9ADED9DC06489549",
+        "status": "not_run"
       }
     ]
   }

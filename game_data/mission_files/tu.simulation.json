@@ -9,7 +9,8 @@
   "level_counts": {
     "ok": 2,
     "failed": 1,
-    "timeout": 4
+    "timeout": 3,
+    "route_mismatch": 1
   },
   "levels": [
     {
@@ -24,17 +25,17 @@
       "objectives": [
         {
           "n": "switch 0",
-          "s": 28
+          "s": 22
         },
         {
           "n": "blue key",
-          "s": 33
+          "s": 26
         }
       ],
-      "total_frames": 1989,
+      "total_frames": 1552,
       "rng_end": {
-        "state": 2479256406,
-        "calls": 529
+        "state": 3251531490,
+        "calls": 533
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -50,30 +51,30 @@
       "objectives": [
         {
           "n": "switch 10",
-          "s": 30
+          "s": 21
         },
         {
           "n": "blue key",
-          "s": 69
+          "s": 45
         },
         {
           "n": "switch 11",
-          "s": 93
+          "s": 62
         },
         {
           "n": "red key",
-          "s": 121
+          "s": 80
         },
         {
           "n": "reactor",
-          "s": 162
+          "s": 105
         },
         {
           "n": "exit",
-          "s": 168
+          "s": 108
         }
       ],
-      "total_frames": 10105,
+      "total_frames": 6489,
       "rng_end": {
         "state": 2071363995,
         "calls": 1902
@@ -91,21 +92,37 @@
       "objectives": [
         {
           "n": "gold key",
-          "s": 15
+          "s": 10
         },
         {
           "n": "switch 14",
-          "s": 31
+          "s": 21
         },
         {
           "n": "blue key",
-          "s": 51
+          "s": 33
+        },
+        {
+          "n": "hidden door",
+          "s": 59
+        },
+        {
+          "n": "switch 28",
+          "s": 61
+        },
+        {
+          "n": "hidden door",
+          "s": 65
+        },
+        {
+          "n": "switch 29",
+          "s": 65
         }
       ],
-      "total_frames": 4821,
+      "total_frames": 5243,
       "rng_end": {
-        "state": 4027750086,
-        "calls": 1121
+        "state": 868962217,
+        "calls": 2072
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -113,7 +130,7 @@
       "level_num": 4,
       "level_file": "umbriel.rl2",
       "route_input_sha256": "2C494A19987B13032CCFA884C32919803AB45CAAB1417923D30C38A7424E2152",
-      "status": "timeout",
+      "status": "route_mismatch",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -121,23 +138,31 @@
       "objectives": [
         {
           "n": "switch 1",
-          "s": 20
+          "s": 13
         },
         {
           "n": "blue key",
-          "s": 43
+          "s": 29
         },
         {
           "n": "gold key",
-          "s": 105
+          "s": 69
+        },
+        {
+          "n": "red key",
+          "s": 91
+        },
+        {
+          "n": "blastable wall",
+          "s": 106
         }
       ],
-      "total_frames": 7763,
+      "total_frames": 6406,
       "rng_end": {
-        "state": 3043260654,
-        "calls": 1881
+        "state": 3321593968,
+        "calls": 2519
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "live objective sequence differs from route input"
     },
     {
       "level_num": 5,
@@ -151,14 +176,14 @@
       "objectives": [
         {
           "n": "reactor",
-          "s": 5
+          "s": 4
         },
         {
           "n": "exit",
-          "s": 10
+          "s": 6
         }
       ],
-      "total_frames": 597,
+      "total_frames": 365,
       "rng_end": {
         "state": 1660932118,
         "calls": 81
@@ -176,21 +201,25 @@
       "objectives": [
         {
           "n": "gold key",
-          "s": 10
+          "s": 7
         },
         {
           "n": "hidden door",
-          "s": 17
+          "s": 12
         },
         {
           "n": "switch 2",
-          "s": 17
+          "s": 12
+        },
+        {
+          "n": "reactor",
+          "s": 19
         }
       ],
-      "total_frames": 1741,
+      "total_frames": 2388,
       "rng_end": {
-        "state": 2903093813,
-        "calls": 204
+        "state": 2629647659,
+        "calls": 478
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -204,10 +233,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 6894,
+      "total_frames": 5731,
       "rng_end": {
-        "state": 1407252008,
-        "calls": 703
+        "state": 3775887821,
+        "calls": 756
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

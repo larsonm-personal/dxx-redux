@@ -5,32 +5,16 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "not_run",
   "level_counts": {
-    "timeout": 1
+    "not_run": 1
   },
   "levels": [
     {
-      "level_num": 1,
+      "level_num": 0,
       "level_file": "Uneasy4.rl2",
-      "route_input_sha256": "B6174AA43900D7451A8BED4D7053567B5343EC25BE47AC521098F41E00FA7AFD",
-      "status": "timeout",
-      "rng_start": {
-        "state": 1,
-        "calls": 0
-      },
-      "objectives": [
-        {
-          "n": "blue key",
-          "s": 52
-        }
-      ],
-      "total_frames": 4463,
-      "rng_end": {
-        "state": 1474188028,
-        "calls": 2811
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "route_input_sha256": "CB2720E872A0F87C88A5FE4077813E86F1D348DB4A7CB21B10D5398A41E78E0E",
+      "status": "not_run"
     }
   ]
 }
