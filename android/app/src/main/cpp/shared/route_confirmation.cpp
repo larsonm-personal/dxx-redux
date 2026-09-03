@@ -293,9 +293,15 @@ void set_target_position(const level_metadata_route_step &step)
 	} else if ((step.activation_kind ==
 	                LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER ||
 	            step.activation_kind ==
-	                LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER ||
-	            step.activation_kind ==
-	                LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT) &&
+	                LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER) &&
+	           step.seg >= 0 && step.seg < Num_segments && step.side >= 0 &&
+	           step.side < MAX_SIDES_PER_SEGMENT) {
+		State.target_seg = step.seg;
+		compute_center_point_on_side(&State.target_pos, &Segments[step.seg],
+		                             step.side);
+		State.target_pos_valid = 1;
+	} else if (step.activation_kind ==
+	               LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT &&
 	           step.seg >= 0 && step.seg < Num_segments && step.side >= 0 &&
 	           step.side < MAX_SIDES_PER_SEGMENT) {
 		const int child = Segments[step.seg].children[step.side];
@@ -303,8 +309,7 @@ void set_target_position(const level_metadata_route_step &step)
 			State.target_seg = child;
 			compute_segment_center(&State.target_pos, &Segments[child]);
 			State.target_pos_valid = 1;
-		} else if (step.activation_kind ==
-		           LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT) {
+		} else {
 			State.target_seg = step.seg;
 			compute_center_point_on_side(&State.target_pos,
 			                             &Segments[step.seg], step.side);
@@ -1044,6 +1049,10 @@ void apply_objective_action(object *actor)
 	     State.step.activation_kind !=
 	         LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR &&
 	     State.step.activation_kind !=
+	         LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER &&
+	     State.step.activation_kind !=
+	         LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER &&
+	     State.step.activation_kind !=
 	         LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BOSS))
 		return;
 	switch (State.step.activation_kind) {
@@ -1131,14 +1140,38 @@ void apply_objective_action(object *actor)
 		case LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER:
 			if (objective_source(&segnum, &sidenum)) {
 				const int child = Segments[segnum].children[sidenum];
-				if ((State.previous_actor_seg == segnum &&
-				     actor->segnum == child) ||
-				    (State.previous_actor_seg == child &&
-				     actor->segnum == segnum)) {
-					State.action_applied = 1;
+				const int crossed =
+				    child >= 0 && child < Num_segments &&
+				    ((State.previous_actor_seg == segnum &&
+				      actor->segnum == child) ||
+				     (State.previous_actor_seg == child &&
+				      actor->segnum == segnum));
+				if (crossed) {
 					check_trigger(&Segments[segnum], (short) sidenum,
 					              (short) State.actor_objnum, 0);
 					record_objective_and_replan();
+					break;
+				}
+				if (!State.action_applied && actor->segnum == segnum &&
+				    actor_reached_target(actor)) {
+					if (child < 0 || child >= Num_segments) {
+						fail(ROUTE_CONFIRMATION_FAILED,
+						     "fly-through trigger has no traversable child segment");
+						break;
+					}
+					State.action_applied = 1;
+					State.target_seg = child;
+					compute_segment_center(&State.target_pos,
+					                       &Segments[child]);
+					State.target_pos_valid = 1;
+					create_path_to_segment(actor, child, 4, 1);
+					actor->ctype.ai_info.SKIP_AI_COUNT = 0;
+					Ai_local_info[State.actor_objnum].mode =
+					    AIM_GOTO_OBJECT;
+					refine_last_path_point(actor);
+					State.best_distance = vm_vec_dist_quick(
+					    &actor->pos, &State.target_pos);
+					State.no_progress_frames = 0;
 				}
 			}
 			break;

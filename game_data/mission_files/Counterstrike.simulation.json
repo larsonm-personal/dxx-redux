@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 16,
+    "ok": 17,
     "failed": 1,
-    "timeout": 9,
+    "timeout": 8,
     "route_mismatch": 4
   },
   "levels": [
@@ -324,7 +324,7 @@
       "level_num": 9,
       "level_file": "d2levc-1.rl2",
       "route_input_sha256": "0E49692DC3C48E2E9CC0A4FA3BF3FC6CB948601889089A1F0C56A0DF71F3F5E5",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -345,14 +345,33 @@
         {
           "n": "blue key",
           "s": 37
+        },
+        {
+          "n": "fly-through 13",
+          "s": 62
+        },
+        {
+          "n": "hidden door",
+          "s": 98
+        },
+        {
+          "n": "red key",
+          "s": 108
+        },
+        {
+          "n": "reactor",
+          "s": 141
+        },
+        {
+          "n": "exit",
+          "s": 156
         }
       ],
-      "total_frames": 7315,
+      "total_frames": 9349,
       "rng_end": {
-        "state": 3935930555,
-        "calls": 2126
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 4253933804,
+        "calls": 4683
+      }
     },
     {
       "level_num": 10,
