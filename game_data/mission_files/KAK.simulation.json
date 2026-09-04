@@ -27,10 +27,10 @@
         },
         {
           "n": "destroy robot carrying blue key",
-          "s": 15
+          "s": 14
         }
       ],
-      "total_frames": 6079,
+      "total_frames": 9086,
       "rng_end": {
         "state": 4253218497,
         "calls": 1856

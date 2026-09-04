@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
-    "timeout": 1
+    "ok": 1,
+    "timeout": 2
   },
   "levels": [
     {
@@ -98,46 +98,18 @@
       "level_num": 3,
       "level_file": "icemaid1.rl2",
       "route_input_sha256": "DD141B2570CBFF2301B77A35E8960DA6698ECA7C1D27DAE7F0B05EEE2FCA4EDF",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [
-        {
-          "n": "destroy robot carrying blue key",
-          "s": 65
-        },
-        {
-          "n": "gold key",
-          "s": 92
-        },
-        {
-          "n": "red key",
-          "s": 135
-        },
-        {
-          "n": "fly-through 5",
-          "s": 140
-        },
-        {
-          "n": "switch 2",
-          "s": 141
-        },
-        {
-          "n": "boss",
-          "s": 158
-        },
-        {
-          "n": "exit",
-          "s": 166
-        }
-      ],
-      "total_frames": 9943,
+      "objectives": [],
+      "total_frames": 4829,
       "rng_end": {
-        "state": 1910688535,
-        "calls": 2770
-      }
+        "state": 78769249,
+        "calls": 672
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }
   ]
 }

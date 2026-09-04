@@ -129,7 +129,8 @@ int find_object_in_segment(int type, int segnum)
 	return -1;
 }
 
-void set_key_target_position(const object *actor, int key_objnum)
+void set_key_target_position(const object *actor, int key_objnum,
+                             int carrier_drop)
 {
 	vms_vector segment_center;
 	vms_vector contact_offset;
@@ -137,15 +138,17 @@ void set_key_target_position(const object *actor, int key_objnum)
 	State.target_objnum = key_objnum;
 	State.target_seg = key->segnum;
 	State.target_pos = key->pos;
-	/* Aim for a deterministic point on the pickup contact shell on the
-	 * segment-center side of the key.  Steering a large actor at the key center
-	 * can pin it against the wall before the two collision spheres overlap. */
+	/* Static keys may be wall-adjacent, so approach their contact shell from the
+	 * segment center.  Carrier drops spawn in navigable space and need the target
+	 * one actor radius farther inward: the path follower may stop that far from
+	 * its final point. */
 	if (actor) {
 		compute_segment_center(&segment_center, &Segments[State.target_seg]);
 		vm_vec_sub(&contact_offset, &segment_center, &key->pos);
 		if (vm_vec_normalize_quick(&contact_offset)) {
 			vm_vec_scale(&contact_offset,
-			             actor->size + key->size - F1_0 / 8);
+			             key->size + (carrier_drop ? 0 : actor->size) -
+			                 F1_0 / 8);
 			vm_vec_add(&State.target_pos, &key->pos, &contact_offset);
 		}
 	}
@@ -257,7 +260,7 @@ void set_target_position(const level_metadata_route_step &step)
 			set_key_target_position(
 			    valid_object(State.actor_objnum) ? &Objects[State.actor_objnum]
 			                                     : NULL,
-			    State.target_objnum);
+			    State.target_objnum, 0);
 	} else if (step.kind == LEVEL_METADATA_ROUTE_REACTOR) {
 		State.target_objnum = find_object_in_segment(OBJ_CNTRLCEN, step.seg);
 		if (valid_object(State.target_objnum)) {
@@ -814,6 +817,71 @@ void record_objective_and_replan(void)
 	prepare_next_goal();
 }
 
+void apply_incidental_crossed_trigger(object *actor)
+{
+	int side;
+	int wall_num;
+	int trigger_num;
+	if (!actor || State.previous_actor_seg < 0 ||
+	    State.previous_actor_seg >= Num_segments ||
+	    actor->segnum == State.previous_actor_seg ||
+	    State.step.activation_kind !=
+	        LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_REACTOR)
+		return;
+	side = find_connect_side(&Segments[actor->segnum],
+	                         &Segments[State.previous_actor_seg]);
+	if (side < 0)
+		return;
+	wall_num = Segments[State.previous_actor_seg].sides[side].wall_num;
+	if (wall_num < 0 || wall_num >= Num_walls)
+		return;
+	trigger_num = Walls[wall_num].trigger;
+	if (trigger_num < 0 || trigger_num >= Num_triggers)
+		return;
+	/* Incidental OPEN_WALL crossings are persistent route state that the
+	 * strategic plan assumes after traversing a longer leg.  Other trigger
+	 * kinds can toggle or affect unrelated gameplay and remain explicit route
+	 * objectives. */
+	if (Triggers[trigger_num].type != TT_OPEN_WALL)
+		return;
+	{
+		const trigger *triggerp = &Triggers[trigger_num];
+		int effect_needed = 0;
+		for (int link = 0; link < triggerp->num_links; ++link) {
+			const int target_seg = triggerp->seg[link];
+			const int target_side = triggerp->side[link];
+			const int target_wall =
+			    target_seg >= 0 && target_seg < Num_segments &&
+			            target_side >= 0 &&
+			            target_side < MAX_SIDES_PER_SEGMENT
+			        ? Segments[target_seg].sides[target_side].wall_num
+			        : -1;
+			if (target_wall >= 0 && target_wall < Num_walls &&
+			    Walls[target_wall].type != WALL_OPEN) {
+				effect_needed = 1;
+				break;
+			}
+		}
+		if (!effect_needed)
+			return;
+	}
+	/* The named trigger objective below owns both activation and timing. */
+	if ((State.step.activation_kind ==
+	         LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER ||
+	     State.step.activation_kind ==
+	         LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER) &&
+	    State.step.seg == State.previous_actor_seg &&
+	    State.step.side == side)
+		return;
+	check_trigger(&Segments[State.previous_actor_seg], (short) side,
+	              (short) State.actor_objnum, 0);
+#if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	fprintf(stderr,
+	        "ROUTE-CONFIRM incidental trigger=%d seg=%d side=%d actor_seg=%d\n",
+	        trigger_num, State.previous_actor_seg, side, actor->segnum);
+#endif
+}
+
 int actor_is_close_to_side(const object *actor, int segnum, int sidenum)
 {
 	vms_vector center;
@@ -1276,7 +1344,7 @@ void apply_objective_action(object *actor)
 				State.step.activation_kind =
 				    LEVEL_METADATA_ROUTE_ACTIVATION_PICKUP_KEY;
 				State.action_applied = 0;
-				set_target_position(State.step);
+				set_key_target_position(actor, key_objnum, 1);
 				State.semantic_target_seg = State.target_seg;
 				{
 					const int physical_target_seg =
@@ -1465,6 +1533,7 @@ extern "C" void route_confirmation_after_frame(void)
 	actor = &Objects[State.actor_objnum];
 	if (actor->segnum >= 0 && actor->segnum < Num_segments)
 		Automap_visited[actor->segnum] = 1;
+	apply_incidental_crossed_trigger(actor);
 	if (State.target_pos_valid) {
 		distance = vm_vec_dist_quick(&actor->pos, &State.target_pos);
 		if (distance + F1_0 / 4 < State.best_distance) {

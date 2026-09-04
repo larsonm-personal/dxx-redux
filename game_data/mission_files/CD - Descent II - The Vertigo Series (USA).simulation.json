@@ -42,10 +42,10 @@
             "s": 58
           }
         ],
-        "total_frames": 3457,
+        "total_frames": 3475,
         "rng_end": {
-          "state": 906951488,
-          "calls": 1479
+          "state": 678341241,
+          "calls": 1480
         }
       },
       {
@@ -354,8 +354,8 @@
         ],
         "total_frames": 5944,
         "rng_end": {
-          "state": 185854590,
-          "calls": 2569
+          "state": 3241005425,
+          "calls": 2576
         },
         "problem": "physical route frontier did not open after 8 interaction attempts"
       },
@@ -422,8 +422,8 @@
         ],
         "total_frames": 7159,
         "rng_end": {
-          "state": 1422864722,
-          "calls": 3173
+          "state": 883633187,
+          "calls": 3174
         }
       },
       {
@@ -457,10 +457,10 @@
             "s": 112
           }
         ],
-        "total_frames": 6726,
+        "total_frames": 6729,
         "rng_end": {
-          "state": 890570627,
-          "calls": 3334
+          "state": 1189542201,
+          "calls": 3336
         }
       },
       {

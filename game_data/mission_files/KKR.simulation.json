@@ -143,34 +143,34 @@
       "objectives": [
         {
           "n": "destroy robot carrying blue key",
-          "s": 15
+          "s": 64
         },
         {
           "n": "switch 4",
-          "s": 18
+          "s": 67
         },
         {
           "n": "switch 1",
-          "s": 32
+          "s": 82
         },
         {
           "n": "switch 5",
-          "s": 34
+          "s": 84
         },
         {
           "n": "red key",
-          "s": 42
+          "s": 92
         },
         {
           "n": "boss",
-          "s": 57
+          "s": 106
         },
         {
           "n": "exit",
-          "s": 64
+          "s": 113
         }
       ],
-      "total_frames": 3840,
+      "total_frames": 6791,
       "rng_end": {
         "state": 998720860,
         "calls": 3355

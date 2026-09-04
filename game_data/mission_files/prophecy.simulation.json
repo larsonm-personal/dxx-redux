@@ -163,17 +163,17 @@
         },
         {
           "n": "boss",
-          "s": 104
+          "s": 102
         },
         {
           "n": "exit",
-          "s": 105
+          "s": 103
         }
       ],
-      "total_frames": 6277,
+      "total_frames": 6203,
       "rng_end": {
-        "state": 3355957900,
-        "calls": 3115
+        "state": 3889597212,
+        "calls": 3163
       }
     },
     {

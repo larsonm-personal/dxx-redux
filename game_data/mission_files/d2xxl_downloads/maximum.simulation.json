@@ -112,8 +112,8 @@
         ],
         "total_frames": 3070,
         "rng_end": {
-          "state": 1893721028,
-          "calls": 787
+          "state": 2144619499,
+          "calls": 798
         }
       },
       {
@@ -669,7 +669,7 @@
             "s": 17
           }
         ],
-        "total_frames": 5093,
+        "total_frames": 5094,
         "rng_end": {
           "state": 111157742,
           "calls": 601
@@ -722,10 +722,10 @@
           },
           {
             "n": "switch 1",
-            "s": 17
+            "s": 16
           }
         ],
-        "total_frames": 6004,
+        "total_frames": 5993,
         "rng_end": {
           "state": 1407164246,
           "calls": 1553
@@ -817,30 +817,30 @@
           },
           {
             "n": "destroy robot carrying gold key",
-            "s": 58
+            "s": 112
           },
           {
             "n": "fly-through 9",
-            "s": 76
+            "s": 129
           },
           {
             "n": "destroy robot carrying red key",
-            "s": 79
+            "s": 133
           },
           {
             "n": "fly-through 25",
-            "s": 96
+            "s": 149
           },
           {
             "n": "reactor",
-            "s": 102
+            "s": 156
           },
           {
             "n": "exit",
-            "s": 118
+            "s": 172
           }
         ],
-        "total_frames": 7100,
+        "total_frames": 10332,
         "rng_end": {
           "state": 2066035752,
           "calls": 3263

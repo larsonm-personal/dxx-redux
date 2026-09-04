@@ -8,9 +8,9 @@
     "seed": 1,
     "status": "partial",
     "level_counts": {
-      "ok": 17,
+      "ok": 16,
       "failed": 1,
-      "timeout": 12
+      "timeout": 13
     },
     "levels": [
       {
@@ -112,8 +112,8 @@
         ],
         "total_frames": 3070,
         "rng_end": {
-          "state": 1893721028,
-          "calls": 787
+          "state": 2144619499,
+          "calls": 798
         }
       },
       {
@@ -654,7 +654,7 @@
         "level_num": 18,
         "level_file": "psx18.rl2",
         "route_input_sha256": "EA4BF484912A57D1125F3F1E9E9406A5615A677F584E0B123E264197DE722B7A",
-        "status": "ok",
+        "status": "timeout",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -667,33 +667,14 @@
           {
             "n": "switch 0",
             "s": 17
-          },
-          {
-            "n": "destroy robot carrying gold key",
-            "s": 59
-          },
-          {
-            "n": "destroy robot carrying red key",
-            "s": 68
-          },
-          {
-            "n": "switch 4",
-            "s": 68
-          },
-          {
-            "n": "reactor",
-            "s": 94
-          },
-          {
-            "n": "exit",
-            "s": 107
           }
         ],
-        "total_frames": 6443,
+        "total_frames": 5094,
         "rng_end": {
-          "state": 2108262447,
-          "calls": 1722
-        }
+          "state": 111157742,
+          "calls": 601
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       },
       {
         "level_num": 19,
@@ -721,7 +702,7 @@
         "level_num": 20,
         "level_file": "psx20.rl2",
         "route_input_sha256": "5B720C78EC95B73D0D3D81E6C919849CCC996617E5BAF447C0EE8FF39F705A6D",
-        "status": "ok",
+        "status": "timeout",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -734,37 +715,14 @@
           {
             "n": "switch 0",
             "s": 11
-          },
-          {
-            "n": "destroy robot carrying gold key",
-            "s": 16
-          },
-          {
-            "n": "switch 1",
-            "s": 18
-          },
-          {
-            "n": "destroy robot carrying red key",
-            "s": 40
-          },
-          {
-            "n": "switch 2",
-            "s": 45
-          },
-          {
-            "n": "boss",
-            "s": 71
-          },
-          {
-            "n": "exit",
-            "s": 88
           }
         ],
-        "total_frames": 5283,
+        "total_frames": 4540,
         "rng_end": {
-          "state": 3661595847,
-          "calls": 2594
-        }
+          "state": 3436464596,
+          "calls": 451
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       },
       {
         "level_num": 21,
@@ -823,7 +781,7 @@
         "level_num": 22,
         "level_file": "psx22.rl2",
         "route_input_sha256": "95C0FD9C776C64788F3CADCE8A30770B872F854CCFB61DA956664C1B4C01C1B0",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -848,14 +806,37 @@
           {
             "n": "fly-through 2",
             "s": 34
+          },
+          {
+            "n": "destroy robot carrying gold key",
+            "s": 43
+          },
+          {
+            "n": "fly-through 9",
+            "s": 60
+          },
+          {
+            "n": "destroy robot carrying red key",
+            "s": 64
+          },
+          {
+            "n": "fly-through 25",
+            "s": 80
+          },
+          {
+            "n": "reactor",
+            "s": 87
+          },
+          {
+            "n": "exit",
+            "s": 103
           }
         ],
-        "total_frames": 6060,
+        "total_frames": 6190,
         "rng_end": {
-          "state": 1312673392,
-          "calls": 983
-        },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+          "state": 2066035752,
+          "calls": 3263
+        }
       },
       {
         "level_num": 23,

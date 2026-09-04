@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 25,
+    "ok": 26,
     "failed": 1,
-    "timeout": 4
+    "timeout": 3
   },
   "levels": [
     {
@@ -311,8 +311,8 @@
       ],
       "total_frames": 8853,
       "rng_end": {
-        "state": 1160364752,
-        "calls": 3575
+        "state": 3389010901,
+        "calls": 3628
       }
     },
     {
@@ -396,13 +396,13 @@
         },
         {
           "n": "exit",
-          "s": 155
+          "s": 154
         }
       ],
-      "total_frames": 9293,
+      "total_frames": 9259,
       "rng_end": {
-        "state": 1339443965,
-        "calls": 4676
+        "state": 2009474189,
+        "calls": 4660
       }
     },
     {
@@ -665,7 +665,7 @@
           "s": 168
         }
       ],
-      "total_frames": 10107,
+      "total_frames": 10089,
       "rng_end": {
         "state": 2816012112,
         "calls": 3959
@@ -728,18 +728,50 @@
       "level_num": 17,
       "level_file": "d2leve-1.rl2",
       "route_input_sha256": "68227FCC49A1E35A19A9479CB6C5710316447FC2499FF3551298D11EDC51F1AB",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4100,
+      "objectives": [
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 10
+        },
+        {
+          "n": "gold key",
+          "s": 28
+        },
+        {
+          "n": "fly-through 14",
+          "s": 32
+        },
+        {
+          "n": "switch 16",
+          "s": 32
+        },
+        {
+          "n": "red key",
+          "s": 48
+        },
+        {
+          "n": "pass-through 22",
+          "s": 54
+        },
+        {
+          "n": "reactor",
+          "s": 68
+        },
+        {
+          "n": "exit",
+          "s": 86
+        }
+      ],
+      "total_frames": 5169,
       "rng_end": {
-        "state": 811900218,
-        "calls": 285
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 2854478429,
+        "calls": 2020
+      }
     },
     {
       "level_num": 18,
@@ -881,22 +913,22 @@
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 76
+          "s": 81
         },
         {
           "n": "reactor",
-          "s": 122
+          "s": 127
         },
         {
           "n": "switch 16",
-          "s": 140
+          "s": 145
         },
         {
           "n": "exit",
-          "s": 148
+          "s": 153
         }
       ],
-      "total_frames": 8876,
+      "total_frames": 9184,
       "rng_end": {
         "state": 1173849616,
         "calls": 3511
