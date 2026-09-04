@@ -2135,9 +2135,9 @@
         "mine_volume": 13510400.0,
         "mine_volume_normalized": 2.95444,
         "mine_volume_text": "3.0x",
-        "travel_distance": 1022.8,
-        "travel_time_seconds": 20,
-        "travel_time_text": "0M:20S",
+        "travel_distance": 1550.9,
+        "travel_time_seconds": 31,
+        "travel_time_text": "0M:31S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2154,6 +2154,46 @@
           },
           {
             "index": 1,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 11",
+            "seg": 293,
+            "side": 0,
+            "wall": 58,
+            "label_pos": {
+              "x": 165.5,
+              "y": 72.5,
+              "z": 253.0
+            },
+            "distance": 892.7,
+            "trigger": 11,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 76,
+                "side": 2,
+                "wall": 21
+              },
+              {
+                "seg": 73,
+                "side": 0,
+                "wall": 19
+              },
+              {
+                "seg": 90,
+                "side": 2,
+                "wall": 23
+              },
+              {
+                "seg": 124,
+                "side": 4,
+                "wall": 30
+              }
+            ]
+          },
+          {
+            "index": 2,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "blue key",
@@ -2163,7 +2203,7 @@
               "y": 3.7,
               "z": 337.7
             },
-            "distance": 1022.8,
+            "distance": 658.2,
             "key": "blue"
           }
         ],

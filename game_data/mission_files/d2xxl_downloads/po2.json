@@ -903,9 +903,9 @@
         "mine_volume": 251923000.0,
         "mine_volume_normalized": 55.0903,
         "mine_volume_text": "55x",
-        "travel_distance": 13195.5,
-        "travel_time_seconds": 264,
-        "travel_time_text": "4M:24S",
+        "travel_distance": 13253.4,
+        "travel_time_seconds": 265,
+        "travel_time_text": "4M:25S",
         "guidebot_count": 4,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -1000,6 +1000,31 @@
           },
           {
             "index": 4,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 6",
+            "seg": 541,
+            "side": 2,
+            "wall": 104,
+            "label_pos": {
+              "x": 216.8,
+              "y": 81.5,
+              "z": 784.5
+            },
+            "distance": 2429.1,
+            "trigger": 6,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 456,
+                "side": 4,
+                "wall": 81
+              }
+            ]
+          },
+          {
+            "index": 5,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -1009,11 +1034,11 @@
               "y": 82.4,
               "z": 849.4
             },
-            "distance": 2494.3,
+            "distance": 123.1,
             "key": "red"
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 10",
@@ -1038,7 +1063,7 @@
             ]
           },
           {
-            "index": 6,
+            "index": 7,
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
@@ -1051,7 +1076,7 @@
             "distance": 2611.0
           },
           {
-            "index": 7,
+            "index": 8,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

@@ -1218,20 +1218,6 @@
           },
           {
             "index": 10,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 798,
-            "label_pos": {
-              "x": 17.1,
-              "y": 97.9,
-              "z": 92.1
-            },
-            "distance": 3204.7,
-            "key": "red"
-          },
-          {
-            "index": 11,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 16",
@@ -1243,7 +1229,7 @@
               "y": 55.8,
               "z": 258.2
             },
-            "distance": 227.1,
+            "distance": 3107.7,
             "trigger": 16,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -1301,6 +1287,20 @@
             ]
           },
           {
+            "index": 11,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 798,
+            "label_pos": {
+              "x": 17.1,
+              "y": 97.9,
+              "z": 92.1
+            },
+            "distance": 227.1,
+            "key": "red"
+          },
+          {
             "index": 12,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
@@ -1311,7 +1311,7 @@
               "y": -137.6,
               "z": -581.2
             },
-            "distance": 2880.1
+            "distance": 2977.1
           },
           {
             "index": 13,

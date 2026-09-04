@@ -174,6 +174,30 @@
           },
           {
             "index": 2,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 7",
+            "seg": 305,
+            "wall": 51,
+            "label_pos": {
+              "x": -708.0,
+              "y": -680.0,
+              "z": -11.4
+            },
+            "distance": 1574.0,
+            "trigger": 7,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 298,
+                "side": 2,
+                "wall": 48
+              }
+            ]
+          },
+          {
+            "index": 3,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "blue key",
@@ -183,11 +207,11 @@
               "y": -680.0,
               "z": -11.4
             },
-            "distance": 1449.0,
+            "distance": 125.0,
             "key": "blue"
           },
           {
-            "index": 3,
+            "index": 4,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 8",
@@ -212,7 +236,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -226,30 +250,6 @@
             "key": "gold"
           },
           {
-            "index": 5,
-            "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 7",
-            "seg": 305,
-            "wall": 51,
-            "label_pos": {
-              "x": -708.0,
-              "y": -680.0,
-              "z": -11.4
-            },
-            "distance": 565.0,
-            "trigger": 7,
-            "trigger_type_id": 7,
-            "trigger_type": "unlock_door",
-            "opens": [
-              {
-                "seg": 298,
-                "side": 2,
-                "wall": 48
-              }
-            ]
-          },
-          {
             "index": 6,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
@@ -261,7 +261,7 @@
               "y": -819.3,
               "z": -12.0
             },
-            "distance": 1574.0,
+            "distance": 1889.0,
             "trigger": 6,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",

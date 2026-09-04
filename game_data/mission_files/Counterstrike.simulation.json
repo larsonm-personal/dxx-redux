@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 24,
+    "ok": 25,
     "failed": 1,
-    "timeout": 5
+    "timeout": 4
   },
   "levels": [
     {
@@ -514,8 +514,8 @@
     {
       "level_num": 12,
       "level_file": "d2levc-4.rl2",
-      "route_input_sha256": "A555CCAF60115B74B973CDD8935AD6436E5D69A0C1D745B2F30F9CFC8F0965AB",
-      "status": "timeout",
+      "route_input_sha256": "0336F2967BB54B5975070D013D04D952F03492DA039A48407A96861BC0F177A6",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -530,16 +530,31 @@
           "s": 32
         },
         {
+          "n": "switch 7",
+          "s": 51
+        },
+        {
           "n": "gold key",
           "s": 76
+        },
+        {
+          "n": "red key",
+          "s": 134
+        },
+        {
+          "n": "boss",
+          "s": 192
+        },
+        {
+          "n": "exit",
+          "s": 193
         }
       ],
-      "total_frames": 8161,
+      "total_frames": 11595,
       "rng_end": {
-        "state": 3306372056,
-        "calls": 1615
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1227536725,
+        "calls": 3244
+      }
     },
     {
       "level_num": 13,

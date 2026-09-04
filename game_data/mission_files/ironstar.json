@@ -481,15 +481,15 @@
         "mine_volume": 10056000.0,
         "mine_volume_normalized": 2.19904,
         "mine_volume_text": "2.2x",
-        "travel_distance": 2442.0,
-        "travel_time_seconds": 49,
-        "travel_time_text": "0M:49S",
+        "travel_distance": 2348.7,
+        "travel_time_seconds": 47,
+        "travel_time_text": "0M:47S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_required_key_mask": 2,
-        "route_completing_key_mask_set": 140,
+        "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -501,6 +501,21 @@
           {
             "index": 1,
             "kind": "key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying blue key",
+            "seg": 23,
+            "label_pos": {
+              "x": -176.2,
+              "y": -75.0,
+              "z": 362.5
+            },
+            "distance": 366.0,
+            "key": "blue",
+            "key_carrier_objnum": 73
+          },
+          {
+            "index": 2,
+            "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 434,
@@ -509,45 +524,52 @@
               "y": -132.5,
               "z": 305.0
             },
-            "distance": 885.8,
+            "distance": 763.8,
             "key": "red"
           },
           {
-            "index": 2,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 307,
+            "index": 3,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 251,
+            "side": 5,
+            "wall": 67,
             "label_pos": {
-              "x": 355.0,
-              "y": -75.0,
-              "z": 330.0
+              "x": 0.0,
+              "y": 0.0,
+              "z": 10.0
             },
-            "distance": 1331.8
+            "distance": 1166.8,
+            "opens": [
+              {
+                "seg": 251,
+                "side": 5,
+                "wall": 67
+              },
+              {
+                "seg": 250,
+                "side": 4,
+                "wall": 66
+              }
+            ]
           },
           {
-            "index": 3,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 318,
-            "side": 2,
-            "wall": 28,
+            "index": 4,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 1,
             "label_pos": {
-              "x": 205.0,
-              "y": -25.0,
-              "z": 430.0
+              "x": -30.0,
+              "y": 2.0,
+              "z": 0.0
             },
-            "distance": 224.5,
-            "trigger": 0,
-            "trigger_type_id": 8,
-            "trigger_type": "exit"
+            "distance": 52.2,
+            "key": "gold"
           }
         ],
-        "notes": [
-          "blue key not necessary",
-          "gold key not necessary"
-        ]
+        "route_problem": "route target unreachable"
       },
       {
         "level_num": 4,

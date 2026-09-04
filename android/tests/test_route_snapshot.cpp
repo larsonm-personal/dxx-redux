@@ -816,6 +816,44 @@ dxx_route::route_snapshot make_fleeing_carrier_snapshot(bool fleeing)
 	return snapshot;
 }
 
+dxx_route::route_snapshot make_static_key_asymmetric_return_snapshot()
+{
+	auto snapshot = make_fleeing_carrier_snapshot(false);
+	snapshot.state.objects[0].kind = dxx_route::route_object_kind::powerup;
+	snapshot.state.objects[0].contains_count = 0;
+	snapshot.state.objects[0].contains_key =
+	    dxx_route::route_key_requirement::none;
+	snapshot.state.objects[0].key = dxx_route::route_key_requirement::gold;
+	snapshot.state.objects[0].segment = 1;
+	snapshot.state.objects[0].position =
+	    snapshot.topology.segments[1].center;
+	snapshot.state.walls[1].locked = true;
+	snapshot.state.segments[1].sides[0].flyable = true;
+	snapshot.state.walls[2].key = dxx_route::route_key_requirement::gold;
+	snapshot.state.walls[3].key = dxx_route::route_key_requirement::gold;
+	snapshot.topology.walls.resize(5);
+	snapshot.state.walls.resize(5);
+	snapshot.topology.walls[4].segment = 0;
+	snapshot.topology.walls[4].side = 2;
+	snapshot.topology.walls[4].target =
+	    snapshot.topology.segments[0].center;
+	snapshot.topology.walls[4].target.value[0] += LEVEL_METADATA_FIX_SCALE;
+	snapshot.topology.walls[4].shootable_trigger = true;
+	snapshot.state.walls[4].kind = dxx_route::route_wall_kind::overlay;
+	snapshot.state.walls[4].trigger = 0;
+	snapshot.topology.segments[0].sides[2].wall = 4;
+	snapshot.topology.segments[0].sides[2].child = -1;
+	snapshot.topology.segments[0].sides[2].reverse_side = -1;
+	snapshot.topology.segments[1].sides[0].opener_walls = { 4 };
+	snapshot.topology.triggers.resize(1);
+	snapshot.state.triggers.resize(1);
+	snapshot.topology.triggers[0].raw_type = 7;
+	snapshot.topology.triggers[0].kind =
+	    dxx_route::route_trigger_kind::unlock_door;
+	snapshot.topology.triggers[0].links.push_back({ 1, 0 });
+	return snapshot;
+}
+
 level_metadata_scan_view make_view(test_level &level)
 {
 	level_metadata_scan_view view = {};
@@ -2206,6 +2244,31 @@ int main()
 	    stationary_carrier_snapshot, fleeing_carrier_query);
 	assert(stationary_carrier_plan.status !=
 	       dxx_route::route_plan_status::ok);
+	const auto asymmetric_key_snapshot =
+	    make_static_key_asymmetric_return_snapshot();
+	auto asymmetric_key_query = planner_query;
+	asymmetric_key_query.endpoint = dxx_route::route_endpoint_kind::segment;
+	asymmetric_key_query.target_segment = 2;
+	test_visibility asymmetric_key_visible;
+	asymmetric_key_visible.segment = 0;
+	asymmetric_key_visible.wall = 4;
+	asymmetric_key_visible.position =
+	    asymmetric_key_snapshot.topology.segments[0].center;
+	dxx_route::route_visibility_query asymmetric_key_visibility;
+	asymmetric_key_visibility.user = &asymmetric_key_visible;
+	asymmetric_key_visibility.wall_shootable = wall_shootable;
+	const auto asymmetric_key_plan = dxx_route::plan_route(
+	    asymmetric_key_snapshot, asymmetric_key_query,
+	    asymmetric_key_visibility);
+	assert(asymmetric_key_plan.status == dxx_route::route_plan_status::ok);
+	assert(asymmetric_key_plan.steps.size() == 4);
+	assert(asymmetric_key_plan.steps[1].kind ==
+	       dxx_route::route_semantic_step_kind::trigger);
+	assert(asymmetric_key_plan.steps[1].trigger == 0);
+	assert(asymmetric_key_plan.steps[2].kind ==
+	       dxx_route::route_semantic_step_kind::key);
+	assert(asymmetric_key_plan.steps[2].key ==
+	       dxx_route::route_key_requirement::gold);
 	const auto selected_key = dxx_route::select_key_target(
 	    key_snapshot, planner_query,
 	    dxx_route::initial_route_progress_state(key_snapshot, planner_query),

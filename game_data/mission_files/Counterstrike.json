@@ -2338,32 +2338,17 @@
         },
         {
           "index": 3,
-          "kind": "key",
-          "activation_kind": "pickup_key",
-          "label": "gold key",
-          "seg": 230,
-          "label_pos": {
-            "x": -723.3,
-            "y": -1211.5,
-            "z": 145.1
-          },
-          "distance": 3183.7,
-          "key": "gold"
-        },
-        {
-          "index": 4,
           "kind": "trigger",
           "activation_kind": "shoot_switch",
           "label": "Shoot switch trigger 7",
-          "seg": 239,
-          "side": 4,
+          "seg": 236,
           "wall": 113,
           "label_pos": {
             "x": -613.1,
             "y": -1399.9,
             "z": 212.6
           },
-          "distance": 295.0,
+          "distance": 2144.7,
           "trigger": 7,
           "trigger_type_id": 7,
           "trigger_type": "unlock_door",
@@ -2376,6 +2361,20 @@
           ]
         },
         {
+          "index": 4,
+          "kind": "key",
+          "activation_kind": "pickup_key",
+          "label": "gold key",
+          "seg": 230,
+          "label_pos": {
+            "x": -723.3,
+            "y": -1211.5,
+            "z": 145.1
+          },
+          "distance": 1151.3,
+          "key": "gold"
+        },
+        {
           "index": 5,
           "kind": "key",
           "activation_kind": "pickup_key",
@@ -2386,7 +2385,7 @@
             "y": -938.4,
             "z": 201.9
           },
-          "distance": 3399.0,
+          "distance": 3604.0,
           "key": "red"
         },
         {

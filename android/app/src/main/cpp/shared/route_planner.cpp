@@ -3153,6 +3153,55 @@ class dependency_planner
 		           route_object_kind::robot;
 	}
 
+	int prepare_static_key_return_path(
+	    const route_target &target,
+	    int depth)
+	{
+		if (is_robot_carrier(target))
+			return 0;
+		const auto path = path_to_position(
+		    target.segment, target.position, false, false);
+		if (!path.reached)
+			return 0;
+		for (std::size_t index = 0;
+		     index < path.sides.size() && index + 1 < path.segments.size();
+		     ++index) {
+			const int source_segment = path.segments[index];
+			const int destination_segment = path.segments[index + 1];
+			const int forward_side = path.sides[index];
+			if (!valid_segment(snapshot_, source_segment) ||
+			    !valid_segment(snapshot_, destination_segment) ||
+			    forward_side < 0 ||
+			    forward_side >= LEVEL_METADATA_MAX_SIDES)
+				continue;
+			const int reverse_side = snapshot_.topology
+			                             .segments[source_segment]
+			                             .sides[forward_side]
+			                             .reverse_side;
+			if (reverse_side < 0 ||
+			    reverse_side >= LEVEL_METADATA_MAX_SIDES)
+				continue;
+			const auto reverse = evaluate_route_edge(
+			    snapshot_, query_, state_.progress, destination_segment,
+			    reverse_side);
+			if (reverse.progress_cost == LEVEL_METADATA_ROUTE_EDGE_PASSABLE)
+				continue;
+			/* A static key cannot follow the player back through a one-way
+			 * portal.  Resolve a switch-controlled return face before crossing
+			 * the portal, while its switch is still physically reachable. */
+			if (reverse.blocker == route_edge_blocker::trigger &&
+			    state_flag(
+			        state_.progress.trigger_in_progress, reverse.trigger))
+				continue;
+			if (reverse.blocker == route_edge_blocker::trigger)
+				return fire_trigger(
+				           destination_segment, reverse_side, depth + 1)
+				           ? 1
+				           : -1;
+		}
+		return 0;
+	}
+
 	void preserve_carrier_continuation_anchor(const route_target &target)
 	{
 		/* A fleeing carrier can cross an opened asymmetric door toward the
@@ -3236,7 +3285,8 @@ class dependency_planner
 		}
 		state_.progress.key_in_progress |= bit;
 		const auto &target = targets_.keys[key][selected.selected_index];
-		if (!move_to_target(target.segment, target.position, depth + 1)) {
+		if (!move_to_target(
+		        target.segment, target.position, depth + 1, &target)) {
 			state_.progress.key_in_progress &= ~bit;
 			return false;
 		}
@@ -3903,7 +3953,8 @@ class dependency_planner
 	bool move_to_target(
 	    int goal_segment,
 	    const route_position &goal_position,
-	    int depth)
+	    int depth,
+	    const route_target *static_key_target = nullptr)
 	{
 		if (depth > LEVEL_METADATA_MAX_ROUTE_STEPS) {
 			set_problem("route dependency depth limit");
@@ -3920,6 +3971,14 @@ class dependency_planner
 			const auto direct = path_to_position(
 			    goal_segment, goal_position, false, false);
 			if (direct.reached) {
+				if (static_key_target) {
+					const int prepared = prepare_static_key_return_path(
+					    *static_key_target, depth + 1);
+					if (prepared < 0)
+						return false;
+					if (prepared > 0)
+						continue;
+				}
 				int blast_segment = -1;
 				int blast_side = -1;
 				int blast_wall = -1;

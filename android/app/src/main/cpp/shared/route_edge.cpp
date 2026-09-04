@@ -306,7 +306,11 @@ route_edge_decision evaluate_route_edge(
 	     wall_opened != snapshot.state.walls[wall].opened);
 	if (state_side.exit_trigger)
 		return blocked(route_edge_blocker::exit);
-	if (state_side.flyable && !wall_changed)
+	/* A shared auto-closing door can be open because it was entered through
+	 * the opposite face while this face remains locked.  Treating that transient
+	 * flyable bit as permanent lets the plan strand itself after the door closes. */
+	if (state_side.flyable && !wall_changed &&
+	    !(wall_kind == route_wall_kind::door && wall_locked))
 		return passable(topology_side.wall);
 	const auto &reverse_state_side =
 	    snapshot.state.segments[child].sides[reverse_side];

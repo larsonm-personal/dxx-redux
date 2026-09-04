@@ -677,7 +677,7 @@
         "mine_volume": 41929900.0,
         "mine_volume_normalized": 9.16922,
         "mine_volume_text": "9.2x",
-        "travel_distance": 16493.4,
+        "travel_distance": 16503.4,
         "travel_time_seconds": 330,
         "travel_time_text": "5M:30S",
         "guidebot_count": 0,
@@ -868,6 +868,31 @@
           },
           {
             "index": 8,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 12",
+            "seg": 524,
+            "side": 1,
+            "wall": 78,
+            "label_pos": {
+              "x": -846.5,
+              "y": 40.0,
+              "z": 26.4
+            },
+            "distance": 564.8,
+            "trigger": 12,
+            "trigger_type_id": 11,
+            "trigger_type": "illusory_wall",
+            "opens": [
+              {
+                "seg": 523,
+                "side": 1,
+                "wall": 81
+              }
+            ]
+          },
+          {
+            "index": 9,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -877,11 +902,11 @@
               "y": 25.0,
               "z": 80.0
             },
-            "distance": 793.5,
+            "distance": 238.7,
             "key": "gold"
           },
           {
-            "index": 9,
+            "index": 10,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 13",
@@ -905,7 +930,7 @@
             ]
           },
           {
-            "index": 10,
+            "index": 11,
             "kind": "key",
             "activation_kind": "destroy_key_carrier",
             "label": "Destroy robot carrying red key",
@@ -920,7 +945,7 @@
             "key_carrier_objnum": 278
           },
           {
-            "index": 11,
+            "index": 12,
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
@@ -933,7 +958,7 @@
             "distance": 3145.0
           },
           {
-            "index": 12,
+            "index": 13,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -1690,15 +1715,15 @@
         "mine_volume": 36192200.0,
         "mine_volume_normalized": 7.9145,
         "mine_volume_text": "7.9x",
-        "travel_distance": 6829.8,
-        "travel_time_seconds": 137,
-        "travel_time_text": "2M:17S",
+        "travel_distance": 7313.2,
+        "travel_time_seconds": 146,
+        "travel_time_text": "2M:26S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 3,
+        "route_completing_key_mask_set": 8,
         "route_steps": [
           {
             "index": 0,
@@ -1879,31 +1904,48 @@
           },
           {
             "index": 8,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 414,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 11",
+            "seg": 447,
+            "side": 2,
+            "wall": 104,
             "label_pos": {
-              "x": -440.0,
-              "y": -242.5,
+              "x": -470.0,
+              "y": -240.0,
               "z": -560.0
             },
-            "distance": 1851.3,
-            "key": "red"
+            "distance": 1818.8,
+            "trigger": 11,
+            "trigger_type_id": 11,
+            "trigger_type": "illusory_wall",
+            "opens": [
+              {
+                "seg": 457,
+                "side": 1,
+                "wall": 110
+              },
+              {
+                "seg": 391,
+                "side": 3,
+                "wall": 109
+              }
+            ]
           },
           {
             "index": 9,
             "kind": "trigger",
-            "activation_kind": "unresolved_trigger",
-            "calculated": false,
-            "label": "Locate and activate switch trigger 10",
-            "seg": 414,
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 10",
+            "seg": 457,
+            "side": 3,
             "wall": 108,
             "label_pos": {
               "x": -440.0,
               "y": -252.5,
               "z": -390.0
             },
+            "distance": 241.7,
             "trigger": 10,
             "trigger_type_id": 11,
             "trigger_type": "illusory_wall",
@@ -1922,6 +1964,20 @@
           },
           {
             "index": 10,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 414,
+            "label_pos": {
+              "x": -440.0,
+              "y": -242.5,
+              "z": -560.0
+            },
+            "distance": 274.2,
+            "key": "red"
+          },
+          {
+            "index": 11,
             "kind": "trigger",
             "activation_kind": "pass_through_trigger",
             "label": "Pass through trigger 14",
@@ -1946,7 +2002,7 @@
             ]
           },
           {
-            "index": 11,
+            "index": 12,
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
@@ -1959,7 +2015,7 @@
             "distance": 660.5
           },
           {
-            "index": 12,
+            "index": 13,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -1978,7 +2034,6 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "switch activation route unresolved",
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",
