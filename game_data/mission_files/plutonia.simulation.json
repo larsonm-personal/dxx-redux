@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 9,
+    "ok": 11,
     "failed": 7,
-    "timeout": 16
+    "timeout": 14
   },
   "levels": [
     {
@@ -210,17 +210,17 @@
         },
         {
           "n": "reactor",
-          "s": 73
+          "s": 70
         },
         {
           "n": "exit",
-          "s": 81
+          "s": 73
         }
       ],
-      "total_frames": 4845,
+      "total_frames": 4405,
       "rng_end": {
-        "state": 1240179346,
-        "calls": 3109
+        "state": 4188231431,
+        "calls": 3042
       }
     },
     {
@@ -242,10 +242,10 @@
           "s": 13
         }
       ],
-      "total_frames": 1503,
+      "total_frames": 1444,
       "rng_end": {
-        "state": 89561265,
-        "calls": 1232
+        "state": 2682890258,
+        "calls": 1189
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -273,37 +273,37 @@
         },
         {
           "n": "pass-through 37",
-          "s": 37
+          "s": 22
         },
         {
           "n": "pass-through 40",
-          "s": 38
+          "s": 24
         },
         {
           "n": "pass-through 16",
-          "s": 39
+          "s": 25
         },
         {
           "n": "pass-through 22",
-          "s": 41
+          "s": 26
         },
         {
           "n": "pass-through 6",
-          "s": 42
+          "s": 28
         },
         {
           "n": "pass-through 3",
-          "s": 43
+          "s": 29
         },
         {
           "n": "fly-through 43",
-          "s": 45
+          "s": 31
         }
       ],
-      "total_frames": 7570,
+      "total_frames": 6765,
       "rng_end": {
-        "state": 514107671,
-        "calls": 3282
+        "state": 3716007049,
+        "calls": 2616
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -331,17 +331,17 @@
         },
         {
           "n": "reactor",
-          "s": 97
+          "s": 94
         },
         {
           "n": "exit",
-          "s": 105
+          "s": 99
         }
       ],
-      "total_frames": 6284,
+      "total_frames": 5933,
       "rng_end": {
-        "state": 2027195608,
-        "calls": 4431
+        "state": 1366414672,
+        "calls": 4471
       }
     },
     {
@@ -426,7 +426,7 @@
       "level_num": 13,
       "level_file": "map13.rl2",
       "route_input_sha256": "CD7BCE81362827963FE357769B183B0C655C187D8ED6B1373EBB75507858E667",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -451,14 +451,29 @@
         {
           "n": "red key",
           "s": 105
+        },
+        {
+          "n": "switch 5",
+          "s": 125
+        },
+        {
+          "n": "switch 6",
+          "s": 129
+        },
+        {
+          "n": "reactor",
+          "s": 130
+        },
+        {
+          "n": "exit",
+          "s": 160
         }
       ],
-      "total_frames": 10680,
+      "total_frames": 9625,
       "rng_end": {
-        "state": 1092328216,
-        "calls": 4623
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3717760298,
+        "calls": 6637
+      }
     },
     {
       "level_num": 14,
@@ -561,14 +576,14 @@
         },
         {
           "n": "reactor",
-          "s": 101
+          "s": 99
         },
         {
           "n": "exit",
-          "s": 127
+          "s": 122
         }
       ],
-      "total_frames": 7637,
+      "total_frames": 7349,
       "rng_end": {
         "state": 2955380948,
         "calls": 5827
@@ -602,14 +617,14 @@
         },
         {
           "n": "reactor",
-          "s": 99
+          "s": 97
         },
         {
           "n": "exit",
-          "s": 111
+          "s": 106
         }
       ],
-      "total_frames": 6664,
+      "total_frames": 6380,
       "rng_end": {
         "state": 1350069555,
         "calls": 3926
@@ -643,14 +658,14 @@
         },
         {
           "n": "reactor",
-          "s": 100
+          "s": 97
         },
         {
           "n": "exit",
-          "s": 110
+          "s": 104
         }
       ],
-      "total_frames": 6611,
+      "total_frames": 6245,
       "rng_end": {
         "state": 1919816455,
         "calls": 4066
@@ -756,12 +771,12 @@
           "s": 9
         }
       ],
-      "total_frames": 554,
+      "total_frames": 1073,
       "rng_end": {
-        "state": 3066448807,
-        "calls": 322
+        "state": 2965106811,
+        "calls": 142
       },
-      "problem": "semantic objective repeated without route advancement"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 24,
@@ -829,17 +844,17 @@
         },
         {
           "n": "reactor",
-          "s": 125
+          "s": 120
         },
         {
           "n": "exit",
-          "s": 126
+          "s": 127
         }
       ],
-      "total_frames": 7569,
+      "total_frames": 7615,
       "rng_end": {
-        "state": 2809706843,
-        "calls": 4014
+        "state": 765583355,
+        "calls": 4366
       }
     },
     {
@@ -899,17 +914,17 @@
         },
         {
           "n": "reactor",
-          "s": 136
+          "s": 133
         },
         {
           "n": "exit",
-          "s": 138
+          "s": 136
         }
       ],
-      "total_frames": 8279,
+      "total_frames": 8131,
       "rng_end": {
-        "state": 770344314,
-        "calls": 3549
+        "state": 210839171,
+        "calls": 3590
       }
     },
     {
@@ -944,17 +959,17 @@
         },
         {
           "n": "reactor",
-          "s": 70
+          "s": 69
         },
         {
           "n": "exit",
-          "s": 75
+          "s": 73
         }
       ],
-      "total_frames": 4525,
+      "total_frames": 4380,
       "rng_end": {
-        "state": 1245478415,
-        "calls": 4826
+        "state": 580285368,
+        "calls": 4847
       }
     },
     {
@@ -1029,24 +1044,24 @@
         },
         {
           "n": "reactor",
-          "s": 13
+          "s": 10
         },
         {
           "n": "exit",
-          "s": 23
+          "s": 22
         }
       ],
-      "total_frames": 1397,
+      "total_frames": 1341,
       "rng_end": {
-        "state": 2721995831,
-        "calls": 946
+        "state": 1793388582,
+        "calls": 1153
       }
     },
     {
       "level_num": -2,
       "level_file": "map32.rl2",
       "route_input_sha256": "86427B838AF026E73D22835B538E93877C8A3805D92B4B42773BC887B2618AD5",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -1075,14 +1090,21 @@
         {
           "n": "blastable wall",
           "s": 49
+        },
+        {
+          "n": "reactor",
+          "s": 60
+        },
+        {
+          "n": "exit",
+          "s": 65
         }
       ],
-      "total_frames": 2978,
+      "total_frames": 3901,
       "rng_end": {
-        "state": 2579133721,
-        "calls": 2088
-      },
-      "problem": "semantic objective repeated without route advancement"
+        "state": 3804883212,
+        "calls": 2987
+      }
     }
   ]
 }

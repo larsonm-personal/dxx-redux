@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
+    "ok": 3,
     "failed": 2,
-    "timeout": 4
+    "timeout": 3
   },
   "levels": [
     {
@@ -84,17 +84,17 @@
         },
         {
           "n": "reactor",
-          "s": 52
+          "s": 50
         },
         {
           "n": "exit",
-          "s": 67
+          "s": 61
         }
       ],
-      "total_frames": 4019,
+      "total_frames": 3647,
       "rng_end": {
-        "state": 1180976397,
-        "calls": 3508
+        "state": 3540364135,
+        "calls": 3458
       }
     },
     {
@@ -121,14 +121,14 @@
         },
         {
           "n": "reactor",
-          "s": 89
+          "s": 86
         },
         {
           "n": "exit",
-          "s": 101
+          "s": 95
         }
       ],
-      "total_frames": 6043,
+      "total_frames": 5689,
       "rng_end": {
         "state": 1017304121,
         "calls": 2568
@@ -138,7 +138,7 @@
       "level_num": 5,
       "level_file": "level05.rl2",
       "route_input_sha256": "D81CF52E36B2A2CA85EF6C171285E190EF5A7A09E04CB2B1D89C16F9D72B0FE0",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -155,14 +155,21 @@
         {
           "n": "red key",
           "s": 52
+        },
+        {
+          "n": "reactor",
+          "s": 70
+        },
+        {
+          "n": "exit",
+          "s": 77
         }
       ],
-      "total_frames": 8347,
+      "total_frames": 4610,
       "rng_end": {
-        "state": 3904604604,
-        "calls": 1339
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 696687669,
+        "calls": 1740
+      }
     },
     {
       "level_num": 6,

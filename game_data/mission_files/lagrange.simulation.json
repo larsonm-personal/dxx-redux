@@ -33,12 +33,12 @@
           "s": 13
         }
       ],
-      "total_frames": 804,
+      "total_frames": 1326,
       "rng_end": {
-        "state": 2174576902,
-        "calls": 801
+        "state": 1823798819,
+        "calls": 614
       },
-      "problem": "semantic objective repeated without route advancement"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 2,

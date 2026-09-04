@@ -88,14 +88,14 @@
         },
         {
           "n": "boss",
-          "s": 93
+          "s": 87
         },
         {
           "n": "exit",
-          "s": 116
+          "s": 111
         }
       ],
-      "total_frames": 6952,
+      "total_frames": 6633,
       "rng_end": {
         "state": 3605725861,
         "calls": 4316
@@ -145,12 +145,12 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 3602,
+      "total_frames": 36001,
       "rng_end": {
-        "state": 3826077128,
-        "calls": 159
+        "state": 2212816966,
+        "calls": 714977
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "route confirmation exceeded 10 simulation minutes"
     },
     {
       "level_num": 7,
@@ -162,12 +162,12 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 5666,
+      "total_frames": 36001,
       "rng_end": {
-        "state": 3433853922,
-        "calls": 277
+        "state": 537437380,
+        "calls": 11795
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "route confirmation exceeded 10 simulation minutes"
     },
     {
       "level_num": 8,
@@ -252,12 +252,12 @@
           "s": 6
         }
       ],
-      "total_frames": 383,
+      "total_frames": 912,
       "rng_end": {
-        "state": 1547223264,
-        "calls": 423
+        "state": 2234146244,
+        "calls": 275
       },
-      "problem": "semantic objective repeated without route advancement"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 12,
@@ -283,14 +283,14 @@
         },
         {
           "n": "boss",
-          "s": 43
+          "s": 38
         },
         {
           "n": "exit",
-          "s": 45
+          "s": 40
         }
       ],
-      "total_frames": 2713,
+      "total_frames": 2398,
       "rng_end": {
         "state": 1531785709,
         "calls": 2516
@@ -333,14 +333,14 @@
         },
         {
           "n": "boss",
-          "s": 78
+          "s": 75
         },
         {
           "n": "exit",
-          "s": 79
+          "s": 77
         }
       ],
-      "total_frames": 4748,
+      "total_frames": 4599,
       "rng_end": {
         "state": 1130859006,
         "calls": 2185
@@ -405,14 +405,22 @@
         {
           "n": "fly-through 7",
           "s": 18
+        },
+        {
+          "n": "reactor",
+          "s": 25
+        },
+        {
+          "n": "fly-through 3",
+          "s": 28
         }
       ],
-      "total_frames": 17516,
+      "total_frames": 2375,
       "rng_end": {
-        "state": 207148699,
-        "calls": 12910
+        "state": 2953541386,
+        "calls": 1421
       },
-      "problem": "semantic objective repeated without route advancement"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 17,
@@ -438,14 +446,14 @@
         },
         {
           "n": "boss",
-          "s": 38
+          "s": 36
         },
         {
           "n": "exit",
-          "s": 61
+          "s": 57
         }
       ],
-      "total_frames": 3638,
+      "total_frames": 3429,
       "rng_end": {
         "state": 743471179,
         "calls": 1726

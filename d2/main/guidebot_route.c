@@ -1508,6 +1508,24 @@ static void escort_route_build_frontier_goal(
 	         "closest reachable route point");
 }
 
+int escort_route_build_goal_for_step(
+	const level_metadata_route_step *step,
+	escort_route_goal *candidate)
+{
+	int guidance_mode;
+	if (!step || !candidate || !escort_route_step_is_targetable(step))
+		return ESCORT_GOAL_UNSPECIFIED;
+	guidance_mode = escort_route_step_guidance_mode(step);
+	if (guidance_mode == ESCORT_ROUTE_GUIDANCE_NONE)
+		return ESCORT_GOAL_UNSPECIFIED;
+	escort_route_build_step_goal(
+		step, guidance_mode,
+		escort_valid_segment(step->path_terminal_segment) ?
+			step->path_terminal_segment : step->seg,
+		candidate);
+	return escort_route_goal_object_for_step(step);
+}
+
 int escort_route_select_next_goal(
 	escort_route_goal *candidate,
 	int *selected_index)

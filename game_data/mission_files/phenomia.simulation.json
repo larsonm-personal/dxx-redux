@@ -32,12 +32,12 @@
           "s": 9
         }
       ],
-      "total_frames": 558,
+      "total_frames": 1058,
       "rng_end": {
-        "state": 3524531733,
-        "calls": 492
+        "state": 232049766,
+        "calls": 321
       },
-      "problem": "semantic objective repeated without route advancement"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 2,
@@ -151,18 +151,18 @@
         },
         {
           "n": "boss",
-          "s": 153
+          "s": 148
         },
         {
           "n": "switch 3",
-          "s": 163
+          "s": 157
         },
         {
           "n": "exit",
-          "s": 177
+          "s": 172
         }
       ],
-      "total_frames": 10626,
+      "total_frames": 10302,
       "rng_end": {
         "state": 580285368,
         "calls": 4847
@@ -192,13 +192,13 @@
         },
         {
           "n": "reactor",
-          "s": 41
+          "s": 38
         }
       ],
-      "total_frames": 6459,
+      "total_frames": 6201,
       "rng_end": {
-        "state": 3899512905,
-        "calls": 1144
+        "state": 2954493520,
+        "calls": 1143
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -370,13 +370,13 @@
         },
         {
           "n": "reactor",
-          "s": 71
+          "s": 69
         }
       ],
-      "total_frames": 5576,
+      "total_frames": 5374,
       "rng_end": {
-        "state": 134241830,
-        "calls": 3713
+        "state": 3609107594,
+        "calls": 3597
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

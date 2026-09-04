@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 1,
-    "timeout": 5,
+    "ok": 2,
+    "timeout": 4,
     "unsupported": 1
   },
   "levels": [
@@ -28,17 +28,17 @@
         },
         {
           "n": "reactor",
-          "s": 45
+          "s": 43
         },
         {
           "n": "exit",
-          "s": 60
+          "s": 56
         }
       ],
-      "total_frames": 3617,
+      "total_frames": 3338,
       "rng_end": {
-        "state": 3978561062,
-        "calls": 1665
+        "state": 3614462044,
+        "calls": 1563
       }
     },
     {
@@ -111,25 +111,25 @@
         },
         {
           "n": "switch 20",
-          "s": 99
+          "s": 107
         },
         {
           "n": "switch 22",
-          "s": 164
+          "s": 119
         },
         {
           "n": "red key",
-          "s": 239
+          "s": 121
         },
         {
           "n": "reactor",
-          "s": 310
+          "s": 148
         }
       ],
-      "total_frames": 22389,
+      "total_frames": 13703,
       "rng_end": {
-        "state": 2103136814,
-        "calls": 13081
+        "state": 3960321535,
+        "calls": 5610
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -171,7 +171,7 @@
       "level_num": 5,
       "level_file": "level05.rl2",
       "route_input_sha256": "A637A7A4428188F6B82F0BCEC91B001CB206E8E2C95850C2B18CF09E26BCC409",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -195,15 +195,18 @@
         },
         {
           "n": "reactor",
-          "s": 95
+          "s": 93
+        },
+        {
+          "n": "exit",
+          "s": 117
         }
       ],
-      "total_frames": 6801,
+      "total_frames": 7047,
       "rng_end": {
-        "state": 3058413865,
-        "calls": 4760
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 2694628668,
+        "calls": 5051
+      }
     },
     {
       "level_num": 6,

@@ -57,17 +57,17 @@
         },
         {
           "n": "boss",
-          "s": 54
+          "s": 48
         },
         {
           "n": "exit",
-          "s": 72
+          "s": 65
         }
       ],
-      "total_frames": 4344,
+      "total_frames": 3896,
       "rng_end": {
-        "state": 552378116,
-        "calls": 1747
+        "state": 1752636946,
+        "calls": 1701
       }
     },
     {
@@ -142,14 +142,14 @@
         },
         {
           "n": "boss",
-          "s": 24
+          "s": 22
         },
         {
           "n": "exit",
-          "s": 37
+          "s": 35
         }
       ],
-      "total_frames": 2243,
+      "total_frames": 2124,
       "rng_end": {
         "state": 3984842223,
         "calls": 1274
@@ -326,26 +326,26 @@
       "objectives": [
         {
           "n": "boss",
-          "s": 21
+          "s": 17
         },
         {
           "n": "switch 2",
-          "s": 30
+          "s": 26
         },
         {
           "n": "hidden door",
-          "s": 49
+          "s": 45
         },
         {
           "n": "switch 1",
-          "s": 49
+          "s": 46
         },
         {
           "n": "exit",
-          "s": 68
+          "s": 64
         }
       ],
-      "total_frames": 4068,
+      "total_frames": 3852,
       "rng_end": {
         "state": 3551035395,
         "calls": 1158

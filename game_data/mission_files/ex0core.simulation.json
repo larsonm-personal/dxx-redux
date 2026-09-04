@@ -36,13 +36,13 @@
         },
         {
           "n": "reactor",
-          "s": 40
+          "s": 38
         }
       ],
-      "total_frames": 6450,
+      "total_frames": 6192,
       "rng_end": {
-        "state": 3899512905,
-        "calls": 1144
+        "state": 2954493520,
+        "calls": 1143
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -114,17 +114,17 @@
       "objectives": [
         {
           "n": "reactor",
-          "s": 6
+          "s": 0
         },
         {
           "n": "exit",
-          "s": 12
+          "s": 2
         }
       ],
-      "total_frames": 729,
+      "total_frames": 106,
       "rng_end": {
-        "state": 2822133894,
-        "calls": 417
+        "state": 811900218,
+        "calls": 285
       }
     }
   ]

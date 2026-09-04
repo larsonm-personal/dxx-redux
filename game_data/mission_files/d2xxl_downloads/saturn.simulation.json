@@ -28,18 +28,18 @@
         },
         {
           "n": "reactor",
-          "s": 20
+          "s": 16
         },
         {
           "n": "switch 15",
-          "s": 42
+          "s": 34
         },
         {
           "n": "exit",
-          "s": 48
+          "s": 41
         }
       ],
-      "total_frames": 2883,
+      "total_frames": 2433,
       "rng_end": {
         "state": 3827994298,
         "calls": 3485
@@ -163,17 +163,17 @@
       "objectives": [
         {
           "n": "reactor",
-          "s": 22
+          "s": 21
         },
         {
           "n": "exit",
-          "s": 24
+          "s": 22
         }
       ],
-      "total_frames": 1416,
+      "total_frames": 1308,
       "rng_end": {
-        "state": 808381751,
-        "calls": 690
+        "state": 1195529845,
+        "calls": 652
       }
     }
   ]

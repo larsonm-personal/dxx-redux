@@ -51,14 +51,38 @@
         {
           "n": "switch 36",
           "s": 80
+        },
+        {
+          "n": "switch 37",
+          "s": 81
+        },
+        {
+          "n": "switch 38",
+          "s": 84
+        },
+        {
+          "n": "switch 40",
+          "s": 106
+        },
+        {
+          "n": "red key",
+          "s": 108
+        },
+        {
+          "n": "hidden door",
+          "s": 132
+        },
+        {
+          "n": "hidden door",
+          "s": 133
         }
       ],
-      "total_frames": 9931,
+      "total_frames": 8465,
       "rng_end": {
-        "state": 3822105863,
-        "calls": 3554
+        "state": 2171043584,
+        "calls": 4871
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 2,

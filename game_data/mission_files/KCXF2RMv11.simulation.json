@@ -91,14 +91,14 @@
         },
         {
           "n": "boss",
-          "s": 162
+          "s": 157
         },
         {
           "n": "exit",
-          "s": 169
+          "s": 165
         }
       ],
-      "total_frames": 10132,
+      "total_frames": 9889,
       "rng_end": {
         "state": 819313084,
         "calls": 5435

@@ -139,6 +139,8 @@ int escort_route_next_waypoint_pending(void);
 int escort_route_next_goal(void);
 int escort_route_select_next_goal(escort_route_goal *candidate,
                                   int *selected_index);
+int escort_route_build_goal_for_step(const level_metadata_route_step *step,
+                                     escort_route_goal *candidate);
 int escort_route_adopt_exit_command(void);
 int escort_route_physical_target(object *objp, int goal_seg, int max_depth);
 void escort_route_refresh_metadata(void);

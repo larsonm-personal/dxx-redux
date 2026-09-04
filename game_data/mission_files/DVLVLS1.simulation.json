@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
+    "ok": 3,
     "failed": 2,
-    "timeout": 7
+    "timeout": 6
   },
   "levels": [
     {
@@ -40,17 +40,17 @@
         },
         {
           "n": "reactor",
-          "s": 87
+          "s": 68
         },
         {
           "n": "exit",
-          "s": 121
+          "s": 81
         }
       ],
-      "total_frames": 7285,
+      "total_frames": 4844,
       "rng_end": {
-        "state": 3184915598,
-        "calls": 4665
+        "state": 3388807434,
+        "calls": 2957
       }
     },
     {
@@ -105,7 +105,7 @@
       "level_num": 4,
       "level_file": "figatuns.rl2",
       "route_input_sha256": "56F2237FEBE7B02F8593EAE0A9DB2B78B18515B208D2E9E269095A3E416B47B6",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -125,15 +125,18 @@
         },
         {
           "n": "reactor",
-          "s": 72
+          "s": 70
+        },
+        {
+          "n": "exit",
+          "s": 83
         }
       ],
-      "total_frames": 7961,
+      "total_frames": 5004,
       "rng_end": {
-        "state": 693418230,
-        "calls": 1777
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3915573791,
+        "calls": 1994
+      }
     },
     {
       "level_num": 5,
@@ -159,14 +162,14 @@
         },
         {
           "n": "reactor",
-          "s": 98
+          "s": 96
         },
         {
           "n": "exit",
-          "s": 117
+          "s": 113
         }
       ],
-      "total_frames": 7004,
+      "total_frames": 6759,
       "rng_end": {
         "state": 1734514162,
         "calls": 6213
@@ -188,21 +191,21 @@
         },
         {
           "n": "switch 1",
-          "s": 24
+          "s": 22
         },
         {
           "n": "gold key",
-          "s": 30
+          "s": 29
         },
         {
           "n": "red key",
-          "s": 46
+          "s": 45
         }
       ],
-      "total_frames": 2786,
+      "total_frames": 2680,
       "rng_end": {
-        "state": 2416637693,
-        "calls": 1604
+        "state": 2859731786,
+        "calls": 1613
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -293,12 +296,12 @@
           "s": 5
         }
       ],
-      "total_frames": 339,
+      "total_frames": 1072,
       "rng_end": {
-        "state": 780004447,
-        "calls": 394
+        "state": 2540048041,
+        "calls": 280
       },
-      "problem": "semantic objective repeated without route advancement"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 10,

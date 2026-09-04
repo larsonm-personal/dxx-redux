@@ -68,17 +68,17 @@
           },
           {
             "n": "reactor",
-            "s": 28
+            "s": 27
           },
           {
             "n": "exit",
             "s": 30
           }
         ],
-        "total_frames": 1789,
+        "total_frames": 1776,
         "rng_end": {
-          "state": 1110170446,
-          "calls": 1657
+          "state": 3104832301,
+          "calls": 1684
         }
       },
       {
@@ -199,10 +199,10 @@
           },
           {
             "n": "exit",
-            "s": 27
+            "s": 26
           }
         ],
-        "total_frames": 1598,
+        "total_frames": 1578,
         "rng_end": {
           "state": 2429993800,
           "calls": 1311
@@ -220,14 +220,14 @@
         "objectives": [
           {
             "n": "reactor",
-            "s": 10
+            "s": 9
           },
           {
             "n": "exit",
-            "s": 15
+            "s": 13
           }
         ],
-        "total_frames": 876,
+        "total_frames": 779,
         "rng_end": {
           "state": 770427433,
           "calls": 408

@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
+    "ok": 5,
     "failed": 2,
-    "timeout": 3
+    "timeout": 2
   },
   "levels": [
     {
@@ -48,13 +48,13 @@
         },
         {
           "n": "exit",
-          "s": 117
+          "s": 115
         }
       ],
-      "total_frames": 7001,
+      "total_frames": 6927,
       "rng_end": {
-        "state": 2988337081,
-        "calls": 4744
+        "state": 443438602,
+        "calls": 4749
       }
     },
     {
@@ -84,10 +84,10 @@
           "s": 79
         }
       ],
-      "total_frames": 6272,
+      "total_frames": 6239,
       "rng_end": {
-        "state": 4091201998,
-        "calls": 4601
+        "state": 3675155678,
+        "calls": 4393
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -95,7 +95,7 @@
       "level_num": 3,
       "level_file": "lumodya.rl2",
       "route_input_sha256": "02E67FDE813C4A9EA28062C13205D61FEEA00CA7DACF8057C395C730CA2B82B9",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -115,15 +115,18 @@
         },
         {
           "n": "reactor",
-          "s": 77
+          "s": 75
+        },
+        {
+          "n": "exit",
+          "s": 81
         }
       ],
-      "total_frames": 10007,
+      "total_frames": 4859,
       "rng_end": {
-        "state": 1217407189,
-        "calls": 4396
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3111564362,
+        "calls": 4429
+      }
     },
     {
       "level_num": 4,
@@ -153,17 +156,17 @@
         },
         {
           "n": "reactor",
-          "s": 80
+          "s": 79
         },
         {
           "n": "exit",
-          "s": 97
+          "s": 94
         }
       ],
-      "total_frames": 5812,
+      "total_frames": 5612,
       "rng_end": {
-        "state": 1245478415,
-        "calls": 4826
+        "state": 1559631503,
+        "calls": 4698
       }
     },
     {
@@ -202,14 +205,14 @@
         },
         {
           "n": "reactor",
-          "s": 88
+          "s": 87
         },
         {
           "n": "exit",
-          "s": 94
+          "s": 93
         }
       ],
-      "total_frames": 5646,
+      "total_frames": 5563,
       "rng_end": {
         "state": 4221922778,
         "calls": 3325
@@ -268,12 +271,12 @@
           "s": 19
         }
       ],
-      "total_frames": 1193,
+      "total_frames": 1667,
       "rng_end": {
-        "state": 2153573669,
-        "calls": 604
+        "state": 3810069260,
+        "calls": 427
       },
-      "problem": "semantic objective repeated without route advancement"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 8,
@@ -341,14 +344,14 @@
         },
         {
           "n": "reactor",
-          "s": 88
+          "s": 87
         },
         {
           "n": "exit",
-          "s": 94
+          "s": 93
         }
       ],
-      "total_frames": 5646,
+      "total_frames": 5563,
       "rng_end": {
         "state": 4221922778,
         "calls": 3325

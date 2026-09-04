@@ -88,10 +88,10 @@
       "objectives": [
         {
           "n": "boss",
-          "s": 34
+          "s": 30
         }
       ],
-      "total_frames": 7248,
+      "total_frames": 7008,
       "rng_end": {
         "state": 3370890238,
         "calls": 1673

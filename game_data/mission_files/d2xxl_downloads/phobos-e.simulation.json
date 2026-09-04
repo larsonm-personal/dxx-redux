@@ -40,14 +40,14 @@
         },
         {
           "n": "boss",
-          "s": 126
+          "s": 124
         },
         {
           "n": "exit",
-          "s": 139
+          "s": 137
         }
       ],
-      "total_frames": 8339,
+      "total_frames": 8230,
       "rng_end": {
         "state": 1124039579,
         "calls": 3438
@@ -176,14 +176,14 @@
       "objectives": [
         {
           "n": "boss",
-          "s": 13
+          "s": 12
         },
         {
           "n": "exit",
-          "s": 17
+          "s": 16
         }
       ],
-      "total_frames": 1015,
+      "total_frames": 940,
       "rng_end": {
         "state": 3320089730,
         "calls": 245

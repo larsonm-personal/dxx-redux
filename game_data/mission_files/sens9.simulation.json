@@ -124,13 +124,13 @@
         },
         {
           "n": "reactor",
-          "s": 71
+          "s": 69
         }
       ],
-      "total_frames": 5576,
+      "total_frames": 5374,
       "rng_end": {
-        "state": 134241830,
-        "calls": 3713
+        "state": 3609107594,
+        "calls": 3597
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

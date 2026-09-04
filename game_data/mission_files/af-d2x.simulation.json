@@ -32,17 +32,17 @@
         },
         {
           "n": "reactor",
-          "s": 32
+          "s": 31
         },
         {
           "n": "exit",
           "s": 38
         }
       ],
-      "total_frames": 2278,
+      "total_frames": 2306,
       "rng_end": {
-        "state": 3189206247,
-        "calls": 1026
+        "state": 812880152,
+        "calls": 1039
       }
     },
     {
@@ -132,17 +132,17 @@
         },
         {
           "n": "reactor",
-          "s": 100
+          "s": 98
         },
         {
           "n": "exit",
-          "s": 107
+          "s": 101
         }
       ],
-      "total_frames": 6403,
+      "total_frames": 6084,
       "rng_end": {
-        "state": 2189816399,
-        "calls": 2714
+        "state": 3816800785,
+        "calls": 2672
       }
     },
     {
@@ -246,14 +246,14 @@
         },
         {
           "n": "reactor",
-          "s": 68
+          "s": 67
         },
         {
           "n": "exit",
-          "s": 82
+          "s": 80
         }
       ],
-      "total_frames": 4898,
+      "total_frames": 4828,
       "rng_end": {
         "state": 877185513,
         "calls": 4056
@@ -380,12 +380,12 @@
           "s": 31
         }
       ],
-      "total_frames": 1903,
+      "total_frames": 2475,
       "rng_end": {
-        "state": 1840225874,
-        "calls": 869
+        "state": 808381751,
+        "calls": 690
       },
-      "problem": "semantic objective repeated without route advancement"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 13,
@@ -411,10 +411,10 @@
         },
         {
           "n": "red key",
-          "s": 85
+          "s": 84
         }
       ],
-      "total_frames": 5112,
+      "total_frames": 5066,
       "rng_end": {
         "state": 2433872794,
         "calls": 2621
@@ -459,14 +459,14 @@
         },
         {
           "n": "boss",
-          "s": 60
+          "s": 55
         },
         {
           "n": "exit",
-          "s": 110
+          "s": 105
         }
       ],
-      "total_frames": 6615,
+      "total_frames": 6305,
       "rng_end": {
         "state": 3381675222,
         "calls": 1681

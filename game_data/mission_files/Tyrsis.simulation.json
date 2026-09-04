@@ -50,10 +50,10 @@
         },
         {
           "n": "exit",
-          "s": 101
+          "s": 100
         }
       ],
-      "total_frames": 6089,
+      "total_frames": 5981,
       "rng_end": {
         "state": 3532897574,
         "calls": 2945
@@ -99,18 +99,18 @@
         },
         {
           "n": "boss",
-          "s": 79
+          "s": 78
         },
         {
           "n": "switch 10",
-          "s": 80
+          "s": 79
         },
         {
           "n": "exit",
-          "s": 82
+          "s": 81
         }
       ],
-      "total_frames": 4924,
+      "total_frames": 4854,
       "rng_end": {
         "state": 3783851011,
         "calls": 2182

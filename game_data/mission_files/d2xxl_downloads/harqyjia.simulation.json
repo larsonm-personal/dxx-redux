@@ -131,12 +131,12 @@
           "s": 61
         }
       ],
-      "total_frames": 7518,
+      "total_frames": 4307,
       "rng_end": {
-        "state": 693418230,
-        "calls": 1777
+        "state": 1976212944,
+        "calls": 1783
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": -1,
@@ -154,14 +154,14 @@
         },
         {
           "n": "boss",
-          "s": 64
+          "s": 63
         },
         {
           "n": "exit",
-          "s": 67
+          "s": 66
         }
       ],
-      "total_frames": 4015,
+      "total_frames": 3949,
       "rng_end": {
         "state": 3340639529,
         "calls": 1688

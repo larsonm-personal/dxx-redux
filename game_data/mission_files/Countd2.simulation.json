@@ -22,19 +22,19 @@
       "objectives": [
         {
           "n": "reactor",
-          "s": 4
+          "s": 3
         },
         {
           "n": "red key",
-          "s": 15
+          "s": 13
         }
       ],
-      "total_frames": 5498,
+      "total_frames": 36001,
       "rng_end": {
-        "state": 1639207252,
-        "calls": 1091
+        "state": 529261395,
+        "calls": 537910
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "route confirmation exceeded 10 simulation minutes"
     },
     {
       "level_num": 2,
@@ -52,19 +52,19 @@
         },
         {
           "n": "blue key",
-          "s": 22
+          "s": 20
         },
         {
           "n": "red key",
-          "s": 40
+          "s": 39
         }
       ],
-      "total_frames": 7206,
+      "total_frames": 36001,
       "rng_end": {
-        "state": 4179569576,
-        "calls": 1855
+        "state": 3798898621,
+        "calls": 515972
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "route confirmation exceeded 10 simulation minutes"
     },
     {
       "level_num": 3,
@@ -78,23 +78,23 @@
       "objectives": [
         {
           "n": "reactor",
-          "s": 6
+          "s": 4
         },
         {
           "n": "blue key",
-          "s": 31
+          "s": 26
         },
         {
           "n": "gold key",
-          "s": 63
+          "s": 58
         }
       ],
-      "total_frames": 9494,
+      "total_frames": 36001,
       "rng_end": {
-        "state": 1130859006,
-        "calls": 2185
+        "state": 1198503955,
+        "calls": 538742
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "route confirmation exceeded 10 simulation minutes"
     },
     {
       "level_num": 4,
@@ -108,23 +108,23 @@
       "objectives": [
         {
           "n": "reactor",
-          "s": 9
+          "s": 8
         },
         {
           "n": "blue key",
-          "s": 24
+          "s": 23
         },
         {
           "n": "gold key",
           "s": 46
         }
       ],
-      "total_frames": 7950,
+      "total_frames": 36001,
       "rng_end": {
-        "state": 1571281991,
-        "calls": 2722
+        "state": 1973508716,
+        "calls": 502475
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "route confirmation exceeded 10 simulation minutes"
     },
     {
       "level_num": 5,
@@ -142,14 +142,14 @@
         },
         {
           "n": "blue key",
-          "s": 18
+          "s": 17
         },
         {
           "n": "gold key",
-          "s": 34
+          "s": 33
         }
       ],
-      "total_frames": 6448,
+      "total_frames": 6388,
       "rng_end": {
         "state": 2488335204,
         "calls": 2803
@@ -168,27 +168,27 @@
       "objectives": [
         {
           "n": "reactor",
-          "s": 7
+          "s": 6
         },
         {
           "n": "blue key",
-          "s": 26
+          "s": 25
         },
         {
           "n": "gold key",
-          "s": 50
+          "s": 49
         },
         {
           "n": "red key",
-          "s": 68
+          "s": 67
         }
       ],
-      "total_frames": 8373,
+      "total_frames": 36001,
       "rng_end": {
-        "state": 892686396,
-        "calls": 3259
+        "state": 1044340501,
+        "calls": 495852
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "route confirmation exceeded 10 simulation minutes"
     },
     {
       "level_num": 7,
@@ -202,15 +202,23 @@
       "objectives": [
         {
           "n": "reactor",
-          "s": 13
+          "s": 4
+        },
+        {
+          "n": "blue key",
+          "s": 21
+        },
+        {
+          "n": "gold key",
+          "s": 38
         }
       ],
-      "total_frames": 4401,
+      "total_frames": 4561,
       "rng_end": {
-        "state": 1252116776,
-        "calls": 959
+        "state": 2475750677,
+        "calls": 2796
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     }
   ]
 }

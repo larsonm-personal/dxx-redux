@@ -28,12 +28,12 @@
           "s": 2
         }
       ],
-      "total_frames": 125,
+      "total_frames": 626,
       "rng_end": {
-        "state": 997936956,
-        "calls": 443
+        "state": 3735676127,
+        "calls": 266
       },
-      "problem": "semantic objective repeated without route advancement"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 2,
@@ -101,14 +101,14 @@
         },
         {
           "n": "reactor",
-          "s": 22
+          "s": 21
         },
         {
           "n": "exit",
-          "s": 34
+          "s": 33
         }
       ],
-      "total_frames": 2025,
+      "total_frames": 1953,
       "rng_end": {
         "state": 1987473253,
         "calls": 1564
@@ -294,11 +294,11 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 6
+          "s": 7
         },
         {
           "n": "hidden door",
-          "s": 8
+          "s": 9
         },
         {
           "n": "blue key",
@@ -310,13 +310,13 @@
         },
         {
           "n": "gold key",
-          "s": 30
+          "s": 31
         }
       ],
-      "total_frames": 1810,
+      "total_frames": 1844,
       "rng_end": {
-        "state": 2521697404,
-        "calls": 891
+        "state": 3344647880,
+        "calls": 927
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -378,17 +378,17 @@
         },
         {
           "n": "reactor",
-          "s": 12
+          "s": 10
         },
         {
           "n": "exit",
-          "s": 15
+          "s": 14
         }
       ],
-      "total_frames": 914,
+      "total_frames": 859,
       "rng_end": {
-        "state": 4020018141,
-        "calls": 612
+        "state": 809667242,
+        "calls": 621
       }
     },
     {

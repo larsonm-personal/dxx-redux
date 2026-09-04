@@ -30,12 +30,12 @@
           "s": 50
         }
       ],
-      "total_frames": 3018,
+      "total_frames": 3464,
       "rng_end": {
-        "state": 4131908619,
-        "calls": 766
+        "state": 2875035323,
+        "calls": 590
       },
-      "problem": "semantic objective repeated without route advancement"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 2,
@@ -82,25 +82,25 @@
         },
         {
           "n": "reactor",
-          "s": 88
+          "s": 84
         },
         {
           "n": "fly-through 6",
-          "s": 100
+          "s": 98
         },
         {
           "n": "switch 8",
-          "s": 117
+          "s": 115
         },
         {
           "n": "red key",
-          "s": 143
+          "s": 142
         }
       ],
-      "total_frames": 9853,
+      "total_frames": 9884,
       "rng_end": {
-        "state": 3130548163,
-        "calls": 3270
+        "state": 3153118750,
+        "calls": 3305
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

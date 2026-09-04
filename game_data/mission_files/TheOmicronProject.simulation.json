@@ -36,17 +36,17 @@
         },
         {
           "n": "reactor",
-          "s": 26
+          "s": 22
         },
         {
           "n": "exit",
-          "s": 35
+          "s": 27
         }
       ],
-      "total_frames": 2074,
+      "total_frames": 1645,
       "rng_end": {
-        "state": 612968979,
-        "calls": 1654
+        "state": 908664903,
+        "calls": 1698
       }
     },
     {
@@ -103,14 +103,14 @@
         },
         {
           "n": "reactor",
-          "s": 60
+          "s": 59
         },
         {
           "n": "exit",
-          "s": 72
+          "s": 70
         }
       ],
-      "total_frames": 4317,
+      "total_frames": 4180,
       "rng_end": {
         "state": 3381675222,
         "calls": 1681
@@ -147,10 +147,10 @@
           "s": 35
         }
       ],
-      "total_frames": 7580,
+      "total_frames": 6737,
       "rng_end": {
-        "state": 1742575053,
-        "calls": 1780
+        "state": 3517084114,
+        "calls": 1509
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -230,10 +230,10 @@
         },
         {
           "n": "reactor",
-          "s": 8
+          "s": 7
         }
       ],
-      "total_frames": 450,
+      "total_frames": 421,
       "rng_end": {
         "state": 3386287052,
         "calls": 491

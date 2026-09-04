@@ -27,12 +27,12 @@
           "s": 7
         }
       ],
-      "total_frames": 475,
+      "total_frames": 921,
       "rng_end": {
-        "state": 274854673,
-        "calls": 368
+        "state": 1814397249,
+        "calls": 192
       },
-      "problem": "semantic objective repeated without route advancement"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 2,
@@ -152,14 +152,14 @@
         },
         {
           "n": "reactor",
-          "s": 75
+          "s": 74
         },
         {
           "n": "exit",
-          "s": 83
+          "s": 82
         }
       ],
-      "total_frames": 4978,
+      "total_frames": 4893,
       "rng_end": {
         "state": 3776197745,
         "calls": 7952
@@ -214,12 +214,12 @@
           "s": 19
         }
       ],
-      "total_frames": 1188,
+      "total_frames": 1634,
       "rng_end": {
-        "state": 2678191699,
-        "calls": 566
+        "state": 742793987,
+        "calls": 390
       },
-      "problem": "semantic objective repeated without route advancement"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 8,

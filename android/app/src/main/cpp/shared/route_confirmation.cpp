@@ -408,7 +408,22 @@ void refine_last_path_point(object *actor)
 		last->point = State.target_pos;
 }
 
-int prepare_next_goal(void)
+int objective_was_recorded(const level_metadata_route_step *step, int step_index)
+{
+	if (!step)
+		return 0;
+	for (int index = 0; index < State.summary.objective_count; ++index) {
+		const route_confirmation_objective_result *completed =
+		    &State.summary.objectives[index];
+		if (completed->route_step_index == step_index &&
+		    completed->kind == step->kind &&
+		    completed->activation_kind == step->activation_kind)
+			return 1;
+	}
+	return 0;
+}
+
+int prepare_next_goal(int restorer_trigger)
 {
 	const level_metadata_state *metadata;
 	int selected_index = -1;
@@ -451,6 +466,43 @@ int prepare_next_goal(void)
 #endif
 		fail(ROUTE_CONFIRMATION_FAILED, "live Guide-Bot route has no actionable goal");
 		return 0;
+	}
+	if (restorer_trigger >= 0) {
+		for (int candidate_index = 0;
+		     candidate_index < metadata->route_step_count; ++candidate_index) {
+			const level_metadata_route_step *candidate =
+			    &metadata->route_steps[candidate_index];
+			if (candidate->trigger_num != restorer_trigger)
+				continue;
+			route_goal =
+			    escort_route_build_goal_for_step(candidate, &State.goal);
+			if (route_goal != ESCORT_GOAL_UNSPECIFIED) {
+				selected_index = candidate_index;
+				break;
+			}
+		}
+	}
+	/* A live rescan can report an old automatic-door trigger as the first
+	 * pending world-state prerequisite even after the actor has crossed that
+	 * gate.  Continue with the first uncompleted route objective; if its path
+	 * actually reaches a reclosed controlled door, recover_path_door requests
+	 * an explicit restorer replan. */
+	if (restorer_trigger < 0 &&
+	    objective_was_recorded(&metadata->route_steps[selected_index],
+	                           selected_index)) {
+		for (int candidate_index = selected_index + 1;
+		     candidate_index < metadata->route_step_count; ++candidate_index) {
+			const level_metadata_route_step *candidate =
+			    &metadata->route_steps[candidate_index];
+			if (objective_was_recorded(candidate, candidate_index))
+				continue;
+			route_goal =
+			    escort_route_build_goal_for_step(candidate, &State.goal);
+			if (route_goal != ESCORT_GOAL_UNSPECIFIED) {
+				selected_index = candidate_index;
+				break;
+			}
+		}
 	}
 	if (!record_implicitly_completed_steps(
 	        metadata, State.summary.current_route_step_index + 1,
@@ -784,7 +836,7 @@ void record_objective_and_replan(void)
 				fail(ROUTE_CONFIRMATION_TIMEOUT,
 				     "semantic objective repeated without route advancement");
 			else
-				prepare_next_goal();
+				prepare_next_goal(-1);
 			return;
 		}
 	}
@@ -814,7 +866,7 @@ void record_objective_and_replan(void)
 		restore_player_sandbox();
 		return;
 	}
-	prepare_next_goal();
+	prepare_next_goal(-1);
 }
 
 void apply_incidental_crossed_trigger(object *actor)
@@ -930,27 +982,62 @@ void recover_path_door(object *actor)
 	ai_static *aip;
 	int next_index;
 	int next_seg;
-	int side;
+	int side = -1;
 	int wall_num;
+	int controlling_trigger;
 	if (!actor)
 		return;
 	aip = &actor->ctype.ai_info;
 	if (aip->hide_index < 0 || aip->path_length <= 0)
 		return;
-	next_index = aip->cur_path_index + aip->PATH_DIR;
-	if (next_index < 0 || next_index >= aip->path_length)
-		next_index = aip->cur_path_index;
-	if (next_index < 0 || next_index >= aip->path_length)
-		return;
-	next_seg = Point_segs[aip->hide_index + next_index].segnum;
-	if (next_seg == actor->segnum)
-		return;
-	side = find_connect_side(&Segments[next_seg], &Segments[actor->segnum]);
+	/* The AI advances cur_path_index as it commits to the point across a
+	 * doorway, before the actor necessarily crosses that doorway.  Prefer the
+	 * current point when it is already in the adjacent segment, and otherwise
+	 * inspect the following point. */
+	next_index = aip->cur_path_index;
+	for (int attempt = 0; attempt < 2; ++attempt,
+	         next_index += aip->PATH_DIR) {
+		if (next_index < 0 || next_index >= aip->path_length)
+			break;
+		next_seg = Point_segs[aip->hide_index + next_index].segnum;
+		if (next_seg == actor->segnum)
+			continue;
+		side = find_connect_side(&Segments[next_seg], &Segments[actor->segnum]);
+		if (side >= 0)
+			break;
+	}
 	if (side < 0)
 		return;
 	wall_num = Segments[actor->segnum].sides[side].wall_num;
 	if (wall_num < 0 || wall_num >= Num_walls)
 		return;
+	controlling_trigger = Walls[wall_num].controlling_trigger;
+	if (controlling_trigger < 0) {
+		const int opposite_side = find_connect_side(
+		    &Segments[actor->segnum], &Segments[next_seg]);
+		const int opposite_wall =
+		    opposite_side >= 0
+		        ? Segments[next_seg].sides[opposite_side].wall_num
+		        : -1;
+		if (opposite_wall >= 0 && opposite_wall < Num_walls)
+			controlling_trigger =
+			    Walls[opposite_wall].controlling_trigger;
+	}
+	if (Walls[wall_num].type == WALL_DOOR &&
+	    Walls[wall_num].state == WALL_DOOR_CLOSED &&
+	    (Walls[wall_num].flags & WALL_DOOR_LOCKED) &&
+	    controlling_trigger >= 0 &&
+	    actor_is_close_to_side(actor, actor->segnum, side)) {
+#if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+		fprintf(stderr,
+		        "ROUTE-CONFIRM replan closed trigger door wall=%d trigger=%d "
+		        "seg=%d side=%d actor_seg=%d\n",
+		        wall_num, controlling_trigger, actor->segnum, side,
+		        actor->segnum);
+#endif
+		prepare_next_goal(controlling_trigger);
+		return;
+	}
 	if (Walls[wall_num].type == WALL_DOOR)
 		apply_flare_fallback(actor, actor->segnum, side, wall_num);
 }
@@ -1300,7 +1387,7 @@ void apply_objective_action(object *actor)
 			break;
 
 		case LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_REACTOR:
-			if (actor_reached_target(actor) && valid_object(State.target_objnum) &&
+			if (valid_object(State.target_objnum) &&
 			    target_is_visible(actor, &Objects[State.target_objnum])) {
 				State.action_applied = 1;
 				apply_damage_to_controlcen(&Objects[State.target_objnum],
@@ -1311,7 +1398,7 @@ void apply_objective_action(object *actor)
 			break;
 
 		case LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BOSS:
-			if (!State.action_applied && actor_reached_target(actor) &&
+			if (!State.action_applied &&
 			    valid_object(State.target_objnum) &&
 			    target_is_visible(actor, &Objects[State.target_objnum])) {
 				State.action_applied = 1;
@@ -1475,7 +1562,7 @@ extern "C" int route_confirmation_start(void)
 	 * The live view below represents the world the actor actually traverses. */
 	remove_ordinary_robots();
 	memset(&Controls, 0, sizeof(Controls));
-	return prepare_next_goal();
+	return prepare_next_goal(-1);
 }
 
 extern "C" void route_confirmation_prepare_frame_time(void)

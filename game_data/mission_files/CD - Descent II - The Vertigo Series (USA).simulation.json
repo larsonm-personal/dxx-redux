@@ -8,9 +8,9 @@
     "seed": 1,
     "status": "partial",
     "level_counts": {
-      "ok": 11,
+      "ok": 12,
       "failed": 1,
-      "timeout": 8,
+      "timeout": 7,
       "unsupported": 1,
       "route_mismatch": 2
     },
@@ -35,17 +35,17 @@
           },
           {
             "n": "reactor",
-            "s": 49
+            "s": 47
           },
           {
             "n": "exit",
-            "s": 58
+            "s": 65
           }
         ],
-        "total_frames": 3475,
+        "total_frames": 3921,
         "rng_end": {
-          "state": 678341241,
-          "calls": 1480
+          "state": 3417499190,
+          "calls": 1713
         }
       },
       {
@@ -84,13 +84,17 @@
           },
           {
             "n": "reactor",
-            "s": 60
+            "s": 58
+          },
+          {
+            "n": "exit",
+            "s": 72
           }
         ],
-        "total_frames": 9544,
+        "total_frames": 4333,
         "rng_end": {
-          "state": 2049385582,
-          "calls": 2521
+          "state": 1661827568,
+          "calls": 2647
         },
         "problem": "live objective sequence differs from route input"
       },
@@ -118,14 +122,14 @@
           },
           {
             "n": "reactor",
-            "s": 46
+            "s": 43
           },
           {
             "n": "exit",
-            "s": 59
+            "s": 54
           }
         ],
-        "total_frames": 3562,
+        "total_frames": 3228,
         "rng_end": {
           "state": 3517910807,
           "calls": 1746
@@ -163,14 +167,14 @@
           },
           {
             "n": "reactor",
-            "s": 139
+            "s": 137
           },
           {
             "n": "exit",
-            "s": 150
+            "s": 147
           }
         ],
-        "total_frames": 8991,
+        "total_frames": 8793,
         "rng_end": {
           "state": 2805590340,
           "calls": 3987
@@ -200,17 +204,17 @@
           },
           {
             "n": "reactor",
-            "s": 75
+            "s": 73
           },
           {
             "n": "exit",
-            "s": 91
+            "s": 87
           }
         ],
-        "total_frames": 5436,
+        "total_frames": 5199,
         "rng_end": {
-          "state": 2876703512,
-          "calls": 2575
+          "state": 1725722493,
+          "calls": 2500
         }
       },
       {
@@ -262,18 +266,18 @@
             "s": 42
           }
         ],
-        "total_frames": 2530,
+        "total_frames": 2976,
         "rng_end": {
-          "state": 2406486900,
-          "calls": 1955
+          "state": 915140452,
+          "calls": 1779
         },
-        "problem": "semantic objective repeated without route advancement"
+        "problem": "physical route frontier did not open after 8 interaction attempts"
       },
       {
         "level_num": 8,
         "level_file": "d2xlvl08.rl2",
         "route_input_sha256": "81F89FBC951B14A4BA47BD32CABF4D280E8CB5D1AC4277E893F28E25D2A14B61",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -293,15 +297,18 @@
           },
           {
             "n": "reactor",
-            "s": 97
+            "s": 95
+          },
+          {
+            "n": "exit",
+            "s": 105
           }
         ],
-        "total_frames": 12605,
+        "total_frames": 6299,
         "rng_end": {
-          "state": 2367135906,
-          "calls": 2901
-        },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+          "state": 1436981981,
+          "calls": 2916
+        }
       },
       {
         "level_num": 9,
@@ -413,17 +420,17 @@
           },
           {
             "n": "reactor",
-            "s": 105
+            "s": 102
           },
           {
             "n": "exit",
-            "s": 119
+            "s": 113
           }
         ],
-        "total_frames": 7159,
+        "total_frames": 6793,
         "rng_end": {
-          "state": 883633187,
-          "calls": 3174
+          "state": 1240179346,
+          "calls": 3109
         }
       },
       {
@@ -450,17 +457,17 @@
           },
           {
             "n": "reactor",
-            "s": 89
+            "s": 88
           },
           {
             "n": "exit",
-            "s": 112
+            "s": 110
           }
         ],
-        "total_frames": 6729,
+        "total_frames": 6574,
         "rng_end": {
-          "state": 1189542201,
-          "calls": 3336
+          "state": 3306922665,
+          "calls": 3352
         }
       },
       {
@@ -513,17 +520,17 @@
           },
           {
             "n": "reactor",
-            "s": 72
+            "s": 69
           },
           {
             "n": "exit",
-            "s": 88
+            "s": 84
           }
         ],
-        "total_frames": 5281,
+        "total_frames": 5012,
         "rng_end": {
-          "state": 3358257987,
-          "calls": 2374
+          "state": 404455680,
+          "calls": 2311
         }
       },
       {
@@ -613,14 +620,14 @@
           },
           {
             "n": "reactor",
-            "s": 85
+            "s": 84
           },
           {
             "n": "exit",
-            "s": 91
+            "s": 89
           }
         ],
-        "total_frames": 5436,
+        "total_frames": 5346,
         "rng_end": {
           "state": 3670294233,
           "calls": 3176
@@ -646,14 +653,14 @@
           },
           {
             "n": "reactor",
-            "s": 35
+            "s": 33
           },
           {
             "n": "exit",
-            "s": 50
+            "s": 47
           }
         ],
-        "total_frames": 2981,
+        "total_frames": 2796,
         "rng_end": {
           "state": 4097967988,
           "calls": 931
@@ -683,14 +690,14 @@
           },
           {
             "n": "boss",
-            "s": 33
+            "s": 30
           },
           {
             "n": "exit",
-            "s": 44
+            "s": 42
           }
         ],
-        "total_frames": 2654,
+        "total_frames": 2490,
         "rng_end": {
           "state": 3224114648,
           "calls": 1103
@@ -708,17 +715,17 @@
         "objectives": [
           {
             "n": "reactor",
-            "s": 5
+            "s": 4
           },
           {
             "n": "exit",
-            "s": 11
+            "s": 9
           }
         ],
-        "total_frames": 673,
+        "total_frames": 541,
         "rng_end": {
-          "state": 45610742,
-          "calls": 241
+          "state": 1948555936,
+          "calls": 231
         }
       },
       {
@@ -794,10 +801,10 @@
           },
           {
             "n": "exit",
-            "s": 5
+            "s": 4
           }
         ],
-        "total_frames": 306,
+        "total_frames": 234,
         "rng_end": {
           "state": 3737188581,
           "calls": 156

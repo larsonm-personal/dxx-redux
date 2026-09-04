@@ -67,17 +67,17 @@
         },
         {
           "n": "reactor",
-          "s": 102
+          "s": 100
         },
         {
           "n": "exit",
-          "s": 105
+          "s": 103
         }
       ],
-      "total_frames": 6320,
+      "total_frames": 6153,
       "rng_end": {
-        "state": 1171560760,
-        "calls": 1903
+        "state": 998538513,
+        "calls": 1904
       }
     },
     {
@@ -157,10 +157,10 @@
           "s": 106
         }
       ],
-      "total_frames": 6409,
+      "total_frames": 7112,
       "rng_end": {
-        "state": 103197130,
-        "calls": 2509
+        "state": 3835377864,
+        "calls": 2463
       },
       "problem": "live objective sequence differs from route input"
     },
@@ -176,14 +176,14 @@
       "objectives": [
         {
           "n": "reactor",
-          "s": 4
+          "s": 2
         },
         {
           "n": "exit",
-          "s": 6
+          "s": 2
         }
       ],
-      "total_frames": 365,
+      "total_frames": 142,
       "rng_end": {
         "state": 1660932118,
         "calls": 81
@@ -213,14 +213,14 @@
         },
         {
           "n": "reactor",
-          "s": 19
+          "s": 18
         },
         {
           "n": "exit",
-          "s": 22
+          "s": 20
         }
       ],
-      "total_frames": 1332,
+      "total_frames": 1183,
       "rng_end": {
         "state": 882003441,
         "calls": 400

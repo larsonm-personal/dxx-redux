@@ -55,17 +55,17 @@
         },
         {
           "n": "reactor",
-          "s": 106
+          "s": 105
         },
         {
           "n": "exit",
-          "s": 108
+          "s": 107
         }
       ],
-      "total_frames": 6500,
+      "total_frames": 6410,
       "rng_end": {
-        "state": 3647053058,
-        "calls": 2677
+        "state": 2932009335,
+        "calls": 2674
       }
     },
     {
@@ -163,14 +163,14 @@
         },
         {
           "n": "boss",
-          "s": 102
+          "s": 100
         },
         {
           "n": "exit",
-          "s": 103
+          "s": 101
         }
       ],
-      "total_frames": 6203,
+      "total_frames": 6061,
       "rng_end": {
         "state": 3889597212,
         "calls": 3163

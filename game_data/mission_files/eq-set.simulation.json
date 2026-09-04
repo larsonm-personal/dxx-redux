@@ -23,21 +23,21 @@
       "objectives": [
         {
           "n": "boss",
-          "s": 20
+          "s": 6
         },
         {
           "n": "switch 1",
-          "s": 20
+          "s": 17
         },
         {
           "n": "exit",
-          "s": 29
+          "s": 26
         }
       ],
-      "total_frames": 1757,
+      "total_frames": 1561,
       "rng_end": {
-        "state": 3124316263,
-        "calls": 130
+        "state": 2029357497,
+        "calls": 136
       }
     },
     {
@@ -262,17 +262,17 @@
       "objectives": [
         {
           "n": "reactor",
-          "s": 19
+          "s": 18
         },
         {
           "n": "exit",
-          "s": 24
+          "s": 22
         }
       ],
-      "total_frames": 1414,
+      "total_frames": 1314,
       "rng_end": {
-        "state": 3551035395,
-        "calls": 1158
+        "state": 2819228775,
+        "calls": 1154
       }
     },
     {
