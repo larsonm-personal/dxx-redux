@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 15,
+    "ok": 16,
     "failed": 2,
-    "timeout": 10
+    "timeout": 9
   },
   "levels": [
     {
@@ -68,10 +68,10 @@
           "s": 63
         }
       ],
-      "total_frames": 3776,
+      "total_frames": 3761,
       "rng_end": {
-        "state": 3831008624,
-        "calls": 2263
+        "state": 2583135184,
+        "calls": 2295
       }
     },
     {
@@ -97,12 +97,12 @@
           "s": 51
         }
       ],
-      "total_frames": 36001,
+      "total_frames": 11461,
       "rng_end": {
         "state": 3558432468,
         "calls": 2243
       },
-      "problem": "route confirmation exceeded 10 simulation minutes"
+      "problem": "route confirmation exceeded 191-second simulation budget"
     },
     {
       "level_num": 4,
@@ -120,25 +120,25 @@
         },
         {
           "n": "gold key",
-          "s": 31
+          "s": 32
         },
         {
           "n": "red key",
-          "s": 57
+          "s": 65
         },
         {
           "n": "reactor",
-          "s": 75
+          "s": 82
         },
         {
           "n": "exit",
-          "s": 84
+          "s": 91
         }
       ],
-      "total_frames": 5016,
+      "total_frames": 5441,
       "rng_end": {
-        "state": 1121683269,
-        "calls": 2876
+        "state": 1689723728,
+        "calls": 2935
       }
     },
     {
@@ -165,17 +165,17 @@
         },
         {
           "n": "reactor",
-          "s": 66
+          "s": 67
         },
         {
           "n": "exit",
-          "s": 76
+          "s": 77
         }
       ],
-      "total_frames": 4555,
+      "total_frames": 4610,
       "rng_end": {
-        "state": 1099679833,
-        "calls": 3816
+        "state": 2086237693,
+        "calls": 3908
       }
     },
     {
@@ -245,7 +245,7 @@
       "level_num": 8,
       "level_file": "level08.rl2",
       "route_input_sha256": "D7A77538EFA8DF01B12B89F22F29A8855A95C26D4013ED61442DF4418BE07261",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -254,14 +254,29 @@
         {
           "n": "blue key",
           "s": 9
+        },
+        {
+          "n": "gold key",
+          "s": 35
+        },
+        {
+          "n": "red key",
+          "s": 61
+        },
+        {
+          "n": "reactor",
+          "s": 92
+        },
+        {
+          "n": "exit",
+          "s": 102
         }
       ],
-      "total_frames": 5659,
+      "total_frames": 6116,
       "rng_end": {
-        "state": 3532497610,
-        "calls": 1229
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1797105699,
+        "calls": 4198
+      }
     },
     {
       "level_num": 9,
@@ -339,7 +354,7 @@
           "s": 106
         }
       ],
-      "total_frames": 6387,
+      "total_frames": 6388,
       "rng_end": {
         "state": 1786756255,
         "calls": 3402
@@ -435,19 +450,19 @@
         },
         {
           "n": "gold key",
-          "s": 40
+          "s": 39
         },
         {
           "n": "red key",
           "s": 65
         }
       ],
-      "total_frames": 36001,
+      "total_frames": 17521,
       "rng_end": {
         "state": 986697615,
         "calls": 2394
       },
-      "problem": "route confirmation exceeded 10 simulation minutes"
+      "problem": "route confirmation exceeded 292-second simulation budget"
     },
     {
       "level_num": 14,
@@ -506,7 +521,7 @@
         },
         {
           "n": "gold key",
-          "s": 52
+          "s": 53
         },
         {
           "n": "red key",
@@ -514,17 +529,17 @@
         },
         {
           "n": "reactor",
-          "s": 105
+          "s": 104
         },
         {
           "n": "exit",
           "s": 110
         }
       ],
-      "total_frames": 6576,
+      "total_frames": 6571,
       "rng_end": {
-        "state": 998720860,
-        "calls": 3355
+        "state": 2058485953,
+        "calls": 3392
       }
     },
     {
@@ -547,15 +562,15 @@
         },
         {
           "n": "red key",
-          "s": 44
+          "s": 45
         }
       ],
-      "total_frames": 36001,
+      "total_frames": 12901,
       "rng_end": {
-        "state": 3938815745,
-        "calls": 2304
+        "state": 2033855936,
+        "calls": 2375
       },
-      "problem": "route confirmation exceeded 10 simulation minutes"
+      "problem": "route confirmation exceeded 215-second simulation budget"
     },
     {
       "level_num": 17,
@@ -588,10 +603,10 @@
           "s": 95
         }
       ],
-      "total_frames": 5721,
+      "total_frames": 5725,
       "rng_end": {
-        "state": 1332915809,
-        "calls": 4256
+        "state": 869022236,
+        "calls": 4443
       }
     },
     {
@@ -618,17 +633,17 @@
         },
         {
           "n": "reactor",
-          "s": 89
+          "s": 88
         },
         {
           "n": "exit",
-          "s": 97
+          "s": 96
         }
       ],
-      "total_frames": 5824,
+      "total_frames": 5782,
       "rng_end": {
-        "state": 2810568835,
-        "calls": 5126
+        "state": 1166679525,
+        "calls": 5020
       }
     },
     {
@@ -651,21 +666,21 @@
         },
         {
           "n": "red key",
-          "s": 45
+          "s": 46
         },
         {
           "n": "reactor",
-          "s": 61
+          "s": 62
         },
         {
           "n": "exit",
-          "s": 68
+          "s": 69
         }
       ],
-      "total_frames": 4072,
+      "total_frames": 4117,
       "rng_end": {
-        "state": 3389010901,
-        "calls": 3628
+        "state": 1371383653,
+        "calls": 3612
       }
     },
     {
@@ -734,12 +749,12 @@
           "s": 40
         }
       ],
-      "total_frames": 36001,
+      "total_frames": 13501,
       "rng_end": {
         "state": 3345593417,
         "calls": 2168
       },
-      "problem": "route confirmation exceeded 10 simulation minutes"
+      "problem": "route confirmation exceeded 225-second simulation budget"
     },
     {
       "level_num": 23,
@@ -761,21 +776,21 @@
         },
         {
           "n": "red key",
-          "s": 75
+          "s": 73
         },
         {
           "n": "reactor",
-          "s": 94
+          "s": 92
         },
         {
           "n": "exit",
-          "s": 102
+          "s": 100
         }
       ],
-      "total_frames": 6122,
+      "total_frames": 6017,
       "rng_end": {
-        "state": 1649739513,
-        "calls": 3400
+        "state": 2362134277,
+        "calls": 3452
       }
     },
     {
@@ -831,7 +846,7 @@
           "s": 64
         }
       ],
-      "total_frames": 5157,
+      "total_frames": 5175,
       "rng_end": {
         "state": 1295416093,
         "calls": 2340

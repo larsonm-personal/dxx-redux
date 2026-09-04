@@ -85,6 +85,15 @@ int parse_level(const char *text, int *level)
 	return 1;
 }
 
+int configure_time_limit(const char *text)
+{
+	char *end = nullptr;
+	const unsigned long value = text ? strtoul(text, &end, 10) : 0;
+	return text && end && !*end && value <= 3600 &&
+	       route_confirmation_set_time_limit_seconds(
+	           static_cast<unsigned int>(value));
+}
+
 void finish_if_terminal()
 {
 	char error[256] = "";
@@ -109,15 +118,19 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 	char error[256] = "";
 	const char *output = argument_value("-route-confirm-json-out");
 	const char *level_text;
+	const char *time_limit_text;
 	const char *extra_dir;
 	std::string mission;
 	if (!output)
 		return -1;
 	level_text = argument_value("-level");
-	if (!parse_level(level_text, &State.level)) {
+	time_limit_text = argument_value("-route-confirm-timeout-seconds");
+	if (!parse_level(level_text, &State.level) ||
+	    (time_limit_text && !configure_time_limit(time_limit_text))) {
 		fprintf(stderr,
 		        "usage: -route-confirm-json-out <path> -level <number> "
-		        "[-mission <name>] [-extra-dir <path>]\n");
+		        "[-mission <name>] [-extra-dir <path>] "
+		        "[-route-confirm-timeout-seconds <1..3600>]\n");
 		return 1;
 	}
 	extra_dir = argument_value("-extra-dir");

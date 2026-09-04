@@ -172,17 +172,17 @@
         },
         {
           "n": "gold key",
-          "s": 37
+          "s": 36
         },
         {
           "n": "red key",
-          "s": 72
+          "s": 71
         }
       ],
-      "total_frames": 5242,
+      "total_frames": 5209,
       "rng_end": {
-        "state": 1700572025,
-        "calls": 3272
+        "state": 991276799,
+        "calls": 3306
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -276,7 +276,7 @@
           "s": 44
         }
       ],
-      "total_frames": 2659,
+      "total_frames": 2660,
       "rng_end": {
         "state": 1893776899,
         "calls": 1670
@@ -314,7 +314,7 @@
         },
         {
           "n": "switch 3",
-          "s": 21
+          "s": 22
         },
         {
           "n": "switch 4",
@@ -322,17 +322,17 @@
         },
         {
           "n": "switch 5",
-          "s": 40
+          "s": 41
         },
         {
           "n": "reactor",
-          "s": 41
+          "s": 42
         }
       ],
-      "total_frames": 6960,
+      "total_frames": 6843,
       "rng_end": {
-        "state": 3008179180,
-        "calls": 2891
+        "state": 1333509001,
+        "calls": 2872
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -396,7 +396,7 @@
           "s": 42
         }
       ],
-      "total_frames": 3510,
+      "total_frames": 3512,
       "rng_end": {
         "state": 3101324076,
         "calls": 2827
@@ -525,13 +525,13 @@
         },
         {
           "n": "gold key",
-          "s": 56
+          "s": 57
         }
       ],
-      "total_frames": 4216,
+      "total_frames": 4227,
       "rng_end": {
-        "state": 1657337217,
-        "calls": 1664
+        "state": 1935767572,
+        "calls": 1667
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -559,18 +559,18 @@
         },
         {
           "n": "red key",
-          "s": 32
+          "s": 33
         },
         {
           "n": "boss",
-          "s": 53
+          "s": 52
         },
         {
           "n": "exit",
-          "s": 67
+          "s": 65
         }
       ],
-      "total_frames": 3996,
+      "total_frames": 3890,
       "rng_end": {
         "state": 1892333986,
         "calls": 1621
@@ -697,14 +697,14 @@
         },
         {
           "n": "red key",
-          "s": 55
+          "s": 56
         },
         {
           "n": "boss",
           "s": 70
         }
       ],
-      "total_frames": 8142,
+      "total_frames": 8222,
       "rng_end": {
         "state": 939661161,
         "calls": 3672
@@ -730,10 +730,10 @@
           "s": 19
         }
       ],
-      "total_frames": 1551,
+      "total_frames": 1566,
       "rng_end": {
-        "state": 272285270,
-        "calls": 785
+        "state": 3498291313,
+        "calls": 784
       },
       "problem": "route objective activation is not supported"
     },

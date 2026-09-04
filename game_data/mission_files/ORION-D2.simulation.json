@@ -35,10 +35,10 @@
           "s": 41
         }
       ],
-      "total_frames": 7849,
+      "total_frames": 7884,
       "rng_end": {
-        "state": 3594968428,
-        "calls": 3019
+        "state": 2796758462,
+        "calls": 3017
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -91,7 +91,7 @@
           "s": 61
         }
       ],
-      "total_frames": 3647,
+      "total_frames": 3648,
       "rng_end": {
         "state": 3540364135,
         "calls": 3458
@@ -165,7 +165,7 @@
           "s": 77
         }
       ],
-      "total_frames": 4610,
+      "total_frames": 4612,
       "rng_end": {
         "state": 696687669,
         "calls": 1740
@@ -217,13 +217,13 @@
         },
         {
           "n": "gold key",
-          "s": 66
+          "s": 64
         }
       ],
-      "total_frames": 8310,
+      "total_frames": 14832,
       "rng_end": {
-        "state": 2365839717,
-        "calls": 3100
+        "state": 3401285988,
+        "calls": 3315
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },

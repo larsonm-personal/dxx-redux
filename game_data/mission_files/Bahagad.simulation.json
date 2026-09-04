@@ -9,7 +9,8 @@
   "level_counts": {
     "ok": 4,
     "failed": 1,
-    "timeout": 5
+    "timeout": 4,
+    "route_mismatch": 1
   },
   "levels": [
     {
@@ -48,13 +49,13 @@
         },
         {
           "n": "exit",
-          "s": 61
+          "s": 60
         }
       ],
-      "total_frames": 3657,
+      "total_frames": 3575,
       "rng_end": {
-        "state": 363392285,
-        "calls": 1828
+        "state": 822661459,
+        "calls": 1846
       }
     },
     {
@@ -146,17 +147,17 @@
           "s": 158
         }
       ],
-      "total_frames": 9479,
+      "total_frames": 9488,
       "rng_end": {
-        "state": 2794203425,
-        "calls": 5088
+        "state": 2106728596,
+        "calls": 5123
       }
     },
     {
       "level_num": 4,
       "level_file": "world1d.rl2",
       "route_input_sha256": "6C6FB924C2917E69339C438E1A8FABEB58C9E217F2E6292A110DA80E948860F4",
-      "status": "timeout",
+      "status": "route_mismatch",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -181,14 +182,26 @@
         {
           "n": "gold key",
           "s": 21
+        },
+        {
+          "n": "red key",
+          "s": 33
+        },
+        {
+          "n": "fly-through 2",
+          "s": 52
+        },
+        {
+          "n": "switch 3",
+          "s": 53
         }
       ],
-      "total_frames": 5859,
+      "total_frames": 13381,
       "rng_end": {
-        "state": 1256401675,
-        "calls": 1022
+        "state": 3197631653,
+        "calls": 1756
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live objective sequence differs from route input"
     },
     {
       "level_num": 5,
@@ -266,10 +279,10 @@
           "s": 86
         }
       ],
-      "total_frames": 9342,
+      "total_frames": 9372,
       "rng_end": {
-        "state": 3952548382,
-        "calls": 2281
+        "state": 3285893879,
+        "calls": 2290
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },

@@ -34,10 +34,10 @@
           "s": 43
         }
       ],
-      "total_frames": 2567,
+      "total_frames": 2578,
       "rng_end": {
-        "state": 1434307051,
-        "calls": 1310
+        "state": 2783425680,
+        "calls": 1335
       }
     },
     {
@@ -56,21 +56,21 @@
         },
         {
           "n": "gold key",
-          "s": 48
+          "s": 47
         },
         {
           "n": "reactor",
-          "s": 66
+          "s": 64
         },
         {
           "n": "exit",
-          "s": 69
+          "s": 66
         }
       ],
-      "total_frames": 4127,
+      "total_frames": 3973,
       "rng_end": {
-        "state": 3104832301,
-        "calls": 1684
+        "state": 3788755263,
+        "calls": 1706
       }
     },
     {
@@ -101,13 +101,13 @@
         },
         {
           "n": "red key",
-          "s": 49
+          "s": 50
         }
       ],
-      "total_frames": 8135,
+      "total_frames": 8053,
       "rng_end": {
-        "state": 2745403012,
-        "calls": 2387
+        "state": 2009896676,
+        "calls": 2419
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -139,17 +139,17 @@
         },
         {
           "n": "reactor",
-          "s": 100
+          "s": 101
         },
         {
           "n": "exit",
-          "s": 103
+          "s": 104
         }
       ],
-      "total_frames": 6169,
+      "total_frames": 6225,
       "rng_end": {
-        "state": 1898174989,
-        "calls": 4276
+        "state": 4222562952,
+        "calls": 4319
       }
     },
     {
@@ -168,25 +168,25 @@
         },
         {
           "n": "gold key",
-          "s": 50
+          "s": 48
         },
         {
           "n": "red key",
-          "s": 98
+          "s": 95
         },
         {
           "n": "boss",
-          "s": 121
+          "s": 118
         },
         {
           "n": "exit",
-          "s": 130
+          "s": 127
         }
       ],
-      "total_frames": 7772,
+      "total_frames": 7598,
       "rng_end": {
-        "state": 3169057466,
-        "calls": 4509
+        "state": 266719432,
+        "calls": 4511
       }
     },
     {

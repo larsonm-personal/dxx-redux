@@ -73,9 +73,12 @@ struct controller_state {
 	fix64 player_invulnerable_time;
 	physics_info player_physics;
 	int player_sandbox_active;
+	unsigned int time_limit_seconds;
 };
 
 controller_state State = {};
+unsigned int Configured_time_limit_seconds =
+    ROUTE_CONFIRMATION_DEFAULT_TIME_LIMIT_SECONDS;
 
 int set_visible_flare_target(const object *actor, int segnum, int sidenum,
                              vms_vector *direction);
@@ -740,8 +743,20 @@ int actor_reached_target(const object *actor)
 {
 	fix distance;
 	fix tolerance;
-	if (!actor || actor->segnum != State.target_seg)
+	if (!actor)
 		return 0;
+	if (actor->segnum != State.target_seg) {
+		if (State.target_seg == State.semantic_target_seg ||
+		    !Escort_route_goal.frontier_player_keyed_door ||
+		    actor->segnum < 0 || actor->segnum >= Num_segments ||
+		    State.target_seg < 0 || State.target_seg >= Num_segments ||
+		    find_connect_side(&Segments[State.target_seg],
+		                      &Segments[actor->segnum]) < 0 ||
+		    !State.target_pos_valid ||
+		    vm_vec_dist_quick(&actor->pos, &State.target_pos) >
+		        actor->size + F1_0 / 16)
+			return 0;
+	}
 	if (State.step.activation_kind ==
 	        LEVEL_METADATA_ROUTE_ACTIVATION_PICKUP_KEY &&
 	    State.target_seg == State.semantic_target_seg &&
@@ -1149,18 +1164,18 @@ int find_route_flare_target(object *actor, int *segnum, int *sidenum,
 		previous_seg = next_seg;
 	}
 	if (State.target_seg != State.semantic_target_seg &&
-	    actor->segnum == State.target_seg) {
+	    actor_reached_target(actor)) {
 		for (int side = 0; side < MAX_SIDES_PER_SEGMENT; ++side) {
 			const int candidate_wall =
-			    Segments[actor->segnum].sides[side].wall_num;
+			    Segments[State.target_seg].sides[side].wall_num;
 			if (Escort_route_goal.frontier_player_keyed_door &&
 			    candidate_wall >= 0 && candidate_wall < Num_walls &&
 			    Walls[candidate_wall].keys == KEY_NONE)
 				continue;
 			if (wall_accepts_route_flare(candidate_wall) &&
-			    set_visible_flare_target(actor, actor->segnum, side,
+			    set_visible_flare_target(actor, State.target_seg, side,
 			                             direction)) {
-				*segnum = actor->segnum;
+				*segnum = State.target_seg;
 				*sidenum = side;
 				*wall_num = candidate_wall;
 				State.frontier_wall_num = candidate_wall;
@@ -1218,20 +1233,22 @@ void speed_up_actor(object *actor)
 
 void shoot_frontier_door(object *actor)
 {
+	int frontier_seg;
 	if (!actor || State.target_seg == State.semantic_target_seg ||
 	    (State.step.activation_kind ==
 	         LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT &&
 	     actor->segnum == State.step.seg))
 		return;
+	frontier_seg = actor_reached_target(actor) ? State.target_seg : actor->segnum;
 	for (int side = 0; side < MAX_SIDES_PER_SEGMENT; ++side) {
-		const int wall_num = Segments[actor->segnum].sides[side].wall_num;
+		const int wall_num = Segments[frontier_seg].sides[side].wall_num;
 		if (wall_num < 0 || wall_num >= Num_walls ||
 		    (Walls[wall_num].type != WALL_DOOR &&
 		     Walls[wall_num].type != WALL_BLASTABLE))
 			continue;
 		/* Recover only after a real flare aimed at this door had enough time to
 		 * arrive.  wall_hit_process remains authoritative for keys and locks. */
-		apply_flare_fallback(actor, actor->segnum, side, wall_num);
+		apply_flare_fallback(actor, frontier_seg, side, wall_num);
 	}
 }
 
@@ -1500,6 +1517,7 @@ extern "C" int route_confirmation_start(void)
 	State.summary.seed = ROUTE_CONFIRMATION_CANONICAL_SEED;
 	State.summary.fixed_hz = ROUTE_CONFIRMATION_FIXED_HZ;
 	State.summary.current_route_step_index = -1;
+	State.time_limit_seconds = Configured_time_limit_seconds;
 	State.actor_objnum = -1;
 	State.target_objnum = -1;
 	State.flare_fallback_wall_num = -1;
@@ -1602,15 +1620,19 @@ extern "C" void route_confirmation_before_frame(void)
 
 extern "C" void route_confirmation_after_frame(void)
 {
+	char timeout_problem[128];
 	object *actor;
 	fix distance;
 	if (State.summary.status != ROUTE_CONFIRMATION_RUNNING)
 		return;
 	State.summary.frame_count++;
 	State.summary.elapsed_ticks += FrameTime;
-	if (State.summary.frame_count > ROUTE_CONFIRMATION_FIXED_HZ * 600) {
-		fail(ROUTE_CONFIRMATION_TIMEOUT,
-		     "route confirmation exceeded 10 simulation minutes");
+	if (State.summary.frame_count >
+	    ROUTE_CONFIRMATION_FIXED_HZ * State.time_limit_seconds) {
+		snprintf(timeout_problem, sizeof(timeout_problem),
+		         "route confirmation exceeded %u-second simulation budget",
+		         State.time_limit_seconds);
+		fail(ROUTE_CONFIRMATION_TIMEOUT, timeout_problem);
 		return;
 	}
 	if (!valid_object(State.actor_objnum)) {
@@ -1704,6 +1726,15 @@ extern "C" void route_confirmation_after_frame(void)
 		State.previous_actor_pos = actor->pos;
 }
 
+extern "C" int route_confirmation_set_time_limit_seconds(
+    unsigned int seconds)
+{
+	if (!seconds || seconds > 3600)
+		return 0;
+	Configured_time_limit_seconds = seconds;
+	return 1;
+}
+
 extern "C" void route_confirmation_stop(void)
 {
 	if (State.summary.status == ROUTE_CONFIRMATION_RUNNING)
@@ -1774,6 +1805,10 @@ extern "C" const route_confirmation_summary *route_confirmation_get_summary(void
 #else
 
 extern "C" int route_confirmation_start(void)
+{
+	return 0;
+}
+extern "C" int route_confirmation_set_time_limit_seconds(unsigned int)
 {
 	return 0;
 }

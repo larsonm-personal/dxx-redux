@@ -4059,8 +4059,19 @@ extern "C" void game_automate_tick(void)
 				}
 			} else if (s.field == "start_route_confirmation") {
 #ifdef DXX_BUILD_DESCENT_II
-				if ((strcasecmp(s.value.c_str(), "true") != 0 &&
-				     strtol(s.value.c_str(), NULL, 10) == 0) ||
+				char *end = NULL;
+				const unsigned long seconds =
+				    strtoul(s.value.c_str(), &end, 10);
+				const int use_default =
+				    strcasecmp(s.value.c_str(), "true") == 0;
+				if (use_default)
+					route_confirmation_set_time_limit_seconds(
+					    ROUTE_CONFIRMATION_DEFAULT_TIME_LIMIT_SECONDS);
+				if ((!use_default &&
+				     (end == s.value.c_str() || *end != '\0' ||
+				      seconds > 3600 ||
+				      !route_confirmation_set_time_limit_seconds(
+				          (unsigned int) seconds))) ||
 				    !route_confirmation_start()) {
 					stop_script_fail(
 					    route_confirmation_get_summary()->problem[0]

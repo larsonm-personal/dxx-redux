@@ -212,8 +212,8 @@
       ],
       "total_frames": 4032,
       "rng_end": {
-        "state": 3499212410,
-        "calls": 2269
+        "state": 570149541,
+        "calls": 2268
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -310,13 +310,13 @@
         },
         {
           "n": "gold key",
-          "s": 31
+          "s": 30
         }
       ],
-      "total_frames": 1844,
+      "total_frames": 1799,
       "rng_end": {
-        "state": 3344647880,
-        "calls": 927
+        "state": 862331967,
+        "calls": 938
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -406,12 +406,12 @@
           "s": 4
         }
       ],
-      "total_frames": 4199,
+      "total_frames": 3661,
       "rng_end": {
         "state": 2996623694,
         "calls": 121
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "route confirmation exceeded 61-second simulation budget"
     },
     {
       "level_num": -3,

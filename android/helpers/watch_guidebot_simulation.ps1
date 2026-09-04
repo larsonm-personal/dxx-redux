@@ -192,7 +192,7 @@ function Invoke-GuidebotBrowserRun {
     $stderr = Join-Path $manualRunRoot 'runner.stderr.log'
     $runner = Join-Path $scriptDir 'regenerate_all_guidebot_simulations.ps1'
     $arguments = @('-NoProfile', '-File', $runner, '-Mode', 'Desktop', '-MissionJson', $Item.MissionJson,
-        '-Level', [string]$Item.Level, '-Repeat', '1', '-LevelTimeoutSeconds', '900', '-NoBuild')
+        '-Level', [string]$Item.Level, '-Repeat', '1', '-NoBuild')
     $arguments += @('-OutputRoot', $manualRunRoot)
     $processArguments = @($arguments | ForEach-Object {
             $argument = [string]$_

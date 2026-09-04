@@ -8,9 +8,9 @@
     "seed": 1,
     "status": "partial",
     "level_counts": {
-      "ok": 16,
+      "ok": 17,
       "failed": 1,
-      "timeout": 13
+      "timeout": 12
     },
     "levels": [
       {
@@ -173,10 +173,10 @@
             "s": 62
           }
         ],
-        "total_frames": 3728,
+        "total_frames": 3702,
         "rng_end": {
-          "state": 1252116776,
-          "calls": 959
+          "state": 3328140451,
+          "calls": 998
         }
       },
       {
@@ -215,13 +215,13 @@
           },
           {
             "n": "exit",
-            "s": 73
+            "s": 72
           }
         ],
-        "total_frames": 4358,
+        "total_frames": 4340,
         "rng_end": {
-          "state": 2822734377,
-          "calls": 2456
+          "state": 3835377864,
+          "calls": 2463
         }
       },
       {
@@ -285,13 +285,13 @@
           },
           {
             "n": "red key",
-            "s": 51
+            "s": 52
           }
         ],
-        "total_frames": 4787,
+        "total_frames": 4788,
         "rng_end": {
-          "state": 3276219314,
-          "calls": 1413
+          "state": 1299315158,
+          "calls": 1425
         },
         "problem": "physical route frontier did not open after 8 interaction attempts"
       },
@@ -391,7 +391,7 @@
             "s": 70
           }
         ],
-        "total_frames": 4797,
+        "total_frames": 4800,
         "rng_end": {
           "state": 3438387236,
           "calls": 1843
@@ -415,8 +415,8 @@
         ],
         "total_frames": 805,
         "rng_end": {
-          "state": 2780109717,
-          "calls": 108
+          "state": 300568396,
+          "calls": 107
         },
         "problem": "physical route frontier did not open after 8 interaction attempts"
       },
@@ -424,7 +424,7 @@
         "level_num": 12,
         "level_file": "psx12.rl2",
         "route_input_sha256": "FE1EC656813947F23103FFAD77D25BED15C50AF8471A81E09FE55568F4C5A731",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -457,14 +457,21 @@
           {
             "n": "red key",
             "s": 51
+          },
+          {
+            "n": "boss",
+            "s": 67
+          },
+          {
+            "n": "exit",
+            "s": 71
           }
         ],
-        "total_frames": 6824,
+        "total_frames": 4264,
         "rng_end": {
-          "state": 2836888651,
-          "calls": 702
-        },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+          "state": 3420633278,
+          "calls": 1225
+        }
       },
       {
         "level_num": 13,
@@ -1273,12 +1280,12 @@
           "calls": 0
         },
         "objectives": [],
-        "total_frames": 3664,
+        "total_frames": 2641,
         "rng_end": {
           "state": 2122112351,
           "calls": 138
         },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "problem": "route confirmation exceeded 44-second simulation budget"
       },
       {
         "level_num": 6,

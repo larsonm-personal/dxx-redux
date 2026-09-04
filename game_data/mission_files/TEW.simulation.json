@@ -359,25 +359,25 @@
         },
         {
           "n": "gold key",
-          "s": 20
+          "s": 19
         },
         {
           "n": "red key",
-          "s": 47
+          "s": 46
         },
         {
           "n": "boss",
-          "s": 70
+          "s": 68
         },
         {
           "n": "exit",
-          "s": 77
+          "s": 75
         }
       ],
-      "total_frames": 4623,
+      "total_frames": 4504,
       "rng_end": {
-        "state": 824971491,
-        "calls": 4006
+        "state": 2921549515,
+        "calls": 4158
       }
     },
     {
@@ -415,7 +415,7 @@
           "s": 79
         }
       ],
-      "total_frames": 4714,
+      "total_frames": 4715,
       "rng_end": {
         "state": 2033855936,
         "calls": 2375
@@ -445,17 +445,17 @@
         },
         {
           "n": "reactor",
-          "s": 47
+          "s": 48
         },
         {
           "n": "exit",
           "s": 49
         }
       ],
-      "total_frames": 2938,
+      "total_frames": 2955,
       "rng_end": {
-        "state": 1004316454,
-        "calls": 2433
+        "state": 3115249498,
+        "calls": 2429
       }
     },
     {
@@ -613,13 +613,13 @@
         },
         {
           "n": "switch 0",
-          "s": 47
+          "s": 48
         }
       ],
-      "total_frames": 3238,
+      "total_frames": 3303,
       "rng_end": {
-        "state": 2594954263,
-        "calls": 2514
+        "state": 247760615,
+        "calls": 2562
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -818,21 +818,21 @@
         },
         {
           "n": "red key",
-          "s": 45
+          "s": 46
         },
         {
           "n": "reactor",
-          "s": 77
+          "s": 78
         },
         {
           "n": "exit",
-          "s": 86
+          "s": 88
         }
       ],
-      "total_frames": 5172,
+      "total_frames": 5277,
       "rng_end": {
-        "state": 1431170862,
-        "calls": 2585
+        "state": 1639399965,
+        "calls": 2596
       }
     },
     {

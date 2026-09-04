@@ -8,9 +8,9 @@
     "seed": 1,
     "status": "partial",
     "level_counts": {
-      "ok": 16,
+      "ok": 17,
       "failed": 1,
-      "timeout": 13
+      "timeout": 12
     },
     "levels": [
       {
@@ -173,7 +173,7 @@
             "s": 62
           }
         ],
-        "total_frames": 3728,
+        "total_frames": 3730,
         "rng_end": {
           "state": 1252116776,
           "calls": 959
@@ -215,13 +215,13 @@
           },
           {
             "n": "exit",
-            "s": 73
+            "s": 72
           }
         ],
-        "total_frames": 4358,
+        "total_frames": 4340,
         "rng_end": {
-          "state": 2822734377,
-          "calls": 2456
+          "state": 3835377864,
+          "calls": 2463
         }
       },
       {
@@ -391,7 +391,7 @@
             "s": 70
           }
         ],
-        "total_frames": 4797,
+        "total_frames": 4800,
         "rng_end": {
           "state": 3438387236,
           "calls": 1843
@@ -415,8 +415,8 @@
         ],
         "total_frames": 805,
         "rng_end": {
-          "state": 2780109717,
-          "calls": 108
+          "state": 300568396,
+          "calls": 107
         },
         "problem": "physical route frontier did not open after 8 interaction attempts"
       },
@@ -424,7 +424,7 @@
         "level_num": 12,
         "level_file": "psx12.rl2",
         "route_input_sha256": "92E80C6D3E90C0EDA71E77CE8BFC5F603449DB0F5962781CF46391D8FAFE23AE",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -457,14 +457,21 @@
           {
             "n": "red key",
             "s": 33
+          },
+          {
+            "n": "boss",
+            "s": 49
+          },
+          {
+            "n": "exit",
+            "s": 54
           }
         ],
-        "total_frames": 5785,
+        "total_frames": 3225,
         "rng_end": {
-          "state": 2836888651,
-          "calls": 702
-        },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+          "state": 3420633278,
+          "calls": 1225
+        }
       },
       {
         "level_num": 13,
@@ -1281,12 +1288,12 @@
           "calls": 0
         },
         "objectives": [],
-        "total_frames": 3664,
+        "total_frames": 2641,
         "rng_end": {
           "state": 2122112351,
           "calls": 138
         },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "problem": "route confirmation exceeded 44-second simulation budget"
       },
       {
         "level_num": 6,

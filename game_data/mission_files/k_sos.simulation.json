@@ -183,26 +183,26 @@
         },
         {
           "n": "red key",
-          "s": 52
+          "s": 53
         },
         {
           "n": "gold key",
-          "s": 73
+          "s": 74
         },
         {
           "n": "fly-through 4",
-          "s": 92
-        },
-        {
-          "n": "reactor",
           "s": 93
         },
         {
+          "n": "reactor",
+          "s": 94
+        },
+        {
           "n": "exit",
-          "s": 117
+          "s": 118
         }
       ],
-      "total_frames": 7047,
+      "total_frames": 7090,
       "rng_end": {
         "state": 2694628668,
         "calls": 5051

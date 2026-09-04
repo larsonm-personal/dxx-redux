@@ -361,12 +361,12 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 3656,
+      "total_frames": 2161,
       "rng_end": {
-        "state": 811863863,
-        "calls": 178
+        "state": 3423541591,
+        "calls": 146
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "route confirmation exceeded 36-second simulation budget"
     }
   ]
 }

@@ -117,13 +117,13 @@
         },
         {
           "n": "exit",
-          "s": 98
+          "s": 97
         }
       ],
-      "total_frames": 5865,
+      "total_frames": 5848,
       "rng_end": {
-        "state": 3600278651,
-        "calls": 3214
+        "state": 3246992905,
+        "calls": 3256
       }
     },
     {
@@ -173,7 +173,7 @@
           "s": 163
         }
       ],
-      "total_frames": 9782,
+      "total_frames": 9784,
       "rng_end": {
         "state": 3728613309,
         "calls": 6020
@@ -252,7 +252,7 @@
           "s": 140
         }
       ],
-      "total_frames": 9051,
+      "total_frames": 9018,
       "rng_end": {
         "state": 4116360776,
         "calls": 3615
@@ -302,7 +302,7 @@
           "s": 145
         }
       ],
-      "total_frames": 8712,
+      "total_frames": 8713,
       "rng_end": {
         "state": 1671904012,
         "calls": 4523
@@ -425,29 +425,29 @@
         },
         {
           "n": "hidden door",
-          "s": 70
+          "s": 71
         },
         {
           "n": "red key",
-          "s": 79
+          "s": 81
         },
         {
           "n": "switch 8",
-          "s": 120
+          "s": 121
         },
         {
           "n": "reactor",
-          "s": 122
+          "s": 123
         },
         {
           "n": "exit",
-          "s": 140
+          "s": 141
         }
       ],
-      "total_frames": 8413,
+      "total_frames": 8465,
       "rng_end": {
-        "state": 2859380992,
-        "calls": 6407
+        "state": 1235441163,
+        "calls": 6398
       }
     },
     {
@@ -471,8 +471,8 @@
       ],
       "total_frames": 3034,
       "rng_end": {
-        "state": 3175997191,
-        "calls": 994
+        "state": 3590000966,
+        "calls": 993
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -519,7 +519,7 @@
           "s": 174
         }
       ],
-      "total_frames": 10434,
+      "total_frames": 10437,
       "rng_end": {
         "state": 1512517728,
         "calls": 5159

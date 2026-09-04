@@ -88,17 +88,17 @@
         },
         {
           "n": "boss",
-          "s": 87
+          "s": 89
         },
         {
           "n": "exit",
-          "s": 111
+          "s": 110
         }
       ],
-      "total_frames": 6633,
+      "total_frames": 6615,
       "rng_end": {
-        "state": 3605725861,
-        "calls": 4316
+        "state": 3332410724,
+        "calls": 4339
       }
     },
     {
@@ -128,10 +128,10 @@
           "s": 51
         }
       ],
-      "total_frames": 4371,
+      "total_frames": 4377,
       "rng_end": {
-        "state": 2108581043,
-        "calls": 2006
+        "state": 2671758063,
+        "calls": 2042
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -145,12 +145,12 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 36001,
+      "total_frames": 1861,
       "rng_end": {
-        "state": 2212816966,
-        "calls": 714977
+        "state": 570783303,
+        "calls": 37026
       },
-      "problem": "route confirmation exceeded 10 simulation minutes"
+      "problem": "route confirmation exceeded 31-second simulation budget"
     },
     {
       "level_num": 7,
@@ -162,12 +162,12 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 36001,
+      "total_frames": 5881,
       "rng_end": {
-        "state": 537437380,
-        "calls": 11795
+        "state": 4206527530,
+        "calls": 1773
       },
-      "problem": "route confirmation exceeded 10 simulation minutes"
+      "problem": "route confirmation exceeded 98-second simulation budget"
     },
     {
       "level_num": 8,
@@ -185,21 +185,21 @@
         },
         {
           "n": "blue key",
-          "s": 37
+          "s": 38
         },
         {
           "n": "fly-through 7",
-          "s": 37
+          "s": 38
         },
         {
           "n": "fly-through 12",
-          "s": 60
+          "s": 61
         }
       ],
-      "total_frames": 5661,
+      "total_frames": 5658,
       "rng_end": {
-        "state": 1479255279,
-        "calls": 3578
+        "state": 1371383653,
+        "calls": 3612
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -290,10 +290,10 @@
           "s": 40
         }
       ],
-      "total_frames": 2398,
+      "total_frames": 2372,
       "rng_end": {
-        "state": 1531785709,
-        "calls": 2516
+        "state": 1692656121,
+        "calls": 2632
       }
     },
     {
@@ -333,17 +333,17 @@
         },
         {
           "n": "boss",
-          "s": 75
+          "s": 74
         },
         {
           "n": "exit",
-          "s": 77
+          "s": 76
         }
       ],
-      "total_frames": 4599,
+      "total_frames": 4555,
       "rng_end": {
-        "state": 1130859006,
-        "calls": 2185
+        "state": 667148126,
+        "calls": 2217
       }
     },
     {

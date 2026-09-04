@@ -119,7 +119,7 @@
           "s": 64
         }
       ],
-      "total_frames": 5139,
+      "total_frames": 5143,
       "rng_end": {
         "state": 2967600276,
         "calls": 2051
@@ -157,10 +157,10 @@
           "s": 106
         }
       ],
-      "total_frames": 7112,
+      "total_frames": 7072,
       "rng_end": {
-        "state": 3835377864,
-        "calls": 2463
+        "state": 3984703090,
+        "calls": 2501
       },
       "problem": "live objective sequence differs from route input"
     },
@@ -220,10 +220,10 @@
           "s": 20
         }
       ],
-      "total_frames": 1183,
+      "total_frames": 1176,
       "rng_end": {
-        "state": 882003441,
-        "calls": 400
+        "state": 743020753,
+        "calls": 432
       }
     },
     {

@@ -3,6 +3,9 @@ $script:GuidebotSimulationGeneration = 4
 # Keep the fixed timestep and seed synchronized with route_confirmation.h
 $script:GuidebotSimulationFixedHz = 60
 $script:GuidebotSimulationSeed = 1
+$script:GuidebotSimulationMinimumSeconds = 30
+$script:GuidebotSimulationMaximumSeconds = 300
+$script:GuidebotSimulationDistancePerSecond = 30.0
 $script:GuidebotSimulationStatuses = @(
     'ok',
     'partial',
@@ -27,6 +30,18 @@ function Get-GuidebotPropertyValue {
     $property = $InputObject.PSObject.Properties[$Name]
     if ($null -eq $property -or $null -eq $property.Value) { return $Default }
     return $property.Value
+}
+
+function Get-GuidebotSimulationTimeLimitSeconds {
+    param([Parameter(Mandatory)][object]$Level)
+
+    $distance = [double](Get-GuidebotPropertyValue $Level 'travel_distance' 0)
+    if ([double]::IsNaN($distance) -or [double]::IsInfinity($distance) -or $distance -lt 0) {
+        $distance = 0
+    }
+    $seconds = $script:GuidebotSimulationMinimumSeconds +
+    [Math]::Ceiling($distance / $script:GuidebotSimulationDistancePerSecond)
+    return [int][Math]::Min($script:GuidebotSimulationMaximumSeconds, $seconds)
 }
 
 function ConvertTo-GuidebotRouteProjection {

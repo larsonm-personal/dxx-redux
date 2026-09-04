@@ -8,7 +8,8 @@ $browserSource = [IO.File]::ReadAllText($browser)
 
 if ($browserSource -notmatch "function Invoke-GuidebotBrowserBuild" -or
     $browserSource -notmatch "Invoke-GuidebotBrowserBuild\s+New-Item" -or
-    $browserSource -notmatch "'-LevelTimeoutSeconds', '900', '-NoBuild'" -or
+    $browserSource -match "'-LevelTimeoutSeconds', '900'" -or
+    $browserSource -notmatch "'-Repeat', '1', '-NoBuild'" -or
     $browserSource -match 'desktopBuildReady') {
     throw 'Every visible route run must check the build before starting a no-build child process'
 }

@@ -64,12 +64,24 @@
         {
           "n": "blue key",
           "s": 54
+        },
+        {
+          "n": "fly-through 10",
+          "s": 69
+        },
+        {
+          "n": "switch 6",
+          "s": 73
+        },
+        {
+          "n": "fly-through 7",
+          "s": 88
         }
       ],
-      "total_frames": 7819,
+      "total_frames": 9580,
       "rng_end": {
-        "state": 242789525,
-        "calls": 1900
+        "state": 606577268,
+        "calls": 3235
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -98,12 +110,84 @@
         {
           "n": "switch 19",
           "s": 61
+        },
+        {
+          "n": "switch 8",
+          "s": 76
+        },
+        {
+          "n": "fly-through 1",
+          "s": 89
+        },
+        {
+          "n": "gold key",
+          "s": 91
+        },
+        {
+          "n": "hidden door",
+          "s": 104
+        },
+        {
+          "n": "switch 0",
+          "s": 106
+        },
+        {
+          "n": "hidden door",
+          "s": 116
+        },
+        {
+          "n": "switch 20",
+          "s": 119
+        },
+        {
+          "n": "hidden door",
+          "s": 128
+        },
+        {
+          "n": "hidden door",
+          "s": 135
+        },
+        {
+          "n": "switch 10",
+          "s": 135
+        },
+        {
+          "n": "hidden door",
+          "s": 150
+        },
+        {
+          "n": "switch 26",
+          "s": 153
+        },
+        {
+          "n": "hidden door",
+          "s": 162
+        },
+        {
+          "n": "switch 22",
+          "s": 163
+        },
+        {
+          "n": "switch 24",
+          "s": 170
+        },
+        {
+          "n": "red key",
+          "s": 174
+        },
+        {
+          "n": "reactor",
+          "s": 203
+        },
+        {
+          "n": "switch 3",
+          "s": 208
         }
       ],
-      "total_frames": 7630,
+      "total_frames": 16455,
       "rng_end": {
-        "state": 764320203,
-        "calls": 1342
+        "state": 1719405509,
+        "calls": 4796
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -223,8 +307,8 @@
       ],
       "total_frames": 953,
       "rng_end": {
-        "state": 3396130861,
-        "calls": 404
+        "state": 3529457476,
+        "calls": 403
       },
       "problem": "route objective activation is not supported"
     },
@@ -390,12 +474,12 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 3670,
+      "total_frames": 2041,
       "rng_end": {
         "state": 916896761,
         "calls": 72
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "route confirmation exceeded 34-second simulation budget"
     },
     {
       "level_num": -2,
@@ -407,12 +491,12 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 36001,
+      "total_frames": 4021,
       "rng_end": {
         "state": 3416620587,
         "calls": 222
       },
-      "problem": "route confirmation exceeded 10 simulation minutes"
+      "problem": "route confirmation exceeded 67-second simulation budget"
     },
     {
       "level_num": -3,

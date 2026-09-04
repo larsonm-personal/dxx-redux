@@ -139,7 +139,7 @@
           "s": 101
         }
       ],
-      "total_frames": 6084,
+      "total_frames": 6085,
       "rng_end": {
         "state": 3816800785,
         "calls": 2672
@@ -168,7 +168,7 @@
           "s": 73
         }
       ],
-      "total_frames": 10974,
+      "total_frames": 10975,
       "rng_end": {
         "state": 3456028837,
         "calls": 4828
@@ -238,25 +238,25 @@
         },
         {
           "n": "gold key",
-          "s": 29
+          "s": 26
         },
         {
           "n": "red key",
-          "s": 53
+          "s": 51
         },
         {
           "n": "reactor",
-          "s": 67
+          "s": 64
         },
         {
           "n": "exit",
-          "s": 80
+          "s": 77
         }
       ],
-      "total_frames": 4828,
+      "total_frames": 4629,
       "rng_end": {
-        "state": 877185513,
-        "calls": 4056
+        "state": 3402857454,
+        "calls": 4185
       }
     },
     {
@@ -294,7 +294,7 @@
           "s": 88
         }
       ],
-      "total_frames": 5262,
+      "total_frames": 5264,
       "rng_end": {
         "state": 1026127875,
         "calls": 3206
@@ -320,10 +320,10 @@
           "s": 25
         }
       ],
-      "total_frames": 5970,
+      "total_frames": 6505,
       "rng_end": {
-        "state": 3308648524,
-        "calls": 875
+        "state": 1495569341,
+        "calls": 900
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -436,12 +436,12 @@
           "s": 39
         }
       ],
-      "total_frames": 36001,
+      "total_frames": 14341,
       "rng_end": {
         "state": 623386897,
         "calls": 880
       },
-      "problem": "route confirmation exceeded 10 simulation minutes"
+      "problem": "route confirmation exceeded 239-second simulation budget"
     },
     {
       "level_num": 15,

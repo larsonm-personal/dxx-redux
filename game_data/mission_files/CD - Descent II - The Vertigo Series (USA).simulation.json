@@ -9,8 +9,8 @@
     "status": "partial",
     "level_counts": {
       "ok": 12,
-      "failed": 1,
-      "timeout": 7,
+      "failed": 2,
+      "timeout": 6,
       "unsupported": 1,
       "route_mismatch": 2
     },
@@ -163,18 +163,18 @@
           },
           {
             "n": "red key",
-            "s": 107
+            "s": 96
           },
           {
             "n": "reactor",
-            "s": 137
+            "s": 127
           },
           {
             "n": "exit",
-            "s": 147
+            "s": 136
           }
         ],
-        "total_frames": 8793,
+        "total_frames": 8160,
         "rng_end": {
           "state": 2805590340,
           "calls": 3987
@@ -211,7 +211,7 @@
             "s": 87
           }
         ],
-        "total_frames": 5199,
+        "total_frames": 5200,
         "rng_end": {
           "state": 1725722493,
           "calls": 2500
@@ -221,7 +221,7 @@
         "level_num": 6,
         "level_file": "d2xlvl06.rl2",
         "route_input_sha256": "BEE4B1C831DAE8EFBCAFF03B14D625A1E8C2248277A3F9F5815903E426C2D6B4",
-        "status": "timeout",
+        "status": "failed",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -230,14 +230,22 @@
           {
             "n": "blue key",
             "s": 18
+          },
+          {
+            "n": "gold key",
+            "s": 34
+          },
+          {
+            "n": "red key",
+            "s": 70
           }
         ],
-        "total_frames": 4944,
+        "total_frames": 4218,
         "rng_end": {
-          "state": 1388571841,
-          "calls": 320
+          "state": 1947568827,
+          "calls": 1614
         },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "problem": "live Guide-Bot route has no actionable goal"
       },
       {
         "level_num": 7,
@@ -329,7 +337,7 @@
             "s": 36
           }
         ],
-        "total_frames": 7537,
+        "total_frames": 7538,
         "rng_end": {
           "state": 3287141505,
           "calls": 1920
@@ -427,7 +435,7 @@
             "s": 113
           }
         ],
-        "total_frames": 6793,
+        "total_frames": 6794,
         "rng_end": {
           "state": 1240179346,
           "calls": 3109
@@ -627,7 +635,7 @@
             "s": 89
           }
         ],
-        "total_frames": 5346,
+        "total_frames": 5347,
         "rng_end": {
           "state": 3670294233,
           "calls": 3176

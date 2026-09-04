@@ -7,16 +7,16 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
+    "ok": 1,
     "failed": 1,
-    "timeout": 4
+    "timeout": 5
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "virus2.rl2",
       "route_input_sha256": "E419C163D3B84A5BDACF720D74C00242432EBBB55DA649F443748DB7AD655B86",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -33,21 +33,14 @@
         {
           "n": "red key",
           "s": 17
-        },
-        {
-          "n": "reactor",
-          "s": 22
-        },
-        {
-          "n": "exit",
-          "s": 27
         }
       ],
-      "total_frames": 1645,
+      "total_frames": 1787,
       "rng_end": {
-        "state": 908664903,
-        "calls": 1698
-      }
+        "state": 1386117904,
+        "calls": 1207
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 2,
@@ -110,10 +103,10 @@
           "s": 70
         }
       ],
-      "total_frames": 4180,
+      "total_frames": 4192,
       "rng_end": {
-        "state": 3381675222,
-        "calls": 1681
+        "state": 2755215601,
+        "calls": 1680
       }
     },
     {
@@ -147,7 +140,7 @@
           "s": 35
         }
       ],
-      "total_frames": 6737,
+      "total_frames": 9730,
       "rng_end": {
         "state": 3517084114,
         "calls": 1509

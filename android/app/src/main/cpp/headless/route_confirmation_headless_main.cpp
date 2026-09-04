@@ -71,6 +71,15 @@ int parse_level(const char *text, int *level)
 	return 1;
 }
 
+int configure_time_limit(const char *text)
+{
+	char *end = nullptr;
+	const unsigned long value = text ? strtoul(text, &end, 10) : 0;
+	return text && end && !*end && value <= 3600 &&
+	       route_confirmation_set_time_limit_seconds(
+	           static_cast<unsigned int>(value));
+}
+
 int init_headless_audio()
 {
 	static char sdl_audio_driver[] = "SDL_AUDIODRIVER=dummy";
@@ -175,11 +184,15 @@ int main(int argc, char *argv[])
 	const char *mission = find_arg_value(argc, argv, "-mission");
 	const char *extra_dir = find_arg_value(argc, argv, "-extra-dir");
 	const char *level_text = find_arg_value(argc, argv, "-level");
+	const char *time_limit_text =
+	    find_arg_value(argc, argv, "-route-confirm-timeout-seconds");
 	int level = 0;
-	if (!output || !parse_level(level_text, &level)) {
+	if (!output || !parse_level(level_text, &level) ||
+	    (time_limit_text && !configure_time_limit(time_limit_text))) {
 		fprintf(stderr,
 		        "usage: %s -route-confirm-json-out <path> -level <number> "
-		        "[-mission <name>] [-hogdir <dir>]\n",
+		        "[-mission <name>] [-hogdir <dir>] "
+		        "[-route-confirm-timeout-seconds <1..3600>]\n",
 		        argc > 0 ? argv[0] : "dxx-redux-d2-headless-route");
 		return 1;
 	}

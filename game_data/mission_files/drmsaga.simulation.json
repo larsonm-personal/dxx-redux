@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
+    "ok": 3,
     "failed": 1,
-    "timeout": 2
+    "timeout": 1
   },
   "levels": [
     {
@@ -38,7 +38,7 @@
       "level_num": 2,
       "level_file": "drmrvrt2.rl2",
       "route_input_sha256": "36007DC396E4EBECADAFA8C752EFA22D60D2A86BAA901A557A2842C993F572EC",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -51,14 +51,33 @@
         {
           "n": "blue key",
           "s": 12
+        },
+        {
+          "n": "fly-through 8",
+          "s": 31
+        },
+        {
+          "n": "gold key",
+          "s": 47
+        },
+        {
+          "n": "red key",
+          "s": 77
+        },
+        {
+          "n": "boss",
+          "s": 97
+        },
+        {
+          "n": "exit",
+          "s": 103
         }
       ],
-      "total_frames": 5179,
+      "total_frames": 6198,
       "rng_end": {
-        "state": 3494592722,
-        "calls": 741
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1436102573,
+        "calls": 3604
+      }
     },
     {
       "level_num": 3,
@@ -91,7 +110,7 @@
           "s": 90
         }
       ],
-      "total_frames": 5420,
+      "total_frames": 5422,
       "rng_end": {
         "state": 3674684925,
         "calls": 1860

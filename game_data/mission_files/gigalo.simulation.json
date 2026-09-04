@@ -199,12 +199,12 @@
             "s": 39
           }
         ],
-        "total_frames": 36001,
+        "total_frames": 9481,
         "rng_end": {
           "state": 2003240718,
           "calls": 2489
         },
-        "problem": "route confirmation exceeded 10 simulation minutes"
+        "problem": "route confirmation exceeded 158-second simulation budget"
       }
     ]
   },
@@ -239,7 +239,7 @@
             "s": 21
           }
         ],
-        "total_frames": 5375,
+        "total_frames": 5377,
         "rng_end": {
           "state": 3246236687,
           "calls": 3290
@@ -439,12 +439,12 @@
           "calls": 0
         },
         "objectives": [],
-        "total_frames": 5416,
+        "total_frames": 3661,
         "rng_end": {
           "state": 1440254347,
           "calls": 1406
         },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "problem": "route confirmation exceeded 61-second simulation budget"
       }
     ]
   },
@@ -470,12 +470,12 @@
           "calls": 0
         },
         "objectives": [],
-        "total_frames": 4268,
+        "total_frames": 4261,
         "rng_end": {
           "state": 2901314047,
           "calls": 490
         },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "problem": "route confirmation exceeded 71-second simulation budget"
       }
     ]
   }

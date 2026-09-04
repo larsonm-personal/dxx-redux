@@ -163,17 +163,17 @@
         },
         {
           "n": "boss",
-          "s": 100
+          "s": 101
         },
         {
           "n": "exit",
-          "s": 101
+          "s": 102
         }
       ],
-      "total_frames": 6061,
+      "total_frames": 6104,
       "rng_end": {
-        "state": 3889597212,
-        "calls": 3163
+        "state": 375099116,
+        "calls": 3147
       }
     },
     {
@@ -232,15 +232,15 @@
         },
         {
           "n": "gold key",
-          "s": 86
+          "s": 87
         },
         {
           "n": "fly-through 3",
-          "s": 121
+          "s": 120
         },
         {
           "n": "switch 7",
-          "s": 123
+          "s": 122
         },
         {
           "n": "fly-through 5",
@@ -252,13 +252,13 @@
         },
         {
           "n": "red key",
-          "s": 144
+          "s": 145
         }
       ],
-      "total_frames": 13707,
+      "total_frames": 14275,
       "rng_end": {
-        "state": 4141626410,
-        "calls": 5869
+        "state": 3656054667,
+        "calls": 6014
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

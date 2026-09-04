@@ -115,6 +115,7 @@ function Get-GuidebotWorkItems {
                     Level = $levelRecord
                     LevelNumber = $levelNumber
                     EngineLevelNumber = if ($levelNumber -eq 0) { 1 } else { $levelNumber }
+                    SimulationTimeLimitSeconds = Get-GuidebotSimulationTimeLimitSeconds -Level $levelRecord
                     RouteHash = Get-GuidebotRouteInputHash -Mission $mission -Level $levelRecord
                 }
             }
@@ -272,6 +273,7 @@ function Invoke-GuidebotHeadlessLevel {
             '-hogdir', $resolvedHogDir,
             '-mission', $missionName,
             '-level', [string]$WorkItem.EngineLevelNumber,
+            '-route-confirm-timeout-seconds', [string]$WorkItem.SimulationTimeLimitSeconds,
             '-route-confirm-json-out', $output
         )
         if ($Stage.ExtraDir) { $arguments += @('-extra-dir', $Stage.ExtraDir) }
@@ -329,6 +331,7 @@ function Invoke-GuidebotDesktopLevel {
         '-hogdir', $resolvedHogDir,
         '-mission', $missionName,
         '-level', [string]$WorkItem.EngineLevelNumber,
+        '-route-confirm-timeout-seconds', [string]$WorkItem.SimulationTimeLimitSeconds,
         '-route-confirm-json-out', $output
     )
     if ($Stage.ExtraDir) { $arguments += @('-extra-dir', $Stage.ExtraDir) }
@@ -338,10 +341,14 @@ function Invoke-GuidebotDesktopLevel {
         }) -join ' '
     $process = Start-Process -FilePath $desktopExe -ArgumentList $processArguments -PassThru `
         -WorkingDirectory $sandbox -RedirectStandardOutput $log -RedirectStandardError $errorLog
-    if (-not $process.WaitForExit($LevelTimeoutSeconds * 1000)) {
+    $processTimeoutSeconds = [Math]::Max(
+        $LevelTimeoutSeconds,
+        $WorkItem.SimulationTimeLimitSeconds + 60
+    )
+    if (-not $process.WaitForExit($processTimeoutSeconds * 1000)) {
         $process.Kill($true)
         $process.WaitForExit()
-        throw "Desktop route process timeout after $LevelTimeoutSeconds seconds for $($WorkItem.Identity), log=$log"
+        throw "Desktop route process timeout after $processTimeoutSeconds seconds for $($WorkItem.Identity), log=$log"
     }
     $exitCode = $process.ExitCode
     if (Test-Path -LiteralPath $errorLog -PathType Leaf) {
@@ -445,8 +452,17 @@ function New-GuidebotHeadedScript {
     $steps.Add([ordered]@{ action = 'select'; text = 'Rookie'; post_delay_ms = 100; timeout_ms = 10000 })
     $steps.Add([ordered]@{ action = 'skip_briefing'; timeout_ms = 60000; post_delay_ms = 100 })
     $steps.Add([ordered]@{ action = 'wait_for'; field = 'in_game'; value = 'true'; timeout_ms = 30000 })
-    $steps.Add([ordered]@{ action = 'set_debug'; field = 'start_route_confirmation'; value = 'true' })
-    $steps.Add([ordered]@{ action = 'wait_for'; field = 'route_confirmation_terminal'; value = 'true'; timeout_ms = 720000 })
+    $steps.Add([ordered]@{
+            action = 'set_debug'
+            field = 'start_route_confirmation'
+            value = [string]$WorkItem.SimulationTimeLimitSeconds
+        })
+    $steps.Add([ordered]@{
+            action = 'wait_for'
+            field = 'route_confirmation_terminal'
+            value = 'true'
+            timeout_ms = ($WorkItem.SimulationTimeLimitSeconds + 15) * 1000
+        })
     $steps.Add([ordered]@{ action = 'introspect' })
     [IO.File]::WriteAllText(
         $Path,
@@ -477,7 +493,15 @@ function Invoke-GuidebotHeadedLevel {
         $safeIdentity = [regex]::Replace($WorkItem.Identity, '[^A-Za-z0-9_.-]+', '_')
         $scriptPath = Join-Path $resultRoot "${safeIdentity}_headed_${run}.jsonc"
         New-GuidebotHeadedScript -WorkItem $WorkItem -DeviceArchiveName $deviceArchive -Path $scriptPath
-        $arguments = @($scriptPath, '-Game', 'd2', '-TimeoutSeconds', '900')
+        $automationTimeoutSeconds = [Math]::Max(
+            $LevelTimeoutSeconds,
+            $WorkItem.SimulationTimeLimitSeconds + 120
+        )
+        $arguments = @(
+            $scriptPath,
+            '-Game', 'd2',
+            '-TimeoutSeconds', [string]$automationTimeoutSeconds
+        )
         if ($Install -and $run -eq 1) { $arguments += '-Install' }
         if ($LeaveHeadedRunning -and $run -eq $Repeat) { $arguments += '-LeaveRunning' }
         $pwsh = (Get-Process -Id $PID).Path
@@ -613,11 +637,12 @@ if ($DryRun) {
                 [ordered]@{
                     identity = $_.Identity
                     engine_level = $_.EngineLevelNumber
+                    simulation_time_limit_seconds = $_.SimulationTimeLimitSeconds
                     route_input_sha256 = $_.RouteHash
                 }
             })
     }
-    $selectedItems | Select-Object Identity, RouteHash
+    $selectedItems | Select-Object Identity, SimulationTimeLimitSeconds, RouteHash
     exit 0
 }
 if ($Mode -in @('Headless', 'Desktop') -and -not (Test-Path -LiteralPath $resolvedHogDir -PathType Container)) {
@@ -651,7 +676,7 @@ $index = 0
 $installHeaded = $Mode -eq 'Headed' -and -not $NoBuild
 foreach ($item in $selectedItems) {
     $index++
-    Write-GuidebotStatus "[$index/$($selectedItems.Count)] $($item.Identity)"
+    Write-GuidebotStatus "[$index/$($selectedItems.Count)] $($item.Identity) budget=$($item.SimulationTimeLimitSeconds)s"
     $metadataKey = $item.MetadataFile.FullName.ToLowerInvariant()
     try {
         if (Test-GuidebotLevelAssetUnavailable -LevelRecord $item.Level) {

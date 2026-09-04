@@ -7,9 +7,10 @@
 extern "C" {
 #endif
 
-#define ROUTE_CONFIRMATION_CANONICAL_SEED 1u
-#define ROUTE_CONFIRMATION_FIXED_HZ       60
-#define ROUTE_CONFIRMATION_MAX_OBJECTIVES 96
+#define ROUTE_CONFIRMATION_CANONICAL_SEED             1u
+#define ROUTE_CONFIRMATION_FIXED_HZ                   60
+#define ROUTE_CONFIRMATION_MAX_OBJECTIVES             96
+#define ROUTE_CONFIRMATION_DEFAULT_TIME_LIMIT_SECONDS 180u
 
 struct object;
 
@@ -62,6 +63,7 @@ typedef struct route_confirmation_summary {
 } route_confirmation_summary;
 
 int route_confirmation_start(void);
+int route_confirmation_set_time_limit_seconds(unsigned int seconds);
 void route_confirmation_prepare_frame_time(void);
 void route_confirmation_before_frame(void);
 void route_confirmation_after_frame(void);

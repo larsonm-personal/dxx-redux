@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
-    "timeout": 3,
+    "ok": 3,
+    "timeout": 2,
     "route_mismatch": 1
   },
   "levels": [
@@ -40,24 +40,24 @@
         },
         {
           "n": "boss",
-          "s": 124
+          "s": 125
         },
         {
           "n": "exit",
-          "s": 137
+          "s": 138
         }
       ],
-      "total_frames": 8230,
+      "total_frames": 8275,
       "rng_end": {
-        "state": 1124039579,
-        "calls": 3438
+        "state": 1240761752,
+        "calls": 3471
       }
     },
     {
       "level_num": 2,
       "level_file": "phobos2.rl2",
       "route_input_sha256": "C2D418D7CFCB76273C5F75ADE01BA7D9643628D90C754AD375186A6A4F5CB77C",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -73,15 +73,22 @@
         },
         {
           "n": "red key",
-          "s": 90
+          "s": 91
+        },
+        {
+          "n": "boss",
+          "s": 139
+        },
+        {
+          "n": "exit",
+          "s": 144
         }
       ],
-      "total_frames": 9633,
+      "total_frames": 8631,
       "rng_end": {
-        "state": 1231614670,
-        "calls": 3321
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 4148805152,
+        "calls": 3943
+      }
     },
     {
       "level_num": 3,
@@ -140,7 +147,7 @@
           "s": 48
         }
       ],
-      "total_frames": 36001,
+      "total_frames": 10501,
       "rng_end": {
         "state": 3901011787,
         "calls": 1982

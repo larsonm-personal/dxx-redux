@@ -241,13 +241,13 @@
         },
         {
           "n": "exit",
-          "s": 145
+          "s": 146
         }
       ],
-      "total_frames": 8716,
+      "total_frames": 8747,
       "rng_end": {
-        "state": 511835098,
-        "calls": 5885
+        "state": 3419525100,
+        "calls": 5963
       }
     },
     {
@@ -298,17 +298,17 @@
         },
         {
           "n": "pass-through 12",
-          "s": 107
+          "s": 108
         },
         {
           "n": "reactor",
-          "s": 108
+          "s": 109
         }
       ],
-      "total_frames": 11164,
+      "total_frames": 11217,
       "rng_end": {
-        "state": 1609406109,
-        "calls": 4516
+        "state": 3169057466,
+        "calls": 4509
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -359,14 +359,18 @@
         {
           "n": "destroy robot carrying blue key",
           "s": 9
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 17
         }
       ],
-      "total_frames": 4751,
+      "total_frames": 2214,
       "rng_end": {
-        "state": 896791444,
-        "calls": 1283
+        "state": 113985633,
+        "calls": 1696
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 11,
@@ -415,12 +419,12 @@
           "s": 57
         }
       ],
-      "total_frames": 36001,
+      "total_frames": 17161,
       "rng_end": {
-        "state": 2140513667,
-        "calls": 503558
+        "state": 3644747195,
+        "calls": 205646
       },
-      "problem": "route confirmation exceeded 10 simulation minutes"
+      "problem": "route confirmation exceeded 286-second simulation budget"
     },
     {
       "level_num": 12,
@@ -465,10 +469,10 @@
           "s": 51
         }
       ],
-      "total_frames": 8116,
+      "total_frames": 7595,
       "rng_end": {
-        "state": 1688554078,
-        "calls": 2473
+        "state": 2782575594,
+        "calls": 2605
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },

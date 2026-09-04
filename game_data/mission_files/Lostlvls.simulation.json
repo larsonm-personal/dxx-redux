@@ -76,7 +76,7 @@
         },
         {
           "n": "red key",
-          "s": 48
+          "s": 47
         },
         {
           "n": "reactor",
@@ -87,10 +87,10 @@
           "s": 73
         }
       ],
-      "total_frames": 4396,
+      "total_frames": 4384,
       "rng_end": {
-        "state": 2321132630,
-        "calls": 3345
+        "state": 858169495,
+        "calls": 3410
       }
     },
     {
@@ -136,12 +136,12 @@
           "s": 39
         }
       ],
-      "total_frames": 36001,
+      "total_frames": 10081,
       "rng_end": {
         "state": 904813134,
         "calls": 889
       },
-      "problem": "route confirmation exceeded 10 simulation minutes"
+      "problem": "route confirmation exceeded 168-second simulation budget"
     },
     {
       "level_num": 5,
@@ -388,12 +388,12 @@
           "s": 58
         }
       ],
-      "total_frames": 36001,
+      "total_frames": 13081,
       "rng_end": {
         "state": 316215344,
         "calls": 2839
       },
-      "problem": "route confirmation exceeded 10 simulation minutes"
+      "problem": "route confirmation exceeded 218-second simulation budget"
     },
     {
       "level_num": 13,
@@ -448,10 +448,10 @@
           "s": 46
         }
       ],
-      "total_frames": 7096,
+      "total_frames": 6956,
       "rng_end": {
-        "state": 2134449477,
-        "calls": 1340
+        "state": 3205777174,
+        "calls": 1361
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -471,13 +471,13 @@
         },
         {
           "n": "gold key",
-          "s": 59
+          "s": 60
         }
       ],
-      "total_frames": 3548,
+      "total_frames": 3621,
       "rng_end": {
-        "state": 3952548382,
-        "calls": 2281
+        "state": 3517814689,
+        "calls": 2400
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -576,25 +576,25 @@
         },
         {
           "n": "gold key",
-          "s": 59
+          "s": 60
         },
         {
           "n": "red key",
-          "s": 93
+          "s": 94
         },
         {
           "n": "reactor",
-          "s": 111
+          "s": 112
         },
         {
           "n": "exit",
-          "s": 116
+          "s": 117
         }
       ],
-      "total_frames": 6955,
+      "total_frames": 7020,
       "rng_end": {
-        "state": 1953761339,
-        "calls": 2254
+        "state": 3793778116,
+        "calls": 2323
       }
     },
     {
@@ -625,13 +625,13 @@
         },
         {
           "n": "gold key",
-          "s": 81
+          "s": 82
         }
       ],
-      "total_frames": 6311,
+      "total_frames": 6324,
       "rng_end": {
-        "state": 4276846153,
-        "calls": 3704
+        "state": 3835290235,
+        "calls": 3726
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -728,10 +728,10 @@
           "s": 46
         }
       ],
-      "total_frames": 7634,
+      "total_frames": 7560,
       "rng_end": {
-        "state": 570149541,
-        "calls": 2268
+        "state": 1013447912,
+        "calls": 2303
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -755,21 +755,21 @@
         },
         {
           "n": "gold key",
-          "s": 15
+          "s": 16
         },
         {
           "n": "red key",
-          "s": 36
+          "s": 34
         },
         {
           "n": "exit",
-          "s": 53
+          "s": 52
         }
       ],
-      "total_frames": 3163,
+      "total_frames": 3110,
       "rng_end": {
-        "state": 2007066169,
-        "calls": 2056
+        "state": 1528129864,
+        "calls": 1823
       }
     },
     {

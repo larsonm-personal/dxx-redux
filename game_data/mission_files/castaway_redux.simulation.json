@@ -32,13 +32,13 @@
         },
         {
           "n": "red key",
-          "s": 40
+          "s": 38
         }
       ],
-      "total_frames": 3342,
+      "total_frames": 3207,
       "rng_end": {
-        "state": 3692326210,
-        "calls": 1845
+        "state": 2530671006,
+        "calls": 1897
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -154,45 +154,45 @@
         },
         {
           "n": "gold key",
-          "s": 45
+          "s": 44
         },
         {
           "n": "red key",
-          "s": 66
+          "s": 65
         },
         {
           "n": "switch 7",
-          "s": 66
+          "s": 65
         },
         {
           "n": "hidden door",
-          "s": 66
+          "s": 65
         },
         {
           "n": "switch 13",
-          "s": 69
+          "s": 68
         },
         {
           "n": "switch 8",
-          "s": 71
+          "s": 70
         },
         {
           "n": "fly-through 16",
-          "s": 71
+          "s": 70
         },
         {
           "n": "reactor",
-          "s": 83
+          "s": 81
         },
         {
           "n": "exit",
-          "s": 97
+          "s": 96
         }
       ],
-      "total_frames": 5805,
+      "total_frames": 5761,
       "rng_end": {
-        "state": 4141882743,
-        "calls": 5746
+        "state": 665281505,
+        "calls": 5920
       }
     },
     {

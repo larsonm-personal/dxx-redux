@@ -110,12 +110,16 @@
         {
           "n": "red key",
           "s": 60
+        },
+        {
+          "n": "reactor",
+          "s": 88
         }
       ],
-      "total_frames": 7722,
+      "total_frames": 9309,
       "rng_end": {
-        "state": 2889871362,
-        "calls": 4981
+        "state": 1615213147,
+        "calls": 5806
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
