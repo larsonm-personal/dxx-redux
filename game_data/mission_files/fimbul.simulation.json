@@ -7,15 +7,15 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 1,
-    "timeout": 2
+    "ok": 2,
+    "timeout": 1
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "icepris1.rl2",
       "route_input_sha256": "A4AE1447E570475B5D74BF6C55000BEF731AE9814A154BA56B6976EA3BDEA97C",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -27,15 +27,30 @@
         },
         {
           "n": "blastable wall",
-          "s": 36
+          "s": 37
+        },
+        {
+          "n": "gold key",
+          "s": 39
+        },
+        {
+          "n": "red key",
+          "s": 69
+        },
+        {
+          "n": "reactor",
+          "s": 96
+        },
+        {
+          "n": "exit",
+          "s": 102
         }
       ],
-      "total_frames": 2802,
+      "total_frames": 6131,
       "rng_end": {
-        "state": 3956752154,
-        "calls": 1213
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 1689723728,
+        "calls": 2935
+      }
     },
     {
       "level_num": 2,

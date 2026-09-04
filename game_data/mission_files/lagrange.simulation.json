@@ -7,14 +7,15 @@
   "seed": 1,
   "status": "failed",
   "level_counts": {
-    "timeout": 2
+    "timeout": 1,
+    "unsupported": 1
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "lagrange.rl2",
       "route_input_sha256": "6C55D930847BC8310CA66F9D01C3CAD9E13E6A8C94B2162F6DDD430D82A9369F",
-      "status": "timeout",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -31,14 +32,30 @@
         {
           "n": "blastable wall",
           "s": 13
+        },
+        {
+          "n": "gold key",
+          "s": 35
+        },
+        {
+          "n": "switch 10",
+          "s": 60
+        },
+        {
+          "n": "blue key",
+          "s": 82
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 101
         }
       ],
-      "total_frames": 1326,
+      "total_frames": 7478,
       "rng_end": {
-        "state": 1823798819,
-        "calls": 614
+        "state": 4220170352,
+        "calls": 6615
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "route objective activation is not supported"
     },
     {
       "level_num": 2,

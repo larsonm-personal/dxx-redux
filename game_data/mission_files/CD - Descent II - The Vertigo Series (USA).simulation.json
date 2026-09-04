@@ -275,25 +275,25 @@
           },
           {
             "n": "switch 11",
-            "s": 45
+            "s": 43
           },
           {
             "n": "red key",
-            "s": 50
+            "s": 48
           },
           {
             "n": "boss",
-            "s": 75
+            "s": 72
           },
           {
             "n": "exit",
-            "s": 81
+            "s": 79
           }
         ],
-        "total_frames": 4874,
+        "total_frames": 4769,
         "rng_end": {
-          "state": 3477880533,
-          "calls": 2860
+          "state": 744085226,
+          "calls": 2861
         }
       },
       {

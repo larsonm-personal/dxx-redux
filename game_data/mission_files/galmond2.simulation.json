@@ -341,15 +341,51 @@
         },
         {
           "n": "blastable wall",
-          "s": 35
+          "s": 36
+        },
+        {
+          "n": "blue key",
+          "s": 36
+        },
+        {
+          "n": "switch 12",
+          "s": 59
+        },
+        {
+          "n": "switch 14",
+          "s": 74
+        },
+        {
+          "n": "fly-through 17",
+          "s": 90
+        },
+        {
+          "n": "gold key",
+          "s": 91
+        },
+        {
+          "n": "switch 6",
+          "s": 99
+        },
+        {
+          "n": "red key",
+          "s": 124
+        },
+        {
+          "n": "switch 2",
+          "s": 139
+        },
+        {
+          "n": "switch 1",
+          "s": 139
         }
       ],
-      "total_frames": 2641,
+      "total_frames": 12042,
       "rng_end": {
-        "state": 1386117904,
-        "calls": 1207
+        "state": 3637538869,
+        "calls": 4812
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 9,

@@ -610,21 +610,21 @@
           },
           {
             "n": "blastable wall",
-            "s": 48
+            "s": 49
           },
           {
             "n": "switch 11",
-            "s": 52
+            "s": 50
           },
           {
             "n": "exit",
-            "s": 68
+            "s": 66
           }
         ],
-        "total_frames": 4057,
+        "total_frames": 3934,
         "rng_end": {
-          "state": 3754837988,
-          "calls": 1139
+          "state": 63926633,
+          "calls": 1112
         }
       },
       {

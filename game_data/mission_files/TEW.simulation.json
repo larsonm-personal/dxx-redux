@@ -549,21 +549,21 @@
         },
         {
           "n": "hidden door",
-          "s": 76
+          "s": 74
         },
         {
           "n": "boss",
-          "s": 82
+          "s": 80
         },
         {
           "n": "exit",
-          "s": 84
+          "s": 82
         }
       ],
-      "total_frames": 5068,
+      "total_frames": 4948,
       "rng_end": {
-        "state": 3643469303,
-        "calls": 3570
+        "state": 1466566853,
+        "calls": 3516
       }
     },
     {

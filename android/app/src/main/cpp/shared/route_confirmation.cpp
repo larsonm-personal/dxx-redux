@@ -1127,6 +1127,17 @@ int find_route_flare_target(object *actor, int *segnum, int *sidenum,
 	if (!actor || !segnum || !sidenum || !wall_num || !direction)
 		return 0;
 	aip = &actor->ctype.ai_info;
+	if (State.step.activation_kind ==
+	        LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BLASTABLE_WALL &&
+	    objective_source(segnum, sidenum)) {
+		const int objective_wall =
+		    Segments[*segnum].sides[*sidenum].wall_num;
+		if (wall_accepts_route_flare(objective_wall) &&
+		    set_visible_flare_target(actor, *segnum, *sidenum, direction)) {
+			*wall_num = objective_wall;
+			return 1;
+		}
+	}
 	if (!State.action_applied &&
 	    State.step.activation_kind ==
 	        LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR &&
@@ -1376,10 +1387,16 @@ void apply_objective_action(object *actor)
 			if (actor_reached_target(actor) &&
 			    State.target_seg == State.semantic_target_seg &&
 			    objective_source(&segnum, &sidenum)) {
-				State.action_applied = 1;
-				wall_hit_process(&Segments[segnum], sidenum, i2f(1000),
-				                 Player_num, ConsoleObject);
-				record_objective_and_replan();
+				const int wall_num =
+				    Segments[segnum].sides[sidenum].wall_num;
+				if (wall_num >= 0 && wall_num < Num_walls &&
+				    !(Walls[wall_num].flags & WALL_BLASTED))
+					apply_flare_fallback(actor, segnum, sidenum, wall_num);
+				if (wall_num >= 0 && wall_num < Num_walls &&
+				    (Walls[wall_num].flags & WALL_BLASTED)) {
+					State.action_applied = 1;
+					record_objective_and_replan();
+				}
 			}
 			break;
 

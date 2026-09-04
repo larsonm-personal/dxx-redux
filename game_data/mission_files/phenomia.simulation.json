@@ -8,8 +8,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 2,
-    "failed": 3,
-    "timeout": 7,
+    "failed": 4,
+    "timeout": 6,
     "unsupported": 2
   },
   "levels": [
@@ -17,7 +17,7 @@
       "level_num": 1,
       "level_file": "cathedra.rl2",
       "route_input_sha256": "0EE9CDE2B36739B928B8B8594340F8357FF398FEE0ED1C76DD3CB457A7E2D008",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -30,14 +30,22 @@
         {
           "n": "blastable wall",
           "s": 9
+        },
+        {
+          "n": "blue key",
+          "s": 9
+        },
+        {
+          "n": "red key",
+          "s": 26
         }
       ],
-      "total_frames": 1058,
+      "total_frames": 1579,
       "rng_end": {
-        "state": 232049766,
-        "calls": 321
+        "state": 3434688321,
+        "calls": 704
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 2,

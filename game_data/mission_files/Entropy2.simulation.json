@@ -127,17 +127,17 @@
         },
         {
           "n": "blue key",
-          "s": 19
+          "s": 17
         },
         {
           "n": "switch 2",
-          "s": 23
+          "s": 21
         }
       ],
-      "total_frames": 2505,
+      "total_frames": 2436,
       "rng_end": {
-        "state": 2684313047,
-        "calls": 1042
+        "state": 4107399316,
+        "calls": 1027
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

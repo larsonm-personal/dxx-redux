@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 8,
-    "timeout": 10
+    "ok": 9,
+    "timeout": 9
   },
   "levels": [
     {
@@ -101,7 +101,7 @@
       "level_num": 3,
       "level_file": "argntitr.rl2",
       "route_input_sha256": "083703D60D9744A684F3F609E6CE5F7C28FF9D758F3253711DA7F5B906909CC2",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -125,19 +125,78 @@
         },
         {
           "n": "fly-through 8",
-          "s": 23
+          "s": 21
         },
         {
           "n": "blastable wall",
+          "s": 24
+        },
+        {
+          "n": "fly-through 11",
           "s": 26
+        },
+        {
+          "n": "switch 33",
+          "s": 34
+        },
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 43
+        },
+        {
+          "n": "switch 2",
+          "s": 67
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 94
+        },
+        {
+          "n": "switch 12",
+          "s": 101
+        },
+        {
+          "n": "switch 13",
+          "s": 107
+        },
+        {
+          "n": "switch 14",
+          "s": 117
+        },
+        {
+          "n": "switch 15",
+          "s": 123
+        },
+        {
+          "n": "switch 16",
+          "s": 129
+        },
+        {
+          "n": "switch 17",
+          "s": 134
+        },
+        {
+          "n": "switch 32",
+          "s": 139
+        },
+        {
+          "n": "fly-through 19",
+          "s": 141
+        },
+        {
+          "n": "boss",
+          "s": 151
+        },
+        {
+          "n": "exit",
+          "s": 160
         }
       ],
-      "total_frames": 2276,
+      "total_frames": 9616,
       "rng_end": {
-        "state": 1374657230,
-        "calls": 1273
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 618395013,
+        "calls": 8956
+      }
     },
     {
       "level_num": 4,

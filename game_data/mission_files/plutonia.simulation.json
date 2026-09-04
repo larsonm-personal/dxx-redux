@@ -740,15 +740,31 @@
       "objectives": [
         {
           "n": "blastable wall",
-          "s": 9
+          "s": 10
+        },
+        {
+          "n": "blastable wall",
+          "s": 27
+        },
+        {
+          "n": "blastable wall",
+          "s": 32
+        },
+        {
+          "n": "blue key",
+          "s": 33
+        },
+        {
+          "n": "switch 1",
+          "s": 33
         }
       ],
-      "total_frames": 1073,
+      "total_frames": 9946,
       "rng_end": {
-        "state": 2965106811,
-        "calls": 142
+        "state": 464019428,
+        "calls": 3187
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 24,
@@ -1061,21 +1077,21 @@
         },
         {
           "n": "blastable wall",
-          "s": 49
+          "s": 50
         },
         {
           "n": "reactor",
-          "s": 60
+          "s": 55
         },
         {
           "n": "exit",
-          "s": 65
+          "s": 60
         }
       ],
-      "total_frames": 3901,
+      "total_frames": 3595,
       "rng_end": {
-        "state": 3804883212,
-        "calls": 2987
+        "state": 1803590772,
+        "calls": 2723
       }
     }
   ]

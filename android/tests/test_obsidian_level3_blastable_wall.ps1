@@ -20,6 +20,9 @@ if ($results.Count -ne 2) {
 
 foreach ($file in $results) {
     $result = Get-Content -Raw $file.FullName | ConvertFrom-Json
+    if ($result.status -ne 'confirmed') {
+        throw "Obsidian level 3 route was not confirmed: status=$($result.status) problem=$($result.problem)"
+    }
     if (@($result.objectives).Count -eq 0) {
         throw "Obsidian level 3 made no progress beyond its initial blastable wall: $($file.Name)"
     }
@@ -37,6 +40,14 @@ foreach ($file in $results) {
                 $_.label -eq 'Fly-through trigger 8'
             }).Count) {
         throw "Obsidian level 3 reversed its path before fly-through trigger 8: $($file.Name)"
+    }
+    if (-not @($result.objectives | Where-Object {
+                $_.label -eq 'Fly-through trigger 11'
+            }).Count) {
+        throw "Obsidian level 3 did not cross the third blastable wall: $($file.Name)"
+    }
+    if (@($result.objectives)[-1].label -ne 'Exit') {
+        throw "Obsidian level 3 did not finish at the exit: $($file.Name)"
     }
 }
 

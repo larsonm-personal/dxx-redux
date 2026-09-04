@@ -96,25 +96,25 @@
         },
         {
           "n": "blastable wall",
-          "s": 19
+          "s": 20
         },
         {
           "n": "red key",
-          "s": 23
+          "s": 21
         },
         {
           "n": "reactor",
-          "s": 31
+          "s": 29
         },
         {
           "n": "exit",
-          "s": 39
+          "s": 36
         }
       ],
-      "total_frames": 2311,
+      "total_frames": 2176,
       "rng_end": {
-        "state": 2854478429,
-        "calls": 2020
+        "state": 1425948058,
+        "calls": 2109
       }
     },
     {

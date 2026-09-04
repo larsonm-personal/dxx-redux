@@ -614,17 +614,17 @@
           },
           {
             "n": "switch 11",
-            "s": 51
+            "s": 49
           },
           {
             "n": "exit",
-            "s": 67
+            "s": 65
           }
         ],
-        "total_frames": 4037,
+        "total_frames": 3917,
         "rng_end": {
-          "state": 2426163063,
-          "calls": 1138
+          "state": 873953262,
+          "calls": 1113
         }
       },
       {

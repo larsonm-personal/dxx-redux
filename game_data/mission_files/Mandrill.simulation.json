@@ -80,13 +80,13 @@
         },
         {
           "n": "blastable wall",
-          "s": 34
+          "s": 35
         }
       ],
       "total_frames": 10201,
       "rng_end": {
-        "state": 2975631653,
-        "calls": 1628
+        "state": 834197707,
+        "calls": 1598
       },
       "problem": "route confirmation exceeded 170-second simulation budget"
     },

@@ -25,14 +25,30 @@
         {
           "n": "blastable wall",
           "s": 8
+        },
+        {
+          "n": "blue key",
+          "s": 28
+        },
+        {
+          "n": "gold key",
+          "s": 48
+        },
+        {
+          "n": "red key",
+          "s": 71
+        },
+        {
+          "n": "reactor",
+          "s": 82
         }
       ],
-      "total_frames": 1173,
+      "total_frames": 9140,
       "rng_end": {
-        "state": 1814397249,
-        "calls": 192
+        "state": 610364383,
+        "calls": 2570
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 2,

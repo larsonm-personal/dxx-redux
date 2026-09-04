@@ -8,8 +8,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 5,
-    "failed": 2,
-    "timeout": 2
+    "failed": 3,
+    "timeout": 1
   },
   "levels": [
     {
@@ -260,7 +260,7 @@
       "level_num": 7,
       "level_file": "hotspot.rl2",
       "route_input_sha256": "E5819F8D2EBAC3A94CFAAFBA5BAC773593D876C2E5BB4356CA065EC3F2F72E08",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -268,15 +268,23 @@
       "objectives": [
         {
           "n": "blastable wall",
-          "s": 19
+          "s": 20
+        },
+        {
+          "n": "blue key",
+          "s": 22
+        },
+        {
+          "n": "gold key",
+          "s": 37
         }
       ],
-      "total_frames": 1667,
+      "total_frames": 2224,
       "rng_end": {
-        "state": 3810069260,
-        "calls": 427
+        "state": 141351509,
+        "calls": 940
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 8,

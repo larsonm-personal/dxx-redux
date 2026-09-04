@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
+    "ok": 5,
     "failed": 2,
-    "timeout": 9
+    "timeout": 8
   },
   "levels": [
     {
@@ -369,7 +369,7 @@
       "level_num": 12,
       "level_file": "ursula.rl2",
       "route_input_sha256": "01EC415A5CD3066F230E44B828A6A7EB8D61746CBE344427C4FB81ED8F24EAF7",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -378,14 +378,25 @@
         {
           "n": "blastable wall",
           "s": 31
+        },
+        {
+          "n": "blastable wall",
+          "s": 39
+        },
+        {
+          "n": "boss",
+          "s": 51
+        },
+        {
+          "n": "exit",
+          "s": 57
         }
       ],
-      "total_frames": 2475,
+      "total_frames": 3418,
       "rng_end": {
-        "state": 808381751,
-        "calls": 690
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 1000023036,
+        "calls": 1531
+      }
     },
     {
       "level_num": 13,

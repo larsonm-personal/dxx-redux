@@ -130,49 +130,49 @@
         },
         {
           "n": "blastable wall",
-          "s": 58
+          "s": 59
         },
         {
           "n": "blastable wall",
-          "s": 63
+          "s": 62
         },
         {
           "n": "red key",
-          "s": 87
+          "s": 77
         },
         {
           "n": "switch 12",
-          "s": 126
+          "s": 107
         },
         {
           "n": "switch 15",
-          "s": 129
+          "s": 107
         },
         {
           "n": "switch 13",
-          "s": 137
+          "s": 133
         },
         {
           "n": "fly-through 21",
-          "s": 144
+          "s": 139
         },
         {
           "n": "switch 22",
-          "s": 152
+          "s": 159
         },
         {
           "n": "reactor",
-          "s": 153
+          "s": 175
         },
         {
           "n": "exit",
-          "s": 168
+          "s": 189
         }
       ],
-      "total_frames": 10054,
+      "total_frames": 11322,
       "rng_end": {
-        "state": 264174521,
-        "calls": 7816
+        "state": 1808815994,
+        "calls": 9181
       }
     },
     {
@@ -364,12 +364,36 @@
         {
           "n": "blastable wall",
           "s": 40
+        },
+        {
+          "n": "blastable wall",
+          "s": 45
+        },
+        {
+          "n": "gold key",
+          "s": 49
+        },
+        {
+          "n": "switch 13",
+          "s": 67
+        },
+        {
+          "n": "switch 8",
+          "s": 69
+        },
+        {
+          "n": "blastable wall",
+          "s": 72
+        },
+        {
+          "n": "red key",
+          "s": 87
         }
       ],
-      "total_frames": 2941,
+      "total_frames": 6440,
       "rng_end": {
-        "state": 1889151071,
-        "calls": 1418
+        "state": 675862092,
+        "calls": 3435
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -458,25 +482,25 @@
         },
         {
           "n": "gold key",
-          "s": 84
+          "s": 59
         },
         {
           "n": "red key",
-          "s": 93
+          "s": 68
         },
         {
           "n": "boss",
-          "s": 112
+          "s": 87
         },
         {
           "n": "exit",
-          "s": 116
+          "s": 91
         }
       ],
-      "total_frames": 6958,
+      "total_frames": 5439,
       "rng_end": {
-        "state": 2758372886,
-        "calls": 6737
+        "state": 2647824051,
+        "calls": 5590
       }
     },
     {
@@ -507,25 +531,25 @@
         },
         {
           "n": "blastable wall",
-          "s": 38
+          "s": 39
         },
         {
           "n": "blastable wall",
-          "s": 47
+          "s": 46
         },
         {
           "n": "boss",
-          "s": 56
+          "s": 52
         },
         {
           "n": "exit",
-          "s": 99
+          "s": 95
         }
       ],
-      "total_frames": 5938,
+      "total_frames": 5712,
       "rng_end": {
-        "state": 2884796811,
-        "calls": 3454
+        "state": 858169495,
+        "calls": 3410
       }
     },
     {
@@ -556,17 +580,17 @@
         },
         {
           "n": "blastable wall",
-          "s": 110
+          "s": 111
         },
         {
           "n": "red key",
-          "s": 119
+          "s": 117
         }
       ],
-      "total_frames": 8587,
+      "total_frames": 8476,
       "rng_end": {
-        "state": 3633550424,
-        "calls": 7119
+        "state": 1350427762,
+        "calls": 7109
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     }

@@ -8,8 +8,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 1,
-    "failed": 4,
-    "timeout": 5
+    "failed": 5,
+    "timeout": 4
   },
   "levels": [
     {
@@ -24,31 +24,31 @@
       "objectives": [
         {
           "n": "blastable wall",
-          "s": 7
+          "s": 8
         },
         {
           "n": "blue key",
-          "s": 11
+          "s": 9
         },
         {
           "n": "gold key",
-          "s": 26
+          "s": 24
         },
         {
           "n": "red key",
-          "s": 35
+          "s": 32
         },
         {
           "n": "reactor",
-          "s": 42
+          "s": 39
         }
       ],
-      "total_frames": 7741,
+      "total_frames": 7032,
       "rng_end": {
-        "state": 1970098540,
-        "calls": 1995
+        "state": 2771411007,
+        "calls": 1962
       },
-      "problem": "route confirmation exceeded 129-second simulation budget"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 2,
@@ -215,7 +215,7 @@
       "level_num": 7,
       "level_file": "titi.rl2",
       "route_input_sha256": "1420758B653C0E7586398BC996920B2F153C2F8CC5909C47D6312B9830937FB2",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -227,15 +227,19 @@
         },
         {
           "n": "blastable wall",
-          "s": 19
+          "s": 22
+        },
+        {
+          "n": "gold key",
+          "s": 28
         }
       ],
-      "total_frames": 1563,
+      "total_frames": 1668,
       "rng_end": {
-        "state": 1151322306,
-        "calls": 437
+        "state": 3349304502,
+        "calls": 561
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 8,

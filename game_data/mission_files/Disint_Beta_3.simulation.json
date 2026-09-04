@@ -8,8 +8,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 3,
-    "failed": 5,
-    "timeout": 7,
+    "failed": 6,
+    "timeout": 6,
     "unsupported": 2
   },
   "levels": [
@@ -17,7 +17,7 @@
       "level_num": 1,
       "level_file": "01carbo.rl2",
       "route_input_sha256": "60F43D978377D30FC564AE08602DDEA31557767CC030CB906C5BC75F2B785605",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -26,14 +26,18 @@
         {
           "n": "blastable wall",
           "s": 2
+        },
+        {
+          "n": "blue key",
+          "s": 5
         }
       ],
-      "total_frames": 626,
+      "total_frames": 310,
       "rng_end": {
-        "state": 3735676127,
-        "calls": 266
+        "state": 3494321052,
+        "calls": 475
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 2,

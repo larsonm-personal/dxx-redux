@@ -267,18 +267,13 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [
-        {
-          "n": "blastable wall",
-          "s": 6
-        }
-      ],
-      "total_frames": 912,
+      "objectives": [],
+      "total_frames": 3951,
       "rng_end": {
-        "state": 2234146244,
-        "calls": 275
+        "state": 3494321052,
+        "calls": 475
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 12,

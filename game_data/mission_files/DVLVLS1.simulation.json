@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
+    "ok": 4,
     "failed": 2,
-    "timeout": 6
+    "timeout": 5
   },
   "levels": [
     {
@@ -285,7 +285,7 @@
       "level_num": 9,
       "level_file": "dalvol.rl2",
       "route_input_sha256": "A71FBC8BB3BDCCB807916E07AE3B924F99157A5FE60323C56470BD2E6391F616",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -294,14 +294,49 @@
         {
           "n": "blastable wall",
           "s": 5
+        },
+        {
+          "n": "blue key",
+          "s": 11
+        },
+        {
+          "n": "gold key",
+          "s": 32
+        },
+        {
+          "n": "fly-through 4",
+          "s": 52
+        },
+        {
+          "n": "hidden door",
+          "s": 52
+        },
+        {
+          "n": "switch 5",
+          "s": 54
+        },
+        {
+          "n": "red key",
+          "s": 61
+        },
+        {
+          "n": "switch 6",
+          "s": 61
+        },
+        {
+          "n": "reactor",
+          "s": 75
+        },
+        {
+          "n": "exit",
+          "s": 81
         }
       ],
-      "total_frames": 1072,
+      "total_frames": 4877,
       "rng_end": {
-        "state": 2540048041,
-        "calls": 280
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 2950194336,
+        "calls": 3815
+      }
     },
     {
       "level_num": 10,
