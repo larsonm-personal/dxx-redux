@@ -7,25 +7,31 @@
   "seed": 1,
   "status": "failed",
   "level_counts": {
-    "timeout": 2
+    "failed": 1,
+    "timeout": 1
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "U3AAH.rl2",
       "route_input_sha256": "AA1EF7F2CFCFE60566A1494E23DA3A0BAAFB4805CA020E0716F9F8126938C772",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 3837,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 8
+        }
+      ],
+      "total_frames": 454,
       "rng_end": {
         "state": 2144619499,
         "calls": 798
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 2,
@@ -47,17 +53,17 @@
         },
         {
           "n": "fly-through 3",
-          "s": 15
+          "s": 14
         },
         {
           "n": "red key",
-          "s": 25
+          "s": 24
         }
       ],
-      "total_frames": 6468,
+      "total_frames": 6059,
       "rng_end": {
-        "state": 2910045670,
-        "calls": 7617
+        "state": 2188137696,
+        "calls": 7591
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

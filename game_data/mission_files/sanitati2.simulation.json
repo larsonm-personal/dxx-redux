@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
-    "timeout": 1
+    "ok": 2,
+    "timeout": 2
   },
   "levels": [
     {
@@ -27,25 +27,25 @@
         },
         {
           "n": "hidden door",
-          "s": 36
-        },
-        {
-          "n": "blue key",
           "s": 39
         },
         {
+          "n": "blue key",
+          "s": 42
+        },
+        {
           "n": "reactor",
-          "s": 63
+          "s": 66
         },
         {
           "n": "exit",
-          "s": 84
+          "s": 87
         }
       ],
-      "total_frames": 5034,
+      "total_frames": 5196,
       "rng_end": {
-        "state": 1179259537,
-        "calls": 3568
+        "state": 3698647558,
+        "calls": 3617
       }
     },
     {
@@ -60,30 +60,30 @@
       "objectives": [
         {
           "n": "switch 1",
-          "s": 4
+          "s": 5
         },
         {
           "n": "switch 10",
-          "s": 15
+          "s": 18
         },
         {
           "n": "red key",
-          "s": 27
+          "s": 30
         },
         {
           "n": "switch 5",
-          "s": 40
+          "s": 43
         },
         {
           "n": "reactor",
-          "s": 50
+          "s": 52
         },
         {
           "n": "exit",
-          "s": 52
+          "s": 55
         }
       ],
-      "total_frames": 3131,
+      "total_frames": 3289,
       "rng_end": {
         "state": 1013734990,
         "calls": 3961
@@ -93,7 +93,7 @@
       "level_num": 3,
       "level_file": "verne.rl2",
       "route_input_sha256": "BB1FB82A489D9821D3EE1FC02C8E64C0A95502BAEE15BB891432B16AADA9DDA5",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -109,22 +109,15 @@
         },
         {
           "n": "red key",
-          "s": 62
-        },
-        {
-          "n": "reactor",
-          "s": 89
-        },
-        {
-          "n": "exit",
-          "s": 92
+          "s": 60
         }
       ],
-      "total_frames": 5546,
+      "total_frames": 7722,
       "rng_end": {
-        "state": 754197396,
-        "calls": 5379
-      }
+        "state": 2889871362,
+        "calls": 4981
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 4,
@@ -138,25 +131,25 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 33
+          "s": 32
         },
         {
           "n": "hidden door",
-          "s": 46
+          "s": 44
         },
         {
           "n": "hidden door",
-          "s": 47
+          "s": 45
         },
         {
           "n": "hidden door",
-          "s": 50
+          "s": 48
         }
       ],
-      "total_frames": 12408,
+      "total_frames": 6594,
       "rng_end": {
-        "state": 1376061655,
-        "calls": 2322
+        "state": 2437141959,
+        "calls": 2338
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

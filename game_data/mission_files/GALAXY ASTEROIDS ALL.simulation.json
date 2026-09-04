@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
+    "ok": 4,
     "failed": 2,
-    "timeout": 3
+    "timeout": 1
   },
   "levels": [
     {
@@ -31,10 +31,10 @@
           "s": 36
         }
       ],
-      "total_frames": 3168,
+      "total_frames": 3148,
       "rng_end": {
-        "state": 51885617,
-        "calls": 848
+        "state": 3061904516,
+        "calls": 851
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -42,7 +42,7 @@
       "level_num": 2,
       "level_file": "ICARUS02.RL2",
       "route_input_sha256": "66ABAEECEA63C2482D40BDD1F2F2196EC964238315288161E49F5401F367191A",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -54,7 +54,7 @@
         },
         {
           "n": "blue key",
-          "s": 28
+          "s": 27
         },
         {
           "n": "gold key",
@@ -63,14 +63,25 @@
         {
           "n": "switch 3",
           "s": 87
+        },
+        {
+          "n": "red key",
+          "s": 127
+        },
+        {
+          "n": "boss",
+          "s": 169
+        },
+        {
+          "n": "exit",
+          "s": 191
         }
       ],
-      "total_frames": 10119,
+      "total_frames": 11442,
       "rng_end": {
-        "state": 2490122385,
-        "calls": 4080
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1015659356,
+        "calls": 7963
+      }
     },
     {
       "level_num": 3,
@@ -84,40 +95,40 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 34
+          "s": 35
         },
         {
           "n": "blue key",
-          "s": 36
+          "s": 37
         },
         {
           "n": "gold key",
-          "s": 78
+          "s": 76
         },
         {
           "n": "red key",
-          "s": 104
+          "s": 101
         },
         {
           "n": "reactor",
-          "s": 121
+          "s": 118
         },
         {
           "n": "exit",
-          "s": 136
+          "s": 131
         }
       ],
-      "total_frames": 8139,
+      "total_frames": 7889,
       "rng_end": {
-        "state": 1026013445,
-        "calls": 4988
+        "state": 1166679525,
+        "calls": 5020
       }
     },
     {
       "level_num": 4,
       "level_file": "VESTA04.RL2",
       "route_input_sha256": "319513900C4CA30C1BFC586269BAD8E923972A4C1E467696D39941C2EF1E7F5C",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -125,31 +136,38 @@
       "objectives": [
         {
           "n": "switch 22",
-          "s": 27
+          "s": 26
         },
         {
           "n": "blue key",
-          "s": 28
+          "s": 30
         },
         {
           "n": "gold key",
-          "s": 70
+          "s": 72
         },
         {
           "n": "switch 24",
-          "s": 83
+          "s": 85
         },
         {
           "n": "red key",
-          "s": 117
+          "s": 119
+        },
+        {
+          "n": "reactor",
+          "s": 166
+        },
+        {
+          "n": "exit",
+          "s": 192
         }
       ],
-      "total_frames": 13845,
+      "total_frames": 11521,
       "rng_end": {
-        "state": 2476294361,
-        "calls": 6760
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3415271039,
+        "calls": 7530
+      }
     },
     {
       "level_num": 5,
@@ -175,18 +193,18 @@
         },
         {
           "n": "fly-through 0",
-          "s": 35
+          "s": 34
         },
         {
           "n": "blue key",
-          "s": 37
+          "s": 36
         },
         {
           "n": "gold key",
-          "s": 84
+          "s": 82
         }
       ],
-      "total_frames": 5038,
+      "total_frames": 4893,
       "rng_end": {
         "state": 4120562848,
         "calls": 1767
@@ -237,7 +255,7 @@
           "s": 24
         }
       ],
-      "total_frames": 1411,
+      "total_frames": 1414,
       "rng_end": {
         "state": 2100293115,
         "calls": 782

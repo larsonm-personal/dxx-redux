@@ -27,7 +27,7 @@
           "s": 7
         }
       ],
-      "total_frames": 463,
+      "total_frames": 475,
       "rng_end": {
         "state": 274854673,
         "calls": 368
@@ -50,10 +50,10 @@
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 13
+          "s": 14
         }
       ],
-      "total_frames": 784,
+      "total_frames": 813,
       "rng_end": {
         "state": 3228750693,
         "calls": 540
@@ -76,7 +76,7 @@
         },
         {
           "n": "switch 3",
-          "s": 20
+          "s": 21
         },
         {
           "n": "gold key",
@@ -84,13 +84,13 @@
         },
         {
           "n": "red key",
-          "s": 35
+          "s": 36
         }
       ],
-      "total_frames": 2091,
+      "total_frames": 2155,
       "rng_end": {
-        "state": 3965243816,
-        "calls": 2367
+        "state": 1612101980,
+        "calls": 2331
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -113,7 +113,7 @@
           "s": 8
         }
       ],
-      "total_frames": 1227,
+      "total_frames": 1225,
       "rng_end": {
         "state": 4273677855,
         "calls": 3018
@@ -136,19 +136,19 @@
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 36
+          "s": 35
         },
         {
           "n": "fly-through 2",
-          "s": 45
+          "s": 44
         },
         {
           "n": "fly-through 3",
-          "s": 48
+          "s": 47
         },
         {
           "n": "red key",
-          "s": 57
+          "s": 56
         },
         {
           "n": "reactor",
@@ -156,13 +156,13 @@
         },
         {
           "n": "exit",
-          "s": 84
+          "s": 83
         }
       ],
-      "total_frames": 5026,
+      "total_frames": 4978,
       "rng_end": {
-        "state": 856272373,
-        "calls": 7948
+        "state": 3776197745,
+        "calls": 7952
       }
     },
     {
@@ -188,10 +188,10 @@
           "s": 18
         }
       ],
-      "total_frames": 1098,
+      "total_frames": 1094,
       "rng_end": {
-        "state": 3244467800,
-        "calls": 463
+        "state": 3386287052,
+        "calls": 491
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -208,14 +208,18 @@
         {
           "n": "blue key",
           "s": 10
+        },
+        {
+          "n": "blastable wall",
+          "s": 19
         }
       ],
-      "total_frames": 1448,
+      "total_frames": 1188,
       "rng_end": {
-        "state": 2057323293,
-        "calls": 292
+        "state": 2678191699,
+        "calls": 566
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "semantic objective repeated without route advancement"
     },
     {
       "level_num": 8,
@@ -262,7 +266,7 @@
           "s": 28
         }
       ],
-      "total_frames": 6093,
+      "total_frames": 7255,
       "rng_end": {
         "state": 620555859,
         "calls": 2614

@@ -26,18 +26,18 @@
         },
         {
           "n": "hidden door",
-          "s": 25
+          "s": 24
         },
         {
           "n": "switch 16",
-          "s": 45
+          "s": 43
         },
         {
           "n": "blue key",
-          "s": 55
+          "s": 54
         }
       ],
-      "total_frames": 10760,
+      "total_frames": 9663,
       "rng_end": {
         "state": 242789525,
         "calls": 1900
@@ -56,7 +56,7 @@
       "objectives": [
         {
           "n": "fly-through 18",
-          "s": 14
+          "s": 13
         },
         {
           "n": "switch 4",
@@ -71,10 +71,10 @@
           "s": 61
         }
       ],
-      "total_frames": 7710,
+      "total_frames": 7630,
       "rng_end": {
-        "state": 2142376787,
-        "calls": 1334
+        "state": 764320203,
+        "calls": 1342
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -90,25 +90,25 @@
       "objectives": [
         {
           "n": "switch 2",
-          "s": 11
+          "s": 10
         },
         {
           "n": "switch 1",
-          "s": 17
+          "s": 16
         },
         {
           "n": "switch 4",
-          "s": 39
+          "s": 35
         },
         {
           "n": "switch 3",
-          "s": 57
+          "s": 52
         }
       ],
-      "total_frames": 7952,
+      "total_frames": 7995,
       "rng_end": {
-        "state": 1061480236,
-        "calls": 1803
+        "state": 1045204029,
+        "calls": 1796
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },

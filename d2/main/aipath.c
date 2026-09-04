@@ -1107,6 +1107,28 @@ void move_object_to_goal(object *objp, vms_vector *goal_point, int goal_seg)
 
 //	----------------------------------------------------------------------------------------------------------
 //	Optimization: If current velocity will take robot near goal, don't change velocity
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+static int guidebot_route_waypoint_reached(const object *objp,
+	const point_seg *waypoint, fix distance, fix threshold_distance)
+{
+	int side;
+	if (waypoint->segnum == objp->segnum)
+		return distance < threshold_distance;
+	/* Safety paths place portal waypoints just inside the destination segment.
+	 * A large actor can stop one radius short of such a point while still being
+	 * correctly aligned with an open portal.  Permit that one adjacent step,
+	 * but never use geometric proximity to skip a closed door or solid wall. */
+	if (distance >= threshold_distance + objp->size ||
+	    waypoint->segnum < 0 || waypoint->segnum > Highest_segment_index ||
+	    objp->segnum < 0 || objp->segnum > Highest_segment_index)
+		return 0;
+	side = find_connect_side(&Segments[waypoint->segnum],
+	                         &Segments[objp->segnum]);
+	return side >= 0 &&
+	       (WALL_IS_DOORWAY(&Segments[objp->segnum], side) & WID_FLY_FLAG);
+}
+#endif
+
 void ai_follow_path(object *objp, int player_visibility, int previous_visibility, vms_vector *vec_to_player)
 {
 	ai_static		*aip = &objp->ctype.ai_info;
@@ -1253,13 +1275,18 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 	 * physics has actually moved the companion into that segment.  Otherwise a
 	 * fast companion can advance several nearby points in one frame and then
 	 * steer directly at the later point through the intervening wall. */
-	while ((dist_to_goal < threshold_distance) && !forced_break
+	while (
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
-	       && (!Escort_route_goal.active ||
-	           Point_segs[aip->hide_index + aip->cur_path_index].segnum ==
-	               objp->segnum)
+	       (Escort_route_goal.active
+	            ? guidebot_route_waypoint_reached(
+	                  objp,
+	                  &Point_segs[aip->hide_index + aip->cur_path_index],
+	                  dist_to_goal, threshold_distance)
+	            : dist_to_goal < threshold_distance) &&
+#else
+	       (dist_to_goal < threshold_distance) &&
 #endif
-	) {
+	       !forced_break) {
 		//	Advance to next point on path.
 		aip->cur_path_index += aip->PATH_DIR;
 

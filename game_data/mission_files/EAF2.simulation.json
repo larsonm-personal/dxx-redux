@@ -44,10 +44,10 @@
         },
         {
           "n": "exit",
-          "s": 85
+          "s": 84
         }
       ],
-      "total_frames": 5070,
+      "total_frames": 5060,
       "rng_end": {
         "state": 2158105776,
         "calls": 5271
@@ -95,30 +95,30 @@
         },
         {
           "n": "fly-through 15",
-          "s": 41
+          "s": 40
         },
         {
           "n": "fly-through 13",
-          "s": 60
+          "s": 59
         },
         {
           "n": "fly-through 11",
-          "s": 72
+          "s": 71
         },
         {
           "n": "fly-through 12",
-          "s": 89
+          "s": 87
         },
         {
           "n": "reactor",
-          "s": 99
+          "s": 97
         },
         {
           "n": "exit",
-          "s": 129
+          "s": 126
         }
       ],
-      "total_frames": 7711,
+      "total_frames": 7573,
       "rng_end": {
         "state": 1888484047,
         "calls": 6682
@@ -153,45 +153,45 @@
       "objectives": [
         {
           "n": "switch 25",
-          "s": 9
+          "s": 7
         },
         {
           "n": "switch 26",
-          "s": 12
+          "s": 10
         },
         {
           "n": "switch 27",
-          "s": 18
+          "s": 16
         },
         {
           "n": "switch 29",
-          "s": 29
+          "s": 27
         },
         {
           "n": "switch 30",
-          "s": 43
+          "s": 41
         },
         {
           "n": "switch 28",
-          "s": 56
+          "s": 53
         },
         {
           "n": "switch 24",
-          "s": 69
+          "s": 66
         },
         {
           "n": "reactor",
-          "s": 77
+          "s": 73
         },
         {
           "n": "exit",
-          "s": 95
+          "s": 91
         }
       ],
-      "total_frames": 5695,
+      "total_frames": 5457,
       "rng_end": {
-        "state": 1294288587,
-        "calls": 6206
+        "state": 899008182,
+        "calls": 6193
       }
     },
     {
@@ -210,7 +210,7 @@
         },
         {
           "n": "fly-through 16",
-          "s": 21
+          "s": 20
         },
         {
           "n": "fly-through 17",
@@ -222,13 +222,13 @@
         },
         {
           "n": "exit",
-          "s": 64
+          "s": 63
         }
       ],
-      "total_frames": 3811,
+      "total_frames": 3802,
       "rng_end": {
-        "state": 3426037612,
-        "calls": 4555
+        "state": 218595359,
+        "calls": 4554
       }
     },
     {
@@ -246,7 +246,7 @@
           "s": 7
         }
       ],
-      "total_frames": 6600,
+      "total_frames": 4838,
       "rng_end": {
         "state": 3869925848,
         "calls": 2127
@@ -269,45 +269,45 @@
         },
         {
           "n": "blue key",
-          "s": 22
+          "s": 23
         },
         {
           "n": "switch 0",
-          "s": 22
+          "s": 23
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 43
+          "s": 42
         },
         {
           "n": "switch 1",
-          "s": 44
+          "s": 42
         },
         {
           "n": "hidden door",
-          "s": 73
+          "s": 69
         },
         {
           "n": "switch 2",
-          "s": 73
+          "s": 70
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 85
+          "s": 81
         },
         {
           "n": "boss",
-          "s": 114
+          "s": 110
         },
         {
           "n": "exit",
-          "s": 133
+          "s": 128
         }
       ],
-      "total_frames": 7972,
+      "total_frames": 7689,
       "rng_end": {
-        "state": 4203346628,
-        "calls": 8211
+        "state": 3505200513,
+        "calls": 7808
       }
     },
     {
@@ -342,10 +342,10 @@
         },
         {
           "n": "exit",
-          "s": 67
+          "s": 66
         }
       ],
-      "total_frames": 3993,
+      "total_frames": 3961,
       "rng_end": {
         "state": 4063420284,
         "calls": 5243

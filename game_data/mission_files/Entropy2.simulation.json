@@ -7,15 +7,15 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
-    "timeout": 4
+    "ok": 1,
+    "timeout": 5
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "e2v-1.rl2",
       "route_input_sha256": "86FF4928A58EECC100EBB3001DF54E5FE34062FA3AEBCEAA512B256E92FF7AAB",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -23,34 +23,31 @@
       "objectives": [
         {
           "n": "fly-through 16",
-          "s": 7
+          "s": 6
         },
         {
           "n": "fly-through 12",
-          "s": 23
+          "s": 22
         },
         {
           "n": "fly-through 13",
-          "s": 40
+          "s": 39
         },
         {
           "n": "pass-through 6",
-          "s": 44
+          "s": 42
         },
         {
           "n": "fly-through 14",
-          "s": 46
-        },
-        {
-          "n": "exit",
-          "s": 51
+          "s": 44
         }
       ],
-      "total_frames": 3035,
+      "total_frames": 7556,
       "rng_end": {
-        "state": 1941426484,
-        "calls": 1763
-      }
+        "state": 2701267033,
+        "calls": 1768
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 2,
@@ -71,7 +68,7 @@
           "s": 11
         }
       ],
-      "total_frames": 5635,
+      "total_frames": 4435,
       "rng_end": {
         "state": 625495087,
         "calls": 698
@@ -94,14 +91,14 @@
         },
         {
           "n": "boss",
-          "s": 10
+          "s": 11
         },
         {
           "n": "exit",
-          "s": 20
+          "s": 22
         }
       ],
-      "total_frames": 1218,
+      "total_frames": 1295,
       "rng_end": {
         "state": 4131908619,
         "calls": 766
@@ -126,7 +123,7 @@
           "s": 17
         }
       ],
-      "total_frames": 1024,
+      "total_frames": 1023,
       "rng_end": {
         "state": 3765068871,
         "calls": 674
@@ -143,7 +140,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 4662,
+      "total_frames": 4658,
       "rng_end": {
         "state": 3453706785,
         "calls": 736
@@ -162,7 +159,7 @@
       "objectives": [
         {
           "n": "pass-through 13",
-          "s": 20
+          "s": 19
         },
         {
           "n": "switch 17",
@@ -170,18 +167,18 @@
         },
         {
           "n": "pass-through 12",
-          "s": 34
+          "s": 33
         },
         {
           "n": "switch 18",
-          "s": 39
+          "s": 38
         },
         {
           "n": "pass-through 10",
           "s": 53
         }
       ],
-      "total_frames": 11097,
+      "total_frames": 10934,
       "rng_end": {
         "state": 1883699947,
         "calls": 5150

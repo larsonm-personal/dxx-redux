@@ -8,8 +8,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 4,
-    "failed": 1,
-    "timeout": 10
+    "failed": 2,
+    "timeout": 9
   },
   "levels": [
     {
@@ -24,11 +24,11 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 16
+          "s": 17
         },
         {
           "n": "red key",
-          "s": 26
+          "s": 27
         },
         {
           "n": "reactor",
@@ -39,7 +39,7 @@
           "s": 38
         }
       ],
-      "total_frames": 2296,
+      "total_frames": 2278,
       "rng_end": {
         "state": 3189206247,
         "calls": 1026
@@ -55,7 +55,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 6297,
+      "total_frames": 6487,
       "rng_end": {
         "state": 319819300,
         "calls": 307
@@ -75,12 +75,16 @@
         {
           "n": "blue key",
           "s": 18
+        },
+        {
+          "n": "switch 12",
+          "s": 35
         }
       ],
-      "total_frames": 4961,
+      "total_frames": 7078,
       "rng_end": {
-        "state": 1356192294,
-        "calls": 641
+        "state": 3977212231,
+        "calls": 1442
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -96,46 +100,46 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 16
+          "s": 15
         },
         {
           "n": "switch 2",
-          "s": 19
+          "s": 17
         },
         {
           "n": "switch 3",
-          "s": 20
+          "s": 18
         },
         {
           "n": "gold key",
-          "s": 27
+          "s": 25
         },
         {
           "n": "red key",
-          "s": 48
+          "s": 45
         },
         {
           "n": "switch 6",
-          "s": 51
+          "s": 48
         },
         {
           "n": "switch 5",
-          "s": 54
+          "s": 50
         },
         {
           "n": "pass-through 9",
-          "s": 73
+          "s": 68
         },
         {
           "n": "reactor",
-          "s": 107
+          "s": 100
         },
         {
           "n": "exit",
-          "s": 114
+          "s": 107
         }
       ],
-      "total_frames": 6815,
+      "total_frames": 6403,
       "rng_end": {
         "state": 2189816399,
         "calls": 2714
@@ -153,35 +157,23 @@
       "objectives": [
         {
           "n": "switch 1",
-          "s": 11
+          "s": 10
         },
         {
           "n": "blue key",
-          "s": 31
+          "s": 30
         },
         {
           "n": "gold key",
-          "s": 76
-        },
-        {
-          "n": "pass-through 3",
-          "s": 152
-        },
-        {
-          "n": "hidden door",
-          "s": 152
-        },
-        {
-          "n": "switch 2",
-          "s": 172
+          "s": 73
         }
       ],
-      "total_frames": 36001,
+      "total_frames": 10974,
       "rng_end": {
-        "state": 2058247299,
-        "calls": 6150
+        "state": 3456028837,
+        "calls": 4828
       },
-      "problem": "route confirmation exceeded 10 simulation minutes"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 6,
@@ -199,13 +191,13 @@
         },
         {
           "n": "switch 6",
-          "s": 33
+          "s": 32
         }
       ],
-      "total_frames": 5597,
+      "total_frames": 7144,
       "rng_end": {
-        "state": 359135893,
-        "calls": 2412
+        "state": 3298833526,
+        "calls": 2417
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -219,7 +211,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 4217,
+      "total_frames": 4193,
       "rng_end": {
         "state": 3524531733,
         "calls": 492
@@ -230,7 +222,7 @@
       "level_num": 8,
       "level_file": "ganeshd.rl2",
       "route_input_sha256": "BB253728FE0ADBF113D9FBBDD3ED5283609A5BF194DD61DE41780FF051C5F1FC",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -246,7 +238,7 @@
         },
         {
           "n": "gold key",
-          "s": 28
+          "s": 29
         },
         {
           "n": "red key",
@@ -255,14 +247,17 @@
         {
           "n": "reactor",
           "s": 68
+        },
+        {
+          "n": "exit",
+          "s": 82
         }
       ],
-      "total_frames": 7714,
+      "total_frames": 4898,
       "rng_end": {
-        "state": 643223998,
-        "calls": 4041
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 877185513,
+        "calls": 4056
+      }
     },
     {
       "level_num": 9,
@@ -280,26 +275,26 @@
         },
         {
           "n": "gold key",
-          "s": 37
+          "s": 39
         },
         {
           "n": "fly-through 23",
-          "s": 85
+          "s": 86
         },
         {
           "n": "hidden door",
-          "s": 85
+          "s": 86
         },
         {
           "n": "switch 15",
-          "s": 85
+          "s": 86
         },
         {
           "n": "red key",
-          "s": 86
+          "s": 88
         }
       ],
-      "total_frames": 5144,
+      "total_frames": 5262,
       "rng_end": {
         "state": 1026127875,
         "calls": 3206
@@ -310,7 +305,7 @@
       "level_num": 10,
       "level_file": "fbasin.rl2",
       "route_input_sha256": "FAE78F8CF319E17AA3D2B72959AB52E587C6F9A6C499F3D7934938B93795BAD2",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -323,33 +318,14 @@
         {
           "n": "gold key",
           "s": 25
-        },
-        {
-          "n": "red key",
-          "s": 40
-        },
-        {
-          "n": "fly-through 6",
-          "s": 40
-        },
-        {
-          "n": "switch 7",
-          "s": 41
-        },
-        {
-          "n": "boss",
-          "s": 67
-        },
-        {
-          "n": "exit",
-          "s": 83
         }
       ],
-      "total_frames": 4999,
+      "total_frames": 5970,
       "rng_end": {
-        "state": 1820422358,
-        "calls": 2705
-      }
+        "state": 3308648524,
+        "calls": 875
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 11,
@@ -367,25 +343,25 @@
         },
         {
           "n": "switch 2",
-          "s": 9
+          "s": 8
         },
         {
           "n": "blue key",
-          "s": 12
+          "s": 11
         },
         {
           "n": "gold key",
-          "s": 45
+          "s": 43
         },
         {
           "n": "fly-through 10",
-          "s": 49
+          "s": 46
         }
       ],
-      "total_frames": 9089,
+      "total_frames": 7671,
       "rng_end": {
-        "state": 3111176122,
-        "calls": 2205
+        "state": 4005048549,
+        "calls": 2204
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -401,10 +377,10 @@
       "objectives": [
         {
           "n": "blastable wall",
-          "s": 32
+          "s": 31
         }
       ],
-      "total_frames": 1925,
+      "total_frames": 1903,
       "rng_end": {
         "state": 1840225874,
         "calls": 869
@@ -415,18 +391,35 @@
       "level_num": 13,
       "level_file": "lvoxonbt.rl2",
       "route_input_sha256": "A99FE8FC0D69FEE0DADA254B0964CB09848D023FFCCCB8789FCB88A34707F798",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4161,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 25
+        },
+        {
+          "n": "switch 0",
+          "s": 44
+        },
+        {
+          "n": "gold key",
+          "s": 48
+        },
+        {
+          "n": "red key",
+          "s": 85
+        }
+      ],
+      "total_frames": 5112,
       "rng_end": {
-        "state": 1758946598,
-        "calls": 897
+        "state": 2433872794,
+        "calls": 2621
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 14,
@@ -440,13 +433,13 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 42
+          "s": 39
         }
       ],
       "total_frames": 36001,
       "rng_end": {
-        "state": 66576503,
-        "calls": 882
+        "state": 623386897,
+        "calls": 880
       },
       "problem": "route confirmation exceeded 10 simulation minutes"
     },
@@ -462,18 +455,18 @@
       "objectives": [
         {
           "n": "pass-through 16",
-          "s": 40
+          "s": 38
         },
         {
           "n": "boss",
-          "s": 62
+          "s": 60
         },
         {
           "n": "exit",
-          "s": 115
+          "s": 110
         }
       ],
-      "total_frames": 6898,
+      "total_frames": 6615,
       "rng_end": {
         "state": 3381675222,
         "calls": 1681

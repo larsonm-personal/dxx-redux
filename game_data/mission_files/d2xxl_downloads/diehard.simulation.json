@@ -22,7 +22,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 529,
+      "total_frames": 527,
       "rng_end": {
         "state": 1116175964,
         "calls": 27
@@ -61,13 +61,13 @@
         },
         {
           "n": "exit",
-          "s": 73
+          "s": 72
         }
       ],
-      "total_frames": 4370,
+      "total_frames": 4344,
       "rng_end": {
-        "state": 2895563420,
-        "calls": 1755
+        "state": 552378116,
+        "calls": 1747
       }
     },
     {
@@ -90,14 +90,14 @@
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 56
+          "s": 55
         },
         {
           "n": "switch 17",
-          "s": 68
+          "s": 67
         }
       ],
-      "total_frames": 4913,
+      "total_frames": 4886,
       "rng_end": {
         "state": 696687669,
         "calls": 1740
@@ -116,10 +116,10 @@
       "objectives": [
         {
           "n": "switch 4",
-          "s": 42
+          "s": 39
         }
       ],
-      "total_frames": 7622,
+      "total_frames": 7962,
       "rng_end": {
         "state": 4028954632,
         "calls": 1375
@@ -149,7 +149,7 @@
           "s": 37
         }
       ],
-      "total_frames": 2247,
+      "total_frames": 2243,
       "rng_end": {
         "state": 3984842223,
         "calls": 1274
@@ -170,7 +170,7 @@
           "s": 18
         }
       ],
-      "total_frames": 5048,
+      "total_frames": 5044,
       "rng_end": {
         "state": 1684271235,
         "calls": 1030
@@ -200,7 +200,7 @@
           "s": 40
         }
       ],
-      "total_frames": 2865,
+      "total_frames": 2838,
       "rng_end": {
         "state": 4158889185,
         "calls": 1568
@@ -234,7 +234,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 801,
+      "total_frames": 785,
       "rng_end": {
         "state": 3075635823,
         "calls": 122
@@ -253,21 +253,21 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 9
+          "s": 8
         },
         {
           "n": "pass-through 0",
-          "s": 17
+          "s": 15
         },
         {
           "n": "pass-through 6",
-          "s": 17
+          "s": 16
         }
       ],
-      "total_frames": 1847,
+      "total_frames": 1781,
       "rng_end": {
-        "state": 699525189,
-        "calls": 572
+        "state": 3818017060,
+        "calls": 563
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -281,7 +281,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 525,
+      "total_frames": 523,
       "rng_end": {
         "state": 3040535893,
         "calls": 172
@@ -334,21 +334,21 @@
         },
         {
           "n": "hidden door",
-          "s": 48
+          "s": 49
         },
         {
           "n": "switch 1",
-          "s": 48
+          "s": 49
         },
         {
           "n": "exit",
-          "s": 67
+          "s": 68
         }
       ],
-      "total_frames": 4032,
+      "total_frames": 4068,
       "rng_end": {
-        "state": 868726942,
-        "calls": 1129
+        "state": 3551035395,
+        "calls": 1158
       }
     },
     {
@@ -444,7 +444,7 @@
           "s": 29
         }
       ],
-      "total_frames": 3016,
+      "total_frames": 2982,
       "rng_end": {
         "state": 3061904516,
         "calls": 851
@@ -461,7 +461,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 720,
+      "total_frames": 717,
       "rng_end": {
         "state": 3885567453,
         "calls": 100
@@ -478,7 +478,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 832,
+      "total_frames": 823,
       "rng_end": {
         "state": 2881533255,
         "calls": 418
@@ -495,7 +495,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 687,
+      "total_frames": 675,
       "rng_end": {
         "state": 43796357,
         "calls": 252

@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
-    "timeout": 2,
+    "ok": 2,
+    "timeout": 3,
     "route_mismatch": 1
   },
   "levels": [
@@ -28,7 +28,7 @@
         },
         {
           "n": "switch 1",
-          "s": 29
+          "s": 28
         },
         {
           "n": "gold key",
@@ -36,28 +36,28 @@
         },
         {
           "n": "red key",
-          "s": 96
+          "s": 95
         },
         {
           "n": "boss",
-          "s": 128
+          "s": 126
         },
         {
           "n": "exit",
-          "s": 141
+          "s": 139
         }
       ],
-      "total_frames": 8435,
+      "total_frames": 8339,
       "rng_end": {
-        "state": 1589490602,
-        "calls": 3437
+        "state": 1124039579,
+        "calls": 3438
       }
     },
     {
       "level_num": 2,
       "level_file": "phobos2.rl2",
       "route_input_sha256": "C2D418D7CFCB76273C5F75ADE01BA7D9643628D90C754AD375186A6A4F5CB77C",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -73,22 +73,15 @@
         },
         {
           "n": "red key",
-          "s": 92
-        },
-        {
-          "n": "boss",
-          "s": 142
-        },
-        {
-          "n": "exit",
-          "s": 148
+          "s": 90
         }
       ],
-      "total_frames": 8859,
+      "total_frames": 9633,
       "rng_end": {
-        "state": 1246998880,
-        "calls": 3879
-      }
+        "state": 1231614670,
+        "calls": 3321
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 3,
@@ -102,7 +95,7 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 23
+          "s": 22
         },
         {
           "n": "switch 1",
@@ -110,21 +103,21 @@
         },
         {
           "n": "gold key",
-          "s": 57
+          "s": 56
         },
         {
           "n": "switch 0",
-          "s": 87
+          "s": 86
         },
         {
           "n": "red key",
-          "s": 89
+          "s": 87
         }
       ],
-      "total_frames": 6622,
+      "total_frames": 6516,
       "rng_end": {
-        "state": 2049385582,
-        "calls": 2521
+        "state": 3866165955,
+        "calls": 2502
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -144,13 +137,13 @@
         },
         {
           "n": "red key",
-          "s": 49
+          "s": 48
         }
       ],
       "total_frames": 36001,
       "rng_end": {
-        "state": 2715074907,
-        "calls": 1966
+        "state": 3901011787,
+        "calls": 1982
       },
       "problem": "live objective sequence differs from route input"
     },
@@ -164,7 +157,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 5153,
+      "total_frames": 5132,
       "rng_end": {
         "state": 2303754503,
         "calls": 482
@@ -183,14 +176,14 @@
       "objectives": [
         {
           "n": "boss",
-          "s": 14
+          "s": 13
         },
         {
           "n": "exit",
           "s": 17
         }
       ],
-      "total_frames": 1038,
+      "total_frames": 1015,
       "rng_end": {
         "state": 3320089730,
         "calls": 245

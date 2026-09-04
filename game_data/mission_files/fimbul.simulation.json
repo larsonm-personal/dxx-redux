@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 1,
-    "timeout": 2
+    "ok": 2,
+    "timeout": 1
   },
   "levels": [
     {
@@ -23,14 +23,14 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 16
+          "s": 14
         },
         {
           "n": "blastable wall",
-          "s": 38
+          "s": 36
         }
       ],
-      "total_frames": 2309,
+      "total_frames": 2178,
       "rng_end": {
         "state": 2946671141,
         "calls": 1372
@@ -53,42 +53,42 @@
         },
         {
           "n": "switch 1",
-          "s": 29
+          "s": 28
         },
         {
           "n": "switch 6",
-          "s": 46
+          "s": 44
         },
         {
           "n": "blue key",
-          "s": 54
+          "s": 52
         },
         {
           "n": "switch 2",
-          "s": 68
+          "s": 67
         },
         {
           "n": "gold key",
-          "s": 98
+          "s": 96
         },
         {
           "n": "switch 13",
-          "s": 128
+          "s": 126
         },
         {
           "n": "red key",
-          "s": 141
+          "s": 138
         },
         {
           "n": "reactor",
-          "s": 155
+          "s": 152
         },
         {
           "n": "exit",
-          "s": 168
+          "s": 165
         }
       ],
-      "total_frames": 10107,
+      "total_frames": 9907,
       "rng_end": {
         "state": 759157142,
         "calls": 5329
@@ -98,18 +98,46 @@
       "level_num": 3,
       "level_file": "icemaid1.rl2",
       "route_input_sha256": "DD141B2570CBFF2301B77A35E8960DA6698ECA7C1D27DAE7F0B05EEE2FCA4EDF",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 5721,
+      "objectives": [
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 65
+        },
+        {
+          "n": "gold key",
+          "s": 92
+        },
+        {
+          "n": "red key",
+          "s": 135
+        },
+        {
+          "n": "fly-through 5",
+          "s": 140
+        },
+        {
+          "n": "switch 2",
+          "s": 141
+        },
+        {
+          "n": "boss",
+          "s": 158
+        },
+        {
+          "n": "exit",
+          "s": 166
+        }
+      ],
+      "total_frames": 9943,
       "rng_end": {
-        "state": 78769249,
-        "calls": 672
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1910688535,
+        "calls": 2770
+      }
     }
   ]
 }

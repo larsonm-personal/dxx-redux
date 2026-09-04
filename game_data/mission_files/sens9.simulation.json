@@ -61,7 +61,7 @@
           "s": 3
         }
       ],
-      "total_frames": 743,
+      "total_frames": 710,
       "rng_end": {
         "state": 2225544632,
         "calls": 239
@@ -108,26 +108,26 @@
         },
         {
           "n": "hidden door",
-          "s": 36
+          "s": 37
         },
         {
           "n": "switch 11",
-          "s": 36
+          "s": 37
         },
         {
           "n": "red key",
-          "s": 46
+          "s": 45
         },
         {
           "n": "hidden door",
-          "s": 67
+          "s": 66
         },
         {
           "n": "reactor",
-          "s": 73
+          "s": 71
         }
       ],
-      "total_frames": 5687,
+      "total_frames": 5576,
       "rng_end": {
         "state": 134241830,
         "calls": 3713

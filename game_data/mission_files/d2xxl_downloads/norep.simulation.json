@@ -22,26 +22,26 @@
       "objectives": [
         {
           "n": "switch 8",
-          "s": 26
+          "s": 25
         },
         {
           "n": "switch 0",
-          "s": 34
+          "s": 32
         },
         {
           "n": "switch 1",
-          "s": 35
+          "s": 33
         },
         {
           "n": "switch 14",
-          "s": 40
+          "s": 38
         },
         {
           "n": "blue key",
-          "s": 46
+          "s": 43
         }
       ],
-      "total_frames": 3788,
+      "total_frames": 3621,
       "rng_end": {
         "state": 2919826395,
         "calls": 1326

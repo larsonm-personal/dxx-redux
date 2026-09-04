@@ -27,7 +27,7 @@
           "s": 22
         }
       ],
-      "total_frames": 1794,
+      "total_frames": 1775,
       "rng_end": {
         "state": 3507574849,
         "calls": 448
@@ -53,7 +53,7 @@
           "s": 22
         }
       ],
-      "total_frames": 1336,
+      "total_frames": 1304,
       "rng_end": {
         "state": 1812429809,
         "calls": 912
@@ -76,14 +76,14 @@
         },
         {
           "n": "switch 1",
-          "s": 19
+          "s": 20
         },
         {
           "n": "blastable wall",
           "s": 34
         }
       ],
-      "total_frames": 2086,
+      "total_frames": 2089,
       "rng_end": {
         "state": 1278060811,
         "calls": 1534
@@ -102,38 +102,38 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 23
+          "s": 22
         },
         {
           "n": "gold key",
-          "s": 59
+          "s": 63
         },
         {
           "n": "switch 7",
-          "s": 74
+          "s": 78
         },
         {
           "n": "switch 8",
-          "s": 99
+          "s": 102
         },
         {
           "n": "switch 9",
-          "s": 108
+          "s": 111
         },
         {
           "n": "red key",
-          "s": 117
+          "s": 120
         },
         {
           "n": "reactor",
-          "s": 137
+          "s": 140
         },
         {
           "n": "exit",
-          "s": 149
+          "s": 153
         }
       ],
-      "total_frames": 8930,
+      "total_frames": 9171,
       "rng_end": {
         "state": 1210657932,
         "calls": 4651
@@ -168,21 +168,21 @@
       "objectives": [
         {
           "n": "switch 4",
-          "s": 20
+          "s": 19
         },
         {
           "n": "reactor",
-          "s": 28
+          "s": 27
         },
         {
           "n": "exit",
-          "s": 37
+          "s": 36
         }
       ],
-      "total_frames": 2200,
+      "total_frames": 2166,
       "rng_end": {
-        "state": 3014832133,
-        "calls": 1148
+        "state": 3274223484,
+        "calls": 1147
       }
     },
     {

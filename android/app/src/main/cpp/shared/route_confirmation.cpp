@@ -1487,12 +1487,18 @@ extern "C" void route_confirmation_after_frame(void)
 				}
 				fprintf(stderr,
 				        "ROUTE-CONFIRM path i=%d seg=%d side=%d wall=%d type=%d "
-				        "state=%d flags=%d keys=%d%s\n",
+				        "state=%d flags=%d keys=%d point=(%d,%d,%d) "
+				        "actor_dist=%d%s\n",
 				        path_index, path_seg, path_side, path_wall,
 				        path_wall >= 0 ? Walls[path_wall].type : -1,
 				        path_wall >= 0 ? Walls[path_wall].state : -1,
 				        path_wall >= 0 ? Walls[path_wall].flags : 0,
 				        path_wall >= 0 ? Walls[path_wall].keys : 0,
+				        Point_segs[point_index].point.x,
+				        Point_segs[point_index].point.y,
+				        Point_segs[point_index].point.z,
+				        vm_vec_dist_quick(&actor->pos,
+				                          &Point_segs[point_index].point),
 				        path_index == actor->ctype.ai_info.cur_path_index ? " current" : "");
 			}
 			fprintf(stderr,

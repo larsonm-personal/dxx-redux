@@ -41,19 +41,19 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 44
+          "s": 43
         },
         {
           "n": "switch 1",
-          "s": 73
+          "s": 76
         },
         {
           "n": "gold key",
-          "s": 84
+          "s": 86
         },
         {
           "n": "red key",
-          "s": 114
+          "s": 115
         },
         {
           "n": "boss",
@@ -64,10 +64,10 @@
           "s": 154
         }
       ],
-      "total_frames": 9215,
+      "total_frames": 9240,
       "rng_end": {
-        "state": 3628576993,
-        "calls": 4640
+        "state": 3772951437,
+        "calls": 4916
       }
     },
     {
@@ -82,21 +82,21 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 52
+          "s": 50
         },
         {
           "n": "gold key",
-          "s": 125
+          "s": 120
         },
         {
           "n": "red key",
-          "s": 201
+          "s": 198
         }
       ],
-      "total_frames": 12067,
+      "total_frames": 11887,
       "rng_end": {
-        "state": 2034759081,
-        "calls": 4632
+        "state": 2955309015,
+        "calls": 4626
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -116,13 +116,13 @@
         },
         {
           "n": "red key",
-          "s": 79
+          "s": 77
         }
       ],
-      "total_frames": 8177,
+      "total_frames": 7904,
       "rng_end": {
-        "state": 3707538854,
-        "calls": 3329
+        "state": 1382109136,
+        "calls": 3319
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -142,10 +142,10 @@
         },
         {
           "n": "gold key",
-          "s": 92
+          "s": 90
         }
       ],
-      "total_frames": 12494,
+      "total_frames": 11017,
       "rng_end": {
         "state": 202834805,
         "calls": 3468
@@ -162,10 +162,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 7447,
+      "total_frames": 7330,
       "rng_end": {
-        "state": 2920974234,
-        "calls": 1597
+        "state": 1114955951,
+        "calls": 1594
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }
