@@ -8,9 +8,9 @@
     "seed": 1,
     "status": "partial",
     "level_counts": {
-      "ok": 17,
+      "ok": 18,
       "failed": 1,
-      "timeout": 12
+      "timeout": 11
     },
     "levels": [
       {
@@ -413,10 +413,10 @@
             "s": 1
           }
         ],
-        "total_frames": 805,
+        "total_frames": 742,
         "rng_end": {
-          "state": 300568396,
-          "calls": 107
+          "state": 1187663298,
+          "calls": 181
         },
         "problem": "physical route frontier did not open after 8 interaction attempts"
       },
@@ -578,7 +578,7 @@
         "level_num": 16,
         "level_file": "psx16.rl2",
         "route_input_sha256": "4799F671B78B7B6AE1E6744C74F5148067ED009AF3B38423189A168FA9D29681",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -611,14 +611,21 @@
           {
             "n": "blastable wall",
             "s": 48
+          },
+          {
+            "n": "switch 11",
+            "s": 51
+          },
+          {
+            "n": "exit",
+            "s": 67
           }
         ],
-        "total_frames": 3332,
+        "total_frames": 4037,
         "rng_end": {
-          "state": 3166007986,
-          "calls": 645
-        },
-        "problem": "physical route frontier did not open after 8 interaction attempts"
+          "state": 2426163063,
+          "calls": 1138
+        }
       },
       {
         "level_num": 17,
@@ -778,7 +785,7 @@
             "s": 90
           }
         ],
-        "total_frames": 5418,
+        "total_frames": 5402,
         "rng_end": {
           "state": 3136488723,
           "calls": 2934
@@ -1152,10 +1159,9 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "partial",
+    "status": "ok",
     "level_counts": {
-      "ok": 5,
-      "timeout": 1
+      "ok": 6
     },
     "levels": [
       {
@@ -1274,18 +1280,30 @@
         "level_num": 5,
         "level_file": "psxlink5.rl2",
         "route_input_sha256": "00A57CE9A808DA9C572A8C36869B343C72D0CD2EB73959DE62DDCB0AAB6D7B4E",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 2641,
+        "objectives": [
+          {
+            "n": "fly-through 2",
+            "s": 1
+          },
+          {
+            "n": "reactor",
+            "s": 1
+          },
+          {
+            "n": "exit",
+            "s": 3
+          }
+        ],
+        "total_frames": 150,
         "rng_end": {
-          "state": 2122112351,
-          "calls": 138
-        },
-        "problem": "route confirmation exceeded 44-second simulation budget"
+          "state": 2711556952,
+          "calls": 207
+        }
       },
       {
         "level_num": 6,

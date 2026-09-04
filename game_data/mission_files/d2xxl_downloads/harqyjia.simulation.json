@@ -75,13 +75,94 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 5610,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 34
+        },
+        {
+          "n": "switch 32",
+          "s": 67
+        },
+        {
+          "n": "switch 40",
+          "s": 75
+        },
+        {
+          "n": "fly-through 10",
+          "s": 88
+        },
+        {
+          "n": "hidden door",
+          "s": 88
+        },
+        {
+          "n": "switch 9",
+          "s": 89
+        },
+        {
+          "n": "hidden door",
+          "s": 89
+        },
+        {
+          "n": "switch 8",
+          "s": 90
+        },
+        {
+          "n": "switch 41",
+          "s": 91
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 171
+        },
+        {
+          "n": "pass-through 15",
+          "s": 174
+        },
+        {
+          "n": "hidden door",
+          "s": 174
+        },
+        {
+          "n": "switch 42",
+          "s": 175
+        },
+        {
+          "n": "pass-through 47",
+          "s": 175
+        },
+        {
+          "n": "switch 53",
+          "s": 191
+        },
+        {
+          "n": "fly-through 49",
+          "s": 197
+        },
+        {
+          "n": "fly-through 50",
+          "s": 198
+        },
+        {
+          "n": "fly-through 48",
+          "s": 199
+        },
+        {
+          "n": "switch 63",
+          "s": 203
+        },
+        {
+          "n": "red key",
+          "s": 215
+        }
+      ],
+      "total_frames": 14598,
       "rng_end": {
-        "state": 3866404266,
-        "calls": 877
+        "state": 2056152567,
+        "calls": 5618
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 3,

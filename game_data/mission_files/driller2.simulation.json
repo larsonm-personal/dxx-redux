@@ -25,14 +25,30 @@
         {
           "n": "blastable wall",
           "s": 7
+        },
+        {
+          "n": "blue key",
+          "s": 11
+        },
+        {
+          "n": "gold key",
+          "s": 26
+        },
+        {
+          "n": "red key",
+          "s": 35
+        },
+        {
+          "n": "reactor",
+          "s": 42
         }
       ],
-      "total_frames": 921,
+      "total_frames": 7741,
       "rng_end": {
-        "state": 1814397249,
-        "calls": 192
+        "state": 1970098540,
+        "calls": 1995
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "route confirmation exceeded 129-second simulation budget"
     },
     {
       "level_num": 2,
@@ -214,10 +230,10 @@
           "s": 19
         }
       ],
-      "total_frames": 1636,
+      "total_frames": 1563,
       "rng_end": {
-        "state": 742793987,
-        "calls": 390
+        "state": 1151322306,
+        "calls": 437
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

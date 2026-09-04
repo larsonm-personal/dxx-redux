@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 20,
-    "timeout": 12
+    "ok": 21,
+    "timeout": 11
   },
   "levels": [
     {
@@ -521,7 +521,7 @@
       "level_num": 15,
       "level_file": "level15.rl2",
       "route_input_sha256": "C621CB10B8E2E261F1847B095FCEE4A1025C81D0BE3DA0C8DCAFC26CDB5F90B9",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -546,14 +546,25 @@
         {
           "n": "blastable wall",
           "s": 70
+        },
+        {
+          "n": "hidden door",
+          "s": 76
+        },
+        {
+          "n": "boss",
+          "s": 82
+        },
+        {
+          "n": "exit",
+          "s": 84
         }
       ],
-      "total_frames": 4650,
+      "total_frames": 5068,
       "rng_end": {
-        "state": 3408328663,
-        "calls": 2578
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 3643469303,
+        "calls": 3570
+      }
     },
     {
       "level_num": 16,
@@ -732,10 +743,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 5460,
+      "total_frames": 5473,
       "rng_end": {
-        "state": 4120937883,
-        "calls": 878
+        "state": 3866404266,
+        "calls": 877
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -874,14 +885,22 @@
         {
           "n": "blue key",
           "s": 14
+        },
+        {
+          "n": "gold key",
+          "s": 29
+        },
+        {
+          "n": "fly-through 11",
+          "s": 43
         }
       ],
-      "total_frames": 5029,
+      "total_frames": 16501,
       "rng_end": {
-        "state": 3258630601,
-        "calls": 1784
+        "state": 3820032300,
+        "calls": 21771
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "route confirmation exceeded 275-second simulation budget"
     },
     {
       "level_num": -1,

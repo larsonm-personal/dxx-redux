@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 1,
-    "timeout": 2,
+    "ok": 2,
+    "timeout": 1,
     "unsupported": 1
   },
   "levels": [
@@ -76,7 +76,7 @@
       "level_num": 3,
       "level_file": "shremple.rl2",
       "route_input_sha256": "2B572DE3690296CA9B21603299D46FB5C8FA59A79A15DF3B3E612E93DF98C578",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -93,14 +93,29 @@
         {
           "n": "switch 28",
           "s": 10
+        },
+        {
+          "n": "gold key",
+          "s": 35
+        },
+        {
+          "n": "red key",
+          "s": 64
+        },
+        {
+          "n": "reactor",
+          "s": 85
+        },
+        {
+          "n": "exit",
+          "s": 98
         }
       ],
-      "total_frames": 4589,
+      "total_frames": 5859,
       "rng_end": {
-        "state": 3580241508,
-        "calls": 1011
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1631271608,
+        "calls": 4079
+      }
     },
     {
       "level_num": -1,

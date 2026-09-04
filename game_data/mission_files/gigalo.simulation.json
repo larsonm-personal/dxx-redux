@@ -301,10 +301,10 @@
           "calls": 0
         },
         "objectives": [],
-        "total_frames": 6895,
+        "total_frames": 7205,
         "rng_end": {
-          "state": 3547338501,
-          "calls": 1404
+          "state": 1234143972,
+          "calls": 1395
         },
         "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }

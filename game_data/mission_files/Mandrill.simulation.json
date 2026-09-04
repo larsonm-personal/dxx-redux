@@ -83,12 +83,12 @@
           "s": 34
         }
       ],
-      "total_frames": 2535,
+      "total_frames": 10201,
       "rng_end": {
-        "state": 3483296817,
-        "calls": 1360
+        "state": 2975631653,
+        "calls": 1628
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "route confirmation exceeded 170-second simulation budget"
     },
     {
       "level_num": 4,

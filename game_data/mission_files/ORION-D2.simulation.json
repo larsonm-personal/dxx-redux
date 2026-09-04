@@ -8,8 +8,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 3,
-    "failed": 2,
-    "timeout": 3
+    "failed": 3,
+    "timeout": 2
   },
   "levels": [
     {
@@ -33,12 +33,16 @@
         {
           "n": "gold key",
           "s": 41
+        },
+        {
+          "n": "fly-through 0",
+          "s": 67
         }
       ],
-      "total_frames": 7884,
+      "total_frames": 7650,
       "rng_end": {
-        "state": 2796758462,
-        "calls": 3017
+        "state": 1217407189,
+        "calls": 4396
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -46,7 +50,7 @@
       "level_num": 2,
       "level_file": "level02.rl2",
       "route_input_sha256": "996BD6EEE95579CF04CECC52C5B7F0F538919A5F5C656DD825107D5DCFC7C600",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -55,14 +59,18 @@
         {
           "n": "blue key",
           "s": 18
+        },
+        {
+          "n": "gold key",
+          "s": 36
         }
       ],
-      "total_frames": 5403,
+      "total_frames": 2174,
       "rng_end": {
-        "state": 1195529845,
-        "calls": 652
+        "state": 2706250699,
+        "calls": 830
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 3,

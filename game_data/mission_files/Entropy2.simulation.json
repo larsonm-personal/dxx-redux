@@ -124,12 +124,20 @@
         {
           "n": "blastable wall",
           "s": 17
+        },
+        {
+          "n": "blue key",
+          "s": 19
+        },
+        {
+          "n": "switch 2",
+          "s": 23
         }
       ],
-      "total_frames": 1469,
+      "total_frames": 2505,
       "rng_end": {
-        "state": 875936247,
-        "calls": 498
+        "state": 2684313047,
+        "calls": 1042
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

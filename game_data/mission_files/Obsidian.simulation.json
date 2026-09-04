@@ -106,11 +106,36 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 687,
+      "objectives": [
+        {
+          "n": "fly-through 6",
+          "s": 8
+        },
+        {
+          "n": "fly-through 7",
+          "s": 10
+        },
+        {
+          "n": "blastable wall",
+          "s": 10
+        },
+        {
+          "n": "blastable wall",
+          "s": 19
+        },
+        {
+          "n": "fly-through 8",
+          "s": 23
+        },
+        {
+          "n": "blastable wall",
+          "s": 26
+        }
+      ],
+      "total_frames": 2276,
       "rng_end": {
-        "state": 3493013978,
-        "calls": 253
+        "state": 1374657230,
+        "calls": 1273
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -511,12 +536,16 @@
         {
           "n": "fly-through 2",
           "s": 14
+        },
+        {
+          "n": "fly-through 15",
+          "s": 25
         }
       ],
-      "total_frames": 5080,
+      "total_frames": 6486,
       "rng_end": {
-        "state": 1410849802,
-        "calls": 1165
+        "state": 1179259537,
+        "calls": 3568
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },

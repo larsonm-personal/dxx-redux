@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 6,
-    "timeout": 6
+    "ok": 8,
+    "timeout": 4
   },
   "levels": [
     {
@@ -110,7 +110,7 @@
       "level_num": 3,
       "level_file": "level3.rl2",
       "route_input_sha256": "E07733D7144CFE9856AF441121F4076E1B58F0489F62511EE8845E8CE39B3497",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -131,14 +131,49 @@
         {
           "n": "blastable wall",
           "s": 58
+        },
+        {
+          "n": "blastable wall",
+          "s": 63
+        },
+        {
+          "n": "red key",
+          "s": 87
+        },
+        {
+          "n": "switch 12",
+          "s": 126
+        },
+        {
+          "n": "switch 15",
+          "s": 129
+        },
+        {
+          "n": "switch 13",
+          "s": 137
+        },
+        {
+          "n": "fly-through 21",
+          "s": 144
+        },
+        {
+          "n": "switch 22",
+          "s": 152
+        },
+        {
+          "n": "reactor",
+          "s": 153
+        },
+        {
+          "n": "exit",
+          "s": 168
         }
       ],
-      "total_frames": 3985,
+      "total_frames": 10054,
       "rng_end": {
-        "state": 3938815745,
-        "calls": 2304
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 264174521,
+        "calls": 7816
+      }
     },
     {
       "level_num": 4,
@@ -448,7 +483,7 @@
       "level_num": 11,
       "level_file": "finisis.rl2",
       "route_input_sha256": "8E86D309C3A544F61C4C2AF45FFC4AC13B0A0F1516E85412F2DA624063F847CE",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -473,14 +508,25 @@
         {
           "n": "blastable wall",
           "s": 38
+        },
+        {
+          "n": "blastable wall",
+          "s": 47
+        },
+        {
+          "n": "boss",
+          "s": 56
+        },
+        {
+          "n": "exit",
+          "s": 99
         }
       ],
-      "total_frames": 2743,
+      "total_frames": 5938,
       "rng_end": {
-        "state": 232553092,
-        "calls": 1363
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 2884796811,
+        "calls": 3454
+      }
     },
     {
       "level_num": -1,
@@ -511,12 +557,16 @@
         {
           "n": "blastable wall",
           "s": 110
+        },
+        {
+          "n": "red key",
+          "s": 119
         }
       ],
-      "total_frames": 7083,
+      "total_frames": 8587,
       "rng_end": {
-        "state": 1551763927,
-        "calls": 6162
+        "state": 3633550424,
+        "calls": 7119
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     }

@@ -47,6 +47,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "escort_goal_policy.h"
 #include "guidebot_route_internal.h"
 #include "secretarea.h"
+#include "switch.h"
 #endif
 
 #define	PARALLAX	0		//	If !0, then special debugging for Parallax eyes enabled.
@@ -290,6 +291,98 @@ if (vm_vec_mag_quick(&e) < F1_0/2)
 //	like to say that it ensures that the object can move between the points, but that would require knowing what
 //	the object is (which isn't passed, right?) and making fvi calls (slow, right?).  So, consider it the more_or_less_safe_flag.
 //	If end_seg == -2, then end seg will never be found and this routine will drop out due to depth (probably called by create_n_segment_path).
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+static int guidebot_route_wall_is_passable(void *user, int seg, int side)
+{
+	(void) user;
+	return level_metadata_guidebot_side_passable_current(seg, side);
+}
+
+static int guidebot_route_hit_is_closed_trigger_barrier(
+	const fvi_info *hit_data)
+{
+	int trigger_num;
+	int wall_num;
+
+	if (!hit_data || hit_data->hit_type != HIT_WALL ||
+	    hit_data->hit_side_seg < 0 ||
+	    hit_data->hit_side_seg > Highest_segment_index ||
+	    hit_data->hit_side < 0 ||
+	    hit_data->hit_side >= MAX_SIDES_PER_SEGMENT)
+		return 0;
+	wall_num = Segments[hit_data->hit_side_seg]
+	               .sides[hit_data->hit_side]
+	               .wall_num;
+	if (wall_num < 0 || wall_num >= Num_walls ||
+	    Walls[wall_num].type != WALL_CLOSED)
+		return 0;
+	for (trigger_num = 0; trigger_num < Num_triggers; ++trigger_num) {
+		int link;
+		if (Triggers[trigger_num].type != TT_OPEN_WALL ||
+		    (Triggers[trigger_num].flags & TF_DISABLED))
+			continue;
+		for (link = 0; link < Triggers[trigger_num].num_links; ++link)
+			if (Triggers[trigger_num].seg[link] ==
+			        hit_data->hit_side_seg &&
+			    Triggers[trigger_num].side[link] == hit_data->hit_side)
+				return 1;
+	}
+	return 0;
+}
+
+static int guidebot_route_find_blocked_segment(object *objp, point_seg *psegs,
+	int num_points, int start_seg, int end_seg, int *avoid_segment)
+{
+	int i;
+	fix radius;
+
+	if (!objp || !psegs || num_points < 2 || !avoid_segment)
+		return 0;
+	radius = objp->size;
+	if (ConsoleObject && ConsoleObject->size > radius)
+		radius = ConsoleObject->size;
+	for (i = 0; i + 1 < num_points; ++i) {
+		fvi_info hit_data;
+		fvi_query query;
+		int hit_type;
+		int blocked_segment;
+
+		memset(&query, 0, sizeof(query));
+		memset(&hit_data, 0, sizeof(hit_data));
+		query.p0 = &psegs[i].point;
+		query.p1 = &psegs[i + 1].point;
+		query.startseg = psegs[i].segnum;
+		query.rad = radius;
+		query.thisobjnum = objp - Objects;
+		query.flags = FQ_PASSABLE_WALL_CALLBACK;
+		query.wall_is_passable = guidebot_route_wall_is_passable;
+		hit_type = find_vector_intersection(&query, &hit_data);
+		if (hit_type == HIT_NONE)
+			continue;
+		if (!guidebot_route_hit_is_closed_trigger_barrier(&hit_data))
+			continue;
+		/* A collision against an unrelated side of the segment being left can
+		 * be a harmless consequence of move_towards_outside.  The failure this
+		 * recovery addresses is an unoccupiable destination waypoint whose
+		 * collision shell overlaps a still-closed, trigger-retractable wall. */
+		if (hit_data.hit_side_seg != psegs[i + 1].segnum)
+			continue;
+		/* Avoid the interior segment reached by this bad leg.  Avoiding only
+		 * the crossed edge can let the breadth-first search enter the same
+		 * too-tight pocket from its other side on the retry. */
+		blocked_segment = psegs[i + 1].segnum;
+		if (blocked_segment == start_seg || blocked_segment == end_seg)
+			blocked_segment = psegs[i].segnum;
+		if (blocked_segment == start_seg || blocked_segment == end_seg ||
+		    blocked_segment < 0 || blocked_segment > Highest_segment_index)
+			continue;
+		*avoid_segment = blocked_segment;
+		return 1;
+	}
+	return 0;
+}
+#endif
+
 static int create_path_points_avoiding(object *objp, int start_seg, int end_seg, point_seg *psegs, short *num_points, int max_depth, int random_flag, int safety_flag, int avoid_seg, int avoid_seg2, int avoid_edge_from, int avoid_edge_to, int avoid_edge_from2, int avoid_edge_to2, int guidebot_route)
 {
 	int		cur_seg;
@@ -564,6 +657,30 @@ cpp_done1: ;
 	if (objp->type == OBJ_ROBOT)
 		if (Robot_info[objp->id].companion)
 			move_towards_outside(original_psegs, &l_num_points, objp, 0);
+
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	if (guidebot_route) {
+		int blocked_segment;
+		if (guidebot_route_find_blocked_segment(
+		        objp, original_psegs, l_num_points, start_seg, end_seg,
+		        &blocked_segment)) {
+			if (avoid_seg == -1)
+				return create_path_points_avoiding(
+				    objp, start_seg, end_seg, original_psegs, num_points,
+				    max_depth, random_flag, safety_flag, blocked_segment,
+				    avoid_seg2, avoid_edge_from, avoid_edge_to,
+				    avoid_edge_from2, avoid_edge_to2, guidebot_route);
+			if (avoid_seg2 == -1 && blocked_segment != avoid_seg)
+				return create_path_points_avoiding(
+				    objp, start_seg, end_seg, original_psegs, num_points,
+				    max_depth, random_flag, safety_flag, avoid_seg,
+				    blocked_segment, avoid_edge_from, avoid_edge_to,
+				    avoid_edge_from2, avoid_edge_to2, guidebot_route);
+		}
+	}
+#else
+	(void) guidebot_route;
+#endif
 
 #if PATH_VALIDATION
 	validate_path(4, original_psegs, l_num_points);
@@ -1292,6 +1409,16 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 
 		//	See if next point wraps past end of path (in either direction), and if so, deal with it based on mode.
 		if ((aip->cur_path_index >= aip->path_length) || (aip->cur_path_index < 0)) {
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+			/* An active Guide-Bot objective is a one-way route.  The legacy
+			 * follower otherwise turns an AIM_GOTO_OBJECT path into a patrol by
+			 * reversing it as soon as the final waypoint is accepted.  Hold the
+			 * endpoint so the route driver can approach and complete the target. */
+			if (Escort_route_goal.active && aip->PATH_DIR > 0) {
+				aip->cur_path_index = aip->path_length - 1;
+				break;
+			}
+#endif
 			if (input_demo_replay_follow_probe_active(objp))
 				input_demo_log_follow_wrap(objp, player_visibility);
 			if (input_demo_replay_follow_probe_active(objp))

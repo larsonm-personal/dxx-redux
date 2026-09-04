@@ -5,17 +5,18 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
+    "ok": 1,
     "failed": 1,
-    "timeout": 4
+    "timeout": 3
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "kcxf201.rl2",
       "route_input_sha256": "CC76AA757B72FCBE824507F660287D48318275904E4F5A54311FD7060B81E8DB",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -28,14 +29,17 @@
         {
           "n": "blastable wall",
           "s": 50
+        },
+        {
+          "n": "exit",
+          "s": 52
         }
       ],
-      "total_frames": 3464,
+      "total_frames": 3098,
       "rng_end": {
-        "state": 2875035323,
-        "calls": 590
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 2078627975,
+        "calls": 610
+      }
     },
     {
       "level_num": 2,
@@ -47,10 +51,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 5424,
+      "total_frames": 5429,
       "rng_end": {
-        "state": 4031738486,
-        "calls": 881
+        "state": 3389348384,
+        "calls": 871
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -131,10 +135,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 5664,
+      "total_frames": 9553,
       "rng_end": {
-        "state": 2915528778,
-        "calls": 1357
+        "state": 770111590,
+        "calls": 1345
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

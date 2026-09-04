@@ -8,9 +8,9 @@
     "seed": 1,
     "status": "partial",
     "level_counts": {
-      "ok": 3,
+      "ok": 4,
       "failed": 1,
-      "timeout": 3,
+      "timeout": 2,
       "route_mismatch": 1
     },
     "levels": [
@@ -63,7 +63,7 @@
         "level_num": 2,
         "level_file": "world1b.rl2",
         "route_input_sha256": "369F5219E2C65A11B6E77291DD2661DAA8B30DC89824AA457943792AFFC7F3F8",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -84,14 +84,33 @@
           {
             "n": "switch 11",
             "s": 58
+          },
+          {
+            "n": "blastable wall",
+            "s": 65
+          },
+          {
+            "n": "red key",
+            "s": 67
+          },
+          {
+            "n": "switch 2",
+            "s": 88
+          },
+          {
+            "n": "reactor",
+            "s": 90
+          },
+          {
+            "n": "exit",
+            "s": 101
           }
         ],
-        "total_frames": 4200,
+        "total_frames": 6044,
         "rng_end": {
-          "state": 913235701,
-          "calls": 1548
-        },
-        "problem": "physical route frontier did not open after 8 interaction attempts"
+          "state": 3464152169,
+          "calls": 2392
+        }
       },
       {
         "level_num": 3,
@@ -228,7 +247,7 @@
           },
           {
             "n": "red key",
-            "s": 83
+            "s": 84
           },
           {
             "n": "switch 1",
@@ -243,7 +262,7 @@
             "s": 125
           }
         ],
-        "total_frames": 7485,
+        "total_frames": 7486,
         "rng_end": {
           "state": 3921887095,
           "calls": 5234
@@ -349,9 +368,9 @@
     "seed": 1,
     "status": "partial",
     "level_counts": {
-      "ok": 4,
+      "ok": 5,
       "failed": 1,
-      "timeout": 4,
+      "timeout": 3,
       "route_mismatch": 1
     },
     "levels": [
@@ -404,7 +423,7 @@
         "level_num": 2,
         "level_file": "world1b.rl2",
         "route_input_sha256": "444F8DB21CCF76128BF982D6E9B121C7EB6337E3A43961D10BADBBC52AD0ECA5",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -425,14 +444,33 @@
           {
             "n": "switch 11",
             "s": 58
+          },
+          {
+            "n": "blastable wall",
+            "s": 65
+          },
+          {
+            "n": "red key",
+            "s": 67
+          },
+          {
+            "n": "switch 2",
+            "s": 88
+          },
+          {
+            "n": "reactor",
+            "s": 90
+          },
+          {
+            "n": "exit",
+            "s": 101
           }
         ],
-        "total_frames": 4200,
+        "total_frames": 6044,
         "rng_end": {
-          "state": 913235701,
-          "calls": 1548
-        },
-        "problem": "physical route frontier did not open after 8 interaction attempts"
+          "state": 3464152169,
+          "calls": 2392
+        }
       },
       {
         "level_num": 3,
@@ -581,10 +619,10 @@
           },
           {
             "n": "exit",
-            "s": 133
+            "s": 134
           }
         ],
-        "total_frames": 8004,
+        "total_frames": 8026,
         "rng_end": {
           "state": 2939158058,
           "calls": 5357

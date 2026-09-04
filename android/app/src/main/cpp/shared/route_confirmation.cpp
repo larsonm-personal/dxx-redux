@@ -975,13 +975,20 @@ int apply_flare_fallback(object *actor, int segnum, int sidenum, int wall_num)
 	if (!actor || wall_num < 0 || wall_num >= Num_walls ||
 	    wall_num != State.flare_fallback_wall_num ||
 	    State.summary.elapsed_ticks < State.flare_fallback_ticks ||
-	    Walls[wall_num].type != WALL_DOOR ||
-	    Walls[wall_num].state != WALL_DOOR_CLOSED ||
+	    (Walls[wall_num].type != WALL_DOOR &&
+	     Walls[wall_num].type != WALL_BLASTABLE) ||
+	    (Walls[wall_num].type == WALL_DOOR &&
+	     Walls[wall_num].state != WALL_DOOR_CLOSED) ||
+	    (Walls[wall_num].type == WALL_BLASTABLE &&
+	     (Walls[wall_num].flags & WALL_BLASTED)) ||
 	    !actor_is_close_to_side(actor, segnum, sidenum) ||
 	    !set_visible_flare_target(actor, segnum, sidenum, &direction))
 		return 0;
-	wall_hit_process(&Segments[segnum], sidenum, i2f(1000), Player_num,
-	                 ConsoleObject);
+	if (Walls[wall_num].type == WALL_BLASTABLE)
+		wall_damage(&Segments[segnum], sidenum, i2f(1000));
+	else
+		wall_hit_process(&Segments[segnum], sidenum, i2f(1000), Player_num,
+		                 ConsoleObject);
 	State.flare_fallback_wall_num = -1;
 #if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	fprintf(stderr,
@@ -989,7 +996,9 @@ int apply_flare_fallback(object *actor, int segnum, int sidenum, int wall_num)
 	        "actor_seg=%d\n",
 	        wall_num, segnum, sidenum, actor->segnum);
 #endif
-	return Walls[wall_num].state != WALL_DOOR_CLOSED;
+	return Walls[wall_num].type == WALL_BLASTABLE
+	           ? (Walls[wall_num].flags & WALL_BLASTED) != 0
+	           : Walls[wall_num].state != WALL_DOOR_CLOSED;
 }
 
 void recover_path_door(object *actor)
@@ -1206,6 +1215,17 @@ void fire_path_flare(object *actor)
 	    &direction, &actor->pos, (int) (actor - Objects), FLARE_ID, 1);
 	if (weapon_objnum < 0)
 		return;
+	if (Walls[wall_num].type == WALL_BLASTABLE) {
+		object *weapon = &Objects[weapon_objnum];
+		/* The route actor stands in for the player, but D2 intentionally rejects
+		 * robot-owned damage against blastable walls.  Preserve the real flare
+		 * flight and collision while assigning this simulation-only shot to the
+		 * stationary player. */
+		weapon->ctype.laser_info.parent_type = OBJ_PLAYER;
+		weapon->ctype.laser_info.parent_num = Players[Player_num].objnum;
+		weapon->ctype.laser_info.parent_signature = ConsoleObject->signature;
+		weapon->shields = i2f(1000);
+	}
 	if (State.flare_fallback_wall_num != wall_num) {
 		const fix speed =
 		    vm_vec_mag_quick(&Objects[weapon_objnum].mtype.phys_info.velocity);
@@ -1612,9 +1632,7 @@ extern "C" void route_confirmation_before_frame(void)
 		fire_path_flare(&Objects[State.actor_objnum]);
 	if (valid_object(State.actor_objnum))
 		recover_path_door(&Objects[State.actor_objnum]);
-	if (valid_object(State.actor_objnum) &&
-	    State.wait_frames == 0 &&
-	    actor_reached_target(&Objects[State.actor_objnum]))
+	if (valid_object(State.actor_objnum) && State.wait_frames == 0)
 		shoot_frontier_door(&Objects[State.actor_objnum]);
 }
 

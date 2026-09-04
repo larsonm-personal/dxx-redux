@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 7,
+    "ok": 6,
     "failed": 6,
-    "timeout": 10,
+    "timeout": 11,
     "unsupported": 2
   },
   "levels": [
@@ -109,37 +109,37 @@
         },
         {
           "n": "switch 5",
-          "s": 5
+          "s": 10
         },
         {
           "n": "switch 6",
-          "s": 11
+          "s": 15
         },
         {
           "n": "switch 7",
-          "s": 18
+          "s": 21
         },
         {
           "n": "switch 8",
-          "s": 24
+          "s": 27
         },
         {
           "n": "switch 9",
-          "s": 31
+          "s": 34
         },
         {
           "n": "switch 10",
-          "s": 37
+          "s": 41
         },
         {
           "n": "fly-through 2",
-          "s": 39
+          "s": 42
         }
       ],
       "total_frames": 10081,
       "rng_end": {
-        "state": 904813134,
-        "calls": 889
+        "state": 2363015200,
+        "calls": 1383
       },
       "problem": "route confirmation exceeded 168-second simulation budget"
     },
@@ -365,33 +365,33 @@
         },
         {
           "n": "switch 6",
-          "s": 14
+          "s": 21
         },
         {
           "n": "switch 7",
-          "s": 23
+          "s": 30
         },
         {
           "n": "switch 8",
-          "s": 31
+          "s": 38
         },
         {
           "n": "switch 9",
-          "s": 40
+          "s": 47
         },
         {
           "n": "switch 10",
-          "s": 49
+          "s": 56
         },
         {
           "n": "switch 11",
-          "s": 58
+          "s": 65
         }
       ],
       "total_frames": 13081,
       "rng_end": {
-        "state": 316215344,
-        "calls": 2839
+        "state": 1716775747,
+        "calls": 4422
       },
       "problem": "route confirmation exceeded 218-second simulation budget"
     },
@@ -505,37 +505,37 @@
         },
         {
           "n": "switch 10",
-          "s": 34
+          "s": 35
         },
         {
           "n": "switch 11",
-          "s": 44
+          "s": 46
         },
         {
           "n": "switch 12",
-          "s": 55
+          "s": 56
         },
         {
           "n": "switch 13",
-          "s": 65
+          "s": 66
         },
         {
           "n": "switch 14",
-          "s": 76
+          "s": 77
         },
         {
           "n": "boss",
-          "s": 96
+          "s": 97
         },
         {
           "n": "exit",
-          "s": 97
+          "s": 98
         }
       ],
-      "total_frames": 5795,
+      "total_frames": 5864,
       "rng_end": {
-        "state": 1586148989,
-        "calls": 2756
+        "state": 699233548,
+        "calls": 4011
       }
     },
     {
@@ -639,7 +639,7 @@
       "level_num": 20,
       "level_file": "lost20.rl2",
       "route_input_sha256": "B0B8107D2B5D0BDF6354995C1FDAF89864BC6D00080F9B2031C744D1A872EA0C",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -656,45 +656,14 @@
         {
           "n": "switch 8",
           "s": 17
-        },
-        {
-          "n": "switch 9",
-          "s": 26
-        },
-        {
-          "n": "switch 10",
-          "s": 35
-        },
-        {
-          "n": "switch 11",
-          "s": 43
-        },
-        {
-          "n": "switch 12",
-          "s": 52
-        },
-        {
-          "n": "switch 13",
-          "s": 61
-        },
-        {
-          "n": "switch 14",
-          "s": 70
-        },
-        {
-          "n": "boss",
-          "s": 81
-        },
-        {
-          "n": "exit",
-          "s": 86
         }
       ],
-      "total_frames": 5137,
+      "total_frames": 5083,
       "rng_end": {
-        "state": 1785250014,
-        "calls": 3369
-      }
+        "state": 4028954632,
+        "calls": 1375
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 21,

@@ -8,9 +8,9 @@
     "seed": 1,
     "status": "partial",
     "level_counts": {
-      "ok": 12,
+      "ok": 13,
       "failed": 2,
-      "timeout": 6,
+      "timeout": 5,
       "unsupported": 1,
       "route_mismatch": 2
     },
@@ -251,7 +251,7 @@
         "level_num": 7,
         "level_file": "d2xlvl07.rl2",
         "route_input_sha256": "0F9684F65A8588BD3343B57AF3D8DA5BF67DE33564184E96AD5127C9EAAF9A11",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -272,14 +272,29 @@
           {
             "n": "blastable wall",
             "s": 42
+          },
+          {
+            "n": "switch 11",
+            "s": 45
+          },
+          {
+            "n": "red key",
+            "s": 50
+          },
+          {
+            "n": "boss",
+            "s": 75
+          },
+          {
+            "n": "exit",
+            "s": 81
           }
         ],
-        "total_frames": 2976,
+        "total_frames": 4874,
         "rng_end": {
-          "state": 915140452,
-          "calls": 1779
-        },
-        "problem": "physical route frontier did not open after 8 interaction attempts"
+          "state": 3477880533,
+          "calls": 2860
+        }
       },
       {
         "level_num": 8,

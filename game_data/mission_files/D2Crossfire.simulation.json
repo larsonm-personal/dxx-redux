@@ -43,11 +43,32 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 846,
+      "objectives": [
+        {
+          "n": "pass-through 1",
+          "s": 9
+        },
+        {
+          "n": "blastable wall",
+          "s": 9
+        },
+        {
+          "n": "blue key",
+          "s": 16
+        },
+        {
+          "n": "gold key",
+          "s": 42
+        },
+        {
+          "n": "red key",
+          "s": 79
+        }
+      ],
+      "total_frames": 5710,
       "rng_end": {
-        "state": 4112870923,
-        "calls": 254
+        "state": 3135950983,
+        "calls": 2658
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

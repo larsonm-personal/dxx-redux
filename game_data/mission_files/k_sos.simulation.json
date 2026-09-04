@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
-    "timeout": 4,
+    "ok": 3,
+    "timeout": 3,
     "unsupported": 1
   },
   "levels": [
@@ -79,7 +79,7 @@
       "level_num": 3,
       "level_file": "level03.rl2",
       "route_input_sha256": "64CBB24F5DA12E8742529CCE1F6B1D2C77FA49A24EEF0CAE848C45936694792D",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -124,14 +124,17 @@
         {
           "n": "reactor",
           "s": 148
+        },
+        {
+          "n": "exit",
+          "s": 168
         }
       ],
-      "total_frames": 13703,
+      "total_frames": 10105,
       "rng_end": {
-        "state": 3960321535,
-        "calls": 5610
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 2994580664,
+        "calls": 5615
+      }
     },
     {
       "level_num": 4,
@@ -160,7 +163,7 @@
           "s": 59
         }
       ],
-      "total_frames": 3524,
+      "total_frames": 3516,
       "rng_end": {
         "state": 1550313281,
         "calls": 2752
@@ -233,14 +236,18 @@
         {
           "n": "gold key",
           "s": 53
+        },
+        {
+          "n": "red key",
+          "s": 88
         }
       ],
-      "total_frames": 8065,
+      "total_frames": 6409,
       "rng_end": {
-        "state": 1546817700,
-        "calls": 3251
+        "state": 4155049321,
+        "calls": 4184
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": -1,
