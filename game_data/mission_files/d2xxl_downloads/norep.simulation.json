@@ -13,7 +13,7 @@
     {
       "level_num": 0,
       "level_file": "sammy.rl2",
-      "route_input_sha256": "1D04D2BCE82EA194BDFFBD88E3EBB41F49D42A57AA6E37CA4D71D568CE4DA59E",
+      "route_input_sha256": "B2DA21BFF4118496395124708A344424488B54EFAC97EDF12C122B1758BAA537",
       "status": "timeout",
       "rng_start": {
         "state": 1,

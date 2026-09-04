@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 57,
+    "ok": 58,
     "failed": 3,
-    "timeout": 22,
+    "timeout": 21,
     "unsupported": 1
   },
   "levels": [
@@ -1457,8 +1457,8 @@
     {
       "level_num": 39,
       "level_file": "d2levc-4.rl2",
-      "route_input_sha256": "5E55DE484EA9266D0CE111C60F1E46E898619874E96ABE70258AB8234C15D98F",
-      "status": "timeout",
+      "route_input_sha256": "6EB166A9289D4ED1ED1A10804ACD503EFE99D45D9EB5C06C131C36195CAA4D27",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -1473,16 +1473,31 @@
           "s": 32
         },
         {
+          "n": "switch 7",
+          "s": 51
+        },
+        {
           "n": "gold key",
           "s": 76
+        },
+        {
+          "n": "red key",
+          "s": 134
+        },
+        {
+          "n": "boss",
+          "s": 190
+        },
+        {
+          "n": "exit",
+          "s": 192
         }
       ],
-      "total_frames": 8161,
+      "total_frames": 11492,
       "rng_end": {
-        "state": 3306372056,
-        "calls": 1615
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1227536725,
+        "calls": 3244
+      }
     },
     {
       "level_num": 40,
@@ -1762,7 +1777,7 @@
     {
       "level_num": 47,
       "level_file": "d2leve-4.rl2",
-      "route_input_sha256": "006FE3D00A55F57B23EB0A2D8D291FDA83137EB077A74055FFC19CAD06A51E40",
+      "route_input_sha256": "0689D5C6D362C9A7545BA759F1D84E48D1FE773BFFC7C5AE69B64640410F44AC",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -2023,7 +2038,7 @@
     {
       "level_num": 54,
       "level_file": "d2xlvl02.rl2",
-      "route_input_sha256": "98AA0C857B4B72D0FA8CCB44F1B8BAC950AE23AC38D10D4EEBADF9258904EE09",
+      "route_input_sha256": "D5B6905FF660C175C2F27D1C5BC70F0F08A2B90403F04CA056B5246C33F598EA",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -2036,6 +2051,10 @@
         },
         {
           "n": "switch 3",
+          "s": 17
+        },
+        {
+          "n": "switch 16",
           "s": 17
         },
         {
@@ -2055,10 +2074,10 @@
           "s": 60
         }
       ],
-      "total_frames": 9278,
+      "total_frames": 9544,
       "rng_end": {
-        "state": 477778129,
-        "calls": 2480
+        "state": 2049385582,
+        "calls": 2521
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -2330,7 +2349,7 @@
     {
       "level_num": 63,
       "level_file": "d2xlvl11.rl2",
-      "route_input_sha256": "8105A417787966432C3738107372B24DCDA37520DBB70CD40B8422B7CB446345",
+      "route_input_sha256": "BD51C429A78A53B126632D68CDFDAF6DCF652B859E68B0A60A5C0DBC17E23E8B",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -2344,12 +2363,16 @@
         {
           "n": "gold key",
           "s": 46
+        },
+        {
+          "n": "switch 2",
+          "s": 52
         }
       ],
-      "total_frames": 7196,
+      "total_frames": 7249,
       "rng_end": {
-        "state": 108232613,
-        "calls": 3036
+        "state": 4111154319,
+        "calls": 3162
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },

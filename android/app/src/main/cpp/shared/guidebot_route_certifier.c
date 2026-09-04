@@ -92,22 +92,8 @@ static int guidebot_route_side_passable(
 	    view->side_has_exit_trigger(view->user, segment, side))
 		return 0;
 	if (view->side_is_flyable &&
-	    view->side_is_flyable(view->user, segment, side)) {
-		/* An auto-closing door can still be physically open after the actor
-		 * entered through its unlocked face.  Do not build a return route through
-		 * a face that remains locked: it may close before the actor arrives and
-		 * cannot then be reopened from that side. */
-		wall = view->wall_num
-		           ? view->wall_num(view->user, segment, side)
-		           : -1;
-		if (wall >= 0 && wall < view->num_walls && view->wall_type &&
-		    view->wall_flags &&
-		    view->wall_type(view->user, wall) == view->wall_type_door &&
-		    (view->wall_flags(view->user, wall) &
-		     view->wall_flag_door_locked) != 0)
-			return 0;
+	    view->side_is_flyable(view->user, segment, side))
 		return 1;
-	}
 	if (view->side_is_control_center_link &&
 	    (view->side_is_control_center_link(view->user, segment, side) ||
 	     (reverse >= 0 && view->side_is_control_center_link(

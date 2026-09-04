@@ -315,7 +315,7 @@
     {
       "level_num": 11,
       "level_file": "lost11.rl2",
-      "route_input_sha256": "853B069A18A6D7C3161CDA6BEFF2D41C7FCC8BB793EE849F601014D6B6943DA5",
+      "route_input_sha256": "F8A237EF1936D5B3BD95CD7C9938B9A4B21D2F09D83CC3591320C7E9B8E1B9E5",
       "status": "failed",
       "rng_start": {
         "state": 1,
@@ -323,14 +323,18 @@
       },
       "objectives": [
         {
+          "n": "switch 11",
+          "s": 17
+        },
+        {
           "n": "blue key",
-          "s": 19
+          "s": 26
         }
       ],
-      "total_frames": 1116,
+      "total_frames": 1571,
       "rng_end": {
-        "state": 1835933489,
-        "calls": 592
+        "state": 1608860600,
+        "calls": 751
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },

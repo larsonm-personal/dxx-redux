@@ -10,8 +10,9 @@
     "level_counts": {
       "ok": 11,
       "failed": 1,
-      "timeout": 10,
-      "unsupported": 1
+      "timeout": 8,
+      "unsupported": 1,
+      "route_mismatch": 2
     },
     "levels": [
       {
@@ -51,7 +52,7 @@
         "level_num": 2,
         "level_file": "d2xlvl02.rl2",
         "route_input_sha256": "252F5A7321053CDF0A73536F1780CA7831F1689E354F2D0D3FAD72A0D04A8698",
-        "status": "timeout",
+        "status": "route_mismatch",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -63,6 +64,10 @@
           },
           {
             "n": "switch 3",
+            "s": 17
+          },
+          {
+            "n": "switch 16",
             "s": 17
           },
           {
@@ -82,12 +87,12 @@
             "s": 60
           }
         ],
-        "total_frames": 9278,
+        "total_frames": 9544,
         "rng_end": {
-          "state": 477778129,
-          "calls": 2480
+          "state": 2049385582,
+          "calls": 2521
         },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "problem": "live objective sequence differs from route input"
       },
       {
         "level_num": 3,
@@ -358,7 +363,7 @@
         "level_num": 11,
         "level_file": "d2xlvl11.rl2",
         "route_input_sha256": "34600BDCB21EBA150C15832BCF08ED8E5CB7AA4DABD715009271AFBAFEB6F1CC",
-        "status": "timeout",
+        "status": "route_mismatch",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -371,14 +376,18 @@
           {
             "n": "gold key",
             "s": 46
+          },
+          {
+            "n": "switch 2",
+            "s": 52
           }
         ],
-        "total_frames": 7196,
+        "total_frames": 7249,
         "rng_end": {
-          "state": 108232613,
-          "calls": 3036
+          "state": 4111154319,
+          "calls": 3162
         },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "problem": "live objective sequence differs from route input"
       },
       {
         "level_num": 12,

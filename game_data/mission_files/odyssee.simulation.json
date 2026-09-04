@@ -13,7 +13,7 @@
     {
       "level_num": 1,
       "level_file": "1.rl2",
-      "route_input_sha256": "FC3A61469D132DE43B053B3F425B9516BCA1D7D2A25457615E56E3C5187235D9",
+      "route_input_sha256": "CA30635F0EFC2238CC095EB9859F617724ABFD5924A8CBA652DE6218ACBF0284",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -25,6 +25,10 @@
           "s": 11
         },
         {
+          "n": "switch 7",
+          "s": 27
+        },
+        {
           "n": "blue key",
           "s": 29
         },
@@ -34,11 +38,7 @@
         },
         {
           "n": "gold key",
-          "s": 34
-        },
-        {
-          "n": "switch 7",
-          "s": 40
+          "s": 35
         },
         {
           "n": "switch 6",
@@ -46,7 +46,7 @@
         },
         {
           "n": "switch 22",
-          "s": 75
+          "s": 76
         },
         {
           "n": "hidden door",
@@ -66,7 +66,7 @@
         },
         {
           "n": "hidden door",
-          "s": 130
+          "s": 129
         },
         {
           "n": "switch 9",
@@ -85,10 +85,10 @@
           "s": 228
         }
       ],
-      "total_frames": 13685,
+      "total_frames": 13680,
       "rng_end": {
-        "state": 2910048295,
-        "calls": 9410
+        "state": 2958468239,
+        "calls": 9306
       }
     },
     {

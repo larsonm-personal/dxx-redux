@@ -1432,7 +1432,7 @@ static void test_visible_unlocked_triggered_door_is_physically_passable(void)
 	assert(!level_metadata_route_step_required_by_world_state(&view, &step));
 }
 
-static void test_open_locked_door_is_not_stable_route(void)
+static void test_open_locked_door_is_currently_passable(void)
 {
 	certifier_fixture fixture;
 	level_metadata_scan_view view;
@@ -1442,9 +1442,11 @@ static void test_open_locked_door_is_not_stable_route(void)
 	fixture.wall_open[0] = 1;
 	fixture.wall_extra_flags[0] =
 	    view.wall_flag_door_opened | view.wall_flag_door_locked;
-	assert(!guidebot_route_side_passable_current(&view, 0, 0));
+	assert(guidebot_route_side_passable_current(&view, 0, 0));
+	assert(guidebot_route_side_progress_reachable_current(&view, 0, 0));
 	fixture.wall_extra_flags[0] = view.wall_flag_door_opened;
 	assert(guidebot_route_side_passable_current(&view, 0, 0));
+	assert(guidebot_route_side_progress_reachable_current(&view, 0, 0));
 }
 
 static void test_keyed_buddy_proof_door_keeps_objective_reachable(void)
@@ -2217,7 +2219,7 @@ int main(int argc, char **argv)
 	test_detailed_switch_pose_excludes_aim_point();
 	test_solid_illusion_wall_is_not_passable();
 	test_visible_unlocked_triggered_door_is_physically_passable();
-	test_open_locked_door_is_not_stable_route();
+	test_open_locked_door_is_currently_passable();
 	test_keyed_buddy_proof_door_keeps_objective_reachable();
 	test_keyed_door_blocks_objective_route_but_not_player_progress();
 	test_reverse_side_keyed_buddy_proof_door_is_player_reachable();

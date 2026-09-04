@@ -119,7 +119,7 @@
     {
       "level_num": 4,
       "level_file": "omicron.rl2",
-      "route_input_sha256": "3A2CA592AA1030E77D42E1A6B352648FA839C9990F3060EFC724312A15AC11CD",
+      "route_input_sha256": "9109F368531B8454BFCCBB4EE8265A2737DBEBEB89C32AAA63DA8BC80451099C",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -135,11 +135,11 @@
           "s": 16
         },
         {
-          "n": "gold key",
-          "s": 22
+          "n": "fly-through 29",
+          "s": 21
         },
         {
-          "n": "fly-through 29",
+          "n": "gold key",
           "s": 22
         },
         {
@@ -147,7 +147,7 @@
           "s": 35
         }
       ],
-      "total_frames": 8359,
+      "total_frames": 7580,
       "rng_end": {
         "state": 1742575053,
         "calls": 1780

@@ -103,7 +103,7 @@
     {
       "level_num": 4,
       "level_file": "DH04.RL2",
-      "route_input_sha256": "BB00326465DD5384D62AF88B7B812DF847E29DFDEEC1F69C7B5030E8F0B822CC",
+      "route_input_sha256": "64F2AB89F89BF5E1F8DD57DCD4F0A5CD6FC7EA342302CFA71A8E9AEB07FC77E6",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -240,7 +240,7 @@
     {
       "level_num": 10,
       "level_file": "DH10.RL2",
-      "route_input_sha256": "0D0CEA366F2B6206F6C868EC65AA474B851C9BDC3588DC74879253C531813AE8",
+      "route_input_sha256": "DEDE6C0402EA7F449AA7C338E748AD1874118F6359FDE2AF3E14978934591EA6",
       "status": "timeout",
       "rng_start": {
         "state": 1,
