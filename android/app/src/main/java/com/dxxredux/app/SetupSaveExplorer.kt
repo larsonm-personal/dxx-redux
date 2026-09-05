@@ -1,6 +1,9 @@
 package com.dxxredux.app
 
 import android.graphics.Bitmap
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -40,12 +43,14 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -54,6 +59,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,10 +73,14 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -144,6 +154,36 @@ internal fun SaveExplorerDialog(
     onDismiss: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    var exportPath by rememberSaveable { mutableStateOf<String?>(null) }
+    var exportError by remember { mutableStateOf<String?>(null) }
+    val exportLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
+            val path = exportPath
+            exportPath = null
+            if (uri != null && path != null) {
+                scope.launch {
+                    val error =
+                        withContext(Dispatchers.IO) {
+                            try {
+                                File(path).inputStream().use { input ->
+                                    checkNotNull(context.contentResolver.openOutputStream(uri, "wt")) {
+                                        "Could not open the export destination"
+                                    }.use { output -> input.copyTo(output) }
+                                }
+                                null
+                            } catch (e: Exception) {
+                                e.message ?: "Could not export the save"
+                            }
+                        }
+                    if (error != null) {
+                        exportError = error
+                    } else {
+                        Toast.makeText(context, "Save exported", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
     var refreshKey by remember { mutableIntStateOf(0) }
     val pagerState = rememberPagerState(pageCount = { saveExplorerModes.size })
     var selectedGame by remember { mutableStateOf("") }
@@ -307,6 +347,17 @@ internal fun SaveExplorerDialog(
                         onOpenDetails = { pendingDetails = it },
                         onLoadCandidate = onLoadCandidate,
                         onDelete = { pendingDelete = it },
+                        onExport = { slot ->
+                            if (exportPath == null) {
+                                exportPath = slot.path
+                                try {
+                                    exportLauncher.launch(File(slot.path).name)
+                                } catch (e: Exception) {
+                                    exportPath = null
+                                    exportError = e.message ?: "Could not open the export destination picker"
+                                }
+                            }
+                        },
                     )
                 }
 
@@ -321,6 +372,15 @@ internal fun SaveExplorerDialog(
                 }
             }
         }
+    }
+
+    exportError?.let { message ->
+        AlertDialog(
+            onDismissRequest = { exportError = null },
+            title = { Text("Export failed") },
+            text = { Text(message) },
+            confirmButton = { TextButton(onClick = { exportError = null }) { Text("OK") } },
+        )
     }
 
     pendingDelete?.let { slot ->
@@ -495,6 +555,7 @@ private fun SaveExplorerPage(
     onOpenDetails: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
     onLoadCandidate: (ResumeSaveBridge.ResumeSaveCandidate) -> Unit,
     onDelete: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
+    onExport: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
 ) {
     when (mode) {
         SaveExplorerMode.Choose -> {
@@ -517,6 +578,7 @@ private fun SaveExplorerPage(
                 onOpenDetails = onOpenDetails,
                 onLoadCandidate = onLoadCandidate,
                 onDelete = onDelete,
+                onExport = onExport,
             )
         }
 
@@ -552,6 +614,7 @@ private fun SaveExplorerPage(
                     onOpenDetails = onOpenDetails,
                     onLoadCandidate = onLoadCandidate,
                     onDelete = onDelete,
+                    onExport = onExport,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -577,6 +640,7 @@ private fun SaveExplorerPage(
                     onOpenDetails = onOpenDetails,
                     onLoadCandidate = onLoadCandidate,
                     onDelete = onDelete,
+                    onExport = onExport,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -593,6 +657,7 @@ private fun SaveExplorerSlotPageBody(
     onOpenDetails: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
     onLoadCandidate: (ResumeSaveBridge.ResumeSaveCandidate) -> Unit,
     onDelete: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
+    onExport: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
     modifier: Modifier = Modifier.fillMaxSize(),
 ) {
     if (slots == null) {
@@ -618,6 +683,7 @@ private fun SaveExplorerSlotPageBody(
                     onOpenDetails = onOpenDetails,
                     onLoadCandidate = onLoadCandidate,
                     onDelete = onDelete,
+                    onExport = onExport,
                 )
             }
         }
@@ -797,6 +863,7 @@ private fun SaveExplorerSlotRow(
     onOpenDetails: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
     onLoadCandidate: (ResumeSaveBridge.ResumeSaveCandidate) -> Unit,
     onDelete: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
+    onExport: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
 ) {
     val slot = row.slot
     val candidateState =
@@ -881,13 +948,36 @@ private fun SaveExplorerSlotRow(
             ) {
                 Text("Load", fontSize = 10.sp)
             }
-            TextButton(
-                onClick = { slot?.let(onDelete) },
-                enabled = slot != null,
-                modifier = Modifier.height(32.dp),
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+            val viewConfiguration = LocalViewConfiguration.current
+            val actionViewConfiguration =
+                remember(viewConfiguration) {
+                    object : ViewConfiguration by viewConfiguration {
+                        override val minimumTouchTargetSize = DpSize(48.dp, 24.dp)
+                    }
+                }
+            CompositionLocalProvider(
+                LocalMinimumInteractiveComponentSize provides 0.dp,
+                LocalViewConfiguration provides actionViewConfiguration,
             ) {
-                Text("Delete", fontSize = 10.sp)
+                // Match the existing Load control's 48dp area without overlapping action targets
+                Column(modifier = Modifier.height(48.dp)) {
+                    TextButton(
+                        onClick = { slot?.let(onDelete) },
+                        enabled = slot != null,
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 8.dp),
+                    ) {
+                        Text("Delete", fontSize = 10.sp, lineHeight = 12.sp, maxLines = 1)
+                    }
+                    TextButton(
+                        onClick = { slot?.let(onExport) },
+                        enabled = slot != null,
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 8.dp),
+                    ) {
+                        Text("Export", fontSize = 10.sp, lineHeight = 12.sp, maxLines = 1)
+                    }
+                }
             }
         }
     }

@@ -7,7 +7,7 @@ if ($Serial -notmatch '^emulator-\d+$') { throw 'Run this fixture test only on a
 $previousSerial = $env:ANDROID_SERIAL
 $env:ANDROID_SERIAL = $Serial
 $root = 'files/d2x-redux'
-$save = "$root/Players/save_sets/coop/sdkcompat/coopsave.mg5"
+$save = "$root/Players/save_sets/coop/d2/coopsave.mg5"
 $marker = "$root/coop_restore_slot.txt"
 $fixtureDir = Join-Path $PSScriptRoot '../temp/coop_compatibility_test'
 New-Item -ItemType Directory -Path $fixtureDir -Force | Out-Null
@@ -25,7 +25,11 @@ function Push-AppFixture([string]$LocalPath, [string]$Destination) {
 try {
     if (-not (Test-DeviceOnline -Serial $Serial)) { throw 'Emulator is not online' }
     Adb -AdbArgs @('shell', 'am', 'force-stop', $script:PACKAGE) | Out-Null
-    Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'mkdir', '-p', "$root/Players/save_sets/coop/sdkcompat") | Out-Null
+    Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'mkdir', '-p', "$root/Players/save_sets/coop/d2") | Out-Null
+    $hadSave = (Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'ls', $save)) -notmatch 'No such file'
+    if ($hadSave) {
+        Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cp', $save, "$save.compat-backup") | Out-Null
+    }
     $priorMarker = Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'cat', $marker)
     $hadMarker = $priorMarker -notmatch 'No such file'
     if ($hadMarker) {
@@ -33,7 +37,7 @@ try {
     }
     Adb -AdbArgs @('shell', 'am', 'start', '-n', "$($script:PACKAGE)/.SetupActivity") | Out-Null
     if (-not (Wait-SetupActivityReady)) { throw 'Launcher did not become ready' }
-    Send-MpCommand 'lan_host_lobby' @('--es', 'callsign', 'Compat', '--es', 'game', 'd2', '--es', 'mission', 'sdkcompat', '--es', 'mode', 'coop')
+    Send-MpCommand 'lan_host_lobby' @('--es', 'callsign', 'Compat', '--es', 'game', 'd2', '--es', 'mission', 'd2', '--es', 'mode', 'coop')
 
     # Missing metadata fixture; native format tests separately cover older versions
     $oldSave = Join-Path $fixtureDir 'old-save.mg5'
@@ -68,6 +72,9 @@ try {
 } finally {
     Send-MpCommand 'lan_stop_lobby'
     Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'rm', '-f', $save, $marker) | Out-Null
+    if ($hadSave) {
+        Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'mv', "$save.compat-backup", $save) | Out-Null
+    }
     if ($hadMarker) {
         Adb -AdbArgs @('shell', 'run-as', $script:PACKAGE, 'mv', "$marker.compat-backup", $marker) | Out-Null
     }
