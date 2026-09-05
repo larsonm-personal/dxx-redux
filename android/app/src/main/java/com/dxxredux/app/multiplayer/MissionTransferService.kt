@@ -5,6 +5,8 @@ import android.util.Log
 import com.dxxredux.app.AtomicFilePublication
 import com.dxxredux.app.FileSetManager
 import com.dxxredux.app.MissionContentIdentity
+import com.dxxredux.app.MissionDistributionPolicy
+import com.dxxredux.app.MissionDownloadPolicy
 import com.dxxredux.app.ModManager
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -81,6 +83,8 @@ internal object MissionTransferService {
         val wrapper = manager.modFile(filename).canonicalFile
         val root = manager.importDirectory().canonicalFile
         if (!wrapper.isFile || !wrapper.toPath().startsWith(root.toPath())) return false
+        // Reinspect local bytes; a peer's requirement and the picker are not authorization
+        if (!hostArchiveAllowed(requirement, wrapper)) return false
         val mod = manager.listMods().firstOrNull { it.filename == filename } ?: return false
         val identity = manager.ensureMissionContentIdentity(mod.filename) ?: return false
         if (identity.sizeBytes != requirement.sizeBytes || identity.sha256 != requirement.sha256) return false
@@ -101,6 +105,14 @@ internal object MissionTransferService {
         scope.launch { acceptLoop(session) }
         return true
     }
+
+    internal fun hostArchiveAllowed(
+        requirement: MissionRequirement,
+        wrapper: File,
+    ): Boolean =
+        requirement.isValid && requirement.isWrapper && requirement.offerAvailable &&
+            MissionDistributionPolicy.missionPolicy(requirement.missionKey) == MissionDownloadPolicy.USER_SUPPLIED &&
+            MissionDistributionPolicy.archivePolicy(wrapper) == MissionDownloadPolicy.USER_SUPPLIED
 
     @Synchronized
     fun stopHost() {
@@ -213,6 +225,7 @@ internal object MissionTransferService {
         if (authorization.expiresAtMs < System.currentTimeMillis()) return
         val remote = client.inetAddress.hostAddress ?: return
         if (!sameAddress(authorization.address, remote)) return
+        if (!hostArchiveAllowed(session.requirement, session.wrapper)) return
         val offset = request.optLong("offset", -1L)
         val chunkSize = session.identity.chunkSizeBytes
         if (

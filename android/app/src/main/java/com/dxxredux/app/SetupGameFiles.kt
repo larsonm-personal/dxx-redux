@@ -295,7 +295,6 @@ internal val D2_FILES =
             required = false,
             alternatives = listOf("robots-l.mvl"),
         ),
-        GameFileInfo("d2x.hog", "Vertigo expansion", required = false),
         GameFileInfo("hoard.ham", "Hoard multiplayer mode", required = false),
     )
 

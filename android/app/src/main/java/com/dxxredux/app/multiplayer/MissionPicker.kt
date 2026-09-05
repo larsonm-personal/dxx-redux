@@ -24,7 +24,10 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import com.dxxredux.app.AssetManifest
+import com.dxxredux.app.FileSetContentManager
 import com.dxxredux.app.GameFileFormats
+import com.dxxredux.app.MissionDistributionPolicy
+import com.dxxredux.app.MissionDownloadPolicy
 import com.dxxredux.app.MissionZip
 import com.dxxredux.app.ModManager
 import com.dxxredux.app.SafManifest
@@ -55,10 +58,12 @@ object MissionScanner {
         val archiveSha256: String? = null,
         val archiveChunkSizeBytes: Int = 0,
         val archiveChunkSha256: List<String> = emptyList(),
+        val downloadPolicy: MissionDownloadPolicy = MissionDistributionPolicy.missionPolicy(filename),
     ) {
         val transferable: Boolean
             get() =
                 !isBuiltin &&
+                    downloadPolicy == MissionDownloadPolicy.USER_SUPPLIED &&
                     wrapperFilename != null &&
                     archiveSha256 != null &&
                     archiveSizeBytes != null &&
@@ -189,6 +194,7 @@ object MissionScanner {
         for (mod in missionMods) {
             val wrapper = modManager.modFile(mod.filename)
             val scan = runCatching { MissionZip.inspect(wrapper) }.getOrNull() ?: continue
+            val downloadPolicy = MissionDistributionPolicy.archivePolicy(scan)
             val identity = runCatching { modManager.ensureMissionContentIdentity(mod.filename) }.getOrNull()
             for (missionSet in scan.effectiveMissionSets) {
                 val descriptor = missionSet.mission
@@ -212,14 +218,15 @@ object MissionScanner {
                         archiveSha256 = identity?.sha256,
                         archiveChunkSizeBytes = identity?.chunkSizeBytes ?: 0,
                         archiveChunkSha256 = identity?.chunkSha256.orEmpty(),
+                        downloadPolicy = downloadPolicy,
                     )
             }
         }
 
         val dirs = listOf(setDir, File(setDir, "missions"))
 
-        for (dir in dirs) {
-            val files = dir.listFiles() ?: continue
+        val managedFiles = FileSetContentManager(setDir).listEntries().filter { it.enabled }.flatMap { it.files }
+        for (files in listOf(managedFiles) + dirs.map { it.listFiles()?.toList().orEmpty() }) {
             for (file in files) {
                 if (!file.isFile) continue
                 val descriptorGame = GameFileFormats.gameForDescriptor(file.name) ?: continue

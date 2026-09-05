@@ -527,6 +527,8 @@ internal fun CreateGameDialog(
                                 "Offer mission download (share only with permission)"
                             } else if (selectedMissionInfo?.isBuiltin == true) {
                                 "Base missions are never shared"
+                            } else if (selectedMissionInfo?.downloadPolicy?.explanation != null) {
+                                selectedMissionInfo.downloadPolicy.explanation.orEmpty()
                             } else {
                                 "This mission cannot be shared automatically"
                             },

@@ -2416,7 +2416,7 @@ private fun ContentEntryRow(
                     },
             )
             Text(
-                "${contentKindLabel(entry.kind)} - ${setupSectionFormatSize(entry.totalBytes)} - " +
+                "${contentKindLabel(entry)} - ${setupSectionFormatSize(entry.totalBytes)} - " +
                     entry.game.uppercase(),
                 fontSize = 10.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -2521,7 +2521,10 @@ private fun ContentEntryDetailsDialog(
         title = { Text(entry.displayName, fontWeight = FontWeight.Bold) },
         text = {
             Column(modifier = Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState())) {
-                DetailRow("Category", contentKindLabel(entry.kind))
+                DetailRow("Category", contentKindLabel(entry))
+                if (entry.virtualPaths.any(MissionDistributionPolicy::isVertigoMission)) {
+                    DetailRow("Co-op", "Each player must import their own copy")
+                }
                 DetailRow("Game", entry.game.uppercase())
                 DetailRow("State", if (entry.enabled) "Enabled" else "Disabled")
                 DetailRow("Size", setupSectionFormatSize(entry.totalBytes))
@@ -2558,6 +2561,16 @@ private fun ContentEntryDetailsDialog(
         },
     )
 }
+
+private fun contentKindLabel(entry: FileSetContentEntry): String =
+    if (entry.virtualPaths.any(
+            MissionDistributionPolicy::isVertigoMission,
+        )
+    ) {
+        "Official expansion"
+    } else {
+        contentKindLabel(entry.kind)
+    }
 
 private fun contentKindLabel(kind: String): String =
     when (kind) {

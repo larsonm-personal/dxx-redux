@@ -74,9 +74,7 @@ internal object FileSetContentCatalog {
             return FileSetFileClass.LAUNCHER_STATE
         }
         if (isDirectory) return FileSetFileClass.MANAGED_CONTENT
-        // Vertigo is an add-on mission: its HOG must follow d2x.mn2 into missions/
-        // The setup inventory also lists it, but that does not make it a base asset
-        if (parts.size == 1 && portableGameFilenameIdentity(leaf) in ALL_GAME_FILENAMES && leaf != "d2x.hog") {
+        if (parts.size == 1 && portableGameFilenameIdentity(leaf) in ALL_GAME_FILENAMES) {
             return FileSetFileClass.BASE
         }
         if (GameFileFormats.extensionOf(leaf) in playerExtensions ||
