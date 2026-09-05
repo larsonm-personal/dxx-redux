@@ -140,6 +140,11 @@ internal fun CreateGameDialog(
     var selectedSave by remember(coopSaves) {
         mutableStateOf(initialCoopSaveSelection(coopSaves))
     }
+    val saveWarnings =
+        remember(game, mission, coopSaves) {
+            coopSaves.associateWith { CoopSaveCompatibility.warning(context.filesDir, game, mission, it) }
+        }
+    var launchWarning by remember(game, mission, selectedSave) { mutableStateOf<String?>(null) }
 
     val coopResumeLevel =
         if (mode == "coop" && coopSaves.none { it.type == "full_save" }) {
@@ -319,6 +324,7 @@ internal fun CreateGameDialog(
                         )
                     }
                     if (coopSaves.isNotEmpty()) {
+                        launchWarning?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                         Text("Restore from save:", style = MaterialTheme.typography.labelMedium)
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             val noSaveSelected = selectedSave == null
@@ -355,6 +361,13 @@ internal fun CreateGameDialog(
                                         onClick = { selectedSave = save },
                                         modifier = Modifier.fillMaxWidth(),
                                     ) { Text(label, fontSize = 11.sp, maxLines = 2) }
+                                }
+                                saveWarnings[save]?.let {
+                                    Text(
+                                        it,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.error,
+                                    )
                                 }
                             }
                         }
@@ -529,6 +542,8 @@ internal fun CreateGameDialog(
             val levelNum = levelNumText.toIntOrNull() ?: 1
             Button(
                 onClick = {
+                    launchWarning = CoopSaveCompatibility.warning(context.filesDir, game, mission, selectedSave)
+                    if (launchWarning != null) return@Button
                     HostGameDefaults.save(
                         context,
                         HostGameDefaults.Defaults(
@@ -589,7 +604,7 @@ internal fun CreateGameDialog(
                 },
                 enabled =
                     selectedMissionLevelIsValid(selectedMissionInfo, levelNum) &&
-                        maxPlayers in 2..8,
+                        maxPlayers in 2..8 && saveWarnings[selectedSave] == null,
                 modifier = Modifier.focusRequester(createFocus),
             ) {
                 Text(confirmLabel)

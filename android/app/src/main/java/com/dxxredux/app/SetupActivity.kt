@@ -1525,7 +1525,7 @@ class SetupActivity : ComponentActivity() {
                     }
 
                     "start_game" -> {
-                        MatchmakingService.startGame()
+                        MatchmakingService.startGame(filesDir)
                     }
 
                     "launch_game" -> {

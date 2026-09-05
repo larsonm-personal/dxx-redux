@@ -403,19 +403,6 @@ static int coop_build_save_metadata(coop_save_metadata *meta)
 	return 1;
 }
 
-static uint32_t coop_save_checksum(const void *data, size_t size,
-                                   uint32_t checksum)
-{
-	const uint8_t *bytes = (const uint8_t *) data;
-	size_t i;
-
-	for (i = 0; i < size; i++) {
-		checksum ^= bytes[i];
-		checksum *= 16777619u;
-	}
-	return checksum;
-}
-
 static int coop_write_save_payload(rewind_file *file)
 {
 	size_t count = coop_powerup_duplication_count();

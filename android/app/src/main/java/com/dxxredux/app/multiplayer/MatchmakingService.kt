@@ -430,7 +430,23 @@ object MatchmakingService {
         send(protocolJson.encodeToString(MissionStatusMsg.serializer(), msg))
     }
 
-    fun startGame() {
+    fun startGame(filesDir: java.io.File) {
+        val gameInfo =
+            state.state.value.currentLobby
+                ?.gameInfo
+        if (gameInfo?.get("mode")?.jsonPrimitive?.content == "coop") {
+            val warning =
+                CoopSaveCompatibility.hostWarning(
+                    filesDir,
+                    gameInfo["game"]?.jsonPrimitive?.content ?: "d2",
+                    gameInfo["mission"]?.jsonPrimitive?.content,
+                )
+            if (warning != null) {
+                state.appendLog(warning)
+                NetLog.log("LOBBY", "Start blocked: $warning")
+                return
+            }
+        }
         send(protocolJson.encodeToString(StartGameMsg.serializer(), StartGameMsg()))
         state.appendLog("Requesting game start...")
         NetLog.log("LOBBY", "Requesting game start")

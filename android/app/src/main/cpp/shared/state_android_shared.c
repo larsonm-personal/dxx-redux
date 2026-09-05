@@ -649,6 +649,18 @@ int state_android_read_android_metadata_trailer(rewind_file *file,
 	return have_meta;
 }
 
+/* Reject incompatible co-op data before either engine replaces its live level */
+int state_android_preflight_coop_restore(rewind_file *file, const char *filename)
+{
+	coop_save_metadata metadata;
+	if (!(Game_mode & GM_MULTI_COOP) ||
+	    state_android_read_coop_metadata_trailer(file, &metadata))
+		return 1;
+	debug_log(DLOG_GAME, "restore rejected before level load: incompatible coop metadata file='%s'", filename);
+	con_printf(CON_URGENT, "Cannot restore: incompatible or damaged co-op save\n");
+	return 0;
+}
+
 int state_android_read_coop_metadata_trailer(rewind_file *file,
                                              coop_save_metadata *meta)
 {

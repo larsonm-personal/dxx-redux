@@ -1570,6 +1570,18 @@ object LobbyService {
     ) {
         if (!_isHosting.value) return
         val lid = hostedLobbyId ?: return
+        if (hostedMode == "coop") {
+            val warning =
+                appContext?.let {
+                    com.dxxredux.app.multiplayer.CoopSaveCompatibility
+                        .hostWarning(it.filesDir, hostedGame, hostedMission)
+                }
+            if (warning != null) {
+                _diagnostics.value = warning
+                NetLog.log("LAN", "Start blocked: $warning")
+                return
+            }
+        }
         val players = _hostedLobbyPlayers.value
         if (players.size < 2) {
             _diagnostics.value = "Cannot start: at least two players are required"

@@ -5660,7 +5660,15 @@ void multi_restore_game(ubyte slot, uint id)
 		return;
 	}
   
+#ifdef __ANDROID__
+	if (!state_restore_all_sub(filename)) {
+		COOPLOG("multi_restore_game rejected: game=d1 file='%s'", filename);
+		coop_restore_status_failed();
+		return;
+	}
+#else
 	state_restore_all_sub( filename );
+#endif
 #ifdef __ANDROID__
 	if (Game_mode & GM_MULTI_COOP)
 		coop_restore_status_complete();

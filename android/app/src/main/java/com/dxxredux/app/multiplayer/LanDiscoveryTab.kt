@@ -858,8 +858,20 @@ private fun LanDiscoveryView(
                 if (hostedMode == "coop") {
                     CoopRestoreSelectionSummary(hostedGame, hostedLevelNum)
                 }
+                val saveWarning =
+                    if (hostedMode == "coop") {
+                        CoopSaveCompatibility.hostWarning(context.filesDir, hostedGame, hostedMission)
+                    } else {
+                        null
+                    }
+                saveWarning?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 Button(
                     onClick = {
+                        if (hostedMode == "coop" &&
+                            CoopSaveCompatibility.hostWarning(context.filesDir, hostedGame, hostedMission) != null
+                        ) {
+                            return@Button
+                        }
                         onLaunchRequested(hostedGame)
                         LobbyService.startGame(
                             hostedDifficulty,
@@ -874,7 +886,7 @@ private fun LanDiscoveryView(
                     },
                     modifier = Modifier.fillMaxWidth(),
                     enabled =
-                        hostedPlayers.size >= 2 &&
+                        saveWarning == null && hostedPlayers.size >= 2 &&
                             hostedPlayers.all {
                                 it.connected && it.ready &&
                                     it.missionStatus?.status == MissionCompatibilityStatus.MATCH

@@ -2,7 +2,7 @@
 - the current goal is to create an android port
 
 ## principles
-- this project, as of now, is largely about porting via build systems, rather than detailed source code changes. try to make as few source changes (within d1/ or d2/) as possible
+- a key design goal is to minimize changes within the d1/ and d2/ folders. much code is being collected in android/ (see examples). I want d1/ and d2/ changes minimal to make a future merge easier
   - exceptions:
   - introspection or game control API extensions in order to support automated testing (this project has already started)
   - additional touch features such as adding "OK" to some menus
@@ -19,34 +19,13 @@
 - whenever adding dependencies, or build tools, pin them to a specific version using a version string or git commit tag, etc. - see the existing methods for doing that
 - keep dependencies lightweight and cross platform. a few things are rebuilt as single file/AI-slop reimplementations because the formats were simple-ish and it was easier than bringing in boost, or whatever
 
-## new features
-### launcher
-- there *is* a need to build a launcher that encompasses game file management and configuration editing. there will be significant new code for that and it will be mostly kotlin
-- this launcher will need to have interfaces to set configurations within the game. in general, the launcher will be operating by changing the game asset files and config files *before* the game launches, and then letting the game read those files in its existing ways, which aren't modified from the base redux game
-- when editing config files, attempt to centralize the logic for how the files are laid out within the existing C code,but add clean interfaces so the kotlin can call into helper functions to make edits
-- for these interfaces, it's ok to add shared constants in order to make the interfaces clean and minimize line count
-- the goal is for the C code to be the source of truth (along with shared constants) so config logic isn't spread unnecessarily between kotlin and C
-
-### touch interfaces and overlays
-- there will be new touch interfaces and overlays added. some of these will expose info in an overlay from the base game. interfaces between kotlin and java should be clean and simple. there will be some places where C helper functions are added to expose things the overlay can use, similar to the introspection API, although the full introspection API is probably the wrong answer for this because as it grows it will become more and more inefficient
-- the goal for the game is to have the full game be operable through a pure screen touch interface.  in effect, means playing the full game with only a mouse (no keyboard). there are places where keyboard presses are currently required. we're slowly adding ways to skip these with touches
-
-### matchmaking server
-- this is a freshly-built matchmaking and relay server in rust. it's in `/server/`
-- build with `cargo build` and test with `cargo test`
-- any changes should include a run of `rust_lint.sh` (it does a build+test call at the end to verify)
-- tests should complete within 60s, make sure to wrap them with a way to fail if it takes longer
-- server notes: the code will be open-source, so any possible flaw might be exploited. guard against malicious clients, dos, attempts to deadlock or crash the server, etc.  Clean up stale connections and clients such that the server doesn't leak system resources (for example, socket handles)
-
 ### code quality and testing
 - don't use emoji anywhere, not in code, not in comments, not in markdown files
 - don't use emdashes anywhere, but especially not in scripts
 - in printlines/comments, don't end self-contained sentences, especially those that already end with a newline, with a period. for example, `Write-Host "No lobbies to join"` instead of `Write-Host "No lobbies to join.`
 - keep to printable ascii wherever possible
 - avoid utf8-with-bom files; use plain ascii or utf8 without bom
-- always create a plan as step 1 of any block of work. plan files go here: android\ai tool plans\
-  - when a given tranche of work is done, always mark the finished parts in the plan file so the next phase can start at the right place
-  - attempt to categorize the plan file into an existing subdir, or propose a new subdir
+- always create a plan as step 1 of any significant block of work which will take multiple steps. plan files go here: android\ai tool plans\. plan files aren't needed for one-off questions or fixes that are kept within a single step
 - attempt to minimize line count to some extent. don't take this to an extreme, but avoid abstractions that are just wrappers, duplicated code, and other verbose things
 - mimic the style of the existing code. by and large, this is a "C in C++" codebase without classes or templates. it's ok to use things like std::array<> or simple RAII classes within the android/ dir, but don't get crazy. I *do* want you to use C++ patterns (within the android/ dir) that can avoid things like null pointer access and array bounds problems, the base game is highly susceptible to these things and it's sometimes a problem
 - add simple, high-level integration tests to catch regressions and document high level functionality. it's not necessary to add tests to cover every little function unless the function has tricky edge cases or is very complex by itself

@@ -194,12 +194,33 @@ fun LobbyScreen(
                     it.ready && it.missionStatus?.status == MissionCompatibilityStatus.MATCH
                 }
             val enoughPlayers = lobby.players.size >= 2
+            val saveWarning =
+                if (mode == "coop") {
+                    CoopSaveCompatibility.hostWarning(
+                        context.filesDir,
+                        gi["game"]?.jsonPrimitive?.content ?: "d2",
+                        mission,
+                    )
+                } else {
+                    null
+                }
+            saveWarning?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Button(
                 onClick = {
+                    if (mode == "coop" &&
+                        CoopSaveCompatibility.hostWarning(
+                            context.filesDir,
+                            gi["game"]?.jsonPrimitive?.content ?: "d2",
+                            mission,
+                        ) !=
+                        null
+                    ) {
+                        return@Button
+                    }
                     onLaunchRequested(gi["game"]?.jsonPrimitive?.content ?: "d2")
-                    MatchmakingService.startGame()
+                    MatchmakingService.startGame(context.filesDir)
                 },
-                enabled = allReady && enoughPlayers,
+                enabled = allReady && enoughPlayers && saveWarning == null,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("Start Game")

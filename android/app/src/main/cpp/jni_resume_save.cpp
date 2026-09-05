@@ -18,10 +18,48 @@
 extern "C" {
 #include "android_save_meta.h"
 #include "android_save_set.h"
+#include "coop/coop_save_format.h"
 #include "jni_string.h"
 }
 
 using nlohmann::json;
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_dxxredux_app_multiplayer_CoopSaveCompatibility_nativeSlotPath(
+    JNIEnv *env, jobject, jstring root_arg, jstring mission_arg, jint slot)
+{
+	const char *root = env->GetStringUTFChars(root_arg, nullptr);
+	const char *mission = env->GetStringUTFChars(mission_arg, nullptr);
+	char relative[ANDROID_SAVE_META_PATH_LEN];
+	std::string path;
+	if (root && mission && android_save_set_build_slot_path(relative, sizeof(relative), 1, "coop", ANDROID_SAVE_SET_COOP_CALLSIGN, mission, slot, 1))
+		path = std::string(root) + "/" + relative;
+	if (root) env->ReleaseStringUTFChars(root_arg, root);
+	if (mission) env->ReleaseStringUTFChars(mission_arg, mission);
+	return env->NewStringUTF(path.c_str());
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_multiplayer_CoopSaveCompatibility_nativeIsCompatible(
+    JNIEnv *env, jobject, jstring path_arg)
+{
+	const char *path = env->GetStringUTFChars(path_arg, nullptr);
+	FILE *file = path ? fopen(path, "rb") : nullptr;
+	if (path) env->ReleaseStringUTFChars(path_arg, path);
+	if (!file) return JNI_FALSE;
+	int supported = 0;
+	if (!fseek(file, 0, SEEK_END)) {
+		long end = ftell(file);
+		android_save_meta_disk meta;
+		if (end >= (long) sizeof(meta) &&
+		    !fseek(file, end - (long) sizeof(meta), SEEK_SET) &&
+		    fread(&meta, sizeof(meta), 1, file) == 1 && android_save_meta_is_valid(&meta))
+			end -= (long) sizeof(meta);
+		supported = coop_save_format_supported(file, end);
+	}
+	fclose(file);
+	return supported ? JNI_TRUE : JNI_FALSE;
+}
 
 static bool is_save_slot_name(const char *name)
 {

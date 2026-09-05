@@ -30,9 +30,7 @@
 #endif
 
 /* --- constants --- */
-#define COOP_SAVE_META_TAG          0x434F4F50 /* "COOP" */
-#define COOP_SAVE_META_VER          6
-#define COOP_SAVE_FOOTER_TAG        0x36504643 /* "CFP6" */
+#include "coop_save_format.h"
 #define COOP_MAX_REMEMBERED_PLAYERS 16
 #define COOP_CLIENT_ID_LEN          36         /* UUID without null */
 #define COOP_SAVE_MAX_WEAPONS       10         /* max(d1=5, d2=10) */
@@ -89,15 +87,6 @@ typedef struct coop_save_metadata {
 	uint8_t difficulty_max;           /* v4 */
 	uint8_t duplicate_energy_shields; /* v5 */
 } coop_save_metadata;
-
-typedef struct coop_save_footer {
-	uint32_t tag;
-	uint16_t version;
-	uint16_t reserved;
-	uint32_t payload_size;
-	uint32_t collection_count;
-	uint32_t checksum;
-} coop_save_footer;
 
 /* --- helpers (implemented in coop_save.c) --- */
 

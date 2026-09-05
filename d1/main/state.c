@@ -2226,6 +2226,13 @@ int state_restore_all_sub(char *filename)
 	}
 
 //Read id
+	#ifdef __ANDROID__
+	/* android port: preflight before replacing live state */
+	if (!state_android_preflight_coop_restore(fp, filename)) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+	#endif
 	PHYSFS_read(fp, id, sizeof(char) * 4, 1);
 	if ( memcmp( id, dgss_id, 4 )) {
 		con_printf(CON_URGENT, "restore: bad save id in '%s'\n", filename);

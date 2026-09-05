@@ -77,6 +77,9 @@ add_executable(test_android_save_set test_android_save_set.c
                                      "${DXX_TEST_SHARED_SOURCE_DIR}/android_save_set.c")
 target_include_directories(test_android_save_set PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
 
+add_executable(test_coop_save_format test_coop_save_format.c)
+target_include_directories(test_coop_save_format PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
+
 add_executable(
     test_android_file_pair_transaction
     test_android_file_pair_transaction.c
@@ -326,6 +329,7 @@ set(DXX_HOST_TEST_TARGETS
     test_homing_compat
     test_android_save_meta
     test_android_save_set
+    test_coop_save_format
     test_android_file_pair_transaction
     test_playsave_transaction
     test_playsave_layout
