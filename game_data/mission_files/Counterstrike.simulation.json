@@ -7,10 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 27,
+    "ok": 28,
     "failed": 1,
-    "timeout": 1,
-    "route_mismatch": 1
+    "timeout": 1
   },
   "levels": [
     {
@@ -867,8 +866,8 @@
     {
       "level_num": 20,
       "level_file": "d2leve-4.rl2",
-      "route_input_sha256": "CB61E84BA7BF6EE778E50BDA11DBB97FE870DBF89E69023E56CA9F9A82DC03A4",
-      "status": "route_mismatch",
+      "route_input_sha256": "A5AE37D43B08D4CEC599CD43410825F6BE703189305EF1DD6B927A564924A45D",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -911,8 +910,7 @@
       "rng_end": {
         "state": 1589087784,
         "calls": 2751
-      },
-      "problem": "live objective sequence differs from route input"
+      }
     },
     {
       "level_num": 21,
@@ -1221,7 +1219,7 @@
     {
       "level_num": -5,
       "level_file": "d2leve-s.rl2",
-      "route_input_sha256": "C81EDC002BCCF934C1CA8AE4BEE4095D6BF4F89651632B84D65C72A66406E74B",
+      "route_input_sha256": "9548EB233FD86EA0F5488878657EFA631326538ED2A44A8DC7117685033B71EB",
       "status": "failed",
       "rng_start": {
         "state": 1,

@@ -24,7 +24,13 @@ $d2Cmake = [IO.File]::ReadAllText((Join-Path $repoRoot 'd2\main\CMakeLists.txt')
 
 Assert-Contains $publicRunner "[string]`$Engine = 'Windows'" 'Windows must be the default metadata engine'
 Assert-Contains $publicRunner "`$Engine -eq 'Windows'" 'The public runner must dispatch to the Windows path'
+Assert-Contains $publicRunner 'IncludeBuiltInCounterstrike' 'The public runner must forward focused built-in Counterstrike requests'
+Assert-Contains $publicRunner 'IncludeBuiltInFirstStrike' 'The public runner must forward focused built-in First Strike requests'
+Assert-Contains $publicRunner 'if ($RoutingDevelopmentSet)' 'The public runner must resolve the shared routing development set'
 Assert-Contains $hostRunner 'dxx-redux-$Game-metadata-worker' 'The host runner must use the shared native worker'
+Assert-Contains $hostRunner '-or $IncludeBuiltInCounterstrike' 'Focused host runs must be able to include built-in Counterstrike'
+Assert-Contains $hostRunner '-or $IncludeBuiltInFirstStrike' 'Focused host runs must be able to include built-in First Strike'
+Assert-Contains $hostRunner 'Invoke-BuiltinHeadlessScan -Game d1' 'First Strike metadata must come from the native D1 analyzer'
 Assert-Contains $hostRunner '--directory-precedence' 'The host runner must load variant precedence from shared Kotlin'
 Assert-Contains $hostRunner "op = 'project'" 'The host runner must use the shared Kotlin checked-in projection'
 Assert-Contains $hostRunner "op = 'descriptor'" 'The host runner must use the shared Kotlin descriptor parser'

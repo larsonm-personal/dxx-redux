@@ -50,6 +50,17 @@ Assert-True ($missingMetadataStage.Count -eq 1 -and $missingMetadataStage[0].Key
     'Missing-metadata selection should contain only the metadata stage'
 Assert-True (($missingMetadataStage[0].Arguments -join ',') -eq '-MissingOnly') `
     'Missing-metadata selection should request missing archive JSON only'
+$routingStages = @(Get-RegressionDataStages -RepoRoot $repoRoot -Category RoutingSet)
+$routingMissions = @(Get-RoutingDevelopmentMissions)
+Assert-True (($routingMissions.Json -join ',') -eq `
+        'castaway_redux.json,Counterstrike.json,FirstStrike.json,Obsidian.json') `
+    'Routing development mission order should remain stable'
+Assert-True ($routingStages.Count -eq 2) `
+    'Routing development selection should contain metadata and simulation stages'
+Assert-True (($routingStages[0].Arguments -join ' ') -eq '-RoutingDevelopmentSet') `
+    'Routing development metadata should use its stable focused-set switch'
+Assert-True (($routingStages[1].Arguments -join ' ') -eq '-Mode Headless -WriteRegression -RoutingDevelopmentSet') `
+    'Routing development simulation should use canonical headless output and its stable focused-set switch'
 
 $sampleStages = @(Get-RegressionDataStages -RepoRoot $repoRoot)
 $sampleEstimates = @(600, 1200, 1800, 2400)

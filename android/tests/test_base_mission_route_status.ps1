@@ -3,7 +3,7 @@
 $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$descentPath = Join-Path $repoRoot "game_data\mission_files\Descent.json"
+$firstStrikePath = Join-Path $repoRoot "game_data\mission_files\FirstStrike.json"
 $counterstrikePath = Join-Path $repoRoot "game_data\mission_files\Counterstrike.json"
 
 function Get-MissionLevels {
@@ -13,10 +13,10 @@ function Get-MissionLevels {
     return @($missions | ForEach-Object { $_.levels })
 }
 
-$descentFailures = @(Get-MissionLevels -Path $descentPath | Where-Object { $_.route_status -ne "ok" })
-if ($descentFailures.Count -gt 0) {
-    $summary = $descentFailures | ForEach-Object { "level $($_.level_num): $($_.route_status) $($_.route_problem)" }
-    throw "Descent route regressions:`n$($summary -join "`n")"
+$firstStrikeFailures = @(Get-MissionLevels -Path $firstStrikePath | Where-Object { $_.route_status -ne "ok" })
+if ($firstStrikeFailures.Count -gt 0) {
+    $summary = $firstStrikeFailures | ForEach-Object { "level $($_.level_num): $($_.route_status) $($_.route_problem)" }
+    throw "First Strike route regressions:`n$($summary -join "`n")"
 }
 
 $counterstrikeFailures = @(

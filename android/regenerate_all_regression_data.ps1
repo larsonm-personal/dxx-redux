@@ -12,8 +12,8 @@
   report used by later full and partial runs for remaining-time estimates.
 
 .PARAMETER Category
-  Menu, All, Cd, Fingerprints, Metadata, MissingMetadata, or Simulation. Menu is the
-  interactive default.
+  Menu, All, Cd, Fingerprints, Metadata, MissingMetadata, Simulation, or RoutingSet.
+  Menu is the interactive default.
 
 .PARAMETER ReportDir
   Directory for durable run artifacts and full-run timing reports.
@@ -31,12 +31,13 @@
   .\android\regenerate_all_regression_data.ps1 -Category All
   .\android\regenerate_all_regression_data.ps1 -Category Metadata
   .\android\regenerate_all_regression_data.ps1 -Category MissingMetadata
+  .\android\regenerate_all_regression_data.ps1 -Category RoutingSet
   .\android\regenerate_all_regression_data.ps1 -Target45Minutes
 #>
 
 [CmdletBinding()]
 param(
-    [ValidateSet('Menu', 'All', 'Cd', 'Fingerprints', 'Metadata', 'MissingMetadata', 'Simulation')]
+    [ValidateSet('Menu', 'All', 'Cd', 'Fingerprints', 'Metadata', 'MissingMetadata', 'Simulation', 'RoutingSet')]
     [string]$Category = 'Menu',
     [ValidateSet('Headless', 'Headed')]
     [string]$SimulationMode = 'Headless',
@@ -51,11 +52,12 @@ $script:RepoRoot = Split-Path $PSScriptRoot -Parent
 $script:HelpersDir = Join-Path $PSScriptRoot 'helpers'
 . (Join-Path $script:HelpersDir 'test_suite_progress.ps1')
 . (Join-Path $script:HelpersDir 'runtime_targeted_sampling.ps1')
+. (Join-Path $script:HelpersDir 'routing_development_missions.ps1')
 
 function Get-RegressionDataStages {
     param(
         [string]$RepoRoot,
-        [ValidateSet('All', 'Cd', 'Fingerprints', 'Metadata', 'MissingMetadata', 'Simulation')]
+        [ValidateSet('All', 'Cd', 'Fingerprints', 'Metadata', 'MissingMetadata', 'Simulation', 'RoutingSet')]
         [string]$Category = 'All',
         [ValidateSet('Headless', 'Headed')]
         [string]$SimulationMode = 'Headless'
@@ -105,6 +107,22 @@ function Get-RegressionDataStages {
         $stage.Arguments = @('-MissingOnly')
         return @($stage)
     }
+    if ($Category -eq 'RoutingSet') {
+        $metadata = @($stages | Where-Object { $_.Key -eq 'Metadata' })[0]
+        $metadata.Key = 'RoutingSetMetadata'
+        $metadata.Name = 'Routing development mission metadata'
+        $metadata.Description = 'Windows metadata for Castaway Redux, Counterstrike, First Strike under D2, and Obsidian'
+        $metadata.Arguments = @('-RoutingDevelopmentSet')
+        $metadata.DefaultEstimatedRuntime = 180
+
+        $simulation = @($stages | Where-Object { $_.Key -eq 'Simulation' })[0]
+        $simulation.Key = 'RoutingSetSimulation'
+        $simulation.Name = 'Routing development GuideBot simulations'
+        $simulation.Description = 'Headless route confirmation for the four routing development campaigns'
+        $simulation.Arguments = @('-Mode', 'Headless', '-WriteRegression', '-RoutingDevelopmentSet')
+        $simulation.DefaultEstimatedRuntime = 900
+        return @($metadata, $simulation)
+    }
     return @($stages | Where-Object { $_.Key -eq $Category })
 }
 
@@ -117,6 +135,7 @@ function Select-RegressionDataCategory {
     Write-Host '  4. Mission level metadata'
     Write-Host '  5. Missing mission archive metadata only'
     Write-Host '  6. GuideBot engine route simulations'
+    Write-Host '  7. Routing development set metadata and GuideBot simulations'
     Write-Host '  M. Search for and watch one GuideBot route'
     Write-Host '  T. Resumable hash-ring sample targeting 45 minutes'
     Write-Host '  Q. Cancel'
@@ -135,13 +154,16 @@ function Select-RegressionDataCategory {
             'missingmetadata' { return 'MissingMetadata' }
             '6' { return 'Simulation' }
             'simulation' { return 'Simulation' }
+            '7' { return 'RoutingSet' }
+            'routing' { return 'RoutingSet' }
+            'routingset' { return 'RoutingSet' }
             'm' { return 'ManualSimulation' }
             'manual' { return 'ManualSimulation' }
             't' { return 'Target45' }
             'target' { return 'Target45' }
             'q' { return $null }
             'quit' { return $null }
-            default { Write-Host 'Enter 1, 2, 3, 4, 5, 6, M, T, or Q' -ForegroundColor Yellow }
+            default { Write-Host 'Enter 1, 2, 3, 4, 5, 6, 7, M, T, or Q' -ForegroundColor Yellow }
         }
     }
 }

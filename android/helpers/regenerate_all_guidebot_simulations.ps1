@@ -4,6 +4,7 @@
 param(
     [ValidateSet('Headless', 'Headed', 'Desktop')][string]$Mode = 'Headless',
     [string[]]$MissionJson,
+    [string]$MissionMetadataRoot,
     [int[]]$Level,
     [ValidateRange(0.000001, 1.0)][double]$SampleFraction = 1.0,
     [ValidateRange(0, [int]::MaxValue)][int]$SampleSeed = 0,
@@ -12,9 +13,11 @@ param(
     [ValidateRange(10, 7200)][int]$LevelTimeoutSeconds = 180,
     [ValidateRange(0, 128)][int]$MaxParallel = 0,
     [string]$HogDir = 'game_data/CD images/Descent II (USA) (v1.1)/data_tracks/d2data',
+    [string]$D1InD2HogDir = 'game_data_to_copy_to_emulator/temp',
     [string]$OutputRoot,
     [switch]$NoBuild,
     [switch]$WriteRegression,
+    [switch]$RoutingDevelopmentSet,
     [switch]$DryRun,
     [string]$DryRunJsonOut,
     [string]$HeadlessExecutable,
@@ -25,7 +28,11 @@ $ErrorActionPreference = 'Stop'
 $scriptDir = Split-Path -Parent $PSCommandPath
 $androidRoot = Split-Path -Parent $scriptDir
 $repoRoot = Split-Path -Parent $androidRoot
-$missionRoot = Join-Path $repoRoot 'game_data\mission_files'
+$missionRoot = if ($MissionMetadataRoot) {
+    $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($MissionMetadataRoot)
+} else {
+    Join-Path $repoRoot 'game_data\mission_files'
+}
 $stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
 $runRoot = if ($OutputRoot) {
     $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputRoot)
@@ -47,6 +54,11 @@ $batchStart = [DateTime]::UtcNow
 . (Join-Path $scriptDir 'runtime_targeted_sampling.ps1')
 . (Join-Path $scriptDir 'cd_level_metadata_sources.ps1')
 . (Join-Path $scriptDir 'headless_process_pool.ps1')
+. (Join-Path $scriptDir 'routing_development_missions.ps1')
+
+if ($RoutingDevelopmentSet) {
+    $MissionJson = @(Get-RoutingDevelopmentMissions | ForEach-Object Json)
+}
 
 function Write-GuidebotStatus {
     param([string]$Message, [string]$Color = 'Cyan')
@@ -88,7 +100,9 @@ function Get-GuidebotMissionFiles {
     return @($files | Where-Object {
             try {
                 $entries = @(Get-GuidebotMissionEntries -Path $_.FullName)
-                return @($entries | Where-Object { [string](Get-GuidebotPropertyValue $_ 'game' '') -eq 'd2' }).Count -gt 0
+                return @($entries | Where-Object {
+                        [string](Get-GuidebotPropertyValue $_ 'game' '') -in @('d1', 'd2')
+                    }).Count -gt 0
             } catch {
                 return $false
             }
@@ -101,7 +115,8 @@ function Get-GuidebotWorkItems {
     $items = foreach ($file in $Files) {
         $relative = $file.FullName.Substring($missionRoot.Length).TrimStart('\', '/').Replace('\', '/')
         foreach ($mission in @(Get-GuidebotMissionEntries -Path $file.FullName)) {
-            if ([string](Get-GuidebotPropertyValue $mission 'game' '') -ne 'd2') { continue }
+            $game = [string](Get-GuidebotPropertyValue $mission 'game' '')
+            if ($game -notin @('d1', 'd2')) { continue }
             $targetIndex = [int](Get-GuidebotPropertyValue $mission 'target_index' 0)
             foreach ($levelRecord in @(Get-GuidebotPropertyValue $mission 'levels' @())) {
                 $levelNumber = [int](Get-GuidebotPropertyValue $levelRecord 'level_num' 0)
@@ -114,6 +129,8 @@ function Get-GuidebotWorkItems {
                     MetadataFile = $file
                     RelativeMetadata = $relative
                     Mission = $mission
+                    Game = $game
+                    D1InD2 = $game -eq 'd1'
                     Level = $levelRecord
                     LevelNumber = $levelNumber
                     EngineLevelNumber = if ($levelNumber -eq 0) { 1 } else { $levelNumber }
@@ -169,7 +186,7 @@ function Copy-GuidebotFlatStage {
 function Initialize-GuidebotMissionStage {
     param([Parameter(Mandatory)][IO.FileInfo]$MetadataFile)
 
-    if ($MetadataFile.Name -eq 'Counterstrike.json') {
+    if ($MetadataFile.Name -in @('Counterstrike.json', 'FirstStrike.json')) {
         return [pscustomobject]@{ ExtraDir = ''; Source = 'builtin' }
     }
     $archive = @(
@@ -271,9 +288,10 @@ function Invoke-GuidebotDesktopLevel {
     $errorLog = "$log.stderr"
     $sandbox = Join-Path $runRoot 'desktop_sandbox'
     New-Item -ItemType Directory -Path $sandbox -Force | Out-Null
+    $workItemHogDir = if ($WorkItem.D1InD2) { $resolvedD1InD2HogDir } else { $resolvedHogDir }
     $arguments = @(
         '-window', '-nomovies', '-nosound', '-nomusic',
-        '-hogdir', $resolvedHogDir,
+        '-hogdir', $workItemHogDir,
         '-mission', $missionName,
         '-level', [string]$WorkItem.EngineLevelNumber,
         '-route-confirm-timeout-seconds', [string]$WorkItem.SimulationTimeLimitSeconds,
@@ -357,13 +375,17 @@ function New-GuidebotHeadedScript {
         )
     }
     $steps = [Collections.Generic.List[object]]::new()
+    $dependencies = [Collections.Generic.List[object]]::new()
+    $dependencies.Add([ordered]@{ file = 'descent2.hog'; sha256 = 'f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703' })
+    $dependencies.Add([ordered]@{ file = 'descent2.ham'; sha256 = '5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d' })
+    $dependencies.Add([ordered]@{ file = 'groupa.pig'; sha256 = 'facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b' })
+    if ($WorkItem.D1InD2) {
+        $dependencies.Add([ordered]@{ file = 'descent.hog'; sha256 = '83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052' })
+        $dependencies.Add([ordered]@{ file = 'descent.pig'; sha256 = '093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe' })
+    }
     $steps.Add([ordered]@{ _info = [ordered]@{
                 games = @('d2')
-                _deps = @(
-                    [ordered]@{ file = 'descent2.hog'; sha256 = 'f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703' }
-                    [ordered]@{ file = 'descent2.ham'; sha256 = '5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d' }
-                    [ordered]@{ file = 'groupa.pig'; sha256 = 'facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b' }
-                )
+                _deps = @($dependencies)
             }
         })
     $steps.Add([ordered]@{ action = 'enter_launcher' })
@@ -511,7 +533,7 @@ function Write-GuidebotSimulationFile {
     $simulationPath = Join-Path $MetadataFile.DirectoryName ($MetadataFile.BaseName + '.simulation.json')
     $relative = $MetadataFile.FullName.Substring($missionRoot.Length).TrimStart('\', '/').Replace('\', '/')
     $simulationEntries = foreach ($mission in $entries) {
-        if ([string](Get-GuidebotPropertyValue $mission 'game' '') -ne 'd2') { continue }
+        if ([string](Get-GuidebotPropertyValue $mission 'game' '') -notin @('d1', 'd2')) { continue }
         $targetIndex = [int](Get-GuidebotPropertyValue $mission 'target_index' 0)
         $existing = Get-ExistingGuidebotLevelMap -Path $simulationPath -TargetIndex $targetIndex
         $levels = foreach ($levelRecord in @($mission.levels)) {
@@ -565,6 +587,8 @@ function Write-GuidebotSimulationFile {
 
 $hogPath = if ([IO.Path]::IsPathRooted($HogDir)) { $HogDir } else { Join-Path $repoRoot $HogDir }
 $resolvedHogDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($hogPath)
+$d1InD2HogPath = if ([IO.Path]::IsPathRooted($D1InD2HogDir)) { $D1InD2HogDir } else { Join-Path $repoRoot $D1InD2HogDir }
+$resolvedD1InD2HogDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($d1InD2HogPath)
 $files = @(Get-GuidebotMissionFiles)
 $allItems = @(Get-GuidebotWorkItems -Files $files)
 $selectedItems = $allItems
@@ -581,6 +605,7 @@ if ($DryRun) {
         Write-GuidebotSimulationJson -Path $DryRunJsonOut -Value @($selectedItems | ForEach-Object {
                 [ordered]@{
                     identity = $_.Identity
+                    engine_mode = if ($_.D1InD2) { 'd1_in_d2' } else { 'd2' }
                     engine_level = $_.EngineLevelNumber
                     simulation_time_limit_seconds = $_.SimulationTimeLimitSeconds
                     route_input_sha256 = $_.RouteHash
@@ -592,6 +617,14 @@ if ($DryRun) {
 }
 if ($Mode -in @('Headless', 'Desktop') -and -not (Test-Path -LiteralPath $resolvedHogDir -PathType Container)) {
     throw "D2 HOG directory not found: $resolvedHogDir"
+}
+$d1InD2Selected = @($selectedItems | Where-Object D1InD2).Count -gt 0
+if ($Mode -in @('Headless', 'Desktop') -and $d1InD2Selected) {
+    $missingD1InD2Files = @('descent2.hog', 'descent2.ham', 'groupa.pig', 'descent.hog', 'descent.pig') |
+        Where-Object { -not (Test-Path -LiteralPath (Join-Path $resolvedD1InD2HogDir $_) -PathType Leaf) }
+    if ($missingD1InD2Files.Count -gt 0) {
+        throw "D1-in-D2 data directory is missing $($missingD1InD2Files -join ', '): $resolvedD1InD2HogDir"
+    }
 }
 if ($Mode -eq 'Headed' -and $WriteRegression) {
     Write-GuidebotStatus 'Warning: headed results are noncanonical and will update regression files only because -WriteRegression was explicit' 'Yellow'
@@ -657,6 +690,7 @@ if ($Mode -eq 'Headless') {
                 [string](Get-GuidebotPropertyValue $item.Mission 'mission_filename' 'd2')
             )
             $safeIdentity = [regex]::Replace($item.Identity, '[^A-Za-z0-9_.-]+', '_')
+            $workItemHogDir = if ($item.D1InD2) { $resolvedD1InD2HogDir } else { $resolvedHogDir }
             $runStates[$item.Identity] = [pscustomobject]@{
                 Item = $item; Completed = 0; Runs = @{}; Problems = [Collections.Generic.List[string]]::new()
             }
@@ -664,7 +698,7 @@ if ($Mode -eq 'Headless') {
                 $output = Join-Path $resultRoot "${safeIdentity}_run_${run}.json"
                 $log = Join-Path $logRoot "${safeIdentity}_run_${run}.log"
                 $arguments = @(
-                    '-hogdir', $resolvedHogDir, '-mission', $missionName,
+                    '-hogdir', $workItemHogDir, '-mission', $missionName,
                     '-level', [string]$item.EngineLevelNumber,
                     '-route-confirm-timeout-seconds', [string]$item.SimulationTimeLimitSeconds,
                     '-route-confirm-json-out', $output

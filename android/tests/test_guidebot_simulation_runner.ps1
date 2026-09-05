@@ -14,6 +14,7 @@ function Invoke-DryRun {
         [double]$SampleFraction = 1,
         [int]$SampleSeed = 0,
         [string]$SampleStatePath,
+        [switch]$RoutingDevelopmentSet,
         [ValidateSet('Headless', 'Headed', 'Desktop')][string]$Mode = 'Headless'
     )
     $output = Join-Path $tempRoot "$Name.json"
@@ -22,6 +23,7 @@ function Invoke-DryRun {
     if ($Level) { $parameters.Level = $Level }
     if ($SampleFraction -lt 1) { $parameters.SampleFraction = $SampleFraction; $parameters.SampleSeed = $SampleSeed }
     if ($SampleStatePath) { $parameters.SampleStatePath = $SampleStatePath }
+    if ($RoutingDevelopmentSet) { $parameters.RoutingDevelopmentSet = $true }
     & $runner @parameters | Out-Null
     return @(Get-Content -LiteralPath $output -Raw | ConvertFrom-Json)
 }
@@ -58,6 +60,20 @@ try {
     }
     if (@($multiDescriptor | Where-Object { $_.identity -notmatch '\|0\|' -or $_.engine_level -ne 1 }).Count) {
         throw 'Level-zero metadata must retain its identity while launching engine level 1'
+    }
+    $routingSet = @(Invoke-DryRun -Name routing_set -RoutingDevelopmentSet)
+    $routingFiles = @($routingSet.identity | ForEach-Object { $_.Split('|')[0] } | Select-Object -Unique)
+    if (($routingFiles -join ',') -cne 'castaway_redux.json,Counterstrike.json,FirstStrike.json,Obsidian.json') {
+        throw "Routing development set selected unexpected mission files: $($routingFiles -join ', ')"
+    }
+    $firstStrike = @($routingSet | Where-Object { $_.identity -like 'FirstStrike.json|*' })
+    if ($firstStrike.Count -ne 30 -or @($firstStrike | Where-Object engine_mode -ne 'd1_in_d2').Count) {
+        throw 'Canonical First Strike must expose all 30 native D1 levels through the D2 simulation engine'
+    }
+    $customD1 = @(Invoke-DryRun -Name custom_d1 -MissionJson trainng.json -Level 1)
+    if ($customD1.Count -ne 1 -or $customD1[0].engine_mode -ne 'd1_in_d2' -or
+        $customD1[0].identity -notmatch '\.rdl$') {
+        throw 'Custom D1 archives must be discovered as D1-in-D2 work items'
     }
     $sampleA = @(Invoke-DryRun -Name sample_a -MissionJson Counterstrike.json -SampleFraction 0.25 `
             -SampleSeed 717 -SampleStatePath (Join-Path $tempRoot 'sample_a_state.json'))

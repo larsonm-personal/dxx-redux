@@ -62,6 +62,10 @@ $record = New-GuidebotMissionSimulationRecord -Mission $mission -Levels @($level
 $validation = Test-GuidebotMissionSimulationRecord -Record $record
 Assert-True $validation.Valid "valid simulation record was rejected: $($validation.Errors -join '; ')"
 Assert-True ($record.status -eq 'ok' -and $record.level_counts.ok -eq 1) 'mission summary is incorrect'
+$d1Mission = $mission.PSObject.Copy()
+$d1Mission | Add-Member -NotePropertyName game -NotePropertyValue 'd1'
+$d1Record = New-GuidebotMissionSimulationRecord -Mission $d1Mission -Levels @($levelResult)
+Assert-True ($d1Record.engine_mode -eq 'd1_in_d2') 'D1 simulation output must identify the D2 engine mode'
 
 $mismatchEngine = $engine.PSObject.Copy()
 $mismatchEngine.objectives = @(

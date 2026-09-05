@@ -7,6 +7,9 @@ param(
     [string]$SampleStatePath,
     [string[]]$ArchiveNames,
     [ValidateRange(0, 128)][int]$MaxParallel = 0,
+    [switch]$IncludeBuiltInCounterstrike,
+    [switch]$IncludeBuiltInFirstStrike,
+    [switch]$RoutingDevelopmentSet,
     [switch]$NoBuild,
     [switch]$MissingOnly
 )
@@ -26,6 +29,15 @@ $hostBatch = Join-Path $scriptDir "regenerate_all_mission_metadata_host.ps1"
 . (Join-Path $scriptDir 'runtime_targeted_sampling.ps1')
 . (Join-Path $scriptDir 'cd_level_metadata_sources.ps1')
 . (Join-Path $scriptDir 'mission_archive_sources.ps1')
+. (Join-Path $scriptDir 'routing_development_missions.ps1')
+
+$routingArchivePaths = @()
+if ($RoutingDevelopmentSet) {
+    $routingMissions = @(Get-RoutingDevelopmentMissions)
+    $routingArchivePaths = @($routingMissions.Archive | Where-Object { $_ } | ForEach-Object { Join-Path $zipDir $_ })
+    $IncludeBuiltInCounterstrike = @($routingMissions | Where-Object BuiltInGame -eq 'd2').Count -gt 0
+    $IncludeBuiltInFirstStrike = @($routingMissions | Where-Object BuiltInGame -eq 'd1').Count -gt 0
+}
 
 function Write-Status {
     param([string]$Message, [string]$Color = "Cyan")
@@ -59,8 +71,13 @@ if ($MissingOnly -and $eligibleArchiveCount -eq 0) {
 
 if ($Engine -eq 'Windows') {
     $hostArgs = @{ MaxParallel = $MaxParallel }
+    if ($IncludeBuiltInCounterstrike) { $hostArgs.IncludeBuiltInCounterstrike = $true }
+    if ($IncludeBuiltInFirstStrike) { $hostArgs.IncludeBuiltInFirstStrike = $true }
     if ($NoBuild) { $hostArgs.NoBuild = $true }
-    if ($ArchiveNames) {
+    if ($routingArchivePaths.Count -gt 0) {
+        $hostArgs.ArchivePaths = $routingArchivePaths
+        $hostArgs.CdSourceIds = @('__none__')
+    } elseif ($ArchiveNames) {
         $hostArgs.ArchiveNames = @($ArchiveNames)
         $hostArgs.CdSourceIds = @('__none__')
     } elseif ($MissingOnly) {

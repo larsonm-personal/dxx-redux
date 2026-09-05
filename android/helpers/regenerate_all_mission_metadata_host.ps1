@@ -8,6 +8,8 @@ param(
     [string[]]$ArchiveNames,
     [string[]]$ArchivePaths,
     [string[]]$CdSourceIds,
+    [switch]$IncludeBuiltInCounterstrike,
+    [switch]$IncludeBuiltInFirstStrike,
     [ValidateRange(1, [int]::MaxValue)][int]$ArchiveTimeoutSeconds = 120,
     [ValidateRange(0, 128)][int]$MaxParallel = 0,
     [string]$OutputRoot,
@@ -1057,7 +1059,21 @@ foreach ($source in $allCdSources) {
 }
 
 if (-not $CdSourcesOnly) {
-    if (-not $hasArchiveFilter) {
+    if (-not $hasArchiveFilter -or $IncludeBuiltInFirstStrike) {
+        $firstStrikeRawPath = Join-Path $rawDir "FirstStrike.metadata.json"
+        $firstStrikeLogPath = Join-Path $logsDir "FirstStrike.log"
+        $firstStrikeMetadataPath = Join-Path $metadataDir "FirstStrike.json"
+        $firstStrikeRegressionPath = Join-Path $zipDir "FirstStrike.json"
+        Write-Status "Host metadata: built-in First Strike"
+        $firstStrikeRaw = Invoke-BuiltinHeadlessScan -Game d1 -Executables $executables -DataDirs $dataDirs -RawOutputPath $firstStrikeRawPath -LogPath $firstStrikeLogPath
+        $firstStrike = Get-CheckedInMissionJson -RawPath $firstStrikeRawPath -TargetIndex 0 -SourceName "descent.hog" -MissionFilename "descent"
+        Write-JsonValue -Path $firstStrikeMetadataPath -Value $firstStrike -MissionMetadata
+        if (-not $NoRegressionCopy) {
+            Write-Utf8NoBomTextAtomically -Path $firstStrikeRegressionPath -Text ([System.IO.File]::ReadAllText($firstStrikeMetadataPath))
+        }
+        Write-Status "PASSED: built-in First Strike" "Green"
+    }
+    if (-not $hasArchiveFilter -or $IncludeBuiltInCounterstrike) {
         $counterstrikeRawPath = Join-Path $rawDir "Counterstrike.metadata.json"
         $counterstrikeLogPath = Join-Path $logsDir "Counterstrike.log"
         $counterstrikeMetadataPath = Join-Path $metadataDir "Counterstrike.json"

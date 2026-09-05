@@ -246,17 +246,21 @@ function New-GuidebotMissionSimulationRecord {
         $count = @($Levels | Where-Object { $_.status -eq $status }).Count
         if ($count -gt 0) { $counts[$status] = $count }
     }
-    return [pscustomobject][ordered]@{
+    $record = [ordered]@{
         schema = $script:GuidebotSimulationSchema
         mission_filename = [string](Get-GuidebotPropertyValue $Mission 'mission_filename' '')
         target_index = [int](Get-GuidebotPropertyValue $Mission 'target_index' 0)
-        generation = $script:GuidebotSimulationGeneration
-        fixed_hz = $script:GuidebotSimulationFixedHz
-        seed = $script:GuidebotSimulationSeed
-        status = Get-GuidebotMissionAggregateStatus -Levels $Levels
-        level_counts = [pscustomobject]$counts
-        levels = @($Levels)
     }
+    if ([string](Get-GuidebotPropertyValue $Mission 'game' '') -eq 'd1') {
+        $record.engine_mode = 'd1_in_d2'
+    }
+    $record.generation = $script:GuidebotSimulationGeneration
+    $record.fixed_hz = $script:GuidebotSimulationFixedHz
+    $record.seed = $script:GuidebotSimulationSeed
+    $record.status = Get-GuidebotMissionAggregateStatus -Levels $Levels
+    $record.level_counts = [pscustomobject]$counts
+    $record.levels = @($Levels)
+    return [pscustomobject]$record
 }
 
 function ConvertTo-GuidebotNormalizedJsonText {
