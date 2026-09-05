@@ -252,9 +252,8 @@ try {
         throw "Automap camera did not respond to zoom/rotation input; diagnostics=$diagnostics"
     }
 
-    Adb -AdbArgs @(
-        "shell", "am", "broadcast", "-a", "com.dxxredux.LEVEL_PREVIEW_COMMAND", "-p", $script:PACKAGE, "--es", "command", "close"
-    ) | Out-Null
+    # Exercise Android Back dispatch and native cleanup, including target SDK 36
+    Adb -AdbArgs @("shell", "input", "keyevent", "KEYCODE_BACK") | Out-Null
     $closed = Wait-ForCondition -Description "preview closes and request cache is removed" -TimeoutSec 30 -PollMs 500 -Condition {
         $activities = Adb-Timeout -AdbArgs @("shell", "dumpsys", "activity", "activities") -Seconds 8
         $requestState = if ($requestId -match '^[A-Za-z0-9._-]+$') {

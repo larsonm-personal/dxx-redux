@@ -1,0 +1,68 @@
+// SDK compatibility smoke test: launcher, native rendering, and repeated resume
+// Run for both games on the target Android version after provisioning standard data
+// Keep objective-route rendering coverage in test_launch_to_automap.jsonc
+[
+    {"_info": {
+        "games": ["d1", "d2"],
+        "vars": {
+            "d1": {"GAME": "d1", "MISSION": "First Strike"},
+            "d2": {"GAME": "d2", "MISSION": "Counterstrike"}
+        }
+    }},
+    {"action": "enter_launcher"},
+    {"action": "reset_state"},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
+    {"action": "enter_game", "game": "${GAME}"},
+    {"action": "wait_for", "field": "intro_active", "value": "true", "timeout_ms": 20000},
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
+    {"action": "select", "text": "New game", "timeout_ms": 10000},
+    {"action": "select_mission", "text": "${MISSION}", "timeout_ms": 10000},
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
+    {"action": "select", "text": "Rookie", "timeout_ms": 10000},
+    {"action": "key", "key": "escape", "when": "d1", "post_delay_ms": 100},
+    {"action": "skip_briefing", "when": "d2", "timeout_ms": 30000},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 30000},
+    {"action": "assert", "expect": {
+        "in_game": "true", "current_level_num": "1",
+        "resolution.render_width": {"gt": 0}, "resolution.render_height": {"gt": 0}
+    }},
+    {"action": "key", "key": "tab", "post_delay_ms": 100},
+    {"action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {"automap.edges_drawn_last_frame": {"gt": 0}}},
+    {"action": "key", "key": "escape", "post_delay_ms": 100},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+
+    // Runner uses HOME and launcher navigation, exercising system Back on resume
+    {"action": "log", "message": "SCRIPT_BACKGROUND: sdk-cycle-1 duration_s=5"},
+    {"action": "wait_for", "field": "egl_recreate_count", "value": "1", "timeout_ms": 30000},
+    {"action": "assert", "expect": {
+        "in_game": "true", "egl_window_generation": {"gte": 4},
+        "android_lifecycle.observed_visibility": "foreground",
+        "android_lifecycle.checkpoint_state": "committed",
+        "android_lifecycle.suspend_state": "running",
+        "android_lifecycle.park_entry_count": {"gte": 1},
+        "android_lifecycle.wake_count": {"gte": 1}
+    }},
+    {"action": "key", "key": "escape", "post_delay_ms": 200},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+    {"action": "log", "message": "SCRIPT_BACKGROUND: sdk-cycle-2 duration_s=5 lock_screen=true"},
+    {"action": "wait_for", "field": "egl_recreate_count", "value": "2", "timeout_ms": 30000},
+    {"action": "assert", "expect": {
+        "in_game": "true", "egl_window_generation": {"gte": 6},
+        "android_lifecycle.observed_visibility": "foreground",
+        "android_lifecycle.checkpoint_state": "committed",
+        "android_lifecycle.suspend_state": "running",
+        "android_lifecycle.park_entry_count": {"gte": 2},
+        "android_lifecycle.wake_count": {"gte": 2}
+    }},
+    {"action": "key", "key": "escape", "post_delay_ms": 200},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+    {"action": "introspect"}
+]

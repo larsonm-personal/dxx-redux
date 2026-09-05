@@ -50,6 +50,8 @@ param(
 $ErrorActionPreference = 'Stop'
 $script:RepoRoot = Split-Path $PSScriptRoot -Parent
 $script:HelpersDir = Join-Path $PSScriptRoot 'helpers'
+. (Join-Path $script:HelpersDir 'process_lifetime.ps1')
+Initialize-RegressionProcessLifetime
 . (Join-Path $script:HelpersDir 'test_suite_progress.ps1')
 . (Join-Path $script:HelpersDir 'runtime_targeted_sampling.ps1')
 . (Join-Path $script:HelpersDir 'routing_development_missions.ps1')
@@ -300,6 +302,7 @@ function Invoke-RegressionDataStageProcess {
         }
         return $exitCode
     } finally {
+        Stop-RegressionChildProcess -Process $process
         if ($stdoutReader) { $stdoutReader.Dispose() }
         if ($stderrReader) { $stderrReader.Dispose() }
         $process.Dispose()

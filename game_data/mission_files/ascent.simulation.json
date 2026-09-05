@@ -177,13 +177,13 @@
         },
         {
           "n": "red key",
-          "s": 71
+          "s": 72
         }
       ],
-      "total_frames": 5209,
+      "total_frames": 5201,
       "rng_end": {
-        "state": 991276799,
-        "calls": 3306
+        "state": 3424519170,
+        "calls": 3957
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -239,10 +239,10 @@
           "s": 41
         }
       ],
-      "total_frames": 6282,
+      "total_frames": 6451,
       "rng_end": {
-        "state": 4244552450,
-        "calls": 1141
+        "state": 1635793825,
+        "calls": 1376
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },

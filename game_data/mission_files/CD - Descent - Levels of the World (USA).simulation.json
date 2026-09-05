@@ -1,0 +1,2894 @@
+[
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "abandn10.msn",
+    "target_index": 0,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "abandn10.rdl",
+        "route_input_sha256": "F805A43400093466E30C7D58A72EE743B0878890EF4A15D55F208B51C4D2E07A",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 6
+          },
+          {
+            "n": "hidden door",
+            "s": 8
+          },
+          {
+            "n": "reactor",
+            "s": 15
+          },
+          {
+            "n": "exit",
+            "s": 34
+          }
+        ],
+        "total_frames": 2046,
+        "rng_end": {
+          "state": 4022231744,
+          "calls": 71
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "abyss10.msn",
+    "target_index": 1,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "abyss10.rdl",
+        "route_input_sha256": "6C66BCEF66D9F73910FFA029B374D2D4D2DC759BE7294276BFBC3EBD3BF939D0",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 7
+          },
+          {
+            "n": "gold key",
+            "s": 28
+          },
+          {
+            "n": "red key",
+            "s": 58
+          }
+        ],
+        "total_frames": 5348,
+        "rng_end": {
+          "state": 1228891816,
+          "calls": 63
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "advance.msn",
+    "target_index": 2,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "Advance.rdl",
+        "route_input_sha256": "456ACD67A101D8303AF2BE4B59995773BDAE358A682FD4F4776AAE8EF6691877",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 8
+          },
+          {
+            "n": "hidden door",
+            "s": 16
+          },
+          {
+            "n": "exit",
+            "s": 17
+          }
+        ],
+        "total_frames": 1000,
+        "rng_end": {
+          "state": 2577478752,
+          "calls": 39
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "alexand.msn",
+    "target_index": 3,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "ALEXAND.RDL",
+        "route_input_sha256": "85F958E3D6C4003BEC4DD862E441C2915178076CD5DB53A3116AF2991CED5DE0",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 5
+          },
+          {
+            "n": "hidden door",
+            "s": 10
+          },
+          {
+            "n": "destroy robot carrying gold key",
+            "s": 21
+          },
+          {
+            "n": "hidden door",
+            "s": 31
+          },
+          {
+            "n": "red key",
+            "s": 34
+          },
+          {
+            "n": "reactor",
+            "s": 50
+          },
+          {
+            "n": "exit",
+            "s": 64
+          }
+        ],
+        "total_frames": 3848,
+        "rng_end": {
+          "state": 2122112351,
+          "calls": 138
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "alien.msn",
+    "target_index": 4,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "ALIEN.RDL",
+        "route_input_sha256": "0F47E40E126B5B108CDE3AA55C3DB76A8CB8384BA42BE679DAE592575A96626D",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 15
+          },
+          {
+            "n": "gold key",
+            "s": 38
+          },
+          {
+            "n": "destroy robot carrying red key",
+            "s": 59
+          }
+        ],
+        "total_frames": 8358,
+        "rng_end": {
+          "state": 1621937922,
+          "calls": 117
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "alphac.msn",
+    "target_index": 5,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "ALPHAC.RDL",
+        "route_input_sha256": "150684E667F87CB1D9FFFFED1736B800F7092483E4E9D54F2A4571E7A52B776A",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Levels of the World (USA).json|5|1|ALPHAC.RDL, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_5_1_ALPHAC.RDL_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "arena.msn",
+    "target_index": 6,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "arena.rdl",
+        "route_input_sha256": "BBF1A8E26DC87DFF7B71BB0F3C65114BED547292BE0AC4C045B68B3967DF1F80",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 8
+          },
+          {
+            "n": "exit",
+            "s": 10
+          }
+        ],
+        "total_frames": 622,
+        "rng_end": {
+          "state": 1116175964,
+          "calls": 27
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "aurora.msn",
+    "target_index": 7,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "aurora.rdl",
+        "route_input_sha256": "85480190E4E26E86526AE380B5E3915C5E8794D9D9B8B40E798EA96C6A1DB35A",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 1
+          },
+          {
+            "n": "blue key",
+            "s": 2
+          },
+          {
+            "n": "gold key",
+            "s": 19
+          },
+          {
+            "n": "red key",
+            "s": 38
+          },
+          {
+            "n": "reactor",
+            "s": 57
+          },
+          {
+            "n": "exit",
+            "s": 60
+          }
+        ],
+        "total_frames": 3588,
+        "rng_end": {
+          "state": 2801490995,
+          "calls": 86
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "barium.msn",
+    "target_index": 8,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "Barium.rdl",
+        "route_input_sha256": "B84F5B0E4FAB6E8495F9C7B214F6B537C8A3D97143F5BEEFBE7D035489746219",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Levels of the World (USA).json|8|1|Barium.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_8_1_Barium.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "bay32.msn",
+    "target_index": 9,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "BAY32.rdl",
+        "route_input_sha256": "A1938FE15DBD42288B45E6E4C2D2956E52B4B2AF03A42B3F360BB17CE9010E84",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 6
+          },
+          {
+            "n": "red key",
+            "s": 17
+          },
+          {
+            "n": "reactor",
+            "s": 33
+          },
+          {
+            "n": "exit",
+            "s": 42
+          }
+        ],
+        "total_frames": 2506,
+        "rng_end": {
+          "state": 3772987475,
+          "calls": 54
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "blusnake.msn",
+    "target_index": 10,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "blusnake.rdl",
+        "route_input_sha256": "D98152D963382E4D7C7F36C4D6609B3EB79F91B27B9BB194E7A4DA508EA11E7C",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 5
+          },
+          {
+            "n": "exit",
+            "s": 7
+          }
+        ],
+        "total_frames": 394,
+        "rng_end": {
+          "state": 1116175964,
+          "calls": 27
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "boli.msn",
+    "target_index": 11,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "Boli.rdl",
+        "route_input_sha256": "F0D927EC903DD22F5B60C7EFF30283D70A7AC8BB87188D6309C9BFCA546E6653",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Levels of the World (USA).json|11|1|Boli.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_11_1_Boli.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "brattica.msn",
+    "target_index": 12,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "brattica.rdl",
+        "route_input_sha256": "DB0ACD68DC2B2CCEA301DD5FA99551636BA7D941AEF83F2A0E70C34D65C738B9",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Levels of the World (USA).json|12|1|brattica.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_12_1_brattica.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "brbeta.msn",
+    "target_index": 13,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "BRBETA.rdl",
+        "route_input_sha256": "F8AAB24AAEB78DF28BE27A7DC68B904B1ADE5982C420BE09F05735EAD2C24C2E",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 5
+          },
+          {
+            "n": "hidden door",
+            "s": 7
+          },
+          {
+            "n": "hidden door",
+            "s": 14
+          },
+          {
+            "n": "blue key",
+            "s": 20
+          },
+          {
+            "n": "blastable wall",
+            "s": 40
+          },
+          {
+            "n": "blastable wall",
+            "s": 42
+          },
+          {
+            "n": "gold key",
+            "s": 57
+          },
+          {
+            "n": "fly-through 16",
+            "s": 76
+          },
+          {
+            "n": "blastable wall",
+            "s": 78
+          },
+          {
+            "n": "hidden door",
+            "s": 84
+          },
+          {
+            "n": "hidden door",
+            "s": 86
+          },
+          {
+            "n": "red key",
+            "s": 86
+          },
+          {
+            "n": "blastable wall",
+            "s": 99
+          },
+          {
+            "n": "blastable wall",
+            "s": 100
+          },
+          {
+            "n": "reactor",
+            "s": 104
+          },
+          {
+            "n": "exit",
+            "s": 112
+          }
+        ],
+        "total_frames": 6701,
+        "rng_end": {
+          "state": 4236922272,
+          "calls": 487
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "brdecon.msn",
+    "target_index": 14,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "BRDECON.rdl",
+        "route_input_sha256": "4BE7612D606B5709021EA8CEE595415E3CED4890F53D6B3D27AC20C1A396D8D7",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Levels of the World (USA).json|14|1|BRDECON.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_14_1_BRDECON.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "brequip.msn",
+    "target_index": 15,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "BREQUIP.rdl",
+        "route_input_sha256": "64F15C7E0EE31573C6576139EE6FE967C3E9330FCC45DA57A13094EA2070FCA5",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Levels of the World (USA).json|15|1|BREQUIP.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_15_1_BREQUIP.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "brinsane.msn",
+    "target_index": 16,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "BRINSANE.rdl",
+        "route_input_sha256": "4C2F1FA0DE84ED9C99B63C0E5681BEF98A6F3990ED0DF433E760695FDEE1B570",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Levels of the World (USA).json|16|1|BRINSANE.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_16_1_BRINSANE.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "brspiral.msn",
+    "target_index": 17,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "BRSPIRAL.rdl",
+        "route_input_sha256": "18CCB4788B6AB72DA6D66803D1420C0C60138DD2C9358574BFFA2DD89D1F0BD7",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Levels of the World (USA).json|17|1|BRSPIRAL.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_17_1_BRSPIRAL.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "brtrade.msn",
+    "target_index": 18,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "brtrade.rdl",
+        "route_input_sha256": "7E52AD813DC622A2F900B404DFC2A652A287ACB76A2BECB6298B1874B18607B4",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Levels of the World (USA).json|18|1|brtrade.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_18_1_brtrade.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "bushwak.msn",
+    "target_index": 19,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "Bushwak.RDL",
+        "route_input_sha256": "A79AA41AF83CAFC42F46930FFF9B4A1561DDFC508533B236BCDE97DCCCDF6919",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Levels of the World (USA).json|19|1|Bushwak.RDL, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_19_1_Bushwak.RDL_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "cap-rye.msn",
+    "target_index": 20,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "cap-rye.rdl",
+        "route_input_sha256": "8CB1C34CDE559EAE91FFD3BCB421583E35222774958B531DEEB2F0A5FB69BE47",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Levels of the World (USA).json|20|1|cap-rye.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_20_1_cap-rye.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "catacomb.msn",
+    "target_index": 21,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "Catacomb.rdl",
+        "route_input_sha256": "051B5E436015500EB9364A037ECFE7AC64841A3F10866BCCD3CB4163D86D2B8E",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Levels of the World (USA).json|21|1|Catacomb.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_21_1_Catacomb.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "cavern11.msn",
+    "target_index": 22,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "cavern11.rdl",
+        "route_input_sha256": "A175D0A5C0E939C49329FD833F867391A2E0EE4D58B7F93FA23192AB5EDBCEBF",
+        "status": "infrastructure_error",
+        "problem": "Route engine infrastructure failure for CD - Descent - Levels of the World (USA).json|22|1|cavern11.rdl, exit 1, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_22_1_cavern11.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "cd.msn",
+    "target_index": 23,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "cd.rdl",
+        "route_input_sha256": "27AE2F625D08A672F5F5D9613087B93B9661506C2DC22407A0FDF95CD9C1D7DA",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Levels of the World (USA).json|23|1|cd.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_23_1_cd.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "chambers.msn",
+    "target_index": 24,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "CHAMBERS.RDL",
+        "route_input_sha256": "6CD3370DAD40F20EBBAE801F1D094B0FFFBF744868BEB380F99DBD97E3957438",
+        "status": "infrastructure_error",
+        "problem": "Route engine infrastructure failure for CD - Descent - Levels of the World (USA).json|24|1|CHAMBERS.RDL, exit 1, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_24_1_CHAMBERS.RDL_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "cicero.msn",
+    "target_index": 25,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "cicero.rdl",
+        "route_input_sha256": "4A025CCD9A635E30712C71160C4E7C0A360864804EA9C0C3FED0240BF6F45F15",
+        "status": "infrastructure_error",
+        "problem": "Route engine infrastructure failure for CD - Descent - Levels of the World (USA).json|25|1|cicero.rdl, exit 1, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_25_1_cicero.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "cod.msn",
+    "target_index": 26,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "cod.rdl",
+        "route_input_sha256": "F7C628BDFBA26806B27ADDC76064A4A1EE3F68DA8C3A323FEA7A4C599DE5655A",
+        "status": "infrastructure_error",
+        "problem": "Route engine infrastructure failure for CD - Descent - Levels of the World (USA).json|26|1|cod.rdl, exit 1, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_26_1_cod.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "comet.msn",
+    "target_index": 27,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "comet.rdl",
+        "route_input_sha256": "968383EA8538A61101AAD424E8CFF3A12CC6ABAA771956EC6EE8693859FF1535",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Levels of the World (USA).json|27|1|comet.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_27_1_comet.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "corkscrw.msn",
+    "target_index": 28,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "CORKSCRW.RDL",
+        "route_input_sha256": "B2DC21928DA15CF141C8954321BF41FF70460C1C8FCC2E8589CC687439B19768",
+        "status": "infrastructure_error",
+        "problem": "Route engine infrastructure failure for CD - Descent - Levels of the World (USA).json|28|1|CORKSCRW.RDL, exit 1, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_28_1_CORKSCRW.RDL_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "cubik.msn",
+    "target_index": 29,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "cubik.rdl",
+        "route_input_sha256": "259859BABDC18B1DA66E8A00CE9D0E13D24ED9EEBBDC5AFDE2A9C9028052E88D",
+        "status": "infrastructure_error",
+        "problem": "Route engine infrastructure failure for CD - Descent - Levels of the World (USA).json|29|1|cubik.rdl, exit 1, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_29_1_cubik.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "deathmat.msn",
+    "target_index": 30,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "deathmat.rdl",
+        "route_input_sha256": "B30DF343350A4EE4AFC6FE590E704BB2687C6CC62E2C234AF0CF50E64A016A09",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 8
+          },
+          {
+            "n": "exit",
+            "s": 12
+          }
+        ],
+        "total_frames": 711,
+        "rng_end": {
+          "state": 3008955749,
+          "calls": 28
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "deep-pit.msn",
+    "target_index": 31,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "DEEP-PIT.RDL",
+        "route_input_sha256": "0FB951ACC9CABC65295EF79B72B63A2B00CC64EBF1EA3C6407315A8B4AB116FF",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 15
+          },
+          {
+            "n": "blue key",
+            "s": 19
+          },
+          {
+            "n": "gold key",
+            "s": 59
+          }
+        ],
+        "total_frames": 7317,
+        "rng_end": {
+          "state": 872078403,
+          "calls": 70
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "dethstar.msn",
+    "target_index": 32,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "dethstar.rdl",
+        "route_input_sha256": "27A568C99448577C9BD7B0E90784AD24330539AA6EE409F2FBE60D7AB6F691A1",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Levels of the World (USA).json|32|1|dethstar.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_32_1_dethstar.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "devheart.msn",
+    "target_index": 33,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "devheart.rdl",
+        "route_input_sha256": "A755E58E17B5D2A8BFE20DBD4013E696B2DFA7FE3BAD9269A3E4556785A8084A",
+        "status": "infrastructure_error",
+        "problem": "Route engine infrastructure failure for CD - Descent - Levels of the World (USA).json|33|1|devheart.rdl, exit 1, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_33_1_devheart.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "diamond.msn",
+    "target_index": 34,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "DIAMOND.RDL",
+        "route_input_sha256": "56FC49FBC7A7D5A14055C698D9A32BD7014BA3A25EA9341387ECA5C7F6EC5456",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Levels of the World (USA).json|34|1|DIAMOND.RDL, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_34_1_DIAMOND.RDL_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "drkzone2.msn",
+    "target_index": 35,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "drkzone2.rdl",
+        "route_input_sha256": "24235C3657AA21388E1B9F1C10019B41CD439C2BA7494A186978264601D2E8EF",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "destroy robot carrying blue key",
+            "s": 6
+          }
+        ],
+        "total_frames": 4996,
+        "rng_end": {
+          "state": 4015624929,
+          "calls": 32
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "dsntcity.msn",
+    "target_index": 36,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "dsntcity.rdl",
+        "route_input_sha256": "AE914311AF7698027399506BBF40B2D0D3CA47469ADF32168889D7936DD4EFA3",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "gold key",
+            "s": 17
+          }
+        ],
+        "total_frames": 10036,
+        "rng_end": {
+          "state": 2207819405,
+          "calls": 52
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "excel.msn",
+    "target_index": 37,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "excel.rdl",
+        "route_input_sha256": "E6391FEFDF5B26D0EDA381D6E6B5BD1BD9609AB4D20272570E0E0B9FC9C38262",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blastable wall",
+            "s": 1
+          },
+          {
+            "n": "hidden door",
+            "s": 11
+          },
+          {
+            "n": "gold key",
+            "s": 14
+          },
+          {
+            "n": "blue key",
+            "s": 29
+          }
+        ],
+        "total_frames": 5918,
+        "rng_end": {
+          "state": 3212330324,
+          "calls": 67
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "fork.msn",
+    "target_index": 38,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "fork.rdl",
+        "route_input_sha256": "0BF9E8F4AC219FA713BA16A2A16BFB511919A380231A833FD894802AE2AF6311",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 16
+          },
+          {
+            "n": "blue key",
+            "s": 18
+          },
+          {
+            "n": "gold key",
+            "s": 32
+          }
+        ],
+        "total_frames": 6417,
+        "rng_end": {
+          "state": 948921754,
+          "calls": 61
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "gamerelm.msn",
+    "target_index": 39,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "gamerelm.rdl",
+        "route_input_sha256": "5E33608CB506AA1841927FF6F24810E1B305202D5193666BB9E232188D1C245D",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 17
+          }
+        ],
+        "total_frames": 8362,
+        "rng_end": {
+          "state": 835903122,
+          "calls": 37
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "ganymed.msn",
+    "target_index": 40,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1,
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "ganymed1.rdl",
+        "route_input_sha256": "AAECE33C9FAA7004738EA52A9BA3B1FA3EC9C2914D235D6DF63F6CC000BA9652",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Levels of the World (USA).json|40|1|ganymed1.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_40_1_ganymed1.rdl_run_1.log"
+      },
+      {
+        "level_num": 2,
+        "level_file": "ganymed2.rdl",
+        "route_input_sha256": "B8EEA60D92C59E94703506423476A510382A9A5C5A58981857CDE7BD6AD31159",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 14
+          },
+          {
+            "n": "blue key",
+            "s": 19
+          },
+          {
+            "n": "gold key",
+            "s": 51
+          }
+        ],
+        "total_frames": 4213,
+        "rng_end": {
+          "state": 3269224778,
+          "calls": 77
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "gehenna.msn",
+    "target_index": 41,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "GEHENNA.rdl",
+        "route_input_sha256": "2BB485C2A440B09E6975751437699F347EB67E4DA09F00E0E939F8B22ADBAE50",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 742,
+        "rng_end": {
+          "state": 595337866,
+          "calls": 13
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "grengyro.msn",
+    "target_index": 42,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "failed": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "grengyro.rdl",
+        "route_input_sha256": "A31DDDC19A7746399AE481D44BEB2674F47D7F5ED321795325AB17990461FC9A",
+        "status": "failed",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 0,
+        "rng_end": {
+          "state": 2516284547,
+          "calls": 6
+        },
+        "problem": "live Guide-Bot route has no actionable goal"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "halls10.msn",
+    "target_index": 43,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "halls10.rdl",
+        "route_input_sha256": "61ED0E0495943DF92D727C842F1A66557DB1F5A2F35DAAC39D6294BAA8263326",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 4282,
+        "rng_end": {
+          "state": 4112870923,
+          "calls": 254
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "hypractv.msn",
+    "target_index": 44,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "hypractv.rdl",
+        "route_input_sha256": "53F5D38C896A7CE1E5D4AE0AE291B48E8E656C4E7415FE4787998711B5505DB2",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 10
+          },
+          {
+            "n": "red key",
+            "s": 24
+          },
+          {
+            "n": "reactor",
+            "s": 40
+          },
+          {
+            "n": "exit",
+            "s": 50
+          }
+        ],
+        "total_frames": 3015,
+        "rng_end": {
+          "state": 2274957893,
+          "calls": 60
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "iceout.msn",
+    "target_index": 45,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "iceout.rdl",
+        "route_input_sha256": "82F9341F9FADB52625070950F63056ECDF4E905B3EA02E0B43C3E4DDD7F52F46",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "insqout.msn",
+    "target_index": 46,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "INSQOUT.RDL",
+        "route_input_sha256": "5F08F4F686302097426602A4341F37DF187933F5D78BF92D997362480574CCC6",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 8
+          }
+        ],
+        "total_frames": 4943,
+        "rng_end": {
+          "state": 2102736524,
+          "calls": 43
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "jaxx.msn",
+    "target_index": 47,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "jaxx.rdl",
+        "route_input_sha256": "EFDC8BF63A2D1C82506AC8EB35AAC46B03C3E6D077422F04B83229DD9C6E85C9",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "johnsway.msn",
+    "target_index": 48,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "johnsway.rdl",
+        "route_input_sha256": "B8156DF65930D563FDFD6B180E8378C770468869B2D567D9B6619215FAC93FC8",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "keep.msn",
+    "target_index": 49,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "keep.rdl",
+        "route_input_sha256": "E36EE67B9DA2C490203E6B1AACAF94875195D818282FEFB94A96FBF1EECFBA72",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 11
+          },
+          {
+            "n": "exit",
+            "s": 20
+          }
+        ],
+        "total_frames": 1205,
+        "rng_end": {
+          "state": 675780521,
+          "calls": 24
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "kicker.msn",
+    "target_index": 50,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "KICKER.RDL",
+        "route_input_sha256": "0C94CFDAA1D19CB1F6CB137C1E9FA6D09B2AB8D522D0EE4F622681C644776332",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 10
+          },
+          {
+            "n": "exit",
+            "s": 13
+          }
+        ],
+        "total_frames": 802,
+        "rng_end": {
+          "state": 1116175964,
+          "calls": 27
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "lava4dtc.msn",
+    "target_index": 51,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "lava4dtc.rdl",
+        "route_input_sha256": "8A5EE939E6713EEE8AE34992D1A0C7AAEC92C1E895A78CC932F5C60ADF17FD72",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 4141,
+        "rng_end": {
+          "state": 836760821,
+          "calls": 12
+        },
+        "problem": "route confirmation exceeded 69-second simulation budget"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "lil-dev.msn",
+    "target_index": 52,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "lil-dev.rdl",
+        "route_input_sha256": "6469636492DE49F5ACAE83DCD0073305D76A4CE8B107B0A02272E29D82D08076",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "destroy robot carrying gold key",
+            "s": 23
+          }
+        ],
+        "total_frames": 5531,
+        "rng_end": {
+          "state": 2780109717,
+          "calls": 108
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "lupis.msn",
+    "target_index": 53,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 7
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "LUPIS1.rdl",
+        "route_input_sha256": "BE1C6C2E5D0E9E810737A4E566945714CC80B876926A003136EBE5CD15024023",
+        "status": "not_run"
+      },
+      {
+        "level_num": 2,
+        "level_file": "LUPIS2.rdl",
+        "route_input_sha256": "55EBAF76A1A1A2296E46C369BBDE1A8CE95F49E08EAE473ED11C6C8C650A4FA7",
+        "status": "not_run"
+      },
+      {
+        "level_num": 3,
+        "level_file": "LUPIS3.rdl",
+        "route_input_sha256": "9C176239E47A108B3C4AEACB1F30ED1466DD5345E991B25ACA5FC93A182262A6",
+        "status": "not_run"
+      },
+      {
+        "level_num": 4,
+        "level_file": "LUPIS4.rdl",
+        "route_input_sha256": "90D579C17893086B5D978F230B01F367C59EC6DB0D95DEFFA46C1FD6C4F0B862",
+        "status": "not_run"
+      },
+      {
+        "level_num": 5,
+        "level_file": "LUPIS5.rdl",
+        "route_input_sha256": "24E533732EF0B8AAEF5C695F6BECD2E9380E1C10AA89AA5972B8E961EA164066",
+        "status": "not_run"
+      },
+      {
+        "level_num": 6,
+        "level_file": "LUPIS6.rdl",
+        "route_input_sha256": "4FD15ABE78A04D11356866E252710AECF15F071CA87160E6D1106D89C0BE7720",
+        "status": "not_run"
+      },
+      {
+        "level_num": 7,
+        "level_file": "LUPIS7.rdl",
+        "route_input_sha256": "74BC84ECF53C1A14766149D4F31BFEDA49ECAAE3BA5CCD6498578B5A03797593",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "lupis2.msn",
+    "target_index": 54,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "LUPIS2.rdl",
+        "route_input_sha256": "7D82D29F40FBB79995C8E78D5991756E2B5D493375DBB074F5B3F24BB3CAB2EE",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "lupis3.msn",
+    "target_index": 55,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "LUPIS3.rdl",
+        "route_input_sha256": "ADC8896EA349B5FCADC5A9936B15E1C7697B54F2149C53937139169D00EAF1F2",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "lupis4.msn",
+    "target_index": 56,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "LUPIS4.rdl",
+        "route_input_sha256": "F63B27CFBA84A7F8840E46142A9F1960F18E53DA94B52ECBC3D2F2705AE497BD",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "lupis5.msn",
+    "target_index": 57,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "LUPIS5.rdl",
+        "route_input_sha256": "955F35E796E0FA93A8068B5F4645DEF19040EF076610BBDAC8B658FEA2FFA88E",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "lupis6.msn",
+    "target_index": 58,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "LUPIS6.rdl",
+        "route_input_sha256": "423A87F198EB39E050E6C28F8ABB988F2BBC1EE7C3A744E76DD56A520BFB62AB",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "lupis7.msn",
+    "target_index": 59,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "LUPIS7.rdl",
+        "route_input_sha256": "119F2E6D00A7BE0DFE78D02CCCB35D9D91DC206C942A1A8F4B86708F662A9545",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "magicbox.msn",
+    "target_index": 60,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "magicbox.rdl",
+        "route_input_sha256": "D3FB6657A7A2027BD1FD70E9E467B558152731976B12E4B53D3D10F48F47496B",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "mars.msn",
+    "target_index": 61,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "mars.rdl",
+        "route_input_sha256": "BDDDB47050ED37728C56673BF7F82082B3DEF1588C13EF543EB0A39084813AA8",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "meridian.msn",
+    "target_index": 62,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "meridian.rdl",
+        "route_input_sha256": "BE367136BE5E65CA10B84CC31D572CF08951DD7FD9FB1C14895F4F7351EE4C8E",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "muni2.msn",
+    "target_index": 63,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "M2.RDL",
+        "route_input_sha256": "03898C60CFC6BC02E84E8A9F93D3C51E7C509C8158BF2C7C789190C2BAA0527E",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "neural-i.msn",
+    "target_index": 64,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "neural-i.rdl",
+        "route_input_sha256": "9C9FE8D84171132393E3A94E52FC43E620CE342EB1C0ACA69EFAC7DB9B527D5E",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "nexus.msn",
+    "target_index": 65,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "nexus.rdl",
+        "route_input_sha256": "6E7C6B029783BDEB13AAD85F6BE95BF11A8191D74777E1C1DE001172EEC5B8B3",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "panic.msn",
+    "target_index": 66,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "panic.rdl",
+        "route_input_sha256": "F8FD83F5DCA2C0242CD8AAD286AF1B5A7FC8DE3AA20A0E895344720BCB89C152",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "paradox.msn",
+    "target_index": 67,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "PARADOX.RDL",
+        "route_input_sha256": "63418D4BF70C707C438C2A84864C968302ED3B725E1A3CFF57EDF73E71CE8DBF",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "pit.msn",
+    "target_index": 68,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "Pit.rdl",
+        "route_input_sha256": "F6BEF306978D5CBC8DB2E51FE86284E41230CF01FF1F54A223078037909458F2",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "ports10.msn",
+    "target_index": 69,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "ports10.rdl",
+        "route_input_sha256": "342094D9099CDB18AB103E7940ED5BA39C56226586742443FED8085A389D387B",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "pyramid.msn",
+    "target_index": 70,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "PYRAMID.RDL",
+        "route_input_sha256": "DCC62A4CFACE4B629E1F97F3602C23E2A649569FE0CBF0C5C4ED1BCC6E5F7A39",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "ratrace.msn",
+    "target_index": 71,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "ratrace.rdl",
+        "route_input_sha256": "06B7949AB4ABBE6567EE5159DCF1E9563666DA9F8B663AB6D18458B342AEE548",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "redrum.msn",
+    "target_index": 72,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "redrum.rdl",
+        "route_input_sha256": "93A2D02A5204E613873D29EBC659EC5ED4451695C6241F12473FD8628001D06F",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "rescue.msn",
+    "target_index": 73,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "rescue.rdl",
+        "route_input_sha256": "1B4A0FECC64C8D36705AA6495211F6CB07C932B7296C190EBEC1EA7A299773EC",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "resq.msn",
+    "target_index": 74,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "resq.rdl",
+        "route_input_sha256": "9FCFE349A1C1057F0BC8194AB47812E18C08EA7982D0ABE098B3A73F0442CB4F",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "roundup.msn",
+    "target_index": 75,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "roundup.rdl",
+        "route_input_sha256": "3F7CB1211FEC4FA0D2E1AB5487A84498CEDDC56A04DA6A24EA7CC64E9148AA09",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "satelite.msn",
+    "target_index": 76,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "SATELITE.RDL",
+        "route_input_sha256": "6B1884FA79B3AFE39935E96B6AD62E897356FA80DD7E669A052D92ABB12F53D8",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "saturn.msn",
+    "target_index": 77,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "saturn15.rdl",
+        "route_input_sha256": "F6CC0ACBA09879C71C05CA8A1522612F9C9CEF3864FFEAEFA2B2C86DD37F7622",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "secrets.msn",
+    "target_index": 78,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "secrets.rdl",
+        "route_input_sha256": "3983E16BB6A6C7525AF10E59DAFFA2E1EE7FD5D550CC83B83168F4907E633A4D",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "setialph.msn",
+    "target_index": 79,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "setialph.rdl",
+        "route_input_sha256": "5CD246347FA610887A5ED5E5850E9C18062442DB2A6DFFDC58843F8083BE35E4",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "slimod12.msn",
+    "target_index": 80,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "slimod12.rdl",
+        "route_input_sha256": "CE5C39600333C77F104F495207B0ED26B19057F8A3CDCCE3B92DF278B418ECA6",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "spooge.msn",
+    "target_index": 81,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "spooge.rdl",
+        "route_input_sha256": "84FEF1975286A85DDAC9DAE8F4DC2A7EBA353751F9DAD629B83B02D1750F3D30",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "stair.msn",
+    "target_index": 82,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "stair.rdl",
+        "route_input_sha256": "AD5931E5421CAC3A2F5759936FBCCF19CECFDEFA21B12C2BCE10CF06DB79970D",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "stick.msn",
+    "target_index": 83,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "stick.rdl",
+        "route_input_sha256": "4693D423C3D1DC711879C5815C4C40BBCA58B5430BCFB772F155AD1C5A4E19EB",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "sub.msn",
+    "target_index": 84,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "NOUV4.RDL",
+        "route_input_sha256": "B284C7897279AC747D9D53684EB41A9ABD243A71FDEEA0199955BA9BB40B6432",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "switch.msn",
+    "target_index": 85,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "switch.rdl",
+        "route_input_sha256": "5640B4AFFAC75A7080371AA7E622490C1470F7827D7A881B46F803B070A49CC3",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "tartarus.msn",
+    "target_index": 86,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "TARTARUS.rdl",
+        "route_input_sha256": "250C15EF939E1ECD11B2A1AB8D7F0915325604277FD3F3F2B6042A30C3B2F9A7",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "tcamp.msn",
+    "target_index": 87,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "tcamp.rdl",
+        "route_input_sha256": "42278C132946383742859A17E66A41882F92BB691F9C9298DD01B45E3CE746DE",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "teamdeth.msn",
+    "target_index": 88,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "TEAMDETH.RDL",
+        "route_input_sha256": "B79806DC5B3B3D80ACD6E3265F1CCA26B94D5C68379CA4CA8AA8DC8E8CD349A8",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "techncl.msn",
+    "target_index": 89,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "techncl.rdl",
+        "route_input_sha256": "E2F24BE4876FDCF133F9F8BEAF7F9E9918FAA493097F438EC5DC96E7EBB8E51D",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "temple.msn",
+    "target_index": 90,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "temple.rdl",
+        "route_input_sha256": "16CAD265BBDCBE28684356BC0162E03D2FF9BD87B5FBB651EE14E4B07FC20BF4",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "titanium.msn",
+    "target_index": 91,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "titanium.rdl",
+        "route_input_sha256": "CA5C2529EAF9A524B9F12400835990D73953BC0AED372D1277E7D58FB818DF54",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "tolstoy1.msn",
+    "target_index": 92,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "tolstoy1.rdl",
+        "route_input_sha256": "025831659E7070CAD294C773906B177BE5FA6DDF050FE0134255C9B7E8C03CC3",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "tolstoy2.msn",
+    "target_index": 93,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "tolstoy2.rdl",
+        "route_input_sha256": "134CCAFE954F81C880159B467EE552CBCC83AB8DB2E0C6518FCEC4BBF8526D16",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "top.msn",
+    "target_index": 94,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "top.rdl",
+        "route_input_sha256": "9E290F165165A0A81337911ACA860AC4F2E8C81D5703A84B38A9A3748B2F3B2A",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "tribyss.msn",
+    "target_index": 95,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "TRIBYSS.RDL",
+        "route_input_sha256": "FE09EF99356926A904A72618A2A767EC1E450307BA951CF5048709CB78CB74C9",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "turncoat.msn",
+    "target_index": 96,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "turncoat.RDL",
+        "route_input_sha256": "7FB4DB504103435E21DAB06DB4272FCFF95116F0BD92D183A75518D74BA8BEDC",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "twyrm.msn",
+    "target_index": 97,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "twyrm01.rdl",
+        "route_input_sha256": "27AF708AF95425AB46EBE30F6A04036FDD797FC9AD86F0D2B8CCBBD1025E0321",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "ufp1771g.msn",
+    "target_index": 98,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "ufp1771G.rdl",
+        "route_input_sha256": "1D03779BEA27137FCA682CBC56EE678B5FD03AB264D9C4639487819FAD706E13",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "vanguard.msn",
+    "target_index": 99,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "vanguard.rdl",
+        "route_input_sha256": "49312361BADF4176E56B4A2F614C70C848691BC468C9026DD55B51192BE3ED21",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "venus1.msn",
+    "target_index": 100,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "venus1.rdl",
+        "route_input_sha256": "9A54D00F5EACA3A1BEA95444A4F07AE164B3AE9CED3020DB3602AA508FA9A9EA",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "venus3.msn",
+    "target_index": 101,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "venus3.rdl",
+        "route_input_sha256": "550A4A40A165CFAF335630D04378808E5459199A6536F648EB90869B0AA4466E",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "viper.msn",
+    "target_index": 102,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "viper.rdl",
+        "route_input_sha256": "3B84491BED888C76F152BFE573B7E69D19F3F172C23B6ED5258A8DE8681A24D0",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "viper1.msn",
+    "target_index": 103,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "viper.rdl",
+        "route_input_sha256": "5FDE2EC9A96A323ED8BE3FED44DF54F7951EE9916F50FDBED761D21F13434943",
+        "status": "not_run"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "votd.msn",
+    "target_index": 104,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "not_run",
+    "level_counts": {
+      "not_run": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "votd.rdl",
+        "route_input_sha256": "5C65C6C98A3FB1192D2180BC4EE25E1ECF9A484075A0266B2C66C9562C8067B1",
+        "status": "not_run"
+      }
+    ]
+  }
+]

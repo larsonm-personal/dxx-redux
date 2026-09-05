@@ -26,6 +26,7 @@ $repoRoot = Split-Path -Parent $androidRoot
 . (Join-Path $scriptDir "normalized_json_text.ps1")
 . (Join-Path $scriptDir "mission_archive_sources.ps1")
 . (Join-Path $scriptDir "headless_process_pool.ps1")
+Initialize-RegressionProcessLifetime
 $zipDir = Join-Path $repoRoot "game_data\mission_files"
 $archiveSources = @()
 if (-not $CdSourcesOnly) {

@@ -20,6 +20,7 @@
     <application
         android:name=".DxxReduxApp"
         android:allowBackup="true"
+        android:appCategory="game"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:banner="@drawable/tv_banner"
@@ -53,9 +54,12 @@
         <!-- Game engine surface: separate process avoids a libhwui.so
              RenderThread crash (destroyed mutex FORTIFY abort) triggered by
              transitioning from a Compose Activity to an SDL SurfaceView
-             Activity within the same process. -->
+             Activity within the same process.
+             Keep legacy Back dispatch for native game key routing on API 36;
+             SetupActivity uses AndroidX Back handling and retains predictive Back -->
         <activity
             android:name=".MainActivity"
+            android:enableOnBackInvokedCallback="false"
             android:process=":game"
             android:launchMode="singleTop"
             android:exported="false"
@@ -64,27 +68,32 @@
 
         <!-- Native automap previews are short-lived and isolated from both
              the launcher and a paused full game. D1 and D2 remain separate
-             so one process never loads both engine libraries. -->
+             so one process never loads both engine libraries.
+             Preserve onBackPressed cleanup until previews use predictive Back callbacks -->
         <activity
             android:name=".LevelPreviewD1Activity"
+            android:enableOnBackInvokedCallback="false"
             android:process=":levelpreview_d1"
             android:exported="false"
             android:excludeFromRecents="true"
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".LevelPreviewD2Activity"
+            android:enableOnBackInvokedCallback="false"
             android:process=":levelpreview_d2"
             android:exported="false"
             android:excludeFromRecents="true"
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".RobotPreviewD1Activity"
+            android:enableOnBackInvokedCallback="false"
             android:process=":robotpreview_d1"
             android:exported="false"
             android:excludeFromRecents="true"
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".RobotPreviewD2Activity"
+            android:enableOnBackInvokedCallback="false"
             android:process=":robotpreview_d2"
             android:exported="false"
             android:excludeFromRecents="true"

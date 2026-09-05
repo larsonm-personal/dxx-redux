@@ -54,6 +54,7 @@ $batchStart = [DateTime]::UtcNow
 . (Join-Path $scriptDir 'runtime_targeted_sampling.ps1')
 . (Join-Path $scriptDir 'cd_level_metadata_sources.ps1')
 . (Join-Path $scriptDir 'headless_process_pool.ps1')
+Initialize-RegressionProcessLifetime
 . (Join-Path $scriptDir 'routing_development_missions.ps1')
 
 if ($RoutingDevelopmentSet) {

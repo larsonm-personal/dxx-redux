@@ -1,0 +1,154 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "bratmaze.msn",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 1,
+    "failed": 1,
+    "timeout": 2,
+    "infrastructure_error": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "pits.rdl",
+      "route_input_sha256": "05CAAA3D3FDF03FB974A3FBB17B6D25D5D2E91CB29F5234A3F2E8CC4B2700070",
+      "status": "infrastructure_error",
+      "problem": "Route engine infrastructure failure for bratmaze.json|0|1|pits.rdl, exit -1073740791, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\bratmaze.json_0_1_pits.rdl_run_1.log"
+    },
+    {
+      "level_num": 2,
+      "level_file": "panic.rdl",
+      "route_input_sha256": "93230D4523EFE571DB553CA7AE3E4793722BAF137B4676CC88382E94FB9F4020",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blastable wall",
+          "s": 5
+        },
+        {
+          "n": "reactor",
+          "s": 5
+        },
+        {
+          "n": "exit",
+          "s": 12
+        }
+      ],
+      "total_frames": 732,
+      "rng_end": {
+        "state": 2102736524,
+        "calls": 43
+      }
+    },
+    {
+      "level_num": 3,
+      "level_file": "ratmaze.rdl",
+      "route_input_sha256": "180B553E8C9E6EC1CCD93127EDCCF373FE80847F7334319B63A5CBB3240B6F25",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 5092,
+      "rng_end": {
+        "state": 3297241969,
+        "calls": 16
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 4,
+      "level_file": "gauntlet.rdl",
+      "route_input_sha256": "9B147B70B259071CC295A787377A282C17F93A800AD555218B99B9FEF5EC38E4",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "fly-through 0",
+          "s": 19
+        },
+        {
+          "n": "blastable wall",
+          "s": 19
+        },
+        {
+          "n": "fly-through 1",
+          "s": 23
+        },
+        {
+          "n": "fly-through 2",
+          "s": 26
+        },
+        {
+          "n": "fly-through 3",
+          "s": 28
+        },
+        {
+          "n": "fly-through 4",
+          "s": 31
+        },
+        {
+          "n": "fly-through 5",
+          "s": 33
+        },
+        {
+          "n": "fly-through 6",
+          "s": 36
+        },
+        {
+          "n": "fly-through 7",
+          "s": 39
+        },
+        {
+          "n": "fly-through 8",
+          "s": 42
+        },
+        {
+          "n": "fly-through 9",
+          "s": 46
+        },
+        {
+          "n": "blue key",
+          "s": 64
+        }
+      ],
+      "total_frames": 10279,
+      "rng_end": {
+        "state": 4053843764,
+        "calls": 227
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 5,
+      "level_file": "serenity.rdl",
+      "route_input_sha256": "42FCD5FBE2F97952EA5B1F7F856CFE138D51585492F726C10D58FC830EBE0C9E",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2516284547,
+        "calls": 6
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    }
+  ]
+}

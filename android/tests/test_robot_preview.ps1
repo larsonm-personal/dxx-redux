@@ -459,10 +459,8 @@ try {
         throw "Robot preview did not respond to rotation input"
     }
 
-    Adb -AdbArgs @(
-        "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_COMMAND", "-p", $script:PACKAGE,
-        "--es", "command", "close"
-    ) | Out-Null
+    # Exercise Android Back dispatch and native cleanup, including target SDK 36
+    Adb -AdbArgs @("shell", "input", "keyevent", "KEYCODE_BACK") | Out-Null
     $closed = Wait-ForCondition -Description "robot preview closes" -TimeoutSec 30 -PollMs 500 -Condition {
         $activities = Adb-Timeout -AdbArgs @("shell", "dumpsys", "activity", "activities") -Seconds 8
         $requestState = Adb-Timeout -AdbArgs @(

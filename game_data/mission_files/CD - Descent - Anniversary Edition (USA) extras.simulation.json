@@ -1,0 +1,546 @@
+[
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "comdelux.msn",
+    "target_index": 0,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "SECHRIST.RDL",
+        "route_input_sha256": "BAEBB2FD10F4D7E90B1EC7957F7FBC6B2729239DA504976D0BD2439D015D047B",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Anniversary Edition (USA) extras.json|0|1|SECHRIST.RDL, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Anniversary_Edition_USA_extras.json_0_1_SECHRIST.RDL_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "corr11.msn",
+    "target_index": 1,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "CORR11.RDL",
+        "route_input_sha256": "BB7DC927064A8278B4BC84EBCBD184C375E776619C95A55A9B5861F5671C88FF",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 3885,
+        "rng_end": {
+          "state": 2669311376,
+          "calls": 55
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "demonbrg.msn",
+    "target_index": 2,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "demonbrg.rdl",
+        "route_input_sha256": "9DA0550996C476F27DC6DD15757B125C04D45FD25599B703D2238E7571C94968",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 6
+          },
+          {
+            "n": "destroy robot carrying red key",
+            "s": 31
+          },
+          {
+            "n": "reactor",
+            "s": 56
+          },
+          {
+            "n": "exit",
+            "s": 72
+          }
+        ],
+        "total_frames": 4346,
+        "rng_end": {
+          "state": 1848832019,
+          "calls": 118
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "dethpost.msn",
+    "target_index": 3,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "dethpost.rdl",
+        "route_input_sha256": "1154F3A99FE2B5E293032B36B2C30630E0B97ABADC2CBBA966EBDD1B08830908",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 5
+          },
+          {
+            "n": "red key",
+            "s": 7
+          },
+          {
+            "n": "reactor",
+            "s": 11
+          },
+          {
+            "n": "exit",
+            "s": 23
+          }
+        ],
+        "total_frames": 1395,
+        "rng_end": {
+          "state": 1223573862,
+          "calls": 65
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "erthstrk.msn",
+    "target_index": 4,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "level01.rdl",
+        "route_input_sha256": "95B5468E59B151F0A4686BF1B30554F027A4E0004E21BA8713C3801A2C2C4A65",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Anniversary Edition (USA) extras.json|4|1|level01.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Anniversary_Edition_USA_extras.json_4_1_level01.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "fbomega.msn",
+    "target_index": 5,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "fbomega.rdl",
+        "route_input_sha256": "6C537BAA6ED3FBCAED31463DBBA1F4F0AC6C8102DBADA686547228454601FE7F",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Anniversary Edition (USA) extras.json|5|1|fbomega.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Anniversary_Edition_USA_extras.json_5_1_fbomega.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "humil2.msn",
+    "target_index": 6,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "humility.rdl",
+        "route_input_sha256": "B2219D1D7C85BCDA3DC988EDF41AB8F1075D7F892186616DAECF7539D14DBCA3",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 10
+          },
+          {
+            "n": "gold key",
+            "s": 26
+          },
+          {
+            "n": "red key",
+            "s": 39
+          },
+          {
+            "n": "boss",
+            "s": 65
+          },
+          {
+            "n": "exit",
+            "s": 68
+          }
+        ],
+        "total_frames": 4108,
+        "rng_end": {
+          "state": 1621937922,
+          "calls": 117
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "lunapost.msn",
+    "target_index": 7,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "LUNAPOST.RDL",
+        "route_input_sha256": "78B5EBFBCFF17052EE52626DE7894AFAD94B38060ED94DBF1932A274245E20E2",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Anniversary Edition (USA) extras.json|7|1|LUNAPOST.RDL, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Anniversary_Edition_USA_extras.json_7_1_LUNAPOST.RDL_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "mad.msn",
+    "target_index": 8,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "mad.rdl",
+        "route_input_sha256": "DAF0DB0375D4519584769624834108BB7889C1AF794859026C4FA68E584D74BB",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 11
+          },
+          {
+            "n": "blue key",
+            "s": 11
+          },
+          {
+            "n": "gold key",
+            "s": 35
+          },
+          {
+            "n": "red key",
+            "s": 58
+          },
+          {
+            "n": "reactor",
+            "s": 75
+          }
+        ],
+        "total_frames": 5545,
+        "rng_end": {
+          "state": 493907821,
+          "calls": 84
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "mag4.msn",
+    "target_index": 9,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "MAG4.rdl",
+        "route_input_sha256": "CBD6143EBE692530C482FE0ACAA0DA4D7A235FC8A7CF4EDBECB72F3736283D2D",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Anniversary Edition (USA) extras.json|9|1|MAG4.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Anniversary_Edition_USA_extras.json_9_1_MAG4.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "newest.msn",
+    "target_index": 10,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "newest.RDL",
+        "route_input_sha256": "1FE8FBD854828012BDED0903EC6ED53D64C05C820BED5090682B5F45DDA83B84",
+        "status": "infrastructure_error",
+        "problem": "Route engine infrastructure failure for CD - Descent - Anniversary Edition (USA) extras.json|10|1|newest.RDL, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Anniversary_Edition_USA_extras.json_10_1_newest.RDL_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "obsrv13.msn",
+    "target_index": 11,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "obsrv13.rdl",
+        "route_input_sha256": "FEB8A07CD0C2F2F8F5CB06EB75BC167E9ACF4E2B77901B8A58E9C631B974C049",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Anniversary Edition (USA) extras.json|11|1|obsrv13.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Anniversary_Edition_USA_extras.json_11_1_obsrv13.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "retrib10.msn",
+    "target_index": 12,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "retrib10.rdl",
+        "route_input_sha256": "F8BFB436243E80924334A760CDB8369309A165167BEA8736835DDD5142B8803C",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Anniversary Edition (USA) extras.json|12|1|retrib10.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Anniversary_Edition_USA_extras.json_12_1_retrib10.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "retrib11.msn",
+    "target_index": 13,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "failed": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "retrib11.rdl",
+        "route_input_sha256": "17C9CE26F0A765BFFC28B54C4926AB354776E0F03E97C7AABECC73E293860E24",
+        "status": "failed",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 0,
+        "rng_end": {
+          "state": 2516284547,
+          "calls": 6
+        },
+        "problem": "live Guide-Bot route has no actionable goal"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "serenity.msn",
+    "target_index": 14,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "serenity.rdl",
+        "route_input_sha256": "8CB8A6360C7FE550FE6AB78FA2809AE2AFC26CF037EE1190CE19B294E3A977B6",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Anniversary Edition (USA) extras.json|14|1|serenity.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Anniversary_Edition_USA_extras.json_14_1_serenity.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "super_s.msn",
+    "target_index": 15,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "super_s.rdl",
+        "route_input_sha256": "1B7EBE7A960378AD023E25FF64B70DCC46516F17DB1BFB3EC0AAE66602A07504",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 9
+          }
+        ],
+        "total_frames": 4812,
+        "rng_end": {
+          "state": 948921754,
+          "calls": 61
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "terminus.msn",
+    "target_index": 16,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "terminus.rdl",
+        "route_input_sha256": "2938713B5AF072DAC22CBF957E43B04EFC0B570E6887D372C41706B8A4A1131C",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Anniversary Edition (USA) extras.json|16|1|terminus.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Anniversary_Edition_USA_extras.json_16_1_terminus.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "tranquil.msn",
+    "target_index": 17,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "tranquil.rdl",
+        "route_input_sha256": "367D5FB0FA147D5DB337EE59F724C67FB3747A78FB10B19563848134FB563638",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Anniversary Edition (USA) extras.json|17|1|tranquil.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Anniversary_Edition_USA_extras.json_17_1_tranquil.rdl_run_1.log"
+      }
+    ]
+  }
+]

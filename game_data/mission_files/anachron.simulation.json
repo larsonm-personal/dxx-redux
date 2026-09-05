@@ -1,0 +1,97 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "anachron.msn",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 1,
+    "timeout": 2
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "redriver.rdl",
+      "route_input_sha256": "0F3C9BEA5A040493273A58AEEADA8CC8A1AF17CB9AB1514198E18775B7A097BA",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 24
+        },
+        {
+          "n": "red key",
+          "s": 68
+        },
+        {
+          "n": "reactor",
+          "s": 101
+        },
+        {
+          "n": "exit",
+          "s": 114
+        }
+      ],
+      "total_frames": 6846,
+      "rng_end": {
+        "state": 508382461,
+        "calls": 68
+      }
+    },
+    {
+      "level_num": 2,
+      "level_file": "scktrnst.rdl",
+      "route_input_sha256": "B19B9CAE0507AFDBA6F518CC7AA613561C703BB48FE4FB300563F4C5131313F9",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 17
+        },
+        {
+          "n": "gold key",
+          "s": 56
+        }
+      ],
+      "total_frames": 6970,
+      "rng_end": {
+        "state": 1448521415,
+        "calls": 34
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 3,
+      "level_file": "appease.rdl",
+      "route_input_sha256": "1F981689E00F566C28307B3AA4A45DC83CDF802AFA020B38AB910D9EE2436F57",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 28
+        }
+      ],
+      "total_frames": 7180,
+      "rng_end": {
+        "state": 3823029677,
+        "calls": 20
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    }
+  ]
+}

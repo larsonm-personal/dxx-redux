@@ -1,7 +1,10 @@
+. (Join-Path $PSScriptRoot 'process_lifetime.ps1')
+
 function Get-HeadlessProcessWorkerCount {
     param(
         [ValidateRange(0, 128)][int]$Requested = 0,
-        [ValidateRange(1, 1024)][int]$ItemCount = 1024,
+        # Queue length is independent of the bounded number of active workers
+        [ValidateRange(1, [int]::MaxValue)][int]$ItemCount = [int]::MaxValue,
         [ValidateRange(1, 1024)][int]$LogicalProcessorCount = [Environment]::ProcessorCount,
         [ValidateRange(1, 128)][int]$AutomaticLimit = 8
     )
@@ -36,6 +39,7 @@ function Set-HeadlessProcessArguments {
 function Start-HeadlessProcessPoolItem {
     param([Parameter(Mandatory)]$Task)
 
+    Initialize-RegressionProcessLifetime
     $startInfo = [Diagnostics.ProcessStartInfo]::new()
     $startInfo.FileName = [string]$Task.FilePath
     Set-HeadlessProcessArguments -StartInfo $startInfo -Arguments @($Task.Arguments)
@@ -62,47 +66,56 @@ function Invoke-HeadlessProcessPool {
         [Parameter(Mandatory)][scriptblock]$OnCompleted
     )
 
+    Initialize-RegressionProcessLifetime
     $pending = [Collections.Generic.Queue[object]]::new()
     foreach ($task in $Tasks) { $pending.Enqueue($task) }
     $running = [Collections.Generic.List[object]]::new()
-    while ($pending.Count -gt 0 -or $running.Count -gt 0) {
-        while ($pending.Count -gt 0 -and $running.Count -lt $MaxParallel) {
-            $task = $pending.Dequeue()
-            try {
-                $state = Start-HeadlessProcessPoolItem -Task $task
-                $running.Add($state)
-                if ($OnStarted) { & $OnStarted $task }
-            } catch {
-                & $OnCompleted $task ([pscustomobject]@{
-                        ExitCode = -1; TimedOut = $false; StartError = $_.Exception.Message
-                        StandardOutput = ''; StandardError = ''
-                    })
+    try {
+        while ($pending.Count -gt 0 -or $running.Count -gt 0) {
+            while ($pending.Count -gt 0 -and $running.Count -lt $MaxParallel) {
+                $task = $pending.Dequeue()
+                $state = $null
+                try {
+                    $state = Start-HeadlessProcessPoolItem -Task $task
+                    $running.Add($state)
+                } catch {
+                    & $OnCompleted $task ([pscustomobject]@{
+                            ExitCode = -1; TimedOut = $false; StartError = $_.Exception.Message
+                            StandardOutput = ''; StandardError = ''
+                        })
+                }
+                if ($state -and $OnStarted) { & $OnStarted $task }
             }
-        }
 
-        $retired = $false
-        for ($i = $running.Count - 1; $i -ge 0; $i--) {
-            $state = $running[$i]
-            $timeoutSeconds = [int]$state.Task.TimeoutSeconds
-            $timedOut = $timeoutSeconds -gt 0 -and
-            ([DateTime]::UtcNow - $state.StartedUtc).TotalSeconds -ge $timeoutSeconds
-            if (-not $state.Process.HasExited -and -not $timedOut) { continue }
-            if ($timedOut -and -not $state.Process.HasExited) {
-                try { $state.Process.Kill($true) } catch { try { $state.Process.Kill() } catch {} }
+            $retired = $false
+            for ($i = $running.Count - 1; $i -ge 0; $i--) {
+                $state = $running[$i]
+                $timeoutSeconds = [int]$state.Task.TimeoutSeconds
+                $timedOut = $timeoutSeconds -gt 0 -and
+                ([DateTime]::UtcNow - $state.StartedUtc).TotalSeconds -ge $timeoutSeconds
+                if (-not $state.Process.HasExited -and -not $timedOut) { continue }
+                if ($timedOut -and -not $state.Process.HasExited) {
+                    Stop-RegressionChildProcess -Process $state.Process
+                }
+                $state.Process.WaitForExit()
+                $result = [pscustomobject]@{
+                    ExitCode = if ($timedOut) { -1 } else { $state.Process.ExitCode }
+                    TimedOut = $timedOut
+                    StartError = ''
+                    StandardOutput = $state.StandardOutput.GetAwaiter().GetResult()
+                    StandardError = $state.StandardError.GetAwaiter().GetResult()
+                }
+                $state.Process.Dispose()
+                $running.RemoveAt($i)
+                & $OnCompleted $state.Task $result
+                $retired = $true
             }
-            $state.Process.WaitForExit()
-            $result = [pscustomobject]@{
-                ExitCode = if ($timedOut) { -1 } else { $state.Process.ExitCode }
-                TimedOut = $timedOut
-                StartError = ''
-                StandardOutput = $state.StandardOutput.GetAwaiter().GetResult()
-                StandardError = $state.StandardError.GetAwaiter().GetResult()
-            }
-            $state.Process.Dispose()
-            $running.RemoveAt($i)
-            & $OnCompleted $state.Task $result
-            $retired = $true
+            if (-not $retired -and $running.Count -gt 0) { Start-Sleep -Milliseconds 50 }
         }
-        if (-not $retired -and $running.Count -gt 0) { Start-Sleep -Milliseconds 50 }
+    } finally {
+        foreach ($state in $running) {
+            try { Stop-RegressionChildProcess -Process $state.Process }
+            finally { $state.Process.Dispose() }
+        }
     }
 }

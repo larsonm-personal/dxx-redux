@@ -1,0 +1,313 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "af_d1.msn",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 5,
+    "timeout": 5
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "sdg22.rdl",
+      "route_input_sha256": "D4CF76EFEFDEE003065112D8B8D8A9E71EB48F37C677C6B7CE8E21D8271F96E1",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 20
+        },
+        {
+          "n": "red key",
+          "s": 30
+        },
+        {
+          "n": "reactor",
+          "s": 34
+        },
+        {
+          "n": "exit",
+          "s": 42
+        }
+      ],
+      "total_frames": 2495,
+      "rng_end": {
+        "state": 948921754,
+        "calls": 61
+      }
+    },
+    {
+      "level_num": 2,
+      "level_file": "esonapri.rdl",
+      "route_input_sha256": "7000EA2C926FEFDC19247A53E4E3721079CD91027ABCB60187A4C1C153CFF9B3",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "fly-through 4",
+          "s": 4
+        },
+        {
+          "n": "blue key",
+          "s": 9
+        },
+        {
+          "n": "red key",
+          "s": 26
+        },
+        {
+          "n": "boss",
+          "s": 47
+        },
+        {
+          "n": "exit",
+          "s": 54
+        }
+      ],
+      "total_frames": 3258,
+      "rng_end": {
+        "state": 2077067425,
+        "calls": 96
+      }
+    },
+    {
+      "level_num": 3,
+      "level_file": "sedurta.rdl",
+      "route_input_sha256": "9306ACB07750E80D6345E07C66A17FF5BDEC43BE8BEA8E099682828C6B7F99BA",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 5197,
+      "rng_end": {
+        "state": 2937909499,
+        "calls": 14
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 4,
+      "level_file": "chacshir.rdl",
+      "route_input_sha256": "C2FF2AFF5D03221EB9B526FBEC851E27AE7A60A707013D51368CFD7E24A98534",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 30
+        },
+        {
+          "n": "gold key",
+          "s": 55
+        },
+        {
+          "n": "fly-through 1",
+          "s": 92
+        },
+        {
+          "n": "red key",
+          "s": 105
+        },
+        {
+          "n": "reactor",
+          "s": 132
+        },
+        {
+          "n": "exit",
+          "s": 136
+        }
+      ],
+      "total_frames": 8130,
+      "rng_end": {
+        "state": 340946258,
+        "calls": 101
+      }
+    },
+    {
+      "level_num": 5,
+      "level_file": "tefalog.rdl",
+      "route_input_sha256": "EA043A05DE25FEE6A2B2B1307FAF340D4AF5192BDCA1DE63551E4134A15A3F3B",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 14
+        },
+        {
+          "n": "gold key",
+          "s": 60
+        }
+      ],
+      "total_frames": 18001,
+      "rng_end": {
+        "state": 3025925713,
+        "calls": 48
+      },
+      "problem": "route confirmation exceeded 300-second simulation budget"
+    },
+    {
+      "level_num": 6,
+      "level_file": "alarlof.rdl",
+      "route_input_sha256": "E633DF0F94404D23C181EBDAC1DA8D20422A2FE4FB9C3DA70451FB43CA4D6862",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 21
+        }
+      ],
+      "total_frames": 6278,
+      "rng_end": {
+        "state": 4015624929,
+        "calls": 32
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 7,
+      "level_file": "cefispar.rdl",
+      "route_input_sha256": "AA2449D68F89748ACC4E03F1501DB33E0876E84E7ACB9EB1EF5815CE2F7FF6E3",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4276,
+      "rng_end": {
+        "state": 835903122,
+        "calls": 37
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 8,
+      "level_file": "ganeshd.rdl",
+      "route_input_sha256": "F43544812EC7D6E4E1B2FF89001AABB69D3345DE27EDCCA5A7AD887EC17441DE",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 12
+        },
+        {
+          "n": "blue key",
+          "s": 13
+        },
+        {
+          "n": "gold key",
+          "s": 27
+        },
+        {
+          "n": "red key",
+          "s": 49
+        },
+        {
+          "n": "reactor",
+          "s": 63
+        },
+        {
+          "n": "exit",
+          "s": 77
+        }
+      ],
+      "total_frames": 4593,
+      "rng_end": {
+        "state": 1447624116,
+        "calls": 99
+      }
+    },
+    {
+      "level_num": 9,
+      "level_file": "lakshmid.rdl",
+      "route_input_sha256": "750A742C919A431BEC1472B581D1151B2038BCB35EBA9B31CAC2FACA58FCB773",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 14
+        },
+        {
+          "n": "gold key",
+          "s": 34
+        }
+      ],
+      "total_frames": 7785,
+      "rng_end": {
+        "state": 3822763702,
+        "calls": 49
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 10,
+      "level_file": "fbasin.rdl",
+      "route_input_sha256": "C1523B3BF6BE07B831261B08243F063BCA32DC395E7DD01D4A2503B584BF6107",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 11
+        },
+        {
+          "n": "gold key",
+          "s": 25
+        },
+        {
+          "n": "red key",
+          "s": 39
+        },
+        {
+          "n": "boss",
+          "s": 60
+        },
+        {
+          "n": "exit",
+          "s": 76
+        }
+      ],
+      "total_frames": 4553,
+      "rng_end": {
+        "state": 3423541591,
+        "calls": 146
+      }
+    }
+  ]
+}

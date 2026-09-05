@@ -6,6 +6,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'process_lifetime.ps1')
+Initialize-RegressionProcessLifetime
 
 function ConvertTo-WindowsCommandLineArgument {
     param([AllowEmptyString()][string]$Argument)
@@ -107,6 +109,7 @@ try {
         $process.StandardOutput.Dispose()
         $process.StandardError.Dispose()
     } finally {
+        Stop-RegressionChildProcess -Process $process
         $process.Dispose()
     }
 

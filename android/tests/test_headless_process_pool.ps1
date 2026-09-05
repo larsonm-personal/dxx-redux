@@ -13,6 +13,10 @@ Assert-Equal 1 (Get-HeadlessProcessWorkerCount -ItemCount 10 -LogicalProcessorCo
 Assert-Equal 4 (Get-HeadlessProcessWorkerCount -ItemCount 10 -LogicalProcessorCount 8) 'automatic half cores'
 Assert-Equal 8 (Get-HeadlessProcessWorkerCount -ItemCount 20 -LogicalProcessorCount 64) 'automatic cap'
 Assert-Equal 3 (Get-HeadlessProcessWorkerCount -Requested 7 -ItemCount 3) 'item cap'
+foreach ($count in @(1024, 1025, 1761, [int]::MaxValue)) {
+    Assert-Equal 8 (Get-HeadlessProcessWorkerCount -ItemCount $count -LogicalProcessorCount 64) "large queue $count automatic cap"
+    Assert-Equal 3 (Get-HeadlessProcessWorkerCount -Requested 3 -ItemCount $count) "large queue $count explicit cap"
+}
 
 $powershell = (Get-Process -Id $PID).Path
 $tasks = @(
