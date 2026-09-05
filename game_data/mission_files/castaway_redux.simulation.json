@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 1,
+    "ok": 2,
     "failed": 2,
-    "timeout": 7
+    "timeout": 6
   },
   "levels": [
     {
@@ -32,13 +32,13 @@
         },
         {
           "n": "red key",
-          "s": 38
+          "s": 39
         }
       ],
-      "total_frames": 3207,
+      "total_frames": 3280,
       "rng_end": {
-        "state": 2530671006,
-        "calls": 1897
+        "state": 2757827055,
+        "calls": 2298
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -46,7 +46,7 @@
       "level_num": 2,
       "level_file": "rupture.rl2",
       "route_input_sha256": "D2E2CBA41E87F1AF9ECD33F29758B3DA84DE189D957D0E679F0A5D891D8CDC6E",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -62,43 +62,82 @@
         },
         {
           "n": "switch 6",
-          "s": 27
+          "s": 28
         },
         {
           "n": "fly-through 3",
-          "s": 32
+          "s": 33
         },
         {
           "n": "switch 4",
-          "s": 32
+          "s": 33
         },
         {
           "n": "blue key",
-          "s": 39
+          "s": 41
         },
         {
           "n": "gold key",
-          "s": 55
+          "s": 56
         },
         {
           "n": "red key",
-          "s": 66
+          "s": 67
         },
         {
           "n": "fly-through 9",
-          "s": 66
+          "s": 68
         },
         {
           "n": "switch 10",
-          "s": 69
+          "s": 71
+        },
+        {
+          "n": "pass-through 32",
+          "s": 83
+        },
+        {
+          "n": "switch 18",
+          "s": 83
+        },
+        {
+          "n": "switch 17",
+          "s": 83
+        },
+        {
+          "n": "fly-through 19",
+          "s": 89
+        },
+        {
+          "n": "switch 24",
+          "s": 90
+        },
+        {
+          "n": "fly-through 16",
+          "s": 91
+        },
+        {
+          "n": "switch 21",
+          "s": 92
+        },
+        {
+          "n": "switch 20",
+          "s": 92
+        },
+        {
+          "n": "reactor",
+          "s": 101
+        },
+        {
+          "n": "exit",
+          "s": 104
         }
       ],
-      "total_frames": 8425,
+      "total_frames": 6237,
       "rng_end": {
-        "state": 3086274844,
-        "calls": 3675
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 2188137696,
+        "calls": 7591
+      }
     },
     {
       "level_num": 3,
@@ -304,10 +343,10 @@
           "s": 15
         }
       ],
-      "total_frames": 1924,
+      "total_frames": 1920,
       "rng_end": {
-        "state": 3260609084,
-        "calls": 699
+        "state": 612968979,
+        "calls": 1654
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -330,10 +369,10 @@
           "s": 11
         }
       ],
-      "total_frames": 1583,
+      "total_frames": 1558,
       "rng_end": {
-        "state": 725113970,
-        "calls": 965
+        "state": 1416728504,
+        "calls": 1775
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

@@ -1072,6 +1072,16 @@ int guidebot_route_select_compiled_current_state(
 		if (step < 64)
 			local_summary.required_steps_low |= 1ULL << step;
 		local_summary.evaluated_actions++;
+		/* A close-wall trigger restores its switch surface over engine frames
+		 * rather than immediately. Keep this objective pending until it settles */
+		if (candidate->activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH &&
+		    view->wall_is_restoring &&
+		    view->wall_is_restoring(view->user, candidate->wall_num)) {
+			local_summary.blocking_step = step;
+			if (summary)
+				*summary = local_summary;
+			return GUIDEBOT_ROUTE_CERTIFIER_PENDING;
+		}
 		if (!guidebot_step_usable(view, candidate)) {
 			if (!guidebot_prepare_switch_restorer(
 			        view, candidate, &local_summary)) {

@@ -191,6 +191,7 @@ typedef struct level_metadata_scan_view {
 	int (*wall_segment)(void *user, int wall_num);
 	int (*wall_side)(void *user, int wall_num);
 	int (*wall_type)(void *user, int wall_num);
+	int (*wall_is_restoring)(void *user, int wall_num);
 	int (*wall_flags)(void *user, int wall_num);
 	int (*wall_is_opening)(void *user, int wall_num);
 	int (*wall_keys)(void *user, int wall_num);

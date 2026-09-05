@@ -359,12 +359,37 @@ static int guidebot_route_find_blocked_segment(object *objp, point_seg *psegs,
 		hit_type = find_vector_intersection(&query, &hit_data);
 		if (hit_type == HIT_NONE)
 			continue;
-		if (!guidebot_route_hit_is_closed_trigger_barrier(&hit_data))
-			continue;
+		if (!guidebot_route_hit_is_closed_trigger_barrier(&hit_data)) {
+			object probe;
+			int clearance;
+			/* Android route navigation: reject an interior waypoint whose
+			 * collision shell intersects solid level geometry.  Door contacts
+			 * still belong to normal interaction and frontier handling */
+			if (hit_type != HIT_WALL || hit_data.hit_side_seg < 0 ||
+			    hit_data.hit_side_seg > Highest_segment_index ||
+			    hit_data.hit_side < 0 || hit_data.hit_side >= MAX_SIDES_PER_SEGMENT ||
+			    Segments[hit_data.hit_side_seg].sides[hit_data.hit_side].wall_num >= 0)
+				continue;
+			memset(&probe, 0, sizeof(probe));
+			probe.pos = psegs[i + 1].point;
+			probe.segnum = psegs[i + 1].segnum;
+			probe.size = radius;
+			if (!object_intersects_wall(&probe))
+				continue;
+			compute_segment_center(&probe.pos, &Segments[probe.segnum]);
+			if (!object_intersects_wall(&probe))
+				continue;
+			/* The topology cache excludes isolated skewed centers from its
+			 * narrow components. Those can still have usable physical paths */
+			clearance = level_metadata_segment_clearance_current(probe.segnum);
+			if (clearance <= 0 || clearance >= objp->size)
+				continue;
+		}
 		/* A collision against an unrelated side of the segment being left can
 		 * be a harmless consequence of move_towards_outside.  The failure this
 		 * recovery addresses is an unoccupiable destination waypoint whose
-		 * collision shell overlaps a still-closed, trigger-retractable wall. */
+		 * collision shell overlaps a still-closed, trigger-retractable wall
+		 * or confirmed narrow solid geometry */
 		if (hit_data.hit_side_seg != psegs[i + 1].segnum)
 			continue;
 		/* Avoid the interior segment reached by this bad leg.  Avoiding only

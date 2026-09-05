@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 10,
-    "timeout": 8
+    "ok": 11,
+    "timeout": 7
   },
   "levels": [
     {
@@ -373,7 +373,7 @@
       "level_num": 7,
       "level_file": "berylium.rl2",
       "route_input_sha256": "D1EACF131CAFD30066253A0F4558FBA47FF4E80F5B9AE372F36E07D5F9AAF7D9",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -422,14 +422,17 @@
         {
           "n": "reactor",
           "s": 109
+        },
+        {
+          "n": "exit",
+          "s": 131
         }
       ],
-      "total_frames": 11217,
+      "total_frames": 7845,
       "rng_end": {
-        "state": 3169057466,
-        "calls": 4509
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 927961790,
+        "calls": 4809
+      }
     },
     {
       "level_num": 8,

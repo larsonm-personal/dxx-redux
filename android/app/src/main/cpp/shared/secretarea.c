@@ -1216,6 +1216,14 @@ int level_metadata_player_radius_current(void)
 	return secret_area_player_radius();
 }
 
+int level_metadata_segment_clearance_current(int segment)
+{
+	return Level_metadata_topology_valid && segment >= 0 &&
+	               segment < Level_metadata_topology_num_segments
+	           ? Level_metadata_segment_clearance[segment]
+	           : 0;
+}
+
 static int secret_area_navigator_radius(int start_objnum)
 {
 	int objnum;
@@ -1361,6 +1369,18 @@ static int secret_area_wall_clip_flags(void *user, int wall_num)
 	if (clip_num < 0 || clip_num >= Num_wall_anims)
 		return 0;
 	return WallAnims[clip_num].flags;
+}
+
+static int secret_area_wall_is_restoring(void *user, int wall_num)
+{
+	(void) user;
+#ifdef DXX_BUILD_DESCENT_II
+	return secret_area_wall_index_valid(wall_num) &&
+	       Walls[wall_num].state == WALL_DOOR_DECLOAKING;
+#else
+	(void) wall_num;
+	return 0;
+#endif
 }
 
 static int secret_area_wall_is_shootable_trigger(void *user, int wall_num)
@@ -2699,6 +2719,7 @@ static void level_metadata_initialize_scan_view(void)
 	view->wall_shot_incidence_cosine =
 	    secret_area_wall_shot_incidence_cosine;
 	view->wall_is_shootable_trigger = secret_area_wall_is_shootable_trigger;
+	view->wall_is_restoring = secret_area_wall_is_restoring;
 	Level_metadata_scan_view_initialized = 1;
 }
 

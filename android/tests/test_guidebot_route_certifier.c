@@ -29,6 +29,7 @@ typedef struct certifier_fixture {
 	int child[FIXTURE_SEGMENTS][LEVEL_METADATA_MAX_SIDES];
 	int wall[FIXTURE_SEGMENTS][LEVEL_METADATA_MAX_SIDES];
 	int wall_type[TEST_WALLS];
+	int wall_restoring[TEST_WALLS];
 	int wall_open[TEST_WALLS];
 	int wall_extra_flags[TEST_WALLS];
 	int wall_clip[TEST_WALLS];
@@ -588,6 +589,41 @@ static void test_compiled_selector_blocks_removed_switch_surface(void)
 	assert(summary.selected_step == -1);
 	assert(summary.blocking_step == 1);
 	assert(certificate.status == GUIDEBOT_ROUTE_CERTIFICATE_INVALID);
+}
+
+static int wall_is_restoring(void *user, int wall)
+{
+	certifier_fixture *fixture = user;
+	return wall >= 0 && wall < TEST_WALLS && fixture->wall_restoring[wall];
+}
+
+static void test_compiled_selector_waits_for_restoring_switch(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+	route_planner_plan_summary compiled_plan, live_plan;
+	guidebot_route_validity_certificate certificate;
+	guidebot_route_certifier_summary summary;
+	int closed_type;
+
+	initialize_fixture(&fixture);
+	initialize_plan(&compiled_plan);
+	view = make_view(&fixture);
+	view.wall_is_restoring = wall_is_restoring;
+	Prepared.route_steps[1].opened_link_count = 0;
+	closed_type = fixture.wall_type[0];
+	fixture.wall_type[0] = view.wall_type_open;
+	fixture.wall_restoring[0] = 1;
+	assert(select_compiled(&view, &compiled_plan, &live_plan, &certificate, &summary) ==
+	       GUIDEBOT_ROUTE_CERTIFIER_PENDING);
+	assert(summary.blocking_step == 1);
+	fixture.wall_type[0] = closed_type;
+	assert(select_compiled(&view, &compiled_plan, &live_plan, &certificate, &summary) ==
+	       GUIDEBOT_ROUTE_CERTIFIER_PENDING);
+	fixture.wall_restoring[0] = 0;
+	assert(select_compiled(&view, &compiled_plan, &live_plan, &certificate, &summary) ==
+	       GUIDEBOT_ROUTE_CERTIFIER_VALID);
+	assert(summary.selected_step == 1);
 }
 
 static void test_compiled_selector_restores_removed_switch_surface(void)
@@ -2195,6 +2231,7 @@ int main(int argc, char **argv)
 		return run_benchmarks();
 	test_compiled_selector_never_restores_collected_key();
 	test_compiled_selector_blocks_removed_switch_surface();
+	test_compiled_selector_waits_for_restoring_switch();
 	test_compiled_selector_restores_removed_switch_surface();
 	test_one_shot_close_trigger_stays_complete_after_reopen();
 	test_compiled_selector_rebinds_moving_key_object();

@@ -58,6 +58,8 @@ struct controller_state {
 	int action_applied;
 	unsigned int no_progress_frames;
 	unsigned int wait_frames;
+	unsigned int replan_wait_frames;
+	int pending_restorer_trigger;
 	unsigned int frontier_extension_count;
 	unsigned int duplicate_objective_count;
 	unsigned int frame_time_remainder;
@@ -439,6 +441,12 @@ int prepare_next_goal(int restorer_trigger)
 	}
 	actor = &Objects[State.actor_objnum];
 	level_metadata_rescan_route_from_object(State.actor_objnum);
+	if (level_metadata_live_route_work_pending()) {
+		State.phase = PHASE_WAIT_FOR_REPLAN;
+		State.pending_restorer_trigger = restorer_trigger;
+		return 1;
+	}
+	State.replan_wait_frames = 0;
 	if (!level_metadata_prepare_guidebot_path_view(State.actor_objnum)) {
 		fail(ROUTE_CONFIRMATION_FAILED, "could not prepare live Guide-Bot route view");
 		return 0;
@@ -1645,6 +1653,13 @@ extern "C" void route_confirmation_before_frame(void)
 	 * engine API so long verification paths do not involuntarily end the level. */
 	if (reactor_countdown_is_active() && !Reactor_countdown_paused)
 		reactor_countdown_set_paused(1, Countdown_timer);
+	if (State.phase == PHASE_WAIT_FOR_REPLAN && valid_object(State.actor_objnum)) {
+		object *actor = &Objects[State.actor_objnum];
+		vm_vec_zero(&actor->mtype.phys_info.velocity);
+		vm_vec_zero(&actor->mtype.phys_info.thrust);
+		actor->ctype.ai_info.SKIP_AI_COUNT = 2;
+		return;
+	}
 	if (valid_object(State.actor_objnum))
 		fire_path_flare(&Objects[State.actor_objnum]);
 	if (valid_object(State.actor_objnum))
@@ -1677,6 +1692,13 @@ extern "C" void route_confirmation_after_frame(void)
 	actor = &Objects[State.actor_objnum];
 	if (actor->segnum >= 0 && actor->segnum < Num_segments)
 		Automap_visited[actor->segnum] = 1;
+	if (State.phase == PHASE_WAIT_FOR_REPLAN) {
+		if (++State.replan_wait_frames > 5 * ROUTE_CONFIRMATION_FIXED_HZ)
+			fail(ROUTE_CONFIRMATION_TIMEOUT, "pending route transition did not settle within 5 seconds");
+		else
+			prepare_next_goal(State.pending_restorer_trigger);
+		return;
+	}
 	apply_incidental_crossed_trigger(actor);
 	if (State.target_pos_valid) {
 		distance = vm_vec_dist_quick(&actor->pos, &State.target_pos);
