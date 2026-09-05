@@ -1,0 +1,157 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "THEHIVE.MSN",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "failed": 1,
+    "timeout": 5,
+    "infrastructure_error": 2
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "THEHIVE1.RDL",
+      "route_input_sha256": "69DD5A699C818ED37C16C2069F1E6BFF9F5397BE694F967CE9885E2216686AC7",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blastable wall",
+          "s": 2
+        },
+        {
+          "n": "red key",
+          "s": 16
+        }
+      ],
+      "total_frames": 2047,
+      "rng_end": {
+        "state": 2577478752,
+        "calls": 39
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 2,
+      "level_file": "THEHIVE2.RDL",
+      "route_input_sha256": "92867D4B630D3BB21D18E1D98CEB1E60431704D3F08C6A8FB93F99B2686878DD",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2516284547,
+        "calls": 6
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 3,
+      "level_file": "THEHIVE3.RDL",
+      "route_input_sha256": "15AB9B5A0A67A56D757F9CD8571864FE0B2FBB77BD7A240F73B6F736D39837FB",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 14
+        }
+      ],
+      "total_frames": 2096,
+      "rng_end": {
+        "state": 3823029677,
+        "calls": 20
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 4,
+      "level_file": "THEHIVE4.RDL",
+      "route_input_sha256": "19FFC343A18B1D1265AA2FA705D5541E447F1205088D4CC9CCC31FB517E4B47A",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4782,
+      "rng_end": {
+        "state": 3914758370,
+        "calls": 21
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 5,
+      "level_file": "THEHIVE5.RDL",
+      "route_input_sha256": "8068DFC91A10EDC385152B916837FC01A1243E1E1BDA12702CE9837A5AC03527",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 12
+        }
+      ],
+      "total_frames": 1920,
+      "rng_end": {
+        "state": 675780521,
+        "calls": 24
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 6,
+      "level_file": "THEHIVE6.RDL",
+      "route_input_sha256": "A5414A17EFB71AB9A641CC95E38A5090EA40AA09B83B44764B3209B349CB80B3",
+      "status": "infrastructure_error",
+      "problem": "Route engine infrastructure failure for THEHIVE.json|0|6|THEHIVE6.RDL, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\THEHIVE.json_0_6_THEHIVE6.RDL_run_1.log"
+    },
+    {
+      "level_num": 7,
+      "level_file": "THEHIVE7.RDL",
+      "route_input_sha256": "AD6AF54CEEE4B59B5DABD513EA6665D01064FEA46D6F1B5B83CC2375BAFFECA7",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 18
+        }
+      ],
+      "total_frames": 2581,
+      "rng_end": {
+        "state": 1116175964,
+        "calls": 27
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 8,
+      "level_file": "THEHIVE8.RDL",
+      "route_input_sha256": "42B4A3F195F01705B02108F5A803563EE8D74484F39D6C8965A2D03E0E3ABF51",
+      "status": "infrastructure_error",
+      "problem": "Route engine infrastructure failure for THEHIVE.json|0|8|THEHIVE8.RDL, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\THEHIVE.json_0_8_THEHIVE8.RDL_run_1.log"
+    }
+  ]
+}

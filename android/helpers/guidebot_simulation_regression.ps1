@@ -224,7 +224,7 @@ function ConvertTo-GuidebotLevelSimulationResult {
 }
 
 function Get-GuidebotMissionAggregateStatus {
-    param([Parameter(Mandatory)][object[]]$Levels)
+    param([Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Levels)
 
     if ($Levels.Count -eq 0) { return 'not_run' }
     $statuses = @($Levels | ForEach-Object { [string]$_.status })
@@ -238,7 +238,7 @@ function Get-GuidebotMissionAggregateStatus {
 function New-GuidebotMissionSimulationRecord {
     param(
         [Parameter(Mandatory)][object]$Mission,
-        [Parameter(Mandatory)][object[]]$Levels
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Levels
     )
 
     $counts = [ordered]@{}
@@ -258,6 +258,11 @@ function New-GuidebotMissionSimulationRecord {
     $record.fixed_hz = $script:GuidebotSimulationFixedHz
     $record.seed = $script:GuidebotSimulationSeed
     $record.status = Get-GuidebotMissionAggregateStatus -Levels $Levels
+    if ($Levels.Count -eq 0) {
+        $record.status = 'failed'
+        $details = @(Get-GuidebotPropertyValue $Mission 'problems' @()) -join '; '
+        $record.problem = 'Mission metadata contains no levels' + $(if ($details) { ": $details" } else { '' })
+    }
     $record.level_counts = [pscustomobject]$counts
     $record.levels = @($Levels)
     return [pscustomobject]$record
@@ -321,6 +326,9 @@ function Test-GuidebotMissionSimulationRecord {
         }
     }
     $expectedAggregate = Get-GuidebotMissionAggregateStatus -Levels $levels
+    if ($levels.Count -eq 0 -and [string](Get-GuidebotPropertyValue $Record 'problem' '')) {
+        $expectedAggregate = 'failed'
+    }
     if ([string](Get-GuidebotPropertyValue $Record 'status' '') -ne $expectedAggregate) {
         $errors.Add('mission aggregate status does not match levels')
     }

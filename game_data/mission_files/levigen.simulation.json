@@ -8,9 +8,9 @@
   "status": "partial",
   "level_counts": {
     "ok": 3,
+    "failed": 1,
     "timeout": 4,
-    "unsupported": 1,
-    "infrastructure_error": 1
+    "unsupported": 1
   },
   "levels": [
     {
@@ -102,8 +102,23 @@
       "level_num": 4,
       "level_file": "lvn-irr.rl2",
       "route_input_sha256": "E771BF59BAA1E69EAD8D0CE5C67FD53CAF19BE4DA1489DCF80BA4C020B659539",
-      "status": "infrastructure_error",
-      "problem": "Route engine infrastructure failure for levigen.json|0|4|lvn-irr.rl2, exit -1073741571, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_102101\\logs\\levigen.json_0_4_lvn-irr.rl2_run_1.log"
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 21
+        }
+      ],
+      "total_frames": 1272,
+      "rng_end": {
+        "state": 785130577,
+        "calls": 560
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 5,

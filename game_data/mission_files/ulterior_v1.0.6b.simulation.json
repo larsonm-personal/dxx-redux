@@ -7,10 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 14,
+    "ok": 15,
     "failed": 1,
-    "timeout": 10,
-    "route_mismatch": 1
+    "timeout": 10
   },
   "levels": [
     {
@@ -855,8 +854,8 @@
     {
       "level_num": -1,
       "level_file": "lvl97.rl2",
-      "route_input_sha256": "16E8CA2FE864D071A3ADE5659FC1374FA52F00765CD0644B673145E320717990",
-      "status": "route_mismatch",
+      "route_input_sha256": "05B61FB59510189C4BD5A89F4E708D101377B8753E511BFBC75610931D01EC20",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -887,8 +886,7 @@
       "rng_end": {
         "state": 3361628676,
         "calls": 2003
-      },
-      "problem": "live objective sequence differs from route input"
+      }
     },
     {
       "level_num": -2,
@@ -902,17 +900,17 @@
       "objectives": [
         {
           "n": "switch 5",
-          "s": 12
+          "s": 13
         },
         {
           "n": "switch 28",
-          "s": 24
+          "s": 25
         }
       ],
-      "total_frames": 2421,
+      "total_frames": 2457,
       "rng_end": {
-        "state": 1334668553,
-        "calls": 1464
+        "state": 1303892316,
+        "calls": 4379
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

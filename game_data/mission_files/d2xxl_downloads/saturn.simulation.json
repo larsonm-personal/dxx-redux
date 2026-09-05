@@ -48,7 +48,7 @@
     {
       "level_num": 2,
       "level_file": "PROM-NO.RL2",
-      "route_input_sha256": "4F87E3D15544E1F35397C0DE349E780073B835A8284BB9879D13F1D8A20D4CA6",
+      "route_input_sha256": "5F388E69ACEF93CA9E7776426CF38626860FD6F8EDEF7BBC0BC24A064B317071",
       "status": "failed",
       "rng_start": {
         "state": 1,
@@ -83,8 +83,8 @@
       ],
       "total_frames": 7508,
       "rng_end": {
-        "state": 3559888919,
-        "calls": 3538
+        "state": 4259882423,
+        "calls": 4658
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },

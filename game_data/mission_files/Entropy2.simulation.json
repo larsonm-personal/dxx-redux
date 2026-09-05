@@ -7,9 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
-    "timeout": 2,
-    "route_mismatch": 1
+    "ok": 4,
+    "timeout": 2
   },
   "levels": [
     {
@@ -56,8 +55,8 @@
     {
       "level_num": 2,
       "level_file": "e2v-2.rl2",
-      "route_input_sha256": "668511F1DBDC207A1EF758C1197683BA32280EAB2566D20134ACF1523CAE5BE5",
-      "status": "route_mismatch",
+      "route_input_sha256": "AE1D1AE645B8BA3CB176CFE1CD0DDA7B0B9FD4E5580E5EA01B96FDEE5F45D3AD",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -81,19 +80,18 @@
         },
         {
           "n": "reactor",
-          "s": 33
+          "s": 34
         },
         {
           "n": "exit",
           "s": 42
         }
       ],
-      "total_frames": 2512,
+      "total_frames": 2524,
       "rng_end": {
-        "state": 1326565041,
-        "calls": 1744
-      },
-      "problem": "live objective sequence differs from route input"
+        "state": 790436741,
+        "calls": 3324
+      }
     },
     {
       "level_num": 3,

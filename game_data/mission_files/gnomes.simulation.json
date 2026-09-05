@@ -1,0 +1,136 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "GNOMES.MSN",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "failed": 1,
+    "timeout": 3
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "cometlab.rdl",
+      "route_input_sha256": "BDDEBC93DDFDB1173F9288F5AC65CE97EFD9BA5E880F9A46CCA150882F790A7C",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 7
+        },
+        {
+          "n": "gold key",
+          "s": 24
+        },
+        {
+          "n": "red key",
+          "s": 46
+        }
+      ],
+      "total_frames": 7528,
+      "rng_end": {
+        "state": 2673245591,
+        "calls": 82
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 2,
+      "level_file": "carbon.rdl",
+      "route_input_sha256": "0030FD960CD05C4671944FDA1A38A647E23A159B70ED7BF5DEDA40604893AEDD",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 10
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 27
+        },
+        {
+          "n": "red key",
+          "s": 44
+        }
+      ],
+      "total_frames": 7218,
+      "rng_end": {
+        "state": 3819596486,
+        "calls": 97
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 3,
+      "level_file": "warehos.rdl",
+      "route_input_sha256": "14914172A1C026F7732BC7E6FEBF25606E8E9F5082A208E28CBD0A049E448598",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "fly-through 0",
+          "s": 7
+        },
+        {
+          "n": "blue key",
+          "s": 8
+        },
+        {
+          "n": "gold key",
+          "s": 20
+        },
+        {
+          "n": "red key",
+          "s": 43
+        }
+      ],
+      "total_frames": 3712,
+      "rng_end": {
+        "state": 2787170210,
+        "calls": 85
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 4,
+      "level_file": "homecave.rdl",
+      "route_input_sha256": "FFAEF16357BF51675E6D768B40B6BEC2246F72A8F90078619114CF8D0915C2C2",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 11
+        },
+        {
+          "n": "gold key",
+          "s": 43
+        }
+      ],
+      "total_frames": 2588,
+      "rng_end": {
+        "state": 1775811865,
+        "calls": 40
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    }
+  ]
+}

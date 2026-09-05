@@ -8,25 +8,30 @@
     "seed": 1,
     "status": "failed",
     "level_counts": {
-      "timeout": 1
+      "route_mismatch": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "gigaloma.rl2",
         "route_input_sha256": "DC7C6B44F845F1E3A77EBB193C55778FC0DC203139CA06A4DEF2A93BA211D6C4",
-        "status": "timeout",
+        "status": "route_mismatch",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 4434,
+        "objectives": [
+          {
+            "n": "gold key",
+            "s": 23
+          }
+        ],
+        "total_frames": 1400,
         "rng_end": {
-          "state": 1418186756,
-          "calls": 467
+          "state": 2983129977,
+          "calls": 1224
         },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "problem": "live objective sequence differs from route input"
       }
     ]
   },

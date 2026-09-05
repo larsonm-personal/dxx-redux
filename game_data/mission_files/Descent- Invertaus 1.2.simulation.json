@@ -1,0 +1,96 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "dinvert.msn",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 1,
+    "timeout": 2
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "fuego.rdl",
+      "route_input_sha256": "5A3E0ADE64F093F421F33AD287028DA781065063E21B8DF44C63B7C3A2B721BA",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 12
+        },
+        {
+          "n": "gold key",
+          "s": 29
+        }
+      ],
+      "total_frames": 2954,
+      "rng_end": {
+        "state": 1266032265,
+        "calls": 56
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 2,
+      "level_file": "destirus.rdl",
+      "route_input_sha256": "AD5B189C0E33D9F357676AF5574769404A88149FEBE568F854B2535BE1276B86",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 11
+        },
+        {
+          "n": "gold key",
+          "s": 30
+        },
+        {
+          "n": "red key",
+          "s": 54
+        },
+        {
+          "n": "reactor",
+          "s": 73
+        },
+        {
+          "n": "exit",
+          "s": 79
+        }
+      ],
+      "total_frames": 4759,
+      "rng_end": {
+        "state": 2883693444,
+        "calls": 83
+      }
+    },
+    {
+      "level_num": 3,
+      "level_file": "darrel.rdl",
+      "route_input_sha256": "6D9AD2436DCEC9F1F76355F5F379E8663983CCA13605B43AB502EF17B5AC67A8",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4715,
+      "rng_end": {
+        "state": 3914758370,
+        "calls": 21
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    }
+  ]
+}

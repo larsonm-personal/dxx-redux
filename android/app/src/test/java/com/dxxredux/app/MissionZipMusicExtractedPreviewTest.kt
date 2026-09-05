@@ -8,10 +8,87 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.util.zip.CRC32
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 class MissionZipMusicExtractedPreviewTest {
+    @Test
+    fun largeExtractedDxaSupportsMusicDiscoveryAndPreview() {
+        verifyLargeDxaMusic(archiveBacked = false)
+    }
+
+    @Test
+    fun largeArchiveBackedDxaSupportsMusicDiscoveryAndPreview() {
+        verifyLargeDxaMusic(archiveBacked = true)
+    }
+
+    private fun verifyLargeDxaMusic(archiveBacked: Boolean) {
+        val root = File("build/test-mission-zip-music-extracted-preview/large-$archiveBacked").absoluteFile
+        root.mkdirs()
+        val dxa = File(root, "ewithin.dxa")
+        val audio = byteArrayOf(1, 2, 3, 4)
+        val midi = byteArrayOf(5, 6, 7, 8)
+        // Stored entries reproduce the real DXA's size without a high expansion ratio
+        val padding = ByteArray(1024 * 1024)
+        val paddingCrc = CRC32().apply { repeat(17) { update(padding) } }
+        ZipOutputStream(dxa.outputStream()).use { zip ->
+            zip.putNextEntry(
+                ZipEntry("padding.bin").apply {
+                    method = ZipEntry.STORED
+                    size = 17L * padding.size
+                    compressedSize = size
+                    crc = paddingCrc.value
+                },
+            )
+            repeat(17) { zip.write(padding) }
+            zip.closeEntry()
+            for ((name, bytes) in listOf("level01.ogg" to audio, "level02.mid" to midi)) {
+                zip.putNextEntry(ZipEntry(name))
+                zip.write(bytes)
+                zip.closeEntry()
+            }
+        }
+        assertTrue(dxa.length() > ExtractionLimits.MAX_ZIP_PREAMBLE_BYTES)
+        val catalog =
+            if (archiveBacked) {
+                val archive = File(root, "ewithin-rebirth.zip")
+                ZipOutputStream(archive.outputStream()).use { zip ->
+                    zip.putNextEntry(
+                        ZipEntry(dxa.name).apply {
+                            method = ZipEntry.STORED
+                            size = dxa.length()
+                            compressedSize = size
+                            crc = CRC32().apply { update(dxa.readBytes()) }.value
+                        },
+                    )
+                    dxa.inputStream().use { it.copyTo(zip) }
+                    zip.closeEntry()
+                }
+                MissionZipMusic.inspect(archive)
+            } else {
+                MissionZipMusic.inspectExtracted(
+                    MissionZipExtractionRecord(
+                        ownerFilename = "ewithin-rebirth.zip",
+                        ownerSizeBytes = dxa.length(),
+                        ownerLastModifiedMs = 0L,
+                        rootDir = root,
+                        files = listOf(MissionZipExtractedFile(dxa.name, dxa.name, dxa.length())),
+                        archiveFormat = "zip",
+                    ),
+                )
+            }
+        assertNotNull(catalog)
+        val tracks = catalog!!.sources.single().tracks
+        assertEquals(2, tracks.size)
+        val manager = MissionZipMusicStageManager(File(root, "cache"))
+        assertArrayEquals(
+            audio,
+            manager.stageCompressedAudioTrack(catalog, tracks.single { it.extension == "ogg" })!!.readBytes(),
+        )
+        assertArrayEquals(midi, manager.readMidiTrackBytes(catalog, tracks.single { it.extension == "mid" }))
+    }
+
     @Test
     fun extractedCatalogKeepsOriginalSongListIdentityInsteadOfGeneratedAlias() {
         val root = File("build/test-mission-zip-music-extracted-preview/song-list-identity").absoluteFile
@@ -103,13 +180,25 @@ class MissionZipMusicExtractedPreviewTest {
         assertArrayEquals(
             byteArrayOf(1, 2, 3, 4),
             MissionZipMusicStageManager(File(filesDir, "cache"))
-                .stageCompressedAudioTrack(firstCatalog, firstCatalog.sources.single().tracks.single())!!
+                .stageCompressedAudioTrack(
+                    firstCatalog,
+                    firstCatalog.sources
+                        .single()
+                        .tracks
+                        .single(),
+                )!!
                 .readBytes(),
         )
         assertArrayEquals(
             byteArrayOf(4, 3, 2, 1),
             MissionZipMusicStageManager(File(filesDir, "cache"))
-                .stageCompressedAudioTrack(secondCatalog, secondCatalog.sources.single().tracks.single())!!
+                .stageCompressedAudioTrack(
+                    secondCatalog,
+                    secondCatalog.sources
+                        .single()
+                        .tracks
+                        .single(),
+                )!!
                 .readBytes(),
         )
     }
@@ -138,7 +227,13 @@ class MissionZipMusicExtractedPreviewTest {
         val catalog = MissionZipMusic.inspectExtracted(record)
 
         assertNotNull(catalog)
-        assertTrue(catalog!!.sources.flatMap { it.tracks }.single().playable)
+        assertTrue(
+            catalog!!
+                .sources
+                .flatMap { it.tracks }
+                .single()
+                .playable,
+        )
     }
 
     private fun extractedRecord(

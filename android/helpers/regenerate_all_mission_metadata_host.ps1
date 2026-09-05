@@ -47,7 +47,8 @@ $summaryJsonl = Join-Path $outDir "summary.jsonl"
 $largeZipBytes = 524288000
 $largeZipIncludePatterns = @("ewithin-versions.zip")
 $hasArchiveFilter = -not [string]::IsNullOrWhiteSpace($ArchiveName) -or
-@($ArchiveNames).Count -gt 0 -or @($ArchivePaths).Count -gt 0
+($null -ne $ArchiveNames -and $ArchiveNames.Count -gt 0) -or
+($null -ne $ArchivePaths -and $ArchivePaths.Count -gt 0)
 $missionVariantDirectoryMaskPrecedence = @()
 $invariantCulture = [System.Globalization.CultureInfo]::InvariantCulture
 $d1DataCandidates = @(
@@ -732,7 +733,15 @@ function Invoke-MetadataWorker {
             throw "metadata worker timed out after $TimeoutSeconds seconds"
         }
         $line = $readTask.Result
-        if ($null -eq $line) { throw "metadata worker closed its output unexpectedly" }
+        if ($null -eq $line) {
+            $exited = $process.WaitForExit(5000)
+            if ($Worker.ErrorTask.IsCompleted) {
+                $logLines.Add($Worker.ErrorTask.GetAwaiter().GetResult())
+            }
+            Write-Utf8NoBomTextAtomically -Path $LogPath -Text (($logLines -join "`n") + "`n")
+            $exitDetail = if ($exited) { " with exit code $($process.ExitCode)" } else { '' }
+            throw "metadata worker closed its output unexpectedly${exitDetail}; log=$LogPath"
+        }
         if ($line.StartsWith("DXXMETA`t", [StringComparison]::Ordinal)) {
             $json = $line.Substring(8)
             Write-Utf8NoBomTextAtomically -Path $RawOutputPath -Text ($json + "`n")
@@ -885,14 +894,19 @@ function Invoke-HeadlessScan {
         [Parameter(Mandatory = $true)][hashtable]$DataDirs,
         [Parameter(Mandatory = $true)][string]$RawOutputPath,
         [Parameter(Mandatory = $true)][string]$LogPath,
-        [int]$TimeoutSeconds = 120
+        [int]$TimeoutSeconds = 120,
+        [switch]$DescriptorHogOnly
     )
 
     $game = if ($Descriptor.Extension.Equals(".msn", [StringComparison]::OrdinalIgnoreCase)) { "d1" } else { "d2" }
     $mission = [IO.Path]::GetFileNameWithoutExtension($Descriptor.Name)
     $descriptorInfo = Get-MissionDescriptorInfo -Descriptor $Descriptor
     $dataDir = $DataDirs[$game]
-    $missionHogs = @(Get-ChildItem -LiteralPath $StageDir -File -Filter '*.hog' | ForEach-Object { $_.FullName })
+    # CD collections contain unrelated and sometimes malformed HOGs
+    # Let the engine resolve the descriptor's HOG and any declared override
+    $missionHogs = if ($DescriptorHogOnly) { @() } else {
+        @(Get-ChildItem -LiteralPath $StageDir -File -Filter '*.hog' | ForEach-Object { $_.FullName })
+    }
     $request = [ordered]@{
         schema = 'dxx-level-metadata-request-v1'; request_id = [guid]::NewGuid().ToString('N')
         game = $game; source_name = $descriptorInfo.DisplayName; source_type = 'mission_files'
@@ -1019,7 +1033,10 @@ foreach ($source in $allCdSources) {
             $rawOutputPath = Join-Path $rawDir "$label.$($descriptor.BaseName).metadata.json"
             $logPath = Join-Path $logsDir "$label.$($descriptor.BaseName).log"
             try {
-                $raw = Invoke-HeadlessScan -Descriptor $descriptor -StageDir $stageDir -Executables $executables -DataDirs $dataDirs -RawOutputPath $rawOutputPath -LogPath $logPath -TimeoutSeconds 30
+                $raw = Invoke-HeadlessScan -Descriptor $descriptor -StageDir $stageDir -Executables $executables -DataDirs $dataDirs -RawOutputPath $rawOutputPath -LogPath $logPath -TimeoutSeconds 30 -DescriptorHogOnly
+                if ($raw.status -eq 'failed') {
+                    throw "Metadata analysis failed: $(@($raw.problems) -join '; ')"
+                }
             } catch {
                 $reason = $_.Exception.Message
                 $descriptorFailures += [pscustomobject]@{ Name = $descriptor.Name; Reason = $reason }
@@ -1105,7 +1122,7 @@ if (-not $CdSourcesOnly) {
                 }
             )
         }
-        if (@($ArchivePaths).Count -gt 0) {
+        if ($null -ne $ArchivePaths -and $ArchivePaths.Count -gt 0) {
             $requestedArchivePaths = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
             foreach ($path in $ArchivePaths) {
                 $requestedArchivePaths.Add([IO.Path]::GetFullPath($path)) | Out-Null

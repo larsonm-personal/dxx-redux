@@ -138,7 +138,7 @@
     {
       "level_num": 6,
       "level_file": "kcxf2_n6.rl2",
-      "route_input_sha256": "BC45B30F89BB1254E40EE37D0D5CD3B13BBB3F796E317DD1700FBCAAA0A043A4",
+      "route_input_sha256": "FB7C37D786ED460BAD095D36A1A4B03744FF8A0C54B32D7EF1A4962961D084A7",
       "status": "failed",
       "rng_start": {
         "state": 1,

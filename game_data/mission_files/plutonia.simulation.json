@@ -81,10 +81,10 @@
           "s": 100
         }
       ],
-      "total_frames": 10676,
+      "total_frames": 10693,
       "rng_end": {
-        "state": 2434794246,
-        "calls": 4385
+        "state": 1901349794,
+        "calls": 7253
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -354,10 +354,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 4459,
+      "total_frames": 4479,
       "rng_end": {
-        "state": 3938869097,
-        "calls": 1624
+        "state": 2123336736,
+        "calls": 2407
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -514,7 +514,7 @@
     {
       "level_num": 16,
       "level_file": "map16.rl2",
-      "route_input_sha256": "1C9B5AC30D087EBC94ECBA39F4E5B4BB6DB1FCFF93F9AC2FC97609A5771CC932",
+      "route_input_sha256": "5C2B56C69C7EF425AFF04331BB1219969FA9D134E95679A6270C62BA94561295",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -731,7 +731,7 @@
     {
       "level_num": 23,
       "level_file": "map23.rl2",
-      "route_input_sha256": "F3ED434DF2C778C7C10DA4C081915CAEC2462A8E25104F9EE13BBD7C27FE08C9",
+      "route_input_sha256": "C3043DD320AAAAE49740BFB463A24E6305CEBD46DAA42B449F4EF329D6283E05",
       "status": "failed",
       "rng_start": {
         "state": 1,
@@ -931,7 +931,7 @@
         },
         {
           "n": "blue key",
-          "s": 24
+          "s": 25
         },
         {
           "n": "switch 5",
@@ -950,10 +950,10 @@
           "s": 73
         }
       ],
-      "total_frames": 4380,
+      "total_frames": 4368,
       "rng_end": {
-        "state": 580285368,
-        "calls": 4847
+        "state": 1731418522,
+        "calls": 7229
       }
     },
     {

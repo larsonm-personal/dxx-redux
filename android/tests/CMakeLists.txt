@@ -26,6 +26,7 @@ find_package(SDL)
 find_package(ZLIB REQUIRED)
 
 add_executable(test_rng_seed_resume test_rng_seed_resume.c)
+add_executable(test_headless_diagnostics test_headless_diagnostics.cpp)
 target_link_libraries(test_rng_seed_resume PRIVATE ${DXX_TARGET_PREFIX}maths)
 
 add_executable(test_deterministic_math test_deterministic_math.c)
@@ -320,6 +321,7 @@ target_link_libraries(test_args_defaults PRIVATE ${DXX_TARGET_PREFIX}misc ${DXX_
                                                  ${SDL_LIBRARY} ${PHYSFS_LIBRARY})
 
 set(DXX_HOST_TEST_TARGETS
+    test_headless_diagnostics
     test_rng_seed_resume
     test_deterministic_math
     test_coop_indicator_lines_math

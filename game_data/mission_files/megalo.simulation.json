@@ -1,0 +1,481 @@
+[
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "megalo01.msn",
+    "target_index": 0,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "megaloma.rdl",
+        "route_input_sha256": "91D2F4A1695DB486DAD2ED30F76CF476E1C484AD3D03279BFE7581F7DBA98559",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 9
+          }
+        ],
+        "total_frames": 4891,
+        "rng_end": {
+          "state": 1303003706,
+          "calls": 29
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "megalo02.msn",
+    "target_index": 1,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "megaloma.rdl",
+        "route_input_sha256": "8A3F7D8A9DEDD9A8D4A41C41C52221C543CCB3061FEAF6F54296056B16834AD6",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for megalo.json|1|0|megaloma.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\megalo.json_1_0_megaloma.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "megalo03.msn",
+    "target_index": 2,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "megaloma.rdl",
+        "route_input_sha256": "38DA46B66DFD9FDFD112CEA7676F57B3573429A740658F8A79211EA8CB653385",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "destroy robot carrying blue key",
+            "s": 24
+          },
+          {
+            "n": "destroy robot carrying gold key",
+            "s": 59
+          }
+        ],
+        "total_frames": 14474,
+        "rng_end": {
+          "state": 3843909140,
+          "calls": 131
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "megalo04.msn",
+    "target_index": 3,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "megaloma.rdl",
+        "route_input_sha256": "8EE8A68E7C04DDB0CB54174E26A2DE2010F21AFF0B89EB8C6206D9482D8DE34E",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "boss",
+            "s": 15
+          },
+          {
+            "n": "exit",
+            "s": 30
+          }
+        ],
+        "total_frames": 1812,
+        "rng_end": {
+          "state": 1223573862,
+          "calls": 65
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "megalo05.msn",
+    "target_index": 4,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "megaloma.rdl",
+        "route_input_sha256": "6CA85DC29C9B38F7F3B85AF86718E4251C4FF1C0825EED9DD1AE77AC8F791563",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 9
+          },
+          {
+            "n": "gold key",
+            "s": 26
+          },
+          {
+            "n": "red key",
+            "s": 46
+          },
+          {
+            "n": "reactor",
+            "s": 58
+          },
+          {
+            "n": "exit",
+            "s": 68
+          }
+        ],
+        "total_frames": 4068,
+        "rng_end": {
+          "state": 820312479,
+          "calls": 74
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "megalo06.msn",
+    "target_index": 5,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "megaloma.rdl",
+        "route_input_sha256": "6FD10E4013F3344CA7D3EB5C1DF70A6FB9D30A78AB0450152432634020259E26",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 10
+          },
+          {
+            "n": "gold key",
+            "s": 25
+          }
+        ],
+        "total_frames": 8161,
+        "rng_end": {
+          "state": 456633834,
+          "calls": 45
+        },
+        "problem": "route confirmation exceeded 136-second simulation budget"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "megalo07.msn",
+    "target_index": 6,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "megaloma.rdl",
+        "route_input_sha256": "333FB7C78DBBA2C3A9CE8B2D7E276A5F6DA8B921AD2C6FBAAB28D1EF5FAD472F",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 3980,
+        "rng_end": {
+          "state": 3297241969,
+          "calls": 16
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "megalo08.msn",
+    "target_index": 7,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "megaloma.rdl",
+        "route_input_sha256": "798441D21F0EBDAF25DA3CC01B0F0A1B56A10A6042F0A51ADDC1613683B2EEA7",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "boss",
+            "s": 6
+          },
+          {
+            "n": "exit",
+            "s": 13
+          }
+        ],
+        "total_frames": 755,
+        "rng_end": {
+          "state": 1848832019,
+          "calls": 118
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "megalo09.msn",
+    "target_index": 8,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "megaloma.rdl",
+        "route_input_sha256": "9F53D20A3DF0FBAEF6E0EEF33D3A59DC5DD8A64BA6CB7E3D51811995208B0C30",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "fly-through 23",
+            "s": 1
+          },
+          {
+            "n": "fly-through 24",
+            "s": 3
+          },
+          {
+            "n": "fly-through 26",
+            "s": 8
+          }
+        ],
+        "total_frames": 1054,
+        "rng_end": {
+          "state": 3025925713,
+          "calls": 48
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "megalo10.msn",
+    "target_index": 9,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "megaloma.rdl",
+        "route_input_sha256": "EBF6D781B1C91B41CABB9AD425742FD4310787355960166049C5AACBDE5832CC",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 10
+          },
+          {
+            "n": "gold key",
+            "s": 21
+          },
+          {
+            "n": "red key",
+            "s": 29
+          },
+          {
+            "n": "boss",
+            "s": 37
+          },
+          {
+            "n": "exit",
+            "s": 61
+          }
+        ],
+        "total_frames": 3644,
+        "rng_end": {
+          "state": 4053843764,
+          "calls": 227
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "megalo11.msn",
+    "target_index": 10,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "failed": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "megaloma.rdl",
+        "route_input_sha256": "556FCF04253C8E51110732AF97121A208F703185D91A107B7693620F85B6D4A3",
+        "status": "failed",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 7
+          },
+          {
+            "n": "red key",
+            "s": 23
+          },
+          {
+            "n": "gold key",
+            "s": 40
+          }
+        ],
+        "total_frames": 2407,
+        "rng_end": {
+          "state": 675780521,
+          "calls": 24
+        },
+        "problem": "live Guide-Bot route has no actionable goal"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "megalo12.msn",
+    "target_index": 11,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "megaloma.rdl",
+        "route_input_sha256": "FF3E580D6BF444F782FDA28C760E58E3008221DBFF3BF792375DE371FFACD261",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 3361,
+        "rng_end": {
+          "state": 3535774167,
+          "calls": 18
+        },
+        "problem": "route confirmation exceeded 56-second simulation budget"
+      }
+    ]
+  }
+]

@@ -126,9 +126,9 @@
         "mine_volume": 9873750.0,
         "mine_volume_normalized": 2.15919,
         "mine_volume_text": "2.2x",
-        "travel_distance": 9054.2,
-        "travel_time_seconds": 181,
-        "travel_time_text": "3M:01S",
+        "travel_distance": 9194.1,
+        "travel_time_seconds": 184,
+        "travel_time_text": "3M:04S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -392,18 +392,88 @@
           {
             "index": 10,
             "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 50",
-            "seg": 633,
-            "side": 3,
-            "wall": 204,
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 34",
+            "seg": 638,
+            "side": 2,
+            "wall": 215,
             "label_pos": {
-              "x": 51.1,
-              "y": -157.4,
-              "z": -597.6
+              "x": 1.4,
+              "y": -153.9,
+              "z": -647.7
             },
-            "distance": 1953.4,
-            "trigger": 50,
+            "distance": 2013.3,
+            "trigger": 34,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 586,
+                "side": 1,
+                "wall": 203
+              },
+              {
+                "seg": 633,
+                "side": 3,
+                "wall": 204
+              },
+              {
+                "seg": 586,
+                "side": 4,
+                "wall": 205
+              },
+              {
+                "seg": 635,
+                "side": 5,
+                "wall": 206
+              },
+              {
+                "seg": 586,
+                "side": 5,
+                "wall": 207
+              },
+              {
+                "seg": 636,
+                "side": 4,
+                "wall": 208
+              },
+              {
+                "seg": 586,
+                "side": 0,
+                "wall": 209
+              },
+              {
+                "seg": 632,
+                "side": 2,
+                "wall": 210
+              },
+              {
+                "seg": 634,
+                "side": 0,
+                "wall": 211
+              },
+              {
+                "seg": 586,
+                "side": 2,
+                "wall": 212
+              }
+            ]
+          },
+          {
+            "index": 11,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 53",
+            "seg": 638,
+            "side": 0,
+            "wall": 213,
+            "label_pos": {
+              "x": 15.3,
+              "y": -157.7,
+              "z": -633.9
+            },
+            "distance": 10.0,
+            "trigger": 53,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
             "opens": [
@@ -420,7 +490,34 @@
             ]
           },
           {
-            "index": 11,
+            "index": 12,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 638,
+            "side": 0,
+            "wall": 213,
+            "label_pos": {
+              "x": 15.3,
+              "y": -157.7,
+              "z": -633.9
+            },
+            "distance": 10.0,
+            "opens": [
+              {
+                "seg": 638,
+                "side": 0,
+                "wall": 213
+              },
+              {
+                "seg": 637,
+                "side": 2,
+                "wall": 214
+              }
+            ]
+          },
+          {
+            "index": 13,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
@@ -432,7 +529,7 @@
               "y": -68.9,
               "z": -555.1
             },
-            "distance": 128.1,
+            "distance": 188.1,
             "opens": [
               {
                 "seg": 594,
@@ -447,7 +544,7 @@
             ]
           },
           {
-            "index": 12,
+            "index": 14,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -460,7 +557,7 @@
             "distance": 216.0
           },
           {
-            "index": 13,
+            "index": 15,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

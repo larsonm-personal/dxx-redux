@@ -4037,7 +4037,7 @@
         "mine_volume": 12733000.0,
         "mine_volume_normalized": 2.78446,
         "mine_volume_text": "2.8x",
-        "travel_distance": 2860.2,
+        "travel_distance": 2835.2,
         "travel_time_seconds": 57,
         "travel_time_text": "0M:57S",
         "guidebot_count": 0,
@@ -4112,71 +4112,6 @@
           {
             "index": 2,
             "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 6",
-            "seg": 305,
-            "side": 0,
-            "wall": 83,
-            "label_pos": {
-              "x": 103.8,
-              "y": -44.6,
-              "z": 86.8
-            },
-            "distance": 319.0,
-            "trigger": 6,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 317,
-                "side": 3,
-                "wall": 82
-              },
-              {
-                "seg": 318,
-                "side": 3,
-                "wall": 80
-              },
-              {
-                "seg": 319,
-                "side": 3,
-                "wall": 78
-              },
-              {
-                "seg": 185,
-                "side": 4,
-                "wall": 57
-              },
-              {
-                "seg": 309,
-                "side": 4,
-                "wall": 65
-              },
-              {
-                "seg": 185,
-                "side": 0,
-                "wall": 59
-              },
-              {
-                "seg": 185,
-                "side": 2,
-                "wall": 61
-              },
-              {
-                "seg": 309,
-                "side": 0,
-                "wall": 63
-              },
-              {
-                "seg": 309,
-                "side": 2,
-                "wall": 64
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 7",
             "seg": 361,
@@ -4187,7 +4122,7 @@
               "y": -33.3,
               "z": 104.4
             },
-            "distance": 371.9,
+            "distance": 681.0,
             "trigger": 7,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -4225,7 +4160,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 3,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 10",
@@ -4237,7 +4172,7 @@
               "y": -33.3,
               "z": -145.6
             },
-            "distance": 672.6,
+            "distance": 657.6,
             "trigger": 10,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -4250,7 +4185,7 @@
             ]
           },
           {
-            "index": 5,
+            "index": 4,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -4263,7 +4198,7 @@
             "distance": 586.2
           },
           {
-            "index": 6,
+            "index": 5,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

@@ -1,0 +1,398 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "series.msn",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 3,
+    "failed": 1,
+    "timeout": 9,
+    "infrastructure_error": 2
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "series01.rdl",
+      "route_input_sha256": "2D980492F856AFC2403FE0E812B4BB07760237CD3DB233E1CDADEF326BC3742F",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "red key",
+          "s": 15
+        }
+      ],
+      "total_frames": 5488,
+      "rng_end": {
+        "state": 3794901700,
+        "calls": 19
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 2,
+      "level_file": "series02.rdl",
+      "route_input_sha256": "7D87F997770FF7171B4B927CB1410F8FCB018E62F67D8D106B69569F7F2B3EDD",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 19
+        },
+        {
+          "n": "red key",
+          "s": 57
+        },
+        {
+          "n": "reactor",
+          "s": 84
+        },
+        {
+          "n": "exit",
+          "s": 93
+        }
+      ],
+      "total_frames": 5551,
+      "rng_end": {
+        "state": 344858293,
+        "calls": 76
+      }
+    },
+    {
+      "level_num": 3,
+      "level_file": "series03.rdl",
+      "route_input_sha256": "5852966827CF354407BEB29265331FE95A506173B864861DF3BF17920E5F1436",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 11
+        },
+        {
+          "n": "gold key",
+          "s": 32
+        },
+        {
+          "n": "red key",
+          "s": 50
+        }
+      ],
+      "total_frames": 3865,
+      "rng_end": {
+        "state": 3212330324,
+        "calls": 67
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 4,
+      "level_file": "series04.rdl",
+      "route_input_sha256": "28A2F4433F43C799C8BCB113024D8E4D2F0D69DFB1C2DC88072522A2CA8AE7AD",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 16
+        }
+      ],
+      "total_frames": 6797,
+      "rng_end": {
+        "state": 675780521,
+        "calls": 24
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 5,
+      "level_file": "series05.rdl",
+      "route_input_sha256": "B12904D248E7C51091221A5442225FF117557A5FEC180BC00B308F980F2D8709",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "red key",
+          "s": 5
+        },
+        {
+          "n": "boss",
+          "s": 18
+        },
+        {
+          "n": "exit",
+          "s": 25
+        }
+      ],
+      "total_frames": 1474,
+      "rng_end": {
+        "state": 1024265714,
+        "calls": 69
+      }
+    },
+    {
+      "level_num": 6,
+      "level_file": "series06.rdl",
+      "route_input_sha256": "E023F220E1BB1B352DCB031922A4C271D5DDF200520A61FF64166C790B75B311",
+      "status": "infrastructure_error",
+      "problem": "Route engine infrastructure failure for Descend Again.json|0|6|series06.rdl, exit -1073740791, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\Descend_Again.json_0_6_series06.rdl_run_1.log"
+    },
+    {
+      "level_num": 7,
+      "level_file": "series07.rdl",
+      "route_input_sha256": "02A598B9EBBD961671ABE9D0DB2171F0CB777A9EF540C0F2CF34CF56329A53D7",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 21
+        },
+        {
+          "n": "fly-through 0",
+          "s": 22
+        },
+        {
+          "n": "gold key",
+          "s": 53
+        }
+      ],
+      "total_frames": 3863,
+      "rng_end": {
+        "state": 1627576247,
+        "calls": 50
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 8,
+      "level_file": "series08.rdl",
+      "route_input_sha256": "6584294287790F3FEBFCD21E07E9ED7878BB632022D3BD97B7A10656DAB84D18",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 11
+        },
+        {
+          "n": "blue key",
+          "s": 14
+        },
+        {
+          "n": "gold key",
+          "s": 26
+        },
+        {
+          "n": "fly-through 2",
+          "s": 42
+        },
+        {
+          "n": "red key",
+          "s": 50
+        },
+        {
+          "n": "fly-through 1",
+          "s": 50
+        }
+      ],
+      "total_frames": 7831,
+      "rng_end": {
+        "state": 2787170210,
+        "calls": 85
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 9,
+      "level_file": "series09.rdl",
+      "route_input_sha256": "A99393DCFAD000B1FC22A9345B4728A3F0F7F825C46C5EC4D60B6C961E350A0C",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 18
+        },
+        {
+          "n": "gold key",
+          "s": 52
+        },
+        {
+          "n": "red key",
+          "s": 83
+        },
+        {
+          "n": "reactor",
+          "s": 96
+        },
+        {
+          "n": "exit",
+          "s": 103
+        }
+      ],
+      "total_frames": 6207,
+      "rng_end": {
+        "state": 92728044,
+        "calls": 75
+      }
+    },
+    {
+      "level_num": 10,
+      "level_file": "series10.rdl",
+      "route_input_sha256": "338FEF2172608F9A244BB73C57022A716BB28319CDC5407F65F0AFFCD694B9A9",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 13
+        },
+        {
+          "n": "gold key",
+          "s": 43
+        }
+      ],
+      "total_frames": 2605,
+      "rng_end": {
+        "state": 3834121963,
+        "calls": 30
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 11,
+      "level_file": "series11.rdl",
+      "route_input_sha256": "E9081C019714D2BC55716017734B2F10CBC2CA8B28916B1970C0A22AA7D68F0C",
+      "status": "infrastructure_error",
+      "problem": "Route engine infrastructure failure for Descend Again.json|0|11|series11.rdl, exit -1073740791, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\Descend_Again.json_0_11_series11.rdl_run_1.log"
+    },
+    {
+      "level_num": 12,
+      "level_file": "series12.rdl",
+      "route_input_sha256": "9514D8BF8DE91C7E17FF2FDCF144BFB86F8072E69CFC6AFD75129D8B4D06E318",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 14
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 54
+        },
+        {
+          "n": "red key",
+          "s": 74
+        }
+      ],
+      "total_frames": 6478,
+      "rng_end": {
+        "state": 3843909140,
+        "calls": 131
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 13,
+      "level_file": "series13.rdl",
+      "route_input_sha256": "8D09FF63402940F5975D22473CF9F33FE8ECD0B8BE7BA6871BF7F5614ABC6F21",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 3991,
+      "rng_end": {
+        "state": 675780521,
+        "calls": 24
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 14,
+      "level_file": "series14.rdl",
+      "route_input_sha256": "135C2D98B3E60E7F9830278A615B4FC6ED70AE1CE611DF2E6FA3727A9A50C083",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 4
+        },
+        {
+          "n": "gold key",
+          "s": 24
+        }
+      ],
+      "total_frames": 3023,
+      "rng_end": {
+        "state": 2054802212,
+        "calls": 51
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 15,
+      "level_file": "series15.rdl",
+      "route_input_sha256": "D7998AC64ACF9B47C09E0598BE90F4C4BA165C959CDAFB6969E09C5CD31D172C",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 12
+        }
+      ],
+      "total_frames": 8930,
+      "rng_end": {
+        "state": 1969681615,
+        "calls": 26
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    }
+  ]
+}

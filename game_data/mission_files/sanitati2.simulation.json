@@ -147,13 +147,13 @@
         },
         {
           "n": "hidden door",
-          "s": 48
+          "s": 47
         }
       ],
-      "total_frames": 6594,
+      "total_frames": 6568,
       "rng_end": {
-        "state": 2437141959,
-        "calls": 2338
+        "state": 176246517,
+        "calls": 5644
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

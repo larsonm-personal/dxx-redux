@@ -60,10 +60,10 @@
           "s": 24
         }
       ],
-      "total_frames": 6059,
+      "total_frames": 5752,
       "rng_end": {
-        "state": 2188137696,
-        "calls": 7591
+        "state": 1298652210,
+        "calls": 9989
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

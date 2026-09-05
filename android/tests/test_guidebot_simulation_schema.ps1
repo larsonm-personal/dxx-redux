@@ -125,4 +125,54 @@ $invalidValidation = Test-GuidebotMissionSimulationRecord -Record $invalidRecord
 Assert-True (-not $invalidValidation.Valid -and ($invalidValidation.Errors -join ' ') -match 'duplicate') `
     'duplicate level identities were not rejected'
 
+Assert-True ((Get-GuidebotMissionAggregateStatus -Levels @()) -eq 'not_run') `
+    'empty level arrays were rejected by the aggregate helper'
+$emptyMission = [pscustomobject]@{
+    game = 'd1'
+    mission_filename = 'empty.msn'
+    target_index = 0
+    levels = @()
+    status = 'failed'
+    problems = @('could not mount HOG: unsupported')
+}
+$emptyRecord = New-GuidebotMissionSimulationRecord -Mission $emptyMission -Levels @()
+Assert-True ($emptyRecord.status -eq 'failed' -and $emptyRecord.levels.Count -eq 0) `
+    'empty metadata must not become a successful simulation'
+Assert-True ($emptyRecord.problem -match 'could not mount HOG') 'metadata failure detail was lost'
+Assert-True ((Test-GuidebotMissionSimulationRecord -Record $emptyRecord).Valid) `
+    'empty failed mission record did not validate'
+$emptyRoundTrip = ConvertTo-GuidebotNormalizedJsonText -Value $emptyRecord | ConvertFrom-Json
+Assert-True ($emptyRoundTrip.levels -is [array] -and $emptyRoundTrip.levels.Count -eq 0) `
+    'empty levels did not serialize as an array'
+$emptyMission.problems = @()
+Assert-True ((New-GuidebotMissionSimulationRecord -Mission $emptyMission -Levels @()).status -eq 'failed') `
+    'empty metadata without an error must not report success'
+
+# Exercise the actual finalization writer without launching any engine processes
+$runnerPath = Join-Path $repoRoot 'android\helpers\regenerate_all_guidebot_simulations.ps1'
+$runnerAst = [Management.Automation.Language.Parser]::ParseFile($runnerPath, [ref]$null, [ref]$null)
+foreach ($functionName in @('Get-GuidebotMissionEntries', 'Get-ExistingGuidebotLevelMap', 'Write-GuidebotSimulationFile')) {
+    $definition = $runnerAst.Find({
+            param($node)
+            $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $functionName
+        }, $true)
+    . ([scriptblock]::Create($definition.Extent.Text))
+}
+$missionRoot = Join-Path $repoRoot "android\temp\empty_simulation_$([guid]::NewGuid().ToString('N'))"
+New-Item -ItemType Directory -Path $missionRoot | Out-Null
+$Mode = 'Headless'
+foreach ($arrayRoot in @($false, $true)) {
+    $metadataPath = Join-Path $missionRoot "$arrayRoot.json"
+    $outputPath = Join-Path $missionRoot "$arrayRoot.simulation.json"
+    $value = if ($arrayRoot) { , @($emptyMission, $emptyMission) } else { $emptyMission }
+    Write-GuidebotSimulationJson -Path $metadataPath -Value $value
+    Write-GuidebotSimulationFile -MetadataFile (Get-Item -LiteralPath $metadataPath) `
+        -ResultsByIdentity @{} -Destination $outputPath
+    $written = @(Get-Content -LiteralPath $outputPath -Raw | ConvertFrom-Json)
+    Assert-True ($written.Count -eq $(if ($arrayRoot) { 2 } else { 1 })) 'finalization lost empty mission entries'
+    foreach ($entry in $written) {
+        Assert-True ($entry.status -eq 'failed' -and $entry.levels.Count -eq 0) 'finalization misreported empty metadata'
+    }
+}
+
 Write-Host 'GuideBot simulation schema tests passed'

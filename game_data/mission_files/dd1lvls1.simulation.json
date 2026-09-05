@@ -1,0 +1,389 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "DD1LVLS1.MSN",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 5,
+    "failed": 1,
+    "timeout": 5,
+    "infrastructure_error": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "vosil.rdl",
+      "route_input_sha256": "07E3C45E36A1987F4C49A988D5F784E307F09E02493F63C45F50169132EB8FA9",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 16
+        },
+        {
+          "n": "gold key",
+          "s": 32
+        },
+        {
+          "n": "red key",
+          "s": 47
+        },
+        {
+          "n": "reactor",
+          "s": 59
+        },
+        {
+          "n": "exit",
+          "s": 67
+        }
+      ],
+      "total_frames": 4004,
+      "rng_end": {
+        "state": 2077067425,
+        "calls": 96
+      }
+    },
+    {
+      "level_num": 2,
+      "level_file": "piczirmi.rdl",
+      "route_input_sha256": "5864716D180E8A0E0AAB2D090C3F17A539031C06F34A71CAECA8C6E88568AD6F",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 11
+        }
+      ],
+      "total_frames": 680,
+      "rng_end": {
+        "state": 3791773014,
+        "calls": 17
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 3,
+      "level_file": "toigol.rdl",
+      "route_input_sha256": "C185F46A23271E85D93179263BC3481D5E190BA33946E15B5F729644B6F54B6A",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 8
+        },
+        {
+          "n": "gold key",
+          "s": 29
+        },
+        {
+          "n": "fly-through 1",
+          "s": 64
+        },
+        {
+          "n": "red key",
+          "s": 72
+        },
+        {
+          "n": "reactor",
+          "s": 94
+        },
+        {
+          "n": "exit",
+          "s": 107
+        }
+      ],
+      "total_frames": 6407,
+      "rng_end": {
+        "state": 327681027,
+        "calls": 134
+      }
+    },
+    {
+      "level_num": 4,
+      "level_file": "tunnels.rdl",
+      "route_input_sha256": "CCB6E9CEB8382000572A870C61E0223A88D10B05F4265A819A66B279A43A1127",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4325,
+      "rng_end": {
+        "state": 3297241969,
+        "calls": 16
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 5,
+      "level_file": "palmi.rdl",
+      "route_input_sha256": "A059A5831A251A3CA4EF3E8CCD7D6BB3644CE7EB306D887447472D1EC6A0C5E0",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 12
+        },
+        {
+          "n": "gold key",
+          "s": 34
+        },
+        {
+          "n": "red key",
+          "s": 60
+        }
+      ],
+      "total_frames": 8511,
+      "rng_end": {
+        "state": 916896761,
+        "calls": 72
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 6,
+      "level_file": "wutermi.rdl",
+      "route_input_sha256": "2DBAB5386904F4EFD777DD08C081789B198AA670407021606D57EE9E2492BDBC",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 18
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 58
+        },
+        {
+          "n": "fly-through 1",
+          "s": 92
+        },
+        {
+          "n": "reactor",
+          "s": 98
+        },
+        {
+          "n": "exit",
+          "s": 104
+        }
+      ],
+      "total_frames": 6235,
+      "rng_end": {
+        "state": 510737498,
+        "calls": 125
+      }
+    },
+    {
+      "level_num": 7,
+      "level_file": "phytmi.rdl",
+      "route_input_sha256": "D0CDFBA924759C9700441E24D905D1CB529B7F5CF4B30664BB05F9EF3B4258BF",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 17
+        },
+        {
+          "n": "hidden door",
+          "s": 38
+        },
+        {
+          "n": "gold key",
+          "s": 39
+        },
+        {
+          "n": "fly-through 3",
+          "s": 62
+        },
+        {
+          "n": "fly-through 4",
+          "s": 76
+        },
+        {
+          "n": "red key",
+          "s": 88
+        },
+        {
+          "n": "fly-through 5",
+          "s": 105
+        },
+        {
+          "n": "reactor",
+          "s": 105
+        },
+        {
+          "n": "exit",
+          "s": 112
+        }
+      ],
+      "total_frames": 6734,
+      "rng_end": {
+        "state": 204674734,
+        "calls": 153
+      }
+    },
+    {
+      "level_num": 8,
+      "level_file": "junine.rdl",
+      "route_input_sha256": "E09890DEFDF6D1F05259C6BE4C8A82064B4741A6C8E6299FDDC6F856F6D7104D",
+      "status": "infrastructure_error",
+      "problem": "Route engine infrastructure failure for dd1lvls1.json|0|8|junine.rdl, exit 1, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\dd1lvls1.json_0_8_junine.rdl_run_1.log"
+    },
+    {
+      "level_num": 9,
+      "level_file": "atir.rdl",
+      "route_input_sha256": "1A54C5F3459CF559FEADE31BCEE96D2030AAAD753AD223BDB26E6B3C0A407020",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 5
+        },
+        {
+          "n": "gold key",
+          "s": 28
+        },
+        {
+          "n": "red key",
+          "s": 73
+        },
+        {
+          "n": "reactor",
+          "s": 102
+        },
+        {
+          "n": "exit",
+          "s": 103
+        }
+      ],
+      "total_frames": 6179,
+      "rng_end": {
+        "state": 3871495338,
+        "calls": 109
+      }
+    },
+    {
+      "level_num": 10,
+      "level_file": "ilsilmi.rdl",
+      "route_input_sha256": "855BC7036E6F93EE1DBF8632645BDC87EC191FD80D600378BE6848F3B58659C9",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 10
+        },
+        {
+          "n": "gold key",
+          "s": 35
+        },
+        {
+          "n": "red key",
+          "s": 68
+        }
+      ],
+      "total_frames": 8947,
+      "rng_end": {
+        "state": 4161386746,
+        "calls": 93
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 11,
+      "level_file": "tokexfa.rdl",
+      "route_input_sha256": "DC7AF16D8A4FEDE2B7833B805C8D6A4C49304C3FAC4382B572B73F6222EC2B96",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 9
+        },
+        {
+          "n": "gold key",
+          "s": 23
+        },
+        {
+          "n": "red key",
+          "s": 37
+        }
+      ],
+      "total_frames": 8341,
+      "rng_end": {
+        "state": 916896761,
+        "calls": 72
+      },
+      "problem": "route confirmation exceeded 139-second simulation budget"
+    },
+    {
+      "level_num": 12,
+      "level_file": "thortin.rdl",
+      "route_input_sha256": "00592BABEAD48AD1E398B9E7EFA51EAFB03E97A8C1682E8337BDC8FD2E7AF519",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 7
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 27
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 51
+        }
+      ],
+      "total_frames": 7442,
+      "rng_end": {
+        "state": 3040535893,
+        "calls": 172
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    }
+  ]
+}

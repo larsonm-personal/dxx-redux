@@ -1,0 +1,181 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "insanem3.msn",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 3,
+    "timeout": 4,
+    "infrastructure_error": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "fighter.rdl",
+      "route_input_sha256": "4843E8914659C37A5C2234FBCFEA9ABD350A10AC8E1080696F44E12F7B217EBE",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "reactor",
+          "s": 6
+        },
+        {
+          "n": "exit",
+          "s": 7
+        }
+      ],
+      "total_frames": 431,
+      "rng_end": {
+        "state": 675780521,
+        "calls": 24
+      }
+    },
+    {
+      "level_num": 2,
+      "level_file": "brawl.rdl",
+      "route_input_sha256": "E1F9D11310884400CFB5C746C3DE64A1FD95A7436EF1A2153514342777CFBC90",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4081,
+      "rng_end": {
+        "state": 2787170210,
+        "calls": 85
+      },
+      "problem": "route confirmation exceeded 68-second simulation budget"
+    },
+    {
+      "level_num": 3,
+      "level_file": "battalio.rdl",
+      "route_input_sha256": "4014A56B78385302C057086B9717C93382185C3DB3482E7326ABD7B02EEA1A49",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 12
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 21
+        }
+      ],
+      "total_frames": 4561,
+      "rng_end": {
+        "state": 3843909140,
+        "calls": 131
+      },
+      "problem": "route confirmation exceeded 76-second simulation budget"
+    },
+    {
+      "level_num": 4,
+      "level_file": "basic.rdl",
+      "route_input_sha256": "F42C115225BA0239F5F4D9A3EBF453024A6DA44DBFB0D48A1B480E9D4D62C20D",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "boss",
+          "s": 9
+        },
+        {
+          "n": "exit",
+          "s": 15
+        }
+      ],
+      "total_frames": 897,
+      "rng_end": {
+        "state": 1266032265,
+        "calls": 56
+      }
+    },
+    {
+      "level_num": 5,
+      "level_file": "royosb.rdl",
+      "route_input_sha256": "EAFE3F19856A4DDCB3B15EDC46E70A65C47864E0F7D0C9CCB4DABF0C5DA98842",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "reactor",
+          "s": 15
+        },
+        {
+          "n": "exit",
+          "s": 18
+        }
+      ],
+      "total_frames": 1078,
+      "rng_end": {
+        "state": 675780521,
+        "calls": 24
+      }
+    },
+    {
+      "level_num": 6,
+      "level_file": "bp48.rdl",
+      "route_input_sha256": "FCF19E033BC7F7C668D316E9C156712C39E3003B205D23205BAABA5EF8920331",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 3841,
+      "rng_end": {
+        "state": 684462146,
+        "calls": 53
+      },
+      "problem": "route confirmation exceeded 64-second simulation budget"
+    },
+    {
+      "level_num": 7,
+      "level_file": "bigred.rdl",
+      "route_input_sha256": "538B13DE45224E6C6E7037B59261BC0103D66A5B4639FD2B83CF3E0EB87DC09F",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "destroy robot carrying red key",
+          "s": 9
+        }
+      ],
+      "total_frames": 1519,
+      "rng_end": {
+        "state": 3212330324,
+        "calls": 67
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 8,
+      "level_file": "bg7.rdl",
+      "route_input_sha256": "C0E2DAAED4683B56E55C86C9F3247141F182A46E8CBBA756172FD5EB55BDF276",
+      "status": "infrastructure_error",
+      "problem": "Route engine infrastructure failure for INSANE MISSION PACK ULTRA.json|0|8|bg7.rdl, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\INSANE_MISSION_PACK_ULTRA.json_0_8_bg7.rdl_run_1.log"
+    }
+  ]
+}

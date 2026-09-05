@@ -1,0 +1,66 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "HDVBETA2.msn",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "timeout": 3
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "level01.rdl",
+      "route_input_sha256": "E05813E3EEEABD631867DF45AB79B77B5B5D1A5CCCACC3056B78535302148A38",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4896,
+      "rng_end": {
+        "state": 2937909499,
+        "calls": 14
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 2,
+      "level_file": "level02.rdl",
+      "route_input_sha256": "F18628C465619A6B25D151EF698E2E14F12AC5B9BD864581B3758669204F0497",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 1039,
+      "rng_end": {
+        "state": 2937909499,
+        "calls": 14
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 3,
+      "level_file": "level03.rdl",
+      "route_input_sha256": "19F50EE01620C7B0BD800C515E4238566E710E3F69103529F834BABD1B56C1E3",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4729,
+      "rng_end": {
+        "state": 3535774167,
+        "calls": 18
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    }
+  ]
+}

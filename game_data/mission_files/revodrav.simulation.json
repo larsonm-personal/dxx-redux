@@ -1,0 +1,880 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "revodrav.msn",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 11,
+    "failed": 1,
+    "timeout": 16,
+    "infrastructure_error": 2
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "drav01.rdl",
+      "route_input_sha256": "BCDBE25F20C9D8D12A187D19DD7A2177BEFF52821BE3DB7D2DA7301E9EDC3AD4",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "red key",
+          "s": 8
+        },
+        {
+          "n": "reactor",
+          "s": 18
+        },
+        {
+          "n": "exit",
+          "s": 22
+        }
+      ],
+      "total_frames": 1334,
+      "rng_end": {
+        "state": 2577478752,
+        "calls": 39
+      }
+    },
+    {
+      "level_num": 2,
+      "level_file": "drav02.rdl",
+      "route_input_sha256": "47816276D2FD620221A5DB9EC106CD7E8D6013C90B8098B558765F20483A3F08",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 9
+        },
+        {
+          "n": "red key",
+          "s": 23
+        },
+        {
+          "n": "reactor",
+          "s": 33
+        },
+        {
+          "n": "exit",
+          "s": 35
+        }
+      ],
+      "total_frames": 2121,
+      "rng_end": {
+        "state": 3772987475,
+        "calls": 54
+      }
+    },
+    {
+      "level_num": 3,
+      "level_file": "drav03.rdl",
+      "route_input_sha256": "AC2EB11A46556175E809B8510B7DE6F6BACD43CB951D12306BEB8B0074D42D42",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 14
+        },
+        {
+          "n": "gold key",
+          "s": 30
+        },
+        {
+          "n": "red key",
+          "s": 48
+        }
+      ],
+      "total_frames": 3740,
+      "rng_end": {
+        "state": 2054802212,
+        "calls": 51
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 4,
+      "level_file": "drav04.rdl",
+      "route_input_sha256": "5AB34F8D7FA97AB339DA67B8211A1E31209D196BB743B58DC87161EB766C0013",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 10
+        },
+        {
+          "n": "gold key",
+          "s": 21
+        },
+        {
+          "n": "red key",
+          "s": 35
+        },
+        {
+          "n": "boss",
+          "s": 51
+        },
+        {
+          "n": "exit",
+          "s": 56
+        }
+      ],
+      "total_frames": 3373,
+      "rng_end": {
+        "state": 4264971915,
+        "calls": 126
+      }
+    },
+    {
+      "level_num": 5,
+      "level_file": "drav05.rdl",
+      "route_input_sha256": "5F248C647A7EC3A28CC4F0A7D13AD916D4B6D4BE7383E285A54A1FC5C13E89BC",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 9
+        },
+        {
+          "n": "gold key",
+          "s": 27
+        },
+        {
+          "n": "fly-through 1",
+          "s": 41
+        },
+        {
+          "n": "red key",
+          "s": 46
+        },
+        {
+          "n": "reactor",
+          "s": 69
+        },
+        {
+          "n": "exit",
+          "s": 73
+        }
+      ],
+      "total_frames": 4406,
+      "rng_end": {
+        "state": 3948108040,
+        "calls": 95
+      }
+    },
+    {
+      "level_num": 6,
+      "level_file": "drav06.rdl",
+      "route_input_sha256": "40EC944EDA2E76A12EE2AC136AE0B7F23F6C7BDD2456F9245B0E67690A0B3293",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 5
+        },
+        {
+          "n": "gold key",
+          "s": 16
+        }
+      ],
+      "total_frames": 1882,
+      "rng_end": {
+        "state": 3025925713,
+        "calls": 48
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 7,
+      "level_file": "drav07.rdl",
+      "route_input_sha256": "6FAF6BA0CDD682108A73A14DAEA5BA48A526C9273DA31187ACAA60E92691531A",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 7
+        },
+        {
+          "n": "hidden door",
+          "s": 18
+        },
+        {
+          "n": "gold key",
+          "s": 20
+        },
+        {
+          "n": "red key",
+          "s": 32
+        },
+        {
+          "n": "reactor",
+          "s": 49
+        },
+        {
+          "n": "exit",
+          "s": 54
+        }
+      ],
+      "total_frames": 3244,
+      "rng_end": {
+        "state": 2673245591,
+        "calls": 82
+      }
+    },
+    {
+      "level_num": 8,
+      "level_file": "drav08.rdl",
+      "route_input_sha256": "8EFED3E67137803B71E46CD3EA952CBA335C1F3BAF24D19527D68C22B301D39B",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 4
+        },
+        {
+          "n": "gold key",
+          "s": 11
+        },
+        {
+          "n": "red key",
+          "s": 23
+        },
+        {
+          "n": "boss",
+          "s": 34
+        },
+        {
+          "n": "exit",
+          "s": 39
+        }
+      ],
+      "total_frames": 2365,
+      "rng_end": {
+        "state": 3074161287,
+        "calls": 98
+      }
+    },
+    {
+      "level_num": 9,
+      "level_file": "drav09.rdl",
+      "route_input_sha256": "83C9D65C81B706E6EFC6E355C9ABCD359741115C162F1071B8E8A90C7EAD8BD0",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 9
+        },
+        {
+          "n": "gold key",
+          "s": 23
+        },
+        {
+          "n": "red key",
+          "s": 48
+        },
+        {
+          "n": "reactor",
+          "s": 69
+        },
+        {
+          "n": "exit",
+          "s": 73
+        }
+      ],
+      "total_frames": 4389,
+      "rng_end": {
+        "state": 344858293,
+        "calls": 76
+      }
+    },
+    {
+      "level_num": 10,
+      "level_file": "drav10.rdl",
+      "route_input_sha256": "7792423A1EFAF539FBFEDB10068AF1F170E0DAFEC67616F2503DC6D08CB28447",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4096,
+      "rng_end": {
+        "state": 3914758370,
+        "calls": 21
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 11,
+      "level_file": "drav11.rdl",
+      "route_input_sha256": "D1C3BE871CA398D8A5D8B24E09837C7F4A569665ED9E2FD121C3847112A20F4B",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4090,
+      "rng_end": {
+        "state": 3535774167,
+        "calls": 18
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 12,
+      "level_file": "drav12.rdl",
+      "route_input_sha256": "2E92657CBBABFEE5E4867B63F255C101F6A76ACB6A9A94DEA627D1E24EEFA3BC",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 7
+        },
+        {
+          "n": "gold key",
+          "s": 20
+        },
+        {
+          "n": "red key",
+          "s": 39
+        }
+      ],
+      "total_frames": 2359,
+      "rng_end": {
+        "state": 3822763702,
+        "calls": 49
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 13,
+      "level_file": "drav13.rdl",
+      "route_input_sha256": "E5C02624F05A0ACAAFCBC73788AB1F9898955C1B14FDC1EB347EF9F5FC6BF63F",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 4
+        },
+        {
+          "n": "gold key",
+          "s": 21
+        },
+        {
+          "n": "red key",
+          "s": 44
+        },
+        {
+          "n": "reactor",
+          "s": 60
+        },
+        {
+          "n": "exit",
+          "s": 66
+        }
+      ],
+      "total_frames": 3970,
+      "rng_end": {
+        "state": 1495896251,
+        "calls": 78
+      }
+    },
+    {
+      "level_num": 14,
+      "level_file": "drav14.rdl",
+      "route_input_sha256": "862DA04D49D6E344885AAD331DFACF6B55C760D623D45032F041792C85F87588",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 12
+        }
+      ],
+      "total_frames": 4733,
+      "rng_end": {
+        "state": 2473755763,
+        "calls": 22
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 15,
+      "level_file": "drav15.rdl",
+      "route_input_sha256": "95DAB713F25235689DADD1653D49D38D905C7F1A66D9688B069A3D197095231E",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 12
+        },
+        {
+          "n": "gold key",
+          "s": 37
+        },
+        {
+          "n": "red key",
+          "s": 62
+        },
+        {
+          "n": "reactor",
+          "s": 76
+        },
+        {
+          "n": "exit",
+          "s": 86
+        }
+      ],
+      "total_frames": 5132,
+      "rng_end": {
+        "state": 4052745200,
+        "calls": 87
+      }
+    },
+    {
+      "level_num": 16,
+      "level_file": "drav16.rdl",
+      "route_input_sha256": "0E589D4A974733FD8AA3E7ACFD57AEE1AA8C4C919064579D539ADBA233D6FAD4",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 11
+        },
+        {
+          "n": "gold key",
+          "s": 26
+        },
+        {
+          "n": "red key",
+          "s": 55
+        }
+      ],
+      "total_frames": 5060,
+      "rng_end": {
+        "state": 2916751166,
+        "calls": 73
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 17,
+      "level_file": "drav17.rdl",
+      "route_input_sha256": "30A03CF40A317DB0B198ACD30A980356F31D12735A5A4F3981CF98B5EE9A0486",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4574,
+      "rng_end": {
+        "state": 595337866,
+        "calls": 13
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 18,
+      "level_file": "drav18.rdl",
+      "route_input_sha256": "222F060FC92E6530366229812BFC9BDE9139C534BFE2591F0A0965217E418FEB",
+      "status": "infrastructure_error",
+      "problem": "Route engine infrastructure failure for revodrav.json|0|18|drav18.rdl, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\revodrav.json_0_18_drav18.rdl_run_1.log"
+    },
+    {
+      "level_num": 19,
+      "level_file": "drav19.rdl",
+      "route_input_sha256": "009F29C6704FA64ADFFCDE5A29BD1EC8797D5EF4D3A98F339D19ED9E890A9FC5",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 8
+        },
+        {
+          "n": "gold key",
+          "s": 17
+        }
+      ],
+      "total_frames": 6516,
+      "rng_end": {
+        "state": 2577478752,
+        "calls": 39
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 20,
+      "level_file": "drav20.rdl",
+      "route_input_sha256": "AA899C440F50207CE13E1FCEE0D642761E8AB2141EE0494B9C7D8557FCF4186A",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 23
+        },
+        {
+          "n": "gold key",
+          "s": 44
+        },
+        {
+          "n": "red key",
+          "s": 78
+        }
+      ],
+      "total_frames": 6030,
+      "rng_end": {
+        "state": 1452336924,
+        "calls": 91
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 21,
+      "level_file": "drav21.rdl",
+      "route_input_sha256": "A0364FFBC38518973D5E14E6811D159B5C88B2CDC78EEB496D9B1D394E31A9C5",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 12
+        },
+        {
+          "n": "gold key",
+          "s": 36
+        },
+        {
+          "n": "red key",
+          "s": 60
+        }
+      ],
+      "total_frames": 4946,
+      "rng_end": {
+        "state": 2207819405,
+        "calls": 52
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 22,
+      "level_file": "drav22.rdl",
+      "route_input_sha256": "F20D9103B94F2CFF0871B90E0C0AEDA16FE1B23A4F2F90A9EBDFFFC5030AD9A9",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 7
+        },
+        {
+          "n": "fly-through 13",
+          "s": 14
+        },
+        {
+          "n": "gold key",
+          "s": 17
+        }
+      ],
+      "total_frames": 7882,
+      "rng_end": {
+        "state": 3731173240,
+        "calls": 47
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 23,
+      "level_file": "drav23.rdl",
+      "route_input_sha256": "B6D56DDD5A3EFDC6287F53D60C14F6B317FD3EB0E9DCE5465A58AE2DB4EC036F",
+      "status": "infrastructure_error",
+      "problem": "Route engine infrastructure failure for revodrav.json|0|23|drav23.rdl, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\revodrav.json_0_23_drav23.rdl_run_1.log"
+    },
+    {
+      "level_num": 24,
+      "level_file": "drav24.rdl",
+      "route_input_sha256": "34F1D5618B78C6750C133C05B1311843CEE78A4EA936C67B40F8EC0373DC8DB3",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 18
+        }
+      ],
+      "total_frames": 5515,
+      "rng_end": {
+        "state": 3823029677,
+        "calls": 20
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": -1,
+      "level_file": "dravs1.rdl",
+      "route_input_sha256": "EE6E385977706816D50EA0109053C97A71692480A69E1EB4DE60C63FFDDA72C2",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "reactor",
+          "s": 1
+        },
+        {
+          "n": "exit",
+          "s": 8
+        }
+      ],
+      "total_frames": 489,
+      "rng_end": {
+        "state": 744964398,
+        "calls": 25
+      }
+    },
+    {
+      "level_num": -2,
+      "level_file": "dravs2.rdl",
+      "route_input_sha256": "F00917085F4D626D391DB526E4F531DD0328ED8D2073D86D294ADB620BCE3C62",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 5873,
+      "rng_end": {
+        "state": 3535774167,
+        "calls": 18
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": -3,
+      "level_file": "dravs3.rdl",
+      "route_input_sha256": "B00C79B93AA6961D494BBB464A77B0DE50C63A0635E9F197E604E5F8C0F6D7CA",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "reactor",
+          "s": 2
+        },
+        {
+          "n": "exit",
+          "s": 19
+        }
+      ],
+      "total_frames": 1162,
+      "rng_end": {
+        "state": 744964398,
+        "calls": 25
+      }
+    },
+    {
+      "level_num": -4,
+      "level_file": "dravs4.rdl",
+      "route_input_sha256": "7560C05DD0A9CFE2ECE5CD82457E69DD19B2EBC5F7B3630E3CE1EB1DB74727DC",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "fly-through 0",
+          "s": 3
+        },
+        {
+          "n": "fly-through 1",
+          "s": 12
+        },
+        {
+          "n": "fly-through 4",
+          "s": 26
+        },
+        {
+          "n": "fly-through 3",
+          "s": 39
+        },
+        {
+          "n": "fly-through 2",
+          "s": 56
+        },
+        {
+          "n": "fly-through 5",
+          "s": 66
+        },
+        {
+          "n": "fly-through 6",
+          "s": 76
+        },
+        {
+          "n": "fly-through 7",
+          "s": 87
+        },
+        {
+          "n": "fly-through 8",
+          "s": 96
+        },
+        {
+          "n": "fly-through 9",
+          "s": 105
+        },
+        {
+          "n": "fly-through 10",
+          "s": 114
+        },
+        {
+          "n": "fly-through 11",
+          "s": 131
+        },
+        {
+          "n": "fly-through 12",
+          "s": 145
+        },
+        {
+          "n": "fly-through 15",
+          "s": 156
+        }
+      ],
+      "total_frames": 13859,
+      "rng_end": {
+        "state": 752577037,
+        "calls": 180
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": -5,
+      "level_file": "dravs5.rdl",
+      "route_input_sha256": "B5C26D8882FE4177C25871680CECE43997820502AFEE21E32B558D384DD7B015",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 13021,
+      "rng_end": {
+        "state": 2124364189,
+        "calls": 153252
+      },
+      "problem": "route confirmation exceeded 217-second simulation budget"
+    },
+    {
+      "level_num": -6,
+      "level_file": "dravs6.rdl",
+      "route_input_sha256": "DA8AED904426FC905DCE5BC91CC2B882CD63485A464830FB412CD70BADEC262B",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 7
+        },
+        {
+          "n": "gold key",
+          "s": 31
+        },
+        {
+          "n": "red key",
+          "s": 60
+        },
+        {
+          "n": "boss",
+          "s": 77
+        }
+      ],
+      "total_frames": 9518,
+      "rng_end": {
+        "state": 1814397249,
+        "calls": 192
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    }
+  ]
+}

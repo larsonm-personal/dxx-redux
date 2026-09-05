@@ -126,15 +126,15 @@
         "mine_volume": 102698000.0,
         "mine_volume_normalized": 22.458,
         "mine_volume_text": "22x",
-        "travel_distance": 11042.8,
-        "travel_time_seconds": 221,
-        "travel_time_text": "3M:41S",
+        "travel_distance": 6313.3,
+        "travel_time_seconds": 126,
+        "travel_time_text": "2M:06S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
-        "route_status": "ok",
-        "route_required_key_mask": 7,
-        "route_completing_key_mask_set": 128,
+        "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -228,17 +228,16 @@
           {
             "index": 6,
             "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 27",
-            "seg": 435,
-            "side": 1,
+            "activation_kind": "unresolved_trigger",
+            "calculated": false,
+            "label": "Locate and activate switch trigger 27",
+            "seg": 102,
             "wall": 125,
             "label_pos": {
               "x": 0.0,
               "y": -10.0,
               "z": 20.0
             },
-            "distance": 534.9,
             "trigger": 27,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -249,27 +248,10 @@
                 "wall": 13
               }
             ]
-          },
-          {
-            "index": 7,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 390,
-            "side": 0,
-            "wall": 111,
-            "label_pos": {
-              "x": -436.4,
-              "y": 35.4,
-              "z": 674.6
-            },
-            "distance": 4194.6,
-            "trigger": 13,
-            "trigger_type_id": 3,
-            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
+        "route_problem": "non-shootable trigger source is behind a closed wall",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
         ]

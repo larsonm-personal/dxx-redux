@@ -8,16 +8,14 @@
   "status": "failed",
   "level_counts": {
     "failed": 1,
-    "timeout": 1,
-    "route_mismatch": 1,
-    "infrastructure_error": 1
+    "timeout": 3
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "toro_s.rl2",
-      "route_input_sha256": "5E3F6E93B36C3A3FE1E9DC282C0A8A6F1992CF5332025598BE7677E6D22C43F5",
-      "status": "route_mismatch",
+      "route_input_sha256": "9F4282C65B27D8F0B038AA439007CAB4CDB27381BA0D3AD2455D61C298C0E977",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -33,15 +31,15 @@
         },
         {
           "n": "blastable wall",
-          "s": 25
+          "s": 26
         }
       ],
-      "total_frames": 5291,
+      "total_frames": 5318,
       "rng_end": {
-        "state": 1804597305,
-        "calls": 1544
+        "state": 3949761703,
+        "calls": 2114
       },
-      "problem": "live objective sequence differs from route input"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 2,
@@ -63,9 +61,24 @@
     {
       "level_num": 3,
       "level_file": "deadmine.rl2",
-      "route_input_sha256": "4DCD7B45D7D9CC220233A255C9B52DE18E09A33D4C36A9532E0E351AD4D5093E",
-      "status": "infrastructure_error",
-      "problem": "Route engine infrastructure failure for KAK.json|0|3|deadmine.rl2, exit -1073741571, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_102101\\logs\\KAK.json_0_3_deadmine.rl2_run_1.log"
+      "route_input_sha256": "63261C7BAD4639F6D3712057B22DF40A3CC96DAD1ED5E45C3588479FBD35A8C7",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 0",
+          "s": 11
+        }
+      ],
+      "total_frames": 1140,
+      "rng_end": {
+        "state": 4024132204,
+        "calls": 715
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 4,

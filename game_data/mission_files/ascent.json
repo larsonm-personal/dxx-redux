@@ -2021,9 +2021,9 @@
         "mine_volume": 11100300.0,
         "mine_volume_normalized": 2.4274,
         "mine_volume_text": "2.4x",
-        "travel_distance": 1862.3,
-        "travel_time_seconds": 37,
-        "travel_time_text": "0M:37S",
+        "travel_distance": 1897.3,
+        "travel_time_seconds": 38,
+        "travel_time_text": "0M:38S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2041,18 +2041,52 @@
           {
             "index": 1,
             "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 4",
-            "seg": 132,
-            "side": 2,
-            "wall": 64,
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 2",
+            "seg": 114,
+            "wall": 68,
             "label_pos": {
-              "x": 167.0,
-              "y": 40.0,
-              "z": 230.0
+              "x": 177.0,
+              "y": -10.0,
+              "z": 210.0
             },
-            "distance": 442.0,
-            "trigger": 4,
+            "distance": 402.0,
+            "trigger": 2,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 126,
+                "side": 2,
+                "wall": 66
+              },
+              {
+                "seg": 131,
+                "side": 2,
+                "wall": 62
+              },
+              {
+                "seg": 132,
+                "side": 2,
+                "wall": 64
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 3",
+            "seg": 126,
+            "side": 2,
+            "wall": 66,
+            "label_pos": {
+              "x": 177.0,
+              "y": 40.0,
+              "z": 210.0
+            },
+            "distance": 60.0,
+            "trigger": 3,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
             "opens": [
@@ -2074,7 +2108,7 @@
             ]
           },
           {
-            "index": 2,
+            "index": 3,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -2084,11 +2118,11 @@
               "y": 0.0,
               "z": 250.0
             },
-            "distance": 95.0,
+            "distance": 110.0,
             "key": "gold"
           },
           {
-            "index": 3,
+            "index": 4,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",

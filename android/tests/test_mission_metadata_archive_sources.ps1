@@ -31,6 +31,45 @@ try {
     $available = @(Get-AvailableMissionArchiveSources -Sources $sources)
     Assert-True ($available.Count -eq 2) "Expected both populated mission archive sources"
 
+    # Execute the host runner's real parameter binding and archive selection without building or regenerating data
+    $hostScript = Join-Path $repoRoot "android\helpers\regenerate_all_mission_metadata_host.ps1"
+    $hostAst = [Management.Automation.Language.Parser]::ParseFile($hostScript, [ref]$null, [ref]$null)
+    $filterAssignment = $hostAst.Find({
+            param($node)
+            $node -is [Management.Automation.Language.AssignmentStatementAst] -and
+            $node.Left.Extent.Text -eq '$hasArchiveFilter'
+        }, $true)
+    $archiveAssignment = $hostAst.Find({
+            param($node)
+            $node -is [Management.Automation.Language.AssignmentStatementAst] -and
+            $node.Left.Extent.Text -eq '$archives'
+        }, $true)
+    $emptyCheck = $hostAst.Find({
+            param($node)
+            $node -is [Management.Automation.Language.IfStatementAst] -and
+            $node.Clauses[0].Item1.Extent.Text -eq '$archives.Count -eq 0'
+        }, $true)
+    $selectionText = $hostAst.Extent.Text.Substring($archiveAssignment.Extent.StartOffset,
+        $emptyCheck.Extent.StartOffset - $archiveAssignment.Extent.StartOffset)
+    $selectArchives = [scriptblock]::Create($hostAst.ParamBlock.Extent.Text + "`n" +
+        $filterAssignment.Extent.Text + "`n" + $selectionText + "`n" +
+        '[pscustomobject]@{ Filtered = $hasArchiveFilter; Archives = @($archives) }')
+    $archiveSources = $available
+    foreach ($options in @(@{}, @{ ArchiveNames = $null; ArchivePaths = $null },
+            @{ ArchiveNames = @(); ArchivePaths = @() })) {
+        $selection = & $selectArchives @options
+        Assert-True (-not $selection.Filtered) "Absent or empty filters must retain built-in and CD missions"
+        Assert-True ($selection.Archives.Count -eq 4) "Absent or empty filters must retain all archives"
+    }
+    $selection = & $selectArchives -ArchiveName 'primary.zip'
+    Assert-True ($selection.Filtered -and $selection.Archives.Count -eq 1) "Single-name selection must still filter"
+    $selection = & $selectArchives -ArchiveNames @('primary.zip', 'secondary.7z')
+    Assert-True ($selection.Filtered -and $selection.Archives.Count -eq 2) "Multiple-name selection must still filter"
+    $selectedPath = Join-Path $secondary.FullName "complete.zip"
+    $selection = & $selectArchives -ArchivePaths @($selectedPath)
+    Assert-True ($selection.Filtered -and $selection.Archives.Count -eq 1 -and
+        $selection.Archives[0].Archive.FullName -eq $selectedPath) "Worker path selection must retain only the requested archive"
+
     $primaryMissing = @(Get-MissingMissionMetadataArchives -Source $sources[0])
     Assert-True (($primaryMissing.Name -join ',') -eq 'primary.zip') `
         "Primary missing selection should exclude archives with matching JSON"

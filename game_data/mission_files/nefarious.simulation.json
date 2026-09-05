@@ -1,0 +1,531 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "nefarius.msn",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 3,
+    "failed": 4,
+    "timeout": 12
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "nefar01.rdl",
+      "route_input_sha256": "6AA416B3E20EA228C3B451EDB34A91C896222794802899F8F535F990A009ED96",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 13
+        }
+      ],
+      "total_frames": 756,
+      "rng_end": {
+        "state": 3297241969,
+        "calls": 16
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 2,
+      "level_file": "nefar02.rdl",
+      "route_input_sha256": "23FFBEDA902781B26D8C25103FFD5C37A31660781A835504603C500C95395B67",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 7
+        }
+      ],
+      "total_frames": 1452,
+      "rng_end": {
+        "state": 2473755763,
+        "calls": 22
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 3,
+      "level_file": "nefar03.rdl",
+      "route_input_sha256": "3E6AE0F9FA83B2E022C37034C9A58602258CFECB523008D500D855093ECD87EA",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2516284547,
+        "calls": 6
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 4,
+      "level_file": "nefar04.rdl",
+      "route_input_sha256": "25F444D6244DFBA4BDD74BDB5459653A8373EB3513D4C3AA70BF2F3AF7A59607",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 17
+        },
+        {
+          "n": "gold key",
+          "s": 39
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 56
+        }
+      ],
+      "total_frames": 4289,
+      "rng_end": {
+        "state": 1848832019,
+        "calls": 118
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 5,
+      "level_file": "nefar05.rdl",
+      "route_input_sha256": "6E38F353488CC8F694D610B12930FC561E6505DB517F3EA7BFA09C9332C63C3E",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 62
+        }
+      ],
+      "total_frames": 9261,
+      "rng_end": {
+        "state": 3776134388,
+        "calls": 35
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 6,
+      "level_file": "nefar06.rdl",
+      "route_input_sha256": "FAFF09AB4F9DB29F0A0A1CE392680E29EBBFE184730577D7FA4A73B9502D3426",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 6181,
+      "rng_end": {
+        "state": 2058258651,
+        "calls": 46
+      },
+      "problem": "route confirmation exceeded 103-second simulation budget"
+    },
+    {
+      "level_num": 7,
+      "level_file": "nefar07.rdl",
+      "route_input_sha256": "C8E83477C5D4AA7998F16CBE2FBF2BA73610FD3496427ABA5E6B25C535747DD3",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blastable wall",
+          "s": 20
+        },
+        {
+          "n": "blue key",
+          "s": 29
+        },
+        {
+          "n": "gold key",
+          "s": 61
+        }
+      ],
+      "total_frames": 12420,
+      "rng_end": {
+        "state": 3821532770,
+        "calls": 149
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 8,
+      "level_file": "nefar08.rdl",
+      "route_input_sha256": "740947CBB0A8FD08613307EE4727BF754A072C598E24F4631A58907E397C5B52",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "fly-through 1",
+          "s": 4
+        },
+        {
+          "n": "blue key",
+          "s": 10
+        }
+      ],
+      "total_frames": 1409,
+      "rng_end": {
+        "state": 4008331270,
+        "calls": 33
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 9,
+      "level_file": "nefar09.rdl",
+      "route_input_sha256": "66AD85E27119A886663530C7BF2F3F6FC447AB66295F308BF802601C21593D40",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 3711,
+      "rng_end": {
+        "state": 675780521,
+        "calls": 24
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 10,
+      "level_file": "nefar10.rdl",
+      "route_input_sha256": "4048F517D9444DD221F61FE6D0AB26ED2A8FB983DE810463CB6639F4FDAD98B9",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 5
+        },
+        {
+          "n": "gold key",
+          "s": 17
+        },
+        {
+          "n": "blastable wall",
+          "s": 23
+        },
+        {
+          "n": "red key",
+          "s": 44
+        },
+        {
+          "n": "reactor",
+          "s": 65
+        },
+        {
+          "n": "exit",
+          "s": 68
+        }
+      ],
+      "total_frames": 4073,
+      "rng_end": {
+        "state": 2754807367,
+        "calls": 162
+      }
+    },
+    {
+      "level_num": 11,
+      "level_file": "nefar11.rdl",
+      "route_input_sha256": "3B8C72E1D56A92B7A53D5BA5C4D6E6DF6A466B1ECE196B4A3487821478838198",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 5
+        },
+        {
+          "n": "fly-through 12",
+          "s": 18
+        },
+        {
+          "n": "gold key",
+          "s": 23
+        },
+        {
+          "n": "fly-through 0",
+          "s": 39
+        },
+        {
+          "n": "red key",
+          "s": 47
+        }
+      ],
+      "total_frames": 3822,
+      "rng_end": {
+        "state": 856000655,
+        "calls": 90
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 12,
+      "level_file": "nefar12.rdl",
+      "route_input_sha256": "A7B62C8FA88E8C05F2CFCC5B1BEFBCC26D5647FB3726D89F857BECE356B5DEF8",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 5231,
+      "rng_end": {
+        "state": 3914758370,
+        "calls": 21
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 13,
+      "level_file": "nefar13.rdl",
+      "route_input_sha256": "E43B936FCC8828D1C8C16B92F93DBDAB31C6AA0D588031CB88B503F8D4806493",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "fly-through 0",
+          "s": 6
+        },
+        {
+          "n": "blue key",
+          "s": 11
+        },
+        {
+          "n": "gold key",
+          "s": 19
+        },
+        {
+          "n": "red key",
+          "s": 27
+        },
+        {
+          "n": "fly-through 15",
+          "s": 37
+        }
+      ],
+      "total_frames": 6079,
+      "rng_end": {
+        "state": 2801490995,
+        "calls": 86
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 14,
+      "level_file": "nefar14.rdl",
+      "route_input_sha256": "3E12D9FA4B0031FECC2E0A10BBDD0F26732246A5E334829FD2680DD7C1E09813",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 10
+        },
+        {
+          "n": "gold key",
+          "s": 28
+        },
+        {
+          "n": "red key",
+          "s": 41
+        },
+        {
+          "n": "fly-through 0",
+          "s": 54
+        },
+        {
+          "n": "reactor",
+          "s": 55
+        },
+        {
+          "n": "exit",
+          "s": 62
+        }
+      ],
+      "total_frames": 3706,
+      "rng_end": {
+        "state": 916896761,
+        "calls": 72
+      }
+    },
+    {
+      "level_num": 15,
+      "level_file": "nefar15.rdl",
+      "route_input_sha256": "B0E924EB9771CC3CB61186D96F611B8439A177B32D1A39D2A221CF55A3EF86ED",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2516284547,
+        "calls": 6
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 16,
+      "level_file": "nefar16.rdl",
+      "route_input_sha256": "0023CC4B4F31D32041CECDC44B75B002CF9041CFBE66A7280A526100CEF9D125",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 17
+        },
+        {
+          "n": "gold key",
+          "s": 30
+        },
+        {
+          "n": "red key",
+          "s": 48
+        }
+      ],
+      "total_frames": 3643,
+      "rng_end": {
+        "state": 2402686401,
+        "calls": 64
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": -1,
+      "level_file": "nefars1.rdl",
+      "route_input_sha256": "C54FDB760002283F08CCA1678F38A0E2A3B85C3848D1E35891A9FB957C89350C",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 11
+        },
+        {
+          "n": "blue key",
+          "s": 11
+        }
+      ],
+      "total_frames": 680,
+      "rng_end": {
+        "state": 1969681615,
+        "calls": 26
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": -2,
+      "level_file": "nefars2.rdl",
+      "route_input_sha256": "643EA45F984DA560161B55EA4C5AEB76AF11A65A3649F64F6B0CFFBE91A1B7D0",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 11
+        },
+        {
+          "n": "blue key",
+          "s": 18
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 46
+        },
+        {
+          "n": "reactor",
+          "s": 68
+        },
+        {
+          "n": "exit",
+          "s": 75
+        }
+      ],
+      "total_frames": 4495,
+      "rng_end": {
+        "state": 510737498,
+        "calls": 125
+      }
+    },
+    {
+      "level_num": -3,
+      "level_file": "nefars3.rdl",
+      "route_input_sha256": "4F6FDFE9C68EC9F833FD94929630CCC81F2C3C60DA655E76A293BEF3C7F035F6",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blastable wall",
+          "s": 2
+        },
+        {
+          "n": "blue key",
+          "s": 9
+        }
+      ],
+      "total_frames": 1345,
+      "rng_end": {
+        "state": 3074161287,
+        "calls": 98
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    }
+  ]
+}

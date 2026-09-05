@@ -1,3 +1,4 @@
+#include "headless_diagnostics.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -249,8 +250,8 @@ static int init_headless_metadata_runtime(int argc, char *argv[], char *error, s
 	trace_dump_init("mem_init");
 	mem_init();
 	trace_dump_init("error_init");
-	error_init(msgbox_error);
-	set_warn_func(msgbox_warning);
+	error_init(headless_error);
+	set_warn_func(headless_warning);
 	trace_dump_init("physfs_init");
 	PHYSFSX_init(argc, argv);
 	trace_dump_init("con_init");

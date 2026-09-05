@@ -89,7 +89,9 @@ static std::atomic<int> Robot_preview_pitch(0);
 static std::atomic<int> Robot_preview_active(0);
 static int Robot_preview_model = -1;
 static int Robot_preview_number = -1;
-static std::atomic<int> Robot_preview_pending_number(-1);
+static std::atomic<int> Robot_preview_pending_index(0);
+static int Robot_preview_navigation_index;
+static json Robot_preview_navigation;
 static std::atomic<int> Robot_preview_count(0);
 static std::vector<int> Robot_preview_navigation_numbers;
 static unsigned long long Robot_preview_frames;
@@ -1368,8 +1370,13 @@ static int robot_preview_configure_robot(int number)
 static void robot_preview_configure_navigation(const json &request)
 {
 	Robot_preview_navigation_numbers.clear();
+	// RobotPreviewRequestStore writes one entry per distinct replacement, including source-level context
+	Robot_preview_navigation = request.value("robot_navigation", json::array());
 	const auto requested = request.find("robot_numbers");
-	if (requested != request.end() && requested->is_array()) {
+	if (!Robot_preview_navigation.empty()) {
+		for (const json &entry : Robot_preview_navigation)
+			Robot_preview_navigation_numbers.push_back(entry.at("robot_number").get<int>());
+	} else if (requested != request.end() && requested->is_array()) {
 		for (const json &value : *requested) {
 			if (!value.is_number_integer())
 				continue;
@@ -1393,6 +1400,41 @@ static void robot_preview_configure_navigation(const json &request)
 		    Robot_preview_navigation_numbers.begin(), Robot_preview_number);
 	Robot_preview_count.store(
 	    static_cast<int>(Robot_preview_navigation_numbers.size()), std::memory_order_release);
+	Robot_preview_navigation_index = Robot_preview_navigation.empty()
+	                                     ? static_cast<int>(std::find(Robot_preview_navigation_numbers.begin(), Robot_preview_navigation_numbers.end(), Robot_preview_number) - Robot_preview_navigation_numbers.begin())
+	                                     : request.value("robot_navigation_index", 0);
+	Robot_preview_pending_index.store(Robot_preview_navigation_index, std::memory_order_release);
+}
+
+static int robot_preview_select_entry(int index)
+{
+	if (index < 0 || index >= static_cast<int>(Robot_preview_navigation_numbers.size()))
+		return 0;
+	if (!Robot_preview_navigation.empty()) {
+		const json &entry = Robot_preview_navigation[index];
+		const std::string level_file = entry.at("level_file").get<std::string>();
+		if (level_file != Level_preview_request.value("level_file", "")) {
+			digi_stop_digi_sounds();
+			robot_preview_reset_attack_state();
+			if (load_level(level_file.c_str())) {
+				preview_fail(std::string("Could not load robot preview level ") + level_file);
+				return 0;
+			}
+			Current_level_num = entry.at("level_num").get<int>();
+#ifdef DXX_BUILD_DESCENT_II
+			load_level_robots_file(level_file.c_str());
+#endif
+			load_preview_palette();
+			robot_preview_configure_camera_tiers();
+			Level_preview_request["level_file"] = level_file;
+			Level_preview_request["level_num"] = Current_level_num;
+			Level_preview_request["secret_level"] = entry.value("secret_level", false);
+		}
+	}
+	if (!robot_preview_configure_robot(Robot_preview_navigation_numbers[index]))
+		return 0;
+	Robot_preview_navigation_index = index;
+	return 1;
 }
 
 static void robot_preview_play_sound(void)
@@ -1441,9 +1483,12 @@ static int robot_preview_window_handler(window *wind, d_event *event, void *data
 			window_close(wind);
 			return 1;
 		case EVENT_WINDOW_DRAW: {
-			const int pending = Robot_preview_pending_number.load(std::memory_order_acquire);
-			if (pending != Robot_preview_number && !robot_preview_configure_robot(pending))
-				Robot_preview_pending_number.store(Robot_preview_number, std::memory_order_release);
+			const int pending = Robot_preview_pending_index.load(std::memory_order_acquire);
+			if (pending != Robot_preview_navigation_index && !robot_preview_select_entry(pending)) {
+				preview_fail("Could not load robot preview navigation entry");
+				window_close(wind);
+				return 1;
+			}
 			const Uint32 now = SDL_GetTicks();
 			const int attack_enabled = Robot_preview_attack_enabled.load(std::memory_order_relaxed);
 			if (attack_enabled != Robot_preview_attack_was_enabled) {
@@ -1506,7 +1551,7 @@ static int run_robot_preview(
 	Robot_preview_active.store(0, std::memory_order_release);
 	Robot_preview_model = -1;
 	Robot_preview_number = request.value("robot_number", -1);
-	Robot_preview_pending_number.store(Robot_preview_number, std::memory_order_release);
+	Robot_preview_pending_index.store(0, std::memory_order_release);
 	Robot_preview_count.store(0, std::memory_order_release);
 	Robot_preview_frames = 0;
 	memset(Robot_preview_anim_angles, 0, sizeof(Robot_preview_anim_angles));
@@ -1625,7 +1670,7 @@ static int run_robot_preview(
 		window_close(Game_wind);
 	debug_log(DLOG_GAME, "robot preview closed after %u ms robot=%d",
 	          (unsigned int) (SDL_GetTicks() - started_at), Robot_preview_number);
-	return 0;
+	return Level_preview_error.empty() ? 0 : 1;
 }
 
 extern "C" const char *android_level_preview_request_path(void)
@@ -1874,6 +1919,7 @@ extern "C" const char *android_level_preview_introspection_json(void)
 			{ "robot_number", Robot_preview_number },
 			{ "robot_count", Robot_preview_count.load(std::memory_order_relaxed) },
 			{ "navigation_numbers", Robot_preview_navigation_numbers },
+			{ "navigation_index", Robot_preview_navigation_index },
 			{ "robot_label", Level_preview_request.value("robot_label", "") },
 			{ "model_number", Robot_preview_model },
 			{ "model_radius", f2fl(Polygon_models[Robot_preview_model].rad) },
@@ -2024,16 +2070,10 @@ extern "C" int android_robot_preview_select(int direction)
 	const int count = Robot_preview_count.load(std::memory_order_acquire);
 	if (!Robot_preview_active.load(std::memory_order_acquire) || count <= 0 || direction == 0)
 		return -1;
-	const int current = Robot_preview_pending_number.load(std::memory_order_relaxed);
-	const auto current_position = std::find(
-	    Robot_preview_navigation_numbers.begin(), Robot_preview_navigation_numbers.end(), current);
-	const int current_index = current_position != Robot_preview_navigation_numbers.end()
-	                              ? static_cast<int>(
-	                                    current_position - Robot_preview_navigation_numbers.begin())
-	                              : 0;
+	const int current_index = Robot_preview_pending_index.load(std::memory_order_relaxed);
 	const int selected_index = (current_index + (direction > 0 ? 1 : count - 1)) % count;
 	const int selected = Robot_preview_navigation_numbers[selected_index];
-	Robot_preview_pending_number.store(selected, std::memory_order_release);
+	Robot_preview_pending_index.store(selected_index, std::memory_order_release);
 	return selected;
 }
 

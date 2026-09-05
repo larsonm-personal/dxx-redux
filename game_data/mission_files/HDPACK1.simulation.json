@@ -1,0 +1,97 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "HDPACK1.MSN",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 2,
+    "infrastructure_error": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "HELLION.rdl",
+      "route_input_sha256": "A24425D9BF9B0D69C2D4B4EFC93610A9C9CE887E07EB78195AE84E9FE259D0F8",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 9
+        },
+        {
+          "n": "gold key",
+          "s": 18
+        },
+        {
+          "n": "red key",
+          "s": 32
+        },
+        {
+          "n": "reactor",
+          "s": 44
+        },
+        {
+          "n": "exit",
+          "s": 44
+        }
+      ],
+      "total_frames": 2661,
+      "rng_end": {
+        "state": 508382461,
+        "calls": 68
+      }
+    },
+    {
+      "level_num": 2,
+      "level_file": "hpostiv.rdl",
+      "route_input_sha256": "21748D6996B7A9F436AC4802FBFF484684A8F476C00509E16CD1547CDB9B5147",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 12
+        },
+        {
+          "n": "gold key",
+          "s": 26
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 39
+        },
+        {
+          "n": "reactor",
+          "s": 44
+        },
+        {
+          "n": "exit",
+          "s": 46
+        }
+      ],
+      "total_frames": 2767,
+      "rng_end": {
+        "state": 470157467,
+        "calls": 110
+      }
+    },
+    {
+      "level_num": 3,
+      "level_file": "LOD.rdl",
+      "route_input_sha256": "21DE6F311FA9331E7E137742E8732390A2CF26261306A855F68F597AA6598C31",
+      "status": "infrastructure_error",
+      "problem": "Route engine infrastructure failure for HDPACK1.json|0|3|LOD.rdl, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\HDPACK1.json_0_3_LOD.rdl_run_1.log"
+    }
+  ]
+}

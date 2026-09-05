@@ -1,3 +1,4 @@
+#include "headless_diagnostics.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -87,8 +88,8 @@ static int init_headless_runtime(int argc, char *argv[], int console_output_mode
 	int screen_h;
 
 	mem_init();
-	error_init(msgbox_error);
-	set_warn_func(msgbox_warning);
+	error_init(headless_error);
+	set_warn_func(headless_warning);
 	PHYSFSX_init(argc, argv);
 	if (console_output_mode == 1)
 		GameArg.DbgVerbose = -1;

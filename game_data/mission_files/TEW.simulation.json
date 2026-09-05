@@ -1107,17 +1107,17 @@
         },
         {
           "n": "reactor",
-          "s": 18
+          "s": 11
         },
         {
           "n": "exit",
-          "s": 28
+          "s": 19
         }
       ],
-      "total_frames": 1677,
+      "total_frames": 1140,
       "rng_end": {
-        "state": 3100814004,
-        "calls": 3939
+        "state": 2793295319,
+        "calls": 5138
       }
     }
   ]

@@ -1,0 +1,294 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "icerealm.msn",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 4,
+    "timeout": 5
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "outpost1.rdl",
+      "route_input_sha256": "B9046E64B0AD124A86FBD93F06FDD5F5FB7EB50136D8701E83C003B2D8A6E410",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "gold key",
+          "s": 16
+        }
+      ],
+      "total_frames": 6168,
+      "rng_end": {
+        "state": 3776134388,
+        "calls": 35
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 2,
+      "level_file": "sewers.rdl",
+      "route_input_sha256": "CA5DF6BFB5032240AE108724489BDCC89B0B132B858D5615BFA266E4B05A82E1",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "gold key",
+          "s": 10
+        }
+      ],
+      "total_frames": 1969,
+      "rng_end": {
+        "state": 3535774167,
+        "calls": 18
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 3,
+      "level_file": "towers.rdl",
+      "route_input_sha256": "880316E9905588C0C9F970B93478D5F505BD5AE7DB7B190D86D676BD94FE2D80",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 2
+        }
+      ],
+      "total_frames": 4535,
+      "rng_end": {
+        "state": 1116175964,
+        "calls": 27
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 4,
+      "level_file": "castle.rdl",
+      "route_input_sha256": "4312178E73B8754CE29E351C44207A8B5C35BED42FAFDC82809B79DE3F9F2726",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 16
+        }
+      ],
+      "total_frames": 5910,
+      "rng_end": {
+        "state": 744964398,
+        "calls": 25
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 5,
+      "level_file": "outpost2.rdl",
+      "route_input_sha256": "B4B41C2BEB742054A637279E66787D143A23E824F0227C6B221544B2C8139301",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 6
+        },
+        {
+          "n": "hidden door",
+          "s": 7
+        },
+        {
+          "n": "blue key",
+          "s": 8
+        },
+        {
+          "n": "hidden door",
+          "s": 8
+        },
+        {
+          "n": "hidden door",
+          "s": 17
+        },
+        {
+          "n": "hidden door",
+          "s": 18
+        },
+        {
+          "n": "gold key",
+          "s": 18
+        },
+        {
+          "n": "red key",
+          "s": 26
+        },
+        {
+          "n": "reactor",
+          "s": 31
+        },
+        {
+          "n": "exit",
+          "s": 35
+        }
+      ],
+      "total_frames": 2114,
+      "rng_end": {
+        "state": 4247911497,
+        "calls": 120
+      }
+    },
+    {
+      "level_num": 6,
+      "level_file": "icehouse.rdl",
+      "route_input_sha256": "E0CF60BFAF342D33E35F9E1BCD3FAC5D974839075983790EF9C8A032EC3FAFD7",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 4
+        },
+        {
+          "n": "gold key",
+          "s": 12
+        },
+        {
+          "n": "red key",
+          "s": 27
+        },
+        {
+          "n": "reactor",
+          "s": 39
+        },
+        {
+          "n": "exit",
+          "s": 42
+        }
+      ],
+      "total_frames": 2526,
+      "rng_end": {
+        "state": 1024265714,
+        "calls": 69
+      }
+    },
+    {
+      "level_num": 7,
+      "level_file": "reactor.rdl",
+      "route_input_sha256": "DD1F953FD8F180496D79A91F9436B6A51290ABE5BCC66B961FA517253419C5ED",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 11
+        },
+        {
+          "n": "gold key",
+          "s": 30
+        },
+        {
+          "n": "red key",
+          "s": 55
+        },
+        {
+          "n": "reactor",
+          "s": 72
+        },
+        {
+          "n": "exit",
+          "s": 77
+        }
+      ],
+      "total_frames": 4598,
+      "rng_end": {
+        "state": 208521688,
+        "calls": 79
+      }
+    },
+    {
+      "level_num": 8,
+      "level_file": "recycle.rdl",
+      "route_input_sha256": "1549E5C8283A6E048366B9A0A715BBA0160292628ED5BE26A47DD3DCCD9AE78B",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 12
+        }
+      ],
+      "total_frames": 5521,
+      "rng_end": {
+        "state": 3914758370,
+        "calls": 21
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 9,
+      "level_file": "canyon.rdl",
+      "route_input_sha256": "0C6D4D10BAD5CD124EF8DB226ED4C1DDF3222A631674536C465ACC2D99403AF5",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 42
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 78
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 126
+        },
+        {
+          "n": "reactor",
+          "s": 139
+        },
+        {
+          "n": "exit",
+          "s": 146
+        }
+      ],
+      "total_frames": 8743,
+      "rng_end": {
+        "state": 351503374,
+        "calls": 185
+      }
+    }
+  ]
+}

@@ -19,7 +19,7 @@
       "level_file": "pits.rdl",
       "route_input_sha256": "05CAAA3D3FDF03FB974A3FBB17B6D25D5D2E91CB29F5234A3F2E8CC4B2700070",
       "status": "infrastructure_error",
-      "problem": "Route engine infrastructure failure for bratmaze.json|0|1|pits.rdl, exit -1073740791, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\bratmaze.json_0_1_pits.rdl_run_1.log"
+      "problem": "Route engine infrastructure failure for bratmaze.json|0|1|pits.rdl, exit -1073740791, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\bratmaze.json_0_1_pits.rdl_run_1.log"
     },
     {
       "level_num": 2,

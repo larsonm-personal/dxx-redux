@@ -1,0 +1,230 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "FREELAN.MSN",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 3,
+    "failed": 1,
+    "timeout": 2,
+    "infrastructure_error": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "kokcol.rdl",
+      "route_input_sha256": "813CDBE668C72D3C82003B8C085746B5446284D98852FD63267BC1DD0F5D3703",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "fly-through 4",
+          "s": 6
+        },
+        {
+          "n": "reactor",
+          "s": 8
+        },
+        {
+          "n": "exit",
+          "s": 10
+        }
+      ],
+      "total_frames": 612,
+      "rng_end": {
+        "state": 2577478752,
+        "calls": 39
+      }
+    },
+    {
+      "level_num": 2,
+      "level_file": "koklab.rdl",
+      "route_input_sha256": "B2C0643EF7375ACA184A04CC5B2BA8FE736A209A8557FAE734D7DDE00610AE39",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 14
+        },
+        {
+          "n": "gold key",
+          "s": 21
+        },
+        {
+          "n": "red key",
+          "s": 32
+        }
+      ],
+      "total_frames": 1912,
+      "rng_end": {
+        "state": 3025925713,
+        "calls": 48
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 3,
+      "level_file": "kokout.rdl",
+      "route_input_sha256": "F3B9F44DA1892BCEE9C900B8B2BC56BD77526206EE32F170B0558535A9EFF0F2",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 6
+        },
+        {
+          "n": "gold key",
+          "s": 16
+        },
+        {
+          "n": "red key",
+          "s": 30
+        }
+      ],
+      "total_frames": 6129,
+      "rng_end": {
+        "state": 2402686401,
+        "calls": 64
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 4,
+      "level_file": "shipport.rdl",
+      "route_input_sha256": "1115441C6FE41BB6598D06F7FC8CFC566749078223CAEFF3BE867FF0C6152F52",
+      "status": "infrastructure_error",
+      "problem": "Route engine process timeout after 180 seconds for freelan.json|0|4|shipport.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\freelan.json_0_4_shipport.rdl_run_1.log"
+    },
+    {
+      "level_num": 5,
+      "level_file": "abbase.rdl",
+      "route_input_sha256": "9021220FB9944EA1718629716F88B8C6C8228B310742136F539660A9C31E02DE",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 3
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 22
+        },
+        {
+          "n": "red key",
+          "s": 44
+        },
+        {
+          "n": "fly-through 0",
+          "s": 70
+        },
+        {
+          "n": "reactor",
+          "s": 70
+        },
+        {
+          "n": "exit",
+          "s": 78
+        }
+      ],
+      "total_frames": 4669,
+      "rng_end": {
+        "state": 2316746429,
+        "calls": 132
+      }
+    },
+    {
+      "level_num": 6,
+      "level_file": "gyres.rdl",
+      "route_input_sha256": "8194F3DA121AABA18D5703EED46622A60B2C22098FF940E1D25BBEF43AE9D84A",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 13
+        },
+        {
+          "n": "gold key",
+          "s": 24
+        },
+        {
+          "n": "fly-through 1",
+          "s": 39
+        },
+        {
+          "n": "fly-through 2",
+          "s": 43
+        },
+        {
+          "n": "red key",
+          "s": 43
+        },
+        {
+          "n": "reactor",
+          "s": 82
+        },
+        {
+          "n": "exit",
+          "s": 93
+        }
+      ],
+      "total_frames": 5550,
+      "rng_end": {
+        "state": 2029357497,
+        "calls": 136
+      }
+    },
+    {
+      "level_num": 7,
+      "level_file": "headquar.rdl",
+      "route_input_sha256": "AC90507BD521433EE04AE540550E6017D392BB0EF4990E0C489B2223E4E4CB14",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 16
+        },
+        {
+          "n": "gold key",
+          "s": 26
+        },
+        {
+          "n": "red key",
+          "s": 37
+        }
+      ],
+      "total_frames": 3903,
+      "rng_end": {
+        "state": 4022231744,
+        "calls": 71
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    }
+  ]
+}

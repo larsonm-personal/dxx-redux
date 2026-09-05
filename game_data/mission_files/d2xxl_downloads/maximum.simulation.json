@@ -8,10 +8,9 @@
     "seed": 1,
     "status": "partial",
     "level_counts": {
-      "ok": 18,
+      "ok": 19,
       "failed": 1,
-      "timeout": 10,
-      "route_mismatch": 1
+      "timeout": 10
     },
     "levels": [
       {
@@ -694,8 +693,8 @@
       {
         "level_num": 19,
         "level_file": "psx19.rl2",
-        "route_input_sha256": "AEB9DA921D7039382B5C3D854A6E16519356DAAB01363489D6DA9CC224240FD0",
-        "status": "route_mismatch",
+        "route_input_sha256": "BB040A75F6314DE02DBE252BA506618B73130811DF05D86B05DBDEC684388849",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -746,8 +745,7 @@
         "rng_end": {
           "state": 2025613794,
           "calls": 789
-        },
-        "problem": "live objective sequence differs from route input"
+        }
       },
       {
         "level_num": 20,

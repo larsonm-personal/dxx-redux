@@ -1,0 +1,215 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "IRONBL01.MSN",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "failed": 3,
+    "timeout": 5
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "nemesis.rdl",
+      "route_input_sha256": "6DAFDE31F3A24D6E2057E5E8E032731131A7D3DA7049DBE88BCD3FCB61813E34",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 14
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 24
+        }
+      ],
+      "total_frames": 1457,
+      "rng_end": {
+        "state": 3269224778,
+        "calls": 77
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 2,
+      "level_file": "arkon01.rdl",
+      "route_input_sha256": "5F9EB98AC8C713A12F9A61E96F0BCEB2DC81950E5D768A02B33157BDCA0A27FB",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 17
+        },
+        {
+          "n": "gold key",
+          "s": 40
+        },
+        {
+          "n": "red key",
+          "s": 61
+        },
+        {
+          "n": "fly-through 4",
+          "s": 74
+        }
+      ],
+      "total_frames": 5309,
+      "rng_end": {
+        "state": 872078403,
+        "calls": 70
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 3,
+      "level_file": "hosthell.rdl",
+      "route_input_sha256": "B74B3C4F6B03CFD3DF47F901C46B8ECC9DD41DD49220AEA16839BABCC710FA56",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2516284547,
+        "calls": 6
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 4,
+      "level_file": "arkon02.rdl",
+      "route_input_sha256": "A1C91DE15143D27CF846B3F2BC5DFA7E1AA6F86450E55F38650F4CCD2725A5F7",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 9
+        }
+      ],
+      "total_frames": 5457,
+      "rng_end": {
+        "state": 4147913800,
+        "calls": 31
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 5,
+      "level_file": "nemsup.rdl",
+      "route_input_sha256": "67F12BA0E215B55FF1F94B938555C38A3494CD1EB47BDA5F1FAC1563FB8A0C2B",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 13
+        }
+      ],
+      "total_frames": 805,
+      "rng_end": {
+        "state": 2937909499,
+        "calls": 14
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 6,
+      "level_file": "arkon03.rdl",
+      "route_input_sha256": "F1ECCA68F0A57FE5AC5945D23BF2DCEDBA713C0DEF8FF74C436E463F867FA84A",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 18
+        }
+      ],
+      "total_frames": 1836,
+      "rng_end": {
+        "state": 744964398,
+        "calls": 25
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 7,
+      "level_file": "ironbla2.rdl",
+      "route_input_sha256": "6872C309EFF5E4EC4F29D45F029D01A2E56D4374D0DDB399194446A8DBD4B5AC",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 1
+        },
+        {
+          "n": "hidden door",
+          "s": 3
+        },
+        {
+          "n": "hidden door",
+          "s": 3
+        }
+      ],
+      "total_frames": 837,
+      "rng_end": {
+        "state": 2883693444,
+        "calls": 83
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": -1,
+      "level_file": "fadeout1.rdl",
+      "route_input_sha256": "0DFA8954106018CFDBD272382EB93DC9B7A81595FD712648C7F84A6491B4CC07",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "fly-through 0",
+          "s": 5
+        },
+        {
+          "n": "blue key",
+          "s": 28
+        }
+      ],
+      "total_frames": 7486,
+      "rng_end": {
+        "state": 3397090333,
+        "calls": 36
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    }
+  ]
+}

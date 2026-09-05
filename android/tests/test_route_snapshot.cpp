@@ -1616,6 +1616,21 @@ int main()
 	assert(closed_source_dependency.steps[1].trigger == 0);
 	assert(closed_source_dependency.steps[1].activation ==
 	       dxx_route::route_activation_kind::fly_through_trigger);
+	// Each fly-through switch requires the other switch to open its surface
+	auto cyclic_preparation_snapshot = closed_source_snapshot;
+	cyclic_preparation_snapshot.state.walls[2].kind =
+	    dxx_route::route_wall_kind::closed;
+	cyclic_preparation_snapshot.topology.walls[2].shootable_trigger = false;
+	cyclic_preparation_snapshot.topology.triggers[0].links.push_back({ 0, 2 });
+	const auto cyclic_preparation_dependency =
+	    dxx_route::resolve_trigger_dependency(
+	        cyclic_preparation_snapshot, planner_query,
+	        dxx_route::initial_route_progress_state(
+	            cyclic_preparation_snapshot, planner_query),
+	        1, 0);
+	assert(cyclic_preparation_dependency.attempted);
+	assert(!cyclic_preparation_dependency.resolved);
+	assert(cyclic_preparation_dependency.steps.empty());
 	auto narrow_trigger_snapshot = fly_through_snapshot;
 	narrow_trigger_snapshot.topology.segments[0].sides[0].clearance_radius = 1;
 	auto narrow_trigger_query = planner_query;

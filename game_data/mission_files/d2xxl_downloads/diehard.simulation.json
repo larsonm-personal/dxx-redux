@@ -9,9 +9,8 @@
   "level_counts": {
     "ok": 3,
     "failed": 1,
-    "timeout": 13,
-    "unsupported": 1,
-    "route_mismatch": 1
+    "timeout": 14,
+    "unsupported": 1
   },
   "levels": [
     {
@@ -109,7 +108,7 @@
     {
       "level_num": 4,
       "level_file": "DH04.RL2",
-      "route_input_sha256": "7413E1D82F667DB849C3C6EAC3C9A285BAFEF16F53F16859F504AA0B30A3E660",
+      "route_input_sha256": "8CCE9FACE4DD63BAFDEDD666B923A1EE531FBD13A5C1CCD718DF736FCB91735F",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -160,8 +159,8 @@
     {
       "level_num": 6,
       "level_file": "DH06.RL2",
-      "route_input_sha256": "0F265428F94444D0CD5BF62CB16FC8719F3A5CD91388F65A7517D2FC7490C82B",
-      "status": "route_mismatch",
+      "route_input_sha256": "CB5A36C5B494708D58923D0459F0F5105A9EC5DFC14B72C653C442C8D1A48C10",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -193,7 +192,7 @@
         "state": 1177098591,
         "calls": 1162
       },
-      "problem": "live objective sequence differs from route input"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 7,
@@ -292,7 +291,7 @@
     {
       "level_num": 11,
       "level_file": "DH11.RL2",
-      "route_input_sha256": "CB95C65394D24C8B955C2B84FE449D57D3892541420997A84E9BD4DF18013CAA",
+      "route_input_sha256": "1AD153FA31EB63744C053C5942E1C9263705B75A14F03E3B3CED93C09DB2F338",
       "status": "failed",
       "rng_start": {
         "state": 1,

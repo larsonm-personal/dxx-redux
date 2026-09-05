@@ -1,0 +1,133 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "ROG.MSN",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 1,
+    "failed": 4
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "level01.rdl",
+      "route_input_sha256": "9295F630577B2AA6B8F7AEDE94A7E8E68B250478D169233E6A1A7677763E418F",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 12
+        },
+        {
+          "n": "red key",
+          "s": 12
+        },
+        {
+          "n": "pass-through 7",
+          "s": 21
+        },
+        {
+          "n": "pass-through 6",
+          "s": 23
+        },
+        {
+          "n": "blastable wall",
+          "s": 27
+        },
+        {
+          "n": "fly-through 8",
+          "s": 27
+        },
+        {
+          "n": "reactor",
+          "s": 34
+        },
+        {
+          "n": "exit",
+          "s": 77
+        }
+      ],
+      "total_frames": 4620,
+      "rng_end": {
+        "state": 2805861856,
+        "calls": 167
+      }
+    },
+    {
+      "level_num": 2,
+      "level_file": "level02.rdl",
+      "route_input_sha256": "053DA53B11FB4A47B240BD45D393AA4E9E3EB25AB937026875BCE6D60309CAC1",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2516284547,
+        "calls": 6
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 3,
+      "level_file": "level03.rdl",
+      "route_input_sha256": "00C1C7FB061EEE61F34DC032001A22500CB603CF08355EE30F0FAD4FB28ED215",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2516284547,
+        "calls": 6
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 4,
+      "level_file": "level04.rdl",
+      "route_input_sha256": "651FBBFD4E96366514FA5BC15CC277F9727433C4A8E48A6EB7E25E676A642ED1",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2516284547,
+        "calls": 6
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 5,
+      "level_file": "level13.rdl",
+      "route_input_sha256": "98F89FD91901F8AB4046383A333DE8CAAB0C97011B8607CB08CD9D51514BBBBF",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2516284547,
+        "calls": 6
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    }
+  ]
+}

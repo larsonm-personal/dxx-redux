@@ -1,0 +1,76 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "lseries.msn",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "failed": 1,
+    "timeout": 2
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "lo.rdl",
+      "route_input_sha256": "3C0BEF257E38C201AD88CBFF8D46333A4FA4DD685486F7AD6C303017EE831B0D",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2516284547,
+        "calls": 6
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 2,
+      "level_file": "lsl.rdl",
+      "route_input_sha256": "54185C7B0620F9D84CF6994C4B7DB0737E291507FCD709E1802187FD011CBFCC",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 13
+        },
+        {
+          "n": "red key",
+          "s": 34
+        }
+      ],
+      "total_frames": 3041,
+      "rng_end": {
+        "state": 3731173240,
+        "calls": 47
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 3,
+      "level_file": "lmb.rdl",
+      "route_input_sha256": "565CAD86BF3A398DAA51BB7EAC0C9FA7E553DBB9FD75634701210DC66D865D6E",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 595,
+      "rng_end": {
+        "state": 3535774167,
+        "calls": 18
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    }
+  ]
+}

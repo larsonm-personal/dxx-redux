@@ -1,0 +1,2292 @@
+[
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "1sttrial.msn",
+    "target_index": 0,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "1sttrial.rdl",
+        "route_input_sha256": "BC510AAB8410C3469F218A9A759750F7A3AB785E607D2C6887AE736CD6602879",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 2
+          },
+          {
+            "n": "destroy robot carrying blue key",
+            "s": 5
+          }
+        ],
+        "total_frames": 5569,
+        "rng_end": {
+          "state": 536951780,
+          "calls": 115
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "alpha.msn",
+    "target_index": 1,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "partial",
+    "level_counts": {
+      "ok": 3,
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "alpha001.rdl",
+        "route_input_sha256": "88997417C68813F87CB7ADA7BB68FFB4B914915B15ED01A8F0164BC67EF3E08E",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "destroy robot carrying blue key",
+            "s": 72
+          },
+          {
+            "n": "destroy robot carrying gold key",
+            "s": 140
+          },
+          {
+            "n": "destroy robot carrying red key",
+            "s": 161
+          },
+          {
+            "n": "reactor",
+            "s": 171
+          },
+          {
+            "n": "exit",
+            "s": 186
+          }
+        ],
+        "total_frames": 11137,
+        "rng_end": {
+          "state": 3105560752,
+          "calls": 151
+        }
+      },
+      {
+        "level_num": 2,
+        "level_file": "alpha002.rdl",
+        "route_input_sha256": "4C23795FA9339A49A6500320FF2385736A7F65231F735DA38A0CB6D4212C232A",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "destroy robot carrying gold key",
+            "s": 14
+          },
+          {
+            "n": "destroy robot carrying blue key",
+            "s": 34
+          },
+          {
+            "n": "destroy robot carrying red key",
+            "s": 55
+          },
+          {
+            "n": "reactor",
+            "s": 69
+          },
+          {
+            "n": "exit",
+            "s": 75
+          }
+        ],
+        "total_frames": 4505,
+        "rng_end": {
+          "state": 2358149846,
+          "calls": 145
+        }
+      },
+      {
+        "level_num": 3,
+        "level_file": "alpha003.rdl",
+        "route_input_sha256": "05C545F1009B91F602601A255831AC8BF9555FFBC993A50558E417E90DFA128E",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "fly-through 26",
+            "s": 8
+          },
+          {
+            "n": "hidden door",
+            "s": 11
+          },
+          {
+            "n": "reactor",
+            "s": 18
+          },
+          {
+            "n": "fly-through 24",
+            "s": 23
+          },
+          {
+            "n": "exit",
+            "s": 31
+          }
+        ],
+        "total_frames": 1880,
+        "rng_end": {
+          "state": 1228891816,
+          "calls": 63
+        }
+      },
+      {
+        "level_num": 4,
+        "level_file": "alpha004.rdl",
+        "route_input_sha256": "FD1F885DAF49BBC106D454C9903C736F0E20B90F7E6FE4D17E5B604B0B24013A",
+        "status": "infrastructure_error",
+        "problem": "Route engine infrastructure failure for CD - Dimensions for Descent (USA).json|1|4|alpha004.rdl, exit 1, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\CD_-_Dimensions_for_Descent_USA_.json_1_4_alpha004.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "battle.msn",
+    "target_index": 2,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "BATTLE.RDL",
+        "route_input_sha256": "8638C748954269B5EF36AFF73114AA880829D27D1FBC0B817DAED348B3EF33B3",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "exit",
+            "s": 6
+          }
+        ],
+        "total_frames": 350,
+        "rng_end": {
+          "state": 3794901700,
+          "calls": 19
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "bdrome10.msn",
+    "target_index": 3,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "bdrome10.rdl",
+        "route_input_sha256": "AE3B420317A6F7E5F2349E9F0580F14E5C8477DCDFBED59A5D6884C1655347F3",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "fly-through 4",
+            "s": 3
+          },
+          {
+            "n": "hidden door",
+            "s": 9
+          },
+          {
+            "n": "gold key",
+            "s": 14
+          }
+        ],
+        "total_frames": 5526,
+        "rng_end": {
+          "state": 3731173240,
+          "calls": 47
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "beta.msn",
+    "target_index": 4,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "beta1.rdl",
+        "route_input_sha256": "0566E94567D88BDA8CF230072399A5A38495BDAB12F82787B82CD6C4528FAFFE",
+        "status": "infrastructure_error",
+        "problem": "Route engine infrastructure failure for CD - Dimensions for Descent (USA).json|4|0|beta1.rdl, exit 1, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\CD_-_Dimensions_for_Descent_USA_.json_4_0_beta1.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "block.msn",
+    "target_index": 5,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "block.rdl",
+        "route_input_sha256": "F2EBEEF3EE9F8C5608FD5C2D3C4ED3A700485E83E05BFE12DA315402B656AF2E",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 5
+          },
+          {
+            "n": "exit",
+            "s": 7
+          }
+        ],
+        "total_frames": 406,
+        "rng_end": {
+          "state": 1969681615,
+          "calls": 26
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "borg47.msn",
+    "target_index": 6,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "borg47.rdl",
+        "route_input_sha256": "CD46FB3E02E1465185A85DE6305B73479347D32A61D5A6A70409051DF7BBFB44",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 4144,
+        "rng_end": {
+          "state": 684462146,
+          "calls": 53
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "boydsend.msn",
+    "target_index": 7,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "boydsend.rdl",
+        "route_input_sha256": "9E24216F97498965B72D53BE89C6F39CEE854CDC9A3929147484D58CEE4999CD",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "red key",
+            "s": 5
+          },
+          {
+            "n": "reactor",
+            "s": 13
+          },
+          {
+            "n": "exit",
+            "s": 20
+          }
+        ],
+        "total_frames": 1194,
+        "rng_end": {
+          "state": 1775811865,
+          "calls": 40
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "bri1.msn",
+    "target_index": 8,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "bri1.rdl",
+        "route_input_sha256": "A7A0E478D709997DF83C55E5E6634C915345F15746A97E81DB88937324B52EE4",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 12
+          }
+        ],
+        "total_frames": 5172,
+        "rng_end": {
+          "state": 3535774167,
+          "calls": 18
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "brtrade.msn",
+    "target_index": 9,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "brtrade.rdl",
+        "route_input_sha256": "CD09C221BDDF6996B15C2164C2EAC8B01BD1675EF59CBEE98AD1A9F6C1150F86",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 14
+          }
+        ],
+        "total_frames": 1940,
+        "rng_end": {
+          "state": 3914758370,
+          "calls": 21
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "cbox.msn",
+    "target_index": 10,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "failed": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "cbox_x.rdl",
+        "route_input_sha256": "3B3858610412E9EEFC89DE406BDB99AC011EA3A741D601A17E833DF5A79A9868",
+        "status": "failed",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 9
+          },
+          {
+            "n": "gold key",
+            "s": 20
+          }
+        ],
+        "total_frames": 1183,
+        "rng_end": {
+          "state": 3914758370,
+          "calls": 21
+        },
+        "problem": "live Guide-Bot route has no actionable goal"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "chaosii.msn",
+    "target_index": 11,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "chii-1.rdl",
+        "route_input_sha256": "8402F4907E7050DEF74E5730CDE23F4552F5ADD648E1911C1C2712D37C3CC3D1",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 6
+          },
+          {
+            "n": "exit",
+            "s": 7
+          }
+        ],
+        "total_frames": 414,
+        "rng_end": {
+          "state": 1969681615,
+          "calls": 26
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "class1.msn",
+    "target_index": 12,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "CLASS1.RDL",
+        "route_input_sha256": "C416E70EE46B9DD965AEC64B24B53A6071B4798B5B1DDF4079158868300C1540",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 3895,
+        "rng_end": {
+          "state": 1627576247,
+          "calls": 50
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "cobalt.msn",
+    "target_index": 13,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "Cobalt.rdl",
+        "route_input_sha256": "3FE94477CFBB7822ABD01013740EC268DF2FBECF90B09DB83AD12A494A3B9EBC",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "red key",
+            "s": 4
+          }
+        ],
+        "total_frames": 933,
+        "rng_end": {
+          "state": 3794901700,
+          "calls": 19
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "coral1b.msn",
+    "target_index": 14,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 4
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "coral1.rdl",
+        "route_input_sha256": "9AFE251693A9AE6553BAFB79481E142085967231D94EE56E5277962904877778",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 10
+          },
+          {
+            "n": "gold key",
+            "s": 10
+          }
+        ],
+        "total_frames": 1194,
+        "rng_end": {
+          "state": 3776134388,
+          "calls": 35
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      },
+      {
+        "level_num": 2,
+        "level_file": "coral2.rdl",
+        "route_input_sha256": "A25732F92E74F6F62D502395AD7DFF02EC1C9CE313FA80AD370C49DFF30CBE1B",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 8
+          }
+        ],
+        "total_frames": 4471,
+        "rng_end": {
+          "state": 675780521,
+          "calls": 24
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      },
+      {
+        "level_num": 3,
+        "level_file": "coral3.rdl",
+        "route_input_sha256": "792C71B61F2E760A2504BAA558CCAE62DD53EC62B175EE1DE930539ED1A1169F",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 10
+          },
+          {
+            "n": "blue key",
+            "s": 10
+          },
+          {
+            "n": "hidden door",
+            "s": 20
+          },
+          {
+            "n": "fly-through 0",
+            "s": 27
+          },
+          {
+            "n": "gold key",
+            "s": 35
+          }
+        ],
+        "total_frames": 6664,
+        "rng_end": {
+          "state": 3269224778,
+          "calls": 77
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      },
+      {
+        "level_num": 4,
+        "level_file": "coral4.rdl",
+        "route_input_sha256": "E1E989B19D5A54555CEE34C73C84E29654F239F7B849C8F254BB31972CF93F0B",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 16
+          },
+          {
+            "n": "blue key",
+            "s": 18
+          },
+          {
+            "n": "gold key",
+            "s": 32
+          }
+        ],
+        "total_frames": 6417,
+        "rng_end": {
+          "state": 948921754,
+          "calls": 61
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "darkseri.msn",
+    "target_index": 15,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "partial",
+    "level_counts": {
+      "ok": 1,
+      "failed": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "dark001.rdl",
+        "route_input_sha256": "5AF4BE9C35919FD211F9AA5F16D4A27D174D51E74EFC766D7EEA1011CE9BAE28",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 0
+          },
+          {
+            "n": "exit",
+            "s": 1
+          }
+        ],
+        "total_frames": 61,
+        "rng_end": {
+          "state": 675780521,
+          "calls": 24
+        }
+      },
+      {
+        "level_num": 2,
+        "level_file": "dark002.rdl",
+        "route_input_sha256": "EE820859264333B93A195E296F811A589A67E0850CBCFBFF6935D4021496FB4C",
+        "status": "failed",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 0,
+        "rng_end": {
+          "state": 2516284547,
+          "calls": 6
+        },
+        "problem": "live Guide-Bot route has no actionable goal"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "demo.msn",
+    "target_index": 16,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "partial",
+    "level_counts": {
+      "ok": 1,
+      "failed": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "demo.rdl",
+        "route_input_sha256": "7179198BDD1DC90F50D8222BB64082D393FFFB90EAE4863B44A22D975246AEDE",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 15
+          },
+          {
+            "n": "exit",
+            "s": 19
+          }
+        ],
+        "total_frames": 1114,
+        "rng_end": {
+          "state": 744964398,
+          "calls": 25
+        }
+      },
+      {
+        "level_num": 2,
+        "level_file": "my_demo.rdl",
+        "route_input_sha256": "6A55857913A733CA1115C2CA7AAB3AA6B41D01F5D44A82E8CC90FD9FCEB2491E",
+        "status": "failed",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 0,
+        "rng_end": {
+          "state": 2516284547,
+          "calls": 6
+        },
+        "problem": "live Guide-Bot route has no actionable goal"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "dsniper.msn",
+    "target_index": 17,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "partial",
+    "level_counts": {
+      "ok": 1,
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "snipe1.rdl",
+        "route_input_sha256": "117B0392FA233DCE8A6E613149F83819596A3D01210DA2B7A100834AAB38B60D",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "destroy robot carrying red key",
+            "s": 7
+          },
+          {
+            "n": "reactor",
+            "s": 17
+          },
+          {
+            "n": "exit",
+            "s": 29
+          }
+        ],
+        "total_frames": 1739,
+        "rng_end": {
+          "state": 2673245591,
+          "calls": 82
+        }
+      },
+      {
+        "level_num": 2,
+        "level_file": "snipe2.rdl",
+        "route_input_sha256": "AE0102262FCD45C2446C67463E60601ADF3B879AC70A687B8121E4B6DAFBC79C",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 3952,
+        "rng_end": {
+          "state": 948921754,
+          "calls": 61
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "eye.msn",
+    "target_index": 18,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 2
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "eye.rdl",
+        "route_input_sha256": "D1E258F4B788421813D0F61A411D32B5A0477398FA15C2DDAB77E6DD2CB347F1",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 6
+          },
+          {
+            "n": "exit",
+            "s": 12
+          }
+        ],
+        "total_frames": 747,
+        "rng_end": {
+          "state": 744964398,
+          "calls": 25
+        }
+      },
+      {
+        "level_num": 2,
+        "level_file": "eye002.rdl",
+        "route_input_sha256": "E004786E26EBF379B0AED3452181F668BD7968DFCE6037C4E1B9697CEB74AF3E",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 3
+          },
+          {
+            "n": "exit",
+            "s": 8
+          }
+        ],
+        "total_frames": 497,
+        "rng_end": {
+          "state": 1969681615,
+          "calls": 26
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "insane.msn",
+    "target_index": 19,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "insane.rdl",
+        "route_input_sha256": "E7119DB86CADB66FDBC5017228CF48FEE4B7BFD6168E46EBDA92B55BBC49164C",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blastable wall",
+            "s": 1
+          },
+          {
+            "n": "hidden door",
+            "s": 4
+          },
+          {
+            "n": "gold key",
+            "s": 5
+          },
+          {
+            "n": "blue key",
+            "s": 17
+          },
+          {
+            "n": "fly-through 12",
+            "s": 31
+          },
+          {
+            "n": "red key",
+            "s": 51
+          },
+          {
+            "n": "reactor",
+            "s": 79
+          },
+          {
+            "n": "exit",
+            "s": 82
+          }
+        ],
+        "total_frames": 4948,
+        "rng_end": {
+          "state": 811863863,
+          "calls": 178
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "josha.msn",
+    "target_index": 20,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "josha25.rdl",
+        "route_input_sha256": "07D162338AEDADE807B0BE8381D2C31D47AD4517ED21373EB2B4945F3E8F6210",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "red key",
+            "s": 9
+          },
+          {
+            "n": "reactor",
+            "s": 20
+          },
+          {
+            "n": "exit",
+            "s": 23
+          }
+        ],
+        "total_frames": 1385,
+        "rng_end": {
+          "state": 2911203427,
+          "calls": 38
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "joust.msn",
+    "target_index": 21,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "joust.rdl",
+        "route_input_sha256": "A7AD9E85E6EB76F1D93A8553855B0DC4E8EB1708345C3732455366F917B1A561",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 14
+          },
+          {
+            "n": "exit",
+            "s": 29
+          }
+        ],
+        "total_frames": 1761,
+        "rng_end": {
+          "state": 675780521,
+          "calls": 24
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "karlmonb.msn",
+    "target_index": 22,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "karlmb01.rdl",
+        "route_input_sha256": "13B9CA85DECADFB8E0A2EA09BFD9123449D1151A3D346FD9AC4DC054F05D2514",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "fly-through 3",
+            "s": 7
+          },
+          {
+            "n": "gold key",
+            "s": 8
+          },
+          {
+            "n": "red key",
+            "s": 19
+          },
+          {
+            "n": "blue key",
+            "s": 32
+          }
+        ],
+        "total_frames": 3260,
+        "rng_end": {
+          "state": 403521121,
+          "calls": 160
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "lava.msn",
+    "target_index": 23,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "lava.rdl",
+        "route_input_sha256": "33B387F888EC40D5597DA7B9E129023A064B45F029EFD7F2D2E389CF6F1AC321",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 6
+          },
+          {
+            "n": "exit",
+            "s": 12
+          }
+        ],
+        "total_frames": 703,
+        "rng_end": {
+          "state": 744964398,
+          "calls": 25
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "lava4d.msn",
+    "target_index": 24,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "lava4d.rdl",
+        "route_input_sha256": "3DB2FDFADB9BDE9381C001B3B02A7D106601F5DDDA0D62DC0CBC8E229F68CF4C",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 4141,
+        "rng_end": {
+          "state": 836760821,
+          "calls": 12
+        },
+        "problem": "route confirmation exceeded 69-second simulation budget"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "maze.msn",
+    "target_index": 25,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "failed": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "maze.rdl",
+        "route_input_sha256": "182657E7C851B49895F3B03AFC68F5F1EA540C5EA0AEF7AD75FB3C77B5A51E2E",
+        "status": "failed",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "gold key",
+            "s": 5
+          }
+        ],
+        "total_frames": 308,
+        "rng_end": {
+          "state": 836760821,
+          "calls": 12
+        },
+        "problem": "live Guide-Bot route has no actionable goal"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "megadeth.msn",
+    "target_index": 26,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "MEGADETH.RDL",
+        "route_input_sha256": "FFEECD2F0137D1634DF5C654A444BB7E84FA4BF9FF9F2C6F3C03C58CA702A6D1",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 8
+          },
+          {
+            "n": "exit",
+            "s": 14
+          }
+        ],
+        "total_frames": 823,
+        "rng_end": {
+          "state": 675780521,
+          "calls": 24
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "munition.msn",
+    "target_index": 27,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "HOPE.RDL",
+        "route_input_sha256": "EF292D08D6FBB44A3C732683B0CF8E48E46E6B6FCECBF8C8DD815281776D6986",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "pass-through 14",
+            "s": 5
+          },
+          {
+            "n": "destroy robot carrying blue key",
+            "s": 8
+          }
+        ],
+        "total_frames": 970,
+        "rng_end": {
+          "state": 1660932118,
+          "calls": 81
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "nailed.msn",
+    "target_index": 28,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 3,
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "BRINSANE.RDL",
+        "route_input_sha256": "967EAD55BBAA023D6E9C35E15E472CE80AF5D7648690B316D399BCEF1A5C3606",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 2401,
+        "rng_end": {
+          "state": 3794901700,
+          "calls": 19
+        },
+        "problem": "route confirmation exceeded 40-second simulation budget"
+      },
+      {
+        "level_num": 2,
+        "level_file": "BRSPIRAL.RDL",
+        "route_input_sha256": "E82DD780839C519F3025F5A18A9A4F341138B9205034E1822B1AA07BA3054A28",
+        "status": "infrastructure_error",
+        "problem": "Route engine infrastructure failure for CD - Dimensions for Descent (USA).json|28|2|BRSPIRAL.RDL, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\CD_-_Dimensions_for_Descent_USA_.json_28_2_BRSPIRAL.RDL_run_1.log"
+      },
+      {
+        "level_num": 3,
+        "level_file": "BRATTICA.RDL",
+        "route_input_sha256": "FEFF16573DDF74FBC589953236C33346CB6BE36D576FC2BD702D7E38606DF35D",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 20
+          },
+          {
+            "n": "gold key",
+            "s": 33
+          }
+        ],
+        "total_frames": 2679,
+        "rng_end": {
+          "state": 3397090333,
+          "calls": 36
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      },
+      {
+        "level_num": 4,
+        "level_file": "BRTRADE.RDL",
+        "route_input_sha256": "0C798ACD9E117594B9E7E32D5826D9499CC85363212A38891CE6CDD61874F1B3",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 14
+          }
+        ],
+        "total_frames": 1940,
+        "rng_end": {
+          "state": 3914758370,
+          "calls": 21
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "razor.msn",
+    "target_index": 29,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "razor.rdl",
+        "route_input_sha256": "04F194E64C3E161DE6054993CA315AD2B46A249BBF69D3452A9C6B4B870F7758",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 4
+          },
+          {
+            "n": "exit",
+            "s": 10
+          }
+        ],
+        "total_frames": 613,
+        "rng_end": {
+          "state": 675780521,
+          "calls": 24
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "realsmal.msn",
+    "target_index": 30,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "realsmal.rdl",
+        "route_input_sha256": "B106CF30BEF69192B5B790BA535DAF5545BAEE9792046EDDD79AC029173EF13D",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 5
+          },
+          {
+            "n": "red key",
+            "s": 17
+          },
+          {
+            "n": "reactor",
+            "s": 22
+          },
+          {
+            "n": "exit",
+            "s": 26
+          }
+        ],
+        "total_frames": 1532,
+        "rng_end": {
+          "state": 2207819405,
+          "calls": 52
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "rooms.msn",
+    "target_index": 31,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "rooms.rdl",
+        "route_input_sha256": "454522F3C471802F2969D49E8C46D3AC4F62A0BBB2C3B97D14F03AD515AB1A04",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 9
+          },
+          {
+            "n": "blue key",
+            "s": 11
+          }
+        ],
+        "total_frames": 1830,
+        "rng_end": {
+          "state": 1448521415,
+          "calls": 34
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "rough.msn",
+    "target_index": 32,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "ROUGH.RDL",
+        "route_input_sha256": "5947A1325CE8BFA72330E98516B7C736BF66B8137F86B364FC4E424205DB5A09",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 2341,
+        "rng_end": {
+          "state": 2413161777,
+          "calls": 25680
+        },
+        "problem": "route confirmation exceeded 39-second simulation budget"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "rubicon.msn",
+    "target_index": 33,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "level01.rdl",
+        "route_input_sha256": "4CF68A2119257FCE183E9D09BDDB1E3F351D0B69EC553B14E5890FD64E26184D",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "red key",
+            "s": 14
+          },
+          {
+            "n": "gold key",
+            "s": 33
+          },
+          {
+            "n": "blue key",
+            "s": 47
+          },
+          {
+            "n": "reactor",
+            "s": 73
+          },
+          {
+            "n": "exit",
+            "s": 86
+          }
+        ],
+        "total_frames": 5152,
+        "rng_end": {
+          "state": 3008295217,
+          "calls": 80
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "scartrek.msn",
+    "target_index": 34,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "scartrek.rdl",
+        "route_input_sha256": "57D902172D7BC27EABD320E8D8A49BDBC041DDE75410E89019593CDCA61C8558",
+        "status": "infrastructure_error",
+        "problem": "Route engine infrastructure failure for CD - Dimensions for Descent (USA).json|34|0|scartrek.rdl, exit -1073740791, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\CD_-_Dimensions_for_Descent_USA_.json_34_0_scartrek.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "sjb_lev1.msn",
+    "target_index": 35,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "sjb_lev1.rdl",
+        "route_input_sha256": "B3FEBE8F62542CC0604ACFFA144A5E008F1A57C5214851C9591D99FB7AC832B0",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 3
+          },
+          {
+            "n": "hidden door",
+            "s": 5
+          },
+          {
+            "n": "gold key",
+            "s": 6
+          },
+          {
+            "n": "hidden door",
+            "s": 29
+          },
+          {
+            "n": "red key",
+            "s": 32
+          },
+          {
+            "n": "reactor",
+            "s": 52
+          },
+          {
+            "n": "exit",
+            "s": 60
+          }
+        ],
+        "total_frames": 3589,
+        "rng_end": {
+          "state": 1948555936,
+          "calls": 231
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "slayer.msn",
+    "target_index": 36,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "partial",
+    "level_counts": {
+      "ok": 1,
+      "timeout": 2
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "slayer01.rdl",
+        "route_input_sha256": "D7E00CF903C0FF944E46D2AF45D60AF6061EE547DC7083E779AD1FB4C47AA65A",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 7
+          },
+          {
+            "n": "destroy robot carrying blue key",
+            "s": 10
+          },
+          {
+            "n": "gold key",
+            "s": 36
+          },
+          {
+            "n": "red key",
+            "s": 55
+          },
+          {
+            "n": "reactor",
+            "s": 69
+          },
+          {
+            "n": "exit",
+            "s": 72
+          }
+        ],
+        "total_frames": 4340,
+        "rng_end": {
+          "state": 1598124042,
+          "calls": 141
+        }
+      },
+      {
+        "level_num": 2,
+        "level_file": "slayer02.rdl",
+        "route_input_sha256": "46A0063AF0B005B02415340CFC3EC5FCF90AE5DA662A18B884EA4D24B7C73AC9",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 4924,
+        "rng_end": {
+          "state": 3791773014,
+          "calls": 17
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      },
+      {
+        "level_num": 3,
+        "level_file": "slayer03.rdl",
+        "route_input_sha256": "26114104C5BE283FF9F07F3FC60BC687F7AC88C756EE57C5BA8B818E92F13DBA",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 4783,
+        "rng_end": {
+          "state": 836760821,
+          "calls": 12
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "sniper.msn",
+    "target_index": 37,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "snipe1.rdl",
+        "route_input_sha256": "1B6A7A7B959025DD0C97E5A16819A64440B0A6115DB08FC9F41F3B1AC3B76EE8",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "destroy robot carrying red key",
+            "s": 7
+          },
+          {
+            "n": "reactor",
+            "s": 17
+          },
+          {
+            "n": "exit",
+            "s": 29
+          }
+        ],
+        "total_frames": 1739,
+        "rng_end": {
+          "state": 2673245591,
+          "calls": 82
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "spiral.msn",
+    "target_index": 38,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "spiral.rdl",
+        "route_input_sha256": "9BC187FA149A7713467AB9E9DEE4B2C5B117CDB14107C13D85C30BB056556C92",
+        "status": "infrastructure_error",
+        "problem": "Route engine infrastructure failure for CD - Dimensions for Descent (USA).json|38|0|spiral.rdl, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\CD_-_Dimensions_for_Descent_USA_.json_38_0_spiral.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "spooge.msn",
+    "target_index": 39,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "spooge.rdl",
+        "route_input_sha256": "5CDA4E3AEE1EA5D746868381F9D15D04CD193A7399A962089867C6263C7D8BC5",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 4
+          },
+          {
+            "n": "hidden door",
+            "s": 9
+          }
+        ],
+        "total_frames": 1093,
+        "rng_end": {
+          "state": 4147913800,
+          "calls": 31
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "squeezer.msn",
+    "target_index": 40,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "SQUEEZER.RDL",
+        "route_input_sha256": "2867EAEE2D35CCDEB0F0649E358FC774635E9B14DD62D8371566C46F5E6FDB87",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 5
+          },
+          {
+            "n": "exit",
+            "s": 8
+          }
+        ],
+        "total_frames": 491,
+        "rng_end": {
+          "state": 744964398,
+          "calls": 25
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "tcamp.msn",
+    "target_index": 41,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "tcamp.rdl",
+        "route_input_sha256": "3A83B2B85885A5ED5073EF09485679FCC124F7F029FF9D359F08B9C962B8CFA1",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 6
+          },
+          {
+            "n": "exit",
+            "s": 19
+          }
+        ],
+        "total_frames": 1110,
+        "rng_end": {
+          "state": 744964398,
+          "calls": 25
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "turners.msn",
+    "target_index": 42,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "turners.rdl",
+        "route_input_sha256": "E7F0E1D0FCF05AF944471515517370300553FB5FCC8F6D11A84647043AD2F544",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 12
+          },
+          {
+            "n": "exit",
+            "s": 17
+          }
+        ],
+        "total_frames": 1014,
+        "rng_end": {
+          "state": 3008955749,
+          "calls": 28
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "twisty.msn",
+    "target_index": 43,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "twisty.rdl",
+        "route_input_sha256": "973518C19600C13D619197D0B57F3D7F94417CD35254E73DAFAE10160EACC268",
+        "status": "infrastructure_error",
+        "problem": "Route engine process timeout after 180 seconds for CD - Dimensions for Descent (USA).json|43|0|twisty.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\CD_-_Dimensions_for_Descent_USA_.json_43_0_twisty.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "viper.msn",
+    "target_index": 44,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "Viper.rdl",
+        "route_input_sha256": "D619C0A651B50099A902FF7A867C427DC1ED2C071BE3C90A133DD6C0A8AAF4B7",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 8
+          },
+          {
+            "n": "exit",
+            "s": 13
+          }
+        ],
+        "total_frames": 785,
+        "rng_end": {
+          "state": 675780521,
+          "calls": 24
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "wild_3.msn",
+    "target_index": 45,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 3
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "level01x.rdl",
+        "route_input_sha256": "81BE615DC6E2902BBE122979088476880A89D0520C4DEDE39210F3A53EB1B852",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "destroy robot carrying red key",
+            "s": 4
+          }
+        ],
+        "total_frames": 4141,
+        "rng_end": {
+          "state": 1627576247,
+          "calls": 50
+        },
+        "problem": "route confirmation exceeded 69-second simulation budget"
+      },
+      {
+        "level_num": 2,
+        "level_file": "level07x.rdl",
+        "route_input_sha256": "D3C16D0A3021A1E989BDD284EDCA441645257DC757808538878D337CD1B259D8",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 1259,
+        "rng_end": {
+          "state": 2111915288,
+          "calls": 15
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      },
+      {
+        "level_num": 3,
+        "level_file": "level27x.rdl",
+        "route_input_sha256": "F19C46AB9EFCD443B2E4902B316EF7DF84889232170BFF77ADC3E6C665872ED8",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 622,
+        "rng_end": {
+          "state": 595337866,
+          "calls": 13
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "ziv4.msn",
+    "target_index": 46,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "ziv4.rdl",
+        "route_input_sha256": "0B2E23FEB12A9EB828CD55DFDDC779C333CABE6B08AEEA5DAC37F1C69B948D3A",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 4
+          }
+        ],
+        "total_frames": 4918,
+        "rng_end": {
+          "state": 1343201072,
+          "calls": 23
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "zoo5.msn",
+    "target_index": 47,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "zoo5.rdl",
+        "route_input_sha256": "760C043E2E61FF8BAA1B8D24E2D7D44C659BF4548D41442751D25A53134F7463",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 1
+          },
+          {
+            "n": "exit",
+            "s": 1
+          }
+        ],
+        "total_frames": 58,
+        "rng_end": {
+          "state": 3823029677,
+          "calls": 20
+        }
+      }
+    ]
+  }
+]

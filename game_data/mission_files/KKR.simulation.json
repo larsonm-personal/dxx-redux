@@ -50,12 +50,16 @@
         {
           "n": "switch 1",
           "s": 43
+        },
+        {
+          "n": "boss",
+          "s": 86
         }
       ],
-      "total_frames": 7898,
+      "total_frames": 9193,
       "rng_end": {
-        "state": 1528720303,
-        "calls": 2874
+        "state": 1559631503,
+        "calls": 4698
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },

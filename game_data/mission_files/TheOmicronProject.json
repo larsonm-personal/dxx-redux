@@ -742,9 +742,9 @@
         "mine_volume": 88434100.0,
         "mine_volume_normalized": 19.3387,
         "mine_volume_text": "19x",
-        "travel_distance": 7166.5,
-        "travel_time_seconds": 143,
-        "travel_time_text": "2M:23S",
+        "travel_distance": 6976.4,
+        "travel_time_seconds": 140,
+        "travel_time_text": "2M:20S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -853,41 +853,6 @@
           {
             "index": 6,
             "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 10",
-            "seg": 322,
-            "side": 5,
-            "wall": 169,
-            "label_pos": {
-              "x": 76.6,
-              "y": -147.0,
-              "z": -446.2
-            },
-            "distance": 379.8,
-            "trigger": 10,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 612,
-                "side": 5,
-                "wall": 175
-              },
-              {
-                "seg": 324,
-                "side": 5,
-                "wall": 190
-              },
-              {
-                "seg": 441,
-                "side": 5,
-                "wall": 192
-              }
-            ]
-          },
-          {
-            "index": 7,
-            "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 1",
             "seg": 129,
@@ -898,7 +863,7 @@
               "y": -148.0,
               "z": 117.3
             },
-            "distance": 682.7,
+            "distance": 564.2,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -916,7 +881,7 @@
             ]
           },
           {
-            "index": 8,
+            "index": 7,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 7",
@@ -951,6 +916,41 @@
             ]
           },
           {
+            "index": 8,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 10",
+            "seg": 322,
+            "side": 5,
+            "wall": 169,
+            "label_pos": {
+              "x": 78.2,
+              "y": -147.0,
+              "z": -476.1
+            },
+            "distance": 189.2,
+            "trigger": 10,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 612,
+                "side": 5,
+                "wall": 175
+              },
+              {
+                "seg": 324,
+                "side": 5,
+                "wall": 190
+              },
+              {
+                "seg": 441,
+                "side": 5,
+                "wall": 192
+              }
+            ]
+          },
+          {
             "index": 9,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
@@ -963,7 +963,7 @@
               "y": -131.9,
               "z": -538.4
             },
-            "distance": 170.2,
+            "distance": 299.2,
             "trigger": 13,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -993,7 +993,7 @@
               "y": -29.1,
               "z": -373.6
             },
-            "distance": 739.9,
+            "distance": 729.9,
             "trigger": 38,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1064,9 +1064,9 @@
         "mine_volume": 287042000.0,
         "mine_volume_normalized": 62.7701,
         "mine_volume_text": "63x",
-        "travel_distance": 6782.5,
-        "travel_time_seconds": 136,
-        "travel_time_text": "2M:16S",
+        "travel_distance": 6756.1,
+        "travel_time_seconds": 135,
+        "travel_time_text": "2M:15S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -1149,7 +1149,7 @@
               "y": -558.0,
               "z": 717.1
             },
-            "distance": 1732.1,
+            "distance": 1705.7,
             "trigger": 16,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",

@@ -422,7 +422,8 @@ object MissionZipMusic {
                 containerPath = archiveEntryPath,
                 catalogBudget = catalogBudget,
             )
-        openZipInputStreamSkippingPreamble(input).use { zip ->
+        // A DXA can contain a full soundtrack; its source limit is separate from the ZIP preamble limit
+        openZipInputStreamSkippingPreamble(input, maxSourceBytes = ExtractionLimits.MAX_ENTRY_BYTES).use { zip ->
             var entry = zip.nextEntry
             while (entry != null) {
                 catalogBudget.visit("$archiveEntryPath:${entry.name}")

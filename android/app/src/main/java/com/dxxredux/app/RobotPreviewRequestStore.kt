@@ -1,5 +1,6 @@
 package com.dxxredux.app
 
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.util.Locale
@@ -34,12 +35,25 @@ internal object RobotPreviewRequestStore {
     ): LevelMetadataLevelRow? =
         levels.firstOrNull { row -> row.replacementGroups.any { group -> group.items.contains(item) } }
 
+    internal fun navigationEntries(
+        levels: List<LevelMetadataLevelRow>,
+    ): List<Pair<LevelMetadataLevelRow, LevelMetadataReplacementItem>> =
+        levels
+            .filter { it.status.equals("ok", ignoreCase = true) }
+            .flatMap { row ->
+                row.replacementGroups
+                    .flatMap { it.items }
+                    .filter { it.kind == "robot" && it.number >= 0 }
+                    .map { row to it }
+            }.distinctBy { it.second }
+
     fun create(
         cacheDir: File,
         target: LevelMetadataTarget,
         row: LevelMetadataLevelRow,
         item: LevelMetadataReplacementItem,
         robotLabel: String,
+        levels: List<LevelMetadataLevelRow> = listOf(row),
     ): RobotPreviewLaunchRequest {
         validate(target, row, item)
         val cacheRoot = root(cacheDir)
@@ -48,24 +62,33 @@ internal object RobotPreviewRequestStore {
         try {
             val previewWriteDir = File(workDir, "runtime-write").canonicalFile
             check(previewWriteDir.mkdir()) { "Could not create isolated robot preview write directory" }
-            val robotNumbers =
-                row.replacementGroups
-                    .flatMap { group -> group.items }
-                    .filter { replacement -> replacement.kind == "robot" && replacement.number >= 0 }
-                    .map { replacement -> replacement.number }
-                    .distinct()
-                    .sorted()
+            val entries = navigationEntries(levels)
+            val selectedIndex = entries.indexOfFirst { it.second == item }
+            require(selectedIndex >= 0) { "Selected robot is missing from mission replacements" }
+            val robotNumbers = entries.map { it.second.number }.distinct()
             val request =
-                LevelMetadataAnalyzer.buildRobotPreviewRequestJson(
-                    target,
-                    row,
-                    workDir.name,
-                    workDir,
-                    previewWriteDir,
-                    item.number,
-                    robotLabel,
-                    robotNumbers,
-                )
+                LevelMetadataAnalyzer
+                    .buildRobotPreviewRequestJson(
+                        target,
+                        entries[selectedIndex].first,
+                        workDir.name,
+                        workDir,
+                        previewWriteDir,
+                        item.number,
+                        robotLabel,
+                        robotNumbers,
+                    ).put(
+                        "robot_navigation",
+                        JSONArray(
+                            entries.map { (source, replacement) ->
+                                JSONObject()
+                                    .put("robot_number", replacement.number)
+                                    .put("level_file", source.levelFile)
+                                    .put("level_num", source.levelNum)
+                                    .put("secret_level", source.secret)
+                            },
+                        ),
+                    ).put("robot_navigation_index", selectedIndex)
             val requestFile =
                 OwnedCacheDirectories.writeUtf8Atomically(
                     workDir,
@@ -156,6 +179,23 @@ internal object RobotPreviewRequestStore {
             }
             require(robotNumber in navigationNumbers) {
                 "Robot preview navigation list does not contain the selected robot"
+            }
+        }
+        request.optJSONArray("robot_navigation")?.let { entries ->
+            val index = request.optInt("robot_navigation_index", -1)
+            require(index in 0 until entries.length()) { "Robot preview navigation index is invalid" }
+            for (entryIndex in 0 until entries.length()) {
+                val entry = entries.getJSONObject(entryIndex)
+                require(entry.optInt("robot_number", -1) >= 0 && entry.optString("level_file").isNotBlank()) {
+                    "Robot preview navigation source is invalid"
+                }
+            }
+            val selected = entries.getJSONObject(index)
+            require(
+                selected.getInt("robot_number") == robotNumber &&
+                    selected.getString("level_file") == request.optString("level_file"),
+            ) {
+                "Robot preview navigation selection does not match source level"
             }
         }
         return RobotPreviewRuntimeRequest(

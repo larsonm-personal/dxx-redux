@@ -634,6 +634,7 @@ class LauncherScriptExecutor(
                                 selected.second,
                                 selected.third,
                                 robotLabel,
+                                candidates.filter { it.first == selected.first }.map { it.second }.distinct(),
                             )
                         }
                     writeRobotPreviewSmokeSelection(seed, label, candidates.size, selected, launchRequest, robotLabel)

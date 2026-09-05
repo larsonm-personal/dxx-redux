@@ -1,0 +1,469 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "D1LOST.MSN",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 7,
+    "failed": 6,
+    "timeout": 3
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "lost01.rdl",
+      "route_input_sha256": "E82DEAEF6CF41970901611DECFB16B8DB9470A7F9B25B0F88AF3CE33EEC61E0A",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2516284547,
+        "calls": 6
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 2,
+      "level_file": "lost02.rdl",
+      "route_input_sha256": "E8D93E67C39BB1536EC34BF3D0DFDE0936CD8700DF8C9DFF8F958B2F13640FE9",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 13
+        },
+        {
+          "n": "red key",
+          "s": 32
+        }
+      ],
+      "total_frames": 2905,
+      "rng_end": {
+        "state": 1627576247,
+        "calls": 50
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 3,
+      "level_file": "lost03.rdl",
+      "route_input_sha256": "23EDB0CE0544012DAE7F72F8015251C6C3A37711C11311DF29F1CADD62CA417B",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 10
+        },
+        {
+          "n": "gold key",
+          "s": 31
+        },
+        {
+          "n": "red key",
+          "s": 46
+        },
+        {
+          "n": "reactor",
+          "s": 64
+        },
+        {
+          "n": "exit",
+          "s": 71
+        }
+      ],
+      "total_frames": 4237,
+      "rng_end": {
+        "state": 508382461,
+        "calls": 68
+      }
+    },
+    {
+      "level_num": 4,
+      "level_file": "lost04.rdl",
+      "route_input_sha256": "10E47809CCD6DFE8A41732C20DB7F301985DC181A012DABECC4AC57D152685E6",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 17
+        },
+        {
+          "n": "gold key",
+          "s": 37
+        }
+      ],
+      "total_frames": 2226,
+      "rng_end": {
+        "state": 1303003706,
+        "calls": 29
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 5,
+      "level_file": "lost05.rdl",
+      "route_input_sha256": "5A572ED3651995F676F12540E7DAA068EC2E78987941F5094B679422B137EE66",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 13
+        },
+        {
+          "n": "gold key",
+          "s": 28
+        },
+        {
+          "n": "red key",
+          "s": 46
+        },
+        {
+          "n": "reactor",
+          "s": 61
+        },
+        {
+          "n": "exit",
+          "s": 64
+        }
+      ],
+      "total_frames": 3859,
+      "rng_end": {
+        "state": 820312479,
+        "calls": 74
+      }
+    },
+    {
+      "level_num": 6,
+      "level_file": "lost06.rdl",
+      "route_input_sha256": "5B445A8A736936B4D4CDD11196212EC08F18DEA6AC44F40FC3B77656BF0D60B2",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 15
+        },
+        {
+          "n": "gold key",
+          "s": 27
+        },
+        {
+          "n": "red key",
+          "s": 40
+        },
+        {
+          "n": "reactor",
+          "s": 49
+        },
+        {
+          "n": "exit",
+          "s": 59
+        }
+      ],
+      "total_frames": 3533,
+      "rng_end": {
+        "state": 3212330324,
+        "calls": 67
+      }
+    },
+    {
+      "level_num": 7,
+      "level_file": "lost07.rdl",
+      "route_input_sha256": "37DE386EEF47C61AC8B5177ED410BA375BF849EB32003034301ABAB81711F981",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2516284547,
+        "calls": 6
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 8,
+      "level_file": "lost08.rdl",
+      "route_input_sha256": "9AB0A351D6014EDA3D253AA2369F2E2E3869A72F0AFBFED96FA7E990CFBC5717",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 15
+        },
+        {
+          "n": "blue key",
+          "s": 16
+        },
+        {
+          "n": "gold key",
+          "s": 37
+        },
+        {
+          "n": "red key",
+          "s": 60
+        },
+        {
+          "n": "reactor",
+          "s": 82
+        },
+        {
+          "n": "exit",
+          "s": 93
+        }
+      ],
+      "total_frames": 5601,
+      "rng_end": {
+        "state": 3885567453,
+        "calls": 100
+      }
+    },
+    {
+      "level_num": 9,
+      "level_file": "lost09.rdl",
+      "route_input_sha256": "FA9DB605FCA7703A1B86DE96D22EB91CE5D4F20DA8AEAE1BC594C4778ED80878",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 18
+        }
+      ],
+      "total_frames": 1050,
+      "rng_end": {
+        "state": 2937909499,
+        "calls": 14
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 10,
+      "level_file": "lost10.rdl",
+      "route_input_sha256": "99F783A6541A4E89223186415E371801C0055F8258FF68512D9C56DEF078F921",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 18
+        },
+        {
+          "n": "gold key",
+          "s": 50
+        },
+        {
+          "n": "red key",
+          "s": 62
+        },
+        {
+          "n": "reactor",
+          "s": 77
+        },
+        {
+          "n": "exit",
+          "s": 89
+        }
+      ],
+      "total_frames": 5340,
+      "rng_end": {
+        "state": 1660932118,
+        "calls": 81
+      }
+    },
+    {
+      "level_num": 11,
+      "level_file": "lost11.rdl",
+      "route_input_sha256": "3AE22C357815B6930DC8E33F6487F0DF0DF842C5775B9A1CBACF62243DF75308",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 20
+        },
+        {
+          "n": "fly-through 4",
+          "s": 46
+        },
+        {
+          "n": "gold key",
+          "s": 56
+        },
+        {
+          "n": "red key",
+          "s": 64
+        },
+        {
+          "n": "reactor",
+          "s": 76
+        },
+        {
+          "n": "exit",
+          "s": 80
+        }
+      ],
+      "total_frames": 4829,
+      "rng_end": {
+        "state": 208521688,
+        "calls": 79
+      }
+    },
+    {
+      "level_num": 12,
+      "level_file": "lost12.rdl",
+      "route_input_sha256": "8D801F516A834F73296CA36190AC4C507B8FA9E32AFF3B4557076506912C007B",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 20
+        },
+        {
+          "n": "gold key",
+          "s": 52
+        }
+      ],
+      "total_frames": 3108,
+      "rng_end": {
+        "state": 4008331270,
+        "calls": 33
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 13,
+      "level_file": "lost13.rdl",
+      "route_input_sha256": "1A42F428068F256CC7E62ACA33DA468FB7FB877174ABC6F9C3A2574FDDD1A7AF",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2516284547,
+        "calls": 6
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 14,
+      "level_file": "lost14.rdl",
+      "route_input_sha256": "C5E678E973D3A45FC3824F452B530537A0B0C62EF63264C78C4D5DC6466ACE9D",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4489,
+      "rng_end": {
+        "state": 3535774167,
+        "calls": 18
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 15,
+      "level_file": "lost15.rdl",
+      "route_input_sha256": "D96C8D1E7CC29EE3E57CEB19D7BAC4339F0AC5DF7B96B9DD039642596D388629",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 20
+        },
+        {
+          "n": "gold key",
+          "s": 50
+        },
+        {
+          "n": "red key",
+          "s": 74
+        },
+        {
+          "n": "reactor",
+          "s": 104
+        },
+        {
+          "n": "exit",
+          "s": 113
+        }
+      ],
+      "total_frames": 6803,
+      "rng_end": {
+        "state": 2883693444,
+        "calls": 83
+      }
+    },
+    {
+      "level_num": 16,
+      "level_file": "lost16.rdl",
+      "route_input_sha256": "43855923A92BFADC9727B00DC10861330D709ECEF426551995E6851792EB7B40",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 5701,
+      "rng_end": {
+        "state": 595337866,
+        "calls": 13
+      },
+      "problem": "route confirmation exceeded 95-second simulation budget"
+    }
+  ]
+}

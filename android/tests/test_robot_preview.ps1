@@ -153,7 +153,7 @@ try {
     if (-not $BaseGame) {
         $requestState =
         Read-AppJson -Path "cache/robot_preview/$([string]$selection.request_id)/request.json"
-        $requestedNumbers = @($requestState.robot_numbers)
+        $requestedNumbers = @($requestState.robot_navigation | ForEach-Object { $_.robot_number })
         if (-not $requestState -or $requestedNumbers.Count -le 0 -or
             (@($requestedNumbers | ForEach-Object { [int]$_ }) -join ",") -ne
             (@($navigationNumbers | ForEach-Object { [int]$_ }) -join ",")) {
@@ -177,14 +177,9 @@ try {
         -Expected $expectedDisplayRatio -Description "World-scale robot display ratio"
 
     $robotCount = [int]$initial.level_preview.robot_count
-    $currentNavigationIndex = 0
-    for ($index = 0; $index -lt $navigationNumbers.Count; $index++) {
-        if ([int]$navigationNumbers[$index] -eq [int]$initial.level_preview.robot_number) {
-            $currentNavigationIndex = $index
-            break
-        }
-    }
-    $nextRobot = [int]$navigationNumbers[($currentNavigationIndex + 1) % $robotCount]
+    $currentNavigationIndex = [int]$initial.level_preview.navigation_index
+    $nextIndex = ($currentNavigationIndex + 1) % $robotCount
+    $nextRobot = [int]$navigationNumbers[$nextIndex]
     Adb -AdbArgs @(
         "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_COMMAND", "-p", $script:PACKAGE,
         "--es", "command", "next"
@@ -196,7 +191,12 @@ try {
     if (-not $navigated -or [int]$navigated.level_preview.robot_number -ne $nextRobot) {
         throw "Robot preview did not advance to the next robot"
     }
-    if ($initial.level_preview.camera_tier -eq "normal" -and
+    if (-not $BaseGame -and
+        $navigated.level_preview.level_file -ne $requestState.robot_navigation[$nextIndex].level_file) {
+        throw "Robot preview did not load the next replacement's source level"
+    }
+    if ($initial.level_preview.level_file -eq $navigated.level_preview.level_file -and
+        $initial.level_preview.camera_tier -eq "normal" -and
         $navigated.level_preview.camera_tier -eq "normal" -and
         [Math]::Abs(
             [double]$navigated.level_preview.camera_view_radius -
@@ -457,6 +457,32 @@ try {
     $rotated = Read-AppJson -Path $introspectionFile
     if (-not $rotated -or [int]$rotated.level_preview.pitch -eq $oldPitch) {
         throw "Robot preview did not respond to rotation input"
+    }
+
+    # Walk the full mission chain, including source-level changes and wraparound
+    if (-not $BaseGame) {
+        foreach ($direction in @("next", "previous")) {
+            for ($step = 1; $step -le $robotCount; $step++) {
+                $offset = if ($direction -eq "next") { $step } else { - $step }
+                $expectedIndex = ($currentNavigationIndex + $offset + $robotCount) % $robotCount
+                $expectedEntry = $requestState.robot_navigation[$expectedIndex]
+                Adb -AdbArgs @(
+                    "shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_COMMAND", "-p", $script:PACKAGE,
+                    "--es", "command", $direction
+                ) | Out-Null
+                $entryReady = Wait-ForCondition -Description "robot navigation entry $expectedIndex" -TimeoutSec 15 -PollMs 300 -Condition {
+                    Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.ROBOT_PREVIEW_INTROSPECT", "-p", $script:PACKAGE) | Out-Null
+                    Start-Sleep -Milliseconds 200
+                    $state = Read-AppJson -Path $introspectionFile
+                    return $state -and [int]$state.level_preview.navigation_index -eq $expectedIndex -and
+                    [int]$state.level_preview.robot_number -eq [int]$expectedEntry.robot_number -and
+                    $state.level_preview.level_file -eq $expectedEntry.level_file -and
+                    [double]$state.level_preview.model_radius -gt 0 -and
+                    (@($state.level_preview.navigation_numbers) -join ",") -eq ($navigationNumbers -join ",")
+                }
+                if (-not $entryReady) { throw "Robot navigation failed at $direction entry $expectedIndex" }
+            }
+        }
     }
 
     # Exercise Android Back dispatch and native cleanup, including target SDK 36

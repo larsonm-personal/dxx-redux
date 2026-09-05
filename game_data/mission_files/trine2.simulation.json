@@ -1,0 +1,245 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "trine2.msn",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 2,
+    "failed": 2,
+    "timeout": 5,
+    "infrastructure_error": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "e2m1.rdl",
+      "route_input_sha256": "20FF4D7A4CA9269F7F94C27DB910C8FC99D5A80AFA66E5947D13F3C60C697CC5",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4482,
+      "rng_end": {
+        "state": 3791773014,
+        "calls": 17
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 2,
+      "level_file": "e2m2.rdl",
+      "route_input_sha256": "CCC9A2038C07923F2F43C66F2BB39B161AE1FDCBCD4B2FE9EF4A4FD31CA20B98",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 5612,
+      "rng_end": {
+        "state": 2111915288,
+        "calls": 15
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 3,
+      "level_file": "e2m3.rdl",
+      "route_input_sha256": "BF5281F3D75B831A198D2CF8032CF6F27F28059F2F5E94A42C6BA39B2227D040",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 11
+        },
+        {
+          "n": "gold key",
+          "s": 28
+        },
+        {
+          "n": "red key",
+          "s": 68
+        },
+        {
+          "n": "reactor",
+          "s": 97
+        },
+        {
+          "n": "exit",
+          "s": 112
+        }
+      ],
+      "total_frames": 6749,
+      "rng_end": {
+        "state": 2226230633,
+        "calls": 88
+      }
+    },
+    {
+      "level_num": 4,
+      "level_file": "e2m4.rdl",
+      "route_input_sha256": "D975CE330ED0485A386922F842E0DD542DEC836D116A84159E0F29418E04E13B",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 24
+        },
+        {
+          "n": "blue key",
+          "s": 25
+        },
+        {
+          "n": "gold key",
+          "s": 55
+        },
+        {
+          "n": "red key",
+          "s": 96
+        },
+        {
+          "n": "reactor",
+          "s": 99
+        },
+        {
+          "n": "exit",
+          "s": 118
+        }
+      ],
+      "total_frames": 7070,
+      "rng_end": {
+        "state": 2077067425,
+        "calls": 96
+      }
+    },
+    {
+      "level_num": 5,
+      "level_file": "e2m5.rdl",
+      "route_input_sha256": "9B1104FB9C63AFEADA8C468C0268EA6A921A876B1D1CA643E7EF9EBD29BECCB7",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 12
+        },
+        {
+          "n": "gold key",
+          "s": 49
+        }
+      ],
+      "total_frames": 2925,
+      "rng_end": {
+        "state": 3834121963,
+        "calls": 30
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 6,
+      "level_file": "e2m6.rdl",
+      "route_input_sha256": "C0D207225A89F3EA2A8C5D67ABD452CADB4B1CCC83D8143F4E7AF5D6CCD70528",
+      "status": "infrastructure_error",
+      "problem": "Route engine infrastructure failure for trine2.json|0|6|e2m6.rdl, exit -1073740791, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\trine2.json_0_6_e2m6.rdl_run_1.log"
+    },
+    {
+      "level_num": 7,
+      "level_file": "e2m7.rdl",
+      "route_input_sha256": "AF08A2007C361A2176F7566BF7DBA96A1D524DA73073A3C4DAA6738FC368CAB4",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 10
+        },
+        {
+          "n": "gold key",
+          "s": 28
+        }
+      ],
+      "total_frames": 2939,
+      "rng_end": {
+        "state": 3822763702,
+        "calls": 49
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 8,
+      "level_file": "e2m8.rdl",
+      "route_input_sha256": "5C37C4A1C9D5351DCBFCE25D1051B0D647BFE79B352B18694867921C35457926",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 13
+        }
+      ],
+      "total_frames": 796,
+      "rng_end": {
+        "state": 595337866,
+        "calls": 13
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 9,
+      "level_file": "e2m9.rdl",
+      "route_input_sha256": "46E0EA160831A9078C6FFC2CE7FA3CAF71D1CC35D9253ADEAECF705359AE73D2",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 5140,
+      "rng_end": {
+        "state": 3297241969,
+        "calls": 16
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": -1,
+      "level_file": "e2m10.rdl",
+      "route_input_sha256": "D1CCDBBB24CA173105C91BA253A6FD4B594D350E1B81D76BBF96BBEAB4385546",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4855,
+      "rng_end": {
+        "state": 3791773014,
+        "calls": 17
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    }
+  ]
+}

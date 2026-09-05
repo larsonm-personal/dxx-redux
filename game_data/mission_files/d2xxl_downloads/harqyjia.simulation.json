@@ -7,17 +7,16 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 1,
+    "ok": 2,
     "failed": 1,
-    "timeout": 2,
-    "route_mismatch": 1
+    "timeout": 2
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "HARQYJ01.RL2",
-      "route_input_sha256": "62A345A2090174C8C713414038639B436A41DF0C8A2889DD024EAC29BC9C9AE9",
-      "status": "route_mismatch",
+      "route_input_sha256": "5ADD425579528660E0949B1237927D828A137D37A0C82B86D5FA3CF784F85ED4",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -88,8 +87,7 @@
       "rng_end": {
         "state": 613983103,
         "calls": 4202
-      },
-      "problem": "live objective sequence differs from route input"
+      }
     },
     {
       "level_num": 2,
@@ -107,87 +105,43 @@
         },
         {
           "n": "switch 32",
-          "s": 67
+          "s": 66
         },
         {
           "n": "switch 40",
-          "s": 75
+          "s": 74
         },
         {
           "n": "fly-through 10",
-          "s": 88
+          "s": 87
         },
         {
           "n": "hidden door",
-          "s": 88
+          "s": 87
         },
         {
           "n": "switch 9",
-          "s": 89
+          "s": 88
         },
         {
           "n": "hidden door",
-          "s": 89
+          "s": 88
         },
         {
           "n": "switch 8",
-          "s": 90
+          "s": 89
         },
         {
           "n": "switch 41",
           "s": 91
-        },
-        {
-          "n": "destroy robot carrying gold key",
-          "s": 171
-        },
-        {
-          "n": "pass-through 15",
-          "s": 174
-        },
-        {
-          "n": "hidden door",
-          "s": 174
-        },
-        {
-          "n": "switch 42",
-          "s": 175
-        },
-        {
-          "n": "pass-through 47",
-          "s": 175
-        },
-        {
-          "n": "switch 53",
-          "s": 191
-        },
-        {
-          "n": "fly-through 49",
-          "s": 197
-        },
-        {
-          "n": "fly-through 50",
-          "s": 198
-        },
-        {
-          "n": "fly-through 48",
-          "s": 199
-        },
-        {
-          "n": "switch 63",
-          "s": 203
-        },
-        {
-          "n": "red key",
-          "s": 215
         }
       ],
-      "total_frames": 14598,
+      "total_frames": 10186,
       "rng_end": {
-        "state": 2056152567,
-        "calls": 5618
+        "state": 3732811029,
+        "calls": 4844
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 3,

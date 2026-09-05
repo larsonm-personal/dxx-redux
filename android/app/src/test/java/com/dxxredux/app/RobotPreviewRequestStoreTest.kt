@@ -74,6 +74,38 @@ class RobotPreviewRequestStoreTest {
         assertEquals(source, RobotPreviewRequestStore.findSourceLevel(listOf(unrelated, source), wanted))
     }
 
+    @Test
+    fun missionNavigationIsIndependentOfStartingRobotAndPreservesVariants() {
+        val root = testRoot("mission-navigation")
+        val cacheDir = File(root, "cache").apply { mkdirs() }
+        val dataDir = File(root, "data").apply { mkdirs() }
+        val level = File(dataDir, "early.rl2").apply { writeBytes(byteArrayOf(1)) }
+        val earlyRobot = robotItem(4)
+        val laterRobot = robotItem(60)
+        val variant = earlyRobot.copy(fields = earlyRobot.fields.map { it.copy(mod = 300) })
+        val early = levelRow(level.name, earlyRobot)
+        val later = levelRow("later.rl2", laterRobot)
+        val variantLevel = levelRow("variant.rl2", variant)
+        val levels = listOf(early, later, early.copy(levelFile = "duplicate.rl2"), variantLevel)
+        val target = LevelMetadataTarget(
+            displayName = level.name, game = "d2", sourceType = "level",
+            sourcePath = level.path, dataDir = dataDir.path, levelFile = level.name,
+        )
+        val requests = listOf(early to earlyRobot, later to laterRobot, variantLevel to variant).map { (row, item) ->
+            val launch = RobotPreviewRequestStore.create(cacheDir, target, row, item, item.label, levels)
+            JSONObject(launch.requestFile.readText())
+        }
+        val entries = requests.first().getJSONArray("robot_navigation")
+        assertEquals(3, entries.length())
+        assertEquals("early.rl2", entries.getJSONObject(0).getString("level_file"))
+        assertEquals("later.rl2", entries.getJSONObject(1).getString("level_file"))
+        assertEquals("variant.rl2", entries.getJSONObject(2).getString("level_file"))
+        requests.forEachIndexed { index, request ->
+            assertEquals(entries.toString(), request.getJSONArray("robot_navigation").toString())
+            assertEquals(index, request.getInt("robot_navigation_index"))
+        }
+    }
+
     private fun robotItem(number: Int) =
         LevelMetadataReplacementItem(
             kind = "robot",

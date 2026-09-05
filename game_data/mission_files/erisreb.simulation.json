@@ -1,0 +1,261 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "erisreb.msn",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 3,
+    "timeout": 5,
+    "infrastructure_error": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "eris0001.rdl",
+      "route_input_sha256": "1FE14D1540786971D4AD684439D562515B22C33EADA99352EF4FF3ED9EA371F5",
+      "status": "infrastructure_error",
+      "problem": "Route engine process timeout after 180 seconds for erisreb.json|0|1|eris0001.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\erisreb.json_0_1_eris0001.rdl_run_1.log"
+    },
+    {
+      "level_num": 2,
+      "level_file": "eris0002.rdl",
+      "route_input_sha256": "D18AE82DB111FBBCA0AE1594582428A95D422C0A59A9FD3B03DC27C07FC54CC8",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 11
+        }
+      ],
+      "total_frames": 5900,
+      "rng_end": {
+        "state": 4008331270,
+        "calls": 33
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 3,
+      "level_file": "eris0003.rdl",
+      "route_input_sha256": "6376DF160E3DCAA676751D6A5D1079C9C80017E7CA9550E8EB906BCCDE6CD8E4",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 13
+        },
+        {
+          "n": "gold key",
+          "s": 33
+        },
+        {
+          "n": "red key",
+          "s": 65
+        },
+        {
+          "n": "reactor",
+          "s": 94
+        },
+        {
+          "n": "exit",
+          "s": 108
+        }
+      ],
+      "total_frames": 6483,
+      "rng_end": {
+        "state": 2883693444,
+        "calls": 83
+      }
+    },
+    {
+      "level_num": 4,
+      "level_file": "eris0004.rdl",
+      "route_input_sha256": "320B123D09D566A2EF31E918967CC73F7AB66A20989CC43DDBB465B2269B1CE9",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 11
+        }
+      ],
+      "total_frames": 6258,
+      "rng_end": {
+        "state": 1343201072,
+        "calls": 23
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 5,
+      "level_file": "eris0005.rdl",
+      "route_input_sha256": "579E4F06671325E8E8ADAE31E1C0871C21947B030813FCC25A92687B14E054E2",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 10
+        },
+        {
+          "n": "gold key",
+          "s": 35
+        },
+        {
+          "n": "red key",
+          "s": 68
+        },
+        {
+          "n": "reactor",
+          "s": 94
+        },
+        {
+          "n": "exit",
+          "s": 102
+        }
+      ],
+      "total_frames": 6105,
+      "rng_end": {
+        "state": 1023081650,
+        "calls": 133
+      }
+    },
+    {
+      "level_num": 6,
+      "level_file": "eris0006.rdl",
+      "route_input_sha256": "9596F76F81D6F497806E1386FAA5393CB1238498CCEDA777F7B845F90AE76DB3",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 19
+        },
+        {
+          "n": "gold key",
+          "s": 45
+        },
+        {
+          "n": "red key",
+          "s": 68
+        },
+        {
+          "n": "reactor",
+          "s": 91
+        },
+        {
+          "n": "exit",
+          "s": 105
+        }
+      ],
+      "total_frames": 6302,
+      "rng_end": {
+        "state": 2787170210,
+        "calls": 85
+      }
+    },
+    {
+      "level_num": 7,
+      "level_file": "eris0007.rdl",
+      "route_input_sha256": "5D6CD0E87B448F3720DFBBEB92270C9C8E362524299A4FCBFB8D636F46911C54",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 8
+        },
+        {
+          "n": "gold key",
+          "s": 21
+        },
+        {
+          "n": "red key",
+          "s": 38
+        }
+      ],
+      "total_frames": 7217,
+      "rng_end": {
+        "state": 3025925713,
+        "calls": 48
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 8,
+      "level_file": "eris0008.rdl",
+      "route_input_sha256": "9621E536635C9F10E67189827A4C60D37DE372EA8D2427A49C8F875FF7C87DDA",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 14
+        },
+        {
+          "n": "gold key",
+          "s": 38
+        },
+        {
+          "n": "red key",
+          "s": 67
+        }
+      ],
+      "total_frames": 5788,
+      "rng_end": {
+        "state": 541269159,
+        "calls": 66
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 9,
+      "level_file": "eris0009.rdl",
+      "route_input_sha256": "AB929AA01455FF2AD8C199152FCB752C516AE4FE56FB3C7CBDFB8D382099BE5F",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 8
+        }
+      ],
+      "total_frames": 4707,
+      "rng_end": {
+        "state": 510737498,
+        "calls": 125
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    }
+  ]
+}

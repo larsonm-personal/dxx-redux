@@ -1,3 +1,4 @@
+#include "headless_diagnostics.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -123,8 +124,8 @@ int init_headless_runtime(int argc, char *argv[], char *error,
                           size_t error_size)
 {
 	mem_init();
-	error_init(msgbox_error);
-	set_warn_func(msgbox_warning);
+	error_init(headless_error);
+	set_warn_func(headless_warning);
 	PHYSFSX_init(argc, argv);
 	con_init();
 	if (GameArg.SysShowCmdHelp) {

@@ -1,0 +1,262 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "trine1.msn",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 3,
+    "failed": 1,
+    "timeout": 6
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "e1m1.rdl",
+      "route_input_sha256": "3320609BD6235FA5AF596D5D64B41B79881A1664F6209C4B38CDBE6024F7A929",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4948,
+      "rng_end": {
+        "state": 3297241969,
+        "calls": 16
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 2,
+      "level_file": "e1m2.rdl",
+      "route_input_sha256": "0A1B094289500ED48F454B203C69DA7AB805BBAC1A5C17F74199C6E75BE39B7B",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4635,
+      "rng_end": {
+        "state": 2937909499,
+        "calls": 14
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 3,
+      "level_file": "e1m3.rdl",
+      "route_input_sha256": "8FDB524ADA5E3F8D2F8EE7EA335D0ACE9A7EFF374EB1B7B7A50863790DD53182",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 15
+        },
+        {
+          "n": "gold key",
+          "s": 38
+        },
+        {
+          "n": "red key",
+          "s": 58
+        },
+        {
+          "n": "reactor",
+          "s": 74
+        },
+        {
+          "n": "exit",
+          "s": 88
+        }
+      ],
+      "total_frames": 5273,
+      "rng_end": {
+        "state": 493907821,
+        "calls": 84
+      }
+    },
+    {
+      "level_num": 4,
+      "level_file": "e1m4.rdl",
+      "route_input_sha256": "A618B3A755C9C635CBB92E2DCDD1B70CA902BF765CEFF28C53E03509B65F4720",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 15
+        },
+        {
+          "n": "gold key",
+          "s": 37
+        },
+        {
+          "n": "red key",
+          "s": 58
+        },
+        {
+          "n": "reactor",
+          "s": 84
+        },
+        {
+          "n": "exit",
+          "s": 90
+        }
+      ],
+      "total_frames": 5376,
+      "rng_end": {
+        "state": 2916751166,
+        "calls": 73
+      }
+    },
+    {
+      "level_num": 5,
+      "level_file": "e1m5.rdl",
+      "route_input_sha256": "AB1CB37EA55057DAC6734CD14163866DC52F8C7038450AEE591A229CC8ABFBF5",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 3740,
+      "rng_end": {
+        "state": 2937909499,
+        "calls": 14
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 6,
+      "level_file": "e1m6.rdl",
+      "route_input_sha256": "27B6E00739AD90982BB5D6B52318F95176A3526714E1171BB8613B3646213E0F",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 29
+        },
+        {
+          "n": "gold key",
+          "s": 58
+        }
+      ],
+      "total_frames": 3492,
+      "rng_end": {
+        "state": 2207819405,
+        "calls": 52
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 7,
+      "level_file": "e1m7.rdl",
+      "route_input_sha256": "C839750F10F37200A2245D33F5926AC634902B0FF0E5215B46D493E61A16CE4A",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 16
+        },
+        {
+          "n": "gold key",
+          "s": 39
+        }
+      ],
+      "total_frames": 3422,
+      "rng_end": {
+        "state": 2054802212,
+        "calls": 51
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 8,
+      "level_file": "e1m8.rdl",
+      "route_input_sha256": "63A5DDFF5090AE8736FAFD400A3EADDA12AEEF2991F5B921FAA6A6431A03682B",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 21
+        }
+      ],
+      "total_frames": 6134,
+      "rng_end": {
+        "state": 3834121963,
+        "calls": 30
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 9,
+      "level_file": "e1m9.rdl",
+      "route_input_sha256": "5A3D2A92AAAFDBD025047BB89F316095FD24CFAED845A2DC6D653EE885840999",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 3700,
+      "rng_end": {
+        "state": 3535774167,
+        "calls": 18
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": -1,
+      "level_file": "e1m10.rdl",
+      "route_input_sha256": "2B372727536C60C7850CBFDD3D9B98DE435E780CBB68E33785F368A7B7E8D8DA",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "red key",
+          "s": 14
+        },
+        {
+          "n": "reactor",
+          "s": 35
+        },
+        {
+          "n": "exit",
+          "s": 43
+        }
+      ],
+      "total_frames": 2604,
+      "rng_end": {
+        "state": 3025925713,
+        "calls": 48
+      }
+    }
+  ]
+}

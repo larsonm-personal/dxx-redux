@@ -460,7 +460,7 @@
       "level_file": "saturn15.rdl",
       "route_input_sha256": "9C75C51C307241C2A774650545C4C722D9A4BAFCF1F44068E1B68A33E81FFDFB",
       "status": "infrastructure_error",
-      "problem": "Route engine process timeout after 180 seconds for CD - Descent - Destination Saturn (USA).json|0|15|saturn15.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_134721\\logs\\CD_-_Descent_-_Destination_Saturn_USA_.json_0_15_saturn15.rdl_run_1.log"
+      "problem": "Route engine infrastructure failure for CD - Descent - Destination Saturn (USA).json|0|15|saturn15.rdl, exit 1, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\CD_-_Descent_-_Destination_Saturn_USA_.json_0_15_saturn15.rdl_run_1.log"
     },
     {
       "level_num": -1,

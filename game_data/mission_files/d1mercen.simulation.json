@@ -1,0 +1,267 @@
+[
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "merc01.msn",
+    "target_index": 0,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "merc01.rdl",
+        "route_input_sha256": "6D49E12903EB231AA93B4F2C5BBD57FBEAD4A829CFDF3EEFB9A69E9A0D4D49AC",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 4
+          },
+          {
+            "n": "gold key",
+            "s": 20
+          },
+          {
+            "n": "red key",
+            "s": 40
+          }
+        ],
+        "total_frames": 3468,
+        "rng_end": {
+          "state": 2669311376,
+          "calls": 55
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "merc02.msn",
+    "target_index": 1,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "merc02.rdl",
+        "route_input_sha256": "551CEB9264989D668F6E1F3B16E16FEB3C2B5A5624DCFDBDF448890884F00F48",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 8
+          },
+          {
+            "n": "red key",
+            "s": 14
+          },
+          {
+            "n": "reactor",
+            "s": 19
+          },
+          {
+            "n": "exit",
+            "s": 27
+          }
+        ],
+        "total_frames": 1625,
+        "rng_end": {
+          "state": 2207819405,
+          "calls": 52
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "merc03.msn",
+    "target_index": 2,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "failed": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "merc03.rdl",
+        "route_input_sha256": "B6CEA786789A0406B8CBBF3A1DE9756BA165BF1916AF303D78235248AE28C00C",
+        "status": "failed",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 36
+          },
+          {
+            "n": "red key",
+            "s": 79
+          }
+        ],
+        "total_frames": 4766,
+        "rng_end": {
+          "state": 1969681615,
+          "calls": 26
+        },
+        "problem": "live Guide-Bot route has no actionable goal"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "merc04.msn",
+    "target_index": 3,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "infrastructure_error": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "merc04.rdl",
+        "route_input_sha256": "C996F6A3BDAC4374E8D259AD424314E378EA9245EE5C0DDBC0EEFB1F691079F4",
+        "status": "infrastructure_error",
+        "problem": "Route engine infrastructure failure for d1mercen.json|3|0|merc04.rdl, exit 1, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\d1mercen.json_3_0_merc04.rdl_run_1.log"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "merc05.msn",
+    "target_index": 4,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "merc05.rdl",
+        "route_input_sha256": "8A72D0D2B68459DB1328C57804ED0951036FD82495AEF4E3608C6722E4B0D6BE",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 4373,
+        "rng_end": {
+          "state": 836760821,
+          "calls": 12
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "merc06.msn",
+    "target_index": 5,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "failed": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "merc06.rdl",
+        "route_input_sha256": "1207B255B937BB814352167A097A7C957ABAA4D574AADCBED9384B2CC418D310",
+        "status": "failed",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 0,
+        "rng_end": {
+          "state": 2516284547,
+          "calls": 6
+        },
+        "problem": "live Guide-Bot route has no actionable goal"
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "merc07.msn",
+    "target_index": 6,
+    "engine_mode": "d1_in_d2",
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "failed",
+    "level_counts": {
+      "timeout": 1
+    },
+    "levels": [
+      {
+        "level_num": 0,
+        "level_file": "merc07.rdl",
+        "route_input_sha256": "25C9F97BB98D31545A723258CC854350144685F41564F95C5C92EB50396F79A2",
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blastable wall",
+            "s": 6
+          },
+          {
+            "n": "destroy robot carrying blue key",
+            "s": 9
+          },
+          {
+            "n": "gold key",
+            "s": 18
+          }
+        ],
+        "total_frames": 5485,
+        "rng_end": {
+          "state": 1047820095,
+          "calls": 170
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      }
+    ]
+  }
+]

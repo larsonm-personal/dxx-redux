@@ -1,0 +1,114 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "VESTA.MSN",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 1,
+    "failed": 2,
+    "timeout": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "level1.rdl",
+      "route_input_sha256": "3573020E4AE09929BF630E19C11863CCF1F33E25E708F2A30FEC2FBD50B737C5",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2516284547,
+        "calls": 6
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 2,
+      "level_file": "level2.rdl",
+      "route_input_sha256": "2B054F41A4C589694398022078DA6990E9171F2B0FB227C640CB986363F3BD4D",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 20
+        },
+        {
+          "n": "hidden door",
+          "s": 23
+        },
+        {
+          "n": "gold key",
+          "s": 24
+        },
+        {
+          "n": "red key",
+          "s": 54
+        },
+        {
+          "n": "reactor",
+          "s": 74
+        },
+        {
+          "n": "exit",
+          "s": 89
+        }
+      ],
+      "total_frames": 5317,
+      "rng_end": {
+        "state": 856000655,
+        "calls": 90
+      }
+    },
+    {
+      "level_num": 3,
+      "level_file": "level3.rdl",
+      "route_input_sha256": "C890949F743036C6BDB1AC05615216971D14F4C7E8733AB5949D134FC1D4867B",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 17
+        }
+      ],
+      "total_frames": 1020,
+      "rng_end": {
+        "state": 3297241969,
+        "calls": 16
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": -1,
+      "level_file": "slevel.rdl",
+      "route_input_sha256": "BB02513A82D001FA894BD4BF25E271946D65338F8D669C646AA89D02CD3A5A81",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 8175,
+      "rng_end": {
+        "state": 2937909499,
+        "calls": 14
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    }
+  ]
+}

@@ -1,0 +1,313 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "ironstar.msn",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 2,
+    "failed": 3,
+    "timeout": 6
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "zoo.rdl",
+      "route_input_sha256": "9B082F523881C58002DDE955340EB2EC571C87C1834CD0C4BC873E15ED7FF68B",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 13
+        },
+        {
+          "n": "gold key",
+          "s": 31
+        },
+        {
+          "n": "red key",
+          "s": 52
+        },
+        {
+          "n": "reactor",
+          "s": 74
+        }
+      ],
+      "total_frames": 10230,
+      "rng_end": {
+        "state": 916896761,
+        "calls": 72
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 2,
+      "level_file": "deneb.rdl",
+      "route_input_sha256": "8A258A5F5F5B332311B172F8F2D9BE9EEA3B64EAC90BCBC10A5A5BBFA27F97DD",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 8
+        }
+      ],
+      "total_frames": 4631,
+      "rng_end": {
+        "state": 92728044,
+        "calls": 75
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 3,
+      "level_file": "escape3.rdl",
+      "route_input_sha256": "E295ACC4E7F33127C82C09F76CA90471B2E0A8DFE557A61F14A0E4B236DCC12F",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 7
+        },
+        {
+          "n": "red key",
+          "s": 18
+        },
+        {
+          "n": "hidden door",
+          "s": 36
+        },
+        {
+          "n": "gold key",
+          "s": 37
+        }
+      ],
+      "total_frames": 2247,
+      "rng_end": {
+        "state": 3758492830,
+        "calls": 105
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 4,
+      "level_file": "remors11.rdl",
+      "route_input_sha256": "9F41DD66C9A7E9F98D439CFB3384A36CA4A87F68FD63D372892886250E5EF86B",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 9
+        }
+      ],
+      "total_frames": 5061,
+      "rng_end": {
+        "state": 2473755763,
+        "calls": 22
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 5,
+      "level_file": "epsilon.rdl",
+      "route_input_sha256": "38F48D1F55CB5AAC4DF8D409D81D94BC4DFB0E9BDA379696D35880F93FB056B3",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "fly-through 1",
+          "s": 16
+        },
+        {
+          "n": "pass-through 2",
+          "s": 17
+        },
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 21
+        },
+        {
+          "n": "gold key",
+          "s": 42
+        },
+        {
+          "n": "hidden door",
+          "s": 69
+        },
+        {
+          "n": "red key",
+          "s": 69
+        },
+        {
+          "n": "reactor",
+          "s": 84
+        },
+        {
+          "n": "exit",
+          "s": 96
+        }
+      ],
+      "total_frames": 5745,
+      "rng_end": {
+        "state": 2805861856,
+        "calls": 167
+      }
+    },
+    {
+      "level_num": 6,
+      "level_file": "chapel.rdl",
+      "route_input_sha256": "20CFF35E2D3FAA73931A24E79B11E0607C5E8A0E4802C04B31AF57D8CF1E60C6",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 5
+        }
+      ],
+      "total_frames": 8323,
+      "rng_end": {
+        "state": 744964398,
+        "calls": 25
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 7,
+      "level_file": "alpha-h.rdl",
+      "route_input_sha256": "7F09D046DDA137C1D4ADB97C13FBCDDAE73D274CA8FF1417F1F9269A092E3440",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4907,
+      "rng_end": {
+        "state": 3297241969,
+        "calls": 16
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 8,
+      "level_file": "ironstr1.rdl",
+      "route_input_sha256": "65FE1DD3B6CA703D8D62F4D3332B4D6EE4B1194CDA2B318CDE4D8881FD89015C",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "fly-through 4",
+          "s": 9
+        },
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 12
+        },
+        {
+          "n": "gold key",
+          "s": 37
+        },
+        {
+          "n": "red key",
+          "s": 108
+        },
+        {
+          "n": "fly-through 1",
+          "s": 130
+        },
+        {
+          "n": "reactor",
+          "s": 131
+        },
+        {
+          "n": "exit",
+          "s": 148
+        }
+      ],
+      "total_frames": 8890,
+      "rng_end": {
+        "state": 3549428584,
+        "calls": 127
+      }
+    },
+    {
+      "level_num": -1,
+      "level_file": "dropshf8.rdl",
+      "route_input_sha256": "0AABF4C13EE20512FB97F8480A3D221CBBFA0912704C938F8533787A6FA23D44",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 554,
+      "rng_end": {
+        "state": 684462146,
+        "calls": 53
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": -2,
+      "level_file": "badland.rdl",
+      "route_input_sha256": "546C3A7323CF4D615E117568C79074421EA8AADB5F67138974858239854F99A0",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2516284547,
+        "calls": 6
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": -3,
+      "level_file": "nowhere.rdl",
+      "route_input_sha256": "79B90BD8E5A2D3BD38965348A6383B1E1A507763A50D04AB40E6F92EBA46AAF7",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2516284547,
+        "calls": 6
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    }
+  ]
+}

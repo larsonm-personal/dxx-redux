@@ -3530,6 +3530,7 @@ private fun LevelMetadataDialog(
                                                         row,
                                                         item,
                                                         label,
+                                                        result?.levels.orEmpty(),
                                                     )
                                                 }
                                             }.getOrElse { error ->

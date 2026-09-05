@@ -95,10 +95,10 @@
           "s": 32
         }
       ],
-      "total_frames": 3044,
+      "total_frames": 2997,
       "rng_end": {
-        "state": 1684271235,
-        "calls": 1030
+        "state": 915140452,
+        "calls": 1779
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -163,17 +163,17 @@
         },
         {
           "n": "boss",
-          "s": 101
+          "s": 102
         },
         {
           "n": "exit",
-          "s": 102
+          "s": 103
         }
       ],
-      "total_frames": 6104,
+      "total_frames": 6191,
       "rng_end": {
-        "state": 375099116,
-        "calls": 3147
+        "state": 2822522611,
+        "calls": 3478
       }
     },
     {

@@ -9,9 +9,8 @@
   "level_counts": {
     "ok": 3,
     "failed": 1,
-    "timeout": 13,
-    "unsupported": 1,
-    "route_mismatch": 1
+    "timeout": 14,
+    "unsupported": 1
   },
   "levels": [
     {
@@ -105,7 +104,7 @@
     {
       "level_num": 4,
       "level_file": "DH04.RL2",
-      "route_input_sha256": "64F2AB89F89BF5E1F8DD57DCD4F0A5CD6FC7EA342302CFA71A8E9AEB07FC77E6",
+      "route_input_sha256": "32780D7204FC978044CFA905FF88DF854F97826B5750CFB3079197487B5C780A",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -156,8 +155,8 @@
     {
       "level_num": 6,
       "level_file": "DH06.RL2",
-      "route_input_sha256": "1E5ECA6B47A4917569D0E8789AF855EAAD2DFD32E627AF745FB7A1B805A3E604",
-      "status": "route_mismatch",
+      "route_input_sha256": "3A8EBEFC64E4EEBB08DFD72445114368C73E05A3205C9DBB9CA7B329C399C681",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -193,7 +192,7 @@
         "state": 230621619,
         "calls": 2774
       },
-      "problem": "live objective sequence differs from route input"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 7,
@@ -292,7 +291,7 @@
     {
       "level_num": 11,
       "level_file": "DH11.RL2",
-      "route_input_sha256": "CE6C033153B5EF859C786F11782840E88F25B89095198BAD2FFCC03B3BEA2E6B",
+      "route_input_sha256": "402F409A4CAF0A0969ABECDB17E83BC989D8B121FEFED6361CD41FE0963BACF3",
       "status": "failed",
       "rng_start": {
         "state": 1,

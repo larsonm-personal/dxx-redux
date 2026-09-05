@@ -8,11 +8,10 @@
     "seed": 1,
     "status": "partial",
     "level_counts": {
-      "ok": 13,
+      "ok": 14,
       "failed": 2,
-      "timeout": 5,
-      "unsupported": 1,
-      "route_mismatch": 2
+      "timeout": 6,
+      "unsupported": 1
     },
     "levels": [
       {
@@ -51,8 +50,8 @@
       {
         "level_num": 2,
         "level_file": "d2xlvl02.rl2",
-        "route_input_sha256": "252F5A7321053CDF0A73536F1780CA7831F1689E354F2D0D3FAD72A0D04A8698",
-        "status": "route_mismatch",
+        "route_input_sha256": "3CC48BB4526581310519C59190F63042D8CD7C1FB264D00BCAEA121D49627329",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -95,8 +94,7 @@
         "rng_end": {
           "state": 1661827568,
           "calls": 2647
-        },
-        "problem": "live objective sequence differs from route input"
+        }
       },
       {
         "level_num": 3,
@@ -220,7 +218,7 @@
       {
         "level_num": 6,
         "level_file": "d2xlvl06.rl2",
-        "route_input_sha256": "BEE4B1C831DAE8EFBCAFF03B14D625A1E8C2248277A3F9F5815903E426C2D6B4",
+        "route_input_sha256": "F3C34A0DDE244A7D559E2720A08D34808C89DC0D8036FC536C9043EDC1619416",
         "status": "failed",
         "rng_start": {
           "state": 1,
@@ -392,8 +390,8 @@
       {
         "level_num": 11,
         "level_file": "d2xlvl11.rl2",
-        "route_input_sha256": "34600BDCB21EBA150C15832BCF08ED8E5CB7AA4DABD715009271AFBAFEB6F1CC",
-        "status": "route_mismatch",
+        "route_input_sha256": "EDFC14D29E0C3A89DB424AA072590FEF6229CB5D35B0113E967A848854071222",
+        "status": "timeout",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -417,7 +415,7 @@
           "state": 4111154319,
           "calls": 3162
         },
-        "problem": "live objective sequence differs from route input"
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       },
       {
         "level_num": 12,
@@ -771,7 +769,7 @@
       {
         "level_num": -3,
         "level_file": "d2xlvls3.rl2",
-        "route_input_sha256": "325A48C3ABEF4C236CED191960480430034907911C94086959671C737B770108",
+        "route_input_sha256": "3E296FAF99F164E65C2EEB44E825BA87758F975972F5EA3A3C46A0C3ABD604F6",
         "status": "unsupported",
         "rng_start": {
           "state": 1,
@@ -809,9 +807,9 @@
     },
     "levels": [
       {
-        "level_num": 1,
+        "level_num": 0,
         "level_file": "tutorial.rl2",
-        "route_input_sha256": "C62F7A1277E35ECC5F08C420730A7B2E1DF344158430AA067127EC5538768938",
+        "route_input_sha256": "0C3EE43A031C7EC88392440F5E1E898612C3098561EF0F397C67A1605BFC65C5",
         "status": "ok",
         "rng_start": {
           "state": 1,

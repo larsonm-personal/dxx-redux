@@ -8,10 +8,10 @@
     "seed": 1,
     "status": "partial",
     "level_counts": {
-      "ok": 18,
+      "ok": 19,
       "failed": 1,
-      "timeout": 10,
-      "route_mismatch": 1
+      "timeout": 9,
+      "infrastructure_error": 1
     },
     "levels": [
       {
@@ -403,23 +403,8 @@
         "level_num": 11,
         "level_file": "psx11.rl2",
         "route_input_sha256": "9489702DFF9729880A104BD5ADB2759081E72013385EF14DA5F514520C58B6B2",
-        "status": "timeout",
-        "rng_start": {
-          "state": 1,
-          "calls": 0
-        },
-        "objectives": [
-          {
-            "n": "switch 7",
-            "s": 1
-          }
-        ],
-        "total_frames": 742,
-        "rng_end": {
-          "state": 1187663298,
-          "calls": 181
-        },
-        "problem": "physical route frontier did not open after 8 interaction attempts"
+        "status": "infrastructure_error",
+        "problem": "Route engine infrastructure failure for descent_maximum_fixed.json|0|11|psx11.rl2, exit 1, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\descent_maximum_fixed.json_0_11_psx11.rl2_run_1.log"
       },
       {
         "level_num": 12,
@@ -694,8 +679,8 @@
       {
         "level_num": 19,
         "level_file": "psx19.rl2",
-        "route_input_sha256": "074881F5DA1C2B4758378ECC4E1D7E409AC402B6C07D6F82E35AAA542CE856CC",
-        "status": "route_mismatch",
+        "route_input_sha256": "CB9ABF9E3E896601E546B77B90FCBF705559AA200E287AA632A61DFF63BC16FD",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -746,8 +731,7 @@
         "rng_end": {
           "state": 2025613794,
           "calls": 789
-        },
-        "problem": "live objective sequence differs from route input"
+        }
       },
       {
         "level_num": 20,

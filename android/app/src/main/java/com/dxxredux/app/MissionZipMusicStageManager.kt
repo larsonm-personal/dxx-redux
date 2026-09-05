@@ -356,7 +356,7 @@ class MissionZipMusicStageManager private constructor(
         output: File,
         budget: ExtractionBudget,
     ): Boolean {
-        openZipInputStreamSkippingPreamble(dxa).use { zip ->
+        openZipInputStreamSkippingPreamble(dxa, maxSourceBytes = ExtractionLimits.MAX_ENTRY_BYTES).use { zip ->
             var entry = zip.nextEntry
             while (entry != null) {
                 budget.registerEntry(
@@ -386,7 +386,7 @@ class MissionZipMusicStageManager private constructor(
         nestedEntryPath: String,
         budget: ExtractionBudget,
     ): ByteArray? {
-        openZipInputStreamSkippingPreamble(dxa).use { zip ->
+        openZipInputStreamSkippingPreamble(dxa, maxSourceBytes = ExtractionLimits.MAX_ENTRY_BYTES).use { zip ->
             var entry = zip.nextEntry
             while (entry != null) {
                 budget.registerEntry(
@@ -421,7 +421,7 @@ class MissionZipMusicStageManager private constructor(
         hogEntryName: String,
         budget: ExtractionBudget,
     ): ByteArray? {
-        openZipInputStreamSkippingPreamble(dxa).use { zip ->
+        openZipInputStreamSkippingPreamble(dxa, maxSourceBytes = ExtractionLimits.MAX_ENTRY_BYTES).use { zip ->
             var entry = zip.nextEntry
             while (entry != null) {
                 budget.registerEntry(
@@ -475,7 +475,7 @@ class MissionZipMusicStageManager private constructor(
         output: File,
         budget: ExtractionBudget,
     ): Boolean {
-        openZipInputStreamSkippingPreamble(dxa).use { zip ->
+        openZipInputStreamSkippingPreamble(dxa, maxSourceBytes = ExtractionLimits.MAX_ENTRY_BYTES).use { zip ->
             var entry = zip.nextEntry
             while (entry != null) {
                 budget.registerEntry(

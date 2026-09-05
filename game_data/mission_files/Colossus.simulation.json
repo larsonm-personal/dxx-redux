@@ -1,0 +1,75 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "COLOSSUS.MSN",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "failed",
+  "level_counts": {
+    "failed": 2,
+    "timeout": 1,
+    "infrastructure_error": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "PLAIN.RDL",
+      "route_input_sha256": "AD55AC652FFB8230E48BA5A735ECADDF14F9AEA2601BF936A6B5292F9458A265",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2516284547,
+        "calls": 6
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 2,
+      "level_file": "BLUE.RDL",
+      "route_input_sha256": "1DA7A9F1541B31A262390966F27515F0D9B5C499B5B5533B2DA7CF486A60F85C",
+      "status": "infrastructure_error",
+      "problem": "Route engine infrastructure failure for Colossus.json|0|2|BLUE.RDL, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\Colossus.json_0_2_BLUE.RDL_run_1.log"
+    },
+    {
+      "level_num": 3,
+      "level_file": "YELLOW.RDL",
+      "route_input_sha256": "2BF18CAE47AB84717B0916954081417803C12E1020BA45DE867EFD28640F459D",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 3601,
+      "rng_end": {
+        "state": 836760821,
+        "calls": 12
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 4,
+      "level_file": "RED.RDL",
+      "route_input_sha256": "61AA7D7E3683213EDF12CFCB9DC8A77D545527324C95A0E1DADC4BBE0CEA7DB4",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2516284547,
+        "calls": 6
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    }
+  ]
+}

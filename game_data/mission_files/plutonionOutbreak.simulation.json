@@ -1,0 +1,259 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "pluton.msn",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 2,
+    "failed": 2,
+    "timeout": 6
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "p1.rdl",
+      "route_input_sha256": "CE3D2B70CE03F14FB10B3B1FB3ADF493E96FEFB41E22CAD8DF3E0969E4029FE4",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 15
+        }
+      ],
+      "total_frames": 882,
+      "rng_end": {
+        "state": 595337866,
+        "calls": 13
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 2,
+      "level_file": "p2.rdl",
+      "route_input_sha256": "17179E95F9D46B2BDCF5B4827BBAE81A6218C718124024449E3F50C39B24A237",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4034,
+      "rng_end": {
+        "state": 2937909499,
+        "calls": 14
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 3,
+      "level_file": "p3.rdl",
+      "route_input_sha256": "884917E81E8D3C88E28CD5ED29D02E22CA9C29D94DD22E27AE6895AB070C6983",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4652,
+      "rng_end": {
+        "state": 3535774167,
+        "calls": 18
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 4,
+      "level_file": "p4.rdl",
+      "route_input_sha256": "50AB498A1E7DAEC419835A7B4DF660C64B9722435FA8CB35DC6C6843D459D1E1",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 13
+        },
+        {
+          "n": "gold key",
+          "s": 31
+        },
+        {
+          "n": "red key",
+          "s": 49
+        },
+        {
+          "n": "reactor",
+          "s": 65
+        },
+        {
+          "n": "exit",
+          "s": 69
+        }
+      ],
+      "total_frames": 4164,
+      "rng_end": {
+        "state": 344858293,
+        "calls": 76
+      }
+    },
+    {
+      "level_num": 5,
+      "level_file": "p5.rdl",
+      "route_input_sha256": "02A37E5AB4A270446E0BE5B7F9301556440047B40FE55AC0AA2DA62B35485C63",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 10
+        },
+        {
+          "n": "gold key",
+          "s": 32
+        },
+        {
+          "n": "red key",
+          "s": 46
+        },
+        {
+          "n": "reactor",
+          "s": 62
+        },
+        {
+          "n": "exit",
+          "s": 64
+        }
+      ],
+      "total_frames": 3830,
+      "rng_end": {
+        "state": 2673245591,
+        "calls": 82
+      }
+    },
+    {
+      "level_num": 6,
+      "level_file": "p6.rdl",
+      "route_input_sha256": "BF57FC528B22DFDBD046253F42687551E77A113864529C2EE0E9CF7F5B218806",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 5080,
+      "rng_end": {
+        "state": 2111915288,
+        "calls": 15
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 7,
+      "level_file": "p7.rdl",
+      "route_input_sha256": "4253533F7FBF53EDD7D2D1D61622372904D1AFFC59F0554B98B4AD6B02C6A0CC",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 17
+        },
+        {
+          "n": "gold key",
+          "s": 58
+        }
+      ],
+      "total_frames": 7147,
+      "rng_end": {
+        "state": 1775811865,
+        "calls": 40
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    },
+    {
+      "level_num": 8,
+      "level_file": "p8.rdl",
+      "route_input_sha256": "875B0518BB75C2251B3ACDF76FEAF36B1C4EFE229B883E97B18EF2DBAF288C4B",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 21
+        },
+        {
+          "n": "gold key",
+          "s": 51
+        },
+        {
+          "n": "red key",
+          "s": 68
+        }
+      ],
+      "total_frames": 5043,
+      "rng_end": {
+        "state": 508382461,
+        "calls": 68
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 9,
+      "level_file": "p9.rdl",
+      "route_input_sha256": "A5F5F74795BA1EA53F49DB1F320CD3168FE9EF30EC908F5486A74AAF3632CC88",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2516284547,
+        "calls": 6
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": -1,
+      "level_file": "s1.rdl",
+      "route_input_sha256": "FCFDA241897849C19E881367C16E3E91C17F02CDF0BFA5342A70D150839EBA9B",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "gold key",
+          "s": 13
+        }
+      ],
+      "total_frames": 2004,
+      "rng_end": {
+        "state": 300568396,
+        "calls": 107
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    }
+  ]
+}

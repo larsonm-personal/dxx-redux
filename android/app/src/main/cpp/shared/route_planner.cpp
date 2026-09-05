@@ -3625,7 +3625,8 @@ class dependency_planner
 	    const route_trigger_source &source,
 	    int depth)
 	{
-		if (!valid_wall(snapshot_, source.source_wall))
+		if (!valid_wall(snapshot_, source.source_wall) ||
+		    state_flag(state_.progress.trigger_in_progress, source.trigger))
 			return false;
 		const auto preparation_start = state_;
 		const auto initial_kind = route_progress_wall_kind(
@@ -3654,9 +3655,13 @@ class dependency_planner
 				continue;
 			state_ = preparation_start;
 			state_.problem.clear();
+			// Preparation is a dependency too, including after activation rollback
+			state_.progress.trigger_in_progress[source.trigger] = 1;
 			const auto &link = snapshot_.topology.triggers[trigger].links.front();
-			if (!fire_trigger(
-			        link.segment, link.side, depth + 1, &sources)) {
+			const bool prepared = fire_trigger(
+			    link.segment, link.side, depth + 1, &sources);
+			state_.progress.trigger_in_progress[source.trigger] = 0;
+			if (!prepared) {
 				if (!state_.problem.empty())
 					last_problem = state_.problem;
 				continue;

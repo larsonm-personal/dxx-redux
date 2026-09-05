@@ -1,0 +1,266 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "outerrch.msn",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 5,
+    "failed": 1,
+    "timeout": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "coldopen.rdl",
+      "route_input_sha256": "E701E51EC3EF37EB9F1D0CE27ADF164F60E374F2A59B598924585668F502C283",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "red key",
+          "s": 13
+        },
+        {
+          "n": "reactor",
+          "s": 26
+        },
+        {
+          "n": "exit",
+          "s": 38
+        }
+      ],
+      "total_frames": 2297,
+      "rng_end": {
+        "state": 456633834,
+        "calls": 45
+      }
+    },
+    {
+      "level_num": 2,
+      "level_file": "haimaul.rdl",
+      "route_input_sha256": "DACE613F5989650903D3A56B361A526ABD51817E2B1346285ADCFE757862F936",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 2
+        },
+        {
+          "n": "blue key",
+          "s": 4
+        },
+        {
+          "n": "red key",
+          "s": 17
+        },
+        {
+          "n": "reactor",
+          "s": 27
+        },
+        {
+          "n": "exit",
+          "s": 38
+        }
+      ],
+      "total_frames": 2306,
+      "rng_end": {
+        "state": 92728044,
+        "calls": 75
+      }
+    },
+    {
+      "level_num": 3,
+      "level_file": "doom.rdl",
+      "route_input_sha256": "CFE241CBF3410C114A0C51C5E69CA1952A20704821A35B04629DCE10F886CD94",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 12
+        },
+        {
+          "n": "red key",
+          "s": 33
+        },
+        {
+          "n": "reactor",
+          "s": 48
+        },
+        {
+          "n": "exit",
+          "s": 59
+        }
+      ],
+      "total_frames": 3516,
+      "rng_end": {
+        "state": 92728044,
+        "calls": 75
+      }
+    },
+    {
+      "level_num": 4,
+      "level_file": "hangar18.rdl",
+      "route_input_sha256": "6E889029466D5046C983394393580174F500948C0EF0347BEC2C71BFAE6DFBA5",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 1
+        },
+        {
+          "n": "hidden door",
+          "s": 4
+        },
+        {
+          "n": "hidden door",
+          "s": 6
+        },
+        {
+          "n": "fly-through 1",
+          "s": 11
+        },
+        {
+          "n": "gold key",
+          "s": 18
+        }
+      ],
+      "total_frames": 1663,
+      "rng_end": {
+        "state": 92728044,
+        "calls": 75
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 5,
+      "level_file": "beneath.rdl",
+      "route_input_sha256": "6DFC4CC6A50F05800F87FECB72F2ED20E98DB6C57CF89438D87AB94620511374",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 18
+        },
+        {
+          "n": "hidden door",
+          "s": 29
+        },
+        {
+          "n": "gold key",
+          "s": 33
+        },
+        {
+          "n": "hidden door",
+          "s": 39
+        },
+        {
+          "n": "red key",
+          "s": 49
+        },
+        {
+          "n": "reactor",
+          "s": 71
+        },
+        {
+          "n": "exit",
+          "s": 80
+        }
+      ],
+      "total_frames": 4821,
+      "rng_end": {
+        "state": 3684228113,
+        "calls": 112
+      }
+    },
+    {
+      "level_num": 6,
+      "level_file": "universe.rdl",
+      "route_input_sha256": "429F16F2BF6ACFE5CE1740D4CCF505735B4F333D0EE5BA688D023A6952DC5D23",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 13
+        },
+        {
+          "n": "gold key",
+          "s": 24
+        },
+        {
+          "n": "red key",
+          "s": 45
+        },
+        {
+          "n": "boss",
+          "s": 64
+        },
+        {
+          "n": "exit",
+          "s": 67
+        }
+      ],
+      "total_frames": 4044,
+      "rng_end": {
+        "state": 2029357497,
+        "calls": 136
+      }
+    },
+    {
+      "level_num": -1,
+      "level_file": "infernal.rdl",
+      "route_input_sha256": "72777A9D91D59E901BF21A1695CF106B42BE952F831A550A03B30C5A79F10B5A",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "gold key",
+          "s": 10
+        },
+        {
+          "n": "blue key",
+          "s": 27
+        },
+        {
+          "n": "red key",
+          "s": 52
+        }
+      ],
+      "total_frames": 3110,
+      "rng_end": {
+        "state": 2240736910,
+        "calls": 57
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    }
+  ]
+}

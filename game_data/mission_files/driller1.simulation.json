@@ -1,0 +1,326 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "DRILLER1.MSN",
+  "target_index": 0,
+  "engine_mode": "d1_in_d2",
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 2,
+    "failed": 5,
+    "timeout": 3
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "meru.rdl",
+      "route_input_sha256": "34D8BDF14B419C1CD240CF7E3672C6A90F637B3C90EF0886698849E37EBC3DCB",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blastable wall",
+          "s": 7
+        },
+        {
+          "n": "blue key",
+          "s": 9
+        },
+        {
+          "n": "gold key",
+          "s": 25
+        },
+        {
+          "n": "red key",
+          "s": 33
+        },
+        {
+          "n": "reactor",
+          "s": 40
+        },
+        {
+          "n": "exit",
+          "s": 45
+        }
+      ],
+      "total_frames": 2698,
+      "rng_end": {
+        "state": 2754807367,
+        "calls": 162
+      }
+    },
+    {
+      "level_num": 2,
+      "level_file": "dtest.rdl",
+      "route_input_sha256": "57B71847EC0BAF7E2E6D995C740A4B884A6F87CE755E9DA62ED3C532E3D7292D",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 1
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 12
+        }
+      ],
+      "total_frames": 727,
+      "rng_end": {
+        "state": 1223573862,
+        "calls": 65
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 3,
+      "level_file": "lunp.rdl",
+      "route_input_sha256": "B6F48C7054F0FC8473606A68314A3FC888CAB922140065245E4817EE10C53691",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 9
+        },
+        {
+          "n": "gold key",
+          "s": 21
+        },
+        {
+          "n": "red key",
+          "s": 34
+        }
+      ],
+      "total_frames": 2022,
+      "rng_end": {
+        "state": 456633834,
+        "calls": 45
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 4,
+      "level_file": "marin.rdl",
+      "route_input_sha256": "F5CF1309DA4FDBFF745C26C6C8A8CE5AB5B808CE47F75F4F6F5AA16E163A0523",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2516284547,
+        "calls": 6
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 5,
+      "level_file": "irock.rdl",
+      "route_input_sha256": "E0E5C48AC982B74D89D379EC0A901160BD9C76AC079FDDF08B86D6C60A8010B0",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 18
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 38
+        },
+        {
+          "n": "fly-through 2",
+          "s": 46
+        },
+        {
+          "n": "fly-through 3",
+          "s": 49
+        },
+        {
+          "n": "red key",
+          "s": 58
+        },
+        {
+          "n": "reactor",
+          "s": 77
+        },
+        {
+          "n": "exit",
+          "s": 84
+        }
+      ],
+      "total_frames": 5040,
+      "rng_end": {
+        "state": 2029357497,
+        "calls": 136
+      }
+    },
+    {
+      "level_num": 6,
+      "level_file": "mimu.rdl",
+      "route_input_sha256": "B6D4BCB71DE6DAC477ED4AF2AA8175AAE595EAB740BF66A8E51E84633885D8C3",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 2
+        },
+        {
+          "n": "gold key",
+          "s": 9
+        },
+        {
+          "n": "red key",
+          "s": 19
+        }
+      ],
+      "total_frames": 1168,
+      "rng_end": {
+        "state": 995405759,
+        "calls": 42
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": 7,
+      "level_file": "titi.rdl",
+      "route_input_sha256": "65EE2F205E6E39DB375E70FCC3A246E2ACCBD021A7250B876EC1B2192EDF3356",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 12
+        },
+        {
+          "n": "blastable wall",
+          "s": 24
+        },
+        {
+          "n": "gold key",
+          "s": 27
+        }
+      ],
+      "total_frames": 2299,
+      "rng_end": {
+        "state": 2965106811,
+        "calls": 142
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 8,
+      "level_file": "nes.rdl",
+      "route_input_sha256": "E9EBC46BC98627E92362179F576FF0303E46129ACCCD6D6B912865138407073A",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 3
+        }
+      ],
+      "total_frames": 732,
+      "rng_end": {
+        "state": 3269224778,
+        "calls": 77
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
+    },
+    {
+      "level_num": 9,
+      "level_file": "palace.rdl",
+      "route_input_sha256": "D4E369CD32ABD085211C3D62E9B8B3037DC4C3217ED03E4F1803D5F1AF6949BC",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 4
+        },
+        {
+          "n": "gold key",
+          "s": 14
+        },
+        {
+          "n": "red key",
+          "s": 26
+        },
+        {
+          "n": "reactor",
+          "s": 45
+        }
+      ],
+      "total_frames": 2699,
+      "rng_end": {
+        "state": 820312479,
+        "calls": 74
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": -1,
+      "level_file": "veswo.rdl",
+      "route_input_sha256": "AB4C981EAC6440EC06A95621B8F94BB5CC84194068EA912E06AC84555A62487A",
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 8
+        },
+        {
+          "n": "fly-through 0",
+          "s": 19
+        },
+        {
+          "n": "gold key",
+          "s": 20
+        },
+        {
+          "n": "hidden door",
+          "s": 21
+        }
+      ],
+      "total_frames": 5488,
+      "rng_end": {
+        "state": 948921754,
+        "calls": 61
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+    }
+  ]
+}
