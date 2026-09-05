@@ -181,7 +181,14 @@ function Copy-GuidebotFlatStage {
         $key = $file.Name.ToLowerInvariant()
         if ($used.ContainsKey($key)) { continue }
         $used[$key] = $true
-        Copy-Item -LiteralPath $file.FullName -Destination (Join-Path $Destination $file.Name) -Force
+        $target = Join-Path $Destination $file.Name
+        if ($file.Extension.ToLowerInvariant() -in @('.msn', '.mn2')) {
+            # Match host metadata staging for DOS end-of-file markers
+            $text = [IO.File]::ReadAllText($file.FullName).Replace(([char]0x1a).ToString(), '')
+            [IO.File]::WriteAllText($target, $text, [Text.UTF8Encoding]::new($false))
+        } else {
+            Copy-Item -LiteralPath $file.FullName -Destination $target -Force
+        }
     }
 }
 
@@ -213,6 +220,11 @@ function Initialize-GuidebotMissionStage {
                 Where-Object { $_.OutputPath -eq $MetadataFile.FullName } | Select-Object -First 1)
         if ($cdSource.Count -gt 0) {
             Copy-GuidebotFlatStage -Source $cdSource[0].SourceDir -Destination (Join-Path $stage 'missions')
+            # Base-named CD HOGs must also be visible to the engine's root lookup
+            # Metadata staging exposes both layouts, including Destination Saturn's descent.hog
+            foreach ($hog in Get-ChildItem -LiteralPath (Join-Path $stage 'missions') -File -Filter '*.hog') {
+                Copy-Item -LiteralPath $hog.FullName -Destination (Join-Path $stage $hog.Name) -Force
+            }
             return [pscustomobject]@{ ExtraDir = $stage; Source = $cdSource[0].SourceDir }
         }
     }

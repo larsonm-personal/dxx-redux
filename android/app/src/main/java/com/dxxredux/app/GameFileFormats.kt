@@ -265,6 +265,13 @@ object GameFileFormats {
     val setGameDataExtensions: Set<String> = formats.filterValues { it.setGameData }.keys
     val gogAudioExtensions: Set<String> = formats.filterValues { it.gogAudio }.keys
 
+    // Extraction includes transport archives and recordings; retain only runtime content after unpacking
+    fun isDiscRuntimeFile(name: String): Boolean {
+        val extension = extensionOf(name)
+        return (extension in discExtractExtensions && extension !in setOf("sow", "dem")) ||
+            extension in setOf("txb", "ctb", "sng", "pcx", "hmp", "hmq", "mid", "256", "tex", "vham")
+    }
+
     /*
      * Mac HFS/STI media needs auxiliary config, text, and palette files and
      * intentionally does not use the generic ISO data-track allowlist.
@@ -442,11 +449,21 @@ object GameFileFormats {
     ): MissionDescriptor {
         val parsed = MissionDescriptorPolicy.parse(path, text)
         return MissionDescriptor(
-            path = parsed.path, name = parsed.name, type = parsed.type, author = parsed.author,
-            editor = parsed.editor, levelNames = parsed.levelNames, secretLevelNames = parsed.secretLevelNames,
-            secretLevelOrigins = parsed.secretLevelOrigins, declaredLevelCount = parsed.declaredLevelCount,
-            declaredSecretLevelCount = parsed.declaredSecretLevelCount, assetReferences = parsed.assetReferences,
-            game = parsed.game, modeFlags = parsed.modeFlags, valid = parsed.valid, problem = parsed.problem,
+            path = parsed.path,
+            name = parsed.name,
+            type = parsed.type,
+            author = parsed.author,
+            editor = parsed.editor,
+            levelNames = parsed.levelNames,
+            secretLevelNames = parsed.secretLevelNames,
+            secretLevelOrigins = parsed.secretLevelOrigins,
+            declaredLevelCount = parsed.declaredLevelCount,
+            declaredSecretLevelCount = parsed.declaredSecretLevelCount,
+            assetReferences = parsed.assetReferences,
+            game = parsed.game,
+            modeFlags = parsed.modeFlags,
+            valid = parsed.valid,
+            problem = parsed.problem,
         )
     }
 

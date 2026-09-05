@@ -1460,6 +1460,10 @@ void obj_delete(int objnum)
 	if (obj == Viewer)		//deleting the viewer?
 		Viewer = ConsoleObject;						//..make the player the viewer
 
+	// Stop reactor effects before this slot can be reused for another object
+	if (objnum == Dead_controlcen_object_num)
+		Dead_controlcen_object_num = -1;
+
 	if (obj->flags & OF_ATTACHED)		//detach this from object
 		obj_detach_one(obj);
 

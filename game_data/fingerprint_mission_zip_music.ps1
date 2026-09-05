@@ -829,7 +829,7 @@ if (-not $SkipAcoustId) {
 $script:lastRequestTime = [datetime]::MinValue
 $script:minDelayMs = 350
 
-$missionSources = if ($MissionDir.Count -gt 0) {
+$missionSources = if ($null -ne $MissionDir -and $MissionDir.Count -gt 0) {
     @($MissionDir | ForEach-Object -Begin { $sourceIndex = 0 } -Process {
             $sourceId = if ($sourceIndex -eq 0) { "mission_files" } else { "mission_files_$sourceIndex" }
             [pscustomobject]@{

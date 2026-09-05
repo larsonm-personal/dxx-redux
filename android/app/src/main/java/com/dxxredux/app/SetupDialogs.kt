@@ -1382,6 +1382,7 @@ internal fun DiscImportDialog(
                                                     extractPickedCueDataTracks(
                                                         context = context,
                                                         setDir = setDir,
+                                                        sourceName = cueName,
                                                         tracks = tracks!!,
                                                         orderedBinUris = orderedBinUris,
                                                         preparedImages = prepared,
@@ -1844,19 +1845,15 @@ internal fun IsoImportDialog(
                                                         return 0
                                                     }
                                                 }
-                                            val isoExtracted =
+                                            val (isoExtracted, sowExtracted) =
                                                 pfd.use {
-                                                    DiscImportBridge.extractIsoImageFiles(
-                                                        it.fd,
-                                                        setDir.absolutePath,
-                                                        progress,
-                                                    )
-                                                }
-                                            val sowExtracted =
-                                                if (isoExtracted > 0) {
-                                                    postProcessImportedDiscFiles(setDir, progress)
-                                                } else {
-                                                    0
+                                                    extractIsoDiscContent(setDir, isoName, progress) { staging ->
+                                                        DiscImportBridge.extractIsoImageFiles(
+                                                            it.fd,
+                                                            staging.absolutePath,
+                                                            progress,
+                                                        )
+                                                    }
                                                 }
                                             withContext(Dispatchers.Main) {
                                                 extractedCount =

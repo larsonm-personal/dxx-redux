@@ -33,6 +33,7 @@ extern "C" {
 #include "physfsx.h"
 #include "piggy.h"
 #include "player.h"
+#include "playsave.h"
 #include "screens.h"
 #include "songs.h"
 #include "texmerge.h"
@@ -159,6 +160,8 @@ int init_headless_runtime(int argc, char *argv[], char *error,
 		return 0;
 	Screen_mode = SCREEN_GAME;
 	init_game();
+	// Headless runs bypass pilot selection but still need valid player defaults
+	new_player_config();
 	snprintf(Players[Player_num].callsign,
 	         sizeof(Players[Player_num].callsign), "%s", "RouteBot");
 	GameArg.SysUseNiceFPS = 0;

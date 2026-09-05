@@ -4,6 +4,27 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $repoRoot 'game_data\fingerprint_mission_zip_music.ps1') -BudgetTestOnly
 
+# Exercise the production source selection without building or contacting AcoustID
+$sourceScript = Join-Path $repoRoot 'game_data\fingerprint_mission_zip_music.ps1'
+$sourceAst = [Management.Automation.Language.Parser]::ParseFile($sourceScript, [ref]$null, [ref]$null)
+$selection = $sourceAst.Find({
+        param($node)
+        $node -is [Management.Automation.Language.AssignmentStatementAst] -and
+        $node.Left.Extent.Text -eq '$missionSources'
+    }, $true)
+$selectSources = [scriptblock]::Create($sourceAst.ParamBlock.Extent.Text + "`nSet-StrictMode -Version Latest`n" +
+    $selection.Extent.Text + "`n" + '$missionSources')
+foreach ($options in @(@{}, @{ MissionDir = $null }, @{ MissionDir = @() })) {
+    $selected = @(& $selectSources @options -OutputRoot $repoRoot)
+    if ($selected.Count -ne 2 -or $selected[1].Id -ne 'd2xxl_downloads') {
+        throw 'Omitted or empty mission directories must select the configured archive sources'
+    }
+}
+$selected = @(& $selectSources -MissionDir @('fixture-one', 'fixture-two') -OutputRoot $repoRoot)
+if ($selected.Count -ne 2 -or $selected[0].Directory -ne 'fixture-one' -or $selected[1].Directory -ne 'fixture-two') {
+    throw 'Explicit mission directory selection changed'
+}
+
 $testRoot = Join-Path (Resolve-Path (Join-Path $repoRoot 'android\temp')).Path `
 ('fingerprint_budget_test_' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $testRoot | Out-Null

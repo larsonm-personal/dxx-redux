@@ -30,6 +30,23 @@ function Invoke-DryRun {
 
 try {
     $runnerSource = Get-Content -LiteralPath $runner -Raw
+    $runnerAst = [Management.Automation.Language.Parser]::ParseInput($runnerSource, [ref]$null, [ref]$null)
+    $stageFunction = $runnerAst.Find({
+            param($node)
+            $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Copy-GuidebotFlatStage'
+        }, $true)
+    . ([scriptblock]::Create($stageFunction.Extent.Text))
+    $stageSource = Join-Path $tempRoot 'stage_source'
+    $stageDestination = Join-Path $tempRoot 'stage_destination'
+    New-Item -ItemType Directory -Path $stageSource -Force | Out-Null
+    $descriptorText = "name = fixture`nnum_levels = 1`nfixture.rdl"
+    [IO.File]::WriteAllText((Join-Path $stageSource 'fixture.msn'), $descriptorText + [char]0x1a)
+    [IO.File]::WriteAllBytes((Join-Path $stageSource 'fixture.hog'), [byte[]]@(68, 72, 70, 26))
+    Copy-GuidebotFlatStage -Source $stageSource -Destination $stageDestination
+    if ([IO.File]::ReadAllText((Join-Path $stageDestination 'fixture.msn')) -cne $descriptorText -or
+        [IO.File]::ReadAllBytes((Join-Path $stageDestination 'fixture.hog'))[3] -ne 26) {
+        throw 'DOS EOF normalization must apply to descriptors only'
+    }
     if ($runnerSource -notmatch "headless_process_pool\.ps1" -or
         $runnerSource -notmatch '(?s)if \(\$Mode -eq ''Headless''\).*?Invoke-HeadlessProcessPool' -or
         $runnerSource -match '(?s)function Invoke-GuidebotDesktopLevel.*?Start-Process.*?-NoNewWindow') {

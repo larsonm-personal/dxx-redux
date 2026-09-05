@@ -20,6 +20,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stdio.h>		//	for printf()
 #include <stdlib.h>		// for d_rand() and qsort()
 #include <string.h>		// for memset()
+#include "u_mem.h"
 
 #include "inferno.h"
 #include "console.h"
@@ -165,9 +166,11 @@ int	Ai_path_debug=0;
 void move_towards_outside(point_seg *psegs, int *num_points, object *objp, int rand_flag)
 {
 	int	i;
-	point_seg	new_psegs[200];
-
-	Assert(*num_points < 200);
+	point_seg *new_psegs;
+	// Door-crossing points can expand a 200-segment GuideBot path beyond 200 points
+	if (*num_points <= 2)
+		return;
+	new_psegs = (point_seg *)d_malloc(sizeof(*new_psegs) * (size_t)*num_points);
 
 	for (i=1; i<*num_points-1; i++) {
 		int			new_segnum;
@@ -180,7 +183,12 @@ void move_towards_outside(point_seg *psegs, int *num_points, object *objp, int r
 
 		// -- psegs[i].segnum = find_point_seg(&psegs[i].point, psegs[i].segnum);
 		temp_segnum = find_point_seg(&psegs[i].point, psegs[i].segnum);
-		Assert(temp_segnum != -1);
+		// Keep the original waypoint when it cannot be located for smoothing
+		// Never propagate the invalid segment sentinel into collision probes
+		if (temp_segnum == -1) {
+			new_psegs[i] = psegs[i];
+			continue;
+		}
 		psegs[i].segnum = temp_segnum;
 		segnum = psegs[i].segnum;
 
@@ -276,6 +284,7 @@ if (vm_vec_mag_quick(&e) < F1_0/2)
 
 	for (i=1; i<*num_points-1; i++)
 		psegs[i] = new_psegs[i];
+	d_free(new_psegs);
 }
 
 

@@ -91,6 +91,55 @@ internal class FileSetContentManager(
             materialize(stored.values, repairState(stored.keys))
         }
 
+    /** Keep reconciliation from observing a partially published disc owner */
+    fun publishDiscImport(
+        staging: File,
+        sourceName: String,
+    ) = synchronized(CONTENT_LOCK) {
+        prepareDiscContent(staging, sourceName)
+        publishStagedArchiveFiles(staging, setDir)
+    }
+
+    /** Prepare a single owner in an isolated disc staging directory before archive publication */
+    fun stageDiscContent(displayName: String) =
+        synchronized(CONTENT_LOCK) {
+            val discovered = FileSetContentCatalog.scan(setDir)
+            if (discovered.isEmpty()) return@synchronized
+            check(entriesDir.isDirectory || entriesDir.mkdirs()) { "Could not create disc content directory" }
+            val files = discovered.flatMap { it.files }
+            val paths = discovered.flatMap { it.virtualPaths }
+            val identity = paths.zip(files).joinToString("\n") { (path, file) -> "$path:${sha256(file)}" }
+            val id =
+                MessageDigest
+                    .getInstance("SHA-256")
+                    .digest("disc\n$displayName\n$identity".toByteArray())
+                    .take(12)
+                    .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+            val games = discovered.map { it.game }.distinct()
+            val entry =
+                FileSetContentEntry(
+                    id = id,
+                    displayName = displayName,
+                    game = games.singleOrNull() ?: GameFileFormats.GAME_BOTH,
+                    kind = FileSetContentCatalog.KIND_MOD,
+                    files = files,
+                    versionName = null,
+                    sourceUri = null,
+                    problem =
+                        discovered
+                            .mapNotNull { it.problem }
+                            .distinct()
+                            .joinToString("; ")
+                            .ifEmpty { null },
+                    virtualPaths = paths,
+                )
+            publishEntry(entry)
+            files.forEach { source ->
+                check(source.delete()) { "Could not remove staged disc source ${source.name}" }
+                removeEmptyParents(source.parentFile)
+            }
+        }
+
     /** Publish a related group of source files without allowing reconciliation between writes. */
     fun writeSourceFiles(files: List<Pair<String, String>>) =
         synchronized(CONTENT_LOCK) {

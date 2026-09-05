@@ -291,6 +291,33 @@ internal fun buildDiscExtractSummary(
     return "Extracted ${parts.joinToString(" + ")}"
 }
 
+/** Filter only isolated extraction output, never an existing user file set */
+internal fun prepareDiscContent(
+    stagingDir: File,
+    sourceName: String,
+) {
+    val files = stagingDir.walkTopDown().filter { it.isFile }.toList()
+    val referencedAssets =
+        files
+            .filter { GameFileFormats.isMissionDescriptor(it.name) }
+            .flatMap { descriptor ->
+                GameFileFormats.parseMissionDescriptor(descriptor.name, descriptor.readText()).assetReferences.values
+            }.map { portableGameFilenameIdentity(GameFileFormats.leafName(it)) }
+            .toSet()
+    files
+        .filter { file ->
+            !GameFileFormats.isDiscRuntimeFile(file.name) &&
+                portableGameFilenameIdentity(file.name) !in referencedAssets
+        }.forEach { check(it.delete()) { "Could not remove unused disc file ${it.name}" } }
+    FileSetContentManager(stagingDir).stageDiscContent(
+        File(sourceName)
+            .nameWithoutExtension
+            .replace('_', ' ')
+            .trim()
+            .ifEmpty { "Imported CD" },
+    )
+}
+
 private fun moveImportedGameFileToRoot(
     source: File,
     dest: File,
@@ -765,6 +792,7 @@ internal fun openSeekableDiscImage(
 internal fun extractPickedCueDataTracks(
     context: Context,
     setDir: File,
+    sourceName: String,
     tracks: List<DiscImportBridge.CueTrack>,
     orderedBinUris: List<Pair<String, Uri>>,
     preparedImages: PreparedDiscImages,
@@ -791,6 +819,7 @@ internal fun extractPickedCueDataTracks(
         setDir = setDir,
         tracks = tracks,
         imageCount = orderedBinUris.size,
+        sourceName = sourceName,
         progress = progress,
         extractTrack = { track, outputDir, trackProgress, attempt ->
             val image = orderedBinUris.getOrNull(track.fileIndex)
@@ -875,6 +904,7 @@ internal fun extractCueDataTracks(
     setDir: File,
     tracks: List<DiscImportBridge.CueTrack>,
     imageCount: Int,
+    sourceName: String? = null,
     progress: DiscImportBridge.ExtractProgress? = null,
     extractTrack: (
         track: DiscImportBridge.CueTrack,
@@ -993,7 +1023,11 @@ internal fun extractCueDataTracks(
                     failedTrackNumber = dataTracks.last().trackNum,
                 )
             }
-            publishStagedArchiveFiles(stagingDir, setDir)
+            if (sourceName != null) {
+                FileSetContentManager(setDir).publishDiscImport(stagingDir, sourceName)
+            } else {
+                publishStagedArchiveFiles(stagingDir, setDir)
+            }
         }
         return CueDataTrackExtractionResult(
             isoExtracted = isoExtracted,
@@ -1066,6 +1100,7 @@ internal fun importDiscImageFromPath(
             setDir = setDir,
             tracks = tracks,
             imageCount = orderedImageFiles.size,
+            sourceName = cueFile.name,
             extractTrack = { track, outputDir, progress, attempt ->
                 val image = orderedImageFiles[track.fileIndex]
                 val iso =
@@ -1137,12 +1172,34 @@ internal fun importIsoImageFromPath(
         return -1
     }
 
-    val isoExtracted = DiscImportBridge.extractIsoImageFiles(isoFile.absolutePath, setDir.absolutePath, null)
-    val sowExtracted = if (isoExtracted > 0) postProcessImportedDiscFiles(setDir) else 0
+    val (isoExtracted, sowExtracted) =
+        extractIsoDiscContent(setDir, isoFile.name) { staging ->
+            DiscImportBridge.extractIsoImageFiles(isoFile.absolutePath, staging.absolutePath, null)
+        }
 
     Log.i(
         "DXX-DiscImport",
         "importIsoImageFromPath: iso=$isoPath files=$isoExtracted sow=$sowExtracted",
     )
     return if (isoExtracted < 0 || sowExtracted < 0) -1 else isoExtracted + sowExtracted
+}
+
+internal fun extractIsoDiscContent(
+    setDir: File,
+    sourceName: String,
+    progress: DiscImportBridge.ExtractProgress? = null,
+    extract: (File) -> Int,
+): Pair<Int, Int> {
+    val staging = File(setDir.parentFile, ".disc-import-${System.nanoTime()}")
+    check(staging.mkdirs()) { "Could not stage ISO import" }
+    try {
+        val extracted = extract(staging)
+        val nested = if (extracted > 0) postProcessImportedDiscFiles(staging, progress) else 0
+        if (extracted > 0 && nested >= 0) {
+            FileSetContentManager(setDir).publishDiscImport(staging, sourceName)
+        }
+        return extracted to nested
+    } finally {
+        staging.deleteRecursively()
+    }
 }
