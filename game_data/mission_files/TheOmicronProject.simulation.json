@@ -9,7 +9,8 @@
   "level_counts": {
     "ok": 1,
     "failed": 1,
-    "timeout": 5
+    "timeout": 4,
+    "route_mismatch": 1
   },
   "levels": [
     {
@@ -113,7 +114,7 @@
       "level_num": 4,
       "level_file": "omicron.rl2",
       "route_input_sha256": "9109F368531B8454BFCCBB4EE8265A2737DBEBEB89C32AAA63DA8BC80451099C",
-      "status": "timeout",
+      "status": "route_mismatch",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -138,14 +139,30 @@
         {
           "n": "red key",
           "s": 35
+        },
+        {
+          "n": "fly-through 1",
+          "s": 44
+        },
+        {
+          "n": "fly-through 7",
+          "s": 54
+        },
+        {
+          "n": "fly-through 10",
+          "s": 58
+        },
+        {
+          "n": "switch 13",
+          "s": 63
         }
       ],
-      "total_frames": 9730,
+      "total_frames": 8119,
       "rng_end": {
-        "state": 3517084114,
-        "calls": 1509
+        "state": 778545630,
+        "calls": 2089
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live objective sequence differs from route input"
     },
     {
       "level_num": 5,

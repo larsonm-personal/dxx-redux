@@ -8,7 +8,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 2,
-    "timeout": 5,
+    "failed": 1,
+    "timeout": 4,
     "unsupported": 1
   },
   "levels": [
@@ -138,23 +139,18 @@
       "level_num": 6,
       "level_file": "kcxf2_n6.rl2",
       "route_input_sha256": "BC45B30F89BB1254E40EE37D0D5CD3B13BBB3F796E317DD1700FBCAAA0A043A4",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [
-        {
-          "n": "fly-through 15",
-          "s": 9
-        }
-      ],
-      "total_frames": 4756,
+      "objectives": [],
+      "total_frames": 0,
       "rng_end": {
-        "state": 2100073167,
-        "calls": 538
+        "state": 4008331270,
+        "calls": 33
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": -1,

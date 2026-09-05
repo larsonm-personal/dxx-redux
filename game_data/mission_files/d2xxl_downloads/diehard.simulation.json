@@ -8,8 +8,10 @@
   "status": "partial",
   "level_counts": {
     "ok": 3,
-    "timeout": 15,
-    "unsupported": 1
+    "failed": 1,
+    "timeout": 13,
+    "unsupported": 1,
+    "route_mismatch": 1
   },
   "levels": [
     {
@@ -159,23 +161,39 @@
       "level_num": 6,
       "level_file": "DH06.RL2",
       "route_input_sha256": "0F265428F94444D0CD5BF62CB16FC8719F3A5CD91388F65A7517D2FC7490C82B",
-      "status": "timeout",
+      "status": "route_mismatch",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
       "objectives": [
         {
-          "n": "switch 0",
+          "n": "switch 1",
           "s": 18
+        },
+        {
+          "n": "switch 0",
+          "s": 19
+        },
+        {
+          "n": "pass-through 2",
+          "s": 24
+        },
+        {
+          "n": "pass-through 7",
+          "s": 25
+        },
+        {
+          "n": "red key",
+          "s": 26
         }
       ],
-      "total_frames": 5044,
+      "total_frames": 2238,
       "rng_end": {
-        "state": 1684271235,
-        "calls": 1030
+        "state": 1177098591,
+        "calls": 1162
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live objective sequence differs from route input"
     },
     {
       "level_num": 7,
@@ -275,18 +293,18 @@
       "level_num": 11,
       "level_file": "DH11.RL2",
       "route_input_sha256": "CB95C65394D24C8B955C2B84FE449D57D3892541420997A84E9BD4DF18013CAA",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 523,
+      "total_frames": 0,
       "rng_end": {
-        "state": 3040535893,
-        "calls": 172
+        "state": 2111915288,
+        "calls": 15
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 12,

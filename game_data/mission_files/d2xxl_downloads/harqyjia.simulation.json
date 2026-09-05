@@ -9,14 +9,15 @@
   "level_counts": {
     "ok": 1,
     "failed": 1,
-    "timeout": 3
+    "timeout": 2,
+    "route_mismatch": 1
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "HARQYJ01.RL2",
       "route_input_sha256": "62A345A2090174C8C713414038639B436A41DF0C8A2889DD024EAC29BC9C9AE9",
-      "status": "timeout",
+      "status": "route_mismatch",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -57,14 +58,38 @@
         {
           "n": "red key",
           "s": 84
+        },
+        {
+          "n": "switch 34",
+          "s": 102
+        },
+        {
+          "n": "pass-through 53",
+          "s": 112
+        },
+        {
+          "n": "blastable wall",
+          "s": 112
+        },
+        {
+          "n": "hidden door",
+          "s": 116
+        },
+        {
+          "n": "reactor",
+          "s": 116
+        },
+        {
+          "n": "exit",
+          "s": 123
         }
       ],
-      "total_frames": 10334,
+      "total_frames": 7396,
       "rng_end": {
-        "state": 3275705456,
-        "calls": 3543
+        "state": 613983103,
+        "calls": 4202
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live objective sequence differs from route input"
     },
     {
       "level_num": 2,

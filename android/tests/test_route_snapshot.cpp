@@ -1581,6 +1581,41 @@ int main()
 	       fly_through_step.aim_position.value);
 	assert(fly_through_step.aim_position.value[0] >
 	       fly_through_step.activation_position.value[0]);
+	auto closed_source_snapshot = triggered_snapshot;
+	closed_source_snapshot.state.segments[0].sides[0].flyable = false;
+	closed_source_snapshot.state.walls[0].kind =
+	    dxx_route::route_wall_kind::closed;
+	closed_source_snapshot.topology.walls[0].shootable_trigger = false;
+	closed_source_snapshot.topology.walls.resize(3);
+	closed_source_snapshot.state.walls.resize(3);
+	closed_source_snapshot.topology.triggers.resize(2);
+	closed_source_snapshot.state.triggers.resize(2);
+	closed_source_snapshot.topology.walls[2].segment = 0;
+	closed_source_snapshot.topology.walls[2].side = 2;
+	closed_source_snapshot.topology.walls[2].target =
+	    closed_source_snapshot.topology.segments[0].center;
+	closed_source_snapshot.topology.walls[2].shootable_trigger = true;
+	closed_source_snapshot.topology.segments[0].sides[2].wall = 2;
+	closed_source_snapshot.state.walls[2].kind =
+	    dxx_route::route_wall_kind::overlay;
+	closed_source_snapshot.state.walls[2].trigger = 1;
+	closed_source_snapshot.topology.triggers[1].kind =
+	    dxx_route::route_trigger_kind::open_wall;
+	closed_source_snapshot.topology.triggers[1].links.push_back({ 0, 0 });
+	const auto closed_source_dependency =
+	    dxx_route::resolve_trigger_dependency(
+	        closed_source_snapshot, planner_query,
+	        dxx_route::initial_route_progress_state(
+	            closed_source_snapshot, planner_query),
+	        1, 0);
+	assert(closed_source_dependency.resolved);
+	assert(closed_source_dependency.steps.size() == 2);
+	assert(closed_source_dependency.steps[0].trigger == 1);
+	assert(closed_source_dependency.steps[0].activation ==
+	       dxx_route::route_activation_kind::shoot_switch);
+	assert(closed_source_dependency.steps[1].trigger == 0);
+	assert(closed_source_dependency.steps[1].activation ==
+	       dxx_route::route_activation_kind::fly_through_trigger);
 	auto narrow_trigger_snapshot = fly_through_snapshot;
 	narrow_trigger_snapshot.topology.segments[0].sides[0].clearance_radius = 1;
 	auto narrow_trigger_query = planner_query;

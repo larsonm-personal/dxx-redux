@@ -6,6 +6,7 @@ param(
     [ValidateRange(0, [int]::MaxValue)][int]$SampleSeed = 0,
     [string]$SampleStatePath,
     [string[]]$ArchiveNames,
+    [ValidateRange(0, 128)][int]$MaxParallel = 0,
     [switch]$NoBuild,
     [switch]$MissingOnly
 )
@@ -57,7 +58,7 @@ if ($MissingOnly -and $eligibleArchiveCount -eq 0) {
 }
 
 if ($Engine -eq 'Windows') {
-    $hostArgs = @{}
+    $hostArgs = @{ MaxParallel = $MaxParallel }
     if ($NoBuild) { $hostArgs.NoBuild = $true }
     if ($ArchiveNames) {
         $hostArgs.ArchiveNames = @($ArchiveNames)

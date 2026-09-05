@@ -28,17 +28,18 @@ function Invoke-DryRun {
 
 try {
     $runnerSource = Get-Content -LiteralPath $runner -Raw
-    if ($runnerSource -notmatch '(?s)function Invoke-GuidebotHeadlessLevel.*?Start-Process.*?-NoNewWindow' -or
+    if ($runnerSource -notmatch "headless_process_pool\.ps1" -or
+        $runnerSource -notmatch '(?s)if \(\$Mode -eq ''Headless''\).*?Invoke-HeadlessProcessPool' -or
         $runnerSource -match '(?s)function Invoke-GuidebotDesktopLevel.*?Start-Process.*?-NoNewWindow') {
-        throw 'Headless runs must reuse the parent console while Desktop runs retain their visible game window'
+        throw 'Headless runs must use the hidden process pool while Desktop runs retain their visible game window'
     }
     if ($runnerSource -notmatch '\[int\]\$Repeat\s*=\s*1') {
         throw 'Corpus runs must default to one deterministic execution per level'
     }
-    $levelLoop = $runnerSource.IndexOf('foreach ($item in $selectedItems) {')
-    $incrementalWrite = $runnerSource.IndexOf('Write-GuidebotSimulationFile -MetadataFile $item.MetadataFile', $levelLoop)
+    $processPool = $runnerSource.IndexOf('Invoke-HeadlessProcessPool -Tasks')
+    $incrementalWrite = $runnerSource.IndexOf('Publish-GuidebotResult -Item $task.Item', $processPool)
     $finalWriteLoop = $runnerSource.IndexOf('foreach ($file in $files) {', $incrementalWrite)
-    if ($levelLoop -lt 0 -or $incrementalWrite -lt $levelLoop -or $finalWriteLoop -lt $incrementalWrite) {
+    if ($processPool -lt 0 -or $incrementalWrite -lt $processPool -or $finalWriteLoop -lt $incrementalWrite) {
         throw 'Each completed level must be published before final corpus aggregation'
     }
     $filtered = @(Invoke-DryRun -Name filtered -MissionJson Counterstrike.json -Level 1, 3)

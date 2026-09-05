@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 9,
-    "timeout": 9
+    "ok": 10,
+    "timeout": 8
   },
   "levels": [
     {
@@ -201,8 +201,8 @@
     {
       "level_num": 4,
       "level_file": "pliom.rl2",
-      "route_input_sha256": "1B318DEFCDA3561A5B5EC8DDD1B08CF490DEC422C446B7036A6DFBFB1B04AE6B",
-      "status": "timeout",
+      "route_input_sha256": "F35551DF75CB107DA6F31B5231F61E678FCF4AD3B1461F643B0F020F51B6F281",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -213,16 +213,51 @@
           "s": 5
         },
         {
+          "n": "switch 6",
+          "s": 8
+        },
+        {
           "n": "gold key",
-          "s": 9
+          "s": 15
+        },
+        {
+          "n": "fly-through 22",
+          "s": 31
+        },
+        {
+          "n": "switch 7",
+          "s": 31
+        },
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 53
+        },
+        {
+          "n": "reactor",
+          "s": 66
+        },
+        {
+          "n": "switch 3",
+          "s": 70
+        },
+        {
+          "n": "switch 12",
+          "s": 81
+        },
+        {
+          "n": "red key",
+          "s": 83
+        },
+        {
+          "n": "exit",
+          "s": 105
         }
       ],
-      "total_frames": 5909,
+      "total_frames": 6270,
       "rng_end": {
-        "state": 3294173102,
-        "calls": 921
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1572943126,
+        "calls": 3921
+      }
     },
     {
       "level_num": 5,

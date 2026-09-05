@@ -8,7 +8,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 3,
-    "timeout": 3
+    "timeout": 2,
+    "route_mismatch": 1
   },
   "levels": [
     {
@@ -56,7 +57,7 @@
       "level_num": 2,
       "level_file": "e2v-2.rl2",
       "route_input_sha256": "668511F1DBDC207A1EF758C1197683BA32280EAB2566D20134ACF1523CAE5BE5",
-      "status": "timeout",
+      "status": "route_mismatch",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -69,14 +70,30 @@
         {
           "n": "fly-through 5",
           "s": 11
+        },
+        {
+          "n": "fly-through 7",
+          "s": 13
+        },
+        {
+          "n": "fly-through 14",
+          "s": 15
+        },
+        {
+          "n": "reactor",
+          "s": 33
+        },
+        {
+          "n": "exit",
+          "s": 42
         }
       ],
-      "total_frames": 4435,
+      "total_frames": 2512,
       "rng_end": {
-        "state": 625495087,
-        "calls": 698
+        "state": 1326565041,
+        "calls": 1744
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live objective sequence differs from route input"
     },
     {
       "level_num": 3,

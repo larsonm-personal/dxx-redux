@@ -10,7 +10,8 @@
     "level_counts": {
       "ok": 18,
       "failed": 1,
-      "timeout": 11
+      "timeout": 10,
+      "route_mismatch": 1
     },
     "levels": [
       {
@@ -694,23 +695,59 @@
         "level_num": 19,
         "level_file": "psx19.rl2",
         "route_input_sha256": "074881F5DA1C2B4758378ECC4E1D7E409AC402B6C07D6F82E35AAA542CE856CC",
-        "status": "timeout",
+        "status": "route_mismatch",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
         "objectives": [
           {
+            "n": "blue key",
+            "s": 16
+          },
+          {
             "n": "fly-through 5",
             "s": 16
+          },
+          {
+            "n": "pass-through 12",
+            "s": 26
+          },
+          {
+            "n": "fly-through 10",
+            "s": 28
+          },
+          {
+            "n": "switch 13",
+            "s": 31
+          },
+          {
+            "n": "switch 2",
+            "s": 38
+          },
+          {
+            "n": "switch 9",
+            "s": 42
+          },
+          {
+            "n": "red key",
+            "s": 47
+          },
+          {
+            "n": "reactor",
+            "s": 49
+          },
+          {
+            "n": "exit",
+            "s": 51
           }
         ],
-        "total_frames": 5258,
+        "total_frames": 3055,
         "rng_end": {
-          "state": 3735676127,
-          "calls": 266
+          "state": 2025613794,
+          "calls": 789
         },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "problem": "live objective sequence differs from route input"
       },
       {
         "level_num": 20,

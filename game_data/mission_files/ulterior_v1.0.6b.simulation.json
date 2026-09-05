@@ -7,9 +7,10 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 15,
+    "ok": 14,
     "failed": 1,
-    "timeout": 10
+    "timeout": 10,
+    "route_mismatch": 1
   },
   "levels": [
     {
@@ -855,7 +856,7 @@
       "level_num": -1,
       "level_file": "lvl97.rl2",
       "route_input_sha256": "16E8CA2FE864D071A3ADE5659FC1374FA52F00765CD0644B673145E320717990",
-      "status": "ok",
+      "status": "route_mismatch",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -864,10 +865,6 @@
         {
           "n": "switch 5",
           "s": 11
-        },
-        {
-          "n": "pass-through 6",
-          "s": 17
         },
         {
           "n": "fly-through 7",
@@ -879,18 +876,19 @@
         },
         {
           "n": "reactor",
-          "s": 40
+          "s": 39
         },
         {
           "n": "exit",
-          "s": 41
+          "s": 40
         }
       ],
-      "total_frames": 2437,
+      "total_frames": 2419,
       "rng_end": {
-        "state": 781457496,
-        "calls": 1999
-      }
+        "state": 3361628676,
+        "calls": 2003
+      },
+      "problem": "live objective sequence differs from route input"
     },
     {
       "level_num": -2,

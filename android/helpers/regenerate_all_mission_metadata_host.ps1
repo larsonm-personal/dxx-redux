@@ -6,8 +6,12 @@ param(
     [switch]$NoBuild,
     [string]$ArchiveName = "",
     [string[]]$ArchiveNames,
+    [string[]]$ArchivePaths,
     [string[]]$CdSourceIds,
-    [ValidateRange(1, [int]::MaxValue)][int]$ArchiveTimeoutSeconds = 120
+    [ValidateRange(1, [int]::MaxValue)][int]$ArchiveTimeoutSeconds = 120,
+    [ValidateRange(0, 128)][int]$MaxParallel = 0,
+    [string]$OutputRoot,
+    [switch]$InternalWorker
 )
 
 $ErrorActionPreference = "Stop"
@@ -19,6 +23,7 @@ $repoRoot = Split-Path -Parent $androidRoot
 . (Join-Path $scriptDir "cd_level_metadata_sources.ps1")
 . (Join-Path $scriptDir "normalized_json_text.ps1")
 . (Join-Path $scriptDir "mission_archive_sources.ps1")
+. (Join-Path $scriptDir "headless_process_pool.ps1")
 $zipDir = Join-Path $repoRoot "game_data\mission_files"
 $archiveSources = @()
 if (-not $CdSourcesOnly) {
@@ -26,7 +31,11 @@ if (-not $CdSourcesOnly) {
 }
 $cdSourceManifest = Join-Path $zipDir "cd_level_metadata_sources.jsonc"
 $stamp = Get-Date -Format "yyyyMMdd_HHmmss"
-$outDir = Join-Path $androidRoot "temp\mission_zip_host_metadata\$stamp"
+$outDir = if ($OutputRoot) {
+    $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputRoot)
+} else {
+    Join-Path $androidRoot "temp\mission_zip_host_metadata\$stamp"
+}
 $metadataDir = Join-Path $outDir "metadata"
 $rawDir = Join-Path $outDir "raw"
 $logsDir = Join-Path $outDir "logs"
@@ -34,7 +43,8 @@ $stagesDir = Join-Path $outDir "stages"
 $summaryJsonl = Join-Path $outDir "summary.jsonl"
 $largeZipBytes = 524288000
 $largeZipIncludePatterns = @("ewithin-versions.zip")
-$hasArchiveFilter = -not [string]::IsNullOrWhiteSpace($ArchiveName) -or @($ArchiveNames).Count -gt 0
+$hasArchiveFilter = -not [string]::IsNullOrWhiteSpace($ArchiveName) -or
+@($ArchiveNames).Count -gt 0 -or @($ArchivePaths).Count -gt 0
 $missionVariantDirectoryMaskPrecedence = @()
 $invariantCulture = [System.Globalization.CultureInfo]::InvariantCulture
 $d1DataCandidates = @(
@@ -816,6 +826,18 @@ function Invoke-MetadataKotlinWorker {
     }
 }
 
+function Stop-MetadataWorkerProcess {
+    param([AllowNull()]$Worker)
+
+    if ($null -eq $Worker -or $null -eq $Worker.Process) { return }
+    try { $Worker.Process.StandardInput.Close() } catch {}
+    if (-not $Worker.Process.WaitForExit(2000)) {
+        try { $Worker.Process.Kill($true) } catch { try { $Worker.Process.Kill() } catch {} }
+        $Worker.Process.WaitForExit()
+    }
+    $Worker.Process.Dispose()
+}
+
 function Invoke-HeadlessMetadataProcess {
     param(
         [Parameter(Mandatory = $true)][string]$Executable,
@@ -1066,91 +1088,172 @@ if (-not $CdSourcesOnly) {
                 }
             )
         }
+        if (@($ArchivePaths).Count -gt 0) {
+            $requestedArchivePaths = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+            foreach ($path in $ArchivePaths) {
+                $requestedArchivePaths.Add([IO.Path]::GetFullPath($path)) | Out-Null
+            }
+            $archives = @($archives | Where-Object { $requestedArchivePaths.Contains($_.Archive.FullName) })
+        }
         if ($archives.Count -eq 0) {
             throw $(if ($requestedArchiveNames.Count -gt 0) { "Requested mission archives not found: $($requestedArchiveNames -join ', ')" } else { "No mission archives found in $zipDir" })
         }
 
-        $index = 0
-        foreach ($archiveRecord in $archives) {
-            $archive = $archiveRecord.Archive
-            $index++
-            $runStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-            $artifactName = if ($archiveRecord.Source.Id -eq "mission_files") { $archive.BaseName } else { "$($archiveRecord.Source.Id)_$($archive.BaseName)" }
-            $label = Get-SafeLabel -Name $artifactName
-            $metadataPath = Join-Path $metadataDir "$($archive.BaseName).json"
-            if ($archiveRecord.Source.Id -ne "mission_files") {
-                $metadataPath = Join-Path $metadataDir "$artifactName.json"
+        $archiveWorkerCount = Get-HeadlessProcessWorkerCount -Requested $MaxParallel `
+            -ItemCount $archives.Count -AutomaticLimit 4
+        if (-not $InternalWorker -and $archiveWorkerCount -gt 1) {
+            Write-Status "Host metadata workers: $archiveWorkerCount for $($archives.Count) archives on $([Environment]::ProcessorCount) logical processors"
+            $powershell = Get-PowerShellPath
+            $workerTasks = [Collections.Generic.List[object]]::new()
+            $workerIndex = 0
+            foreach ($archiveRecord in $archives) {
+                $workerIndex++
+                $workerRoot = Join-Path $outDir "workers\$('{0:d4}' -f $workerIndex)"
+                $arguments = @(
+                    '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', $PSCommandPath,
+                    '-NoBuild', '-InternalWorker', '-MaxParallel', '1', '-ArchivePaths', $archiveRecord.Archive.FullName,
+                    '-ArchiveTimeoutSeconds', [string]$ArchiveTimeoutSeconds, '-OutputRoot', $workerRoot
+                )
+                if ($NoRegressionCopy) { $arguments += '-NoRegressionCopy' }
+                $workerTasks.Add([pscustomobject]@{
+                        FilePath = $powershell; Arguments = $arguments; TimeoutSeconds = 0; WorkingDirectory = $repoRoot
+                        ArchiveRecord = $archiveRecord; WorkerRoot = $workerRoot; Index = $workerIndex
+                    })
             }
-            $regressionPath = Join-Path $archive.DirectoryName "$($archive.BaseName).json"
-            $rawArchiveDir = Join-Path $rawDir $label
-            $stageDir = Join-Path $stagesDir $label
-            $counts = @{
-                passed = @($results | Where-Object { $_.status -eq "passed" }).Count
-                skipped = @($results | Where-Object { $_.status -like "skipped*" }).Count
-                failed = @($results | Where-Object { $_.status -eq "failed" }).Count
+            $parallelProgress = @{ Started = 0; Retired = 0 }
+            $parallelResults = [Collections.Generic.List[object]]::new()
+            Invoke-HeadlessProcessPool -Tasks @($workerTasks) -MaxParallel $archiveWorkerCount -OnStarted {
+                param($task)
+                $parallelProgress.Started++
+                Write-Status "[$($parallelProgress.Started)/$($archives.Count)] Host metadata started: $($task.ArchiveRecord.Archive.Name)"
+            } -OnCompleted {
+                param($task, $processResult)
+                $parallelProgress.Retired++
+                $summaryPath = Join-Path $task.WorkerRoot 'summary.json'
+                $workerLogPath = Join-Path $task.WorkerRoot 'worker.log'
+                $workerLog = ($processResult.StandardOutput + "`n" + $processResult.StandardError).Trim()
+                Write-Utf8NoBomTextAtomically -Path $workerLogPath -Text ($workerLog + $(if ($workerLog) { "`n" } else { '' }))
+                $workerResults = if (-not $processResult.StartError -and -not $processResult.TimedOut -and
+                    (Test-Path -LiteralPath $summaryPath -PathType Leaf)) {
+                    @(Get-Content -LiteralPath $summaryPath -Raw | ConvertFrom-Json -NoEnumerate)
+                } else { @() }
+                if ($workerResults.Count -eq 0) {
+                    $reason = if ($processResult.StartError) {
+                        $processResult.StartError
+                    } elseif ($processResult.TimedOut) {
+                        'metadata archive worker timed out'
+                    } else {
+                        "metadata archive worker exited $($processResult.ExitCode); log=$workerLogPath"
+                    }
+                    $workerResults = @([pscustomobject][ordered]@{
+                            zip = $task.ArchiveRecord.Archive.FullName
+                            name = $task.ArchiveRecord.Archive.Name
+                            source = $task.ArchiveRecord.Source.Id
+                            size_bytes = $task.ArchiveRecord.Archive.Length
+                            status = 'failed'
+                            reason = $reason
+                        })
+                }
+                foreach ($record in $workerResults) {
+                    if ($record.metadata_json -and (Test-Path -LiteralPath $record.metadata_json -PathType Leaf)) {
+                        $combinedMetadataPath = Join-Path $metadataDir ([IO.Path]::GetFileName([string]$record.metadata_json))
+                        Write-Utf8NoBomTextAtomically -Path $combinedMetadataPath -Text ([IO.File]::ReadAllText([string]$record.metadata_json))
+                        $record.metadata_json = $combinedMetadataPath
+                    }
+                    $parallelResults.Add($record)
+                    $summaryRecord = [ordered]@{}
+                    foreach ($property in $record.PSObject.Properties) { $summaryRecord[$property.Name] = $property.Value }
+                    Write-SummaryRecord -Record $summaryRecord
+                }
+                $primary = $workerResults[0]
+                $color = if ($primary.status -eq 'passed') { 'Green' } elseif ($primary.status -like 'skipped*') { 'Yellow' } else { 'Red' }
+                Write-Status "[$($parallelProgress.Retired)/$($archives.Count)] $($primary.status.ToUpperInvariant()): $($task.ArchiveRecord.Archive.Name)" $color
+                if ($primary.reason) { Write-Status "  reason: $($primary.reason)" $color }
             }
-            Write-Progress -Activity "Host mission metadata batch" -Status "Running ${index}/$($archives.Count): $($archive.Name)" -PercentComplete ([int](($index - 1) * 100 / $archives.Count))
-            Write-Status ("[{0}/{1}] Host metadata: {2} ({3} MB, elapsed {4:n1}s, passed {5}, skipped {6}, failed {7})" -f
-                $index, $archives.Count, $archive.Name, [Math]::Round($archive.Length / 1MB, 1),
-                $batchStopwatch.Elapsed.TotalSeconds, $counts.passed, $counts.skipped, $counts.failed)
+            $results += @($parallelResults)
+        } else {
+            $index = 0
+            foreach ($archiveRecord in $archives) {
+                $archive = $archiveRecord.Archive
+                $index++
+                $runStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+                $artifactName = if ($archiveRecord.Source.Id -eq "mission_files") { $archive.BaseName } else { "$($archiveRecord.Source.Id)_$($archive.BaseName)" }
+                $label = Get-SafeLabel -Name $artifactName
+                $metadataPath = Join-Path $metadataDir "$($archive.BaseName).json"
+                if ($archiveRecord.Source.Id -ne "mission_files") {
+                    $metadataPath = Join-Path $metadataDir "$artifactName.json"
+                }
+                $regressionPath = Join-Path $archive.DirectoryName "$($archive.BaseName).json"
+                $rawArchiveDir = Join-Path $rawDir $label
+                $stageDir = Join-Path $stagesDir $label
+                $counts = @{
+                    passed = @($results | Where-Object { $_.status -eq "passed" }).Count
+                    skipped = @($results | Where-Object { $_.status -like "skipped*" }).Count
+                    failed = @($results | Where-Object { $_.status -eq "failed" }).Count
+                }
+                Write-Progress -Activity "Host mission metadata batch" -Status "Running ${index}/$($archives.Count): $($archive.Name)" -PercentComplete ([int](($index - 1) * 100 / $archives.Count))
+                Write-Status ("[{0}/{1}] Host metadata: {2} ({3} MB, elapsed {4:n1}s, passed {5}, skipped {6}, failed {7})" -f
+                    $index, $archives.Count, $archive.Name, [Math]::Round($archive.Length / 1MB, 1),
+                    $batchStopwatch.Elapsed.TotalSeconds, $counts.passed, $counts.skipped, $counts.failed)
 
-            $record = [ordered]@{
-                zip = $archive.FullName
-                name = $archive.Name
-                source = $archiveRecord.Source.Id
-                size_bytes = $archive.Length
-                status = "pending"
-                metadata_json = $metadataPath
-                regression_json = $regressionPath
-            }
-            try {
-                if ($archive.Length -gt $largeZipBytes -and -not (Test-LargeMissionZipIncluded -Name $archive.Name)) {
-                    $record["status"] = "skipped_large"
-                    $record["reason"] = "archive is larger than the configured host metadata limit"
+                $record = [ordered]@{
+                    zip = $archive.FullName
+                    name = $archive.Name
+                    source = $archiveRecord.Source.Id
+                    size_bytes = $archive.Length
+                    status = "pending"
+                    metadata_json = $metadataPath
+                    regression_json = $regressionPath
+                }
+                try {
+                    if ($archive.Length -gt $largeZipBytes -and -not (Test-LargeMissionZipIncluded -Name $archive.Name)) {
+                        $record["status"] = "skipped_large"
+                        $record["reason"] = "archive is larger than the configured host metadata limit"
+                        Write-FailureJson -Path $metadataPath -Reason $record["reason"]
+                        continue
+                    }
+                    Expand-MissionArchive -Archive $archive -RawArchiveDir $rawArchiveDir
+                    $variantSelection = Get-MissionVariantMaskSelection -RawDirPath $rawArchiveDir
+                    Copy-RawMissionFileSet -RawDirPath $rawArchiveDir -StageDir $stageDir -VariantSelection $variantSelection
+                    $descriptors = @(Get-MissionDescriptor -StageDir $stageDir)
+                    if ($descriptors.Count -eq 0) {
+                        $record["status"] = "skipped_no_descriptor"
+                        $record["reason"] = "archive contains no .msn or .mn2 mission descriptor"
+                        Write-FailureJson -Path $metadataPath -Reason $record["reason"]
+                        continue
+                    }
+                    $missions = @()
+                    $targetIndex = 0
+                    foreach ($descriptor in $descriptors) {
+                        $rawOutputPath = Join-Path $rawDir "$label.$($descriptor.BaseName).metadata.json"
+                        $logPath = Join-Path $logsDir "$label.$($descriptor.BaseName).log"
+                        $descriptorInfo = Get-MissionDescriptorInfo -Descriptor $descriptor
+                        $missionPath = Get-RawMissionDescriptorPath -RawDirPath $rawArchiveDir -StagedDescriptor $descriptor -VariantSelection $variantSelection
+                        $raw = Invoke-HeadlessScan -Descriptor $descriptor -StageDir $stageDir -Executables $executables -DataDirs $dataDirs -RawOutputPath $rawOutputPath -LogPath $logPath -TimeoutSeconds $ArchiveTimeoutSeconds
+                        $missions += Get-CheckedInMissionJson -RawPath $rawOutputPath -TargetIndex $targetIndex -SourceName $descriptorInfo.DisplayName -MissionFilename $descriptorInfo.Filename -MissionPath $missionPath
+                        $targetIndex++
+                    }
+                    Write-JsonValue -Path $metadataPath -Value ([object[]]$missions) -MissionMetadata
+                    if (-not $NoRegressionCopy) {
+                        Write-Utf8NoBomTextAtomically -Path $regressionPath -Text ([System.IO.File]::ReadAllText($metadataPath))
+                    }
+                    $record["status"] = "passed"
+                    $record["mission_count"] = $missions.Count
+                    $record["level_count"] = @($missions | ForEach-Object { $_.level_count } | Measure-Object -Sum).Sum
+                } catch {
+                    $record["status"] = "failed"
+                    $record["reason"] = $_.Exception.Message
                     Write-FailureJson -Path $metadataPath -Reason $record["reason"]
-                    continue
-                }
-                Expand-MissionArchive -Archive $archive -RawArchiveDir $rawArchiveDir
-                $variantSelection = Get-MissionVariantMaskSelection -RawDirPath $rawArchiveDir
-                Copy-RawMissionFileSet -RawDirPath $rawArchiveDir -StageDir $stageDir -VariantSelection $variantSelection
-                $descriptors = @(Get-MissionDescriptor -StageDir $stageDir)
-                if ($descriptors.Count -eq 0) {
-                    $record["status"] = "skipped_no_descriptor"
-                    $record["reason"] = "archive contains no .msn or .mn2 mission descriptor"
-                    Write-FailureJson -Path $metadataPath -Reason $record["reason"]
-                    continue
-                }
-                $missions = @()
-                $targetIndex = 0
-                foreach ($descriptor in $descriptors) {
-                    $rawOutputPath = Join-Path $rawDir "$label.$($descriptor.BaseName).metadata.json"
-                    $logPath = Join-Path $logsDir "$label.$($descriptor.BaseName).log"
-                    $descriptorInfo = Get-MissionDescriptorInfo -Descriptor $descriptor
-                    $missionPath = Get-RawMissionDescriptorPath -RawDirPath $rawArchiveDir -StagedDescriptor $descriptor -VariantSelection $variantSelection
-                    $raw = Invoke-HeadlessScan -Descriptor $descriptor -StageDir $stageDir -Executables $executables -DataDirs $dataDirs -RawOutputPath $rawOutputPath -LogPath $logPath -TimeoutSeconds $ArchiveTimeoutSeconds
-                    $missions += Get-CheckedInMissionJson -RawPath $rawOutputPath -TargetIndex $targetIndex -SourceName $descriptorInfo.DisplayName -MissionFilename $descriptorInfo.Filename -MissionPath $missionPath
-                    $targetIndex++
-                }
-                Write-JsonValue -Path $metadataPath -Value ([object[]]$missions) -MissionMetadata
-                if (-not $NoRegressionCopy) {
-                    Write-Utf8NoBomTextAtomically -Path $regressionPath -Text ([System.IO.File]::ReadAllText($metadataPath))
-                }
-                $record["status"] = "passed"
-                $record["mission_count"] = $missions.Count
-                $record["level_count"] = @($missions | ForEach-Object { $_.level_count } | Measure-Object -Sum).Sum
-            } catch {
-                $record["status"] = "failed"
-                $record["reason"] = $_.Exception.Message
-                Write-FailureJson -Path $metadataPath -Reason $record["reason"]
-            } finally {
-                $runStopwatch.Stop()
-                $record["elapsed_ms"] = $runStopwatch.ElapsedMilliseconds
-                $results += [pscustomobject]$record
-                Write-SummaryRecord -Record $record
-                $color = if ($record["status"] -eq "passed") { "Green" } elseif ($record["status"] -like "skipped*") { "Yellow" } else { "Red" }
-                Write-Status ("[{0}/{1}] {2}: {3} in {4:n1}s" -f $index, $archives.Count, $record["status"].ToUpperInvariant(), $archive.Name, $runStopwatch.Elapsed.TotalSeconds) $color
-                if ($record.Contains("reason") -and $record["reason"]) {
-                    Write-Status "  reason: $($record["reason"])" $color
+                } finally {
+                    $runStopwatch.Stop()
+                    $record["elapsed_ms"] = $runStopwatch.ElapsedMilliseconds
+                    $results += [pscustomobject]$record
+                    Write-SummaryRecord -Record $record
+                    $color = if ($record["status"] -eq "passed") { "Green" } elseif ($record["status"] -like "skipped*") { "Yellow" } else { "Red" }
+                    Write-Status ("[{0}/{1}] {2}: {3} in {4:n1}s" -f $index, $archives.Count, $record["status"].ToUpperInvariant(), $archive.Name, $runStopwatch.Elapsed.TotalSeconds) $color
+                    if ($record.Contains("reason") -and $record["reason"]) {
+                        Write-Status "  reason: $($record["reason"])" $color
+                    }
                 }
             }
         }
@@ -1158,14 +1261,18 @@ if (-not $CdSourcesOnly) {
 
     $batchStopwatch.Stop()
     Write-Progress -Activity "Host mission metadata batch" -Completed
-    Write-JsonValue -Path (Join-Path $outDir "summary.json") -Value ([object[]]$results)
-    $failed = @($results | Where-Object { $_.status -eq "failed" })
-    $skipped = @($results | Where-Object { $_.status -like "skipped*" })
-    $passed = @($results | Where-Object { $_.status -eq "passed" })
+    $orderedResults = @($results | Sort-Object source, name, zip)
+    Write-JsonValue -Path (Join-Path $outDir "summary.json") -Value ([object[]]$orderedResults)
+    $failed = @($orderedResults | Where-Object { $_.status -eq "failed" })
+    $skipped = @($orderedResults | Where-Object { $_.status -like "skipped*" })
+    $passed = @($orderedResults | Where-Object { $_.status -eq "passed" })
     $failedLines = @($failed | ForEach-Object { "$($_.name)`t$($_.reason)" })
     Write-Utf8NoBomTextAtomically -Path (Join-Path $outDir "failed_zips.txt") -Text (($failedLines -join "`n") + $(if ($failedLines.Count) { "`n" } else { "" }))
     Write-Status "Host mission metadata complete: $($results.Count) total, $($passed.Count) passed, $($skipped.Count) skipped, $($failed.Count) failed in $([Math]::Round($batchStopwatch.Elapsed.TotalSeconds, 1))s"
     Write-Status "Output: $outDir"
+    Stop-MetadataWorkerProcess -Worker $executables.d1
+    Stop-MetadataWorkerProcess -Worker $executables.d2
+    Stop-MetadataWorkerProcess -Worker $script:metadataKotlinWorker
     if ($failed.Count -gt 0) {
         exit 1
     }

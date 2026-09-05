@@ -8,8 +8,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 10,
-    "failed": 6,
-    "timeout": 16
+    "failed": 7,
+    "timeout": 15
   },
   "levels": [
     {
@@ -732,7 +732,7 @@
       "level_num": 23,
       "level_file": "map23.rl2",
       "route_input_sha256": "F3ED434DF2C778C7C10DA4C081915CAEC2462A8E25104F9EE13BBD7C27FE08C9",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -753,18 +753,14 @@
         {
           "n": "blue key",
           "s": 33
-        },
-        {
-          "n": "switch 1",
-          "s": 33
         }
       ],
-      "total_frames": 9946,
+      "total_frames": 1979,
       "rng_end": {
-        "state": 464019428,
-        "calls": 3187
+        "state": 3813384172,
+        "calls": 1867
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 24,

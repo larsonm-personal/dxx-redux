@@ -3627,22 +3627,6 @@ class dependency_planner
 	{
 		if (!valid_wall(snapshot_, source.source_wall))
 			return false;
-		bool has_restorer = false;
-		for (int trigger = 0;
-		     trigger < static_cast<int>(snapshot_.topology.triggers.size());
-		     ++trigger) {
-			const auto kind = snapshot_.topology.triggers[trigger].kind;
-			if (kind != route_trigger_kind::close_wall &&
-			    kind != route_trigger_kind::illusion_on &&
-			    kind != route_trigger_kind::close_door)
-				continue;
-			if (!trigger_targets_wall(snapshot_, trigger, source.source_wall))
-				continue;
-			has_restorer = true;
-			break;
-		}
-		if (!has_restorer)
-			return false;
 		const auto preparation_start = state_;
 		const auto initial_kind = route_progress_wall_kind(
 		    snapshot_, state_.progress, source.source_wall);
@@ -3786,6 +3770,19 @@ class dependency_planner
 		const bool shootable = valid_wall(snapshot_, source.source_wall) &&
 		                       snapshot_.topology.walls[source.source_wall]
 		                           .shootable_trigger;
+		if (!shootable && valid_wall(snapshot_, source.source_wall) &&
+		    route_progress_wall_kind(
+		        snapshot_, state_.progress, source.source_wall) ==
+		        route_wall_kind::closed) {
+			const auto blocked_source_start = state_;
+			if (prepare_unreachable_trigger_source(source, depth + 1))
+				return fire_trigger(segment, side, depth + 1, forced_sources);
+			state_ = blocked_source_start;
+			set_problem(
+			    "non-shootable trigger source is behind a closed wall");
+			state_.failed_trigger = source.trigger;
+			return false;
+		}
 		/* A fired bit denotes an effect that is still active. Contrary wall
 		 * transitions clear that bit when they restore a shootable surface, so
 		 * only a genuinely rearmed trigger reaches the firing path again. */

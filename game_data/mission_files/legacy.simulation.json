@@ -8,7 +8,8 @@
   "status": "failed",
   "level_counts": {
     "failed": 1,
-    "timeout": 2
+    "timeout": 1,
+    "route_mismatch": 1
   },
   "levels": [
     {
@@ -61,7 +62,7 @@
       "level_num": 2,
       "level_file": "trident.rl2",
       "route_input_sha256": "483AFD9714CC4C0C8A481C879534EF274E07DC19357C35232933AF9B97DF21D8",
-      "status": "timeout",
+      "status": "route_mismatch",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -74,14 +75,50 @@
         {
           "n": "switch 1",
           "s": 11
+        },
+        {
+          "n": "fly-through 3",
+          "s": 23
+        },
+        {
+          "n": "fly-through 4",
+          "s": 41
+        },
+        {
+          "n": "switch 5",
+          "s": 46
+        },
+        {
+          "n": "fly-through 15",
+          "s": 47
+        },
+        {
+          "n": "red key",
+          "s": 51
+        },
+        {
+          "n": "switch 11",
+          "s": 63
+        },
+        {
+          "n": "fly-through 12",
+          "s": 66
+        },
+        {
+          "n": "reactor",
+          "s": 75
+        },
+        {
+          "n": "exit",
+          "s": 78
         }
       ],
-      "total_frames": 7063,
+      "total_frames": 4660,
       "rng_end": {
-        "state": 3328140451,
-        "calls": 998
+        "state": 2858410995,
+        "calls": 4246
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live objective sequence differs from route input"
     },
     {
       "level_num": 3,

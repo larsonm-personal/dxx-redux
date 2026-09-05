@@ -8,8 +8,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 3,
-    "failed": 1,
-    "timeout": 3
+    "failed": 2,
+    "timeout": 2
   },
   "levels": [
     {
@@ -49,18 +49,18 @@
       "level_num": 2,
       "level_file": "PROM-NO.RL2",
       "route_input_sha256": "4F87E3D15544E1F35397C0DE349E780073B835A8284BB9879D13F1D8A20D4CA6",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 3722,
+      "total_frames": 0,
       "rng_end": {
-        "state": 675780521,
-        "calls": 24
+        "state": 1,
+        "calls": 0
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 3,

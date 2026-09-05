@@ -8,8 +8,10 @@
   "status": "partial",
   "level_counts": {
     "ok": 3,
-    "timeout": 15,
-    "unsupported": 1
+    "failed": 1,
+    "timeout": 13,
+    "unsupported": 1,
+    "route_mismatch": 1
   },
   "levels": [
     {
@@ -155,23 +157,43 @@
       "level_num": 6,
       "level_file": "DH06.RL2",
       "route_input_sha256": "1E5ECA6B47A4917569D0E8789AF855EAAD2DFD32E627AF745FB7A1B805A3E604",
-      "status": "timeout",
+      "status": "route_mismatch",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
       "objectives": [
         {
-          "n": "switch 0",
+          "n": "switch 1",
           "s": 18
+        },
+        {
+          "n": "switch 0",
+          "s": 19
+        },
+        {
+          "n": "pass-through 2",
+          "s": 24
+        },
+        {
+          "n": "pass-through 7",
+          "s": 25
+        },
+        {
+          "n": "red key",
+          "s": 26
+        },
+        {
+          "n": "boss",
+          "s": 53
         }
       ],
-      "total_frames": 5044,
+      "total_frames": 8268,
       "rng_end": {
-        "state": 1684271235,
-        "calls": 1030
+        "state": 230621619,
+        "calls": 2774
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live objective sequence differs from route input"
     },
     {
       "level_num": 7,
@@ -271,18 +293,18 @@
       "level_num": 11,
       "level_file": "DH11.RL2",
       "route_input_sha256": "CE6C033153B5EF859C786F11782840E88F25B89095198BAD2FFCC03B3BEA2E6B",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 523,
+      "total_frames": 0,
       "rng_end": {
-        "state": 3040535893,
-        "calls": 172
+        "state": 2111915288,
+        "calls": 15
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 12,

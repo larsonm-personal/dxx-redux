@@ -10,6 +10,7 @@ param(
     [string]$SampleStatePath,
     [ValidateRange(1, 20)][int]$Repeat = 1,
     [ValidateRange(10, 7200)][int]$LevelTimeoutSeconds = 180,
+    [ValidateRange(0, 128)][int]$MaxParallel = 0,
     [string]$HogDir = 'game_data/CD images/Descent II (USA) (v1.1)/data_tracks/d2data',
     [string]$OutputRoot,
     [switch]$NoBuild,
@@ -45,6 +46,7 @@ $batchStart = [DateTime]::UtcNow
 . (Join-Path $scriptDir 'guidebot_simulation_regression.ps1')
 . (Join-Path $scriptDir 'runtime_targeted_sampling.ps1')
 . (Join-Path $scriptDir 'cd_level_metadata_sources.ps1')
+. (Join-Path $scriptDir 'headless_process_pool.ps1')
 
 function Write-GuidebotStatus {
     param([string]$Message, [string]$Color = 'Cyan')
@@ -252,63 +254,6 @@ function New-GuidebotInfrastructureErrorResult {
         status = 'infrastructure_error'
         problem = $Problem
     }
-}
-
-function Invoke-GuidebotHeadlessLevel {
-    param(
-        [Parameter(Mandatory)][object]$WorkItem,
-        [Parameter(Mandatory)][object]$Stage
-    )
-
-    $missionName = [IO.Path]::GetFileNameWithoutExtension(
-        [string](Get-GuidebotPropertyValue $WorkItem.Mission 'mission_filename' 'd2')
-    )
-    $safeIdentity = [regex]::Replace($WorkItem.Identity, '[^A-Za-z0-9_.-]+', '_')
-    $referenceHash = ''
-    $referenceResult = $null
-    for ($run = 1; $run -le $Repeat; $run++) {
-        $output = Join-Path $resultRoot "${safeIdentity}_run_${run}.json"
-        $log = Join-Path $logRoot "${safeIdentity}_run_${run}.log"
-        $arguments = @(
-            '-hogdir', $resolvedHogDir,
-            '-mission', $missionName,
-            '-level', [string]$WorkItem.EngineLevelNumber,
-            '-route-confirm-timeout-seconds', [string]$WorkItem.SimulationTimeLimitSeconds,
-            '-route-confirm-json-out', $output
-        )
-        if ($Stage.ExtraDir) { $arguments += @('-extra-dir', $Stage.ExtraDir) }
-        $errorLog = "$log.stderr"
-        $processArguments = @($arguments | ForEach-Object {
-                $argument = [string]$_
-                if ($argument -match '[\s"]') { '"' + $argument.Replace('"', '\"') + '"' } else { $argument }
-            }) -join ' '
-        $process = Start-Process -FilePath $exe -ArgumentList $processArguments -PassThru -NoNewWindow `
-            -RedirectStandardOutput $log -RedirectStandardError $errorLog
-        if (-not $process.WaitForExit($LevelTimeoutSeconds * 1000)) {
-            $process.Kill($true)
-            $process.WaitForExit()
-            throw "Route engine process timeout after $LevelTimeoutSeconds seconds for $($WorkItem.Identity), log=$log"
-        }
-        $exitCode = $process.ExitCode
-        if (Test-Path -LiteralPath $errorLog -PathType Leaf) {
-            Add-Content -LiteralPath $log -Value (Get-Content -LiteralPath $errorLog -Raw)
-        }
-        if ($exitCode -notin @(0, 2) -or -not (Test-Path -LiteralPath $output -PathType Leaf)) {
-            throw "Route engine infrastructure failure for $($WorkItem.Identity), exit $exitCode, log=$log"
-        }
-        $hash = (Get-FileHash -LiteralPath $output -Algorithm SHA256).Hash
-        $result = Get-Content -LiteralPath $output -Raw | ConvertFrom-Json
-        if ($run -eq 1) {
-            $referenceHash = $hash
-            $referenceResult = $result
-        } elseif ($hash -ne $referenceHash) {
-            $nondeterministic = ConvertTo-GuidebotLevelSimulationResult -Mission $WorkItem.Mission -Level $WorkItem.Level -EngineResult $referenceResult
-            $nondeterministic.status = 'nondeterministic'
-            $nondeterministic | Add-Member -NotePropertyName problem -NotePropertyValue "headless repeat $run differed" -Force
-            return $nondeterministic
-        }
-    }
-    return ConvertTo-GuidebotLevelSimulationResult -Mission $WorkItem.Mission -Level $WorkItem.Level -EngineResult $referenceResult
 }
 
 function Invoke-GuidebotDesktopLevel {
@@ -672,45 +617,161 @@ $infrastructureFailures = [Collections.Generic.List[object]]::new()
 $changedFiles = [Collections.Generic.List[string]]::new()
 $headedComparisons = [Collections.Generic.List[object]]::new()
 $stageByMetadata = @{}
-$index = 0
 $installHeaded = $Mode -eq 'Headed' -and -not $NoBuild
-foreach ($item in $selectedItems) {
-    $index++
-    Write-GuidebotStatus "[$index/$($selectedItems.Count)] $($item.Identity) budget=$($item.SimulationTimeLimitSeconds)s"
-    $metadataKey = $item.MetadataFile.FullName.ToLowerInvariant()
-    try {
-        if (Test-GuidebotLevelAssetUnavailable -LevelRecord $item.Level) {
-            $resultsByIdentity[$item.Identity] = New-GuidebotUnsupportedResult `
-                -Mission $item.Mission -LevelRecord $item.Level
-            Write-GuidebotStatus "UNSUPPORTED: $($item.Identity): $($resultsByIdentity[$item.Identity].problem)" 'Yellow'
-        } else {
-            if (-not $stageByMetadata.ContainsKey($metadataKey)) {
-                $stageByMetadata[$metadataKey] = Initialize-GuidebotMissionStage -MetadataFile $item.MetadataFile
-            }
-            $resultsByIdentity[$item.Identity] = switch ($Mode) {
-                'Headless' { Invoke-GuidebotHeadlessLevel -WorkItem $item -Stage $stageByMetadata[$metadataKey] }
-                'Desktop' { Invoke-GuidebotDesktopLevel -WorkItem $item -Stage $stageByMetadata[$metadataKey] }
-                default { Invoke-GuidebotHeadedLevel -WorkItem $item -Stage $stageByMetadata[$metadataKey] -Install:$installHeaded }
-            }
-            $installHeaded = $false
-        }
-    } catch {
-        $problem = $_.Exception.Message
-        Write-GuidebotStatus "FAILED: $($item.Identity): $problem" 'Red'
-        $resultsByIdentity[$item.Identity] = New-GuidebotInfrastructureErrorResult `
-            -Mission $item.Mission -LevelRecord $item.Level -Problem $problem
-        $infrastructureFailures.Add([ordered]@{ identity = $item.Identity; problem = $problem })
-    }
-    $simulationPath = Join-Path $item.MetadataFile.DirectoryName ($item.MetadataFile.BaseName + '.simulation.json')
+
+function Publish-GuidebotResult {
+    param([Parameter(Mandatory)]$Item)
+
+    $simulationPath = Join-Path $Item.MetadataFile.DirectoryName ($Item.MetadataFile.BaseName + '.simulation.json')
     $incrementalPath = if ($WriteRegression) {
         $simulationPath
     } else {
-        Join-Path $resultRoot $item.MetadataFile.Name.Replace('.json', '.simulation.json')
+        Join-Path $resultRoot $Item.MetadataFile.Name.Replace('.json', '.simulation.json')
     }
-    Write-GuidebotSimulationFile -MetadataFile $item.MetadataFile `
+    Write-GuidebotSimulationFile -MetadataFile $Item.MetadataFile `
         -ResultsByIdentity $resultsByIdentity -Destination $incrementalPath `
-        -HeadedComparisons $headedComparisons -ComparisonIdentity $item.Identity
+        -HeadedComparisons $headedComparisons -ComparisonIdentity $Item.Identity
     if ($WriteRegression -and -not $changedFiles.Contains($simulationPath)) { $changedFiles.Add($simulationPath) }
+}
+
+if ($Mode -eq 'Headless') {
+    $runStates = @{}
+    $processTasks = [Collections.Generic.List[object]]::new()
+    $progressState = @{ Retired = 0 }
+    foreach ($item in $selectedItems) {
+        $metadataKey = $item.MetadataFile.FullName.ToLowerInvariant()
+        if (Test-GuidebotLevelAssetUnavailable -LevelRecord $item.Level) {
+            $resultsByIdentity[$item.Identity] = New-GuidebotUnsupportedResult `
+                -Mission $item.Mission -LevelRecord $item.Level
+            $progressState.Retired++
+            Write-GuidebotStatus "[$($progressState.Retired)/$($selectedItems.Count)] UNSUPPORTED: $($item.Identity)" 'Yellow'
+            Publish-GuidebotResult -Item $item
+            continue
+        }
+        try {
+            if (-not $stageByMetadata.ContainsKey($metadataKey)) {
+                $stageByMetadata[$metadataKey] = Initialize-GuidebotMissionStage -MetadataFile $item.MetadataFile
+            }
+            $stage = $stageByMetadata[$metadataKey]
+            $missionName = [IO.Path]::GetFileNameWithoutExtension(
+                [string](Get-GuidebotPropertyValue $item.Mission 'mission_filename' 'd2')
+            )
+            $safeIdentity = [regex]::Replace($item.Identity, '[^A-Za-z0-9_.-]+', '_')
+            $runStates[$item.Identity] = [pscustomobject]@{
+                Item = $item; Completed = 0; Runs = @{}; Problems = [Collections.Generic.List[string]]::new()
+            }
+            for ($run = 1; $run -le $Repeat; $run++) {
+                $output = Join-Path $resultRoot "${safeIdentity}_run_${run}.json"
+                $log = Join-Path $logRoot "${safeIdentity}_run_${run}.log"
+                $arguments = @(
+                    '-hogdir', $resolvedHogDir, '-mission', $missionName,
+                    '-level', [string]$item.EngineLevelNumber,
+                    '-route-confirm-timeout-seconds', [string]$item.SimulationTimeLimitSeconds,
+                    '-route-confirm-json-out', $output
+                )
+                if ($stage.ExtraDir) { $arguments += @('-extra-dir', $stage.ExtraDir) }
+                $processTasks.Add([pscustomobject]@{
+                        FilePath = $exe; Arguments = $arguments; TimeoutSeconds = $LevelTimeoutSeconds
+                        WorkingDirectory = ''; Item = $item; Run = $run; Output = $output; Log = $log
+                    })
+            }
+        } catch {
+            $problem = $_.Exception.Message
+            $resultsByIdentity[$item.Identity] = New-GuidebotInfrastructureErrorResult `
+                -Mission $item.Mission -LevelRecord $item.Level -Problem $problem
+            $infrastructureFailures.Add([ordered]@{ identity = $item.Identity; problem = $problem })
+            $progressState.Retired++
+            Write-GuidebotStatus "[$($progressState.Retired)/$($selectedItems.Count)] FAILED: $($item.Identity): $problem" 'Red'
+            Publish-GuidebotResult -Item $item
+        }
+    }
+
+    if ($processTasks.Count -gt 0) {
+        $workerCount = Get-HeadlessProcessWorkerCount -Requested $MaxParallel -ItemCount $processTasks.Count
+        Write-GuidebotStatus "Headless workers: $workerCount for $($processTasks.Count) engine runs on $([Environment]::ProcessorCount) logical processors"
+        Invoke-HeadlessProcessPool -Tasks @($processTasks) -MaxParallel $workerCount -OnCompleted {
+            param($task, $processResult)
+
+            $logText = ($processResult.StandardOutput + "`n" + $processResult.StandardError).Trim()
+            [IO.File]::WriteAllText($task.Log, $logText + $(if ($logText) { "`n" } else { '' }), [Text.UTF8Encoding]::new($false))
+            $state = $runStates[$task.Item.Identity]
+            $problem = ''
+            if ($processResult.StartError) {
+                $problem = "Route engine could not start for $($task.Item.Identity): $($processResult.StartError)"
+            } elseif ($processResult.TimedOut) {
+                $problem = "Route engine process timeout after $LevelTimeoutSeconds seconds for $($task.Item.Identity), log=$($task.Log)"
+            } elseif ($processResult.ExitCode -notin @(0, 2) -or -not (Test-Path -LiteralPath $task.Output -PathType Leaf)) {
+                $problem = "Route engine infrastructure failure for $($task.Item.Identity), exit $($processResult.ExitCode), log=$($task.Log)"
+            } else {
+                try {
+                    $state.Runs[$task.Run] = [pscustomobject]@{
+                        Hash = (Get-FileHash -LiteralPath $task.Output -Algorithm SHA256).Hash
+                        Result = Get-Content -LiteralPath $task.Output -Raw | ConvertFrom-Json
+                    }
+                } catch {
+                    $problem = "Route engine result could not be read for $($task.Item.Identity): $($_.Exception.Message)"
+                }
+            }
+            if ($problem) { $state.Problems.Add($problem) }
+            $state.Completed++
+            if ($state.Completed -ne $Repeat) { return }
+
+            if ($state.Problems.Count -gt 0) {
+                $problem = $state.Problems[0]
+                $resultsByIdentity[$task.Item.Identity] = New-GuidebotInfrastructureErrorResult `
+                    -Mission $task.Item.Mission -LevelRecord $task.Item.Level -Problem $problem
+                $infrastructureFailures.Add([ordered]@{ identity = $task.Item.Identity; problem = $problem })
+                $color = 'Red'
+            } else {
+                $reference = $state.Runs[1]
+                $result = ConvertTo-GuidebotLevelSimulationResult -Mission $task.Item.Mission `
+                    -Level $task.Item.Level -EngineResult $reference.Result
+                foreach ($run in 2..$Repeat) {
+                    if ($Repeat -gt 1 -and $state.Runs[$run].Hash -ne $reference.Hash) {
+                        $result.status = 'nondeterministic'
+                        $result | Add-Member -NotePropertyName problem -NotePropertyValue "headless repeat $run differed" -Force
+                        break
+                    }
+                }
+                $resultsByIdentity[$task.Item.Identity] = $result
+                $color = if ($result.status -eq 'ok') { 'Green' } else { 'Yellow' }
+            }
+            $progressState.Retired++
+            Write-GuidebotStatus "[$($progressState.Retired)/$($selectedItems.Count)] $($resultsByIdentity[$task.Item.Identity].status.ToUpperInvariant()): $($task.Item.Identity)" $color
+            Publish-GuidebotResult -Item $task.Item
+        }
+    }
+} else {
+    $index = 0
+    foreach ($item in $selectedItems) {
+        $index++
+        Write-GuidebotStatus "[$index/$($selectedItems.Count)] $($item.Identity) budget=$($item.SimulationTimeLimitSeconds)s"
+        $metadataKey = $item.MetadataFile.FullName.ToLowerInvariant()
+        try {
+            if (Test-GuidebotLevelAssetUnavailable -LevelRecord $item.Level) {
+                $resultsByIdentity[$item.Identity] = New-GuidebotUnsupportedResult `
+                    -Mission $item.Mission -LevelRecord $item.Level
+                Write-GuidebotStatus "UNSUPPORTED: $($item.Identity): $($resultsByIdentity[$item.Identity].problem)" 'Yellow'
+            } else {
+                if (-not $stageByMetadata.ContainsKey($metadataKey)) {
+                    $stageByMetadata[$metadataKey] = Initialize-GuidebotMissionStage -MetadataFile $item.MetadataFile
+                }
+                $resultsByIdentity[$item.Identity] = if ($Mode -eq 'Desktop') {
+                    Invoke-GuidebotDesktopLevel -WorkItem $item -Stage $stageByMetadata[$metadataKey]
+                } else {
+                    Invoke-GuidebotHeadedLevel -WorkItem $item -Stage $stageByMetadata[$metadataKey] -Install:$installHeaded
+                }
+                $installHeaded = $false
+            }
+        } catch {
+            $problem = $_.Exception.Message
+            Write-GuidebotStatus "FAILED: $($item.Identity): $problem" 'Red'
+            $resultsByIdentity[$item.Identity] = New-GuidebotInfrastructureErrorResult `
+                -Mission $item.Mission -LevelRecord $item.Level -Problem $problem
+            $infrastructureFailures.Add([ordered]@{ identity = $item.Identity; problem = $problem })
+        }
+        Publish-GuidebotResult -Item $item
+    }
 }
 
 foreach ($file in $files) {

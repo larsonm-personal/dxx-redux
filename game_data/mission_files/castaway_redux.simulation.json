@@ -8,8 +8,9 @@
   "status": "partial",
   "level_counts": {
     "ok": 1,
-    "failed": 1,
-    "timeout": 8
+    "failed": 2,
+    "timeout": 6,
+    "route_mismatch": 1
   },
   "levels": [
     {
@@ -259,7 +260,7 @@
       "level_num": 7,
       "level_file": "swallow.rl2",
       "route_input_sha256": "DC58D7B73B61A9D3FD5DD2728DA9F6509B7EC8BF552A284E15E4C534656E61DA",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -280,26 +281,14 @@
         {
           "n": "gold key",
           "s": 48
-        },
-        {
-          "n": "fly-through 13",
-          "s": 58
-        },
-        {
-          "n": "switch 3",
-          "s": 63
-        },
-        {
-          "n": "fly-through 4",
-          "s": 65
         }
       ],
-      "total_frames": 9010,
+      "total_frames": 2865,
       "rng_end": {
-        "state": 2934676578,
-        "calls": 4757
+        "state": 2734234381,
+        "calls": 1972
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 8,
@@ -353,18 +342,31 @@
       "level_num": -1,
       "level_file": "devoured.rl2",
       "route_input_sha256": "CC19BA7B32FBA1C4D82AD050DC7CE88DBF0CC6E90DE0527479A6273D6A338C63",
-      "status": "timeout",
+      "status": "route_mismatch",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 5416,
+      "objectives": [
+        {
+          "n": "fly-through 23",
+          "s": 1
+        },
+        {
+          "n": "fly-through 5",
+          "s": 11
+        },
+        {
+          "n": "switch 16",
+          "s": 13
+        }
+      ],
+      "total_frames": 1729,
       "rng_end": {
-        "state": 2234146244,
-        "calls": 275
+        "state": 3260609084,
+        "calls": 699
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live objective sequence differs from route input"
     }
   ]
 }
