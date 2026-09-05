@@ -198,13 +198,13 @@ try {
     $beforeBuilds = $state.Prompts
     & $helper -RepositoryRoot $fixture -Preview
     Assert-CleanupExists $generationFiles[0]
-    & $helper -RepositoryRoot $fixture -AutoOnly -KeepBuildGenerations 2
+    & $helper -RepositoryRoot $fixture -AutoOnly -KeepBuildGenerations 2 -BuildGraceHours 24
     Assert-CleanupExists $generationFiles[0] $false
     Assert-CleanupExists $generationFiles[1] $false
     Assert-CleanupExists $generationFiles[4]
     New-CleanupFixtureFile 'temp/builds-only.log'
     (Get-Item -LiteralPath (Join-Path $fixture 'temp/builds-only.log')).LastWriteTimeUtc = $old
-    & $helper -RepositoryRoot $fixture -BuildsOnly
+    & $helper -RepositoryRoot $fixture -BuildsOnly -BuildGraceHours 24
     Assert-CleanupExists 'temp/builds-only.log'
     Assert-CleanupExists 'android/app/.cxx/tools/internal/tool-info.txt'
     foreach ($path in @($generationFiles[4], $generationFiles[6], $generationFiles[8], $generationFiles[11], 'build-native-old')) {
@@ -215,7 +215,61 @@ try {
         Assert-CleanupExists $path
     }
     if ($state.Prompts -ne $beforeBuilds) { throw 'Superseded builds prompted for confirmation' }
-    Write-Host 'PASS: cleanup safety, prompts, build generations, generated dependency clones, and retained configurations'
+    Add-Content -LiteralPath (Join-Path $fixture '.gitignore') -Value '/android/temp/'
+    & $helper -RepositoryRoot $fixture -BuildsOnly
+    Assert-CleanupExists $generationFiles[2] $false
+    Assert-CleanupExists $generationFiles[3]
+    # Producer startup keeps exactly three prior hashes, including equal fresh timestamps
+    $producerFiles = 5..9 | ForEach-Object { "android/app/.cxx/Debug/test000$_/arm64-v8a/output.o" }
+    foreach ($path in $producerFiles) { New-CleanupFixtureFile $path }
+    $sameTime = [DateTime]::UtcNow
+    foreach ($item in Get-ChildItem -LiteralPath (Join-Path $fixture 'android/app/.cxx/Debug') -Recurse -Force) {
+        $item.LastWriteTimeUtc = $sameTime
+    }
+    & $helper -RepositoryRoot $fixture -BuildsOnly -Producer -BuildRoots (Join-Path $fixture 'android/app/.cxx') -KeepBuildGenerations 3
+    if (@(Get-ChildItem -LiteralPath (Join-Path $fixture 'android/app/.cxx/Debug') -Directory).Count -ne 3) {
+        throw 'Native producer startup must retain exactly three prior hashes, even with timestamp ties'
+    }
+    New-CleanupFixtureFile 'android/app/.cxx/Debug/testnew0/arm64-v8a/output.o'
+    if (@(Get-ChildItem -LiteralPath (Join-Path $fixture 'android/app/.cxx/Debug') -Directory).Count -ne 4) {
+        throw 'Native production should leave four hashes'
+    }
+    $run = 'android/temp/guidebot_simulation_regression/20260904_120000'
+    $worker = 'android/temp/mission_zip_host_metadata/20260904_120000/workers/0001'
+    foreach ($path in @("$run/raw/mission/assets.hog", "$run/stages/mission/assets.hog",
+            "$run/raw/mission.metadata.json", "$run/results/level.json", "$run/summary.json",
+            "$run/raw/recent/assets.hog", "$run/raw/tracked/notes.txt",
+            "$worker/raw/partial/assets.hog", "$worker/stages/partial/assets.hog",
+            "$worker/logs/worker.log", 'android/temp/unrecognized/20260904_120000/raw/mission/assets.hog')) {
+        New-CleanupFixtureFile $path
+    }
+    & git -C $fixture add -f "$run/raw/tracked/notes.txt"
+    foreach ($collection in @('android/temp/guidebot_simulation_regression', 'android/temp/mission_zip_host_metadata')) {
+        foreach ($item in Get-ChildItem -LiteralPath (Join-Path $fixture $collection) -Recurse -Force) {
+            $item.CreationTimeUtc = $old
+            $item.LastWriteTimeUtc = $old
+        }
+    }
+    # Copied assets can have old modification dates but new creation dates
+    (Get-Item -LiteralPath (Join-Path $fixture "$run/raw/recent/assets.hog")).CreationTimeUtc = [DateTime]::UtcNow
+    & $helper -RepositoryRoot $fixture -PayloadsOnly -Preview
+    Assert-CleanupExists "$run/raw/mission/assets.hog"
+    $state.Busy = $true
+    $blocked = $false
+    try { & $helper -RepositoryRoot $fixture -PayloadsOnly -AutoOnly } catch { $blocked = $true }
+    $state.Busy = $false
+    if (-not $blocked) { throw 'Active regression payload cleanup was not blocked' }
+    & $helper -RepositoryRoot $fixture -PayloadsOnly -AutoOnly
+    foreach ($path in @("$run/raw/mission", "$run/stages/mission", "$worker/raw/partial", "$worker/stages/partial")) {
+        Assert-CleanupExists $path $false
+    }
+    foreach ($path in @("$run/raw/mission.metadata.json", "$run/results/level.json", "$run/summary.json",
+            "$run/raw/recent/assets.hog", "$run/raw/tracked/notes.txt", "$worker/logs/worker.log",
+            'android/temp/unrecognized/20260904_120000/raw/mission/assets.hog')) {
+        Assert-CleanupExists $path
+    }
+    if ($state.Prompts -ne $beforeBuilds) { throw 'Regression payload cleanup prompted' }
+    Write-Host 'PASS: cleanup safety, prompts, build generations, and regression payload retention'
 } finally {
     if ($heldLock) { $heldLock.Dispose() }
     # Validate the fixture boundary before removing only this test's own files

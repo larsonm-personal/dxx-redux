@@ -23,6 +23,7 @@ $jdkHome = "C:\local\jdk-21"
 $zipDir = Join-Path $repoRoot "game_data\mission_files"
 $stamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $outDir = Join-Path $androidRoot "temp\mission_zip_batch\regen_all_metadata_only_$stamp"
+& (Join-Path $scriptDir "retain-recent-artifacts.ps1") -Artifacts $outDir
 $gradle = Join-Path $androidRoot "gradlew.bat"
 $batch = Join-Path $scriptDir "run_mission_zip_batch.ps1"
 $hostBatch = Join-Path $scriptDir "regenerate_all_mission_metadata_host.ps1"

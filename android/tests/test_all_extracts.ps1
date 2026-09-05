@@ -71,6 +71,7 @@ $suiteStartedAt = Get-Date
 if (-not $ReportDir) {
     $ReportDir = Join-Path $REPO_ROOT "temp\extract_regression_reports\run_$($suiteStartedAt.ToString('yyyyMMdd_HHmmss'))"
 }
+& (Join-Path $PSScriptRoot "../helpers/retain-recent-artifacts.ps1") -Artifacts $ReportDir
 New-Item -ItemType Directory -Path $ReportDir -Force | Out-Null
 
 Write-Host "test_all_extracts.ps1 starting"

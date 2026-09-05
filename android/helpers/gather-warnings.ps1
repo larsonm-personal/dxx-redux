@@ -28,6 +28,7 @@ if (-not (Test-Path $tempDir)) {
 
 $datestamp = Get-Date -Format "yyyy-MM-dd"
 $logFile = Join-Path $tempDir "warnings-$datestamp.log"
+& (Join-Path $PSScriptRoot "retain-recent-artifacts.ps1") -Artifacts $logFile
 
 # --- Set JAVA_HOME if needed ---
 $depBaseFile = Join-Path $repoRoot "dependency_base.txt"
@@ -89,4 +90,3 @@ Write-Host "  Kotlin:       $kotlinCount"
 Write-Host "  Total:        $($warnings.Count)"
 Write-Host ""
 Write-Host "Written to: $logFile"
-& (Join-Path $PSScriptRoot "retain-recent-artifacts.ps1") -Artifacts $logFile

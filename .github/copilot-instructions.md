@@ -52,6 +52,7 @@ Write-Output "EXIT: $testExitCode"
 - Drive tests through the automation API; save reusable scripts in `android/game_scripts/*.jsonc`. Existing scripts demonstrate player/mission/level selection and skipping briefings. Base missions are named "first strike" (D1) and "counterstrike!" (D2)
 - The test runner uses durable `files/automation_result.json` for pass/fail and `files/automation_log.jsonl` for step diagnostics; inspect these on failure
 - Generate regression text/JSON in a stable, normalized, pretty-printed form at the source, not through a post-run formatter
+- Before producing a new timestamped report, package, or scratch run, call `android/helpers/retain-recent-artifacts.ps1` with its planned output path to retain three prior generations; see `android/CLEANUP.md` for native build retention
 
 ## Simulation determinism
 

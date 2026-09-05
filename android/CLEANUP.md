@@ -7,6 +7,27 @@ Run from the repository root:
 .\android\clean-workspace.ps1
 ```
 
+Mission metadata and guidebot runs can retain gigabytes of duplicate extracted
+assets. The cleaner automatically removes per-mission directories under `raw`
+and `stages` in timestamped `android/temp/mission_zip_host_metadata` and
+`android/temp/guidebot_simulation_regression` runs, including metadata workers.
+It keeps JSON files directly under `raw`, summaries, logs, and simulation results.
+These payloads need no newer replacement run: the original mission archives remain
+in `game_data`. A one-hour grace period uses both creation and modification times,
+because asset copies preserve old source modification dates. Active-process and
+Git/link/lock protections still apply.
+Payload-only trees are checked and deleted as groups; folders mixed with reports
+are cleaned per mission so the reports remain available.
+
+```powershell
+# Fast, focused preview and cleanup of reproducible regression payloads
+.\android\clean-workspace.ps1 -PayloadsOnly -Preview
+.\android\clean-workspace.ps1 -PayloadsOnly -AutoOnly
+```
+
+`-PayloadGraceHours` adjusts the one-hour grace period. `-PayloadsOnly` skips build
+and general artifact scans and cannot be combined with `-BuildsOnly`.
+
 The normal interactive run automatically removes ignored loose `.log`, `.tmp`,
 and `.temp` files at least 7 days old in known scratch directories. It also
 automatically removes superseded build generations without confirmation:
@@ -20,9 +41,9 @@ automatically removes superseded build generations without confirmation:
 
 The newest generation in each family is always kept, including when it is old.
 Ordering uses the newest write anywhere in each generation, not hash-name order
-or the parent directory's timestamp. Ties and builds touched within the last
-24 hours are kept. `-KeepBuildGenerations 2` retains two generations;
-`-BuildGraceHours` adjusts the 24-hour protection window. These automatic build
+or the parent directory's timestamp. The default keeps exactly one generation
+with no age exemption; ties are resolved by path. `-KeepBuildGenerations 2` retains
+two generations; `-BuildGraceHours 24` explicitly opts into a grace period. These automatic build
 rules are independent of `-ArtifactDays` and apply with `-AutoOnly` as well.
 The retained replacement must still exist when an older build is deleted.
 Discovery looks up to four levels below known output roots; source trees and
@@ -90,3 +111,25 @@ Test the new helper without touching real artifacts:
 ```powershell
 .\android\tests\test_clean_workspace.ps1
 ```
+
+## Producer startup retention
+
+Producers trim their own output family to the newest three prior generations
+before creating the next output, leaving at most four after a new generation is
+created. No age threshold applies. Reusing an existing output does not create a
+fourth generation. The current/planned output is excluded from prior history,
+including when a wrapper and child runner share it.
+
+The shared `helpers/retain-recent-artifacts.ps1` accepts planned output paths.
+Hooks cover metadata and guidebot batches, regression/test reports, demo matrix
+outputs, warning logs, guidebot browser runs, and timestamped/deployment AAB copies.
+On Windows, Gradle build/assemble/bundle/native tasks trim `app/.cxx` at root-project
+configuration, before AGP configures the next native hash. Native configurations
+are separate families; fixed build directories are reused rather than rotated.
+Producer native cleanup excludes its initiating process chain and Gradle clients
+from the idle check, but still refuses cleanup during active native builds or
+unrelated tests. It never kills processes. Other hosts retain their existing native
+build behavior; workspace native deletion currently requires Windows safety checks.
+
+Manual cleanup still defaults to one newest generation. Producers keep three prior
+outputs so running them offers more history without requiring cleanup flags.

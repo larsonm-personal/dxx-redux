@@ -6,7 +6,7 @@
     Default: delete ignored loose .log/.tmp/.temp files older than TempDays in
     known scratch directories, and prompt for older build/download/regression
     artifacts. Superseded native builds and versioned packages are automatic,
-    keeping the newest generation per family and a 24-hour recent-build grace
+    keeping the newest generation per family without an age exemption
     Enter keeps a prompted item. NoToAll skips all remaining prompts
     Use -Preview or -WhatIf to inspect without deleting or prompting
     Use -AutoOnly for unattended cleanup of temporary files and superseded builds
@@ -24,15 +24,22 @@ param(
     [switch]$Preview,
     [switch]$AutoOnly,
     [switch]$BuildsOnly,
+    [string[]]$BuildRoots,
+    [switch]$Producer,
+    [switch]$PayloadsOnly,
+    [ValidateRange(0, 8760)][double]$PayloadGraceHours = 1,
     [ValidateRange(1, 3650)][int]$TempDays = 7,
     [ValidateRange(1, 3650)][int]$ArtifactDays = 30,
     [ValidateRange(1, 100)][int]$KeepBuildGenerations = 1,
-    [ValidateRange(0, 8760)][double]$BuildGraceHours = 24,
-    [string]$RepositoryRoot = (Split-Path $PSScriptRoot)
+    [ValidateRange(0, 8760)][double]$BuildGraceHours = 0,
+    [string]$RepositoryRoot = ''
 )
 
 $ErrorActionPreference = 'Stop'
+if ($Producer -and (-not $BuildsOnly -or -not $BuildRoots)) { throw 'Producer cleanup requires BuildsOnly and explicit BuildRoots' }
+if ($BuildsOnly -and $PayloadsOnly) { throw 'BuildsOnly and PayloadsOnly cannot be combined' }
 Set-StrictMode -Version Latest
+if (-not $RepositoryRoot) { $RepositoryRoot = Split-Path $PSScriptRoot }
 $RepositoryRoot = [IO.Path]::GetFullPath($RepositoryRoot).TrimEnd('\', '/')
 $comparison = if ([Environment]::OSVersion.Platform -eq [PlatformID]::Unix) {
     [StringComparison]::Ordinal
@@ -100,8 +107,27 @@ function Test-CleanupGitProtection {
 function Assert-CleanupIdle {
     # Do not kill processes or confuse idle Gradle/Kotlin daemons with active builds
     if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) {
-        $busy = @(Get-CimInstance Win32_Process | Where-Object {
-                $_.ProcessId -ne $PID -and (
+        $processes = @(Get-CimInstance Win32_Process)
+        $producerAncestors = @($PID)
+        if ($Producer) {
+            # Gradle daemons launch cleanup separately from the wrapper's test/build caller
+            $clients = @($PID) + @($processes | Where-Object {
+                    $_.CommandLine -and $_.CommandLine.Contains($RepositoryRoot) -and $_.CommandLine -match 'GradleWrapperMain'
+                } | ForEach-Object ProcessId)
+            foreach ($clientId in $clients) {
+                $currentId = $clientId
+                if ($currentId -notin $producerAncestors) { $producerAncestors += $currentId }
+                while ($currentId) {
+                    $owner = $processes | Where-Object ProcessId -eq $currentId | Select-Object -First 1
+                    if (-not $owner -or $owner.ParentProcessId -in $producerAncestors) { break }
+                    $currentId = $owner.ParentProcessId
+                    $producerAncestors += $currentId
+                }
+            }
+        }
+        $busy = @($processes | Where-Object {
+                $_.ProcessId -notin $producerAncestors -and
+                (
                     $_.Name -match '^(cl|clang|clang\+\+|ninja|cmake|ctest|cargo|rustc|dxx-redux.*)\.exe$' -or
                     ($_.CommandLine -and $_.CommandLine.Contains($RepositoryRoot) -and
                     $_.CommandLine -match '(GradleWrapperMain|run[_-].*tests?\.ps1|test_[^ ]+\.ps1|regenerate[^ ]*\.ps1|run_mission[^ ]*\.ps1|run-code-quality\.ps1)')
@@ -116,7 +142,7 @@ function Assert-CleanupIdle {
 }
 
 function Get-CleanupTreeInfo {
-    param([string]$Path, [switch]$AllowBuildDependencies)
+    param([string]$Path, [switch]$AllowBuildDependencies, [switch]$IncludeCreationTime, [switch]$IgnoreRootWriteTime)
     Assert-CleanupPath $Path
     $stack = [Collections.Generic.Stack[IO.FileSystemInfo]]::new()
     $stack.Push((Get-Item -LiteralPath $Path -Force))
@@ -128,7 +154,8 @@ function Get-CleanupTreeInfo {
         if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) {
             throw "Preserving tree containing a link: $($item.FullName)"
         }
-        if ($item.LastWriteTimeUtc -gt $latest) { $latest = $item.LastWriteTimeUtc }
+        if ((-not $IgnoreRootWriteTime -or $item.FullName -ne $Path) -and $item.LastWriteTimeUtc -gt $latest) { $latest = $item.LastWriteTimeUtc }
+        if ($IncludeCreationTime -and $item.CreationTimeUtc -gt $latest) { $latest = $item.CreationTimeUtc }
         if ($item -is [IO.DirectoryInfo]) {
             foreach ($child in $item.EnumerateFileSystemInfos()) {
                 if ($child.Attributes -band [IO.FileAttributes]::ReparsePoint) {
@@ -230,6 +257,66 @@ function Add-BuildGeneration {
         })
 }
 
+function Find-RegressionPayloads {
+    # Only these runners define raw/stages as reproducible mission asset copies
+    foreach ($collection in @('mission_zip_host_metadata', 'guidebot_simulation_regression')) {
+        $container = Join-Path $RepositoryRoot "android/temp/$collection"
+        if (-not (Test-Path -LiteralPath $container -PathType Container)) { continue }
+        Assert-CleanupPath $container
+        foreach ($run in Get-ChildItem -LiteralPath $container -Directory -Force) {
+            if ($run.Name -notmatch '^\d{8}_\d{6}$') { continue }
+            Assert-CleanupPath $run.FullName
+            $workspaces = @($run.FullName)
+            $workers = Join-Path $run.FullName 'workers'
+            if (Test-Path -LiteralPath $workers -PathType Container) {
+                Assert-CleanupPath $workers
+                $workspaces += @(Get-ChildItem -LiteralPath $workers -Directory -Force | ForEach-Object FullName)
+            }
+            foreach ($workspace in $workspaces) {
+                foreach ($role in @('raw', 'stages')) {
+                    $parent = Join-Path $workspace $role
+                    if (-not (Test-Path -LiteralPath $parent -PathType Container)) { continue }
+                    Assert-CleanupPath $parent
+                    # Group pure payload trees, but preserve raw JSON reports in mixed directories
+                    $entries = @(Get-ChildItem -LiteralPath $parent -Force)
+                    $grouped = $false
+                    if ($entries.Count -gt 0 -and @($entries | Where-Object { -not $_.PSIsContainer }).Count -eq 0 -and
+                        -not $protectedPaths.Contains($parent)) {
+                        try {
+                            # Removing old children changes the parent's write time, not its remaining payloads
+                            $groupInfo = Get-CleanupTreeInfo $parent -IncludeCreationTime -IgnoreRootWriteTime
+                            if ($groupInfo.Latest -le $now.AddHours(-$PayloadGraceHours)) {
+                                $candidates.Add([pscustomobject]@{
+                                        Path = $parent; Category = 'regression-payload-group'; Automatic = $true
+                                        Bytes = $groupInfo.Bytes; Count = $groupInfo.Count; Latest = $groupInfo.Latest
+                                        Days = $PayloadGraceHours / 24; Retained = $null
+                                    })
+                                $null = $seen.Add($parent)
+                                $grouped = $true
+                            }
+                        } catch { Write-Warning $_.Exception.Message }
+                    }
+                    if ($grouped) { continue }
+                    foreach ($payload in $entries | Where-Object PSIsContainer) {
+                        $null = $seen.Add($payload.FullName)
+                        if ($protectedPaths.Contains($payload.FullName)) { continue }
+                        try { $info = Get-CleanupTreeInfo $payload.FullName -IncludeCreationTime } catch {
+                            Write-Warning $_.Exception.Message
+                            continue
+                        }
+                        if ($info.Latest -gt $now.AddHours(-$PayloadGraceHours)) { continue }
+                        $candidates.Add([pscustomobject]@{
+                                Path = $payload.FullName; Category = 'regression-payload'; Automatic = $true
+                                Bytes = $info.Bytes; Count = $info.Count; Latest = $info.Latest
+                                Days = $PayloadGraceHours / 24; Retained = $null
+                            })
+                    }
+                }
+            }
+        }
+    }
+}
+
 function Find-BuildGenerations {
     param([IO.FileSystemInfo]$Item, [int]$Depth = 0)
     if ($Item.Attributes -band [IO.FileAttributes]::ReparsePoint) { return }
@@ -291,6 +378,7 @@ if ($LASTEXITCODE -ne 0 -or -not ([IO.Path]::GetFullPath($gitRoot)).Equals($Repo
 }
 Update-ProtectedPaths
 if (-not $dryRun) { Assert-CleanupIdle }
+if (-not $BuildsOnly) { Find-RegressionPayloads }
 $roots = [Collections.Generic.List[object]]::new()
 foreach ($parentRelative in @('', 'android', 'server')) {
     $parent = if ($parentRelative) { Join-Path $RepositoryRoot $parentRelative } else { $RepositoryRoot }
@@ -321,8 +409,22 @@ if (Test-Path -LiteralPath $androidRoot) {
         }
     }
 }
+if ($BuildRoots) {
+    $roots.Clear()
+    foreach ($buildRoot in $BuildRoots) {
+        $full = [IO.Path]::GetFullPath($buildRoot)
+        if (-not (Test-Path -LiteralPath $full -PathType Container)) { continue }
+        Assert-CleanupPath $full
+        $item = Get-Item -LiteralPath $full
+        if ($item.Name -notmatch '^(\.cxx(?:$|[-_])|build-outputs$)') {
+            throw "Explicit build roots must be .cxx or build-outputs directories: $full"
+        }
+        $roots.Add([pscustomobject]@{ Item = $item; Category = 'build'; Children = $false })
+    }
+}
 $discoveredBuildRoots = [Collections.Generic.HashSet[string]]::new($comparer)
 foreach ($root in $roots) {
+    if ($PayloadsOnly) { break }
     if ($root.Category -notin @('build', 'scratch')) { continue }
     if (-not $discoveredBuildRoots.Add($root.Item.FullName)) { continue }
     Write-Host "Finding build generations in $($root.Item.FullName)"
@@ -334,9 +436,8 @@ foreach ($family in $buildGenerations | Group-Object Family) {
         Write-Host "[KEEP] newest build generation: $($keep.Path)"
     }
     foreach ($generation in $ranked | Select-Object -Skip $KeepBuildGenerations) {
-        # Do not break timestamp ties or delete builds touched within the grace period
-        if ($generation.Latest -ge $ranked[$KeepBuildGenerations - 1].Latest -or
-            $generation.Latest -gt $now.AddHours(-$BuildGraceHours) -or
+        # Rank ties by path and honor an explicitly requested grace period
+        if (($BuildGraceHours -gt 0 -and $generation.Latest -gt $now.AddHours(-$BuildGraceHours)) -or
             $protectedPaths.Contains($generation.Path)) { continue }
         $candidates.Add([pscustomobject]@{
                 Path = $generation.Path; Category = 'superseded-build'; Automatic = $true
@@ -346,7 +447,7 @@ foreach ($family in $buildGenerations | Group-Object Family) {
     }
 }
 foreach ($root in $roots) {
-    if ($BuildsOnly) { break }
+    if ($BuildsOnly -or $PayloadsOnly) { break }
     Write-Host "Scanning $($root.Item.FullName)"
     try { Assert-CleanupPath $root.Item.FullName } catch { Write-Warning $_.Exception.Message; continue }
     if ($root.Children) {
@@ -364,7 +465,7 @@ $autoBytes = 0L
 $reviewBytes = 0L
 foreach ($item in $auto) { $autoBytes += $item.Bytes }
 foreach ($item in $review) { $reviewBytes += $item.Bytes }
-Write-Host "Automatic: $($auto.Count) temporary files and superseded builds ($(Format-CleanupBytes $autoBytes))"
+Write-Host "Automatic: $($auto.Count) temporary files, regression payloads, and superseded builds ($(Format-CleanupBytes $autoBytes))"
 Write-Host "Review: $($review.Count) artifacts ($(Format-CleanupBytes $reviewBytes))"
 Write-Host 'Review items may contain useful diagnostics or require rebuilding/downloading'
 $removed = 0
@@ -408,14 +509,16 @@ foreach ($candidate in $ordered) {
     try {
         if ($candidate.Retained) {
             $replacement = Get-CleanupTreeInfo $candidate.Retained -AllowBuildDependencies
-            if ($replacement.Latest -le $candidate.Latest) {
+            if ($replacement.Latest -lt $candidate.Latest) {
                 Write-Warning "Newer retained build is no longer available; preserving $($candidate.Path)"
                 continue
             }
         }
-        $current = Get-CleanupTreeInfo $candidate.Path -AllowBuildDependencies:([bool]$candidate.Retained)
+        $current = Get-CleanupTreeInfo $candidate.Path -AllowBuildDependencies:([bool]$candidate.Retained) `
+            -IncludeCreationTime:($candidate.Category -like 'regression-payload*') `
+            -IgnoreRootWriteTime:($candidate.Category -eq 'regression-payload-group')
         if ($current.Latest -ne $candidate.Latest -or $current.Bytes -ne $candidate.Bytes -or
-            $current.Count -ne $candidate.Count -or $current.Latest -gt [DateTime]::UtcNow.AddDays(-$candidate.Days)) {
+            $current.Count -ne $candidate.Count -or ($candidate.Days -gt 0 -and $current.Latest -gt [DateTime]::UtcNow.AddDays(-$candidate.Days))) {
             Write-Warning "Changed since scan; preserving $($candidate.Path)"
             continue
         }

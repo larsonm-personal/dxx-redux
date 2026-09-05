@@ -183,10 +183,11 @@ function Invoke-GuidebotBrowserBuild {
 
 function Invoke-GuidebotBrowserRun {
     param([object]$Item)
-    Invoke-GuidebotBrowserBuild
     New-Item -ItemType Directory -Path $manualRoot -Force | Out-Null
     $stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
     $manualRunRoot = Join-Path $manualRoot $stamp
+    & (Join-Path $scriptDir "retain-recent-artifacts.ps1") -Artifacts $manualRunRoot
+    Invoke-GuidebotBrowserBuild
     New-Item -ItemType Directory -Path $manualRunRoot -Force | Out-Null
     $stdout = Join-Path $manualRunRoot 'runner.stdout.log'
     $stderr = Join-Path $manualRunRoot 'runner.stderr.log'

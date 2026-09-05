@@ -81,13 +81,40 @@ try {
         New-FixtureFile -RelativePath $relativePath
         Join-Path $fixtureRoot $relativePath
     }
+    foreach ($path in $retentionFamily) { (Get-Item -LiteralPath $path).LastWriteTime = Get-Date }
     & $retentionHelper -RepositoryRoot $fixtureRoot -Artifacts $retentionFamily[-1] | Out-Null
     Assert-Missing -RelativePath "temp\TEST_ONLY_retention\TEST_ONLY_generation_20260101_010101.test-output"
-    foreach ($path in $retentionFamily[1..5]) {
+    Assert-Missing -RelativePath "temp\TEST_ONLY_retention\TEST_ONLY_generation_20260102_010101.test-output"
+    foreach ($path in $retentionFamily[2..5]) {
         Assert-Exists -RelativePath (Get-CompatibleRelativePath -BasePath $fixtureRoot -TargetPath $path)
     }
 
-    $preview = & $helper -RepositoryRoot $fixtureRoot -MinimumAgeHours 0 2>&1 | Out-String
+    $planned = Join-Path $fixtureRoot "temp/TEST_ONLY_retention/TEST_ONLY_generation_20260107_010101.test-output"
+    & $retentionHelper -RepositoryRoot $fixtureRoot -Artifacts $planned | Out-Null
+    if (Test-Path -LiteralPath $planned) { throw 'Startup retention created the planned artifact' }
+    if (@(Get-ChildItem (Split-Path $planned) -File).Count -ne 3) { throw 'Startup must keep three prior outputs' }
+    [IO.File]::WriteAllText($planned, 'new output')
+    if (@(Get-ChildItem (Split-Path $planned) -File).Count -ne 4) { throw 'Production should leave four outputs' }
+    & $retentionHelper -RepositoryRoot $fixtureRoot -Artifacts $planned | Out-Null
+    if (@(Get-ChildItem (Split-Path $planned) -File).Count -ne 4) { throw 'Nested producers must not count the current output as prior history' }
+
+    $packages = 1..5 | ForEach-Object {
+        $relativePath = "android/build-outputs/TEST_ONLY_deploy-internal-v$_-$('a' * 32).aab"
+        New-FixtureFile -RelativePath $relativePath
+        $path = Join-Path $fixtureRoot $relativePath
+        (Get-Item -LiteralPath $path).LastWriteTime = (Get-Date).AddSeconds($_)
+        $path
+    }
+    $plannedPackage = Join-Path $fixtureRoot "android/build-outputs/TEST_ONLY_deploy-internal-v6-$('b' * 32).aab"
+    & $retentionHelper -RepositoryRoot $fixtureRoot -Artifacts $plannedPackage | Out-Null
+    foreach ($path in $packages[0..1]) {
+        if (Test-Path -LiteralPath $path) { throw 'Package startup retention kept an older package' }
+    }
+    foreach ($path in $packages[2..4]) {
+        if (-not (Test-Path -LiteralPath $path)) { throw 'Package startup retention removed a recent package' }
+    }
+
+    $preview = & $helper -RepositoryRoot $fixtureRoot 2>&1 | Out-String
     foreach ($expected in @(
             'timestamped-generation-directory:',
             'timestamped-output-file:',

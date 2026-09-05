@@ -151,7 +151,7 @@ Assert-True ((New-GuidebotMissionSimulationRecord -Mission $emptyMission -Levels
 # Exercise the actual finalization writer without launching any engine processes
 $runnerPath = Join-Path $repoRoot 'android\helpers\regenerate_all_guidebot_simulations.ps1'
 $runnerAst = [Management.Automation.Language.Parser]::ParseFile($runnerPath, [ref]$null, [ref]$null)
-foreach ($functionName in @('Get-GuidebotMissionEntries', 'Get-ExistingGuidebotLevelMap', 'Write-GuidebotSimulationFile')) {
+foreach ($functionName in @('Get-GuidebotMissionEntries', 'Get-ExistingGuidebotLevelMap', 'Write-GuidebotSimulationFile', 'New-GuidebotInfrastructureErrorResult')) {
     $definition = $runnerAst.Find({
             param($node)
             $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq $functionName
@@ -173,6 +173,27 @@ foreach ($arrayRoot in @($false, $true)) {
     foreach ($entry in $written) {
         Assert-True ($entry.status -eq 'failed' -and $entry.levels.Count -eq 0) 'finalization misreported empty metadata'
     }
+}
+
+$failureCases = @(
+    @{ Text = 'Route engine infrastructure failure for fixture, exit -1073741819, log={0}'; Problem = 'Route engine infrastructure failure'; Exit = -1073741819 },
+    @{ Text = 'Desktop route infrastructure failure for fixture, exit 1, log={0}'; Problem = 'Route engine infrastructure failure'; Exit = 1 },
+    @{ Text = 'Route engine process timeout after 180 seconds for fixture, log={0}'; Problem = 'Route engine process timeout'; Timeout = 180 },
+    @{ Text = 'Desktop route process timeout after 300 seconds for fixture, log={0}'; Problem = 'Route engine process timeout'; Timeout = 300 },
+    @{ Text = 'Route engine could not start for fixture: missing {0}'; Problem = 'Route engine could not start' },
+    @{ Text = 'Route engine result could not be read for fixture: invalid JSON in {0}'; Problem = 'Route engine result could not be read' },
+    @{ Text = 'Could not stage mission at {0}'; Problem = 'Simulation setup or execution failed' }
+)
+foreach ($case in $failureCases) {
+    $firstFailure = New-GuidebotInfrastructureErrorResult -Mission $mission -LevelRecord $mission.levels[0] `
+        -Problem ($case.Text -f 'C:\workspace one\temp\20260904_174756\result.log')
+    $secondFailure = New-GuidebotInfrastructureErrorResult -Mission $mission -LevelRecord $mission.levels[0] `
+        -Problem ($case.Text -f '/different/workspace/temp/20260905_010000/result.log')
+    Assert-True ((ConvertTo-GuidebotNormalizedJsonText $firstFailure) -ceq (ConvertTo-GuidebotNormalizedJsonText $secondFailure)) `
+        'run-specific diagnostics changed the regression record'
+    Assert-True ($firstFailure.problem -eq $case.Problem) 'failure category was lost'
+    if ($case.ContainsKey('Exit')) { Assert-True ($firstFailure.exit_code -eq $case.Exit) 'native exit code was lost' }
+    if ($case.ContainsKey('Timeout')) { Assert-True ($firstFailure.timeout_seconds -eq $case.Timeout) 'timeout budget was lost' }
 }
 
 Write-Host 'GuideBot simulation schema tests passed'

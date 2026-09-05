@@ -24,6 +24,7 @@ if (-not (Test-Path $tempDir)) {
 
 $datestamp = Get-Date -Format "yyyy-MM-dd"
 $logFile = Join-Path $tempDir "warnings-msvc-$datestamp.log"
+& (Join-Path $PSScriptRoot "retain-recent-artifacts.ps1") -Artifacts $logFile
 
 # Kill any zombie cl.exe processes
 Get-Process cl -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
@@ -81,4 +82,3 @@ if (-not $D1Only) {
 
 Write-Host ""
 Write-Host "Written to: $logFile"
-& (Join-Path $PSScriptRoot "retain-recent-artifacts.ps1") -Artifacts $logFile

@@ -13,6 +13,26 @@ import java.util.zip.ZipOutputStream
 
 class MissionZipExtractionStoreTest {
     @Test
+    fun launchFreshnessChecksMetadataWhileIntegrityAuditChecksBytes() {
+        val filesDir = File("build/test-mission-zip-extraction/launch-freshness").absoluteFile
+        filesDir.deleteRecursively()
+        val archive = File(filesDir, "mods/preview.zip")
+        requireNotNull(archive.parentFile).mkdirs()
+        writeMissionArchive(archive, listOf("docs/readme.txt" to "original"))
+        val store = MissionZipExtractionStore(filesDir)
+        val record = store.ensureExtracted(archive.name, archive, requireNotNull(MissionZip.inspect(archive)))
+        val output = File(record.rootDir, "docs/readme.txt")
+        val timestamp = output.lastModified()
+        output.writeText("changed!")
+        assertTrue(output.setLastModified(timestamp))
+        // No content reads on the launch path, including across manager/process reloads
+        assertNotNull(MissionZipExtractionStore(filesDir).reusableRecord(archive.name, archive))
+        assertNull(store.freshRecord(archive.name, archive))
+        assertTrue(output.setLastModified(timestamp + 2000))
+        assertNull(store.reusableRecord(archive.name, archive))
+    }
+
+    @Test
     fun freshRecordRejectsSameSizeArchiveWithChangedModificationTime() {
         val filesDir = File("build/test-mission-zip-extraction/freshness").absoluteFile
         filesDir.deleteRecursively()

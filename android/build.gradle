@@ -3,3 +3,16 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.compose' apply false
     id 'org.jetbrains.kotlin.plugin.serialization' apply false
 }
+
+// Trim prior native generations before AGP configures or creates the next hash directory
+if (System.getProperty('os.name').toLowerCase().contains('windows') &&
+        gradle.startParameter.taskNames.any { it ==~ /(?i).*(assemble|bundle|externalNativeBuild|configureCMake|buildCMake|:build$|^build$).*/ }) {
+    def cleanup = new File(rootDir, 'clean-workspace.ps1')
+    def process = new ProcessBuilder('powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass',
+        '-File', cleanup.absolutePath, '-BuildsOnly', '-Producer', '-KeepBuildGenerations', '3',
+        '-BuildRoots', new File(rootDir, 'app/.cxx').absolutePath).redirectErrorStream(true).start()
+    process.inputStream.withReader { reader -> reader.eachLine { logger.lifecycle(it) } }
+    if (process.waitFor() != 0) {
+        throw new GradleException('Native build retention failed before build startup')
+    }
+}

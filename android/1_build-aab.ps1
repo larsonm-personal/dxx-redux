@@ -88,6 +88,23 @@ Write-Host "gitHash:     $gitHash"
 Write-Host "buildDate:   $buildDate"
 Write-Host "buildTime:   $buildTime PST"
 
+$variantLower = $variant.ToLower()
+# Copy to build-outputs/ with timestamp
+$outDir = Join-Path $PSScriptRoot "build-outputs"
+if (-not (Test-Path $outDir)) { New-Item -ItemType Directory -Path $outDir | Out-Null }
+
+if ($OutputPath) {
+    $outPath = if ([System.IO.Path]::IsPathRooted($OutputPath)) { $OutputPath } else { Join-Path $PSScriptRoot $OutputPath }
+    $requestedDir = Split-Path -Parent $outPath
+    if (-not (Test-Path $requestedDir)) { New-Item -ItemType Directory -Path $requestedDir | Out-Null }
+} else {
+    $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $outName = "dxx-redux-$variantLower-$timestamp-v$versionCode.aab"
+    $outPath = Join-Path $outDir $outName
+}
+
+& (Join-Path $PSScriptRoot "helpers\retain-recent-artifacts.ps1") -Artifacts $outPath
+
 # Generate BuildInfo.kt with real build metadata
 $buildInfoPath = Join-Path $PSScriptRoot "app\src\main\java\com\dxxredux\app\BuildInfo.kt"
 $buildInfoContent = @"
@@ -137,23 +154,8 @@ $aabDir = Join-Path $PSScriptRoot "app\build\outputs\bundle\$variantLower"
 $aab = Get-ChildItem "$aabDir\*.aab" -ErrorAction SilentlyContinue | Select-Object -First 1
 if (-not $aab) { throw "AAB not found in $aabDir" }
 
-# Copy to build-outputs/ with timestamp
-$outDir = Join-Path $PSScriptRoot "build-outputs"
-if (-not (Test-Path $outDir)) { New-Item -ItemType Directory -Path $outDir | Out-Null }
-
-if ($OutputPath) {
-    $outPath = if ([System.IO.Path]::IsPathRooted($OutputPath)) { $OutputPath } else { Join-Path $PSScriptRoot $OutputPath }
-    $requestedDir = Split-Path -Parent $outPath
-    if (-not (Test-Path $requestedDir)) { New-Item -ItemType Directory -Path $requestedDir | Out-Null }
-} else {
-    $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-    $outName = "dxx-redux-$variantLower-$timestamp-v$versionCode.aab"
-    $outPath = Join-Path $outDir $outName
-}
-
 Copy-Item $aab.FullName $outPath
 $sizeMB = [math]::Round((Get-Item $outPath).Length / 1MB, 1)
-& (Join-Path $PSScriptRoot "helpers\retain-recent-artifacts.ps1") -Artifacts $outPath
 
 Write-Host ""
 Write-Host "AAB built successfully: $outPath ($sizeMB MB)"

@@ -592,6 +592,20 @@ static int load_requested_mission(const json &request, LevelMetadataRequestMount
 #ifdef DXX_BUILD_DESCENT_II
 	if (mission.empty())
 		mission = "d2";
+	// Descriptor-only requests rely on load_mission to mount the mission HOG
+	// Mount Vertigo first so its safety check can see the embedded HAM
+	if (!d_stricmp(mission.c_str(), "d2x") && !PHYSFSX_exists("d2x.ham", 1)) {
+		for (const char *candidate : { "missions/d2x.hog", "d2x.hog" }) {
+			char hog_name[PATH_MAX], real_path[PATH_MAX];
+			snprintf(hog_name, sizeof(hog_name), "%s", candidate);
+			PHYSFSEXT_locateCorrectCase(hog_name);
+			if (!PHYSFS_exists(hog_name))
+				continue;
+			if (PHYSFSX_getRealPath(hog_name, real_path))
+				mounts.mount(real_path);
+			break;
+		}
+	}
 	if (!d_stricmp(mission.c_str(), "d2x") && !PHYSFSX_exists("d2x.ham", 1)) {
 		snprintf(error, error_size, "%s",
 		         "Vertigo data is incomplete: d2x.ham was not found inside d2x.hog");

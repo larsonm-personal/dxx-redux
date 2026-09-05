@@ -51,6 +51,7 @@ $exe = if ($HeadlessExecutable) {
 $desktopExe = Join-Path $repoRoot 'buildd2\main\d2x-redux.exe'
 $batchStart = [DateTime]::UtcNow
 . (Join-Path $scriptDir 'guidebot_simulation_regression.ps1')
+. (Join-Path $scriptDir 'mission_archive_variants.ps1')
 . (Join-Path $scriptDir 'runtime_targeted_sampling.ps1')
 . (Join-Path $scriptDir 'cd_level_metadata_sources.ps1')
 . (Join-Path $scriptDir 'headless_process_pool.ps1')
@@ -165,7 +166,7 @@ function Expand-GuidebotMissionArchive {
         return
     }
     Add-Type -AssemblyName System.IO.Compression.FileSystem
-    [IO.Compression.ZipFile]::ExtractToDirectory($Archive.FullName, $Destination)
+    Expand-MissionZipContent -ArchivePath $Archive.FullName -Destination $Destination
 }
 
 function Copy-GuidebotFlatStage {
@@ -265,13 +266,27 @@ function New-GuidebotInfrastructureErrorResult {
         [Parameter(Mandatory)][string]$Problem
     )
 
-    return [pscustomobject][ordered]@{
+    # Detailed exception text belongs in the per-run summary, not regression JSON
+    $failure = [ordered]@{ problem = 'Simulation setup or execution failed' }
+    if ($Problem -match '^(?:Route engine|Desktop route) infrastructure failure .*?, exit (-?\d+), log=') {
+        $failure.problem = 'Route engine infrastructure failure'
+        $failure.exit_code = [int]$Matches[1]
+    } elseif ($Problem -match '^(?:Route engine|Desktop route) process timeout after (\d+) seconds') {
+        $failure.problem = 'Route engine process timeout'
+        $failure.timeout_seconds = [int]$Matches[1]
+    } elseif ($Problem -match '^Route engine could not start') {
+        $failure.problem = 'Route engine could not start'
+    } elseif ($Problem -match '^Route engine result could not be read') {
+        $failure.problem = 'Route engine result could not be read'
+    }
+    $record = [ordered]@{
         level_num = [int](Get-GuidebotPropertyValue $LevelRecord 'level_num' 0)
         level_file = [string](Get-GuidebotPropertyValue $LevelRecord 'level_file' '')
         route_input_sha256 = Get-GuidebotRouteInputHash -Mission $Mission -Level $LevelRecord
         status = 'infrastructure_error'
-        problem = $Problem
     }
+    foreach ($key in $failure.Keys) { $record[$key] = $failure[$key] }
+    return [pscustomobject]$record
 }
 
 function Invoke-GuidebotDesktopLevel {
@@ -616,6 +631,7 @@ if ($DryRun) {
     $selectedItems | Select-Object Identity, SimulationTimeLimitSeconds, RouteHash
     exit 0
 }
+& (Join-Path $scriptDir "retain-recent-artifacts.ps1") -Artifacts $runRoot
 if ($Mode -in @('Headless', 'Desktop') -and -not (Test-Path -LiteralPath $resolvedHogDir -PathType Container)) {
     throw "D2 HOG directory not found: $resolvedHogDir"
 }

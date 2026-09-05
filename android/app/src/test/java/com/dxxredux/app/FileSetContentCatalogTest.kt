@@ -14,7 +14,7 @@ class FileSetContentCatalogTest {
     @Test
     fun classifiesOnlyRootKnownNamesAsBaseFiles() {
         assertEquals(FileSetFileClass.BASE, FileSetContentCatalog.classify("descent2.hog"))
-        assertEquals(FileSetFileClass.BASE, FileSetContentCatalog.classify("D2X.HOG"))
+        assertEquals(FileSetFileClass.MANAGED_CONTENT, FileSetContentCatalog.classify("D2X.HOG"))
         assertEquals(FileSetFileClass.MANAGED_CONTENT, FileSetContentCatalog.classify("panic.hog"))
         assertEquals(FileSetFileClass.MANAGED_CONTENT, FileSetContentCatalog.classify("missions/descent2.hog"))
         assertEquals(FileSetFileClass.LAUNCHER_STATE, FileSetContentCatalog.classify("assets.json"))

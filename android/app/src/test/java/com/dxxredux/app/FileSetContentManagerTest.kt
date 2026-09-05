@@ -14,6 +14,29 @@ class FileSetContentManagerTest {
     @get:Rule val temporaryFolder = TemporaryFolder()
 
     @Test
+    fun vertigoDescriptorAndHogStayTogetherInLaunchProjection() {
+        val setDir = temporaryFolder.newFolder("vertigo")
+        File(setDir, "descent2.hog").writeText("base")
+        File(setDir, "D2X.HOG").writeText("expansion")
+        File(setDir, "d2x.mn2").writeText("zname = Descent 2: Vertigo\nnum_levels = 1\nd2xlvl01.rl2\n")
+        val manager = FileSetContentManager(setDir)
+        val result = manager.reconcile()
+        val entry = result.entries.single()
+        assertEquals(setOf("missions/D2X.HOG", "missions/d2x.mn2"), entry.virtualPaths.toSet())
+        assertTrue(result.conflicts.isEmpty())
+        val projection = manager.buildProjection("d2")
+        assertEquals("expansion", File(projection, "missions/D2X.HOG").readText())
+        assertTrue(File(projection, "missions/d2x.mn2").isFile)
+        assertTrue(File(setDir, "descent2.hog").isFile)
+        assertFalse(File(setDir, "D2X.HOG").exists())
+        assertEquals(entry.id, manager.reconcile().entries.single().id)
+        manager.setEnabled(entry.id, false)
+        val disabled = manager.buildProjection("d2")
+        assertFalse(File(disabled, "missions/D2X.HOG").exists())
+        assertFalse(File(disabled, "missions/d2x.mn2").exists())
+    }
+
+    @Test
     fun reconcileDoesNotRecreateDeletedSet() {
         val setDir = temporaryFolder.newFolder("deleted")
         val manager = FileSetContentManager(setDir)

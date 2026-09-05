@@ -20,6 +20,51 @@ import java.util.zip.ZipOutputStream
 
 class ModManagerMissionZipTest {
     @Test
+    fun smallPackLaunchCacheSurvivesReloadAndTracksOwnership() {
+        val filesDir = File("build/test-mod-manager-lazy-launch-cache").absoluteFile
+        filesDir.deleteRecursively()
+        val manager = ModManager(filesDir)
+        val imported = requireNotNull(manager.importMissionZipFile(createMissionZip(), "Lazy.zip"))
+        val store = manager.extractionStore()
+        val archive = manager.modFile(imported.filename)
+        assertNull(store.reusableRecord(imported.filename, archive))
+
+        manager.writeEnabledModPaths("d2")
+        val record = requireNotNull(store.reusableRecord(imported.filename, archive))
+        val timestamps = record.files.map { File(record.rootDir, it.relativePath).lastModified() }
+        val pathsFile = File(filesDir, "d2x-redux/.active_mod_paths")
+        val paths = pathsFile.readText()
+        val marker = File(record.rootDir, "mission_music_names.json").apply { writeText("background metadata") }
+        val reloaded = ModManager(filesDir)
+        reloaded.writeEnabledModPaths("d2")
+        assertEquals(paths, pathsFile.readText())
+        assertEquals(timestamps, record.files.map { File(record.rootDir, it.relativePath).lastModified() })
+        assertEquals("background metadata", marker.readText())
+        val linked = store.linkedFilesByAbsolutePath()
+        assertTrue(record.files.all { linked[File(record.rootDir, it.relativePath).absolutePath]?.ownerFilename == imported.filename })
+        val scan = requireNotNull(MissionZip.inspect(archive))
+        assertNotNull(store.extractedTarget(archive.absolutePath, File(filesDir, "set"), scan, scan.missionSets.single()))
+
+        reloaded.setEnabled(imported.filename, false)
+        reloaded.writeEnabledModPaths("d2")
+        assertFalse(pathsFile.exists())
+        assertTrue(record.rootDir.isDirectory)
+        reloaded.setEnabled(imported.filename, true)
+        reloaded.writeEnabledModPaths("d2")
+        assertEquals(paths, pathsFile.readText())
+        assertTrue(marker.isFile)
+
+        // Missing output repairs the entire generation before publishing launch paths
+        assertTrue(File(record.rootDir, record.files.first().relativePath).delete())
+        reloaded.writeEnabledModPaths("d2")
+        assertNotNull(store.freshRecord(imported.filename, archive))
+        assertFalse(marker.exists())
+        reloaded.deleteMod(imported.filename)
+        assertFalse(record.rootDir.exists())
+        assertTrue(store.linkedFilesByAbsolutePath().isEmpty())
+    }
+
+    @Test
     fun fileSetScopedManagersKeepArchivesStateAndLaunchPathsIsolated() {
         val filesDir = File("build/test-mod-manager-file-set-isolation").absoluteFile
         filesDir.deleteRecursively()
@@ -115,14 +160,14 @@ class ModManagerMissionZipTest {
         val pathFile = File(filesDir, "d2x-redux/.active_mod_paths")
         val lines = pathFile.readLines()
         assertEquals(2, lines.size)
-        assertTrue(lines[0].endsWith(".generated_mission_zips${File.separator}Uneasy4.zip"))
+        assertTrue(lines[0].endsWith(".extracted_mission_zips${File.separator}Uneasy4.zip"))
         assertTrue(
             lines[1].endsWith(
-                ".generated_mission_zips${File.separator}Uneasy4.zip${File.separator}missions${File.separator}Uneasy4.dxa",
+                ".extracted_mission_zips${File.separator}Uneasy4.zip${File.separator}missions${File.separator}Uneasy4.dxa",
             ),
         )
 
-        val stageDir = File(filesDir, "d2x-redux/.generated_mission_zips/Uneasy4.zip/missions")
+        val stageDir = File(filesDir, "mods/.extracted_mission_zips/Uneasy4.zip/missions")
         assertTrue(File(stageDir, "Uneasy4.mn2").isFile)
         assertTrue(File(stageDir, "Uneasy4.hog").isFile)
         assertTrue(File(stageDir, "Uneasy4.dxa").isFile)
@@ -258,9 +303,9 @@ class ModManagerMissionZipTest {
         val d2PathFile = File(filesDir, "d2x-redux/.active_mod_paths")
         val d2Lines = d2PathFile.readLines()
         assertEquals(1, d2Lines.size)
-        assertTrue(d2Lines[0].endsWith(".generated_mission_zips${File.separator}trine2.zip"))
+        assertTrue(d2Lines[0].endsWith(".extracted_mission_zips${File.separator}trine2.zip"))
 
-        val d2StageDir = File(filesDir, "d2x-redux/.generated_mission_zips/trine2.zip/missions")
+        val d2StageDir = File(filesDir, "mods/.extracted_mission_zips/trine2.zip/missions")
         assertTrue(File(d2StageDir, "trine2.msn").isFile)
         val d2Hog = File(d2StageDir, "trine2.hog")
         assertTrue(d2Hog.isFile)
@@ -272,9 +317,9 @@ class ModManagerMissionZipTest {
         val d1PathFile = File(filesDir, "d1x-redux/.active_mod_paths")
         val d1Lines = d1PathFile.readLines()
         assertEquals(1, d1Lines.size)
-        assertTrue(d1Lines[0].endsWith(".generated_mission_zips${File.separator}trine2.zip"))
+        assertTrue(d1Lines[0].endsWith(".extracted_mission_zips${File.separator}trine2.zip"))
 
-        val d1StageDir = File(filesDir, "d1x-redux/.generated_mission_zips/trine2.zip/missions")
+        val d1StageDir = File(filesDir, "mods/.extracted_mission_zips/trine2.zip/missions")
         assertTrue(File(d1StageDir, "trine2.msn").isFile)
         val d1Hog = File(d1StageDir, "trine2.hog")
         assertTrue(d1Hog.isFile)
@@ -297,14 +342,14 @@ class ModManagerMissionZipTest {
         manager.writeEnabledModPaths("d2", includeD1MissionZipsForD2 = false)
 
         assertFalse(File(filesDir, "d2x-redux/.active_mod_paths").exists())
-        assertFalse(File(filesDir, "d2x-redux/.generated_mission_zips/trine2.zip").exists())
+        assertFalse(File(filesDir, "mods/.extracted_mission_zips/trine2.zip").exists())
 
         manager.writeEnabledModPaths("d1")
 
         val d1PathFile = File(filesDir, "d1x-redux/.active_mod_paths")
         val d1Lines = d1PathFile.readLines()
         assertEquals(1, d1Lines.size)
-        assertTrue(d1Lines[0].endsWith(".generated_mission_zips${File.separator}trine2.zip"))
+        assertTrue(d1Lines[0].endsWith(".extracted_mission_zips${File.separator}trine2.zip"))
     }
 
     @Test
@@ -345,7 +390,7 @@ class ModManagerMissionZipTest {
         assertTrue(manager.hasEnabledMissionZipSoundtrack("d2"))
         manager.writeEnabledModPaths("d2")
 
-        val stageRoot = File(filesDir, "d2x-redux/.generated_mission_zips/Obsidian.zip")
+        val stageRoot = File(filesDir, "mods/.extracted_mission_zips/Obsidian.zip")
         assertTrue(File(stageRoot, "obsidian.sng").isFile)
         assertFalse(File(stageRoot, "missions/obsidian.sng").exists())
         assertTrue(File(stageRoot, "loose.ogg").isFile)
@@ -398,14 +443,14 @@ class ModManagerMissionZipTest {
         val pathFile = File(filesDir, "d2x-redux/.active_mod_paths")
         val lines = pathFile.readLines()
         assertEquals(2, lines.size)
-        assertTrue(lines[0].endsWith(".generated_mission_zips${File.separator}ewithin-rebirth.zip"))
+        assertTrue(lines[0].endsWith(".extracted_mission_zips${File.separator}ewithin-rebirth.zip"))
         assertTrue(
             lines[1].endsWith(
-                ".generated_mission_zips${File.separator}ewithin-rebirth.zip${File.separator}ewithin.dxa",
+                ".extracted_mission_zips${File.separator}ewithin-rebirth.zip${File.separator}ewithin.dxa",
             ),
         )
 
-        val stageRoot = File(filesDir, "d2x-redux/.generated_mission_zips/ewithin-rebirth.zip")
+        val stageRoot = File(filesDir, "mods/.extracted_mission_zips/ewithin-rebirth.zip")
         assertTrue(File(stageRoot, "ewithin.dxa").isFile)
         assertTrue(File(stageRoot, "missions/ewithin.mn2").isFile)
         assertTrue(File(stageRoot, "missions/ewithin.hog").isFile)
@@ -595,11 +640,18 @@ class ModManagerMissionZipTest {
 
         val extractedRoot = File(setDir, ".content/mod_support/mods/.extracted_mission_zips/Large.zip")
         assertEquals(File(extractedRoot, "missions").absolutePath, target.sourcePath)
+        val store = manager.extractionStore()
+        val linked = store.linkedFilesByAbsolutePath().values
+        assertTrue(linked.isNotEmpty())
+        assertTrue(linked.all { it.ownerFile == modFile && it.sourceExists })
+        assertNotNull(store.reusableRecord(imported.filename))
+        assertTrue(store.pruneMissingOwners().isEmpty())
+
         assertEquals(null, target.archivePath)
     }
 
     @Test
-    fun sameMetadataArchiveReplacementDoesNotLaunchStaleExtraction() {
+    fun changedArchiveDoesNotLaunchStaleExtraction() {
         val filesDir = File("build/test-mod-manager-mission-zip-extracted-record").absoluteFile
         filesDir.deleteRecursively()
         filesDir.mkdirs()
@@ -619,7 +671,7 @@ class ModManagerMissionZipTest {
             it.write(byteArrayOf(1, 2, 3, 4))
             it.setLength(originalLength)
         }
-        assertTrue(modFile.setLastModified(originalLastModified))
+        assertTrue(modFile.setLastModified(originalLastModified + 2000))
 
         assertThrows(Exception::class.java) { manager.writeEnabledModPaths("d2") }
         val extractedRoot = File(filesDir, "mods/.extracted_mission_zips/LargeMission.zip")

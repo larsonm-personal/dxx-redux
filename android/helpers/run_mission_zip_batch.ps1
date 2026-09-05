@@ -47,8 +47,8 @@ $metadataDir = Join-Path $OutDir "metadata"
 $importsDir = Join-Path $OutDir "imports"
 $artifactsDir = Join-Path $OutDir "artifacts"
 $resolvedScriptDir = Join-Path $OutDir "resolved_scripts"
-New-Item -ItemType Directory -Force -Path $metadataDir, $importsDir, $artifactsDir, $resolvedScriptDir | Out-Null
 & (Join-Path $helpersDir "retain-recent-artifacts.ps1") -Artifacts $OutDir
+New-Item -ItemType Directory -Force -Path $metadataDir, $importsDir, $artifactsDir, $resolvedScriptDir | Out-Null
 $script:LogFile = Join-Path $OutDir "batch.log"
 $script:MissionZipBatchConsecutiveRecoveryCount = 0
 

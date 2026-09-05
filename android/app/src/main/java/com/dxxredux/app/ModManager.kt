@@ -811,7 +811,7 @@ class ModManager(
             for (mod in enabled) {
                 val modFile = File(modsDir, mod.filename)
                 if (modFile.exists() && modFile.length() > 0) {
-                    validPaths.addAll(activeModPathLines(game, mod, modFile))
+                    validPaths.addAll(activeModPathLines(mod, modFile))
                 } else {
                     Log.e(TAG, "Mod file missing or empty: ${modFile.absolutePath} (${mod.displayName})")
                 }
@@ -837,115 +837,34 @@ class ModManager(
     }
 
     private fun activeModPathLines(
-        game: String,
         mod: ModInfo,
         modFile: File,
     ): List<String> =
         if (mod.kind == MOD_KIND_MISSION_ZIP) {
-            generatedMissionZipPathLines(game, mod, modFile)
+            generatedMissionZipPathLines(mod, modFile)
         } else {
             listOf(modFile.absolutePath)
         }
 
     private fun generatedMissionZipPathLines(
-        game: String,
         mod: ModInfo,
         modFile: File,
     ): List<String> {
         val extractionStore = MissionZipExtractionStore(supportDir)
-        if (mod.importMode == "extracted_bundle") {
-            extractionStore.freshRecord(mod.filename, modFile)?.let { record ->
-                writeMissionZipMusicNames(
-                    mod.filename,
-                    modFile,
-                    record,
-                    mod.displayName,
-                )
-                return extractionStore.activePathLines(mod.filename, modFile) ?: emptyList()
+        val startedAt = System.nanoTime()
+        val cached = extractionStore.reusableRecord(mod.filename, modFile)
+        val record =
+            cached ?: run {
+                val scan = MissionZip.inspect(modFile) ?: return emptyList()
+                extractionStore.ensureExtracted(mod.filename, modFile, scan)
             }
-        }
-        val scan = MissionZip.inspect(modFile) ?: return emptyList()
-        if (mod.importMode == "extracted_bundle" || scan.importMode == "extracted_bundle") {
-            val record = extractionStore.ensureExtracted(mod.filename, modFile, scan)
-            writeMissionZipMusicNames(mod.filename, modFile, record, mod.displayName)
-            return extractionStore.activePathLines(mod.filename, modFile) ?: emptyList()
-        }
-        val stageDir = File(generatedMissionZipDir(game), safeMissionZipDirName(mod.filename))
-        try {
-            extractZipToRoot(modFile, stageDir, scan)
-            writeMissionZipMusicNames(mod.filename, modFile, null, mod.displayName)
-            copyMissionZipMusicNames(mod.filename, stageDir)
-        } catch (e: InsufficientStorageException) {
-            throw e
-        } catch (e: Exception) {
-            Log.e(TAG, "Could not stage mission zip ${modFile.absolutePath}: ${e.message ?: e.javaClass.simpleName}")
-            return emptyList()
-        }
-        return buildList {
-            add(stageDir.absolutePath)
-            for (constituent in scan.constituents.filter { it.role == GameFileFormats.MISSION_ZIP_MOD_ARCHIVE }) {
-                val archive =
-                    File(
-                        stageDir,
-                        stagedRelativePath(scan, constituent.path).replace('/', File.separatorChar),
-                    )
-                if (archive.isFile) add(archive.absolutePath)
-            }
-        }
-    }
-
-    private fun writeMissionZipMusicNames(
-        ownerFilename: String,
-        modFile: File,
-        extractionRecord: MissionZipExtractionRecord?,
-        displayName: String,
-        onProgress: (LauncherCopyProgress) -> Unit = {},
-    ) {
-        val appContext = context ?: return
-        val catalog =
-            try {
-                extractionRecord?.let { MissionZipMusic.inspectExtracted(it) }
-                    ?: MissionZipMusic.inspect(modFile)
-                    ?: return
-            } catch (e: Exception) {
-                Log.w(TAG, "Could not inspect optional mission music for $displayName", e)
-                return
-            }
-        val sidecar =
-            extractionRecord?.let { File(it.rootDir, MISSION_ZIP_MUSIC_NAMES_FILE) }
-                ?: MissionZipMusicNames.cacheFile(supportDir, ownerFilename)
-        if (MissionZipMusicNames.isCurrent(sidecar, catalog)) return
-        try {
-            val count =
-                MissionZipMusicNames.identifyLocalAndWrite(
-                    appContext,
-                    filesDir,
-                    catalog,
-                    sidecar,
-                ) { done, total, track ->
-                    if (total > 0) {
-                        onProgress(
-                            LauncherCopyProgress(
-                                "Identifying music tracks: $displayName ($track)",
-                                done.toLong(),
-                                total.toLong(),
-                            ),
-                        )
-                    }
-                }
-            if (count > 0) logInfo("Wrote $count mission music names for $displayName")
-        } catch (e: Exception) {
-            Log.w(TAG, "Could not identify mission zip music for $displayName", e)
-        }
-    }
-
-    private fun copyMissionZipMusicNames(
-        ownerFilename: String,
-        stageDir: File,
-    ) {
-        val sidecar = MissionZipMusicNames.cacheFile(supportDir, ownerFilename)
-        if (!sidecar.isFile) return
-        sidecar.copyTo(File(stageDir, MISSION_ZIP_MUSIC_NAMES_FILE), overwrite = true)
+        logInfo(
+            "Mission launch cache owner=${mod.filename} hit=${cached != null} " +
+                "files=${record.fileCount} bytes=${record.extractedSizeBytes} " +
+                "elapsed_ms=${(System.nanoTime() - startedAt) / 1_000_000}",
+        )
+        // Optional soundtrack fingerprinting belongs to music analysis, not game launch
+        return extractionStore.activePathLines(record)
     }
 
     fun checkEnabledModCompatibility(
@@ -1011,7 +930,7 @@ class ModManager(
 
     private fun modHasMissionSoundtrack(mod: ModInfo): Boolean {
         val modFile = File(modsDir, mod.filename)
-        val record = MissionZipExtractionStore(supportDir).freshRecord(mod.filename, modFile)
+        val record = MissionZipExtractionStore(supportDir).reusableRecord(mod.filename, modFile)
         return if (record != null) missionZipHasSoundtrack(record) else missionZipHasSoundtrack(modFile)
     }
 
@@ -1140,7 +1059,7 @@ class ModManager(
     private fun getMissionZipDetails(modFile: File): ModDetails =
         try {
             val extractionStore = MissionZipExtractionStore(supportDir)
-            var extractionRecord = extractionStore.freshRecord(modFile.name, modFile)
+            var extractionRecord = extractionStore.reusableRecord(modFile.name, modFile)
             var scan = extractionRecord?.let { MissionZip.inspectExtracted(it) } ?: MissionZip.inspect(modFile)
             val sourceScan = scan
             if (extractionRecord == null && sourceScan?.importMode == "extracted_bundle") {
@@ -1266,7 +1185,7 @@ class ModManager(
         if (mod.kind == MOD_KIND_MISSION_ZIP && GameFileFormats.extensionOf(mod.filename) != "zip") return emptyList()
         if (mod.kind == MOD_KIND_MISSION_ZIP &&
             mod.importMode == "extracted_bundle" &&
-            MissionZipExtractionStore(supportDir).freshRecord(mod.filename, modFile) != null
+            MissionZipExtractionStore(supportDir).reusableRecord(mod.filename, modFile) != null
         ) {
             return emptyList()
         }

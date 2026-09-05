@@ -52,6 +52,7 @@ New-Item -Path $ReportDir -ItemType Directory -Force -ErrorAction SilentlyContin
 
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $reportFile = Join-Path $ReportDir "quick_report_$timestamp.md"
+& (Join-Path $helpersDir "retain-recent-artifacts.ps1") -Artifacts $reportFile
 $runTestScript = Join-Path $helpersDir "run_test.ps1"
 
 function New-QuickDemoSubset {
@@ -75,10 +76,12 @@ function New-QuickDemoSubset {
 
 $inputDemoCanaryManifest = Read-InputDemoGraphicsCanaryManifest `
     -ManifestPath (Join-Path $scriptDir "tests\input_demo_graphics_canaries.txt")
+& (Join-Path $helpersDir "retain-recent-artifacts.ps1") -Artifacts (Join-Path $repoRoot "temp/quick_demo_subset_$timestamp")
 $quickDemoRoot = New-QuickDemoSubset `
     -DestinationRoot (Join-Path $repoRoot "temp\quick_demo_subset_$timestamp") `
     -Canary $inputDemoCanaryManifest['d2']
 $quickPrimaryResultRoot = Join-Path $repoRoot "temp\quick_demo_primary_results_$timestamp"
+& (Join-Path $helpersDir "retain-recent-artifacts.ps1") -Artifacts $quickPrimaryResultRoot
 $headlessExecutable = Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName "d2" -PreferHeadlessConsole
 $headlessFreshnessIssue = Get-InputDemoExecutableFreshnessIssue `
     -RepoRoot $repoRoot `
@@ -193,6 +196,7 @@ function Invoke-QuickTest {
     $name = $Test.Name
     $historicalSeconds = Get-QuickTestHistoricalSeconds -Test $Test
     $logFile = Join-Path $ReportDir ("{0}_{1}.log" -f $name, $timestamp)
+    & (Join-Path $helpersDir "retain-recent-artifacts.ps1") -Artifacts $logFile
 
     Write-Host "------------------------------------------------------------" -ForegroundColor DarkGray
     Write-Host "  Running: $name [$($Test.Type)]  (timeout: ${TestTimeoutSeconds}s)" -ForegroundColor White
@@ -456,9 +460,6 @@ if ($failCount -gt 0 -or $timeoutCount -gt 0 -or $notRun.Count -gt 0) {
 
 [IO.File]::WriteAllText($reportFile, ($md -join "`n") + "`n", [Text.UTF8Encoding]::new($false))
 
-$retentionArtifacts = @($reportFile, $quickDemoRoot, $quickPrimaryResultRoot) | Where-Object { Test-Path -LiteralPath $_ }
-$retentionArtifacts += @(Get-ChildItem -LiteralPath $ReportDir -File | Where-Object { $_.Name -like "*_$timestamp.*" } | Select-Object -ExpandProperty FullName)
-& (Join-Path $helpersDir "retain-recent-artifacts.ps1") -Artifacts $retentionArtifacts
 
 if ($failCount -gt 0 -or $timeoutCount -gt 0 -or $notRun.Count -gt 0) {
     exit 1

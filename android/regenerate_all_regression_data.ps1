@@ -376,6 +376,7 @@ function Invoke-RegressionDataStages {
     $runStamp = $startedAt.ToString('yyyyMMdd_HHmmss')
     $runDir = if ($ReportDir) { Join-Path $ReportDir "run_$runStamp" } else { '' }
     if ($runDir) {
+        & (Join-Path $script:HelpersDir "retain-recent-artifacts.ps1") -Artifacts $runDir
         New-Item -ItemType Directory -Path $runDir -Force | Out-Null
     }
     $results = @()

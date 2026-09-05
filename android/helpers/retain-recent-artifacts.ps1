@@ -1,10 +1,11 @@
 #!/usr/bin/env pwsh
-# Rotates the timestamped artifact families represented by the supplied paths
+# Before producing output, retain three prior generations in its timestamped families
+# Artifacts may name planned outputs which do not exist yet
 
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][string[]]$Artifacts,
-    [ValidateRange(1, 1000)][int]$Keep = 5,
+    [ValidateRange(1, 1000)][int]$Keep = 3,
     [string]$RepositoryRoot = ""
 )
 
@@ -17,17 +18,13 @@ $RepositoryRoot = [IO.Path]::GetFullPath($RepositoryRoot).TrimEnd($separators)
 $pathComparison = if ([Environment]::OSVersion.Platform -eq [PlatformID]::Unix) { [StringComparison]::Ordinal } else { [StringComparison]::OrdinalIgnoreCase }
 $repositoryPrefix = $RepositoryRoot + [IO.Path]::DirectorySeparatorChar
 $artifactPaths = @($Artifacts | ForEach-Object { [IO.Path]::GetFullPath($_) } | Sort-Object -Unique)
-foreach ($path in $artifactPaths) {
-    if (-not (Test-Path -LiteralPath $path)) {
-        throw "Retention artifact not found: $path"
-    }
-}
 $artifactPaths = @($artifactPaths | Where-Object { $_.StartsWith($repositoryPrefix, $pathComparison) })
 if ($artifactPaths.Count -eq 0) {
     Write-Verbose "No repository artifacts are eligible for retention"
     return
 }
-$roots = @($artifactPaths | ForEach-Object { Split-Path -Parent $_ } | Sort-Object -Unique)
+$roots = @($artifactPaths | ForEach-Object { Split-Path -Parent $_ } | Where-Object { Test-Path -LiteralPath $_ -PathType Container } | Sort-Object -Unique)
+if ($roots.Count -eq 0) { return }
 $arguments = @{
     apply                    = $true
     KeepDirectoryGenerations = $Keep
@@ -35,6 +32,7 @@ $arguments = @{
     MinimumAgeHours          = 0
     Roots                    = $roots
     FamilySeeds              = $artifactPaths
+    ExcludePaths             = $artifactPaths
     IgnoreUnrecognizedFamilySeeds = $true
     Confirm                  = $false
     RepositoryRoot           = $RepositoryRoot

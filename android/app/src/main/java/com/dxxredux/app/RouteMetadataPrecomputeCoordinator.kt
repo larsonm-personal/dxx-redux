@@ -715,7 +715,7 @@ internal class RouteMetadataPrecomputeCoordinator(
                 val modTargets =
                     if (mod.kind == ModManager.MOD_KIND_MISSION_ZIP) {
                         val scan = runCatching { MissionZip.inspect(archive) }.getOrNull()
-                        val extractionRecord = extractionStore.freshRecord(mod.filename, archive)
+                        val extractionRecord = extractionStore.reusableRecord(mod.filename, archive)
                         val musicCatalog =
                             runCatching {
                                 extractionRecord?.let { MissionZipMusic.inspectExtracted(it) }

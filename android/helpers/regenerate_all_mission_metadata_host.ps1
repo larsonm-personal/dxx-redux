@@ -25,6 +25,8 @@ $repoRoot = Split-Path -Parent $androidRoot
 . (Join-Path $scriptDir "cd_level_metadata_sources.ps1")
 . (Join-Path $scriptDir "normalized_json_text.ps1")
 . (Join-Path $scriptDir "mission_archive_sources.ps1")
+. (Join-Path $scriptDir "mission_archive_variants.ps1")
+. (Join-Path $scriptDir "host_metadata_workspace.ps1")
 . (Join-Path $scriptDir "headless_process_pool.ps1")
 Initialize-RegressionProcessLifetime
 $zipDir = Join-Path $repoRoot "game_data\mission_files"
@@ -151,21 +153,6 @@ function Initialize-HostExecutable {
     return @{ d1 = $d1; d2 = $d2 }
 }
 
-function Initialize-MetadataKotlinCli {
-    $cli = Join-Path $androidRoot 'mission-metadata-cli\build\install\mission-metadata-cli\bin\mission-metadata-cli.bat'
-    $jdkHome = 'C:\local\jdk-21'
-    if (Test-Path -LiteralPath $jdkHome -PathType Container) {
-        $env:JAVA_HOME = $jdkHome
-        $env:Path = "$jdkHome\bin;$env:Path"
-    }
-    if (-not $NoBuild) {
-        & (Join-Path $androidRoot 'gradlew.bat') -p $androidRoot :mission-metadata-cli:installDist --console=plain 2>&1 |
-            ForEach-Object { Write-Host ([string]$_) }
-        if ($LASTEXITCODE -ne 0) { throw "Mission metadata Kotlin CLI build failed with exit code $LASTEXITCODE" }
-    }
-    if (-not (Test-Path -LiteralPath $cli -PathType Leaf)) { throw "Mission metadata Kotlin CLI not found: $cli" }
-    return $cli
-}
 
 function Get-SafeLabel {
     param([Parameter(Mandatory = $true)][string]$Name)
@@ -772,7 +759,7 @@ function Expand-MissionArchive {
     }
     Add-Type -AssemblyName System.IO.Compression
     Add-Type -AssemblyName System.IO.Compression.FileSystem
-    [System.IO.Compression.ZipFile]::ExtractToDirectory($Archive.FullName, $RawArchiveDir)
+    Expand-MissionZipContent -ArchivePath $Archive.FullName -Destination $RawArchiveDir
 }
 
 function Get-MissionDescriptor {
@@ -945,13 +932,14 @@ function Write-SummaryRecord {
     Add-Utf8NoBomText -Path $summaryJsonl -Text (($Record | ConvertTo-Json -Depth 30 -Compress) + "`n")
 }
 
-New-Item -ItemType Directory -Force -Path $metadataDir, $rawDir, $logsDir, $stagesDir | Out-Null
 & (Join-Path $scriptDir "retain-recent-artifacts.ps1") -Artifacts $outDir
+New-Item -ItemType Directory -Force -Path $metadataDir, $rawDir, $logsDir, $stagesDir | Out-Null
 if (-not (Test-Path -LiteralPath $zipDir -PathType Container)) {
     throw "Mission metadata source directory not found: $zipDir"
 }
 
 $metadataKotlinCli = Initialize-MetadataKotlinCli
+$script:missionArchiveVariantCli = $metadataKotlinCli
 $missionVariantDirectoryMaskPrecedence = @(& $metadataKotlinCli --directory-precedence)
 if ($LASTEXITCODE -ne 0 -or $missionVariantDirectoryMaskPrecedence.Count -eq 0) {
     throw 'Mission variant precedence could not be loaded from the shared Kotlin policy'
@@ -1048,6 +1036,7 @@ foreach ($source in $allCdSources) {
         if ($missions.Count -eq 0) {
             throw "CD metadata source has no new non-anarchy mission descriptors"
         }
+        Remove-HostMetadataPayloads -RunRoot $outDir -Paths @($stageDir)
         Write-JsonValue -Path $metadataPath -Value ([object[]]$missions) -MissionMetadata
         if ($descriptorFailures.Count -gt 0) {
             $failureNames = @($descriptorFailures | ForEach-Object { $_.Name }) -join ", "
@@ -1062,8 +1051,11 @@ foreach ($source in $allCdSources) {
     } catch {
         $record["status"] = "failed"
         $record["reason"] = $_.Exception.Message
-        Write-FailureJson -Path $metadataPath -Reason $record["reason"]
     } finally {
+        Remove-HostMetadataPayloads -RunRoot $outDir -Paths @($stageDir)
+        if ($record["status"] -eq "failed") {
+            Write-FailureJson -Path $metadataPath -Reason $record["reason"]
+        }
         $runStopwatch.Stop()
         $record["elapsed_ms"] = $runStopwatch.ElapsedMilliseconds
         $results += [pscustomobject]$record
@@ -1163,10 +1155,11 @@ if (-not $CdSourcesOnly) {
             } -OnCompleted {
                 param($task, $processResult)
                 $parallelProgress.Retired++
+                Remove-HostMetadataPayloads -RunRoot $task.WorkerRoot
                 $summaryPath = Join-Path $task.WorkerRoot 'summary.json'
                 $workerLogPath = Join-Path $task.WorkerRoot 'worker.log'
                 $workerLog = ($processResult.StandardOutput + "`n" + $processResult.StandardError).Trim()
-                Write-Utf8NoBomTextAtomically -Path $workerLogPath -Text ($workerLog + $(if ($workerLog) { "`n" } else { '' }))
+                Write-HostMetadataWorkerLog -Path $workerLogPath -Text ($workerLog + $(if ($workerLog) { "`n" } else { '' }))
                 $workerResults = if (-not $processResult.StartError -and -not $processResult.TimedOut -and
                     (Test-Path -LiteralPath $summaryPath -PathType Leaf)) {
                     @(Get-Content -LiteralPath $summaryPath -Raw | ConvertFrom-Json -NoEnumerate)
@@ -1267,6 +1260,7 @@ if (-not $CdSourcesOnly) {
                         $missions += Get-CheckedInMissionJson -RawPath $rawOutputPath -TargetIndex $targetIndex -SourceName $descriptorInfo.DisplayName -MissionFilename $descriptorInfo.Filename -MissionPath $missionPath
                         $targetIndex++
                     }
+                    Remove-HostMetadataPayloads -RunRoot $outDir -Paths @($rawArchiveDir, $stageDir)
                     Write-JsonValue -Path $metadataPath -Value ([object[]]$missions) -MissionMetadata
                     if (-not $NoRegressionCopy) {
                         Write-Utf8NoBomTextAtomically -Path $regressionPath -Text ([System.IO.File]::ReadAllText($metadataPath))
@@ -1277,8 +1271,11 @@ if (-not $CdSourcesOnly) {
                 } catch {
                     $record["status"] = "failed"
                     $record["reason"] = $_.Exception.Message
-                    Write-FailureJson -Path $metadataPath -Reason $record["reason"]
                 } finally {
+                    Remove-HostMetadataPayloads -RunRoot $outDir -Paths @($rawArchiveDir, $stageDir)
+                    if ($record["status"] -eq "failed") {
+                        Write-FailureJson -Path $metadataPath -Reason $record["reason"]
+                    }
                     $runStopwatch.Stop()
                     $record["elapsed_ms"] = $runStopwatch.ElapsedMilliseconds
                     $results += [pscustomobject]$record

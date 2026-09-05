@@ -13,10 +13,11 @@ param(
     [switch]$apply,
     [ValidateRange(1, 1000)][int]$KeepDirectoryGenerations = 1,
     [ValidateRange(1, 1000)][int]$KeepFileGenerations = 1,
-    [ValidateRange(0, 8760)][double]$MinimumAgeHours = 1,
+    [ValidateRange(0, 8760)][double]$MinimumAgeHours = 0,
     [string]$RepositoryRoot = "",
     [string[]]$Roots,
     [string[]]$FamilySeeds,
+    [string[]]$ExcludePaths,
     [switch]$IgnoreUnrecognizedFamilySeeds
 )
 
@@ -153,6 +154,13 @@ function Get-TimestampIdentity {
         $template = $template -replace '(?i)-v\d+(?=\.)', '-v{version}'
         return [pscustomobject]@{ Timestamp = $timestamp; Template = $template.ToLowerInvariant() }
     }
+    # Deployment copies use a version and GUID instead of a timestamp
+    if ($Name -match '^(?<family>.+)-v\d+(?:-[a-f0-9]{32})?(?<extension>\.(?:apk|aab|zip))$') {
+        return [pscustomobject]@{
+            Timestamp = [DateTime]::MinValue
+            Template = ($Matches.family + '-v{version}' + $Matches.extension).ToLowerInvariant()
+        }
+    }
     return $null
 }
 
@@ -266,6 +274,17 @@ if ($FamilySeeds) {
     $seedFamilies = @()
     foreach ($seedValue in $FamilySeeds) {
         $seedPath = [IO.Path]::GetFullPath($seedValue)
+        if (-not (Test-Path -LiteralPath $seedPath)) {
+            $identity = Get-TimestampIdentity -Name ([IO.Path]::GetFileName($seedPath))
+            if ($identity) {
+                $seedParent = [IO.Path]::GetDirectoryName($seedPath)
+                $seedFamilies += @($observed | Where-Object {
+                        $_.Identity -and $_.Parent.Equals($seedParent, $pathComparison) -and
+                        $_.Identity.Template -eq $identity.Template
+                    } | ForEach-Object Family)
+                continue
+            }
+        }
         $seed = @($observed | Where-Object { $_.Item.FullName.Equals($seedPath, $pathComparison) })
         if ($seed.Count -ne 1 -or -not $seed[0].Family) {
             if ($IgnoreUnrecognizedFamilySeeds) {
@@ -279,6 +298,7 @@ if ($FamilySeeds) {
     $seedFamilies = @($seedFamilies | Sort-Object -Unique)
     $observed = @($observed | Where-Object { $_.Family -and $_.Family -in $seedFamilies })
 }
+$observed = @($observed | Where-Object { $_.Item.FullName -notin $ExcludePaths })
 $kept = @()
 $candidates = @()
 foreach ($className in @('timestamped-generation-directory', 'timestamped-output-file')) {
@@ -290,6 +310,12 @@ foreach ($className in @('timestamped-generation-directory', 'timestamped-output
     }
 }
 
+$gitProtected = @()
+if (Test-Path -LiteralPath (Join-Path $RepositoryRoot '.git')) {
+    $gitPaths = & git -C $RepositoryRoot -c core.quotepath=false ls-files --cached --others --exclude-standard -z
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot read Git protection before artifact retention' }
+    $gitProtected = @(($gitPaths -join "`n").Split([char]0) | Where-Object { $_ } | ForEach-Object { [IO.Path]::GetFullPath((Join-Path $RepositoryRoot $_)) })
+}
 $eligible = @()
 $protected = @()
 foreach ($record in $candidates) {
@@ -306,10 +332,13 @@ foreach ($record in $candidates) {
         LatestWriteTime = $stats.LatestWriteTime
         Reason          = ""
     }
-    if ($stats.HasReparsePoint) {
+    if (@($gitProtected | Where-Object { $_.Equals($path, $pathComparison) -or (Test-PathWithinRoot -Path $_ -Root $path) }).Count) {
+        $candidate.Reason = 'contains Git-visible files'
+        $protected += $candidate
+    } elseif ($stats.HasReparsePoint) {
         $candidate.Reason = 'contains a reparse point'
         $protected += $candidate
-    } elseif ($stats.LatestWriteTime -gt $cutoff) {
+    } elseif ($MinimumAgeHours -gt 0 -and $stats.LatestWriteTime -gt $cutoff) {
         $candidate.Reason = "modified after $($cutoff.ToString('s'))"
         $protected += $candidate
     } else {
@@ -352,7 +381,7 @@ foreach ($record in $eligible) {
     [void](Assert-SafeTreePath -Path $record.Root)
     $path = Assert-DirectChildPath -Path $record.Path -Parent $record.Parent -Root $record.Root
     $currentStats = Get-ArtifactStats -Path $path
-    if ($currentStats.HasReparsePoint -or $currentStats.LatestWriteTime -gt $cutoff) {
+    if ($currentStats.HasReparsePoint -or ($MinimumAgeHours -gt 0 -and $currentStats.LatestWriteTime -gt $cutoff)) {
         Write-Warning "Changed since discovery; preserving $path"
         continue
     }
