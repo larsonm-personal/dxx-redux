@@ -24,14 +24,14 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 12
+          "s": 11
         },
         {
           "n": "gold key",
           "s": 29
         }
       ],
-      "total_frames": 6449,
+      "total_frames": 6410,
       "rng_end": {
         "state": 1964990155,
         "calls": 62
@@ -69,7 +69,7 @@
           "s": 79
         }
       ],
-      "total_frames": 4755,
+      "total_frames": 4751,
       "rng_end": {
         "state": 2883693444,
         "calls": 83
@@ -87,26 +87,26 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 9
+          "s": 8
         },
         {
           "n": "gold key",
-          "s": 25
+          "s": 23
         },
         {
           "n": "red key",
-          "s": 43
+          "s": 42
         },
         {
           "n": "boss",
-          "s": 63
+          "s": 61
         },
         {
           "n": "exit",
-          "s": 80
+          "s": 77
         }
       ],
-      "total_frames": 4791,
+      "total_frames": 4614,
       "rng_end": {
         "state": 3826077128,
         "calls": 159

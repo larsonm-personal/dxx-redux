@@ -74,10 +74,10 @@
         },
         {
           "n": "hidden door",
-          "s": 134
+          "s": 133
         }
       ],
-      "total_frames": 8508,
+      "total_frames": 8482,
       "rng_end": {
         "state": 2171043584,
         "calls": 4871
@@ -100,14 +100,14 @@
         },
         {
           "n": "switch 8",
-          "s": 20
+          "s": 19
         },
         {
           "n": "gold key",
-          "s": 28
+          "s": 27
         }
       ],
-      "total_frames": 6201,
+      "total_frames": 8049,
       "rng_end": {
         "state": 3580241508,
         "calls": 1011

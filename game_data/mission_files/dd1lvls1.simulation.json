@@ -8,9 +8,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 6,
+    "ok": 7,
     "failed": 1,
-    "timeout": 5
+    "timeout": 4
   },
   "levels": [
     {
@@ -25,29 +25,29 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 16
+          "s": 14
         },
         {
           "n": "gold key",
-          "s": 32
+          "s": 29
         },
         {
           "n": "red key",
-          "s": 47
+          "s": 44
         },
         {
           "n": "reactor",
-          "s": 60
+          "s": 56
         },
         {
           "n": "exit",
-          "s": 67
+          "s": 63
         }
       ],
-      "total_frames": 4021,
+      "total_frames": 3805,
       "rng_end": {
-        "state": 2077067425,
-        "calls": 96
+        "state": 3948108040,
+        "calls": 95
       }
     },
     {
@@ -62,18 +62,18 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 11
+          "s": 10
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 22
+          "s": 20
         },
         {
           "n": "red key",
-          "s": 37
+          "s": 33
         }
       ],
-      "total_frames": 2209,
+      "total_frames": 1992,
       "rng_end": {
         "state": 2077067425,
         "calls": 96
@@ -104,39 +104,59 @@
         },
         {
           "n": "red key",
-          "s": 72
+          "s": 71
         },
         {
           "n": "reactor",
-          "s": 93
+          "s": 91
         },
         {
           "n": "exit",
-          "s": 107
+          "s": 104
         }
       ],
-      "total_frames": 6414,
+      "total_frames": 6242,
       "rng_end": {
-        "state": 327681027,
-        "calls": 134
+        "state": 1023081650,
+        "calls": 133
       }
     },
     {
       "level_num": 4,
       "level_file": "tunnels.rdl",
       "route_input_sha256": "CCB6E9CEB8382000572A870C61E0223A88D10B05F4265A819A66B279A43A1127",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4325,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 15
+        },
+        {
+          "n": "gold key",
+          "s": 30
+        },
+        {
+          "n": "red key",
+          "s": 45
+        },
+        {
+          "n": "reactor",
+          "s": 60
+        },
+        {
+          "n": "exit",
+          "s": 62
+        }
+      ],
+      "total_frames": 3728,
       "rng_end": {
-        "state": 3297241969,
-        "calls": 16
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 208521688,
+        "calls": 79
+      }
     },
     {
       "level_num": 5,
@@ -150,18 +170,18 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 12
+          "s": 10
         },
         {
           "n": "gold key",
-          "s": 34
+          "s": 30
         },
         {
           "n": "red key",
-          "s": 60
+          "s": 54
         }
       ],
-      "total_frames": 8510,
+      "total_frames": 7961,
       "rng_end": {
         "state": 916896761,
         "calls": 72
@@ -184,22 +204,22 @@
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 58
+          "s": 57
         },
         {
           "n": "fly-through 1",
-          "s": 92
+          "s": 90
         },
         {
           "n": "reactor",
-          "s": 98
+          "s": 97
         },
         {
           "n": "exit",
-          "s": 104
+          "s": 103
         }
       ],
-      "total_frames": 6233,
+      "total_frames": 6151,
       "rng_end": {
         "state": 510737498,
         "calls": 125
@@ -221,38 +241,38 @@
         },
         {
           "n": "hidden door",
-          "s": 33
+          "s": 31
         },
         {
           "n": "gold key",
-          "s": 33
+          "s": 32
         },
         {
           "n": "fly-through 3",
-          "s": 56
+          "s": 55
         },
         {
           "n": "fly-through 4",
-          "s": 71
+          "s": 70
         },
         {
           "n": "red key",
-          "s": 83
+          "s": 80
         },
         {
           "n": "fly-through 5",
-          "s": 100
+          "s": 97
         },
         {
           "n": "reactor",
-          "s": 100
+          "s": 97
         },
         {
           "n": "exit",
-          "s": 107
+          "s": 103
         }
       ],
-      "total_frames": 6433,
+      "total_frames": 6176,
       "rng_end": {
         "state": 204674734,
         "calls": 153
@@ -270,10 +290,10 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 13
+          "s": 12
         }
       ],
-      "total_frames": 5191,
+      "total_frames": 5140,
       "rng_end": {
         "state": 4008331270,
         "calls": 33
@@ -292,26 +312,26 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 5
+          "s": 4
         },
         {
           "n": "gold key",
-          "s": 28
+          "s": 27
         },
         {
           "n": "red key",
-          "s": 73
+          "s": 69
         },
         {
           "n": "reactor",
-          "s": 102
+          "s": 97
         },
         {
           "n": "exit",
-          "s": 103
+          "s": 97
         }
       ],
-      "total_frames": 6170,
+      "total_frames": 5843,
       "rng_end": {
         "state": 3871495338,
         "calls": 109
@@ -329,18 +349,18 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 10
+          "s": 15
         },
         {
           "n": "gold key",
-          "s": 35
+          "s": 39
         },
         {
           "n": "red key",
-          "s": 68
+          "s": 69
         }
       ],
-      "total_frames": 8948,
+      "total_frames": 8997,
       "rng_end": {
         "state": 3074161287,
         "calls": 98
@@ -363,29 +383,29 @@
         },
         {
           "n": "gold key",
-          "s": 23
+          "s": 22
         },
         {
           "n": "red key",
-          "s": 36
+          "s": 35
         },
         {
           "n": "fly-through 2",
-          "s": 63
+          "s": 61
         },
         {
           "n": "reactor",
-          "s": 64
+          "s": 62
         },
         {
           "n": "exit",
-          "s": 70
+          "s": 67
         }
       ],
-      "total_frames": 4199,
+      "total_frames": 4000,
       "rng_end": {
-        "state": 3885567453,
-        "calls": 100
+        "state": 1447624116,
+        "calls": 99
       }
     },
     {
@@ -404,17 +424,17 @@
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 30
+          "s": 29
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 58
+          "s": 52
         }
       ],
-      "total_frames": 7838,
+      "total_frames": 7498,
       "rng_end": {
-        "state": 752577037,
-        "calls": 180
+        "state": 3536284836,
+        "calls": 179
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

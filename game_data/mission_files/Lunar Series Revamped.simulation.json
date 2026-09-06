@@ -45,14 +45,14 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 13
+          "s": 12
         },
         {
           "n": "red key",
-          "s": 34
+          "s": 33
         }
       ],
-      "total_frames": 3041,
+      "total_frames": 2988,
       "rng_end": {
         "state": 3731173240,
         "calls": 47

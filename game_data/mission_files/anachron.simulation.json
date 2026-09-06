@@ -28,18 +28,18 @@
         },
         {
           "n": "red key",
-          "s": 68
+          "s": 67
         },
         {
           "n": "reactor",
-          "s": 101
+          "s": 100
         },
         {
           "n": "exit",
-          "s": 114
+          "s": 113
         }
       ],
-      "total_frames": 6841,
+      "total_frames": 6804,
       "rng_end": {
         "state": 508382461,
         "calls": 68
@@ -64,7 +64,7 @@
           "s": 56
         }
       ],
-      "total_frames": 6971,
+      "total_frames": 6942,
       "rng_end": {
         "state": 1448521415,
         "calls": 34

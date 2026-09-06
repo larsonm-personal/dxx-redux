@@ -25,14 +25,14 @@
       "objectives": [
         {
           "n": "destroy robot carrying blue key",
-          "s": 14
+          "s": 13
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 25
+          "s": 24
         }
       ],
-      "total_frames": 1494,
+      "total_frames": 1463,
       "rng_end": {
         "state": 3545811950,
         "calls": 89
@@ -55,7 +55,7 @@
         },
         {
           "n": "gold key",
-          "s": 40
+          "s": 39
         },
         {
           "n": "red key",
@@ -66,7 +66,7 @@
           "s": 74
         }
       ],
-      "total_frames": 5303,
+      "total_frames": 5254,
       "rng_end": {
         "state": 872078403,
         "calls": 70
@@ -129,7 +129,7 @@
           "s": 152
         }
       ],
-      "total_frames": 9147,
+      "total_frames": 9135,
       "rng_end": {
         "state": 1598124042,
         "calls": 141
@@ -150,7 +150,7 @@
           "s": 13
         }
       ],
-      "total_frames": 805,
+      "total_frames": 763,
       "rng_end": {
         "state": 2937909499,
         "calls": 14

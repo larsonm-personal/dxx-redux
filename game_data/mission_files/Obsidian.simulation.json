@@ -146,54 +146,54 @@
         },
         {
           "n": "switch 2",
-          "s": 69
+          "s": 61
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 84
+          "s": 76
         },
         {
           "n": "switch 12",
-          "s": 90
+          "s": 82
         },
         {
           "n": "switch 13",
-          "s": 96
+          "s": 88
         },
         {
           "n": "switch 14",
-          "s": 105
+          "s": 97
         },
         {
           "n": "switch 15",
-          "s": 112
+          "s": 104
         },
         {
           "n": "switch 16",
-          "s": 117
+          "s": 109
         },
         {
           "n": "switch 17",
-          "s": 123
+          "s": 115
         },
         {
           "n": "switch 32",
-          "s": 128
+          "s": 120
         },
         {
           "n": "fly-through 19",
-          "s": 130
+          "s": 122
         },
         {
           "n": "boss",
-          "s": 140
+          "s": 131
         },
         {
           "n": "exit",
-          "s": 149
+          "s": 141
         }
       ],
-      "total_frames": 8944,
+      "total_frames": 8444,
       "rng_end": {
         "state": 4136410438,
         "calls": 10209
@@ -251,10 +251,10 @@
         },
         {
           "n": "exit",
-          "s": 104
+          "s": 103
         }
       ],
-      "total_frames": 6236,
+      "total_frames": 6207,
       "rng_end": {
         "state": 1179848895,
         "calls": 3882
@@ -341,11 +341,11 @@
         },
         {
           "n": "switch 15",
-          "s": 28
+          "s": 27
         },
         {
           "n": "switch 16",
-          "s": 56
+          "s": 55
         },
         {
           "n": "switch 14",
@@ -364,10 +364,10 @@
           "s": 146
         }
       ],
-      "total_frames": 8766,
+      "total_frames": 8747,
       "rng_end": {
-        "state": 1128553242,
-        "calls": 6333
+        "state": 1391368317,
+        "calls": 6340
       }
     },
     {
@@ -382,7 +382,7 @@
       "objectives": [
         {
           "n": "switch 5",
-          "s": 24
+          "s": 23
         },
         {
           "n": "blue key",
@@ -390,11 +390,11 @@
         },
         {
           "n": "switch 7",
-          "s": 53
+          "s": 52
         },
         {
           "n": "fly-through 8",
-          "s": 63
+          "s": 62
         },
         {
           "n": "fly-through 9",
@@ -402,34 +402,34 @@
         },
         {
           "n": "switch 10",
-          "s": 75
+          "s": 74
         },
         {
           "n": "gold key",
-          "s": 82
+          "s": 81
         },
         {
           "n": "switch 17",
-          "s": 82
+          "s": 81
         },
         {
           "n": "red key",
-          "s": 94
+          "s": 93
         },
         {
           "n": "pass-through 12",
-          "s": 106
+          "s": 105
         },
         {
           "n": "reactor",
-          "s": 107
+          "s": 106
         },
         {
           "n": "exit",
-          "s": 130
+          "s": 128
         }
       ],
-      "total_frames": 7798,
+      "total_frames": 7707,
       "rng_end": {
         "state": 4129720846,
         "calls": 4793
@@ -485,13 +485,18 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4266,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 12
+        }
+      ],
+      "total_frames": 1988,
       "rng_end": {
-        "state": 934293688,
-        "calls": 495
+        "state": 2555828275,
+        "calls": 1110
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 10,
@@ -539,7 +544,7 @@
         },
         {
           "n": "switch 6",
-          "s": 13
+          "s": 12
         },
         {
           "n": "blue key",
@@ -547,11 +552,11 @@
         },
         {
           "n": "fly-through 10",
-          "s": 32
+          "s": 31
         },
         {
           "n": "switch 7",
-          "s": 38
+          "s": 37
         },
         {
           "n": "switch 8",
@@ -567,13 +572,13 @@
         },
         {
           "n": "switch 16",
-          "s": 53
+          "s": 52
         }
       ],
       "total_frames": 17161,
       "rng_end": {
-        "state": 699980064,
-        "calls": 198759
+        "state": 1166341759,
+        "calls": 200042
       },
       "problem": "route confirmation exceeded 286-second simulation budget"
     },

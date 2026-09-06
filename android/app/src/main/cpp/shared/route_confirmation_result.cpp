@@ -35,6 +35,8 @@ nlohmann::ordered_json serialize_result(const route_confirmation_summary &summar
 	result["status"] = route_confirmation_status_name(summary.status);
 	result["seed"] = summary.seed;
 	result["fixed_hz"] = summary.fixed_hz;
+	if (route_confirmation_speed_percent() != 160)
+		result["test_speed_percent"] = route_confirmation_speed_percent();
 	result["difficulty"] = Difficulty_level;
 	result["frames"] = summary.frame_count;
 	result["simulation_seconds"] = fixed_seconds(summary.elapsed_ticks);

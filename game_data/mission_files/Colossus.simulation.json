@@ -62,14 +62,14 @@
         },
         {
           "n": "gold key",
-          "s": 78
+          "s": 77
         },
         {
           "n": "exit",
           "s": 96
         }
       ],
-      "total_frames": 5750,
+      "total_frames": 5738,
       "rng_end": {
         "state": 3429444377,
         "calls": 552

@@ -202,10 +202,10 @@
         },
         {
           "n": "exit",
-          "s": 84
+          "s": 83
         }
       ],
-      "total_frames": 5045,
+      "total_frames": 4968,
       "rng_end": {
         "state": 2849125866,
         "calls": 6189
@@ -242,7 +242,7 @@
           "s": 59
         }
       ],
-      "total_frames": 3568,
+      "total_frames": 3555,
       "rng_end": {
         "state": 218595359,
         "calls": 4554
@@ -352,7 +352,7 @@
           "s": 125
         }
       ],
-      "total_frames": 7513,
+      "total_frames": 7510,
       "rng_end": {
         "state": 4123504779,
         "calls": 7806
@@ -378,22 +378,22 @@
         },
         {
           "n": "fly-through 21",
-          "s": 39
+          "s": 38
         },
         {
           "n": "switch 6",
-          "s": 53
+          "s": 51
         },
         {
           "n": "reactor",
-          "s": 55
+          "s": 53
         },
         {
           "n": "exit",
-          "s": 59
+          "s": 57
         }
       ],
-      "total_frames": 3558,
+      "total_frames": 3398,
       "rng_end": {
         "state": 3563181320,
         "calls": 5215

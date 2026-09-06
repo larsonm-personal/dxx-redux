@@ -24,10 +24,10 @@
       "objectives": [
         {
           "n": "red key",
-          "s": 17
+          "s": 16
         }
       ],
-      "total_frames": 1024,
+      "total_frames": 949,
       "rng_end": {
         "state": 3740753246,
         "calls": 681
@@ -73,7 +73,7 @@
           "s": 111
         }
       ],
-      "total_frames": 6686,
+      "total_frames": 6633,
       "rng_end": {
         "state": 3426037612,
         "calls": 4555
@@ -200,7 +200,7 @@
           "s": 114
         }
       ],
-      "total_frames": 6841,
+      "total_frames": 6818,
       "rng_end": {
         "state": 695934172,
         "calls": 3995
@@ -252,42 +252,42 @@
       "objectives": [
         {
           "n": "red key",
-          "s": 17
+          "s": 16
         },
         {
           "n": "blue key",
-          "s": 38
+          "s": 36
         },
         {
           "n": "fly-through 7",
-          "s": 38
+          "s": 36
         },
         {
           "n": "fly-through 12",
-          "s": 61
+          "s": 59
         },
         {
           "n": "switch 3",
-          "s": 69
+          "s": 67
         },
         {
           "n": "switch 2",
-          "s": 94
+          "s": 92
         },
         {
           "n": "switch 1",
-          "s": 126
+          "s": 124
         },
         {
           "n": "reactor",
-          "s": 156
+          "s": 154
         },
         {
           "n": "exit",
-          "s": 179
+          "s": 177
         }
       ],
-      "total_frames": 10714,
+      "total_frames": 10593,
       "rng_end": {
         "state": 3256023730,
         "calls": 6789
@@ -337,7 +337,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 3951,
+      "total_frames": 3922,
       "rng_end": {
         "state": 3494321052,
         "calls": 475
@@ -356,26 +356,26 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 10
+          "s": 9
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 20
+          "s": 19
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 28
+          "s": 27
         },
         {
           "n": "boss",
-          "s": 38
+          "s": 37
         },
         {
           "n": "exit",
-          "s": 40
+          "s": 39
         }
       ],
-      "total_frames": 2396,
+      "total_frames": 2335,
       "rng_end": {
         "state": 3338075996,
         "calls": 2843
@@ -445,7 +445,7 @@
           "s": 76
         }
       ],
-      "total_frames": 4555,
+      "total_frames": 4545,
       "rng_end": {
         "state": 667148126,
         "calls": 2217
@@ -467,14 +467,14 @@
         },
         {
           "n": "gold key",
-          "s": 45
+          "s": 44
         },
         {
           "n": "red key",
-          "s": 85
+          "s": 83
         }
       ],
-      "total_frames": 5914,
+      "total_frames": 5811,
       "rng_end": {
         "state": 1983819910,
         "calls": 2465
@@ -493,19 +493,19 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 6
+          "s": 5
         },
         {
           "n": "fly-through 1",
-          "s": 9
+          "s": 8
         },
         {
           "n": "hidden door",
-          "s": 9
+          "s": 8
         },
         {
           "n": "switch 2",
-          "s": 9
+          "s": 8
         },
         {
           "n": "fly-through 7",
@@ -513,14 +513,14 @@
         },
         {
           "n": "reactor",
-          "s": 27
+          "s": 26
         },
         {
           "n": "fly-through 3",
-          "s": 31
+          "s": 30
         }
       ],
-      "total_frames": 2586,
+      "total_frames": 2544,
       "rng_end": {
         "state": 2896654120,
         "calls": 1471
@@ -555,10 +555,10 @@
         },
         {
           "n": "exit",
-          "s": 57
+          "s": 58
         }
       ],
-      "total_frames": 3429,
+      "total_frames": 3458,
       "rng_end": {
         "state": 743471179,
         "calls": 1726

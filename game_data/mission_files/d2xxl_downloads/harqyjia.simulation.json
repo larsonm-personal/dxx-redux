@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
-    "timeout": 1
+    "ok": 3,
+    "timeout": 2
   },
   "levels": [
     {
@@ -35,54 +35,54 @@
         },
         {
           "n": "switch 1",
-          "s": 39
+          "s": 38
         },
         {
           "n": "hidden door",
-          "s": 39
+          "s": 38
         },
         {
           "n": "switch 2",
-          "s": 41
+          "s": 39
         },
         {
           "n": "switch 8",
-          "s": 46
+          "s": 44
         },
         {
           "n": "gold key",
-          "s": 53
+          "s": 51
         },
         {
           "n": "red key",
-          "s": 84
+          "s": 82
         },
         {
           "n": "switch 34",
-          "s": 102
+          "s": 100
         },
         {
           "n": "pass-through 53",
-          "s": 112
+          "s": 109
         },
         {
           "n": "blastable wall",
-          "s": 112
+          "s": 109
         },
         {
           "n": "hidden door",
-          "s": 116
+          "s": 113
         },
         {
           "n": "reactor",
-          "s": 116
+          "s": 114
         },
         {
           "n": "exit",
-          "s": 123
+          "s": 121
         }
       ],
-      "total_frames": 7394,
+      "total_frames": 7241,
       "rng_end": {
         "state": 2961550964,
         "calls": 4259
@@ -92,7 +92,7 @@
       "level_num": 2,
       "level_file": "HARQYJ02.RL2",
       "route_input_sha256": "1ABF909E01825041FA0A0B8804FFFB86F99A944A49976833AD07763635D3B313",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -177,21 +177,14 @@
         {
           "n": "red key",
           "s": 149
-        },
-        {
-          "n": "reactor",
-          "s": 167
-        },
-        {
-          "n": "exit",
-          "s": 172
         }
       ],
-      "total_frames": 10320,
+      "total_frames": 10675,
       "rng_end": {
-        "state": 3388796041,
-        "calls": 8760
-      }
+        "state": 2416952661,
+        "calls": 8364
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 3,
@@ -221,11 +214,11 @@
         },
         {
           "n": "fly-through 28",
-          "s": 41
+          "s": 40
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 46
+          "s": 45
         },
         {
           "n": "hidden door",
@@ -237,14 +230,14 @@
         },
         {
           "n": "boss",
-          "s": 116
+          "s": 115
         },
         {
           "n": "exit",
           "s": 119
         }
       ],
-      "total_frames": 7147,
+      "total_frames": 7141,
       "rng_end": {
         "state": 3990225211,
         "calls": 4046

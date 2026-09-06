@@ -126,11 +126,13 @@ extern "C" int route_confirmation_desktop_maybe_start(void)
 	level_text = argument_value("-level");
 	time_limit_text = argument_value("-route-confirm-timeout-seconds");
 	if (!parse_level(level_text, &State.level) ||
+	    !route_confirmation_configure_speed(argument_value("-route-confirm-speed-percent")) ||
 	    (time_limit_text && !configure_time_limit(time_limit_text))) {
 		fprintf(stderr,
 		        "usage: -route-confirm-json-out <path> -level <number> "
 		        "[-mission <name>] [-extra-dir <path>] "
-		        "[-route-confirm-timeout-seconds <1..3600>]\n");
+		        "[-route-confirm-timeout-seconds <1..3600>] "
+		        "[-route-confirm-speed-percent <100..200>]\n");
 		return 1;
 	}
 	extra_dir = argument_value("-extra-dir");

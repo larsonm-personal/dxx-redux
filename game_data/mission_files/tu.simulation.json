@@ -94,7 +94,7 @@
           "s": 92
         }
       ],
-      "total_frames": 5537,
+      "total_frames": 5533,
       "rng_end": {
         "state": 2967401077,
         "calls": 1676
@@ -128,7 +128,7 @@
         },
         {
           "n": "switch 28",
-          "s": 59
+          "s": 58
         },
         {
           "n": "hidden door",
@@ -140,7 +140,7 @@
         },
         {
           "n": "red key",
-          "s": 90
+          "s": 89
         },
         {
           "n": "reactor",
@@ -151,7 +151,7 @@
           "s": 101
         }
       ],
-      "total_frames": 6044,
+      "total_frames": 6031,
       "rng_end": {
         "state": 905077752,
         "calls": 2479
@@ -169,34 +169,34 @@
       "objectives": [
         {
           "n": "switch 1",
-          "s": 13
+          "s": 11
         },
         {
           "n": "blue key",
-          "s": 29
+          "s": 27
         },
         {
           "n": "gold key",
-          "s": 69
+          "s": 66
         },
         {
           "n": "red key",
-          "s": 90
+          "s": 87
         },
         {
           "n": "boss",
-          "s": 117
+          "s": 113
         },
         {
           "n": "blastable wall",
-          "s": 129
+          "s": 126
         },
         {
           "n": "exit",
-          "s": 130
+          "s": 126
         }
       ],
-      "total_frames": 7779,
+      "total_frames": 7577,
       "rng_end": {
         "state": 3477880533,
         "calls": 2860
@@ -221,7 +221,7 @@
           "s": 2
         }
       ],
-      "total_frames": 142,
+      "total_frames": 132,
       "rng_end": {
         "state": 1660932118,
         "calls": 81
@@ -276,14 +276,14 @@
       "objectives": [
         {
           "n": "reactor",
-          "s": 53
+          "s": 52
         },
         {
           "n": "exit",
-          "s": 61
+          "s": 59
         }
       ],
-      "total_frames": 3641,
+      "total_frames": 3545,
       "rng_end": {
         "state": 2226093429,
         "calls": 908

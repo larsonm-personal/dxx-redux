@@ -29,26 +29,26 @@
         },
         {
           "n": "blue key",
-          "s": 9
+          "s": 8
         },
         {
           "n": "gold key",
-          "s": 25
+          "s": 23
         },
         {
           "n": "red key",
-          "s": 33
+          "s": 32
         },
         {
           "n": "reactor",
-          "s": 40
+          "s": 39
         },
         {
           "n": "exit",
-          "s": 45
+          "s": 44
         }
       ],
-      "total_frames": 2697,
+      "total_frames": 2630,
       "rng_end": {
         "state": 2754807367,
         "calls": 162
@@ -111,10 +111,10 @@
         },
         {
           "n": "red key",
-          "s": 34
+          "s": 33
         }
       ],
-      "total_frames": 2022,
+      "total_frames": 2001,
       "rng_end": {
         "state": 456633834,
         "calls": 45
@@ -152,7 +152,7 @@
           "s": 56
         }
       ],
-      "total_frames": 3358,
+      "total_frames": 3356,
       "rng_end": {
         "state": 3423541591,
         "calls": 146
@@ -197,7 +197,7 @@
           "s": 84
         }
       ],
-      "total_frames": 5038,
+      "total_frames": 5037,
       "rng_end": {
         "state": 2029357497,
         "calls": 136
@@ -223,10 +223,10 @@
         },
         {
           "n": "red key",
-          "s": 19
+          "s": 18
         }
       ],
-      "total_frames": 1168,
+      "total_frames": 1103,
       "rng_end": {
         "state": 995405759,
         "calls": 42
@@ -245,18 +245,18 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 12
+          "s": 9
         },
         {
           "n": "blastable wall",
-          "s": 24
+          "s": 22
         },
         {
           "n": "gold key",
-          "s": 27
+          "s": 25
         }
       ],
-      "total_frames": 2714,
+      "total_frames": 2596,
       "rng_end": {
         "state": 3178040984,
         "calls": 143
@@ -286,12 +286,12 @@
           "s": 24
         }
       ],
-      "total_frames": 5521,
+      "total_frames": 5480,
       "rng_end": {
-        "state": 4247911497,
-        "calls": 120
+        "state": 4273116023,
+        "calls": 114
       },
-      "problem": "route confirmation exceeded 92-second simulation budget"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 9,
@@ -354,7 +354,7 @@
           "s": 21
         }
       ],
-      "total_frames": 5488,
+      "total_frames": 5414,
       "rng_end": {
         "state": 948921754,
         "calls": 61

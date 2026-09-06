@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
-    "timeout": 2
+    "ok": 3,
+    "timeout": 1
   },
   "levels": [
     {
@@ -35,14 +35,14 @@
         },
         {
           "n": "reactor",
-          "s": 64
+          "s": 65
         },
         {
           "n": "exit",
-          "s": 84
+          "s": 85
         }
       ],
-      "total_frames": 5041,
+      "total_frames": 5075,
       "rng_end": {
         "state": 3698647558,
         "calls": 3617
@@ -64,26 +64,26 @@
         },
         {
           "n": "switch 10",
-          "s": 18
+          "s": 17
         },
         {
           "n": "red key",
-          "s": 30
+          "s": 29
         },
         {
           "n": "switch 5",
-          "s": 43
+          "s": 42
         },
         {
           "n": "reactor",
-          "s": 51
+          "s": 50
         },
         {
           "n": "exit",
-          "s": 56
+          "s": 55
         }
       ],
-      "total_frames": 3354,
+      "total_frames": 3279,
       "rng_end": {
         "state": 917025743,
         "calls": 4378
@@ -93,7 +93,7 @@
       "level_num": 3,
       "level_file": "verne.rl2",
       "route_input_sha256": "BB1FB82A489D9821D3EE1FC02C8E64C0A95502BAEE15BB891432B16AADA9DDA5",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -109,19 +109,22 @@
         },
         {
           "n": "red key",
-          "s": 60
+          "s": 59
         },
         {
           "n": "reactor",
-          "s": 88
+          "s": 82
+        },
+        {
+          "n": "exit",
+          "s": 87
         }
       ],
-      "total_frames": 9309,
+      "total_frames": 5233,
       "rng_end": {
-        "state": 1615213147,
-        "calls": 5806
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3460827591,
+        "calls": 5410
+      }
     },
     {
       "level_num": 4,
@@ -135,11 +138,11 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 32
+          "s": 31
         },
         {
           "n": "hidden door",
-          "s": 44
+          "s": 43
         },
         {
           "n": "hidden door",
@@ -147,13 +150,13 @@
         },
         {
           "n": "hidden door",
-          "s": 47
+          "s": 48
         }
       ],
-      "total_frames": 6568,
+      "total_frames": 6573,
       "rng_end": {
-        "state": 176246517,
-        "calls": 5644
+        "state": 2755226259,
+        "calls": 5622
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

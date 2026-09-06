@@ -120,22 +120,22 @@
         },
         {
           "n": "hidden door",
-          "s": 66
+          "s": 65
         },
         {
           "n": "reactor",
-          "s": 69
+          "s": 68
         },
         {
           "n": "hidden door",
-          "s": 86
+          "s": 84
         },
         {
           "n": "exit",
-          "s": 86
+          "s": 85
         }
       ],
-      "total_frames": 5177,
+      "total_frames": 5082,
       "rng_end": {
         "state": 1371983276,
         "calls": 3723

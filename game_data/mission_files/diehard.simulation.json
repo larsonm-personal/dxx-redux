@@ -396,59 +396,15 @@
         },
         {
           "n": "hidden door",
-          "s": 23
-        },
-        {
-          "n": "pass-through 6",
-          "s": 40
-        },
-        {
-          "n": "hidden door",
-          "s": 40
-        },
-        {
-          "n": "hidden door",
-          "s": 40
-        },
-        {
-          "n": "switch 8",
-          "s": 43
-        },
-        {
-          "n": "hidden door",
-          "s": 47
-        },
-        {
-          "n": "switch 5",
-          "s": 47
-        },
-        {
-          "n": "hidden door",
-          "s": 52
-        },
-        {
-          "n": "switch 4",
-          "s": 53
-        },
-        {
-          "n": "hidden door",
-          "s": 55
-        },
-        {
-          "n": "blue key",
-          "s": 56
-        },
-        {
-          "n": "switch 14",
-          "s": 57
+          "s": 22
         }
       ],
-      "total_frames": 4060,
+      "total_frames": 6105,
       "rng_end": {
-        "state": 2706250699,
-        "calls": 830
+        "state": 1395459970,
+        "calls": 501
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 15,

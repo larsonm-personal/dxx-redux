@@ -41,30 +41,30 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 20
+          "s": 19
         },
         {
           "n": "hidden door",
-          "s": 23
+          "s": 22
         },
         {
           "n": "gold key",
-          "s": 24
+          "s": 23
         },
         {
           "n": "red key",
-          "s": 54
+          "s": 52
         },
         {
           "n": "reactor",
-          "s": 74
+          "s": 73
         },
         {
           "n": "exit",
-          "s": 89
+          "s": 87
         }
       ],
-      "total_frames": 5315,
+      "total_frames": 5219,
       "rng_end": {
         "state": 856000655,
         "calls": 90

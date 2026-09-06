@@ -36,10 +36,10 @@
         },
         {
           "n": "fly-through 0",
-          "s": 65
+          "s": 64
         }
       ],
-      "total_frames": 7507,
+      "total_frames": 7453,
       "rng_end": {
         "state": 1217407189,
         "calls": 4396
@@ -92,17 +92,17 @@
         },
         {
           "n": "reactor",
-          "s": 50
+          "s": 48
         },
         {
           "n": "exit",
-          "s": 61
+          "s": 59
         }
       ],
-      "total_frames": 3646,
+      "total_frames": 3530,
       "rng_end": {
-        "state": 3540364135,
-        "calls": 3458
+        "state": 3468262302,
+        "calls": 3433
       }
     },
     {
@@ -121,22 +121,22 @@
         },
         {
           "n": "gold key",
-          "s": 37
+          "s": 36
         },
         {
           "n": "red key",
-          "s": 55
+          "s": 54
         },
         {
           "n": "reactor",
-          "s": 86
+          "s": 84
         },
         {
           "n": "exit",
-          "s": 95
+          "s": 91
         }
       ],
-      "total_frames": 5687,
+      "total_frames": 5485,
       "rng_end": {
         "state": 1017304121,
         "calls": 2568
@@ -170,10 +170,10 @@
         },
         {
           "n": "exit",
-          "s": 77
+          "s": 76
         }
       ],
-      "total_frames": 4615,
+      "total_frames": 4579,
       "rng_end": {
         "state": 4159101130,
         "calls": 1741
@@ -191,18 +191,18 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 29
+          "s": 28
         },
         {
           "n": "hidden door",
-          "s": 61
+          "s": 60
         },
         {
           "n": "gold key",
-          "s": 61
+          "s": 60
         }
       ],
-      "total_frames": 3682,
+      "total_frames": 3621,
       "rng_end": {
         "state": 868726942,
         "calls": 1129
@@ -266,7 +266,7 @@
           "s": 93
         }
       ],
-      "total_frames": 5561,
+      "total_frames": 5557,
       "rng_end": {
         "state": 3321239684,
         "calls": 3923

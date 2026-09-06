@@ -50,11 +50,11 @@
         },
         {
           "n": "switch 7",
-          "s": 78
+          "s": 77
         },
         {
           "n": "switch 8",
-          "s": 101
+          "s": 100
         },
         {
           "n": "switch 13",
@@ -62,7 +62,7 @@
         },
         {
           "n": "switch 19",
-          "s": 126
+          "s": 125
         },
         {
           "n": "switch 18",
@@ -77,7 +77,7 @@
           "s": 165
         }
       ],
-      "total_frames": 9915,
+      "total_frames": 9882,
       "rng_end": {
         "state": 3374439426,
         "calls": 6005
@@ -153,18 +153,18 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 28
+          "s": 26
         },
         {
           "n": "switch 6",
-          "s": 75
+          "s": 73
         },
         {
           "n": "red key",
-          "s": 82
+          "s": 80
         }
       ],
-      "total_frames": 5696,
+      "total_frames": 5586,
       "rng_end": {
         "state": 3483563614,
         "calls": 3497

@@ -10,6 +10,7 @@ param(
     [ValidateRange(0, [int]::MaxValue)][int]$SampleSeed = 0,
     [string]$SampleStatePath,
     [ValidateRange(1, 20)][int]$Repeat = 1,
+    [ValidateRange(100, 200)][int]$TestSpeedPercent = 160,
     [ValidateRange(10, 7200)][int]$LevelTimeoutSeconds = 180,
     [ValidateRange(0, 128)][int]$MaxParallel = 0,
     [string]$HogDir = 'game_data/CD images/Descent II (USA) (v1.1)/data_tracks/d2data',
@@ -25,6 +26,9 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+if ($TestSpeedPercent -ne 160 -and ($WriteRegression -or $Mode -eq 'Headed')) {
+    throw 'Noncanonical test speed requires native Headless/Desktop mode without WriteRegression'
+}
 $scriptDir = Split-Path -Parent $PSCommandPath
 $androidRoot = Split-Path -Parent $scriptDir
 $repoRoot = Split-Path -Parent $androidRoot
@@ -323,6 +327,7 @@ function Invoke-GuidebotDesktopLevel {
         '-mission', $missionName,
         '-level', [string]$WorkItem.EngineLevelNumber,
         '-route-confirm-timeout-seconds', [string]$WorkItem.SimulationTimeLimitSeconds,
+        '-route-confirm-speed-percent', [string]$TestSpeedPercent,
         '-route-confirm-json-out', $output
     )
     if ($Stage.ExtraDir) { $arguments += @('-extra-dir', $Stage.ExtraDir) }
@@ -730,6 +735,7 @@ if ($Mode -eq 'Headless') {
                     '-hogdir', $workItemHogDir, '-mission', $missionName,
                     '-level', [string]$item.EngineLevelNumber,
                     '-route-confirm-timeout-seconds', [string]$item.SimulationTimeLimitSeconds,
+                    '-route-confirm-speed-percent', [string]$TestSpeedPercent,
                     '-route-confirm-json-out', $output
                 )
                 if ($stage.ExtraDir) { $arguments += @('-extra-dir', $stage.ExtraDir) }

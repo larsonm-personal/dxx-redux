@@ -32,7 +32,7 @@
         },
         {
           "n": "gold key",
-          "s": 24
+          "s": 23
         },
         {
           "n": "red key",
@@ -43,12 +43,12 @@
           "s": 39
         }
       ],
-      "total_frames": 7219,
+      "total_frames": 7741,
       "rng_end": {
         "state": 2771411007,
         "calls": 1962
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "route confirmation exceeded 129-second simulation budget"
     },
     {
       "level_num": 2,
@@ -250,13 +250,13 @@
         },
         {
           "n": "gold key",
-          "s": 28
+          "s": 25
         }
       ],
-      "total_frames": 1668,
+      "total_frames": 1481,
       "rng_end": {
-        "state": 3349304502,
-        "calls": 561
+        "state": 4013917488,
+        "calls": 535
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -283,7 +283,7 @@
           "s": 24
         }
       ],
-      "total_frames": 1450,
+      "total_frames": 1449,
       "rng_end": {
         "state": 4037406763,
         "calls": 3806

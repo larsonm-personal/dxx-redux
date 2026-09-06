@@ -25,18 +25,18 @@
       "objectives": [
         {
           "n": "red key",
-          "s": 13
+          "s": 12
         },
         {
           "n": "reactor",
-          "s": 26
+          "s": 25
         },
         {
           "n": "exit",
-          "s": 38
+          "s": 37
         }
       ],
-      "total_frames": 2295,
+      "total_frames": 2248,
       "rng_end": {
         "state": 456633834,
         "calls": 45
@@ -73,7 +73,7 @@
           "s": 39
         }
       ],
-      "total_frames": 2333,
+      "total_frames": 2325,
       "rng_end": {
         "state": 344858293,
         "calls": 76
@@ -91,22 +91,22 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 12
+          "s": 9
         },
         {
           "n": "red key",
-          "s": 33
+          "s": 27
         },
         {
           "n": "reactor",
-          "s": 48
+          "s": 42
         },
         {
           "n": "exit",
-          "s": 59
+          "s": 52
         }
       ],
-      "total_frames": 3525,
+      "total_frames": 3137,
       "rng_end": {
         "state": 92728044,
         "calls": 75
@@ -132,7 +132,7 @@
         },
         {
           "n": "hidden door",
-          "s": 6
+          "s": 5
         },
         {
           "n": "fly-through 1",
@@ -143,7 +143,7 @@
           "s": 18
         }
       ],
-      "total_frames": 1663,
+      "total_frames": 1642,
       "rng_end": {
         "state": 92728044,
         "calls": 75
@@ -189,7 +189,7 @@
           "s": 80
         }
       ],
-      "total_frames": 4829,
+      "total_frames": 4818,
       "rng_end": {
         "state": 3684228113,
         "calls": 112

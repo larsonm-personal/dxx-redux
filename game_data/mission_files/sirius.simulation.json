@@ -35,7 +35,7 @@
           "s": 58
         }
       ],
-      "total_frames": 3502,
+      "total_frames": 3488,
       "rng_end": {
         "state": 995405759,
         "calls": 42
@@ -72,7 +72,7 @@
           "s": 107
         }
       ],
-      "total_frames": 6404,
+      "total_frames": 6395,
       "rng_end": {
         "state": 1447624116,
         "calls": 99
@@ -90,14 +90,14 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 8
+          "s": 7
         },
         {
           "n": "gold key",
-          "s": 29
+          "s": 28
         }
       ],
-      "total_frames": 6702,
+      "total_frames": 6686,
       "rng_end": {
         "state": 995405759,
         "calls": 42

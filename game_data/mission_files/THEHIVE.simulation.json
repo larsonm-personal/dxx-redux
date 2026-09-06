@@ -30,7 +30,7 @@
           "s": 16
         }
       ],
-      "total_frames": 2047,
+      "total_frames": 1980,
       "rng_end": {
         "state": 2577478752,
         "calls": 39
@@ -49,10 +49,10 @@
       "objectives": [
         {
           "n": "red key",
-          "s": 14
+          "s": 13
         }
       ],
-      "total_frames": 1679,
+      "total_frames": 1668,
       "rng_end": {
         "state": 1343201072,
         "calls": 23
@@ -96,7 +96,7 @@
           "s": 26
         }
       ],
-      "total_frames": 3246,
+      "total_frames": 3244,
       "rng_end": {
         "state": 3008955749,
         "calls": 28
@@ -118,7 +118,7 @@
           "s": 12
         }
       ],
-      "total_frames": 1920,
+      "total_frames": 1884,
       "rng_end": {
         "state": 675780521,
         "calls": 24
@@ -137,10 +137,10 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 39
+          "s": 38
         }
       ],
-      "total_frames": 3314,
+      "total_frames": 3268,
       "rng_end": {
         "state": 1303003706,
         "calls": 29
@@ -162,7 +162,7 @@
           "s": 18
         }
       ],
-      "total_frames": 2581,
+      "total_frames": 2562,
       "rng_end": {
         "state": 1116175964,
         "calls": 27
@@ -181,10 +181,10 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 52
+          "s": 47
         }
       ],
-      "total_frames": 6961,
+      "total_frames": 6629,
       "rng_end": {
         "state": 1627576247,
         "calls": 50

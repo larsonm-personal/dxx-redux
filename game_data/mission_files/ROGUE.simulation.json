@@ -6,17 +6,17 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
-    "failed": 4,
-    "timeout": 1
+    "ok": 1,
+    "failed": 4
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "level01.rdl",
       "route_input_sha256": "9295F630577B2AA6B8F7AEDE94A7E8E68B250478D169233E6A1A7677763E418F",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -24,39 +24,42 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 12
+          "s": 10
         },
         {
           "n": "red key",
-          "s": 12
+          "s": 11
         },
         {
           "n": "pass-through 7",
-          "s": 21
+          "s": 20
         },
         {
           "n": "pass-through 6",
-          "s": 23
+          "s": 22
         },
         {
           "n": "blastable wall",
-          "s": 27
+          "s": 25
         },
         {
           "n": "fly-through 8",
-          "s": 27
+          "s": 25
         },
         {
           "n": "reactor",
-          "s": 34
+          "s": 32
+        },
+        {
+          "n": "exit",
+          "s": 39
         }
       ],
-      "total_frames": 5988,
+      "total_frames": 2360,
       "rng_end": {
-        "state": 3361651730,
-        "calls": 165
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1468890740,
+        "calls": 163
+      }
     },
     {
       "level_num": 2,

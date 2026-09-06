@@ -61,46 +61,46 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 7
+          "s": 6
         },
         {
           "n": "red key",
-          "s": 25
+          "s": 24
         },
         {
           "n": "switch 2",
-          "s": 41
+          "s": 40
         },
         {
           "n": "switch 7",
-          "s": 41
+          "s": 40
         },
         {
           "n": "fly-through 8",
-          "s": 56
+          "s": 55
         },
         {
           "n": "gold key",
-          "s": 62
+          "s": 61
         },
         {
           "n": "switch 1",
-          "s": 67
+          "s": 66
         },
         {
           "n": "switch 9",
-          "s": 127
+          "s": 125
         },
         {
           "n": "reactor",
-          "s": 149
+          "s": 148
         },
         {
           "n": "exit",
-          "s": 176
+          "s": 175
         }
       ],
-      "total_frames": 10572,
+      "total_frames": 10479,
       "rng_end": {
         "state": 176246517,
         "calls": 5644
@@ -191,7 +191,7 @@
         },
         {
           "n": "blue key",
-          "s": 52
+          "s": 51
         },
         {
           "n": "switch 6",
@@ -203,14 +203,14 @@
         },
         {
           "n": "reactor",
-          "s": 98
+          "s": 97
         },
         {
           "n": "exit",
-          "s": 107
+          "s": 106
         }
       ],
-      "total_frames": 6420,
+      "total_frames": 6356,
       "rng_end": {
         "state": 917813531,
         "calls": 4078
@@ -289,7 +289,7 @@
         },
         {
           "n": "fly-through 6",
-          "s": 116
+          "s": 115
         },
         {
           "n": "boss",
@@ -297,10 +297,10 @@
         },
         {
           "n": "exit",
-          "s": 133
+          "s": 132
         }
       ],
-      "total_frames": 7952,
+      "total_frames": 7938,
       "rng_end": {
         "state": 746240687,
         "calls": 3130
@@ -375,11 +375,11 @@
         },
         {
           "n": "switch 13",
-          "s": 67
+          "s": 66
         },
         {
           "n": "switch 8",
-          "s": 69
+          "s": 68
         },
         {
           "n": "blastable wall",
@@ -391,14 +391,14 @@
         },
         {
           "n": "reactor",
-          "s": 112
+          "s": 111
         },
         {
           "n": "exit",
-          "s": 115
+          "s": 114
         }
       ],
-      "total_frames": 6888,
+      "total_frames": 6851,
       "rng_end": {
         "state": 1840613958,
         "calls": 3809
@@ -416,23 +416,23 @@
       "objectives": [
         {
           "n": "switch 5",
-          "s": 6
+          "s": 5
         },
         {
           "n": "switch 3",
-          "s": 17
+          "s": 16
         },
         {
           "n": "switch 1",
-          "s": 27
+          "s": 26
         },
         {
           "n": "switch 4",
-          "s": 42
+          "s": 41
         },
         {
           "n": "switch 0",
-          "s": 57
+          "s": 56
         },
         {
           "n": "switch 8",
@@ -440,18 +440,18 @@
         },
         {
           "n": "switch 9",
-          "s": 79
+          "s": 78
         },
         {
           "n": "reactor",
-          "s": 81
+          "s": 80
         },
         {
           "n": "exit",
-          "s": 84
+          "s": 83
         }
       ],
-      "total_frames": 5018,
+      "total_frames": 4975,
       "rng_end": {
         "state": 1685365463,
         "calls": 3858
@@ -595,14 +595,14 @@
         },
         {
           "n": "boss",
-          "s": 143
+          "s": 142
         },
         {
           "n": "exit",
           "s": 174
         }
       ],
-      "total_frames": 10440,
+      "total_frames": 10415,
       "rng_end": {
         "state": 932044076,
         "calls": 6411

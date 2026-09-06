@@ -8,9 +8,10 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 13,
+    "ok": 12,
     "failed": 8,
-    "timeout": 9
+    "timeout": 9,
+    "infrastructure_error": 1
   },
   "levels": [
     {
@@ -51,26 +52,26 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 4
+          "s": 3
         },
         {
           "n": "red key",
-          "s": 9
+          "s": 7
         },
         {
           "n": "fly-through 4",
-          "s": 17
+          "s": 13
         },
         {
           "n": "reactor",
-          "s": 18
+          "s": 14
         },
         {
           "n": "exit",
-          "s": 21
+          "s": 16
         }
       ],
-      "total_frames": 1232,
+      "total_frames": 982,
       "rng_end": {
         "state": 1223573862,
         "calls": 65
@@ -103,7 +104,7 @@
           "s": 19
         }
       ],
-      "total_frames": 1167,
+      "total_frames": 1151,
       "rng_end": {
         "state": 2669311376,
         "calls": 55
@@ -245,34 +246,9 @@
       "level_num": 9,
       "level_file": "level09.rdl",
       "route_input_sha256": "5BF2F0C1278B3965DD10D83371149443B557594585EDB6583CE7DCAE6365A384",
-      "status": "ok",
-      "rng_start": {
-        "state": 1,
-        "calls": 0
-      },
-      "objectives": [
-        {
-          "n": "blue key",
-          "s": 5
-        },
-        {
-          "n": "red key",
-          "s": 9
-        },
-        {
-          "n": "reactor",
-          "s": 17
-        },
-        {
-          "n": "exit",
-          "s": 20
-        }
-      ],
-      "total_frames": 1197,
-      "rng_end": {
-        "state": 4200531631,
-        "calls": 58
-      }
+      "status": "infrastructure_error",
+      "problem": "Route engine infrastructure failure",
+      "exit_code": -1073740940
     },
     {
       "level_num": 10,

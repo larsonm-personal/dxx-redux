@@ -51,7 +51,7 @@
           "s": 39
         }
       ],
-      "total_frames": 2342,
+      "total_frames": 2339,
       "rng_end": {
         "state": 1259199996,
         "calls": 1019
@@ -82,7 +82,7 @@
         },
         {
           "n": "fly-through 4",
-          "s": 41
+          "s": 40
         },
         {
           "n": "switch 5",
@@ -90,7 +90,7 @@
         },
         {
           "n": "fly-through 15",
-          "s": 48
+          "s": 47
         },
         {
           "n": "red key",
@@ -113,7 +113,7 @@
           "s": 78
         }
       ],
-      "total_frames": 4675,
+      "total_frames": 4659,
       "rng_end": {
         "state": 2858410995,
         "calls": 4246
@@ -135,7 +135,7 @@
         },
         {
           "n": "blue key",
-          "s": 16
+          "s": 15
         },
         {
           "n": "gold key",
@@ -152,8 +152,8 @@
       ],
       "total_frames": 16141,
       "rng_end": {
-        "state": 188403110,
-        "calls": 183553
+        "state": 393634129,
+        "calls": 183600
       },
       "problem": "route confirmation exceeded 269-second simulation budget"
     }

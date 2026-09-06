@@ -169,11 +169,11 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 15
+          "s": 14
         },
         {
           "n": "gold key",
-          "s": 44
+          "s": 43
         },
         {
           "n": "red key",
@@ -185,14 +185,14 @@
         },
         {
           "n": "reactor",
-          "s": 98
+          "s": 97
         },
         {
           "n": "exit",
-          "s": 125
+          "s": 124
         }
       ],
-      "total_frames": 7502,
+      "total_frames": 7459,
       "rng_end": {
         "state": 3039520771,
         "calls": 7302
@@ -377,22 +377,22 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 15
+          "s": 13
         },
         {
           "n": "pass-through 3",
-          "s": 25
+          "s": 23
         },
         {
           "n": "switch 4",
-          "s": 29
+          "s": 27
         },
         {
           "n": "gold key",
-          "s": 30
+          "s": 28
         }
       ],
-      "total_frames": 1803,
+      "total_frames": 1703,
       "rng_end": {
         "state": 1976212944,
         "calls": 1783

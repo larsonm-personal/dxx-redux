@@ -1725,6 +1725,28 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 	fix			dot;
 	robot_info	*robptr = &Robot_info[objp->id];
 	fix			max_speed;
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	static object *motion_actor;
+	static int motion_signature;
+	static fix64 motion_time;
+	static fix64 motion_contact_time;
+	static int motion_pending;
+	static vms_vector motion_goal, motion_command;
+	int contact_reversed_motion = 0;
+	if (robptr->companion && (!Escort_route_goal.active ||
+	    motion_actor != objp || motion_signature != objp->signature ||
+	    memcmp(&motion_goal, goal_point, sizeof(motion_goal)) ||
+	    GameTime64 < motion_contact_time || GameTime64 - motion_contact_time > 2 * F1_0))
+		motion_pending = 0;
+	if (robptr->companion && Escort_route_goal.active &&
+	    motion_actor == objp && motion_signature == objp->signature &&
+	    GameTime64 > motion_time && GameTime64 - motion_time <= F1_0 / 4 &&
+	    !memcmp(&motion_goal, goal_point, sizeof(motion_goal))) {
+		vms_vector actual = cur_vel;
+		vm_vec_normalize_quick(&actual);
+		contact_reversed_motion = vm_vec_dot(&actual, &motion_command) < -15 * F1_0 / 16;
+	}
+#endif
 
 	//	If evading player, use highest difficulty level speed, plus something based on diff level
 	max_speed = robptr->max_speed[Difficulty_level];
@@ -1801,6 +1823,47 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 
 	dot = vm_vec_dot(&norm_vec_to_goal, &norm_fvec);
 
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	/* Contact can reverse motion without reversing facing. Normalizing and
+	 * blending opposing vectors then perpetuates backward travel. Recognize
+	 * an openable-door reversal, brake while its full-radius approach remains
+	 * blocked, then resume ordinary steering. Never open the wall here */
+	if (robptr->companion && Escort_route_goal.active && contact_reversed_motion && dot > 15 * F1_0 / 16 &&
+	    vm_vec_dot(&norm_vec_to_goal, &norm_cur_vel) < -15 * F1_0 / 16) {
+		fvi_query query;
+		fvi_info hit;
+		memset(&query, 0, sizeof(query));
+		memset(&hit, 0, sizeof(hit));
+		query.p0 = &objp->pos;
+		query.p1 = goal_point;
+		query.startseg = objp->segnum;
+		query.rad = objp->size;
+		if (ConsoleObject && ConsoleObject->size > query.rad)
+			query.rad = ConsoleObject->size;
+		query.thisobjnum = objp - Objects;
+		/* An opening door is temporary contact, unlike a solid obstacle
+		 * from which the actor may need to back away */
+		if (find_vector_intersection(&query, &hit) == HIT_WALL &&
+		    hit.hit_seg >= 0 && hit.hit_seg <= Highest_segment_index &&
+		    hit.hit_side >= 0 && hit.hit_side < 6) {
+			const int wall = Segments[hit.hit_seg].sides[hit.hit_side].wall_num;
+			if (wall >= 0 && wall < Num_walls && Walls[wall].type == WALL_DOOR &&
+			    ai_door_is_openable(objp, &Segments[hit.hit_seg], hit.hit_side)) {
+				motion_pending = 1;
+				motion_contact_time = GameTime64;
+			}
+		}
+	}
+	if (robptr->companion && Escort_route_goal.active && motion_pending) {
+		norm_cur_vel = norm_vec_to_goal;
+		vm_vec_zero(&objp->mtype.phys_info.velocity);
+		if (guidebot_route_waypoint_leg_clear(objp, &objp->pos, objp->segnum, goal_point))
+			motion_pending = 0;
+		else
+			max_speed = 0;
+	}
+#endif
+
 	//	If very close to facing opposite desired vector, perturb vector
 	if (dot < -15*F1_0/16) {
 		norm_cur_vel = norm_vec_to_goal;
@@ -1835,6 +1898,17 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 		objp->mtype.phys_info.velocity.z = (objp->mtype.phys_info.velocity.z + norm_cur_vel.z) / 2;
 	} else
 	objp->mtype.phys_info.velocity = norm_cur_vel;
+
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	if (robptr->companion) {
+		motion_actor = objp;
+		motion_signature = objp->signature;
+		motion_time = GameTime64;
+		motion_goal = *goal_point;
+		motion_command = objp->mtype.phys_info.velocity;
+		vm_vec_normalize_quick(&motion_command);
+	}
+#endif
 
 	if ((Ai_local_info[objp-Objects].mode == AIM_RUN_FROM_OBJECT) ||
 	    (robptr->companion == 1) ||

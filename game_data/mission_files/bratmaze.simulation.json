@@ -33,26 +33,26 @@
         },
         {
           "n": "red key",
-          "s": 151
+          "s": 150
         },
         {
           "n": "fly-through 9",
-          "s": 194
+          "s": 192
         },
         {
           "n": "fly-through 15",
-          "s": 195
+          "s": 193
         },
         {
           "n": "fly-through 8",
-          "s": 198
+          "s": 196
         },
         {
           "n": "fly-through 16",
-          "s": 199
+          "s": 197
         }
       ],
-      "total_frames": 12629,
+      "total_frames": 12526,
       "rng_end": {
         "state": 4264971915,
         "calls": 126
@@ -93,7 +93,7 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 29
+          "s": 28
         },
         {
           "n": "gold key",
@@ -101,29 +101,29 @@
         },
         {
           "n": "blastable wall",
-          "s": 125
+          "s": 123
         },
         {
           "n": "red key",
-          "s": 127
+          "s": 126
         },
         {
           "n": "fly-through 19",
-          "s": 169
+          "s": 166
         },
         {
           "n": "reactor",
-          "s": 169
+          "s": 167
         },
         {
           "n": "exit",
-          "s": 189
+          "s": 187
         }
       ],
-      "total_frames": 11346,
+      "total_frames": 11205,
       "rng_end": {
-        "state": 1187663298,
-        "calls": 181
+        "state": 752577037,
+        "calls": 180
       }
     },
     {

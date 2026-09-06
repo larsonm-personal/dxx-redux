@@ -8,16 +8,16 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 5,
+    "ok": 6,
     "failed": 1,
-    "timeout": 5
+    "timeout": 4
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "zoo.rdl",
       "route_input_sha256": "BD66911166664C070C1CE0D1EA38AE7A7456FF7DD1CE1EBEC42D1FF77B759862",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -37,15 +37,18 @@
         },
         {
           "n": "reactor",
-          "s": 74
+          "s": 69
+        },
+        {
+          "n": "exit",
+          "s": 76
         }
       ],
-      "total_frames": 10723,
+      "total_frames": 4555,
       "rng_end": {
-        "state": 916896761,
-        "calls": 72
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3269224778,
+        "calls": 77
+      }
     },
     {
       "level_num": 2,
@@ -78,7 +81,7 @@
           "s": 74
         }
       ],
-      "total_frames": 4456,
+      "total_frames": 4451,
       "rng_end": {
         "state": 3821532770,
         "calls": 149
@@ -140,15 +143,15 @@
       "objectives": [
         {
           "n": "fly-through 1",
-          "s": 16
+          "s": 15
         },
         {
           "n": "pass-through 2",
-          "s": 17
+          "s": 16
         },
         {
           "n": "destroy robot carrying blue key",
-          "s": 21
+          "s": 20
         },
         {
           "n": "gold key",
@@ -156,11 +159,11 @@
         },
         {
           "n": "hidden door",
-          "s": 69
+          "s": 68
         },
         {
           "n": "red key",
-          "s": 69
+          "s": 68
         },
         {
           "n": "reactor",
@@ -171,7 +174,7 @@
           "s": 95
         }
       ],
-      "total_frames": 5726,
+      "total_frames": 5697,
       "rng_end": {
         "state": 2805861856,
         "calls": 167
@@ -211,7 +214,7 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 26
+          "s": 25
         },
         {
           "n": "destroy robot carrying gold key",
@@ -227,7 +230,7 @@
         },
         {
           "n": "hidden door",
-          "s": 97
+          "s": 96
         },
         {
           "n": "red key",
@@ -235,14 +238,14 @@
         },
         {
           "n": "reactor",
-          "s": 154
+          "s": 152
         },
         {
           "n": "exit",
-          "s": 163
+          "s": 160
         }
       ],
-      "total_frames": 9757,
+      "total_frames": 9624,
       "rng_end": {
         "state": 1694224903,
         "calls": 226
@@ -272,22 +275,22 @@
         },
         {
           "n": "red key",
-          "s": 85
+          "s": 84
         },
         {
           "n": "fly-through 1",
-          "s": 107
+          "s": 106
         },
         {
           "n": "reactor",
-          "s": 108
+          "s": 107
         },
         {
           "n": "exit",
-          "s": 124
+          "s": 123
         }
       ],
-      "total_frames": 7422,
+      "total_frames": 7366,
       "rng_end": {
         "state": 4264971915,
         "calls": 126
@@ -341,7 +344,7 @@
           "s": 84
         }
       ],
-      "total_frames": 5064,
+      "total_frames": 5059,
       "rng_end": {
         "state": 2916751166,
         "calls": 73

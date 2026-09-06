@@ -192,11 +192,13 @@ int main(int argc, char *argv[])
 	    find_arg_value(argc, argv, "-route-confirm-timeout-seconds");
 	int level = 0;
 	if (!output || !parse_level(level_text, &level) ||
+	    !route_confirmation_configure_speed(find_arg_value(argc, argv, "-route-confirm-speed-percent")) ||
 	    (time_limit_text && !configure_time_limit(time_limit_text))) {
 		fprintf(stderr,
 		        "usage: %s -route-confirm-json-out <path> -level <number> "
 		        "[-mission <name>] [-hogdir <dir>] "
-		        "[-route-confirm-timeout-seconds <1..3600>]\n",
+		        "[-route-confirm-timeout-seconds <1..3600>] "
+		        "[-route-confirm-speed-percent <100..200>]\n",
 		        argc > 0 ? argv[0] : "dxx-redux-d2-headless-route");
 		return 1;
 	}

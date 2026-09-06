@@ -195,26 +195,26 @@
       "objectives": [
         {
           "n": "switch 2",
-          "s": 10
+          "s": 9
         },
         {
           "n": "switch 1",
-          "s": 16
+          "s": 15
         },
         {
           "n": "switch 4",
-          "s": 35
+          "s": 34
         },
         {
           "n": "switch 5",
-          "s": 52
+          "s": 51
         },
         {
           "n": "blue key",
           "s": 53
         }
       ],
-      "total_frames": 3196,
+      "total_frames": 3173,
       "rng_end": {
         "state": 1225298831,
         "calls": 1370

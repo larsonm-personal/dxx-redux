@@ -27,7 +27,7 @@
         },
         {
           "n": "blastable wall",
-          "s": 37
+          "s": 36
         },
         {
           "n": "gold key",
@@ -46,7 +46,7 @@
           "s": 102
         }
       ],
-      "total_frames": 6138,
+      "total_frames": 6118,
       "rng_end": {
         "state": 1689723728,
         "calls": 2935
@@ -76,37 +76,37 @@
         },
         {
           "n": "blue key",
-          "s": 34
+          "s": 33
         },
         {
           "n": "switch 2",
-          "s": 50
+          "s": 47
         },
         {
           "n": "gold key",
-          "s": 79
+          "s": 75
         },
         {
           "n": "switch 13",
-          "s": 96
+          "s": 92
         },
         {
           "n": "red key",
-          "s": 121
+          "s": 119
         },
         {
           "n": "reactor",
-          "s": 132
+          "s": 130
         },
         {
           "n": "exit",
-          "s": 144
+          "s": 141
         }
       ],
-      "total_frames": 8628,
+      "total_frames": 8475,
       "rng_end": {
-        "state": 3576650859,
-        "calls": 4766
+        "state": 4218811700,
+        "calls": 4835
       }
     },
     {
@@ -121,13 +121,13 @@
       "objectives": [
         {
           "n": "destroy robot carrying blue key",
-          "s": 21
+          "s": 18
         }
       ],
-      "total_frames": 6435,
+      "total_frames": 6297,
       "rng_end": {
-        "state": 441395351,
-        "calls": 1362
+        "state": 440353951,
+        "calls": 1354
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

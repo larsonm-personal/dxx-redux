@@ -50,10 +50,10 @@
         },
         {
           "n": "destroy robot carrying blue key",
-          "s": 22
+          "s": 21
         }
       ],
-      "total_frames": 1304,
+      "total_frames": 1254,
       "rng_end": {
         "state": 1812429809,
         "calls": 912
@@ -72,26 +72,26 @@
       "objectives": [
         {
           "n": "switch 3",
-          "s": 10
+          "s": 9
         },
         {
           "n": "switch 1",
-          "s": 22
+          "s": 20
         },
         {
           "n": "blastable wall",
-          "s": 40
+          "s": 37
         },
         {
           "n": "boss",
-          "s": 49
+          "s": 47
         },
         {
           "n": "exit",
-          "s": 72
+          "s": 70
         }
       ],
-      "total_frames": 4315,
+      "total_frames": 4184,
       "rng_end": {
         "state": 1797105699,
         "calls": 4198
@@ -113,37 +113,37 @@
         },
         {
           "n": "gold key",
-          "s": 63
+          "s": 59
         },
         {
           "n": "switch 7",
-          "s": 68
+          "s": 64
         },
         {
           "n": "switch 8",
-          "s": 104
+          "s": 99
         },
         {
           "n": "switch 9",
-          "s": 114
+          "s": 108
         },
         {
           "n": "red key",
-          "s": 122
+          "s": 117
         },
         {
           "n": "reactor",
-          "s": 140
+          "s": 135
         },
         {
           "n": "exit",
-          "s": 148
+          "s": 144
         }
       ],
-      "total_frames": 8866,
+      "total_frames": 8619,
       "rng_end": {
-        "state": 266719432,
-        "calls": 4511
+        "state": 1609406109,
+        "calls": 4516
       }
     },
     {
@@ -186,7 +186,7 @@
           "s": 36
         }
       ],
-      "total_frames": 2166,
+      "total_frames": 2161,
       "rng_end": {
         "state": 3274223484,
         "calls": 1147

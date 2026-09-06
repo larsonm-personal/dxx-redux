@@ -219,7 +219,7 @@
             "s": 33
           }
         ],
-        "total_frames": 1987,
+        "total_frames": 1982,
         "rng_end": {
           "state": 1116175964,
           "calls": 27
@@ -393,46 +393,46 @@
         "objectives": [
           {
             "n": "blue key",
-            "s": 23
+            "s": 22
           },
           {
             "n": "hidden door",
-            "s": 59
+            "s": 54
           },
           {
             "n": "hidden door",
-            "s": 66
+            "s": 61
           },
           {
             "n": "fly-through 11",
-            "s": 66
+            "s": 62
           },
           {
             "n": "fly-through 10",
-            "s": 75
+            "s": 70
           },
           {
             "n": "gold key",
-            "s": 77
+            "s": 72
           },
           {
             "n": "red key",
-            "s": 129
+            "s": 123
           },
           {
             "n": "fly-through 9",
-            "s": 169
+            "s": 161
           },
           {
             "n": "reactor",
-            "s": 169
+            "s": 161
           },
           {
             "n": "exit",
-            "s": 181
+            "s": 173
           }
         ],
-        "total_frames": 10832,
+        "total_frames": 10356,
         "rng_end": {
           "state": 3424728103,
           "calls": 194
@@ -484,7 +484,7 @@
             "s": 75
           }
         ],
-        "total_frames": 5541,
+        "total_frames": 5468,
         "rng_end": {
           "state": 493907821,
           "calls": 84
@@ -534,17 +534,17 @@
           },
           {
             "n": "reactor",
-            "s": 203
+            "s": 202
           },
           {
             "n": "exit",
-            "s": 212
+            "s": 211
           }
         ],
-        "total_frames": 12721,
+        "total_frames": 12634,
         "rng_end": {
-          "state": 290603296,
-          "calls": 103
+          "state": 601077795,
+          "calls": 102
         }
       }
     ]
@@ -574,26 +574,26 @@
         "objectives": [
           {
             "n": "blue key",
-            "s": 57
+            "s": 56
           },
           {
             "n": "gold key",
-            "s": 111
+            "s": 110
           },
           {
             "n": "red key",
-            "s": 158
+            "s": 157
           },
           {
             "n": "reactor",
-            "s": 184
+            "s": 182
           },
           {
             "n": "exit",
-            "s": 193
+            "s": 191
           }
         ],
-        "total_frames": 11568,
+        "total_frames": 11484,
         "rng_end": {
           "state": 2316746429,
           "calls": 132
@@ -638,7 +638,7 @@
           },
           {
             "n": "red key",
-            "s": 39
+            "s": 38
           },
           {
             "n": "reactor",
@@ -649,7 +649,7 @@
             "s": 46
           }
         ],
-        "total_frames": 2742,
+        "total_frames": 2740,
         "rng_end": {
           "state": 2675232640,
           "calls": 135
@@ -758,7 +758,7 @@
           },
           {
             "n": "red key",
-            "s": 77
+            "s": 76
           },
           {
             "n": "reactor",
@@ -766,10 +766,10 @@
           },
           {
             "n": "exit",
-            "s": 120
+            "s": 119
           }
         ],
-        "total_frames": 7185,
+        "total_frames": 7160,
         "rng_end": {
           "state": 3948108040,
           "calls": 95
@@ -806,10 +806,10 @@
           },
           {
             "n": "destroy robot carrying red key",
-            "s": 32
+            "s": 31
           }
         ],
-        "total_frames": 1931,
+        "total_frames": 1880,
         "rng_end": {
           "state": 508382461,
           "calls": 68

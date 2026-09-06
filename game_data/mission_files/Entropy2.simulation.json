@@ -31,7 +31,7 @@
         },
         {
           "n": "fly-through 13",
-          "s": 39
+          "s": 38
         },
         {
           "n": "pass-through 6",
@@ -43,13 +43,13 @@
         },
         {
           "n": "exit",
-          "s": 50
+          "s": 54
         }
       ],
-      "total_frames": 3013,
+      "total_frames": 3264,
       "rng_end": {
-        "state": 1853125009,
-        "calls": 1776
+        "state": 3930101884,
+        "calls": 1915
       }
     },
     {
@@ -248,7 +248,7 @@
           "s": 145
         }
       ],
-      "total_frames": 8691,
+      "total_frames": 8680,
       "rng_end": {
         "state": 2844557587,
         "calls": 3958

@@ -116,13 +116,13 @@
         },
         {
           "n": "gold key",
-          "s": 46
+          "s": 45
         }
       ],
       "total_frames": 10921,
       "rng_end": {
-        "state": 1556625199,
-        "calls": 108474
+        "state": 3758684051,
+        "calls": 108790
       },
       "problem": "route confirmation exceeded 182-second simulation budget"
     },
@@ -176,21 +176,21 @@
         },
         {
           "n": "blue key",
-          "s": 25
+          "s": 24
         },
         {
           "n": "gold key",
-          "s": 49
+          "s": 47
         },
         {
           "n": "red key",
-          "s": 62
+          "s": 61
         }
       ],
       "total_frames": 12721,
       "rng_end": {
-        "state": 3667750723,
-        "calls": 134470
+        "state": 3620872822,
+        "calls": 136049
       },
       "problem": "route confirmation exceeded 212-second simulation budget"
     },

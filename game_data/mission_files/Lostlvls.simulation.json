@@ -54,10 +54,10 @@
         },
         {
           "n": "exit",
-          "s": 52
+          "s": 51
         }
       ],
-      "total_frames": 3107,
+      "total_frames": 3065,
       "rng_end": {
         "state": 1460267003,
         "calls": 2318
@@ -134,14 +134,14 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 18
+          "s": 17
         },
         {
           "n": "gold key",
-          "s": 38
+          "s": 37
         }
       ],
-      "total_frames": 2263,
+      "total_frames": 2221,
       "rng_end": {
         "state": 529017226,
         "calls": 1293
@@ -179,7 +179,7 @@
           "s": 64
         }
       ],
-      "total_frames": 3846,
+      "total_frames": 3831,
       "rng_end": {
         "state": 757974908,
         "calls": 3195
@@ -262,7 +262,7 @@
           "s": 46
         }
       ],
-      "total_frames": 2753,
+      "total_frames": 2743,
       "rng_end": {
         "state": 1889151071,
         "calls": 1418
@@ -314,14 +314,14 @@
       "objectives": [
         {
           "n": "switch 11",
-          "s": 17
+          "s": 13
         },
         {
           "n": "blue key",
-          "s": 26
+          "s": 22
         }
       ],
-      "total_frames": 1571,
+      "total_frames": 1322,
       "rng_end": {
         "state": 1608860600,
         "calls": 751
@@ -343,7 +343,7 @@
           "s": 9
         }
       ],
-      "total_frames": 4592,
+      "total_frames": 4585,
       "rng_end": {
         "state": 63926633,
         "calls": 1112
@@ -362,14 +362,14 @@
       "objectives": [
         {
           "n": "switch 6",
-          "s": 17
+          "s": 16
         },
         {
           "n": "blue key",
-          "s": 20
+          "s": 18
         }
       ],
-      "total_frames": 6475,
+      "total_frames": 7648,
       "rng_end": {
         "state": 2337897445,
         "calls": 1436
@@ -403,7 +403,7 @@
           "s": 46
         }
       ],
-      "total_frames": 6700,
+      "total_frames": 8278,
       "rng_end": {
         "state": 3205777174,
         "calls": 1361
@@ -448,18 +448,18 @@
       "objectives": [
         {
           "n": "switch 1",
-          "s": 5
+          "s": 4
         },
         {
           "n": "switch 8",
-          "s": 14
+          "s": 11
         },
         {
           "n": "switch 9",
-          "s": 82
+          "s": 130
         }
       ],
-      "total_frames": 9192,
+      "total_frames": 12106,
       "rng_end": {
         "state": 1500759625,
         "calls": 1656
@@ -516,10 +516,10 @@
         },
         {
           "n": "exit",
-          "s": 117
+          "s": 116
         }
       ],
-      "total_frames": 7023,
+      "total_frames": 6965,
       "rng_end": {
         "state": 3793778116,
         "calls": 2323
@@ -575,18 +575,18 @@
       "objectives": [
         {
           "n": "switch 6",
-          "s": 10
+          "s": 4
         },
         {
           "n": "switch 5",
-          "s": 14
+          "s": 8
         },
         {
           "n": "switch 8",
-          "s": 19
+          "s": 13
         }
       ],
-      "total_frames": 5242,
+      "total_frames": 4868,
       "rng_end": {
         "state": 3959185378,
         "calls": 1301
@@ -707,8 +707,8 @@
       ],
       "total_frames": 8306,
       "rng_end": {
-        "state": 2893145943,
-        "calls": 4754
+        "state": 741656181,
+        "calls": 4748
       }
     },
     {

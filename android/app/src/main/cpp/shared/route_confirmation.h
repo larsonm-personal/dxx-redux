@@ -64,6 +64,9 @@ typedef struct route_confirmation_summary {
 
 int route_confirmation_start(void);
 int route_confirmation_set_time_limit_seconds(unsigned int seconds);
+/* Test-only speed variation; null selects the canonical 160 percent */
+int route_confirmation_configure_speed(const char *percent);
+int route_confirmation_speed_percent(void);
 void route_confirmation_prepare_frame_time(void);
 void route_confirmation_before_frame(void);
 void route_confirmation_after_frame(void);

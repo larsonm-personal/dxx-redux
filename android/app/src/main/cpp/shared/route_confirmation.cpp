@@ -1,6 +1,7 @@
 #include "route_confirmation.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 extern "C" {
@@ -35,6 +36,7 @@ extern "C" int Max_escort_length;
 
 namespace
 {
+int Configured_speed_percent = 160;
 enum controller_phase {
 	PHASE_IDLE = 0,
 	PHASE_NAVIGATE = 1,
@@ -1284,7 +1286,8 @@ void fire_path_flare(object *actor)
 void speed_up_actor(object *actor)
 {
 	if (actor)
-		vm_vec_scale(&actor->mtype.phys_info.velocity, 8 * F1_0 / 5);
+		vm_vec_scale(&actor->mtype.phys_info.velocity,
+		             Configured_speed_percent * F1_0 / 100);
 }
 
 void shoot_frontier_door(object *actor)
@@ -1810,6 +1813,23 @@ extern "C" int route_confirmation_set_time_limit_seconds(
 	return 1;
 }
 
+extern "C" int route_confirmation_configure_speed(const char *percent)
+{
+	char *end = NULL;
+	const long value = percent ? strtol(percent, &end, 10) : 160;
+	if (value < 100 || value > 200 ||
+	    (percent && (!*percent || !end || *end)) ||
+	    State.summary.status == ROUTE_CONFIRMATION_RUNNING)
+		return 0;
+	Configured_speed_percent = (int) value;
+	return 1;
+}
+
+extern "C" int route_confirmation_speed_percent(void)
+{
+	return Configured_speed_percent;
+}
+
 extern "C" void route_confirmation_stop(void)
 {
 	if (State.summary.status == ROUTE_CONFIRMATION_RUNNING)
@@ -1906,6 +1926,14 @@ extern "C" int route_confirmation_start(void)
 extern "C" int route_confirmation_set_time_limit_seconds(unsigned int)
 {
 	return 0;
+}
+extern "C" int route_confirmation_configure_speed(const char *)
+{
+	return 0;
+}
+extern "C" int route_confirmation_speed_percent(void)
+{
+	return 160;
 }
 extern "C" void route_confirmation_prepare_frame_time(void) {}
 extern "C" void route_confirmation_before_frame(void) {}

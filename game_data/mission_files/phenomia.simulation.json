@@ -226,19 +226,19 @@
       "objectives": [
         {
           "n": "switch 2",
-          "s": 10
+          "s": 9
         },
         {
           "n": "switch 1",
-          "s": 16
+          "s": 15
         },
         {
           "n": "switch 4",
-          "s": 35
+          "s": 34
         },
         {
           "n": "switch 5",
-          "s": 52
+          "s": 51
         },
         {
           "n": "blue key",
@@ -254,11 +254,11 @@
         },
         {
           "n": "red key",
-          "s": 134
+          "s": 133
         },
         {
           "n": "boss",
-          "s": 148
+          "s": 147
         },
         {
           "n": "switch 3",
@@ -269,7 +269,7 @@
           "s": 170
         }
       ],
-      "total_frames": 10226,
+      "total_frames": 10190,
       "rng_end": {
         "state": 622276768,
         "calls": 4839
@@ -488,22 +488,22 @@
         },
         {
           "n": "hidden door",
-          "s": 66
+          "s": 65
         },
         {
           "n": "reactor",
-          "s": 69
+          "s": 68
         },
         {
           "n": "hidden door",
-          "s": 86
+          "s": 84
         },
         {
           "n": "exit",
-          "s": 86
+          "s": 85
         }
       ],
-      "total_frames": 5177,
+      "total_frames": 5082,
       "rng_end": {
         "state": 1371983276,
         "calls": 3723

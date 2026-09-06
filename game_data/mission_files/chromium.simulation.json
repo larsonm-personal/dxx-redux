@@ -24,7 +24,7 @@
       "objectives": [
         {
           "n": "blastable wall",
-          "s": 11
+          "s": 10
         },
         {
           "n": "blue key",
@@ -32,18 +32,18 @@
         },
         {
           "n": "gold key",
-          "s": 27
+          "s": 26
         },
         {
           "n": "red key",
-          "s": 43
+          "s": 40
         },
         {
           "n": "reactor",
-          "s": 61
+          "s": 58
         }
       ],
-      "total_frames": 9283,
+      "total_frames": 7754,
       "rng_end": {
         "state": 3331395548,
         "calls": 155
@@ -74,14 +74,14 @@
         },
         {
           "n": "reactor",
-          "s": 42
+          "s": 38
         },
         {
           "n": "exit",
-          "s": 46
+          "s": 41
         }
       ],
-      "total_frames": 2735,
+      "total_frames": 2467,
       "rng_end": {
         "state": 3008295217,
         "calls": 80
@@ -99,18 +99,18 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 11
+          "s": 10
         },
         {
           "n": "gold key",
-          "s": 35
+          "s": 33
         },
         {
           "n": "red key",
-          "s": 51
+          "s": 48
         }
       ],
-      "total_frames": 8044,
+      "total_frames": 7855,
       "rng_end": {
         "state": 208521688,
         "calls": 79
@@ -133,14 +133,14 @@
         },
         {
           "n": "gold key",
-          "s": 16
+          "s": 15
         },
         {
           "n": "fly-through 0",
-          "s": 35
+          "s": 34
         }
       ],
-      "total_frames": 5688,
+      "total_frames": 5621,
       "rng_end": {
         "state": 2274957893,
         "calls": 60
