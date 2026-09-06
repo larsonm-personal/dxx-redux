@@ -28,18 +28,18 @@
         },
         {
           "n": "red key",
-          "s": 32
+          "s": 18
         },
         {
           "n": "switch 3",
-          "s": 32
+          "s": 19
         },
         {
           "n": "reactor",
-          "s": 38
+          "s": 25
         }
       ],
-      "total_frames": 6192,
+      "total_frames": 9251,
       "rng_end": {
         "state": 2954493520,
         "calls": 1143

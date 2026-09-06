@@ -6,10 +6,9 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 2,
-    "timeout": 1
+    "ok": 3
   },
   "levels": [
     {
@@ -90,18 +89,30 @@
       "level_num": 3,
       "level_file": "LOD.rdl",
       "route_input_sha256": "21DE6F311FA9331E7E137742E8732390A2CF26261306A855F68F597AA6598C31",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4748,
+      "objectives": [
+        {
+          "n": "red key",
+          "s": 28
+        },
+        {
+          "n": "reactor",
+          "s": 43
+        },
+        {
+          "n": "exit",
+          "s": 46
+        }
+      ],
+      "total_frames": 2788,
       "rng_end": {
-        "state": 2937909499,
-        "calls": 14
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 2577478752,
+        "calls": 39
+      }
     }
   ]
 }

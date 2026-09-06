@@ -6,27 +6,40 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
-    "timeout": 3
+    "ok": 2,
+    "timeout": 1
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "level01.rdl",
       "route_input_sha256": "E05813E3EEEABD631867DF45AB79B77B5B5D1A5CCCACC3056B78535302148A38",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4896,
+      "objectives": [
+        {
+          "n": "red key",
+          "s": 22
+        },
+        {
+          "n": "reactor",
+          "s": 40
+        },
+        {
+          "n": "exit",
+          "s": 45
+        }
+      ],
+      "total_frames": 2724,
       "rng_end": {
-        "state": 2937909499,
-        "calls": 14
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1775811865,
+        "calls": 40
+      }
     },
     {
       "level_num": 2,
@@ -49,18 +62,42 @@
       "level_num": 3,
       "level_file": "level03.rdl",
       "route_input_sha256": "19F50EE01620C7B0BD800C515E4238566E710E3F69103529F834BABD1B56C1E3",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4729,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 23
+        },
+        {
+          "n": "gold key",
+          "s": 39
+        },
+        {
+          "n": "red key",
+          "s": 51
+        },
+        {
+          "n": "fly-through 1",
+          "s": 74
+        },
+        {
+          "n": "reactor",
+          "s": 75
+        },
+        {
+          "n": "exit",
+          "s": 83
+        }
+      ],
+      "total_frames": 4977,
       "rng_end": {
-        "state": 3535774167,
-        "calls": 18
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3356693560,
+        "calls": 111
+      }
     }
   ]
 }

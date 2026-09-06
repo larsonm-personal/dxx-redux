@@ -24,22 +24,22 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 11
+          "s": 10
         },
         {
           "n": "switch 12",
-          "s": 35
+          "s": 33
         },
         {
           "n": "gold key",
-          "s": 41
+          "s": 39
         },
         {
           "n": "fly-through 0",
-          "s": 67
+          "s": 65
         }
       ],
-      "total_frames": 7650,
+      "total_frames": 7507,
       "rng_end": {
         "state": 1217407189,
         "calls": 4396

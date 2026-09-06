@@ -169,7 +169,7 @@
           "s": 113
         }
       ],
-      "total_frames": 6755,
+      "total_frames": 6753,
       "rng_end": {
         "state": 1734514162,
         "calls": 6213
@@ -199,10 +199,10 @@
         },
         {
           "n": "red key",
-          "s": 45
+          "s": 44
         }
       ],
-      "total_frames": 2678,
+      "total_frames": 2641,
       "rng_end": {
         "state": 2859731786,
         "calls": 1613
@@ -262,29 +262,29 @@
       "objectives": [
         {
           "n": "switch 0",
-          "s": 8
+          "s": 12
         },
         {
           "n": "blue key",
-          "s": 12
+          "s": 15
         },
         {
           "n": "switch 2",
-          "s": 12
+          "s": 16
         },
         {
           "n": "gold key",
-          "s": 30
+          "s": 33
         },
         {
           "n": "red key",
-          "s": 52
+          "s": 56
         }
       ],
-      "total_frames": 3149,
+      "total_frames": 3348,
       "rng_end": {
-        "state": 2937489548,
-        "calls": 1579
+        "state": 312223261,
+        "calls": 1572
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -339,7 +339,7 @@
           "s": 81
         }
       ],
-      "total_frames": 4881,
+      "total_frames": 4878,
       "rng_end": {
         "state": 2950194336,
         "calls": 3815
@@ -372,7 +372,7 @@
           "s": 46
         }
       ],
-      "total_frames": 9223,
+      "total_frames": 6807,
       "rng_end": {
         "state": 3531805918,
         "calls": 2345

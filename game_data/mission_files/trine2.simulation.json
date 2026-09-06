@@ -8,27 +8,39 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
+    "ok": 5,
     "failed": 3,
-    "timeout": 5
+    "timeout": 2
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "e2m1.rdl",
       "route_input_sha256": "20FF4D7A4CA9269F7F94C27DB910C8FC99D5A80AFA66E5947D13F3C60C697CC5",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4482,
+      "objectives": [
+        {
+          "n": "red key",
+          "s": 41
+        },
+        {
+          "n": "reactor",
+          "s": 62
+        },
+        {
+          "n": "exit",
+          "s": 70
+        }
+      ],
+      "total_frames": 4193,
       "rng_end": {
-        "state": 3791773014,
-        "calls": 17
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 271520213,
+        "calls": 44
+      }
     },
     {
       "level_num": 2,
@@ -39,11 +51,24 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 5612,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 33
+        },
+        {
+          "n": "red key",
+          "s": 95
+        },
+        {
+          "n": "reactor",
+          "s": 119
+        }
+      ],
+      "total_frames": 11116,
       "rng_end": {
-        "state": 2111915288,
-        "calls": 15
+        "state": 3212330324,
+        "calls": 67
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -78,7 +103,7 @@
           "s": 112
         }
       ],
-      "total_frames": 6745,
+      "total_frames": 6749,
       "rng_end": {
         "state": 2226230633,
         "calls": 88
@@ -112,17 +137,17 @@
         },
         {
           "n": "reactor",
-          "s": 99
+          "s": 130
         },
         {
           "n": "exit",
-          "s": 118
+          "s": 143
         }
       ],
-      "total_frames": 7067,
+      "total_frames": 8598,
       "rng_end": {
-        "state": 2077067425,
-        "calls": 96
+        "state": 1621937922,
+        "calls": 117
       }
     },
     {
@@ -137,14 +162,14 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 12
+          "s": 11
         },
         {
           "n": "gold key",
-          "s": 49
+          "s": 48
         }
       ],
-      "total_frames": 2925,
+      "total_frames": 2894,
       "rng_end": {
         "state": 3834121963,
         "calls": 30
@@ -155,7 +180,7 @@
       "level_num": 6,
       "level_file": "e2m6.rdl",
       "route_input_sha256": "C0D207225A89F3EA2A8C5D67ABD452CADB4B1CCC83D8143F4E7AF5D6CCD70528",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -164,14 +189,29 @@
         {
           "n": "blue key",
           "s": 14
+        },
+        {
+          "n": "red key",
+          "s": 53
+        },
+        {
+          "n": "gold key",
+          "s": 102
+        },
+        {
+          "n": "reactor",
+          "s": 138
+        },
+        {
+          "n": "exit",
+          "s": 148
         }
       ],
-      "total_frames": 5781,
+      "total_frames": 8866,
       "rng_end": {
-        "state": 1343201072,
-        "calls": 23
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1660932118,
+        "calls": 81
+      }
     },
     {
       "level_num": 7,
@@ -196,7 +236,7 @@
           "s": 58
         }
       ],
-      "total_frames": 3505,
+      "total_frames": 3504,
       "rng_end": {
         "state": 2669311376,
         "calls": 55
@@ -215,10 +255,10 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 13
+          "s": 12
         }
       ],
-      "total_frames": 796,
+      "total_frames": 741,
       "rng_end": {
         "state": 595337866,
         "calls": 13
@@ -246,18 +286,34 @@
       "level_num": -1,
       "level_file": "e2m10.rdl",
       "route_input_sha256": "D1CCDBBB24CA173105C91BA253A6FD4B594D350E1B81D76BBF96BBEAB4385546",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4855,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 22
+        },
+        {
+          "n": "red key",
+          "s": 61
+        },
+        {
+          "n": "reactor",
+          "s": 111
+        },
+        {
+          "n": "exit",
+          "s": 117
+        }
+      ],
+      "total_frames": 7020,
       "rng_end": {
-        "state": 3791773014,
-        "calls": 17
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 2402686401,
+        "calls": 64
+      }
     }
   ]
 }

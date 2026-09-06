@@ -8,8 +8,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 11,
-    "failed": 3,
-    "timeout": 9
+    "failed": 2,
+    "timeout": 10
   },
   "levels": [
     {
@@ -28,14 +28,14 @@
         },
         {
           "n": "reactor",
-          "s": 48
+          "s": 49
         },
         {
           "n": "exit",
           "s": 51
         }
       ],
-      "total_frames": 3036,
+      "total_frames": 3067,
       "rng_end": {
         "state": 3572110337,
         "calls": 3072
@@ -45,39 +45,18 @@
       "level_num": 2,
       "level_file": "Level02.rl2",
       "route_input_sha256": "A511B6EF408CC209227709871DAAC8D6DC3A58148D38B388D88CB2F9E98E42E8",
-      "status": "failed",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [
-        {
-          "n": "pass-through 5",
-          "s": 3
-        },
-        {
-          "n": "switch 4",
-          "s": 13
-        },
-        {
-          "n": "blue key",
-          "s": 41
-        },
-        {
-          "n": "switch 6",
-          "s": 42
-        },
-        {
-          "n": "red key",
-          "s": 62
-        }
-      ],
-      "total_frames": 3704,
+      "objectives": [],
+      "total_frames": 5336,
       "rng_end": {
-        "state": 3801347208,
-        "calls": 1759
+        "state": 3655513600,
+        "calls": 7
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 3,
@@ -110,7 +89,7 @@
           "s": 67
         }
       ],
-      "total_frames": 7899,
+      "total_frames": 7896,
       "rng_end": {
         "state": 3374144444,
         "calls": 2875
@@ -145,7 +124,7 @@
         },
         {
           "n": "switch 8",
-          "s": 57
+          "s": 56
         },
         {
           "n": "switch 14",
@@ -172,7 +151,7 @@
           "s": 135
         }
       ],
-      "total_frames": 8088,
+      "total_frames": 8089,
       "rng_end": {
         "state": 2955309015,
         "calls": 4626
@@ -217,7 +196,7 @@
           "s": 93
         }
       ],
-      "total_frames": 5592,
+      "total_frames": 5580,
       "rng_end": {
         "state": 1047822082,
         "calls": 4213
@@ -318,7 +297,7 @@
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 54
+          "s": 53
         },
         {
           "n": "boss",
@@ -329,7 +308,7 @@
           "s": 81
         }
       ],
-      "total_frames": 4845,
+      "total_frames": 4847,
       "rng_end": {
         "state": 4289724122,
         "calls": 4093
@@ -351,7 +330,7 @@
         },
         {
           "n": "switch 1",
-          "s": 19
+          "s": 18
         },
         {
           "n": "blue key",
@@ -359,7 +338,7 @@
         },
         {
           "n": "hidden door",
-          "s": 48
+          "s": 47
         },
         {
           "n": "red key",
@@ -367,18 +346,18 @@
         },
         {
           "n": "hidden door",
-          "s": 59
+          "s": 58
         },
         {
           "n": "reactor",
-          "s": 59
+          "s": 58
         },
         {
           "n": "exit",
           "s": 69
         }
       ],
-      "total_frames": 4149,
+      "total_frames": 4126,
       "rng_end": {
         "state": 1171560760,
         "calls": 1903
@@ -415,7 +394,7 @@
           "s": 43
         }
       ],
-      "total_frames": 3073,
+      "total_frames": 3071,
       "rng_end": {
         "state": 1635793825,
         "calls": 1376
@@ -442,7 +421,7 @@
         },
         {
           "n": "gold key",
-          "s": 78
+          "s": 77
         },
         {
           "n": "red key",
@@ -450,14 +429,14 @@
         },
         {
           "n": "reactor",
-          "s": 117
+          "s": 116
         },
         {
           "n": "exit",
-          "s": 133
+          "s": 132
         }
       ],
-      "total_frames": 7962,
+      "total_frames": 7932,
       "rng_end": {
         "state": 4255738964,
         "calls": 3395
@@ -494,7 +473,7 @@
           "s": 166
         }
       ],
-      "total_frames": 9954,
+      "total_frames": 9951,
       "rng_end": {
         "state": 734834261,
         "calls": 4012
@@ -690,7 +669,7 @@
           "s": 39
         }
       ],
-      "total_frames": 6179,
+      "total_frames": 6178,
       "rng_end": {
         "state": 3071740085,
         "calls": 1612

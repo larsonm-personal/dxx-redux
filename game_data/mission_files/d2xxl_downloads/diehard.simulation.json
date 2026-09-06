@@ -42,7 +42,7 @@
       "objectives": [
         {
           "n": "pass-through 1",
-          "s": 0
+          "s": 1
         },
         {
           "n": "switch 4",
@@ -58,17 +58,17 @@
         },
         {
           "n": "boss",
-          "s": 48
+          "s": 53
         },
         {
           "n": "exit",
-          "s": 65
+          "s": 71
         }
       ],
-      "total_frames": 3896,
+      "total_frames": 4266,
       "rng_end": {
-        "state": 1752636946,
-        "calls": 1701
+        "state": 552378116,
+        "calls": 1747
       }
     },
     {
@@ -150,7 +150,7 @@
           "s": 35
         }
       ],
-      "total_frames": 2124,
+      "total_frames": 2119,
       "rng_end": {
         "state": 3984842223,
         "calls": 1274
@@ -187,7 +187,7 @@
           "s": 26
         }
       ],
-      "total_frames": 2238,
+      "total_frames": 2239,
       "rng_end": {
         "state": 1177098591,
         "calls": 1162
@@ -396,50 +396,50 @@
         },
         {
           "n": "pass-through 6",
-          "s": 29
+          "s": 40
         },
         {
           "n": "hidden door",
-          "s": 29
+          "s": 40
         },
         {
           "n": "hidden door",
-          "s": 29
+          "s": 40
         },
         {
           "n": "switch 8",
-          "s": 32
+          "s": 43
         },
         {
           "n": "hidden door",
-          "s": 36
+          "s": 47
         },
         {
           "n": "switch 5",
-          "s": 36
+          "s": 47
         },
         {
           "n": "hidden door",
-          "s": 41
+          "s": 52
         },
         {
           "n": "switch 4",
-          "s": 42
+          "s": 53
         },
         {
           "n": "hidden door",
-          "s": 44
+          "s": 55
         },
         {
           "n": "blue key",
-          "s": 45
+          "s": 56
         },
         {
           "n": "switch 14",
-          "s": 46
+          "s": 57
         }
       ],
-      "total_frames": 3404,
+      "total_frames": 4060,
       "rng_end": {
         "state": 2706250699,
         "calls": 830
@@ -455,22 +455,13 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [
-        {
-          "n": "pass-through 12",
-          "s": 13
-        },
-        {
-          "n": "switch 14",
-          "s": 29
-        }
-      ],
-      "total_frames": 2982,
+      "objectives": [],
+      "total_frames": 4204,
       "rng_end": {
-        "state": 3061904516,
-        "calls": 851
+        "state": 811900218,
+        "calls": 285
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 16,

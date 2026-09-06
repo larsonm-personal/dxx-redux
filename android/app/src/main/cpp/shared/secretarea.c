@@ -1198,12 +1198,12 @@ static int secret_area_player_radius(void)
 	    Polygon_models[model_num].rad > 0)
 		return Polygon_models[model_num].rad;
 
-	if (local_objnum >= 0 && local_objnum < num_objects &&
+	if (local_objnum >= 0 && local_objnum <= Highest_object_index &&
 	    (Objects[local_objnum].type == OBJ_PLAYER ||
 	     Objects[local_objnum].type == OBJ_GHOST) &&
 	    Objects[local_objnum].size > 0)
 		return Objects[local_objnum].size;
-	for (objnum = 0; objnum < num_objects; ++objnum)
+	for (objnum = 0; objnum <= Highest_object_index; ++objnum)
 		if ((Objects[objnum].type == OBJ_PLAYER ||
 		     Objects[objnum].type == OBJ_GHOST) &&
 		    Objects[objnum].size > 0)
@@ -1228,11 +1228,11 @@ static int secret_area_navigator_radius(int start_objnum)
 {
 	int objnum;
 
-	if (start_objnum >= 0 && start_objnum < num_objects &&
+	if (start_objnum >= 0 && start_objnum <= Highest_object_index &&
 	    Objects[start_objnum].size > 0)
 		return Objects[start_objnum].size;
 #ifdef DXX_BUILD_DESCENT_II
-	for (objnum = 0; objnum < num_objects; ++objnum)
+	for (objnum = 0; objnum <= Highest_object_index; ++objnum)
 		if (Objects[objnum].type == OBJ_ROBOT &&
 		    Objects[objnum].id >= 0 && Objects[objnum].id < N_robot_types &&
 		    Robot_info[Objects[objnum].id].companion &&
@@ -1479,7 +1479,7 @@ static int secret_area_side_center(void *user, int seg, int side, int xyz[3])
 
 static int secret_area_object_start(int objnum, int *seg, int xyz[3])
 {
-	if (objnum < 0 || objnum >= num_objects || Objects[objnum].type == OBJ_NONE)
+	if (objnum < 0 || objnum > Highest_object_index || Objects[objnum].type == OBJ_NONE)
 		return 0;
 	if (seg)
 		*seg = Objects[objnum].segnum;
@@ -1496,11 +1496,11 @@ static int secret_area_player_start(int *seg, int xyz[3])
 	int objnum;
 	int local_objnum = Players[Player_num].objnum;
 
-	if (local_objnum >= 0 && local_objnum < num_objects &&
+	if (local_objnum >= 0 && local_objnum <= Highest_object_index &&
 	    (Objects[local_objnum].type == OBJ_PLAYER || Objects[local_objnum].type == OBJ_GHOST))
 		return secret_area_object_start(local_objnum, seg, xyz);
 
-	for (objnum = 0; objnum < num_objects; ++objnum) {
+	for (objnum = 0; objnum <= Highest_object_index; ++objnum) {
 		int type = Objects[objnum].type;
 		if (type != OBJ_PLAYER && type != OBJ_GHOST)
 			continue;
@@ -1565,13 +1565,14 @@ static int secret_area_energy_center_group_distance(void)
 static int secret_area_object_count(void *user)
 {
 	(void) user;
-	return num_objects;
+	/* Object slots are sparse after deletion; num_objects is not an index bound */
+	return Highest_object_index + 1;
 }
 
 static int secret_area_object_segment(void *user, int objnum)
 {
 	(void) user;
-	if (objnum < 0 || objnum >= num_objects)
+	if (objnum < 0 || objnum > Highest_object_index || Objects[objnum].type == OBJ_NONE)
 		return -1;
 	return Objects[objnum].segnum;
 }
@@ -1579,7 +1580,7 @@ static int secret_area_object_segment(void *user, int objnum)
 static int secret_area_object_type(void *user, int objnum)
 {
 	(void) user;
-	if (objnum < 0 || objnum >= num_objects)
+	if (objnum < 0 || objnum > Highest_object_index)
 		return OBJ_NONE;
 	return Objects[objnum].type;
 }
@@ -1587,7 +1588,7 @@ static int secret_area_object_type(void *user, int objnum)
 static int secret_area_object_id(void *user, int objnum)
 {
 	(void) user;
-	if (objnum < 0 || objnum >= num_objects)
+	if (objnum < 0 || objnum > Highest_object_index)
 		return -1;
 	return Objects[objnum].id;
 }
@@ -1595,7 +1596,7 @@ static int secret_area_object_id(void *user, int objnum)
 static int secret_area_object_flags(void *user, int objnum)
 {
 	(void) user;
-	if (objnum < 0 || objnum >= num_objects)
+	if (objnum < 0 || objnum > Highest_object_index)
 		return 0;
 	return Objects[objnum].flags;
 }
@@ -1603,7 +1604,7 @@ static int secret_area_object_flags(void *user, int objnum)
 static int secret_area_object_contains_type(void *user, int objnum)
 {
 	(void) user;
-	if (objnum < 0 || objnum >= num_objects)
+	if (objnum < 0 || objnum > Highest_object_index)
 		return OBJ_NONE;
 	return Objects[objnum].contains_type;
 }
@@ -1611,7 +1612,7 @@ static int secret_area_object_contains_type(void *user, int objnum)
 static int secret_area_object_contains_id(void *user, int objnum)
 {
 	(void) user;
-	if (objnum < 0 || objnum >= num_objects)
+	if (objnum < 0 || objnum > Highest_object_index)
 		return -1;
 	return Objects[objnum].contains_id;
 }
@@ -1619,7 +1620,7 @@ static int secret_area_object_contains_id(void *user, int objnum)
 static int secret_area_object_contains_count(void *user, int objnum)
 {
 	(void) user;
-	if (objnum < 0 || objnum >= num_objects)
+	if (objnum < 0 || objnum > Highest_object_index)
 		return 0;
 	return Objects[objnum].contains_count;
 }
@@ -1627,7 +1628,7 @@ static int secret_area_object_contains_count(void *user, int objnum)
 static int secret_area_object_position(void *user, int objnum, int xyz[3])
 {
 	(void) user;
-	if (objnum < 0 || objnum >= num_objects || !xyz)
+	if (objnum < 0 || objnum > Highest_object_index || !xyz)
 		return 0;
 	xyz[0] = Objects[objnum].pos.x;
 	xyz[1] = Objects[objnum].pos.y;
@@ -1638,7 +1639,7 @@ static int secret_area_object_position(void *user, int objnum, int xyz[3])
 static int secret_area_object_is_boss(void *user, int objnum)
 {
 	(void) user;
-	if (objnum < 0 || objnum >= num_objects)
+	if (objnum < 0 || objnum > Highest_object_index)
 		return 0;
 	if (Objects[objnum].type != OBJ_ROBOT)
 		return 0;
@@ -1650,7 +1651,7 @@ static int secret_area_object_is_boss(void *user, int objnum)
 static int secret_area_object_is_fleeing(void *user, int objnum)
 {
 	(void) user;
-	if (objnum < 0 || objnum >= num_objects)
+	if (objnum < 0 || objnum > Highest_object_index)
 		return 0;
 	return Objects[objnum].type == OBJ_ROBOT &&
 	       Objects[objnum].ctype.ai_info.behavior == AIB_RUN_FROM;
@@ -1660,7 +1661,7 @@ static int secret_area_object_is_fleeing(void *user, int objnum)
 static int secret_area_object_is_companion(void *user, int objnum)
 {
 	(void) user;
-	if (objnum < 0 || objnum >= num_objects)
+	if (objnum < 0 || objnum > Highest_object_index)
 		return 0;
 	if (Objects[objnum].type != OBJ_ROBOT)
 		return 0;

@@ -345,12 +345,15 @@ int guidebot_route_waypoint_leg_clear(const object *objp, const vms_vector *from
 {
 	fvi_query query;
 	fvi_info hit;
+	vms_vector start, end;
 	if (!objp || segnum < 0 || segnum > Highest_segment_index)
 		return 0;
+	start = *from;
+	end = *to;
 	memset(&query, 0, sizeof(query));
 	memset(&hit, 0, sizeof(hit));
-	query.p0 = from;
-	query.p1 = to;
+	query.p0 = &start;
+	query.p1 = &end;
 	query.startseg = segnum;
 	query.rad = objp->size;
 	if (ConsoleObject && ConsoleObject->size > query.rad)
@@ -1529,6 +1532,21 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 #endif
 	       !forced_break) {
 		//	Advance to next point on path.
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+		/* The legacy cursor is a signed byte, even though route paths may
+		 * contain hundreds of points. Retire only the consumed prefix of a
+		 * forward objective path before incrementing beyond its range. The
+		 * terminal point and every remaining leg stay unchanged, as do the
+		 * save/network AI layouts and ordinary robot patrol behavior */
+		if (robptr->companion && Escort_route_goal.active &&
+		    aip->PATH_DIR > 0 && aip->cur_path_index >= 120) {
+			const int consumed = aip->cur_path_index;
+			aip->hide_index += consumed;
+			aip->path_length -= consumed;
+			aip->cur_path_index = 0;
+			original_index -= consumed;
+		}
+#endif
 		aip->cur_path_index += aip->PATH_DIR;
 
 		//	See if next point wraps past end of path (in either direction), and if so, deal with it based on mode.

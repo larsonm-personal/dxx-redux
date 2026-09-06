@@ -99,7 +99,7 @@
         },
         {
           "n": "fly-through 13",
-          "s": 59
+          "s": 60
         },
         {
           "n": "fly-through 11",
@@ -118,7 +118,7 @@
           "s": 124
         }
       ],
-      "total_frames": 7432,
+      "total_frames": 7437,
       "rng_end": {
         "state": 1888484047,
         "calls": 6682
@@ -206,26 +206,26 @@
       "objectives": [
         {
           "n": "fly-through 18",
-          "s": 7
+          "s": 6
         },
         {
           "n": "fly-through 16",
-          "s": 20
+          "s": 19
         },
         {
           "n": "fly-through 17",
-          "s": 36
+          "s": 34
         },
         {
           "n": "reactor",
-          "s": 55
+          "s": 54
         },
         {
           "n": "exit",
-          "s": 61
+          "s": 59
         }
       ],
-      "total_frames": 3643,
+      "total_frames": 3568,
       "rng_end": {
         "state": 218595359,
         "calls": 4554

@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
+    "ok": 3,
     "failed": 1,
-    "timeout": 3
+    "timeout": 2
   },
   "levels": [
     {
@@ -167,18 +167,26 @@
       "level_num": 6,
       "level_file": "iwihml.rl2",
       "route_input_sha256": "23D8E678735FF6B0BF851CA9A73AA5CFC0425F35F55AC3A5A15603AF98169201",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 12653,
+      "objectives": [
+        {
+          "n": "boss",
+          "s": 102
+        },
+        {
+          "n": "exit",
+          "s": 109
+        }
+      ],
+      "total_frames": 6552,
       "rng_end": {
-        "state": 4293501304,
-        "calls": 1583
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1549932665,
+        "calls": 1992
+      }
     }
   ]
 }

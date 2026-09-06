@@ -6,10 +6,11 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
+    "ok": 2,
     "failed": 1,
-    "timeout": 4
+    "timeout": 2
   },
   "levels": [
     {
@@ -21,13 +22,42 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4436,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 57
+        },
+        {
+          "n": "gold key",
+          "s": 107
+        },
+        {
+          "n": "red key",
+          "s": 151
+        },
+        {
+          "n": "fly-through 9",
+          "s": 194
+        },
+        {
+          "n": "fly-through 15",
+          "s": 195
+        },
+        {
+          "n": "fly-through 8",
+          "s": 198
+        },
+        {
+          "n": "fly-through 16",
+          "s": 199
+        }
+      ],
+      "total_frames": 12629,
       "rng_end": {
-        "state": 2111915288,
-        "calls": 15
+        "state": 4264971915,
+        "calls": 126
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 2,
@@ -55,24 +85,52 @@
       "level_num": 3,
       "level_file": "ratmaze.rdl",
       "route_input_sha256": "180B553E8C9E6EC1CCD93127EDCCF373FE80847F7334319B63A5CBB3240B6F25",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 5092,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 29
+        },
+        {
+          "n": "gold key",
+          "s": 86
+        },
+        {
+          "n": "blastable wall",
+          "s": 125
+        },
+        {
+          "n": "red key",
+          "s": 127
+        },
+        {
+          "n": "fly-through 19",
+          "s": 169
+        },
+        {
+          "n": "reactor",
+          "s": 169
+        },
+        {
+          "n": "exit",
+          "s": 189
+        }
+      ],
+      "total_frames": 11346,
       "rng_end": {
-        "state": 3297241969,
-        "calls": 16
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1187663298,
+        "calls": 181
+      }
     },
     {
       "level_num": 4,
       "level_file": "gauntlet.rdl",
       "route_input_sha256": "9B147B70B259071CC295A787377A282C17F93A800AD555218B99B9FEF5EC38E4",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -125,14 +183,25 @@
         {
           "n": "blue key",
           "s": 65
+        },
+        {
+          "n": "gold key",
+          "s": 115
+        },
+        {
+          "n": "reactor",
+          "s": 240
+        },
+        {
+          "n": "exit",
+          "s": 248
         }
       ],
-      "total_frames": 10353,
+      "total_frames": 14902,
       "rng_end": {
-        "state": 4053843764,
-        "calls": 227
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 2388714045,
+        "calls": 260
+      }
     },
     {
       "level_num": 5,

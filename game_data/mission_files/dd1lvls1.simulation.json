@@ -8,9 +8,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 5,
+    "ok": 6,
     "failed": 1,
-    "timeout": 6
+    "timeout": 5
   },
   "levels": [
     {
@@ -209,42 +209,42 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 17
+          "s": 11
         },
         {
           "n": "hidden door",
-          "s": 38
+          "s": 33
         },
         {
           "n": "gold key",
-          "s": 39
+          "s": 33
         },
         {
           "n": "fly-through 3",
-          "s": 62
+          "s": 56
         },
         {
           "n": "fly-through 4",
-          "s": 77
+          "s": 71
         },
         {
           "n": "red key",
-          "s": 88
+          "s": 83
         },
         {
           "n": "fly-through 5",
-          "s": 105
+          "s": 100
         },
         {
           "n": "reactor",
-          "s": 105
+          "s": 100
         },
         {
           "n": "exit",
-          "s": 113
+          "s": 107
         }
       ],
-      "total_frames": 6750,
+      "total_frames": 6433,
       "rng_end": {
         "state": 204674734,
         "calls": 153
@@ -343,7 +343,7 @@
       "level_num": 11,
       "level_file": "tokexfa.rdl",
       "route_input_sha256": "DC7AF16D8A4FEDE2B7833B805C8D6A4C49304C3FAC4382B572B73F6222EC2B96",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -360,14 +360,25 @@
         {
           "n": "red key",
           "s": 36
+        },
+        {
+          "n": "fly-through 2",
+          "s": 63
+        },
+        {
+          "n": "reactor",
+          "s": 64
+        },
+        {
+          "n": "exit",
+          "s": 70
         }
       ],
-      "total_frames": 8341,
+      "total_frames": 4199,
       "rng_end": {
-        "state": 916896761,
-        "calls": 72
-      },
-      "problem": "route confirmation exceeded 139-second simulation budget"
+        "state": 3885567453,
+        "calls": 100
+      }
     },
     {
       "level_num": 12,

@@ -42,7 +42,7 @@
       "objectives": [
         {
           "n": "pass-through 1",
-          "s": 0
+          "s": 1
         },
         {
           "n": "switch 4",
@@ -65,7 +65,7 @@
           "s": 69
         }
       ],
-      "total_frames": 4157,
+      "total_frames": 4162,
       "rng_end": {
         "state": 1591783502,
         "calls": 1401
@@ -146,7 +146,7 @@
           "s": 35
         }
       ],
-      "total_frames": 2124,
+      "total_frames": 2119,
       "rng_end": {
         "state": 3959185378,
         "calls": 1301
@@ -187,7 +187,7 @@
           "s": 53
         }
       ],
-      "total_frames": 8276,
+      "total_frames": 7728,
       "rng_end": {
         "state": 230621619,
         "calls": 2774
@@ -396,26 +396,18 @@
         },
         {
           "n": "pass-through 6",
-          "s": 29
+          "s": 40
         },
         {
           "n": "hidden door",
-          "s": 29
+          "s": 40
         },
         {
           "n": "hidden door",
-          "s": 29
+          "s": 40
         },
         {
           "n": "switch 8",
-          "s": 33
-        },
-        {
-          "n": "hidden door",
-          "s": 38
-        },
-        {
-          "n": "switch 5",
           "s": 44
         },
         {
@@ -423,22 +415,30 @@
           "s": 48
         },
         {
-          "n": "switch 4",
-          "s": 55
+          "n": "switch 5",
+          "s": 50
         },
         {
           "n": "hidden door",
-          "s": 59
+          "s": 55
+        },
+        {
+          "n": "switch 4",
+          "s": 61
+        },
+        {
+          "n": "hidden door",
+          "s": 65
         },
         {
           "n": "blue key",
-          "s": 59
+          "s": 66
         }
       ],
-      "total_frames": 4177,
+      "total_frames": 4557,
       "rng_end": {
-        "state": 1907952765,
-        "calls": 1220
+        "state": 3305027207,
+        "calls": 1122
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -451,22 +451,13 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [
-        {
-          "n": "pass-through 12",
-          "s": 13
-        },
-        {
-          "n": "switch 14",
-          "s": 29
-        }
-      ],
-      "total_frames": 2982,
+      "objectives": [],
+      "total_frames": 4204,
       "rng_end": {
-        "state": 3061904516,
-        "calls": 851
+        "state": 811900218,
+        "calls": 285
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 16,

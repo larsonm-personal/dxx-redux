@@ -35,25 +35,25 @@
         },
         {
           "n": "gold key",
-          "s": 34
+          "s": 35
         },
         {
           "n": "switch 10",
-          "s": 60
+          "s": 61
         },
         {
           "n": "blue key",
-          "s": 63
+          "s": 68
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 81
+          "s": 88
         }
       ],
-      "total_frames": 6344,
+      "total_frames": 6744,
       "rng_end": {
-        "state": 3168073852,
-        "calls": 10107
+        "state": 540834943,
+        "calls": 10090
       },
       "problem": "route objective activation is not supported"
     },

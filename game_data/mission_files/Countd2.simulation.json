@@ -56,7 +56,7 @@
         },
         {
           "n": "red key",
-          "s": 39
+          "s": 38
         }
       ],
       "total_frames": 10081,
@@ -91,8 +91,8 @@
       ],
       "total_frames": 12481,
       "rng_end": {
-        "state": 1381377881,
-        "calls": 141288
+        "state": 4264279693,
+        "calls": 141364
       },
       "problem": "route confirmation exceeded 208-second simulation budget"
     },
@@ -121,8 +121,8 @@
       ],
       "total_frames": 10921,
       "rng_end": {
-        "state": 3529210229,
-        "calls": 108428
+        "state": 1556625199,
+        "calls": 108474
       },
       "problem": "route confirmation exceeded 182-second simulation budget"
     },
@@ -204,7 +204,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 5688,
+      "total_frames": 3680,
       "rng_end": {
         "state": 3524531733,
         "calls": 492

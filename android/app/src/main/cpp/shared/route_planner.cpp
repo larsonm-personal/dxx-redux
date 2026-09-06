@@ -4310,7 +4310,7 @@ route_plan_result plan_route(
 				diagnostic.problem = "switch activation route unresolved";
 		}
 		if (!have_partial ||
-		    diagnostic.steps.size() > best_partial.steps.size())
+		    diagnostic.steps.size() >= best_partial.steps.size())
 			return diagnostic;
 		return best_partial;
 	}

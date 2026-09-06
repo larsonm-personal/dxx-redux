@@ -212,7 +212,7 @@
           "calls": 0
         },
         "objectives": [],
-        "total_frames": 4373,
+        "total_frames": 4659,
         "rng_end": {
           "state": 836760821,
           "calls": 12
@@ -261,16 +261,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "merc07.rdl",
         "route_input_sha256": "25C9F97BB98D31545A723258CC854350144685F41564F95C5C92EB50396F79A2",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -287,14 +287,25 @@
           {
             "n": "gold key",
             "s": 18
+          },
+          {
+            "n": "red key",
+            "s": 41
+          },
+          {
+            "n": "reactor",
+            "s": 67
+          },
+          {
+            "n": "exit",
+            "s": 83
           }
         ],
-        "total_frames": 5485,
+        "total_frames": 4969,
         "rng_end": {
-          "state": 1047820095,
-          "calls": 170
-        },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+          "state": 1303781742,
+          "calls": 217
+        }
       }
     ]
   }

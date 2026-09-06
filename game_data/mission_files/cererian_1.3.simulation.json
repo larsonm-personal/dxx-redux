@@ -8,8 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
-    "timeout": 4
+    "ok": 5,
+    "timeout": 2
   },
   "levels": [
     {
@@ -35,7 +35,7 @@
           "s": 24
         }
       ],
-      "total_frames": 1440,
+      "total_frames": 1438,
       "rng_end": {
         "state": 995405759,
         "calls": 42
@@ -68,7 +68,7 @@
           "s": 63
         }
       ],
-      "total_frames": 3758,
+      "total_frames": 3762,
       "rng_end": {
         "state": 2402686401,
         "calls": 64
@@ -78,7 +78,7 @@
       "level_num": 3,
       "level_file": "lv1_3.rdl",
       "route_input_sha256": "DBC1DB6CA72847F6E1D001D57E7C2F15A23A4966BDE5ED4960E40AE057AB6992",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -95,20 +95,27 @@
         {
           "n": "red key",
           "s": 89
+        },
+        {
+          "n": "reactor",
+          "s": 128
+        },
+        {
+          "n": "exit",
+          "s": 133
         }
       ],
-      "total_frames": 9858,
+      "total_frames": 7954,
       "rng_end": {
-        "state": 2274957893,
-        "calls": 60
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 2226230633,
+        "calls": 88
+      }
     },
     {
       "level_num": 4,
       "level_file": "lv1_4.rdl",
       "route_input_sha256": "9DA16DA6871474C8B62358A4FB1902BD19F4C7866D46628ED8A341943B50223F",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -116,15 +123,30 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 22
+          "s": 21
+        },
+        {
+          "n": "gold key",
+          "s": 64
+        },
+        {
+          "n": "red key",
+          "s": 114
+        },
+        {
+          "n": "reactor",
+          "s": 152
+        },
+        {
+          "n": "exit",
+          "s": 159
         }
       ],
-      "total_frames": 6373,
+      "total_frames": 9550,
       "rng_end": {
-        "state": 744964398,
-        "calls": 25
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1452336924,
+        "calls": 91
+      }
     },
     {
       "level_num": 5,

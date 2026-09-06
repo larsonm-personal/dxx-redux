@@ -81,13 +81,13 @@
         },
         {
           "n": "red key",
-          "s": 79
+          "s": 80
         }
       ],
-      "total_frames": 6235,
+      "total_frames": 6334,
       "rng_end": {
-        "state": 3675155678,
-        "calls": 4393
+        "state": 3738432113,
+        "calls": 4368
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -163,7 +163,7 @@
           "s": 93
         }
       ],
-      "total_frames": 5609,
+      "total_frames": 5607,
       "rng_end": {
         "state": 1559631503,
         "calls": 4698
@@ -279,7 +279,7 @@
           "s": 37
         }
       ],
-      "total_frames": 2224,
+      "total_frames": 2225,
       "rng_end": {
         "state": 141351509,
         "calls": 940

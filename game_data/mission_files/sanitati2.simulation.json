@@ -27,22 +27,22 @@
         },
         {
           "n": "hidden door",
-          "s": 39
+          "s": 38
         },
         {
           "n": "blue key",
-          "s": 42
+          "s": 41
         },
         {
           "n": "reactor",
-          "s": 65
+          "s": 64
         },
         {
           "n": "exit",
-          "s": 85
+          "s": 84
         }
       ],
-      "total_frames": 5109,
+      "total_frames": 5041,
       "rng_end": {
         "state": 3698647558,
         "calls": 3617

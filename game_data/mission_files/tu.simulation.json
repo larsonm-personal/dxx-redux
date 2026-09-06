@@ -7,9 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
+    "ok": 5,
     "failed": 1,
-    "timeout": 1,
     "route_mismatch": 1
   },
   "levels": [
@@ -67,14 +66,14 @@
         },
         {
           "n": "reactor",
-          "s": 100
+          "s": 101
         },
         {
           "n": "exit",
           "s": 103
         }
       ],
-      "total_frames": 6153,
+      "total_frames": 6155,
       "rng_end": {
         "state": 998538513,
         "calls": 1904
@@ -168,7 +167,7 @@
           "s": 106
         }
       ],
-      "total_frames": 10023,
+      "total_frames": 10022,
       "rng_end": {
         "state": 4051164844,
         "calls": 2443
@@ -241,18 +240,26 @@
       "level_num": -2,
       "level_file": "europa.rl2",
       "route_input_sha256": "E7530E33DAF6D8BC9909797F5B19CD4D18D68FE448175A2292D477D055377EA7",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 5781,
+      "objectives": [
+        {
+          "n": "reactor",
+          "s": 53
+        },
+        {
+          "n": "exit",
+          "s": 61
+        }
+      ],
+      "total_frames": 3641,
       "rng_end": {
-        "state": 509448964,
-        "calls": 723
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 2226093429,
+        "calls": 908
+      }
     }
   ]
 }

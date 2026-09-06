@@ -60,11 +60,11 @@
         },
         {
           "n": "switch 2",
-          "s": 5
+          "s": 4
         },
         {
           "n": "switch 3",
-          "s": 7
+          "s": 6
         },
         {
           "n": "fly-through 0",
@@ -80,7 +80,7 @@
         },
         {
           "n": "blue key",
-          "s": 35
+          "s": 34
         },
         {
           "n": "fly-through 6",
@@ -88,21 +88,21 @@
         },
         {
           "n": "hidden door",
-          "s": 48
+          "s": 47
         },
         {
           "n": "switch 24",
-          "s": 50
+          "s": 49
         },
         {
           "n": "switch 7",
-          "s": 59
+          "s": 58
         }
       ],
-      "total_frames": 4436,
+      "total_frames": 4403,
       "rng_end": {
-        "state": 2822236841,
-        "calls": 1304
+        "state": 608528836,
+        "calls": 1299
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -174,34 +174,34 @@
         },
         {
           "n": "blue key",
-          "s": 43
+          "s": 23
         },
         {
           "n": "hidden door",
-          "s": 51
+          "s": 31
         },
         {
           "n": "hidden door",
-          "s": 54
+          "s": 34
         },
         {
           "n": "switch 4",
-          "s": 66
+          "s": 46
         },
         {
           "n": "gold key",
-          "s": 72
+          "s": 52
         },
         {
           "n": "red key",
-          "s": 93
+          "s": 73
         },
         {
           "n": "switch 0",
-          "s": 109
+          "s": 88
         }
       ],
-      "total_frames": 7555,
+      "total_frames": 6318,
       "rng_end": {
         "state": 429103274,
         "calls": 3181
@@ -327,10 +327,10 @@
         },
         {
           "n": "switch 14",
-          "s": 174
+          "s": 173
         }
       ],
-      "total_frames": 10889,
+      "total_frames": 10884,
       "rng_end": {
         "state": 2159019218,
         "calls": 3813

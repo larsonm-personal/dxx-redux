@@ -51,7 +51,7 @@
           "s": 39
         }
       ],
-      "total_frames": 2348,
+      "total_frames": 2342,
       "rng_end": {
         "state": 1259199996,
         "calls": 1019
@@ -90,7 +90,7 @@
         },
         {
           "n": "fly-through 15",
-          "s": 47
+          "s": 48
         },
         {
           "n": "red key",
@@ -113,7 +113,7 @@
           "s": 78
         }
       ],
-      "total_frames": 4660,
+      "total_frames": 4675,
       "rng_end": {
         "state": 2858410995,
         "calls": 4246

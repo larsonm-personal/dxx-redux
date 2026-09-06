@@ -461,17 +461,17 @@
         },
         {
           "n": "reactor",
-          "s": 25
+          "s": 27
         },
         {
           "n": "fly-through 3",
-          "s": 28
+          "s": 31
         }
       ],
-      "total_frames": 2375,
+      "total_frames": 2586,
       "rng_end": {
-        "state": 2953541386,
-        "calls": 1421
+        "state": 2896654120,
+        "calls": 1471
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -544,10 +544,10 @@
           "s": 3
         }
       ],
-      "total_frames": 7909,
+      "total_frames": 4059,
       "rng_end": {
-        "state": 4194562402,
-        "calls": 405
+        "state": 831237128,
+        "calls": 351
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

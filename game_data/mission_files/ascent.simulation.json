@@ -99,7 +99,7 @@
           "s": 10
         }
       ],
-      "total_frames": 5225,
+      "total_frames": 5395,
       "rng_end": {
         "state": 3747147131,
         "calls": 910
@@ -478,17 +478,17 @@
       "objectives": [
         {
           "n": "fly-through 4",
-          "s": 3
+          "s": 2
         },
         {
           "n": "boss",
-          "s": 20
+          "s": 18
         }
       ],
-      "total_frames": 2453,
+      "total_frames": 2310,
       "rng_end": {
-        "state": 4244552450,
-        "calls": 1141
+        "state": 2517908854,
+        "calls": 1137
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -666,14 +666,14 @@
         },
         {
           "n": "pass-through 3",
-          "s": 11
+          "s": 12
         },
         {
           "n": "red key",
-          "s": 15
+          "s": 16
         }
       ],
-      "total_frames": 1640,
+      "total_frames": 1677,
       "rng_end": {
         "state": 3706192004,
         "calls": 1875

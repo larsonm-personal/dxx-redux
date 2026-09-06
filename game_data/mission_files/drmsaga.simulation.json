@@ -74,22 +74,22 @@
         },
         {
           "n": "gold key",
-          "s": 47
+          "s": 46
         },
         {
           "n": "red key",
-          "s": 77
+          "s": 76
         },
         {
           "n": "boss",
-          "s": 97
+          "s": 96
         },
         {
           "n": "exit",
-          "s": 103
+          "s": 102
         }
       ],
-      "total_frames": 6194,
+      "total_frames": 6144,
       "rng_end": {
         "state": 1436102573,
         "calls": 3604

@@ -97,22 +97,22 @@
         },
         {
           "n": "red key",
-          "s": 43
+          "s": 41
         },
         {
           "n": "fly-through 5",
-          "s": 67
+          "s": 64
         },
         {
           "n": "reactor",
-          "s": 68
+          "s": 65
         },
         {
           "n": "exit",
-          "s": 90
+          "s": 87
         }
       ],
-      "total_frames": 5380,
+      "total_frames": 5198,
       "rng_end": {
         "state": 3178040984,
         "calls": 143

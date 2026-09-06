@@ -8,8 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
-    "timeout": 5
+    "ok": 4,
+    "timeout": 4
   },
   "levels": [
     {
@@ -117,14 +117,14 @@
       "objectives": [
         {
           "n": "reactor",
-          "s": 15
+          "s": 14
         },
         {
           "n": "exit",
-          "s": 18
+          "s": 16
         }
       ],
-      "total_frames": 1078,
+      "total_frames": 960,
       "rng_end": {
         "state": 675780521,
         "calls": 24
@@ -173,7 +173,7 @@
       "level_num": 8,
       "level_file": "bg7.rdl",
       "route_input_sha256": "C0E2DAAED4683B56E55C86C9F3247141F182A46E8CBBA756172FD5EB55BDF276",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -182,14 +182,17 @@
         {
           "n": "boss",
           "s": 22
+        },
+        {
+          "n": "exit",
+          "s": 72
         }
       ],
-      "total_frames": 5772,
+      "total_frames": 4343,
       "rng_end": {
-        "state": 3375450775,
-        "calls": 850
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 2081135787,
+        "calls": 606
+      }
     }
   ]
 }

@@ -8,9 +8,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 6,
-    "failed": 4,
-    "timeout": 9
+    "ok": 7,
+    "failed": 5,
+    "timeout": 7
   },
   "levels": [
     {
@@ -126,10 +126,10 @@
           "s": 62
         }
       ],
-      "total_frames": 9261,
+      "total_frames": 10379,
       "rng_end": {
-        "state": 3776134388,
-        "calls": 35
+        "state": 1303003706,
+        "calls": 29
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -154,7 +154,7 @@
       "level_num": 7,
       "level_file": "nefar07.rdl",
       "route_input_sha256": "C8E83477C5D4AA7998F16CBE2FBF2BA73610FD3496427ABA5E6B25C535747DD3",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -171,14 +171,29 @@
         {
           "n": "gold key",
           "s": 61
+        },
+        {
+          "n": "hidden door",
+          "s": 106
+        },
+        {
+          "n": "red key",
+          "s": 109
+        },
+        {
+          "n": "reactor",
+          "s": 138
+        },
+        {
+          "n": "exit",
+          "s": 140
         }
       ],
-      "total_frames": 12470,
+      "total_frames": 8391,
       "rng_end": {
-        "state": 3821532770,
-        "calls": 149
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 2528132273,
+        "calls": 208
+      }
     },
     {
       "level_num": 8,
@@ -216,7 +231,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 3711,
+      "total_frames": 5461,
       "rng_end": {
         "state": 675780521,
         "calls": 24
@@ -292,7 +307,7 @@
         },
         {
           "n": "red key",
-          "s": 47
+          "s": 46
         },
         {
           "n": "reactor",
@@ -303,7 +318,7 @@
           "s": 75
         }
       ],
-      "total_frames": 4482,
+      "total_frames": 4486,
       "rng_end": {
         "state": 2780109717,
         "calls": 108
@@ -313,18 +328,31 @@
       "level_num": 12,
       "level_file": "nefar12.rdl",
       "route_input_sha256": "A7B62C8FA88E8C05F2CFCC5B1BEFBCC26D5647FB3726D89F857BECE356B5DEF8",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 5231,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 15
+        },
+        {
+          "n": "gold key",
+          "s": 37
+        },
+        {
+          "n": "red key",
+          "s": 68
+        }
+      ],
+      "total_frames": 4062,
       "rng_end": {
-        "state": 3914758370,
-        "calls": 21
+        "state": 2207819405,
+        "calls": 52
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 13,
@@ -346,23 +374,23 @@
         },
         {
           "n": "gold key",
-          "s": 19
+          "s": 20
         },
         {
           "n": "red key",
-          "s": 27
+          "s": 28
         },
         {
           "n": "fly-through 15",
           "s": 37
         }
       ],
-      "total_frames": 6079,
+      "total_frames": 6901,
       "rng_end": {
         "state": 2801490995,
         "calls": 86
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "route confirmation exceeded 115-second simulation budget"
     },
     {
       "level_num": 14,
@@ -457,7 +485,7 @@
           "s": 85
         }
       ],
-      "total_frames": 5124,
+      "total_frames": 5127,
       "rng_end": {
         "state": 1369828971,
         "calls": 158
@@ -509,7 +537,7 @@
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 46
+          "s": 45
         },
         {
           "n": "reactor",
@@ -520,7 +548,7 @@
           "s": 75
         }
       ],
-      "total_frames": 4493,
+      "total_frames": 4472,
       "rng_end": {
         "state": 510737498,
         "calls": 125

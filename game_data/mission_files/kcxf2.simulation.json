@@ -8,8 +8,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 1,
-    "failed": 1,
-    "timeout": 3
+    "failed": 2,
+    "timeout": 2
   },
   "levels": [
     {
@@ -45,18 +45,23 @@
       "level_num": 2,
       "level_file": "kcxf202.rl2",
       "route_input_sha256": "F46DC55E3BDA2883E53CF9F0C737F0E9450E1DEF40B2959A12AC0ACE3758C0F7",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 5429,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 34
+        }
+      ],
+      "total_frames": 2056,
       "rng_end": {
         "state": 3389348384,
         "calls": 871
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 3,
@@ -135,12 +140,12 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 9553,
+      "total_frames": 3064,
       "rng_end": {
-        "state": 770111590,
-        "calls": 1345
+        "state": 1382522462,
+        "calls": 1449
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     }
   ]
 }

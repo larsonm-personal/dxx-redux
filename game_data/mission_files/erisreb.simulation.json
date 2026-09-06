@@ -8,8 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 5,
-    "timeout": 4
+    "ok": 7,
+    "timeout": 2
   },
   "levels": [
     {
@@ -53,7 +53,7 @@
       "level_num": 2,
       "level_file": "eris0002.rdl",
       "route_input_sha256": "D18AE82DB111FBBCA0AE1594582428A95D422C0A59A9FD3B03DC27C07FC54CC8",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -62,14 +62,29 @@
         {
           "n": "blue key",
           "s": 11
+        },
+        {
+          "n": "gold key",
+          "s": 41
+        },
+        {
+          "n": "red key",
+          "s": 63
+        },
+        {
+          "n": "reactor",
+          "s": 89
+        },
+        {
+          "n": "exit",
+          "s": 94
         }
       ],
-      "total_frames": 5900,
+      "total_frames": 5631,
       "rng_end": {
-        "state": 4008331270,
-        "calls": 33
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3269224778,
+        "calls": 77
+      }
     },
     {
       "level_num": 3,
@@ -102,7 +117,7 @@
           "s": 108
         }
       ],
-      "total_frames": 6483,
+      "total_frames": 6454,
       "rng_end": {
         "state": 2883693444,
         "calls": 83
@@ -112,7 +127,7 @@
       "level_num": 4,
       "level_file": "eris0004.rdl",
       "route_input_sha256": "320B123D09D566A2EF31E918967CC73F7AB66A20989CC43DDBB465B2269B1CE9",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -121,14 +136,29 @@
         {
           "n": "blue key",
           "s": 11
+        },
+        {
+          "n": "gold key",
+          "s": 51
+        },
+        {
+          "n": "red key",
+          "s": 86
+        },
+        {
+          "n": "reactor",
+          "s": 138
+        },
+        {
+          "n": "exit",
+          "s": 145
         }
       ],
-      "total_frames": 6258,
+      "total_frames": 8689,
       "rng_end": {
-        "state": 1343201072,
-        "calls": 23
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 500965035,
+        "calls": 94
+      }
     },
     {
       "level_num": 5,
@@ -187,21 +217,21 @@
         },
         {
           "n": "red key",
-          "s": 68
+          "s": 70
         },
         {
           "n": "reactor",
-          "s": 91
+          "s": 93
         },
         {
           "n": "exit",
-          "s": 105
+          "s": 106
         }
       ],
-      "total_frames": 6302,
+      "total_frames": 6371,
       "rng_end": {
-        "state": 2787170210,
-        "calls": 85
+        "state": 2801490995,
+        "calls": 86
       }
     },
     {
@@ -224,13 +254,13 @@
         },
         {
           "n": "red key",
-          "s": 38
+          "s": 37
         }
       ],
-      "total_frames": 7217,
+      "total_frames": 8884,
       "rng_end": {
-        "state": 3025925713,
-        "calls": 48
+        "state": 3731173240,
+        "calls": 47
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },

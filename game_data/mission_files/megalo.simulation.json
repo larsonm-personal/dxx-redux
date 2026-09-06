@@ -27,7 +27,7 @@
             "s": 9
           }
         ],
-        "total_frames": 4891,
+        "total_frames": 4890,
         "rng_end": {
           "state": 1303003706,
           "calls": 29
@@ -92,16 +92,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "megaloma.rdl",
         "route_input_sha256": "38DA46B66DFD9FDFD112CEA7676F57B3573429A740658F8A79211EA8CB653385",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -114,14 +114,25 @@
           {
             "n": "destroy robot carrying gold key",
             "s": 59
+          },
+          {
+            "n": "destroy robot carrying red key",
+            "s": 100
+          },
+          {
+            "n": "reactor",
+            "s": 116
+          },
+          {
+            "n": "exit",
+            "s": 132
           }
         ],
-        "total_frames": 14474,
+        "total_frames": 7923,
         "rng_end": {
-          "state": 3843909140,
-          "calls": 131
-        },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+          "state": 3361651730,
+          "calls": 165
+        }
       }
     ]
   },
@@ -281,10 +292,10 @@
           "calls": 0
         },
         "objectives": [],
-        "total_frames": 3980,
+        "total_frames": 4343,
         "rng_end": {
-          "state": 3297241969,
-          "calls": 16
+          "state": 3863712643,
+          "calls": 262
         },
         "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }

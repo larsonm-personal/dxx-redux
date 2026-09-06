@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 7,
+    "ok": 5,
     "failed": 6,
-    "timeout": 10,
+    "timeout": 12,
     "unsupported": 2
   },
   "levels": [
@@ -113,42 +113,14 @@
         {
           "n": "switch 4",
           "s": 1
-        },
-        {
-          "n": "switch 5",
-          "s": 10
-        },
-        {
-          "n": "switch 6",
-          "s": 15
-        },
-        {
-          "n": "switch 7",
-          "s": 21
-        },
-        {
-          "n": "switch 8",
-          "s": 27
-        },
-        {
-          "n": "switch 9",
-          "s": 34
-        },
-        {
-          "n": "switch 10",
-          "s": 41
-        },
-        {
-          "n": "fly-through 2",
-          "s": 42
         }
       ],
-      "total_frames": 10081,
+      "total_frames": 7118,
       "rng_end": {
-        "state": 2363015200,
-        "calls": 1383
+        "state": 3845379245,
+        "calls": 276
       },
-      "problem": "route confirmation exceeded 168-second simulation budget"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 5,
@@ -369,38 +341,14 @@
         {
           "n": "switch 5",
           "s": 9
-        },
-        {
-          "n": "switch 6",
-          "s": 21
-        },
-        {
-          "n": "switch 7",
-          "s": 30
-        },
-        {
-          "n": "switch 8",
-          "s": 38
-        },
-        {
-          "n": "switch 9",
-          "s": 47
-        },
-        {
-          "n": "switch 10",
-          "s": 56
-        },
-        {
-          "n": "switch 11",
-          "s": 65
         }
       ],
-      "total_frames": 13081,
+      "total_frames": 4592,
       "rng_end": {
-        "state": 1716775747,
-        "calls": 4422
+        "state": 63926633,
+        "calls": 1112
       },
-      "problem": "route confirmation exceeded 218-second simulation budget"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 13,
@@ -455,7 +403,7 @@
           "s": 46
         }
       ],
-      "total_frames": 6956,
+      "total_frames": 6700,
       "rng_end": {
         "state": 3205777174,
         "calls": 1361
@@ -492,7 +440,7 @@
       "level_num": 16,
       "level_file": "lost16.rl2",
       "route_input_sha256": "21846C9B0A4660A77989265F7184809FECDA9F1DC2CEA8032F4EA166C5C75F48",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -505,45 +453,14 @@
         {
           "n": "switch 8",
           "s": 14
-        },
-        {
-          "n": "switch 9",
-          "s": 24
-        },
-        {
-          "n": "switch 10",
-          "s": 35
-        },
-        {
-          "n": "switch 11",
-          "s": 46
-        },
-        {
-          "n": "switch 12",
-          "s": 56
-        },
-        {
-          "n": "switch 13",
-          "s": 66
-        },
-        {
-          "n": "switch 14",
-          "s": 77
-        },
-        {
-          "n": "boss",
-          "s": 97
-        },
-        {
-          "n": "exit",
-          "s": 98
         }
       ],
-      "total_frames": 5864,
+      "total_frames": 9227,
       "rng_end": {
-        "state": 699233548,
-        "calls": 4011
-      }
+        "state": 4107399316,
+        "calls": 1027
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 17,
@@ -654,21 +571,21 @@
       "objectives": [
         {
           "n": "switch 6",
-          "s": 9
+          "s": 10
         },
         {
           "n": "switch 5",
-          "s": 12
+          "s": 14
         },
         {
           "n": "switch 8",
-          "s": 17
+          "s": 19
         }
       ],
-      "total_frames": 5083,
+      "total_frames": 5242,
       "rng_end": {
-        "state": 4028954632,
-        "calls": 1375
+        "state": 3959185378,
+        "calls": 1301
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -715,7 +632,7 @@
       "level_num": 23,
       "level_file": "lost23.rl2",
       "route_input_sha256": "A35AB6140C250A4B9E19BC6FA91333E3DB911C86212BC21558148913EAB6288F",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -732,21 +649,14 @@
         {
           "n": "gold key",
           "s": 16
-        },
-        {
-          "n": "red key",
-          "s": 34
-        },
-        {
-          "n": "exit",
-          "s": 52
         }
       ],
-      "total_frames": 3110,
+      "total_frames": 5456,
       "rng_end": {
-        "state": 1528129864,
-        "calls": 1823
-      }
+        "state": 3427645392,
+        "calls": 1271
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 24,

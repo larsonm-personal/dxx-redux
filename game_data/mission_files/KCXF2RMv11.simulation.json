@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
+    "ok": 3,
     "failed": 1,
-    "timeout": 4,
+    "timeout": 3,
     "unsupported": 1
   },
   "levels": [
@@ -34,18 +34,54 @@
       "level_num": 2,
       "level_file": "kcxf2_n2.rl2",
       "route_input_sha256": "D3019F37FD613196284332EED519BB0B89F49B95D1365A968EC3DC69505289C5",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 7258,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 35
+        },
+        {
+          "n": "fly-through 4",
+          "s": 61
+        },
+        {
+          "n": "switch 7",
+          "s": 78
+        },
+        {
+          "n": "switch 8",
+          "s": 101
+        },
+        {
+          "n": "switch 13",
+          "s": 115
+        },
+        {
+          "n": "switch 19",
+          "s": 126
+        },
+        {
+          "n": "switch 18",
+          "s": 152
+        },
+        {
+          "n": "switch 17",
+          "s": 155
+        },
+        {
+          "n": "exit",
+          "s": 165
+        }
+      ],
+      "total_frames": 9915,
       "rng_end": {
-        "state": 2682890258,
-        "calls": 1189
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3374439426,
+        "calls": 6005
+      }
     },
     {
       "level_num": 3,
@@ -99,7 +135,7 @@
           "s": 165
         }
       ],
-      "total_frames": 9887,
+      "total_frames": 9882,
       "rng_end": {
         "state": 819313084,
         "calls": 5435
@@ -128,7 +164,7 @@
           "s": 82
         }
       ],
-      "total_frames": 5695,
+      "total_frames": 5696,
       "rng_end": {
         "state": 3483563614,
         "calls": 3497

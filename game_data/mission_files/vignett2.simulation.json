@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 23,
+    "ok": 24,
     "failed": 1,
-    "timeout": 4,
+    "timeout": 3,
     "unsupported": 1,
     "route_mismatch": 1
   },
@@ -37,7 +37,7 @@
           "s": 26
         }
       ],
-      "total_frames": 1536,
+      "total_frames": 1538,
       "rng_end": {
         "state": 2058375196,
         "calls": 859
@@ -218,7 +218,7 @@
           "s": 22
         }
       ],
-      "total_frames": 1299,
+      "total_frames": 1303,
       "rng_end": {
         "state": 2147173166,
         "calls": 1561
@@ -395,7 +395,7 @@
           "s": 23
         }
       ],
-      "total_frames": 1399,
+      "total_frames": 1403,
       "rng_end": {
         "state": 1560329003,
         "calls": 990
@@ -461,7 +461,7 @@
           "s": 43
         }
       ],
-      "total_frames": 2551,
+      "total_frames": 2550,
       "rng_end": {
         "state": 950213582,
         "calls": 2041
@@ -506,7 +506,7 @@
           "s": 59
         }
       ],
-      "total_frames": 3541,
+      "total_frames": 3549,
       "rng_end": {
         "state": 1375418125,
         "calls": 2996
@@ -610,7 +610,7 @@
           "s": 30
         }
       ],
-      "total_frames": 1825,
+      "total_frames": 1821,
       "rng_end": {
         "state": 3607355649,
         "calls": 1792
@@ -661,7 +661,7 @@
       "level_num": 19,
       "level_file": "level19.rl2",
       "route_input_sha256": "C8EE2B8E264C1AE0453CDE7630EB881787751F2EAE0F77FF88B4BF28A936C2C4",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -670,14 +670,29 @@
         {
           "n": "blue key",
           "s": 7
+        },
+        {
+          "n": "gold key",
+          "s": 18
+        },
+        {
+          "n": "red key",
+          "s": 25
+        },
+        {
+          "n": "reactor",
+          "s": 30
+        },
+        {
+          "n": "exit",
+          "s": 38
         }
       ],
-      "total_frames": 4673,
+      "total_frames": 2260,
       "rng_end": {
-        "state": 305579427,
-        "calls": 742
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 2990018150,
+        "calls": 1857
+      }
     },
     {
       "level_num": 20,
@@ -698,12 +713,12 @@
           "s": 23
         }
       ],
-      "total_frames": 5581,
+      "total_frames": 5096,
       "rng_end": {
         "state": 1334668553,
         "calls": 1464
       },
-      "problem": "route confirmation exceeded 93-second simulation budget"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 21,

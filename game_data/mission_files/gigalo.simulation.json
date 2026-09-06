@@ -291,27 +291,47 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "gigaloma.rl2",
         "route_input_sha256": "7A7275E45695B233C7241C055F399715B7022300EA3F7E539570F6ACECAF7BCE",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 7205,
+        "objectives": [
+          {
+            "n": "gold key",
+            "s": 59
+          },
+          {
+            "n": "hidden door",
+            "s": 125
+          },
+          {
+            "n": "switch 1",
+            "s": 125
+          },
+          {
+            "n": "boss",
+            "s": 134
+          },
+          {
+            "n": "exit",
+            "s": 140
+          }
+        ],
+        "total_frames": 8425,
         "rng_end": {
-          "state": 1234143972,
-          "calls": 1395
-        },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+          "state": 4188231431,
+          "calls": 3042
+        }
       }
     ]
   },
@@ -383,7 +403,7 @@
           },
           {
             "n": "switch 78",
-            "s": 24
+            "s": 25
           },
           {
             "n": "switch 79",
@@ -395,11 +415,11 @@
           },
           {
             "n": "switch 81",
-            "s": 45
+            "s": 46
           },
           {
             "n": "red key",
-            "s": 56
+            "s": 57
           },
           {
             "n": "fly-through 37",
@@ -414,7 +434,7 @@
             "s": 89
           }
         ],
-        "total_frames": 5330,
+        "total_frames": 5333,
         "rng_end": {
           "state": 3326479798,
           "calls": 3377

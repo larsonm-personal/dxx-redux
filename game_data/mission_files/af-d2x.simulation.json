@@ -85,7 +85,7 @@
           "s": 64
         }
       ],
-      "total_frames": 11235,
+      "total_frames": 7468,
       "rng_end": {
         "state": 2838722267,
         "calls": 4654
@@ -143,7 +143,7 @@
           "s": 101
         }
       ],
-      "total_frames": 6085,
+      "total_frames": 6087,
       "rng_end": {
         "state": 3816800785,
         "calls": 2672
@@ -170,14 +170,26 @@
         {
           "n": "gold key",
           "s": 73
+        },
+        {
+          "n": "pass-through 3",
+          "s": 125
+        },
+        {
+          "n": "hidden door",
+          "s": 125
+        },
+        {
+          "n": "switch 2",
+          "s": 144
         }
       ],
-      "total_frames": 10975,
+      "total_frames": 18001,
       "rng_end": {
-        "state": 3456028837,
-        "calls": 4828
+        "state": 2058247299,
+        "calls": 6150
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "route confirmation exceeded 300-second simulation budget"
     },
     {
       "level_num": 6,
@@ -362,7 +374,7 @@
           "s": 46
         }
       ],
-      "total_frames": 7671,
+      "total_frames": 7672,
       "rng_end": {
         "state": 4005048549,
         "calls": 2204
@@ -474,14 +486,14 @@
         },
         {
           "n": "boss",
-          "s": 55
+          "s": 48
         },
         {
           "n": "exit",
-          "s": 105
+          "s": 93
         }
       ],
-      "total_frames": 6305,
+      "total_frames": 5599,
       "rng_end": {
         "state": 3381675222,
         "calls": 1681

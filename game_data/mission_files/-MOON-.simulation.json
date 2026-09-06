@@ -38,7 +38,7 @@
             "s": 91
           }
         ],
-        "total_frames": 9735,
+        "total_frames": 9756,
         "rng_end": {
           "state": 2245833461,
           "calls": 4620
@@ -110,7 +110,7 @@
           },
           {
             "n": "switch 9",
-            "s": 36
+            "s": 35
           },
           {
             "n": "gold key",
@@ -125,7 +125,7 @@
             "s": 72
           }
         ],
-        "total_frames": 8774,
+        "total_frames": 8769,
         "rng_end": {
           "state": 2191940876,
           "calls": 1963
@@ -166,11 +166,11 @@
           },
           {
             "n": "hidden door",
-            "s": 15
+            "s": 16
           },
           {
             "n": "switch 16",
-            "s": 15
+            "s": 16
           },
           {
             "n": "blue key",
@@ -190,11 +190,11 @@
           },
           {
             "n": "hidden door",
-            "s": 83
+            "s": 84
           },
           {
             "n": "switch 19",
-            "s": 85
+            "s": 86
           },
           {
             "n": "red key",
@@ -202,14 +202,14 @@
           },
           {
             "n": "reactor",
-            "s": 147
+            "s": 148
           },
           {
             "n": "exit",
-            "s": 161
+            "s": 162
           }
         ],
-        "total_frames": 9682,
+        "total_frames": 9695,
         "rng_end": {
           "state": 2992512938,
           "calls": 4461
@@ -328,13 +328,13 @@
           },
           {
             "n": "switch 29",
-            "s": 17
+            "s": 16
           }
         ],
-        "total_frames": 1985,
+        "total_frames": 1952,
         "rng_end": {
-          "state": 3339064652,
-          "calls": 619
+          "state": 3058329110,
+          "calls": 593
         },
         "problem": "physical route frontier did not open after 8 interaction attempts"
       }
@@ -606,7 +606,7 @@
             "s": 95
           }
         ],
-        "total_frames": 5702,
+        "total_frames": 5724,
         "rng_end": {
           "state": 3289805459,
           "calls": 3574
@@ -642,7 +642,7 @@
           },
           {
             "n": "blue key",
-            "s": 12
+            "s": 11
           },
           {
             "n": "switch 1",
@@ -677,7 +677,7 @@
             "s": 102
           }
         ],
-        "total_frames": 6138,
+        "total_frames": 6149,
         "rng_end": {
           "state": 2719835267,
           "calls": 4102

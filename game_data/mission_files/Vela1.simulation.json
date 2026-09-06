@@ -58,26 +58,26 @@
         },
         {
           "n": "switch 38",
-          "s": 84
+          "s": 83
         },
         {
           "n": "switch 40",
-          "s": 106
+          "s": 105
         },
         {
           "n": "red key",
-          "s": 108
+          "s": 107
+        },
+        {
+          "n": "hidden door",
+          "s": 131
         },
         {
           "n": "hidden door",
           "s": 132
-        },
-        {
-          "n": "hidden door",
-          "s": 133
         }
       ],
-      "total_frames": 8459,
+      "total_frames": 8399,
       "rng_end": {
         "state": 2171043584,
         "calls": 4871

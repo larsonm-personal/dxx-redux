@@ -6,10 +6,11 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
+    "ok": 1,
     "failed": 2,
-    "timeout": 2
+    "timeout": 1
   },
   "levels": [
     {
@@ -33,18 +34,46 @@
       "level_num": 2,
       "level_file": "BLUE.RDL",
       "route_input_sha256": "1DA7A9F1541B31A262390966F27515F0D9B5C499B5B5533B2DA7CF486A60F85C",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4900,
+      "objectives": [
+        {
+          "n": "pass-through 13",
+          "s": 43
+        },
+        {
+          "n": "blastable wall",
+          "s": 43
+        },
+        {
+          "n": "blastable wall",
+          "s": 75
+        },
+        {
+          "n": "blastable wall",
+          "s": 76
+        },
+        {
+          "n": "blastable wall",
+          "s": 77
+        },
+        {
+          "n": "gold key",
+          "s": 78
+        },
+        {
+          "n": "exit",
+          "s": 96
+        }
+      ],
+      "total_frames": 5750,
       "rng_end": {
-        "state": 3297241969,
-        "calls": 16
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3429444377,
+        "calls": 552
+      }
     },
     {
       "level_num": 3,
