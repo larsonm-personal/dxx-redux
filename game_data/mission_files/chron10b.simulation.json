@@ -5,10 +5,11 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
+    "ok": 1,
     "failed": 1,
-    "timeout": 3
+    "timeout": 2
   },
   "levels": [
     {
@@ -51,13 +52,25 @@
         },
         {
           "n": "fly-through 7",
-          "s": 88
+          "s": 89
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 98
+        },
+        {
+          "n": "reactor",
+          "s": 122
+        },
+        {
+          "n": "fly-through 9",
+          "s": 123
         }
       ],
-      "total_frames": 9428,
+      "total_frames": 11078,
       "rng_end": {
-        "state": 3634999703,
-        "calls": 3154
+        "state": 48038782,
+        "calls": 5385
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -65,7 +78,7 @@
       "level_num": 2,
       "level_file": "reactorc.rl2",
       "route_input_sha256": "C6D481878E935F77A7A08B304100E5D1B37EDBDC446ECD01A30494AB6C1B0DD5",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -149,23 +162,26 @@
         },
         {
           "n": "red key",
-          "s": 173
+          "s": 175
         },
         {
           "n": "reactor",
-          "s": 202
+          "s": 201
         },
         {
           "n": "switch 3",
-          "s": 206
+          "s": 208
+        },
+        {
+          "n": "exit",
+          "s": 227
         }
       ],
-      "total_frames": 16380,
+      "total_frames": 13597,
       "rng_end": {
-        "state": 1719405509,
-        "calls": 4796
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 4053660929,
+        "calls": 4864
+      }
     },
     {
       "level_num": 3,
@@ -198,7 +214,7 @@
           "s": 53
         }
       ],
-      "total_frames": 3197,
+      "total_frames": 3196,
       "rng_end": {
         "state": 1225298831,
         "calls": 1370

@@ -42,10 +42,10 @@
           "s": 61
         }
       ],
-      "total_frames": 4603,
+      "total_frames": 4575,
       "rng_end": {
-        "state": 363798525,
-        "calls": 5444
+        "state": 4034227874,
+        "calls": 5461
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -150,7 +150,7 @@
         },
         {
           "n": "switch 13",
-          "s": 126
+          "s": 125
         },
         {
           "n": "fly-through 21",
@@ -158,21 +158,21 @@
         },
         {
           "n": "switch 22",
-          "s": 140
+          "s": 139
         },
         {
           "n": "reactor",
-          "s": 141
+          "s": 140
         },
         {
           "n": "exit",
-          "s": 158
+          "s": 157
         }
       ],
-      "total_frames": 9471,
+      "total_frames": 9413,
       "rng_end": {
-        "state": 2294590721,
-        "calls": 6912
+        "state": 974909922,
+        "calls": 6933
       }
     },
     {
@@ -199,21 +199,21 @@
         },
         {
           "n": "switch 7",
-          "s": 93
+          "s": 75
         },
         {
           "n": "reactor",
-          "s": 117
+          "s": 98
         },
         {
           "n": "exit",
-          "s": 125
+          "s": 107
         }
       ],
-      "total_frames": 7485,
+      "total_frames": 6420,
       "rng_end": {
-        "state": 1710521454,
-        "calls": 4569
+        "state": 917813531,
+        "calls": 4078
       }
     },
     {
@@ -359,11 +359,11 @@
         },
         {
           "n": "blue key",
-          "s": 27
+          "s": 28
         },
         {
           "n": "blastable wall",
-          "s": 40
+          "s": 41
         },
         {
           "n": "blastable wall",
@@ -398,10 +398,10 @@
           "s": 115
         }
       ],
-      "total_frames": 6914,
+      "total_frames": 6888,
       "rng_end": {
-        "state": 4136874082,
-        "calls": 3733
+        "state": 1840613958,
+        "calls": 3809
       }
     },
     {
@@ -504,10 +504,10 @@
           "s": 91
         }
       ],
-      "total_frames": 5432,
+      "total_frames": 5448,
       "rng_end": {
-        "state": 2647824051,
-        "calls": 5590
+        "state": 1232218944,
+        "calls": 5575
       }
     },
     {
@@ -587,25 +587,25 @@
         },
         {
           "n": "blastable wall",
-          "s": 82
+          "s": 83
         },
         {
           "n": "red key",
-          "s": 88
+          "s": 89
         },
         {
           "n": "boss",
-          "s": 142
+          "s": 143
         },
         {
           "n": "exit",
-          "s": 173
+          "s": 174
         }
       ],
-      "total_frames": 10377,
+      "total_frames": 10440,
       "rng_end": {
-        "state": 1461006422,
-        "calls": 6417
+        "state": 932044076,
+        "calls": 6411
       }
     }
   ]

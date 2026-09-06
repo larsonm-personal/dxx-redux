@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 14,
-    "timeout": 3
+    "ok": 15,
+    "timeout": 2
   },
   "levels": [
     {
@@ -35,25 +35,25 @@
         },
         {
           "n": "gold key",
-          "s": 94
+          "s": 93
         },
         {
           "n": "red key",
-          "s": 115
+          "s": 114
         },
         {
           "n": "reactor",
-          "s": 135
+          "s": 134
         },
         {
           "n": "exit",
-          "s": 148
+          "s": 147
         }
       ],
-      "total_frames": 8854,
+      "total_frames": 8807,
       "rng_end": {
-        "state": 2744742440,
-        "calls": 5823
+        "state": 1328891135,
+        "calls": 5866
       }
     },
     {
@@ -103,10 +103,10 @@
           "s": 194
         }
       ],
-      "total_frames": 11628,
+      "total_frames": 11644,
       "rng_end": {
-        "state": 1605186651,
-        "calls": 5294
+        "state": 244183971,
+        "calls": 5350
       }
     },
     {
@@ -153,21 +153,21 @@
         },
         {
           "n": "red key",
-          "s": 110
+          "s": 101
         },
         {
           "n": "boss",
-          "s": 130
+          "s": 119
         },
         {
           "n": "exit",
-          "s": 141
+          "s": 130
         }
       ],
-      "total_frames": 8449,
+      "total_frames": 7826,
       "rng_end": {
-        "state": 4102717474,
-        "calls": 4565
+        "state": 3858517989,
+        "calls": 4508
       }
     },
     {
@@ -194,25 +194,25 @@
         },
         {
           "n": "red key",
-          "s": 76
+          "s": 75
         },
         {
           "n": "switch 5",
-          "s": 94
+          "s": 91
         },
         {
           "n": "boss",
-          "s": 115
+          "s": 111
         },
         {
           "n": "exit",
-          "s": 128
+          "s": 125
         }
       ],
-      "total_frames": 7653,
+      "total_frames": 7487,
       "rng_end": {
-        "state": 1771475411,
-        "calls": 5814
+        "state": 2955380948,
+        "calls": 5827
       }
     },
     {
@@ -239,15 +239,15 @@
         },
         {
           "n": "gold key",
-          "s": 53
+          "s": 51
         },
         {
           "n": "switch 8",
-          "s": 67
+          "s": 65
         },
         {
           "n": "red key",
-          "s": 73
+          "s": 72
         },
         {
           "n": "fly-through 13",
@@ -259,13 +259,13 @@
         },
         {
           "n": "exit",
-          "s": 132
+          "s": 131
         }
       ],
-      "total_frames": 7943,
+      "total_frames": 7888,
       "rng_end": {
-        "state": 1053602589,
-        "calls": 4388
+        "state": 1217407189,
+        "calls": 4396
       }
     },
     {
@@ -315,10 +315,10 @@
           "s": 147
         }
       ],
-      "total_frames": 8823,
+      "total_frames": 8834,
       "rng_end": {
-        "state": 4034211149,
-        "calls": 4980
+        "state": 4069126410,
+        "calls": 5005
       }
     },
     {
@@ -349,11 +349,11 @@
         },
         {
           "n": "gold key",
-          "s": 91
+          "s": 90
         },
         {
           "n": "switch 6",
-          "s": 123
+          "s": 122
         },
         {
           "n": "red key",
@@ -369,13 +369,13 @@
         },
         {
           "n": "exit",
-          "s": 184
+          "s": 183
         }
       ],
-      "total_frames": 11037,
+      "total_frames": 10996,
       "rng_end": {
-        "state": 3531803823,
-        "calls": 6714
+        "state": 2758372886,
+        "calls": 6737
       }
     },
     {
@@ -422,13 +422,13 @@
         },
         {
           "n": "exit",
-          "s": 142
+          "s": 143
         }
       ],
-      "total_frames": 8535,
+      "total_frames": 8558,
       "rng_end": {
-        "state": 3693571933,
-        "calls": 4836
+        "state": 780502405,
+        "calls": 4860
       }
     },
     {
@@ -463,7 +463,7 @@
         },
         {
           "n": "red key",
-          "s": 101
+          "s": 102
         },
         {
           "n": "boss",
@@ -474,10 +474,10 @@
           "s": 158
         }
       ],
-      "total_frames": 9471,
+      "total_frames": 9506,
       "rng_end": {
-        "state": 4251520053,
-        "calls": 5836
+        "state": 1646444472,
+        "calls": 5871
       }
     },
     {
@@ -561,10 +561,10 @@
           "s": 174
         }
       ],
-      "total_frames": 10464,
+      "total_frames": 10444,
       "rng_end": {
-        "state": 2028209708,
-        "calls": 7179
+        "state": 4251000612,
+        "calls": 7219
       }
     },
     {
@@ -724,18 +724,34 @@
       "level_num": -4,
       "level_file": "luna.rl2",
       "route_input_sha256": "3FF5A543D5FB839E11CFD089BE2B9B4153A7475BAA033CE0E51254CB4DA32E09",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4029,
+      "objectives": [
+        {
+          "n": "switch 1",
+          "s": 15
+        },
+        {
+          "n": "switch 0",
+          "s": 23
+        },
+        {
+          "n": "switch 2",
+          "s": 31
+        },
+        {
+          "n": "exit",
+          "s": 60
+        }
+      ],
+      "total_frames": 3602,
       "rng_end": {
-        "state": 382657182,
-        "calls": 617
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3331311566,
+        "calls": 3065
+      }
     }
   ]
 }

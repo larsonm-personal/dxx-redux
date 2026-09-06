@@ -5,10 +5,10 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
+    "ok": 1,
     "failed": 3,
-    "timeout": 1,
     "unsupported": 1
   },
   "levels": [
@@ -72,7 +72,7 @@
       "level_num": 4,
       "level_file": "flw.rl2",
       "route_input_sha256": "DF562D269FAF8099330786FDEFCE22AC3ED3C6145FAFAFFEBE65431C3EC52890",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -125,14 +125,21 @@
         {
           "n": "reactor",
           "s": 69
+        },
+        {
+          "n": "hidden door",
+          "s": 86
+        },
+        {
+          "n": "exit",
+          "s": 86
         }
       ],
-      "total_frames": 5363,
+      "total_frames": 5177,
       "rng_end": {
-        "state": 3609107594,
-        "calls": 3597
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 1371983276,
+        "calls": 3723
+      }
     },
     {
       "level_num": -1,

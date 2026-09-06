@@ -51,10 +51,10 @@
           "s": 60
         }
       ],
-      "total_frames": 3575,
+      "total_frames": 3609,
       "rng_end": {
-        "state": 822661459,
-        "calls": 1846
+        "state": 1718045622,
+        "calls": 1841
       }
     },
     {
@@ -106,8 +106,8 @@
       ],
       "total_frames": 6133,
       "rng_end": {
-        "state": 1751259290,
-        "calls": 2365
+        "state": 986697615,
+        "calls": 2394
       }
     },
     {
@@ -146,29 +146,29 @@
         },
         {
           "n": "red key",
-          "s": 101
+          "s": 102
         },
         {
           "n": "fly-through 10",
-          "s": 101
+          "s": 102
         },
         {
           "n": "switch 11",
-          "s": 104
+          "s": 105
         },
         {
           "n": "reactor",
-          "s": 138
+          "s": 122
         },
         {
           "n": "exit",
-          "s": 158
+          "s": 136
         }
       ],
-      "total_frames": 9483,
+      "total_frames": 8146,
       "rng_end": {
-        "state": 2106728596,
-        "calls": 5123
+        "state": 3223304534,
+        "calls": 5137
       }
     },
     {
@@ -215,13 +215,13 @@
         },
         {
           "n": "exit",
-          "s": 71
+          "s": 72
         }
       ],
-      "total_frames": 4289,
+      "total_frames": 4343,
       "rng_end": {
-        "state": 3444936998,
-        "calls": 1921
+        "state": 919002371,
+        "calls": 1926
       }
     },
     {
@@ -236,34 +236,34 @@
       "objectives": [
         {
           "n": "destroy robot carrying blue key",
-          "s": 32
+          "s": 20
         },
         {
           "n": "switch 17",
-          "s": 56
+          "s": 44
         },
         {
           "n": "gold key",
-          "s": 60
+          "s": 49
         },
         {
           "n": "red key",
-          "s": 92
+          "s": 80
         },
         {
           "n": "switch 1",
-          "s": 99
+          "s": 87
         },
         {
           "n": "reactor",
-          "s": 116
+          "s": 104
         },
         {
           "n": "exit",
-          "s": 133
+          "s": 121
         }
       ],
-      "total_frames": 7955,
+      "total_frames": 7285,
       "rng_end": {
         "state": 3177100444,
         "calls": 5339

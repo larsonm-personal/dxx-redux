@@ -140,17 +140,17 @@
         },
         {
           "n": "reactor",
-          "s": 49
+          "s": 50
         },
         {
           "n": "exit",
-          "s": 52
+          "s": 53
         }
       ],
-      "total_frames": 3141,
+      "total_frames": 3178,
       "rng_end": {
-        "state": 2135898737,
-        "calls": 2320
+        "state": 3954677940,
+        "calls": 2403
       }
     },
     {
@@ -254,17 +254,17 @@
           "s": 45
         }
       ],
-      "total_frames": 2676,
+      "total_frames": 2698,
       "rng_end": {
-        "state": 1326565041,
-        "calls": 1744
+        "state": 3788755263,
+        "calls": 1706
       }
     },
     {
       "level_num": 8,
       "level_file": "level08.rl2",
       "route_input_sha256": "57DF68E7D637B5060AF497FA5B4F691DDCC2A609D8B19D192477032CFA9ED394",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -276,22 +276,15 @@
         },
         {
           "n": "red key",
-          "s": 17
-        },
-        {
-          "n": "reactor",
-          "s": 22
-        },
-        {
-          "n": "exit",
-          "s": 26
+          "s": 16
         }
       ],
-      "total_frames": 1574,
+      "total_frames": 5058,
       "rng_end": {
-        "state": 2975631653,
-        "calls": 1628
-      }
+        "state": 3984842223,
+        "calls": 1274
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 9,
@@ -462,8 +455,8 @@
       ],
       "total_frames": 2550,
       "rng_end": {
-        "state": 950213582,
-        "calls": 2041
+        "state": 667899573,
+        "calls": 2124
       }
     },
     {
@@ -568,10 +561,10 @@
           "s": 76
         }
       ],
-      "total_frames": 4581,
+      "total_frames": 4544,
       "rng_end": {
-        "state": 3099752810,
-        "calls": 6829
+        "state": 1628962176,
+        "calls": 6791
       }
     },
     {
@@ -847,7 +840,7 @@
       "level_num": 25,
       "level_file": "level25.rl2",
       "route_input_sha256": "846268B3A8021E4A53B795C034B26AB0076E055D65B7D3CF29F414ED5D528EA6",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -860,14 +853,33 @@
         {
           "n": "blue key",
           "s": 12
+        },
+        {
+          "n": "gold key",
+          "s": 23
+        },
+        {
+          "n": "red key",
+          "s": 34
+        },
+        {
+          "n": "boss",
+          "s": 58
+        },
+        {
+          "n": "pass-through 3",
+          "s": 59
+        },
+        {
+          "n": "exit",
+          "s": 72
         }
       ],
-      "total_frames": 1650,
+      "total_frames": 4328,
       "rng_end": {
-        "state": 2881533255,
-        "calls": 418
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 404455680,
+        "calls": 2311
+      }
     },
     {
       "level_num": -1,

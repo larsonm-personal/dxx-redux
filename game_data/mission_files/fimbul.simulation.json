@@ -118,11 +118,16 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4829,
+      "objectives": [
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 21
+        }
+      ],
+      "total_frames": 6435,
       "rng_end": {
-        "state": 78769249,
-        "calls": 672
+        "state": 441395351,
+        "calls": 1362
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

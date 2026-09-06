@@ -1735,6 +1735,64 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 	vm_vec_sub(&norm_vec_to_goal, goal_point, &cur_pos);
 	vm_vec_normalize_quick(&norm_vec_to_goal);
 
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	/* Track actual motion between steering updates, not commanded velocity */
+	static object *portal_actor;
+	static int portal_signature;
+	static vms_vector portal_last_pos;
+	static fix64 portal_last_time;
+	static fix portal_still_time;
+	int portal_stalled = 0;
+	if (robptr->companion) {
+		const fix64 elapsed = GameTime64 - portal_last_time;
+		if (Escort_route_goal.active && portal_actor == objp &&
+		    portal_signature == objp->signature && elapsed > 0 && elapsed <= F1_0 / 4 &&
+		    vm_vec_dist(&objp->pos, &portal_last_pos) <= F1_0 / 64)
+			portal_still_time = min(F1_0, portal_still_time + (fix)elapsed);
+		else
+			portal_still_time = 0;
+		portal_actor = objp;
+		portal_signature = objp->signature;
+		portal_last_pos = objp->pos;
+		portal_last_time = GameTime64;
+		portal_stalled = portal_still_time >= F1_0 / 4;
+	}
+	/* A clear waypoint can still be approached with wall-bound momentum.
+	 * If the next motion hits a portal rim, align through its clear center
+	 * before blending steering. Keep the route cursor and full radius */
+	if (robptr->companion && Escort_route_goal.active && portal_stalled &&
+	    objp->ctype.ai_info.hide_index >= 0 &&
+	    objp->ctype.ai_info.cur_path_index >= 0 &&
+	    objp->ctype.ai_info.cur_path_index < objp->ctype.ai_info.path_length &&
+	    objp->ctype.ai_info.hide_index + objp->ctype.ai_info.cur_path_index < MAX_POINT_SEGS &&
+	    guidebot_route_waypoint_leg_clear(objp, &objp->pos, objp->segnum, goal_point)) {
+		vms_vector next;
+		fvi_query query;
+		fvi_info hit;
+		vm_vec_scale_add(&next, &objp->pos, &cur_vel, FrameTime * 2);
+		memset(&query, 0, sizeof(query));
+		memset(&hit, 0, sizeof(hit));
+		query.p0 = &objp->pos;
+		query.p1 = &next;
+		query.startseg = objp->segnum;
+		query.rad = objp->size;
+		query.thisobjnum = objp - Objects;
+		if (find_vector_intersection(&query, &hit) == HIT_WALL) {
+			const int nextseg = Point_segs[objp->ctype.ai_info.hide_index + objp->ctype.ai_info.cur_path_index].segnum;
+			const int side = nextseg >= 0 && nextseg <= Highest_segment_index && nextseg != objp->segnum
+			    ? find_connect_side(&Segments[nextseg], &Segments[objp->segnum]) : -1;
+			if (side >= 0 && (WALL_IS_DOORWAY(&Segments[objp->segnum], side) & WID_FLY_FLAG)) {
+				vms_vector center;
+				compute_center_point_on_side(&center, &Segments[objp->segnum], side);
+				if (guidebot_route_waypoint_leg_clear(objp, &objp->pos, objp->segnum, &center)) {
+					vm_vec_sub(&norm_vec_to_goal, &center, &objp->pos);
+					vm_vec_normalize_quick(&norm_vec_to_goal);
+					vm_vec_zero(&cur_vel);
+				}
+			}
+		}
+	}
+#endif
 	norm_cur_vel = cur_vel;
 	vm_vec_normalize_quick(&norm_cur_vel);
 

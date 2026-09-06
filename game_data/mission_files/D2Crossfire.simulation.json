@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 8,
+    "ok": 9,
     "failed": 2,
-    "timeout": 9
+    "timeout": 8
   },
   "levels": [
     {
@@ -83,18 +83,50 @@
       "level_num": 3,
       "level_file": "rembasin.rl2",
       "route_input_sha256": "224D9B87EDADDF95788780EC9A2FAF00923706856F855D7F4792C5AF10AA9346",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4923,
+      "objectives": [
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 21
+        },
+        {
+          "n": "gold key",
+          "s": 58
+        },
+        {
+          "n": "fly-through 2",
+          "s": 112
+        },
+        {
+          "n": "fly-through 3",
+          "s": 114
+        },
+        {
+          "n": "red key",
+          "s": 147
+        },
+        {
+          "n": "fly-through 5",
+          "s": 176
+        },
+        {
+          "n": "boss",
+          "s": 184
+        },
+        {
+          "n": "exit",
+          "s": 234
+        }
+      ],
+      "total_frames": 14067,
       "rng_end": {
-        "state": 3108881716,
-        "calls": 739
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 688298113,
+        "calls": 7040
+      }
     },
     {
       "level_num": 4,
@@ -343,10 +375,10 @@
           "s": 40
         }
       ],
-      "total_frames": 2372,
+      "total_frames": 2396,
       "rng_end": {
-        "state": 1692656121,
-        "calls": 2632
+        "state": 3338075996,
+        "calls": 2843
       }
     },
     {

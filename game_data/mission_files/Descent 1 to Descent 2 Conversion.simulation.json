@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 24,
-    "timeout": 3
+    "ok": 25,
+    "timeout": 2
   },
   "levels": [
     {
@@ -718,7 +718,7 @@
       "level_num": 20,
       "level_file": "level20.rl2",
       "route_input_sha256": "E87D4B97A1A2982155F57654F2CEDD08BB8252CDDC95AD9BE4C5FD75F139D222",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -727,14 +727,29 @@
         {
           "n": "blue key",
           "s": 6
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 12
+        },
+        {
+          "n": "red key",
+          "s": 20
+        },
+        {
+          "n": "reactor",
+          "s": 25
+        },
+        {
+          "n": "exit",
+          "s": 29
         }
       ],
-      "total_frames": 4317,
+      "total_frames": 1711,
       "rng_end": {
-        "state": 3154970640,
-        "calls": 951
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 2799845403,
+        "calls": 2286
+      }
     },
     {
       "level_num": 21,

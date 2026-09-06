@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 12,
+    "ok": 13,
     "failed": 2,
-    "timeout": 9
+    "timeout": 8
   },
   "levels": [
     {
@@ -89,10 +89,10 @@
           "s": 67
         }
       ],
-      "total_frames": 7896,
+      "total_frames": 10139,
       "rng_end": {
-        "state": 3374144444,
-        "calls": 2875
+        "state": 3962036573,
+        "calls": 4324
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -132,15 +132,15 @@
         },
         {
           "n": "gold key",
-          "s": 88
+          "s": 87
         },
         {
           "n": "switch 12",
-          "s": 93
+          "s": 92
         },
         {
           "n": "red key",
-          "s": 111
+          "s": 110
         },
         {
           "n": "boss",
@@ -148,13 +148,13 @@
         },
         {
           "n": "exit",
-          "s": 135
+          "s": 134
         }
       ],
-      "total_frames": 8089,
+      "total_frames": 8068,
       "rng_end": {
-        "state": 2955309015,
-        "calls": 4626
+        "state": 3184915598,
+        "calls": 4665
       }
     },
     {
@@ -308,7 +308,7 @@
           "s": 81
         }
       ],
-      "total_frames": 4847,
+      "total_frames": 4846,
       "rng_end": {
         "state": 4289724122,
         "calls": 4093
@@ -674,12 +674,20 @@
         {
           "n": "switch 4",
           "s": 39
+        },
+        {
+          "n": "hidden door",
+          "s": 50
+        },
+        {
+          "n": "reactor",
+          "s": 54
         }
       ],
-      "total_frames": 6178,
+      "total_frames": 7148,
       "rng_end": {
-        "state": 3071740085,
-        "calls": 1612
+        "state": 3744405731,
+        "calls": 1958
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -766,7 +774,7 @@
       "level_num": -4,
       "level_file": "Secret4.rl2",
       "route_input_sha256": "0DC9C2D60C73670BDB9B2139ABD98BABAD931BE0856D26DEDBF77283288446CC",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -775,14 +783,17 @@
         {
           "n": "reactor",
           "s": 12
+        },
+        {
+          "n": "exit",
+          "s": 25
         }
       ],
-      "total_frames": 4589,
+      "total_frames": 1473,
       "rng_end": {
-        "state": 341699579,
-        "calls": 1294
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3959185378,
+        "calls": 1301
+      }
     },
     {
       "level_num": -5,

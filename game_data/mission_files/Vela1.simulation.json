@@ -30,54 +30,54 @@
         },
         {
           "n": "gold key",
-          "s": 36
+          "s": 38
         },
         {
           "n": "switch 29",
-          "s": 41
+          "s": 43
         },
         {
           "n": "switch 32",
-          "s": 60
+          "s": 62
         },
         {
           "n": "switch 35",
-          "s": 68
+          "s": 70
         },
         {
           "n": "fly-through 33",
-          "s": 71
+          "s": 73
         },
         {
           "n": "switch 36",
-          "s": 80
+          "s": 82
         },
         {
           "n": "switch 37",
-          "s": 81
-        },
-        {
-          "n": "switch 38",
           "s": 83
         },
         {
-          "n": "switch 40",
-          "s": 105
+          "n": "switch 38",
+          "s": 85
         },
         {
-          "n": "red key",
+          "n": "switch 40",
           "s": 107
         },
         {
-          "n": "hidden door",
-          "s": 131
+          "n": "red key",
+          "s": 109
         },
         {
           "n": "hidden door",
-          "s": 132
+          "s": 133
+        },
+        {
+          "n": "hidden door",
+          "s": 134
         }
       ],
-      "total_frames": 8399,
+      "total_frames": 8508,
       "rng_end": {
         "state": 2171043584,
         "calls": 4871

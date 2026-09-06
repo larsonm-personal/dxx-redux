@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 5,
+    "ok": 6,
     "failed": 2,
-    "timeout": 8
+    "timeout": 7
   },
   "levels": [
     {
@@ -136,17 +136,17 @@
         },
         {
           "n": "reactor",
-          "s": 92
+          "s": 80
         },
         {
           "n": "exit",
-          "s": 96
+          "s": 84
         }
       ],
-      "total_frames": 5745,
+      "total_frames": 5043,
       "rng_end": {
-        "state": 3726344032,
-        "calls": 2343
+        "state": 1594953884,
+        "calls": 2267
       }
     },
     {
@@ -221,18 +221,50 @@
       "level_num": 7,
       "level_file": "cefispar.rl2",
       "route_input_sha256": "1279E8E942DDC52EA2FE72ADC59DDCB218C9EB7641DEEA152C921D23753FF0BA",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4193,
+      "objectives": [
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 9
+        },
+        {
+          "n": "switch 2",
+          "s": 21
+        },
+        {
+          "n": "gold key",
+          "s": 50
+        },
+        {
+          "n": "switch 12",
+          "s": 92
+        },
+        {
+          "n": "switch 13",
+          "s": 97
+        },
+        {
+          "n": "red key",
+          "s": 132
+        },
+        {
+          "n": "boss",
+          "s": 165
+        },
+        {
+          "n": "exit",
+          "s": 195
+        }
+      ],
+      "total_frames": 11719,
       "rng_end": {
-        "state": 3524531733,
-        "calls": 492
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1411159983,
+        "calls": 7994
+      }
     },
     {
       "level_num": 8,
@@ -258,7 +290,7 @@
         },
         {
           "n": "red key",
-          "s": 51
+          "s": 50
         },
         {
           "n": "reactor",
@@ -269,10 +301,10 @@
           "s": 77
         }
       ],
-      "total_frames": 4625,
+      "total_frames": 4647,
       "rng_end": {
-        "state": 3402857454,
-        "calls": 4185
+        "state": 643223998,
+        "calls": 4041
       }
     },
     {

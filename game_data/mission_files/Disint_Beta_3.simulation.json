@@ -8,8 +8,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 6,
-    "failed": 5,
-    "timeout": 4,
+    "failed": 6,
+    "timeout": 3,
     "unsupported": 2
   },
   "levels": [
@@ -156,7 +156,7 @@
       "level_num": 6,
       "level_file": "06delta.rl2",
       "route_input_sha256": "4678706214829D7CB9802CF093BD5AD936E7B35A0CA8B5DC820ECB1D0881B8AF",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -165,14 +165,18 @@
         {
           "n": "fly-through 1",
           "s": 4
+        },
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 9
         }
       ],
-      "total_frames": 967,
+      "total_frames": 515,
       "rng_end": {
-        "state": 1822187647,
-        "calls": 874
+        "state": 1495569341,
+        "calls": 900
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 7,

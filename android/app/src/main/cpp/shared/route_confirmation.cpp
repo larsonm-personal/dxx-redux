@@ -916,9 +916,7 @@ void apply_incidental_crossed_trigger(object *actor)
 	int trigger_num;
 	if (!actor || State.previous_actor_seg < 0 ||
 	    State.previous_actor_seg >= Num_segments ||
-	    actor->segnum == State.previous_actor_seg ||
-	    State.step.activation_kind !=
-	        LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_REACTOR)
+	    actor->segnum == State.previous_actor_seg)
 		return;
 	side = find_connect_side(&Segments[actor->segnum],
 	                         &Segments[State.previous_actor_seg]);
@@ -931,7 +929,9 @@ void apply_incidental_crossed_trigger(object *actor)
 	if (trigger_num < 0 || trigger_num >= Num_triggers)
 		return;
 	/* Incidental OPEN_WALL crossings are persistent route state that the
-	 * strategic plan assumes after traversing a longer leg.  Other trigger
+	 * strategic plan assumes after traversing any leg, including key pickups.
+	 * Limiting these to reactor objectives misses earlier cage-opening effects.
+	 * Other trigger
 	 * kinds can toggle or affect unrelated gameplay and remain explicit route
 	 * objectives. */
 	if (Triggers[trigger_num].type != TT_OPEN_WALL)

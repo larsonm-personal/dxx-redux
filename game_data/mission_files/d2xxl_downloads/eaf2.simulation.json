@@ -7,9 +7,10 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 6,
+    "ok": 7,
     "failed": 1,
-    "timeout": 3
+    "timeout": 1,
+    "route_mismatch": 1
   },
   "levels": [
     {
@@ -57,7 +58,7 @@
       "level_num": 2,
       "level_file": "Enc2-2.rl2",
       "route_input_sha256": "D8E82A24B5286E70099B0DFBA5B491F9F595ED4A4EF01A55CF8E3F97E1CCF59C",
-      "status": "timeout",
+      "status": "route_mismatch",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -70,14 +71,30 @@
         {
           "n": "switch 5",
           "s": 16
+        },
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 21
+        },
+        {
+          "n": "switch 4",
+          "s": 34
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 46
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 65
         }
       ],
-      "total_frames": 4906,
+      "total_frames": 3879,
       "rng_end": {
-        "state": 1868926584,
-        "calls": 1327
+        "state": 1259989467,
+        "calls": 7982
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live objective sequence differs from route input"
     },
     {
       "level_num": 3,
@@ -235,7 +252,7 @@
       "level_num": 7,
       "level_file": "Enc2-7.rl2",
       "route_input_sha256": "14EBFEBC0EEE82284BA0406BCDCB06E355E91C2DF15144886AADA2355FE754A7",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -244,14 +261,45 @@
         {
           "n": "switch 23",
           "s": 7
+        },
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 20
+        },
+        {
+          "n": "switch 24",
+          "s": 26
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 38
+        },
+        {
+          "n": "switch 25",
+          "s": 44
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 66
+        },
+        {
+          "n": "reactor",
+          "s": 81
+        },
+        {
+          "n": "switch 22",
+          "s": 96
+        },
+        {
+          "n": "exit",
+          "s": 109
         }
       ],
-      "total_frames": 4838,
+      "total_frames": 6537,
       "rng_end": {
-        "state": 3869925848,
-        "calls": 2127
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3117269441,
+        "calls": 13376
+      }
     },
     {
       "level_num": 8,
@@ -304,10 +352,10 @@
           "s": 125
         }
       ],
-      "total_frames": 7492,
+      "total_frames": 7513,
       "rng_end": {
-        "state": 3505200513,
-        "calls": 7808
+        "state": 4123504779,
+        "calls": 7806
       }
     },
     {

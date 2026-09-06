@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
+    "ok": 5,
     "failed": 4,
-    "timeout": 5,
+    "timeout": 3,
     "unsupported": 2
   },
   "levels": [
@@ -79,17 +79,29 @@
         },
         {
           "n": "switch 6",
-          "s": 74
+          "s": 73
         },
         {
           "n": "fly-through 7",
-          "s": 88
+          "s": 89
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 98
+        },
+        {
+          "n": "reactor",
+          "s": 122
+        },
+        {
+          "n": "fly-through 9",
+          "s": 123
         }
       ],
-      "total_frames": 11722,
+      "total_frames": 11073,
       "rng_end": {
-        "state": 606577268,
-        "calls": 3235
+        "state": 23138853,
+        "calls": 5468
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -97,7 +109,7 @@
       "level_num": 3,
       "level_file": "reactorc.rl2",
       "route_input_sha256": "5DF0E8BC3DB3F01B8A7A7E404AA9E401D65EC39869CC462429578FD3A86ACE0A",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -181,23 +193,26 @@
         },
         {
           "n": "red key",
-          "s": 173
+          "s": 175
         },
         {
           "n": "reactor",
-          "s": 202
+          "s": 201
         },
         {
           "n": "switch 3",
-          "s": 206
+          "s": 208
+        },
+        {
+          "n": "exit",
+          "s": 227
         }
       ],
-      "total_frames": 16380,
+      "total_frames": 13597,
       "rng_end": {
-        "state": 1719405509,
-        "calls": 4796
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 4053660929,
+        "calls": 4864
+      }
     },
     {
       "level_num": 4,
@@ -235,7 +250,7 @@
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 88
+          "s": 87
         },
         {
           "n": "red key",
@@ -251,13 +266,13 @@
         },
         {
           "n": "exit",
-          "s": 172
+          "s": 170
         }
       ],
-      "total_frames": 10305,
+      "total_frames": 10226,
       "rng_end": {
-        "state": 580285368,
-        "calls": 4847
+        "state": 622276768,
+        "calls": 4839
       }
     },
     {
@@ -289,8 +304,8 @@
       ],
       "total_frames": 5400,
       "rng_end": {
-        "state": 2954493520,
-        "calls": 1143
+        "state": 1832367727,
+        "calls": 1146
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -348,21 +363,21 @@
         },
         {
           "n": "red key",
-          "s": 65
+          "s": 62
         },
         {
           "n": "reactor",
-          "s": 86
+          "s": 83
         },
         {
           "n": "exit",
-          "s": 98
+          "s": 95
         }
       ],
-      "total_frames": 5899,
+      "total_frames": 5725,
       "rng_end": {
-        "state": 1631271608,
-        "calls": 4079
+        "state": 1334084737,
+        "calls": 3968
       }
     },
     {
@@ -425,7 +440,7 @@
       "level_num": 11,
       "level_file": "flw.rl2",
       "route_input_sha256": "78D2ADE584C8FA024CC03BED567B3C841271D693C8DEE05AC262A35D4BCCB66B",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -478,14 +493,21 @@
         {
           "n": "reactor",
           "s": 69
+        },
+        {
+          "n": "hidden door",
+          "s": 86
+        },
+        {
+          "n": "exit",
+          "s": 86
         }
       ],
-      "total_frames": 5363,
+      "total_frames": 5177,
       "rng_end": {
-        "state": 3609107594,
-        "calls": 3597
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 1371983276,
+        "calls": 3723
+      }
     },
     {
       "level_num": -1,

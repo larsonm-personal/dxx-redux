@@ -312,23 +312,23 @@
       "objectives": [
         {
           "n": "destroy robot carrying blue key",
-          "s": 13
+          "s": 7
         },
         {
           "n": "gold key",
-          "s": 23
+          "s": 17
         },
         {
           "n": "red key",
-          "s": 32
+          "s": 25
         }
       ],
-      "total_frames": 5821,
+      "total_frames": 5546,
       "rng_end": {
-        "state": 344858293,
-        "calls": 76
+        "state": 2673245591,
+        "calls": 82
       },
-      "problem": "route confirmation exceeded 97-second simulation budget"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 12,
@@ -814,25 +814,25 @@
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 8
+          "s": 9
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 11
+          "s": 12
         },
         {
           "n": "reactor",
-          "s": 15
+          "s": 16
         },
         {
           "n": "exit",
-          "s": 18
+          "s": 21
         }
       ],
-      "total_frames": 1080,
+      "total_frames": 1248,
       "rng_end": {
-        "state": 2122112351,
-        "calls": 138
+        "state": 1526854643,
+        "calls": 150
       }
     },
     {

@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 12,
-    "timeout": 5,
+    "ok": 13,
+    "timeout": 4,
     "unsupported": 1
   },
   "levels": [
@@ -300,25 +300,25 @@
         },
         {
           "n": "switch 10",
-          "s": 47
+          "s": 46
         },
         {
           "n": "blue key",
-          "s": 88
+          "s": 64
         },
         {
           "n": "switch 14",
-          "s": 94
+          "s": 72
         },
         {
           "n": "exit",
-          "s": 101
+          "s": 79
         }
       ],
-      "total_frames": 6060,
+      "total_frames": 4725,
       "rng_end": {
-        "state": 3816800785,
-        "calls": 2672
+        "state": 1661827568,
+        "calls": 2647
       }
     },
     {
@@ -353,7 +353,7 @@
         },
         {
           "n": "red key",
-          "s": 111
+          "s": 110
         },
         {
           "n": "boss",
@@ -364,10 +364,10 @@
           "s": 146
         }
       ],
-      "total_frames": 8747,
+      "total_frames": 8766,
       "rng_end": {
-        "state": 3419525100,
-        "calls": 5963
+        "state": 1128553242,
+        "calls": 6333
       }
     },
     {
@@ -402,37 +402,37 @@
         },
         {
           "n": "switch 10",
-          "s": 77
+          "s": 75
         },
         {
           "n": "gold key",
-          "s": 84
+          "s": 82
         },
         {
           "n": "switch 17",
-          "s": 84
+          "s": 82
         },
         {
           "n": "red key",
-          "s": 96
+          "s": 94
         },
         {
           "n": "pass-through 12",
-          "s": 108
+          "s": 106
         },
         {
           "n": "reactor",
-          "s": 110
+          "s": 107
         },
         {
           "n": "exit",
-          "s": 132
+          "s": 130
         }
       ],
-      "total_frames": 7912,
+      "total_frames": 7798,
       "rng_end": {
-        "state": 393258073,
-        "calls": 4840
+        "state": 4129720846,
+        "calls": 4793
       }
     },
     {
@@ -653,7 +653,7 @@
       "level_num": 14,
       "level_file": "excidium.rl2",
       "route_input_sha256": "C8001B2A2EE77D16AD82064FE9EDFCCC505B281E7A04996BDF1C784EEE357847",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -678,14 +678,33 @@
         {
           "n": "destroy robot carrying gold key",
           "s": 79
+        },
+        {
+          "n": "fly-through 19",
+          "s": 104
+        },
+        {
+          "n": "switch 5",
+          "s": 104
+        },
+        {
+          "n": "switch 3",
+          "s": 112
+        },
+        {
+          "n": "boss",
+          "s": 126
+        },
+        {
+          "n": "exit",
+          "s": 135
         }
       ],
-      "total_frames": 6541,
+      "total_frames": 8096,
       "rng_end": {
-        "state": 1277895854,
-        "calls": 10905
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 3567251789,
+        "calls": 12148
+      }
     },
     {
       "level_num": 15,

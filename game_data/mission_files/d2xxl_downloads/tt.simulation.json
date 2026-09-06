@@ -5,16 +5,16 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "ok",
   "level_counts": {
-    "timeout": 1
+    "ok": 1
   },
   "levels": [
     {
       "level_num": 0,
       "level_file": "TT.rl2",
       "route_input_sha256": "C837D874E419A297F7C8C0CAA3C1A9F44A7F013B2C2C6CF7119FA363D875008F",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -27,14 +27,41 @@
         {
           "n": "gold key",
           "s": 21
+        },
+        {
+          "n": "fly-through 11",
+          "s": 57
+        },
+        {
+          "n": "switch 13",
+          "s": 59
+        },
+        {
+          "n": "blue key",
+          "s": 75
+        },
+        {
+          "n": "switch 7",
+          "s": 92
+        },
+        {
+          "n": "red key",
+          "s": 112
+        },
+        {
+          "n": "boss",
+          "s": 143
+        },
+        {
+          "n": "exit",
+          "s": 148
         }
       ],
-      "total_frames": 5028,
+      "total_frames": 8867,
       "rng_end": {
-        "state": 3486738872,
-        "calls": 1263
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3556353613,
+        "calls": 4724
+      }
     }
   ]
 }

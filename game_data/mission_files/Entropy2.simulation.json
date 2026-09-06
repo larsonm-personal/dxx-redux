@@ -147,14 +147,18 @@
         {
           "n": "switch 2",
           "s": 21
+        },
+        {
+          "n": "reactor",
+          "s": 29
         }
       ],
-      "total_frames": 2436,
+      "total_frames": 5338,
       "rng_end": {
-        "state": 4107399316,
-        "calls": 1027
+        "state": 1611003340,
+        "calls": 2027
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 5,
@@ -244,10 +248,10 @@
           "s": 145
         }
       ],
-      "total_frames": 8680,
+      "total_frames": 8691,
       "rng_end": {
-        "state": 3869128144,
-        "calls": 3831
+        "state": 2844557587,
+        "calls": 3958
       }
     }
   ]

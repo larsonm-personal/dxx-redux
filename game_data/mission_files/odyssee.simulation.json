@@ -70,7 +70,7 @@
         },
         {
           "n": "switch 9",
-          "s": 163
+          "s": 164
         },
         {
           "n": "hidden door",
@@ -85,10 +85,10 @@
           "s": 229
         }
       ],
-      "total_frames": 13725,
+      "total_frames": 13761,
       "rng_end": {
-        "state": 3840928188,
-        "calls": 9531
+        "state": 1203579134,
+        "calls": 9609
       }
     },
     {
@@ -135,13 +135,13 @@
         },
         {
           "n": "exit",
-          "s": 106
+          "s": 105
         }
       ],
-      "total_frames": 6340,
+      "total_frames": 6313,
       "rng_end": {
-        "state": 4141145027,
-        "calls": 4294
+        "state": 3390489385,
+        "calls": 4248
       }
     }
   ]

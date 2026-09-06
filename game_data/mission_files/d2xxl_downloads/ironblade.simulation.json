@@ -29,13 +29,13 @@
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 24
+          "s": 25
         }
       ],
-      "total_frames": 1457,
+      "total_frames": 1494,
       "rng_end": {
-        "state": 3269224778,
-        "calls": 77
+        "state": 3545811950,
+        "calls": 89
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },

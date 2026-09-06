@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 1,
+    "ok": 2,
     "failed": 1,
-    "timeout": 5
+    "timeout": 4
   },
   "levels": [
     {
@@ -63,12 +63,16 @@
         {
           "n": "gold key",
           "s": 45
+        },
+        {
+          "n": "switch 19",
+          "s": 70
         }
       ],
-      "total_frames": 5237,
+      "total_frames": 5191,
       "rng_end": {
-        "state": 1657337217,
-        "calls": 1664
+        "state": 2972838906,
+        "calls": 2397
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -113,7 +117,7 @@
       "level_num": 4,
       "level_file": "omicron.rl2",
       "route_input_sha256": "73E2E4E72B3D0D2D83587A0348F4D167183D892E0B53073E9A351AF84C27550B",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -154,14 +158,25 @@
         {
           "n": "switch 13",
           "s": 63
+        },
+        {
+          "n": "switch 38",
+          "s": 81
+        },
+        {
+          "n": "reactor",
+          "s": 89
+        },
+        {
+          "n": "exit",
+          "s": 104
         }
       ],
-      "total_frames": 8117,
+      "total_frames": 6210,
       "rng_end": {
-        "state": 778545630,
-        "calls": 2089
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1346256752,
+        "calls": 3799
+      }
     },
     {
       "level_num": 5,
@@ -184,8 +199,8 @@
       ],
       "total_frames": 6260,
       "rng_end": {
-        "state": 3071740085,
-        "calls": 1612
+        "state": 2926329220,
+        "calls": 1619
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },

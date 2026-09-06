@@ -8,8 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 7,
-    "timeout": 2
+    "ok": 8,
+    "timeout": 1
   },
   "levels": [
     {
@@ -305,7 +305,7 @@
       "level_num": 9,
       "level_file": "eris0009.rdl",
       "route_input_sha256": "AB929AA01455FF2AD8C199152FCB752C516AE4FE56FB3C7CBDFB8D382099BE5F",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -313,15 +313,30 @@
       "objectives": [
         {
           "n": "destroy robot carrying gold key",
-          "s": 8
+          "s": 6
+        },
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 15
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 21
+        },
+        {
+          "n": "boss",
+          "s": 39
+        },
+        {
+          "n": "exit",
+          "s": 44
         }
       ],
-      "total_frames": 4707,
+      "total_frames": 2648,
       "rng_end": {
-        "state": 510737498,
-        "calls": 125
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 368913805,
+        "calls": 308
+      }
     }
   ]
 }

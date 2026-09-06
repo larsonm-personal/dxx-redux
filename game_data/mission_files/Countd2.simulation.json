@@ -91,8 +91,8 @@
       ],
       "total_frames": 12481,
       "rng_end": {
-        "state": 4264279693,
-        "calls": 141364
+        "state": 388144464,
+        "calls": 141687
       },
       "problem": "route confirmation exceeded 208-second simulation budget"
     },
@@ -184,13 +184,13 @@
         },
         {
           "n": "red key",
-          "s": 67
+          "s": 62
         }
       ],
       "total_frames": 12721,
       "rng_end": {
-        "state": 1153677533,
-        "calls": 130404
+        "state": 3667750723,
+        "calls": 134470
       },
       "problem": "route confirmation exceeded 212-second simulation budget"
     },

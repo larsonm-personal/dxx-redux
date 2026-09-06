@@ -23,25 +23,25 @@
         "objectives": [
           {
             "n": "destroy robot carrying blue key",
-            "s": 17
+            "s": 14
           },
           {
             "n": "gold key",
-            "s": 35
+            "s": 32
           },
           {
             "n": "fly-through 12",
-            "s": 47
+            "s": 44
           },
           {
             "n": "fly-through 30",
-            "s": 49
+            "s": 46
           }
         ],
-        "total_frames": 6808,
+        "total_frames": 6649,
         "rng_end": {
-          "state": 2914670869,
-          "calls": 1772
+          "state": 2748183959,
+          "calls": 2130
         },
         "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
@@ -239,16 +239,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "gigaloma.rl2",
         "route_input_sha256": "0D08CBD68CE431AAF11E2FC12685FC889A395156D4A0B793EFCE4645C715CF45",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -261,14 +261,29 @@
           {
             "n": "gold key",
             "s": 21
+          },
+          {
+            "n": "red key",
+            "s": 31
+          },
+          {
+            "n": "switch 1",
+            "s": 33
+          },
+          {
+            "n": "boss",
+            "s": 43
+          },
+          {
+            "n": "exit",
+            "s": 53
           }
         ],
-        "total_frames": 5377,
+        "total_frames": 3164,
         "rng_end": {
-          "state": 3246236687,
-          "calls": 3290
-        },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+          "state": 896927647,
+          "calls": 4682
+        }
       }
     ]
   },

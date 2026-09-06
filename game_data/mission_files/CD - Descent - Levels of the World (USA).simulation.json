@@ -181,18 +181,18 @@
           },
           {
             "n": "red key",
-            "s": 36
+            "s": 39
           },
           {
             "n": "reactor",
-            "s": 51
+            "s": 54
           },
           {
             "n": "exit",
-            "s": 66
+            "s": 68
           }
         ],
-        "total_frames": 3931,
+        "total_frames": 4094,
         "rng_end": {
           "state": 2122112351,
           "calls": 138
@@ -1747,7 +1747,7 @@
         "objectives": [
           {
             "n": "destroy robot carrying blue key",
-            "s": 6
+            "s": 5
           },
           {
             "n": "gold key",
@@ -1755,18 +1755,18 @@
           },
           {
             "n": "red key",
-            "s": 51
+            "s": 50
           },
           {
             "n": "reactor",
-            "s": 63
+            "s": 62
           },
           {
             "n": "exit",
             "s": 73
           }
         ],
-        "total_frames": 4373,
+        "total_frames": 4353,
         "rng_end": {
           "state": 2883693444,
           "calls": 83
@@ -2483,16 +2483,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "lil-dev.rdl",
         "route_input_sha256": "19BC56D8EE2DF003C3C63A7F3F3C74E89B31C24F25861E608CFA65DA5F279C9D",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -2500,15 +2500,30 @@
         "objectives": [
           {
             "n": "destroy robot carrying gold key",
-            "s": 23
+            "s": 4
+          },
+          {
+            "n": "destroy robot carrying blue key",
+            "s": 12
+          },
+          {
+            "n": "destroy robot carrying red key",
+            "s": 22
+          },
+          {
+            "n": "reactor",
+            "s": 33
+          },
+          {
+            "n": "exit",
+            "s": 34
           }
         ],
-        "total_frames": 5531,
+        "total_frames": 2042,
         "rng_end": {
-          "state": 2780109717,
-          "calls": 108
-        },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+          "state": 1303781742,
+          "calls": 217
+        }
       }
     ]
   },
@@ -3584,27 +3599,47 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "Pit.rdl",
         "route_input_sha256": "C47A7FA82FAB4CBE693466264E0A0243AC9E709589FA2A891381814E09814D25",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 4001,
+        "objectives": [
+          {
+            "n": "destroy robot carrying blue key",
+            "s": 6
+          },
+          {
+            "n": "gold key",
+            "s": 18
+          },
+          {
+            "n": "destroy robot carrying red key",
+            "s": 36
+          },
+          {
+            "n": "boss",
+            "s": 36
+          },
+          {
+            "n": "exit",
+            "s": 40
+          }
+        ],
+        "total_frames": 2412,
         "rng_end": {
-          "state": 684462146,
-          "calls": 53
-        },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+          "state": 3940765736,
+          "calls": 191
+        }
       }
     ]
   },
@@ -3676,10 +3711,10 @@
             "s": 16
           }
         ],
-        "total_frames": 1848,
+        "total_frames": 1867,
         "rng_end": {
-          "state": 3212330324,
-          "calls": 67
+          "state": 208521688,
+          "calls": 79
         },
         "problem": "physical route frontier did not open after 8 interaction attempts"
       }
@@ -3783,7 +3818,7 @@
           },
           {
             "n": "destroy robot carrying blue key",
-            "s": 15
+            "s": 14
           },
           {
             "n": "fly-through 4",
@@ -3798,7 +3833,7 @@
             "s": 38
           }
         ],
-        "total_frames": 3180,
+        "total_frames": 3179,
         "rng_end": {
           "state": 3758492830,
           "calls": 105
@@ -4027,21 +4062,21 @@
           },
           {
             "n": "destroy robot carrying red key",
-            "s": 63
+            "s": 20
           },
           {
             "n": "reactor",
-            "s": 74
+            "s": 31
           },
           {
             "n": "exit",
-            "s": 76
+            "s": 33
           }
         ],
-        "total_frames": 4552,
+        "total_frames": 1995,
         "rng_end": {
-          "state": 1023081650,
-          "calls": 133
+          "state": 1024943020,
+          "calls": 139
         }
       }
     ]
@@ -4253,37 +4288,37 @@
         "objectives": [
           {
             "n": "destroy robot carrying blue key",
-            "s": 43
+            "s": 16
           },
           {
             "n": "blastable wall",
-            "s": 56
+            "s": 29
           },
           {
             "n": "gold key",
-            "s": 58
+            "s": 31
           },
           {
             "n": "fly-through 0",
-            "s": 76
+            "s": 49
           },
           {
             "n": "red key",
-            "s": 77
+            "s": 50
           },
           {
             "n": "reactor",
-            "s": 87
+            "s": 60
           },
           {
             "n": "exit",
-            "s": 95
+            "s": 67
           }
         ],
-        "total_frames": 5683,
+        "total_frames": 4043,
         "rng_end": {
-          "state": 1160857300,
-          "calls": 195
+          "state": 2711556952,
+          "calls": 207
         }
       }
     ]
@@ -4779,7 +4814,7 @@
             "s": 68
           }
         ],
-        "total_frames": 4084,
+        "total_frames": 4070,
         "rng_end": {
           "state": 3684228113,
           "calls": 112
@@ -5000,14 +5035,18 @@
           {
             "n": "destroy robot carrying blue key",
             "s": 11
+          },
+          {
+            "n": "gold key",
+            "s": 42
           }
         ],
-        "total_frames": 5919,
+        "total_frames": 3222,
         "rng_end": {
-          "state": 3885567453,
-          "calls": 100
+          "state": 3871495338,
+          "calls": 109
         },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "problem": "physical route frontier did not open after 8 interaction attempts"
       }
     ]
   },
@@ -5079,7 +5118,7 @@
             "s": 19
           }
         ],
-        "total_frames": 5387,
+        "total_frames": 5388,
         "rng_end": {
           "state": 500965035,
           "calls": 94
@@ -5133,27 +5172,47 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "viper.rdl",
         "route_input_sha256": "EBC8B22134F8FBCD3DA4CF2D30796F5DD8B719A227274F5E94512D4FC2CBC991",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 4557,
+        "objectives": [
+          {
+            "n": "destroy robot carrying blue key",
+            "s": 12
+          },
+          {
+            "n": "destroy robot carrying gold key",
+            "s": 31
+          },
+          {
+            "n": "destroy robot carrying red key",
+            "s": 44
+          },
+          {
+            "n": "boss",
+            "s": 69
+          },
+          {
+            "n": "exit",
+            "s": 76
+          }
+        ],
+        "total_frames": 4550,
         "rng_end": {
-          "state": 1343201072,
-          "calls": 23
-        },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+          "state": 1814397249,
+          "calls": 192
+        }
       }
     ]
   },
@@ -5165,27 +5224,47 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "viper.rdl",
         "route_input_sha256": "A50D3FC89A1B1D9507856974589F4CF2F1C2A84E2C866D4932938C7E2562B731",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 4557,
+        "objectives": [
+          {
+            "n": "destroy robot carrying blue key",
+            "s": 12
+          },
+          {
+            "n": "destroy robot carrying gold key",
+            "s": 31
+          },
+          {
+            "n": "destroy robot carrying red key",
+            "s": 44
+          },
+          {
+            "n": "boss",
+            "s": 69
+          },
+          {
+            "n": "exit",
+            "s": 76
+          }
+        ],
+        "total_frames": 4550,
         "rng_end": {
-          "state": 1343201072,
-          "calls": 23
-        },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+          "state": 1814397249,
+          "calls": 192
+        }
       }
     ]
   },

@@ -8,8 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 6,
-    "timeout": 4
+    "ok": 7,
+    "timeout": 3
   },
   "levels": [
     {
@@ -201,18 +201,38 @@
       "level_num": 7,
       "level_file": "cefispar.rdl",
       "route_input_sha256": "AA2449D68F89748ACC4E03F1501DB33E0876E84E7ACB9EB1EF5815CE2F7FF6E3",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4276,
+      "objectives": [
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 11
+        },
+        {
+          "n": "gold key",
+          "s": 54
+        },
+        {
+          "n": "red key",
+          "s": 91
+        },
+        {
+          "n": "boss",
+          "s": 115
+        },
+        {
+          "n": "exit",
+          "s": 128
+        }
+      ],
+      "total_frames": 7674,
       "rng_end": {
-        "state": 835903122,
-        "calls": 37
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1047820095,
+        "calls": 170
+      }
     },
     {
       "level_num": 8,

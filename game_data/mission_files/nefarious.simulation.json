@@ -8,9 +8,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 8,
+    "ok": 9,
     "failed": 5,
-    "timeout": 6
+    "timeout": 5
   },
   "levels": [
     {
@@ -102,10 +102,10 @@
         },
         {
           "n": "exit",
-          "s": 77
+          "s": 76
         }
       ],
-      "total_frames": 4591,
+      "total_frames": 4585,
       "rng_end": {
         "state": 2029357497,
         "calls": 136
@@ -137,18 +137,38 @@
       "level_num": 6,
       "level_file": "nefar06.rdl",
       "route_input_sha256": "FAFF09AB4F9DB29F0A0A1CE392680E29EBBFE184730577D7FA4A73B9502D3426",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 6181,
+      "objectives": [
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 7
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 21
+        },
+        {
+          "n": "fly-through 0",
+          "s": 31
+        },
+        {
+          "n": "reactor",
+          "s": 33
+        },
+        {
+          "n": "exit",
+          "s": 35
+        }
+      ],
+      "total_frames": 2074,
       "rng_end": {
-        "state": 2058258651,
-        "calls": 46
-      },
-      "problem": "route confirmation exceeded 103-second simulation budget"
+        "state": 1526854643,
+        "calls": 150
+      }
     },
     {
       "level_num": 7,
@@ -555,7 +575,7 @@
           "s": 75
         }
       ],
-      "total_frames": 4472,
+      "total_frames": 4485,
       "rng_end": {
         "state": 510737498,
         "calls": 125

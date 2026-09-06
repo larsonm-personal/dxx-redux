@@ -85,7 +85,7 @@
           "s": 25
         }
       ],
-      "total_frames": 1499,
+      "total_frames": 1500,
       "rng_end": {
         "state": 470157467,
         "calls": 110
@@ -137,25 +137,25 @@
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 17
+          "s": 13
         },
         {
           "n": "red key",
-          "s": 34
+          "s": 28
         },
         {
           "n": "reactor",
-          "s": 55
+          "s": 48
         },
         {
           "n": "exit",
-          "s": 63
+          "s": 56
         }
       ],
-      "total_frames": 3758,
+      "total_frames": 3358,
       "rng_end": {
-        "state": 1598124042,
-        "calls": 141
+        "state": 3423541591,
+        "calls": 146
       }
     },
     {

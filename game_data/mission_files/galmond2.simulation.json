@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 8,
+    "ok": 9,
     "failed": 1,
-    "timeout": 3
+    "timeout": 2
   },
   "levels": [
     {
@@ -122,8 +122,8 @@
       ],
       "total_frames": 5851,
       "rng_end": {
-        "state": 3246992905,
-        "calls": 3256
+        "state": 1049440712,
+        "calls": 3231
       }
     },
     {
@@ -359,7 +359,7 @@
       "level_num": 8,
       "level_file": "MIRAND26.RL2",
       "route_input_sha256": "6A702553E4CE6D5FA8712048A8A228379A0A32F43021ED57F5E40FA3DA133041",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -403,19 +403,26 @@
         },
         {
           "n": "switch 2",
-          "s": 140
+          "s": 138
         },
         {
           "n": "switch 1",
-          "s": 140
+          "s": 138
+        },
+        {
+          "n": "reactor",
+          "s": 163
+        },
+        {
+          "n": "exit",
+          "s": 186
         }
       ],
-      "total_frames": 12079,
+      "total_frames": 11151,
       "rng_end": {
-        "state": 3637538869,
-        "calls": 4812
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 4138136676,
+        "calls": 7667
+      }
     },
     {
       "level_num": 9,

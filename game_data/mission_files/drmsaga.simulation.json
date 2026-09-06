@@ -9,14 +9,14 @@
   "level_counts": {
     "ok": 3,
     "failed": 1,
-    "unsupported": 1
+    "timeout": 1
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "drmtower.rl2",
       "route_input_sha256": "33E7458758D773766735FFDF9D47F2AEA6E007E0985F6E1B193F4C2105D7EC39",
-      "status": "unsupported",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -28,27 +28,19 @@
         },
         {
           "n": "blue key",
-          "s": 28
+          "s": 27
         },
         {
           "n": "gold key",
           "s": 48
-        },
-        {
-          "n": "red key",
-          "s": 71
-        },
-        {
-          "n": "reactor",
-          "s": 82
         }
       ],
-      "total_frames": 5087,
+      "total_frames": 7374,
       "rng_end": {
-        "state": 2003240718,
-        "calls": 2489
+        "state": 3938815745,
+        "calls": 2304
       },
-      "problem": "route objective activation is not supported"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 2,
@@ -86,10 +78,10 @@
         },
         {
           "n": "exit",
-          "s": 102
+          "s": 103
         }
       ],
-      "total_frames": 6144,
+      "total_frames": 6155,
       "rng_end": {
         "state": 1436102573,
         "calls": 3604

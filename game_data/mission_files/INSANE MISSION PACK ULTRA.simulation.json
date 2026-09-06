@@ -8,8 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 5,
-    "timeout": 3
+    "ok": 7,
+    "timeout": 1
   },
   "levels": [
     {
@@ -41,18 +41,30 @@
       "level_num": 2,
       "level_file": "brawl.rdl",
       "route_input_sha256": "E1F9D11310884400CFB5C746C3DE64A1FD95A7436EF1A2153514342777CFBC90",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4081,
+      "objectives": [
+        {
+          "n": "destroy robot carrying red key",
+          "s": 8
+        },
+        {
+          "n": "reactor",
+          "s": 13
+        },
+        {
+          "n": "exit",
+          "s": 14
+        }
+      ],
+      "total_frames": 859,
       "rng_end": {
-        "state": 2787170210,
-        "calls": 85
-      },
-      "problem": "route confirmation exceeded 68-second simulation budget"
+        "state": 924723277,
+        "calls": 116
+      }
     },
     {
       "level_num": 3,
@@ -66,22 +78,22 @@
       "objectives": [
         {
           "n": "destroy robot carrying blue key",
-          "s": 12
+          "s": 7
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 21
+          "s": 16
         },
         {
           "n": "reactor",
-          "s": 33
+          "s": 29
         },
         {
           "n": "exit",
-          "s": 37
+          "s": 32
         }
       ],
-      "total_frames": 2200,
+      "total_frames": 1920,
       "rng_end": {
         "state": 1024943020,
         "calls": 139
@@ -141,18 +153,30 @@
       "level_num": 6,
       "level_file": "bp48.rdl",
       "route_input_sha256": "FCF19E033BC7F7C668D316E9C156712C39E3003B205D23205BAABA5EF8920331",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 3841,
+      "objectives": [
+        {
+          "n": "destroy robot carrying red key",
+          "s": 8
+        },
+        {
+          "n": "boss",
+          "s": 17
+        },
+        {
+          "n": "exit",
+          "s": 18
+        }
+      ],
+      "total_frames": 1097,
       "rng_end": {
-        "state": 684462146,
-        "calls": 53
-      },
-      "problem": "route confirmation exceeded 64-second simulation budget"
+        "state": 2965106811,
+        "calls": 142
+      }
     },
     {
       "level_num": 7,
@@ -170,13 +194,13 @@
         },
         {
           "n": "boss",
-          "s": 16
+          "s": 17
         }
       ],
-      "total_frames": 1562,
+      "total_frames": 1572,
       "rng_end": {
-        "state": 1750011070,
-        "calls": 201
+        "state": 2711556952,
+        "calls": 207
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

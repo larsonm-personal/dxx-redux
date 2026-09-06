@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 23,
-    "timeout": 9
+    "ok": 24,
+    "timeout": 8
   },
   "levels": [
     {
@@ -292,25 +292,25 @@
         },
         {
           "n": "gold key",
-          "s": 31
+          "s": 32
         },
         {
           "n": "red key",
-          "s": 49
+          "s": 50
         },
         {
           "n": "reactor",
-          "s": 66
+          "s": 67
         },
         {
           "n": "exit",
-          "s": 71
+          "s": 72
         }
       ],
-      "total_frames": 4240,
+      "total_frames": 4301,
       "rng_end": {
-        "state": 4231662437,
-        "calls": 2588
+        "state": 1668760894,
+        "calls": 2633
       }
     },
     {
@@ -496,7 +496,7 @@
         },
         {
           "n": "gold key",
-          "s": 28
+          "s": 29
         },
         {
           "n": "red key",
@@ -508,13 +508,13 @@
         },
         {
           "n": "exit",
-          "s": 62
+          "s": 61
         }
       ],
-      "total_frames": 3692,
+      "total_frames": 3668,
       "rng_end": {
-        "state": 455709867,
-        "calls": 2654
+        "state": 4159927135,
+        "calls": 2698
       }
     },
     {
@@ -780,18 +780,38 @@
       "level_num": 21,
       "level_file": "level21.rl2",
       "route_input_sha256": "F143615BDE0598A99D54BEB90FFC65F7FB179193599B2DB5A9EB3C0173B1B367",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 5695,
+      "objectives": [
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 34
+        },
+        {
+          "n": "gold key",
+          "s": 55
+        },
+        {
+          "n": "red key",
+          "s": 63
+        },
+        {
+          "n": "reactor",
+          "s": 80
+        },
+        {
+          "n": "exit",
+          "s": 88
+        }
+      ],
+      "total_frames": 5264,
       "rng_end": {
-        "state": 4120937883,
-        "calls": 878
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1584136632,
+        "calls": 3311
+      }
     },
     {
       "level_num": 22,
@@ -950,13 +970,13 @@
         },
         {
           "n": "fly-through 11",
-          "s": 44
+          "s": 43
         }
       ],
       "total_frames": 16501,
       "rng_end": {
-        "state": 2900545759,
-        "calls": 21770
+        "state": 3820032300,
+        "calls": 21771
       },
       "problem": "route confirmation exceeded 275-second simulation budget"
     },

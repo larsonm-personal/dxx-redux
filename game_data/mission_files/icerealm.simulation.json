@@ -277,29 +277,29 @@
       "objectives": [
         {
           "n": "destroy robot carrying blue key",
-          "s": 42
+          "s": 27
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 78
+          "s": 64
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 126
+          "s": 112
         },
         {
           "n": "reactor",
-          "s": 139
+          "s": 124
         },
         {
           "n": "exit",
-          "s": 146
+          "s": 131
         }
       ],
-      "total_frames": 8757,
+      "total_frames": 7870,
       "rng_end": {
-        "state": 351503374,
-        "calls": 185
+        "state": 3940765736,
+        "calls": 191
       }
     }
   ]

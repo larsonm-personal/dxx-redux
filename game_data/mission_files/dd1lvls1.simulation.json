@@ -66,17 +66,17 @@
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 37
+          "s": 22
         },
         {
           "n": "red key",
-          "s": 54
+          "s": 37
         }
       ],
-      "total_frames": 3226,
+      "total_frames": 2209,
       "rng_end": {
-        "state": 1452336924,
-        "calls": 91
+        "state": 2077067425,
+        "calls": 96
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -400,21 +400,21 @@
       "objectives": [
         {
           "n": "destroy robot carrying blue key",
-          "s": 7
+          "s": 8
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 27
+          "s": 30
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 51
+          "s": 58
         }
       ],
-      "total_frames": 7440,
+      "total_frames": 7838,
       "rng_end": {
-        "state": 3040535893,
-        "calls": 172
+        "state": 752577037,
+        "calls": 180
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

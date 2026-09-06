@@ -635,14 +635,14 @@
     "seed": 1,
     "status": "failed",
     "level_counts": {
-      "timeout": 1
+      "failed": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "super_s.rdl",
         "route_input_sha256": "D8B1BB6AEF3454931DD8B0027B6CB8A8511A8D38735A5050D5620838C88BD504",
-        "status": "timeout",
+        "status": "failed",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -651,14 +651,18 @@
           {
             "n": "blue key",
             "s": 9
+          },
+          {
+            "n": "destroy robot carrying red key",
+            "s": 32
           }
         ],
-        "total_frames": 4812,
+        "total_frames": 1931,
         "rng_end": {
-          "state": 948921754,
-          "calls": 61
+          "state": 508382461,
+          "calls": 68
         },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "problem": "live Guide-Bot route has no actionable goal"
       }
     ]
   },

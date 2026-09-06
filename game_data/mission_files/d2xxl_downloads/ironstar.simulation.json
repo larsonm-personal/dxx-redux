@@ -8,9 +8,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
+    "ok": 5,
     "failed": 1,
-    "timeout": 6
+    "timeout": 5
   },
   "levels": [
     {
@@ -51,7 +51,7 @@
       "level_num": 2,
       "level_file": "deneb.rdl",
       "route_input_sha256": "8A258A5F5F5B332311B172F8F2D9BE9EEA3B64EAC90BCBC10A5A5BBFA27F97DD",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -60,14 +60,29 @@
         {
           "n": "destroy robot carrying blue key",
           "s": 8
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 19
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 44
+        },
+        {
+          "n": "reactor",
+          "s": 67
+        },
+        {
+          "n": "exit",
+          "s": 74
         }
       ],
-      "total_frames": 4631,
+      "total_frames": 4456,
       "rng_end": {
-        "state": 92728044,
-        "calls": 75
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3821532770,
+        "calls": 149
+      }
     },
     {
       "level_num": 3,
@@ -84,7 +99,7 @@
           "s": 7
         }
       ],
-      "total_frames": 5560,
+      "total_frames": 5166,
       "rng_end": {
         "state": 1964990155,
         "calls": 62
@@ -149,14 +164,14 @@
         },
         {
           "n": "reactor",
-          "s": 84
+          "s": 83
         },
         {
           "n": "exit",
-          "s": 96
+          "s": 95
         }
       ],
-      "total_frames": 5745,
+      "total_frames": 5726,
       "rng_end": {
         "state": 2805861856,
         "calls": 167
@@ -227,7 +242,7 @@
           "s": 163
         }
       ],
-      "total_frames": 9754,
+      "total_frames": 9757,
       "rng_end": {
         "state": 1694224903,
         "calls": 226
