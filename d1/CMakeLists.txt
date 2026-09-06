@@ -5,6 +5,7 @@ cmake_minimum_required (VERSION 3.21)
 project(dxx-redux-d1 VERSION 1.1)
 
 if(NOT ANDROID)
+    include(${CMAKE_CURRENT_LIST_DIR}/../cmake/dxx-sanitizers.cmake)
     include(CTest)
 endif()
 

@@ -25,6 +25,11 @@ find_package(PhysFS REQUIRED)
 find_package(SDL)
 find_package(ZLIB REQUIRED)
 
+add_executable(test_level_section_io test_level_section_io.c)
+target_include_directories(test_level_section_io PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}"
+                                                         ${PHYSFS_INCLUDE_DIR})
+target_link_libraries(test_level_section_io PRIVATE ${PHYSFS_LIBRARY})
+
 add_executable(test_rng_seed_resume test_rng_seed_resume.c)
 add_executable(test_headless_diagnostics test_headless_diagnostics.cpp)
 target_link_libraries(test_rng_seed_resume PRIVATE ${DXX_TARGET_PREFIX}maths)
@@ -349,6 +354,7 @@ set(DXX_HOST_TEST_TARGETS
     test_android_axis_mailbox
     test_level_statistics
     test_level_metadata_scan
+    test_level_section_io
     test_route_snapshot
     test_route_analysis_cache
     test_guidebot_route_decision

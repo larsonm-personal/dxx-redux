@@ -212,7 +212,8 @@ if (-not (Test-Path variable:script:_testHostPlatformLoaded) -or -not $script:_t
             [Parameter(Mandatory)][string]$SourceDir,
             [Parameter(Mandatory)][string]$BuildDir,
             [Parameter(Mandatory)][string]$Triplet,
-            [switch]$Fresh
+            [switch]$Fresh,
+            [string[]]$ExtraArguments = @()
         )
 
         $cmakeArgs = @()
@@ -229,7 +230,7 @@ if (-not (Test-Path variable:script:_testHostPlatformLoaded) -or -not $script:_t
         $cmakeArgs += "-B"
         $cmakeArgs += $BuildDir
 
-        & $CMakePath @cmakeArgs
+        & $CMakePath @cmakeArgs @ExtraArguments
         $script:LastRegressionCMakeConfigureExitCode = $LASTEXITCODE
     }
 

@@ -22,6 +22,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <limits.h>
 
 #include "config.h"
 #include "pstypes.h"
@@ -202,14 +203,25 @@ int ReadConfigFile()
 
 	while (!PHYSFS_eof(infile))
 	{
-		int max_len = PHYSFS_fileLength(infile); // to be fully safe, assume the whole cfg consists of one big line
-		CALLOC(line, char, max_len);
-		PHYSFSX_gets(infile, line);
+		PHYSFS_sint64 file_len = PHYSFS_fileLength(infile);
+		if (file_len < 0 || file_len >= INT_MAX)
+			break;
+		/* The file may be rewritten concurrently; never read beyond this allocation */
+		size_t capacity = (size_t)file_len + 1;
+		CALLOC(line, char, capacity);
+		if (capacity < 2 || !PHYSFSX_fgets(line, capacity, infile)) {
+			d_free(line);
+			break;
+		}
 		ptr = &(line[0]);
 		while (isspace(*ptr))
 			ptr++;
 		if (*ptr != '\0') {
 			token = strtok(ptr, "=");
+			if (!token) {
+				d_free(line);
+				continue;
+			}
 			value = strtok(NULL, "=");
 			if (!value)
 				value = "";

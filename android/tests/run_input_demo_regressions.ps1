@@ -1,5 +1,6 @@
 #!/usr/bin/env pwsh
 param(
+    [ValidateSet('none', 'address')][string]$Sanitizer = 'none',
     [string]$DemoRoot,
     [string[]]$DemoFileName,
     [string]$ResultArchiveRoot,
@@ -28,6 +29,7 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $PSScriptRoot 'input_demo_host_build_guard.ps1')
+$script:InputDemoSanitizer = $Sanitizer
 $wrapper = Join-Path $PSScriptRoot 'run_input_demo_replay.ps1'
 
 function Get-RegressionBuildGames {
@@ -216,8 +218,8 @@ for ($index = 0; $index -lt $demos.Count; $index++) {
     if ($RunMode -eq 'headless' -and -not $D1InD2) {
         $args += '-PreferHeadlessConsole'
     }
-    if ($RunMode -eq 'headless' -and $D1InD2 -and -not $NoRender) {
-        $args += '-NoRender'
+    if ($RunMode -eq 'headless') {
+        $args += @('-Runner', 'fast')
     }
     if ($DataDir) {
         $args += @('-DataDir', $DataDir)
@@ -241,6 +243,7 @@ for ($index = 0; $index -lt $demos.Count; $index++) {
         $args += @('-ReferenceResultPath', (Join-Path $ReferenceResultRoot "$($demo.Name).actual.json"))
     }
 
+    $args += @('-Sanitizer', $Sanitizer)
     & $pwsh @args
     if ($LASTEXITCODE -ne 0) {
         $failures.Add($relativeDemo)

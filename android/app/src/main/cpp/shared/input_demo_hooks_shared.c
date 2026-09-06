@@ -579,8 +579,13 @@ int input_demo_finish_replay_shared(int close_window,
 	if (write_replay_result)
 		write_replay_result();
 	input_demo_replay_unload();
+#ifndef DXX_HEADLESS_CONSOLE
 	if (close_window && Game_wind)
 		window_close(Game_wind);
+#else
+	// The console runner has no menu fonts or UI event loop to return to
+	(void) close_window;
+#endif
 	return 1;
 }
 

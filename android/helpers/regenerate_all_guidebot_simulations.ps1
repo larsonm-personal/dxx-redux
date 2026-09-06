@@ -6,6 +6,7 @@ param(
     [string[]]$MissionJson,
     [string]$MissionMetadataRoot,
     [int[]]$Level,
+    [string[]]$LevelFileFilter,
     [ValidateRange(0.000001, 1.0)][double]$SampleFraction = 1.0,
     [ValidateRange(0, [int]::MaxValue)][int]$SampleSeed = 0,
     [string]$SampleStatePath,
@@ -127,6 +128,7 @@ function Get-GuidebotWorkItems {
             foreach ($levelRecord in @(Get-GuidebotPropertyValue $mission 'levels' @())) {
                 $levelNumber = [int](Get-GuidebotPropertyValue $levelRecord 'level_num' 0)
                 if ($Level -and $levelNumber -notin $Level) { continue }
+                if ($LevelFileFilter -and [string](Get-GuidebotPropertyValue $levelRecord 'level_file' '') -notin $LevelFileFilter) { continue }
                 $levelFile = [string](Get-GuidebotPropertyValue $levelRecord 'level_file' '')
                 $identity = "$relative|$targetIndex|$levelNumber|$levelFile"
                 [pscustomobject]@{
@@ -756,11 +758,52 @@ if ($Mode -eq 'Headless') {
     }
 
     if ($processTasks.Count -gt 0) {
+        $engineHash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash
+        # Keep the exact image and available symbols even if a later build replaces them
+        $engineSnapshot = Join-Path $runRoot 'engine'
+        New-Item -ItemType Directory -Path $engineSnapshot | Out-Null
+        $engineArtifacts = @((Get-Item -LiteralPath $exe)) + @(Get-ChildItem -LiteralPath (Split-Path $exe) -File -Filter '*.dll')
+        $enginePdb = [IO.Path]::ChangeExtension($exe, '.pdb')
+        if (Test-Path -LiteralPath $enginePdb) { $engineArtifacts += Get-Item -LiteralPath $enginePdb }
+        $artifactHashes = @($engineArtifacts | ForEach-Object {
+                $destination = Join-Path $engineSnapshot $_.Name
+                Copy-Item -LiteralPath $_.FullName -Destination $destination
+                [ordered]@{ name = $_.Name; sha256 = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash }
+            })
+        $exe = Join-Path $engineSnapshot ([IO.Path]::GetFileName($exe))
+        if ((Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash -ne $engineHash) {
+            throw 'Route engine changed while creating its diagnostic snapshot; retry after the build completes'
+        }
+        [IO.File]::WriteAllText((Join-Path $engineSnapshot 'files.json'), (ConvertTo-Json -InputObject $artifactHashes), [Text.UTF8Encoding]::new($false))
+        foreach ($processTask in $processTasks) {
+            $processTask.FilePath = $exe
+            $userDirectory = $processTask.Output + '.user'
+            if (Test-Path -LiteralPath $userDirectory) {
+                throw "Refusing to reuse route worker settings; choose a fresh OutputRoot: $userDirectory"
+            }
+            New-Item -ItemType Directory -Path $userDirectory | Out-Null
+            $processTask.Arguments += @('-route-confirm-user-dir', $userDirectory)
+            $reproduction = [ordered]@{
+                identity = $processTask.Item.Identity
+                route_input_sha256 = Get-GuidebotRouteInputHash -Mission $processTask.Item.Mission -Level $processTask.Item.Level
+                executable = $exe
+                executable_sha256 = $engineHash
+                arguments = $processTask.Arguments
+                working_directory = (Get-Location).Path
+                timeout_seconds = $processTask.TimeoutSeconds
+            }
+            [IO.File]::WriteAllText(($processTask.Output + '.launch.json'), ($reproduction | ConvertTo-Json -Depth 10), [Text.UTF8Encoding]::new($false))
+        }
         $workerCount = Get-HeadlessProcessWorkerCount -Requested $MaxParallel -ItemCount $processTasks.Count
         Write-GuidebotStatus "Headless workers: $workerCount for $($processTasks.Count) engine runs on $([Environment]::ProcessorCount) logical processors"
         Invoke-HeadlessProcessPool -Tasks @($processTasks) -MaxParallel $workerCount -OnCompleted {
             param($task, $processResult)
 
+            [IO.File]::WriteAllText(($task.Output + '.process.json'), ([ordered]@{
+                        exit_code = $processResult.ExitCode
+                        timed_out = $processResult.TimedOut
+                        start_error = $processResult.StartError
+                    } | ConvertTo-Json), [Text.UTF8Encoding]::new($false))
             $logText = ($processResult.StandardOutput + "`n" + $processResult.StandardError).Trim()
             [IO.File]::WriteAllText($task.Log, $logText + $(if ($logText) { "`n" } else { '' }), [Text.UTF8Encoding]::new($false))
             $state = $runStates[$task.Item.Identity]
@@ -867,4 +910,9 @@ $summary = [ordered]@{
 Write-GuidebotSimulationJson -Path (Join-Path $runRoot 'summary.json') -Value $summary
 Write-GuidebotStatus "GuideBot simulation complete: $($selectedItems.Count) levels" 'Green'
 Write-GuidebotStatus "Output: $runRoot" 'Green'
-if ($infrastructureFailures.Count) { exit 1 }
+if ($infrastructureFailures.Count) {
+    foreach ($failure in $infrastructureFailures) {
+        Write-GuidebotStatus "$($failure.identity): $($failure.problem)" 'Red'
+    }
+    exit 1
+}

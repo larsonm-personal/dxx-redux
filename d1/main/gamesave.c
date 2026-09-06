@@ -59,6 +59,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "textures.h"
 #include "multi.h"
 #include "makesig.h"
+#include "level_section_io.h"
 
 #ifndef NDEBUG
 void dump_mine_info(void);
@@ -732,6 +733,8 @@ int load_game_data(PHYSFS_file *LoadFile)
 
 	short game_top_fileinfo_version;
 	int object_offset;
+	int walls_offset;
+	int triggers_offset, control_offset, matcens_offset;
 	int gs_num_objects;
 	int trig_size;
 
@@ -755,18 +758,22 @@ int load_game_data(PHYSFS_file *LoadFile)
 
 	object_offset = PHYSFSX_readInt(LoadFile);
 	gs_num_objects = PHYSFSX_readInt(LoadFile);
-	PHYSFSX_fseek(LoadFile, 8, SEEK_CUR);
+	PHYSFSX_fseek(LoadFile, 4, SEEK_CUR);
+	walls_offset = PHYSFSX_readInt(LoadFile);
 
 	Num_walls = PHYSFSX_readInt(LoadFile);
-	PHYSFSX_fseek(LoadFile, 20, SEEK_CUR);
+	PHYSFSX_fseek(LoadFile, 16, SEEK_CUR);
+	triggers_offset = PHYSFSX_readInt(LoadFile);
 
 	Num_triggers = PHYSFSX_readInt(LoadFile);
-	PHYSFSX_fseek(LoadFile, 24, SEEK_CUR);
+	PHYSFSX_fseek(LoadFile, 16, SEEK_CUR);
+	control_offset = PHYSFSX_readInt(LoadFile);
+	PHYSFSX_fseek(LoadFile, 4, SEEK_CUR);
 
 	trig_size = PHYSFSX_readInt(LoadFile);
 	Assert(trig_size == sizeof(ControlCenterTriggers));
 	(void)trig_size;
-	PHYSFSX_fseek(LoadFile, 4, SEEK_CUR);
+	matcens_offset = PHYSFSX_readInt(LoadFile);
 
 	Num_robot_centers = PHYSFSX_readInt(LoadFile);
 	PHYSFSX_fseek(LoadFile, 4, SEEK_CUR);
@@ -826,6 +833,9 @@ int load_game_data(PHYSFS_file *LoadFile)
 	}
 
 	//===================== READ WALL INFO ============================
+	// Editors may leave padding between sections; object decoding does not locate the wall table
+	if (!level_section_seek(LoadFile, walls_offset, Num_walls, "walls"))
+		return -1;
 	REWIND_PHYSFS_FILE(load_rewind_file, LoadFile);
 
 	for (i = 0; i < Num_walls; i++) {
@@ -893,6 +903,8 @@ int load_game_data(PHYSFS_file *LoadFile)
 #endif // 0
 
 	//==================== READ TRIGGER INFO ==========================
+	if (!level_section_seek(LoadFile, triggers_offset, Num_triggers, "triggers"))
+		return -1;
 
 	for (i = 0; i < Num_triggers; i++)
 	{
@@ -942,11 +954,15 @@ int load_game_data(PHYSFS_file *LoadFile)
 	}
 
 	//================ READ CONTROL CENTER TRIGGER INFO ===============
+	if (!level_section_seek(LoadFile, control_offset, 1, "reactor triggers"))
+		return -1;
 
 	if (!control_center_triggers_read_n(&ControlCenterTriggers, 1, load_rewind_file))
 		return -1;
 
 	//================ READ MATERIALOGRIFIZATIONATORS INFO ===============
+	if (!level_section_seek(LoadFile, matcens_offset, Num_robot_centers, "matcens"))
+		return -1;
 
 	for (i = 0; i < Num_robot_centers; i++) {
 		matcen_info_read(&RobotCenters[i], load_rewind_file, game_top_fileinfo_version);
@@ -983,11 +999,23 @@ int load_game_data(PHYSFS_file *LoadFile)
 	for (i=0; i< Num_segments; i++)
 		for (j=0;j<MAX_SIDES_PER_SEGMENT;j++) {
 			side	*sidep = &Segments[i].sides[j];
-			if ((sidep->wall_num != -1) && (Walls[sidep->wall_num].clip_num != -1)) {
-				if (WallAnims[Walls[sidep->wall_num].clip_num].flags & WCF_TMAP1) {
-					sidep->tmap_num = WallAnims[Walls[sidep->wall_num].clip_num].frames[0];
-					sidep->tmap_num2 = 0;
-				}
+			if (sidep->wall_num < -1 || sidep->wall_num >= Num_walls) {
+				Warning("Invalid level wall reference seg=%d side=%d wall=%d count=%d", i, j, sidep->wall_num, Num_walls);
+				return -1;
+			}
+			if (sidep->wall_num == -1)
+				continue;
+			// Only doors and blastable walls use wall animations; other types may carry stale editor data
+			const wall *w = &Walls[sidep->wall_num];
+			if (w->type != WALL_DOOR && w->type != WALL_BLASTABLE)
+				continue;
+			if (w->clip_num < 0 || w->clip_num >= Num_wall_anims || w->clip_num >= MAX_WALL_ANIMS) {
+				Warning("Invalid level wall animation seg=%d side=%d wall=%d type=%d clip=%d count=%d", i, j, sidep->wall_num, w->type, w->clip_num, Num_wall_anims);
+				return -1;
+			}
+			if (WallAnims[w->clip_num].flags & WCF_TMAP1) {
+				sidep->tmap_num = WallAnims[w->clip_num].frames[0];
+				sidep->tmap_num2 = 0;
 			}
 		}
 
@@ -1210,6 +1238,16 @@ int load_level(const char * filename_passed)
 	}
 
 	(void)hostagetext_offset;
+	// Reject invalid required textures before collision, rendering, or other consumers index their tables
+	for (int segnum = 0; segnum < Num_segments; ++segnum)
+		for (int sidenum = 0; sidenum < MAX_SIDES_PER_SEGMENT; ++sidenum) {
+			const side *s = &Segments[segnum].sides[sidenum];
+			if (s->tmap_num < 0 || s->tmap_num >= MAX_TEXTURES || (s->tmap_num2 & 0x3fff) >= MAX_TEXTURES) {
+				Warning("Invalid level texture seg=%d side=%d child=%d wall=%d primary=%d overlay=%d", segnum, sidenum, Segments[segnum].children[sidenum], s->wall_num, s->tmap_num, s->tmap_num2 & 0x3fff);
+				PHYSFS_close(LoadFile);
+				return 3;
+			}
+		}
 
 	//======================== CLOSE FILE =============================
 

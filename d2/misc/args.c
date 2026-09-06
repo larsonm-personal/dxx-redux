@@ -320,7 +320,8 @@ static void init_args_common(int argc, char **argv, int android_mode)
 			d_strlwr( Args[i]  );  // Convert all args to lowercase
 	}
 
-	if (!android_mode)
+	/* Isolated route workers must not inherit the interactive runner's ini */
+	if (!android_mode && !FindArg("-route-confirm-user-dir"))
 		AppendIniArgs();
 	ReadCmdArgsForMode(android_mode);
 }

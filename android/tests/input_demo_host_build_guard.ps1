@@ -1,6 +1,7 @@
 #!/usr/bin/env pwsh
 . (Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers') 'test_host_platform.ps1')
 . (Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers') 'powershell_compat.ps1')
+$script:InputDemoSanitizer = 'none'
 
 function Get-InputDemoRelativeRepoPath {
     param(
@@ -32,7 +33,8 @@ function Get-InputDemoBuildStampPath {
         [string]$GameName
     )
 
-    return Join-RegressionPath $RepoRoot 'temp' 'input_demo_build_stamps' "$GameName.stamp"
+    $suffix = if ($script:InputDemoSanitizer -eq 'address') { '-asan' } else { '' }
+    return Join-RegressionPath $RepoRoot 'temp' 'input_demo_build_stamps' "$GameName$suffix.stamp"
 }
 
 function Get-InputDemoSourceRevision {
@@ -67,15 +69,16 @@ function Get-InputDemoExecutablePath {
         [switch]$PreferHeadlessConsole
     )
 
+    $suffix = if ($script:InputDemoSanitizer -eq 'address') { '-asan' } else { '' }
     switch ($GameName) {
         'd1' {
-            return Join-RegressionPath $RepoRoot 'buildd1' 'main' ((Get-RegressionHostExecutableNames -BaseName 'd1x-redux')[0])
+            return Join-RegressionPath $RepoRoot "buildd1$suffix" 'main' ((Get-RegressionHostExecutableNames -BaseName 'd1x-redux')[0])
         }
         'd2' {
             if ($PreferHeadlessConsole) {
-                return Join-RegressionPath $RepoRoot 'buildd2' 'main' ((Get-RegressionHostExecutableNames -BaseName 'dxx-redux-d2-headless')[0])
+                return Join-RegressionPath $RepoRoot "buildd2$suffix" 'main' ((Get-RegressionHostExecutableNames -BaseName 'dxx-redux-d2-headless')[0])
             }
-            return Join-RegressionPath $RepoRoot 'buildd2' 'main' ((Get-RegressionHostExecutableNames -BaseName 'd2x-redux')[0])
+            return Join-RegressionPath $RepoRoot "buildd2$suffix" 'main' ((Get-RegressionHostExecutableNames -BaseName 'd2x-redux')[0])
         }
     }
 
@@ -116,7 +119,10 @@ function Get-InputDemoFreshnessSourceRoots {
         (Join-Path $RepoRoot $GameName),
         (Join-Path $RepoRoot 'common'),
         (Join-Path $RepoRoot 'arch'),
-        (Join-RegressionPath $RepoRoot 'android' 'app' 'src' 'main' 'cpp' 'shared')
+        (Join-RegressionPath $RepoRoot 'android' 'app' 'src' 'main' 'cpp' 'shared'),
+        (Join-RegressionPath $RepoRoot 'android' 'app' 'src' 'main' 'cpp' 'headless'),
+        (Join-RegressionPath $RepoRoot 'android' 'tests'),
+        (Join-Path $RepoRoot 'cmake')
     )
 
     return $roots | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -Unique
@@ -132,7 +138,7 @@ function Get-InputDemoLatestSourceFileStamp {
     foreach ($root in (Get-InputDemoFreshnessSourceRoots -RepoRoot $RepoRoot -GameName $GameName)) {
         $candidate = Get-ChildItem -LiteralPath $root -Recurse -File -ErrorAction SilentlyContinue |
             Where-Object {
-                $_.Extension -in @('.c', '.cpp', '.cc', '.cxx', '.h', '.hpp', '.hh', '.hxx', '.inl')
+                $_.Extension -in @('.c', '.cpp', '.cc', '.cxx', '.h', '.hpp', '.hh', '.hxx', '.inl', '.cmake') -or $_.Name -eq 'CMakeLists.txt'
             } |
             Sort-Object -Property LastWriteTimeUtc -Descending |
             Select-Object -First 1
@@ -162,6 +168,12 @@ function Invoke-InputDemoHostBuild {
 
     $buildTarget = Get-InputDemoBuildTarget -GameName $GameName
     Write-Host "Build guardrail: rebuilding host target $buildTarget"
+    if ($script:InputDemoSanitizer -eq 'address') {
+        if (-not $IsWindows) { throw 'Sanitizer demo builds currently require the Windows host runner' }
+        & (Join-Path $RepoRoot 'run-windows-build.ps1') -Target $buildTarget -Sanitizer address
+        if ($LASTEXITCODE -ne 0) { throw "Sanitizer build failed for $buildTarget" }
+        return
+    }
     Invoke-RegressionHostBuild -RepoRoot $RepoRoot -Target $buildTarget -Label $GameName
 }
 

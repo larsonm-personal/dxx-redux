@@ -9,6 +9,7 @@ project(
     )
 
 if(NOT ANDROID)
+    include(${CMAKE_CURRENT_LIST_DIR}/../cmake/dxx-sanitizers.cmake)
     include(CTest)
 endif()
 

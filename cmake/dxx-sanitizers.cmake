@@ -1,0 +1,26 @@
+# Opt-in instrumentation for engine code, engine tests, and source-built dependencies
+set(DXX_SANITIZERS "" CACHE STRING "Sanitizers: empty, address, or address,undefined (Clang/GCC)")
+if(DXX_SANITIZERS)
+    if(MSVC)
+        if(NOT DXX_SANITIZERS STREQUAL "address")
+            message(FATAL_ERROR "MSVC supports only DXX_SANITIZERS=address")
+        endif()
+        # The release CRT has the installed ASan runtime; /RTC and incremental linking conflict
+        set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreadedDLL)
+        foreach(lang C CXX)
+            string(REPLACE "/RTC1" "" CMAKE_${lang}_FLAGS_DEBUG "${CMAKE_${lang}_FLAGS_DEBUG}")
+        endforeach()
+        foreach(config DEBUG RELWITHDEBINFO)
+            string(REGEX
+                   REPLACE "/INCREMENTAL(:YES)?( |$)" "/INCREMENTAL:NO\\2"
+                           CMAKE_EXE_LINKER_FLAGS_${config} "${CMAKE_EXE_LINKER_FLAGS_${config}}")
+        endforeach()
+        add_compile_options(/fsanitize=address)
+        add_link_options(/INCREMENTAL:NO)
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        add_compile_options(-fsanitize=${DXX_SANITIZERS} -fno-omit-frame-pointer)
+        add_link_options(-fsanitize=${DXX_SANITIZERS})
+    else()
+        message(FATAL_ERROR "Unsupported sanitizer compiler: ${CMAKE_CXX_COMPILER_ID}")
+    endif()
+endif()

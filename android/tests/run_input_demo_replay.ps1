@@ -1,5 +1,6 @@
 #!/usr/bin/env pwsh
 param(
+    [ValidateSet('none', 'address')][string]$Sanitizer = 'none',
     [string]$DemoPath,
     [string]$SearchRoot,
     [ValidateSet('auto', 'd1', 'd2')]
@@ -47,7 +48,9 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 . (Join-Path $PSScriptRoot 'input_demo_host_build_guard.ps1')
+$script:InputDemoSanitizer = $Sanitizer
 $outRoot = Join-Path $repoRoot 'temp\input_demo_runtime_wrapper'
+if ($Sanitizer -eq 'address') { $outRoot = Join-Path $repoRoot 'temp/input_demo_runtime_wrapper_asan' }
 
 function Write-AsciiFile {
     param(
@@ -621,7 +624,7 @@ function New-LaunchSandbox {
 
         Copy-Item -LiteralPath $Config.Exe -Destination $sandboxExe -Force
         Get-ChildItem -LiteralPath $sourceDir -File |
-            Where-Object { $_.Extension -eq '.dll' } |
+            Where-Object { $_.Extension -eq '.dll' -or ($Sanitizer -eq 'address' -and $_.Extension -eq '.pdb' -and $_.BaseName -eq [IO.Path]::GetFileNameWithoutExtension($Config.Exe)) } |
             Copy-Item -Destination $sandboxDir -Force
     }
 
@@ -1568,21 +1571,36 @@ $startInfo.WorkingDirectory = $sandbox.Directory
 $startInfo.UseShellExecute = $false
 $startInfo.RedirectStandardOutput = $false
 $startInfo.RedirectStandardError = $false
+if ($Sanitizer -eq 'address') {
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.CreateNoWindow = $true
+}
 $startInfo.Arguments = $quotedArgs
 
 $process = $null
 $replayStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 $missingActualResult = $false
+$sanitizerOutput = $null
+$sanitizerError = $null
+$sanitizerFailure = $false
+$forcedReplayStop = $false
+$completedExitCode = $null
 try {
     $process = [System.Diagnostics.Process]::Start($startInfo)
     if (-not $process) {
         throw 'Failed to start replay process'
+    }
+    if ($Sanitizer -eq 'address') {
+        $sanitizerOutput = $process.StandardOutput.ReadToEndAsync()
+        $sanitizerError = $process.StandardError.ReadToEndAsync()
     }
 
     $waitResult = Wait-ForReplayResult -Process $process -ActualResultPath $actualResultPath -TimeoutSeconds $TimeoutSeconds
     if (-not $waitResult.ResultReady) {
         $replayStopwatch.Stop()
         if (-not $waitResult.Exited) {
+            $forcedReplayStop = $true
             Stop-ReplayProcess -Process $process
         }
         if ($waitResult.Exited) {
@@ -1598,11 +1616,34 @@ try {
     }
 
     if (-not $process.HasExited -and -not $process.WaitForExit(2000)) {
+        $forcedReplayStop = $true
         Stop-ReplayProcess -Process $process
     }
+    if ($process.HasExited -and -not $forcedReplayStop) { $completedExitCode = $process.ExitCode }
 } finally {
     Stop-ReplayProcess -Process $process
     $replayStopwatch.Stop()
+    if ($Sanitizer -eq 'address' -and $sanitizerOutput -and $sanitizerError) {
+        $diagnostics = $sanitizerOutput.GetAwaiter().GetResult() + $sanitizerError.GetAwaiter().GetResult()
+        foreach ($nativeLog in @('stdout.txt', 'stderr.txt')) {
+            $nativePath = Join-Path $sandbox.Directory $nativeLog
+            if (Test-Path -LiteralPath $nativePath) { $diagnostics += Get-Content -LiteralPath $nativePath -Raw }
+        }
+        $diagnosticPath = Join-Path $sandbox.Directory 'sanitizer.log'
+        [IO.File]::WriteAllText($diagnosticPath, $diagnostics)
+        if ($ResultCopyPath) {
+            $archivePath = (Resolve-AbsolutePath -Path $ResultCopyPath) + '.sanitizer.log'
+            New-Item -ItemType Directory -Path (Split-Path $archivePath) -Force | Out-Null
+            Copy-Item -LiteralPath $diagnosticPath -Destination $archivePath -Force
+        }
+        $sanitizerFailure = $diagnostics -match 'AddressSanitizer|runtime error:'
+        if ($sanitizerFailure) { Write-Host $diagnostics }
+        Write-Host "Sanitizer diagnostics: $diagnosticPath"
+    }
+}
+if ($sanitizerFailure) { throw 'Replay reported a sanitizer error' }
+if ($Sanitizer -eq 'address' -and $null -ne $completedExitCode -and $completedExitCode -ne 0) {
+    throw "Instrumented replay exited with code $completedExitCode after writing its result"
 }
 $actualResult = $null
 if (-not $missingActualResult) {

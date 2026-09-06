@@ -4,6 +4,8 @@ param(
     [string]$Target = "both",
     [string]$Preset = "x86-release",
     [string]$BuildType = "RelWithDebInfo",
+    [ValidateSet('none', 'address')][string]$Sanitizer = 'none',
+    [ValidateRange(1, 128)][int]$MaxParallel = 8,
     [switch]$Clean,
     [string]$Compiler = "auto",
     [string]$VisualStudioPath,
@@ -455,8 +457,6 @@ Write-Host "vcpkg triplet: $vcpkgTriplet"
 Write-Host "cmake: $cmakePath"
 Write-Host "ninja: $ninjaPath"
 
-Get-Process cl -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-
 $targets = switch ($Target) {
     "d1" { @("d1") }
     "d2" { @("d2") }
@@ -465,6 +465,7 @@ $targets = switch ($Target) {
 
 foreach ($game in $targets) {
     $buildDirName = if ($game -eq "d1") { "buildd1" } else { "buildd2" }
+    if ($Sanitizer -ne 'none') { $buildDirName += '-asan' }
     $buildDir = Join-Path $repoRoot $buildDirName
     if ($Clean -and (Test-Path $buildDir)) {
         Remove-Item -Recurse -Force $buildDir
@@ -473,11 +474,13 @@ foreach ($game in $targets) {
     Write-Host "Configuring $game with preset $Preset ($BuildType)"
     $sourceDir = Join-Path $repoRoot $game
     $freshConfigure = Test-RegressionCMakeCacheNeedsFreshConfigure -BuildDir $buildDir -ExpectedTriplet $vcpkgTriplet
-    Invoke-RegressionCMakeConfigure $cmakePath $Preset $BuildType $sourceDir $buildDir $vcpkgTriplet -Fresh:$freshConfigure
+    $sanitizerArguments = @('-DDXX_SANITIZERS=' + $(if ($Sanitizer -eq 'none') { '' } else { $Sanitizer }))
+    if ($Sanitizer -eq 'address') { $sanitizerArguments += '-DBUILD_TESTING=ON' }
+    Invoke-RegressionCMakeConfigure $cmakePath $Preset $BuildType $sourceDir $buildDir $vcpkgTriplet -Fresh:$freshConfigure -ExtraArguments $sanitizerArguments
     $configureExit = $script:LastRegressionCMakeConfigureExitCode
     if ($configureExit -ne 0 -and -not $freshConfigure -and (Test-Path (Join-Path $buildDir "CMakeCache.txt"))) {
         Write-Host "CMake configure failed for $game; retrying once with a fresh CMake cache"
-        Invoke-RegressionCMakeConfigure $cmakePath $Preset $BuildType $sourceDir $buildDir $vcpkgTriplet -Fresh
+        Invoke-RegressionCMakeConfigure $cmakePath $Preset $BuildType $sourceDir $buildDir $vcpkgTriplet -Fresh -ExtraArguments $sanitizerArguments
         $configureExit = $script:LastRegressionCMakeConfigureExitCode
     }
     if ($configureExit -ne 0) {
@@ -485,9 +488,18 @@ foreach ($game in $targets) {
     }
 
     Write-Host "Building $game"
-    & $cmakePath --build $buildDir --parallel -- -k 10
+    & $cmakePath --build $buildDir --parallel $MaxParallel -- -k 10
     if ($LASTEXITCODE -ne 0) {
         throw "CMake build failed for $game"
+    }
+    if ($Sanitizer -eq 'address') {
+        $asanRuntime = Join-Path (Split-Path (Get-Command cl.exe).Source) $(if ($vcpkgTriplet -like 'x86-*') { 'clang_rt.asan_dynamic-i386.dll' } else { 'clang_rt.asan_dynamic-x86_64.dll' })
+        if (-not (Test-Path -LiteralPath $asanRuntime)) { throw "ASan runtime missing: $asanRuntime" }
+        foreach ($destination in @('main', 'tests')) {
+            if (Test-Path -LiteralPath (Join-Path $buildDir $destination)) {
+                Copy-Item -LiteralPath $asanRuntime -Destination (Join-Path $buildDir $destination) -Force
+            }
+        }
     }
 
     $sourceRevision = & git -C $repoRoot rev-parse HEAD 2>$null
@@ -495,7 +507,7 @@ foreach ($game in $targets) {
         $stampDirectory = Join-Path $repoRoot "temp\input_demo_build_stamps"
         New-Item -ItemType Directory -Path $stampDirectory -Force | Out-Null
         [System.IO.File]::WriteAllText(
-            (Join-Path $stampDirectory "$game.stamp"),
+            (Join-Path $stampDirectory "$game$(if ($Sanitizer -ne 'none') { '-asan' }).stamp"),
             ([string]$sourceRevision).Trim())
     }
 }

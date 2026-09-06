@@ -17,6 +17,15 @@ function Assert-True {
 $repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $d1Executable = Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName 'd1'
 $d2Executable = Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName 'd2'
+$normalStamp = Get-InputDemoBuildStampPath -RepoRoot $repoRoot -GameName 'd2'
+$script:InputDemoSanitizer = 'address'
+foreach ($testGame in @('d1', 'd2')) {
+    $asanExecutable = Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName $testGame
+    Assert-True ($asanExecutable -like "*build$testGame-asan*") 'Sanitizer demos must never select the normal build'
+}
+Assert-True ((Get-InputDemoExecutablePath -RepoRoot $repoRoot -GameName d2 -PreferHeadlessConsole) -like '*buildd2-asan*headless*') 'Console replays must select the instrumented build too'
+Assert-True ((Get-InputDemoBuildStampPath -RepoRoot $repoRoot -GameName d2) -ne $normalStamp) 'Normal build stamps must not satisfy sanitizer freshness checks'
+$script:InputDemoSanitizer = 'none'
 Assert-True ([IO.Path]::GetFileNameWithoutExtension($d1Executable) -eq 'd1x-redux') `
     'D1 input-demo runs must use the public desktop executable name'
 Assert-True ([IO.Path]::GetFileNameWithoutExtension($d2Executable) -eq 'd2x-redux') `

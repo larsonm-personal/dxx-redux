@@ -127,7 +127,21 @@ int init_headless_runtime(int argc, char *argv[], char *error,
 	mem_init();
 	error_init(headless_error);
 	set_warn_func(headless_warning);
+	fprintf(stderr, "ROUTE-CONFIRM phase=filesystem-init\n");
 	PHYSFSX_init(argc, argv);
+	if (const char *user_dir = find_arg_value(argc, argv, "-route-confirm-user-dir")) {
+		const std::string previous_write_dir = PHYSFS_getWriteDir() ? PHYSFS_getWriteDir() : "";
+		if (!PHYSFS_setWriteDir(user_dir)) {
+			snprintf(error, error_size, "could not select isolated user directory");
+			return 0;
+		}
+		if (!previous_write_dir.empty())
+			PHYSFS_removeFromSearchPath(previous_write_dir.c_str());
+		if (!PHYSFS_addToSearchPath(user_dir, 0)) {
+			snprintf(error, error_size, "could not mount isolated user directory");
+			return 0;
+		}
+	}
 	con_init();
 	if (GameArg.SysShowCmdHelp) {
 		snprintf(error, error_size, "%s", "help requested");
@@ -143,19 +157,24 @@ int init_headless_runtime(int argc, char *argv[], char *error,
 		         "could not find descent2.hog or d2demo.hog");
 		return 0;
 	}
+	fprintf(stderr, "ROUTE-CONFIRM phase=text-load\n");
 	load_text();
+	fprintf(stderr, "ROUTE-CONFIRM phase=config-read\n");
 	ReadConfigFile();
+	fprintf(stderr, "ROUTE-CONFIRM phase=audio-init\n");
 	if (!init_headless_audio()) {
 		snprintf(error, error_size, "%s", "audio init failed");
 		return 0;
 	}
 	PHYSFSX_addArchiveContent();
+	fprintf(stderr, "ROUTE-CONFIRM phase=gamedata-init\n");
 	gamedata_init();
 	texmerge_init(10);
 	{
 		char groupa_pig[] = "groupa.pig";
 		piggy_init_pigfile(groupa_pig);
 	}
+	fprintf(stderr, "ROUTE-CONFIRM phase=game-init\n");
 	if (!init_headless_screen(error, error_size))
 		return 0;
 	Screen_mode = SCREEN_GAME;
@@ -183,6 +202,9 @@ int load_requested_mission(const char *requested, char *error,
 
 int main(int argc, char *argv[])
 {
+	/* Preserve the last completed startup phase even if the process crashes */
+	setvbuf(stderr, nullptr, _IONBF, 0);
+	fprintf(stderr, "ROUTE-CONFIRM phase=entry\n");
 	char error[256] = "";
 	const char *output = find_arg_value(argc, argv, "-route-confirm-json-out");
 	const char *mission = find_arg_value(argc, argv, "-mission");
@@ -202,6 +224,7 @@ int main(int argc, char *argv[])
 		        argc > 0 ? argv[0] : "dxx-redux-d2-headless-route");
 		return 1;
 	}
+	fprintf(stderr, "ROUTE-CONFIRM phase=runtime-init\n");
 	if (!init_headless_runtime(argc, argv, error, sizeof(error))) {
 		fprintf(stderr, "ROUTE-CONFIRM FAIL init %s\n",
 		        error[0] ? error : "runtime initialization failed");
@@ -212,6 +235,7 @@ int main(int argc, char *argv[])
 		        extra_dir);
 		return 1;
 	}
+	fprintf(stderr, "ROUTE-CONFIRM phase=mission-load\n");
 	if (!load_requested_mission(mission, error, sizeof(error))) {
 		fprintf(stderr, "ROUTE-CONFIRM FAIL mission %s\n",
 		        error[0] ? error : "mission load failed");
@@ -234,13 +258,16 @@ int main(int argc, char *argv[])
 	 * the existing noninteractive branch, then restore normal simulation. */
 	if (level < 0)
 		Newdemo_state = ND_STATE_PLAYBACK;
+	fprintf(stderr, "ROUTE-CONFIRM phase=level-load level=%d\n", level);
 	StartNewGame(level);
 	if (level < 0)
 		Newdemo_state = ND_STATE_NORMAL;
+	fprintf(stderr, "ROUTE-CONFIRM phase=route-start\n");
 	if (!route_confirmation_start()) {
 		fprintf(stderr, "ROUTE-CONFIRM FAIL start %s\n",
 		        route_confirmation_get_summary()->problem);
 	}
+	fprintf(stderr, "ROUTE-CONFIRM phase=simulation\n");
 	while (!route_confirmation_is_terminal()) {
 		route_confirmation_prepare_frame_time();
 		calc_game_time();
@@ -249,6 +276,7 @@ int main(int argc, char *argv[])
 	{
 		const route_confirmation_summary *summary =
 		    route_confirmation_get_summary();
+		fprintf(stderr, "ROUTE-CONFIRM phase=result frames=%u\n", summary->frame_count);
 		if (!route_confirmation_write_json(output, mission, level, error,
 		                                   sizeof(error))) {
 			fprintf(stderr, "ROUTE-CONFIRM FAIL %s\n", error);
@@ -258,6 +286,7 @@ int main(int argc, char *argv[])
 		       summary->status == ROUTE_CONFIRMATION_CONFIRMED ? "OK" : "FAIL",
 		       mission && *mission ? mission : "d2", level,
 		       summary->frame_count, output);
+		fprintf(stderr, "ROUTE-CONFIRM phase=shutdown\n");
 		args_exit();
 		return summary->status == ROUTE_CONFIRMATION_CONFIRMED ? 0 : 2;
 	}
