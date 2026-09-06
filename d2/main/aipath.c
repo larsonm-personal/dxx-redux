@@ -339,6 +339,65 @@ static int guidebot_route_hit_is_closed_trigger_barrier(
 	return 0;
 }
 
+/* Shared full-radius sweep for route geometry and final-target shortcuts */
+int guidebot_route_waypoint_leg_clear(const object *objp, const vms_vector *from,
+	int segnum, const vms_vector *to)
+{
+	fvi_query query;
+	fvi_info hit;
+	if (!objp || segnum < 0 || segnum > Highest_segment_index)
+		return 0;
+	memset(&query, 0, sizeof(query));
+	memset(&hit, 0, sizeof(hit));
+	query.p0 = from;
+	query.p1 = to;
+	query.startseg = segnum;
+	query.rad = objp->size;
+	if (ConsoleObject && ConsoleObject->size > query.rad)
+		query.rad = ConsoleObject->size;
+	query.thisobjnum = objp - Objects;
+	return find_vector_intersection(&query, &hit) == HIT_NONE;
+}
+
+/* Keep arbitrary route waypoints out of solid geometry without changing valid
+ * points or relaxing the ship radius, using a deterministic interior search */
+int guidebot_route_adjust_waypoint(const object *objp, int segnum, vms_vector *point)
+{
+	object probe;
+	vms_vector center, offset;
+	int sample, hit_seg = -1, hit_side = -1, hit_face = -1;
+	if (!objp || segnum < 0 || segnum > Highest_segment_index)
+		return 0;
+	memset(&probe, 0, sizeof(probe));
+	probe.segnum = segnum;
+	probe.pos = *point;
+	probe.size = objp->size;
+	if (ConsoleObject && ConsoleObject->size > probe.size)
+		probe.size = ConsoleObject->size;
+	if (!object_intersects_wall_d(&probe, &hit_seg, &hit_side, &hit_face))
+		return 1;
+	/* Door-contact waypoints are intentional interaction targets, not malformed
+	 * geometry points; preserve them while the door or blastable wall is closed */
+	if (hit_seg >= 0 && hit_side >= 0) {
+		int wall_num = Segments[hit_seg].sides[hit_side].wall_num;
+		if (wall_num >= 0 && (Walls[wall_num].type == WALL_DOOR ||
+		                      Walls[wall_num].type == WALL_BLASTABLE))
+			return 0;
+	}
+	compute_segment_center(&center, &Segments[segnum]);
+	vm_vec_sub(&offset, &center, point);
+	for (sample = 1; sample <= 16; ++sample) {
+		vm_vec_scale_add(&probe.pos, point, &offset, sample * (F1_0 / 16));
+		if (find_point_seg(&probe.pos, segnum) != segnum || object_intersects_wall(&probe))
+			continue;
+		if (!guidebot_route_waypoint_leg_clear(objp, &center, segnum, &probe.pos))
+			continue;
+		*point = probe.pos;
+		return 1;
+	}
+	return 0;
+}
+
 static int guidebot_route_find_blocked_segment(object *objp, point_seg *psegs,
 	int num_points, int start_seg, int end_seg, int *avoid_segment)
 {
@@ -1259,6 +1318,7 @@ void move_object_to_goal(object *objp, vms_vector *goal_point, int goal_seg)
 //	----------------------------------------------------------------------------------------------------------
 //	Optimization: If current velocity will take robot near goal, don't change velocity
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+
 static int guidebot_route_waypoint_reached(const object *objp,
 	const point_seg *waypoint, fix distance, fix threshold_distance)
 {
@@ -1350,6 +1410,36 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 
 	goal_point = Point_segs[aip->hide_index + aip->cur_path_index].point;
 	dist_to_goal = vm_vec_dist_quick(&goal_point, &objp->pos);
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	/* Repair the waypoint being approached, not future points behind doors
+	 * Its incoming leg must be clear from the actor's actual position */
+	if (robptr->companion && Escort_route_goal.active) {
+		point_seg *waypoint = &Point_segs[aip->hide_index + aip->cur_path_index];
+		vms_vector adjusted = waypoint->point;
+		fvi_query query;
+		fvi_info hit;
+		memset(&query, 0, sizeof(query));
+		memset(&hit, 0, sizeof(hit));
+		query.p0 = &objp->pos;
+		query.p1 = &waypoint->point;
+		query.startseg = objp->segnum;
+		query.rad = objp->size;
+		if (ConsoleObject && ConsoleObject->size > query.rad)
+			query.rad = ConsoleObject->size;
+		query.thisobjnum = objp - Objects;
+		/* A proximity waypoint need not be occupied exactly. Repair it only
+		 * when its approach is actually stopped at geometry, not while a normal
+		 * approach can still reach the follower's acceptance region */
+		if (find_vector_intersection(&query, &hit) == HIT_WALL &&
+		    vm_vec_dist_quick(&objp->pos, &hit.hit_pnt) <= F1_0 / 4 &&
+		    guidebot_route_adjust_waypoint(objp, waypoint->segnum, &adjusted) &&
+		    memcmp(&adjusted, &waypoint->point, sizeof(adjusted)) &&
+		    guidebot_route_waypoint_leg_clear(objp, &objp->pos, objp->segnum, &adjusted)) {
+			waypoint->point = goal_point = adjusted;
+			dist_to_goal = vm_vec_dist_quick(&goal_point, &objp->pos);
+		}
+	}
+#endif
 
 	//	If running from player, only run until can't be seen.
 	if (ailp->mode == AIM_RUN_FROM_OBJECT) {

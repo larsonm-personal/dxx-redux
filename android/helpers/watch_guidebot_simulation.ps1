@@ -55,7 +55,9 @@ function Get-GuidebotBrowserIndex {
             } catch {}
         }
         foreach ($mission in $entries) {
-            if ([string](Get-GuidebotBrowserValue $mission game '') -ne 'd2') { continue }
+            $game = [string](Get-GuidebotBrowserValue $mission game '')
+            if ($game -notin @('d1', 'd2')) { continue }
+            $originalDescent = $relative -eq 'FirstStrike.json' -and $game -eq 'd1'
             $targetIndex = [int](Get-GuidebotBrowserValue $mission target_index 0)
             $simulation = @($simulationEntries | Where-Object { [int]$_.target_index -eq $targetIndex } | Select-Object -First 1)
             foreach ($levelRecord in @(Get-GuidebotBrowserValue $mission levels @())) {
@@ -68,9 +70,17 @@ function Get-GuidebotBrowserIndex {
                         } | Select-Object -First 1)
                 } else { @() }
                 $missionName = [string](Get-GuidebotBrowserValue $mission mission_name $file.BaseName)
+                if ($originalDescent) {
+                    $missionName = 'Descent: First Strike [original D1-in-D2]'
+                } elseif ($file.BaseName -eq 'descent.fan_d2_conversion') {
+                    $missionName += ' [fan D2 conversion]'
+                } elseif ($game -eq 'd1') {
+                    $missionName += ' [D1-in-D2]'
+                }
                 $levelName = [string](Get-GuidebotBrowserValue $levelRecord level_name $levelFile)
                 [pscustomobject]@{
                     MissionName = $missionName
+                    OriginalDescent = $originalDescent
                     MissionFile = [string](Get-GuidebotBrowserValue $mission mission_filename '')
                     MissionJson = $relative
                     TargetIndex = $targetIndex
@@ -87,7 +97,8 @@ function Get-GuidebotBrowserIndex {
             }
         }
     }
-    return @($items)
+    # Keep level and mission order stable within each priority group
+    return @($items | Sort-Object -Stable -Property @{ Expression = { -not $_.OriginalDescent } })
 }
 
 function Find-GuidebotBrowserItems {

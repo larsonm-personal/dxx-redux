@@ -35,7 +35,7 @@
           "s": 29
         }
       ],
-      "total_frames": 1758,
+      "total_frames": 1743,
       "rng_end": {
         "state": 3869697481,
         "calls": 760
@@ -89,10 +89,10 @@
         },
         {
           "n": "exit",
-          "s": 68
+          "s": 67
         }
       ],
-      "total_frames": 4058,
+      "total_frames": 4033,
       "rng_end": {
         "state": 1458346349,
         "calls": 1620
@@ -133,7 +133,7 @@
           "s": 103
         }
       ],
-      "total_frames": 6179,
+      "total_frames": 6178,
       "rng_end": {
         "state": 2836619584,
         "calls": 1991
@@ -227,7 +227,7 @@
           "s": 86
         }
       ],
-      "total_frames": 5168,
+      "total_frames": 5170,
       "rng_end": {
         "state": 937570603,
         "calls": 3550
@@ -253,22 +253,22 @@
         },
         {
           "n": "red key",
-          "s": 31
+          "s": 28
         },
         {
           "n": "fly-through 4",
-          "s": 38
+          "s": 35
         },
         {
           "n": "reactor",
-          "s": 39
+          "s": 35
         },
         {
           "n": "exit",
-          "s": 47
+          "s": 43
         }
       ],
-      "total_frames": 2805,
+      "total_frames": 2578,
       "rng_end": {
         "state": 1920580197,
         "calls": 796
@@ -343,10 +343,10 @@
         },
         {
           "n": "exit",
-          "s": 51
+          "s": 52
         }
       ],
-      "total_frames": 3074,
+      "total_frames": 3092,
       "rng_end": {
         "state": 3318864716,
         "calls": 1131
@@ -486,7 +486,7 @@
         },
         {
           "n": "red key",
-          "s": 82
+          "s": 81
         },
         {
           "n": "switch 14",
@@ -505,7 +505,7 @@
           "s": 130
         }
       ],
-      "total_frames": 7808,
+      "total_frames": 7809,
       "rng_end": {
         "state": 3800454883,
         "calls": 2470
@@ -621,14 +621,14 @@
         },
         {
           "n": "reactor",
-          "s": 88
+          "s": 89
         },
         {
           "n": "exit",
-          "s": 101
+          "s": 102
         }
       ],
-      "total_frames": 6078,
+      "total_frames": 6090,
       "rng_end": {
         "state": 3123028690,
         "calls": 2277
@@ -665,7 +665,7 @@
           "s": 163
         }
       ],
-      "total_frames": 9784,
+      "total_frames": 9803,
       "rng_end": {
         "state": 2816012112,
         "calls": 3959
@@ -695,11 +695,11 @@
         },
         {
           "n": "fly-through 10",
-          "s": 108
+          "s": 107
         },
         {
           "n": "fly-through 11",
-          "s": 108
+          "s": 107
         },
         {
           "n": "fly-through 12",
@@ -707,18 +707,18 @@
         },
         {
           "n": "red key",
-          "s": 124
+          "s": 123
         },
         {
           "n": "boss",
-          "s": 170
+          "s": 169
         },
         {
           "n": "exit",
           "s": 182
         }
       ],
-      "total_frames": 10917,
+      "total_frames": 10900,
       "rng_end": {
         "state": 2734573263,
         "calls": 3610
@@ -767,7 +767,7 @@
           "s": 82
         }
       ],
-      "total_frames": 4913,
+      "total_frames": 4916,
       "rng_end": {
         "state": 3844416493,
         "calls": 2004
@@ -899,14 +899,14 @@
         },
         {
           "n": "boss",
-          "s": 76
+          "s": 73
         },
         {
           "n": "exit",
-          "s": 101
+          "s": 97
         }
       ],
-      "total_frames": 6043,
+      "total_frames": 5849,
       "rng_end": {
         "state": 1589087784,
         "calls": 2751
@@ -1069,7 +1069,7 @@
           "s": 64
         }
       ],
-      "total_frames": 3846,
+      "total_frames": 3845,
       "rng_end": {
         "state": 3607355649,
         "calls": 1792
@@ -1114,7 +1114,7 @@
           "s": 51
         }
       ],
-      "total_frames": 3042,
+      "total_frames": 3041,
       "rng_end": {
         "state": 1511043936,
         "calls": 1319

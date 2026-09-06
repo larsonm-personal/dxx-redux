@@ -52,3 +52,22 @@ if ($LASTEXITCODE -ne 0 -or $preview -notmatch 'GuideBot route browser' -or
 }
 
 Write-Host 'GuideBot simulation browser filtering and initial rendering passed'
+
+foreach ($query in @('d', 'de', 'descent', 'd1', 'first strike')) {
+    $matches = @(Get-BrowserResults -Query $query)
+    if (-not $matches.Count -or $matches[0].MissionJson -ne 'FirstStrike.json' -or
+        $matches[0].MissionName -notmatch 'original D1-in-D2') {
+        throw "Original Descent was not first for query $query"
+    }
+}
+$conversion = @(Get-BrowserResults -Query 'descent fan conversion 8')
+if ($conversion.Count -ne 1 -or $conversion[0].MissionJson -ne 'descent.fan_d2_conversion.json' -or
+    $conversion[0].MissionName -notmatch 'fan D2 conversion') {
+    throw 'Fan conversion identity is ambiguous'
+}
+foreach ($suffix in @('zip', 'json', 'simulation.json')) {
+    if (-not (Test-Path -LiteralPath (Join-Path $repoRoot "game_data\mission_files\descent.fan_d2_conversion.$suffix"))) {
+        throw "Renamed conversion is missing its paired $suffix file"
+    }
+}
+Write-Host 'Original D1 and fan conversion identity and search priority passed'

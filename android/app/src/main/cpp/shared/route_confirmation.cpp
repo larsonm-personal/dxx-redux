@@ -409,8 +409,16 @@ void refine_last_path_point(object *actor)
 	if (aip->hide_index < 0 || aip->path_length <= 0)
 		return;
 	last = &Point_segs[aip->hide_index + aip->path_length - 1];
-	if (last->segnum == State.target_seg)
-		last->point = State.target_pos;
+	if (last->segnum == State.target_seg) {
+		vms_vector target = State.target_pos;
+		if (guidebot_route_adjust_waypoint(actor, State.target_seg, &target)) {
+			State.target_pos = target;
+			const point_seg *previous = aip->path_length > 1 ? last - 1 : last;
+			if (guidebot_route_waypoint_leg_clear(actor, &previous->point,
+			                                      previous->segnum, &target))
+				last->point = target;
+		}
+	}
 }
 
 int objective_was_recorded(const level_metadata_route_step *step, int step_index)
@@ -1823,7 +1831,9 @@ extern "C" int route_confirmation_drive_companion(object *objp)
 	if (State.target_pos_valid && objp->ctype.ai_info.PATH_DIR > 0 &&
 	    objp->ctype.ai_info.path_length > 0 &&
 	    objp->ctype.ai_info.cur_path_index >=
-	        objp->ctype.ai_info.path_length - 1) {
+	        objp->ctype.ai_info.path_length - 1 &&
+	    guidebot_route_waypoint_leg_clear(objp, &objp->pos, objp->segnum,
+	                                     &State.target_pos)) {
 		ai_path_set_orient_and_vel(objp, &State.target_pos, 2, NULL);
 		speed_up_actor(objp);
 		return 1;

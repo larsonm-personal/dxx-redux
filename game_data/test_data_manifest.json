@@ -1868,8 +1868,8 @@
       "kind": "mission_zip"
     },
     {
-      "path": "game_data/mission_files/Descent.zip",
-      "name": "Descent.zip",
+      "path": "game_data/mission_files/descent.fan_d2_conversion.zip",
+      "name": "descent.fan_d2_conversion.zip",
       "size": 2695801,
       "sha256": "b63a8a179c8614044de6dfa5a98b94899166c02abc051c88250dedacd07a8101",
       "kind": "mission_zip"

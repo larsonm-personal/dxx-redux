@@ -143,6 +143,9 @@ int escort_route_build_goal_for_step(const level_metadata_route_step *step,
                                      escort_route_goal *candidate);
 int escort_route_adopt_exit_command(void);
 int escort_route_physical_target(object *objp, int goal_seg, int max_depth);
+int guidebot_route_adjust_waypoint(const object *objp, int segnum, vms_vector *point);
+int guidebot_route_waypoint_leg_clear(const object *objp, const vms_vector *from,
+                                     int segnum, const vms_vector *to);
 void escort_route_refresh_metadata(void);
 
 #endif
