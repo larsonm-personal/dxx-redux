@@ -9,8 +9,7 @@
   "status": "failed",
   "level_counts": {
     "failed": 2,
-    "timeout": 1,
-    "infrastructure_error": 1
+    "timeout": 2
   },
   "levels": [
     {
@@ -34,8 +33,18 @@
       "level_num": 2,
       "level_file": "BLUE.RDL",
       "route_input_sha256": "1DA7A9F1541B31A262390966F27515F0D9B5C499B5B5533B2DA7CF486A60F85C",
-      "status": "infrastructure_error",
-      "problem": "Route engine infrastructure failure for Colossus.json|0|2|BLUE.RDL, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\Colossus.json_0_2_BLUE.RDL_run_1.log"
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4900,
+      "rng_end": {
+        "state": 3297241969,
+        "calls": 16
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 3,

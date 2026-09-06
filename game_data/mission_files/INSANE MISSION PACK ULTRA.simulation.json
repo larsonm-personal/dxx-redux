@@ -9,8 +9,7 @@
   "status": "partial",
   "level_counts": {
     "ok": 3,
-    "timeout": 4,
-    "infrastructure_error": 1
+    "timeout": 5
   },
   "levels": [
     {
@@ -174,8 +173,23 @@
       "level_num": 8,
       "level_file": "bg7.rdl",
       "route_input_sha256": "C0E2DAAED4683B56E55C86C9F3247141F182A46E8CBBA756172FD5EB55BDF276",
-      "status": "infrastructure_error",
-      "problem": "Route engine infrastructure failure for INSANE MISSION PACK ULTRA.json|0|8|bg7.rdl, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\INSANE_MISSION_PACK_ULTRA.json_0_8_bg7.rdl_run_1.log"
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "boss",
+          "s": 22
+        }
+      ],
+      "total_frames": 5772,
+      "rng_end": {
+        "state": 3375450775,
+        "calls": 850
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }
   ]
 }

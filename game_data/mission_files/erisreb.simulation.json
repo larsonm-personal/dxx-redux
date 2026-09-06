@@ -8,17 +8,46 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
-    "timeout": 5,
-    "infrastructure_error": 1
+    "ok": 4,
+    "timeout": 5
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "eris0001.rdl",
       "route_input_sha256": "1FE14D1540786971D4AD684439D562515B22C33EADA99352EF4FF3ED9EA371F5",
-      "status": "infrastructure_error",
-      "problem": "Route engine process timeout after 180 seconds for erisreb.json|0|1|eris0001.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\erisreb.json_0_1_eris0001.rdl_run_1.log"
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 10
+        },
+        {
+          "n": "gold key",
+          "s": 41
+        },
+        {
+          "n": "red key",
+          "s": 71
+        },
+        {
+          "n": "reactor",
+          "s": 88
+        },
+        {
+          "n": "exit",
+          "s": 95
+        }
+      ],
+      "total_frames": 5711,
+      "rng_end": {
+        "state": 2883693444,
+        "calls": 83
+      }
     },
     {
       "level_num": 2,

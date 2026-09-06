@@ -10,8 +10,7 @@
   "level_counts": {
     "ok": 2,
     "failed": 2,
-    "timeout": 5,
-    "infrastructure_error": 1
+    "timeout": 6
   },
   "levels": [
     {
@@ -156,8 +155,23 @@
       "level_num": 6,
       "level_file": "e2m6.rdl",
       "route_input_sha256": "C0D207225A89F3EA2A8C5D67ABD452CADB4B1CCC83D8143F4E7AF5D6CCD70528",
-      "status": "infrastructure_error",
-      "problem": "Route engine infrastructure failure for trine2.json|0|6|e2m6.rdl, exit -1073740791, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\trine2.json_0_6_e2m6.rdl_run_1.log"
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 14
+        }
+      ],
+      "total_frames": 5781,
+      "rng_end": {
+        "state": 1343201072,
+        "calls": 23
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 7,

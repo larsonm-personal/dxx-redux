@@ -9,8 +9,7 @@
   "status": "failed",
   "level_counts": {
     "failed": 1,
-    "timeout": 5,
-    "infrastructure_error": 2
+    "timeout": 7
   },
   "levels": [
     {
@@ -121,8 +120,18 @@
       "level_num": 6,
       "level_file": "THEHIVE6.RDL",
       "route_input_sha256": "A5414A17EFB71AB9A641CC95E38A5090EA40AA09B83B44764B3209B349CB80B3",
-      "status": "infrastructure_error",
-      "problem": "Route engine infrastructure failure for THEHIVE.json|0|6|THEHIVE6.RDL, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\THEHIVE.json_0_6_THEHIVE6.RDL_run_1.log"
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4792,
+      "rng_end": {
+        "state": 3914758370,
+        "calls": 21
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 7,
@@ -150,8 +159,18 @@
       "level_num": 8,
       "level_file": "THEHIVE8.RDL",
       "route_input_sha256": "42B4A3F195F01705B02108F5A803563EE8D74484F39D6C8965A2D03E0E3ABF51",
-      "status": "infrastructure_error",
-      "problem": "Route engine infrastructure failure for THEHIVE.json|0|8|THEHIVE8.RDL, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\THEHIVE.json_0_8_THEHIVE8.RDL_run_1.log"
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 8275,
+      "rng_end": {
+        "state": 3297241969,
+        "calls": 16
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }
   ]
 }

@@ -141,17 +141,51 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "infrastructure_error": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "merc04.rdl",
         "route_input_sha256": "C996F6A3BDAC4374E8D259AD424314E378EA9245EE5C0DDBC0EEFB1F691079F4",
-        "status": "infrastructure_error",
-        "problem": "Route engine infrastructure failure for d1mercen.json|3|0|merc04.rdl, exit 1, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\d1mercen.json_3_0_merc04.rdl_run_1.log"
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 10
+          },
+          {
+            "n": "hidden door",
+            "s": 22
+          },
+          {
+            "n": "gold key",
+            "s": 22
+          },
+          {
+            "n": "red key",
+            "s": 28
+          },
+          {
+            "n": "reactor",
+            "s": 53
+          },
+          {
+            "n": "exit",
+            "s": 71
+          }
+        ],
+        "total_frames": 4263,
+        "rng_end": {
+          "state": 3885567453,
+          "calls": 100
+        }
       }
     ]
   },

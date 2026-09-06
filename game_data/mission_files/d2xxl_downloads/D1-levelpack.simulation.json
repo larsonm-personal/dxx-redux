@@ -9,15 +9,25 @@
     "seed": 1,
     "status": "failed",
     "level_counts": {
-      "infrastructure_error": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "arakian.rdl",
         "route_input_sha256": "E17465CB1DDE0F216114A02B59B595DD4B3702341C9ACCE2D3F300BFC50B9954",
-        "status": "infrastructure_error",
-        "problem": "Route engine infrastructure failure for d2xxl_downloads/D1-levelpack.json|0|0|arakian.rdl, exit -1073740791, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\d2xxl_downloads_D1-levelpack.json_0_0_arakian.rdl_run_1.log"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 3929,
+        "rng_end": {
+          "state": 2937909499,
+          "calls": 14
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },

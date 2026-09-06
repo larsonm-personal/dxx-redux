@@ -6,26 +6,34 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "failed",
   "level_counts": {
-    "ok": 1,
     "failed": 1,
-    "timeout": 2,
-    "infrastructure_error": 1
+    "timeout": 4
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "pits.rdl",
       "route_input_sha256": "05CAAA3D3FDF03FB974A3FBB17B6D25D5D2E91CB29F5234A3F2E8CC4B2700070",
-      "status": "infrastructure_error",
-      "problem": "Route engine infrastructure failure for bratmaze.json|0|1|pits.rdl, exit -1073740791, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\bratmaze.json_0_1_pits.rdl_run_1.log"
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4436,
+      "rng_end": {
+        "state": 2111915288,
+        "calls": 15
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 2,
       "level_file": "panic.rdl",
       "route_input_sha256": "93230D4523EFE571DB553CA7AE3E4793722BAF137B4676CC88382E94FB9F4020",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -34,21 +42,14 @@
         {
           "n": "blastable wall",
           "s": 5
-        },
-        {
-          "n": "reactor",
-          "s": 5
-        },
-        {
-          "n": "exit",
-          "s": 12
         }
       ],
-      "total_frames": 732,
+      "total_frames": 3601,
       "rng_end": {
-        "state": 2102736524,
-        "calls": 43
-      }
+        "state": 4147913800,
+        "calls": 31
+      },
+      "problem": "route confirmation exceeded 60-second simulation budget"
     },
     {
       "level_num": 3,

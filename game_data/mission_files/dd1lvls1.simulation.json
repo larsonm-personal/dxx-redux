@@ -10,8 +10,7 @@
   "level_counts": {
     "ok": 5,
     "failed": 1,
-    "timeout": 5,
-    "infrastructure_error": 1
+    "timeout": 6
   },
   "levels": [
     {
@@ -255,8 +254,23 @@
       "level_num": 8,
       "level_file": "junine.rdl",
       "route_input_sha256": "E09890DEFDF6D1F05259C6BE4C8A82064B4741A6C8E6299FDDC6F856F6D7104D",
-      "status": "infrastructure_error",
-      "problem": "Route engine infrastructure failure for dd1lvls1.json|0|8|junine.rdl, exit 1, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\dd1lvls1.json_0_8_junine.rdl_run_1.log"
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 13
+        }
+      ],
+      "total_frames": 5191,
+      "rng_end": {
+        "state": 4008331270,
+        "calls": 33
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 9,

@@ -9,8 +9,7 @@
   "level_counts": {
     "ok": 16,
     "failed": 2,
-    "timeout": 8,
-    "infrastructure_error": 1
+    "timeout": 9
   },
   "levels": [
     {
@@ -858,8 +857,39 @@
       "level_num": 26,
       "level_file": "level26.rl2",
       "route_input_sha256": "C3CADC6DA1D3F3A26FE61264731DD2D2F63D99CDB2E3081BAEAD4D8B93D457CA",
-      "status": "infrastructure_error",
-      "problem": "Route engine infrastructure failure for Descent 1 to Descent 2 Conversion.json|0|26|level26.rl2, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\Descent_1_to_Descent_2_Conversion.json_0_26_level26.rl2_run_1.log"
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 24
+        },
+        {
+          "n": "gold key",
+          "s": 63
+        },
+        {
+          "n": "hidden door",
+          "s": 79
+        },
+        {
+          "n": "red key",
+          "s": 85
+        },
+        {
+          "n": "reactor",
+          "s": 110
+        }
+      ],
+      "total_frames": 13327,
+      "rng_end": {
+        "state": 1070506881,
+        "calls": 2176
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 27,

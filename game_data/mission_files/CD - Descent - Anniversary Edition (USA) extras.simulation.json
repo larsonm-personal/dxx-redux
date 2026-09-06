@@ -443,15 +443,25 @@
     "seed": 1,
     "status": "failed",
     "level_counts": {
-      "infrastructure_error": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "MAG4.rdl",
         "route_input_sha256": "A6A462C2B614BF0CCF6F2230A0565FB363AFCD2E373D0E54EE99CCDAA22661F0",
-        "status": "infrastructure_error",
-        "problem": "Route engine infrastructure failure for CD - Descent - Anniversary Edition (USA) extras.json|9|0|MAG4.rdl, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\CD_-_Descent_-_Anniversary_Edition_USA_extras.json_9_0_MAG4.rdl_run_1.log"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 3627,
+        "rng_end": {
+          "state": 836760821,
+          "calls": 12
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },
@@ -465,15 +475,25 @@
     "seed": 1,
     "status": "failed",
     "level_counts": {
-      "infrastructure_error": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "newest.RDL",
         "route_input_sha256": "19D54D7AA303E7801CD6644321B8ABB8DF6A4F7737DDE3C3B51AB93F88F72266",
-        "status": "infrastructure_error",
-        "problem": "Route engine infrastructure failure for CD - Descent - Anniversary Edition (USA) extras.json|10|0|newest.RDL, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\CD_-_Descent_-_Anniversary_Edition_USA_extras.json_10_0_newest.RDL_run_1.log"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 6116,
+        "rng_end": {
+          "state": 675780521,
+          "calls": 24
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },

@@ -10,8 +10,7 @@
     "level_counts": {
       "ok": 19,
       "failed": 1,
-      "timeout": 9,
-      "infrastructure_error": 1
+      "timeout": 10
     },
     "levels": [
       {
@@ -403,8 +402,23 @@
         "level_num": 11,
         "level_file": "psx11.rl2",
         "route_input_sha256": "9489702DFF9729880A104BD5ADB2759081E72013385EF14DA5F514520C58B6B2",
-        "status": "infrastructure_error",
-        "problem": "Route engine infrastructure failure for descent_maximum_fixed.json|0|11|psx11.rl2, exit 1, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\descent_maximum_fixed.json_0_11_psx11.rl2_run_1.log"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 7",
+            "s": 1
+          }
+        ],
+        "total_frames": 742,
+        "rng_end": {
+          "state": 1187663298,
+          "calls": 181
+        },
+        "problem": "physical route frontier did not open after 8 interaction attempts"
       },
       {
         "level_num": 12,

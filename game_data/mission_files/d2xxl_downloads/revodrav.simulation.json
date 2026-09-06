@@ -10,8 +10,7 @@
   "level_counts": {
     "ok": 11,
     "failed": 1,
-    "timeout": 16,
-    "infrastructure_error": 2
+    "timeout": 18
   },
   "levels": [
     {
@@ -536,8 +535,27 @@
       "level_num": 18,
       "level_file": "drav18.rdl",
       "route_input_sha256": "222F060FC92E6530366229812BFC9BDE9139C534BFE2591F0A0965217E418FEB",
-      "status": "infrastructure_error",
-      "problem": "Route engine infrastructure failure for d2xxl_downloads/revodrav.json|0|18|drav18.rdl, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\d2xxl_downloads_revodrav.json_0_18_drav18.rdl_run_1.log"
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 18
+        },
+        {
+          "n": "gold key",
+          "s": 42
+        }
+      ],
+      "total_frames": 7777,
+      "rng_end": {
+        "state": 456633834,
+        "calls": 45
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 19,
@@ -659,8 +677,18 @@
       "level_num": 23,
       "level_file": "drav23.rdl",
       "route_input_sha256": "B6D56DDD5A3EFDC6287F53D60C14F6B317FD3EB0E9DCE5465A58AE2DB4EC036F",
-      "status": "infrastructure_error",
-      "problem": "Route engine infrastructure failure for d2xxl_downloads/revodrav.json|0|23|drav23.rdl, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\d2xxl_downloads_revodrav.json_0_23_drav23.rdl_run_1.log"
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 3691,
+      "rng_end": {
+        "state": 2111915288,
+        "calls": 15
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 24,

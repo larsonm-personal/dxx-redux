@@ -44,17 +44,43 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "infrastructure_error": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "megaloma.rdl",
         "route_input_sha256": "8A3F7D8A9DEDD9A8D4A41C41C52221C543CCB3061FEAF6F54296056B16834AD6",
-        "status": "infrastructure_error",
-        "problem": "Route engine process timeout after 180 seconds for megalo.json|1|0|megaloma.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\megalo.json_1_0_megaloma.rdl_run_1.log"
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 14
+          },
+          {
+            "n": "red key",
+            "s": 38
+          },
+          {
+            "n": "reactor",
+            "s": 60
+          },
+          {
+            "n": "exit",
+            "s": 72
+          }
+        ],
+        "total_frames": 4340,
+        "rng_end": {
+          "state": 208521688,
+          "calls": 79
+        }
       }
     ]
   },

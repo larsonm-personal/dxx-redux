@@ -480,15 +480,25 @@
     "seed": 1,
     "status": "failed",
     "level_counts": {
-      "infrastructure_error": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "MAG4.rdl",
         "route_input_sha256": "B9F419855F70EAC2351D39363CA5EA9F4E4AB4A7C903253BEF76AE85C225B367",
-        "status": "infrastructure_error",
-        "problem": "Route engine infrastructure failure for Extra_Missions.json|10|0|MAG4.rdl, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\Extra_Missions.json_10_0_MAG4.rdl_run_1.log"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 3627,
+        "rng_end": {
+          "state": 836760821,
+          "calls": 12
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },
@@ -502,15 +512,25 @@
     "seed": 1,
     "status": "failed",
     "level_counts": {
-      "infrastructure_error": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "newest.RDL",
         "route_input_sha256": "58D3CCDA59B1E9D8799AA23E2B6445FD99140C380D8AEBEBCA3B5B774AE9B034",
-        "status": "infrastructure_error",
-        "problem": "Route engine infrastructure failure for Extra_Missions.json|11|0|newest.RDL, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\Extra_Missions.json_11_0_newest.RDL_run_1.log"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 6116,
+        "rng_end": {
+          "state": 675780521,
+          "calls": 24
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },

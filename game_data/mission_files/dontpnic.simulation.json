@@ -8,10 +8,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 11,
+    "ok": 12,
     "failed": 7,
-    "timeout": 11,
-    "infrastructure_error": 1
+    "timeout": 11
   },
   "levels": [
     {
@@ -787,8 +786,38 @@
       "level_num": -1,
       "level_file": "levels1.rdl",
       "route_input_sha256": "9620BC86F61A105D5CE2CEEE329969D9442E91F16C158595B6033AC59A1E2DE5",
-      "status": "infrastructure_error",
-      "problem": "Route engine infrastructure failure for dontpnic.json|0|-1|levels1.rdl, exit 1, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\dontpnic.json_0_-1_levels1.rdl_run_1.log"
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 3
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 8
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 11
+        },
+        {
+          "n": "reactor",
+          "s": 15
+        },
+        {
+          "n": "exit",
+          "s": 18
+        }
+      ],
+      "total_frames": 1080,
+      "rng_end": {
+        "state": 2122112351,
+        "calls": 138
+      }
     },
     {
       "level_num": -2,

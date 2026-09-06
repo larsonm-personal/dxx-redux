@@ -51,7 +51,7 @@
     "status": "partial",
     "level_counts": {
       "ok": 3,
-      "infrastructure_error": 1
+      "timeout": 1
     },
     "levels": [
       {
@@ -169,8 +169,35 @@
         "level_num": 4,
         "level_file": "alpha004.rdl",
         "route_input_sha256": "FD1F885DAF49BBC106D454C9903C736F0E20B90F7E6FE4D17E5B604B0B24013A",
-        "status": "infrastructure_error",
-        "problem": "Route engine infrastructure failure for CD - Dimensions for Descent (USA).json|1|4|alpha004.rdl, exit 1, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\CD_-_Dimensions_for_Descent_USA_.json_1_4_alpha004.rdl_run_1.log"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "fly-through 20",
+            "s": 8
+          },
+          {
+            "n": "destroy robot carrying blue key",
+            "s": 11
+          },
+          {
+            "n": "fly-through 22",
+            "s": 23
+          },
+          {
+            "n": "destroy robot carrying red key",
+            "s": 27
+          }
+        ],
+        "total_frames": 6187,
+        "rng_end": {
+          "state": 204674734,
+          "calls": 153
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },
@@ -263,17 +290,43 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "infrastructure_error": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "beta1.rdl",
         "route_input_sha256": "0566E94567D88BDA8CF230072399A5A38495BDAB12F82787B82CD6C4528FAFFE",
-        "status": "infrastructure_error",
-        "problem": "Route engine infrastructure failure for CD - Dimensions for Descent (USA).json|4|0|beta1.rdl, exit 1, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\CD_-_Dimensions_for_Descent_USA_.json_4_0_beta1.rdl_run_1.log"
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "fly-through 15",
+            "s": 5
+          },
+          {
+            "n": "destroy robot carrying red key",
+            "s": 9
+          },
+          {
+            "n": "reactor",
+            "s": 17
+          },
+          {
+            "n": "exit",
+            "s": 24
+          }
+        ],
+        "total_frames": 1437,
+        "rng_end": {
+          "state": 2274957893,
+          "calls": 60
+        }
       }
     ]
   },
@@ -1388,8 +1441,7 @@
     "seed": 1,
     "status": "failed",
     "level_counts": {
-      "timeout": 3,
-      "infrastructure_error": 1
+      "timeout": 4
     },
     "levels": [
       {
@@ -1413,8 +1465,18 @@
         "level_num": 2,
         "level_file": "BRSPIRAL.RDL",
         "route_input_sha256": "E82DD780839C519F3025F5A18A9A4F341138B9205034E1822B1AA07BA3054A28",
-        "status": "infrastructure_error",
-        "problem": "Route engine infrastructure failure for CD - Dimensions for Descent (USA).json|28|2|BRSPIRAL.RDL, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\CD_-_Dimensions_for_Descent_USA_.json_28_2_BRSPIRAL.RDL_run_1.log"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 4385,
+        "rng_end": {
+          "state": 836760821,
+          "calls": 12
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       },
       {
         "level_num": 3,
@@ -1689,15 +1751,38 @@
     "seed": 1,
     "status": "failed",
     "level_counts": {
-      "infrastructure_error": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "scartrek.rdl",
         "route_input_sha256": "57D902172D7BC27EABD320E8D8A49BDBC041DDE75410E89019593CDCA61C8558",
-        "status": "infrastructure_error",
-        "problem": "Route engine infrastructure failure for CD - Dimensions for Descent (USA).json|34|0|scartrek.rdl, exit -1073740791, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\CD_-_Dimensions_for_Descent_USA_.json_34_0_scartrek.rdl_run_1.log"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 1
+          },
+          {
+            "n": "fly-through 1",
+            "s": 8
+          },
+          {
+            "n": "gold key",
+            "s": 8
+          }
+        ],
+        "total_frames": 5074,
+        "rng_end": {
+          "state": 1775811865,
+          "calls": 40
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },
@@ -1906,15 +1991,25 @@
     "seed": 1,
     "status": "failed",
     "level_counts": {
-      "infrastructure_error": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "spiral.rdl",
         "route_input_sha256": "9BC187FA149A7713467AB9E9DEE4B2C5B117CDB14107C13D85C30BB056556C92",
-        "status": "infrastructure_error",
-        "problem": "Route engine infrastructure failure for CD - Dimensions for Descent (USA).json|38|0|spiral.rdl, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\CD_-_Dimensions_for_Descent_USA_.json_38_0_spiral.rdl_run_1.log"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 4385,
+        "rng_end": {
+          "state": 836760821,
+          "calls": 12
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },
@@ -2087,17 +2182,47 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "infrastructure_error": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "twisty.rdl",
         "route_input_sha256": "973518C19600C13D619197D0B57F3D7F94417CD35254E73DAFAE10160EACC268",
-        "status": "infrastructure_error",
-        "problem": "Route engine process timeout after 180 seconds for CD - Dimensions for Descent (USA).json|43|0|twisty.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\CD_-_Dimensions_for_Descent_USA_.json_43_0_twisty.rdl_run_1.log"
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "gold key",
+            "s": 9
+          },
+          {
+            "n": "blastable wall",
+            "s": 20
+          },
+          {
+            "n": "blue key",
+            "s": 21
+          },
+          {
+            "n": "reactor",
+            "s": 36
+          },
+          {
+            "n": "exit",
+            "s": 46
+          }
+        ],
+        "total_frames": 2744,
+        "rng_end": {
+          "state": 2122112351,
+          "calls": 138
+        }
       }
     ]
   },

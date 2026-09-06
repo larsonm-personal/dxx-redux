@@ -7,11 +7,10 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 64,
+    "ok": 65,
     "failed": 4,
     "timeout": 13,
-    "unsupported": 1,
-    "infrastructure_error": 1
+    "unsupported": 1
   },
   "levels": [
     {
@@ -562,8 +561,38 @@
       "level_num": 16,
       "level_file": "level16.rl2",
       "route_input_sha256": "DDF9A06D92A0E91A69FB770C633C5ACE9F5016BBF7127367CF600819CB0DCB53",
-      "status": "infrastructure_error",
-      "problem": "Route engine infrastructure failure for TRINITY.json|0|16|level16.rl2, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\TRINITY.json_0_16_level16.rl2_run_1.log"
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 14
+        },
+        {
+          "n": "gold key",
+          "s": 31
+        },
+        {
+          "n": "red key",
+          "s": 45
+        },
+        {
+          "n": "reactor",
+          "s": 70
+        },
+        {
+          "n": "exit",
+          "s": 80
+        }
+      ],
+      "total_frames": 4803,
+      "rng_end": {
+        "state": 2876703512,
+        "calls": 2575
+      }
     },
     {
       "level_num": 17,

@@ -10,8 +10,7 @@
   "level_counts": {
     "ok": 3,
     "failed": 1,
-    "timeout": 9,
-    "infrastructure_error": 2
+    "timeout": 11
   },
   "levels": [
     {
@@ -154,8 +153,23 @@
       "level_num": 6,
       "level_file": "series06.rdl",
       "route_input_sha256": "E023F220E1BB1B352DCB031922A4C271D5DDF200520A61FF64166C790B75B311",
-      "status": "infrastructure_error",
-      "problem": "Route engine infrastructure failure for Descend Again.json|0|6|series06.rdl, exit -1073740791, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\Descend_Again.json_0_6_series06.rdl_run_1.log"
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 12
+        }
+      ],
+      "total_frames": 4820,
+      "rng_end": {
+        "state": 3008955749,
+        "calls": 28
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 7,
@@ -296,8 +310,18 @@
       "level_num": 11,
       "level_file": "series11.rdl",
       "route_input_sha256": "E9081C019714D2BC55716017734B2F10CBC2CA8B28916B1970C0A22AA7D68F0C",
-      "status": "infrastructure_error",
-      "problem": "Route engine infrastructure failure for Descend Again.json|0|11|series11.rdl, exit -1073740791, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\Descend_Again.json_0_11_series11.rdl_run_1.log"
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4978,
+      "rng_end": {
+        "state": 3008955749,
+        "calls": 28
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 12,

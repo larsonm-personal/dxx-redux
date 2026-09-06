@@ -9,7 +9,7 @@
   "status": "partial",
   "level_counts": {
     "ok": 2,
-    "infrastructure_error": 1
+    "timeout": 1
   },
   "levels": [
     {
@@ -90,8 +90,18 @@
       "level_num": 3,
       "level_file": "LOD.rdl",
       "route_input_sha256": "21DE6F311FA9331E7E137742E8732390A2CF26261306A855F68F597AA6598C31",
-      "status": "infrastructure_error",
-      "problem": "Route engine infrastructure failure for HDPACK1.json|0|3|LOD.rdl, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\HDPACK1.json_0_3_LOD.rdl_run_1.log"
+      "status": "timeout",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 4748,
+      "rng_end": {
+        "state": 2937909499,
+        "calls": 14
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }
   ]
 }

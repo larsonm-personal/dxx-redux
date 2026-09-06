@@ -704,17 +704,47 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "infrastructure_error": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "BRDECON.rdl",
         "route_input_sha256": "8DEDB70EE08E7543C54B60E3B62108A869C89CA950DE2D61244133A55BA7EF50",
-        "status": "infrastructure_error",
-        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Levels of the World (USA).json|14|0|BRDECON.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_14_0_BRDECON.rdl_run_1.log"
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 23
+          },
+          {
+            "n": "gold key",
+            "s": 44
+          },
+          {
+            "n": "red key",
+            "s": 69
+          },
+          {
+            "n": "reactor",
+            "s": 116
+          },
+          {
+            "n": "exit",
+            "s": 129
+          }
+        ],
+        "total_frames": 7751,
+        "rng_end": {
+          "state": 3758492830,
+          "calls": 105
+        }
       }
     ]
   },
@@ -852,15 +882,25 @@
     "seed": 1,
     "status": "failed",
     "level_counts": {
-      "infrastructure_error": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "BRSPIRAL.rdl",
         "route_input_sha256": "9CDB9FE791412B64F06F6721549780C67F27BFF3C6A6A8E17FDE3FE5B554D638",
-        "status": "infrastructure_error",
-        "problem": "Route engine infrastructure failure for CD - Descent - Levels of the World (USA).json|17|0|BRSPIRAL.rdl, exit -1073741819, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_17_0_BRSPIRAL.rdl_run_1.log"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [],
+        "total_frames": 4385,
+        "rng_end": {
+          "state": 836760821,
+          "calls": 12
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },
@@ -2023,15 +2063,30 @@
     "seed": 1,
     "status": "failed",
     "level_counts": {
-      "infrastructure_error": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "iceout.rdl",
         "route_input_sha256": "57A555AAC6F674B08E7A7DBEFA04046595093F4C9BA6D2D5A52274CECC8C01BB",
-        "status": "infrastructure_error",
-        "problem": "Route engine infrastructure failure for CD - Descent - Levels of the World (USA).json|45|0|iceout.rdl, exit 1, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_45_0_iceout.rdl_run_1.log"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "gold key",
+            "s": 16
+          }
+        ],
+        "total_frames": 6168,
+        "rng_end": {
+          "state": 3776134388,
+          "calls": 35
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },
@@ -3026,15 +3081,54 @@
     "seed": 1,
     "status": "failed",
     "level_counts": {
-      "infrastructure_error": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "neural-i.rdl",
         "route_input_sha256": "77A085D81A20470B1F65E2F831ADD9B30D0B14806D14B28696E317C744B65A76",
-        "status": "infrastructure_error",
-        "problem": "Route engine process timeout after 180 seconds for CD - Descent - Levels of the World (USA).json|64|0|neural-i.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_185958\\logs\\CD_-_Descent_-_Levels_of_the_World_USA_.json_64_0_neural-i.rdl_run_1.log"
+        "status": "timeout",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 11
+          },
+          {
+            "n": "gold key",
+            "s": 44
+          },
+          {
+            "n": "destroy robot carrying red key",
+            "s": 81
+          },
+          {
+            "n": "blastable wall",
+            "s": 104
+          },
+          {
+            "n": "reactor",
+            "s": 104
+          },
+          {
+            "n": "blastable wall",
+            "s": 113
+          },
+          {
+            "n": "blastable wall",
+            "s": 116
+          }
+        ],
+        "total_frames": 11918,
+        "rng_end": {
+          "state": 274854673,
+          "calls": 368
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },

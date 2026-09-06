@@ -8,10 +8,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
+    "ok": 4,
     "failed": 1,
-    "timeout": 2,
-    "infrastructure_error": 1
+    "timeout": 2
   },
   "levels": [
     {
@@ -107,8 +106,38 @@
       "level_num": 4,
       "level_file": "shipport.rdl",
       "route_input_sha256": "1115441C6FE41BB6598D06F7FC8CFC566749078223CAEFF3BE867FF0C6152F52",
-      "status": "infrastructure_error",
-      "problem": "Route engine process timeout after 180 seconds for freelan.json|0|4|shipport.rdl, log=C:\\local\\dxx-redux\\android\\temp\\guidebot_simulation_regression\\20260904_174756\\logs\\freelan.json_0_4_shipport.rdl_run_1.log"
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 9
+        },
+        {
+          "n": "gold key",
+          "s": 29
+        },
+        {
+          "n": "red key",
+          "s": 48
+        },
+        {
+          "n": "reactor",
+          "s": 52
+        },
+        {
+          "n": "exit",
+          "s": 61
+        }
+      ],
+      "total_frames": 3667,
+      "rng_end": {
+        "state": 4052745200,
+        "calls": 87
+      }
     },
     {
       "level_num": 5,
