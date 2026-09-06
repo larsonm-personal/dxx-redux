@@ -874,6 +874,8 @@ class MainActivity :
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        com.dxxredux.app.multiplayer.UdpReconnectIdentity
+            .initialize(noBackupFilesDir)
         super.onCreate(savedInstanceState)
 
         refreshTransientLaunchState(intent)

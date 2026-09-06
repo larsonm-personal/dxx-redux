@@ -1,9 +1,9 @@
 package com.dxxredux.app.multiplayer
 
+import java.io.File
 import java.security.AlgorithmParameters
 import java.security.KeyFactory
 import java.security.KeyPair
-import java.security.KeyPairGenerator
 import java.security.SecureRandom
 import java.security.Signature
 import java.security.interfaces.ECPublicKey
@@ -13,18 +13,21 @@ import java.security.spec.ECPoint
 import java.security.spec.ECPublicKeySpec
 
 /**
- * Process-lifetime signing identity used by the native UDP reconnect protocol
+ * Installation signing identity used by the native UDP reconnect protocol
  *
  * The public key can be replicated to every peer for host migration. The private
- * key never leaves the game process
+ * key stays in private, non-backed-up app storage across game process restarts
  */
 object UdpReconnectIdentity {
     private val secureRandom = SecureRandom()
+    private lateinit var store: UdpReconnectStore
+
+    internal fun initialize(noBackupFilesDir: File) {
+        store = UdpReconnectStore(File(noBackupFilesDir, "udp_reconnect"))
+    }
+
     private val keyPair: KeyPair by lazy {
-        KeyPairGenerator
-            .getInstance("EC")
-            .apply { initialize(ECGenParameterSpec("secp256r1"), secureRandom) }
-            .generateKeyPair()
+        store.keyPair()
     }
     private val encodedPublicKey: ByteArray by lazy {
         val publicKey = keyPair.public as ECPublicKey
@@ -35,6 +38,9 @@ object UdpReconnectIdentity {
 
     @JvmStatic
     fun publicKey(): ByteArray = encodedPublicKey.copyOf()
+
+    @JvmStatic
+    fun nextRequestCounter(): Long = store.nextCounter()
 
     @JvmStatic
     fun sign(message: ByteArray): ByteArray =

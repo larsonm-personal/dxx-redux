@@ -105,7 +105,6 @@ void android_net_udp_write_u64_le(ubyte *destination,
 
 void android_net_udp_auth_reset(int local_player_num, int game_kind)
 {
-	ubyte random_counter[8];
 	int key_len;
 
 	memset(android_net_udp_player_identities, 0,
@@ -129,14 +128,6 @@ void android_net_udp_auth_reset(int local_player_num, int game_kind)
 		return;
 	android_net_udp_local_identity.public_key_len = (ubyte) key_len;
 
-	if (android_net_udp_reconnect_random(random_counter,
-	                                     sizeof(random_counter))) {
-		random_counter[sizeof(random_counter) - 1] &= 0x7f;
-		android_net_udp_local_identity.request_counter =
-		    android_net_udp_read_u64_le(random_counter);
-	}
-	if (!android_net_udp_local_identity.request_counter)
-		android_net_udp_local_identity.request_counter = 1;
 	android_net_udp_reconnect_random(
 	    android_net_udp_local_identity.generation_nonce,
 	    sizeof(android_net_udp_local_identity.generation_nonce));
@@ -228,10 +219,9 @@ int android_net_udp_auth_prepare_request(UDP_sequence_packet *request,
 
 	if (!request || !android_net_udp_local_identity.public_key_len)
 		return 0;
-	if (android_net_udp_local_identity.request_counter == UINT64_MAX)
+	android_net_udp_local_identity.request_counter = android_net_udp_reconnect_next_counter();
+	if (!android_net_udp_local_identity.request_counter)
 		return 0;
-
-	android_net_udp_local_identity.request_counter++;
 	request->reconnect_identity = android_net_udp_local_identity;
 	request->reconnect_identity.request_signature_len = 0;
 	memset(request->reconnect_identity.request_signature, 0,

@@ -3,11 +3,26 @@ package com.dxxredux.app.multiplayer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.BeforeClass
+import org.junit.ClassRule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 class UdpReconnectIdentityTest {
+    companion object {
+        @ClassRule
+        @JvmField
+        val temporary = TemporaryFolder()
+
+        @BeforeClass
+        @JvmStatic
+        fun initializeStore() {
+            UdpReconnectIdentity.initialize(temporary.root)
+        }
+    }
+
     @Test
-    fun signsAndVerifiesWithProcessIdentity() {
+    fun signsAndVerifiesWithInstallationIdentity() {
         val message = "generation=17;counter=9;callsign=ace".toByteArray()
         val publicKey = UdpReconnectIdentity.publicKey()
         val signature = UdpReconnectIdentity.sign(message)

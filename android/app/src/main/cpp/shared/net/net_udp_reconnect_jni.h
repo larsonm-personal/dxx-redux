@@ -6,6 +6,7 @@
 
 int android_net_udp_reconnect_get_public_key(uint8_t *output,
                                              size_t output_size);
+uint64_t android_net_udp_reconnect_next_counter(void);
 int android_net_udp_reconnect_sign(const uint8_t *message,
                                    size_t message_size,
                                    uint8_t *signature,

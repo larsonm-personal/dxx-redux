@@ -2637,6 +2637,7 @@ class SetupActivity : ComponentActivity() {
         mpGameLaunching = false
         val returnableGame = returnableGameActivityState()
         val rawGamePid = runningGameProcessPid()
+        GameProcessExitDiagnostics.logRecent(this)
         gameRunningFlag = returnableGame != null
         DebugLog.log(
             DebugLogCategory.LAUNCHER,

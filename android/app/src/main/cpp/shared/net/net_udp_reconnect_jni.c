@@ -149,6 +149,29 @@ int android_net_udp_reconnect_get_public_key(uint8_t *output,
 	return result;
 }
 
+uint64_t android_net_udp_reconnect_next_counter(void)
+{
+	android_jni_scope scope;
+	jclass identity_class;
+	jmethodID method;
+	jlong result = 0;
+
+	if (!android_jni_scope_enter(&scope))
+		return 0;
+	identity_class = android_jni_identity_class(&scope);
+	method = identity_class
+	             ? (*scope.env)->GetStaticMethodID(scope.env, identity_class, "nextRequestCounter", "()J")
+	             : NULL;
+	if (method)
+		result = (*scope.env)->CallStaticLongMethod(scope.env, identity_class, method);
+	if (!android_jni_check(&scope))
+		result = 0;
+	if (identity_class && android_jni_check(&scope))
+		(*scope.env)->DeleteLocalRef(scope.env, identity_class);
+	android_jni_scope_leave(&scope);
+	return result > 0 ? (uint64_t) result : 0;
+}
+
 int android_net_udp_reconnect_sign(const uint8_t *message,
                                    size_t message_size,
                                    uint8_t *signature,
