@@ -269,7 +269,7 @@ object GameFileFormats {
     fun isDiscRuntimeFile(name: String): Boolean {
         val extension = extensionOf(name)
         return (extension in discExtractExtensions && extension !in setOf("sow", "dem")) ||
-            extension in setOf("txb", "ctb", "sng", "pcx", "hmp", "hmq", "mid", "256", "tex", "vham")
+            extension in setOf("txb", "ctb", "sng", "hmp", "hmq", "mid", "256", "tex", "vham")
     }
 
     /*
