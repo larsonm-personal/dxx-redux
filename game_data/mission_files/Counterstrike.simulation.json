@@ -417,41 +417,41 @@
       "objectives": [
         {
           "n": "destroy robot carrying blue key",
-          "s": 32
+          "s": 22
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 59
+          "s": 42
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 112
+          "s": 91
         },
         {
           "n": "switch 18",
-          "s": 113
+          "s": 91
         },
         {
           "n": "hidden door",
-          "s": 113
+          "s": 91
         },
         {
           "n": "switch 25",
-          "s": 113
+          "s": 91
         },
         {
           "n": "reactor",
-          "s": 170
+          "s": 142
         },
         {
           "n": "exit",
-          "s": 180
+          "s": 152
         }
       ],
-      "total_frames": 10827,
+      "total_frames": 9133,
       "rng_end": {
-        "state": 1390549597,
-        "calls": 4068
+        "state": 3075278872,
+        "calls": 4367
       }
     },
     {
@@ -736,38 +736,38 @@
       "objectives": [
         {
           "n": "destroy robot carrying blue key",
-          "s": 10
+          "s": 8
         },
         {
           "n": "gold key",
-          "s": 28
+          "s": 26
         },
         {
           "n": "fly-through 14",
-          "s": 32
+          "s": 30
         },
         {
           "n": "switch 16",
-          "s": 32
+          "s": 30
         },
         {
           "n": "red key",
-          "s": 48
+          "s": 46
         },
         {
           "n": "pass-through 22",
-          "s": 54
+          "s": 52
         },
         {
           "n": "reactor",
-          "s": 66
+          "s": 64
         },
         {
           "n": "exit",
-          "s": 82
+          "s": 80
         }
       ],
-      "total_frames": 4916,
+      "total_frames": 4786,
       "rng_end": {
         "state": 3844416493,
         "calls": 2004
@@ -932,25 +932,25 @@
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 81
+          "s": 64
         },
         {
           "n": "reactor",
-          "s": 126
+          "s": 108
         },
         {
           "n": "switch 16",
-          "s": 137
+          "s": 119
         },
         {
           "n": "exit",
-          "s": 141
+          "s": 123
         }
       ],
-      "total_frames": 8457,
+      "total_frames": 7375,
       "rng_end": {
-        "state": 1649739513,
-        "calls": 3400
+        "state": 2070353023,
+        "calls": 3946
       }
     },
     {

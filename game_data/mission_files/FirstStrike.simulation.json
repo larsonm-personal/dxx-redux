@@ -734,7 +734,7 @@
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 23
+          "s": 24
         },
         {
           "n": "reactor",
@@ -745,10 +745,10 @@
           "s": 41
         }
       ],
-      "total_frames": 2433,
+      "total_frames": 2438,
       "rng_end": {
-        "state": 1598124042,
-        "calls": 141
+        "state": 745569348,
+        "calls": 147
       }
     },
     {

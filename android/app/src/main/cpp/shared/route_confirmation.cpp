@@ -53,6 +53,8 @@ struct controller_state {
 	int frontier_wall_num;
 	vms_vector target_pos;
 	int target_pos_valid;
+	vms_vector pickup_source_pos;
+	int pickup_carrier_drop;
 	int previous_actor_seg;
 	vms_vector previous_actor_pos;
 	int action_applied;
@@ -140,6 +142,8 @@ void set_key_target_position(const object *actor, int key_objnum,
 	vms_vector segment_center;
 	vms_vector contact_offset;
 	const object *key = &Objects[key_objnum];
+	State.pickup_source_pos = key->pos;
+	State.pickup_carrier_drop = carrier_drop;
 	State.target_objnum = key_objnum;
 	State.target_seg = key->segnum;
 	State.target_pos = key->pos;
@@ -1823,6 +1827,24 @@ extern "C" int route_confirmation_drive_companion(object *objp)
 	if (State.summary.status != ROUTE_CONFIRMATION_RUNNING || !objp ||
 	    objp - Objects != State.actor_objnum)
 		return 0;
+	/* Dropped keys retain normal physics. Follow their live position rather
+	 * than the one captured when the carrier first released them. Leave door
+	 * frontiers alone until the semantic pickup segment is reachable */
+	if (State.step.activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_PICKUP_KEY &&
+	    State.target_seg == State.semantic_target_seg &&
+	    valid_object(State.target_objnum) &&
+	    Objects[State.target_objnum].type == OBJ_POWERUP &&
+	    Objects[State.target_objnum].id == key_powerup_id(State.step.key_index) &&
+	    (Objects[State.target_objnum].segnum != State.target_seg ||
+	     vm_vec_dist_quick(&State.pickup_source_pos,
+	                       &Objects[State.target_objnum].pos) > F1_0 / 16)) {
+		const int previous_segment = State.target_seg;
+		set_key_target_position(objp, State.target_objnum, State.pickup_carrier_drop);
+		State.semantic_target_seg = State.target_seg;
+		if (previous_segment != State.target_seg)
+			create_guidebot_route_path_to_segment(objp, State.target_seg, Max_escort_length, 1);
+		refine_last_path_point(objp);
+	}
 	if (actor_reached_target(objp)) {
 		vm_vec_zero(&objp->mtype.phys_info.velocity);
 		vm_vec_zero(&objp->mtype.phys_info.thrust);
@@ -1833,7 +1855,7 @@ extern "C" int route_confirmation_drive_companion(object *objp)
 	    objp->ctype.ai_info.cur_path_index >=
 	        objp->ctype.ai_info.path_length - 1 &&
 	    guidebot_route_waypoint_leg_clear(objp, &objp->pos, objp->segnum,
-	                                     &State.target_pos)) {
+	                                      &State.target_pos)) {
 		ai_path_set_orient_and_vel(objp, &State.target_pos, 2, NULL);
 		speed_up_actor(objp);
 		return 1;

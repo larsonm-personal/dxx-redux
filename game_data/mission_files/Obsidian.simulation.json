@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 11,
-    "timeout": 6,
+    "ok": 12,
+    "timeout": 5,
     "unsupported": 1
   },
   "levels": [
@@ -146,57 +146,57 @@
         },
         {
           "n": "switch 2",
-          "s": 65
+          "s": 69
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 83
+          "s": 84
         },
         {
           "n": "switch 12",
-          "s": 91
+          "s": 90
         },
         {
           "n": "switch 13",
-          "s": 97
+          "s": 96
         },
         {
           "n": "switch 14",
-          "s": 107
+          "s": 105
         },
         {
           "n": "switch 15",
-          "s": 113
+          "s": 112
         },
         {
           "n": "switch 16",
-          "s": 119
+          "s": 117
         },
         {
           "n": "switch 17",
-          "s": 124
+          "s": 123
         },
         {
           "n": "switch 32",
-          "s": 129
+          "s": 128
         },
         {
           "n": "fly-through 19",
-          "s": 132
+          "s": 130
         },
         {
           "n": "boss",
-          "s": 141
+          "s": 140
         },
         {
           "n": "exit",
-          "s": 151
+          "s": 149
         }
       ],
-      "total_frames": 9036,
+      "total_frames": 8944,
       "rng_end": {
-        "state": 3725286055,
-        "calls": 8770
+        "state": 4136410438,
+        "calls": 10209
       }
     },
     {
@@ -254,7 +254,7 @@
           "s": 104
         }
       ],
-      "total_frames": 6234,
+      "total_frames": 6236,
       "rng_end": {
         "state": 1179848895,
         "calls": 3882
@@ -439,18 +439,42 @@
       "level_num": 8,
       "level_file": "pelorus.rl2",
       "route_input_sha256": "AF08B578219D0847B3B33D024BE4EEFC511CFE5354BEDA0372A4887F41C52D30",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4164,
+      "objectives": [
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 10
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 25
+        },
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 38
+        },
+        {
+          "n": "switch 0",
+          "s": 57
+        },
+        {
+          "n": "reactor",
+          "s": 62
+        },
+        {
+          "n": "exit",
+          "s": 68
+        }
+      ],
+      "total_frames": 4093,
       "rng_end": {
-        "state": 2433860167,
-        "calls": 1186
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3209686617,
+        "calls": 6376
+      }
     },
     {
       "level_num": 9,
@@ -481,7 +505,7 @@
       "objectives": [
         {
           "n": "destroy robot carrying blue key",
-          "s": 9
+          "s": 8
         },
         {
           "n": "destroy robot carrying gold key",
@@ -489,13 +513,13 @@
         },
         {
           "n": "switch 8",
-          "s": 29
+          "s": 31
         }
       ],
-      "total_frames": 1906,
+      "total_frames": 2004,
       "rng_end": {
-        "state": 2701267033,
-        "calls": 1768
+        "state": 2723429821,
+        "calls": 2436
       },
       "problem": "route objective activation is not supported"
     },
@@ -642,14 +666,26 @@
         {
           "n": "fly-through 15",
           "s": 25
+        },
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 47
+        },
+        {
+          "n": "switch 6",
+          "s": 60
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 79
         }
       ],
-      "total_frames": 6486,
+      "total_frames": 6541,
       "rng_end": {
-        "state": 1179259537,
-        "calls": 3568
+        "state": 1277895854,
+        "calls": 10905
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 15,
