@@ -8,9 +8,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
+    "ok": 6,
     "failed": 4,
-    "timeout": 12
+    "timeout": 9
   },
   "levels": [
     {
@@ -78,7 +78,7 @@
       "level_num": 4,
       "level_file": "nefar04.rdl",
       "route_input_sha256": "25F444D6244DFBA4BDD74BDB5459653A8373EB3513D4C3AA70BF2F3AF7A59607",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -95,14 +95,21 @@
         {
           "n": "destroy robot carrying red key",
           "s": 56
+        },
+        {
+          "n": "reactor",
+          "s": 72
+        },
+        {
+          "n": "exit",
+          "s": 77
         }
       ],
-      "total_frames": 4289,
+      "total_frames": 4591,
       "rng_end": {
-        "state": 1848832019,
-        "calls": 118
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 2029357497,
+        "calls": 136
+      }
     },
     {
       "level_num": 5,
@@ -166,7 +173,7 @@
           "s": 61
         }
       ],
-      "total_frames": 12420,
+      "total_frames": 12470,
       "rng_end": {
         "state": 3821532770,
         "calls": 149
@@ -261,7 +268,7 @@
       "level_num": 11,
       "level_file": "nefar11.rdl",
       "route_input_sha256": "3B8C72E1D56A92B7A53D5BA5C4D6E6DF6A466B1ECE196B4A3487821478838198",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -286,14 +293,21 @@
         {
           "n": "red key",
           "s": 47
+        },
+        {
+          "n": "reactor",
+          "s": 69
+        },
+        {
+          "n": "exit",
+          "s": 75
         }
       ],
-      "total_frames": 3822,
+      "total_frames": 4482,
       "rng_end": {
-        "state": 856000655,
-        "calls": 90
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 2780109717,
+        "calls": 108
+      }
     },
     {
       "level_num": 12,
@@ -412,7 +426,7 @@
       "level_num": 16,
       "level_file": "nefar16.rdl",
       "route_input_sha256": "0023CC4B4F31D32041CECDC44B75B002CF9041CFBE66A7280A526100CEF9D125",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -429,14 +443,25 @@
         {
           "n": "red key",
           "s": 48
+        },
+        {
+          "n": "fly-through 0",
+          "s": 62
+        },
+        {
+          "n": "boss",
+          "s": 71
+        },
+        {
+          "n": "exit",
+          "s": 85
         }
       ],
-      "total_frames": 3643,
+      "total_frames": 5124,
       "rng_end": {
-        "state": 2402686401,
-        "calls": 64
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 1369828971,
+        "calls": 158
+      }
     },
     {
       "level_num": -1,
@@ -495,7 +520,7 @@
           "s": 75
         }
       ],
-      "total_frames": 4495,
+      "total_frames": 4493,
       "rng_end": {
         "state": 510737498,
         "calls": 125

@@ -144,14 +144,18 @@
         {
           "n": "switch 6",
           "s": 49
+        },
+        {
+          "n": "red key",
+          "s": 70
         }
       ],
-      "total_frames": 3944,
+      "total_frames": 16141,
       "rng_end": {
-        "state": 1551731513,
-        "calls": 2824
+        "state": 188403110,
+        "calls": 183553
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "route confirmation exceeded 269-second simulation budget"
     }
   ]
 }

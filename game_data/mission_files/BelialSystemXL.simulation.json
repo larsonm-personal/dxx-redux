@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 13,
-    "timeout": 4
+    "ok": 14,
+    "timeout": 3
   },
   "levels": [
     {
@@ -50,7 +50,7 @@
           "s": 148
         }
       ],
-      "total_frames": 8856,
+      "total_frames": 8854,
       "rng_end": {
         "state": 2744742440,
         "calls": 5823
@@ -96,14 +96,14 @@
         },
         {
           "n": "reactor",
-          "s": 167
+          "s": 166
         },
         {
           "n": "exit",
           "s": 194
         }
       ],
-      "total_frames": 11661,
+      "total_frames": 11642,
       "rng_end": {
         "state": 2154607693,
         "calls": 5236
@@ -164,7 +164,7 @@
           "s": 141
         }
       ],
-      "total_frames": 8451,
+      "total_frames": 8449,
       "rng_end": {
         "state": 4102717474,
         "calls": 4565
@@ -209,7 +209,7 @@
           "s": 126
         }
       ],
-      "total_frames": 7568,
+      "total_frames": 7563,
       "rng_end": {
         "state": 1812258661,
         "calls": 5660
@@ -219,7 +219,7 @@
       "level_num": 5,
       "level_file": "05cabee.rl2",
       "route_input_sha256": "AE1A6396B27F164D26F772578F9A6F749FAD3DA6A123799E84E8D04972E9937B",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -248,14 +248,25 @@
         {
           "n": "red key",
           "s": 84
+        },
+        {
+          "n": "fly-through 13",
+          "s": 113
+        },
+        {
+          "n": "boss",
+          "s": 120
+        },
+        {
+          "n": "exit",
+          "s": 143
         }
       ],
-      "total_frames": 6465,
+      "total_frames": 8571,
       "rng_end": {
-        "state": 2980907859,
-        "calls": 3382
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 3813413828,
+        "calls": 4883
+      }
     },
     {
       "level_num": 6,
@@ -304,7 +315,7 @@
           "s": 174
         }
       ],
-      "total_frames": 10416,
+      "total_frames": 10425,
       "rng_end": {
         "state": 2993644132,
         "calls": 6131
@@ -358,10 +369,10 @@
         },
         {
           "n": "exit",
-          "s": 185
+          "s": 184
         }
       ],
-      "total_frames": 11071,
+      "total_frames": 11069,
       "rng_end": {
         "state": 678126869,
         "calls": 6892
@@ -414,7 +425,7 @@
           "s": 158
         }
       ],
-      "total_frames": 9458,
+      "total_frames": 9453,
       "rng_end": {
         "state": 1303655758,
         "calls": 5241
@@ -463,7 +474,7 @@
           "s": 158
         }
       ],
-      "total_frames": 9481,
+      "total_frames": 9475,
       "rng_end": {
         "state": 2744742440,
         "calls": 5823
@@ -542,7 +553,7 @@
           "s": 178
         }
       ],
-      "total_frames": 10695,
+      "total_frames": 10693,
       "rng_end": {
         "state": 2184421943,
         "calls": 7602

@@ -8,9 +8,9 @@
     "seed": 1,
     "status": "partial",
     "level_counts": {
-      "ok": 19,
+      "ok": 21,
       "failed": 1,
-      "timeout": 10
+      "timeout": 8
     },
     "levels": [
       {
@@ -218,7 +218,7 @@
             "s": 72
           }
         ],
-        "total_frames": 4340,
+        "total_frames": 4339,
         "rng_end": {
           "state": 3835377864,
           "calls": 2463
@@ -288,7 +288,7 @@
             "s": 52
           }
         ],
-        "total_frames": 4788,
+        "total_frames": 4786,
         "rng_end": {
           "state": 1299315158,
           "calls": 1425
@@ -391,7 +391,7 @@
             "s": 70
           }
         ],
-        "total_frames": 4800,
+        "total_frames": 4798,
         "rng_end": {
           "state": 3438387236,
           "calls": 1843
@@ -413,7 +413,7 @@
             "s": 1
           }
         ],
-        "total_frames": 742,
+        "total_frames": 1055,
         "rng_end": {
           "state": 1187663298,
           "calls": 181
@@ -467,7 +467,7 @@
             "s": 71
           }
         ],
-        "total_frames": 4264,
+        "total_frames": 4260,
         "rng_end": {
           "state": 3420633278,
           "calls": 1225
@@ -499,7 +499,7 @@
         "level_num": 14,
         "level_file": "psx14.rl2",
         "route_input_sha256": "C1BD96A223CFB9F259E46D302436ABA0EC0D380D74548CBCC64006F30EDC894D",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -520,14 +520,21 @@
           {
             "n": "switch 3",
             "s": 53
+          },
+          {
+            "n": "reactor",
+            "s": 77
+          },
+          {
+            "n": "exit",
+            "s": 86
           }
         ],
-        "total_frames": 4182,
+        "total_frames": 5131,
         "rng_end": {
-          "state": 1951615169,
-          "calls": 1344
-        },
-        "problem": "physical route frontier did not open after 8 interaction attempts"
+          "state": 3620790455,
+          "calls": 1842
+        }
       },
       {
         "level_num": 15,
@@ -813,17 +820,17 @@
           },
           {
             "n": "reactor",
-            "s": 76
+            "s": 73
           },
           {
             "n": "exit",
-            "s": 90
+            "s": 85
           }
         ],
-        "total_frames": 5402,
+        "total_frames": 5078,
         "rng_end": {
-          "state": 3136488723,
-          "calls": 2934
+          "state": 3995661645,
+          "calls": 2932
         }
       },
       {
@@ -881,7 +888,7 @@
             "s": 100
           }
         ],
-        "total_frames": 5972,
+        "total_frames": 5970,
         "rng_end": {
           "state": 3397543145,
           "calls": 3288
@@ -925,7 +932,7 @@
         "level_num": 24,
         "level_file": "psx24.rl2",
         "route_input_sha256": "8F75EB7A8774EC983213F94DABFB1D7E6C08255F662FA730002282E71D347F89",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -950,14 +957,17 @@
           {
             "n": "boss",
             "s": 81
+          },
+          {
+            "n": "exit",
+            "s": 105
           }
         ],
-        "total_frames": 6055,
+        "total_frames": 6297,
         "rng_end": {
-          "state": 2628292953,
-          "calls": 3560
-        },
-        "problem": "physical route frontier did not open after 8 interaction attempts"
+          "state": 1849309560,
+          "calls": 3631
+        }
       },
       {
         "level_num": -1,

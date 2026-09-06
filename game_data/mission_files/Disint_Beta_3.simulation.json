@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
+    "ok": 5,
     "failed": 6,
-    "timeout": 6,
+    "timeout": 4,
     "unsupported": 2
   },
   "levels": [
@@ -195,7 +195,7 @@
       "level_num": 8,
       "level_file": "12bgorg.rl2",
       "route_input_sha256": "81E8E2C2E1F628B6993CE7A6B71FEED692C0385C1697F9AA84A7FFE9CCD67214",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -212,14 +212,25 @@
         {
           "n": "red key",
           "s": 44
+        },
+        {
+          "n": "fly-through 0",
+          "s": 69
+        },
+        {
+          "n": "blastable wall",
+          "s": 69
+        },
+        {
+          "n": "exit",
+          "s": 93
         }
       ],
-      "total_frames": 3900,
+      "total_frames": 5551,
       "rng_end": {
-        "state": 221511572,
-        "calls": 2307
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 1607040903,
+        "calls": 2914
+      }
     },
     {
       "level_num": 9,
@@ -319,7 +330,7 @@
       "level_num": 13,
       "level_file": "21burn.rl2",
       "route_input_sha256": "3EC77BB695E92E1996F38FB8EAA30C51F0C961D21365B850A4A2D2FC04141EFB",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -348,14 +359,21 @@
         {
           "n": "switch 9",
           "s": 85
+        },
+        {
+          "n": "reactor",
+          "s": 104
+        },
+        {
+          "n": "exit",
+          "s": 120
         }
       ],
-      "total_frames": 5799,
+      "total_frames": 7213,
       "rng_end": {
-        "state": 2475750677,
-        "calls": 2796
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 4024765900,
+        "calls": 4075
+      }
     },
     {
       "level_num": -1,

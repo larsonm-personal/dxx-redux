@@ -8,8 +8,7 @@
   "status": "partial",
   "level_counts": {
     "ok": 3,
-    "timeout": 3,
-    "unsupported": 1
+    "timeout": 4
   },
   "levels": [
     {
@@ -66,14 +65,18 @@
         {
           "n": "red key",
           "s": 57
+        },
+        {
+          "n": "reactor",
+          "s": 74
         }
       ],
-      "total_frames": 4261,
+      "total_frames": 8437,
       "rng_end": {
-        "state": 2791651524,
-        "calls": 2579
+        "state": 1373261189,
+        "calls": 2812
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 3,
@@ -140,7 +143,7 @@
       "level_num": 4,
       "level_file": "level04.rl2",
       "route_input_sha256": "BA9B735BCD6127D65BCD5A78F0B612F8362E9F293CEBB3F4CCAA11D4DBE4F93F",
-      "status": "unsupported",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -157,18 +160,14 @@
         {
           "n": "gold key",
           "s": 53
-        },
-        {
-          "n": "switch 2",
-          "s": 59
         }
       ],
-      "total_frames": 3516,
+      "total_frames": 7262,
       "rng_end": {
-        "state": 1550313281,
-        "calls": 2752
+        "state": 3515167246,
+        "calls": 2745
       },
-      "problem": "route objective activation is not supported"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 5,
@@ -205,7 +204,7 @@
           "s": 118
         }
       ],
-      "total_frames": 7090,
+      "total_frames": 7098,
       "rng_end": {
         "state": 2694628668,
         "calls": 5051
@@ -242,7 +241,7 @@
           "s": 88
         }
       ],
-      "total_frames": 6409,
+      "total_frames": 6407,
       "rng_end": {
         "state": 4155049321,
         "calls": 4184

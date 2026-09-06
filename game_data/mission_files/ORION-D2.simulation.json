@@ -99,7 +99,7 @@
           "s": 61
         }
       ],
-      "total_frames": 3648,
+      "total_frames": 3646,
       "rng_end": {
         "state": 3540364135,
         "calls": 3458
@@ -136,7 +136,7 @@
           "s": 95
         }
       ],
-      "total_frames": 5689,
+      "total_frames": 5687,
       "rng_end": {
         "state": 1017304121,
         "calls": 2568
@@ -162,7 +162,7 @@
         },
         {
           "n": "red key",
-          "s": 52
+          "s": 53
         },
         {
           "n": "reactor",
@@ -173,10 +173,10 @@
           "s": 77
         }
       ],
-      "total_frames": 4612,
+      "total_frames": 4615,
       "rng_end": {
-        "state": 696687669,
-        "calls": 1740
+        "state": 4159101130,
+        "calls": 1741
       }
     },
     {
@@ -228,7 +228,7 @@
           "s": 64
         }
       ],
-      "total_frames": 8340,
+      "total_frames": 8294,
       "rng_end": {
         "state": 571227266,
         "calls": 4341

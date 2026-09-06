@@ -86,29 +86,29 @@
         },
         {
           "n": "blastable wall",
-          "s": 65
-        },
-        {
-          "n": "red key",
           "s": 67
         },
         {
-          "n": "switch 2",
-          "s": 88
+          "n": "red key",
+          "s": 70
         },
         {
-          "n": "reactor",
+          "n": "switch 2",
           "s": 90
         },
         {
+          "n": "reactor",
+          "s": 92
+        },
+        {
           "n": "exit",
-          "s": 101
+          "s": 102
         }
       ],
-      "total_frames": 6044,
+      "total_frames": 6133,
       "rng_end": {
-        "state": 3464152169,
-        "calls": 2392
+        "state": 1751259290,
+        "calls": 2365
       }
     },
     {
@@ -166,7 +166,7 @@
           "s": 158
         }
       ],
-      "total_frames": 9488,
+      "total_frames": 9483,
       "rng_end": {
         "state": 2106728596,
         "calls": 5123

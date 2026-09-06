@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 6,
+    "ok": 7,
     "failed": 1,
-    "timeout": 5
+    "timeout": 4
   },
   "levels": [
     {
@@ -52,10 +52,10 @@
         },
         {
           "n": "exit",
-          "s": 133
+          "s": 132
         }
       ],
-      "total_frames": 7950,
+      "total_frames": 7948,
       "rng_end": {
         "state": 1961215319,
         "calls": 5266
@@ -117,10 +117,10 @@
         },
         {
           "n": "exit",
-          "s": 97
+          "s": 98
         }
       ],
-      "total_frames": 5848,
+      "total_frames": 5855,
       "rng_end": {
         "state": 3246992905,
         "calls": 3256
@@ -173,7 +173,7 @@
           "s": 161
         }
       ],
-      "total_frames": 9643,
+      "total_frames": 9636,
       "rng_end": {
         "state": 3531457739,
         "calls": 6718
@@ -217,7 +217,7 @@
       "level_num": 5,
       "level_file": "THEBE23.RL2",
       "route_input_sha256": "FCEE39E1143A697A6C671C322F8D6E842B917E111C9C231CC7558C527F669AF1",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -249,15 +249,22 @@
         },
         {
           "n": "switch 0",
-          "s": 140
+          "s": 142
+        },
+        {
+          "n": "reactor",
+          "s": 160
+        },
+        {
+          "n": "exit",
+          "s": 175
         }
       ],
-      "total_frames": 9018,
+      "total_frames": 10499,
       "rng_end": {
-        "state": 4116360776,
-        "calls": 3615
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 977662510,
+        "calls": 4889
+      }
     },
     {
       "level_num": 6,
@@ -302,7 +309,7 @@
           "s": 145
         }
       ],
-      "total_frames": 8713,
+      "total_frames": 8711,
       "rng_end": {
         "state": 1671904012,
         "calls": 4523
@@ -380,7 +387,7 @@
           "s": 139
         }
       ],
-      "total_frames": 12042,
+      "total_frames": 12053,
       "rng_end": {
         "state": 3637538869,
         "calls": 4812
@@ -555,7 +562,7 @@
           "s": 174
         }
       ],
-      "total_frames": 10437,
+      "total_frames": 10433,
       "rng_end": {
         "state": 1512517728,
         "calls": 5159

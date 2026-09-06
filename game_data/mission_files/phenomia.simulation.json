@@ -84,12 +84,24 @@
         {
           "n": "fly-through 7",
           "s": 88
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 129
+        },
+        {
+          "n": "reactor",
+          "s": 152
+        },
+        {
+          "n": "fly-through 9",
+          "s": 153
         }
       ],
-      "total_frames": 9580,
+      "total_frames": 12866,
       "rng_end": {
-        "state": 606577268,
-        "calls": 3235
+        "state": 3008084282,
+        "calls": 5405
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -192,7 +204,7 @@
           "s": 207
         }
       ],
-      "total_frames": 16411,
+      "total_frames": 16409,
       "rng_end": {
         "state": 1719405509,
         "calls": 4796
@@ -359,7 +371,7 @@
           "s": 98
         }
       ],
-      "total_frames": 5903,
+      "total_frames": 5899,
       "rng_end": {
         "state": 1631271608,
         "calls": 4079

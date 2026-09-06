@@ -80,54 +80,54 @@
       "objectives": [
         {
           "n": "fly-through 0",
-          "s": 19
+          "s": 20
         },
         {
           "n": "blastable wall",
-          "s": 19
+          "s": 20
         },
         {
           "n": "fly-through 1",
-          "s": 23
+          "s": 24
         },
         {
           "n": "fly-through 2",
-          "s": 26
+          "s": 27
         },
         {
           "n": "fly-through 3",
-          "s": 28
+          "s": 29
         },
         {
           "n": "fly-through 4",
-          "s": 31
+          "s": 32
         },
         {
           "n": "fly-through 5",
-          "s": 33
+          "s": 34
         },
         {
           "n": "fly-through 6",
-          "s": 36
+          "s": 37
         },
         {
           "n": "fly-through 7",
-          "s": 39
+          "s": 41
         },
         {
           "n": "fly-through 8",
-          "s": 42
+          "s": 43
         },
         {
           "n": "fly-through 9",
-          "s": 46
+          "s": 47
         },
         {
           "n": "blue key",
-          "s": 64
+          "s": 65
         }
       ],
-      "total_frames": 10279,
+      "total_frames": 10353,
       "rng_end": {
         "state": 4053843764,
         "calls": 227

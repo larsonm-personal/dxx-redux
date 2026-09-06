@@ -6,10 +6,11 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
+    "ok": 1,
     "failed": 1,
-    "timeout": 3
+    "timeout": 2
   },
   "levels": [
     {
@@ -35,7 +36,7 @@
           "s": 46
         }
       ],
-      "total_frames": 7528,
+      "total_frames": 7414,
       "rng_end": {
         "state": 2673245591,
         "calls": 82
@@ -76,7 +77,7 @@
       "level_num": 3,
       "level_file": "warehos.rdl",
       "route_input_sha256": "14914172A1C026F7732BC7E6FEBF25606E8E9F5082A208E28CBD0A049E448598",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -97,14 +98,25 @@
         {
           "n": "red key",
           "s": 43
+        },
+        {
+          "n": "fly-through 5",
+          "s": 67
+        },
+        {
+          "n": "reactor",
+          "s": 68
+        },
+        {
+          "n": "exit",
+          "s": 90
         }
       ],
-      "total_frames": 3712,
+      "total_frames": 5380,
       "rng_end": {
-        "state": 2787170210,
-        "calls": 85
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 3178040984,
+        "calls": 143
+      }
     },
     {
       "level_num": 4,

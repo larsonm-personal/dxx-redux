@@ -176,7 +176,7 @@
           "s": 52
         }
       ],
-      "total_frames": 3142,
+      "total_frames": 3140,
       "rng_end": {
         "state": 92728044,
         "calls": 75
@@ -289,7 +289,7 @@
           "s": 42
         }
       ],
-      "total_frames": 2511,
+      "total_frames": 2502,
       "rng_end": {
         "state": 3269224778,
         "calls": 77
@@ -414,14 +414,14 @@
         },
         {
           "n": "reactor",
-          "s": 39
+          "s": 40
         },
         {
           "n": "exit",
           "s": 46
         }
       ],
-      "total_frames": 2741,
+      "total_frames": 2761,
       "rng_end": {
         "state": 2274957893,
         "calls": 60
@@ -480,7 +480,7 @@
           "s": 55
         }
       ],
-      "total_frames": 3319,
+      "total_frames": 3318,
       "rng_end": {
         "state": 208521688,
         "calls": 79
@@ -751,7 +751,7 @@
           "s": 71
         }
       ],
-      "total_frames": 4237,
+      "total_frames": 4233,
       "rng_end": {
         "state": 2883693444,
         "calls": 83
@@ -784,7 +784,7 @@
           "s": 35
         }
       ],
-      "total_frames": 6945,
+      "total_frames": 6918,
       "rng_end": {
         "state": 344858293,
         "calls": 76

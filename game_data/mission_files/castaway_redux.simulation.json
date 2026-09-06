@@ -9,7 +9,8 @@
   "level_counts": {
     "ok": 2,
     "failed": 2,
-    "timeout": 6
+    "timeout": 5,
+    "unsupported": 1
   },
   "levels": [
     {
@@ -35,7 +36,7 @@
           "s": 39
         }
       ],
-      "total_frames": 3280,
+      "total_frames": 3340,
       "rng_end": {
         "state": 2757827055,
         "calls": 2298
@@ -238,7 +239,7 @@
       "level_num": 5,
       "level_file": "quarry.rl2",
       "route_input_sha256": "396D2F61BA24C0DBEFAFC90637024EE9AE53703A9AAE310C8A028C1383C70BB6",
-      "status": "timeout",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -259,14 +260,18 @@
         {
           "n": "switch 1",
           "s": 67
+        },
+        {
+          "n": "switch 12",
+          "s": 114
         }
       ],
-      "total_frames": 5235,
+      "total_frames": 7010,
       "rng_end": {
-        "state": 764472599,
-        "calls": 2258
+        "state": 3684793711,
+        "calls": 3450
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "route objective activation is not supported"
     },
     {
       "level_num": 6,

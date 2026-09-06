@@ -8,8 +8,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 1,
-    "failed": 5,
-    "timeout": 4
+    "failed": 6,
+    "timeout": 3
   },
   "levels": [
     {
@@ -43,7 +43,7 @@
           "s": 39
         }
       ],
-      "total_frames": 7032,
+      "total_frames": 7219,
       "rng_end": {
         "state": 2771411007,
         "calls": 1962
@@ -69,7 +69,7 @@
           "s": 14
         }
       ],
-      "total_frames": 813,
+      "total_frames": 811,
       "rng_end": {
         "state": 3228750693,
         "calls": 540
@@ -127,12 +127,24 @@
         {
           "n": "blue key",
           "s": 8
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 22
+        },
+        {
+          "n": "switch 2",
+          "s": 29
+        },
+        {
+          "n": "red key",
+          "s": 39
         }
       ],
-      "total_frames": 1226,
+      "total_frames": 3202,
       "rng_end": {
-        "state": 4273677855,
-        "calls": 3018
+        "state": 3611474342,
+        "calls": 4353
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -175,7 +187,7 @@
           "s": 82
         }
       ],
-      "total_frames": 4894,
+      "total_frames": 4890,
       "rng_end": {
         "state": 3776197745,
         "calls": 7952
@@ -245,7 +257,7 @@
       "level_num": 8,
       "level_file": "nes.rl2",
       "route_input_sha256": "BF45A39A50CF0480B126EC0442BAADEE2A06311DEE4B1D9E596CEEA45E83DFA4",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -254,14 +266,18 @@
         {
           "n": "destroy robot carrying blue key",
           "s": 3
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 14
         }
       ],
-      "total_frames": 759,
+      "total_frames": 838,
       "rng_end": {
-        "state": 3113566325,
-        "calls": 2188
+        "state": 667148126,
+        "calls": 2217
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 9,
@@ -283,10 +299,10 @@
         },
         {
           "n": "red key",
-          "s": 28
+          "s": 27
         }
       ],
-      "total_frames": 7255,
+      "total_frames": 9115,
       "rng_end": {
         "state": 620555859,
         "calls": 2614

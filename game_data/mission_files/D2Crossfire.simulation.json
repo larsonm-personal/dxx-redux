@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
+    "ok": 7,
     "failed": 3,
-    "timeout": 12
+    "timeout": 9
   },
   "levels": [
     {
@@ -38,7 +38,7 @@
       "level_num": 2,
       "level_file": "polrav.rl2",
       "route_input_sha256": "59244C700B28A94CD32D475428883A3613D108979BE7B6388E8BC62FFFA1BCD1",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -46,31 +46,38 @@
       "objectives": [
         {
           "n": "pass-through 1",
-          "s": 9
+          "s": 10
         },
         {
           "n": "blastable wall",
-          "s": 9
+          "s": 10
         },
         {
           "n": "blue key",
-          "s": 16
+          "s": 18
         },
         {
           "n": "gold key",
-          "s": 42
+          "s": 44
         },
         {
           "n": "red key",
-          "s": 79
+          "s": 81
+        },
+        {
+          "n": "reactor",
+          "s": 97
+        },
+        {
+          "n": "exit",
+          "s": 111
         }
       ],
-      "total_frames": 5710,
+      "total_frames": 6686,
       "rng_end": {
-        "state": 3135950983,
-        "calls": 2658
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 3426037612,
+        "calls": 4555
+      }
     },
     {
       "level_num": 3,
@@ -126,7 +133,7 @@
       "level_num": 5,
       "level_file": "k3reb.rl2",
       "route_input_sha256": "06670693A6451BC1BF4711DBC624360CA733620AE4A0E1C918AA073079BEBF7D",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -147,14 +154,25 @@
         {
           "n": "gold key",
           "s": 51
+        },
+        {
+          "n": "fly-through 5",
+          "s": 79
+        },
+        {
+          "n": "red key",
+          "s": 83
+        },
+        {
+          "n": "exit",
+          "s": 114
         }
       ],
-      "total_frames": 4377,
+      "total_frames": 6841,
       "rng_end": {
-        "state": 2671758063,
-        "calls": 2042
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 695934172,
+        "calls": 3995
+      }
     },
     {
       "level_num": 6,
@@ -194,7 +212,7 @@
       "level_num": 8,
       "level_file": "serropa.rl2",
       "route_input_sha256": "1A9674E114BE2EDE2CD3089E60CA518D1AB2E461B81D7FB3D43D4977F7C5F8B9",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -215,14 +233,33 @@
         {
           "n": "fly-through 12",
           "s": 61
+        },
+        {
+          "n": "switch 3",
+          "s": 105
+        },
+        {
+          "n": "switch 2",
+          "s": 128
+        },
+        {
+          "n": "switch 1",
+          "s": 160
+        },
+        {
+          "n": "reactor",
+          "s": 190
+        },
+        {
+          "n": "exit",
+          "s": 213
         }
       ],
-      "total_frames": 5658,
+      "total_frames": 12757,
       "rng_end": {
-        "state": 1371383653,
-        "calls": 3612
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 3972645437,
+        "calls": 8452
+      }
     },
     {
       "level_num": 9,
@@ -385,7 +422,7 @@
           "s": 85
         }
       ],
-      "total_frames": 5916,
+      "total_frames": 5914,
       "rng_end": {
         "state": 1983819910,
         "calls": 2465

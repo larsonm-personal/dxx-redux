@@ -111,7 +111,7 @@
             "s": 72
           }
         ],
-        "total_frames": 4346,
+        "total_frames": 4344,
         "rng_end": {
           "state": 1848832019,
           "calls": 118
@@ -285,7 +285,7 @@
             "s": 83
           }
         ],
-        "total_frames": 5009,
+        "total_frames": 5007,
         "rng_end": {
           "state": 2077067425,
           "calls": 96
@@ -337,7 +337,7 @@
             "s": 68
           }
         ],
-        "total_frames": 4108,
+        "total_frames": 4106,
         "rng_end": {
           "state": 1621937922,
           "calls": 117
@@ -398,21 +398,21 @@
           },
           {
             "n": "fly-through 9",
-            "s": 175
+            "s": 169
           },
           {
             "n": "reactor",
-            "s": 175
+            "s": 169
           },
           {
             "n": "exit",
-            "s": 187
+            "s": 181
           }
         ],
-        "total_frames": 11232,
+        "total_frames": 10832,
         "rng_end": {
-          "state": 1160857300,
-          "calls": 195
+          "state": 3424728103,
+          "calls": 194
         }
       }
     ]
@@ -461,7 +461,7 @@
             "s": 75
           }
         ],
-        "total_frames": 5545,
+        "total_frames": 5541,
         "rng_end": {
           "state": 493907821,
           "calls": 84
@@ -571,7 +571,7 @@
           },
           {
             "n": "red key",
-            "s": 74
+            "s": 75
           },
           {
             "n": "reactor",
@@ -582,7 +582,7 @@
             "s": 81
           }
         ],
-        "total_frames": 4875,
+        "total_frames": 4882,
         "rng_end": {
           "state": 2675232640,
           "calls": 135
@@ -748,16 +748,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "terminus.rdl",
         "route_input_sha256": "76FDC40C201E0AED1F562BF4270D703E6D8A233DDC8DDAD0B2728A6727512868",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -778,14 +778,21 @@
           {
             "n": "blue key",
             "s": 64
+          },
+          {
+            "n": "boss",
+            "s": 79
+          },
+          {
+            "n": "exit",
+            "s": 81
           }
         ],
-        "total_frames": 4335,
+        "total_frames": 4854,
         "rng_end": {
-          "state": 1228891816,
-          "calls": 63
-        },
-        "problem": "physical route frontier did not open after 8 interaction attempts"
+          "state": 2571702646,
+          "calls": 113
+        }
       }
     ]
   },

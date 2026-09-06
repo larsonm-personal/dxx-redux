@@ -109,93 +109,93 @@
       "objectives": [
         {
           "n": "fly-through 6",
-          "s": 8
+          "s": 9
         },
         {
           "n": "fly-through 7",
-          "s": 10
+          "s": 11
         },
         {
           "n": "blastable wall",
-          "s": 10
+          "s": 11
         },
         {
           "n": "blastable wall",
-          "s": 19
-        },
-        {
-          "n": "fly-through 8",
           "s": 21
         },
         {
-          "n": "blastable wall",
-          "s": 24
+          "n": "fly-through 8",
+          "s": 23
         },
         {
-          "n": "fly-through 11",
+          "n": "blastable wall",
           "s": 26
         },
         {
+          "n": "fly-through 11",
+          "s": 28
+        },
+        {
           "n": "switch 33",
-          "s": 34
+          "s": 36
         },
         {
           "n": "destroy robot carrying blue key",
-          "s": 43
+          "s": 45
         },
         {
           "n": "switch 2",
-          "s": 67
+          "s": 65
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 94
+          "s": 81
         },
         {
           "n": "switch 12",
-          "s": 101
+          "s": 87
         },
         {
           "n": "switch 13",
-          "s": 107
+          "s": 93
         },
         {
           "n": "switch 14",
-          "s": 117
+          "s": 102
         },
         {
           "n": "switch 15",
-          "s": 123
+          "s": 109
         },
         {
           "n": "switch 16",
-          "s": 129
+          "s": 114
         },
         {
           "n": "switch 17",
-          "s": 134
+          "s": 120
         },
         {
           "n": "switch 32",
-          "s": 139
+          "s": 125
         },
         {
           "n": "fly-through 19",
-          "s": 141
+          "s": 127
         },
         {
           "n": "boss",
-          "s": 151
+          "s": 137
         },
         {
           "n": "exit",
-          "s": 160
+          "s": 146
         }
       ],
-      "total_frames": 9616,
+      "total_frames": 8773,
       "rng_end": {
-        "state": 618395013,
-        "calls": 8956
+        "state": 3386781090,
+        "calls": 8789
       }
     },
     {
@@ -428,7 +428,7 @@
           "s": 131
         }
       ],
-      "total_frames": 7845,
+      "total_frames": 7843,
       "rng_end": {
         "state": 927961790,
         "calls": 4809
@@ -591,7 +591,7 @@
           "s": 51
         }
       ],
-      "total_frames": 7595,
+      "total_frames": 7624,
       "rng_end": {
         "state": 2782575594,
         "calls": 2605

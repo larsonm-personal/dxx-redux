@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 16,
+    "ok": 19,
     "failed": 2,
-    "timeout": 9
+    "timeout": 6
   },
   "levels": [
     {
@@ -124,18 +124,18 @@
         },
         {
           "n": "red key",
-          "s": 65
+          "s": 63
         },
         {
           "n": "reactor",
-          "s": 82
+          "s": 81
         },
         {
           "n": "exit",
-          "s": 91
+          "s": 90
         }
       ],
-      "total_frames": 5441,
+      "total_frames": 5372,
       "rng_end": {
         "state": 1689723728,
         "calls": 2935
@@ -209,7 +209,7 @@
           "s": 70
         }
       ],
-      "total_frames": 4194,
+      "total_frames": 4205,
       "rng_end": {
         "state": 1606342103,
         "calls": 3090
@@ -219,7 +219,7 @@
       "level_num": 7,
       "level_file": "level07.rl2",
       "route_input_sha256": "BF8681D03B973CCA0A8E88972FE98A54CA238DC3378E5712FBF2E638B03BC202",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -232,14 +232,25 @@
         {
           "n": "gold key",
           "s": 34
+        },
+        {
+          "n": "red key",
+          "s": 77
+        },
+        {
+          "n": "boss",
+          "s": 109
+        },
+        {
+          "n": "exit",
+          "s": 110
         }
       ],
-      "total_frames": 4358,
+      "total_frames": 6626,
       "rng_end": {
-        "state": 3406052777,
-        "calls": 2584
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 3922774578,
+        "calls": 4357
+      }
     },
     {
       "level_num": 8,
@@ -272,7 +283,7 @@
           "s": 103
         }
       ],
-      "total_frames": 6161,
+      "total_frames": 6162,
       "rng_end": {
         "state": 970220964,
         "calls": 5043
@@ -354,7 +365,7 @@
           "s": 106
         }
       ],
-      "total_frames": 6388,
+      "total_frames": 6386,
       "rng_end": {
         "state": 1786756255,
         "calls": 3402
@@ -391,7 +402,7 @@
           "s": 84
         }
       ],
-      "total_frames": 5068,
+      "total_frames": 5066,
       "rng_end": {
         "state": 1771496390,
         "calls": 2913
@@ -428,7 +439,7 @@
           "s": 82
         }
       ],
-      "total_frames": 4929,
+      "total_frames": 4935,
       "rng_end": {
         "state": 1121683269,
         "calls": 2876
@@ -484,18 +495,18 @@
         },
         {
           "n": "red key",
-          "s": 91
+          "s": 92
         },
         {
           "n": "reactor",
-          "s": 119
+          "s": 120
         },
         {
           "n": "exit",
-          "s": 122
+          "s": 123
         }
       ],
-      "total_frames": 7314,
+      "total_frames": 7368,
       "rng_end": {
         "state": 2955309015,
         "calls": 4626
@@ -536,7 +547,7 @@
           "s": 110
         }
       ],
-      "total_frames": 6571,
+      "total_frames": 6573,
       "rng_end": {
         "state": 2058485953,
         "calls": 3392
@@ -603,7 +614,7 @@
           "s": 95
         }
       ],
-      "total_frames": 5725,
+      "total_frames": 5721,
       "rng_end": {
         "state": 869022236,
         "calls": 4443
@@ -677,7 +688,7 @@
           "s": 69
         }
       ],
-      "total_frames": 4117,
+      "total_frames": 4114,
       "rng_end": {
         "state": 1371383653,
         "calls": 3612
@@ -787,7 +798,7 @@
           "s": 100
         }
       ],
-      "total_frames": 6017,
+      "total_frames": 6013,
       "rng_end": {
         "state": 2362134277,
         "calls": 3452
@@ -797,7 +808,7 @@
       "level_num": 24,
       "level_file": "level24.rl2",
       "route_input_sha256": "B24F9D74B3753A13FF5408C2F58F1090A620D30C384D7A2D161F1D1EF4612516",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -814,20 +825,27 @@
         {
           "n": "red key",
           "s": 33
+        },
+        {
+          "n": "reactor",
+          "s": 50
+        },
+        {
+          "n": "exit",
+          "s": 54
         }
       ],
-      "total_frames": 2940,
+      "total_frames": 3239,
       "rng_end": {
-        "state": 296171359,
-        "calls": 1674
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 3249184374,
+        "calls": 1905
+      }
     },
     {
       "level_num": 25,
       "level_file": "level25.rl2",
       "route_input_sha256": "0A729990FE5E566EF1555EC4A3A95F2C75BC80CC2C7506F79CFF8039D762A5F3",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -844,14 +862,21 @@
         {
           "n": "red key",
           "s": 64
+        },
+        {
+          "n": "reactor",
+          "s": 89
+        },
+        {
+          "n": "exit",
+          "s": 98
         }
       ],
-      "total_frames": 5175,
+      "total_frames": 5855,
       "rng_end": {
-        "state": 1295416093,
-        "calls": 2340
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 2777607841,
+        "calls": 2656
+      }
     },
     {
       "level_num": 26,
@@ -884,7 +909,7 @@
           "s": 110
         }
       ],
-      "total_frames": 13327,
+      "total_frames": 12286,
       "rng_end": {
         "state": 1070506881,
         "calls": 2176
@@ -914,7 +939,7 @@
           "s": 35
         }
       ],
-      "total_frames": 5717,
+      "total_frames": 5715,
       "rng_end": {
         "state": 1075938638,
         "calls": 1145

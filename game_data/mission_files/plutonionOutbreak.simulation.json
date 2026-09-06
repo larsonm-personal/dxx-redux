@@ -8,9 +8,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
+    "ok": 3,
     "failed": 2,
-    "timeout": 6
+    "timeout": 5
   },
   "levels": [
     {
@@ -89,7 +89,7 @@
         },
         {
           "n": "red key",
-          "s": 49
+          "s": 48
         },
         {
           "n": "reactor",
@@ -100,7 +100,7 @@
           "s": 69
         }
       ],
-      "total_frames": 4164,
+      "total_frames": 4152,
       "rng_end": {
         "state": 344858293,
         "calls": 76
@@ -137,7 +137,7 @@
           "s": 64
         }
       ],
-      "total_frames": 3830,
+      "total_frames": 3823,
       "rng_end": {
         "state": 2673245591,
         "calls": 82
@@ -190,7 +190,7 @@
       "level_num": 8,
       "level_file": "p8.rdl",
       "route_input_sha256": "875B0518BB75C2251B3ACDF76FEAF36B1C4EFE229B883E97B18EF2DBAF288C4B",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -207,14 +207,21 @@
         {
           "n": "red key",
           "s": 68
+        },
+        {
+          "n": "boss",
+          "s": 91
+        },
+        {
+          "n": "exit",
+          "s": 95
         }
       ],
-      "total_frames": 5043,
+      "total_frames": 5678,
       "rng_end": {
-        "state": 508382461,
-        "calls": 68
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 1848832019,
+        "calls": 118
+      }
     },
     {
       "level_num": 9,
@@ -248,7 +255,7 @@
           "s": 13
         }
       ],
-      "total_frames": 2004,
+      "total_frames": 2317,
       "rng_end": {
         "state": 300568396,
         "calls": 107

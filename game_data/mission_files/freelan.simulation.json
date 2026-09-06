@@ -8,9 +8,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
+    "ok": 5,
     "failed": 1,
-    "timeout": 2
+    "timeout": 1
   },
   "levels": [
     {
@@ -95,7 +95,7 @@
           "s": 30
         }
       ],
-      "total_frames": 6129,
+      "total_frames": 6127,
       "rng_end": {
         "state": 2402686401,
         "calls": 64
@@ -174,7 +174,7 @@
           "s": 78
         }
       ],
-      "total_frames": 4669,
+      "total_frames": 4667,
       "rng_end": {
         "state": 2316746429,
         "calls": 132
@@ -219,7 +219,7 @@
           "s": 93
         }
       ],
-      "total_frames": 5550,
+      "total_frames": 5552,
       "rng_end": {
         "state": 2029357497,
         "calls": 136
@@ -229,7 +229,7 @@
       "level_num": 7,
       "level_file": "headquar.rdl",
       "route_input_sha256": "AC90507BD521433EE04AE540550E6017D392BB0EF4990E0C489B2223E4E4CB14",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -246,14 +246,21 @@
         {
           "n": "red key",
           "s": 37
+        },
+        {
+          "n": "boss",
+          "s": 75
+        },
+        {
+          "n": "exit",
+          "s": 80
         }
       ],
-      "total_frames": 3903,
+      "total_frames": 4791,
       "rng_end": {
-        "state": 4022231744,
-        "calls": 71
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 3737188581,
+        "calls": 156
+      }
     }
   ]
 }

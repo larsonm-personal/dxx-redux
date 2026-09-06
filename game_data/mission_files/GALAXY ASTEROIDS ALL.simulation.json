@@ -77,7 +77,7 @@
           "s": 190
         }
       ],
-      "total_frames": 11391,
+      "total_frames": 11387,
       "rng_end": {
         "state": 1015659356,
         "calls": 7963
@@ -118,7 +118,7 @@
           "s": 130
         }
       ],
-      "total_frames": 7810,
+      "total_frames": 7809,
       "rng_end": {
         "state": 1166679525,
         "calls": 5020
@@ -160,10 +160,10 @@
         },
         {
           "n": "exit",
-          "s": 189
+          "s": 190
         }
       ],
-      "total_frames": 11369,
+      "total_frames": 11372,
       "rng_end": {
         "state": 3571234894,
         "calls": 7545
@@ -204,7 +204,7 @@
           "s": 82
         }
       ],
-      "total_frames": 4893,
+      "total_frames": 4891,
       "rng_end": {
         "state": 4120562848,
         "calls": 1767

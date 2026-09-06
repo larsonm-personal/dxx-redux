@@ -9,8 +9,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 2,
-    "failed": 2,
-    "timeout": 6
+    "failed": 3,
+    "timeout": 5
   },
   "levels": [
     {
@@ -78,7 +78,7 @@
           "s": 112
         }
       ],
-      "total_frames": 6749,
+      "total_frames": 6745,
       "rng_end": {
         "state": 2226230633,
         "calls": 88
@@ -119,7 +119,7 @@
           "s": 118
         }
       ],
-      "total_frames": 7070,
+      "total_frames": 7067,
       "rng_end": {
         "state": 2077067425,
         "calls": 96
@@ -177,7 +177,7 @@
       "level_num": 7,
       "level_file": "e2m7.rdl",
       "route_input_sha256": "AF08A2007C361A2176F7566BF7DBA96A1D524DA73073A3C4DAA6738FC368CAB4",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -190,14 +190,18 @@
         {
           "n": "gold key",
           "s": 28
+        },
+        {
+          "n": "red key",
+          "s": 58
         }
       ],
-      "total_frames": 2939,
+      "total_frames": 3505,
       "rng_end": {
-        "state": 3822763702,
-        "calls": 49
+        "state": 2669311376,
+        "calls": 55
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 8,

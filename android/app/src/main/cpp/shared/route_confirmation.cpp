@@ -638,15 +638,12 @@ int extend_current_goal_from_frontier(void)
 {
 	object *actor;
 	int physical_target_seg;
+	const int previous_target_seg = State.target_seg;
 	if (!valid_object(State.actor_objnum)) {
 		fail(ROUTE_CONFIRMATION_FAILED, "Guide-Bot object is no longer valid");
 		return 0;
 	}
-	if (++State.frontier_extension_count >= 8) {
-		fail(ROUTE_CONFIRMATION_TIMEOUT,
-		     "physical route frontier did not open after 8 interaction attempts");
-		return 0;
-	}
+	++State.frontier_extension_count;
 	actor = &Objects[State.actor_objnum];
 	if (State.step.activation_kind ==
 	        LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT &&
@@ -717,6 +714,14 @@ int extend_current_goal_from_frontier(void)
 	if (State.target_seg < 0 || State.target_seg >= Num_segments) {
 		fail(ROUTE_CONFIRMATION_FAILED,
 		     "frontier extension has no valid physical target segment");
+		return 0;
+	}
+	// Reaching one frontier and extending beyond it is progress, not a failed retry
+	if (State.target_seg != previous_target_seg)
+		State.frontier_extension_count = 0;
+	else if (State.frontier_extension_count >= 8) {
+		fail(ROUTE_CONFIRMATION_TIMEOUT,
+		     "physical route frontier did not open after 8 interaction attempts");
 		return 0;
 	}
 	/* A closed one-sided frontier can legitimately leave the actor in the same
@@ -1768,7 +1773,8 @@ extern "C" void route_confirmation_after_frame(void)
 		if ((State.step.activation_kind ==
 		         LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT &&
 		     actor->segnum == State.step.seg) ||
-		    frontier_door_is_opening())
+		    (frontier_door_is_opening() &&
+		     State.frontier_extension_count == 0))
 			extend_current_goal_from_frontier();
 		else {
 			vm_vec_zero(&actor->mtype.phys_info.velocity);

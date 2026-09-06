@@ -110,7 +110,7 @@
           "s": 67
         }
       ],
-      "total_frames": 7901,
+      "total_frames": 7899,
       "rng_end": {
         "state": 3374144444,
         "calls": 2875
@@ -190,34 +190,34 @@
       "objectives": [
         {
           "n": "switch 2",
-          "s": 19
-        },
-        {
-          "n": "blastable wall",
           "s": 21
         },
         {
+          "n": "blastable wall",
+          "s": 22
+        },
+        {
           "n": "blue key",
-          "s": 34
+          "s": 35
         },
         {
           "n": "switch 4",
-          "s": 57
+          "s": 58
         },
         {
           "n": "red key",
-          "s": 64
+          "s": 65
         },
         {
           "n": "reactor",
-          "s": 85
+          "s": 86
         },
         {
           "n": "exit",
-          "s": 92
+          "s": 93
         }
       ],
-      "total_frames": 5521,
+      "total_frames": 5592,
       "rng_end": {
         "state": 1047822082,
         "calls": 4213
@@ -318,18 +318,18 @@
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 53
+          "s": 54
         },
         {
           "n": "boss",
-          "s": 68
+          "s": 69
         },
         {
           "n": "exit",
           "s": 81
         }
       ],
-      "total_frames": 4832,
+      "total_frames": 4845,
       "rng_end": {
         "state": 4289724122,
         "calls": 4093
@@ -457,7 +457,7 @@
           "s": 133
         }
       ],
-      "total_frames": 7964,
+      "total_frames": 7962,
       "rng_end": {
         "state": 4255738964,
         "calls": 3395
@@ -494,7 +494,7 @@
           "s": 166
         }
       ],
-      "total_frames": 9938,
+      "total_frames": 9954,
       "rng_end": {
         "state": 734834261,
         "calls": 4012
@@ -539,7 +539,7 @@
           "s": 91
         }
       ],
-      "total_frames": 5436,
+      "total_frames": 5434,
       "rng_end": {
         "state": 640238794,
         "calls": 2765

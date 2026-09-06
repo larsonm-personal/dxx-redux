@@ -9,8 +9,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 2,
-    "failed": 5,
-    "timeout": 3
+    "failed": 6,
+    "timeout": 2
   },
   "levels": [
     {
@@ -48,7 +48,7 @@
           "s": 45
         }
       ],
-      "total_frames": 2698,
+      "total_frames": 2697,
       "rng_end": {
         "state": 2754807367,
         "calls": 162
@@ -73,7 +73,7 @@
           "s": 12
         }
       ],
-      "total_frames": 727,
+      "total_frames": 725,
       "rng_end": {
         "state": 1223573862,
         "calls": 65
@@ -166,7 +166,7 @@
           "s": 84
         }
       ],
-      "total_frames": 5040,
+      "total_frames": 5038,
       "rng_end": {
         "state": 2029357497,
         "calls": 136
@@ -225,10 +225,10 @@
           "s": 27
         }
       ],
-      "total_frames": 2299,
+      "total_frames": 2714,
       "rng_end": {
-        "state": 2965106811,
-        "calls": 142
+        "state": 3178040984,
+        "calls": 143
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -236,7 +236,7 @@
       "level_num": 8,
       "level_file": "nes.rdl",
       "route_input_sha256": "E9EBC46BC98627E92362179F576FF0303E46129ACCCD6D6B912865138407073A",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -245,14 +245,18 @@
         {
           "n": "destroy robot carrying blue key",
           "s": 3
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 14
         }
       ],
-      "total_frames": 732,
+      "total_frames": 856,
       "rng_end": {
-        "state": 3269224778,
-        "calls": 77
+        "state": 2883693444,
+        "calls": 83
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 9,
@@ -281,7 +285,7 @@
           "s": 45
         }
       ],
-      "total_frames": 2699,
+      "total_frames": 2701,
       "rng_end": {
         "state": 820312479,
         "calls": 74

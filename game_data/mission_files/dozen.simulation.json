@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 6,
+    "ok": 7,
     "failed": 3,
-    "timeout": 3
+    "timeout": 2
   },
   "levels": [
     {
@@ -150,7 +150,7 @@
       "level_num": 6,
       "level_file": "weila.rl2",
       "route_input_sha256": "C79F5062460017473C6047A9B32799DEAE134DC046DB063914B9AB94269D2919",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -167,14 +167,21 @@
         {
           "n": "red key",
           "s": 56
+        },
+        {
+          "n": "reactor",
+          "s": 78
+        },
+        {
+          "n": "exit",
+          "s": 85
         }
       ],
-      "total_frames": 4333,
+      "total_frames": 5080,
       "rng_end": {
-        "state": 3687277772,
-        "calls": 3307
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 869022236,
+        "calls": 4443
+      }
     },
     {
       "level_num": 7,
@@ -207,7 +214,7 @@
           "s": 57
         }
       ],
-      "total_frames": 3432,
+      "total_frames": 3436,
       "rng_end": {
         "state": 3608215435,
         "calls": 3966
@@ -352,7 +359,7 @@
           "s": 110
         }
       ],
-      "total_frames": 6570,
+      "total_frames": 6619,
       "rng_end": {
         "state": 1566243264,
         "calls": 3399

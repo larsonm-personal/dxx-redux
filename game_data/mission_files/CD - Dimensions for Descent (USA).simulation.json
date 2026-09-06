@@ -31,7 +31,7 @@
             "s": 5
           }
         ],
-        "total_frames": 5569,
+        "total_frames": 5582,
         "rng_end": {
           "state": 536951780,
           "calls": 115
@@ -85,7 +85,7 @@
             "s": 186
           }
         ],
-        "total_frames": 11137,
+        "total_frames": 11135,
         "rng_end": {
           "state": 3105560752,
           "calls": 151
@@ -1100,7 +1100,7 @@
             "s": 82
           }
         ],
-        "total_frames": 4948,
+        "total_frames": 4946,
         "rng_end": {
           "state": 811863863,
           "calls": 178
@@ -1200,16 +1200,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "karlmb01.rdl",
         "route_input_sha256": "13B9CA85DECADFB8E0A2EA09BFD9123449D1151A3D346FD9AC4DC054F05D2514",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -1217,27 +1217,38 @@
         "objectives": [
           {
             "n": "fly-through 3",
-            "s": 7
-          },
-          {
-            "n": "gold key",
             "s": 8
           },
           {
+            "n": "gold key",
+            "s": 9
+          },
+          {
             "n": "red key",
-            "s": 19
+            "s": 20
           },
           {
             "n": "blue key",
-            "s": 32
+            "s": 33
+          },
+          {
+            "n": "reactor",
+            "s": 57
+          },
+          {
+            "n": "blastable wall",
+            "s": 68
+          },
+          {
+            "n": "exit",
+            "s": 71
           }
         ],
-        "total_frames": 3260,
+        "total_frames": 4287,
         "rng_end": {
-          "state": 403521121,
-          "calls": 160
-        },
-        "problem": "physical route frontier did not open after 8 interaction attempts"
+          "state": 1814397249,
+          "calls": 192
+        }
       }
     ]
   },
@@ -1838,7 +1849,7 @@
             "s": 60
           }
         ],
-        "total_frames": 3589,
+        "total_frames": 3587,
         "rng_end": {
           "state": 1948555936,
           "calls": 231
@@ -2218,7 +2229,7 @@
             "s": 46
           }
         ],
-        "total_frames": 2744,
+        "total_frames": 2742,
         "rng_end": {
           "state": 2122112351,
           "calls": 138

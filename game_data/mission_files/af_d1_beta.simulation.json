@@ -237,10 +237,10 @@
         },
         {
           "n": "exit",
-          "s": 77
+          "s": 76
         }
       ],
-      "total_frames": 4593,
+      "total_frames": 4589,
       "rng_end": {
         "state": 1447624116,
         "calls": 99
@@ -303,7 +303,7 @@
           "s": 76
         }
       ],
-      "total_frames": 4553,
+      "total_frames": 4550,
       "rng_end": {
         "state": 3423541591,
         "calls": 146

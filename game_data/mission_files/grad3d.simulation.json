@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 1,
+    "ok": 2,
     "failed": 1,
-    "timeout": 4
+    "timeout": 3
   },
   "levels": [
     {
@@ -64,7 +64,7 @@
           "s": 148
         }
       ],
-      "total_frames": 8882,
+      "total_frames": 8878,
       "rng_end": {
         "state": 3772951437,
         "calls": 4916
@@ -93,7 +93,7 @@
           "s": 198
         }
       ],
-      "total_frames": 11887,
+      "total_frames": 11885,
       "rng_end": {
         "state": 2955309015,
         "calls": 4626
@@ -104,7 +104,7 @@
       "level_num": 4,
       "level_file": "grnhouse.rl2",
       "route_input_sha256": "65C101C13A97631E63BFE1207F91F49EEFD0271F5F5D59B8AFAE653567BE4246",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -117,14 +117,25 @@
         {
           "n": "red key",
           "s": 77
+        },
+        {
+          "n": "gold key",
+          "s": 173
+        },
+        {
+          "n": "boss",
+          "s": 244
+        },
+        {
+          "n": "exit",
+          "s": 248
         }
       ],
-      "total_frames": 7904,
+      "total_frames": 14895,
       "rng_end": {
-        "state": 1382109136,
-        "calls": 3319
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 1686525773,
+        "calls": 6516
+      }
     },
     {
       "level_num": 5,
@@ -145,7 +156,7 @@
           "s": 90
         }
       ],
-      "total_frames": 11020,
+      "total_frames": 11028,
       "rng_end": {
         "state": 202834805,
         "calls": 3468

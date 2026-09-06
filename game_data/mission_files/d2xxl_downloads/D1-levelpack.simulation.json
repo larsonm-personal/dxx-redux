@@ -253,7 +253,7 @@
             "s": 80
           }
         ],
-        "total_frames": 4787,
+        "total_frames": 4783,
         "rng_end": {
           "state": 4264971915,
           "calls": 126
@@ -457,16 +457,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "nwo.rdl",
         "route_input_sha256": "EAAD5E2ED7905DB843AD983790D510AE3BCD7C3346B9ADAA7339F6FE2E30007E",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -483,14 +483,21 @@
           {
             "n": "red key",
             "s": 64
+          },
+          {
+            "n": "reactor",
+            "s": 107
+          },
+          {
+            "n": "exit",
+            "s": 122
           }
         ],
-        "total_frames": 5879,
+        "total_frames": 7327,
         "rng_end": {
-          "state": 916896761,
-          "calls": 72
-        },
-        "problem": "physical route frontier did not open after 8 interaction attempts"
+          "state": 500965035,
+          "calls": 94
+        }
       }
     ]
   },
@@ -661,7 +668,7 @@
             "s": 153
           }
         ],
-        "total_frames": 9208,
+        "total_frames": 9206,
         "rng_end": {
           "state": 2883693444,
           "calls": 83

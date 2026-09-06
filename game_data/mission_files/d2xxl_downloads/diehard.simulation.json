@@ -91,14 +91,14 @@
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 56
+          "s": 55
         },
         {
           "n": "switch 17",
           "s": 67
         }
       ],
-      "total_frames": 4887,
+      "total_frames": 4885,
       "rng_end": {
         "state": 696687669,
         "calls": 1740
@@ -215,12 +215,16 @@
         {
           "n": "switch 3",
           "s": 40
+        },
+        {
+          "n": "red key",
+          "s": 66
         }
       ],
-      "total_frames": 2841,
+      "total_frames": 4657,
       "rng_end": {
-        "state": 1189090888,
-        "calls": 1567
+        "state": 667899573,
+        "calls": 2124
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -478,7 +482,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 718,
+      "total_frames": 778,
       "rng_end": {
         "state": 3885567453,
         "calls": 100
@@ -512,7 +516,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 675,
+      "total_frames": 735,
       "rng_end": {
         "state": 43796357,
         "calls": 252

@@ -8,7 +8,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 4,
-    "timeout": 3
+    "failed": 1,
+    "timeout": 2
   },
   "levels": [
     {
@@ -95,7 +96,7 @@
           "s": 250
         }
       ],
-      "total_frames": 14976,
+      "total_frames": 14977,
       "rng_end": {
         "state": 3306922665,
         "calls": 3352
@@ -105,7 +106,7 @@
       "level_num": 3,
       "level_file": "lavachsm.rl2",
       "route_input_sha256": "D8E0A2BA2569A8C847ECFB77B74F35084654C87ABDF6C77EDB63E5AB0AB251FD",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -122,14 +123,18 @@
         {
           "n": "switch 0",
           "s": 70
+        },
+        {
+          "n": "red key",
+          "s": 108
         }
       ],
-      "total_frames": 5453,
+      "total_frames": 6486,
       "rng_end": {
-        "state": 738479860,
-        "calls": 1571
+        "state": 2692310860,
+        "calls": 2155
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 4,

@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
+    "ok": 6,
     "failed": 2,
-    "timeout": 5
+    "timeout": 3
   },
   "levels": [
     {
@@ -129,10 +129,10 @@
         },
         {
           "n": "exit",
-          "s": 84
+          "s": 83
         }
       ],
-      "total_frames": 5011,
+      "total_frames": 5006,
       "rng_end": {
         "state": 1970098540,
         "calls": 1995
@@ -158,7 +158,7 @@
         },
         {
           "n": "red key",
-          "s": 67
+          "s": 66
         },
         {
           "n": "reactor",
@@ -169,7 +169,7 @@
           "s": 113
         }
       ],
-      "total_frames": 6759,
+      "total_frames": 6755,
       "rng_end": {
         "state": 1734514162,
         "calls": 6213
@@ -202,7 +202,7 @@
           "s": 45
         }
       ],
-      "total_frames": 2680,
+      "total_frames": 2678,
       "rng_end": {
         "state": 2859731786,
         "calls": 1613
@@ -213,7 +213,7 @@
       "level_num": 7,
       "level_file": "giurmi.rl2",
       "route_input_sha256": "6937220EA7ADBA56CA9DF2A743EF8EA736C0097CA617D9FC7D9028B7170F974D",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -234,14 +234,21 @@
         {
           "n": "red key",
           "s": 63
+        },
+        {
+          "n": "reactor",
+          "s": 85
+        },
+        {
+          "n": "exit",
+          "s": 101
         }
       ],
-      "total_frames": 4654,
+      "total_frames": 6086,
       "rng_end": {
-        "state": 894651536,
-        "calls": 3383
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 3586205253,
+        "calls": 5180
+      }
     },
     {
       "level_num": 8,
@@ -271,10 +278,10 @@
         },
         {
           "n": "red key",
-          "s": 53
+          "s": 52
         }
       ],
-      "total_frames": 3151,
+      "total_frames": 3149,
       "rng_end": {
         "state": 2937489548,
         "calls": 1579
@@ -332,7 +339,7 @@
           "s": 81
         }
       ],
-      "total_frames": 4877,
+      "total_frames": 4881,
       "rng_end": {
         "state": 2950194336,
         "calls": 3815
@@ -376,7 +383,7 @@
       "level_num": 11,
       "level_file": "sitem.rl2",
       "route_input_sha256": "6C3A156559FA80C24CB8A6B3A746B00099816F87E1BCDF79B2DB256A377DBC85",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -397,14 +404,21 @@
         {
           "n": "red key",
           "s": 57
+        },
+        {
+          "n": "reactor",
+          "s": 81
+        },
+        {
+          "n": "exit",
+          "s": 89
         }
       ],
-      "total_frames": 4489,
+      "total_frames": 5325,
       "rng_end": {
-        "state": 3916767301,
-        "calls": 2620
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 683415554,
+        "calls": 2933
+      }
     }
   ]
 }

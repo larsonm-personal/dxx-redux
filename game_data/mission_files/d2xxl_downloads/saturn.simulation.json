@@ -74,17 +74,17 @@
       "objectives": [
         {
           "n": "switch 51",
-          "s": 7
+          "s": 9
         },
         {
           "n": "switch 22",
-          "s": 42
+          "s": 43
         }
       ],
-      "total_frames": 7508,
+      "total_frames": 7596,
       "rng_end": {
-        "state": 4259882423,
-        "calls": 4658
+        "state": 309910709,
+        "calls": 4684
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
