@@ -7,9 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 19,
-    "failed": 2,
-    "timeout": 6
+    "ok": 24,
+    "timeout": 3
   },
   "levels": [
     {
@@ -78,7 +77,7 @@
       "level_num": 3,
       "level_file": "level03.rl2",
       "route_input_sha256": "631E8AC3A8ADC1B982ABBD8070A42CC82361984635468807B0CA37E7DA6F5611",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -95,14 +94,21 @@
         {
           "n": "red key",
           "s": 51
+        },
+        {
+          "n": "boss",
+          "s": 64
+        },
+        {
+          "n": "exit",
+          "s": 73
         }
       ],
-      "total_frames": 11461,
+      "total_frames": 4368,
       "rng_end": {
-        "state": 3558432468,
-        "calls": 2243
-      },
-      "problem": "route confirmation exceeded 191-second simulation budget"
+        "state": 3302254884,
+        "calls": 2611
+      }
     },
     {
       "level_num": 4,
@@ -449,7 +455,7 @@
       "level_num": 13,
       "level_file": "level13.rl2",
       "route_input_sha256": "C744125BC3C6C963BDE6B3EC76E992B8A2EE434875255119E3C5F187222A0E48",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -466,14 +472,21 @@
         {
           "n": "red key",
           "s": 65
+        },
+        {
+          "n": "boss",
+          "s": 89
+        },
+        {
+          "n": "exit",
+          "s": 117
         }
       ],
-      "total_frames": 17521,
+      "total_frames": 6994,
       "rng_end": {
-        "state": 986697615,
-        "calls": 2394
-      },
-      "problem": "route confirmation exceeded 292-second simulation budget"
+        "state": 4111154319,
+        "calls": 3162
+      }
     },
     {
       "level_num": 14,
@@ -557,7 +570,7 @@
       "level_num": 16,
       "level_file": "level16.rl2",
       "route_input_sha256": "23544E598F750CE0627C33717484C72CB7D487833BF37623B283A0BB0A9C2BE1",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -574,14 +587,21 @@
         {
           "n": "red key",
           "s": 44
+        },
+        {
+          "n": "boss",
+          "s": 74
+        },
+        {
+          "n": "exit",
+          "s": 84
         }
       ],
-      "total_frames": 12901,
+      "total_frames": 5029,
       "rng_end": {
-        "state": 2033855936,
-        "calls": 2375
-      },
-      "problem": "route confirmation exceeded 215-second simulation budget"
+        "state": 2898092616,
+        "calls": 2591
+      }
     },
     {
       "level_num": 17,
@@ -698,24 +718,29 @@
       "level_num": 20,
       "level_file": "level20.rl2",
       "route_input_sha256": "E87D4B97A1A2982155F57654F2CEDD08BB8252CDDC95AD9BE4C5FD75F139D222",
-      "status": "failed",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 6
+        }
+      ],
+      "total_frames": 4317,
       "rng_end": {
-        "state": 1627576247,
-        "calls": 50
+        "state": 3154970640,
+        "calls": 951
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 21,
       "level_file": "level21.rl2",
       "route_input_sha256": "A50BBC28F5B6F395EE95C199939FFFC9FA0E846FE77BA46B3E6F5ED95BF077EA",
-      "status": "failed",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -728,20 +753,43 @@
         {
           "n": "gold key",
           "s": 34
+        },
+        {
+          "n": "red key",
+          "s": 51
+        },
+        {
+          "n": "pass-through 2",
+          "s": 56
+        },
+        {
+          "n": "pass-through 8",
+          "s": 59
+        },
+        {
+          "n": "pass-through 11",
+          "s": 62
+        },
+        {
+          "n": "reactor",
+          "s": 62
+        },
+        {
+          "n": "exit",
+          "s": 67
         }
       ],
-      "total_frames": 2013,
+      "total_frames": 4044,
       "rng_end": {
-        "state": 3502499663,
-        "calls": 1434
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 986697615,
+        "calls": 2394
+      }
     },
     {
       "level_num": 22,
       "level_file": "level22.rl2",
       "route_input_sha256": "061CCE862D24A2B637840D8F7F41BF16C6B9AED6015D4C47F7945E5B4300EBA7",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -758,14 +806,21 @@
         {
           "n": "red key",
           "s": 40
+        },
+        {
+          "n": "boss",
+          "s": 68
+        },
+        {
+          "n": "exit",
+          "s": 77
         }
       ],
-      "total_frames": 13501,
+      "total_frames": 4640,
       "rng_end": {
-        "state": 3345593417,
-        "calls": 2168
-      },
-      "problem": "route confirmation exceeded 225-second simulation budget"
+        "state": 1692656121,
+        "calls": 2632
+      }
     },
     {
       "level_num": 23,

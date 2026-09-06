@@ -63,12 +63,20 @@
         {
           "n": "blue key",
           "s": 11
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 37
+        },
+        {
+          "n": "red key",
+          "s": 54
         }
       ],
-      "total_frames": 680,
+      "total_frames": 3226,
       "rng_end": {
-        "state": 3791773014,
-        "calls": 17
+        "state": 1452336924,
+        "calls": 91
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },

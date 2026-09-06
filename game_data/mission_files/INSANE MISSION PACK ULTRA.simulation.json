@@ -8,8 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
-    "timeout": 4
+    "ok": 5,
+    "timeout": 3
   },
   "levels": [
     {
@@ -58,7 +58,7 @@
       "level_num": 3,
       "level_file": "battalio.rdl",
       "route_input_sha256": "4014A56B78385302C057086B9717C93382185C3DB3482E7326ABD7B02EEA1A49",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -71,14 +71,21 @@
         {
           "n": "destroy robot carrying red key",
           "s": 21
+        },
+        {
+          "n": "reactor",
+          "s": 33
+        },
+        {
+          "n": "exit",
+          "s": 37
         }
       ],
-      "total_frames": 4561,
+      "total_frames": 2200,
       "rng_end": {
-        "state": 3843909140,
-        "calls": 131
-      },
-      "problem": "route confirmation exceeded 76-second simulation budget"
+        "state": 1024943020,
+        "calls": 139
+      }
     },
     {
       "level_num": 4,
@@ -160,12 +167,16 @@
         {
           "n": "destroy robot carrying red key",
           "s": 9
+        },
+        {
+          "n": "boss",
+          "s": 16
         }
       ],
-      "total_frames": 1519,
+      "total_frames": 1562,
       "rng_end": {
-        "state": 3212330324,
-        "calls": 67
+        "state": 1750011070,
+        "calls": 201
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

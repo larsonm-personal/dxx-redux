@@ -7,8 +7,7 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
-    "failed": 1,
+    "ok": 3,
     "timeout": 2
   },
   "levels": [
@@ -147,18 +146,58 @@
       "level_num": 3,
       "level_file": "harqyj03.rl2",
       "route_input_sha256": "D74E9AA0DBAD35FFA2BECD59E7816218678CE2A1F6891516FF2FC44E476ADD0D",
-      "status": "failed",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "pass-through 1",
+          "s": 10
+        },
+        {
+          "n": "hidden door",
+          "s": 13
+        },
+        {
+          "n": "switch 11",
+          "s": 14
+        },
+        {
+          "n": "blue key",
+          "s": 30
+        },
+        {
+          "n": "fly-through 28",
+          "s": 41
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 46
+        },
+        {
+          "n": "hidden door",
+          "s": 75
+        },
+        {
+          "n": "red key",
+          "s": 76
+        },
+        {
+          "n": "boss",
+          "s": 108
+        },
+        {
+          "n": "exit",
+          "s": 110
+        }
+      ],
+      "total_frames": 6611,
       "rng_end": {
-        "state": 4200531631,
-        "calls": 58
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 1845645418,
+        "calls": 4013
+      }
     },
     {
       "level_num": 4,

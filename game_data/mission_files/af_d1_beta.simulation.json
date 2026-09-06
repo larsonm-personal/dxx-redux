@@ -9,8 +9,7 @@
   "status": "partial",
   "level_counts": {
     "ok": 6,
-    "failed": 1,
-    "timeout": 3
+    "timeout": 4
   },
   "levels": [
     {
@@ -87,7 +86,7 @@
       "level_num": 3,
       "level_file": "sedurta.rdl",
       "route_input_sha256": "9306ACB07750E80D6345E07C66A17FF5BDEC43BE8BEA8E099682828C6B7F99BA",
-      "status": "failed",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -96,14 +95,18 @@
         {
           "n": "blue key",
           "s": 27
+        },
+        {
+          "n": "gold key",
+          "s": 46
         }
       ],
-      "total_frames": 1600,
+      "total_frames": 7278,
       "rng_end": {
-        "state": 2937909499,
-        "calls": 14
+        "state": 2402686401,
+        "calls": 64
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 4,

@@ -7,8 +7,7 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 7,
-    "failed": 3,
+    "ok": 10,
     "timeout": 2
   },
   "levels": [
@@ -133,18 +132,50 @@
       "level_num": 5,
       "level_file": "weisul.rl2",
       "route_input_sha256": "FCCBA0ACED39CFDD982E426856E64CB6A87503DC5B6A9687B9865EC6B345271E",
-      "status": "failed",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 7
+        },
+        {
+          "n": "switch 0",
+          "s": 15
+        },
+        {
+          "n": "gold key",
+          "s": 18
+        },
+        {
+          "n": "switch 2",
+          "s": 33
+        },
+        {
+          "n": "red key",
+          "s": 35
+        },
+        {
+          "n": "switch 1",
+          "s": 35
+        },
+        {
+          "n": "reactor",
+          "s": 45
+        },
+        {
+          "n": "exit",
+          "s": 47
+        }
+      ],
+      "total_frames": 2818,
       "rng_end": {
-        "state": 1,
-        "calls": 0
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 1594953884,
+        "calls": 2267
+      }
     },
     {
       "level_num": 6,
@@ -224,7 +255,7 @@
       "level_num": 8,
       "level_file": "syrpfa.rl2",
       "route_input_sha256": "FF3D4C0B5A6E8FC01D29070747F45AA13C4607370121A77B36C214178A3EAE1F",
-      "status": "failed",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -237,14 +268,25 @@
         {
           "n": "gold key",
           "s": 39
+        },
+        {
+          "n": "red key",
+          "s": 66
+        },
+        {
+          "n": "reactor",
+          "s": 82
+        },
+        {
+          "n": "exit",
+          "s": 88
         }
       ],
-      "total_frames": 2356,
+      "total_frames": 5283,
       "rng_end": {
-        "state": 1786046595,
-        "calls": 3078
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 1108945329,
+        "calls": 7120
+      }
     },
     {
       "level_num": 9,
@@ -311,21 +353,21 @@
         },
         {
           "n": "switch 3",
-          "s": 66
+          "s": 63
         },
         {
           "n": "reactor",
-          "s": 66
+          "s": 67
         },
         {
           "n": "exit",
-          "s": 68
+          "s": 69
         }
       ],
-      "total_frames": 4099,
+      "total_frames": 4111,
       "rng_end": {
-        "state": 3703342054,
-        "calls": 6081
+        "state": 319828982,
+        "calls": 6129
       }
     },
     {
@@ -369,18 +411,42 @@
       "level_num": 12,
       "level_file": "epwarzo.rl2",
       "route_input_sha256": "C026C48249B6F721C67DE0413573E6F7547C72FD4648E7F63CD5DB7BB7BD287A",
-      "status": "failed",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 13
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 31
+        },
+        {
+          "n": "switch 4",
+          "s": 34
+        },
+        {
+          "n": "red key",
+          "s": 52
+        },
+        {
+          "n": "boss",
+          "s": 83
+        },
+        {
+          "n": "exit",
+          "s": 106
+        }
+      ],
+      "total_frames": 6389,
       "rng_end": {
-        "state": 1,
-        "calls": 0
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 1583640841,
+        "calls": 8632
+      }
     }
   ]
 }

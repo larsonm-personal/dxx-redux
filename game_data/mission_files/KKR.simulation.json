@@ -151,29 +151,29 @@
         },
         {
           "n": "switch 1",
-          "s": 82
+          "s": 67
         },
         {
           "n": "switch 5",
-          "s": 84
+          "s": 79
         },
         {
           "n": "red key",
-          "s": 92
+          "s": 88
         },
         {
           "n": "boss",
-          "s": 104
+          "s": 100
         },
         {
           "n": "exit",
-          "s": 111
+          "s": 107
         }
       ],
-      "total_frames": 6633,
+      "total_frames": 6435,
       "rng_end": {
-        "state": 998720860,
-        "calls": 3355
+        "state": 1752759203,
+        "calls": 3302
       }
     },
     {

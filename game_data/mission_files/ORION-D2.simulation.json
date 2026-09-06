@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
-    "failed": 3,
+    "ok": 4,
+    "failed": 2,
     "timeout": 2
   },
   "levels": [
@@ -239,18 +239,38 @@
       "level_num": -1,
       "level_file": "level1s.rl2",
       "route_input_sha256": "0311DF664B230815D2BCBF4446E7489FB17B7A34B9C423AFB2D10B55300B3DB0",
-      "status": "failed",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 9
+        },
+        {
+          "n": "gold key",
+          "s": 38
+        },
+        {
+          "n": "red key",
+          "s": 75
+        },
+        {
+          "n": "reactor",
+          "s": 89
+        },
+        {
+          "n": "exit",
+          "s": 94
+        }
+      ],
+      "total_frames": 5648,
       "rng_end": {
-        "state": 1660932118,
-        "calls": 81
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 3297642855,
+        "calls": 3970
+      }
     }
   ]
 }

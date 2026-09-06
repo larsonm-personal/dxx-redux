@@ -35,17 +35,17 @@
         },
         {
           "n": "switch 3",
-          "s": 58
+          "s": 49
         },
         {
           "n": "reactor",
           "s": 61
         }
       ],
-      "total_frames": 4610,
+      "total_frames": 4603,
       "rng_end": {
-        "state": 687331665,
-        "calls": 5424
+        "state": 363798525,
+        "calls": 5444
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -85,25 +85,25 @@
         },
         {
           "n": "switch 1",
-          "s": 83
+          "s": 67
         },
         {
           "n": "switch 9",
-          "s": 128
+          "s": 127
         },
         {
           "n": "reactor",
-          "s": 142
+          "s": 149
         },
         {
           "n": "exit",
-          "s": 162
+          "s": 176
         }
       ],
-      "total_frames": 9696,
+      "total_frames": 10572,
       "rng_end": {
-        "state": 3198423111,
-        "calls": 5794
+        "state": 176246517,
+        "calls": 5644
       }
     },
     {
@@ -142,37 +142,37 @@
         },
         {
           "n": "switch 12",
-          "s": 107
+          "s": 115
         },
         {
           "n": "switch 15",
-          "s": 107
+          "s": 118
         },
         {
           "n": "switch 13",
-          "s": 133
+          "s": 126
         },
         {
           "n": "fly-through 21",
-          "s": 139
+          "s": 132
         },
         {
           "n": "switch 22",
-          "s": 159
+          "s": 140
         },
         {
           "n": "reactor",
-          "s": 175
+          "s": 141
         },
         {
           "n": "exit",
-          "s": 189
+          "s": 158
         }
       ],
-      "total_frames": 11326,
+      "total_frames": 9471,
       "rng_end": {
-        "state": 1808815994,
-        "calls": 9181
+        "state": 2294590721,
+        "calls": 6912
       }
     },
     {
@@ -579,33 +579,33 @@
         },
         {
           "n": "switch 5",
-          "s": 71
+          "s": 51
         },
         {
           "n": "switch 1",
-          "s": 89
+          "s": 61
         },
         {
           "n": "blastable wall",
-          "s": 111
+          "s": 82
         },
         {
           "n": "red key",
-          "s": 117
+          "s": 88
         },
         {
           "n": "boss",
-          "s": 170
+          "s": 142
         },
         {
           "n": "exit",
-          "s": 201
+          "s": 173
         }
       ],
-      "total_frames": 12063,
+      "total_frames": 10377,
       "rng_end": {
-        "state": 731572891,
-        "calls": 7790
+        "state": 1461006422,
+        "calls": 6417
       }
     }
   ]

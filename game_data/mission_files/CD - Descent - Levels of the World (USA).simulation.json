@@ -1102,14 +1102,14 @@
     "seed": 1,
     "status": "failed",
     "level_counts": {
-      "failed": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "cavern11.rdl",
         "route_input_sha256": "4A5B8D3DA49B9ECBDFE2C1CF3C9C8C700089229D061EDD25CD17781B6DF4EA31",
-        "status": "failed",
+        "status": "timeout",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -1118,14 +1118,22 @@
           {
             "n": "blue key",
             "s": 10
+          },
+          {
+            "n": "blastable wall",
+            "s": 24
+          },
+          {
+            "n": "gold key",
+            "s": 27
           }
         ],
-        "total_frames": 627,
+        "total_frames": 8204,
         "rng_end": {
-          "state": 2937909499,
-          "calls": 14
+          "state": 273032060,
+          "calls": 123
         },
-        "problem": "live Guide-Bot route has no actionable goal"
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },
@@ -4658,10 +4666,10 @@
             "s": 8
           }
         ],
-        "total_frames": 1370,
+        "total_frames": 1233,
         "rng_end": {
-          "state": 2801490995,
-          "calls": 86
+          "state": 835903122,
+          "calls": 37
         },
         "problem": "physical route frontier did not open after 8 interaction attempts"
       }

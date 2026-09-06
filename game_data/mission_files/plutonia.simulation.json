@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 14,
+    "ok": 15,
     "failed": 7,
-    "timeout": 11
+    "timeout": 10
   },
   "levels": [
     {
@@ -40,17 +40,17 @@
         },
         {
           "n": "switch 4",
-          "s": 33
+          "s": 27
         },
         {
           "n": "red key",
-          "s": 40
+          "s": 35
         }
       ],
-      "total_frames": 2426,
+      "total_frames": 2092,
       "rng_end": {
-        "state": 1469804762,
-        "calls": 1533
+        "state": 2563641377,
+        "calls": 1248
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -403,7 +403,7 @@
       "level_num": 12,
       "level_file": "map12.rl2",
       "route_input_sha256": "94914E88084E49E2A5F7E97CCA26369234A8162E8C55C21F55AA6259B1DB213D",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -420,14 +420,21 @@
         {
           "n": "red key",
           "s": 86
+        },
+        {
+          "n": "reactor",
+          "s": 125
+        },
+        {
+          "n": "exit",
+          "s": 143
         }
       ],
-      "total_frames": 18001,
+      "total_frames": 8586,
       "rng_end": {
-        "state": 2638800181,
-        "calls": 5580
-      },
-      "problem": "route confirmation exceeded 300-second simulation budget"
+        "state": 1686525773,
+        "calls": 6516
+      }
     },
     {
       "level_num": 13,
@@ -750,13 +757,18 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 5705,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 25
+        }
+      ],
+      "total_frames": 2061,
       "rng_end": {
-        "state": 3216810172,
-        "calls": 571
+        "state": 3603226953,
+        "calls": 888
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 22,
@@ -1027,18 +1039,18 @@
           "s": 22
         },
         {
-          "n": "red key",
-          "s": 45
+          "n": "gold key",
+          "s": 52
         },
         {
-          "n": "gold key",
-          "s": 69
+          "n": "red key",
+          "s": 77
         }
       ],
-      "total_frames": 4138,
+      "total_frames": 4598,
       "rng_end": {
-        "state": 1551731513,
-        "calls": 2824
+        "state": 1737012597,
+        "calls": 2956
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },

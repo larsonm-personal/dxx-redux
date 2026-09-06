@@ -97,12 +97,16 @@
         {
           "n": "switch 7",
           "s": 58
+        },
+        {
+          "n": "switch 18",
+          "s": 63
         }
       ],
-      "total_frames": 4403,
+      "total_frames": 4399,
       "rng_end": {
-        "state": 608528836,
-        "calls": 1299
+        "state": 1311912705,
+        "calls": 1280
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -186,25 +190,25 @@
         },
         {
           "n": "switch 4",
-          "s": 46
+          "s": 36
         },
         {
           "n": "gold key",
-          "s": 52
+          "s": 55
         },
         {
           "n": "red key",
-          "s": 73
+          "s": 75
         },
         {
           "n": "switch 0",
-          "s": 88
+          "s": 81
         }
       ],
-      "total_frames": 6318,
+      "total_frames": 5390,
       "rng_end": {
-        "state": 429103274,
-        "calls": 3181
+        "state": 1896332983,
+        "calls": 2354
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -236,17 +240,17 @@
         },
         {
           "n": "switch 3",
-          "s": 36
+          "s": 34
         },
         {
           "n": "red key",
-          "s": 45
+          "s": 41
         }
       ],
-      "total_frames": 4598,
+      "total_frames": 4370,
       "rng_end": {
-        "state": 896791444,
-        "calls": 1283
+        "state": 858999435,
+        "calls": 1150
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

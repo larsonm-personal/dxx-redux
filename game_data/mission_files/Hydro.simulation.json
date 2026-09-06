@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 11,
+    "ok": 12,
     "failed": 2,
-    "timeout": 10
+    "timeout": 9
   },
   "levels": [
     {
@@ -583,7 +583,7 @@
       "level_num": 16,
       "level_file": "Level16.rl2",
       "route_input_sha256": "ADCA18628C5E9674662C9140D86B16E53ECF82EA03B9F9B7E4F73E24746FED8B",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -612,14 +612,21 @@
         {
           "n": "red key",
           "s": 78
+        },
+        {
+          "n": "boss",
+          "s": 115
+        },
+        {
+          "n": "exit",
+          "s": 136
         }
       ],
-      "total_frames": 18001,
+      "total_frames": 8148,
       "rng_end": {
-        "state": 4259882423,
-        "calls": 4658
-      },
-      "problem": "route confirmation exceeded 300-second simulation budget"
+        "state": 3798815375,
+        "calls": 5722
+      }
     },
     {
       "level_num": 17,

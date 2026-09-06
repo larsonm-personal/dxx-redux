@@ -540,36 +540,47 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "failed": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "cbox_x.rdl",
         "route_input_sha256": "3B3858610412E9EEFC89DE406BDB99AC011EA3A741D601A17E833DF5A79A9868",
-        "status": "failed",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
         "objectives": [
           {
-            "n": "blue key",
-            "s": 9
+            "n": "gold key",
+            "s": 8
           },
           {
-            "n": "gold key",
+            "n": "blue key",
             "s": 20
+          },
+          {
+            "n": "red key",
+            "s": 43
+          },
+          {
+            "n": "reactor",
+            "s": 52
+          },
+          {
+            "n": "exit",
+            "s": 56
           }
         ],
-        "total_frames": 1183,
+        "total_frames": 3352,
         "rng_end": {
-          "state": 3914758370,
-          "calls": 21
-        },
-        "problem": "live Guide-Bot route has no actionable goal"
+          "state": 4022231744,
+          "calls": 71
+        }
       }
     ]
   },
@@ -824,7 +835,7 @@
     "status": "partial",
     "level_counts": {
       "ok": 1,
-      "failed": 1
+      "timeout": 1
     },
     "levels": [
       {
@@ -856,18 +867,31 @@
         "level_num": 2,
         "level_file": "dark002.rdl",
         "route_input_sha256": "EE820859264333B93A195E296F811A589A67E0850CBCFBFF6935D4021496FB4C",
-        "status": "failed",
+        "status": "timeout",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 0,
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 2
+          },
+          {
+            "n": "hidden door",
+            "s": 5
+          },
+          {
+            "n": "destroy robot carrying red key",
+            "s": 8
+          }
+        ],
+        "total_frames": 4259,
         "rng_end": {
-          "state": 2516284547,
-          "calls": 6
+          "state": 872078403,
+          "calls": 70
         },
-        "problem": "live Guide-Bot route has no actionable goal"
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },
@@ -981,11 +1005,16 @@
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 3952,
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 5
+          }
+        ],
+        "total_frames": 4486,
         "rng_end": {
-          "state": 948921754,
-          "calls": 61
+          "state": 1024265714,
+          "calls": 69
         },
         "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
@@ -1346,14 +1375,14 @@
     "seed": 1,
     "status": "failed",
     "level_counts": {
-      "failed": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "maze.rdl",
         "route_input_sha256": "182657E7C851B49895F3B03AFC68F5F1EA540C5EA0AEF7AD75FB3C77B5A51E2E",
-        "status": "failed",
+        "status": "timeout",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -1364,12 +1393,12 @@
             "s": 5
           }
         ],
-        "total_frames": 308,
+        "total_frames": 1472,
         "rng_end": {
-          "state": 836760821,
-          "calls": 12
+          "state": 3535774167,
+          "calls": 18
         },
-        "problem": "live Guide-Bot route has no actionable goal"
+        "problem": "physical route frontier did not open after 8 interaction attempts"
       }
     ]
   },
@@ -1423,14 +1452,14 @@
     "seed": 1,
     "status": "failed",
     "level_counts": {
-      "timeout": 1
+      "route_mismatch": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "HOPE.RDL",
         "route_input_sha256": "EF292D08D6FBB44A3C732683B0CF8E48E46E6B6FCECBF8C8DD815281776D6986",
-        "status": "timeout",
+        "status": "route_mismatch",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -1443,14 +1472,18 @@
           {
             "n": "destroy robot carrying blue key",
             "s": 11
+          },
+          {
+            "n": "gold key",
+            "s": 18
           }
         ],
-        "total_frames": 1114,
+        "total_frames": 1624,
         "rng_end": {
-          "state": 1660932118,
-          "calls": 81
+          "state": 290603296,
+          "calls": 103
         },
-        "problem": "physical route frontier did not open after 8 interaction attempts"
+        "problem": "live objective sequence differs from route input"
       }
     ]
   },

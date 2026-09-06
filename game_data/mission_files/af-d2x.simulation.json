@@ -112,41 +112,41 @@
         },
         {
           "n": "switch 3",
-          "s": 18
+          "s": 17
         },
         {
           "n": "gold key",
-          "s": 25
+          "s": 24
         },
         {
           "n": "red key",
-          "s": 45
+          "s": 44
         },
         {
           "n": "switch 6",
-          "s": 48
+          "s": 46
         },
         {
           "n": "switch 5",
-          "s": 50
+          "s": 46
         },
         {
           "n": "pass-through 9",
-          "s": 68
+          "s": 62
         },
         {
           "n": "reactor",
-          "s": 98
+          "s": 92
         },
         {
           "n": "exit",
-          "s": 101
+          "s": 96
         }
       ],
-      "total_frames": 6087,
+      "total_frames": 5745,
       "rng_end": {
-        "state": 3816800785,
-        "calls": 2672
+        "state": 3726344032,
+        "calls": 2343
       }
     },
     {
@@ -181,13 +181,13 @@
         },
         {
           "n": "switch 2",
-          "s": 144
+          "s": 125
         }
       ],
       "total_frames": 18001,
       "rng_end": {
-        "state": 2058247299,
-        "calls": 6150
+        "state": 1771951703,
+        "calls": 5010
       },
       "problem": "route confirmation exceeded 300-second simulation budget"
     },

@@ -7,11 +7,10 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 24,
+    "ok": 25,
     "failed": 1,
     "timeout": 3,
-    "unsupported": 1,
-    "route_mismatch": 1
+    "unsupported": 1
   },
   "levels": [
     {
@@ -974,23 +973,26 @@
       "level_num": -5,
       "level_file": "levels5.rl2",
       "route_input_sha256": "0D22A99E8FE056A80E0DEF8BDAE3B546A6454CA0747AA2C86EE7AAF09EA856F7",
-      "status": "route_mismatch",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
       "objectives": [
         {
+          "n": "boss",
+          "s": 12
+        },
+        {
           "n": "exit",
-          "s": 1
+          "s": 25
         }
       ],
-      "total_frames": 45,
+      "total_frames": 1506,
       "rng_end": {
-        "state": 3768274707,
-        "calls": 374
-      },
-      "problem": "live objective sequence differs from route input"
+        "state": 984353377,
+        "calls": 5280
+      }
     }
   ]
 }

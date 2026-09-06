@@ -8,8 +8,7 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 1,
-    "failed": 1,
+    "ok": 2,
     "timeout": 2
   },
   "levels": [
@@ -122,7 +121,7 @@
       "level_num": 4,
       "level_file": "homecave.rdl",
       "route_input_sha256": "FFAEF16357BF51675E6D768B40B6BEC2246F72A8F90078619114CF8D0915C2C2",
-      "status": "failed",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -135,14 +134,25 @@
         {
           "n": "gold key",
           "s": 43
+        },
+        {
+          "n": "red key",
+          "s": 79
+        },
+        {
+          "n": "boss",
+          "s": 105
+        },
+        {
+          "n": "exit",
+          "s": 107
         }
       ],
-      "total_frames": 2588,
+      "total_frames": 6405,
       "rng_end": {
-        "state": 1775811865,
-        "calls": 40
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 2029357497,
+        "calls": 136
+      }
     }
   ]
 }

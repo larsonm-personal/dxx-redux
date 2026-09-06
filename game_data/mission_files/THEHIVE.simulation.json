@@ -8,8 +8,7 @@
   "seed": 1,
   "status": "failed",
   "level_counts": {
-    "failed": 1,
-    "timeout": 7
+    "timeout": 8
   },
   "levels": [
     {
@@ -42,18 +41,23 @@
       "level_num": 2,
       "level_file": "THEHIVE2.RDL",
       "route_input_sha256": "92867D4B630D3BB21D18E1D98CEB1E60431704D3F08C6A8FB93F99B2686878DD",
-      "status": "failed",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "red key",
+          "s": 14
+        }
+      ],
+      "total_frames": 1679,
       "rng_end": {
-        "state": 2516284547,
-        "calls": 6
+        "state": 1343201072,
+        "calls": 23
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 3,

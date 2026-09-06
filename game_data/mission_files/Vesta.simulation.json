@@ -8,8 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
-    "failed": 2
+    "ok": 3,
+    "failed": 1
   },
   "levels": [
     {
@@ -74,7 +74,7 @@
       "level_num": 3,
       "level_file": "level3.rdl",
       "route_input_sha256": "C890949F743036C6BDB1AC05615216971D14F4C7E8733AB5949D134FC1D4867B",
-      "status": "failed",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -83,14 +83,25 @@
         {
           "n": "blue key",
           "s": 17
+        },
+        {
+          "n": "blastable wall",
+          "s": 32
+        },
+        {
+          "n": "boss",
+          "s": 46
+        },
+        {
+          "n": "exit",
+          "s": 50
         }
       ],
-      "total_frames": 1019,
+      "total_frames": 3027,
       "rng_end": {
-        "state": 3297241969,
-        "calls": 16
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 361230461,
+        "calls": 196
+      }
     },
     {
       "level_num": -1,

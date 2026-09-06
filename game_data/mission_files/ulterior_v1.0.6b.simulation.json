@@ -870,21 +870,21 @@
         },
         {
           "n": "switch 5",
-          "s": 110
+          "s": 111
         },
         {
           "n": "boss",
-          "s": 138
+          "s": 140
         },
         {
           "n": "exit",
-          "s": 147
+          "s": 149
         }
       ],
-      "total_frames": 8793,
+      "total_frames": 8918,
       "rng_end": {
-        "state": 1675774670,
-        "calls": 5369
+        "state": 1941204607,
+        "calls": 5482
       }
     },
     {
@@ -940,13 +940,13 @@
         },
         {
           "n": "switch 28",
-          "s": 25
+          "s": 24
         }
       ],
-      "total_frames": 2457,
+      "total_frames": 2369,
       "rng_end": {
-        "state": 1303892316,
-        "calls": 4379
+        "state": 2778408689,
+        "calls": 4240
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

@@ -8,9 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 9,
-    "failed": 6,
-    "timeout": 1
+    "ok": 10,
+    "failed": 6
   },
   "levels": [
     {
@@ -479,18 +478,26 @@
       "level_num": 16,
       "level_file": "lost16.rdl",
       "route_input_sha256": "43855923A92BFADC9727B00DC10861330D709ECEF426551995E6851792EB7B40",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 5701,
+      "objectives": [
+        {
+          "n": "boss",
+          "s": 19
+        },
+        {
+          "n": "exit",
+          "s": 31
+        }
+      ],
+      "total_frames": 1882,
       "rng_end": {
-        "state": 595337866,
-        "calls": 13
-      },
-      "problem": "route confirmation exceeded 95-second simulation budget"
+        "state": 3545811950,
+        "calls": 89
+      }
     }
   ]
 }

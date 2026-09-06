@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
-    "timeout": 3
+    "ok": 3,
+    "timeout": 2
   },
   "levels": [
     {
@@ -111,11 +111,16 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4704,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 50
+        }
+      ],
+      "total_frames": 9846,
       "rng_end": {
-        "state": 1187663298,
-        "calls": 181
+        "state": 2142376787,
+        "calls": 1334
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -147,40 +152,40 @@
         },
         {
           "n": "switch 6",
-          "s": 65
+          "s": 70
         },
         {
           "n": "switch 4",
-          "s": 65
-        },
-        {
-          "n": "fly-through 5",
           "s": 72
         },
         {
+          "n": "fly-through 5",
+          "s": 74
+        },
+        {
           "n": "destroy robot carrying red key",
-          "s": 75
+          "s": 77
         },
         {
           "n": "boss",
-          "s": 102
+          "s": 105
         },
         {
           "n": "exit",
-          "s": 103
+          "s": 106
         }
       ],
-      "total_frames": 6189,
+      "total_frames": 6332,
       "rng_end": {
-        "state": 2822522611,
-        "calls": 3478
+        "state": 1749209515,
+        "calls": 3422
       }
     },
     {
       "level_num": 5,
       "level_file": "hyperion.rl2",
       "route_input_sha256": "AB15E6741A5DDF93D152C1F005FE11AD6280F102E5217E78A8CCBCD70EC2AC2A",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -204,63 +209,70 @@
         },
         {
           "n": "switch 1",
-          "s": 11
+          "s": 10
         },
         {
           "n": "hidden door",
-          "s": 11
+          "s": 10
         },
         {
           "n": "switch 2",
-          "s": 14
+          "s": 13
         },
         {
           "n": "blue key",
-          "s": 17
+          "s": 16
         },
         {
           "n": "switch 14",
-          "s": 21
+          "s": 16
         },
         {
           "n": "hidden door",
-          "s": 44
+          "s": 42
         },
         {
           "n": "switch 15",
-          "s": 66
+          "s": 43
         },
         {
           "n": "gold key",
-          "s": 87
+          "s": 45
         },
         {
           "n": "fly-through 3",
-          "s": 120
+          "s": 79
         },
         {
           "n": "switch 7",
-          "s": 122
+          "s": 81
         },
         {
           "n": "fly-through 5",
-          "s": 135
+          "s": 95
         },
         {
           "n": "switch 8",
-          "s": 137
+          "s": 96
         },
         {
           "n": "red key",
-          "s": 145
+          "s": 104
+        },
+        {
+          "n": "boss",
+          "s": 127
+        },
+        {
+          "n": "exit",
+          "s": 135
         }
       ],
-      "total_frames": 13484,
+      "total_frames": 8116,
       "rng_end": {
-        "state": 3966786373,
-        "calls": 5948
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 2096680711,
+        "calls": 5090
+      }
     }
   ]
 }

@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 7,
-    "failed": 3,
+    "ok": 8,
+    "failed": 2,
     "timeout": 9
   },
   "levels": [
@@ -236,29 +236,29 @@
         },
         {
           "n": "switch 3",
-          "s": 105
+          "s": 69
         },
         {
           "n": "switch 2",
-          "s": 128
+          "s": 94
         },
         {
           "n": "switch 1",
-          "s": 160
+          "s": 126
         },
         {
           "n": "reactor",
-          "s": 190
+          "s": 156
         },
         {
           "n": "exit",
-          "s": 213
+          "s": 179
         }
       ],
-      "total_frames": 12757,
+      "total_frames": 10714,
       "rng_end": {
-        "state": 3972645437,
-        "calls": 8452
+        "state": 3256023730,
+        "calls": 6789
       }
     },
     {
@@ -353,18 +353,38 @@
       "level_num": 13,
       "level_file": "uluhnac.rl2",
       "route_input_sha256": "AC4262E75FAC781E22B7A0573C754BB3D0D70F968482E53938B4DABAD584837D",
-      "status": "failed",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "switch 2",
+          "s": 21
+        },
+        {
+          "n": "switch 1",
+          "s": 31
+        },
+        {
+          "n": "red key",
+          "s": 47
+        },
+        {
+          "n": "boss",
+          "s": 76
+        },
+        {
+          "n": "exit",
+          "s": 85
+        }
+      ],
+      "total_frames": 5128,
       "rng_end": {
-        "state": 1598124042,
-        "calls": 141
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 4097929505,
+        "calls": 3040
+      }
     },
     {
       "level_num": 14,

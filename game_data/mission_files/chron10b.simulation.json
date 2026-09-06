@@ -7,7 +7,8 @@
   "seed": 1,
   "status": "failed",
   "level_counts": {
-    "timeout": 4
+    "failed": 1,
+    "timeout": 3
   },
   "levels": [
     {
@@ -170,7 +171,7 @@
       "level_num": 3,
       "level_file": "specimen.rl2",
       "route_input_sha256": "FA5E5A1062A2F28EC62C87F1508E854330DEC4FD3919A9016B38DBE2EA20DB9A",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -189,16 +190,20 @@
           "s": 35
         },
         {
-          "n": "switch 3",
+          "n": "switch 5",
           "s": 52
+        },
+        {
+          "n": "blue key",
+          "s": 53
         }
       ],
-      "total_frames": 7995,
+      "total_frames": 3197,
       "rng_end": {
-        "state": 1045204029,
-        "calls": 1796
+        "state": 1225298831,
+        "calls": 1370
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": -1,

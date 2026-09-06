@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 5,
-    "failed": 6,
+    "ok": 6,
+    "failed": 5,
     "timeout": 4,
     "unsupported": 2
   },
@@ -101,21 +101,21 @@
         },
         {
           "n": "switch 17",
-          "s": 14
+          "s": 11
         },
         {
           "n": "reactor",
-          "s": 21
+          "s": 13
         },
         {
           "n": "exit",
-          "s": 33
+          "s": 25
         }
       ],
-      "total_frames": 1953,
+      "total_frames": 1498,
       "rng_end": {
-        "state": 1987473253,
-        "calls": 1564
+        "state": 1266869424,
+        "calls": 1175
       }
     },
     {
@@ -292,7 +292,7 @@
       "level_num": 12,
       "level_file": "16corrug.rl2",
       "route_input_sha256": "ADBBBF2DCD125F58F20F0D45C75FBBC44F02113376E958543A85F9AD6A609F5C",
-      "status": "failed",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -317,14 +317,33 @@
         {
           "n": "gold key",
           "s": 30
+        },
+        {
+          "n": "blastable wall",
+          "s": 33
+        },
+        {
+          "n": "red key",
+          "s": 40
+        },
+        {
+          "n": "switch 2",
+          "s": 45
+        },
+        {
+          "n": "boss",
+          "s": 64
+        },
+        {
+          "n": "exit",
+          "s": 81
         }
       ],
-      "total_frames": 1799,
+      "total_frames": 4870,
       "rng_end": {
-        "state": 862331967,
-        "calls": 938
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 1718820068,
+        "calls": 2931
+      }
     },
     {
       "level_num": 13,

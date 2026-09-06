@@ -8,8 +8,7 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 5,
-    "failed": 2,
+    "ok": 7,
     "timeout": 3
   },
   "levels": [
@@ -17,7 +16,7 @@
       "level_num": 1,
       "level_file": "p1.rdl",
       "route_input_sha256": "CE3D2B70CE03F14FB10B3B1FB3ADF493E96FEFB41E22CAD8DF3E0969E4029FE4",
-      "status": "failed",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -26,14 +25,25 @@
         {
           "n": "blue key",
           "s": 15
+        },
+        {
+          "n": "red key",
+          "s": 34
+        },
+        {
+          "n": "reactor",
+          "s": 55
+        },
+        {
+          "n": "exit",
+          "s": 59
         }
       ],
-      "total_frames": 882,
+      "total_frames": 3543,
       "rng_end": {
-        "state": 595337866,
-        "calls": 13
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 1266032265,
+        "calls": 56
+      }
     },
     {
       "level_num": 2,
@@ -267,18 +277,38 @@
       "level_num": 9,
       "level_file": "p9.rdl",
       "route_input_sha256": "A5F5F74795BA1EA53F49DB1F320CD3168FE9EF30EC908F5486A74AAF3632CC88",
-      "status": "failed",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 12
+        },
+        {
+          "n": "gold key",
+          "s": 37
+        },
+        {
+          "n": "red key",
+          "s": 67
+        },
+        {
+          "n": "boss",
+          "s": 99
+        },
+        {
+          "n": "exit",
+          "s": 109
+        }
+      ],
+      "total_frames": 6565,
       "rng_end": {
-        "state": 2516284547,
-        "calls": 6
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 2067651663,
+        "calls": 154
+      }
     },
     {
       "level_num": -1,

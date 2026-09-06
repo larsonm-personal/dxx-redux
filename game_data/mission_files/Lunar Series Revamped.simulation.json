@@ -8,26 +8,30 @@
   "seed": 1,
   "status": "failed",
   "level_counts": {
-    "failed": 1,
-    "timeout": 2
+    "timeout": 3
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "lo.rdl",
       "route_input_sha256": "3C0BEF257E38C201AD88CBFF8D46333A4FA4DD685486F7AD6C303017EE831B0D",
-      "status": "failed",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "red key",
+          "s": 11
+        }
+      ],
+      "total_frames": 2093,
       "rng_end": {
-        "state": 2516284547,
-        "calls": 6
+        "state": 3535774167,
+        "calls": 18
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 2,

@@ -85,16 +85,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "MOON03.RL2",
         "route_input_sha256": "626D31A0F8F2E66FDD2E2CF81FF61DDF48283981879DFF3DC3133C6B12D7F6F5",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -110,7 +110,7 @@
           },
           {
             "n": "switch 9",
-            "s": 35
+            "s": 19
           },
           {
             "n": "gold key",
@@ -118,19 +118,38 @@
           },
           {
             "n": "switch 11",
-            "s": 58
+            "s": 48
           },
           {
             "n": "switch 23",
-            "s": 72
+            "s": 62
+          },
+          {
+            "n": "switch 1",
+            "s": 68
+          },
+          {
+            "n": "red key",
+            "s": 81
+          },
+          {
+            "n": "switch 20",
+            "s": 82
+          },
+          {
+            "n": "boss",
+            "s": 101
+          },
+          {
+            "n": "exit",
+            "s": 111
           }
         ],
-        "total_frames": 8769,
+        "total_frames": 6648,
         "rng_end": {
-          "state": 2191940876,
-          "calls": 1963
-        },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+          "state": 3918121113,
+          "calls": 4264
+        }
       }
     ]
   },

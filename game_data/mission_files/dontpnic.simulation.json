@@ -9,8 +9,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 13,
-    "failed": 7,
-    "timeout": 10
+    "failed": 8,
+    "timeout": 9
   },
   "levels": [
     {
@@ -278,18 +278,27 @@
       "level_num": 10,
       "level_file": "level10.rdl",
       "route_input_sha256": "FF5CEB54E8F5850B913AB4F553F0060EDBA3D72B1D37BE8FA6A173A91CFFCAB2",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 2641,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 2
+        },
+        {
+          "n": "red key",
+          "s": 7
+        }
+      ],
+      "total_frames": 400,
       "rng_end": {
-        "state": 836760821,
-        "calls": 12
+        "state": 1969681615,
+        "calls": 26
       },
-      "problem": "route confirmation exceeded 44-second simulation budget"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 11,

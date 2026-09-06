@@ -7,16 +7,15 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 5,
-    "failed": 1,
-    "route_mismatch": 1
+    "ok": 6,
+    "timeout": 1
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "mercury.rl2",
       "route_input_sha256": "FD913D317935E5256105DE64B94E6B203ADE9A75AE048447784C3960A59A904D",
-      "status": "failed",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -31,12 +30,12 @@
           "s": 22
         }
       ],
-      "total_frames": 1327,
+      "total_frames": 1876,
       "rng_end": {
-        "state": 3251531490,
-        "calls": 533
+        "state": 3596115925,
+        "calls": 556
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 2,
@@ -58,25 +57,25 @@
         },
         {
           "n": "switch 11",
-          "s": 60
+          "s": 44
         },
         {
           "n": "red key",
-          "s": 78
+          "s": 67
         },
         {
           "n": "reactor",
-          "s": 101
+          "s": 90
         },
         {
           "n": "exit",
-          "s": 103
+          "s": 92
         }
       ],
-      "total_frames": 6155,
+      "total_frames": 5537,
       "rng_end": {
-        "state": 998538513,
-        "calls": 1904
+        "state": 2967401077,
+        "calls": 1676
       }
     },
     {
@@ -140,7 +139,7 @@
       "level_num": 4,
       "level_file": "umbriel.rl2",
       "route_input_sha256": "2C494A19987B13032CCFA884C32919803AB45CAAB1417923D30C38A7424E2152",
-      "status": "route_mismatch",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -163,16 +162,23 @@
           "s": 90
         },
         {
+          "n": "boss",
+          "s": 117
+        },
+        {
           "n": "blastable wall",
-          "s": 106
+          "s": 129
+        },
+        {
+          "n": "exit",
+          "s": 130
         }
       ],
-      "total_frames": 10022,
+      "total_frames": 7779,
       "rng_end": {
-        "state": 4051164844,
-        "calls": 2443
-      },
-      "problem": "live objective sequence differs from route input"
+        "state": 3477880533,
+        "calls": 2860
+      }
     },
     {
       "level_num": 5,

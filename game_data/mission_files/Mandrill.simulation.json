@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
+    "ok": 4,
     "failed": 2,
-    "timeout": 2
+    "timeout": 1
   },
   "levels": [
     {
@@ -64,7 +64,7 @@
       "level_num": 3,
       "level_file": "mplevel3.rl2",
       "route_input_sha256": "211B0D993351A00636C8689EC7FE3D2CFC9468F83864D125098D9B59E4B98644",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -81,14 +81,21 @@
         {
           "n": "blastable wall",
           "s": 40
+        },
+        {
+          "n": "boss",
+          "s": 49
+        },
+        {
+          "n": "exit",
+          "s": 72
         }
       ],
-      "total_frames": 10201,
+      "total_frames": 4315,
       "rng_end": {
-        "state": 953786773,
-        "calls": 2668
-      },
-      "problem": "route confirmation exceeded 170-second simulation budget"
+        "state": 1797105699,
+        "calls": 4198
+      }
     },
     {
       "level_num": 4,

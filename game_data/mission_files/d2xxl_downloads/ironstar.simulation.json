@@ -8,8 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
-    "failed": 2,
+    "ok": 4,
+    "failed": 1,
     "timeout": 6
   },
   "levels": [
@@ -299,18 +299,38 @@
       "level_num": -2,
       "level_file": "badland.rdl",
       "route_input_sha256": "546C3A7323CF4D615E117568C79074421EA8AADB5F67138974858239854F99A0",
-      "status": "failed",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 5
+        },
+        {
+          "n": "gold key",
+          "s": 30
+        },
+        {
+          "n": "red key",
+          "s": 58
+        },
+        {
+          "n": "reactor",
+          "s": 82
+        },
+        {
+          "n": "exit",
+          "s": 84
+        }
+      ],
+      "total_frames": 5066,
       "rng_end": {
-        "state": 2516284547,
-        "calls": 6
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 2916751166,
+        "calls": 73
+      }
     },
     {
       "level_num": -3,

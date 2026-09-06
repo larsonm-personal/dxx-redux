@@ -68,45 +68,45 @@
         },
         {
           "n": "switch 1",
-          "s": 28
+          "s": 21
         },
         {
           "n": "switch 6",
-          "s": 44
+          "s": 27
         },
         {
           "n": "blue key",
-          "s": 52
+          "s": 34
         },
         {
           "n": "switch 2",
-          "s": 68
+          "s": 50
         },
         {
           "n": "gold key",
-          "s": 97
+          "s": 79
         },
         {
           "n": "switch 13",
-          "s": 127
+          "s": 96
         },
         {
           "n": "red key",
-          "s": 139
+          "s": 121
         },
         {
           "n": "reactor",
-          "s": 150
+          "s": 132
         },
         {
           "n": "exit",
-          "s": 161
+          "s": 144
         }
       ],
-      "total_frames": 9642,
+      "total_frames": 8628,
       "rng_end": {
-        "state": 759157142,
-        "calls": 5329
+        "state": 3576650859,
+        "calls": 4766
       }
     },
     {

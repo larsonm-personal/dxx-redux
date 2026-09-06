@@ -8,9 +8,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 20,
+    "ok": 22,
     "failed": 1,
-    "timeout": 9
+    "timeout": 7
   },
   "levels": [
     {
@@ -673,7 +673,7 @@
       "level_num": 21,
       "level_file": "drav21.rdl",
       "route_input_sha256": "A0364FFBC38518973D5E14E6811D159B5C88B2CDC78EEB496D9B1D394E31A9C5",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -690,14 +690,21 @@
         {
           "n": "red key",
           "s": 60
+        },
+        {
+          "n": "reactor",
+          "s": 81
+        },
+        {
+          "n": "exit",
+          "s": 84
         }
       ],
-      "total_frames": 4946,
+      "total_frames": 5065,
       "rng_end": {
-        "state": 2207819405,
-        "calls": 52
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 2787170210,
+        "calls": 85
+      }
     },
     {
       "level_num": 22,
@@ -840,18 +847,38 @@
       "level_num": -2,
       "level_file": "dravs2.rdl",
       "route_input_sha256": "F00917085F4D626D391DB526E4F531DD0328ED8D2073D86D294ADB620BCE3C62",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 5873,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 5
+        },
+        {
+          "n": "gold key",
+          "s": 32
+        },
+        {
+          "n": "red key",
+          "s": 54
+        },
+        {
+          "n": "reactor",
+          "s": 76
+        },
+        {
+          "n": "exit",
+          "s": 80
+        }
+      ],
+      "total_frames": 4817,
       "rng_end": {
-        "state": 3535774167,
-        "calls": 18
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 208521688,
+        "calls": 79
+      }
     },
     {
       "level_num": -3,

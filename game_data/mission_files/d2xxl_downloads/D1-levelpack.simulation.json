@@ -545,16 +545,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "saturn15.rdl",
         "route_input_sha256": "FCB41EB9AB585D876759E50BE3663B46919B5D45291D0CEFA6EDD3740F93674E",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -575,14 +575,21 @@
           {
             "n": "red key",
             "s": 34
+          },
+          {
+            "n": "boss",
+            "s": 64
+          },
+          {
+            "n": "exit",
+            "s": 67
           }
         ],
-        "total_frames": 9961,
+        "total_frames": 4000,
         "rng_end": {
-          "state": 2916751166,
-          "calls": 73
-        },
-        "problem": "route confirmation exceeded 166-second simulation budget"
+          "state": 1621937922,
+          "calls": 117
+        }
       }
     ]
   },

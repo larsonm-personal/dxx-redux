@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 1,
-    "failed": 6,
-    "timeout": 3
+    "ok": 3,
+    "failed": 5,
+    "timeout": 2
   },
   "levels": [
     {
@@ -54,7 +54,7 @@
       "level_num": 2,
       "level_file": "dtest.rl2",
       "route_input_sha256": "70362042AE2647A8A1FCC704B8E0DA7BBBE86D0D8892924AD923BAEBD0E166BF",
-      "status": "failed",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -67,14 +67,25 @@
         {
           "n": "destroy robot carrying gold key",
           "s": 14
+        },
+        {
+          "n": "red key",
+          "s": 27
+        },
+        {
+          "n": "reactor",
+          "s": 29
+        },
+        {
+          "n": "exit",
+          "s": 30
         }
       ],
-      "total_frames": 811,
+      "total_frames": 1786,
       "rng_end": {
-        "state": 3228750693,
-        "calls": 540
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 3122105187,
+        "calls": 1318
+      }
     },
     {
       "level_num": 3,
@@ -134,17 +145,13 @@
         },
         {
           "n": "switch 2",
-          "s": 29
-        },
-        {
-          "n": "red key",
-          "s": 39
+          "s": 23
         }
       ],
-      "total_frames": 3202,
+      "total_frames": 1986,
       "rng_end": {
-        "state": 3611474342,
-        "calls": 4353
+        "state": 2089524915,
+        "calls": 3542
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -270,12 +277,16 @@
         {
           "n": "destroy robot carrying gold key",
           "s": 14
+        },
+        {
+          "n": "red key",
+          "s": 24
         }
       ],
-      "total_frames": 838,
+      "total_frames": 1439,
       "rng_end": {
-        "state": 667148126,
-        "calls": 2217
+        "state": 4037406763,
+        "calls": 3806
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -283,7 +294,7 @@
       "level_num": 9,
       "level_file": "palace.rl2",
       "route_input_sha256": "AE5153ADC5A6C78C392C37E859033D308A482D60AB2D46C90C666D38D0134EEF",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -300,14 +311,25 @@
         {
           "n": "red key",
           "s": 27
+        },
+        {
+          "n": "switch 7",
+          "s": 30
+        },
+        {
+          "n": "boss",
+          "s": 49
+        },
+        {
+          "n": "exit",
+          "s": 73
         }
       ],
-      "total_frames": 9115,
+      "total_frames": 4408,
       "rng_end": {
-        "state": 620555859,
-        "calls": 2614
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1483765448,
+        "calls": 5023
+      }
     },
     {
       "level_num": -1,

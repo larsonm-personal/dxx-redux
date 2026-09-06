@@ -112,13 +112,13 @@
         },
         {
           "n": "switch 26",
-          "s": 17
+          "s": 18
         }
       ],
-      "total_frames": 1992,
+      "total_frames": 2047,
       "rng_end": {
-        "state": 3029282076,
-        "calls": 603
+        "state": 1475669976,
+        "calls": 591
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

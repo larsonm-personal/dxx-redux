@@ -8,30 +8,42 @@
     "seed": 1,
     "status": "failed",
     "level_counts": {
-      "route_mismatch": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "gigaloma.rl2",
         "route_input_sha256": "DC7C6B44F845F1E3A77EBB193C55778FC0DC203139CA06A4DEF2A93BA211D6C4",
-        "status": "route_mismatch",
+        "status": "timeout",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
         "objectives": [
           {
+            "n": "destroy robot carrying blue key",
+            "s": 17
+          },
+          {
             "n": "gold key",
-            "s": 23
+            "s": 35
+          },
+          {
+            "n": "fly-through 12",
+            "s": 47
+          },
+          {
+            "n": "fly-through 30",
+            "s": 49
           }
         ],
-        "total_frames": 1400,
+        "total_frames": 6808,
         "rng_end": {
-          "state": 2983129977,
-          "calls": 1224
+          "state": 2914670869,
+          "calls": 1772
         },
-        "problem": "live objective sequence differs from route input"
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },
@@ -176,16 +188,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "gigalo05.rl2",
         "route_input_sha256": "FBA44B137F1D24F90D9023D83193635ACB76305A6A9158D76C83FA568C049BF9",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -202,14 +214,21 @@
           {
             "n": "red key",
             "s": 39
+          },
+          {
+            "n": "boss",
+            "s": 55
+          },
+          {
+            "n": "exit",
+            "s": 59
           }
         ],
-        "total_frames": 9481,
+        "total_frames": 3536,
         "rng_end": {
-          "state": 2003240718,
-          "calls": 2489
-        },
-        "problem": "route confirmation exceeded 158-second simulation budget"
+          "state": 1834270230,
+          "calls": 2641
+        }
       }
     ]
   },

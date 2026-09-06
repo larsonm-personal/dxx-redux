@@ -8,10 +8,9 @@
     "seed": 1,
     "status": "partial",
     "level_counts": {
-      "ok": 4,
+      "ok": 5,
       "failed": 1,
-      "timeout": 2,
-      "route_mismatch": 1
+      "timeout": 2
     },
     "levels": [
       {
@@ -177,7 +176,7 @@
         "level_num": 4,
         "level_file": "world1d.rl2",
         "route_input_sha256": "5BF636E1891C138710FBA55D9B7704A3E606BCE6715E6E79F3A7F493FCC1835A",
-        "status": "route_mismatch",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -208,20 +207,23 @@
             "s": 33
           },
           {
-            "n": "fly-through 2",
-            "s": 52
+            "n": "boss",
+            "s": 60
           },
           {
             "n": "switch 3",
-            "s": 53
+            "s": 66
+          },
+          {
+            "n": "exit",
+            "s": 71
           }
         ],
-        "total_frames": 13381,
+        "total_frames": 4289,
         "rng_end": {
-          "state": 3197631653,
-          "calls": 1756
-        },
-        "problem": "live objective sequence differs from route input"
+          "state": 1762431335,
+          "calls": 1922
+        }
       },
       {
         "level_num": 5,
@@ -251,7 +253,7 @@
           },
           {
             "n": "switch 1",
-            "s": 106
+            "s": 91
           },
           {
             "n": "reactor",
@@ -259,13 +261,13 @@
           },
           {
             "n": "exit",
-            "s": 125
+            "s": 124
           }
         ],
-        "total_frames": 7486,
+        "total_frames": 7459,
         "rng_end": {
-          "state": 3921887095,
-          "calls": 5234
+          "state": 3158216190,
+          "calls": 5257
         }
       },
       {
@@ -368,10 +370,9 @@
     "seed": 1,
     "status": "partial",
     "level_counts": {
-      "ok": 5,
+      "ok": 6,
       "failed": 1,
-      "timeout": 3,
-      "route_mismatch": 1
+      "timeout": 3
     },
     "levels": [
       {
@@ -537,7 +538,7 @@
         "level_num": 4,
         "level_file": "world1d.rl2",
         "route_input_sha256": "9D7C10E40F555B96C473B7652C17DC650E3202ED28120FD3113CD3D02E20F787",
-        "status": "route_mismatch",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -568,20 +569,23 @@
             "s": 33
           },
           {
-            "n": "fly-through 2",
-            "s": 52
+            "n": "boss",
+            "s": 60
           },
           {
             "n": "switch 3",
-            "s": 53
+            "s": 66
+          },
+          {
+            "n": "exit",
+            "s": 71
           }
         ],
-        "total_frames": 13381,
+        "total_frames": 4289,
         "rng_end": {
-          "state": 3197631653,
-          "calls": 1756
-        },
-        "problem": "live objective sequence differs from route input"
+          "state": 3444936998,
+          "calls": 1921
+        }
       },
       {
         "level_num": 5,
@@ -611,7 +615,7 @@
           },
           {
             "n": "switch 1",
-            "s": 115
+            "s": 99
           },
           {
             "n": "reactor",
@@ -619,13 +623,13 @@
           },
           {
             "n": "exit",
-            "s": 134
+            "s": 133
           }
         ],
-        "total_frames": 8026,
+        "total_frames": 7955,
         "rng_end": {
-          "state": 2939158058,
-          "calls": 5357
+          "state": 3177100444,
+          "calls": 5339
         }
       },
       {

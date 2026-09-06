@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 7,
+    "ok": 8,
     "failed": 1,
-    "timeout": 4
+    "timeout": 3
   },
   "levels": [
     {
@@ -183,7 +183,7 @@
       "level_num": 4,
       "level_file": "PANDOR22.RL2",
       "route_input_sha256": "26D2F200ECACC1793D710EC53B9F833E6F875A3DD47B0730E98542D9EE08F88B",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -199,19 +199,42 @@
         },
         {
           "n": "switch 4",
-          "s": 35
+          "s": 18
         },
         {
           "n": "gold key",
           "s": 46
+        },
+        {
+          "n": "switch 3",
+          "s": 46
+        },
+        {
+          "n": "red key",
+          "s": 72
+        },
+        {
+          "n": "switch 2",
+          "s": 72
+        },
+        {
+          "n": "hidden door",
+          "s": 91
+        },
+        {
+          "n": "reactor",
+          "s": 91
+        },
+        {
+          "n": "exit",
+          "s": 101
         }
       ],
-      "total_frames": 7380,
+      "total_frames": 6030,
       "rng_end": {
-        "state": 2049385582,
-        "calls": 2521
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3000104028,
+        "calls": 4635
+      }
     },
     {
       "level_num": 5,
@@ -422,15 +445,15 @@
         },
         {
           "n": "switch 11",
-          "s": 97
+          "s": 73
         }
       ],
-      "total_frames": 7059,
+      "total_frames": 8366,
       "rng_end": {
-        "state": 44714954,
-        "calls": 4045
+        "state": 3889143500,
+        "calls": 2795
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 10,

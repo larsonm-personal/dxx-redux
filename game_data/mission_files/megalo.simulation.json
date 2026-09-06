@@ -466,15 +466,15 @@
             "s": 7
           },
           {
-            "n": "red key",
+            "n": "gold key",
             "s": 23
           },
           {
-            "n": "gold key",
-            "s": 40
+            "n": "red key",
+            "s": 39
           }
         ],
-        "total_frames": 2407,
+        "total_frames": 2354,
         "rng_end": {
           "state": 675780521,
           "calls": 24

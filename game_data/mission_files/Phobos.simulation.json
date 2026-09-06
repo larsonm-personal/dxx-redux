@@ -9,8 +9,7 @@
   "level_counts": {
     "ok": 2,
     "failed": 1,
-    "timeout": 2,
-    "route_mismatch": 1
+    "timeout": 3
   },
   "levels": [
     {
@@ -122,10 +121,10 @@
           "s": 87
         }
       ],
-      "total_frames": 6572,
+      "total_frames": 5967,
       "rng_end": {
-        "state": 3866165955,
-        "calls": 2502
+        "state": 1026092863,
+        "calls": 2218
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -133,7 +132,7 @@
       "level_num": 4,
       "level_file": "phobos4.rl2",
       "route_input_sha256": "7F266D21CB9034B6E079FEF281C030D9740281AD5D54A54E356022DB3AC904D7",
-      "status": "route_mismatch",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -142,18 +141,14 @@
         {
           "n": "blue key",
           "s": 16
-        },
-        {
-          "n": "red key",
-          "s": 48
         }
       ],
-      "total_frames": 10501,
+      "total_frames": 6197,
       "rng_end": {
-        "state": 3901011787,
-        "calls": 1982
+        "state": 324888798,
+        "calls": 1321
       },
-      "problem": "live objective sequence differs from route input"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": -1,

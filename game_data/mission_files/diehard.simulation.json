@@ -54,21 +54,21 @@
         },
         {
           "n": "switch 9",
-          "s": 50
+          "s": 27
         },
         {
           "n": "boss",
-          "s": 68
+          "s": 44
         },
         {
           "n": "exit",
-          "s": 69
+          "s": 45
         }
       ],
-      "total_frames": 4162,
+      "total_frames": 2723,
       "rng_end": {
-        "state": 1591783502,
-        "calls": 1401
+        "state": 3772710371,
+        "calls": 678
       }
     },
     {
@@ -92,12 +92,16 @@
         {
           "n": "destroy robot carrying red key",
           "s": 55
+        },
+        {
+          "n": "switch 17",
+          "s": 67
         }
       ],
-      "total_frames": 4215,
+      "total_frames": 4885,
       "rng_end": {
-        "state": 4099008512,
-        "calls": 1543
+        "state": 696687669,
+        "calls": 1740
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -408,37 +412,41 @@
         },
         {
           "n": "switch 8",
-          "s": 44
+          "s": 43
         },
         {
           "n": "hidden door",
-          "s": 48
+          "s": 47
         },
         {
           "n": "switch 5",
-          "s": 50
+          "s": 47
+        },
+        {
+          "n": "hidden door",
+          "s": 52
+        },
+        {
+          "n": "switch 4",
+          "s": 53
         },
         {
           "n": "hidden door",
           "s": 55
         },
         {
-          "n": "switch 4",
-          "s": 61
-        },
-        {
-          "n": "hidden door",
-          "s": 65
-        },
-        {
           "n": "blue key",
-          "s": 66
+          "s": 56
+        },
+        {
+          "n": "switch 14",
+          "s": 57
         }
       ],
-      "total_frames": 4557,
+      "total_frames": 4060,
       "rng_end": {
-        "state": 3305027207,
-        "calls": 1122
+        "state": 2706250699,
+        "calls": 830
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

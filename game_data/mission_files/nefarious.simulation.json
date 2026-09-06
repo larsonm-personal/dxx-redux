@@ -8,9 +8,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 7,
+    "ok": 8,
     "failed": 5,
-    "timeout": 7
+    "timeout": 6
   },
   "levels": [
     {
@@ -358,7 +358,7 @@
       "level_num": 13,
       "level_file": "nefar13.rdl",
       "route_input_sha256": "E43B936FCC8828D1C8C16B92F93DBDAB31C6AA0D588031CB88B503F8D4806493",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -383,14 +383,21 @@
         {
           "n": "fly-through 15",
           "s": 37
+        },
+        {
+          "n": "reactor",
+          "s": 38
+        },
+        {
+          "n": "exit",
+          "s": 42
         }
       ],
-      "total_frames": 6901,
+      "total_frames": 2494,
       "rng_end": {
-        "state": 2801490995,
-        "calls": 86
-      },
-      "problem": "route confirmation exceeded 115-second simulation budget"
+        "state": 3720683301,
+        "calls": 92
+      }
     },
     {
       "level_num": 14,

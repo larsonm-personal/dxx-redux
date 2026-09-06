@@ -7,8 +7,7 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
-    "failed": 1,
+    "ok": 4,
     "timeout": 2
   },
   "levels": [
@@ -74,7 +73,7 @@
       "level_num": 3,
       "level_file": "aquatica.rl2",
       "route_input_sha256": "3E491E121260718E07BF6215FF99D3F8C4292235CBC364576EF2F2F1859A8CC2",
-      "status": "failed",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -91,14 +90,21 @@
         {
           "n": "red key",
           "s": 198
+        },
+        {
+          "n": "boss",
+          "s": 237
+        },
+        {
+          "n": "exit",
+          "s": 241
         }
       ],
-      "total_frames": 11885,
+      "total_frames": 14474,
       "rng_end": {
-        "state": 2955309015,
-        "calls": 4626
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 3822900233,
+        "calls": 5816
+      }
     },
     {
       "level_num": 4,

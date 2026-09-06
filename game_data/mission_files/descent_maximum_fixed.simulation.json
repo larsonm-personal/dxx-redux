@@ -10,37 +10,17 @@
     "level_counts": {
       "ok": 21,
       "failed": 1,
-      "timeout": 8
+      "timeout": 7,
+      "infrastructure_error": 1
     },
     "levels": [
       {
         "level_num": 1,
         "level_file": "psx01.rl2",
         "route_input_sha256": "9537C05D0A1DF9B6D77CB580A87FE46542547F3BD66E9C3325FEA3CB3C98A124",
-        "status": "ok",
-        "rng_start": {
-          "state": 1,
-          "calls": 0
-        },
-        "objectives": [
-          {
-            "n": "red key",
-            "s": 8
-          },
-          {
-            "n": "reactor",
-            "s": 17
-          },
-          {
-            "n": "exit",
-            "s": 18
-          }
-        ],
-        "total_frames": 1075,
-        "rng_end": {
-          "state": 1809320643,
-          "calls": 454
-        }
+        "status": "infrastructure_error",
+        "problem": "Route engine infrastructure failure",
+        "exit_code": -1073741819
       },
       {
         "level_num": 2,
@@ -211,17 +191,17 @@
           },
           {
             "n": "switch 7",
-            "s": 66
+            "s": 62
           },
           {
             "n": "exit",
-            "s": 72
+            "s": 65
           }
         ],
-        "total_frames": 4332,
+        "total_frames": 3915,
         "rng_end": {
-          "state": 3835377864,
-          "calls": 2463
+          "state": 1912710808,
+          "calls": 2191
         }
       },
       {
@@ -360,7 +340,7 @@
         "level_num": 10,
         "level_file": "psx10.rl2",
         "route_input_sha256": "A9CD251803F0B381DECB96E442D2169B62859F83681C9BCEBA0330BE1018472F",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -389,14 +369,25 @@
           {
             "n": "hidden door",
             "s": 70
+          },
+          {
+            "n": "switch 3",
+            "s": 71
+          },
+          {
+            "n": "reactor",
+            "s": 84
+          },
+          {
+            "n": "exit",
+            "s": 94
           }
         ],
-        "total_frames": 4798,
+        "total_frames": 5662,
         "rng_end": {
-          "state": 3438387236,
-          "calls": 1843
-        },
-        "problem": "physical route frontier did not open after 8 interaction attempts"
+          "state": 2777607841,
+          "calls": 2656
+        }
       },
       {
         "level_num": 11,
@@ -560,25 +551,25 @@
           },
           {
             "n": "switch 0",
-            "s": 41
+            "s": 33
           },
           {
             "n": "red key",
-            "s": 59
+            "s": 56
           },
           {
             "n": "reactor",
-            "s": 63
+            "s": 60
           },
           {
             "n": "exit",
-            "s": 67
+            "s": 64
           }
         ],
-        "total_frames": 4007,
+        "total_frames": 3867,
         "rng_end": {
-          "state": 1485101483,
-          "calls": 1374
+          "state": 814727458,
+          "calls": 1237
         }
       },
       {

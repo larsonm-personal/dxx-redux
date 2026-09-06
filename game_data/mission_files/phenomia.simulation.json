@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
+    "ok": 3,
     "failed": 4,
-    "timeout": 6,
+    "timeout": 5,
     "unsupported": 2
   },
   "levels": [
@@ -508,18 +508,26 @@
       "level_num": -2,
       "level_file": "diamond.rl2",
       "route_input_sha256": "F3225E189619D6A8CCABD58E79E4D9D6E1202647F301B4D0F7D21AACC6D870D7",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4021,
+      "objectives": [
+        {
+          "n": "reactor",
+          "s": 0
+        },
+        {
+          "n": "exit",
+          "s": 2
+        }
+      ],
+      "total_frames": 106,
       "rng_end": {
-        "state": 3416620587,
-        "calls": 222
-      },
-      "problem": "route confirmation exceeded 67-second simulation budget"
+        "state": 811900218,
+        "calls": 285
+      }
     },
     {
       "level_num": -3,

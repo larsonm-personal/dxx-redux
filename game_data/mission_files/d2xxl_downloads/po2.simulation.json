@@ -40,8 +40,9 @@
     "status": "partial",
     "level_counts": {
       "ok": 3,
-      "failed": 3,
-      "timeout": 3
+      "failed": 2,
+      "timeout": 3,
+      "unsupported": 1
     },
     "levels": [
       {
@@ -119,18 +120,18 @@
         "level_num": 4,
         "level_file": "mam.rl2",
         "route_input_sha256": "858E2D449C323A65C2B3F000D4C4FC2B336EEBF9AE8842D6366C6E2223F0022F",
-        "status": "failed",
+        "status": "unsupported",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
         "objectives": [],
-        "total_frames": 0,
+        "total_frames": 754,
         "rng_end": {
-          "state": 1,
-          "calls": 0
+          "state": 3302295110,
+          "calls": 737
         },
-        "problem": "live Guide-Bot route has no actionable goal"
+        "problem": "route objective activation is not supported"
       },
       {
         "level_num": 5,

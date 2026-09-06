@@ -118,25 +118,25 @@
         },
         {
           "n": "switch 8",
-          "s": 54
+          "s": 51
         },
         {
           "n": "red key",
-          "s": 75
+          "s": 55
         },
         {
           "n": "reactor",
-          "s": 89
+          "s": 69
         },
         {
           "n": "exit",
-          "s": 103
+          "s": 84
         }
       ],
-      "total_frames": 6178,
+      "total_frames": 5017,
       "rng_end": {
-        "state": 2836619584,
-        "calls": 1991
+        "state": 23032247,
+        "calls": 1586
       }
     },
     {
@@ -302,17 +302,17 @@
         },
         {
           "n": "switch 14",
-          "s": 134
+          "s": 127
         },
         {
           "n": "exit",
-          "s": 143
+          "s": 149
         }
       ],
-      "total_frames": 8576,
+      "total_frames": 8959,
       "rng_end": {
-        "state": 1242478572,
-        "calls": 3915
+        "state": 1898174989,
+        "calls": 4276
       }
     },
     {
@@ -940,17 +940,17 @@
         },
         {
           "n": "switch 16",
-          "s": 142
+          "s": 137
         },
         {
           "n": "exit",
-          "s": 150
+          "s": 141
         }
       ],
-      "total_frames": 8976,
+      "total_frames": 8457,
       "rng_end": {
-        "state": 3827994298,
-        "calls": 3485
+        "state": 1649739513,
+        "calls": 3400
       }
     },
     {

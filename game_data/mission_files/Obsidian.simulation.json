@@ -8,7 +8,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 11,
-    "timeout": 7
+    "timeout": 6,
+    "unsupported": 1
   },
   "levels": [
     {
@@ -84,17 +85,17 @@
         },
         {
           "n": "switch 11",
-          "s": 32
+          "s": 25
         },
         {
           "n": "exit",
-          "s": 41
+          "s": 26
         }
       ],
-      "total_frames": 2444,
+      "total_frames": 1580,
       "rng_end": {
-        "state": 2911804456,
-        "calls": 1215
+        "state": 3023631242,
+        "calls": 781
       }
     },
     {
@@ -137,11 +138,11 @@
         },
         {
           "n": "switch 33",
-          "s": 36
+          "s": 35
         },
         {
           "n": "destroy robot carrying blue key",
-          "s": 45
+          "s": 44
         },
         {
           "n": "switch 2",
@@ -149,53 +150,53 @@
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 81
+          "s": 83
         },
         {
           "n": "switch 12",
-          "s": 87
+          "s": 91
         },
         {
           "n": "switch 13",
-          "s": 93
+          "s": 97
         },
         {
           "n": "switch 14",
-          "s": 102
+          "s": 107
         },
         {
           "n": "switch 15",
-          "s": 109
+          "s": 113
         },
         {
           "n": "switch 16",
-          "s": 114
+          "s": 119
         },
         {
           "n": "switch 17",
-          "s": 120
+          "s": 124
         },
         {
           "n": "switch 32",
-          "s": 125
+          "s": 129
         },
         {
           "n": "fly-through 19",
-          "s": 127
+          "s": 132
         },
         {
           "n": "boss",
-          "s": 137
+          "s": 141
         },
         {
           "n": "exit",
-          "s": 146
+          "s": 151
         }
       ],
-      "total_frames": 8773,
+      "total_frames": 9036,
       "rng_end": {
-        "state": 3386781090,
-        "calls": 8789
+        "state": 3725286055,
+        "calls": 8770
       }
     },
     {
@@ -409,7 +410,7 @@
         },
         {
           "n": "switch 17",
-          "s": 88
+          "s": 84
         },
         {
           "n": "red key",
@@ -417,7 +418,7 @@
         },
         {
           "n": "pass-through 12",
-          "s": 109
+          "s": 108
         },
         {
           "n": "reactor",
@@ -428,10 +429,10 @@
           "s": 132
         }
       ],
-      "total_frames": 7890,
+      "total_frames": 7912,
       "rng_end": {
-        "state": 927961790,
-        "calls": 4809
+        "state": 393258073,
+        "calls": 4840
       }
     },
     {
@@ -472,7 +473,7 @@
       "level_num": 10,
       "level_file": "aquarius.rl2",
       "route_input_sha256": "0788FEF350D69298F418F9FFBF7C48DD8DE2FABD3891088C95FEC1A8F73D84DC",
-      "status": "timeout",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -485,14 +486,18 @@
         {
           "n": "destroy robot carrying gold key",
           "s": 17
+        },
+        {
+          "n": "switch 8",
+          "s": 29
         }
       ],
-      "total_frames": 2214,
+      "total_frames": 1906,
       "rng_end": {
-        "state": 113985633,
-        "calls": 1696
+        "state": 2701267033,
+        "calls": 1768
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "route objective activation is not supported"
     },
     {
       "level_num": 11,
@@ -538,13 +543,13 @@
         },
         {
           "n": "switch 16",
-          "s": 57
+          "s": 53
         }
       ],
       "total_frames": 17161,
       "rng_end": {
-        "state": 445574038,
-        "calls": 205521
+        "state": 699980064,
+        "calls": 198759
       },
       "problem": "route confirmation exceeded 286-second simulation budget"
     },

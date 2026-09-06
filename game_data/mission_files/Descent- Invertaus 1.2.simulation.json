@@ -8,8 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 1,
-    "timeout": 2
+    "ok": 2,
+    "timeout": 1
   },
   "levels": [
     {
@@ -79,18 +79,38 @@
       "level_num": 3,
       "level_file": "darrel.rdl",
       "route_input_sha256": "6D9AD2436DCEC9F1F76355F5F379E8663983CCA13605B43AB502EF17B5AC67A8",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4715,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 9
+        },
+        {
+          "n": "gold key",
+          "s": 25
+        },
+        {
+          "n": "red key",
+          "s": 43
+        },
+        {
+          "n": "boss",
+          "s": 63
+        },
+        {
+          "n": "exit",
+          "s": 80
+        }
+      ],
+      "total_frames": 4791,
       "rng_end": {
-        "state": 3914758370,
-        "calls": 21
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3826077128,
+        "calls": 159
+      }
     }
   ]
 }
