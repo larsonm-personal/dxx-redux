@@ -22,6 +22,7 @@
 #include "android_jni_overlay.h"
 #include "music_name_table.h"
 #include "midi_metadata_physfs.h"
+#include "audio_tag_metadata.h"
 #include "overlay_ringbuf.h"
 
 extern bim_song_info *BIMSongs;
@@ -67,38 +68,50 @@ const char *track_names_lookup(int track, unsigned long disc_id)
 /* Loaded from custom_music_names.json written by CustomAudioSetManager.
  * Maps absolute file paths to chromaprint-decoded track names. */
 
-#define MISSION_MUSIC_NAMES_FILE "mission_music_names.json"
-#define MAX_MISSION_MIDI_NAMES   256
+#define MISSION_MUSIC_NAMES_FILE   "mission_music_names.json"
+#define MAX_MISSION_EMBEDDED_NAMES 256
 
 static struct {
 	char filename[16];
 	char display_name[MIDI_METADATA_DISPLAY_BYTES];
-} s_mission_midi_names[MAX_MISSION_MIDI_NAMES];
-static int s_mission_midi_name_count;
+} s_mission_embedded_names[MAX_MISSION_EMBEDDED_NAMES];
+static int s_mission_embedded_name_count;
 
-static void mission_midi_names_load(void)
+static void mission_embedded_names_load(void)
 {
 	int index;
-	s_mission_midi_name_count = 0;
+	s_mission_embedded_name_count = 0;
 	for (index = 0; BIMSongs && index < Num_bim_songs &&
-	                s_mission_midi_name_count < MAX_MISSION_MIDI_NAMES;
+	                s_mission_embedded_name_count < MAX_MISSION_EMBEDDED_NAMES;
 	     ++index) {
-		midi_metadata metadata;
-		char source[MIDI_METADATA_SOURCE_FILENAME_BYTES];
-		int inherited;
-		midi_metadata_init(&metadata);
-		midi_metadata_resolve_physfs(BIMSongs[index].filename, &metadata,
-		                             source, sizeof(source), &inherited);
-		if (midi_metadata_has_useful_summary(&metadata)) {
-			strncpy(s_mission_midi_names[s_mission_midi_name_count].filename,
-			        BIMSongs[index].filename,
-			        sizeof(s_mission_midi_names[s_mission_midi_name_count].filename) - 1);
-			strncpy(s_mission_midi_names[s_mission_midi_name_count].display_name,
-			        metadata.display_name,
-			        sizeof(s_mission_midi_names[s_mission_midi_name_count].display_name) - 1);
-			++s_mission_midi_name_count;
+		const char *filename = BIMSongs[index].filename;
+		const char *extension = strrchr(filename, '.');
+		char display_name[sizeof(s_mission_embedded_names[0].display_name)] = "";
+		if (extension && (!strcasecmp(extension, ".ogg") ||
+		                  !strcasecmp(extension, ".mp3") ||
+		                  !strcasecmp(extension, ".flac"))) {
+			audio_tag_metadata metadata;
+			audio_tag_metadata_init(&metadata);
+			audio_tag_metadata_parse_physfs(filename, &metadata);
+			snprintf(display_name, sizeof(display_name), "%s", metadata.display_name);
+			audio_tag_metadata_free(&metadata);
+		} else {
+			midi_metadata metadata;
+			char source[MIDI_METADATA_SOURCE_FILENAME_BYTES];
+			int inherited;
+			midi_metadata_init(&metadata);
+			midi_metadata_resolve_physfs(filename, &metadata, source, sizeof(source), &inherited);
+			if (midi_metadata_has_useful_summary(&metadata))
+				snprintf(display_name, sizeof(display_name), "%s", metadata.display_name);
+			midi_metadata_free(&metadata);
 		}
-		midi_metadata_free(&metadata);
+		if (display_name[0]) {
+			snprintf(s_mission_embedded_names[s_mission_embedded_name_count].filename,
+			         sizeof(s_mission_embedded_names[s_mission_embedded_name_count].filename), "%s", filename);
+			snprintf(s_mission_embedded_names[s_mission_embedded_name_count].display_name,
+			         sizeof(s_mission_embedded_names[s_mission_embedded_name_count].display_name), "%s", display_name);
+			++s_mission_embedded_name_count;
+		}
 	}
 }
 
@@ -200,7 +213,7 @@ void mission_music_names_load(void)
 	char *buf;
 
 	music_name_table_clear_mission();
-	mission_midi_names_load();
+	mission_embedded_names_load();
 
 	f = PHYSFS_openRead(MISSION_MUSIC_NAMES_FILE);
 	if (!f) return;
@@ -232,9 +245,9 @@ const char *mission_music_names_lookup(const char *filename)
 	int index;
 	if (sidecar && sidecar[0])
 		return sidecar;
-	for (index = 0; filename && index < s_mission_midi_name_count; ++index)
-		if (!strcasecmp(filename, s_mission_midi_names[index].filename))
-			return s_mission_midi_names[index].display_name;
+	for (index = 0; filename && index < s_mission_embedded_name_count; ++index)
+		if (!strcasecmp(filename, s_mission_embedded_names[index].filename))
+			return s_mission_embedded_names[index].display_name;
 	return NULL;
 }
 

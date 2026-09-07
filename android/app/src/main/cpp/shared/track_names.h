@@ -14,8 +14,8 @@
 void track_overlay_notify(int track_or_song, int is_midi, unsigned long disc_id);
 
 /* Call when a mission zip built-in/addon track starts playing.
- * Uses mission_music_names.json when present, otherwise falls back to the
- * legacy MIDI Track N label. */
+ * Uses mission_music_names.json when present, otherwise uses embedded MIDI/audio tags,
+ * then the audio filename or MIDI Track N label. */
 void track_overlay_notify_mission_music(const char *filename, int song_index);
 
 /* Return the CUE-parsed title for a 1-based CD track, or NULL. */
