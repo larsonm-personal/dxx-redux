@@ -251,7 +251,7 @@ object DebugLog {
         file: File,
     ): Boolean =
         try {
-            val uri = FileProviderGrantStore.copy(context, file, FileProviderGrantStore.DEBUG_LOG_EXPORTS)
+            val uri = FileProviderGrantStore.copyLogSnapshot(context, file, FileProviderGrantStore.DEBUG_LOG_EXPORTS)
             val intent =
                 Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"

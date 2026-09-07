@@ -28,8 +28,10 @@ internal object LauncherFileCopy {
         bytesTotal: Long,
         label: String,
         maxBytes: Long = Long.MAX_VALUE,
+        stopAtExpectedSize: Boolean = false,
         onProgress: (LauncherCopyProgress) -> Unit = {},
     ): Long {
+        require(!stopAtExpectedSize || bytesTotal >= 0L)
         if (maxBytes < 0L || bytesTotal > maxBytes) {
             throw IOException("$label exceeds the $maxBytes byte copy limit")
         }
@@ -38,7 +40,18 @@ internal object LauncherFileCopy {
         var lastReported = -REPORT_STEP_BYTES
         onProgress(LauncherCopyProgress(label, 0L, bytesTotal))
         while (true) {
-            val count = input.read(buffer)
+            // Append-only log snapshots end at the captured length, including zero
+            if (stopAtExpectedSize && bytesDone == bytesTotal) break
+            val readSize =
+                if (stopAtExpectedSize) {
+                    minOf(
+                        buffer.size.toLong(),
+                        bytesTotal - bytesDone,
+                    ).toInt()
+                } else {
+                    buffer.size
+                }
+            val count = input.read(buffer, 0, readSize)
             if (count < 0) break
             if (count == 0) {
                 val byte = input.read()
@@ -123,7 +136,7 @@ internal object LauncherFileCopy {
             val copied =
                 openInput().use { input ->
                     FileOutputStream(temporary).use { output ->
-                        val count = copyStream(input, output, expectedBytes, label, maxBytes, onProgress)
+                        val count = copyStream(input, output, expectedBytes, label, maxBytes, onProgress = onProgress)
                         output.flush()
                         output.fd.sync()
                         count

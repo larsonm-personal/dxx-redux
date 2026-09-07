@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
 
@@ -52,6 +53,42 @@ internal object FileProviderGrantStore {
             FileOutputStream(temporary).use { it.write(bytes) }
         }
     }
+
+    fun copyLogSnapshot(
+        context: Context,
+        source: File,
+        rootName: String,
+        onProgress: (LauncherCopyProgress) -> Unit = {},
+    ): Uri {
+        require(rootName in roots) { "Unsupported FileProvider cache root" }
+        DebugLog.flush()
+        val published = copyLogSnapshotFile(File(context.cacheDir, rootName), source, onProgress)
+        return FileProvider.getUriForFile(context, AUTHORITY, published)
+    }
+
+    internal fun copyLogSnapshotFile(
+        root: File,
+        source: File,
+        onProgress: (LauncherCopyProgress) -> Unit = {},
+    ): File =
+        FileInputStream(source).use { input ->
+            // The launcher can still append after the game process exits
+            // Capture once on the open file for both copy and publication validation
+            val expectedBytes = input.channel.size()
+            publishFile(root, source.name, expectedBytes) { temporary ->
+                FileOutputStream(temporary).use { output ->
+                    LauncherFileCopy.copyStream(
+                        input,
+                        output,
+                        expectedBytes,
+                        source.name,
+                        maxBytes = MAX_ROOT_BYTES,
+                        stopAtExpectedSize = true,
+                        onProgress = onProgress,
+                    )
+                }
+            }
+        }
 
     fun publish(
         context: Context,

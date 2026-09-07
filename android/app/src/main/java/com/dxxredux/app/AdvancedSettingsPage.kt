@@ -1438,7 +1438,7 @@ private fun DebugLoggingSection(initialLogFiles: List<File>) {
                                     try {
                                         val uri =
                                             withContext(Dispatchers.IO) {
-                                                copyFileToCache(
+                                                FileProviderGrantStore.copyLogSnapshot(
                                                     ctx,
                                                     file,
                                                     FileProviderGrantStore.FILE_VIEW,
@@ -1493,7 +1493,7 @@ private fun DebugLoggingSection(initialLogFiles: List<File>) {
                             try {
                                 val uri =
                                     withContext(Dispatchers.IO) {
-                                        copyFileToCache(
+                                        FileProviderGrantStore.copyLogSnapshot(
                                             ctx,
                                             file,
                                             FileProviderGrantStore.DEBUG_LOG_EXPORTS,

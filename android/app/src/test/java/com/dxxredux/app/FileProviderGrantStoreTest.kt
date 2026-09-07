@@ -9,6 +9,46 @@ import java.io.IOException
 
 class FileProviderGrantStoreTest {
     @Test
+    fun growingLogExportsOnlyTheCapturedPrefix() {
+        val root = testRoot("growing-log")
+        val source = File(root.parentFile, "growing-debuglog.txt")
+        val original = "log line\n".repeat(20_000)
+        source.writeText(original)
+        val published =
+            FileProviderGrantStore.copyLogSnapshotFile(root, source) { progress ->
+                if (progress.bytesDone == 0L) source.appendText("launcher still logging\n")
+            }
+        assertEquals(original, published.readText())
+        source.appendText("later line\n")
+        assertEquals(original, published.readText())
+    }
+
+    @Test
+    fun emptyLogSnapshotDoesNotReadLaterAppends() {
+        val root = testRoot("empty-log")
+        val source = File(root.parentFile, "empty-debuglog.txt").apply { writeText("") }
+        val published =
+            FileProviderGrantStore.copyLogSnapshotFile(root, source) { progress ->
+                if (progress.bytesDone == 0L) source.appendText("later line\n")
+            }
+        assertEquals(0L, published.length())
+    }
+
+    @Test
+    fun truncatedLogSnapshotLeavesNoGrant() {
+        val root = testRoot("truncated-log")
+        val source = File(root.parentFile, "truncated-debuglog.txt").apply { writeText("original log\n") }
+        val failure =
+            runCatching {
+                FileProviderGrantStore.copyLogSnapshotFile(root, source) { progress ->
+                    if (progress.bytesDone == 0L) source.writeText("")
+                }
+            }.exceptionOrNull()
+        assertTrue(failure is IOException)
+        assertEquals(emptyList<File>(), root.listFiles().orEmpty().toList())
+    }
+
+    @Test
     fun everyPublicationGetsAnImmutableGeneration() {
         val root = testRoot("immutable")
         assertEquals("Aa/readme.pdf".hashCode(), "BB/readme.pdf".hashCode())
