@@ -10,6 +10,8 @@
 #include "byteswap.h"
 #include "coop_save.h"
 #include "coop/coop_level_restart.h"
+#include "coop/coop_recovery.h"
+#include "coop/coop_multi_status.h"
 #include "fix.h"
 #include "game.h"
 #include "hudmsg.h"
@@ -29,6 +31,7 @@ typedef struct multi_rewind_save_transfer {
 	int requester;
 	uint total_size;
 	uint checksum;
+	uint32_t recovery_epoch;
 	int64_t game_time64;
 	int has_collision_delay_last_play_time;
 	int64_t collision_delay_last_play_time;
@@ -48,6 +51,7 @@ typedef struct multi_save_send_transfer {
 	int requester;
 	uint total_size;
 	uint checksum;
+	uint32_t recovery_epoch;
 	int64_t game_time64;
 	int has_collision_delay_last_play_time;
 	int64_t collision_delay_last_play_time;
@@ -162,14 +166,17 @@ static void multi_save_transfer_refresh_peer_times(void)
 			Netgame.players[i].LastPacketTime = now;
 }
 
-static void multi_save_transfer_begin_restore(void)
+static void multi_save_transfer_begin_restore(uint32_t generation)
 {
+	coop_clear_pending_restore_inventory();
+	coop_recovery_begin_restore(generation);
 	Save_transfer_restore_active = 1;
 	Save_transfer_timeout_grace_until = timer_query() + F1_0 * 60;
 }
 
 static void multi_save_transfer_finish_restore(void)
 {
+	coop_recovery_end_restore();
 	Save_transfer_restore_active = 0;
 	Save_transfer_timeout_grace_until = timer_query() + F1_0 * 30;
 	multi_save_transfer_refresh_peer_times();
@@ -255,7 +262,7 @@ static void multi_rewind_apply_received_transfer(int at_frame_boundary)
 		buffer.data = Rewind_save_transfer.data;
 		buffer.size = Rewind_save_transfer.total_size;
 		buffer.capacity = Rewind_save_transfer.total_size;
-		multi_save_transfer_begin_restore();
+		multi_save_transfer_begin_restore(Rewind_save_transfer.recovery_epoch);
 		multi_rewind_send_ready(MULTI_SAVE_TRANSFER_READY_APPLY);
 		multi_prepare_restore_sync();
 		restored = state_restore_coop_from_memory(&buffer);
@@ -292,7 +299,7 @@ static void multi_rewind_apply_received_transfer(int at_frame_boundary)
 	    Rewind_save_transfer.has_collision_delay_last_play_time;
 	restore.collision_delay_last_play_time =
 	    Rewind_save_transfer.collision_delay_last_play_time;
-	multi_save_transfer_begin_restore();
+	multi_save_transfer_begin_restore(Rewind_save_transfer.recovery_epoch);
 	multi_rewind_send_ready(MULTI_SAVE_TRANSFER_READY_APPLY);
 	multi_prepare_restore_sync();
 	status = android_rewind_restore_authoritative(&restore);
@@ -354,6 +361,8 @@ static int multi_send_save_transfer_buffer(const unsigned char *data,
 	Save_send_transfer.requester = requester;
 	Save_send_transfer.total_size = (uint) total_size;
 	Save_send_transfer.checksum = checksum;
+	Save_send_transfer.recovery_epoch = coop_recovery_epoch() + 1;
+	if (!Save_send_transfer.recovery_epoch) Save_send_transfer.recovery_epoch = 1;
 	Save_send_transfer.game_time64 = game_time64;
 	Save_send_transfer.has_collision_delay_last_play_time =
 	    has_collision_delay_last_play_time;
@@ -416,6 +425,7 @@ static void multi_save_transfer_send_begin(void)
 	    (ubyte) (Save_send_transfer.has_collision_delay_last_play_time ? 1 : 0);
 	multibuf[29] = (ubyte) Save_send_transfer.transfer_kind;
 	PUT_INTEL_SHORT(multibuf + 30, (ushort) Save_send_transfer.total_chunks);
+	PUT_INTEL_INT(multibuf + 32, Save_send_transfer.recovery_epoch);
 	multi_send_data(multibuf, MULTI_REWIND_SAVE_BEGIN_LEN, 2);
 }
 
@@ -546,8 +556,8 @@ void multi_save_transfer_frame(void)
 		restore.collision_delay_last_play_time =
 		    Save_send_transfer.collision_delay_last_play_time;
 		Save_send_transfer.data = NULL;
+		multi_save_transfer_begin_restore(Save_send_transfer.recovery_epoch);
 		multi_save_send_reset();
-		multi_save_transfer_begin_restore();
 		multi_prepare_restore_sync();
 		status = android_rewind_restore_authoritative(&restore);
 		multi_save_transfer_finish_restore();
@@ -564,8 +574,8 @@ void multi_save_transfer_frame(void)
 	if (Save_send_transfer.level_restart_pending) {
 		int restored;
 
+		multi_save_transfer_begin_restore(Save_send_transfer.recovery_epoch);
 		multi_save_send_reset();
-		multi_save_transfer_begin_restore();
 		restored = coop_level_restart_apply_host();
 		multi_save_transfer_finish_restore();
 		coop_level_restart_transfer_finished(restored);
@@ -579,8 +589,8 @@ void multi_save_transfer_frame(void)
 	COOPLOG("coop restore transfer synchronized: id=%u slot=%u game_id=%u",
 	        Save_send_transfer.transfer_id, (uint) restore_slot,
 	        restore_game_id);
+	multi_save_transfer_begin_restore(Save_send_transfer.recovery_epoch);
 	multi_save_send_reset();
-	multi_save_transfer_begin_restore();
 	multi_restore_game(restore_slot, restore_game_id);
 	multi_save_transfer_finish_restore();
 }
@@ -690,7 +700,7 @@ int multi_send_level_restart_transfer(const rewind_memory_buffer *buffer)
 	if (!multi_rewind_has_connected_clients()) {
 		int restored;
 
-		multi_save_transfer_begin_restore();
+		multi_save_transfer_begin_restore(0);
 		restored = coop_level_restart_apply_host();
 		multi_save_transfer_finish_restore();
 		coop_level_restart_transfer_finished(restored);
@@ -771,7 +781,7 @@ int multi_perform_rewind_request(int requester, int *rewound_seconds)
 		} else
 			HUD_init_message_literal(HM_DEFAULT, "Waiting to rewind");
 	} else {
-		multi_save_transfer_begin_restore();
+		multi_save_transfer_begin_restore(0);
 		status = android_rewind_restore_authoritative(&restore);
 		multi_save_transfer_finish_restore();
 	}
@@ -855,7 +865,7 @@ void multi_do_rewind_save_begin(const ubyte *buf)
 	checksum = GET_INTEL_INT(buf + 8);
 	transfer_kind = buf[29];
 	total_chunks = GET_INTEL_SHORT(buf + 30);
-	if (total_size == 0 || total_size > MULTI_SAVE_TRANSFER_MAX_BYTES ||
+	if (!GET_INTEL_INT(buf + 32) || total_size == 0 || total_size > MULTI_SAVE_TRANSFER_MAX_BYTES ||
 	    total_chunks <= 0) {
 		COOPLOG("save transfer begin rejected: bytes=%u chunks=%d",
 		        total_size, total_chunks);
@@ -907,6 +917,7 @@ void multi_do_rewind_save_begin(const ubyte *buf)
 	Rewind_save_transfer.rewound_seconds = buf[3];
 	Rewind_save_transfer.total_size = total_size;
 	Rewind_save_transfer.checksum = checksum;
+	Rewind_save_transfer.recovery_epoch = (uint32_t) GET_INTEL_INT(buf + 32);
 	Rewind_save_transfer.game_time64 = multi_rewind_get_i64(buf + 12);
 	Rewind_save_transfer.collision_delay_last_play_time =
 	    multi_rewind_get_i64(buf + 20);

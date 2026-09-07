@@ -28,7 +28,12 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "matcen_mode.h"
 // Need these for non network builds too -Chris
 #define MAX_MESSAGE_LEN 35
+#ifdef __ANDROID__
+// Android save transfers include the host recovery timeline at byte 32
+#define MULTI_REWIND_SAVE_BEGIN_LEN     36
+#else
 #define MULTI_REWIND_SAVE_BEGIN_LEN     32
+#endif
 #define MULTI_REWIND_SAVE_APPLY_LEN     4
 #define MULTI_REWIND_SAVE_READY_LEN     4
 #define MULTI_REWIND_SAVE_CHUNK_PAYLOAD 432
@@ -71,7 +76,7 @@ extern int multi_protocol; // set and determinate used protocol
 
 // What version of the multiplayer protocol is this? Increment each time something drastic changes in Multiplayer without the version number changes. Can be reset to 0 each time the version of the game changes
 #ifdef __ANDROID__
-#define MULTI_PROTO_VERSION 30019 // Redux coop recovery ownership protocol
+#define MULTI_PROTO_VERSION 30020 // Redux synchronized recovery timeline protocol
 #define MULTI_PLAYER_DROP_LENGTH 69
 #define MULTI_SHIP_STATUS_LENGTH 53
 #define MULTI_COOP_RESTORE_LENGTH 102

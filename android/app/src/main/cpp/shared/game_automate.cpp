@@ -81,6 +81,7 @@ extern "C" {
 #include "hudmsg.h"
 #include "robot.h"
 #include "coop/coop_save.h"
+#include "coop/coop_recovery.h"
 #include "secretarea.h"
 #include "switch.h"
 #include "wall.h"
@@ -3847,6 +3848,27 @@ extern "C" void game_automate_tick(void)
 						break;
 					}
 				}
+			} else if (s.field == "recovery_test_trace") {
+				debug_log_enabled[DLOG_COOP_DESYNC] = 1;
+			} else if (s.field == "recovery_test_seed_credit") {
+				coop_player_record credit = {};
+				strcpy(credit.client_id, "pickup-test-absent");
+				strcpy(credit.callsign, "OldPilot");
+				credit.secondary_ammo[HOMING_INDEX] = 1;
+				coop_recovery_remember_record(&credit);
+			} else if (s.field == "recovery_test_approach_homing") {
+				bool found = false;
+				for (int n = 0; ConsoleObject && n <= Highest_object_index; n++) {
+					object *powerup = &Objects[n];
+					if (powerup->type != OBJ_POWERUP || powerup->id != POW_HOMING_AMMO_4 ||
+					    !(powerup->flags & OF_COOP_RECOVERY) || (powerup->flags & OF_SHOULD_BE_DEAD)) continue;
+					ConsoleObject->pos = powerup->pos;
+					obj_relink(ConsoleObject - Objects, powerup->segnum);
+					vm_vec_zero(&ConsoleObject->mtype.phys_info.velocity);
+					found = true;
+					break;
+				}
+				if (!found) stop_script_fail("recovery_test_approach_homing: no live pack");
 			} else if (s.field == "recovery_test_collect_homing") {
 				bool found = false;
 				if (ConsoleObject && (Game_mode & GM_MULTI_COOP)) {

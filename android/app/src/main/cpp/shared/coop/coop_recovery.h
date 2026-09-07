@@ -43,6 +43,8 @@ typedef struct coop_recovery_item {
 
 int coop_recovery_active(void);
 void coop_recovery_reset(void);
+void coop_recovery_begin_restore(uint32_t generation);
+void coop_recovery_end_restore(void);
 void coop_recovery_drop(int pnum, uint32_t reported_revision, uint32_t life);
 void coop_recovery_begin_drop(int pnum);
 void coop_recovery_consume_mine(int pnum, int secondary, int objnum);

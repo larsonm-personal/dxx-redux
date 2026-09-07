@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <stdio.h>
+#include "android_log.h"
 #include <string.h>
 
 #include "coop_recovery.h"
@@ -25,6 +27,7 @@ enum { REC_ITEM = 1,
 static coop_recovery_item *items, *pending;
 static size_t count, capacity, pending_count;
 static uint32_t next_id = 1, epoch = 1;
+static uint32_t restore_epoch;
 static uint32_t player_revision[MAX_PLAYERS];
 static uint32_t applied_revision[MAX_PLAYERS];
 static uint32_t player_life[MAX_PLAYERS];
@@ -786,11 +789,25 @@ void coop_recovery_host_changed(void)
 	}
 }
 
+/* Save transfer supplies one host-selected timeline, regardless of how many
+ * local new-game/reset calls each peer made before loading the save */
+void coop_recovery_begin_restore(uint32_t generation)
+{
+	restore_epoch = generation;
+}
+
+void coop_recovery_end_restore(void)
+{
+	COOPLOG("recovery restore epoch=%u rows=%u", epoch, (unsigned) count);
+	restore_epoch = 0;
+}
+
 void coop_recovery_reset(void)
 {
 	count = 0;
 	next_id = 1;
-	epoch++;
+	epoch = restore_epoch ? restore_epoch : epoch + 1;
+	if (!epoch) epoch = 1;
 	requested_id = 0;
 	memset(player_revision, 0, sizeof(player_revision));
 	memset(applied_revision, 0, sizeof(applied_revision));

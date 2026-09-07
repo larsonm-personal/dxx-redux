@@ -337,8 +337,47 @@ static void test_host_migration_object_mapping(void)
     CHECK(Objects[10].flags & OF_SHOULD_BE_DEAD);
 }
 
+static void test_shared_restore_timeline(void)
+{
+    ubyte old_request[160] = {0};
+    coop_recovery_item saved;
+    uint32_t generation;
+    reset();
+    Players[1].secondary_ammo[HOMING_INDEX] = 4;
+    egg(10, POW_HOMING_AMMO_4);
+    coop_recovery_drop(1, 0, 0);
+    saved = coop_recovery_data()[0];
+    old_request[1] = 3;
+    PUT_INTEL_INT(old_request + 4, coop_recovery_epoch());
+    memcpy(old_request + 16, &saved, sizeof(saved));
+    generation = coop_recovery_epoch() + 1;
+    /* Peers may have different local reset histories before the same save */
+    for (int peer = 0; peer < 2; ++peer) {
+        for (int n = 0; n <= peer; ++n) coop_recovery_reset();
+        CHECK(coop_recovery_set_pending(&saved, 1));
+        coop_recovery_begin_restore(generation);
+        coop_recovery_reset();
+        CHECK(coop_recovery_apply_pending());
+        coop_recovery_end_restore();
+        CHECK(coop_recovery_epoch() == generation);
+        CHECK(coop_recovery_count() == 1);
+    }
+    coop_recovery_receive(old_request, 2);
+    CHECK(Players[2].secondary_ammo[HOMING_INDEX] == 0);
+    CHECK(!(Objects[10].flags & OF_SHOULD_BE_DEAD));
+    PUT_INTEL_INT(old_request + 4, generation);
+    coop_recovery_receive(old_request, 2);
+    CHECK(Players[2].secondary_ammo[HOMING_INDEX] == 4);
+    CHECK(Objects[10].flags & OF_SHOULD_BE_DEAD);
+    coop_recovery_receive(old_request, 2);
+    CHECK(Players[2].secondary_ammo[HOMING_INDEX] == 4);
+    coop_recovery_reset();
+    CHECK(coop_recovery_epoch() != generation);
+}
+
 int main(void)
 {
+    test_shared_restore_timeline();
     test_partial_collection_expiry_and_rejoin();
     test_capacity_partial_weapon_and_save_restore();
     test_disconnect_before_drop_and_overflow();

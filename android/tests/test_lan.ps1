@@ -35,6 +35,7 @@ param(
     [switch]$GuidebotSlotRemapRestore,
     [switch]$HostMigration,
     [switch]$SpewRecovery,
+    [switch]$SpewPickup,
     [int]$TimeoutSeconds = 120
 )
 
@@ -1423,11 +1424,32 @@ try {
     if ($testPassed -and $GuidebotHostObserver) {
         $testPassed = Invoke-GuidebotHostObserverScenario
     }
+    if ($testPassed -and $GuidebotSlotRemapRestore -and $SpewPickup) {
+        $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_pickup_seed.jsonc" -SecondarySerial $EMU2 -SecondaryScript "test_coop_pickup_trace.jsonc" -Description "nonempty recovery ledger before save" -TimeoutSec 15
+    }
     if ($testPassed -and $GuidebotSlotRemapRestore) {
         $testPassed = Invoke-GuidebotSlotRemapRestoreScenario
     }
     if ($testPassed -and $HostMigration) {
         $testPassed = Invoke-HostMigrationScenario
+    }
+
+    if ($testPassed -and $SpewPickup) {
+        $pickupHost = if ($GuidebotSlotRemapRestore) { $EMU2 } else { $EMU1 }
+        $pickupClient = if ($GuidebotSlotRemapRestore) { $EMU1 } else { $EMU2 }
+        $testPassed = Invoke-PairedGameAutomation -PrimarySerial $pickupHost -PrimaryScript "test_coop_respawn_pickup_host.jsonc" -SecondarySerial $pickupClient -SecondaryScript "test_coop_respawn_pickup_client.jsonc" -Description "client death, respawn and approach to owned spew" -TimeoutSec 60
+        if ($testPassed) {
+            $testPassed = Wait-ForCondition -Description "client physically picks up owned homing spew" -TimeoutSec 20 -PollMs 1000 -Condition {
+                $h = Get-GameIntrospection -Serial $pickupHost
+                $c = Get-GameIntrospection -Serial $pickupClient
+                if (-not $h -or -not $c) { return $false }
+                $remote = @($h.multiplayer.players | Where-Object { -not $_.is_me -and $_.connected -eq 1 })[0]
+                $local = @($c.multiplayer.players | Where-Object { $_.is_me })[0]
+                return $local.homing_ammo -ge 4 -and $local.homing_ammo -le 6 -and
+                $local.homing_ammo -eq $remote.homing_ammo -and
+                $h.multiplayer.recovery.epoch -eq $c.multiplayer.recovery.epoch
+            }
+        }
     }
 
     if ($testPassed -and $SpewRecovery) {
