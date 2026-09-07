@@ -268,7 +268,7 @@
             "seg": 661
           }
         ],
-        "route_problem": "red key excluded from prerequisite trial",
+        "route_problem": "gold key missing",
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists"

@@ -454,7 +454,7 @@
       {
         "level_num": 0,
         "level_file": "megaloma.rdl",
-        "route_input_sha256": "556FCF04253C8E51110732AF97121A208F703185D91A107B7693620F85B6D4A3",
+        "route_input_sha256": "0546DA0CAD30E86C0FD099D7B67BBFCD13771E7DFFDFAAEBC460999AB06E915A",
         "status": "failed",
         "rng_start": {
           "state": 1,

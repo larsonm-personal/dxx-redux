@@ -942,7 +942,7 @@
         "wall_count": 168,
         "trigger_count": 5,
         "object_count": 117,
-        "texture_count": 63,
+        "texture_count": 62,
         "player_starts": 8,
         "coop_only_starts": 3,
         "powerups": 33,
@@ -1415,7 +1415,7 @@
             "key": "blue"
           }
         ],
-        "route_problem": "red key excluded from prerequisite trial"
+        "route_problem": "red key unreachable"
       }
     ],
     "mission_path": "CHARLIE.MSN",
@@ -3289,7 +3289,7 @@
         "wall_count": 104,
         "trigger_count": 57,
         "object_count": 78,
-        "texture_count": 35,
+        "texture_count": 37,
         "player_starts": 1,
         "coop_only_starts": 0,
         "powerups": 29,
@@ -3894,7 +3894,7 @@
         "wall_count": 80,
         "trigger_count": 4,
         "object_count": 129,
-        "texture_count": 43,
+        "texture_count": 44,
         "player_starts": 8,
         "coop_only_starts": 3,
         "powerups": 28,
@@ -6422,7 +6422,7 @@
             "key": "blue"
           }
         ],
-        "route_problem": "gold key excluded from prerequisite trial"
+        "route_problem": "red key unreachable"
       }
     ],
     "mission_path": "TURNCOAT.MSN",

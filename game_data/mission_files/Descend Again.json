@@ -1409,7 +1409,7 @@
             "key": "gold"
           }
         ],
-        "route_problem": "red key excluded from prerequisite trial"
+        "route_problem": "red key unreachable"
       },
       {
         "level_num": 11,

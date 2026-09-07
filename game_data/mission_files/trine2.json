@@ -646,7 +646,7 @@
             "key": "gold"
           }
         ],
-        "route_problem": "red key excluded from prerequisite trial"
+        "route_problem": "red key unreachable"
       },
       {
         "level_num": 6,
@@ -900,7 +900,7 @@
             "key": "blue"
           }
         ],
-        "route_problem": "gold key excluded from prerequisite trial"
+        "route_problem": "gold key unreachable"
       },
       {
         "level_num": 9,

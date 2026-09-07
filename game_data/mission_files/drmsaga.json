@@ -600,7 +600,7 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "blue key excluded from prerequisite trial",
+        "route_problem": "blue key missing",
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",

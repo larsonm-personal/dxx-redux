@@ -1760,7 +1760,7 @@
             "seg": 417
           }
         ],
-        "route_problem": "blue key excluded from prerequisite trial"
+        "route_problem": "blue key unreachable"
       }
     ],
     "mission_path": "GUM.MSN",

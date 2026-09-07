@@ -268,7 +268,7 @@
             "seg": 0
           }
         ],
-        "route_problem": "blue key excluded from prerequisite trial"
+        "route_problem": "red key unreachable"
       },
       {
         "level_num": 2,

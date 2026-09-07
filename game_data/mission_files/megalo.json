@@ -3980,9 +3980,9 @@
         "mine_volume": 52629400.0,
         "mine_volume_normalized": 11.509,
         "mine_volume_text": "12x",
-        "travel_distance": 3368.2,
-        "travel_time_seconds": 67,
-        "travel_time_text": "1M:07S",
+        "travel_distance": 3272.6,
+        "travel_time_seconds": 65,
+        "travel_time_text": "1M:05S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -4015,20 +4015,6 @@
             "index": 2,
             "kind": "key",
             "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 744,
-            "label_pos": {
-              "x": 175.0,
-              "y": 320.0,
-              "z": -200.0
-            },
-            "distance": 1310.3,
-            "key": "red"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 774,
             "label_pos": {
@@ -4036,8 +4022,22 @@
               "y": 80.0,
               "z": 862.1
             },
-            "distance": 1455.5,
+            "distance": 1214.7,
             "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 744,
+            "label_pos": {
+              "x": 175.0,
+              "y": 320.0,
+              "z": -200.0
+            },
+            "distance": 1455.5,
+            "key": "red"
           }
         ],
         "route_problem": "route target unreachable"

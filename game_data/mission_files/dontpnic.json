@@ -2351,7 +2351,7 @@
             "seg": 13
           }
         ],
-        "route_problem": "blue key excluded from prerequisite trial"
+        "route_problem": "blue key unreachable"
       },
       {
         "level_num": 22,
@@ -3116,7 +3116,7 @@
             "distance": 121.3
           }
         ],
-        "route_problem": "blue key excluded from prerequisite trial"
+        "route_problem": "blue key unreachable"
       },
       {
         "level_num": -3,

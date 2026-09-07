@@ -4625,7 +4625,7 @@
         "wall_count": 40,
         "trigger_count": 17,
         "object_count": 100,
-        "texture_count": 122,
+        "texture_count": 121,
         "player_starts": 8,
         "coop_only_starts": 3,
         "powerups": 40,
@@ -8724,7 +8724,7 @@
         "wall_count": 168,
         "trigger_count": 5,
         "object_count": 117,
-        "texture_count": 63,
+        "texture_count": 62,
         "player_starts": 8,
         "coop_only_starts": 3,
         "powerups": 33,
@@ -38746,7 +38746,7 @@
             "key": "blue"
           }
         ],
-        "route_problem": "gold key excluded from prerequisite trial"
+        "route_problem": "red key unreachable"
       }
     ],
     "target_index": 96

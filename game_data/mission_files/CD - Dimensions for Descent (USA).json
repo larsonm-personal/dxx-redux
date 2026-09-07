@@ -10747,9 +10747,9 @@
         "mine_volume": 2548680.0,
         "mine_volume_normalized": 0.557344,
         "mine_volume_text": "0.56x",
-        "travel_distance": 2455.6,
-        "travel_time_seconds": 49,
-        "travel_time_text": "0M:49S",
+        "travel_distance": 1926.0,
+        "travel_time_seconds": 39,
+        "travel_time_text": "0M:39S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -10811,6 +10811,20 @@
           },
           {
             "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 152,
+            "label_pos": {
+              "x": -294.7,
+              "y": -143.6,
+              "z": 29.3
+            },
+            "distance": 367.1,
+            "key": "gold"
+          },
+          {
+            "index": 4,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
@@ -10822,7 +10836,7 @@
               "y": -94.0,
               "z": 54.1
             },
-            "distance": 321.4,
+            "distance": 575.3,
             "opens": [
               {
                 "seg": 65,
@@ -10837,20 +10851,6 @@
             ]
           },
           {
-            "index": 4,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
-            "seg": 152,
-            "label_pos": {
-              "x": -294.7,
-              "y": -143.6,
-              "z": 29.3
-            },
-            "distance": 575.3,
-            "key": "gold"
-          },
-          {
             "index": 5,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
@@ -10863,7 +10863,7 @@
               "y": -122.0,
               "z": 43.7
             },
-            "distance": 1203.8,
+            "distance": 628.5,
             "opens": [
               {
                 "seg": 21,
@@ -11314,7 +11314,7 @@
         "wall_count": 40,
         "trigger_count": 17,
         "object_count": 100,
-        "texture_count": 122,
+        "texture_count": 121,
         "player_starts": 8,
         "coop_only_starts": 3,
         "powerups": 40,

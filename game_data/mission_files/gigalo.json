@@ -1284,7 +1284,7 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "blue key excluded from prerequisite trial",
+        "route_problem": "route dependency iteration limit",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -1899,9 +1899,9 @@
         "mine_volume": 20839100.0,
         "mine_volume_normalized": 4.55707,
         "mine_volume_text": "4.6x",
-        "travel_distance": 3699.9,
-        "travel_time_seconds": 74,
-        "travel_time_text": "1M:14S",
+        "travel_distance": 5458.8,
+        "travel_time_seconds": 109,
+        "travel_time_text": "1M:49S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1934,20 +1934,6 @@
             "index": 2,
             "kind": "key",
             "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 483,
-            "label_pos": {
-              "x": 530.0,
-              "y": 60.0,
-              "z": 230.6
-            },
-            "distance": 499.4,
-            "key": "red"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 533,
             "label_pos": {
@@ -1955,8 +1941,22 @@
               "y": 0.0,
               "z": -220.0
             },
-            "distance": 1759.4,
+            "distance": 2258.3,
             "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 483,
+            "label_pos": {
+              "x": 530.0,
+              "y": 60.0,
+              "z": 230.6
+            },
+            "distance": 1759.4,
+            "key": "red"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",

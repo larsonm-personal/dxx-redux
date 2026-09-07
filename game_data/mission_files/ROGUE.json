@@ -486,7 +486,7 @@
             "seg": 595
           }
         ],
-        "route_problem": "blue key excluded from prerequisite trial"
+        "route_problem": "blue key unreachable"
       },
       {
         "level_num": 3,
@@ -528,7 +528,7 @@
             "seg": 798
           }
         ],
-        "route_problem": "blue key excluded from prerequisite trial"
+        "route_problem": "blue key unreachable"
       },
       {
         "level_num": 4,
@@ -570,7 +570,7 @@
             "seg": 549
           }
         ],
-        "route_problem": "blue key excluded from prerequisite trial"
+        "route_problem": "blue key unreachable"
       },
       {
         "level_num": 5,
@@ -612,7 +612,7 @@
             "seg": 751
           }
         ],
-        "route_problem": "blue key excluded from prerequisite trial"
+        "route_problem": "gold key unreachable"
       }
     ],
     "mission_path": "ROG.MSN",

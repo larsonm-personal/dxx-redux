@@ -8,9 +8,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 7,
-    "failed": 1,
-    "timeout": 1,
-    "route_mismatch": 1
+    "failed": 2,
+    "timeout": 1
   },
   "levels": [
     {
@@ -57,8 +56,8 @@
     {
       "level_num": 2,
       "level_file": "Enc2-2.rl2",
-      "route_input_sha256": "90FCE38C58E352BEBEBEB31A7FA6344D77FD763A555241130A9E3F306FA9375A",
-      "status": "route_mismatch",
+      "route_input_sha256": "E3AF04913AC17C5AC63107AD4802812B8DAE3C0E762C2BBEE9DECBBFD9B73D87",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -94,7 +93,7 @@
         "state": 1259989467,
         "calls": 7982
       },
-      "problem": "live objective sequence differs from route input"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 3,

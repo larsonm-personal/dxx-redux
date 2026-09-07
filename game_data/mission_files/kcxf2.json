@@ -582,28 +582,28 @@
         "wall_count": 112,
         "trigger_count": 25,
         "object_count": 202,
-        "texture_count": 76,
+        "texture_count": 64,
         "player_starts": 8,
         "coop_only_starts": 3,
         "powerups": 93,
         "reactors": 1,
         "robots": 96,
         "hostages": 1,
-        "secrets": 0,
+        "secrets": 4,
         "matcens": 1,
         "energy_centers": 1,
         "mine_volume": 38626500.0,
         "mine_volume_normalized": 8.44682,
         "mine_volume_text": "8.4x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 11930.6,
+        "travel_time_seconds": 239,
+        "travel_time_text": "3M:59S",
         "guidebot_count": 1,
         "guidebot_placed": true,
-        "guidebot_accessible": false,
-        "route_status": "failed",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "guidebot_accessible": true,
+        "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -611,14 +611,137 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 0
+          },
+          {
+            "index": 1,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 152,
+            "label_pos": {
+              "x": 283.0,
+              "y": -104.2,
+              "z": 645.2
+            },
+            "distance": 1364.5,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 242,
+            "label_pos": {
+              "x": 363.7,
+              "y": -76.4,
+              "z": 498.0
+            },
+            "distance": 1981.9,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 122,
+            "label_pos": {
+              "x": 214.0,
+              "y": -198.2,
+              "z": 335.0
+            },
+            "distance": 2306.0,
+            "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 20",
+            "seg": 206,
+            "side": 4,
+            "wall": 96,
+            "label_pos": {
+              "x": 211.2,
+              "y": -181.9,
+              "z": 516.3
+            },
+            "distance": 2146.3,
+            "trigger": 20,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 286,
+                "side": 5,
+                "wall": 89
+              },
+              {
+                "seg": 57,
+                "side": 4,
+                "wall": 90
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 202,
+            "side": 2,
+            "wall": 54,
+            "label_pos": {
+              "x": 187.9,
+              "y": -182.1,
+              "z": 456.2
+            },
+            "distance": 60.3,
+            "opens": [
+              {
+                "seg": 202,
+                "side": 2,
+                "wall": 54
+              },
+              {
+                "seg": 201,
+                "side": 0,
+                "wall": 55
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 366,
+            "label_pos": {
+              "x": 1086.5,
+              "y": -73.2,
+              "z": -266.9
+            },
+            "distance": 2847.7
+          },
+          {
+            "index": 7,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 415,
+            "side": 2,
+            "label_pos": {
+              "x": 293.2,
+              "y": 364.1,
+              "z": -503.5
+            },
+            "distance": 1223.9
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "guidebot_note": "guidebot is present but not reachable from the start",
-        "route_problem": "blue key excluded from prerequisite trial",
         "notes": [
-          "guidebot or guidebot start cage placed in this level",
-          "guidebot is present but not reachable from the start"
+          "guidebot or guidebot start cage placed in this level"
         ]
       },
       {

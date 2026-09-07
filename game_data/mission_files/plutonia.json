@@ -308,7 +308,7 @@
         "mine_volume": 2936750.0,
         "mine_volume_normalized": 0.642208,
         "mine_volume_text": "0.64x",
-        "travel_distance": 3004.4,
+        "travel_distance": 2994.0,
         "travel_time_seconds": 60,
         "travel_time_text": "1M:00S",
         "guidebot_count": 0,
@@ -425,7 +425,7 @@
               "y": -90.0,
               "z": 44.3
             },
-            "distance": 422.9,
+            "distance": 417.7,
             "trigger": 4,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -448,7 +448,7 @@
               "y": -45.0,
               "z": -66.2
             },
-            "distance": 524.3,
+            "distance": 519.1,
             "key": "red"
           }
         ],
@@ -956,7 +956,7 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "red key excluded from prerequisite trial",
+        "route_problem": "red key unreachable",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -2362,7 +2362,7 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "blue key excluded from prerequisite trial",
+        "route_problem": "blue key unreachable",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -4596,7 +4596,7 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "gold key excluded from prerequisite trial",
+        "route_problem": "non-shootable trigger source is behind a closed wall",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -5077,7 +5077,7 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "blue key excluded from prerequisite trial",
+        "route_problem": "gold key unreachable",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -5546,9 +5546,9 @@
         "mine_volume": 36869500.0,
         "mine_volume_normalized": 8.06261,
         "mine_volume_text": "8.1x",
-        "travel_distance": 5013.2,
-        "travel_time_seconds": 100,
-        "travel_time_text": "1M:40S",
+        "travel_distance": 5661.7,
+        "travel_time_seconds": 113,
+        "travel_time_text": "1M:53S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -5581,20 +5581,6 @@
             "index": 2,
             "kind": "key",
             "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 619,
-            "label_pos": {
-              "x": -428.3,
-              "y": -5.1,
-              "z": -292.6
-            },
-            "distance": 1601.3,
-            "key": "red"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 830,
             "label_pos": {
@@ -5602,8 +5588,22 @@
               "y": -25.1,
               "z": 401.6
             },
-            "distance": 1807.6,
+            "distance": 2249.8,
             "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 619,
+            "label_pos": {
+              "x": -428.3,
+              "y": -5.1,
+              "z": -292.6
+            },
+            "distance": 1807.6,
+            "key": "red"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",

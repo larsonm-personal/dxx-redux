@@ -4623,7 +4623,7 @@
             "seg": 375
           }
         ],
-        "route_problem": "blue key excluded from prerequisite trial"
+        "route_problem": "blue key unreachable"
       }
     ],
     "target_index": 12
@@ -4897,7 +4897,7 @@
             "seg": 375
           }
         ],
-        "route_problem": "blue key excluded from prerequisite trial"
+        "route_problem": "blue key unreachable"
       }
     ],
     "target_index": 13

@@ -126,7 +126,7 @@
         "mine_volume": 13444200.0,
         "mine_volume_normalized": 2.93998,
         "mine_volume_text": "2.9x",
-        "travel_distance": 2345.0,
+        "travel_distance": 2348.7,
         "travel_time_seconds": 47,
         "travel_time_text": "0M:47S",
         "guidebot_count": 0,
@@ -225,7 +225,7 @@
               "y": -57.5,
               "z": 167.5
             },
-            "distance": 232.6,
+            "distance": 234.4,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -253,7 +253,7 @@
               "y": 40.0,
               "z": -6.2
             },
-            "distance": 352.8,
+            "distance": 354.7,
             "key": "gold"
           },
           {

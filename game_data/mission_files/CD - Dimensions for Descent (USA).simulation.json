@@ -1138,59 +1138,18 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "ok",
+    "status": "failed",
     "level_counts": {
-      "ok": 1
+      "infrastructure_error": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "insane.rdl",
         "route_input_sha256": "E7119DB86CADB66FDBC5017228CF48FEE4B7BFD6168E46EBDA92B55BBC49164C",
-        "status": "ok",
-        "rng_start": {
-          "state": 1,
-          "calls": 0
-        },
-        "objectives": [
-          {
-            "n": "blastable wall",
-            "s": 1
-          },
-          {
-            "n": "hidden door",
-            "s": 4
-          },
-          {
-            "n": "gold key",
-            "s": 5
-          },
-          {
-            "n": "blue key",
-            "s": 17
-          },
-          {
-            "n": "fly-through 12",
-            "s": 31
-          },
-          {
-            "n": "red key",
-            "s": 51
-          },
-          {
-            "n": "reactor",
-            "s": 75
-          },
-          {
-            "n": "exit",
-            "s": 79
-          }
-        ],
-        "total_frames": 4732,
-        "rng_end": {
-          "state": 811863863,
-          "calls": 178
-        }
+        "status": "infrastructure_error",
+        "problem": "Route engine infrastructure failure",
+        "exit_code": 1
       }
     ]
   },
@@ -1497,14 +1456,14 @@
     "seed": 1,
     "status": "failed",
     "level_counts": {
-      "route_mismatch": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "HOPE.RDL",
-        "route_input_sha256": "EF292D08D6FBB44A3C732683B0CF8E48E46E6B6FCECBF8C8DD815281776D6986",
-        "status": "route_mismatch",
+        "route_input_sha256": "CA6C5943CD238E28F02D8CFA377622A172DAA63AC3F304F7822FC1086F80D7D4",
+        "status": "timeout",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -1528,7 +1487,7 @@
           "state": 601077795,
           "calls": 102
         },
-        "problem": "live objective sequence differs from route input"
+        "problem": "physical route frontier did not open after 8 interaction attempts"
       }
     ]
   },

@@ -268,7 +268,7 @@
             "seg": 0
           }
         ],
-        "route_problem": "red key excluded from prerequisite trial"
+        "route_problem": "red key unreachable"
       },
       {
         "level_num": 2,
@@ -552,7 +552,7 @@
             "key": "gold"
           }
         ],
-        "route_problem": "red key excluded from prerequisite trial"
+        "route_problem": "red key unreachable"
       },
       {
         "level_num": 5,
@@ -822,7 +822,7 @@
             "seg": 0
           }
         ],
-        "route_problem": "blue key excluded from prerequisite trial"
+        "route_problem": "blue key unreachable"
       },
       {
         "level_num": 8,
@@ -1019,7 +1019,7 @@
             "key": "blue"
           }
         ],
-        "route_problem": "gold key excluded from prerequisite trial"
+        "route_problem": "gold key unreachable"
       },
       {
         "level_num": 10,
@@ -1342,7 +1342,7 @@
             "key": "gold"
           }
         ],
-        "route_problem": "red key excluded from prerequisite trial"
+        "route_problem": "red key unreachable"
       },
       {
         "level_num": 13,
@@ -1384,7 +1384,7 @@
             "seg": 0
           }
         ],
-        "route_problem": "blue key excluded from prerequisite trial"
+        "route_problem": "blue key unreachable"
       },
       {
         "level_num": 14,

@@ -282,7 +282,7 @@
             "key": "blue"
           }
         ],
-        "route_problem": "red key excluded from prerequisite trial"
+        "route_problem": "red key unreachable"
       },
       {
         "level_num": 2,
@@ -465,7 +465,7 @@
             "seg": 0
           }
         ],
-        "route_problem": "blue key excluded from prerequisite trial"
+        "route_problem": "blue key unreachable"
       },
       {
         "level_num": 4,
@@ -2184,7 +2184,7 @@
             "seg": 1
           }
         ],
-        "route_problem": "blue key excluded from prerequisite trial"
+        "route_problem": "blue key unreachable"
       },
       {
         "level_num": 16,
@@ -2410,7 +2410,7 @@
             "key": "blue"
           }
         ],
-        "route_problem": "gold key excluded from prerequisite trial"
+        "route_problem": "gold key unreachable"
       },
       {
         "level_num": -2,
