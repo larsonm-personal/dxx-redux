@@ -71,6 +71,10 @@ extern "C" {
 #include "gameseq.h"
 #include "kmatrix.h"
 #include "multi.h"
+#include "multibot.h"
+#include "fireball.h"
+#include "maths.h"
+#include "coop/coop_powerup_duplication.h"
 #include "object.h"
 #include "collide.h"
 #include "boss_hud.h"
@@ -3862,6 +3866,37 @@ extern "C" void game_automate_tick(void)
 					stop_script_fail("recovery_test_collect_homing: no tracked homing pack");
 					break;
 				}
+			} else if (s.field == "robot_drop_test") {
+				if (!ConsoleObject || !multi_i_am_master() || !(Game_mode & GM_MULTI_COOP)) {
+					stop_script_fail("robot_drop_test: requires a running coop host");
+					break;
+				}
+				object source = {};
+				source.type = OBJ_ROBOT;
+				source.segnum = Highest_segment_index;
+				compute_segment_center(&source.pos, &Segments[source.segnum]);
+				source.contains_type = OBJ_POWERUP;
+				source.contains_id = POW_HOMING_AMMO_1;
+				source.contains_count = 9;
+				Net_create_loc = 0;
+				d_srand(1245L);
+				object_create_egg(&source);
+				if (Net_create_loc != 9) {
+					stop_script_fail("robot_drop_test: could not create nine eggs");
+					break;
+				}
+				multi_send_create_robot_powerups(&source);
+				/* Reproduce a nonempty duplication snapshot ahead of recovery sync */
+				Netgame.DuplicateEnergyShields = 1;
+				bool recorded = false;
+				for (int n = 0; n <= Highest_object_index; n++) {
+					if (Objects[n].type == OBJ_POWERUP && Objects[n].id == POW_ENERGY &&
+					    !(Objects[n].flags & (OF_SHOULD_BE_DEAD | OF_PLAYER_DROPPED))) {
+						recorded = coop_powerup_duplication_record(&Objects[n], Player_num) != 0;
+						if (recorded) break;
+					}
+				}
+				if (!recorded) stop_script_fail("robot_drop_test: could not seed collection snapshot");
 			} else if (s.field == "recovery_test_inventory") {
 				if (!ConsoleObject || !(Game_mode & GM_MULTI_COOP)) {
 					stop_script_fail("recovery_test_inventory: coop game is not running");

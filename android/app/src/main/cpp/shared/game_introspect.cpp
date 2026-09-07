@@ -61,6 +61,7 @@ extern "C" {
 #include "hud_counts_shared.h"
 #include "hudmsg.h"
 #include "multi.h"
+#include "multibot.h"
 #include "matcen_mode.h"
 #include "songs.h"
 #include "songs_android_shared.h"
@@ -1873,6 +1874,7 @@ extern "C" char *game_introspect_get_state(void)
 			json recovery;
 			recovery["active"] = (bool) coop_recovery_active();
 			recovery["epoch"] = coop_recovery_epoch();
+			recovery["rows"] = coop_recovery_count();
 			int live = 0, credit = 0, world = 0;
 			const coop_recovery_item *rows = coop_recovery_data();
 			for (size_t n = 0; n < coop_recovery_count(); n++) {
@@ -1886,6 +1888,7 @@ extern "C" char *game_introspect_get_state(void)
 			recovery["credit"] = credit;
 			recovery["world_objects"] = world;
 			mp["recovery"] = std::move(recovery);
+			mp["robot_drop_objects_received"] = multi_robot_drop_received_count();
 #endif
 			j["multiplayer"] = std::move(mp);
 		}

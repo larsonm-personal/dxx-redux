@@ -837,7 +837,8 @@ function Invoke-SpewRecoveryScenario {
             $hostPlayer = @($h.multiplayer.players | Where-Object { $_.is_me })[0]
             return $hostPlayer.homing_ammo -eq 4 -and $p.homing_ammo -eq 2 -and ($p.primary_flags -band 8) -ne 0 -and
             $h.multiplayer.recovery.live -eq 0 -and $h.multiplayer.recovery.world_objects -eq 0 -and
-            $c.multiplayer.recovery.world_objects -eq 0
+            $c.multiplayer.recovery.world_objects -eq 0 -and
+            $h.multiplayer.recovery.rows -gt 0 -and $c.multiplayer.recovery.rows -eq $h.multiplayer.recovery.rows
         }
         if (-not $recovered) { return $false }
     }

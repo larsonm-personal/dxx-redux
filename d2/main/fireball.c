@@ -1098,6 +1098,10 @@ int drop_powerup(int type, int id, int num, vms_vector *init_vel, vms_vector *po
 
 		case OBJ_ROBOT:
 			for (count=0; count<num; count++) {
+#ifdef NETWORK
+				if ((Game_mode & GM_MULTI) && Net_create_loc >= MAX_NET_CREATE_OBJECTS)
+					return -1;
+#endif
 				int	rand_scale;
 				new_velocity = *init_vel;
 				old_mag = vm_vec_mag_quick(init_vel);

@@ -569,45 +569,39 @@ multi_send_boss_actions(int bossobjnum, int action, int secondary, int objnum)
 void
 multi_send_create_robot_powerups(object *del_obj)
 {
-	// Send create robot information
-
-	int loc = 0;
-	int i;
-#ifdef WORDS_BIGENDIAN
-	vms_vector swapped_vec;
-#endif
-
-	multibuf[loc] = MULTI_CREATE_ROBOT_POWERUPS;				loc += 1;
-	multibuf[loc] = Player_num;									loc += 1;
-	multibuf[loc] = del_obj->contains_count;					loc += 1;
-	multibuf[loc] = del_obj->contains_type; 					loc += 1;
-	multibuf[loc] = del_obj->contains_id;						loc += 1;
-	PUT_INTEL_SHORT(multibuf+loc, del_obj->segnum);		        loc += 2;
-#ifndef WORDS_BIGENDIAN
-	memcpy(multibuf+loc, &del_obj->pos, sizeof(vms_vector));	loc += 12;
-#else
-	swapped_vec.x = (fix)INTEL_INT((int)del_obj->pos.x);
-	swapped_vec.y = (fix)INTEL_INT((int)del_obj->pos.y);
-	swapped_vec.z = (fix)INTEL_INT((int)del_obj->pos.z);
-	memcpy(multibuf+loc, &swapped_vec, sizeof(vms_vector));     loc += 12;
-#endif
-
-	memset(multibuf+loc, -1, MAX_ROBOT_POWERUPS*sizeof(short));
-
-	if ((Net_create_loc > MAX_ROBOT_POWERUPS) || (Net_create_loc < 1))
-	{
-		Int3(); // See Rob
+	/* The wire manifest has four slots, even when a custom robot drops more */
+	int total = Net_create_loc;
+	if (total < 1 || total > MAX_NET_CREATE_OBJECTS) return;
+	if (total > MAX_ROBOT_POWERUPS)
+		con_printf(CON_NORMAL, "robot drop: batching %d created objects into four-slot manifests\n", total);
+	for (int first = 0; first < total;) {
+		ubyte buf[27] = { 0 };
+		object *created = &Objects[Net_create_objnums[first]];
+		int batch = 1;
+		while (batch < MAX_ROBOT_POWERUPS && first + batch < total) {
+			object *next = &Objects[Net_create_objnums[first + batch]];
+			if (next->type != created->type || next->id != created->id) break;
+			batch++;
+		}
+		buf[0] = MULTI_CREATE_ROBOT_POWERUPS;
+		buf[1] = (ubyte) Player_num;
+		buf[2] = (ubyte) batch;
+		buf[3] = created->type;
+		buf[4] = created->id;
+		PUT_INTEL_SHORT(buf + 5, del_obj->segnum);
+		PUT_INTEL_INT(buf + 7, del_obj->pos.x);
+		PUT_INTEL_INT(buf + 11, del_obj->pos.y);
+		PUT_INTEL_INT(buf + 15, del_obj->pos.z);
+		memset(buf + 19, -1, MAX_ROBOT_POWERUPS * sizeof(short));
+		for (int i = 0; i < batch; i++) {
+			int objnum = Net_create_objnums[first + i];
+			PUT_INTEL_SHORT(buf + 19 + 2 * i, objnum);
+			map_objnum_local_to_local(objnum);
+		}
+		multi_send_data(buf, sizeof(buf), 2);
+		first += batch;
 	}
-	for (i = 0; i < Net_create_loc; i++)
-	{
-		PUT_INTEL_SHORT(multibuf+loc, Net_create_objnums[i]);
-		loc += 2;
-		map_objnum_local_to_local(Net_create_objnums[i]);
-	}
-
 	Net_create_loc = 0;
-
-	multi_send_data(multibuf, 27, 2);
 }
 
 void
@@ -1240,6 +1234,13 @@ multi_do_boss_actions(const ubyte *buf)
 	}
 }
 
+static int robot_drop_received_count;
+
+int multi_robot_drop_received_count(void)
+{
+	return robot_drop_received_count;
+}
+
 void
 multi_do_create_robot_powerups(const ubyte *buf)
 {
@@ -1247,7 +1248,7 @@ multi_do_create_robot_powerups(const ubyte *buf)
 
 	int loc = 1;
 	object del_obj;
-	int pnum, egg_objnum, i;
+	int pnum, i;
 
 	memset( &del_obj, 0, sizeof(object) );
 	del_obj.type = OBJ_ROBOT;
@@ -1265,26 +1266,39 @@ multi_do_create_robot_powerups(const ubyte *buf)
 	del_obj.pos.y = (fix)INTEL_INT((int)del_obj.pos.y);
 	del_obj.pos.z = (fix)INTEL_INT((int)del_obj.pos.z);
 
-	Assert((pnum >= 0) && (pnum < N_players));
+	if (pnum < 0 || pnum >= N_players || pnum == Player_num ||
+	    del_obj.contains_count < 1 || del_obj.contains_count > MAX_ROBOT_POWERUPS ||
+	    del_obj.segnum < 0 || del_obj.segnum > Highest_segment_index ||
+	    (del_obj.contains_type != OBJ_POWERUP && del_obj.contains_type != OBJ_ROBOT) ||
+	    del_obj.contains_id < 0 ||
+	    (del_obj.contains_type == OBJ_POWERUP && del_obj.contains_id >= MAX_POWERUP_TYPES) ||
+	    (del_obj.contains_type == OBJ_ROBOT && del_obj.contains_id >= N_robot_types)) {
+		con_printf(CON_URGENT, "robot drop: rejected player=%d contents=%d/%d/%d segment=%d\n",
+		    pnum, del_obj.contains_count, del_obj.contains_type, del_obj.contains_id, del_obj.segnum);
+		return;
+	}
+	for (i = 0; i < del_obj.contains_count; i++) {
+		int remote = GET_INTEL_SHORT(buf + loc + 2 * i);
+		if (remote < -1 || remote >= MAX_OBJECTS) return;
+	}
 
 	Net_create_loc = 0;
 	d_srand(1245L);
 
-	egg_objnum = object_create_egg(&del_obj);
-
-	if (egg_objnum == -1)
-		return; // Object buffer full
-
-//	Assert(egg_objnum > -1);
-	Assert((Net_create_loc > 0) && (Net_create_loc <= MAX_ROBOT_POWERUPS));
+	object_create_egg(&del_obj);
+	/* Allocation can fail after creating some eggs; still map those objects */
+	if (Net_create_loc != del_obj.contains_count)
+		con_printf(CON_NORMAL, "robot drop: created %d of %d requested objects\n", Net_create_loc, del_obj.contains_count);
 
 	for (i = 0; i < Net_create_loc; i++)
 	{
 		short s;
 		
 		s = GET_INTEL_SHORT(buf + loc);
-		if ( s != -1)
+		if ( s != -1) {
 			map_objnum_local_to_remote((short)Net_create_objnums[i], s, pnum);
+			robot_drop_received_count++;
+		}
 		else
 			Objects[Net_create_objnums[i]].flags |= OF_SHOULD_BE_DEAD; // Delete objects other guy didn't create one of
 		loc += 2;
@@ -1297,7 +1311,6 @@ multi_drop_robot_powerups(int objnum)
 	// Code to handle dropped robot powerups in network mode ONLY!
 
 	object *del_obj;
-	int egg_objnum = -1;
 	robot_info	*robptr; 
 
 	if ((objnum < 0) || (objnum > Highest_object_index))
@@ -1334,7 +1347,7 @@ multi_drop_robot_powerups(int objnum)
 		}
 		d_srand(1245L);
 		if (del_obj->contains_count > 0)
-			egg_objnum = object_create_egg(del_obj);
+			object_create_egg(del_obj);
 	}
 		
 	else if (del_obj->ctype.ai_info.REMOTE_OWNER == -1) // No random goodies for robots we weren't in control of
@@ -1350,11 +1363,11 @@ multi_drop_robot_powerups(int objnum)
 				maybe_replace_powerup_with_energy(del_obj);
 			d_srand(1245L);
 			if (del_obj->contains_count > 0)
-				egg_objnum = object_create_egg(del_obj);
+				object_create_egg(del_obj);
 		}
 	}
 
-	if (egg_objnum >= 0) {
+	if (Net_create_loc > 0) {
 		// Transmit the object creation to the other players	 	
 		multi_send_create_robot_powerups(del_obj);
 	}

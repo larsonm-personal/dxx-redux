@@ -1650,18 +1650,18 @@ void multi_send_obs_data(unsigned char* buf, int len)
 
 void multi_send_data_direct(unsigned char *buf, int len, int pnum, int priority)
 {
-	if (len != message_length[(int)buf[0]])
-		Error("multi_send_data_direct: Packet type %i length: %i, expected: %i\n", buf[0], len, message_length[(int)buf[0]]);
 	if (buf[0] >= sizeof(message_length) / sizeof(message_length[0]))
 		Error("multi_send_data_direct: Illegal packet type %i\n", buf[0]);
-	if (pnum < 0 || pnum > MAX_PLAYERS)
+	if (len != message_length[(int)buf[0]])
+		Error("multi_send_data_direct: Packet type %i length: %i, expected: %i\n", buf[0], len, message_length[(int)buf[0]]);
+	if (pnum < 0 || pnum >= MAX_PLAYERS)
 		Error("multi_send_data_direct: Illegal player num: %i\n", pnum);
 
 	switch (multi_protocol)
 	{
 #ifdef USE_UDP
 		case MULTI_PROTO_UDP:
-			net_udp_send_mdata_direct((ubyte *)multibuf, len, pnum, priority);
+			net_udp_send_mdata_direct(buf, len, pnum, priority);
 			break;
 #endif
 		default:
@@ -5802,6 +5802,10 @@ void multi_do_light (const ubyte *buf)
 	ubyte sides=*(char *)(buf+5);
 
 	seg = GET_INTEL_INT(buf + 1);
+	if (seg < 0 || seg > Highest_segment_index) {
+		con_printf(CON_URGENT, "multi_do_light: invalid segment %d (highest %d)\n", seg, Highest_segment_index);
+		return;
+	}
 	for (i=0;i<6;i++)
 	{
 		if ((sides & (1<<i)))
