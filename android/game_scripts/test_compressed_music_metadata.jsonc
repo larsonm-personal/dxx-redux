@@ -31,14 +31,14 @@
     {"action": "skip_briefing", "timeout_ms": 20000},
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
     {"action": "assert", "expect": {
-        "music.name": {"contains": "Crescent"},
-        "music.tracks[0].name": {"contains": "Crescent"},
-        "music.tracks[1].name": {"contains": "Emperor Unknown"},
-        "music.tracks[8].name": {"contains": "Eon Forged"}
+        "music.name": "nightsurfer - Crescent",
+        "music.tracks[0].name": "nightsurfer - Crescent",
+        "music.tracks[1].name": "Vertigo Fox - Emperor Unknown",
+        "music.tracks[8].name": "Vertigo Fox - Eon Forged"
     }},
     {"action": "music_control", "operation": "play", "track": 6},
     {"action": "wait_ms", "ms": 250},
-    {"action": "assert", "expect": {"music.name": {"contains": "Emperor Unknown"}}},
+    {"action": "assert", "expect": {"music.name": "Vertigo Fox - Emperor Unknown"}},
     {"action": "enter_launcher"},
     {"action": "delete_mod", "mod_file": "castaway_redux.zip"},
     {"action": "log", "message": "Tagged compressed mission music metadata passed"}

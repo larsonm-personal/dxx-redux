@@ -93,7 +93,10 @@ static void mission_embedded_names_load(void)
 			audio_tag_metadata metadata;
 			audio_tag_metadata_init(&metadata);
 			audio_tag_metadata_parse_physfs(filename, &metadata);
-			snprintf(display_name, sizeof(display_name), "%s", metadata.display_name);
+			if (metadata.artist[0] && metadata.title[0])
+				snprintf(display_name, sizeof(display_name), "%s - %s", metadata.artist, metadata.title);
+			else
+				snprintf(display_name, sizeof(display_name), "%s", metadata.display_name);
 			audio_tag_metadata_free(&metadata);
 		} else {
 			midi_metadata metadata;
