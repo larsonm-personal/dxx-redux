@@ -22,6 +22,7 @@
 #   .\test_lan.ps1 -GuidebotHostObserver
 #   .\test_lan.ps1 -GuidebotSlotRemapRestore
 #   .\test_lan.ps1 -HostMigration
+#   .\test_lan.ps1 -SpewRecovery
 #   .\test_lan.ps1 -UseRelay
 #   .\test_lan.ps1 -SkipBuild
 
@@ -33,6 +34,7 @@ param(
     [switch]$GuidebotHostObserver,
     [switch]$GuidebotSlotRemapRestore,
     [switch]$HostMigration,
+    [switch]$SpewRecovery,
     [int]$TimeoutSeconds = 120
 )
 
@@ -808,6 +810,41 @@ function Set-DeviceCoopRestoreSlot {
     return $actual -and $actual.Trim() -eq $Slot.ToString()
 }
 
+function Invoke-SpewRecoveryScenario {
+    Write-Status "--- Death spew, process loss and repeated in-game rejoin ---" "White"
+    if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName "test_coop_recovery_host.jsonc")) { return $false }
+    if (-not (Start-DeviceGameAutomation -Serial $EMU2 -ScriptName "test_coop_recovery_drop.jsonc")) { return $false }
+    $dropped = Wait-ForCondition -Description "host records real death spew" -TimeoutSec 30 -PollMs 500 -Condition {
+        $intro = Get-GameIntrospection -Serial $EMU1
+        if (-not $intro -or $intro.multiplayer.recovery.live -le 0) { return $false }
+        $hostPlayer = @($intro.multiplayer.players | Where-Object { $_.is_me })[0]
+        return $hostPlayer.homing_ammo -eq 4
+    }
+    if (-not $dropped) { return $false }
+    for ($attempt = 0; $attempt -lt 2; $attempt++) {
+        Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @("shell", "am", "force-stop", $PACKAGE) -Seconds 10 | Out-Null
+        $absent = Wait-ForCondition -Description "host notices disconnected client" -TimeoutSec 60 -PollMs 1000 -Condition {
+            $intro = Get-GameIntrospection -Serial $EMU1
+            return (Get-IntroNumConnected -Intro $intro) -eq 1
+        }
+        if (-not $absent -or -not (Start-SetupActivity -Serial $EMU2)) { return $false }
+        Send-MpCommand -Serial $EMU2 -Command "lan_launch" -Extras $joinExtras
+        $recovered = Wait-ForCondition -Description "rejoin restores gear exactly once (attempt $attempt)" -TimeoutSec 60 -PollMs 1000 -Condition {
+            $h = Get-GameIntrospection -Serial $EMU1
+            $c = Get-GameIntrospection -Serial $EMU2
+            if (-not $h -or -not $c -or -not $c.in_game -or (Get-IntroNumConnected -Intro $h) -ne 2) { return $false }
+            $p = @($c.multiplayer.players | Where-Object { $_.is_me })[0]
+            $hostPlayer = @($h.multiplayer.players | Where-Object { $_.is_me })[0]
+            return $hostPlayer.homing_ammo -eq 4 -and $p.homing_ammo -eq 2 -and ($p.primary_flags -band 8) -ne 0 -and
+            $h.multiplayer.recovery.live -eq 0 -and $h.multiplayer.recovery.world_objects -eq 0 -and
+            $c.multiplayer.recovery.world_objects -eq 0
+        }
+        if (-not $recovered) { return $false }
+    }
+    Write-Status "PASS: gear returned once, no duplicate world spew after two process restarts" "Green"
+    return $true
+}
+
 function Invoke-GuidebotSlotRemapRestoreScenario {
     Write-Status ""
     Write-Status "--- Guide-Bot slot-remapped coop restore scenario ---" "White"
@@ -845,7 +882,7 @@ function Invoke-GuidebotSlotRemapRestoreScenario {
             "shell", "am", "force-stop", $PACKAGE
         ) -Seconds 10 | Out-Null
         Adb-Dev-Timeout -Serial $emu -AdbArgs @(
-            "shell", "run-as", $PACKAGE, "rm", "-f", "files/file_sets.json"
+            "shell", "run-as", $PACKAGE, "rm", "-f", "files/file_sets.json", "files/introspect.json"
         ) -Seconds 5 | Out-Null
     }
 
@@ -1390,6 +1427,10 @@ try {
     }
     if ($testPassed -and $HostMigration) {
         $testPassed = Invoke-HostMigrationScenario
+    }
+
+    if ($testPassed -and $SpewRecovery) {
+        $testPassed = Invoke-SpewRecoveryScenario
     }
 
     # Stop logcat capture

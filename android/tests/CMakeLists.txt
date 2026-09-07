@@ -64,6 +64,16 @@ target_include_directories(
     PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}" "${DXX_TEST_SHARED_SOURCE_DIR}/coop"
             ${PHYSFS_INCLUDE_DIR})
 
+add_executable(test_coop_recovery test_coop_recovery.c
+                                  "${DXX_TEST_SHARED_SOURCE_DIR}/coop/coop_recovery.c")
+if(DXX_TEST_GAME STREQUAL "d2")
+    target_compile_definitions(test_coop_recovery PRIVATE DXX_BUILD_DESCENT_II=1)
+endif()
+target_include_directories(
+    test_coop_recovery PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}" "${DXX_TEST_SHARED_SOURCE_DIR}/coop"
+                               ${PHYSFS_INCLUDE_DIR} ${SDL_INCLUDE_DIR})
+set_property(TARGET test_coop_recovery PROPERTY C_STANDARD 11)
+
 add_executable(test_hud_layout test_hud_layout.c)
 target_include_directories(test_hud_layout PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
 
@@ -332,6 +342,7 @@ set(DXX_HOST_TEST_TARGETS
     test_coop_indicator_lines_math
     test_coop_warp_policy
     test_coop_powerup_duplication
+    test_coop_recovery
     test_hud_layout
     test_homing_compat
     test_android_save_meta

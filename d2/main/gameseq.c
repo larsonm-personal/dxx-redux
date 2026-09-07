@@ -108,6 +108,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef ANDROID
 #include "coop/coop_level_restart.h"
 #include "coop/coop_powerup_duplication.h"
+#include "coop/coop_recovery.h"
 #include "track_names.h"
 #include "android_crash_handler.h"
 #include "android_screen_advance.h"
@@ -540,6 +541,9 @@ void init_player_stats_new_ship(ubyte pnum)
 		Player_is_dead = 0;
 		Player_exploded = 0;
 		Player_eggs_dropped = 0;
+#ifdef __ANDROID__
+		coop_recovery_alive(pnum);
+#endif
 
 		int delete_camera = 1; 
 #ifdef NETWORK	
@@ -1854,6 +1858,7 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 	const long long init_profile_start_us = android_profile_monotonic_us();
 	long long init_profile_before_load_us;
 	long long init_profile_after_load_us;
+	coop_recovery_level_leave();
 	coop_powerup_duplication_reset();
 	if (Game_mode & GM_MULTI_COOP) {
 		COOPLOG("StartNewLevelSub begin: game=d2 requested=%d current=%d page=%d players=%d master=%d",

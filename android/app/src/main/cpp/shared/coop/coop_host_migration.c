@@ -10,6 +10,7 @@
 #include "console.h"
 #include "coop_host_migration_policy.h"
 #include "coop_level_restart.h"
+#include "coop_recovery.h"
 #include "cntrlcen.h"
 #include "game.h"
 #include "gameseq.h"
@@ -91,6 +92,7 @@ int coop_host_migration_handle_disconnect(int disconnected_player)
 	if (decision.action == COOP_HOST_MIGRATION_LOCAL_HOST) {
 		HUD_init_message_literal(HM_MULTI, "You are now the game host");
 		coop_host_migration_reset_object_owners((int8_t *) object_owner, MAX_OBJECTS);
+		coop_recovery_host_changed();
 		multi_powcap_count_powerups_in_mine();
 		coop_host_migration_write_metadata();
 		/* Kotlin replaces the client proxy with a host-mode loopback proxy. */

@@ -103,6 +103,7 @@ enum object_type_t
 #define OF_SILENT           8   // this makes no sound when it hits a wall.  Added by MK for weapons, if you extend it to other types, do it completely!
 #define OF_ATTACHED         16  // this object is a fireball attached to another object
 #define OF_HARMLESS         32  // this object does no damage.  Added to make quad lasers do 1.5 damage as normal lasers.
+#define OF_COOP_RECOVERY 128 // Android coop death spew requires host ownership transfer
 #define OF_PLAYER_DROPPED   64  // this object was dropped by the player...
 
 void update_all_robot_location_info_with_view(const vms_vector *viewer_eye, const vms_matrix *view_orient);

@@ -62,6 +62,7 @@
 #include "android_crash_handler.h"
 #include "coop_indicator_lines.h"
 #include "coop/coop_powerup_duplication.h"
+#include "coop/coop_recovery.h"
 #include "coop/coop_player_session.h"
 #include "net_udp_initial_sync_retry.h"
 #include <android/log.h>
@@ -2610,7 +2611,7 @@ void net_udp_send_objects(void)
 
 #ifdef __ANDROID__
 			/* android port: restore cached inventory for returning coop players */
-			if (Game_mode & GM_MULTI_COOP)
+			if ((Game_mode & GM_MULTI_COOP) && !UDP_sync_player.player.observer)
 				coop_send_restore_inventory(player_num);
 #endif
 
@@ -8261,7 +8262,10 @@ void net_udp_send_extras ()
 		multi_send_bounty();
 #ifdef __ANDROID__
 	if (Network_sending_extras==1 && Game_mode & GM_MULTI_COOP)
+	{
 		coop_powerup_duplication_send_snapshot(Player_joining_extras);
+		coop_recovery_send_snapshot(Player_joining_extras);
+	}
 #endif
 
 	Network_sending_extras--;

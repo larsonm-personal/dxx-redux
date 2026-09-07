@@ -3843,6 +3843,37 @@ extern "C" void game_automate_tick(void)
 						break;
 					}
 				}
+			} else if (s.field == "recovery_test_collect_homing") {
+				bool found = false;
+				if (ConsoleObject && (Game_mode & GM_MULTI_COOP)) {
+					for (int n = 0; n <= Highest_object_index; n++) {
+						object *powerup = &Objects[n];
+						if (powerup->type != OBJ_POWERUP || powerup->id != POW_HOMING_AMMO_4 ||
+						    !(powerup->flags & OF_COOP_RECOVERY) || (powerup->flags & OF_SHOULD_BE_DEAD)) continue;
+						vms_vector position = ConsoleObject->pos;
+						ConsoleObject->pos = powerup->pos;
+						collide_player_and_powerup(ConsoleObject, powerup, &powerup->pos);
+						ConsoleObject->pos = position;
+						found = true;
+						break;
+					}
+				}
+				if (!found) {
+					stop_script_fail("recovery_test_collect_homing: no tracked homing pack");
+					break;
+				}
+			} else if (s.field == "recovery_test_inventory") {
+				if (!ConsoleObject || !(Game_mode & GM_MULTI_COOP)) {
+					stop_script_fail("recovery_test_inventory: coop game is not running");
+					break;
+				}
+				Players[Player_num].primary_weapon_flags = 1 | (1 << PLASMA_INDEX);
+				Players[Player_num].secondary_weapon_flags = 1 | (1 << HOMING_INDEX);
+				memset(Players[Player_num].secondary_ammo, 0, sizeof(Players[Player_num].secondary_ammo));
+				Players[Player_num].secondary_ammo[HOMING_INDEX] = 6;
+				Players[Player_num].laser_level = 2;
+				Players[Player_num].flags |= PLAYER_FLAGS_QUAD_LASERS;
+				multi_send_ship_status();
 			} else if (s.field == "damage_player") {
 				if (Screen_mode != SCREEN_GAME || Game_wind == NULL || ConsoleObject == NULL) {
 					stop_script_fail("damage_player: game is not running");

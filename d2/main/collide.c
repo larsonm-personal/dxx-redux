@@ -63,6 +63,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "multi.h"
 #ifdef __ANDROID__
 #include "coop/coop_powerup_duplication.h"
+#include "coop/coop_recovery.h"
 #endif
 #endif
 #include "cntrlcen.h"
@@ -2184,7 +2185,14 @@ static void drop_player_death_mines(object *playerobj, int weapon_id, int mine_c
 			newseg = playerobj->segnum;
 		}
 		if (newseg != -1)
+			{
+#ifdef __ANDROID__
+			int created = Laser_create_new(&randvec, &tvec, newseg, playerobj - Objects, weapon_id, 0);
+			coop_recovery_consume_mine(playerobj->id, weapon_id == SUPERPROX_ID ? SMART_MINE_INDEX : PROXIMITY_INDEX, created);
+#else
 			Laser_create_new(&randvec, &tvec, newseg, playerobj - Objects, weapon_id, 0);
+#endif
+		}
 	}
 }
 
@@ -2195,6 +2203,10 @@ void drop_player_eggs_remote(object *playerobj, ubyte remote)
 		int	pnum = playerobj->id;
 		int	objnum;
 		int	vulcan_ammo=0;
+
+#ifdef __ANDROID__
+		coop_recovery_begin_drop(pnum);
+#endif
 
 		// -- Items_destroyed = 0;
 
@@ -2960,6 +2972,9 @@ void collide_player_and_powerup( object * playerobj, object * powerup, vms_vecto
 		if (input_demo_replay_powerup_probe_active())
 			input_demo_log_replay_powerup_probe_before(powerup, energy_before, shields_before);
 
+		#ifdef __ANDROID__
+		if (coop_recovery_pickup(powerup)) return;
+		#endif
 		powerup_used = do_powerup(powerup);
 		if (input_demo_replay_powerup_probe_active())
 			input_demo_log_replay_powerup_probe_after(powerup, powerup_used, energy_before,

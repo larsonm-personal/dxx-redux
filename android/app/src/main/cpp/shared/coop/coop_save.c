@@ -15,6 +15,7 @@
 #include "coop_level_restart.h"
 #include "coop_player_session.h"
 #include "coop_powerup_duplication.h"
+#include "coop_recovery.h"
 #include "coop_restore_remap.h"
 
 #include "player.h"
@@ -348,6 +349,7 @@ void coop_snapshot_player(int pnum, coop_player_record *rec)
 	rec->secondary_weapon = p->secondary_weapon;
 #ifdef DXX_BUILD_DESCENT_II
 	rec->afterburner_charge = p->afterburner_charge;
+	rec->omega_charge = coop_recovery_omega(pnum);
 #endif
 	rec->kill_goal_count = p->KillGoalCount;
 	for (i = 0; i < MAX_PRIMARY_WEAPONS && i < COOP_SAVE_MAX_WEAPONS; i++)
@@ -371,6 +373,7 @@ static int coop_build_save_metadata(coop_save_metadata *meta)
 	if (!meta || !(Game_mode & GM_MULTI_COOP))
 		return 0;
 
+	coop_recovery_frame();
 	memset(meta, 0, sizeof(*meta));
 	meta->tag = COOP_SAVE_META_TAG;
 	meta->version = COOP_SAVE_META_VER;
@@ -385,11 +388,17 @@ static int coop_build_save_metadata(coop_save_metadata *meta)
 	meta->duplicate_energy_shields =
 	    Netgame.DuplicateEnergyShields ? 1 : 0;
 	coop_write_metadata_extra(meta);
+	meta->recovery_count = (uint32_t) coop_recovery_count();
+	for (i = 0; i < MAX_PLAYERS; i++) {
+		meta->recovery_revisions[i] = coop_recovery_player_revision(i);
+		meta->recovery_lives[i] = coop_recovery_life(i);
+	}
 
 	meta->num_active_players = 0;
 	for (i = 0; i < MAX_PLAYERS; i++) {
 		if (Players[i].connected == CONNECT_PLAYING) {
 			coop_snapshot_player(i, &meta->active_players[meta->num_active_players]);
+			coop_recovery_departure_record(i, &meta->active_players[meta->num_active_players]);
 			meta->num_active_players++;
 		}
 	}
@@ -409,6 +418,8 @@ static int coop_write_save_payload(rewind_file *file)
 	const coop_powerup_collection *items =
 	    coop_powerup_duplication_data();
 	size_t items_size;
+	size_t recovery_size = coop_recovery_count() * sizeof(coop_recovery_item);
+	const coop_recovery_item *recovery = coop_recovery_data();
 	coop_save_metadata meta;
 	coop_save_footer footer;
 	uint32_t checksum = 2166136261u;
@@ -416,7 +427,8 @@ static int coop_write_save_payload(rewind_file *file)
 	if (!file || !coop_build_save_metadata(&meta) ||
 	    count > UINT32_MAX ||
 	    count > (SIZE_MAX - sizeof(meta)) / sizeof(*items) ||
-	    sizeof(meta) + count * sizeof(*items) > UINT32_MAX)
+	    recovery_size > UINT32_MAX ||
+	    sizeof(meta) + count * sizeof(*items) > UINT32_MAX - recovery_size)
 		return 0;
 	if (!meta.duplicate_energy_shields && count)
 		return 0;
@@ -424,15 +436,17 @@ static int coop_write_save_payload(rewind_file *file)
 	memset(&footer, 0, sizeof(footer));
 	footer.tag = COOP_SAVE_FOOTER_TAG;
 	footer.version = COOP_SAVE_META_VER;
-	footer.payload_size = (uint32_t) (sizeof(meta) + items_size);
+	footer.payload_size = (uint32_t) (sizeof(meta) + items_size + recovery_size);
 	footer.collection_count = (uint32_t) count;
 	checksum = coop_save_checksum(&meta, sizeof(meta), checksum);
 	if (items_size)
 		checksum = coop_save_checksum(items, items_size, checksum);
+	if (recovery_size) checksum = coop_save_checksum(recovery, recovery_size, checksum);
 	footer.checksum = checksum;
 	if (rewind_file_write(file, &meta, sizeof(meta), 1) != 1 ||
 	    (items_size &&
 	     rewind_file_write(file, items, items_size, 1) != 1) ||
+	    (recovery_size && rewind_file_write(file, recovery, recovery_size, 1) != 1) ||
 	    rewind_file_write(file, &footer, sizeof(footer), 1) != 1)
 		return 0;
 	COOP_SAVE_LOG(CON_DEBUG,
@@ -466,6 +480,8 @@ int coop_read_save_metadata_rewind(rewind_file *file,
 	PHYSFS_sint64 payload_start;
 	coop_save_footer footer;
 	coop_powerup_collection *items = NULL;
+	coop_recovery_item *recovery = NULL;
+	size_t recovery_size;
 	size_t items_size;
 	uint32_t checksum = 2166136261u;
 	int result = 0;
@@ -482,11 +498,7 @@ int coop_read_save_metadata_rewind(rewind_file *file,
 	    footer.payload_size < sizeof(*meta) ||
 	    footer.collection_count >
 	        (footer.payload_size - sizeof(*meta)) /
-	            sizeof(coop_powerup_collection) ||
-	    footer.payload_size !=
-	        sizeof(*meta) +
-	            footer.collection_count *
-	                sizeof(coop_powerup_collection))
+	            sizeof(coop_powerup_collection))
 		goto done;
 	payload_start = trailer_end - (PHYSFS_sint64) sizeof(footer) -
 	                footer.payload_size;
@@ -502,9 +514,17 @@ int coop_read_save_metadata_rewind(rewind_file *file,
 		    rewind_file_read(file, items, items_size, 1) != 1)
 			goto done;
 	}
+	recovery_size = footer.payload_size - sizeof(*meta) - items_size;
+	if (meta->recovery_count > recovery_size / sizeof(*recovery) ||
+	    recovery_size != meta->recovery_count * sizeof(*recovery)) goto done;
+	if (recovery_size) {
+		recovery = (coop_recovery_item *) malloc(recovery_size);
+		if (!recovery || rewind_file_read(file, recovery, recovery_size, 1) != 1) goto done;
+	}
 	checksum = coop_save_checksum(meta, sizeof(*meta), checksum);
 	if (items_size)
 		checksum = coop_save_checksum(items, items_size, checksum);
+	if (recovery_size) checksum = coop_save_checksum(recovery, recovery_size, checksum);
 	if (checksum != footer.checksum ||
 	    meta->tag != COOP_SAVE_META_TAG ||
 	    meta->version != COOP_SAVE_META_VER ||
@@ -526,7 +546,8 @@ int coop_read_save_metadata_rewind(rewind_file *file,
 		goto done;
 	}
 	if (!coop_powerup_duplication_set_pending(
-	        items, footer.collection_count))
+	        items, footer.collection_count) ||
+	    !coop_recovery_set_pending(recovery, meta->recovery_count))
 		goto done;
 	COOP_SAVE_LOG(CON_DEBUG,
 	              "coop_save: read metadata trailer (ver=%d, %d active, %d absent, %u pickups)\n",
@@ -535,6 +556,7 @@ int coop_read_save_metadata_rewind(rewind_file *file,
 	result = 1;
 done:
 	free(items);
+	free(recovery);
 	rewind_file_seek(file, saved_pos);
 	return result;
 }
@@ -591,11 +613,13 @@ void coop_track_absent_player(int pnum)
 		return;
 
 	coop_snapshot_player(pnum, &rec);
+	coop_recovery_departure_record(pnum, &rec);
 	rec.was_connected = 0;
 
 	for (i = 0; i < coop_num_absent; i++) {
 		if ((rec.client_id[0] && strncmp(coop_absent_list[i].client_id, rec.client_id, COOP_CLIENT_ID_LEN) == 0) ||
-		    strncasecmp(coop_absent_list[i].callsign, rec.callsign, COOP_CALLSIGN_LEN) == 0) {
+		    ((!rec.client_id[0] || !coop_absent_list[i].client_id[0]) &&
+		     strncasecmp(coop_absent_list[i].callsign, rec.callsign, COOP_CALLSIGN_LEN) == 0)) {
 			memcpy(&coop_absent_list[i], &rec, sizeof(rec));
 			coop_absent_source_levels[i] = (int16_t) Current_level_num;
 			COOP_SAVE_LOG(CON_NORMAL, "coop_save: updated absent player '%s' (slot %d)\n",
@@ -605,6 +629,7 @@ void coop_track_absent_player(int pnum)
 	}
 
 	if (coop_num_absent >= COOP_MAX_REMEMBERED_PLAYERS) {
+		coop_recovery_remember_record(&coop_absent_list[0]);
 		memmove(&coop_absent_list[0], &coop_absent_list[1],
 		        sizeof(coop_player_record) * (COOP_MAX_REMEMBERED_PLAYERS - 1));
 		memmove(&coop_absent_source_levels[0], &coop_absent_source_levels[1],
@@ -659,7 +684,8 @@ const coop_player_record *coop_find_absent_player_with_level(const char *callsig
 
 	if (callsign && callsign[0]) {
 		for (i = 0; i < coop_num_absent; i++) {
-			if (strncasecmp(coop_absent_list[i].callsign, callsign, COOP_CALLSIGN_LEN) == 0) {
+			if ((!client_id || !client_id[0] || !coop_absent_list[i].client_id[0]) &&
+			    strncasecmp(coop_absent_list[i].callsign, callsign, COOP_CALLSIGN_LEN) == 0) {
 				if (source_level)
 					*source_level = coop_absent_source_levels[i];
 				return &coop_absent_list[i];
@@ -748,6 +774,7 @@ void coop_apply_record_to_player(int pnum, const coop_player_record *rec,
 	int i;
 	player *p = &Players[pnum];
 
+	coop_recovery_set_omega(pnum, rec->omega_charge);
 	p->energy = rec->energy;
 	p->shields = rec->shields;
 	p->score = rec->score;
@@ -760,7 +787,7 @@ void coop_apply_record_to_player(int pnum, const coop_player_record *rec,
 	for (i = 0; i < MAX_SECONDARY_WEAPONS && i < COOP_SAVE_MAX_WEAPONS; i++)
 		p->secondary_ammo[i] = rec->secondary_ammo[i];
 
-	p->flags |= (rec->flags & coop_restore_flags_durable());
+	p->flags = (p->flags & ~coop_restore_flags_durable()) | (rec->flags & coop_restore_flags_durable());
 	if (same_level)
 		p->flags |= (rec->flags & COOP_RESTORE_FLAGS_KEYS);
 
@@ -1020,10 +1047,9 @@ static void coop_append_other_slots(char *buf, int *off, int buf_size,
 	}
 }
 
-#define COOP_PROGRESS_INV_TAG    0x43505249
-#define COOP_PROGRESS_INV_VER    2
-#define COOP_PROGRESS_INV_V1_HDR 18
-#define COOP_PROGRESS_INV_V2_HDR 22
+#define COOP_PROGRESS_INV_TAG 0x43505249
+#define COOP_PROGRESS_INV_VER 3
+#define COOP_PROGRESS_INV_HDR 26
 
 static uint32_t coop_progress_inventory_checksum(const void *data, size_t size)
 {
@@ -1074,10 +1100,12 @@ static void coop_write_progress_inventory(void)
 static void coop_write_progress_inventory_file(const char *filename)
 {
 	PHYSFS_file *fp;
-	coop_player_record records[MAX_PLAYERS];
+	coop_player_record records[MAX_PLAYERS + COOP_MAX_REMEMBERED_PLAYERS];
 	uint32_t tag = COOP_PROGRESS_INV_TAG;
 	uint16_t ver = COOP_PROGRESS_INV_VER;
 	uint32_t checksum;
+	uint32_t recovery_count = (uint32_t) coop_recovery_count();
+	const coop_recovery_item *recovery = coop_recovery_data();
 	int16_t level = (int16_t) Current_level_num;
 	uint8_t num = 0;
 	char mission[9];
@@ -1102,16 +1130,21 @@ static void coop_write_progress_inventory_file(const char *filename)
 		if (Players[i].connected != CONNECT_PLAYING)
 			continue;
 		coop_snapshot_player(i, &records[num]);
+		coop_recovery_departure_record(i, &records[num]);
 		num++;
 	}
+	for (i = 0; i < coop_num_absent; i++) records[num++] = coop_absent_list[i];
 	checksum = coop_progress_inventory_checksum(records, (size_t) num * sizeof(records[0]));
+	checksum = coop_save_checksum(recovery, (size_t) recovery_count * sizeof(*recovery), checksum);
 	write_ok = write_ok && PHYSFS_write(fp, &tag, 4, 1) == 1;
 	write_ok = write_ok && PHYSFS_write(fp, &ver, 2, 1) == 1;
 	write_ok = write_ok && PHYSFS_write(fp, mission, 9, 1) == 1;
 	write_ok = write_ok && PHYSFS_write(fp, &level, 2, 1) == 1;
 	write_ok = write_ok && PHYSFS_write(fp, &num, 1, 1) == 1;
+	write_ok = write_ok && PHYSFS_write(fp, &recovery_count, 4, 1) == 1;
 	write_ok = write_ok && PHYSFS_write(fp, &checksum, 4, 1) == 1;
 	write_ok = write_ok && PHYSFS_write(fp, records, sizeof(records[0]), num) == num;
+	write_ok = write_ok && (!recovery_count || PHYSFS_write(fp, recovery, sizeof(*recovery), recovery_count) == recovery_count);
 	write_ok = write_ok && PHYSFS_flush(fp);
 	write_ok = PHYSFS_close(fp) && write_ok;
 	if (!write_ok || !coop_progress_inventory_publish(temporary, filename)) {
@@ -1132,10 +1165,12 @@ int coop_load_progress_inventory(void)
 	uint32_t tag;
 	uint16_t ver;
 	uint32_t checksum = 0;
+	uint32_t recovery_count = 0;
+	coop_recovery_item *recovery = NULL;
 	char mission[9];
 	int16_t level;
 	uint8_t num;
-	coop_player_record records[MAX_PLAYERS];
+	coop_player_record records[MAX_PLAYERS + COOP_MAX_REMEMBERED_PLAYERS];
 	PHYSFS_sint64 expected_length;
 	int i;
 	int j;
@@ -1166,7 +1201,7 @@ int coop_load_progress_inventory(void)
 		PHYSFS_close(fp);
 		return 0;
 	}
-	if (PHYSFS_read(fp, &ver, 2, 1) != 1 || (ver != 1 && ver != COOP_PROGRESS_INV_VER)) {
+	if (PHYSFS_read(fp, &ver, 2, 1) != 1 || ver != COOP_PROGRESS_INV_VER) {
 		PHYSFS_close(fp);
 		return 0;
 	}
@@ -1178,24 +1213,41 @@ int coop_load_progress_inventory(void)
 		PHYSFS_close(fp);
 		return 0;
 	}
-	if (PHYSFS_read(fp, &num, 1, 1) != 1 || num == 0 || num > MAX_PLAYERS) {
+	if (PHYSFS_read(fp, &num, 1, 1) != 1 || num == 0 || num > MAX_PLAYERS + COOP_MAX_REMEMBERED_PLAYERS) {
 		PHYSFS_close(fp);
 		return 0;
 	}
-	if (ver >= 2 && PHYSFS_read(fp, &checksum, 4, 1) != 1) {
+	if (PHYSFS_read(fp, &recovery_count, 4, 1) != 1 || PHYSFS_read(fp, &checksum, 4, 1) != 1 ||
+	    recovery_count > UINT32_MAX / sizeof(*recovery)) {
 		PHYSFS_close(fp);
 		return 0;
 	}
-	expected_length = (ver == 1 ? COOP_PROGRESS_INV_V1_HDR : COOP_PROGRESS_INV_V2_HDR) +
-	                  (PHYSFS_sint64) num * sizeof(records[0]);
+	expected_length = COOP_PROGRESS_INV_HDR + (PHYSFS_sint64) num * sizeof(records[0]) +
+	                  (PHYSFS_sint64) recovery_count * sizeof(*recovery);
 	if (PHYSFS_fileLength(fp) != expected_length ||
-	    PHYSFS_read(fp, records, sizeof(records[0]), num) != num ||
-	    (ver >= 2 && checksum != coop_progress_inventory_checksum(records, (size_t) num * sizeof(records[0])))) {
+	    PHYSFS_read(fp, records, sizeof(records[0]), num) != num) {
 		PHYSFS_close(fp);
 		return 0;
 	}
-	if (!PHYSFS_close(fp))
-		return 0;
+	if (recovery_count) {
+		recovery = (coop_recovery_item *) malloc((size_t) recovery_count * sizeof(*recovery));
+		if (!recovery || PHYSFS_read(fp, recovery, sizeof(*recovery), recovery_count) != recovery_count) {
+			free(recovery);
+			PHYSFS_close(fp);
+			return 0;
+		}
+	}
+	int valid = PHYSFS_close(fp) && checksum == coop_save_checksum(recovery,
+	                                                               (size_t) recovery_count * sizeof(*recovery),
+	                                                               coop_progress_inventory_checksum(records, (size_t) num * sizeof(records[0])));
+	/* A progress resume creates a new mine; none of the old spew is present */
+	for (uint32_t n = 0; n < recovery_count; n++) {
+		if (recovery[n].state == COOP_RECOVERY_LIVE) recovery[n].state = COOP_RECOVERY_CREDIT;
+		recovery[n].object_index = recovery[n].remote_index = -1;
+	}
+	if (valid) valid = coop_recovery_set_pending(recovery, recovery_count);
+	free(recovery);
+	if (!valid) return 0;
 
 	if (strncasecmp(mission, Current_mission_filename, 8) != 0) {
 		COOP_SAVE_LOG(CON_NORMAL, "coop_save: progress inventory mission mismatch ('%s' vs '%s')\n",
@@ -1229,13 +1281,18 @@ int coop_load_progress_inventory(void)
 			host_record = i;
 		}
 	}
-	if (host_record < 0 || coop_num_absent + num - 1 > COOP_MAX_REMEMBERED_PLAYERS)
+	if (host_record < 0 || !coop_recovery_apply_pending())
 		return 0;
+	coop_recovery_prepare_rejoin(Player_num, &records[host_record]);
 	coop_apply_record_to_player(Player_num, &records[host_record], 0);
 	host_restored = 1;
 	for (i = 0; i < num; ++i) {
 		if (i == host_record)
 			continue;
+		if (coop_num_absent >= COOP_MAX_REMEMBERED_PLAYERS) {
+			coop_recovery_remember_record(&records[i]);
+			continue;
+		}
 		records[i].was_connected = 0;
 		memcpy(&coop_absent_list[coop_num_absent], &records[i], sizeof(records[i]));
 		coop_absent_source_levels[coop_num_absent] = level;

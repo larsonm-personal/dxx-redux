@@ -83,6 +83,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "state_android_shared.h"
 #include "coop_save.h"
 #include "coop/coop_powerup_duplication.h"
+#include "coop/coop_recovery.h"
 #include "coop/coop_restore_remap.h"
 #include "coop_indicator_lines.h"
 #include "android_log.h"
@@ -3631,13 +3632,33 @@ int state_restore_all_sub(char *filename, int secret_restore)
 				coop_meta.num_active_players, coop_meta.num_absent_players);
 			Netgame.DuplicateEnergyShields =
 				coop_meta.duplicate_energy_shields;
-			if (!coop_powerup_duplication_apply_pending()) {
+			if (!coop_powerup_duplication_apply_pending() || !coop_recovery_apply_pending()) {
 				con_printf(CON_URGENT,
 					"coop_save: invalid per-player powerup state\n");
 				PHYSFS_close(fp);
 				return 0;
 			}
-			/* Repopulate the absent player list so returning players get inventory back */
+			/* Restore inventory revisions with the saved player slot mapping */
+            for (int rp = 0; rp < MAX_PLAYERS; rp++) {
+                int saved = coop_find_player_in_metadata(Players[rp].callsign,
+                    Netgame.players[rp].client_id, &coop_meta);
+                if (saved >= 0 && saved < 8) {
+                    coop_player_record record = coop_meta.active_players[saved];
+                    /* Restored ships are alive; do not resurrect inventory already in spew */
+                    coop_recovery_alive(rp);
+                    if (record.shields <= 0) {
+                        record.shields = i2f(100);
+                        record.energy = i2f(100);
+                    }
+                    coop_apply_record_to_player(rp, &record, 1);
+                    int old_slot = coop_meta.active_players[saved].original_slot;
+                    if (old_slot < MAX_PLAYERS) {
+                        coop_recovery_set_player_revision(rp, coop_meta.recovery_revisions[old_slot]);
+                        coop_recovery_set_life(rp, coop_meta.recovery_lives[old_slot]);
+                    }
+                }
+            }
+            /* Repopulate the absent player list so returning players get inventory back */
 			if (Game_mode & GM_MULTI_COOP)
 				coop_load_absent_from_metadata(&coop_meta);
 			coop_restore_player_spew_lifetimes();

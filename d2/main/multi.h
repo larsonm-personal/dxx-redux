@@ -61,7 +61,17 @@ extern int multi_protocol; // set and determinate used protocol
 #define MULTI_PROTO_UDP 1 // UDP protocol
 
 // What version of the multiplayer protocol is this? Increment each time something drastic changes in Multiplayer without the version number changes. Can be reset to 0 each time the version of the game changes
-#define MULTI_PROTO_VERSION 30018 // Redux 1.2 + synchronized boss HUD activation
+#ifdef __ANDROID__
+#define MULTI_PROTO_VERSION 30020 // Redux coop recovery ownership protocol
+#define MULTI_PLAYER_DROP_LENGTH 118
+#define MULTI_SHIP_STATUS_LENGTH 82
+#define MULTI_COOP_RESTORE_LENGTH 102
+#else
+#define MULTI_PROTO_VERSION 30018
+#define MULTI_PLAYER_DROP_LENGTH 106
+#define MULTI_SHIP_STATUS_LENGTH 70
+#define MULTI_COOP_RESTORE_LENGTH 86
+#endif
 
 // PROTOCOL VARIABLES AND DEFINES - END
 
@@ -99,10 +109,10 @@ extern int multi_protocol; // set and determinate used protocol
 	VALUE(MULTI_DEINVULN             , 2)	\
 	VALUE(MULTI_MENU_CHOICE          , 2)	\
 	VALUE(MULTI_ROBOT_POSITION       , 6+sizeof(shortpos))	\
-	VALUE(MULTI_PLAYER_EXPLODE        , 97+9)	\
+	VALUE(MULTI_PLAYER_EXPLODE        , MULTI_PLAYER_DROP_LENGTH)	\
 	VALUE(MULTI_BEGIN_SYNC            , 41)	\
 	VALUE(MULTI_DOOR_OPEN            , 5)	\
-	VALUE(MULTI_PLAYER_DROP          , 97+9)	\
+	VALUE(MULTI_PLAYER_DROP          , MULTI_PLAYER_DROP_LENGTH)	\
 	VALUE(MULTI_ROBOT_EXPLODE        , 9)	\
 	VALUE(MULTI_ROBOT_RELEASE        , 5)	\
 	VALUE(MULTI_ROBOT_FIRE           , 18)	\
@@ -150,12 +160,12 @@ extern int multi_protocol; // set and determinate used protocol
 	VALUE(MULTI_OBS_UPDATE           , 4 + 8*MAX_OBSERVERS)	\
 	VALUE(MULTI_DAMAGE               , 14)  \
 	VALUE(MULTI_REPAIR               , 11)  \
-	VALUE(MULTI_SHIP_STATUS          , 70)  \
+	VALUE(MULTI_SHIP_STATUS          , MULTI_SHIP_STATUS_LENGTH)  \
 	VALUE(MULTI_CREATE_EXPLOSION2    , 24)  \
 	VALUE(MULTI_WARP_TO_PLAYER       , 17)  \
 	VALUE(MULTI_COOP_PEER_STATUS     , 8)   \
 	VALUE(MULTI_ESCORT_OWNER         , 9)   \
-	VALUE(MULTI_COOP_RESTORE_INV     , 86)  \
+	VALUE(MULTI_COOP_RESTORE_INV     , MULTI_COOP_RESTORE_LENGTH)  \
 	VALUE(MULTI_REWIND_REQUEST       , 3)   \
 	VALUE(MULTI_REWIND_RESULT        , 4)   \
 	VALUE(MULTI_REWIND_SAVE_BEGIN    , MULTI_REWIND_SAVE_BEGIN_LEN)   \
@@ -170,6 +180,7 @@ extern int multi_protocol; // set and determinate used protocol
 	VALUE(MULTI_COOP_POWERUP_SNAPSHOT_END, 5)   \
 	VALUE(MULTI_REACTOR_PAUSE       , 7)   \
 	VALUE(MULTI_MATCEN_MODE         , 3 + MATCEN_MODE_MAX_CENTERS)   \
+	VALUE(MULTI_COOP_RECOVERY       , 160)   \
 	AFTER
 for_each_multiplayer_command(enum {, define_multiplayer_command, });
 

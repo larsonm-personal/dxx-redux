@@ -17,6 +17,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
  *
  */
 
+#include <stddef.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -552,6 +553,12 @@ multi_send_robot_position_sub(int objnum, int now)
 	shortpos sp;
 #endif
 
+	/* A robot can be deleted after its position was queued */
+	if (objnum < 0 || objnum > Highest_object_index || Objects[objnum].type != OBJ_ROBOT ||
+	    (Objects[objnum].flags & (OF_SHOULD_BE_DEAD | OF_EXPLODING)) ||
+	    Objects[objnum].segnum < 0 || Objects[objnum].segnum > Highest_segment_index)
+		return;
+
 	multibuf[loc] = MULTI_ROBOT_POSITION;  								loc += 1;
 	multibuf[loc] = Player_num;											loc += 1;
 	s = objnum_local_to_remote(objnum, (sbyte *)&multibuf[loc+2]);
@@ -869,6 +876,15 @@ multi_do_robot_position(const ubyte *buf)
 	remote_botnum = GET_INTEL_SHORT(buf + loc);
 	botnum = objnum_remote_to_local(remote_botnum, (sbyte)buf[loc+2]); loc += 3;
 	thief_mode = buf[loc + sizeof(shortpos)];
+
+	/* Validate remote coordinates before extract_shortpos indexes the mine */
+	int segment = GET_INTEL_SHORT(buf + loc + offsetof(shortpos, segment));
+	if (pnum < 0 || pnum >= MAX_PLAYERS || segment < 0 || segment > Highest_segment_index) {
+#ifdef __ANDROID__
+		COOPLOG("ignored invalid robot position: sender=%d robot=%d segment=%d", pnum, remote_botnum, segment);
+#endif
+		return;
+	}
 
 	if ((botnum < 0) || (botnum > Highest_object_index)) {
 		return;

@@ -46,6 +46,9 @@ extern "C" {
 #include "laser.h"
 #include "cntrlcen.h"
 #include "coop_save.h"
+#ifdef __ANDROID__
+#include "coop/coop_recovery.h"
+#endif
 #include "coop/coop_level_restart.h"
 #include "automap.h"
 #include "automap_metadata_overlay.h"
@@ -1857,9 +1860,33 @@ extern "C" char *game_introspect_get_state(void)
 				pl["shields"] = f2fl(Players[i].shields);
 				pl["energy"] = f2fl(Players[i].energy);
 				pl["is_me"] = (i == Player_num);
+				pl["primary_flags"] = Players[i].primary_weapon_flags;
+				pl["homing_ammo"] = Players[i].secondary_ammo[HOMING_INDEX];
+#ifdef __ANDROID__
+				pl["inventory_revision"] = coop_recovery_player_revision(i);
+				pl["inventory_life"] = coop_recovery_life(i);
+#endif
 				players_arr.push_back(std::move(pl));
 			}
 			mp["players"] = std::move(players_arr);
+#ifdef __ANDROID__
+			json recovery;
+			recovery["active"] = (bool) coop_recovery_active();
+			recovery["epoch"] = coop_recovery_epoch();
+			int live = 0, credit = 0, world = 0;
+			const coop_recovery_item *rows = coop_recovery_data();
+			for (size_t n = 0; n < coop_recovery_count(); n++) {
+				if (rows[n].state == COOP_RECOVERY_LIVE) live++;
+				if (rows[n].state == COOP_RECOVERY_CREDIT) credit++;
+			}
+			for (int n = 0; n <= Highest_object_index; n++)
+				if (Objects[n].type == OBJ_POWERUP && (Objects[n].flags & OF_COOP_RECOVERY) &&
+				    !(Objects[n].flags & OF_SHOULD_BE_DEAD)) world++;
+			recovery["live"] = live;
+			recovery["credit"] = credit;
+			recovery["world_objects"] = world;
+			mp["recovery"] = std::move(recovery);
+#endif
 			j["multiplayer"] = std::move(mp);
 		}
 	}

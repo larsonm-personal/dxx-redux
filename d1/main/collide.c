@@ -60,6 +60,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "multi.h"
 #ifdef __ANDROID__
 #include "coop/coop_powerup_duplication.h"
+#include "coop/coop_recovery.h"
 #endif
 #include "cntrlcen.h"
 #include "newdemo.h"
@@ -1261,7 +1262,14 @@ static void drop_player_death_mines(object *playerobj, int weapon_id, int mine_c
 			tvec = playerobj->pos;
 			newseg = playerobj->segnum;
 		}
-		Laser_create_new(&randvec, &tvec, newseg, playerobj - Objects, weapon_id, 0);
+		{
+#ifdef __ANDROID__
+			int created = Laser_create_new(&randvec, &tvec, newseg, playerobj - Objects, weapon_id, 0);
+			coop_recovery_consume_mine(playerobj->id, PROXIMITY_INDEX, created);
+#else
+			Laser_create_new(&randvec, &tvec, newseg, playerobj - Objects, weapon_id, 0);
+#endif
+		}
 	}
 }
 #endif
@@ -1272,6 +1280,10 @@ void drop_player_eggs_remote(object *playerobj, ubyte remote)
 		int	pnum = playerobj->id;
 		int	objnum;
 		int	vulcan_ammo=0;
+
+#ifdef __ANDROID__
+		coop_recovery_begin_drop(pnum);
+#endif
 
 		// Seed the random number generator so in net play the eggs will always
 		// drop the same way
@@ -1766,6 +1778,9 @@ void collide_player_and_powerup( object * player, object * powerup, vms_vector *
 			return;
 #endif
 
+		#ifdef __ANDROID__
+		if (coop_recovery_pickup(powerup)) return;
+		#endif
 		powerup_used = do_powerup(powerup);
 
 		if (powerup_used)	{

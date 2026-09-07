@@ -48,6 +48,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "morph.h"
 #include "cntrlcen.h"
 #include "powerup.h"
+#ifdef __ANDROID__
+#include "coop/coop_recovery.h"
+#endif
 #include "fuelcen.h"
 #include "endlevel.h"
 #include "sounds.h"
@@ -2366,6 +2369,9 @@ void object_move_one( object * obj )
 	}
 
 	if (obj->lifeleft < 0 ) {		// We died of old age
+#ifdef __ANDROID__
+		if (obj->type == OBJ_POWERUP) coop_recovery_expire(obj);
+#endif
 		obj->flags |= OF_SHOULD_BE_DEAD;
 		if ( obj->type==OBJ_WEAPON && Weapon_info[obj->id].damage_radius )
 			explode_badass_weapon(obj,&obj->pos);

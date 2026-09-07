@@ -1,0 +1,8 @@
+[
+    {"_info": {"games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {"in_game": "true", "multiplayer.num_connected": "2", "multiplayer.recovery.active": "true"}},
+    {"action": "set_debug", "field": "recovery_test_inventory", "value": "true", "post_delay_ms": 2000},
+    {"action": "set_debug", "field": "damage_player", "value": "500"},
+    {"action": "wait_for", "timeout_ms": 15000, "expect": {"player_dead": "true", "multiplayer.recovery.world_objects": {"gte": 1}}},
+    {"action": "log", "message": "Client died and created spew through the normal engine path"}
+]

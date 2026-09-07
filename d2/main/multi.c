@@ -67,6 +67,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef __ANDROID__
 #include "coop/coop_level_restart.h"
 #include "coop/coop_powerup_duplication.h"
+#include "coop/coop_recovery.h"
 #include "coop_save.h"
 #include "coop/coop_host_migration.h"
 #include "coop_warp.h"
@@ -932,6 +933,10 @@ int get_team_size(int team_num)
 void
 multi_new_game(void)
 {
+#ifdef __ANDROID__
+	coop_recovery_reset();
+	coop_clear_pending_restore_inventory();
+#endif
 	int i;
 
 	// Reset variables for a new net game
@@ -1484,6 +1489,8 @@ void multi_do_frame(void)
 	}
 
 #ifdef __ANDROID__
+	coop_apply_pending_restore_inventory();
+	coop_recovery_frame();
 	/* android port: auto-restore from coop auto-save (Phase 4) */
 	coop_arm_auto_restore();
 	coop_try_auto_restore();
@@ -2468,6 +2475,9 @@ multi_do_reappear(const ubyte *buf)
 	multi_make_ghost_player(Objects[objnum].id);
 	create_player_appearance_effect(&Objects[objnum]);
 	PKilledFlags[pnum]=0;
+#ifdef __ANDROID__
+	coop_recovery_alive(pnum);
+#endif
 }
 
 void
@@ -2486,6 +2496,10 @@ multi_do_player_explode(const ubyte *buf)
 
 	if ((pnum < 0) || (pnum >= N_players))
 		return;
+
+#ifdef __ANDROID__
+	if (coop_recovery_active() && (uint32_t) GET_INTEL_INT(buf + 114) < coop_recovery_life(pnum)) return;
+#endif
 
 #ifdef NETWORK
 	// If we are in the process of sending objects to a new player, reset that process
@@ -2558,6 +2572,11 @@ multi_do_player_explode(const ubyte *buf)
 		Objects[Net_create_objnums[i]].flags |= OF_SHOULD_BE_DEAD;
 	}
 
+#ifdef __ANDROID__
+	coop_recovery_set_omega(pnum, GET_INTEL_INT(buf + 110));
+	coop_recovery_drop(pnum, (uint32_t) GET_INTEL_INT(buf + 106), (uint32_t) GET_INTEL_INT(buf + 114));
+#endif
+
 	if (buf[0] == MULTI_PLAYER_EXPLODE)
 	{
 		explode_badass_player(objp);
@@ -2578,6 +2597,9 @@ multi_do_player_explode(const ubyte *buf)
 	{
 		multi_make_ghost_player(Objects[Players[pnum].objnum].id);
 		create_player_appearance_effect(&Objects[Players[pnum].objnum]);
+		#ifdef __ANDROID__
+		coop_recovery_alive(pnum);
+#endif
 		PKilledFlags[pnum] = 0;
 	}
 }
@@ -2773,7 +2795,7 @@ int is_recent_duplicate(const ubyte *buf) {
 }
 
 void
-multi_do_remobj(const ubyte *buf)
+multi_do_remobj(const ubyte *buf, int authenticated_sender)
 {
 	short objnum; // which object to remove
 	short local_objnum;
@@ -2804,6 +2826,12 @@ multi_do_remobj(const ubyte *buf)
 		return;
 	}
 
+#ifdef __ANDROID__
+	if (coop_recovery_active() && (Objects[local_objnum].flags & OF_COOP_RECOVERY) &&
+	    authenticated_sender != multi_who_is_master()) return;
+#else
+	(void) authenticated_sender;
+#endif
 	if (Network_send_objects && multi_objnum_is_past(local_objnum))
 	{
 		Network_send_objnum = -1;
@@ -3831,14 +3859,27 @@ multi_send_player_explode(char type)
 		map_objnum_local_to_local((short)Net_create_objnums[i]);
 	}
 
-	Net_create_loc = 0;
+
 
 	if (count > message_length[MULTI_PLAYER_EXPLODE])
 	{
 		Int3(); // See Rob
 	}
 
+	#ifdef __ANDROID__
+	PUT_INTEL_INT(multibuf + 106, coop_recovery_player_revision(Player_num));
+	PUT_INTEL_INT(multibuf + 110, coop_recovery_omega(Player_num));
+	PUT_INTEL_INT(multibuf + 114, coop_recovery_life(Player_num));
+#else
+	PUT_INTEL_INT(multibuf + 106, 0);
+	PUT_INTEL_INT(multibuf + 110, 0);
+	PUT_INTEL_INT(multibuf + 114, 0);
+#endif
 	multi_send_data(multibuf, message_length[MULTI_PLAYER_EXPLODE], 2);
+#ifdef __ANDROID__
+	coop_recovery_drop(Player_num, coop_recovery_player_revision(Player_num), coop_recovery_life(Player_num));
+#endif
+	Net_create_loc = 0;
 	if (Players[Player_num].flags & PLAYER_FLAGS_CLOAKED)
 		multi_send_decloak();
 	if (Game_mode & GM_MULTI_ROBOTS)
@@ -6749,21 +6790,40 @@ void multi_send_ship_status_for_frame()
 	PUT_INTEL_SHORT(multibuf + 67, Players[Player_num].primary_ammo[9]);
 	multibuf[69] = Players[Player_num].primary_weapon_flags >> 8;
 
+
+#ifdef __ANDROID__
+	PUT_INTEL_INT(multibuf + 70, coop_recovery_player_revision(Player_num));
+	PUT_INTEL_INT(multibuf + 78, coop_recovery_life(Player_num));
+#else
+	PUT_INTEL_INT(multibuf + 70, 0);
+	PUT_INTEL_INT(multibuf + 78, 0);
+#endif
+#ifdef __ANDROID__
+	PUT_INTEL_INT(multibuf + 74, coop_recovery_omega(Player_num));
+#else
+	PUT_INTEL_INT(multibuf + 74, 0);
+#endif
 	/* android port: coop inventory is needed by shared pickup rules and the QoL overlay */
 	if (Game_mode & GM_MULTI_COOP)
-		multi_send_data(multibuf, 70, 2);
+		multi_send_data(multibuf, MULTI_SHIP_STATUS_LENGTH, 2);
 	else
-		multi_send_data_direct( multibuf, 70, multi_who_is_master(), 2);
+		multi_send_data_direct(multibuf, MULTI_SHIP_STATUS_LENGTH, multi_who_is_master(), 2);
 }
 
 void multi_do_ship_status( const ubyte *buf, int authenticated_sender )
 {
+
 	fix afterburner_charge = GET_INTEL_INT(buf + 39);
 	if (buf[1] >= MAX_PLAYERS || buf[8] >= MAX_PRIMARY_WEAPONS ||
 	    buf[30] >= MAX_SECONDARY_WEAPONS || afterburner_charge < 0 ||
 	    afterburner_charge > F1_0 ||
 	    (authenticated_sender >= 0 && buf[1] != authenticated_sender))
 		return;
+#ifdef __ANDROID__
+	if (!coop_recovery_accept_ship_status(buf[1], (uint32_t) GET_INTEL_INT(buf + 70), (uint32_t) GET_INTEL_INT(buf + 78))) return;
+	coop_recovery_set_player_revision(buf[1], (uint32_t) GET_INTEL_INT(buf + 70));
+	coop_recovery_set_omega(buf[1], GET_INTEL_INT(buf + 74));
+#endif
 	if (is_observer())
 	{
 		Players[buf[1]].laser_level = buf[2];
@@ -7625,7 +7685,7 @@ multi_process_data_from_player(const ubyte *buf, int len, int authenticated_send
 		case MULTI_KILL:
 			multi_do_kill(buf); break;
 		case MULTI_REMOVE_OBJECT:
-			if (!Endlevel_sequence) multi_do_remobj(buf); break;
+			if (!Endlevel_sequence) multi_do_remobj(buf, authenticated_sender); break;
 		case MULTI_PLAYER_DROP:
 		case MULTI_PLAYER_EXPLODE:
 			if (!Endlevel_sequence) multi_do_player_explode(buf); break;
@@ -7760,6 +7820,8 @@ multi_process_data_from_player(const ubyte *buf, int len, int authenticated_send
 			coop_warp_do_packet(buf); break;
 		case MULTI_COOP_PEER_STATUS:
 			coop_do_peer_status(buf); break;
+		case MULTI_COOP_RECOVERY:
+			coop_recovery_receive(buf, authenticated_sender); break;
 		case MULTI_COOP_RESTORE_INV:
 			coop_do_restore_inventory(buf, authenticated_sender); break;
 		case MULTI_REWIND_REQUEST:

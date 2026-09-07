@@ -15,6 +15,7 @@
 #ifndef COOP_SAVE_H
 #define COOP_SAVE_H
 
+#include <physfs.h>
 #include "pstypes.h"
 #include "fix.h"
 #ifdef ANDROID
@@ -54,6 +55,7 @@ typedef struct coop_player_record {
 	uint16_t secondary_weapon_flags;
 	int8_t primary_weapon;
 	int8_t secondary_weapon;
+	fix omega_charge;       /* zero in D1 */
 	fix afterburner_charge; /* zero in D1 */
 	int16_t kill_goal_count;
 	uint16_t primary_ammo[COOP_SAVE_MAX_WEAPONS];
@@ -86,6 +88,9 @@ typedef struct coop_save_metadata {
 	uint8_t difficulty_min;           /* v4 */
 	uint8_t difficulty_max;           /* v4 */
 	uint8_t duplicate_energy_shields; /* v5 */
+	uint32_t recovery_count;          /* v7: ownership ledger entries */
+	uint32_t recovery_revisions[8];
+	uint32_t recovery_lives[8];
 } coop_save_metadata;
 
 /* --- helpers (implemented in coop_save.c) --- */

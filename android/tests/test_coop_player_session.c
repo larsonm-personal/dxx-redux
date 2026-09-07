@@ -99,11 +99,11 @@ static int test_restore_accepts_weapon_boundaries(void)
 	return 1;
 }
 
-static int test_coop_metadata_v6_runtime_fields(void)
+static int test_coop_metadata_v7_runtime_fields(void)
 {
 	coop_player_record record = { 0 };
 
-	CHECK(COOP_SAVE_META_VER == 6);
+	CHECK(COOP_SAVE_META_VER == 7);
 	record.primary_weapon = MAX_PRIMARY_WEAPONS - 1;
 	record.secondary_weapon = MAX_SECONDARY_WEAPONS - 1;
 	record.afterburner_charge = F1_0;
@@ -129,7 +129,7 @@ int main(void)
 	if (!test_restore_preserves_live_session_identity() ||
 	    !test_restore_sanitizes_partial_runtime_state() ||
 	    !test_restore_accepts_weapon_boundaries() ||
-	    !test_coop_metadata_v6_runtime_fields() ||
+	    !test_coop_metadata_v7_runtime_fields() ||
 	    !test_sync_prefers_stable_client_identity())
 		return 1;
 	puts("coop player session tests passed");

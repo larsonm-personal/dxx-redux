@@ -12,6 +12,7 @@
 #include <physfs.h>
 
 #include "coop_save.h"
+#include "coop_recovery.h"
 #endif
 
 // -- Coop kill stats (android port: coop QoL overlay) --
@@ -81,33 +82,14 @@ void coop_do_peer_status(const ubyte *buf)
 	Coop_kill_stats[pnum].score_earned = GET_INTEL_INT(buf + 4);
 }
 
-static int coop_remove_rejoin_spew(int pnum)
-{
-	int i;
-	int removed = 0;
-
-	for (i = 0; i <= Highest_object_index; i++) {
-		if (Objects[i].type != OBJ_POWERUP)
-			continue;
-		if (Objects[i].flags & OF_SHOULD_BE_DEAD)
-			continue;
-		if (object_owner[i] != pnum)
-			continue;
-		multi_send_remobj(i);
-		Objects[i].flags |= OF_SHOULD_BE_DEAD;
-		removed++;
-	}
-
-	return removed;
-}
-
 void coop_send_restore_inventory(int pnum)
 {
 	coop_player_record rec;
 	int source_level = Current_level_num;
-	int same_level;
 	int removed;
 	int i;
+
+	if (pnum < 0 || pnum >= MAX_PLAYERS) return;
 
 	if (!(Game_mode & GM_MULTI_COOP))
 		return;
@@ -119,13 +101,13 @@ void coop_send_restore_inventory(int pnum)
 	if (!coop_take_absent_player_with_level(Players[pnum].callsign,
 	                                        Netgame.players[pnum].client_id,
 	                                        &rec, &source_level)) {
-		con_printf(CON_NORMAL, "coop_restore: no cached inventory for '%s'\n",
-		           Players[pnum].callsign);
-		return;
+		coop_snapshot_player(pnum, &rec);
 	}
 
-	same_level = (source_level == Current_level_num);
-	removed = same_level ? coop_remove_rejoin_spew(pnum) : 0;
+	removed = coop_recovery_prepare_rejoin(pnum, &rec);
+	/* Publish the resulting inventory locally before sending it. A failed join
+	 * must cache this result, not the joining ship's default equipment */
+	coop_apply_record_to_player(pnum, &rec, source_level == Current_level_num);
 
 	con_printf(CON_NORMAL, "coop_restore: sending inventory to P%d '%s' (src_level=%d cur_level=%d spew=%d shields=%d energy=%d laser=%d)\n",
 	           pnum, rec.callsign, source_level, Current_level_num, removed,
@@ -156,11 +138,36 @@ void coop_send_restore_inventory(int pnum)
 	PUT_INTEL_INT(multibuf + 80, rec.afterburner_charge);
 	PUT_INTEL_SHORT(multibuf + 84, rec.kill_goal_count);
 
-	multi_send_data_direct(multibuf, 86, pnum, 2);
+	PUT_INTEL_INT(multibuf + 86, coop_recovery_epoch());
+	PUT_INTEL_INT(multibuf + 90, coop_recovery_player_revision(pnum));
+	PUT_INTEL_INT(multibuf + 94, rec.omega_charge);
+	PUT_INTEL_INT(multibuf + 98, coop_recovery_life(pnum));
+	multi_send_data_direct(multibuf, 102, pnum, 2);
+}
+
+static ubyte pending_restore[102];
+static int have_pending_restore;
+
+void coop_clear_pending_restore_inventory(void)
+{
+	have_pending_restore = 0;
 }
 
 void coop_do_restore_inventory(const ubyte *buf, int authenticated_sender)
 {
+	if (!(Game_mode & GM_MULTI_COOP) || authenticated_sender != multi_who_is_master()) return;
+	if (have_pending_restore && GET_INTEL_INT(buf + 86) == GET_INTEL_INT(pending_restore + 86) &&
+	    (uint32_t) GET_INTEL_INT(buf + 90) < (uint32_t) GET_INTEL_INT(pending_restore + 90)) return;
+	memcpy(pending_restore, buf, sizeof(pending_restore));
+	have_pending_restore = 1;
+}
+
+void coop_apply_pending_restore_inventory(void)
+{
+	const ubyte *buf = pending_restore;
+	if (!have_pending_restore || !Game_wind || Player_num != buf[1] ||
+	    Players[Player_num].connected != CONNECT_PLAYING) return;
+	have_pending_restore = 0;
 	int pnum = buf[1];
 	int i;
 	coop_player_record rec;
@@ -170,10 +177,8 @@ void coop_do_restore_inventory(const ubyte *buf, int authenticated_sender)
 		return;
 	if (!(Game_mode & GM_MULTI_COOP))
 		return;
-	if (authenticated_sender >= 0 &&
-	    authenticated_sender != multi_who_is_master())
-		return;
 
+	if (!coop_recovery_accept_restore((uint32_t) GET_INTEL_INT(buf + 86), (uint32_t) GET_INTEL_INT(buf + 90))) return;
 	/* Unpack the network packet into a coop_player_record */
 	memset(&rec, 0, sizeof(rec));
 	rec.energy = GET_INTEL_INT(buf + 2);
@@ -199,6 +204,10 @@ void coop_do_restore_inventory(const ubyte *buf, int authenticated_sender)
 	rec.secondary_weapon = (sbyte) buf[79];
 	rec.afterburner_charge = GET_INTEL_INT(buf + 80);
 	rec.kill_goal_count = GET_INTEL_SHORT(buf + 84);
+	rec.omega_charge = GET_INTEL_INT(buf + 94);
 	coop_apply_record_to_player(pnum, &rec, saved_level == Current_level_num);
+	coop_recovery_set_player_revision(pnum, (uint32_t) GET_INTEL_INT(buf + 90));
+	coop_recovery_set_life(pnum, (uint32_t) GET_INTEL_INT(buf + 98));
+	multi_send_ship_status();
 }
 #endif

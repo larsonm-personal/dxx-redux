@@ -1,0 +1,8 @@
+[
+    {"_info": {"games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {"in_game": "true", "multiplayer.num_connected": "2", "multiplayer.recovery.active": "true"}},
+    {"action": "set_debug", "field": "clear_robots", "value": "true"},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {"multiplayer.recovery.live": {"gte": 1}}},
+    {"action": "set_debug", "field": "recovery_test_collect_homing", "value": "true"},
+    {"action": "log", "message": "Host has authoritative death spew"}
+]

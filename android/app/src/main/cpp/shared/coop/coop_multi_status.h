@@ -32,6 +32,8 @@ void coop_do_peer_status(const ubyte *buf);
 
 // Send/receive cached inventory to a rejoining coop player
 void coop_send_restore_inventory(int pnum);
+void coop_clear_pending_restore_inventory(void);
+void coop_apply_pending_restore_inventory(void);
 void coop_do_restore_inventory(const ubyte *buf, int authenticated_sender);
 
 #endif /* COOP_MULTI_STATUS_H */
