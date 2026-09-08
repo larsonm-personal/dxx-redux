@@ -2973,9 +2973,14 @@ void collide_player_and_powerup( object * playerobj, object * powerup, vms_vecto
 			input_demo_log_replay_powerup_probe_before(powerup, energy_before, shields_before);
 
 		#ifdef __ANDROID__
-		if (coop_recovery_pickup(powerup)) return;
+		if (coop_recovery_pickup_blocked(powerup)) return;
+		coop_player_record pickup_before;
+		coop_snapshot_player(Player_num, &pickup_before);
 		#endif
 		powerup_used = do_powerup(powerup);
+#ifdef __ANDROID__
+		coop_recovery_note_pickup(powerup, &pickup_before, powerup_used);
+#endif
 		if (input_demo_replay_powerup_probe_active())
 			input_demo_log_replay_powerup_probe_after(powerup, powerup_used, energy_before,
 				Players[Player_num].energy, shields_before, Players[Player_num].shields);

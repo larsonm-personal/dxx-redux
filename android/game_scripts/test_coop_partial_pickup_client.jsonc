@@ -1,0 +1,14 @@
+[
+ {"_info":{"games":["d1","d2"],"_standalone":false,"_owner":"test_lan"}},
+ {"action":"set_debug","field":"recovery_test_trace","value":"true"},
+ {"action":"set_debug","field":"recovery_test_inventory","value":"true","post_delay_ms":2000},
+ {"action":"set_debug","field":"recovery_test_isolate_drop","value":"true"},
+ {"action":"wait_ms","ms":1000},
+ {"action":"set_debug","field":"damage_player","value":"500"},
+ {"action":"wait_for","timeout_ms":20000,"expect":{"player_dead":"true","multiplayer.recovery.world_objects":{"gte":1}}},
+ {"action":"key","key":"space","post_delay_ms":1500},
+ {"action":"wait_for","timeout_ms":20000,"expect":{"player_dead":"false"}},
+ {"action":"wait_ms","ms":1500},
+ {"action":"set_debug","field":"recovery_test_nearly_full_homing","value":"true"},
+ {"action":"set_debug","field":"recovery_test_collect_homing","value":"true","post_delay_ms":3000}
+]

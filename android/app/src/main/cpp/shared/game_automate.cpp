@@ -3856,6 +3856,20 @@ extern "C" void game_automate_tick(void)
 				strcpy(credit.callsign, "OldPilot");
 				credit.secondary_ammo[HOMING_INDEX] = 1;
 				coop_recovery_remember_record(&credit);
+			} else if (s.field == "recovery_test_isolate_drop") {
+				if (!ConsoleObject) {
+					stop_script_fail("drop fixture requires a player");
+					break;
+				}
+				obj_relink(ConsoleObject - Objects, Highest_segment_index);
+				compute_segment_center(&ConsoleObject->pos, &Segments[Highest_segment_index]);
+				vm_vec_zero(&ConsoleObject->mtype.phys_info.velocity);
+			} else if (s.field == "recovery_test_nearly_full_homing") {
+				Players[Player_num].secondary_ammo[HOMING_INDEX] = Secondary_ammo_max[HOMING_INDEX] - 1;
+				multi_send_ship_status();
+			} else if (s.field == "recovery_test_freeze_absent") {
+				int ready = coop_recovery_rejoin_ready("OldPilot", "pickup-test-absent");
+				if (s.value == "ready" && !ready) stop_script_fail("drop freeze did not receive peer acknowledgement");
 			} else if (s.field == "recovery_test_approach_homing") {
 				bool found = false;
 				for (int n = 0; ConsoleObject && n <= Highest_object_index; n++) {

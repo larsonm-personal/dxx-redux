@@ -3653,7 +3653,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
                     coop_apply_record_to_player(rp, &record, 1);
                     int old_slot = coop_meta.active_players[saved].original_slot;
                     if (old_slot < MAX_PLAYERS) {
-                        coop_recovery_set_player_revision(rp, coop_meta.recovery_revisions[old_slot]);
+                        coop_recovery_set_restore_serial(rp, coop_meta.recovery_restore_serials[old_slot]);
                         coop_recovery_set_life(rp, coop_meta.recovery_lives[old_slot]);
                     }
                 }

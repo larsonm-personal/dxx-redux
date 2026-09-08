@@ -18,25 +18,22 @@
 #include "weapon.h"
 
 enum { REC_ITEM = 1,
-	   REC_GRANT,
-	   REC_REQUEST,
+	   REC_COLLECT,
+	   REC_FREEZE,
+	   REC_FROZEN,
 	   REC_BEGIN,
 	   REC_END,
-	   REC_REVISION,
-	   REC_SNAPSHOT_REVISION };
+	   REC_LIFE };
 static coop_recovery_item *items, *pending;
 static size_t count, capacity, pending_count;
-static uint32_t next_id = 1, epoch = 1;
-static uint32_t restore_epoch;
-static uint32_t player_revision[MAX_PLAYERS];
-static uint32_t applied_revision[MAX_PLAYERS];
+static uint32_t next_id = 1, epoch = 1, restore_epoch;
+/* Restore serials fence repeated inventory restores, not ordinary pickups */
+static uint32_t restore_serial[MAX_PLAYERS], applied_restore_serial[MAX_PLAYERS];
 static uint32_t player_life[MAX_PLAYERS];
 static fix omega_charge[MAX_PLAYERS];
 static uint16_t armed_mines[MAX_PLAYERS][COOP_SAVE_MAX_WEAPONS];
-static uint32_t requested_id;
-static fix64 requested_at;
-
-static unsigned char *apply_grant;
+static uint8_t *freeze_waiting;
+static fix64 freeze_sent_at;
 
 static uint32_t equipment_flags(void)
 {
@@ -88,12 +85,12 @@ static int reserve(size_t needed)
 	}
 	if (count) {
 		memcpy(grown, items, count * sizeof(*items));
-		memcpy(flags, apply_grant, count);
+		memcpy(flags, freeze_waiting, count);
 	}
 	free(items);
-	free(apply_grant);
+	free(freeze_waiting);
 	items = grown;
-	apply_grant = flags;
+	freeze_waiting = flags;
 	capacity = size;
 	return 1;
 }
@@ -114,7 +111,6 @@ static coop_recovery_item *append(int pnum, int state)
 	item->id = next_id++;
 	item->revision = 1;
 	item->state = (uint8_t) state;
-	item->recipient = 255;
 	item->object_index = item->remote_index = -1;
 	set_owner(item, pnum);
 	return item;
@@ -254,7 +250,7 @@ static coop_recovery_gear allocate_egg(const object *obj, coop_recovery_gear *po
 
 static coop_recovery_gear transfer(coop_player_record *rec, coop_recovery_gear *source);
 
-void coop_recovery_drop(int pnum, uint32_t reported_revision, uint32_t life)
+void coop_recovery_drop(int pnum, uint32_t life)
 {
 	coop_player_record rec;
 	coop_recovery_gear pool;
@@ -288,21 +284,6 @@ void coop_recovery_drop(int pnum, uint32_t reported_revision, uint32_t life)
 	if (!reserve(count + Net_create_loc + 2))
 		Error("Cannot retain coop dropped inventory");
 	coop_snapshot_player(pnum, &rec);
-	/* A grant absent from the death packet never entered the generated eggs
-	 * Retain it separately, including copies or ammo beyond ship capacity */
-	size_t receipt_count = count;
-	for (size_t n = 0; n < receipt_count; n++)
-		if (items[n].recipient == pnum && items[n].id > reported_revision &&
-		    items[n].state == COOP_RECOVERY_TAKEN) {
-			coop_recovery_gear delta = items[n].gear;
-			items[n].recipient = 255;
-			items[n].revision++;
-			send_item(&items[n], REC_ITEM, -1);
-			coop_recovery_item *credit = append(pnum, COOP_RECOVERY_CREDIT);
-			if (!credit) Error("Cannot retain coop undelivered grant");
-			credit->gear = delta;
-			send_item(credit, REC_ITEM, -1);
-		}
 	pool = from_record(&rec);
 	/* Only successfully created armed mines consumed inventory */
 	for (i = 0; i < MAX_SECONDARY_WEAPONS; i++)
@@ -342,11 +323,10 @@ void coop_recovery_drop(int pnum, uint32_t reported_revision, uint32_t life)
 		if (!marker) Error("Cannot retain coop departure state");
 		marker->life = player_life[pnum];
 		send_item(marker, REC_ITEM, -1);
-		coop_recovery_item revision = { 0 };
-		revision.recipient = (uint8_t) pnum;
-		revision.id = player_revision[pnum];
-		revision.life = player_life[pnum];
-		send_item(&revision, REC_REVISION, -1);
+		coop_recovery_item status = { 0 };
+		status.id = (uint32_t) pnum + 1;
+		status.life = player_life[pnum];
+		send_item(&status, REC_LIFE, -1);
 	}
 }
 
@@ -427,91 +407,108 @@ static coop_recovery_gear transfer(coop_player_record *rec, coop_recovery_gear *
 	return taken;
 }
 
-static void apply_delta(int pnum, coop_recovery_gear delta)
+static coop_recovery_item *find_object(const object *obj)
 {
-	coop_player_record rec;
-	coop_snapshot_player(pnum, &rec);
-	rec.primary_weapon_flags |= delta.primary;
-	rec.flags |= delta.flags;
-	rec.laser_level = (uint8_t) take_amount(rec.laser_level + delta.laser,
-#ifdef DXX_BUILD_DESCENT_II
-	                                        5);
-#else
-	                                        3);
-#endif
-	rec.primary_ammo[VULCAN_INDEX] += (uint16_t) delta.vulcan;
-	for (int i = 0; i < MAX_SECONDARY_WEAPONS; i++) {
-		rec.secondary_ammo[i] += delta.missiles[i];
-		if (rec.secondary_ammo[i]) rec.secondary_weapon_flags |= 1u << i;
-	}
-	rec.omega_charge = (fix) take_amount(rec.omega_charge + delta.omega, F1_0);
-	/* Inventory only: do not roll back score/resources or replay pickup rewards */
-	Players[pnum].primary_weapon_flags = rec.primary_weapon_flags;
-	Players[pnum].secondary_weapon_flags = rec.secondary_weapon_flags;
-	Players[pnum].laser_level = rec.laser_level;
-	Players[pnum].flags = rec.flags;
-	Players[pnum].primary_ammo[VULCAN_INDEX] = rec.primary_ammo[VULCAN_INDEX];
-	memcpy(Players[pnum].secondary_ammo, rec.secondary_ammo, sizeof(Players[pnum].secondary_ammo));
-	coop_recovery_set_omega(pnum, rec.omega_charge);
+	for (size_t i = 0; i < count; i++)
+		if (bound_object(&items[i]) == obj - Objects) return &items[i];
+	return NULL;
 }
 
-static void grant_pickup(size_t index, int pnum, uint32_t life)
+/* Contents can only decrease within a world generation. This makes duplicate
+ * and reordered collection reports harmless without inventory replay */
+static void intersect_gear(coop_recovery_gear *a, const coop_recovery_gear *b)
 {
-	coop_player_record rec;
-	coop_recovery_gear remaining, taken;
-	coop_recovery_item *grant;
-	int objnum = bound_object(&items[index]);
-	int ship = Players[pnum].objnum;
-	if (items[index].state != COOP_RECOVERY_LIVE || objnum < 0 ||
-	    ship < 0 || ship > Highest_object_index || Objects[ship].type != OBJ_PLAYER ||
-	    Objects[ship].shields < 0 || (Objects[objnum].flags & OF_SHOULD_BE_DEAD)) return;
-	if (vm_vec_dist_quick(&Objects[ship].pos, &Objects[objnum].pos) >
-	    Objects[ship].size + Objects[objnum].size + i2f(20)) return;
-	coop_snapshot_player(pnum, &rec);
-	remaining = items[index].gear;
-	taken = transfer(&rec, &remaining);
-	if (empty(&taken)) return;
-	if (!reserve(count + 1)) return;
-	/* Retire or reduce the world claim before any recipient can receive it */
-	items[index].gear = remaining;
-	items[index].revision++;
-	if (empty(&remaining)) {
-		remove_world(&items[index]);
-		items[index].state = COOP_RECOVERY_TAKEN;
-	}
-	send_item(&items[index], REC_ITEM, -1);
-	grant = append(pnum, COOP_RECOVERY_TAKEN);
-	if (!grant) Error("Cannot retain coop pickup receipt");
-	grant->gear = taken;
-	grant->recipient = (uint8_t) pnum;
-	grant->previous_revision = player_revision[pnum];
-	grant->life = life;
-	player_revision[pnum] = grant->id;
-	apply_delta(pnum, taken);
-	applied_revision[pnum] = grant->id;
-	send_item(grant, REC_GRANT, -1);
+	a->primary &= b->primary;
+	a->flags &= b->flags;
+	a->laser = (uint16_t) take_amount(a->laser, b->laser);
+	a->vulcan = take_amount(a->vulcan, b->vulcan);
+	a->omega = (int32_t) take_amount(a->omega, b->omega);
+	for (int i = 0; i < MAX_SECONDARY_WEAPONS; i++)
+		a->missiles[i] = (uint16_t) take_amount(a->missiles[i], b->missiles[i]);
 }
 
-int coop_recovery_pickup(object *powerup)
+int coop_recovery_pickup_blocked(const object *powerup)
 {
-	size_t i;
-	int objnum = (int) (powerup - Objects);
 	if (!coop_recovery_active() || !(powerup->flags & OF_COOP_RECOVERY)) return 0;
-	for (i = 0; i < count; i++) {
-		if (items[i].state != COOP_RECOVERY_LIVE || bound_object(&items[i]) != objnum) continue;
-		if (multi_i_am_master()) grant_pickup(i, Player_num, player_life[Player_num]);
-		else if (requested_id != items[i].id || timer_query() > requested_at + F1_0) {
-			requested_id = items[i].id;
-			requested_at = timer_query();
-			coop_recovery_item request = items[i];
-			request.life = player_life[Player_num];
-			send_item(&request, REC_REQUEST, multi_who_is_master());
-		}
-		return 1;
+	const coop_recovery_item *item = find_object(powerup);
+	/* Wait for provenance before allowing a newly synchronized dropped object */
+	return !item || item->state != COOP_RECOVERY_LIVE;
+}
+
+int coop_recovery_pickup_count(const object *powerup, int secondary, int amount)
+{
+	if (!coop_recovery_active() || !(powerup->flags & OF_COOP_RECOVERY)) return amount;
+	const coop_recovery_item *item = find_object(powerup);
+	if (!item) return 0;
+	return (int) take_amount(amount, secondary >= 0 ? item->gear.missiles[secondary] : item->gear.vulcan);
+}
+
+void coop_recovery_note_pickup(object *powerup, const coop_player_record *before, int used)
+{
+	if (!coop_recovery_active() || !(powerup->flags & OF_COOP_RECOVERY)) return;
+	coop_recovery_item *item = find_object(powerup);
+	if (!item || item->state != COOP_RECOVERY_LIVE) return;
+	coop_player_record after;
+	coop_snapshot_player(Player_num, &after);
+	coop_recovery_gear remaining = item->gear;
+	remaining.primary &= ~(after.primary_weapon_flags & ~before->primary_weapon_flags);
+	remaining.flags &= ~(after.flags & ~before->flags);
+	remaining.laser -= (uint16_t) take_amount(after.laser_level > before->laser_level ? after.laser_level - before->laser_level : 0, remaining.laser);
+	remaining.vulcan -= take_amount(after.primary_ammo[VULCAN_INDEX] > before->primary_ammo[VULCAN_INDEX] ? after.primary_ammo[VULCAN_INDEX] - before->primary_ammo[VULCAN_INDEX] : 0, remaining.vulcan);
+	remaining.omega -= (int32_t) take_amount(after.omega_charge > before->omega_charge ? after.omega_charge - before->omega_charge : 0, remaining.omega);
+	for (int i = 0; i < MAX_SECONDARY_WEAPONS; i++)
+		remaining.missiles[i] -= (uint16_t) take_amount(after.secondary_ammo[i] > before->secondary_ammo[i] ? after.secondary_ammo[i] - before->secondary_ammo[i] : 0, remaining.missiles[i]);
+	if (used) {
+		/* A normal duplicate-weapon conversion consumes the weapon too.
+		 * Ammo that would overflow the ship remains recoverable as credit */
+		remaining.primary = remaining.flags = remaining.laser = 0;
 	}
-	/* Bonus shield/energy and timed powers retain the ordinary pickup path */
-	return powerup->id != POW_ENERGY && powerup->id != POW_SHIELD_BOOST &&
-	       powerup->id != POW_CLOAK && powerup->id != POW_INVULNERABILITY;
+	if (!used && !memcmp(&remaining, &item->gear, sizeof(remaining))) return;
+	item->gear = remaining;
+	if (used || empty(&remaining)) item->state = empty(&remaining) ? COOP_RECOVERY_TAKEN : COOP_RECOVERY_CREDIT;
+	send_item(item, REC_COLLECT, -1);
+	COOPLOG("spew collected id=%u used=%d remaining=%d", item->id, used, !empty(&remaining));
+}
+
+/* A normal removal is consumption, never expiry. Keep the old contents only
+ * until the matching collection report supplies any capacity remainder */
+void coop_recovery_note_remove(object *powerup)
+{
+	if (!coop_recovery_active() || !(powerup->flags & OF_COOP_RECOVERY)) return;
+	coop_recovery_item *item = find_object(powerup);
+	if (item && item->state == COOP_RECOVERY_LIVE) {
+		item->state = COOP_RECOVERY_TAKEN;
+		item->object_index = -1;
+	}
+}
+
+/* Before sending a rejoin's world snapshot, freeze its recoverable drops.
+ * Each active peer replies with its remaining contents, including a local
+ * pickup whose ordinary remove packet has not reached the host yet */
+int coop_recovery_rejoin_ready(const char *callsign, const char *client_id)
+{
+	int ready = 1;
+	if (!coop_recovery_active() || !multi_i_am_master()) return 1;
+	int resend = timer_query() >= freeze_sent_at;
+	if (resend) freeze_sent_at = timer_query() + F1_0;
+	for (size_t i = 0; i < count; i++) {
+		coop_recovery_item *item = &items[i];
+		if (client_id[0] && item->client_id[0] ? strcmp(client_id, item->client_id) : d_stricmp(callsign, item->callsign)) continue;
+		if (item->state == COOP_RECOVERY_LIVE || item->state == COOP_RECOVERY_CREDIT) {
+			item->state = COOP_RECOVERY_RECLAIMING;
+			item->revision++;
+			freeze_waiting[i] = 0;
+			for (int peer = 0; peer < MAX_PLAYERS; peer++)
+				if (peer != Player_num && Players[peer].connected == CONNECT_PLAYING)
+					freeze_waiting[i] |= 1u << peer;
+			send_item(item, REC_FREEZE, -1);
+		} else if (item->state != COOP_RECOVERY_RECLAIMING) continue;
+		if (freeze_waiting[i]) {
+			ready = 0;
+			if (resend) send_item(item, REC_FREEZE, -1);
+		}
+	}
+	return ready;
 }
 
 void coop_recovery_expire(object *powerup)
@@ -539,6 +536,13 @@ void coop_recovery_level_leave(void)
 		}
 }
 
+int coop_recovery_save_ready(void)
+{
+	for (size_t i = 0; i < count; i++)
+		if (items[i].state == COOP_RECOVERY_RECLAIMING && freeze_waiting[i]) return 0;
+	return 1;
+}
+
 int coop_recovery_prepare_rejoin(int pnum, coop_player_record *rec)
 {
 	size_t i;
@@ -554,8 +558,9 @@ int coop_recovery_prepare_rejoin(int pnum, coop_player_record *rec)
 	player_life[pnum]++;
 	for (i = 0; i < count; i++) {
 		coop_recovery_gear taken;
-		if ((items[i].state != COOP_RECOVERY_LIVE && items[i].state != COOP_RECOVERY_CREDIT) ||
+		if ((items[i].state != COOP_RECOVERY_LIVE && items[i].state != COOP_RECOVERY_CREDIT && items[i].state != COOP_RECOVERY_RECLAIMING) ||
 		    !same_owner(&items[i], pnum)) continue;
+		if (items[i].state == COOP_RECOVERY_RECLAIMING && freeze_waiting[i]) continue;
 		taken = transfer(rec, &items[i].gear);
 		if (empty(&taken) && items[i].state == COOP_RECOVERY_CREDIT) continue;
 		if (!empty(&taken)) recovered++;
@@ -565,31 +570,29 @@ int coop_recovery_prepare_rejoin(int pnum, coop_player_record *rec)
 		send_item(&items[i], REC_ITEM, -1);
 	}
 	if (!next_id) Error("Coop inventory revision exhausted");
-	player_revision[pnum] = next_id++;
-	if (pnum == Player_num) applied_revision[pnum] = player_revision[pnum];
+	restore_serial[pnum] = next_id++;
+	if (pnum == Player_num) applied_restore_serial[pnum] = restore_serial[pnum];
 	{
-		coop_recovery_item revision = { 0 };
-		revision.id = player_revision[pnum];
-		revision.life = player_life[pnum];
-		revision.previous_revision = 1;
-		revision.recipient = (uint8_t) pnum;
-		send_item(&revision, REC_REVISION, -1);
+		coop_recovery_item status = { 0 };
+		status.id = (uint32_t) pnum + 1;
+		status.life = player_life[pnum];
+		send_item(&status, REC_LIFE, -1);
 	}
 	coop_recovery_alive(pnum);
 	return recovered;
 }
 
-uint32_t coop_recovery_player_revision(int pnum)
+uint32_t coop_recovery_restore_serial(int pnum)
 {
-	return pnum == Player_num ? applied_revision[Player_num] : (pnum >= 0 && pnum < MAX_PLAYERS ? player_revision[pnum] : 0);
+	return pnum == Player_num ? applied_restore_serial[Player_num] : (pnum >= 0 && pnum < MAX_PLAYERS ? restore_serial[pnum] : 0);
 }
 
 int coop_recovery_accept_ship_status(int pnum, uint32_t revision, uint32_t life)
 {
 	if (!coop_recovery_active()) return 1;
 	if (pnum < 0 || pnum >= MAX_PLAYERS || life != player_life[pnum]) return 0;
-	if (multi_i_am_master()) return revision == player_revision[pnum];
-	return revision >= applied_revision[pnum];
+	if (multi_i_am_master()) return revision == restore_serial[pnum];
+	return revision >= applied_restore_serial[pnum];
 }
 
 uint32_t coop_recovery_life(int pnum)
@@ -597,11 +600,11 @@ uint32_t coop_recovery_life(int pnum)
 	return pnum >= 0 && pnum < MAX_PLAYERS ? player_life[pnum] : 0;
 }
 
-void coop_recovery_set_player_revision(int pnum, uint32_t revision)
+void coop_recovery_set_restore_serial(int pnum, uint32_t revision)
 {
 	if (pnum >= 0 && pnum < MAX_PLAYERS) {
-		player_revision[pnum] = revision;
-		applied_revision[pnum] = revision;
+		restore_serial[pnum] = revision;
+		applied_restore_serial[pnum] = revision;
 		if (next_id <= revision) next_id = revision + 1;
 	}
 }
@@ -612,7 +615,7 @@ uint32_t coop_recovery_epoch(void)
 }
 int coop_recovery_accept_restore(uint32_t generation, uint32_t revision)
 {
-	if (!revision || (generation == epoch && revision <= applied_revision[Player_num])) return 0;
+	if (!revision || (generation == epoch && revision <= applied_restore_serial[Player_num])) return 0;
 	epoch = generation;
 	return 1;
 }
@@ -620,157 +623,100 @@ int coop_recovery_accept_restore(uint32_t generation, uint32_t revision)
 void coop_recovery_receive(const ubyte *buf, int sender)
 {
 	coop_recovery_item incoming;
-	size_t index;
-	int prior_object = -1;
 	uint32_t incoming_epoch = (uint32_t) GET_INTEL_INT(buf + 4);
 	if (!coop_recovery_active() || sender < 0 || sender >= MAX_PLAYERS) return;
 	memcpy(&incoming, buf + 16, sizeof(incoming));
-	if (buf[1] == REC_REQUEST) {
-		if (!multi_i_am_master() || incoming_epoch != epoch || Players[sender].connected != CONNECT_PLAYING || incoming.life != player_life[sender]) return;
-		for (index = 0; index < count; index++)
-			if (items[index].id == incoming.id && items[index].revision == incoming.revision) {
-				grant_pickup(index, sender, incoming.life);
-				break;
-			}
-		return;
-	}
-	if (sender != multi_who_is_master() || multi_i_am_master()) return;
-	if (buf[1] == REC_BEGIN) {
-		/* Snapshot rows merge by ID/revision: reliable UDP may reorder them */
-		if (!count) epoch = incoming_epoch;
-		return;
-	}
-	if (!count) epoch = incoming_epoch;
+	int authority = sender == multi_who_is_master();
+	if (!count && authority) epoch = incoming_epoch;
 	if (incoming_epoch != epoch) return;
-	if (buf[1] == REC_END) return;
-	if (buf[1] == REC_SNAPSHOT_REVISION) {
-		int pnum = incoming.recipient;
-		if (pnum < MAX_PLAYERS && incoming.id >= applied_revision[pnum]) {
-			player_life[pnum] = incoming.life;
-			if (pnum != Player_num) {
-				Players[pnum].primary_weapon_flags = 1 | incoming.gear.primary;
-				Players[pnum].secondary_weapon_flags = 0;
-				Players[pnum].laser_level = (ubyte) incoming.gear.laser;
-				Players[pnum].flags = (Players[pnum].flags & ~equipment_flags()) | incoming.gear.flags;
-				Players[pnum].primary_ammo[VULCAN_INDEX] = (uint16_t) incoming.gear.vulcan;
-				for (int i = 0; i < MAX_SECONDARY_WEAPONS; i++) {
-					Players[pnum].secondary_ammo[i] = incoming.gear.missiles[i];
-					if (incoming.gear.missiles[i]) Players[pnum].secondary_weapon_flags |= 1u << i;
-				}
-				coop_recovery_set_omega(pnum, incoming.gear.omega);
-				coop_recovery_set_player_revision(pnum, incoming.id);
-			}
+	if (buf[1] == REC_BEGIN || buf[1] == REC_END) return;
+	if (buf[1] == REC_LIFE) {
+		if (authority && incoming.id && incoming.id <= MAX_PLAYERS && incoming.life > player_life[incoming.id - 1])
+			player_life[incoming.id - 1] = incoming.life;
+		return;
+	}
+	if (!incoming.id || incoming.state < COOP_RECOVERY_LIVE || incoming.state > COOP_RECOVERY_RECLAIMING ||
+	    !memchr(incoming.client_id, 0, sizeof(incoming.client_id)) || !memchr(incoming.callsign, 0, sizeof(incoming.callsign))) return;
+	size_t index;
+	for (index = 0; index < count && items[index].id != incoming.id; index++) {}
+	if (buf[1] == REC_COLLECT || buf[1] == REC_FROZEN) {
+		if (index == count) return;
+		coop_recovery_item *item = &items[index];
+		if (buf[1] == REC_FROZEN) {
+			if (!multi_i_am_master() || item->state != COOP_RECOVERY_RECLAIMING || incoming.revision != item->revision) return;
+			intersect_gear(&item->gear, &incoming.gear);
+			freeze_waiting[index] &= ~(1u << sender);
+		} else {
+			if (incoming.revision != item->revision || item->state == COOP_RECOVERY_RECLAIMING) return;
+			intersect_gear(&item->gear, &incoming.gear);
+			if (empty(&item->gear) || incoming.state == COOP_RECOVERY_TAKEN) item->state = COOP_RECOVERY_TAKEN;
+			else if (incoming.state == COOP_RECOVERY_CREDIT) item->state = COOP_RECOVERY_CREDIT;
+			if (item->state != COOP_RECOVERY_LIVE) remove_world(item);
 		}
 		return;
 	}
-	if (buf[1] == REC_REVISION) {
-		if (incoming.recipient < MAX_PLAYERS) {
-			if (incoming.previous_revision == 1 && incoming.id >= player_revision[incoming.recipient])
-				player_life[incoming.recipient] = incoming.life;
-			if (!incoming.previous_revision && incoming.recipient == Player_num && incoming.life == player_life[Player_num] && incoming.id > applied_revision[Player_num])
-				applied_revision[Player_num] = incoming.id;
-			if (player_revision[incoming.recipient] < incoming.id)
-				player_revision[incoming.recipient] = incoming.id;
-			if (next_id <= incoming.id) next_id = incoming.id + 1;
-		}
-		return;
+	if (!authority || multi_i_am_master() || (buf[1] != REC_ITEM && buf[1] != REC_FREEZE)) return;
+	if (index < count && items[index].revision > incoming.revision) return;
+	int prior_object = index < count ? bound_object(&items[index]) : -1;
+	if (index < count) {
+		intersect_gear(&incoming.gear, &items[index].gear);
+		if (incoming.state == COOP_RECOVERY_LIVE &&
+		    (items[index].state == COOP_RECOVERY_CREDIT || items[index].state == COOP_RECOVERY_TAKEN)) incoming.state = items[index].state;
 	}
-	if ((buf[1] != REC_ITEM && buf[1] != REC_GRANT) || !incoming.id ||
-	    incoming.state < COOP_RECOVERY_LIVE || incoming.state > COOP_RECOVERY_ALIVE ||
-	    !memchr(incoming.client_id, 0, sizeof(incoming.client_id)) ||
-	    !memchr(incoming.callsign, 0, sizeof(incoming.callsign))) return;
-	for (index = 0; index < count; index++)
-		if (items[index].id == incoming.id) break;
-	if (index < count && (items[index].revision > incoming.revision ||
-	                      (items[index].revision == incoming.revision && buf[1] != REC_GRANT))) return;
-	if (index < count) prior_object = bound_object(&items[index]);
 	if (index == count) {
-		if (!reserve(count + 1)) Error("Cannot receive coop recovery state");
+		if (!reserve(count + 1)) Error("Cannot receive coop drop tags");
 		count++;
-		apply_grant[index] = 0;
-	} else if (items[index].state == COOP_RECOVERY_LIVE && incoming.state != COOP_RECOVERY_LIVE)
-		remove_world(&items[index]);
+		freeze_waiting[index] = 0;
+	}
 	incoming.object_index = -1;
 	if (incoming.remote_index >= 0) {
 		int objnum = prior_object >= 0 ? prior_object : objnum_remote_to_local(incoming.remote_index, incoming.network_owner);
-		if (objnum >= 0 && objnum <= Highest_object_index && Objects[objnum].type == OBJ_POWERUP && Objects[objnum].id == incoming.powerup && (Objects[objnum].flags & OF_COOP_RECOVERY)) {
+		if (objnum >= 0 && objnum <= Highest_object_index && Objects[objnum].type == OBJ_POWERUP &&
+		    Objects[objnum].id == incoming.powerup && (Objects[objnum].flags & OF_COOP_RECOVERY)) {
 			incoming.object_index = (int16_t) objnum;
 			incoming.signature = Objects[objnum].signature;
 		}
 	}
+	if (buf[1] == REC_FREEZE) incoming.state = COOP_RECOVERY_RECLAIMING;
 	items[index] = incoming;
-	if (incoming.state != COOP_RECOVERY_LIVE && incoming.object_index >= 0) {
-		remove_world(&items[index]);
-		items[index].remote_index = -1;
-	}
+	if (incoming.state != COOP_RECOVERY_LIVE && incoming.state != COOP_RECOVERY_RECLAIMING) remove_world(&items[index]);
 	if (next_id <= incoming.id) next_id = incoming.id + 1;
-	if (buf[1] == REC_GRANT && incoming.recipient < MAX_PLAYERS) {
-		if (player_revision[incoming.recipient] < incoming.id)
-			player_revision[incoming.recipient] = incoming.id;
-		apply_grant[index] = 1;
-	}
+	if (buf[1] == REC_FREEZE) send_item(&items[index], REC_FROZEN, sender);
 }
 
 void coop_recovery_frame(void)
 {
-	size_t i;
-	int again;
 	if (!coop_recovery_active()) return;
-	for (i = 0; i < count; i++) {
+	for (size_t i = 0; i < count; i++) {
 		coop_recovery_item *item = &items[i];
-		if (item->remote_index >= 0 && item->object_index < 0) {
-			int newer = 0;
-			for (size_t n = 0; n < count; n++)
-				if (items[n].id > item->id && items[n].remote_index == item->remote_index &&
-				    items[n].network_owner == item->network_owner) newer = 1;
-			if (newer) continue;
-			int objnum = objnum_remote_to_local(item->remote_index, item->network_owner);
-			if (objnum >= 0 && objnum <= Highest_object_index && Objects[objnum].type == OBJ_POWERUP &&
-			    Objects[objnum].id == item->powerup && (Objects[objnum].flags & OF_COOP_RECOVERY)) {
-				item->object_index = (int16_t) objnum;
-				item->signature = Objects[objnum].signature;
-				if (item->state != COOP_RECOVERY_LIVE) {
-					remove_world(item);
-					item->remote_index = -1;
-				}
+		if (item->remote_index < 0 || item->object_index >= 0) continue;
+		int newer = 0;
+		for (size_t n = 0; n < count; n++)
+			if (items[n].id > item->id && items[n].remote_index == item->remote_index && items[n].network_owner == item->network_owner) newer = 1;
+		if (newer) continue;
+		int objnum = objnum_remote_to_local(item->remote_index, item->network_owner);
+		if (objnum >= 0 && objnum <= Highest_object_index && Objects[objnum].type == OBJ_POWERUP &&
+		    Objects[objnum].id == item->powerup && (Objects[objnum].flags & OF_COOP_RECOVERY)) {
+			item->object_index = (int16_t) objnum;
+			item->signature = Objects[objnum].signature;
+			if (item->state != COOP_RECOVERY_LIVE && item->state != COOP_RECOVERY_RECLAIMING) {
+				remove_world(item);
+				item->remote_index = -1;
 			}
 		}
 	}
-	do {
-		again = 0;
-		for (i = 0; i < count; i++)
-			if (apply_grant[i]) {
-				int pnum = items[i].recipient;
-				if (pnum >= MAX_PLAYERS || items[i].id <= applied_revision[pnum] ||
-				    (pnum == Player_num && items[i].life != player_life[Player_num])) {
-					apply_grant[i] = 0;
-					continue;
-				}
-				if (items[i].previous_revision != applied_revision[pnum]) continue;
-				apply_grant[i] = 0;
-				apply_delta(pnum, items[i].gear);
-				applied_revision[pnum] = items[i].id;
-				again = 1;
-				if (pnum == Player_num) multi_send_ship_status();
-			}
-	} while (again);
 }
 
 void coop_recovery_send_snapshot(int pnum)
 {
-	size_t i;
 	if (!coop_recovery_active() || !multi_i_am_master()) return;
 	send_item(NULL, REC_BEGIN, pnum);
-	for (i = 0; i < count; i++) send_item(&items[i], REC_ITEM, pnum);
-	for (i = 0; i < MAX_PLAYERS; i++) {
-		coop_recovery_item revision = { 0 };
-		revision.id = player_revision[i];
-		revision.recipient = (uint8_t) i;
-		revision.life = player_life[i];
-		coop_player_record rec;
-		coop_snapshot_player((int) i, &rec);
-		revision.gear = from_record(&rec);
-		send_item(&revision, REC_SNAPSHOT_REVISION, pnum);
+	for (size_t i = 0; i < count; i++) send_item(&items[i], REC_ITEM, pnum);
+	for (int i = 0; i < MAX_PLAYERS; i++) {
+		coop_recovery_item status = { 0 };
+		status.id = (uint32_t) i + 1;
+		status.life = player_life[i];
+		send_item(&status, REC_LIFE, pnum);
 	}
 	send_item(NULL, REC_END, pnum);
 }
@@ -782,6 +728,11 @@ void coop_recovery_host_changed(void)
 	/* Host migration makes surviving objects locally owned for future joins */
 	for (size_t i = 0; i < count; i++) {
 		int objnum = bound_object(&items[i]);
+		/* A new host must obtain its own acknowledgements before reclamation */
+		if (items[i].state == COOP_RECOVERY_RECLAIMING) {
+			items[i].state = objnum >= 0 ? COOP_RECOVERY_LIVE : COOP_RECOVERY_CREDIT;
+			freeze_waiting[i] = 0;
+		}
 		if (items[i].state != COOP_RECOVERY_LIVE || objnum < 0) continue;
 		items[i].remote_index = (int16_t) objnum_local_to_remote(objnum, &items[i].network_owner);
 		items[i].revision++;
@@ -808,9 +759,9 @@ void coop_recovery_reset(void)
 	next_id = 1;
 	epoch = restore_epoch ? restore_epoch : epoch + 1;
 	if (!epoch) epoch = 1;
-	requested_id = 0;
-	memset(player_revision, 0, sizeof(player_revision));
-	memset(applied_revision, 0, sizeof(applied_revision));
+	freeze_sent_at = 0;
+	memset(restore_serial, 0, sizeof(restore_serial));
+	memset(applied_restore_serial, 0, sizeof(applied_restore_serial));
 	memset(omega_charge, 0, sizeof(omega_charge));
 	memset(player_life, 0, sizeof(player_life));
 	memset(armed_mines, 0, sizeof(armed_mines));
@@ -849,10 +800,10 @@ int coop_recovery_apply_pending(void)
 		int j, found = -1;
 		if (!item->id || item->id == UINT32_MAX || !memchr(item->client_id, 0, sizeof(item->client_id)) ||
 		    !memchr(item->callsign, 0, sizeof(item->callsign)) ||
-		    item->state < COOP_RECOVERY_LIVE || item->state > COOP_RECOVERY_ALIVE) return 0;
+		    item->state < COOP_RECOVERY_LIVE || item->state > COOP_RECOVERY_RECLAIMING) return 0;
 		for (size_t n = 0; n < i; n++)
 			if (pending[n].id == item->id) return 0;
-		if (item->state == COOP_RECOVERY_LIVE) {
+		if (item->state == COOP_RECOVERY_LIVE || (item->state == COOP_RECOVERY_RECLAIMING && item->remote_index >= 0)) {
 			for (j = 0; j <= Highest_object_index; j++)
 				if (Objects[j].signature == item->signature && Objects[j].type == OBJ_POWERUP && Objects[j].id == item->powerup) {
 					if (found != -1) return 0;
@@ -868,10 +819,9 @@ int coop_recovery_apply_pending(void)
 	coop_recovery_reset();
 	for (i = 0; i < pending_count; i++) {
 		items[count++] = pending[i];
-		/* Saved player records already include committed transfers
-		 * Receipts must not follow old slot numbers into the restored session */
-		if (items[i].state == COOP_RECOVERY_TAKEN) items[i].recipient = 255;
-		apply_grant[i] = 0;
+		/* A loaded save is a new authoritative world; restart any pending freeze */
+		if (items[i].state == COOP_RECOVERY_RECLAIMING) items[i].state = items[i].object_index >= 0 ? COOP_RECOVERY_LIVE : COOP_RECOVERY_CREDIT;
+		freeze_waiting[i] = 0;
 		if (next_id <= items[i].id) next_id = items[i].id + 1;
 	}
 	free(pending);

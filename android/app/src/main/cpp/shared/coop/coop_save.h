@@ -89,7 +89,7 @@ typedef struct coop_save_metadata {
 	uint8_t difficulty_max;           /* v4 */
 	uint8_t duplicate_energy_shields; /* v5 */
 	uint32_t recovery_count;          /* v7: ownership ledger entries */
-	uint32_t recovery_revisions[8];
+	uint32_t recovery_restore_serials[8];
 	uint32_t recovery_lives[8];
 } coop_save_metadata;
 

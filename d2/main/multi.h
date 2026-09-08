@@ -62,8 +62,8 @@ extern int multi_protocol; // set and determinate used protocol
 
 // What version of the multiplayer protocol is this? Increment each time something drastic changes in Multiplayer without the version number changes. Can be reset to 0 each time the version of the game changes
 #ifdef __ANDROID__
-#define MULTI_PROTO_VERSION 30021 // Redux synchronized recovery timeline protocol
-#define MULTI_PLAYER_DROP_LENGTH 118
+#define MULTI_PROTO_VERSION 30022 // Redux normal-pickup drop tracking protocol
+#define MULTI_PLAYER_DROP_LENGTH 114
 #define MULTI_SHIP_STATUS_LENGTH 82
 #define MULTI_COOP_RESTORE_LENGTH 102
 #else

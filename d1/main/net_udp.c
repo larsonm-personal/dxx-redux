@@ -2522,6 +2522,12 @@ void net_udp_send_objects(void)
 		return;
 	}
 
+#ifdef __ANDROID__
+	/* Freeze and reconcile this owner's drops before the joining world starts */
+	if (!UDP_sync_player.player.observer && Network_send_objnum == -1 &&
+	    !coop_recovery_rejoin_ready(UDP_sync_player.player.callsign, UDP_sync_player.player.client_id)) return;
+#endif
+
 	memset(object_buffer, 0, UPID_MAX_SIZE);
 	object_buffer[0] = UPID_OBJECT_DATA;
 	PUT_INTEL_INT(object_buffer + 1, UDP_sync_player.token); 

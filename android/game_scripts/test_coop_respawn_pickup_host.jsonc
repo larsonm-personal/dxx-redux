@@ -2,5 +2,9 @@
  {"_info":{"games":["d1","d2"],"_standalone":false,"_owner":"test_lan"}},
  {"action":"set_debug","field":"recovery_test_trace","value":"true"},
  {"action":"set_debug","field":"clear_robots","value":"true"},
+ {"action":"set_debug","field":"recovery_test_seed_credit","value":"true"},
+ {"action":"set_debug","field":"recovery_test_freeze_absent","value":"begin"},
+ {"action":"wait_for","timeout_ms":15000,"expect":{"multiplayer.recovery.ready_to_save":"true"}},
+ {"action":"set_debug","field":"recovery_test_freeze_absent","value":"ready"},
  {"action":"wait_for","timeout_ms":30000,"expect":{"multiplayer.recovery.live":{"gte":1}}}
 ]

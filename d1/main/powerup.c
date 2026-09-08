@@ -112,6 +112,14 @@ void draw_powerup(object *obj)
 
 }
 
+/* Android drop tags constrain synthesized ammo packs to their real contents */
+#ifdef __ANDROID__
+#include "coop/coop_recovery.h"
+#define DROPPED_AMMO(obj, index, amount) coop_recovery_pickup_count(obj, index, amount)
+#else
+#define DROPPED_AMMO(obj, index, amount) (amount)
+#endif
+
 void powerup_basic(int redadd, int greenadd, int blueadd, int score, char *format, ...)
 {
 	va_list	args;
@@ -239,15 +247,15 @@ static int duplicate_flag_gives_energy(int flag)
 	return 1;
 }
 
-int pick_up_vulcan_ammo(void)
+static int pick_up_vulcan_ammo(int amount)
 {
 	int	used=0;
 
 //added/killed on 1/21/99 by Victor Rachels ... how is this wrong?
 //-killed-        int     pwsave = Players[Player_num].primary_weapon;                // Ugh, save selected primary weapon around the picking up of the ammo.  I apologize for this code.  Matthew A. Toschlog
-	if (pick_up_ammo(CLASS_PRIMARY, VULCAN_INDEX, VULCAN_AMMO_AMOUNT)) {
+	if (pick_up_ammo(CLASS_PRIMARY, VULCAN_INDEX, amount)) {
 		VulcanAmmoBoxesOnBoard[Player_num] += 1;
-		VulcanBoxAmmo[Player_num] += VULCAN_AMMO_AMOUNT;
+		VulcanBoxAmmo[Player_num] += amount;
 		powerup_basic(7, 14, 21, VULCAN_AMMO_SCORE, "%s!", TXT_VULCAN_AMMO);
 		used = 1;
 	} else {
@@ -345,10 +353,10 @@ int do_powerup(object *obj)
 				used = pick_up_energy();
 			break;
 		case POW_MISSILE_1:
-			used=pick_up_secondary(CONCUSSION_INDEX,1);
+			used=pick_up_secondary(CONCUSSION_INDEX,DROPPED_AMMO(obj, CONCUSSION_INDEX, 1));
 			break;
 		case POW_MISSILE_4:
-			used=pick_up_secondary(CONCUSSION_INDEX,4);
+			used=pick_up_secondary(CONCUSSION_INDEX,DROPPED_AMMO(obj, CONCUSSION_INDEX, 4));
 			break;
 
 		case POW_KEY_BLUE:
@@ -476,7 +484,7 @@ int do_powerup(object *obj)
 
 			if (!used && duplicate_uses_single_player_reward)
 //end addition/edit - Victor Rachels
-				used = pick_up_vulcan_ammo();
+				used = pick_up_vulcan_ammo(DROPPED_AMMO(obj, -1, VULCAN_AMMO_AMOUNT));
 			break;
 		case	POW_SPREADFIRE_WEAPON:
 			used = pick_up_primary(SPREADFIRE_INDEX);
@@ -495,26 +503,26 @@ int do_powerup(object *obj)
 			break;
 
 		case	POW_PROXIMITY_WEAPON:
-			used=pick_up_secondary(PROXIMITY_INDEX,4);
+			used=pick_up_secondary(PROXIMITY_INDEX,DROPPED_AMMO(obj, PROXIMITY_INDEX, 4));
 			break;
 		case	POW_SMARTBOMB_WEAPON:
-			used=pick_up_secondary(SMART_INDEX,1);
+			used=pick_up_secondary(SMART_INDEX,DROPPED_AMMO(obj, SMART_INDEX, 1));
 			break;
 		case	POW_MEGA_WEAPON:
-			used=pick_up_secondary(MEGA_INDEX,1);
+			used=pick_up_secondary(MEGA_INDEX,DROPPED_AMMO(obj, MEGA_INDEX, 1));
 			break;
 		case	POW_VULCAN_AMMO: {
-			used = pick_up_vulcan_ammo();
+			used = pick_up_vulcan_ammo(DROPPED_AMMO(obj, -1, VULCAN_AMMO_AMOUNT));
 			if (!used && !(Game_mode & GM_MULTI) )
-				used = pick_up_vulcan_ammo();
+				used = pick_up_vulcan_ammo(DROPPED_AMMO(obj, -1, VULCAN_AMMO_AMOUNT));
 			break;
 		}
 			break;
 		case	POW_HOMING_AMMO_1:
-			used=pick_up_secondary(HOMING_INDEX,1);
+			used=pick_up_secondary(HOMING_INDEX,DROPPED_AMMO(obj, HOMING_INDEX, 1));
 			break;
 		case	POW_HOMING_AMMO_4:
-			used=pick_up_secondary(HOMING_INDEX,4);
+			used=pick_up_secondary(HOMING_INDEX,DROPPED_AMMO(obj, HOMING_INDEX, 4));
 			break;
 		case	POW_CLOAK:
 			if (Players[Player_num].flags & PLAYER_FLAGS_CLOAKED) {

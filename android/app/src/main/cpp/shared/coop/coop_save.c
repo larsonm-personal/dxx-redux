@@ -390,7 +390,7 @@ static int coop_build_save_metadata(coop_save_metadata *meta)
 	coop_write_metadata_extra(meta);
 	meta->recovery_count = (uint32_t) coop_recovery_count();
 	for (i = 0; i < MAX_PLAYERS; i++) {
-		meta->recovery_revisions[i] = coop_recovery_player_revision(i);
+		meta->recovery_restore_serials[i] = coop_recovery_restore_serial(i);
 		meta->recovery_lives[i] = coop_recovery_life(i);
 	}
 
@@ -424,7 +424,7 @@ static int coop_write_save_payload(rewind_file *file)
 	coop_save_footer footer;
 	uint32_t checksum = 2166136261u;
 
-	if (!file || !coop_build_save_metadata(&meta) ||
+	if (!file || !coop_recovery_save_ready() || !coop_build_save_metadata(&meta) ||
 	    count > UINT32_MAX ||
 	    count > (SIZE_MAX - sizeof(meta)) / sizeof(*items) ||
 	    recovery_size > UINT32_MAX ||
@@ -1048,7 +1048,7 @@ static void coop_append_other_slots(char *buf, int *off, int buf_size,
 }
 
 #define COOP_PROGRESS_INV_TAG 0x43505249
-#define COOP_PROGRESS_INV_VER 3
+#define COOP_PROGRESS_INV_VER 4
 #define COOP_PROGRESS_INV_HDR 26
 
 static uint32_t coop_progress_inventory_checksum(const void *data, size_t size)

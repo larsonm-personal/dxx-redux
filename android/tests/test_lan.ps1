@@ -36,6 +36,7 @@ param(
     [switch]$HostMigration,
     [switch]$SpewRecovery,
     [switch]$SpewPickup,
+    [switch]$SpewPartialPickup,
     [int]$TimeoutSeconds = 120
 )
 
@@ -1434,20 +1435,28 @@ try {
         $testPassed = Invoke-HostMigrationScenario
     }
 
-    if ($testPassed -and $SpewPickup) {
+    if ($testPassed -and ($SpewPickup -or $SpewPartialPickup)) {
         $pickupHost = if ($GuidebotSlotRemapRestore) { $EMU2 } else { $EMU1 }
         $pickupClient = if ($GuidebotSlotRemapRestore) { $EMU1 } else { $EMU2 }
-        $testPassed = Invoke-PairedGameAutomation -PrimarySerial $pickupHost -PrimaryScript "test_coop_respawn_pickup_host.jsonc" -SecondarySerial $pickupClient -SecondaryScript "test_coop_respawn_pickup_client.jsonc" -Description "client death, respawn and approach to owned spew" -TimeoutSec 60
+        $pickupScript = if ($SpewPartialPickup) { "test_coop_partial_pickup_client.jsonc" } else { "test_coop_respawn_pickup_client.jsonc" }
+        $testPassed = Invoke-PairedGameAutomation -PrimarySerial $pickupHost -PrimaryScript "test_coop_respawn_pickup_host.jsonc" -SecondarySerial $pickupClient -SecondaryScript $pickupScript -Description "client death, respawn and approach to owned spew" -TimeoutSec 60
         if ($testPassed) {
-            $testPassed = Wait-ForCondition -Description "client physically picks up owned homing spew" -TimeoutSec 20 -PollMs 1000 -Condition {
+            $testPassed = Wait-ForCondition -Description "client collects owned homing spew" -TimeoutSec 20 -PollMs 1000 -Condition {
                 $h = Get-GameIntrospection -Serial $pickupHost
                 $c = Get-GameIntrospection -Serial $pickupClient
                 if (-not $h -or -not $c) { return $false }
                 $remote = @($h.multiplayer.players | Where-Object { -not $_.is_me -and $_.connected -eq 1 })[0]
                 $local = @($c.multiplayer.players | Where-Object { $_.is_me })[0]
-                return $local.homing_ammo -ge 4 -and $local.homing_ammo -le 6 -and
+                $expectedAmmo = if ($SpewPartialPickup) { $local.homing_ammo -eq 10 -and $h.multiplayer.recovery.credit_homing -eq 3 -and $c.multiplayer.recovery.credit_homing -eq 3 } else { $local.homing_ammo -ge 4 -and $local.homing_ammo -le 6 }
+                return $expectedAmmo -and
                 $local.homing_ammo -eq $remote.homing_ammo -and
                 $h.multiplayer.recovery.epoch -eq $c.multiplayer.recovery.epoch
+            }
+            if (-not $testPassed) {
+                foreach ($serial in @($pickupHost, $pickupClient)) {
+                    $last = Get-GameIntrospection -Serial $serial
+                    @{ serial = $serial; multiplayer = $last.multiplayer } | ConvertTo-Json -Depth 8 | Write-Output
+                }
             }
         }
     }

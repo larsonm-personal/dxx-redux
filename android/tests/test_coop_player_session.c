@@ -103,7 +103,7 @@ static int test_coop_metadata_v7_runtime_fields(void)
 {
 	coop_player_record record = { 0 };
 
-	CHECK(COOP_SAVE_META_VER == 7);
+	CHECK(COOP_SAVE_META_VER == 8);
 	record.primary_weapon = MAX_PRIMARY_WEAPONS - 1;
 	record.secondary_weapon = MAX_SECONDARY_WEAPONS - 1;
 	record.afterburner_charge = F1_0;

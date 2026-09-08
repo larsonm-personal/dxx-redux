@@ -139,7 +139,7 @@ void coop_send_restore_inventory(int pnum)
 	PUT_INTEL_SHORT(multibuf + 84, rec.kill_goal_count);
 
 	PUT_INTEL_INT(multibuf + 86, coop_recovery_epoch());
-	PUT_INTEL_INT(multibuf + 90, coop_recovery_player_revision(pnum));
+	PUT_INTEL_INT(multibuf + 90, coop_recovery_restore_serial(pnum));
 	PUT_INTEL_INT(multibuf + 94, rec.omega_charge);
 	PUT_INTEL_INT(multibuf + 98, coop_recovery_life(pnum));
 	multi_send_data_direct(multibuf, 102, pnum, 2);
@@ -206,7 +206,7 @@ void coop_apply_pending_restore_inventory(void)
 	rec.kill_goal_count = GET_INTEL_SHORT(buf + 84);
 	rec.omega_charge = GET_INTEL_INT(buf + 94);
 	coop_apply_record_to_player(pnum, &rec, saved_level == Current_level_num);
-	coop_recovery_set_player_revision(pnum, (uint32_t) GET_INTEL_INT(buf + 90));
+	coop_recovery_set_restore_serial(pnum, (uint32_t) GET_INTEL_INT(buf + 90));
 	coop_recovery_set_life(pnum, (uint32_t) GET_INTEL_INT(buf + 98));
 	multi_send_ship_status();
 }

@@ -2498,7 +2498,7 @@ multi_do_player_explode(const ubyte *buf)
 		return;
 
 #ifdef __ANDROID__
-	if (coop_recovery_active() && (uint32_t) GET_INTEL_INT(buf + 114) < coop_recovery_life(pnum)) return;
+	if (coop_recovery_active() && (uint32_t) GET_INTEL_INT(buf + 110) < coop_recovery_life(pnum)) return;
 #endif
 
 #ifdef NETWORK
@@ -2573,8 +2573,8 @@ multi_do_player_explode(const ubyte *buf)
 	}
 
 #ifdef __ANDROID__
-	coop_recovery_set_omega(pnum, GET_INTEL_INT(buf + 110));
-	coop_recovery_drop(pnum, (uint32_t) GET_INTEL_INT(buf + 106), (uint32_t) GET_INTEL_INT(buf + 114));
+	coop_recovery_set_omega(pnum, GET_INTEL_INT(buf + 106));
+	coop_recovery_drop(pnum, (uint32_t) GET_INTEL_INT(buf + 110));
 #endif
 
 	if (buf[0] == MULTI_PLAYER_EXPLODE)
@@ -2826,12 +2826,8 @@ multi_do_remobj(const ubyte *buf, int authenticated_sender)
 		return;
 	}
 
-#ifdef __ANDROID__
-	if (coop_recovery_active() && (Objects[local_objnum].flags & OF_COOP_RECOVERY) &&
-	    authenticated_sender != multi_who_is_master()) return;
-#else
 	(void) authenticated_sender;
-#endif
+
 	if (Network_send_objects && multi_objnum_is_past(local_objnum))
 	{
 		Network_send_objnum = -1;
@@ -2866,6 +2862,9 @@ multi_do_remobj(const ubyte *buf, int authenticated_sender)
 #endif
 		}
 
+#ifdef __ANDROID__
+	coop_recovery_note_remove(&Objects[local_objnum]);
+#endif
 	Objects[local_objnum].flags |= OF_SHOULD_BE_DEAD; // quick and painless
 
 }
@@ -3867,9 +3866,8 @@ multi_send_player_explode(char type)
 	}
 
 	#ifdef __ANDROID__
-	PUT_INTEL_INT(multibuf + 106, coop_recovery_player_revision(Player_num));
-	PUT_INTEL_INT(multibuf + 110, coop_recovery_omega(Player_num));
-	PUT_INTEL_INT(multibuf + 114, coop_recovery_life(Player_num));
+	PUT_INTEL_INT(multibuf + 106, coop_recovery_omega(Player_num));
+	PUT_INTEL_INT(multibuf + 110, coop_recovery_life(Player_num));
 #else
 	PUT_INTEL_INT(multibuf + 106, 0);
 	PUT_INTEL_INT(multibuf + 110, 0);
@@ -3877,7 +3875,7 @@ multi_send_player_explode(char type)
 #endif
 	multi_send_data(multibuf, message_length[MULTI_PLAYER_EXPLODE], 2);
 #ifdef __ANDROID__
-	coop_recovery_drop(Player_num, coop_recovery_player_revision(Player_num), coop_recovery_life(Player_num));
+	coop_recovery_drop(Player_num, coop_recovery_life(Player_num));
 #endif
 	Net_create_loc = 0;
 	if (Players[Player_num].flags & PLAYER_FLAGS_CLOAKED)
@@ -6796,7 +6794,7 @@ void multi_send_ship_status_for_frame()
 
 
 #ifdef __ANDROID__
-	PUT_INTEL_INT(multibuf + 70, coop_recovery_player_revision(Player_num));
+	PUT_INTEL_INT(multibuf + 70, coop_recovery_restore_serial(Player_num));
 	PUT_INTEL_INT(multibuf + 78, coop_recovery_life(Player_num));
 #else
 	PUT_INTEL_INT(multibuf + 70, 0);
@@ -6825,7 +6823,7 @@ void multi_do_ship_status( const ubyte *buf, int authenticated_sender )
 		return;
 #ifdef __ANDROID__
 	if (!coop_recovery_accept_ship_status(buf[1], (uint32_t) GET_INTEL_INT(buf + 70), (uint32_t) GET_INTEL_INT(buf + 78))) return;
-	coop_recovery_set_player_revision(buf[1], (uint32_t) GET_INTEL_INT(buf + 70));
+	coop_recovery_set_restore_serial(buf[1], (uint32_t) GET_INTEL_INT(buf + 70));
 	coop_recovery_set_omega(buf[1], GET_INTEL_INT(buf + 74));
 #endif
 	if (is_observer())
