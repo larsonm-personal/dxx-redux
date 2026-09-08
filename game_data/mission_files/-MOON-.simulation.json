@@ -266,7 +266,7 @@
       {
         "level_num": 0,
         "level_file": "-moon05-.rl2",
-        "route_input_sha256": "C4BFDF5044470E5C1EBDF6548F49721ABC67BD0E79A7C0FBF0C852C742796E2C",
+        "route_input_sha256": "1891864B622939821BFA27EAE22D4C810B7AE69D78D150F20057645F68BE3E48",
         "status": "ok",
         "rng_start": {
           "state": 1,
@@ -295,29 +295,29 @@
           },
           {
             "n": "switch 29",
-            "s": 48
+            "s": 47
           },
           {
             "n": "red key",
-            "s": 64
+            "s": 62
           },
           {
             "n": "hidden door",
-            "s": 69
+            "s": 68
           },
           {
             "n": "boss",
-            "s": 94
+            "s": 91
           },
           {
             "n": "exit",
-            "s": 99
+            "s": 97
           }
         ],
-        "total_frames": 5964,
+        "total_frames": 5826,
         "rng_end": {
-          "state": 3067459217,
-          "calls": 2544
+          "state": 1037595951,
+          "calls": 2490
         }
       }
     ]
@@ -416,7 +416,7 @@
       {
         "level_num": 0,
         "level_file": "-moon08-.rl2",
-        "route_input_sha256": "5C4D4FEE17290A841F1C185E047AEA55FDB0737D135B68AA3A92866388D22C23",
+        "route_input_sha256": "AFE2A9109D8E7346D89F3B8E079E0E9887BA02EEF721D718509914D5AB4145D0",
         "status": "timeout",
         "rng_start": {
           "state": 1,
@@ -761,7 +761,7 @@
       {
         "level_num": 0,
         "level_file": "MOON13.RL2",
-        "route_input_sha256": "21B5E68F80C066C027DAD2583A7F6C994CBFF3B5978E03525EF850C7BF9B73DA",
+        "route_input_sha256": "3E81F84A7EC829F18D456EF38D3470FA960EFE04E7B1BEB377B9323628D16BDC",
         "status": "ok",
         "rng_start": {
           "state": 1,
@@ -782,11 +782,11 @@
           },
           {
             "n": "switch 0",
-            "s": 53
+            "s": 52
           },
           {
             "n": "switch 1",
-            "s": 60
+            "s": 59
           },
           {
             "n": "gold key",
@@ -794,33 +794,33 @@
           },
           {
             "n": "destroy robot carrying red key",
-            "s": 99
+            "s": 97
           },
           {
             "n": "switch 31",
-            "s": 113
+            "s": 110
           },
           {
             "n": "switch 27",
-            "s": 113
+            "s": 110
           },
           {
             "n": "switch 32",
-            "s": 132
+            "s": 128
           },
           {
             "n": "reactor",
-            "s": 136
+            "s": 132
           },
           {
             "n": "exit",
-            "s": 146
+            "s": 142
           }
         ],
-        "total_frames": 8755,
+        "total_frames": 8503,
         "rng_end": {
-          "state": 2142801976,
-          "calls": 5231
+          "state": 1430025122,
+          "calls": 5205
         }
       }
     ]

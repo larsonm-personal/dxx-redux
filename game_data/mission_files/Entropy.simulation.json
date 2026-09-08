@@ -13,7 +13,7 @@
     {
       "level_num": 1,
       "level_file": "entropy1.rl2",
-      "route_input_sha256": "092449263CCF1398A2053EB1E2930629E4CA583DAE345AADF4B0C3FBB89219FB",
+      "route_input_sha256": "4FA8CD7EEBEABEAF810799B1B5ED19CEDE7B35279A0F9967EF2E2A023D2C6757",
       "status": "unsupported",
       "rng_start": {
         "state": 1,
@@ -30,7 +30,7 @@
     {
       "level_num": 2,
       "level_file": "entropy2.rl2",
-      "route_input_sha256": "86670DD6A0ED7A89B120AB8252C7663959183D43B3C693F6202EA3E549FB5CA9",
+      "route_input_sha256": "54ECF73CA1175314AFC5A01781A2BB1A178C373C805660BE4F4C22A0916E1569",
       "status": "unsupported",
       "rng_start": {
         "state": 1,

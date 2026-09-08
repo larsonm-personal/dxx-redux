@@ -14,7 +14,7 @@
     {
       "level_num": 1,
       "level_file": "mnalvl1.rl2",
-      "route_input_sha256": "C9CC6B298D70B889EF0CFBD35A60AF28C2C5E4F04E36BCF59A9F752A8778BC36",
+      "route_input_sha256": "B567544EB9F44D7DECF96A0B95F95FE499DCCAFCC10A4A544DEAE3C232D2E007",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -31,29 +31,29 @@
         },
         {
           "n": "switch 1",
-          "s": 29
+          "s": 27
         },
         {
           "n": "red key",
-          "s": 39
+          "s": 37
         },
         {
           "n": "switch 4",
-          "s": 41
+          "s": 39
         },
         {
           "n": "reactor",
-          "s": 66
+          "s": 64
         },
         {
           "n": "exit",
-          "s": 71
+          "s": 70
         }
       ],
-      "total_frames": 4266,
+      "total_frames": 4187,
       "rng_end": {
-        "state": 1240761752,
-        "calls": 3471
+        "state": 1649739513,
+        "calls": 3400
       }
     },
     {

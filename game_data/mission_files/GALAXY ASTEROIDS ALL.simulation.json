@@ -231,7 +231,7 @@
     {
       "level_num": -1,
       "level_file": "PSYCHE5S.RL2",
-      "route_input_sha256": "30A2B3F423B94285267851A7C3339A7A2BB3AF56264F295B0A38BDD9869C4C74",
+      "route_input_sha256": "84C82AFD5C4B52CA275F251C43001D7A18BAEAB4A6E81D1207D9192C8DE4BC98",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -244,21 +244,21 @@
         },
         {
           "n": "switch 1",
-          "s": 7
+          "s": 6
         },
         {
           "n": "red key",
-          "s": 14
+          "s": 12
         },
         {
           "n": "exit",
-          "s": 24
+          "s": 22
         }
       ],
-      "total_frames": 1417,
+      "total_frames": 1331,
       "rng_end": {
-        "state": 2100293115,
-        "calls": 782
+        "state": 1889721200,
+        "calls": 727
       }
     }
   ]

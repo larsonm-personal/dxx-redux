@@ -51,7 +51,7 @@
     {
       "level_num": 2,
       "level_file": "pharioka.rl2",
-      "route_input_sha256": "3594BC1587EAB2D8E4ED293B50DA89F3CA659F59578A5B7F126E91A4191E3F38",
+      "route_input_sha256": "65FE6D905D664B3F73CCBB0ED37BFF242CE4E7C67FF86E1F42A1CDD6CE643B1E",
       "status": "unsupported",
       "rng_start": {
         "state": 1,
@@ -65,12 +65,16 @@
         {
           "n": "blue key",
           "s": 9
+        },
+        {
+          "n": "switch 7",
+          "s": 16
         }
       ],
-      "total_frames": 953,
+      "total_frames": 954,
       "rng_end": {
-        "state": 3396130861,
-        "calls": 404
+        "state": 2100638428,
+        "calls": 411
       },
       "problem": "route objective activation is not supported"
     },

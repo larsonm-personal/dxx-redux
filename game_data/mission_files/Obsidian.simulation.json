@@ -100,7 +100,7 @@
     {
       "level_num": 3,
       "level_file": "argntitr.rl2",
-      "route_input_sha256": "9DC4EE3B7E1CD20007EF6646D8B88E053398F1DD77D707F536EAF87F313691FF",
+      "route_input_sha256": "221DB38FCCEACBB20A8E959BB5C8D6C15C7D5F2FC61D3585800624B227ABC0A5",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -161,41 +161,41 @@
         },
         {
           "n": "switch 14",
-          "s": 95
+          "s": 93
         },
         {
           "n": "switch 15",
-          "s": 101
+          "s": 99
         },
         {
           "n": "switch 16",
-          "s": 107
+          "s": 104
         },
         {
           "n": "switch 17",
-          "s": 112
+          "s": 110
         },
         {
           "n": "switch 32",
-          "s": 117
+          "s": 114
         },
         {
           "n": "fly-through 19",
-          "s": 119
+          "s": 116
         },
         {
           "n": "boss",
-          "s": 129
+          "s": 125
         },
         {
           "n": "exit",
-          "s": 138
+          "s": 135
         }
       ],
-      "total_frames": 8297,
+      "total_frames": 8087,
       "rng_end": {
-        "state": 3032229818,
-        "calls": 10397
+        "state": 3544188490,
+        "calls": 10061
       }
     },
     {
@@ -262,7 +262,7 @@
     {
       "level_num": 5,
       "level_file": "magmav.rl2",
-      "route_input_sha256": "A574A566BE5C374012529A9A3FCC9139BF1A9FD9DEF55EC1BD24F7DA7D24E427",
+      "route_input_sha256": "C5913E5E441E2426C7DE9E671AE2EF8792747F14B651AB14C30C769C28FEAB18",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -299,25 +299,25 @@
         },
         {
           "n": "switch 10",
-          "s": 47
+          "s": 46
         },
         {
           "n": "blue key",
-          "s": 88
+          "s": 65
         },
         {
           "n": "switch 14",
-          "s": 94
+          "s": 72
         },
         {
           "n": "exit",
-          "s": 101
+          "s": 79
         }
       ],
-      "total_frames": 6054,
+      "total_frames": 4715,
       "rng_end": {
-        "state": 3022733088,
-        "calls": 2663
+        "state": 4067394795,
+        "calls": 2590
       }
     },
     {
@@ -478,7 +478,7 @@
     {
       "level_num": 9,
       "level_file": "cerulea.rl2",
-      "route_input_sha256": "D22724D43DDC548ACF90E86961C2319CE55F2F7F55E25AB40250A1F6AA52F83D",
+      "route_input_sha256": "2547C699402F843426E49D48ABF2843BCCE3A326D9D34681FBF8141869B1B8D1",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -507,7 +507,7 @@
         },
         {
           "n": "gold key",
-          "s": 66
+          "s": 65
         },
         {
           "n": "red key",
@@ -515,18 +515,18 @@
         },
         {
           "n": "fly-through 1",
-          "s": 104
+          "s": 103
         },
         {
           "n": "boss",
-          "s": 136
+          "s": 135
         },
         {
           "n": "exit",
           "s": 160
         }
       ],
-      "total_frames": 9602,
+      "total_frames": 9580,
       "rng_end": {
         "state": 3446704330,
         "calls": 5837
@@ -565,7 +565,7 @@
     {
       "level_num": 11,
       "level_file": "quoxir.rl2",
-      "route_input_sha256": "B9D777A5265C759AD51EDF3EF774DB45B33002EA822CA72BC12BDFFB1A09EB1A",
+      "route_input_sha256": "B4DD64E55F62EC6BA415F427E682ED097CBF858C4ECAC70F1142F212308C3299",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -582,83 +582,83 @@
         },
         {
           "n": "blue key",
-          "s": 18
+          "s": 17
         },
         {
           "n": "fly-through 10",
-          "s": 31
+          "s": 29
         },
         {
           "n": "switch 7",
-          "s": 37
+          "s": 35
         },
         {
           "n": "switch 8",
-          "s": 39
+          "s": 37
         },
         {
           "n": "switch 9",
-          "s": 43
+          "s": 40
         },
         {
           "n": "gold key",
-          "s": 46
+          "s": 43
         },
         {
           "n": "switch 17",
-          "s": 52
+          "s": 50
         },
         {
           "n": "switch 16",
-          "s": 52
+          "s": 50
         },
         {
           "n": "pass-through 14",
-          "s": 78
+          "s": 76
         },
         {
           "n": "switch 15",
-          "s": 86
+          "s": 84
         },
         {
           "n": "red key",
-          "s": 88
+          "s": 85
         },
         {
           "n": "switch 2",
-          "s": 88
+          "s": 85
         },
         {
           "n": "switch 3",
-          "s": 100
+          "s": 95
         },
         {
           "n": "switch 4",
-          "s": 105
+          "s": 98
         },
         {
           "n": "switch 1",
-          "s": 108
+          "s": 100
         },
         {
           "n": "reactor",
-          "s": 109
+          "s": 101
         },
         {
           "n": "exit",
-          "s": 118
+          "s": 108
         }
       ],
-      "total_frames": 7069,
+      "total_frames": 6504,
       "rng_end": {
-        "state": 4073839733,
-        "calls": 3212
+        "state": 1240179346,
+        "calls": 3109
       }
     },
     {
       "level_num": 12,
       "level_file": "lususfls.rl2",
-      "route_input_sha256": "009DE4E2C95D84F1E2FB9818E28418713EADE30D39A374CDA66CA632053FC435",
+      "route_input_sha256": "2F167FEC42EB08D597C435E41C7926FE1E370A236F0CFB57E2982F26102E1114",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -695,47 +695,47 @@
         },
         {
           "n": "switch 10",
-          "s": 52
+          "s": 51
         },
         {
           "n": "fly-through 18",
-          "s": 60
+          "s": 58
         },
         {
           "n": "switch 12",
-          "s": 61
+          "s": 60
         },
         {
           "n": "switch 7",
-          "s": 78
+          "s": 76
         },
         {
           "n": "switch 6",
-          "s": 87
+          "s": 85
         },
         {
           "n": "red key",
-          "s": 93
+          "s": 91
         },
         {
           "n": "boss",
-          "s": 113
+          "s": 112
         },
         {
           "n": "exit",
           "s": 132
         }
       ],
-      "total_frames": 7899,
+      "total_frames": 7911,
       "rng_end": {
-        "state": 1734514162,
-        "calls": 6213
+        "state": 2743597066,
+        "calls": 6285
       }
     },
     {
       "level_num": 13,
       "level_file": "o3tdepot.rl2",
-      "route_input_sha256": "2223E3A46C26C20C3187B9ABB0612C2D01184AAD853E16CEC7BEA8E19E3F99F0",
+      "route_input_sha256": "DEE3CAFD715E14096737C62018C90A453350FC0C6BA971D96C8D4D2F162A5367",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -780,7 +780,7 @@
         },
         {
           "n": "red key",
-          "s": 83
+          "s": 84
         },
         {
           "n": "boss",
@@ -791,10 +791,10 @@
           "s": 116
         }
       ],
-      "total_frames": 6955,
+      "total_frames": 6972,
       "rng_end": {
-        "state": 1761389047,
-        "calls": 4594
+        "state": 2788376185,
+        "calls": 4552
       }
     },
     {

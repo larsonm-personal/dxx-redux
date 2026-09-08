@@ -571,7 +571,7 @@
       {
         "level_num": 16,
         "level_file": "d2xlvl16.rl2",
-        "route_input_sha256": "2963806054AB7D201680A9F417E0FC7720F9ACAA05C015609097384B6F3BEC50",
+        "route_input_sha256": "0F38D45989B196ECE8A0985E9DCCC620EEBF00ECD73B148F126327CCB2799EF8",
         "status": "timeout",
         "rng_start": {
           "state": 1,

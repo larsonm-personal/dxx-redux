@@ -219,7 +219,7 @@
     {
       "level_num": 5,
       "level_file": "csparto.rl2",
-      "route_input_sha256": "97757FBEC1020BBC7FC2C4B544B3AE6ADFF3CED98C0C2A5F2119C0C001356E6C",
+      "route_input_sha256": "D279527829F96F2EBE4D922BECA552DE118EFC5E9086D4A2A016908D51783BFB",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -243,15 +243,15 @@
           "s": 35
         },
         {
+          "n": "fly-through 5",
+          "s": 35
+        },
+        {
           "n": "switch 1",
           "s": 35
         },
         {
-          "n": "switch 0",
-          "s": 35
-        },
-        {
-          "n": "switch 2",
+          "n": "locate and activate switch trigger 8",
           "s": 35
         },
         {

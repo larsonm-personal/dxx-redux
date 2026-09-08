@@ -43,7 +43,7 @@
     {
       "level_num": 2,
       "level_file": "d2leva-2.rl2",
-      "route_input_sha256": "9DAC2393BD7FA875F66D4EAB48CE92CB737D241826C3E2AB5C0630FCAF9FF0AA",
+      "route_input_sha256": "83B3C2EA72468F393933332642B668FF2A8731393D3B2A0D411BBAA2850A0BFE",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -80,21 +80,21 @@
         },
         {
           "n": "switch 3",
-          "s": 56
+          "s": 54
         },
         {
           "n": "reactor",
-          "s": 58
+          "s": 54
         },
         {
           "n": "exit",
-          "s": 65
+          "s": 60
         }
       ],
-      "total_frames": 3912,
+      "total_frames": 3626,
       "rng_end": {
-        "state": 3071740085,
-        "calls": 1612
+        "state": 2937489548,
+        "calls": 1579
       }
     },
     {
@@ -440,17 +440,17 @@
         },
         {
           "n": "reactor",
-          "s": 138
+          "s": 97
         },
         {
           "n": "exit",
-          "s": 148
+          "s": 129
         }
       ],
-      "total_frames": 8881,
+      "total_frames": 7759,
       "rng_end": {
-        "state": 3738432113,
-        "calls": 4368
+        "state": 1413989855,
+        "calls": 4106
       }
     },
     {
@@ -726,7 +726,7 @@
     {
       "level_num": 17,
       "level_file": "d2leve-1.rl2",
-      "route_input_sha256": "68227FCC49A1E35A19A9479CB6C5710316447FC2499FF3551298D11EDC51F1AB",
+      "route_input_sha256": "FD8599B529F4171503BD7457F7A34C919491BA45B517DA71E67E7EE492FD4170",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -955,7 +955,7 @@
     {
       "level_num": 22,
       "level_file": "d2levf-2.rl2",
-      "route_input_sha256": "4298C67986F381117A911A5A77694FBEC5EE3BBF4ECC9A6F671015F1C04903CE",
+      "route_input_sha256": "3B2D4A8C803020E114857E4DCC9608AF97DE2B1A685DEA86827E4F491C175133",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -988,17 +988,17 @@
         },
         {
           "n": "switch 10",
-          "s": 100
+          "s": 99
         },
         {
           "n": "exit",
-          "s": 113
+          "s": 110
         }
       ],
-      "total_frames": 6808,
+      "total_frames": 6594,
       "rng_end": {
-        "state": 1209880386,
-        "calls": 3381
+        "state": 3825414692,
+        "calls": 3379
       }
     },
     {

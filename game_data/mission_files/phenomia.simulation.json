@@ -108,7 +108,7 @@
     {
       "level_num": 3,
       "level_file": "reactorc.rl2",
-      "route_input_sha256": "5DF0E8BC3DB3F01B8A7A7E404AA9E401D65EC39869CC462429578FD3A86ACE0A",
+      "route_input_sha256": "6677C81DCAEDAEBD6AC451BE0EF88EEE43D2262FEC9C042556143DD0EB2594AB",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -125,99 +125,99 @@
         },
         {
           "n": "blue key",
-          "s": 44
+          "s": 43
         },
         {
           "n": "switch 19",
-          "s": 61
+          "s": 58
         },
         {
           "n": "switch 8",
-          "s": 76
+          "s": 74
         },
         {
           "n": "fly-through 1",
-          "s": 89
+          "s": 86
         },
         {
           "n": "gold key",
-          "s": 90
+          "s": 88
         },
         {
           "n": "hidden door",
-          "s": 103
+          "s": 101
         },
         {
           "n": "switch 0",
-          "s": 106
+          "s": 103
         },
         {
           "n": "hidden door",
-          "s": 114
+          "s": 112
         },
         {
           "n": "switch 20",
-          "s": 118
+          "s": 115
         },
         {
           "n": "hidden door",
-          "s": 127
+          "s": 123
         },
         {
           "n": "hidden door",
-          "s": 134
+          "s": 131
         },
         {
           "n": "switch 10",
-          "s": 134
+          "s": 131
         },
         {
           "n": "hidden door",
-          "s": 148
+          "s": 145
         },
         {
           "n": "switch 26",
-          "s": 151
+          "s": 148
         },
         {
           "n": "hidden door",
-          "s": 160
+          "s": 157
         },
         {
           "n": "switch 22",
-          "s": 161
+          "s": 157
         },
         {
           "n": "switch 24",
-          "s": 168
+          "s": 165
         },
         {
           "n": "red key",
-          "s": 174
+          "s": 169
         },
         {
           "n": "reactor",
-          "s": 203
+          "s": 198
         },
         {
           "n": "switch 3",
-          "s": 206
+          "s": 202
         },
         {
           "n": "exit",
-          "s": 223
+          "s": 220
         }
       ],
-      "total_frames": 13394,
+      "total_frames": 13227,
       "rng_end": {
-        "state": 1172270678,
-        "calls": 4881
+        "state": 1265253096,
+        "calls": 4863
       }
     },
     {
       "level_num": 4,
       "level_file": "specimen.rl2",
-      "route_input_sha256": "5B8ED242243D601B447495F8A4787415184ACA2B02DB681699A5B72FBA43AE6B",
+      "route_input_sha256": "868BC498A30EA0F48BFD31266266A26B67F3AD1576BA24F9463D61DC53A8694D",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -238,41 +238,41 @@
         },
         {
           "n": "switch 5",
-          "s": 51
+          "s": 50
         },
         {
           "n": "blue key",
-          "s": 53
+          "s": 52
         },
         {
           "n": "switch 10",
-          "s": 53
+          "s": 52
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 88
+          "s": 87
         },
         {
           "n": "red key",
-          "s": 135
+          "s": 133
         },
         {
           "n": "boss",
-          "s": 148
+          "s": 147
         },
         {
           "n": "switch 3",
-          "s": 157
+          "s": 156
         },
         {
           "n": "exit",
-          "s": 170
+          "s": 169
         }
       ],
-      "total_frames": 10199,
+      "total_frames": 10158,
       "rng_end": {
-        "state": 2960590743,
-        "calls": 5714
+        "state": 3358575414,
+        "calls": 5553
       }
     },
     {
@@ -315,7 +315,7 @@
     {
       "level_num": 6,
       "level_file": "pharioka.rl2",
-      "route_input_sha256": "FD13F3F7FB10A2649BA7BF67AD5D92D56486CADCF5BE0421E6C301DF7A230692",
+      "route_input_sha256": "06A3CB08EA876B028C14344B51E7B8C66CC2ECB9963B7F4DB0A51D0CFF97DFCB",
       "status": "unsupported",
       "rng_start": {
         "state": 1,
@@ -329,12 +329,16 @@
         {
           "n": "blue key",
           "s": 9
+        },
+        {
+          "n": "switch 7",
+          "s": 16
         }
       ],
-      "total_frames": 953,
+      "total_frames": 954,
       "rng_end": {
-        "state": 3396130861,
-        "calls": 404
+        "state": 2100638428,
+        "calls": 411
       },
       "problem": "route objective activation is not supported"
     },

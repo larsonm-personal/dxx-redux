@@ -113,7 +113,7 @@
     {
       "level_num": 3,
       "level_file": "world1c.rl2",
-      "route_input_sha256": "49D0671DFD9C1E8A046168C21F33329758180341C554699DE7AACE82C76110B9",
+      "route_input_sha256": "FE29E6AC8E1BC4897545D5C56A189C94F4D1A2B509AB4AE81871626C6EB5AB05",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -130,7 +130,7 @@
         },
         {
           "n": "blue key",
-          "s": 30
+          "s": 29
         },
         {
           "n": "switch 5",
@@ -142,33 +142,33 @@
         },
         {
           "n": "switch 9",
-          "s": 72
+          "s": 71
         },
         {
           "n": "red key",
-          "s": 102
+          "s": 100
         },
         {
           "n": "fly-through 10",
-          "s": 102
+          "s": 101
         },
         {
           "n": "switch 11",
-          "s": 105
+          "s": 103
         },
         {
           "n": "reactor",
-          "s": 122
+          "s": 137
         },
         {
           "n": "exit",
-          "s": 136
+          "s": 157
         }
       ],
-      "total_frames": 8146,
+      "total_frames": 9394,
       "rng_end": {
-        "state": 3223304534,
-        "calls": 5137
+        "state": 2724188782,
+        "calls": 5081
       }
     },
     {

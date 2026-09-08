@@ -1929,9 +1929,9 @@
         "mine_volume": 20653600.0,
         "mine_volume_normalized": 4.51652,
         "mine_volume_text": "4.5x",
-        "travel_distance": 5375.7,
-        "travel_time_seconds": 108,
-        "travel_time_text": "1M:48S",
+        "travel_distance": 5328.2,
+        "travel_time_seconds": 107,
+        "travel_time_text": "1M:47S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -2018,15 +2018,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 7",
-            "seg": 222,
-            "side": 0,
+            "seg": 221,
             "wall": 70,
             "label_pos": {
               "x": -7.9,
               "y": -73.8,
               "z": 724.8
             },
-            "distance": 123.9,
+            "distance": 100.2,
             "trigger": 7,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -2049,7 +2048,7 @@
               "y": 222.5,
               "z": 1226.4
             },
-            "distance": 1323.0
+            "distance": 1299.2
           },
           {
             "index": 7,

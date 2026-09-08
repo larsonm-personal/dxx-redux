@@ -279,7 +279,7 @@
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "guidebot_note": "guidebot is present but not reachable from the start",
-        "route_problem": "non-shootable trigger source is behind a closed wall",
+        "route_problem": "gold key unreachable",
         "notes": [
           "guidebot or guidebot start cage placed in this level",
           "guidebot is present but not reachable from the start"
@@ -307,9 +307,9 @@
         "mine_volume": 71721700.0,
         "mine_volume_normalized": 15.6841,
         "mine_volume_text": "16x",
-        "travel_distance": 11735.5,
-        "travel_time_seconds": 235,
-        "travel_time_text": "3M:55S",
+        "travel_distance": 11385.8,
+        "travel_time_seconds": 228,
+        "travel_time_text": "3M:48S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -530,15 +530,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 2",
-            "seg": 786,
-            "side": 0,
+            "seg": 177,
             "wall": 81,
             "label_pos": {
               "x": -1237.9,
               "y": -427.0,
               "z": -1825.0
             },
-            "distance": 487.2,
+            "distance": 312.4,
             "trigger": 2,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -564,7 +563,7 @@
               "y": -427.0,
               "z": -1474.5
             },
-            "distance": 751.1,
+            "distance": 576.3,
             "trigger": 6,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",

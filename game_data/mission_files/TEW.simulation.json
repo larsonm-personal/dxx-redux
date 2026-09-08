@@ -7,7 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 25,
+    "ok": 24,
+    "failed": 1,
     "timeout": 7
   },
   "levels": [
@@ -531,8 +532,8 @@
     {
       "level_num": 15,
       "level_file": "level15.rl2",
-      "route_input_sha256": "C621CB10B8E2E261F1847B095FCEE4A1025C81D0BE3DA0C8DCAFC26CDB5F90B9",
-      "status": "ok",
+      "route_input_sha256": "C7B2EED1BE65D2E86751264C4418A27C68A762F35EF7A63A64CF9F974BA6E88F",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -541,41 +542,14 @@
         {
           "n": "blue key",
           "s": 17
-        },
-        {
-          "n": "switch 3",
-          "s": 56
-        },
-        {
-          "n": "gold key",
-          "s": 58
-        },
-        {
-          "n": "switch 16",
-          "s": 59
-        },
-        {
-          "n": "blastable wall",
-          "s": 72
-        },
-        {
-          "n": "hidden door",
-          "s": 76
-        },
-        {
-          "n": "boss",
-          "s": 82
-        },
-        {
-          "n": "exit",
-          "s": 84
         }
       ],
-      "total_frames": 5044,
+      "total_frames": 1019,
       "rng_end": {
-        "state": 3643469303,
-        "calls": 3570
-      }
+        "state": 167314660,
+        "calls": 883
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 16,

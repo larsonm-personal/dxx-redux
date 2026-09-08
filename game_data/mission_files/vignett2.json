@@ -3591,39 +3591,10 @@
               "z": -418.1
             },
             "distance": 1218.0
-          },
-          {
-            "index": 8,
-            "kind": "trigger",
-            "activation_kind": "unresolved_trigger",
-            "calculated": false,
-            "label": "Locate and activate switch trigger 3",
-            "seg": 279,
-            "wall": 54,
-            "label_pos": {
-              "x": -25.0,
-              "y": 71.7,
-              "z": -381.1
-            },
-            "trigger": 3,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 279,
-                "side": 4,
-                "wall": 74
-              },
-              {
-                "seg": 498,
-                "side": 5,
-                "wall": 75
-              }
-            ]
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "non-shootable trigger source is behind a closed wall",
+        "route_problem": "non-shootable trigger source is behind a closed wall: trigger 3 source 254:4 wall 54",
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",

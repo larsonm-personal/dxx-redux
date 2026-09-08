@@ -1568,7 +1568,7 @@
             "key": "gold"
           }
         ],
-        "route_problem": "non-shootable trigger source is behind a closed wall"
+        "route_problem": "non-shootable trigger source is behind a closed wall: trigger 8 source 269:2 wall 23"
       },
       {
         "level_num": 12,
@@ -3891,7 +3891,7 @@
             "seg": 2
           }
         ],
-        "route_problem": "non-shootable trigger source is behind a closed wall"
+        "route_problem": "non-shootable trigger source is behind a closed wall: trigger 4 source 25:0 wall 15"
       },
       {
         "level_num": -6,

@@ -114,7 +114,7 @@
       {
         "level_num": 3,
         "level_file": "world1c.rl2",
-        "route_input_sha256": "4765103DC60A3E8A4621D93A111CEC43BB242ED151B9A17646C901445F3C3261",
+        "route_input_sha256": "61F83646E05B4825B425A25CC9C5658BF10675A51426DE94389E81664D1D8D6D",
         "status": "ok",
         "rng_start": {
           "state": 1,
@@ -131,7 +131,7 @@
           },
           {
             "n": "blue key",
-            "s": 30
+            "s": 29
           },
           {
             "n": "switch 4",
@@ -143,33 +143,33 @@
           },
           {
             "n": "switch 8",
-            "s": 72
+            "s": 71
           },
           {
             "n": "red key",
-            "s": 102
+            "s": 100
           },
           {
             "n": "fly-through 9",
-            "s": 102
+            "s": 101
           },
           {
             "n": "switch 10",
-            "s": 105
+            "s": 103
           },
           {
             "n": "reactor",
-            "s": 122
+            "s": 137
           },
           {
             "n": "exit",
-            "s": 136
+            "s": 157
           }
         ],
-        "total_frames": 8146,
+        "total_frames": 9394,
         "rng_end": {
-          "state": 3223304534,
-          "calls": 5137
+          "state": 2724188782,
+          "calls": 5081
         }
       },
       {
@@ -495,7 +495,7 @@
       {
         "level_num": 3,
         "level_file": "world1c.rl2",
-        "route_input_sha256": "540786305BAC785CCFB93FA9D286D34D5DA9D0E269CD210309854EAD8234EB7E",
+        "route_input_sha256": "CC838E85681D2FC8EFEA6C314D4ECF8C4F85C8D197D303FE347F4A810D5A7595",
         "status": "ok",
         "rng_start": {
           "state": 1,
@@ -512,7 +512,7 @@
           },
           {
             "n": "blue key",
-            "s": 30
+            "s": 29
           },
           {
             "n": "switch 5",
@@ -524,33 +524,33 @@
           },
           {
             "n": "switch 9",
-            "s": 72
+            "s": 71
           },
           {
             "n": "red key",
-            "s": 102
+            "s": 100
           },
           {
             "n": "fly-through 10",
-            "s": 102
+            "s": 101
           },
           {
             "n": "switch 11",
-            "s": 105
+            "s": 103
           },
           {
             "n": "reactor",
-            "s": 122
+            "s": 137
           },
           {
             "n": "exit",
-            "s": 136
+            "s": 157
           }
         ],
-        "total_frames": 8146,
+        "total_frames": 9394,
         "rng_end": {
-          "state": 3223304534,
-          "calls": 5137
+          "state": 2724188782,
+          "calls": 5081
         }
       },
       {

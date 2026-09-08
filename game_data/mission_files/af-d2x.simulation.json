@@ -177,29 +177,29 @@
         },
         {
           "n": "switch 2",
-          "s": 125
+          "s": 138
         },
         {
           "n": "switch 4",
-          "s": 133
+          "s": 149
         },
         {
           "n": "red key",
-          "s": 133
+          "s": 149
         },
         {
           "n": "boss",
-          "s": 161
+          "s": 177
         },
         {
           "n": "exit",
-          "s": 183
+          "s": 200
         }
       ],
-      "total_frames": 11003,
+      "total_frames": 11992,
       "rng_end": {
-        "state": 3803226924,
-        "calls": 6923
+        "state": 895454765,
+        "calls": 7060
       }
     },
     {
@@ -363,7 +363,7 @@
     {
       "level_num": 10,
       "level_file": "fbasin.rl2",
-      "route_input_sha256": "FAE78F8CF319E17AA3D2B72959AB52E587C6F9A6C499F3D7934938B93795BAD2",
+      "route_input_sha256": "8FBB395174067A13BE1B195366F0C334178B6974CB2489555A19B6D016AAB494",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -392,17 +392,17 @@
         },
         {
           "n": "boss",
-          "s": 62
+          "s": 61
         },
         {
           "n": "exit",
-          "s": 78
+          "s": 77
         }
       ],
-      "total_frames": 4686,
+      "total_frames": 4638,
       "rng_end": {
-        "state": 1820422358,
-        "calls": 2705
+        "state": 4159927135,
+        "calls": 2698
       }
     },
     {

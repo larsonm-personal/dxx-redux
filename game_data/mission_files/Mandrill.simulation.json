@@ -100,7 +100,7 @@
     {
       "level_num": 4,
       "level_file": "mplevel4.rl2",
-      "route_input_sha256": "4CF451A5E7934071706947D477A760630B41E87F6882D6A37CB83D5F46679B2A",
+      "route_input_sha256": "BD92DD4172E8E440EE62ACB6C232B775A60C7E8091EC48DB4DE96C9EFA8F2CA4",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -125,25 +125,25 @@
         },
         {
           "n": "switch 9",
-          "s": 108
+          "s": 107
         },
         {
           "n": "red key",
-          "s": 117
+          "s": 115
         },
         {
           "n": "reactor",
-          "s": 134
+          "s": 133
         },
         {
           "n": "exit",
-          "s": 143
+          "s": 141
         }
       ],
-      "total_frames": 8597,
+      "total_frames": 8482,
       "rng_end": {
-        "state": 2923237112,
-        "calls": 4783
+        "state": 3234263244,
+        "calls": 4331
       }
     },
     {

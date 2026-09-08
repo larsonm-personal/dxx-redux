@@ -14,7 +14,7 @@
     {
       "level_num": 1,
       "level_file": "pyrstatn.rl2",
-      "route_input_sha256": "6142B54CFEF1EAED9C21C9DC439BCB910F5EEBE9E0F3AAAB2182DA806195018E",
+      "route_input_sha256": "6DD00D24C966D32A5AF7AC5C866DF4FD9F3B419F849FA05A91F57EA6AE96594D",
       "status": "failed",
       "rng_start": {
         "state": 1,
@@ -35,32 +35,32 @@
         },
         {
           "n": "switch 0",
-          "s": 24
+          "s": 23
         },
         {
           "n": "gold key",
-          "s": 29
+          "s": 28
         },
         {
           "n": "switch 1",
-          "s": 30
+          "s": 29
         },
         {
           "n": "red key",
-          "s": 40
+          "s": 39
         }
       ],
-      "total_frames": 2427,
+      "total_frames": 2317,
       "rng_end": {
-        "state": 1259199996,
-        "calls": 1019
+        "state": 3676878653,
+        "calls": 1028
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 2,
       "level_file": "trident.rl2",
-      "route_input_sha256": "6A4B5E6B15FB079544D0B1122085CE7F2E4844AA6EF80FF66C5EFA0F4FEB43BF",
+      "route_input_sha256": "AC507FEE4A3E8A98B2AF3FACF719FD1EB2AF040EBD9CC994C031F967FA0F4203",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -85,7 +85,7 @@
         },
         {
           "n": "switch 5",
-          "s": 46
+          "s": 45
         },
         {
           "n": "fly-through 15",
@@ -97,7 +97,7 @@
         },
         {
           "n": "switch 11",
-          "s": 63
+          "s": 62
         },
         {
           "n": "fly-through 12",
@@ -109,13 +109,13 @@
         },
         {
           "n": "exit",
-          "s": 78
+          "s": 77
         }
       ],
-      "total_frames": 4678,
+      "total_frames": 4634,
       "rng_end": {
-        "state": 3437395400,
-        "calls": 4255
+        "state": 4053155480,
+        "calls": 4239
       }
     },
     {

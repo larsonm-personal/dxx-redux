@@ -1901,9 +1901,34 @@ int main()
 	assert(conditional_dependency.steps[2].segment == 1);
 	assert(conditional_dependency.steps[2].activation ==
 	       dxx_route::route_activation_kind::shoot_switch);
+	assert(conditional_dependency.steps[2].switch_guidance_candidates.size() == 1);
+	assert(conditional_dependency.steps[2].switch_guidance_candidates[0].segment == 1);
 	assert(conditional_dependency.progress.fired_triggers[0]);
 	assert(conditional_dependency.progress.fired_triggers[1]);
 	assert(conditional_dependency.progress.opened_hidden_walls[3]);
+	// A remote switch behind a closed wall needs that wall's opening trigger
+	auto trigger_blocker_snapshot = conditional_snapshot;
+	trigger_blocker_snapshot.state.walls[3].kind = dxx_route::route_wall_kind::closed;
+	trigger_blocker_snapshot.state.walls[4].kind = dxx_route::route_wall_kind::closed;
+	trigger_blocker_snapshot.topology.triggers[1].kind = dxx_route::route_trigger_kind::open_wall;
+	const auto trigger_blocker_dependency = dxx_route::resolve_trigger_dependency(
+	    trigger_blocker_snapshot, conditional_query,
+	    dxx_route::initial_route_progress_state(trigger_blocker_snapshot, conditional_query),
+	    1, 1, conditional_visibility);
+	assert(trigger_blocker_dependency.resolved);
+	assert(trigger_blocker_dependency.steps.size() == 2);
+	assert(trigger_blocker_dependency.steps[0].trigger == 1);
+	assert(trigger_blocker_dependency.steps[1].trigger == 0);
+	assert(dxx_route::route_progress_wall_kind(
+	           trigger_blocker_snapshot, trigger_blocker_dependency.progress, 3) ==
+	       dxx_route::route_wall_kind::open);
+	// Unlocking is not sufficient to remove a solid closed wall
+	trigger_blocker_snapshot.topology.triggers[1].kind = dxx_route::route_trigger_kind::unlock_door;
+	const auto unopened_blocker_dependency = dxx_route::resolve_trigger_dependency(
+	    trigger_blocker_snapshot, conditional_query,
+	    dxx_route::initial_route_progress_state(trigger_blocker_snapshot, conditional_query),
+	    1, 1, conditional_visibility);
+	assert(!unopened_blocker_dependency.resolved);
 	auto opaque_blocker_snapshot = conditional_snapshot;
 	opaque_blocker_snapshot.state.walls[3].hidden = false;
 	const auto opaque_dependency = dxx_route::resolve_trigger_dependency(

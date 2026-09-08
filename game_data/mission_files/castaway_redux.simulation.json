@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 7,
+    "ok": 8,
     "failed": 1,
-    "unsupported": 2
+    "timeout": 1
   },
   "levels": [
     {
@@ -60,7 +60,7 @@
     {
       "level_num": 2,
       "level_file": "rupture.rl2",
-      "route_input_sha256": "D2E2CBA41E87F1AF9ECD33F29758B3DA84DE189D957D0E679F0A5D891D8CDC6E",
+      "route_input_sha256": "647EAD704717468D4629D0AC2FD7A1501160345FF33AF33323E4CAA4E93C559B",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -105,19 +105,19 @@
         },
         {
           "n": "switch 10",
-          "s": 75
+          "s": 74
         },
         {
           "n": "pass-through 32",
-          "s": 87
+          "s": 86
         },
         {
           "n": "switch 18",
-          "s": 91
+          "s": 90
         },
         {
           "n": "switch 17",
-          "s": 92
+          "s": 91
         },
         {
           "n": "fly-through 19",
@@ -125,15 +125,15 @@
         },
         {
           "n": "switch 24",
-          "s": 97
+          "s": 96
         },
         {
           "n": "fly-through 16",
-          "s": 98
+          "s": 97
         },
         {
           "n": "switch 21",
-          "s": 99
+          "s": 98
         },
         {
           "n": "switch 20",
@@ -141,17 +141,17 @@
         },
         {
           "n": "reactor",
-          "s": 108
+          "s": 107
         },
         {
           "n": "exit",
-          "s": 110
+          "s": 109
         }
       ],
-      "total_frames": 6619,
+      "total_frames": 6557,
       "rng_end": {
-        "state": 3942626502,
-        "calls": 7777
+        "state": 1898726726,
+        "calls": 8161
       }
     },
     {
@@ -219,46 +219,46 @@
         },
         {
           "n": "switch 12",
-          "s": 22
+          "s": 23
         },
         {
           "n": "gold key",
-          "s": 44
+          "s": 46
         },
         {
           "n": "red key",
-          "s": 65
-        },
-        {
-          "n": "switch 7",
-          "s": 65
-        },
-        {
-          "n": "hidden door",
-          "s": 65
-        },
-        {
-          "n": "switch 13",
           "s": 68
         },
         {
+          "n": "switch 7",
+          "s": 68
+        },
+        {
+          "n": "hidden door",
+          "s": 68
+        },
+        {
+          "n": "switch 13",
+          "s": 71
+        },
+        {
           "n": "switch 8",
-          "s": 70
+          "s": 72
         },
         {
           "n": "fly-through 16",
-          "s": 70
+          "s": 72
         },
         {
           "n": "reactor",
-          "s": 81
+          "s": 84
         },
         {
           "n": "exit",
-          "s": 96
+          "s": 98
         }
       ],
-      "total_frames": 5776,
+      "total_frames": 5909,
       "rng_end": {
         "state": 2147182535,
         "calls": 5922
@@ -267,8 +267,8 @@
     {
       "level_num": 5,
       "level_file": "quarry.rl2",
-      "route_input_sha256": "396D2F61BA24C0DBEFAFC90637024EE9AE53703A9AAE310C8A028C1383C70BB6",
-      "status": "unsupported",
+      "route_input_sha256": "12E396B3586B965B897BEFF850D32CC64760114C9BD6587DE6DA95C59FBE6693",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -292,20 +292,51 @@
         },
         {
           "n": "switch 12",
-          "s": 112
+          "s": 111
+        },
+        {
+          "n": "fly-through 14",
+          "s": 113
+        },
+        {
+          "n": "switch 13",
+          "s": 114
+        },
+        {
+          "n": "fly-through 17",
+          "s": 120
+        },
+        {
+          "n": "fly-through 19",
+          "s": 123
+        },
+        {
+          "n": "switch 16",
+          "s": 124
+        },
+        {
+          "n": "red key",
+          "s": 157
+        },
+        {
+          "n": "reactor",
+          "s": 188
+        },
+        {
+          "n": "exit",
+          "s": 203
         }
       ],
-      "total_frames": 6920,
+      "total_frames": 12158,
       "rng_end": {
-        "state": 3684793711,
-        "calls": 3450
-      },
-      "problem": "route objective activation is not supported"
+        "state": 962607593,
+        "calls": 8152
+      }
     },
     {
       "level_num": 6,
       "level_file": "cove.rl2",
-      "route_input_sha256": "84FFA89C54B51FD004F5E24B30EDC8F8D649219ABE6B045CF97BA0F210D0455A",
+      "route_input_sha256": "65D45C43AA9296CEB5D7F5FCEE9963A7246396C91B7B4F8B879C370F531EC5AD",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -345,6 +376,10 @@
           "s": 92
         },
         {
+          "n": "red key",
+          "s": 103
+        },
+        {
           "n": "fly-through 9",
           "s": 104
         },
@@ -354,33 +389,29 @@
         },
         {
           "n": "fly-through 12",
-          "s": 111
+          "s": 110
         },
         {
           "n": "switch 11",
-          "s": 113
-        },
-        {
-          "n": "red key",
-          "s": 117
+          "s": 112
         },
         {
           "n": "switch 21",
-          "s": 132
+          "s": 123
         },
         {
           "n": "boss",
-          "s": 150
+          "s": 141
         },
         {
           "n": "exit",
-          "s": 173
+          "s": 164
         }
       ],
-      "total_frames": 10381,
+      "total_frames": 9821,
       "rng_end": {
-        "state": 3476506041,
-        "calls": 9352
+        "state": 2041932861,
+        "calls": 9988
       }
     },
     {
@@ -447,60 +478,19 @@
     {
       "level_num": 8,
       "level_file": "meta.rl2",
-      "route_input_sha256": "903101E9C41143EC9771360BB0C9580D8D91C9E07EADBD0CE1FC928733F2908C",
-      "status": "unsupported",
+      "route_input_sha256": "BE7F2F2AEAF24ACACFEC1BC77C61574DE9AEAA681C1DCA6433F7D144EDBE5770",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [
-        {
-          "n": "blue key",
-          "s": 13
-        },
-        {
-          "n": "pass-through 3",
-          "s": 23
-        },
-        {
-          "n": "switch 4",
-          "s": 27
-        },
-        {
-          "n": "gold key",
-          "s": 28
-        },
-        {
-          "n": "fly-through 15",
-          "s": 52
-        },
-        {
-          "n": "switch 24",
-          "s": 53
-        },
-        {
-          "n": "fly-through 14",
-          "s": 56
-        },
-        {
-          "n": "switch 25",
-          "s": 58
-        },
-        {
-          "n": "fly-through 16",
-          "s": 62
-        },
-        {
-          "n": "switch 26",
-          "s": 63
-        }
-      ],
-      "total_frames": 3928,
+      "objectives": [],
+      "total_frames": 3960,
       "rng_end": {
-        "state": 1626871541,
-        "calls": 3596
+        "state": 43796357,
+        "calls": 252
       },
-      "problem": "route objective activation is not supported"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 9,
@@ -543,7 +533,7 @@
     {
       "level_num": -1,
       "level_file": "devoured.rl2",
-      "route_input_sha256": "CBDA14055DB68D16379CC94B0F55A2CDBC44A5459C9AA0A2BD01E50BF0E0C7E4",
+      "route_input_sha256": "D121475775E24C606563970009AE10CB293F6537CA1D7A292B653B55ADA8E51F",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -580,21 +570,21 @@
         },
         {
           "n": "switch 2",
-          "s": 48
+          "s": 47
         },
         {
           "n": "reactor",
-          "s": 57
+          "s": 55
         },
         {
           "n": "exit",
-          "s": 69
+          "s": 67
         }
       ],
-      "total_frames": 4145,
+      "total_frames": 4036,
       "rng_end": {
-        "state": 3608215435,
-        "calls": 3966
+        "state": 3017180951,
+        "calls": 3794
       }
     }
   ]

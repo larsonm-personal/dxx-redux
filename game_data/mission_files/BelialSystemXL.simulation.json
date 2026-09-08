@@ -664,7 +664,7 @@
     {
       "level_num": -2,
       "level_file": "cargoca.rl2",
-      "route_input_sha256": "4B8497AFE8187543C9EE3CF11009A2E19FBC613A94953F0A0C8ED0C85677A0AF",
+      "route_input_sha256": "7DDE9F450762F668D56CA8F67C9A532E652215D823B2C3DB4FB94C82B52093FE",
       "status": "ok",
       "rng_start": {
         "state": 1,

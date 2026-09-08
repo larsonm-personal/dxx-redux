@@ -459,7 +459,7 @@
     {
       "level_num": 12,
       "level_file": "lvl12.rl2",
-      "route_input_sha256": "EADC51F6600A89A1E01FA96D64BD4C3C6CCCD8FE2F3B9D4A32B61F2505867769",
+      "route_input_sha256": "B1AF29AD640C05338D3F5B5F6914F5A26A86CAB29E25DACA845220363A532F41",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -496,25 +496,25 @@
         },
         {
           "n": "switch 12",
-          "s": 180
+          "s": 179
         },
         {
           "n": "red key",
-          "s": 206
+          "s": 204
         },
         {
           "n": "reactor",
-          "s": 231
+          "s": 229
         },
         {
           "n": "exit",
-          "s": 240
+          "s": 239
         }
       ],
-      "total_frames": 14427,
+      "total_frames": 14327,
       "rng_end": {
-        "state": 4054370975,
-        "calls": 8010
+        "state": 1855842186,
+        "calls": 7949
       }
     },
     {

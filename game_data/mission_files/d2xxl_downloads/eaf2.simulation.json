@@ -336,31 +336,31 @@
         },
         {
           "n": "switch 2",
-          "s": 69
+          "s": 70
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 80
+          "s": 83
         },
         {
           "n": "boss",
-          "s": 107
+          "s": 110
         },
         {
           "n": "exit",
-          "s": 125
+          "s": 128
         }
       ],
-      "total_frames": 7513,
+      "total_frames": 7688,
       "rng_end": {
-        "state": 3930000974,
-        "calls": 8057
+        "state": 3778889413,
+        "calls": 8124
       }
     },
     {
       "level_num": -1,
       "level_file": "Enc2-s1.rl2",
-      "route_input_sha256": "D15652320F44DA8362823E09C53B7B54406F7687D7EC6A736E7B440ACEF871C1",
+      "route_input_sha256": "5E17698BB6E751F7C78847ADD7A43E5774CEE6BFFF3C18493CD3B594E9C8DF82",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -373,29 +373,29 @@
         },
         {
           "n": "switch 5",
-          "s": 25
+          "s": 24
         },
         {
           "n": "fly-through 21",
-          "s": 38
+          "s": 36
         },
         {
           "n": "switch 6",
-          "s": 51
+          "s": 48
         },
         {
           "n": "reactor",
-          "s": 53
+          "s": 50
         },
         {
           "n": "exit",
           "s": 57
         }
       ],
-      "total_frames": 3398,
+      "total_frames": 3392,
       "rng_end": {
-        "state": 3563181320,
-        "calls": 5215
+        "state": 2912811915,
+        "calls": 4990
       }
     },
     {

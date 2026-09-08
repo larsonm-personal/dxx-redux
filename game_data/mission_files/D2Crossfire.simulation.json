@@ -164,7 +164,7 @@
     {
       "level_num": 5,
       "level_file": "k3reb.rl2",
-      "route_input_sha256": "06670693A6451BC1BF4711DBC624360CA733620AE4A0E1C918AA073079BEBF7D",
+      "route_input_sha256": "F3FF73B16A47CACF6AF7DEFFCA73E8F8EF6FE5B4DCD15B46B0D4834B11F905AF",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -181,29 +181,29 @@
         },
         {
           "n": "blue key",
-          "s": 23
+          "s": 22
         },
         {
           "n": "gold key",
-          "s": 51
+          "s": 50
         },
         {
           "n": "fly-through 5",
-          "s": 79
+          "s": 78
         },
         {
           "n": "red key",
-          "s": 83
+          "s": 82
         },
         {
           "n": "exit",
           "s": 114
         }
       ],
-      "total_frames": 6818,
+      "total_frames": 6858,
       "rng_end": {
-        "state": 695934172,
-        "calls": 3995
+        "state": 819357621,
+        "calls": 3916
       }
     },
     {
@@ -384,7 +384,7 @@
     {
       "level_num": 13,
       "level_file": "uluhnac.rl2",
-      "route_input_sha256": "AC4262E75FAC781E22B7A0573C754BB3D0D70F968482E53938B4DABAD584837D",
+      "route_input_sha256": "02F9913B58F62A4DCBEDECFB2E26CEAE5A4039586B269C050A35DE7612775AC4",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -397,25 +397,25 @@
         },
         {
           "n": "switch 1",
-          "s": 31
+          "s": 30
         },
         {
           "n": "red key",
-          "s": 47
+          "s": 44
         },
         {
           "n": "boss",
-          "s": 76
+          "s": 72
         },
         {
           "n": "exit",
-          "s": 85
+          "s": 83
         }
       ],
-      "total_frames": 5128,
+      "total_frames": 4977,
       "rng_end": {
-        "state": 4097929505,
-        "calls": 3040
+        "state": 2796758462,
+        "calls": 3017
       }
     },
     {
@@ -608,7 +608,7 @@
     {
       "level_num": 19,
       "level_file": "exoexec.rl2",
-      "route_input_sha256": "53BFCDAF318D8CF5E0ACCF8AC89072593C87814EDD5484DFD6976E105E3782D0",
+      "route_input_sha256": "963FC388C8B6EEBFCF5CC31AA52FB23868125ACCB53B10E7EE79413A9F82B406",
       "status": "timeout",
       "rng_start": {
         "state": 1,

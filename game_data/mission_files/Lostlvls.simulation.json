@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 10,
-    "failed": 7,
+    "ok": 11,
+    "failed": 6,
     "timeout": 7,
     "unsupported": 1
   },
@@ -103,7 +103,7 @@
     {
       "level_num": 4,
       "level_file": "lost04.rl2",
-      "route_input_sha256": "5883790BB9432C95C90C18A38DBA8F1463A059E1064D9AAA351A84E6406AC3F0",
+      "route_input_sha256": "D58B1EB7A59AEAE417430AEB5A84BDDAF2B2C27BA8F511D0E8A4D878A230D006",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -116,42 +116,42 @@
         },
         {
           "n": "switch 5",
-          "s": 6
+          "s": 5
         },
         {
           "n": "switch 6",
-          "s": 12
+          "s": 10
         },
         {
           "n": "switch 7",
-          "s": 18
+          "s": 17
         },
         {
           "n": "switch 8",
-          "s": 25
+          "s": 23
         },
         {
           "n": "switch 9",
-          "s": 31
+          "s": 29
         },
         {
           "n": "switch 10",
-          "s": 38
+          "s": 36
         },
         {
           "n": "fly-through 2",
-          "s": 40
+          "s": 38
         },
         {
           "n": "boss",
-          "s": 47
+          "s": 45
         },
         {
           "n": "exit",
-          "s": 51
+          "s": 49
         }
       ],
-      "total_frames": 3046,
+      "total_frames": 2925,
       "rng_end": {
         "state": 3965376292,
         "calls": 1075
@@ -223,8 +223,8 @@
     {
       "level_num": 7,
       "level_file": "lost07.rl2",
-      "route_input_sha256": "45087DF454556AE6AD0C6E4E29133529B160B1598119D05259CFAED35D56E53F",
-      "status": "timeout",
+      "route_input_sha256": "156FF112E810B20DC9E729A18C2EBA6C1CBAC507830A9417AF779D4A191F119A",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -241,19 +241,42 @@
         {
           "n": "fly-through 11",
           "s": 40
+        },
+        {
+          "n": "switch 12",
+          "s": 52
+        },
+        {
+          "n": "gold key",
+          "s": 54
+        },
+        {
+          "n": "switch 20",
+          "s": 54
+        },
+        {
+          "n": "red key",
+          "s": 66
+        },
+        {
+          "n": "reactor",
+          "s": 74
+        },
+        {
+          "n": "exit",
+          "s": 83
         }
       ],
-      "total_frames": 6644,
+      "total_frames": 5007,
       "rng_end": {
-        "state": 4241854367,
-        "calls": 2634
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 739457858,
+        "calls": 4405
+      }
     },
     {
       "level_num": 8,
       "level_file": "lost08.rl2",
-      "route_input_sha256": "517D29FDEE1F0DA0D44679CFE490A5A633DCF76B70B2ADB969430E81A5E6D925",
+      "route_input_sha256": "BAD5B6FBF12B1677A74FAA1FA222470010C2CE280D3FB988711D8D5A2CD4A56A",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -266,41 +289,41 @@
         },
         {
           "n": "switch 15",
-          "s": 11
+          "s": 10
         },
         {
           "n": "switch 16",
-          "s": 15
+          "s": 13
         },
         {
           "n": "switch 17",
-          "s": 20
+          "s": 17
         },
         {
           "n": "switch 18",
-          "s": 24
+          "s": 20
         },
         {
           "n": "switch 19",
-          "s": 29
+          "s": 24
         },
         {
           "n": "switch 20",
-          "s": 33
+          "s": 26
         },
         {
           "n": "boss",
-          "s": 41
+          "s": 34
         },
         {
           "n": "exit",
-          "s": 46
+          "s": 39
         }
       ],
-      "total_frames": 2743,
+      "total_frames": 2311,
       "rng_end": {
-        "state": 1889151071,
-        "calls": 1418
+        "state": 3059723990,
+        "calls": 1169
       }
     },
     {
@@ -375,7 +398,7 @@
     {
       "level_num": 12,
       "level_file": "lost12.rl2",
-      "route_input_sha256": "0096A92A0C982647C65E8FF0A187F0959027342806101A58CD0A34A6F26F5A2E",
+      "route_input_sha256": "4CDD55C3108C74AD725A1762A204E8D943C5AB0DCBC063A1DC3F96815D4BE884",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -388,41 +411,41 @@
         },
         {
           "n": "switch 6",
-          "s": 14
+          "s": 13
         },
         {
           "n": "switch 7",
-          "s": 23
+          "s": 21
         },
         {
           "n": "switch 8",
-          "s": 31
+          "s": 29
         },
         {
           "n": "switch 9",
-          "s": 40
+          "s": 38
         },
         {
           "n": "switch 10",
-          "s": 49
+          "s": 47
         },
         {
           "n": "switch 11",
-          "s": 58
+          "s": 56
         },
         {
           "n": "boss",
-          "s": 66
+          "s": 63
         },
         {
           "n": "exit",
-          "s": 67
+          "s": 64
         }
       ],
-      "total_frames": 4003,
+      "total_frames": 3853,
       "rng_end": {
-        "state": 3792637060,
-        "calls": 2899
+        "state": 3592483429,
+        "calls": 2844
       }
     },
     {
@@ -514,7 +537,7 @@
     {
       "level_num": 16,
       "level_file": "lost16.rl2",
-      "route_input_sha256": "21846C9B0A4660A77989265F7184809FECDA9F1DC2CEA8032F4EA166C5C75F48",
+      "route_input_sha256": "3B10F104DFD24EED3D4A175E6F8261F8C1CCD2D8685A18D81CC948E328B629BD",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -535,7 +558,7 @@
         },
         {
           "n": "switch 10",
-          "s": 31
+          "s": 32
         },
         {
           "n": "switch 11",
@@ -555,35 +578,40 @@
         },
         {
           "n": "boss",
-          "s": 92
+          "s": 93
         },
         {
           "n": "exit",
-          "s": 93
+          "s": 94
         }
       ],
-      "total_frames": 5597,
+      "total_frames": 5618,
       "rng_end": {
-        "state": 700380203,
-        "calls": 2782
+        "state": 1673372450,
+        "calls": 2773
       }
     },
     {
       "level_num": 17,
       "level_file": "lost17.rl2",
-      "route_input_sha256": "E87D2A6E4D17A70CDDD630C97D546FF75D554BE79CD50EA0C999756FE222F502",
-      "status": "failed",
+      "route_input_sha256": "719BE55990026A57BAC06D7B90846EF98F11496572F787CD1297B4A89567BFF2",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "switch 3",
+          "s": 11
+        }
+      ],
+      "total_frames": 1191,
       "rng_end": {
-        "state": 3008955749,
-        "calls": 28
+        "state": 3231583492,
+        "calls": 211
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 18,
@@ -663,7 +691,7 @@
     {
       "level_num": 20,
       "level_file": "lost20.rl2",
-      "route_input_sha256": "B0B8107D2B5D0BDF6354995C1FDAF89864BC6D00080F9B2031C744D1A872EA0C",
+      "route_input_sha256": "53460A14669E3FB88F12953C3CF1FECA25995FF42C9624E24DA367E05CA24504",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -700,7 +728,7 @@
         },
         {
           "n": "switch 13",
-          "s": 58
+          "s": 57
         },
         {
           "n": "switch 14",
@@ -708,17 +736,17 @@
         },
         {
           "n": "boss",
-          "s": 78
+          "s": 77
         },
         {
           "n": "exit",
           "s": 82
         }
       ],
-      "total_frames": 4920,
+      "total_frames": 4909,
       "rng_end": {
-        "state": 4221922778,
-        "calls": 3325
+        "state": 3888168883,
+        "calls": 3286
       }
     },
     {

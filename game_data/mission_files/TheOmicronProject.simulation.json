@@ -45,7 +45,7 @@
     {
       "level_num": 2,
       "level_file": "darknite.rl2",
-      "route_input_sha256": "C908C827847C131528EA627734FA84C49973FF63D3CC5FA30EF43A9E33DDF476",
+      "route_input_sha256": "200DE01C5B8466F6EB4BE0B36EB92B0CD0F0DFC710A93EB3707F562E31294DE4",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -82,33 +82,33 @@
         },
         {
           "n": "switch 28",
-          "s": 117
+          "s": 116
         },
         {
           "n": "switch 29",
-          "s": 122
+          "s": 119
         },
         {
           "n": "switch 30",
-          "s": 126
+          "s": 124
         },
         {
           "n": "switch 31",
-          "s": 130
+          "s": 128
         },
         {
           "n": "reactor",
-          "s": 148
+          "s": 146
         },
         {
           "n": "exit",
-          "s": 151
+          "s": 148
         }
       ],
-      "total_frames": 9060,
+      "total_frames": 8907,
       "rng_end": {
-        "state": 1390549597,
-        "calls": 4068
+        "state": 957553217,
+        "calls": 4032
       }
     },
     {

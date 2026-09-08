@@ -80,7 +80,7 @@
     {
       "level_num": 3,
       "level_file": "encoun3.rl2",
-      "route_input_sha256": "DA276EAE3A305927490A3DE8AFD45276E1E3D95D2FB0B67F8C904395C151EF10",
+      "route_input_sha256": "0D5E5F0FE4D567277A477167F3AF43E04E2DA492AF4B025E2B55AED4BF47420F",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -113,23 +113,23 @@
         },
         {
           "n": "reactor",
-          "s": 84
+          "s": 80
         },
         {
           "n": "exit",
-          "s": 106
+          "s": 101
         }
       ],
-      "total_frames": 6333,
+      "total_frames": 6058,
       "rng_end": {
-        "state": 2130394505,
-        "calls": 6456
+        "state": 3363476972,
+        "calls": 6475
       }
     },
     {
       "level_num": 4,
       "level_file": "encoun4.rl2",
-      "route_input_sha256": "1DBC41F7BD20AE9A7DCE2690DEDC9094FAE22CAF356C42B8D671472E3AFABB6C",
+      "route_input_sha256": "B3978579359EBC218E685CB864BAE440B83E9058E7E36611F3CD891C53B1DDBA",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -142,26 +142,26 @@
         },
         {
           "n": "switch 2",
-          "s": 61
+          "s": 60
         },
         {
           "n": "switch 3",
-          "s": 104
+          "s": 101
         },
         {
           "n": "switch 4",
-          "s": 147
+          "s": 142
         },
         {
           "n": "reactor",
-          "s": 180
+          "s": 175
         },
         {
           "n": "exit",
-          "s": 193
+          "s": 187
         }
       ],
-      "total_frames": 11561,
+      "total_frames": 11248,
       "rng_end": {
         "state": 2262560154,
         "calls": 6205

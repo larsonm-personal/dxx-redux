@@ -13,7 +13,7 @@
     {
       "level_num": 0,
       "level_file": "sammy.rl2",
-      "route_input_sha256": "B2DA21BFF4118496395124708A344424488B54EFAC97EDF12C122B1758BAA537",
+      "route_input_sha256": "A464A867082C45F90B818BEF00172C2671A7828C3BC6B963DDF37CD4D3E09B1F",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -34,17 +34,17 @@
         },
         {
           "n": "switch 14",
-          "s": 37
+          "s": 34
         },
         {
           "n": "blue key",
-          "s": 43
+          "s": 35
         }
       ],
-      "total_frames": 3586,
+      "total_frames": 3138,
       "rng_end": {
-        "state": 2919826395,
-        "calls": 1326
+        "state": 1341470111,
+        "calls": 1098
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     }

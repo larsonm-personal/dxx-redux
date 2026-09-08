@@ -15,7 +15,7 @@
     {
       "level_num": 1,
       "level_file": "drmtower.rl2",
-      "route_input_sha256": "33E7458758D773766735FFDF9D47F2AEA6E007E0985F6E1B193F4C2105D7EC39",
+      "route_input_sha256": "741107AA9A24F9364D54976B32129F90851A719A7ADAECF37B90AF7F22EE3307",
       "status": "timeout",
       "rng_start": {
         "state": 1,

@@ -43,49 +43,49 @@
         },
         {
           "n": "switch 2",
-          "s": 40
+          "s": 43
         },
         {
           "n": "switch 8",
-          "s": 44
+          "s": 47
         },
         {
           "n": "gold key",
-          "s": 51
+          "s": 54
         },
         {
           "n": "red key",
-          "s": 82
+          "s": 85
         },
         {
           "n": "blastable wall",
-          "s": 110
+          "s": 112
         },
         {
           "n": "switch 34",
-          "s": 110
+          "s": 112
         },
         {
           "n": "pass-through 53",
-          "s": 110
+          "s": 112
         },
         {
           "n": "hidden door",
-          "s": 114
+          "s": 116
         },
         {
           "n": "reactor",
-          "s": 114
+          "s": 116
         },
         {
           "n": "exit",
-          "s": 121
+          "s": 123
         }
       ],
-      "total_frames": 7266,
+      "total_frames": 7381,
       "rng_end": {
-        "state": 1592347699,
-        "calls": 4182
+        "state": 1440597678,
+        "calls": 4249
       }
     },
     {
@@ -148,11 +148,11 @@
         },
         {
           "n": "switch 42",
-          "s": 114
+          "s": 115
         },
         {
           "n": "pass-through 47",
-          "s": 114
+          "s": 115
         },
         {
           "n": "switch 53",
@@ -179,10 +179,10 @@
           "s": 150
         }
       ],
-      "total_frames": 10735,
+      "total_frames": 10729,
       "rng_end": {
-        "state": 859138527,
-        "calls": 11274
+        "state": 367603691,
+        "calls": 7966
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

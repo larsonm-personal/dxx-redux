@@ -312,9 +312,9 @@
         "mine_volume": 24128600.0,
         "mine_volume_normalized": 5.27643,
         "mine_volume_text": "5.3x",
-        "travel_distance": 12673.1,
-        "travel_time_seconds": 253,
-        "travel_time_text": "4M:13S",
+        "travel_distance": 12613.2,
+        "travel_time_seconds": 252,
+        "travel_time_text": "4M:12S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -598,15 +598,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 18",
-            "seg": 177,
-            "side": 0,
+            "seg": 176,
             "wall": 161,
             "label_pos": {
               "x": 750.8,
               "y": 32.3,
               "z": 240.5
             },
-            "distance": 327.3,
+            "distance": 297.4,
             "trigger": 18,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -656,7 +655,7 @@
               "y": 32.3,
               "z": 360.0
             },
-            "distance": 214.8,
+            "distance": 184.8,
             "trigger": 17,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1517,7 +1516,7 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "non-shootable trigger source is behind a closed wall",
+        "route_problem": "red key unreachable",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]

@@ -126,9 +126,9 @@
         "mine_volume": 102698000.0,
         "mine_volume_normalized": 22.458,
         "mine_volume_text": "22x",
-        "travel_distance": 6313.3,
-        "travel_time_seconds": 126,
-        "travel_time_text": "2M:06S",
+        "travel_distance": 7720.0,
+        "travel_time_seconds": 154,
+        "travel_time_text": "2M:34S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -230,15 +230,50 @@
             "kind": "trigger",
             "activation_kind": "unresolved_trigger",
             "calculated": false,
-            "label": "Locate and activate switch trigger 27",
-            "seg": 102,
-            "wall": 125,
+            "label": "Locate and activate switch trigger 14",
+            "seg": 466,
+            "wall": 129,
             "label_pos": {
-              "x": 0.0,
-              "y": -10.0,
-              "z": 20.0
+              "x": -459.4,
+              "y": -319.0,
+              "z": 174.7
             },
-            "trigger": 27,
+            "trigger": 14,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 422,
+                "side": 4,
+                "wall": 121
+              },
+              {
+                "seg": 467,
+                "side": 2,
+                "wall": 133
+              },
+              {
+                "seg": 435,
+                "side": 1,
+                "wall": 125
+              }
+            ]
+          },
+          {
+            "index": 7,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 28",
+            "seg": 467,
+            "side": 0,
+            "wall": 200,
+            "label_pos": {
+              "x": -298.0,
+              "y": -342.6,
+              "z": 50.1
+            },
+            "distance": 309.5,
+            "trigger": 28,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
             "opens": [
@@ -248,10 +283,28 @@
                 "wall": 13
               }
             ]
+          },
+          {
+            "index": 8,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 390,
+            "side": 0,
+            "wall": 111,
+            "label_pos": {
+              "x": -436.4,
+              "y": 35.4,
+              "z": 674.6
+            },
+            "distance": 1097.1,
+            "trigger": 13,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "non-shootable trigger source is behind a closed wall",
+        "route_problem": "switch activation route unresolved",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
         ]

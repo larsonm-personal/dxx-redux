@@ -9,8 +9,7 @@
   "level_counts": {
     "ok": 24,
     "failed": 2,
-    "timeout": 3,
-    "unsupported": 1
+    "timeout": 4
   },
   "levels": [
     {
@@ -839,8 +838,8 @@
     {
       "level_num": 25,
       "level_file": "level25.rl2",
-      "route_input_sha256": "63E8D4F8D8C50D901366FF3ECE7A274AA065949DEE9D3196BDEC1DA787E498E9",
-      "status": "unsupported",
+      "route_input_sha256": "931ABE254C8225CF90452CA29053115950C6965871854A9A02796287099F5AD4",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -875,12 +874,12 @@
           "s": 60
         }
       ],
-      "total_frames": 4126,
+      "total_frames": 4827,
       "rng_end": {
-        "state": 3692326210,
-        "calls": 1845
+        "state": 3624972834,
+        "calls": 2005
       },
-      "problem": "route objective activation is not supported"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": -1,

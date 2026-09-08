@@ -128,7 +128,7 @@
     {
       "level_num": 3,
       "level_file": "auora1.rl2",
-      "route_input_sha256": "041CF35735B96E215C859C5B34FBDBAED8B13753A3CEFD333B6E4054E632CFA1",
+      "route_input_sha256": "F10252D4D4BBFB519A42D2299264B0EC6334869BFE10F94229B7AB3188E588D4",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -207,7 +207,7 @@
     {
       "level_num": 5,
       "level_file": "hyperion.rl2",
-      "route_input_sha256": "AB15E6741A5DDF93D152C1F005FE11AD6280F102E5217E78A8CCBCD70EC2AC2A",
+      "route_input_sha256": "FF31AB19045F52FCF3344D88DC5853A2AC38705F759732D89F705FE57BA122B2",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -224,77 +224,77 @@
         },
         {
           "n": "switch 0",
-          "s": 8
+          "s": 9
         },
         {
           "n": "hidden door",
-          "s": 8
+          "s": 9
         },
         {
           "n": "switch 1",
-          "s": 10
+          "s": 12
         },
         {
           "n": "hidden door",
-          "s": 10
+          "s": 12
         },
         {
           "n": "switch 2",
-          "s": 13
+          "s": 16
         },
         {
           "n": "blue key",
-          "s": 15
+          "s": 19
         },
         {
           "n": "switch 14",
-          "s": 15
+          "s": 19
         },
         {
           "n": "hidden door",
-          "s": 41
+          "s": 45
         },
         {
           "n": "switch 15",
-          "s": 41
+          "s": 46
         },
         {
           "n": "gold key",
-          "s": 44
+          "s": 48
         },
         {
           "n": "fly-through 3",
-          "s": 79
-        },
-        {
-          "n": "switch 7",
           "s": 81
         },
         {
+          "n": "switch 7",
+          "s": 90
+        },
+        {
           "n": "fly-through 5",
-          "s": 94
+          "s": 99
         },
         {
           "n": "switch 8",
-          "s": 96
+          "s": 108
         },
         {
           "n": "red key",
-          "s": 104
+          "s": 112
         },
         {
           "n": "boss",
-          "s": 127
+          "s": 134
         },
         {
           "n": "exit",
-          "s": 135
+          "s": 142
         }
       ],
-      "total_frames": 8105,
+      "total_frames": 8536,
       "rng_end": {
-        "state": 3949885492,
-        "calls": 5091
+        "state": 634076915,
+        "calls": 5526
       }
     }
   ]

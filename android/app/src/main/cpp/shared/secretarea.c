@@ -1912,7 +1912,10 @@ typedef struct level_metadata_route_shot_context {
 	int allow_transparency;
 	int conditional_wall;
 	int conditional_multiple;
+	int first_blocker;
 } level_metadata_route_shot_context;
+
+static int secret_area_side_opener_source_wall_at(int seg, int side, int wanted_index, int allow_keyed_target);
 
 static int level_metadata_route_shot_wall_is_passable(
     void *user, int seg, int side)
@@ -1934,6 +1937,8 @@ static int level_metadata_route_shot_wall_is_passable(
 	if (context->allow_transparency == 3) {
 		const int actionable =
 		    Walls[wall_num].type == WALL_BLASTABLE ||
+		    (Walls[wall_num].type == WALL_CLOSED && wall_num == context->first_blocker &&
+		     secret_area_side_opener_source_wall_at(seg, side, 0, 1) >= 0) ||
 		    (Walls[wall_num].type == WALL_DOOR &&
 		     Walls[wall_num].keys == KEY_NONE &&
 		     Walls[wall_num].clip_num >= 0 &&
@@ -2044,6 +2049,10 @@ static int level_metadata_wall_shootable_from_position_impl(
 	route_shot_context.target_wall = wall_num;
 	route_shot_context.allow_transparency = allow_transparency;
 	route_shot_context.conditional_wall = -1;
+	// Closed walls only need a prerequisite when the ray actually hits them
+	route_shot_context.first_blocker = allow_transparency == 3
+	                                          ? level_metadata_wall_first_shot_blocker_from_position(seg, from_pos, wall_num)
+	                                          : -1;
 	query.flags |= FQ_PASSABLE_WALL_CALLBACK;
 	query.wall_is_passable = level_metadata_route_shot_wall_is_passable;
 	query.wall_is_passable_user = &route_shot_context;

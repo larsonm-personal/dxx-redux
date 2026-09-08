@@ -167,7 +167,7 @@
     {
       "level_num": 5,
       "level_file": "kk5.rl2",
-      "route_input_sha256": "0085C2296398A5911F7DCAFCF87E4F8D13265F19F0D6A9706EB2ABC0C25E2150",
+      "route_input_sha256": "749A1333D100D2AD6C9D1151E8BF233D5A3D8DFC52950C36C82E0D37323818B8",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -188,22 +188,22 @@
         },
         {
           "n": "switch 5",
-          "s": 29
+          "s": 28
         },
         {
           "n": "red key",
-          "s": 38
+          "s": 36
         },
         {
           "n": "boss",
-          "s": 50
+          "s": 48
         },
         {
           "n": "exit",
-          "s": 57
+          "s": 55
         }
       ],
-      "total_frames": 3399,
+      "total_frames": 3324,
       "rng_end": {
         "state": 1752759203,
         "calls": 3302

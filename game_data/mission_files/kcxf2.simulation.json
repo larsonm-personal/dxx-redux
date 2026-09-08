@@ -66,7 +66,7 @@
     {
       "level_num": 3,
       "level_file": "kcxf203.rl2",
-      "route_input_sha256": "22A48079675B55745F13B3C47AC08F11ACC8B88A1EB919F94DD1939122F06C5D",
+      "route_input_sha256": "09E839C4E8E4A228B20EFD1E1BE981B01D3BF915A08B839447E208BEB9741995",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -83,33 +83,33 @@
         },
         {
           "n": "switch 3",
-          "s": 47
+          "s": 46
         },
         {
           "n": "fly-through 4",
-          "s": 71
+          "s": 69
         },
         {
           "n": "reactor",
-          "s": 84
+          "s": 82
         },
         {
           "n": "fly-through 6",
-          "s": 97
+          "s": 96
         },
         {
           "n": "switch 8",
-          "s": 114
+          "s": 112
         },
         {
           "n": "red key",
-          "s": 142
+          "s": 136
         }
       ],
-      "total_frames": 9855,
+      "total_frames": 9449,
       "rng_end": {
-        "state": 1898833544,
-        "calls": 3295
+        "state": 695870830,
+        "calls": 3289
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

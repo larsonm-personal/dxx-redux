@@ -77,7 +77,7 @@
     {
       "level_num": 2,
       "level_file": "reactorc.rl2",
-      "route_input_sha256": "C6D481878E935F77A7A08B304100E5D1B37EDBDC446ECD01A30494AB6C1B0DD5",
+      "route_input_sha256": "45F78CBE37A3E6FFC6625EDC571CFFABFBA837916927121D21BD24B7EEAEA0AB",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -94,99 +94,99 @@
         },
         {
           "n": "blue key",
-          "s": 44
+          "s": 43
         },
         {
           "n": "switch 19",
-          "s": 61
+          "s": 58
         },
         {
           "n": "switch 8",
-          "s": 76
+          "s": 74
         },
         {
           "n": "fly-through 1",
-          "s": 89
+          "s": 86
         },
         {
           "n": "gold key",
-          "s": 90
+          "s": 88
         },
         {
           "n": "hidden door",
-          "s": 103
+          "s": 101
         },
         {
           "n": "switch 0",
-          "s": 106
+          "s": 103
         },
         {
           "n": "hidden door",
-          "s": 114
+          "s": 112
         },
         {
           "n": "switch 20",
-          "s": 118
+          "s": 115
         },
         {
           "n": "hidden door",
-          "s": 127
+          "s": 123
         },
         {
           "n": "hidden door",
-          "s": 134
+          "s": 131
         },
         {
           "n": "switch 10",
-          "s": 134
+          "s": 131
         },
         {
           "n": "hidden door",
-          "s": 148
+          "s": 145
         },
         {
           "n": "switch 26",
-          "s": 151
+          "s": 148
         },
         {
           "n": "hidden door",
-          "s": 160
+          "s": 157
         },
         {
           "n": "switch 22",
-          "s": 161
+          "s": 157
         },
         {
           "n": "switch 24",
-          "s": 168
+          "s": 165
         },
         {
           "n": "red key",
-          "s": 174
+          "s": 169
         },
         {
           "n": "reactor",
-          "s": 203
+          "s": 198
         },
         {
           "n": "switch 3",
-          "s": 206
+          "s": 202
         },
         {
           "n": "exit",
-          "s": 223
+          "s": 220
         }
       ],
-      "total_frames": 13394,
+      "total_frames": 13227,
       "rng_end": {
-        "state": 1172270678,
-        "calls": 4881
+        "state": 1265253096,
+        "calls": 4863
       }
     },
     {
       "level_num": 3,
       "level_file": "specimen.rl2",
-      "route_input_sha256": "FA5E5A1062A2F28EC62C87F1508E854330DEC4FD3919A9016B38DBE2EA20DB9A",
+      "route_input_sha256": "79914C213B52139FAA5F80C1D9EC0BADF512211D713E860C22FD0BDD4D91E8F1",
       "status": "failed",
       "rng_start": {
         "state": 1,
@@ -211,13 +211,13 @@
         },
         {
           "n": "blue key",
-          "s": 53
+          "s": 52
         }
       ],
-      "total_frames": 3178,
+      "total_frames": 3118,
       "rng_end": {
-        "state": 591691770,
-        "calls": 1373
+        "state": 3904604604,
+        "calls": 1339
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },

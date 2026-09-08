@@ -15,7 +15,7 @@
     {
       "level_num": 1,
       "level_file": "keylark.rl2",
-      "route_input_sha256": "AA8AE7F5C064F18BFC6B89CAAD5DFE678E5D1BAC248BCACFB19BF9A63CB51989",
+      "route_input_sha256": "5344C524C05B64BE62158A25ED9A461CF8D1524C407460100CA9B2758FB46C5C",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -28,25 +28,25 @@
         },
         {
           "n": "switch 2",
-          "s": 19
+          "s": 16
         },
         {
           "n": "red key",
-          "s": 38
+          "s": 33
         },
         {
           "n": "reactor",
-          "s": 57
+          "s": 52
         },
         {
           "n": "exit",
-          "s": 64
+          "s": 57
         }
       ],
-      "total_frames": 3831,
+      "total_frames": 3408,
       "rng_end": {
-        "state": 4027415416,
-        "calls": 1071
+        "state": 2142186641,
+        "calls": 1008
       }
     },
     {

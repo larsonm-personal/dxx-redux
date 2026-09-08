@@ -353,15 +353,15 @@
         },
         {
           "n": "red key",
-          "s": 59
+          "s": 60
         },
         {
           "n": "blastable wall",
-          "s": 65
+          "s": 66
         },
         {
           "n": "switch 6",
-          "s": 66
+          "s": 67
         },
         {
           "n": "reactor",
@@ -372,10 +372,10 @@
           "s": 78
         }
       ],
-      "total_frames": 4679,
+      "total_frames": 4683,
       "rng_end": {
-        "state": 4018476216,
-        "calls": 3567
+        "state": 3609107594,
+        "calls": 3597
       }
     },
     {

@@ -239,7 +239,7 @@
     {
       "level_num": 5,
       "level_file": "THEBE23.RL2",
-      "route_input_sha256": "B4198DF0AC3EC22F148D4393A8AF98115363AADF9C1C203B7FEEB300E28D9388",
+      "route_input_sha256": "318BC307EF4D628300C9EC68ED05C00F7179120973422343CF57504A2974D892",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -272,7 +272,7 @@
         },
         {
           "n": "gold key",
-          "s": 79
+          "s": 78
         },
         {
           "n": "red key",
@@ -280,18 +280,18 @@
         },
         {
           "n": "switch 0",
-          "s": 137
+          "s": 136
         },
         {
           "n": "reactor",
-          "s": 160
+          "s": 159
         },
         {
           "n": "exit",
-          "s": 175
+          "s": 174
         }
       ],
-      "total_frames": 10523,
+      "total_frames": 10461,
       "rng_end": {
         "state": 3027152229,
         "calls": 6172

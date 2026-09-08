@@ -33,7 +33,7 @@
     {
       "level_num": 2,
       "level_file": "kcxf2_n2.rl2",
-      "route_input_sha256": "D3019F37FD613196284332EED519BB0B89F49B95D1365A968EC3DC69505289C5",
+      "route_input_sha256": "C57EA4484240F5192387F363367D9D270EFF4BA040F420376D015EA920C42F7A",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -66,21 +66,21 @@
         },
         {
           "n": "switch 18",
-          "s": 153
+          "s": 152
         },
         {
           "n": "switch 17",
-          "s": 156
+          "s": 155
         },
         {
           "n": "exit",
-          "s": 166
+          "s": 165
         }
       ],
-      "total_frames": 9938,
+      "total_frames": 9899,
       "rng_end": {
-        "state": 1128553242,
-        "calls": 6333
+        "state": 3416695013,
+        "calls": 6300
       }
     },
     {

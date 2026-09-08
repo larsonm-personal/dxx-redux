@@ -8,9 +8,7 @@
   "status": "partial",
   "level_counts": {
     "ok": 3,
-    "failed": 1,
-    "timeout": 14,
-    "unsupported": 1
+    "timeout": 16
   },
   "levels": [
     {
@@ -74,7 +72,7 @@
     {
       "level_num": 3,
       "level_file": "DH03.RL2",
-      "route_input_sha256": "78D49C136BEAC1755BFE839C10C3ED83F82BA730C5BD0D06B02045517023F73F",
+      "route_input_sha256": "16C8E18A88B7FE05F4F5E04BB720F6C4352081BED1AE94CC357C2A4676B48B5A",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -108,7 +106,7 @@
     {
       "level_num": 4,
       "level_file": "DH04.RL2",
-      "route_input_sha256": "8CCE9FACE4DD63BAFDEDD666B923A1EE531FBD13A5C1CCD718DF736FCB91735F",
+      "route_input_sha256": "99CCEE80140381488A403C8C43F9C67877EC0939FCFD444F81E5212861661310",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -118,12 +116,20 @@
         {
           "n": "switch 4",
           "s": 39
+        },
+        {
+          "n": "switch 5",
+          "s": 51
+        },
+        {
+          "n": "blue key",
+          "s": 62
         }
       ],
-      "total_frames": 7962,
+      "total_frames": 10546,
       "rng_end": {
-        "state": 4028954632,
-        "calls": 1375
+        "state": 2755215601,
+        "calls": 1680
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -265,7 +271,7 @@
     {
       "level_num": 10,
       "level_file": "DH10.RL2",
-      "route_input_sha256": "4A4B582A8C7AD469342B52251F621ADCE112B9FDA097F858CC5E21B5DF5216FF",
+      "route_input_sha256": "8EF87C37B00BA3DA1B8E82D4DC4CD9D763D3F7142341F2C6998D6E52966B5AC1",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -295,25 +301,30 @@
     {
       "level_num": 11,
       "level_file": "DH11.RL2",
-      "route_input_sha256": "1AD153FA31EB63744C053C5942E1C9263705B75A14F03E3B3CED93C09DB2F338",
-      "status": "failed",
+      "route_input_sha256": "749CD7917928EDA5269ABCB47F9C1126122213EF43402007AB278477400AF05A",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "pass-through 10",
+          "s": 12
+        }
+      ],
+      "total_frames": 1869,
       "rng_end": {
-        "state": 2111915288,
-        "calls": 15
+        "state": 2875035323,
+        "calls": 590
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 12,
       "level_file": "DH12.RL2",
-      "route_input_sha256": "838BA4DC6E172B403C11BAA270EE547CFA0F13F183F96CB9E16D4F346A817098",
-      "status": "unsupported",
+      "route_input_sha256": "D36A55EECC76DE281B9FA354E40FF6DF407096FC1A8554C3061CA8AE3636675C",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -328,12 +339,12 @@
           "s": 4
         }
       ],
-      "total_frames": 461,
+      "total_frames": 4184,
       "rng_end": {
-        "state": 1814397249,
-        "calls": 192
+        "state": 3213376307,
+        "calls": 342
       },
-      "problem": "route objective activation is not supported"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 13,
@@ -405,7 +416,7 @@
     {
       "level_num": 15,
       "level_file": "DH15.RL2",
-      "route_input_sha256": "8935E76A521FDA92B1924EFFCE21CF41D60CD3CB2C6E1F26DD9BD98503B5D57A",
+      "route_input_sha256": "F27CBFD0A28A095D900C4159DD5C1953E02294496FCA9AA3E5FCE57832C525ED",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -422,7 +433,7 @@
     {
       "level_num": 16,
       "level_file": "DH16.RL2",
-      "route_input_sha256": "C78903BE30A553E17FF41B4A985832B35341402822940F99FA5A91591D2B57BD",
+      "route_input_sha256": "239988897AB2AF4256AE3ABF8925353FDCE2306DA31FF181A3313DE8246FA1C9",
       "status": "timeout",
       "rng_start": {
         "state": 1,

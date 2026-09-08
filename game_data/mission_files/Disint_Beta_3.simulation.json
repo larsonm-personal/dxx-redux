@@ -430,7 +430,7 @@
     {
       "level_num": -2,
       "level_file": "0stwo.rl2",
-      "route_input_sha256": "E9C162E7480C4EA5617229CB69545A4738D097DD829F62321DD0913CFB5F4F66",
+      "route_input_sha256": "AD5CF28D227457B43DECCB8CECDBBA20487D7DD32835BCE7A9907F230AC21394",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -440,14 +440,22 @@
         {
           "n": "switch 1",
           "s": 4
+        },
+        {
+          "n": "switch 0",
+          "s": 5
+        },
+        {
+          "n": "red key",
+          "s": 8
         }
       ],
-      "total_frames": 3661,
+      "total_frames": 1132,
       "rng_end": {
-        "state": 2996623694,
-        "calls": 121
+        "state": 1160857300,
+        "calls": 195
       },
-      "problem": "route confirmation exceeded 61-second simulation budget"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": -3,

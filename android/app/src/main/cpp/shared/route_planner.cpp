@@ -3104,6 +3104,15 @@ class dependency_planner
 			return false;
 		}
 		const auto &wall_state = snapshot_.state.walls[wall];
+		if (wall_state.kind == route_wall_kind::closed) {
+			if (!fire_trigger(topology.segment, topology.side, depth + 1))
+				return false;
+			const auto kind = route_progress_wall_kind(snapshot_, state_.progress, wall);
+			if (kind == route_wall_kind::open || kind == route_wall_kind::illusion)
+				return move_to_target(firing_segment, firing_position, depth + 1);
+			set_problem("conditional shot wall was not opened by its trigger");
+			return false;
+		}
 		if (wall_state.kind == route_wall_kind::blastable) {
 			if (!move_to_target(
 			        firing_segment, firing_position, depth + 1) ||
@@ -3634,6 +3643,7 @@ class dependency_planner
 	    int depth)
 	{
 		if (!valid_wall(snapshot_, source.source_wall) ||
+		    !valid_segment(snapshot_, source.source_segment) ||
 		    state_flag(state_.progress.trigger_in_progress, source.trigger))
 			return false;
 		const auto preparation_start = state_;
@@ -3644,45 +3654,61 @@ class dependency_planner
 		const bool initial_opened = route_progress_wall_opened(
 		    snapshot_, state_.progress, source.source_wall);
 		std::string last_problem;
-		for (int trigger = 0;
-		     trigger < static_cast<int>(snapshot_.topology.triggers.size());
-		     ++trigger) {
-			if (trigger == source.trigger ||
-			    !route_trigger_opens_path(
-			        snapshot_.topology.triggers[trigger].kind) ||
-			    !trigger_targets_wall(snapshot_, trigger, source.source_wall) ||
-			    !trigger_effect_needed(snapshot_, state_.progress, trigger))
-				continue;
-			auto sources = discover_sources_for_trigger(
-			    snapshot_, state_.progress, trigger, false);
-			sources.erase(
-			    std::remove_if(
-			        sources.begin(), sources.end(), [&](const auto &candidate) {
-				        return !trigger_source_fits_navigator(
-				            snapshot_, query_, candidate);
-			        }),
-			    sources.end());
-			if (sources.empty() ||
-			    snapshot_.topology.triggers[trigger].links.empty())
-				continue;
-			state_ = preparation_start;
-			state_.problem.clear();
-			// Preparation is a dependency too, including after activation rollback
-			state_.progress.trigger_in_progress[source.trigger] = 1;
-			const auto &link = snapshot_.topology.triggers[trigger].links.front();
-			const bool prepared = fire_trigger(
-			    link.segment, link.side, depth + 1, &sources);
-			state_.progress.trigger_in_progress[source.trigger] = 0;
-			if (!prepared) {
-				if (!state_.problem.empty())
-					last_problem = state_.problem;
-				continue;
+		// Access can require opening the room boundary rather than the switch face
+		auto source_boundary_target = [&](int trigger) {
+			for (const auto &side : snapshot_.topology.segments[source.source_segment].sides)
+				if (valid_wall(snapshot_, side.wall) &&
+				    route_progress_wall_kind(snapshot_, preparation_start.progress, side.wall) == route_wall_kind::closed &&
+				    trigger_targets_wall(snapshot_, trigger, side.wall))
+					return side.wall;
+			return -1;
+		};
+		// Preserve direct source preparation before trying room access alternatives
+		for (int pass = 0; pass < 2; ++pass) {
+			for (int trigger = 0;
+			     trigger < static_cast<int>(snapshot_.topology.triggers.size());
+			     ++trigger) {
+				if (trigger == source.trigger ||
+				    !route_trigger_opens_path(
+				        snapshot_.topology.triggers[trigger].kind) ||
+				    (trigger_targets_wall(snapshot_, trigger, source.source_wall) != (pass == 0)) ||
+				    (pass == 1 && source_boundary_target(trigger) < 0) ||
+				    !trigger_effect_needed(snapshot_, state_.progress, trigger))
+					continue;
+				auto sources = discover_sources_for_trigger(
+				    snapshot_, state_.progress, trigger, false);
+				sources.erase(
+				    std::remove_if(
+				        sources.begin(), sources.end(), [&](const auto &candidate) {
+					        return !trigger_source_fits_navigator(
+					            snapshot_, query_, candidate);
+				        }),
+				    sources.end());
+				if (sources.empty() ||
+				    snapshot_.topology.triggers[trigger].links.empty())
+					continue;
+				state_ = preparation_start;
+				state_.problem.clear();
+				// Preparation is a dependency too, including after activation rollback
+				state_.progress.trigger_in_progress[source.trigger] = 1;
+				const auto &link = snapshot_.topology.triggers[trigger].links.front();
+				const bool prepared = fire_trigger(
+				    link.segment, link.side, depth + 1, &sources);
+				state_.progress.trigger_in_progress[source.trigger] = 0;
+				if (!prepared) {
+					if (!state_.problem.empty())
+						last_problem = state_.problem;
+					continue;
+				}
+				if (route_progress_wall_kind(
+				        snapshot_, state_.progress, source.source_wall) != initial_kind ||
+				    route_progress_wall_locked(snapshot_, state_.progress, source.source_wall) != initial_locked ||
+				    route_progress_wall_opened(snapshot_, state_.progress, source.source_wall) != initial_opened)
+					return true;
+				const int boundary = source_boundary_target(trigger);
+				if (boundary >= 0 && route_progress_wall_kind(snapshot_, state_.progress, boundary) != route_wall_kind::closed)
+					return true;
 			}
-			if (route_progress_wall_kind(
-			        snapshot_, state_.progress, source.source_wall) != initial_kind ||
-			    route_progress_wall_locked(snapshot_, state_.progress, source.source_wall) != initial_locked ||
-			    route_progress_wall_opened(snapshot_, state_.progress, source.source_wall) != initial_opened)
-				return true;
 		}
 		state_ = preparation_start;
 		if (!last_problem.empty())
@@ -3873,6 +3899,8 @@ class dependency_planner
 					set_problem("conditional shot blocker unresolved");
 				return false;
 			}
+			// Other conditional poses can depend on walls this route did not open
+			selected_firing.guidance_candidates.clear();
 		}
 		if (selected_firing.found) {
 			if (!conditional_firing &&
