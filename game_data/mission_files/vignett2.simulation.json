@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 24,
+    "ok": 25,
     "failed": 2,
-    "timeout": 4
+    "timeout": 3
   },
   "levels": [
     {
@@ -688,8 +688,8 @@
     {
       "level_num": 20,
       "level_file": "level20.rl2",
-      "route_input_sha256": "211120334C26AAA6A918A040F6664D27BA2084A5145EB8B1576EB20ED6C70213",
-      "status": "timeout",
+      "route_input_sha256": "184BAA3E6A84DECA0424009D5493CBB9D23480F822BF8A43994A60209E66DBA4",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -700,16 +700,27 @@
           "s": 16
         },
         {
-          "n": "pass-through 0",
-          "s": 23
+          "n": "gold key",
+          "s": 30
+        },
+        {
+          "n": "red key",
+          "s": 46
+        },
+        {
+          "n": "boss",
+          "s": 63
+        },
+        {
+          "n": "exit",
+          "s": 66
         }
       ],
-      "total_frames": 5096,
+      "total_frames": 3946,
       "rng_end": {
-        "state": 1334668553,
-        "calls": 1464
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1033840618,
+        "calls": 3629
+      }
     },
     {
       "level_num": 21,

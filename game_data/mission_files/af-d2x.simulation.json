@@ -408,7 +408,7 @@
     {
       "level_num": 11,
       "level_file": "aurabyss.rl2",
-      "route_input_sha256": "73A90186CE9B7FB91DC11AEF7B6B8E282C46B342359703850A533888340D79DE",
+      "route_input_sha256": "42B77BA8D096254E503F33C3F0C880537A9DC38B0BC48D75409A4DBD923322CC",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -428,18 +428,22 @@
           "s": 11
         },
         {
-          "n": "gold key",
+          "n": "fly-through 10",
           "s": 43
         },
         {
-          "n": "fly-through 10",
-          "s": 46
+          "n": "gold key",
+          "s": 45
+        },
+        {
+          "n": "red key",
+          "s": 67
         }
       ],
-      "total_frames": 7672,
+      "total_frames": 8273,
       "rng_end": {
-        "state": 4005048549,
-        "calls": 2204
+        "state": 3847820079,
+        "calls": 3002
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },

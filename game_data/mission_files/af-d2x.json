@@ -2096,15 +2096,15 @@
         "mine_volume": 51750800.0,
         "mine_volume_normalized": 11.3168,
         "mine_volume_text": "11x",
-        "travel_distance": 9650.4,
-        "travel_time_seconds": 193,
-        "travel_time_text": "3M:13S",
+        "travel_distance": 9940.7,
+        "travel_time_seconds": 199,
+        "travel_time_text": "3M:19S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
-        "route_required_key_mask": 5,
-        "route_completing_key_mask_set": 160,
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -2194,20 +2194,6 @@
           },
           {
             "index": 4,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
-            "seg": 254,
-            "label_pos": {
-              "x": 94.8,
-              "y": -857.4,
-              "z": -401.6
-            },
-            "distance": 2105.8,
-            "key": "gold"
-          },
-          {
-            "index": 5,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 10",
@@ -2219,7 +2205,7 @@
               "y": -885.9,
               "z": -254.4
             },
-            "distance": 205.7,
+            "distance": 2065.7,
             "trigger": 10,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -2232,29 +2218,32 @@
             ]
           },
           {
+            "index": 5,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 254,
+            "label_pos": {
+              "x": 94.8,
+              "y": -857.4,
+              "z": -401.6
+            },
+            "distance": 193.2,
+            "key": "gold"
+          },
+          {
             "index": 6,
-            "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 14",
-            "seg": 461,
-            "side": 3,
-            "wall": 120,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 418,
             "label_pos": {
               "x": 10.0,
-              "y": -1613.0,
+              "y": -1371.2,
               "z": -40.0
             },
-            "distance": 1664.4,
-            "trigger": 14,
-            "trigger_type_id": 0,
-            "trigger_type": "open_door",
-            "opens": [
-              {
-                "seg": 461,
-                "side": 3,
-                "wall": 120
-              }
-            ]
+            "distance": 1591.5,
+            "key": "red"
           },
           {
             "index": 7,
@@ -2269,7 +2258,7 @@
               "y": -1450.0,
               "z": -220.0
             },
-            "distance": 370.5,
+            "distance": 786.3,
             "opens": [
               {
                 "seg": 493,
@@ -2317,7 +2306,6 @@
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
-          "red key not necessary",
           "no guidebot or guidebot start cage placed in this level"
         ]
       },

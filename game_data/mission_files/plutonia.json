@@ -3141,9 +3141,9 @@
         "mine_volume": 35818200.0,
         "mine_volume_normalized": 7.83271,
         "mine_volume_text": "7.8x",
-        "travel_distance": 11594.2,
-        "travel_time_seconds": 232,
-        "travel_time_text": "3M:52S",
+        "travel_distance": 10101.0,
+        "travel_time_seconds": 202,
+        "travel_time_text": "3M:22S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -3227,36 +3227,6 @@
           {
             "index": 4,
             "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 7",
-            "seg": 356,
-            "side": 2,
-            "wall": 142,
-            "label_pos": {
-              "x": -326.8,
-              "y": 165.8,
-              "z": -163.7
-            },
-            "distance": 750.3,
-            "trigger": 7,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 374,
-                "side": 4,
-                "wall": 175
-              },
-              {
-                "seg": 398,
-                "side": 2,
-                "wall": 163
-              }
-            ]
-          },
-          {
-            "index": 5,
-            "kind": "trigger",
             "activation_kind": "unresolved_trigger",
             "calculated": false,
             "label": "Locate and activate switch trigger 15",
@@ -3279,7 +3249,7 @@
             ]
           },
           {
-            "index": 6,
+            "index": 5,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 3",
@@ -3291,7 +3261,7 @@
               "y": 83.3,
               "z": -28.1
             },
-            "distance": 1237.9,
+            "distance": 487.5,
             "trigger": 3,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -3349,7 +3319,7 @@
             ]
           },
           {
-            "index": 7,
+            "index": 6,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -3361,6 +3331,36 @@
             },
             "distance": 60.0,
             "key": "gold"
+          },
+          {
+            "index": 7,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 7",
+            "seg": 356,
+            "side": 2,
+            "wall": 142,
+            "label_pos": {
+              "x": -326.8,
+              "y": 165.8,
+              "z": -163.7
+            },
+            "distance": 1237.9,
+            "trigger": 7,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 374,
+                "side": 4,
+                "wall": 175
+              },
+              {
+                "seg": 398,
+                "side": 2,
+                "wall": 163
+              }
+            ]
           },
           {
             "index": 8,
@@ -3375,7 +3375,7 @@
               "y": 142.5,
               "z": 35.1
             },
-            "distance": 1737.1,
+            "distance": 506.7,
             "trigger": 10,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",

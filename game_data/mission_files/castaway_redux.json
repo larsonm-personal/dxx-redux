@@ -2771,9 +2771,9 @@
         "mine_volume": 14044500.0,
         "mine_volume_normalized": 3.07125,
         "mine_volume_text": "3.1x",
-        "travel_distance": 6957.1,
-        "travel_time_seconds": 139,
-        "travel_time_text": "2M:19S",
+        "travel_distance": 7458.8,
+        "travel_time_seconds": 149,
+        "travel_time_text": "2M:29S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -2790,61 +2790,6 @@
           },
           {
             "index": 1,
-            "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 8",
-            "seg": 102,
-            "side": 4,
-            "wall": 22,
-            "label_pos": {
-              "x": -210.0,
-              "y": -5.0,
-              "z": 205.0
-            },
-            "distance": 415.6,
-            "trigger": 8,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 199,
-                "side": 3,
-                "wall": 76
-              },
-              {
-                "seg": 200,
-                "side": 3,
-                "wall": 74
-              },
-              {
-                "seg": 201,
-                "side": 3,
-                "wall": 78
-              },
-              {
-                "seg": 49,
-                "side": 3,
-                "wall": 96
-              },
-              {
-                "seg": 50,
-                "side": 3,
-                "wall": 94
-              },
-              {
-                "seg": 51,
-                "side": 3,
-                "wall": 92
-              },
-              {
-                "seg": 52,
-                "side": 3,
-                "wall": 90
-              }
-            ]
-          },
-          {
-            "index": 2,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "blue key",
@@ -2854,11 +2799,11 @@
               "y": 0.6,
               "z": -36.0
             },
-            "distance": 653.7,
+            "distance": 989.3,
             "key": "blue"
           },
           {
-            "index": 3,
+            "index": 2,
             "kind": "trigger",
             "activation_kind": "pass_through_trigger",
             "label": "Pass through trigger 3",
@@ -2888,7 +2833,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 3,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 4",
@@ -2927,7 +2872,7 @@
             ]
           },
           {
-            "index": 5,
+            "index": 4,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -2941,7 +2886,7 @@
             "key": "gold"
           },
           {
-            "index": 6,
+            "index": 5,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 24",
@@ -2952,7 +2897,7 @@
               "y": -75.0,
               "z": -40.0
             },
-            "distance": 883.3,
+            "distance": 1465.0,
             "trigger": 24,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -2965,7 +2910,7 @@
             ]
           },
           {
-            "index": 7,
+            "index": 6,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 25",
@@ -2994,7 +2939,7 @@
             ]
           },
           {
-            "index": 8,
+            "index": 7,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 26",
@@ -3023,7 +2968,7 @@
             ]
           },
           {
-            "index": 9,
+            "index": 8,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 43",
@@ -3048,7 +2993,7 @@
             ]
           },
           {
-            "index": 10,
+            "index": 9,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 17",
@@ -3077,7 +3022,7 @@
             ]
           },
           {
-            "index": 11,
+            "index": 10,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 18",
@@ -3117,7 +3062,7 @@
             ]
           },
           {
-            "index": 12,
+            "index": 11,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -3131,7 +3076,7 @@
             "key": "red"
           },
           {
-            "index": 13,
+            "index": 12,
             "kind": "trigger",
             "activation_kind": "pass_through_trigger",
             "label": "Pass through trigger 9",
@@ -3161,7 +3106,7 @@
             ]
           },
           {
-            "index": 14,
+            "index": 13,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 49",
@@ -3191,7 +3136,7 @@
             ]
           },
           {
-            "index": 15,
+            "index": 14,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -3204,7 +3149,7 @@
             "distance": 896.7
           },
           {
-            "index": 16,
+            "index": 15,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

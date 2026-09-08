@@ -7,9 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 8,
-    "failed": 1,
-    "timeout": 1
+    "ok": 9,
+    "failed": 1
   },
   "levels": [
     {
@@ -478,19 +477,91 @@
     {
       "level_num": 8,
       "level_file": "meta.rl2",
-      "route_input_sha256": "BE7F2F2AEAF24ACACFEC1BC77C61574DE9AEAA681C1DCA6433F7D144EDBE5770",
-      "status": "timeout",
+      "route_input_sha256": "A85CF5C158324D9C939437DB537EFEDEBD59908115402C4B7C6FADE211E59B25",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 3960,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 13
+        },
+        {
+          "n": "pass-through 3",
+          "s": 23
+        },
+        {
+          "n": "switch 4",
+          "s": 27
+        },
+        {
+          "n": "gold key",
+          "s": 28
+        },
+        {
+          "n": "fly-through 15",
+          "s": 52
+        },
+        {
+          "n": "switch 24",
+          "s": 53
+        },
+        {
+          "n": "fly-through 14",
+          "s": 56
+        },
+        {
+          "n": "switch 25",
+          "s": 58
+        },
+        {
+          "n": "fly-through 16",
+          "s": 62
+        },
+        {
+          "n": "switch 26",
+          "s": 63
+        },
+        {
+          "n": "fly-through 43",
+          "s": 65
+        },
+        {
+          "n": "switch 17",
+          "s": 68
+        },
+        {
+          "n": "fly-through 18",
+          "s": 73
+        },
+        {
+          "n": "red key",
+          "s": 73
+        },
+        {
+          "n": "pass-through 9",
+          "s": 73
+        },
+        {
+          "n": "fly-through 49",
+          "s": 85
+        },
+        {
+          "n": "reactor",
+          "s": 96
+        },
+        {
+          "n": "exit",
+          "s": 103
+        }
+      ],
+      "total_frames": 6208,
       "rng_end": {
-        "state": 43796357,
-        "calls": 252
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1415961746,
+        "calls": 6693
+      }
     },
     {
       "level_num": 9,

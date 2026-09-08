@@ -3859,6 +3859,25 @@ class dependency_planner
 			state_.failed_trigger = source.trigger;
 			return false;
 		}
+		// Reaching the source room does not satisfy a keyed door crossing
+		if (!shootable && valid_wall(snapshot_, source.source_wall) &&
+		    route_progress_wall_kind(snapshot_, state_.progress, source.source_wall) == route_wall_kind::door &&
+		    !route_progress_wall_opened(snapshot_, state_.progress, source.source_wall)) {
+			const int key = key_index(snapshot_.state.walls[source.source_wall].key);
+			if (key >= 0 && !(state_.progress.key_mask & (1 << key))) {
+				const auto keyed_source_start = state_;
+				state_.progress.trigger_in_progress[source.trigger] = 1;
+				if (!acquire_key(key, depth + 1)) {
+					state_ = keyed_source_start;
+					set_problem("non-shootable trigger source requires an unreachable key: trigger " +
+					            std::to_string(source.trigger));
+					state_.failed_trigger = source.trigger;
+					return false;
+				}
+				state_.progress.trigger_in_progress[source.trigger] = 0;
+				return fire_trigger(segment, side, depth + 1, forced_sources);
+			}
+		}
 		/* A fired bit denotes an effect that is still active. Contrary wall
 		 * transitions clear that bit when they restore a shootable surface, so
 		 * only a genuinely rearmed trigger reaches the firing path again. */
@@ -4133,6 +4152,8 @@ class dependency_planner
 					    state_.problem == "trigger source missing" ||
 					    state_.problem.rfind(
 					        "non-shootable trigger source is behind a closed wall", 0) == 0 ||
+					    state_.problem.rfind(
+					        "non-shootable trigger source requires an unreachable key", 0) == 0 ||
 					    state_.problem.rfind(
 					        "trigger route dependency loop", 0) == 0;
 					if (avoidable && valid_trigger(snapshot_, block.trigger)) {

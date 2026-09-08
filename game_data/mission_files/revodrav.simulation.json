@@ -8,10 +8,10 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 22,
+    "ok": 23,
     "failed": 1,
-    "timeout": 6,
-    "route_mismatch": 1
+    "timeout": 4,
+    "route_mismatch": 2
   },
   "levels": [
     {
@@ -339,36 +339,101 @@
     {
       "level_num": 10,
       "level_file": "drav10.rdl",
-      "route_input_sha256": "7792423A1EFAF539FBFEDB10068AF1F170E0DAFEC67616F2503DC6D08CB28447",
-      "status": "timeout",
+      "route_input_sha256": "A7E22DABE35C58147B8DEA762EF7A119D58B7F8AFA1F9CA74DEC3B45D7F43A85",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4096,
+      "objectives": [
+        {
+          "n": "gold key",
+          "s": 6
+        },
+        {
+          "n": "pass-through 2",
+          "s": 18
+        },
+        {
+          "n": "fly-through 3",
+          "s": 24
+        },
+        {
+          "n": "red key",
+          "s": 40
+        },
+        {
+          "n": "blue key",
+          "s": 61
+        },
+        {
+          "n": "reactor",
+          "s": 67
+        },
+        {
+          "n": "exit",
+          "s": 72
+        }
+      ],
+      "total_frames": 4314,
       "rng_end": {
-        "state": 3914758370,
-        "calls": 21
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 4052745200,
+        "calls": 87
+      }
     },
     {
       "level_num": 11,
       "level_file": "drav11.rdl",
       "route_input_sha256": "A3A4F8EBCABDFC98231D733FFC9B65E88A68E526E14E326320833CDF3672E780",
-      "status": "timeout",
+      "status": "route_mismatch",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4090,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 9
+        },
+        {
+          "n": "gold key",
+          "s": 42
+        },
+        {
+          "n": "pass-through 5",
+          "s": 64
+        },
+        {
+          "n": "fly-through 4",
+          "s": 70
+        },
+        {
+          "n": "pass-through 6",
+          "s": 71
+        },
+        {
+          "n": "pass-through 8",
+          "s": 75
+        },
+        {
+          "n": "red key",
+          "s": 78
+        },
+        {
+          "n": "reactor",
+          "s": 91
+        },
+        {
+          "n": "exit",
+          "s": 96
+        }
+      ],
+      "total_frames": 5750,
       "rng_end": {
-        "state": 3535774167,
-        "calls": 18
+        "state": 924723277,
+        "calls": 116
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live objective sequence differs from route input"
     },
     {
       "level_num": 12,

@@ -1670,6 +1670,29 @@ int main()
 	assert(locked_source_dependency.steps[1].trigger == 0);
 	assert(locked_source_dependency.steps[1].activation == dxx_route::route_activation_kind::pass_through_trigger);
 	assert(!locked_source_dependency.progress.wall_locked[0]);
+	// A pass-through source on a keyed door needs the key, even from its source room
+	auto keyed_source_snapshot = locked_source_snapshot;
+	keyed_source_snapshot.state.walls[0].locked = false;
+	keyed_source_snapshot.state.walls[0].key = dxx_route::route_key_requirement::gold;
+	dxx_route::route_state_object source_key;
+	source_key.segment = 0;
+	source_key.kind = dxx_route::route_object_kind::powerup;
+	source_key.key = dxx_route::route_key_requirement::gold;
+	source_key.position = keyed_source_snapshot.topology.segments[0].center;
+	keyed_source_snapshot.state.objects.push_back(source_key);
+	const auto keyed_source_dependency = dxx_route::resolve_trigger_dependency(
+	    keyed_source_snapshot, planner_query,
+	    dxx_route::initial_route_progress_state(keyed_source_snapshot, planner_query), 1, 0);
+	assert(keyed_source_dependency.resolved);
+	assert(keyed_source_dependency.steps.size() == 2);
+	assert(keyed_source_dependency.steps[0].kind == dxx_route::route_semantic_step_kind::key);
+	assert(keyed_source_dependency.steps[1].trigger == 0);
+	assert(keyed_source_dependency.progress.key_mask & LEVEL_METADATA_KEY_MASK_GOLD);
+	keyed_source_snapshot.state.objects.pop_back();
+	const auto missing_source_key = dxx_route::resolve_trigger_dependency(
+	    keyed_source_snapshot, planner_query,
+	    dxx_route::initial_route_progress_state(keyed_source_snapshot, planner_query), 1, 0);
+	assert(!missing_source_key.resolved);
 	// Opening a locked door also permits crossing without clearing its lock
 	locked_source_snapshot.topology.triggers[1].kind = dxx_route::route_trigger_kind::open_door;
 	const auto opened_source_dependency = dxx_route::resolve_trigger_dependency(
