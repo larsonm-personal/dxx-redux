@@ -1827,6 +1827,9 @@ int main()
 	assert(prepared_switch_dependency.steps[0].trigger == 2);
 	assert(prepared_switch_dependency.steps[1].trigger == 1);
 	assert(prepared_switch_dependency.steps[2].trigger == 0);
+	assert(dxx_route::route_progress_wall_kind(
+	           prepared_switch_snapshot, prepared_switch_dependency.progress, 0) ==
+	       dxx_route::route_wall_kind::closed);
 	const auto passive_close_snapshot = make_passive_close_replan_snapshot();
 	dxx_route::route_query passive_close_query;
 	passive_close_query.start = passive_close_snapshot.state.start_position;

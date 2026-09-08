@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 6,
-    "failed": 2,
+    "ok": 7,
+    "failed": 1,
     "unsupported": 2
   },
   "levels": [
@@ -386,8 +386,8 @@
     {
       "level_num": 7,
       "level_file": "swallow.rl2",
-      "route_input_sha256": "70A97443EA1366C305D1ADF601A0D364830B2F771C17D5733BCBD3DCD8F59BD9",
-      "status": "failed",
+      "route_input_sha256": "A29B3BD008B4EDEDC50CD596C9210C0FC748E28103B141A2E42809D7E38A8317",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -408,14 +408,41 @@
         {
           "n": "gold key",
           "s": 48
+        },
+        {
+          "n": "fly-through 13",
+          "s": 58
+        },
+        {
+          "n": "switch 3",
+          "s": 63
+        },
+        {
+          "n": "fly-through 4",
+          "s": 64
+        },
+        {
+          "n": "switch 5",
+          "s": 67
+        },
+        {
+          "n": "red key",
+          "s": 86
+        },
+        {
+          "n": "reactor",
+          "s": 103
+        },
+        {
+          "n": "exit",
+          "s": 114
         }
       ],
-      "total_frames": 2865,
+      "total_frames": 6838,
       "rng_end": {
-        "state": 2734234381,
-        "calls": 1972
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 2981336704,
+        "calls": 7559
+      }
     },
     {
       "level_num": 8,

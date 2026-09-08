@@ -3709,7 +3709,7 @@ class dependency_planner
 		    std::remove_if(
 		        raw_sources.begin(), raw_sources.end(), [&](const auto &source) {
 			        return state_flag(state_.progress.avoided_triggers, source.trigger) ||
-		               !trigger_source_fits_navigator(snapshot_, query_, source);
+			               !trigger_source_fits_navigator(snapshot_, query_, source);
 		        }),
 		    raw_sources.end());
 		if (raw_sources.empty()) {
@@ -3717,6 +3717,23 @@ class dependency_planner
 			return false;
 		}
 		auto source = raw_sources.front();
+		auto reject_dependency_loop = [&]() {
+			set_problem(
+			    "trigger route dependency loop: trigger " +
+			    std::to_string(source.trigger) + " source " +
+			    std::to_string(source.source_segment) + ":" +
+			    std::to_string(source.source_side) + " wall " +
+			    std::to_string(source.source_wall) + " target " +
+			    std::to_string(source.target_segment) + ":" +
+			    std::to_string(source.target_side));
+			state_.failed_trigger = source.trigger;
+			return false;
+		};
+		// Cyclic sources cannot yield a firing pose; avoid repeating graph searches
+		if (std::all_of(raw_sources.begin(), raw_sources.end(), [&](const auto &candidate) {
+			    return state_flag(state_.progress.trigger_in_progress, candidate.trigger);
+		    }))
+			return reject_dependency_loop();
 		auto firing_sources = raw_sources;
 		firing_sources.erase(
 		    std::remove_if(
@@ -3794,6 +3811,8 @@ class dependency_planner
 		const bool shootable = valid_wall(snapshot_, source.source_wall) &&
 		                       snapshot_.topology.walls[source.source_wall]
 		                           .shootable_trigger;
+		if (state_flag(state_.progress.trigger_in_progress, source.trigger))
+			return reject_dependency_loop();
 		if (!shootable && valid_wall(snapshot_, source.source_wall) &&
 		    (route_progress_wall_kind(
 		         snapshot_, state_.progress, source.source_wall) ==
@@ -3806,7 +3825,11 @@ class dependency_planner
 				return fire_trigger(segment, side, depth + 1, forced_sources);
 			state_ = blocked_source_start;
 			set_problem(
-			    "non-shootable trigger source is behind a closed wall");
+			    "non-shootable trigger source is behind a closed wall: trigger " +
+			    std::to_string(source.trigger) + " source " +
+			    std::to_string(source.source_segment) + ":" +
+			    std::to_string(source.source_side) + " wall " +
+			    std::to_string(source.source_wall));
 			state_.failed_trigger = source.trigger;
 			return false;
 		}
@@ -3815,18 +3838,6 @@ class dependency_planner
 		 * only a genuinely rearmed trigger reaches the firing path again. */
 		if (state_flag(state_.progress.fired_triggers, source.trigger))
 			return true;
-		if (state_flag(state_.progress.trigger_in_progress, source.trigger)) {
-			set_problem(
-			    "trigger route dependency loop: trigger " +
-			    std::to_string(source.trigger) + " source " +
-			    std::to_string(source.source_segment) + ":" +
-			    std::to_string(source.source_side) + " wall " +
-			    std::to_string(source.source_wall) + " target " +
-			    std::to_string(source.target_segment) + ":" +
-			    std::to_string(source.target_side));
-			state_.failed_trigger = source.trigger;
-			return false;
-		}
 		if (!source.source_position.valid ||
 		    !valid_segment(snapshot_, source.source_segment)) {
 			set_problem("trigger source missing");
@@ -3900,6 +3911,13 @@ class dependency_planner
 		} else {
 			state_.progress.current_segment = source.source_segment;
 			state_.progress.current_position = source.source_position;
+		}
+		// Reaching a switch can open its surface through a prerequisite trigger
+		if (shootable && route_progress_wall_kind(
+		                     snapshot_, state_.progress, source.source_wall) ==
+		                     route_wall_kind::open) {
+			state_.progress.trigger_in_progress[source.trigger] = 0;
+			return fire_trigger(segment, side, depth + 1, forced_sources);
 		}
 		if (!append_trigger_step(
 		        source, selected_firing.found && !shootable)) {
@@ -4085,6 +4103,8 @@ class dependency_planner
 				        optimistic.first_obstruction_side, depth + 1)) {
 					const bool avoidable =
 					    state_.problem == "trigger source missing" ||
+					    state_.problem.rfind(
+					        "non-shootable trigger source is behind a closed wall", 0) == 0 ||
 					    state_.problem.rfind(
 					        "trigger route dependency loop", 0) == 0;
 					if (avoidable && valid_trigger(snapshot_, block.trigger)) {
@@ -4800,22 +4820,30 @@ extern "C" int route_planner_plan_view(
 		auto result = dxx_route::plan_route(snapshot, query, visibility);
 		if (endpoint_kind == ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL &&
 		    result.status == dxx_route::route_plan_status::ok &&
+		    !analysis_budget.exhausted && !analysis_budget.was_cancelled &&
 		    plan_uses_transparent_shot(result) &&
 		    visibility.wall_shootable_without_transparency) {
 			const int preceding_keys = keys_before_transparent_shot(result);
 			if (preceding_keys) {
+				// An optional opaque-shot alternative shares the remaining work limit
+				// Exhausting that search does not invalidate the completed main route
+				auto strict_budget = analysis_budget;
 				auto strict_visibility = visibility;
+				strict_visibility.analysis_budget = &strict_budget;
 				strict_visibility.sample_cache_namespace++;
 				strict_visibility.wall_shootable =
 				    visibility.wall_shootable_without_transparency;
 				strict_visibility.wall_potentially_shootable = nullptr;
 				auto strict = dxx_route::plan_route(
 				    snapshot, query, strict_visibility, false);
+				analysis_budget.work_used = strict_budget.work_used;
+				analysis_budget.was_cancelled = strict_budget.was_cancelled;
 				const int result_keys = plan_key_mask(result);
 				const int strict_keys = plan_key_mask(strict);
 				const int bypassable_keys =
 				    preceding_keys & strict_keys;
-				if (strict.status == dxx_route::route_plan_status::ok &&
+				if (!strict_budget.exhausted && !strict_budget.was_cancelled &&
+				    strict.status == dxx_route::route_plan_status::ok &&
 				    !plan_uses_transparent_shot(strict) && bypassable_keys &&
 				    (strict_keys & result_keys) == result_keys &&
 				    !plans_have_same_objective_sequence(strict, result) &&
