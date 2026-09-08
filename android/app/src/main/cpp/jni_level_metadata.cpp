@@ -56,6 +56,7 @@ extern "C" {
 }
 
 #include "level_statistics.hpp"
+#include "level_texture_diagnostics.h"
 #include "midi_metadata_json.hpp"
 #include "mission_intent_classification.hpp"
 
@@ -851,7 +852,7 @@ static json serialize_route_steps(const level_metadata_state *metadata)
 
 static json serialize_metadata_notes(const level_metadata_state *metadata)
 {
-	json notes = json::array();
+	json notes = level_texture_diagnostic_notes();
 
 	if (!metadata)
 		return notes;

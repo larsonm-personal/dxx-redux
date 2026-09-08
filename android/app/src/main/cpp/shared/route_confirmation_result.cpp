@@ -7,6 +7,7 @@
 #include <nlohmann/json.hpp>
 
 #include "route_confirmation.h"
+#include "level_texture_diagnostics.h"
 
 extern "C" {
 #include "game.h"
@@ -33,6 +34,9 @@ nlohmann::ordered_json serialize_result(const route_confirmation_summary &summar
 	result["mission"] = mission && *mission ? mission : "d2";
 	result["level"] = level;
 	result["status"] = route_confirmation_status_name(summary.status);
+	const auto texture_notes = level_texture_diagnostic_notes();
+	if (!texture_notes.empty())
+		result["notes"] = texture_notes;
 	result["seed"] = summary.seed;
 	result["fixed_hz"] = summary.fixed_hz;
 	if (route_confirmation_speed_percent() != 160)

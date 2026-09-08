@@ -839,18 +839,62 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "infrastructure_error": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "BRINSANE.rdl",
         "route_input_sha256": "FE5D55F2A0F6E0E69804C255D24E57CB5ABC6B1DC59D82F5F5A24A2697184F3A",
-        "status": "infrastructure_error",
-        "problem": "Route engine infrastructure failure",
-        "exit_code": 1
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blastable wall",
+            "s": 1
+          },
+          {
+            "n": "hidden door",
+            "s": 4
+          },
+          {
+            "n": "gold key",
+            "s": 5
+          },
+          {
+            "n": "blue key",
+            "s": 17
+          },
+          {
+            "n": "fly-through 12",
+            "s": 31
+          },
+          {
+            "n": "red key",
+            "s": 51
+          },
+          {
+            "n": "reactor",
+            "s": 75
+          },
+          {
+            "n": "exit",
+            "s": 79
+          }
+        ],
+        "total_frames": 4732,
+        "rng_end": {
+          "state": 811863863,
+          "calls": 178
+        },
+        "notes": [
+          "invalid texture 32767, 2 occurrences"
+        ]
       }
     ]
   },
@@ -1324,18 +1368,38 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "infrastructure_error": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "comet.rdl",
         "route_input_sha256": "E67008AD8BB12A43C080EE3E0B6E61C44E054C205CB1C5BE8B3B357069AE31CB",
-        "status": "infrastructure_error",
-        "problem": "Route engine infrastructure failure",
-        "exit_code": 1
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 9
+          },
+          {
+            "n": "exit",
+            "s": 25
+          }
+        ],
+        "total_frames": 1480,
+        "rng_end": {
+          "state": 3008955749,
+          "calls": 28
+        },
+        "notes": [
+          "invalid texture 14924, 2 occurrences"
+        ]
       }
     ]
   },

@@ -38,6 +38,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "screens.h"
 #include "wall.h"
 #include "gamemine.h"
+#include "level_texture_diagnostics.h"
 #include "robot.h"
 #include "bm.h"
 #include "menu.h"
@@ -1232,6 +1233,7 @@ int no_old_level_file_error=0;
 //returns 0 if success, else error code
 int load_level(const char * filename_passed)
 {
+	level_texture_diagnostics_reset();
 #ifdef EDITOR
 	int use_compiled_level=1;
 #endif
@@ -1431,14 +1433,24 @@ int load_level(const char * filename_passed)
 		return 3;
 	}
 
-	// Reject invalid required textures before ambient sounds, collision, or rendering index their tables
+	// Gray rock (or something) fallback matches the D1/D2 mapping in convert_d1_tmap_num
+	const int fallback_texture = 43;
+	// Repair invalid references before ambient sounds, collision, or rendering index their tables
 	for (int segnum = 0; segnum < Num_segments; ++segnum)
 		for (int sidenum = 0; sidenum < MAX_SIDES_PER_SEGMENT; ++sidenum) {
-			const side *s = &Segments[segnum].sides[sidenum];
+			side *s = &Segments[segnum].sides[sidenum];
 			if (s->tmap_num < 0 || s->tmap_num >= MAX_TEXTURES || (s->tmap_num2 & 0x3fff) >= MAX_TEXTURES) {
-				Warning("Invalid level texture seg=%d side=%d child=%d wall=%d primary=%d overlay=%d", segnum, sidenum, Segments[segnum].children[sidenum], s->wall_num, s->tmap_num, s->tmap_num2 & 0x3fff);
-				PHYSFS_close(LoadFile);
-				return 3;
+				const int primary = s->tmap_num;
+				const int overlay = s->tmap_num2 & 0x3fff;
+				if (primary < 0 || primary >= MAX_TEXTURES) {
+					level_texture_diagnostics_record(primary);
+					s->tmap_num = fallback_texture;
+				}
+				if (overlay >= MAX_TEXTURES) {
+					level_texture_diagnostics_record(overlay);
+					s->tmap_num2 = (s->tmap_num2 & 0xc000) | fallback_texture;
+				}
+				con_printf(CON_URGENT, "Invalid level texture seg=%d side=%d child=%d wall=%d primary=%d overlay=%d replaced with primary=%d overlay=%d\n", segnum, sidenum, Segments[segnum].children[sidenum], s->wall_num, primary, overlay, s->tmap_num, s->tmap_num2 & 0x3fff);
 			}
 		}
 

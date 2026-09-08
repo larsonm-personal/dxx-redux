@@ -79,6 +79,7 @@ set(D2X_MAIN_SOURCES
     wall.c
     weapon.c
     ../../android/app/src/main/cpp/shared/level_metadata_scan.c
+    ../../android/app/src/main/cpp/shared/level_texture_diagnostics.cpp
     ../../android/app/src/main/cpp/shared/route_snapshot.cpp
     ../../android/app/src/main/cpp/shared/route_edge.cpp
     ../../android/app/src/main/cpp/shared/route_planner.cpp

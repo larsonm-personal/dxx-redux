@@ -425,7 +425,7 @@ short convert_d1_tmap_num(short d1_tmap_num) {
 			if (orient != 0) {
 				return orient | convert_d1_tmap_num(tmap_num);
 			} else {
-				Warning("can't convert unknown descent 1 texture #%d.\n", tmap_num);
+				con_printf(CON_URGENT, "Can't convert unknown Descent 1 texture #%d\n", tmap_num);
 				return d1_tmap_num;
 			}
 		}

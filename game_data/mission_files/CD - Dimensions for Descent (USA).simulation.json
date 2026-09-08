@@ -1138,18 +1138,62 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "infrastructure_error": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "insane.rdl",
         "route_input_sha256": "E7119DB86CADB66FDBC5017228CF48FEE4B7BFD6168E46EBDA92B55BBC49164C",
-        "status": "infrastructure_error",
-        "problem": "Route engine infrastructure failure",
-        "exit_code": 1
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blastable wall",
+            "s": 1
+          },
+          {
+            "n": "hidden door",
+            "s": 4
+          },
+          {
+            "n": "gold key",
+            "s": 5
+          },
+          {
+            "n": "blue key",
+            "s": 17
+          },
+          {
+            "n": "fly-through 12",
+            "s": 31
+          },
+          {
+            "n": "red key",
+            "s": 51
+          },
+          {
+            "n": "reactor",
+            "s": 75
+          },
+          {
+            "n": "exit",
+            "s": 79
+          }
+        ],
+        "total_frames": 4732,
+        "rng_end": {
+          "state": 811863863,
+          "calls": 178
+        },
+        "notes": [
+          "invalid texture 32767, 2 occurrences"
+        ]
       }
     ]
   },

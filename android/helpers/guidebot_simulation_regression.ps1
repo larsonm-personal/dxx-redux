@@ -212,6 +212,8 @@ function ConvertTo-GuidebotLevelSimulationResult {
         total_frames = [uint32](Get-GuidebotPropertyValue $EngineResult 'frames' 0)
         rng_end = ConvertTo-GuidebotRngBoundary (Get-GuidebotPropertyValue $EngineResult 'rng_end')
     }
+    $notes = @(Get-GuidebotPropertyValue $EngineResult 'notes' @())
+    if ($notes.Count) { $record.notes = $notes }
     if ($status -ne 'ok') {
         $problem = if (-not $projectionMatches) {
             'live objective sequence differs from route input'

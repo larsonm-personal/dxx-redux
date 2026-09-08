@@ -10,7 +10,9 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 $runner = Join-Path $repoRoot 'android/helpers/regenerate_all_guidebot_simulations.ps1'
 $pwsh = (Get-Process -Id $PID).Path
 foreach ($fixture in @(
-        @{ Name = 'comet'; Mission = 'CD - Descent - Levels of the World (USA).json'; File = 'comet.rdl'; ExpectedExit = 1 },
+        @{ Name = 'comet'; Mission = 'CD - Descent - Levels of the World (USA).json'; File = 'comet.rdl'; ExpectedExit = 0; Repair = 'primary=137 overlay=14924 replaced with primary=137 overlay=43' },
+        @{ Name = 'brinsane'; Mission = 'CD - Descent - Levels of the World (USA).json'; File = 'BRINSANE.rdl'; ExpectedExit = 0; Repair = 'primary=32767 overlay=523 replaced with primary=43 overlay=523' },
+        @{ Name = 'insane'; Mission = 'CD - Dimensions for Descent (USA).json'; File = 'insane.rdl'; ExpectedExit = 0; Repair = 'primary=32767 overlay=523 replaced with primary=43 overlay=523' },
         @{ Name = 'kcxf2'; Mission = 'kcxf2.json'; File = 'kcxf204.rl2'; ExpectedExit = 0 }
     )) {
     $runRoot = Join-Path $OutputRoot $fixture.Name
@@ -19,12 +21,21 @@ foreach ($fixture in @(
     $logs = @(Get-ChildItem -LiteralPath (Join-Path $runRoot 'logs') -File -Filter '*.log')
     if ($logs.Count -ne 1) { throw "Expected exactly one $($fixture.Name) engine run; found $($logs.Count)" }
     $content = Get-Content -LiteralPath $logs[0].FullName -Raw
+    $records = Get-Content -LiteralPath (Join-Path $runRoot ('results/' + $fixture.Mission.Replace('.json', '.simulation.json'))) -Raw | ConvertFrom-Json
+    $levelResult = @($records.levels | Where-Object level_file -eq $fixture.File)
+    if ($levelResult.Count -ne 1) { throw "Expected one compact result for $($fixture.Name)" }
     if ($content -match 'AddressSanitizer|runtime error:') { throw "Sanitizer finding in $($logs[0].FullName)" }
-    if ($fixture.Name -eq 'comet') {
-        if ($content -notmatch 'Invalid level texture seg=51 side=0 .*overlay=14924' -or $content -notmatch "Couldn't load level file") {
-            throw 'Comet did not fail explicitly at the invalid texture reference'
+    if ($fixture.Repair) {
+        $texture = if ($fixture.Name -eq 'comet') { 14924 } else { 32767 }
+        $expectedNote = "invalid texture $texture, 2 occurrences"
+        if (@($levelResult[0].notes).Count -ne 1 -or $levelResult[0].notes[0] -cne $expectedNote) {
+            throw "$($fixture.Name) did not retain its texture occurrence count in regression JSON"
+        }
+        if ($content -notmatch [regex]::Escape($fixture.Repair) -or $content -match "Couldn't load level file" -or $content -notmatch 'phase=simulation' -or $content -notmatch 'phase=result') {
+            throw "$($fixture.Name) did not log its texture repair and complete simulation"
         }
     } else {
+        if ($levelResult[0].notes) { throw 'Clean KCXF2 load unexpectedly has texture notes' }
         if ($content -match 'Invalid level wall animation|Couldn.t load level file' -or $content -notmatch 'phase=simulation') {
             throw 'KCXF2 did not load its declared sections correctly'
         }
