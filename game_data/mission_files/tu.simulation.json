@@ -38,7 +38,7 @@
         },
         {
           "n": "hidden door",
-          "s": 91
+          "s": 90
         },
         {
           "n": "red key",
@@ -46,17 +46,17 @@
         },
         {
           "n": "boss",
-          "s": 124
+          "s": 123
         },
         {
           "n": "exit",
-          "s": 140
+          "s": 139
         }
       ],
-      "total_frames": 8379,
+      "total_frames": 8328,
       "rng_end": {
-        "state": 1538394260,
-        "calls": 3075
+        "state": 860186224,
+        "calls": 3031
       }
     },
     {
@@ -136,7 +136,7 @@
         },
         {
           "n": "switch 29",
-          "s": 64
+          "s": 63
         },
         {
           "n": "red key",
@@ -144,14 +144,14 @@
         },
         {
           "n": "reactor",
-          "s": 94
+          "s": 93
         },
         {
           "n": "exit",
-          "s": 101
+          "s": 100
         }
       ],
-      "total_frames": 6031,
+      "total_frames": 5989,
       "rng_end": {
         "state": 905077752,
         "calls": 2479
@@ -173,33 +173,33 @@
         },
         {
           "n": "blue key",
-          "s": 27
+          "s": 26
         },
         {
           "n": "gold key",
-          "s": 66
+          "s": 64
         },
         {
           "n": "red key",
-          "s": 87
+          "s": 85
         },
         {
           "n": "boss",
-          "s": 113
+          "s": 112
         },
         {
           "n": "blastable wall",
-          "s": 126
+          "s": 124
         },
         {
           "n": "exit",
-          "s": 126
+          "s": 124
         }
       ],
-      "total_frames": 7577,
+      "total_frames": 7461,
       "rng_end": {
-        "state": 3477880533,
-        "calls": 2860
+        "state": 3837263323,
+        "calls": 2862
       }
     },
     {
@@ -258,10 +258,10 @@
           "s": 20
         }
       ],
-      "total_frames": 1174,
+      "total_frames": 1189,
       "rng_end": {
-        "state": 743020753,
-        "calls": 432
+        "state": 3251751928,
+        "calls": 431
       }
     },
     {
@@ -283,10 +283,10 @@
           "s": 59
         }
       ],
-      "total_frames": 3545,
+      "total_frames": 3564,
       "rng_end": {
-        "state": 2226093429,
-        "calls": 908
+        "state": 2002496997,
+        "calls": 924
       }
     }
   ]

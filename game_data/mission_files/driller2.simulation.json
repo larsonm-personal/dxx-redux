@@ -7,16 +7,16 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
+    "ok": 4,
     "failed": 5,
-    "timeout": 2
+    "timeout": 1
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "meru.rl2",
       "route_input_sha256": "47C3EDAEBBFBF6A45C6A8B5BA1863E219661260A3301DCA63CD2C358FFD9E500",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -41,14 +41,17 @@
         {
           "n": "reactor",
           "s": 39
+        },
+        {
+          "n": "exit",
+          "s": 44
         }
       ],
-      "total_frames": 7741,
+      "total_frames": 2614,
       "rng_end": {
-        "state": 2771411007,
-        "calls": 1962
-      },
-      "problem": "route confirmation exceeded 129-second simulation budget"
+        "state": 3838301999,
+        "calls": 1978
+      }
     },
     {
       "level_num": 2,
@@ -111,13 +114,13 @@
         },
         {
           "n": "red key",
-          "s": 36
+          "s": 35
         }
       ],
-      "total_frames": 2155,
+      "total_frames": 2122,
       "rng_end": {
-        "state": 1612101980,
-        "calls": 2331
+        "state": 3114770666,
+        "calls": 2349
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -187,17 +190,17 @@
         },
         {
           "n": "reactor",
-          "s": 74
+          "s": 75
         },
         {
           "n": "exit",
           "s": 82
         }
       ],
-      "total_frames": 4892,
+      "total_frames": 4920,
       "rng_end": {
-        "state": 3776197745,
-        "calls": 7952
+        "state": 856272373,
+        "calls": 7948
       }
     },
     {
@@ -246,17 +249,17 @@
         },
         {
           "n": "blastable wall",
-          "s": 22
+          "s": 21
         },
         {
           "n": "gold key",
           "s": 25
         }
       ],
-      "total_frames": 1481,
+      "total_frames": 1479,
       "rng_end": {
-        "state": 4013917488,
-        "calls": 535
+        "state": 3251531490,
+        "calls": 533
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -285,8 +288,8 @@
       ],
       "total_frames": 1449,
       "rng_end": {
-        "state": 4037406763,
-        "calls": 3806
+        "state": 2987822216,
+        "calls": 3807
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },

@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "failed",
   "level_counts": {
-    "failed": 1,
-    "timeout": 3
+    "failed": 2,
+    "timeout": 2
   },
   "levels": [
     {
@@ -61,19 +61,19 @@
     {
       "level_num": 3,
       "level_file": "deadmine.rl2",
-      "route_input_sha256": "26E641FB04D228B0256649FA7B8034C804FF6B0426A9B211D667DF4CE77248CB",
-      "status": "timeout",
+      "route_input_sha256": "5DEB30C961BD4E9261323DFAB8E33983C04A4BE1426453C2C6983AF57E130197",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 4229,
+      "total_frames": 0,
       "rng_end": {
-        "state": 1428594928,
-        "calls": 1879
+        "state": 3012060019,
+        "calls": 278
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 4,
@@ -90,12 +90,12 @@
           "s": 30
         }
       ],
-      "total_frames": 9061,
+      "total_frames": 8291,
       "rng_end": {
-        "state": 3370890238,
-        "calls": 1673
+        "state": 1935767572,
+        "calls": 1667
       },
-      "problem": "route confirmation exceeded 151-second simulation budget"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }
   ]
 }

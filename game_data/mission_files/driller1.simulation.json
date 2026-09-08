@@ -45,10 +45,10 @@
         },
         {
           "n": "exit",
-          "s": 44
+          "s": 43
         }
       ],
-      "total_frames": 2630,
+      "total_frames": 2609,
       "rng_end": {
         "state": 2754807367,
         "calls": 162
@@ -249,14 +249,14 @@
         },
         {
           "n": "blastable wall",
-          "s": 22
+          "s": 20
         },
         {
           "n": "gold key",
-          "s": 25
+          "s": 23
         }
       ],
-      "total_frames": 2596,
+      "total_frames": 2483,
       "rng_end": {
         "state": 3178040984,
         "calls": 143
@@ -339,22 +339,22 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 8
+          "s": 7
         },
         {
           "n": "fly-through 0",
-          "s": 19
+          "s": 18
         },
         {
           "n": "gold key",
-          "s": 20
+          "s": 19
         },
         {
           "n": "hidden door",
-          "s": 21
+          "s": 20
         }
       ],
-      "total_frames": 5414,
+      "total_frames": 5546,
       "rng_end": {
         "state": 948921754,
         "calls": 61

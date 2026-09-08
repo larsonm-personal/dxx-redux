@@ -40,8 +40,8 @@
         ],
         "total_frames": 6649,
         "rng_end": {
-          "state": 2748183959,
-          "calls": 2130
+          "state": 3377447812,
+          "calls": 2131
         },
         "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
@@ -142,7 +142,7 @@
             "s": 83
           }
         ],
-        "total_frames": 5003,
+        "total_frames": 5005,
         "rng_end": {
           "state": 3540364135,
           "calls": 3458
@@ -226,8 +226,8 @@
         ],
         "total_frames": 3536,
         "rng_end": {
-          "state": 1834270230,
-          "calls": 2641
+          "state": 2968394676,
+          "calls": 2659
         }
       }
     ]
@@ -311,8 +311,8 @@
         "objectives": [],
         "total_frames": 3895,
         "rng_end": {
-          "state": 860264306,
-          "calls": 1221
+          "state": 1801414595,
+          "calls": 1222
         },
         "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
@@ -358,10 +358,10 @@
           },
           {
             "n": "exit",
-            "s": 140
+            "s": 141
           }
         ],
-        "total_frames": 8425,
+        "total_frames": 8439,
         "rng_end": {
           "state": 4188231431,
           "calls": 3042
@@ -470,8 +470,8 @@
         ],
         "total_frames": 5333,
         "rng_end": {
-          "state": 3326479798,
-          "calls": 3377
+          "state": 3710626185,
+          "calls": 3384
         }
       }
     ]

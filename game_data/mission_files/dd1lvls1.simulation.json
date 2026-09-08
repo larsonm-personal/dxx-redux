@@ -33,18 +33,18 @@
         },
         {
           "n": "red key",
-          "s": 44
+          "s": 43
         },
         {
           "n": "reactor",
-          "s": 56
+          "s": 55
         },
         {
           "n": "exit",
           "s": 63
         }
       ],
-      "total_frames": 3805,
+      "total_frames": 3751,
       "rng_end": {
         "state": 3948108040,
         "calls": 95
@@ -245,34 +245,34 @@
         },
         {
           "n": "gold key",
-          "s": 32
+          "s": 31
         },
         {
           "n": "fly-through 3",
-          "s": 55
+          "s": 54
         },
         {
           "n": "fly-through 4",
-          "s": 70
+          "s": 69
         },
         {
           "n": "red key",
-          "s": 80
+          "s": 79
         },
         {
           "n": "fly-through 5",
-          "s": 97
+          "s": 95
         },
         {
           "n": "reactor",
-          "s": 97
+          "s": 96
         },
         {
           "n": "exit",
-          "s": 103
+          "s": 102
         }
       ],
-      "total_frames": 6176,
+      "total_frames": 6110,
       "rng_end": {
         "state": 204674734,
         "calls": 153
@@ -293,7 +293,7 @@
           "s": 12
         }
       ],
-      "total_frames": 5140,
+      "total_frames": 5119,
       "rng_end": {
         "state": 4008331270,
         "calls": 33
@@ -328,13 +328,13 @@
         },
         {
           "n": "exit",
-          "s": 97
+          "s": 98
         }
       ],
-      "total_frames": 5843,
+      "total_frames": 5855,
       "rng_end": {
-        "state": 3871495338,
-        "calls": 109
+        "state": 470157467,
+        "calls": 110
       }
     },
     {
@@ -360,7 +360,7 @@
           "s": 69
         }
       ],
-      "total_frames": 8997,
+      "total_frames": 9009,
       "rng_end": {
         "state": 3074161287,
         "calls": 98
@@ -428,10 +428,10 @@
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 52
+          "s": 54
         }
       ],
-      "total_frames": 7498,
+      "total_frames": 7599,
       "rng_end": {
         "state": 3536284836,
         "calls": 179

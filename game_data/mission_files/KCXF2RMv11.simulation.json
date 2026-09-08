@@ -62,25 +62,25 @@
         },
         {
           "n": "switch 19",
-          "s": 125
+          "s": 126
         },
         {
           "n": "switch 18",
-          "s": 152
+          "s": 153
         },
         {
           "n": "switch 17",
-          "s": 155
+          "s": 156
         },
         {
           "n": "exit",
-          "s": 165
+          "s": 166
         }
       ],
-      "total_frames": 9882,
+      "total_frames": 9938,
       "rng_end": {
-        "state": 3374439426,
-        "calls": 6005
+        "state": 1128553242,
+        "calls": 6333
       }
     },
     {
@@ -120,22 +120,22 @@
         },
         {
           "n": "red key",
-          "s": 107
+          "s": 106
         },
         {
           "n": "hidden door",
-          "s": 135
+          "s": 134
         },
         {
           "n": "boss",
-          "s": 157
+          "s": 156
         },
         {
           "n": "exit",
-          "s": 165
+          "s": 164
         }
       ],
-      "total_frames": 9882,
+      "total_frames": 9825,
       "rng_end": {
         "state": 819313084,
         "calls": 5435
@@ -166,8 +166,8 @@
       ],
       "total_frames": 5586,
       "rng_end": {
-        "state": 3483563614,
-        "calls": 3497
+        "state": 1583537286,
+        "calls": 3489
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

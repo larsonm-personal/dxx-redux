@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 5,
+    "ok": 6,
     "failed": 4,
-    "timeout": 3,
+    "timeout": 2,
     "unsupported": 2
   },
   "levels": [
@@ -100,8 +100,8 @@
       ],
       "total_frames": 11073,
       "rng_end": {
-        "state": 23138853,
-        "calls": 5468
+        "state": 2541367290,
+        "calls": 5469
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -153,11 +153,11 @@
         },
         {
           "n": "hidden door",
-          "s": 115
+          "s": 114
         },
         {
           "n": "switch 20",
-          "s": 119
+          "s": 118
         },
         {
           "n": "hidden door",
@@ -173,15 +173,15 @@
         },
         {
           "n": "hidden door",
-          "s": 149
+          "s": 148
         },
         {
           "n": "switch 26",
-          "s": 152
+          "s": 151
         },
         {
           "n": "hidden door",
-          "s": 161
+          "s": 160
         },
         {
           "n": "switch 22",
@@ -189,29 +189,29 @@
         },
         {
           "n": "switch 24",
-          "s": 169
+          "s": 168
         },
         {
           "n": "red key",
-          "s": 175
+          "s": 174
         },
         {
           "n": "reactor",
-          "s": 201
+          "s": 203
         },
         {
           "n": "switch 3",
-          "s": 208
+          "s": 206
         },
         {
           "n": "exit",
-          "s": 227
+          "s": 223
         }
       ],
-      "total_frames": 13597,
+      "total_frames": 13394,
       "rng_end": {
-        "state": 4053660929,
-        "calls": 4864
+        "state": 1172270678,
+        "calls": 4881
       }
     },
     {
@@ -250,15 +250,15 @@
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 87
+          "s": 88
         },
         {
           "n": "red key",
-          "s": 133
+          "s": 135
         },
         {
           "n": "boss",
-          "s": 147
+          "s": 148
         },
         {
           "n": "switch 3",
@@ -269,17 +269,17 @@
           "s": 170
         }
       ],
-      "total_frames": 10190,
+      "total_frames": 10199,
       "rng_end": {
-        "state": 622276768,
-        "calls": 4839
+        "state": 2960590743,
+        "calls": 5714
       }
     },
     {
       "level_num": 5,
       "level_file": "sphasm.rl2",
       "route_input_sha256": "2DFCCDD4903309CA15945654CDDEAF8E24463B82A33F288FDA7322372D7641B6",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -300,14 +300,17 @@
         {
           "n": "reactor",
           "s": 25
+        },
+        {
+          "n": "exit",
+          "s": 45
         }
       ],
-      "total_frames": 5400,
+      "total_frames": 2682,
       "rng_end": {
-        "state": 1832367727,
-        "calls": 1146
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 599060396,
+        "calls": 1163
+      }
     },
     {
       "level_num": 6,
@@ -330,8 +333,8 @@
       ],
       "total_frames": 953,
       "rng_end": {
-        "state": 3529457476,
-        "calls": 403
+        "state": 3396130861,
+        "calls": 404
       },
       "problem": "route objective activation is not supported"
     },
@@ -359,25 +362,25 @@
         },
         {
           "n": "gold key",
-          "s": 36
+          "s": 35
         },
         {
           "n": "red key",
-          "s": 62
+          "s": 61
         },
         {
           "n": "reactor",
-          "s": 83
+          "s": 86
         },
         {
           "n": "exit",
-          "s": 95
+          "s": 98
         }
       ],
-      "total_frames": 5725,
+      "total_frames": 5895,
       "rng_end": {
-        "state": 1334084737,
-        "calls": 3968
+        "state": 4174470001,
+        "calls": 4112
       }
     },
     {
@@ -431,8 +434,8 @@
       ],
       "total_frames": 710,
       "rng_end": {
-        "state": 2225544632,
-        "calls": 239
+        "state": 444983185,
+        "calls": 240
       },
       "problem": "route objective activation is not supported"
     },
@@ -464,49 +467,49 @@
         },
         {
           "n": "hidden door",
-          "s": 23
+          "s": 21
         },
         {
           "n": "switch 2",
-          "s": 23
+          "s": 21
         },
         {
           "n": "gold key",
-          "s": 26
+          "s": 24
         },
         {
           "n": "hidden door",
-          "s": 37
+          "s": 34
         },
         {
           "n": "switch 11",
-          "s": 37
+          "s": 34
         },
         {
           "n": "red key",
-          "s": 45
+          "s": 42
         },
         {
           "n": "hidden door",
-          "s": 65
+          "s": 64
         },
         {
           "n": "reactor",
-          "s": 68
+          "s": 67
         },
         {
           "n": "hidden door",
-          "s": 84
+          "s": 82
         },
         {
           "n": "exit",
-          "s": 85
+          "s": 83
         }
       ],
-      "total_frames": 5082,
+      "total_frames": 4958,
       "rng_end": {
-        "state": 1371983276,
-        "calls": 3723
+        "state": 1677824788,
+        "calls": 3971
       }
     },
     {

@@ -141,8 +141,8 @@
         ],
         "total_frames": 7184,
         "rng_end": {
-          "state": 273032060,
-          "calls": 123
+          "state": 3124316263,
+          "calls": 130
         },
         "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
@@ -270,26 +270,26 @@
           },
           {
             "n": "hidden door",
-            "s": 32
+            "s": 30
           },
           {
             "n": "gold key",
-            "s": 32
+            "s": 31
           },
           {
             "n": "red key",
-            "s": 52
+            "s": 49
           },
           {
             "n": "reactor",
-            "s": 74
+            "s": 71
           },
           {
             "n": "exit",
-            "s": 80
+            "s": 77
           }
         ],
-        "total_frames": 4774,
+        "total_frames": 4617,
         "rng_end": {
           "state": 4264971915,
           "calls": 126

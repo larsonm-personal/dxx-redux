@@ -82,17 +82,17 @@
         },
         {
           "n": "gold key",
-          "s": 36
+          "s": 37
         },
         {
           "n": "red key",
-          "s": 66
+          "s": 67
         }
       ],
-      "total_frames": 10096,
+      "total_frames": 10154,
       "rng_end": {
-        "state": 3962036573,
-        "calls": 4324
+        "state": 1450252128,
+        "calls": 4391
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -144,17 +144,17 @@
         },
         {
           "n": "boss",
-          "s": 131
+          "s": 129
         },
         {
           "n": "exit",
-          "s": 134
+          "s": 132
         }
       ],
-      "total_frames": 8026,
+      "total_frames": 7906,
       "rng_end": {
-        "state": 3184915598,
-        "calls": 4665
+        "state": 4253933804,
+        "calls": 4683
       }
     },
     {
@@ -289,7 +289,7 @@
         },
         {
           "n": "switch 3",
-          "s": 40
+          "s": 39
         },
         {
           "n": "gold key",
@@ -301,17 +301,17 @@
         },
         {
           "n": "boss",
-          "s": 69
+          "s": 68
         },
         {
           "n": "exit",
-          "s": 81
+          "s": 80
         }
       ],
-      "total_frames": 4846,
+      "total_frames": 4810,
       "rng_end": {
-        "state": 4289724122,
-        "calls": 4093
+        "state": 2805590340,
+        "calls": 3987
       }
     },
     {
@@ -379,25 +379,25 @@
         },
         {
           "n": "blue key",
-          "s": 25
+          "s": 27
         },
         {
           "n": "switch 5",
-          "s": 26
+          "s": 28
         },
         {
           "n": "gold key",
-          "s": 38
+          "s": 41
         },
         {
           "n": "switch 4",
-          "s": 42
+          "s": 44
         }
       ],
-      "total_frames": 3012,
+      "total_frames": 3139,
       "rng_end": {
-        "state": 1635793825,
-        "calls": 1376
+        "state": 3006621063,
+        "calls": 1378
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -436,10 +436,10 @@
           "s": 127
         }
       ],
-      "total_frames": 7628,
+      "total_frames": 7639,
       "rng_end": {
-        "state": 4255738964,
-        "calls": 3395
+        "state": 417122925,
+        "calls": 3412
       }
     },
     {
@@ -458,7 +458,7 @@
         },
         {
           "n": "gold key",
-          "s": 84
+          "s": 83
         },
         {
           "n": "destroy robot carrying red key",
@@ -466,17 +466,17 @@
         },
         {
           "n": "boss",
-          "s": 163
+          "s": 162
         },
         {
           "n": "exit",
-          "s": 164
+          "s": 163
         }
       ],
-      "total_frames": 9823,
+      "total_frames": 9775,
       "rng_end": {
-        "state": 734834261,
-        "calls": 4012
+        "state": 4173157133,
+        "calls": 4020
       }
     },
     {
@@ -599,11 +599,11 @@
         },
         {
           "n": "blue key",
-          "s": 45
+          "s": 44
         },
         {
           "n": "switch 1",
-          "s": 45
+          "s": 44
         },
         {
           "n": "gold key",
@@ -619,17 +619,17 @@
         },
         {
           "n": "boss",
-          "s": 128
+          "s": 126
         },
         {
           "n": "exit",
-          "s": 149
+          "s": 147
         }
       ],
-      "total_frames": 8948,
+      "total_frames": 8827,
       "rng_end": {
-        "state": 3798815375,
-        "calls": 5722
+        "state": 3375324358,
+        "calls": 5729
       }
     },
     {
@@ -720,8 +720,8 @@
       ],
       "total_frames": 2726,
       "rng_end": {
-        "state": 768465658,
-        "calls": 1629
+        "state": 2507388893,
+        "calls": 1636
       }
     },
     {
@@ -745,8 +745,8 @@
       ],
       "total_frames": 450,
       "rng_end": {
-        "state": 2255343208,
-        "calls": 383
+        "state": 3189031553,
+        "calls": 384
       }
     },
     {

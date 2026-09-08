@@ -10,7 +10,8 @@
   "level_counts": {
     "ok": 22,
     "failed": 1,
-    "timeout": 7
+    "timeout": 6,
+    "route_mismatch": 1
   },
   "levels": [
     {
@@ -179,8 +180,8 @@
       ],
       "total_frames": 4317,
       "rng_end": {
-        "state": 3948108040,
-        "calls": 95
+        "state": 2077067425,
+        "calls": 96
       }
     },
     {
@@ -216,8 +217,8 @@
       ],
       "total_frames": 3456,
       "rng_end": {
-        "state": 2226230633,
-        "calls": 88
+        "state": 3545811950,
+        "calls": 89
       }
     },
     {
@@ -355,7 +356,7 @@
     {
       "level_num": 11,
       "level_file": "drav11.rdl",
-      "route_input_sha256": "D1C3BE871CA398D8A5D8B24E09837C7F4A569665ED9E2FD121C3847112A20F4B",
+      "route_input_sha256": "A3A4F8EBCABDFC98231D733FFC9B65E88A68E526E14E326320833CDF3672E780",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -385,17 +386,17 @@
         },
         {
           "n": "gold key",
-          "s": 21
+          "s": 19
         },
         {
           "n": "red key",
-          "s": 40
+          "s": 38
         }
       ],
-      "total_frames": 2419,
+      "total_frames": 2279,
       "rng_end": {
-        "state": 3025925713,
-        "calls": 48
+        "state": 3822763702,
+        "calls": 49
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -993,19 +994,28 @@
     {
       "level_num": -5,
       "level_file": "dravs5.rdl",
-      "route_input_sha256": "B5C26D8882FE4177C25871680CECE43997820502AFEE21E32B558D384DD7B015",
-      "status": "timeout",
+      "route_input_sha256": "2DA051FDC557D8EDFC498440E1F0D3461A5AC90D6AB6E22485D563FD9724FAD4",
+      "status": "route_mismatch",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 13021,
+      "objectives": [
+        {
+          "n": "fly-through 1",
+          "s": 7
+        },
+        {
+          "n": "pass-through 4",
+          "s": 16
+        }
+      ],
+      "total_frames": 1801,
       "rng_end": {
-        "state": 1501006377,
-        "calls": 147864
+        "state": 3834121963,
+        "calls": 30
       },
-      "problem": "route confirmation exceeded 217-second simulation budget"
+      "problem": "live objective sequence differs from route input"
     },
     {
       "level_num": -6,

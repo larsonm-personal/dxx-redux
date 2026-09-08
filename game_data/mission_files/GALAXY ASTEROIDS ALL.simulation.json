@@ -66,7 +66,7 @@
         },
         {
           "n": "red key",
-          "s": 127
+          "s": 128
         },
         {
           "n": "boss",
@@ -74,13 +74,13 @@
         },
         {
           "n": "exit",
-          "s": 189
+          "s": 190
         }
       ],
-      "total_frames": 11348,
+      "total_frames": 11394,
       "rng_end": {
-        "state": 855019456,
-        "calls": 8007
+        "state": 3128173454,
+        "calls": 7993
       }
     },
     {
@@ -118,10 +118,10 @@
           "s": 130
         }
       ],
-      "total_frames": 7809,
+      "total_frames": 7816,
       "rng_end": {
-        "state": 1166679525,
-        "calls": 5020
+        "state": 4069126410,
+        "calls": 5005
       }
     },
     {

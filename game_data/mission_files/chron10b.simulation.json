@@ -69,8 +69,8 @@
       ],
       "total_frames": 11078,
       "rng_end": {
-        "state": 48038782,
-        "calls": 5385
+        "state": 1084166367,
+        "calls": 5386
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -122,11 +122,11 @@
         },
         {
           "n": "hidden door",
-          "s": 115
+          "s": 114
         },
         {
           "n": "switch 20",
-          "s": 119
+          "s": 118
         },
         {
           "n": "hidden door",
@@ -142,15 +142,15 @@
         },
         {
           "n": "hidden door",
-          "s": 149
+          "s": 148
         },
         {
           "n": "switch 26",
-          "s": 152
+          "s": 151
         },
         {
           "n": "hidden door",
-          "s": 161
+          "s": 160
         },
         {
           "n": "switch 22",
@@ -158,29 +158,29 @@
         },
         {
           "n": "switch 24",
-          "s": 169
+          "s": 168
         },
         {
           "n": "red key",
-          "s": 175
+          "s": 174
         },
         {
           "n": "reactor",
-          "s": 201
+          "s": 203
         },
         {
           "n": "switch 3",
-          "s": 208
+          "s": 206
         },
         {
           "n": "exit",
-          "s": 227
+          "s": 223
         }
       ],
-      "total_frames": 13597,
+      "total_frames": 13394,
       "rng_end": {
-        "state": 4053660929,
-        "calls": 4864
+        "state": 1172270678,
+        "calls": 4881
       }
     },
     {
@@ -214,10 +214,10 @@
           "s": 53
         }
       ],
-      "total_frames": 3173,
+      "total_frames": 3178,
       "rng_end": {
-        "state": 1225298831,
-        "calls": 1370
+        "state": 591691770,
+        "calls": 1373
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },

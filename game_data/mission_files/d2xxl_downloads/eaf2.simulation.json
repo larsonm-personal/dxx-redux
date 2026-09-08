@@ -204,10 +204,10 @@
           "s": 83
         }
       ],
-      "total_frames": 4968,
+      "total_frames": 4993,
       "rng_end": {
-        "state": 2849125866,
-        "calls": 6189
+        "state": 3500354240,
+        "calls": 6215
       }
     },
     {
@@ -241,7 +241,7 @@
           "s": 59
         }
       ],
-      "total_frames": 3555,
+      "total_frames": 3542,
       "rng_end": {
         "state": 218595359,
         "calls": 4554
@@ -267,7 +267,7 @@
         },
         {
           "n": "switch 24",
-          "s": 26
+          "s": 27
         },
         {
           "n": "destroy robot carrying gold key",
@@ -279,25 +279,25 @@
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 66
+          "s": 64
         },
         {
           "n": "reactor",
-          "s": 81
+          "s": 79
         },
         {
           "n": "switch 22",
-          "s": 96
+          "s": 91
         },
         {
           "n": "exit",
-          "s": 109
+          "s": 104
         }
       ],
-      "total_frames": 6528,
+      "total_frames": 6257,
       "rng_end": {
-        "state": 3117269441,
-        "calls": 13376
+        "state": 2875101003,
+        "calls": 12222
       }
     },
     {
@@ -324,23 +324,23 @@
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 42
+          "s": 43
         },
         {
           "n": "switch 1",
-          "s": 42
+          "s": 43
         },
         {
           "n": "hidden door",
-          "s": 69
+          "s": 68
         },
         {
           "n": "switch 2",
-          "s": 70
+          "s": 69
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 81
+          "s": 80
         },
         {
           "n": "boss",
@@ -351,10 +351,10 @@
           "s": 125
         }
       ],
-      "total_frames": 7508,
+      "total_frames": 7513,
       "rng_end": {
-        "state": 4123504779,
-        "calls": 7806
+        "state": 3930000974,
+        "calls": 8057
       }
     },
     {

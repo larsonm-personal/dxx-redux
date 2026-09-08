@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 10,
-    "timeout": 2
+    "ok": 11,
+    "timeout": 1
   },
   "levels": [
     {
@@ -27,7 +27,7 @@
         },
         {
           "n": "gold key",
-          "s": 23
+          "s": 22
         },
         {
           "n": "red key",
@@ -35,14 +35,14 @@
         },
         {
           "n": "reactor",
-          "s": 43
+          "s": 44
         },
         {
           "n": "exit",
           "s": 47
         }
       ],
-      "total_frames": 2798,
+      "total_frames": 2826,
       "rng_end": {
         "state": 1171560760,
         "calls": 1903
@@ -81,15 +81,15 @@
       ],
       "total_frames": 2553,
       "rng_end": {
-        "state": 3024176985,
-        "calls": 2024
+        "state": 2009752442,
+        "calls": 2013
       }
     },
     {
       "level_num": 3,
       "level_file": "hemep.rl2",
       "route_input_sha256": "1EEAC42FDD783E00ED2245742672056FD432939312AB41FC94848A236C4C21BA",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -105,15 +105,22 @@
         },
         {
           "n": "red key",
-          "s": 36
+          "s": 35
+        },
+        {
+          "n": "reactor",
+          "s": 52
+        },
+        {
+          "n": "exit",
+          "s": 59
         }
       ],
-      "total_frames": 5992,
+      "total_frames": 3510,
       "rng_end": {
-        "state": 821091030,
-        "calls": 2193
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 2777607841,
+        "calls": 2656
+      }
     },
     {
       "level_num": 4,
@@ -201,21 +208,21 @@
         },
         {
           "n": "red key",
-          "s": 56
+          "s": 57
         },
         {
           "n": "reactor",
-          "s": 77
+          "s": 78
         },
         {
           "n": "exit",
-          "s": 83
+          "s": 84
         }
       ],
-      "total_frames": 4970,
+      "total_frames": 5069,
       "rng_end": {
-        "state": 917025743,
-        "calls": 4378
+        "state": 1053602589,
+        "calls": 4388
       }
     },
     {
@@ -249,10 +256,10 @@
           "s": 57
         }
       ],
-      "total_frames": 3436,
+      "total_frames": 3407,
       "rng_end": {
-        "state": 3608215435,
-        "calls": 3966
+        "state": 1926244580,
+        "calls": 3955
       }
     },
     {
@@ -323,10 +330,10 @@
           "s": 44
         }
       ],
-      "total_frames": 2653,
+      "total_frames": 2650,
       "rng_end": {
-        "state": 2876703512,
-        "calls": 2575
+        "state": 1503717862,
+        "calls": 2497
       }
     },
     {
@@ -349,11 +356,11 @@
         },
         {
           "n": "switch 2",
-          "s": 43
+          "s": 42
         },
         {
           "n": "red key",
-          "s": 47
+          "s": 46
         },
         {
           "n": "switch 3",
@@ -365,13 +372,13 @@
         },
         {
           "n": "exit",
-          "s": 68
+          "s": 69
         }
       ],
-      "total_frames": 4077,
+      "total_frames": 4131,
       "rng_end": {
-        "state": 319828982,
-        "calls": 6129
+        "state": 3914727650,
+        "calls": 6165
       }
     },
     {
@@ -394,21 +401,21 @@
         },
         {
           "n": "red key",
-          "s": 51
+          "s": 52
         },
         {
           "n": "reactor",
-          "s": 82
+          "s": 80
         },
         {
           "n": "exit",
-          "s": 93
+          "s": 88
         }
       ],
-      "total_frames": 5557,
+      "total_frames": 5273,
       "rng_end": {
-        "state": 1793688730,
-        "calls": 3389
+        "state": 1406833095,
+        "calls": 3362
       }
     },
     {
@@ -431,7 +438,7 @@
         },
         {
           "n": "switch 4",
-          "s": 34
+          "s": 35
         },
         {
           "n": "red key",
@@ -439,17 +446,17 @@
         },
         {
           "n": "boss",
-          "s": 83
+          "s": 82
         },
         {
           "n": "exit",
-          "s": 106
+          "s": 105
         }
       ],
-      "total_frames": 6389,
+      "total_frames": 6312,
       "rng_end": {
-        "state": 1583640841,
-        "calls": 8632
+        "state": 3147521900,
+        "calls": 8651
       }
     }
   ]

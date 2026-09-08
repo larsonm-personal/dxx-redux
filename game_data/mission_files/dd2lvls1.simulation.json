@@ -24,37 +24,37 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 20
+          "s": 19
         },
         {
           "n": "switch 2",
-          "s": 46
+          "s": 45
         },
         {
           "n": "gold key",
-          "s": 49
+          "s": 48
         },
         {
           "n": "switch 3",
-          "s": 55
+          "s": 54
         },
         {
           "n": "red key",
-          "s": 73
+          "s": 71
         },
         {
           "n": "reactor",
-          "s": 92
+          "s": 91
         },
         {
           "n": "exit",
-          "s": 107
+          "s": 106
         }
       ],
-      "total_frames": 6390,
+      "total_frames": 6341,
       "rng_end": {
-        "state": 1561885201,
-        "calls": 4720
+        "state": 3956128957,
+        "calls": 4740
       }
     },
     {
@@ -84,10 +84,10 @@
           "s": 78
         }
       ],
-      "total_frames": 6204,
+      "total_frames": 6132,
       "rng_end": {
-        "state": 3075278872,
-        "calls": 4367
+        "state": 1076724611,
+        "calls": 4358
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -107,25 +107,25 @@
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 46
+          "s": 47
         },
         {
           "n": "red key",
-          "s": 67
+          "s": 68
         },
         {
           "n": "reactor",
-          "s": 75
+          "s": 77
         },
         {
           "n": "exit",
-          "s": 81
+          "s": 83
         }
       ],
-      "total_frames": 4852,
+      "total_frames": 4969,
       "rng_end": {
-        "state": 3079037977,
-        "calls": 4392
+        "state": 3111564362,
+        "calls": 4429
       }
     },
     {
@@ -152,21 +152,21 @@
         },
         {
           "n": "red key",
-          "s": 53
+          "s": 52
         },
         {
           "n": "reactor",
-          "s": 78
+          "s": 76
         },
         {
           "n": "exit",
-          "s": 93
+          "s": 91
         }
       ],
-      "total_frames": 5554,
+      "total_frames": 5471,
       "rng_end": {
-        "state": 1559631503,
-        "calls": 4698
+        "state": 625357380,
+        "calls": 4755
       }
     },
     {
@@ -197,25 +197,25 @@
         },
         {
           "n": "hidden door",
-          "s": 71
+          "s": 69
         },
         {
           "n": "red key",
-          "s": 72
+          "s": 71
         },
         {
           "n": "reactor",
-          "s": 86
+          "s": 84
         },
         {
           "n": "exit",
-          "s": 92
+          "s": 89
         }
       ],
-      "total_frames": 5492,
+      "total_frames": 5361,
       "rng_end": {
-        "state": 4221922778,
-        "calls": 3325
+        "state": 3264649439,
+        "calls": 3338
       }
     },
     {
@@ -246,13 +246,13 @@
         },
         {
           "n": "red key",
-          "s": 53
+          "s": 54
         }
       ],
-      "total_frames": 3198,
+      "total_frames": 3238,
       "rng_end": {
-        "state": 3317441796,
-        "calls": 2259
+        "state": 662924321,
+        "calls": 2272
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -279,10 +279,10 @@
           "s": 36
         }
       ],
-      "total_frames": 2152,
+      "total_frames": 2161,
       "rng_end": {
-        "state": 141351509,
-        "calls": 940
+        "state": 3398486110,
+        "calls": 937
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -298,7 +298,7 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 13
+          "s": 12
         },
         {
           "n": "gold key",
@@ -306,10 +306,10 @@
         },
         {
           "n": "red key",
-          "s": 53
+          "s": 52
         }
       ],
-      "total_frames": 7307,
+      "total_frames": 7299,
       "rng_end": {
         "state": 2210860402,
         "calls": 1733
@@ -344,25 +344,25 @@
         },
         {
           "n": "hidden door",
-          "s": 71
+          "s": 69
         },
         {
           "n": "red key",
-          "s": 72
+          "s": 71
         },
         {
           "n": "reactor",
-          "s": 86
+          "s": 84
         },
         {
           "n": "exit",
-          "s": 92
+          "s": 89
         }
       ],
-      "total_frames": 5492,
+      "total_frames": 5361,
       "rng_end": {
-        "state": 4221922778,
-        "calls": 3325
+        "state": 3264649439,
+        "calls": 3338
       }
     }
   ]

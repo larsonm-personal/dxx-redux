@@ -151,10 +151,10 @@
             "s": 61
           }
         ],
-        "total_frames": 3670,
+        "total_frames": 3664,
         "rng_end": {
-          "state": 356973522,
-          "calls": 997
+          "state": 3101968293,
+          "calls": 988
         }
       },
       {
@@ -272,8 +272,8 @@
         ],
         "total_frames": 4530,
         "rng_end": {
-          "state": 2049409536,
-          "calls": 1031
+          "state": 968558934,
+          "calls": 1041
         }
       },
       {
@@ -303,10 +303,10 @@
             "s": 52
           }
         ],
-        "total_frames": 4790,
+        "total_frames": 4766,
         "rng_end": {
-          "state": 2662406682,
-          "calls": 1469
+          "state": 2337897445,
+          "calls": 1436
         },
         "problem": "physical route frontier did not open after 8 interaction attempts"
       },
@@ -520,10 +520,10 @@
             "s": 66
           }
         ],
-        "total_frames": 3981,
+        "total_frames": 3980,
         "rng_end": {
-          "state": 3420633278,
-          "calls": 1225
+          "state": 89561265,
+          "calls": 1232
         }
       },
       {
@@ -602,10 +602,10 @@
             "s": 84
           }
         ],
-        "total_frames": 5067,
+        "total_frames": 5045,
         "rng_end": {
-          "state": 3620790455,
-          "calls": 1842
+          "state": 4179569576,
+          "calls": 1855
         }
       },
       {
@@ -702,8 +702,8 @@
         ],
         "total_frames": 3011,
         "rng_end": {
-          "state": 2049409536,
-          "calls": 1031
+          "state": 1256401675,
+          "calls": 1022
         }
       },
       {
@@ -839,10 +839,10 @@
             "s": 51
           }
         ],
-        "total_frames": 3070,
+        "total_frames": 3066,
         "rng_end": {
-          "state": 3260609084,
-          "calls": 699
+          "state": 2025613794,
+          "calls": 789
         }
       },
       {
@@ -941,10 +941,10 @@
             "s": 87
           }
         ],
-        "total_frames": 5219,
+        "total_frames": 5211,
         "rng_end": {
-          "state": 1528720303,
-          "calls": 2874
+          "state": 1909579252,
+          "calls": 2851
         }
       },
       {
@@ -1040,21 +1040,21 @@
           },
           {
             "n": "reactor",
-            "s": 45
+            "s": 43
           },
           {
             "n": "fly-through 13",
-            "s": 45
+            "s": 46
           },
           {
             "n": "exit",
-            "s": 54
+            "s": 58
           }
         ],
-        "total_frames": 3258,
+        "total_frames": 3451,
         "rng_end": {
-          "state": 2144619499,
-          "calls": 798
+          "state": 1822187647,
+          "calls": 874
         }
       },
       {
@@ -1164,8 +1164,8 @@
         ],
         "total_frames": 3298,
         "rng_end": {
-          "state": 1774871314,
-          "calls": 1445
+          "state": 1940351897,
+          "calls": 1448
         }
       },
       {
@@ -1196,21 +1196,21 @@
           },
           {
             "n": "switch 7",
-            "s": 55
+            "s": 56
           },
           {
             "n": "reactor",
-            "s": 76
+            "s": 75
           },
           {
             "n": "exit",
-            "s": 79
+            "s": 77
           }
         ],
-        "total_frames": 4746,
+        "total_frames": 4604,
         "rng_end": {
-          "state": 3517910807,
-          "calls": 1746
+          "state": 2975631653,
+          "calls": 1628
         }
       },
       {
@@ -1241,15 +1241,15 @@
           },
           {
             "n": "switch 1",
-            "s": 17
+            "s": 16
           },
           {
             "n": "hidden door",
-            "s": 17
+            "s": 16
           },
           {
             "n": "switch 5",
-            "s": 18
+            "s": 17
           },
           {
             "n": "reactor",
@@ -1260,10 +1260,10 @@
             "s": 30
           }
         ],
-        "total_frames": 1817,
+        "total_frames": 1812,
         "rng_end": {
-          "state": 1416820665,
-          "calls": 648
+          "state": 3772710371,
+          "calls": 678
         }
       },
       {
@@ -1363,8 +1363,8 @@
         ],
         "total_frames": 803,
         "rng_end": {
-          "state": 2965492170,
-          "calls": 461
+          "state": 3951027826,
+          "calls": 453
         }
       },
       {
@@ -1392,8 +1392,8 @@
         ],
         "total_frames": 1433,
         "rng_end": {
-          "state": 1356192294,
-          "calls": 641
+          "state": 3739183484,
+          "calls": 635
         }
       },
       {

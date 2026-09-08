@@ -30,7 +30,7 @@
         },
         {
           "n": "switch 1",
-          "s": 32
+          "s": 33
         },
         {
           "n": "switch 14",
@@ -38,10 +38,10 @@
         },
         {
           "n": "blue key",
-          "s": 42
+          "s": 43
         }
       ],
-      "total_frames": 3562,
+      "total_frames": 3586,
       "rng_end": {
         "state": 2919826395,
         "calls": 1326

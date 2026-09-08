@@ -65,12 +65,12 @@
           "s": 120
         }
       ],
-      "total_frames": 13261,
+      "total_frames": 11062,
       "rng_end": {
-        "state": 3212330324,
-        "calls": 67
+        "state": 3269224778,
+        "calls": 77
       },
-      "problem": "route confirmation exceeded 221-second simulation budget"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 3,
@@ -121,33 +121,33 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 24
+          "s": 23
         },
         {
           "n": "blue key",
-          "s": 25
+          "s": 24
         },
         {
           "n": "gold key",
-          "s": 55
+          "s": 54
         },
         {
           "n": "red key",
-          "s": 96
+          "s": 94
         },
         {
           "n": "reactor",
-          "s": 130
+          "s": 132
         },
         {
           "n": "exit",
-          "s": 143
+          "s": 151
         }
       ],
-      "total_frames": 8598,
+      "total_frames": 9039,
       "rng_end": {
-        "state": 1621937922,
-        "calls": 117
+        "state": 3075635823,
+        "calls": 122
       }
     },
     {

@@ -166,11 +166,11 @@
           },
           {
             "n": "gold key",
-            "s": 22
+            "s": 23
           },
           {
             "n": "red key",
-            "s": 28
+            "s": 29
           },
           {
             "n": "reactor",
@@ -181,7 +181,7 @@
             "s": 71
           }
         ],
-        "total_frames": 4242,
+        "total_frames": 4269,
         "rng_end": {
           "state": 3885567453,
           "calls": 100

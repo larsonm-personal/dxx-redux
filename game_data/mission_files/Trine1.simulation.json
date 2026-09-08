@@ -10,7 +10,8 @@
   "level_counts": {
     "ok": 6,
     "failed": 1,
-    "timeout": 3
+    "timeout": 2,
+    "route_mismatch": 1
   },
   "levels": [
     {
@@ -180,7 +181,7 @@
           "s": 89
         }
       ],
-      "total_frames": 5344,
+      "total_frames": 5348,
       "rng_end": {
         "state": 916896761,
         "calls": 72
@@ -267,19 +268,40 @@
     {
       "level_num": 9,
       "level_file": "e1m9.rdl",
-      "route_input_sha256": "5A3D2A92AAAFDBD025047BB89F316095FD24CFAED845A2DC6D653EE885840999",
-      "status": "timeout",
+      "route_input_sha256": "C4675051640495151B98FB44D86CC347199D263B1D6552BA6253C5D57A469C41",
+      "status": "route_mismatch",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 3702,
+      "objectives": [
+        {
+          "n": "fly-through 12",
+          "s": 1
+        },
+        {
+          "n": "pass-through 0",
+          "s": 3
+        },
+        {
+          "n": "red key",
+          "s": 16
+        },
+        {
+          "n": "boss",
+          "s": 43
+        },
+        {
+          "n": "exit",
+          "s": 51
+        }
+      ],
+      "total_frames": 3048,
       "rng_end": {
-        "state": 3535774167,
-        "calls": 18
+        "state": 2077067425,
+        "calls": 96
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live objective sequence differs from route input"
     },
     {
       "level_num": -1,

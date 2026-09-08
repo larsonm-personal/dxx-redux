@@ -7,8 +7,7 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
-    "timeout": 1,
+    "ok": 3,
     "unsupported": 1
   },
   "levels": [
@@ -16,7 +15,7 @@
       "level_num": 1,
       "level_file": "sphasm.rl2",
       "route_input_sha256": "4FBE966123544B1029E5EB13DC3F2AC357F8ABB15C610ABFB9043D34D587D48A",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -37,14 +36,17 @@
         {
           "n": "reactor",
           "s": 25
+        },
+        {
+          "n": "exit",
+          "s": 45
         }
       ],
-      "total_frames": 9251,
+      "total_frames": 2682,
       "rng_end": {
-        "state": 1832367727,
-        "calls": 1146
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 599060396,
+        "calls": 1163
+      }
     },
     {
       "level_num": 2,
@@ -67,8 +69,8 @@
       ],
       "total_frames": 953,
       "rng_end": {
-        "state": 3529457476,
-        "calls": 403
+        "state": 3396130861,
+        "calls": 404
       },
       "problem": "route objective activation is not supported"
     },
@@ -104,17 +106,17 @@
         },
         {
           "n": "reactor",
-          "s": 82
+          "s": 84
         },
         {
           "n": "exit",
-          "s": 95
+          "s": 96
         }
       ],
-      "total_frames": 5680,
+      "total_frames": 5780,
       "rng_end": {
-        "state": 1334084737,
-        "calls": 3968
+        "state": 4174470001,
+        "calls": 4112
       }
     },
     {

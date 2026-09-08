@@ -29,8 +29,8 @@
       ],
       "total_frames": 949,
       "rng_end": {
-        "state": 3740753246,
-        "calls": 681
+        "state": 1652135231,
+        "calls": 682
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -75,8 +75,8 @@
       ],
       "total_frames": 6407,
       "rng_end": {
-        "state": 3426037612,
-        "calls": 4555
+        "state": 1854636490,
+        "calls": 4557
       }
     },
     {
@@ -148,17 +148,17 @@
         },
         {
           "n": "boss",
-          "s": 89
+          "s": 88
         },
         {
           "n": "exit",
           "s": 110
         }
       ],
-      "total_frames": 6615,
+      "total_frames": 6588,
       "rng_end": {
-        "state": 3332410724,
-        "calls": 4339
+        "state": 3234263244,
+        "calls": 4331
       }
     },
     {
@@ -284,13 +284,13 @@
         },
         {
           "n": "exit",
-          "s": 177
+          "s": 176
         }
       ],
-      "total_frames": 10593,
+      "total_frames": 10584,
       "rng_end": {
-        "state": 3256023730,
-        "calls": 6789
+        "state": 2391276696,
+        "calls": 6799
       }
     },
     {
@@ -339,8 +339,8 @@
       "objectives": [],
       "total_frames": 3922,
       "rng_end": {
-        "state": 3494321052,
-        "calls": 475
+        "state": 1331198373,
+        "calls": 476
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -372,13 +372,13 @@
         },
         {
           "n": "exit",
-          "s": 39
+          "s": 38
         }
       ],
-      "total_frames": 2335,
+      "total_frames": 2301,
       "rng_end": {
-        "state": 3338075996,
-        "calls": 2843
+        "state": 1900909795,
+        "calls": 2982
       }
     },
     {
@@ -438,17 +438,17 @@
         },
         {
           "n": "boss",
-          "s": 74
+          "s": 75
         },
         {
           "n": "exit",
           "s": 76
         }
       ],
-      "total_frames": 4545,
+      "total_frames": 4588,
       "rng_end": {
-        "state": 667148126,
-        "calls": 2217
+        "state": 2808920035,
+        "calls": 2214
       }
     },
     {
@@ -474,10 +474,10 @@
           "s": 83
         }
       ],
-      "total_frames": 5811,
+      "total_frames": 5790,
       "rng_end": {
-        "state": 1983819910,
-        "calls": 2465
+        "state": 1688554078,
+        "calls": 2473
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -520,7 +520,7 @@
           "s": 30
         }
       ],
-      "total_frames": 2544,
+      "total_frames": 2535,
       "rng_end": {
         "state": 2896654120,
         "calls": 1471
@@ -558,7 +558,7 @@
           "s": 58
         }
       ],
-      "total_frames": 3458,
+      "total_frames": 3485,
       "rng_end": {
         "state": 743471179,
         "calls": 1726
@@ -601,8 +601,8 @@
       ],
       "total_frames": 5029,
       "rng_end": {
-        "state": 4189441913,
-        "calls": 2248
+        "state": 3558432468,
+        "calls": 2243
       }
     },
     {

@@ -91,7 +91,7 @@
         },
         {
           "n": "switch 12",
-          "s": 57
+          "s": 56
         },
         {
           "n": "red key",
@@ -103,17 +103,17 @@
         },
         {
           "n": "switch 10",
-          "s": 79
+          "s": 78
         },
         {
           "n": "exit",
           "s": 80
         }
       ],
-      "total_frames": 4813,
+      "total_frames": 4803,
       "rng_end": {
-        "state": 1713674141,
-        "calls": 2212
+        "state": 473953889,
+        "calls": 2208
       }
     }
   ]

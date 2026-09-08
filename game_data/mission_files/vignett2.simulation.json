@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 25,
-    "failed": 1,
+    "ok": 24,
+    "failed": 2,
     "timeout": 3,
     "unsupported": 1
   },
@@ -25,7 +25,7 @@
       "objectives": [
         {
           "n": "red key",
-          "s": 10
+          "s": 11
         },
         {
           "n": "reactor",
@@ -36,7 +36,7 @@
           "s": 22
         }
       ],
-      "total_frames": 1303,
+      "total_frames": 1315,
       "rng_end": {
         "state": 2058375196,
         "calls": 859
@@ -147,10 +147,10 @@
           "s": 50
         }
       ],
-      "total_frames": 3011,
+      "total_frames": 3016,
       "rng_end": {
-        "state": 3954677940,
-        "calls": 2403
+        "state": 1022394454,
+        "calls": 2321
       }
     },
     {
@@ -177,17 +177,17 @@
         },
         {
           "n": "boss",
-          "s": 52
+          "s": 53
         },
         {
           "n": "exit",
-          "s": 54
+          "s": 55
         }
       ],
-      "total_frames": 3258,
+      "total_frames": 3280,
       "rng_end": {
-        "state": 4099008512,
-        "calls": 1543
+        "state": 3909714790,
+        "calls": 1601
       }
     },
     {
@@ -314,10 +314,10 @@
         },
         {
           "n": "exit",
-          "s": 41
+          "s": 40
         }
       ],
-      "total_frames": 2457,
+      "total_frames": 2408,
       "rng_end": {
         "state": 582528930,
         "calls": 2133
@@ -498,17 +498,17 @@
           "s": 59
         }
       ],
-      "total_frames": 3549,
+      "total_frames": 3539,
       "rng_end": {
-        "state": 1375418125,
-        "calls": 2996
+        "state": 1726853963,
+        "calls": 3006
       }
     },
     {
       "level_num": 15,
       "level_file": "level15.rl2",
-      "route_input_sha256": "F9C94A2D15BFAE08CE0ECAD68004D09BE8153921296FF4D361DC2B048B3BE8E5",
-      "status": "unsupported",
+      "route_input_sha256": "BC4DE2FB8CF86430EE337FE4C58A6C76028844E9D7E49946426B4698B230AA5C",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -519,12 +519,12 @@
           "s": 15
         }
       ],
-      "total_frames": 1307,
+      "total_frames": 898,
       "rng_end": {
-        "state": 2119654040,
-        "calls": 1167
+        "state": 3656070528,
+        "calls": 647
       },
-      "problem": "route objective activation is not supported"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 16,
@@ -604,8 +604,8 @@
       ],
       "total_frames": 1821,
       "rng_end": {
-        "state": 3607355649,
-        "calls": 1792
+        "state": 4071541263,
+        "calls": 1754
       }
     },
     {
@@ -632,21 +632,21 @@
         },
         {
           "n": "red key",
-          "s": 33
+          "s": 31
         },
         {
           "n": "reactor",
-          "s": 41
+          "s": 39
         },
         {
           "n": "exit",
-          "s": 45
+          "s": 42
         }
       ],
-      "total_frames": 2700,
+      "total_frames": 2491,
       "rng_end": {
-        "state": 1260695941,
-        "calls": 1788
+        "state": 2967401077,
+        "calls": 1676
       }
     },
     {
@@ -741,8 +741,8 @@
       ],
       "total_frames": 1742,
       "rng_end": {
-        "state": 338329566,
-        "calls": 2601
+        "state": 3386125618,
+        "calls": 2565
       }
     },
     {
@@ -819,28 +819,28 @@
         },
         {
           "n": "red key",
-          "s": 49
+          "s": 48
         },
         {
           "n": "reactor",
-          "s": 66
+          "s": 65
         },
         {
           "n": "exit",
           "s": 69
         }
       ],
-      "total_frames": 4169,
+      "total_frames": 4116,
       "rng_end": {
-        "state": 560652350,
-        "calls": 6985
+        "state": 1461588843,
+        "calls": 7070
       }
     },
     {
       "level_num": 25,
       "level_file": "level25.rl2",
-      "route_input_sha256": "846268B3A8021E4A53B795C034B26AB0076E055D65B7D3CF29F414ED5D528EA6",
-      "status": "ok",
+      "route_input_sha256": "63E8D4F8D8C50D901366FF3ECE7A274AA065949DEE9D3196BDEC1DA787E498E9",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -851,35 +851,36 @@
           "s": 3
         },
         {
+          "n": "fly-through 9",
+          "s": 11
+        },
+        {
           "n": "blue key",
-          "s": 12
+          "s": 11
+        },
+        {
+          "n": "fly-through 12",
+          "s": 24
         },
         {
           "n": "gold key",
-          "s": 23
+          "s": 24
         },
         {
           "n": "red key",
-          "s": 34
+          "s": 35
         },
         {
           "n": "boss",
-          "s": 58
-        },
-        {
-          "n": "pass-through 3",
-          "s": 59
-        },
-        {
-          "n": "exit",
-          "s": 72
+          "s": 60
         }
       ],
-      "total_frames": 4328,
+      "total_frames": 4126,
       "rng_end": {
-        "state": 404455680,
-        "calls": 2311
-      }
+        "state": 3692326210,
+        "calls": 1845
+      },
+      "problem": "route objective activation is not supported"
     },
     {
       "level_num": -1,
@@ -906,8 +907,8 @@
       ],
       "total_frames": 748,
       "rng_end": {
-        "state": 4138452763,
-        "calls": 494
+        "state": 3974021622,
+        "calls": 497
       }
     },
     {

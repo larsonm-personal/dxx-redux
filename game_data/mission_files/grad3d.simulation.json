@@ -27,13 +27,13 @@
         },
         {
           "n": "red key",
-          "s": 29
+          "s": 28
         }
       ],
-      "total_frames": 6795,
+      "total_frames": 6729,
       "rng_end": {
-        "state": 2926329220,
-        "calls": 1619
+        "state": 1194438128,
+        "calls": 1623
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -65,17 +65,17 @@
         },
         {
           "n": "boss",
-          "s": 147
+          "s": 146
         },
         {
           "n": "exit",
           "s": 148
         }
       ],
-      "total_frames": 8897,
+      "total_frames": 8875,
       "rng_end": {
-        "state": 3450565110,
-        "calls": 4593
+        "state": 3725318645,
+        "calls": 4876
       }
     },
     {
@@ -94,25 +94,25 @@
         },
         {
           "n": "gold key",
-          "s": 119
+          "s": 120
         },
         {
           "n": "red key",
-          "s": 197
+          "s": 195
         },
         {
           "n": "boss",
-          "s": 236
+          "s": 234
         },
         {
           "n": "exit",
-          "s": 240
+          "s": 238
         }
       ],
-      "total_frames": 14429,
+      "total_frames": 14283,
       "rng_end": {
-        "state": 3822900233,
-        "calls": 5816
+        "state": 2955380948,
+        "calls": 5827
       }
     },
     {
@@ -135,7 +135,7 @@
         },
         {
           "n": "gold key",
-          "s": 173
+          "s": 174
         },
         {
           "n": "boss",
@@ -143,13 +143,13 @@
         },
         {
           "n": "exit",
-          "s": 248
+          "s": 249
         }
       ],
-      "total_frames": 14895,
+      "total_frames": 14925,
       "rng_end": {
-        "state": 1686525773,
-        "calls": 6516
+        "state": 687302841,
+        "calls": 6536
       }
     },
     {
@@ -173,8 +173,8 @@
       ],
       "total_frames": 11028,
       "rng_end": {
-        "state": 202834805,
-        "calls": 3468
+        "state": 467477876,
+        "calls": 3491
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -190,17 +190,17 @@
       "objectives": [
         {
           "n": "boss",
-          "s": 102
+          "s": 101
         },
         {
           "n": "exit",
-          "s": 109
+          "s": 110
         }
       ],
-      "total_frames": 6553,
+      "total_frames": 6594,
       "rng_end": {
-        "state": 2845232224,
-        "calls": 2087
+        "state": 3844416493,
+        "calls": 2004
       }
     }
   ]

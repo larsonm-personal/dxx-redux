@@ -66,10 +66,10 @@
           "s": 14
         }
       ],
-      "total_frames": 1499,
+      "total_frames": 1508,
       "rng_end": {
-        "state": 3166007986,
-        "calls": 645
+        "state": 1866814940,
+        "calls": 667
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -171,10 +171,10 @@
           "s": 9
         }
       ],
-      "total_frames": 515,
+      "total_frames": 514,
       "rng_end": {
-        "state": 1495569341,
-        "calls": 900
+        "state": 787500344,
+        "calls": 879
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -232,8 +232,8 @@
       ],
       "total_frames": 5290,
       "rng_end": {
-        "state": 1528720303,
-        "calls": 2874
+        "state": 1121683269,
+        "calls": 2876
       }
     },
     {
@@ -324,11 +324,11 @@
         },
         {
           "n": "blastable wall",
-          "s": 33
+          "s": 34
         },
         {
           "n": "red key",
-          "s": 40
+          "s": 39
         },
         {
           "n": "switch 2",
@@ -340,13 +340,13 @@
         },
         {
           "n": "exit",
-          "s": 81
+          "s": 82
         }
       ],
-      "total_frames": 4867,
+      "total_frames": 4890,
       "rng_end": {
-        "state": 1718820068,
-        "calls": 2931
+        "state": 936401405,
+        "calls": 2884
       }
     },
     {
@@ -369,7 +369,7 @@
         },
         {
           "n": "gold key",
-          "s": 36
+          "s": 37
         },
         {
           "n": "red key",
@@ -389,13 +389,13 @@
         },
         {
           "n": "exit",
-          "s": 119
+          "s": 120
         }
       ],
-      "total_frames": 7151,
+      "total_frames": 7178,
       "rng_end": {
-        "state": 4024765900,
-        "calls": 4075
+        "state": 3239341108,
+        "calls": 4067
       }
     },
     {

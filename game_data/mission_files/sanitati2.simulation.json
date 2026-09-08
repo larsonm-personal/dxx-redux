@@ -27,25 +27,25 @@
         },
         {
           "n": "hidden door",
-          "s": 38
+          "s": 37
         },
         {
           "n": "blue key",
-          "s": 41
+          "s": 40
         },
         {
           "n": "reactor",
-          "s": 65
+          "s": 64
         },
         {
           "n": "exit",
           "s": 85
         }
       ],
-      "total_frames": 5075,
+      "total_frames": 5088,
       "rng_end": {
-        "state": 3698647558,
-        "calls": 3617
+        "state": 4107034749,
+        "calls": 4292
       }
     },
     {
@@ -101,26 +101,26 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 14
+          "s": 13
         },
         {
           "n": "gold key",
-          "s": 32
+          "s": 31
         },
         {
           "n": "red key",
-          "s": 59
+          "s": 58
         },
         {
           "n": "reactor",
-          "s": 82
+          "s": 81
         },
         {
           "n": "exit",
-          "s": 87
+          "s": 86
         }
       ],
-      "total_frames": 5233,
+      "total_frames": 5161,
       "rng_end": {
         "state": 3460827591,
         "calls": 5410

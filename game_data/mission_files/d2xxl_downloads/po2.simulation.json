@@ -106,24 +106,24 @@
           },
           {
             "n": "pass-through 4",
-            "s": 70
+            "s": 71
           },
           {
             "n": "blue key",
             "s": 87
           }
         ],
-        "total_frames": 6034,
+        "total_frames": 6081,
         "rng_end": {
-          "state": 2145578813,
-          "calls": 3076
+          "state": 821933189,
+          "calls": 3068
         },
         "problem": "physical route frontier did not open after 8 interaction attempts"
       },
       {
         "level_num": 3,
         "level_file": "ship4.rl2",
-        "route_input_sha256": "10021232378EFAFFF91D8A5C11BE1FFA0024A6B1787F886F8A90BF4E84428CB9",
+        "route_input_sha256": "76C14372F9E9E25B386AEBE47EF8332804AC08B4E53B280A4149E74D985566C9",
         "status": "timeout",
         "rng_start": {
           "state": 1,

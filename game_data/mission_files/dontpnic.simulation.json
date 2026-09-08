@@ -159,8 +159,8 @@
       ],
       "total_frames": 4081,
       "rng_end": {
-        "state": 1343201072,
-        "calls": 23
+        "state": 4008331270,
+        "calls": 33
       },
       "problem": "route confirmation exceeded 68-second simulation budget"
     },
@@ -554,8 +554,8 @@
       ],
       "total_frames": 843,
       "rng_end": {
-        "state": 3008955749,
-        "calls": 28
+        "state": 1303003706,
+        "calls": 29
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -752,22 +752,22 @@
         },
         {
           "n": "gold key",
-          "s": 9
+          "s": 8
         },
         {
           "n": "red key",
-          "s": 15
+          "s": 14
         },
         {
           "n": "reactor",
-          "s": 26
+          "s": 25
         },
         {
           "n": "exit",
-          "s": 35
+          "s": 34
         }
       ],
-      "total_frames": 2102,
+      "total_frames": 2064,
       "rng_end": {
         "state": 2673245591,
         "calls": 82

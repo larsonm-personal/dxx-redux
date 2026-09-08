@@ -76,7 +76,7 @@
         },
         {
           "n": "switch 28",
-          "s": 28
+          "s": 27
         },
         {
           "n": "blue key",
@@ -84,7 +84,7 @@
         },
         {
           "n": "fly-through 6",
-          "s": 44
+          "s": 43
         },
         {
           "n": "hidden door",
@@ -103,10 +103,10 @@
           "s": 63
         }
       ],
-      "total_frames": 4396,
+      "total_frames": 4375,
       "rng_end": {
-        "state": 1311912705,
-        "calls": 1280
+        "state": 694153389,
+        "calls": 1300
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -249,8 +249,8 @@
       ],
       "total_frames": 4375,
       "rng_end": {
-        "state": 858999435,
-        "calls": 1150
+        "state": 817055617,
+        "calls": 1152
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

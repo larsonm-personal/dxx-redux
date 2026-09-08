@@ -32,11 +32,11 @@
         },
         {
           "n": "gold key",
-          "s": 58
+          "s": 59
         },
         {
           "n": "red key",
-          "s": 92
+          "s": 93
         },
         {
           "n": "boss",
@@ -44,13 +44,13 @@
         },
         {
           "n": "exit",
-          "s": 135
+          "s": 136
         }
       ],
-      "total_frames": 8124,
+      "total_frames": 8133,
       "rng_end": {
-        "state": 1240761752,
-        "calls": 3471
+        "state": 1124039579,
+        "calls": 3438
       }
     },
     {
@@ -77,17 +77,17 @@
         },
         {
           "n": "boss",
-          "s": 139
+          "s": 138
         },
         {
           "n": "exit",
-          "s": 144
+          "s": 143
         }
       ],
-      "total_frames": 8627,
+      "total_frames": 8605,
       "rng_end": {
-        "state": 4148805152,
-        "calls": 3943
+        "state": 3100814004,
+        "calls": 3939
       }
     },
     {
@@ -123,8 +123,8 @@
       ],
       "total_frames": 5967,
       "rng_end": {
-        "state": 1026092863,
-        "calls": 2218
+        "state": 2139235887,
+        "calls": 2234
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -162,8 +162,8 @@
       "objectives": [],
       "total_frames": 5132,
       "rng_end": {
-        "state": 2303754503,
-        "calls": 482
+        "state": 2280470621,
+        "calls": 484
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },

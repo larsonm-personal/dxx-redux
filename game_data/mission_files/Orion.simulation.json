@@ -218,13 +218,13 @@
         },
         {
           "n": "gold key",
-          "s": 44
+          "s": 46
         }
       ],
-      "total_frames": 9327,
+      "total_frames": 7676,
       "rng_end": {
-        "state": 1223573862,
-        "calls": 65
+        "state": 2916751166,
+        "calls": 73
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },

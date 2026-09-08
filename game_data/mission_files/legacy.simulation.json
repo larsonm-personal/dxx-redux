@@ -7,9 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 1,
-    "failed": 1,
-    "timeout": 1
+    "ok": 2,
+    "failed": 1
   },
   "levels": [
     {
@@ -32,26 +31,26 @@
         },
         {
           "n": "pass-through 2",
-          "s": 19
+          "s": 21
         },
         {
           "n": "switch 0",
-          "s": 22
+          "s": 24
         },
         {
           "n": "gold key",
-          "s": 28
-        },
-        {
-          "n": "switch 1",
           "s": 29
         },
         {
+          "n": "switch 1",
+          "s": 30
+        },
+        {
           "n": "red key",
-          "s": 39
+          "s": 40
         }
       ],
-      "total_frames": 2339,
+      "total_frames": 2427,
       "rng_end": {
         "state": 1259199996,
         "calls": 1019
@@ -113,17 +112,17 @@
           "s": 78
         }
       ],
-      "total_frames": 4659,
+      "total_frames": 4678,
       "rng_end": {
-        "state": 2858410995,
-        "calls": 4246
+        "state": 3437395400,
+        "calls": 4255
       }
     },
     {
       "level_num": 3,
       "level_file": "incnratn.rl2",
-      "route_input_sha256": "8B2419F27C3348197128F1916C5032E26DECA96C0110DD407EA1A09FD795516C",
-      "status": "timeout",
+      "route_input_sha256": "5A13B97E45B7A9F109AFEB49789ED7001DE3FD625A4C1FA441A3B6FB8C46495C",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -143,19 +142,34 @@
         },
         {
           "n": "switch 6",
-          "s": 49
+          "s": 50
         },
         {
           "n": "red key",
-          "s": 70
+          "s": 71
+        },
+        {
+          "n": "pass-through 7",
+          "s": 78
+        },
+        {
+          "n": "pass-through 19",
+          "s": 79
+        },
+        {
+          "n": "boss",
+          "s": 89
+        },
+        {
+          "n": "exit",
+          "s": 98
         }
       ],
-      "total_frames": 16141,
+      "total_frames": 5907,
       "rng_end": {
-        "state": 393634129,
-        "calls": 183600
-      },
-      "problem": "route confirmation exceeded 269-second simulation budget"
+        "state": 3280780446,
+        "calls": 4201
+      }
     }
   ]
 }

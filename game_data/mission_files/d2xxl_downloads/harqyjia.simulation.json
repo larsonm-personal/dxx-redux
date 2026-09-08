@@ -43,7 +43,7 @@
         },
         {
           "n": "switch 2",
-          "s": 39
+          "s": 40
         },
         {
           "n": "switch 8",
@@ -59,33 +59,33 @@
         },
         {
           "n": "blastable wall",
-          "s": 108
+          "s": 110
         },
         {
           "n": "switch 34",
-          "s": 108
+          "s": 110
         },
         {
           "n": "pass-through 53",
-          "s": 109
+          "s": 110
         },
         {
           "n": "hidden door",
-          "s": 112
+          "s": 114
         },
         {
           "n": "reactor",
-          "s": 113
+          "s": 114
         },
         {
           "n": "exit",
-          "s": 120
+          "s": 121
         }
       ],
-      "total_frames": 7181,
+      "total_frames": 7266,
       "rng_end": {
-        "state": 1110308423,
-        "calls": 4258
+        "state": 1592347699,
+        "calls": 4182
       }
     },
     {
@@ -104,7 +104,7 @@
         },
         {
           "n": "switch 32",
-          "s": 65
+          "s": 66
         },
         {
           "n": "switch 40",
@@ -112,77 +112,77 @@
         },
         {
           "n": "fly-through 10",
-          "s": 86
+          "s": 87
         },
         {
           "n": "hidden door",
-          "s": 86
+          "s": 87
         },
         {
           "n": "switch 9",
-          "s": 87
+          "s": 88
         },
         {
           "n": "hidden door",
-          "s": 87
+          "s": 88
         },
         {
           "n": "switch 8",
-          "s": 87
+          "s": 88
         },
         {
           "n": "switch 41",
-          "s": 89
+          "s": 90
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 108
+          "s": 109
         },
         {
           "n": "pass-through 15",
-          "s": 111
+          "s": 113
         },
         {
           "n": "hidden door",
-          "s": 111
+          "s": 113
         },
         {
           "n": "switch 42",
-          "s": 113
+          "s": 114
         },
         {
           "n": "pass-through 47",
-          "s": 113
+          "s": 114
         },
         {
           "n": "switch 53",
-          "s": 127
+          "s": 129
         },
         {
           "n": "fly-through 49",
-          "s": 133
+          "s": 135
         },
         {
           "n": "fly-through 50",
-          "s": 133
+          "s": 135
         },
         {
           "n": "fly-through 48",
-          "s": 133
+          "s": 135
         },
         {
           "n": "switch 63",
-          "s": 138
+          "s": 139
         },
         {
           "n": "red key",
-          "s": 149
+          "s": 150
         }
       ],
-      "total_frames": 10675,
+      "total_frames": 10735,
       "rng_end": {
-        "state": 2416952661,
-        "calls": 8364
+        "state": 859138527,
+        "calls": 11274
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -226,21 +226,21 @@
         },
         {
           "n": "red key",
-          "s": 77
+          "s": 76
         },
         {
           "n": "boss",
-          "s": 115
+          "s": 108
         },
         {
           "n": "exit",
-          "s": 119
+          "s": 110
         }
       ],
-      "total_frames": 7141,
+      "total_frames": 6589,
       "rng_end": {
-        "state": 3990225211,
-        "calls": 4046
+        "state": 1845645418,
+        "calls": 4013
       }
     },
     {
@@ -276,8 +276,8 @@
       ],
       "total_frames": 4322,
       "rng_end": {
-        "state": 1976212944,
-        "calls": 1783
+        "state": 1416728504,
+        "calls": 1775
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -306,8 +306,8 @@
       ],
       "total_frames": 3949,
       "rng_end": {
-        "state": 3340639529,
-        "calls": 1688
+        "state": 582137423,
+        "calls": 1690
       }
     }
   ]

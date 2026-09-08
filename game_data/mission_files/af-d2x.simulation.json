@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 6,
+    "ok": 9,
     "failed": 2,
-    "timeout": 7
+    "timeout": 4
   },
   "levels": [
     {
@@ -79,16 +79,12 @@
         {
           "n": "switch 12",
           "s": 35
-        },
-        {
-          "n": "gold key",
-          "s": 64
         }
       ],
-      "total_frames": 7468,
+      "total_frames": 7139,
       "rng_end": {
-        "state": 2838722267,
-        "calls": 4654
+        "state": 1384050360,
+        "calls": 3055
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -152,8 +148,8 @@
     {
       "level_num": 5,
       "level_file": "tefoleg.rl2",
-      "route_input_sha256": "63F42B917374CF8FE26F9901B2CCD6318F47C1DAB4D20E822AC3479C16660B60",
-      "status": "timeout",
+      "route_input_sha256": "EE46137B422FAD595AA4A0B9C5B9B9D513AA4032F271A5B1A0DBF0309AC0FFF5",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -182,14 +178,29 @@
         {
           "n": "switch 2",
           "s": 125
+        },
+        {
+          "n": "switch 4",
+          "s": 133
+        },
+        {
+          "n": "red key",
+          "s": 133
+        },
+        {
+          "n": "boss",
+          "s": 161
+        },
+        {
+          "n": "exit",
+          "s": 183
         }
       ],
-      "total_frames": 18001,
+      "total_frames": 11003,
       "rng_end": {
-        "state": 1771951703,
-        "calls": 5010
-      },
-      "problem": "route confirmation exceeded 300-second simulation budget"
+        "state": 3803226924,
+        "calls": 6923
+      }
     },
     {
       "level_num": 6,
@@ -249,21 +260,21 @@
         },
         {
           "n": "red key",
-          "s": 132
+          "s": 135
         },
         {
           "n": "boss",
-          "s": 165
+          "s": 168
         },
         {
           "n": "exit",
-          "s": 195
+          "s": 199
         }
       ],
-      "total_frames": 11707,
+      "total_frames": 11943,
       "rng_end": {
-        "state": 1411159983,
-        "calls": 7994
+        "state": 3410446138,
+        "calls": 7965
       }
     },
     {
@@ -294,17 +305,17 @@
         },
         {
           "n": "reactor",
-          "s": 64
+          "s": 63
         },
         {
           "n": "exit",
-          "s": 77
+          "s": 76
         }
       ],
-      "total_frames": 4610,
+      "total_frames": 4546,
       "rng_end": {
-        "state": 643223998,
-        "calls": 4041
+        "state": 1627335664,
+        "calls": 4183
       }
     },
     {
@@ -323,29 +334,29 @@
         },
         {
           "n": "gold key",
-          "s": 69
+          "s": 37
         },
         {
           "n": "fly-through 23",
-          "s": 116
+          "s": 84
         },
         {
           "n": "hidden door",
-          "s": 116
+          "s": 84
         },
         {
           "n": "switch 15",
-          "s": 116
+          "s": 84
         },
         {
           "n": "red key",
-          "s": 117
+          "s": 85
         }
       ],
-      "total_frames": 7037,
+      "total_frames": 5096,
       "rng_end": {
-        "state": 1026127875,
-        "calls": 3206
+        "state": 812049003,
+        "calls": 3230
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -353,7 +364,7 @@
       "level_num": 10,
       "level_file": "fbasin.rl2",
       "route_input_sha256": "FAE78F8CF319E17AA3D2B72959AB52E587C6F9A6C499F3D7934938B93795BAD2",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -366,14 +377,33 @@
         {
           "n": "gold key",
           "s": 25
+        },
+        {
+          "n": "red key",
+          "s": 39
+        },
+        {
+          "n": "fly-through 6",
+          "s": 39
+        },
+        {
+          "n": "switch 7",
+          "s": 40
+        },
+        {
+          "n": "boss",
+          "s": 62
+        },
+        {
+          "n": "exit",
+          "s": 78
         }
       ],
-      "total_frames": 6505,
+      "total_frames": 4686,
       "rng_end": {
-        "state": 1495569341,
-        "calls": 900
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1820422358,
+        "calls": 2705
+      }
     },
     {
       "level_num": 11,
@@ -475,32 +505,55 @@
       ],
       "total_frames": 5061,
       "rng_end": {
-        "state": 2433872794,
-        "calls": 2621
+        "state": 3220821195,
+        "calls": 2622
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 14,
       "level_file": "laradhes.rl2",
-      "route_input_sha256": "CFF75BE7E74102BCAC01D7D5D382D2FB58C830D984EC57F5816C8ED6DC855517",
-      "status": "timeout",
+      "route_input_sha256": "DAFBC901753ACBE712A2755A6638790A42534B0E67B283F74EE91E18850B54BE",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
       "objectives": [
         {
-          "n": "hidden door",
-          "s": 39
+          "n": "blue key",
+          "s": 43
+        },
+        {
+          "n": "gold key",
+          "s": 87
+        },
+        {
+          "n": "red key",
+          "s": 135
+        },
+        {
+          "n": "switch 14",
+          "s": 158
+        },
+        {
+          "n": "switch 0",
+          "s": 183
+        },
+        {
+          "n": "boss",
+          "s": 197
+        },
+        {
+          "n": "exit",
+          "s": 209
         }
       ],
-      "total_frames": 14341,
+      "total_frames": 12510,
       "rng_end": {
-        "state": 623386897,
-        "calls": 880
-      },
-      "problem": "route confirmation exceeded 239-second simulation budget"
+        "state": 559608138,
+        "calls": 6221
+      }
     },
     {
       "level_num": 15,

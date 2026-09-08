@@ -124,11 +124,11 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 6
+          "s": 5
         },
         {
           "n": "hidden door",
-          "s": 7
+          "s": 6
         },
         {
           "n": "blue key",
@@ -140,11 +140,11 @@
         },
         {
           "n": "hidden door",
-          "s": 17
+          "s": 16
         },
         {
           "n": "hidden door",
-          "s": 18
+          "s": 17
         },
         {
           "n": "gold key",
@@ -163,7 +163,7 @@
           "s": 35
         }
       ],
-      "total_frames": 2114,
+      "total_frames": 2088,
       "rng_end": {
         "state": 4247911497,
         "calls": 120

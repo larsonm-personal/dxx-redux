@@ -32,7 +32,7 @@
         },
         {
           "n": "red key",
-          "s": 39
+          "s": 38
         },
         {
           "n": "reactor",
@@ -40,13 +40,13 @@
         },
         {
           "n": "exit",
-          "s": 62
+          "s": 64
         }
       ],
-      "total_frames": 3715,
+      "total_frames": 3831,
       "rng_end": {
-        "state": 398838418,
-        "calls": 1061
+        "state": 4027415416,
+        "calls": 1071
       }
     },
     {
@@ -77,7 +77,7 @@
         },
         {
           "n": "switch 1",
-          "s": 134
+          "s": 135
         },
         {
           "n": "red key",
@@ -96,7 +96,7 @@
           "s": 250
         }
       ],
-      "total_frames": 14972,
+      "total_frames": 14993,
       "rng_end": {
         "state": 892402610,
         "calls": 3461
@@ -131,8 +131,8 @@
       ],
       "total_frames": 6116,
       "rng_end": {
-        "state": 2692310860,
-        "calls": 2155
+        "state": 2275065959,
+        "calls": 2178
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -152,17 +152,17 @@
         },
         {
           "n": "blue key",
-          "s": 47
+          "s": 48
         },
         {
           "n": "switch 8",
-          "s": 47
+          "s": 48
         }
       ],
-      "total_frames": 4329,
+      "total_frames": 4356,
       "rng_end": {
-        "state": 2558705196,
-        "calls": 1035
+        "state": 3082456714,
+        "calls": 1037
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -216,8 +216,8 @@
       ],
       "total_frames": 3904,
       "rng_end": {
-        "state": 4158889185,
-        "calls": 1568
+        "state": 1555859974,
+        "calls": 1569
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

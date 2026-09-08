@@ -79,8 +79,8 @@
       ],
       "total_frames": 1258,
       "rng_end": {
-        "state": 440353951,
-        "calls": 1354
+        "state": 3855800812,
+        "calls": 1355
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -149,10 +149,10 @@
           "s": 107
         }
       ],
-      "total_frames": 6432,
+      "total_frames": 6437,
       "rng_end": {
-        "state": 3358257987,
-        "calls": 2374
+        "state": 5160760,
+        "calls": 2415
       }
     },
     {
@@ -231,10 +231,10 @@
           "s": 28
         }
       ],
-      "total_frames": 1652,
+      "total_frames": 1675,
       "rng_end": {
-        "state": 693418230,
-        "calls": 1777
+        "state": 1941426484,
+        "calls": 1763
       }
     },
     {
@@ -431,8 +431,8 @@
       ],
       "total_frames": 3731,
       "rng_end": {
-        "state": 3037422804,
-        "calls": 2755
+        "state": 3568896551,
+        "calls": 2754
       }
     },
     {
@@ -451,7 +451,7 @@
         },
         {
           "n": "fly-through 3",
-          "s": 8
+          "s": 7
         },
         {
           "n": "gold key",
@@ -462,10 +462,10 @@
           "s": 27
         }
       ],
-      "total_frames": 1638,
+      "total_frames": 1631,
       "rng_end": {
-        "state": 1155173725,
-        "calls": 1252
+        "state": 3675174610,
+        "calls": 1253
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -589,22 +589,22 @@
         },
         {
           "n": "gold key",
-          "s": 55
+          "s": 56
         },
         {
           "n": "red key",
-          "s": 77
+          "s": 78
         },
         {
           "n": "reactor",
-          "s": 101
+          "s": 102
         },
         {
           "n": "exit",
-          "s": 124
+          "s": 125
         }
       ],
-      "total_frames": 7466,
+      "total_frames": 7526,
       "rng_end": {
         "state": 4180119829,
         "calls": 3820
@@ -683,10 +683,10 @@
           "s": 6
         }
       ],
-      "total_frames": 690,
+      "total_frames": 675,
       "rng_end": {
-        "state": 699646382,
-        "calls": 409
+        "state": 2166401871,
+        "calls": 410
       },
       "problem": "route objective activation is not supported"
     },
@@ -887,8 +887,8 @@
       ],
       "total_frames": 3928,
       "rng_end": {
-        "state": 1053259255,
-        "calls": 1522
+        "state": 3799286760,
+        "calls": 1535
       }
     },
     {
@@ -950,13 +950,13 @@
         },
         {
           "n": "exit",
-          "s": 33
+          "s": 32
         }
       ],
-      "total_frames": 1981,
+      "total_frames": 1928,
       "rng_end": {
-        "state": 4175019596,
-        "calls": 1387
+        "state": 591691770,
+        "calls": 1373
       }
     }
   ]

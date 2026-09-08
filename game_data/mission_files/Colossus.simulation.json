@@ -78,7 +78,7 @@
     {
       "level_num": 3,
       "level_file": "YELLOW.RDL",
-      "route_input_sha256": "2BF18CAE47AB84717B0916954081417803C12E1020BA45DE867EFD28640F459D",
+      "route_input_sha256": "2739DC191F742880D0C4C868D3461D07AAA210B6B8DC41C16069B044D7BF6469",
       "status": "timeout",
       "rng_start": {
         "state": 1,

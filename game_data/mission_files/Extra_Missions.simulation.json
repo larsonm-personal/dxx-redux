@@ -405,11 +405,11 @@
           },
           {
             "n": "fly-through 11",
-            "s": 62
+            "s": 61
           },
           {
             "n": "fly-through 10",
-            "s": 70
+            "s": 69
           },
           {
             "n": "gold key",
@@ -417,11 +417,11 @@
           },
           {
             "n": "red key",
-            "s": 123
+            "s": 122
           },
           {
             "n": "fly-through 9",
-            "s": 161
+            "s": 160
           },
           {
             "n": "reactor",
@@ -432,10 +432,10 @@
             "s": 173
           }
         ],
-        "total_frames": 10356,
+        "total_frames": 10379,
         "rng_end": {
-          "state": 3424728103,
-          "calls": 194
+          "state": 627561242,
+          "calls": 189
         }
       }
     ]

@@ -109,26 +109,26 @@
         "objectives": [
           {
             "n": "destroy robot carrying blue key",
-            "s": 22
+            "s": 21
           },
           {
             "n": "destroy robot carrying gold key",
-            "s": 56
+            "s": 54
           },
           {
             "n": "destroy robot carrying red key",
-            "s": 97
+            "s": 94
           },
           {
             "n": "reactor",
-            "s": 113
+            "s": 110
           },
           {
             "n": "exit",
-            "s": 129
+            "s": 126
           }
         ],
-        "total_frames": 7730,
+        "total_frames": 7587,
         "rng_end": {
           "state": 3361651730,
           "calls": 165
@@ -236,16 +236,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "megaloma.rdl",
-        "route_input_sha256": "6FD10E4013F3344CA7D3EB5C1DF70A6FB9D30A78AB0450152432634020259E26",
-        "status": "timeout",
+        "route_input_sha256": "853BD6C02DB3E7A1EE49C2A36007EDFD8D3A23FB7CAA0500548465464993F546",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -258,14 +258,25 @@
           {
             "n": "gold key",
             "s": 25
+          },
+          {
+            "n": "red key",
+            "s": 38
+          },
+          {
+            "n": "boss",
+            "s": 52
+          },
+          {
+            "n": "exit",
+            "s": 63
           }
         ],
-        "total_frames": 8161,
+        "total_frames": 3775,
         "rng_end": {
-          "state": 456633834,
-          "calls": 45
-        },
-        "problem": "route confirmation exceeded 136-second simulation budget"
+          "state": 1598124042,
+          "calls": 141
+        }
       }
     ]
   },

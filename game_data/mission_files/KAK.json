@@ -314,13 +314,13 @@
         "mine_volume": 10331500.0,
         "mine_volume_normalized": 2.2593,
         "mine_volume_text": "2.3x",
-        "travel_distance": 2791.0,
-        "travel_time_seconds": 56,
-        "travel_time_text": "0M:56S",
+        "travel_distance": 0.0,
+        "travel_time_seconds": 0,
+        "travel_time_text": "0M:00S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
+        "route_status": "failed",
         "route_required_key_mask": 0,
         "route_completing_key_mask_set": 0,
         "route_steps": [
@@ -330,115 +330,10 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 177
-          },
-          {
-            "index": 1,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 428,
-            "side": 1,
-            "wall": 101,
-            "label_pos": {
-              "x": 234.3,
-              "y": 10.0,
-              "z": 138.3
-            },
-            "distance": 1206.4,
-            "opens": [
-              {
-                "seg": 428,
-                "side": 1,
-                "wall": 101
-              },
-              {
-                "seg": 429,
-                "side": 3,
-                "wall": 100
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "switch_shot_quality": "confirmed_steep",
-            "switch_shot_incidence_cosine": 0.14947509765625,
-            "label": "Shoot switch trigger 0",
-            "seg": 95,
-            "wall": 76,
-            "label_pos": {
-              "x": 11.2,
-              "y": -20.0,
-              "z": 324.0
-            },
-            "distance": 817.4,
-            "trigger": 0,
-            "trigger_type_id": 7,
-            "trigger_type": "unlock_door",
-            "opens": [
-              {
-                "seg": 363,
-                "side": 0,
-                "wall": 27
-              },
-              {
-                "seg": 362,
-                "side": 2,
-                "wall": 26
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 514,
-            "label_pos": {
-              "x": 140.9,
-              "y": -20.0,
-              "z": 409.5
-            },
-            "distance": 767.3
-          },
-          {
-            "index": 4,
-            "kind": "trigger",
-            "activation_kind": "unresolved_trigger",
-            "calculated": false,
-            "label": "Locate and activate switch trigger 8",
-            "seg": 476,
-            "wall": 175,
-            "label_pos": {
-              "x": 250.3,
-              "y": -7.5,
-              "z": -105.7
-            },
-            "trigger": 8,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 754,
-                "side": 5,
-                "wall": 177
-              },
-              {
-                "seg": 283,
-                "side": 0,
-                "wall": 187
-              },
-              {
-                "seg": 476,
-                "side": 0,
-                "wall": 185
-              }
-            ]
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "non-shootable trigger source is behind a closed wall",
+        "route_problem": "route target unreachable",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]

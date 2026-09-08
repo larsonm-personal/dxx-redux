@@ -35,8 +35,8 @@
       ],
       "total_frames": 3677,
       "rng_end": {
-        "state": 3614462044,
-        "calls": 1563
+        "state": 4196464557,
+        "calls": 1556
       }
     },
     {
@@ -59,21 +59,21 @@
         },
         {
           "n": "red key",
-          "s": 77
+          "s": 75
         },
         {
           "n": "reactor",
-          "s": 100
+          "s": 99
         },
         {
           "n": "exit",
-          "s": 110
+          "s": 109
         }
       ],
-      "total_frames": 6618,
+      "total_frames": 6514,
       "rng_end": {
-        "state": 1017304121,
-        "calls": 2568
+        "state": 1543312301,
+        "calls": 2580
       }
     },
     {

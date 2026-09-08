@@ -8,8 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 7,
-    "timeout": 3
+    "ok": 8,
+    "timeout": 2
   },
   "levels": [
     {
@@ -152,8 +152,8 @@
     {
       "level_num": 5,
       "level_file": "tefalog.rdl",
-      "route_input_sha256": "EA043A05DE25FEE6A2B2B1307FAF340D4AF5192BDCA1DE63551E4134A15A3F3B",
-      "status": "timeout",
+      "route_input_sha256": "7EAA1130629BBCD9FDB6E14E51D173F583C3C2EF5485D5A2399042FE8085BB91",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -166,14 +166,25 @@
         {
           "n": "gold key",
           "s": 59
+        },
+        {
+          "n": "red key",
+          "s": 107
+        },
+        {
+          "n": "boss",
+          "s": 139
+        },
+        {
+          "n": "exit",
+          "s": 167
         }
       ],
-      "total_frames": 18001,
+      "total_frames": 10036,
       "rng_end": {
-        "state": 3025925713,
-        "calls": 48
-      },
-      "problem": "route confirmation exceeded 300-second simulation budget"
+        "state": 4273116023,
+        "calls": 114
+      }
     },
     {
       "level_num": 6,
@@ -332,7 +343,7 @@
         },
         {
           "n": "red key",
-          "s": 39
+          "s": 38
         },
         {
           "n": "boss",
@@ -340,10 +351,10 @@
         },
         {
           "n": "exit",
-          "s": 76
+          "s": 75
         }
       ],
-      "total_frames": 4550,
+      "total_frames": 4513,
       "rng_end": {
         "state": 3423541591,
         "calls": 146

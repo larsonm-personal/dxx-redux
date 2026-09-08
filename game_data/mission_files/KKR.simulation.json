@@ -52,17 +52,17 @@
         },
         {
           "n": "boss",
-          "s": 86
+          "s": 87
         },
         {
           "n": "exit",
-          "s": 121
+          "s": 119
         }
       ],
-      "total_frames": 7240,
+      "total_frames": 7113,
       "rng_end": {
-        "state": 3755170031,
-        "calls": 6650
+        "state": 443438602,
+        "calls": 4749
       }
     },
     {
@@ -109,25 +109,25 @@
         },
         {
           "n": "red key",
-          "s": 63
+          "s": 62
         },
         {
           "n": "switch 4",
-          "s": 63
+          "s": 62
         },
         {
           "n": "reactor",
-          "s": 81
+          "s": 80
         },
         {
           "n": "exit",
           "s": 92
         }
       ],
-      "total_frames": 5516,
+      "total_frames": 5494,
       "rng_end": {
-        "state": 2719835267,
-        "calls": 4102
+        "state": 1631271608,
+        "calls": 4079
       }
     },
     {

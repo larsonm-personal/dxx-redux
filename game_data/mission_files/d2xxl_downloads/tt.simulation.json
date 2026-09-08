@@ -46,21 +46,21 @@
         },
         {
           "n": "red key",
-          "s": 108
+          "s": 109
         },
         {
           "n": "boss",
-          "s": 139
+          "s": 140
         },
         {
           "n": "exit",
-          "s": 144
+          "s": 145
         }
       ],
-      "total_frames": 8624,
+      "total_frames": 8697,
       "rng_end": {
-        "state": 3556353613,
-        "calls": 4724
+        "state": 681707631,
+        "calls": 4730
       }
     }
   ]

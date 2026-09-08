@@ -106,10 +106,10 @@
           "s": 142
         }
       ],
-      "total_frames": 9856,
+      "total_frames": 9855,
       "rng_end": {
-        "state": 991276799,
-        "calls": 3306
+        "state": 1898833544,
+        "calls": 3295
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -141,27 +141,27 @@
         },
         {
           "n": "fly-through 20",
-          "s": 105
+          "s": 106
         },
         {
           "n": "boss",
-          "s": 147
+          "s": 148
         },
         {
           "n": "exit",
-          "s": 160
+          "s": 161
         }
       ],
-      "total_frames": 9613,
+      "total_frames": 9660,
       "rng_end": {
-        "state": 3437395400,
-        "calls": 4255
+        "state": 1906008813,
+        "calls": 4308
       }
     },
     {
       "level_num": 5,
       "level_file": "kcxf205.rl2",
-      "route_input_sha256": "9A193BFD3E1C748B77D99BE666E2B233FD813129BD542FBB00A3A70EBF80F71E",
+      "route_input_sha256": "0B88E9FA11BDB930DC922A148186CABAE5FD258849DC045AEEA3EB8CC1571FB9",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -185,10 +185,10 @@
           "s": 121
         }
       ],
-      "total_frames": 8424,
+      "total_frames": 8999,
       "rng_end": {
-        "state": 1869321542,
-        "calls": 4065
+        "state": 1761389047,
+        "calls": 4594
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     }
