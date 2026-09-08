@@ -24,6 +24,7 @@ $repoRoot = Split-Path -Parent $androidRoot
 . (Join-Path $scriptDir "standard_game_data.ps1")
 . (Join-Path $scriptDir "cd_level_metadata_sources.ps1")
 . (Join-Path $scriptDir "normalized_json_text.ps1")
+. (Join-Path $scriptDir "host_metadata_worker.ps1")
 . (Join-Path $scriptDir "mission_archive_sources.ps1")
 . (Join-Path $scriptDir "mission_archive_variants.ps1")
 . (Join-Path $scriptDir "host_metadata_workspace.ps1")
@@ -685,60 +686,6 @@ function Get-HeadlessFailureSummary {
     return "headless metadata failed for ${Mission}: $tail; log=$LogPath"
 }
 
-function New-MetadataWorker {
-    param([Parameter(Mandatory = $true)][string]$Executable)
-
-    $startInfo = [Diagnostics.ProcessStartInfo]::new()
-    $startInfo.FileName = $Executable
-    $startInfo.RedirectStandardInput = $true
-    $startInfo.RedirectStandardOutput = $true
-    $startInfo.RedirectStandardError = $true
-    $startInfo.UseShellExecute = $false
-    $startInfo.CreateNoWindow = $true
-    $process = [Diagnostics.Process]::Start($startInfo)
-    return @{ Process = $process; ErrorTask = $process.StandardError.ReadToEndAsync() }
-}
-
-function Invoke-MetadataWorker {
-    param(
-        [Parameter(Mandatory = $true)]$Worker,
-        [Parameter(Mandatory = $true)][System.Collections.IDictionary]$Request,
-        [Parameter(Mandatory = $true)][string]$RawOutputPath,
-        [Parameter(Mandatory = $true)][string]$LogPath,
-        [int]$TimeoutSeconds = 120
-    )
-
-    $process = $Worker.Process
-    if ($process.HasExited) { throw "metadata worker exited with code $($process.ExitCode)" }
-    $process.StandardInput.WriteLine(($Request | ConvertTo-Json -Depth 20 -Compress))
-    $process.StandardInput.Flush()
-    $logLines = [Collections.Generic.List[string]]::new()
-    while ($true) {
-        $readTask = $process.StandardOutput.ReadLineAsync()
-        if (-not $readTask.Wait($TimeoutSeconds * 1000)) {
-            try { $process.Kill($true) } catch { try { $process.Kill() } catch {} }
-            throw "metadata worker timed out after $TimeoutSeconds seconds"
-        }
-        $line = $readTask.Result
-        if ($null -eq $line) {
-            $exited = $process.WaitForExit(5000)
-            if ($Worker.ErrorTask.IsCompleted) {
-                $logLines.Add($Worker.ErrorTask.GetAwaiter().GetResult())
-            }
-            Write-Utf8NoBomTextAtomically -Path $LogPath -Text (($logLines -join "`n") + "`n")
-            $exitDetail = if ($exited) { " with exit code $($process.ExitCode)" } else { '' }
-            throw "metadata worker closed its output unexpectedly${exitDetail}; log=$LogPath"
-        }
-        if ($line.StartsWith("DXXMETA`t", [StringComparison]::Ordinal)) {
-            $json = $line.Substring(8)
-            Write-Utf8NoBomTextAtomically -Path $RawOutputPath -Text ($json + "`n")
-            Write-Utf8NoBomTextAtomically -Path $LogPath -Text (($logLines -join "`n") + $(if ($logLines.Count) { "`n" } else { "" }))
-            return $json | ConvertFrom-Json
-        }
-        $logLines.Add($line)
-    }
-}
-
 function Expand-MissionArchive {
     param(
         [Parameter(Mandatory = $true)][System.IO.FileInfo]$Archive,
@@ -823,18 +770,6 @@ function Invoke-MetadataKotlinWorker {
             return $line.Substring(10) | ConvertFrom-Json
         }
     }
-}
-
-function Stop-MetadataWorkerProcess {
-    param([AllowNull()]$Worker)
-
-    if ($null -eq $Worker -or $null -eq $Worker.Process) { return }
-    try { $Worker.Process.StandardInput.Close() } catch {}
-    if (-not $Worker.Process.WaitForExit(2000)) {
-        try { $Worker.Process.Kill($true) } catch { try { $Worker.Process.Kill() } catch {} }
-        $Worker.Process.WaitForExit()
-    }
-    $Worker.Process.Dispose()
 }
 
 function Invoke-HeadlessMetadataProcess {

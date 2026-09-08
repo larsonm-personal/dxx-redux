@@ -1011,7 +1011,7 @@
         "mine_volume": 12230600.0,
         "mine_volume_normalized": 2.67459,
         "mine_volume_text": "2.7x",
-        "travel_distance": 3195.0,
+        "travel_distance": 3211.5,
         "travel_time_seconds": 64,
         "travel_time_text": "1M:04S",
         "guidebot_count": 0,
@@ -1031,25 +1031,35 @@
           {
             "index": 1,
             "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 0",
-            "seg": 11,
-            "side": 3,
-            "wall": 10,
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 13",
+            "seg": 2,
+            "side": 0,
+            "wall": 90,
             "label_pos": {
               "x": -112.3,
-              "y": 91.0,
+              "y": 111.0,
               "z": 30.2
             },
-            "distance": 101.0,
-            "trigger": 0,
+            "distance": 61.0,
+            "trigger": 13,
             "trigger_type_id": 1,
             "trigger_type": "toggle_door",
             "opens": [
               {
-                "seg": 10,
-                "side": 0,
-                "wall": 6
+                "seg": 11,
+                "side": 3,
+                "wall": 10
+              },
+              {
+                "seg": 414,
+                "side": 1,
+                "wall": 79
+              },
+              {
+                "seg": 459,
+                "side": 1,
+                "wall": 81
               }
             ]
           },
@@ -1064,7 +1074,7 @@
               "y": 141.0,
               "z": -405.2
             },
-            "distance": 980.0,
+            "distance": 1036.5,
             "key": "red"
           },
           {

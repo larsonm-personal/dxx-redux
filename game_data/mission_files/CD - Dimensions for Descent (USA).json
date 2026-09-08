@@ -250,15 +250,15 @@
         "mine_volume": 12406100.0,
         "mine_volume_normalized": 2.71296,
         "mine_volume_text": "2.7x",
-        "travel_distance": 5833.3,
-        "travel_time_seconds": 117,
-        "travel_time_text": "1M:57S",
+        "travel_distance": 2967.2,
+        "travel_time_seconds": 59,
+        "travel_time_text": "0M:59S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_required_key_mask": 7,
-        "route_completing_key_mask_set": 128,
+        "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -322,108 +322,9 @@
             },
             "distance": 2847.3,
             "key": "gold"
-          },
-          {
-            "index": 4,
-            "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 10",
-            "seg": 545,
-            "side": 3,
-            "wall": 22,
-            "label_pos": {
-              "x": 0.0,
-              "y": 27.0,
-              "z": 88.5
-            },
-            "distance": 1008.4,
-            "trigger": 10,
-            "trigger_type_id": 1,
-            "trigger_type": "toggle_door",
-            "opens": [
-              {
-                "seg": 536,
-                "side": 3,
-                "wall": 20
-              },
-              {
-                "seg": 522,
-                "side": 2,
-                "wall": 21
-              },
-              {
-                "seg": 513,
-                "side": 2,
-                "wall": 23
-              },
-              {
-                "seg": 563,
-                "side": 3,
-                "wall": 24
-              },
-              {
-                "seg": 495,
-                "side": 2,
-                "wall": 25
-              },
-              {
-                "seg": 554,
-                "side": 3,
-                "wall": 26
-              },
-              {
-                "seg": 504,
-                "side": 2,
-                "wall": 27
-              }
-            ]
-          },
-          {
-            "index": 5,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 437,
-            "label_pos": {
-              "x": 1.2,
-              "y": -363.0,
-              "z": -0.5
-            },
-            "distance": 503.5,
-            "key": "red"
-          },
-          {
-            "index": 6,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 477,
-            "label_pos": {
-              "x": 1.0,
-              "y": 104.0,
-              "z": 0.0
-            },
-            "distance": 783.2
-          },
-          {
-            "index": 7,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 467,
-            "side": 2,
-            "wall": 9,
-            "label_pos": {
-              "x": 130.0,
-              "y": 40.0,
-              "z": 44.0
-            },
-            "distance": 571.0,
-            "trigger": 5,
-            "trigger_type_id": 8,
-            "trigger_type": "exit"
           }
-        ]
+        ],
+        "route_problem": "shared route planning reached its work budget"
       }
     ],
     "target_index": 0

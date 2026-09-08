@@ -361,7 +361,8 @@ void report_progress(
 		    visibility.progress_user, stage, completed, total);
 }
 
-bool consume_analysis_work(const route_visibility_query &visibility)
+bool consume_analysis_work(const route_visibility_query &visibility,
+                           unsigned long long work = 1)
 {
 	auto *budget = visibility.analysis_budget;
 	if (!budget)
@@ -370,11 +371,14 @@ bool consume_analysis_work(const route_visibility_query &visibility)
 		budget->was_cancelled = true;
 		return false;
 	}
-	if (budget->work_limit && budget->work_used >= budget->work_limit) {
+	if (budget->exhausted ||
+	    (budget->work_limit &&
+	     (budget->work_used >= budget->work_limit ||
+	      work > budget->work_limit - budget->work_used))) {
 		budget->exhausted = true;
 		return false;
 	}
-	budget->work_used++;
+	budget->work_used += work;
 	return true;
 }
 
@@ -1617,6 +1621,9 @@ static route_trigger_path_selection select_trigger_firing_path_internal(
     const switch_guidance_graph *guidance_graph)
 {
 	route_trigger_path_selection result;
+	// Cached visibility still requires a graph search for every dependency attempt
+	if (!consume_analysis_work(visibility, snapshot.topology.segments.size()))
+		return result;
 	route_trigger_path_selection keyed_result;
 	double result_score = std::numeric_limits<double>::infinity();
 	double result_shot_distance = std::numeric_limits<double>::infinity();
@@ -3646,6 +3653,10 @@ class dependency_planner
 		const auto preparation_start = state_;
 		const auto initial_kind = route_progress_wall_kind(
 		    snapshot_, state_.progress, source.source_wall);
+		const bool initial_locked = route_progress_wall_locked(
+		    snapshot_, state_.progress, source.source_wall);
+		const bool initial_opened = route_progress_wall_opened(
+		    snapshot_, state_.progress, source.source_wall);
 		std::string last_problem;
 		for (int trigger = 0;
 		     trigger < static_cast<int>(snapshot_.topology.triggers.size());
@@ -3682,7 +3693,9 @@ class dependency_planner
 				continue;
 			}
 			if (route_progress_wall_kind(
-			        snapshot_, state_.progress, source.source_wall) != initial_kind)
+			        snapshot_, state_.progress, source.source_wall) != initial_kind ||
+			    route_progress_wall_locked(snapshot_, state_.progress, source.source_wall) != initial_locked ||
+			    route_progress_wall_opened(snapshot_, state_.progress, source.source_wall) != initial_opened)
 				return true;
 		}
 		state_ = preparation_start;
@@ -3697,6 +3710,10 @@ class dependency_planner
 	    int depth,
 	    const std::vector<route_trigger_source> *forced_sources = nullptr)
 	{
+		if (!consume_analysis_work(visibility_)) {
+			set_problem("trigger dependency analysis incomplete");
+			return false;
+		}
 		auto raw_sources = forced_sources
 		                       ? *forced_sources
 		                       : discover_trigger_sources_internal(
@@ -3791,9 +3808,12 @@ class dependency_planner
 		                       snapshot_.topology.walls[source.source_wall]
 		                           .shootable_trigger;
 		if (!shootable && valid_wall(snapshot_, source.source_wall) &&
-		    route_progress_wall_kind(
-		        snapshot_, state_.progress, source.source_wall) ==
-		        route_wall_kind::closed) {
+		    (route_progress_wall_kind(
+		         snapshot_, state_.progress, source.source_wall) ==
+		         route_wall_kind::closed ||
+		     (route_progress_wall_kind(snapshot_, state_.progress, source.source_wall) == route_wall_kind::door &&
+		      route_progress_wall_locked(snapshot_, state_.progress, source.source_wall) &&
+		      !route_progress_wall_opened(snapshot_, state_.progress, source.source_wall)))) {
 			const auto blocked_source_start = state_;
 			if (prepare_unreachable_trigger_source(source, depth + 1))
 				return fire_trigger(segment, side, depth + 1, forced_sources);

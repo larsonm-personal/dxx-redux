@@ -1522,15 +1522,15 @@
         "mine_volume": 7029950.0,
         "mine_volume_normalized": 1.53731,
         "mine_volume_text": "1.5x",
-        "travel_distance": 3260.6,
-        "travel_time_seconds": 65,
-        "travel_time_text": "1M:05S",
+        "travel_distance": 3027.5,
+        "travel_time_seconds": 61,
+        "travel_time_text": "1M:01S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_required_key_mask": 2,
-        "route_completing_key_mask_set": 140,
+        "route_status": "partial",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -1541,104 +1541,34 @@
           },
           {
             "index": 1,
-            "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 5",
-            "seg": 296,
-            "side": 1,
-            "wall": 14,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 64,
             "label_pos": {
-              "x": -20.9,
-              "y": 1.9,
-              "z": -142.6
+              "x": 108.9,
+              "y": -152.2,
+              "z": 259.9
             },
-            "distance": 593.9,
-            "trigger": 5,
-            "trigger_type_id": 1,
-            "trigger_type": "toggle_door",
-            "opens": [
-              {
-                "seg": 202,
-                "side": 4,
-                "wall": 16
-              }
-            ]
+            "distance": 606.0,
+            "key": "blue"
           },
           {
             "index": 2,
-            "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 8",
-            "seg": 269,
-            "side": 2,
-            "wall": 23,
-            "label_pos": {
-              "x": -185.0,
-              "y": -0.5,
-              "z": 45.0
-            },
-            "distance": 506.0,
-            "trigger": 8,
-            "trigger_type_id": 1,
-            "trigger_type": "toggle_door",
-            "opens": [
-              {
-                "seg": 230,
-                "side": 4,
-                "wall": 19
-              }
-            ]
-          },
-          {
-            "index": 3,
             "kind": "key",
             "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 234,
+            "label": "gold key",
+            "seg": 186,
             "label_pos": {
-              "x": -291.7,
-              "y": 9.5,
-              "z": 61.0
+              "x": 203.3,
+              "y": 153.4,
+              "z": -305.6
             },
-            "distance": 149.0,
-            "key": "red"
-          },
-          {
-            "index": 4,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 275,
-            "label_pos": {
-              "x": -329.1,
-              "y": 5.9,
-              "z": 201.2
-            },
-            "distance": 1305.7
-          },
-          {
-            "index": 5,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 46,
-            "side": 5,
-            "wall": 39,
-            "label_pos": {
-              "x": 64.1,
-              "y": 85.9,
-              "z": 9.7
-            },
-            "distance": 706.1,
-            "trigger": 7,
-            "trigger_type_id": 8,
-            "trigger_type": "exit"
+            "distance": 2421.5,
+            "key": "gold"
           }
         ],
-        "notes": [
-          "blue key not necessary",
-          "gold key not necessary"
-        ]
+        "route_problem": "non-shootable trigger source is behind a closed wall"
       },
       {
         "level_num": 12,
@@ -3943,15 +3873,15 @@
         "mine_volume": 10837600.0,
         "mine_volume_normalized": 2.36997,
         "mine_volume_text": "2.4x",
-        "travel_distance": 5593.5,
-        "travel_time_seconds": 112,
-        "travel_time_text": "1M:52S",
+        "travel_distance": 0.0,
+        "travel_time_seconds": 0,
+        "travel_time_text": "0M:00S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "ok",
-        "route_required_key_mask": 2,
-        "route_completing_key_mask_set": 4,
+        "route_status": "failed",
+        "route_required_key_mask": 0,
+        "route_completing_key_mask_set": 0,
         "route_steps": [
           {
             "index": 0,
@@ -3959,78 +3889,9 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 2
-          },
-          {
-            "index": 1,
-            "kind": "trigger",
-            "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 4",
-            "seg": 25,
-            "side": 0,
-            "wall": 15,
-            "label_pos": {
-              "x": -274.9,
-              "y": -120.3,
-              "z": -654.5
-            },
-            "distance": 341.8,
-            "trigger": 4,
-            "trigger_type_id": 1,
-            "trigger_type": "toggle_door",
-            "opens": [
-              {
-                "seg": 26,
-                "side": 2,
-                "wall": 17
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 253,
-            "label_pos": {
-              "x": 1.9,
-              "y": 58.3,
-              "z": -190.6
-            },
-            "distance": 1782.5,
-            "key": "red"
-          },
-          {
-            "index": 3,
-            "kind": "reactor",
-            "activation_kind": "destroy_reactor",
-            "label": "Reactor",
-            "seg": 278,
-            "label_pos": {
-              "x": -4.2,
-              "y": -240.3,
-              "z": -586.1
-            },
-            "distance": 1784.9
-          },
-          {
-            "index": 4,
-            "kind": "exit",
-            "activation_kind": "enter_exit",
-            "label": "Exit",
-            "seg": 255,
-            "side": 5,
-            "wall": 23,
-            "label_pos": {
-              "x": 4.7,
-              "y": 60.3,
-              "z": 45.4
-            },
-            "distance": 1684.2,
-            "trigger": 3,
-            "trigger_type_id": 8,
-            "trigger_type": "exit"
           }
-        ]
+        ],
+        "route_problem": "non-shootable trigger source is behind a closed wall"
       },
       {
         "level_num": -6,

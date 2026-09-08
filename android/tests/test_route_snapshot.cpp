@@ -1654,6 +1654,44 @@ int main()
 	assert(closed_source_dependency.steps[1].trigger == 0);
 	assert(closed_source_dependency.steps[1].activation ==
 	       dxx_route::route_activation_kind::fly_through_trigger);
+	// A trigger on a locked door requires its unlock switch before crossing
+	auto locked_source_snapshot = closed_source_snapshot;
+	locked_source_snapshot.state.walls[0].kind = dxx_route::route_wall_kind::door;
+	locked_source_snapshot.state.walls[0].locked = true;
+	locked_source_snapshot.state.walls[0].opened = false;
+	locked_source_snapshot.topology.triggers[1].kind = dxx_route::route_trigger_kind::unlock_door;
+	const auto locked_source_dependency = dxx_route::resolve_trigger_dependency(
+	    locked_source_snapshot, planner_query,
+	    dxx_route::initial_route_progress_state(locked_source_snapshot, planner_query), 1, 0);
+	assert(locked_source_dependency.resolved);
+	assert(locked_source_dependency.steps.size() == 2);
+	assert(locked_source_dependency.steps[0].trigger == 1);
+	assert(locked_source_dependency.steps[0].activation == dxx_route::route_activation_kind::shoot_switch);
+	assert(locked_source_dependency.steps[1].trigger == 0);
+	assert(locked_source_dependency.steps[1].activation == dxx_route::route_activation_kind::pass_through_trigger);
+	assert(!locked_source_dependency.progress.wall_locked[0]);
+	// Opening a locked door also permits crossing without clearing its lock
+	locked_source_snapshot.topology.triggers[1].kind = dxx_route::route_trigger_kind::open_door;
+	const auto opened_source_dependency = dxx_route::resolve_trigger_dependency(
+	    locked_source_snapshot, planner_query,
+	    dxx_route::initial_route_progress_state(locked_source_snapshot, planner_query), 1, 0);
+	assert(opened_source_dependency.resolved);
+	assert(opened_source_dependency.steps.size() == 2);
+	assert(opened_source_dependency.steps[0].trigger == 1);
+	assert(opened_source_dependency.steps[1].trigger == 0);
+	assert(opened_source_dependency.progress.wall_locked[0]);
+	assert(opened_source_dependency.progress.wall_opened[0]);
+	// Graph searches count toward the work budget even without fresh visibility rays
+	dxx_route::route_analysis_budget source_budget;
+	source_budget.work_limit = locked_source_snapshot.topology.segments.size() - 1;
+	dxx_route::route_visibility_query source_visibility;
+	source_visibility.analysis_budget = &source_budget;
+	const auto bounded_progress = dxx_route::initial_route_progress_state(locked_source_snapshot, planner_query);
+	const auto bounded_source = dxx_route::select_trigger_firing_path(
+	    locked_source_snapshot, planner_query, bounded_progress,
+	    dxx_route::discover_trigger_sources(locked_source_snapshot, bounded_progress, 1, 0), source_visibility);
+	assert(!bounded_source.found);
+	assert(source_budget.exhausted);
 	// Each fly-through switch requires the other switch to open its surface
 	auto cyclic_preparation_snapshot = closed_source_snapshot;
 	cyclic_preparation_snapshot.state.walls[2].kind =
@@ -1975,7 +2013,7 @@ int main()
 	        { &rejected_visible, nullptr, wall_shootable });
 	assert(!rejected_visible_firing.found);
 	dxx_route::route_analysis_budget limited_budget;
-	limited_budget.work_limit = 1;
+	limited_budget.work_limit = reachable_visible_snapshot.topology.segments.size() + 1;
 	dxx_route::route_visibility_query limited_visibility;
 	limited_visibility.user = &rejected_visible;
 	limited_visibility.wall_shootable = wall_shootable;
@@ -1986,7 +2024,7 @@ int main()
 	    reachable_visible_sources, limited_visibility);
 	assert(!limited_firing.found);
 	assert(limited_budget.exhausted);
-	assert(limited_budget.work_used == 1);
+	assert(limited_budget.work_used == limited_budget.work_limit);
 	assert(rejected_visible.calls == 1);
 	bool cancel_requested = true;
 	dxx_route::route_analysis_budget cancelled_budget;

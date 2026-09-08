@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 14,
-    "timeout": 3,
+    "ok": 15,
+    "timeout": 2,
     "unsupported": 1
   },
   "levels": [
@@ -566,8 +566,8 @@
     {
       "level_num": 11,
       "level_file": "quoxir.rl2",
-      "route_input_sha256": "B3D4858100213D76D29E68AD9645FAEF51F9CBC077A476CB59D82776C36406B9",
-      "status": "timeout",
+      "route_input_sha256": "B9D777A5265C759AD51EDF3EF774DB45B33002EA822CA72BC12BDFFB1A09EB1A",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -606,16 +606,55 @@
           "s": 46
         },
         {
+          "n": "switch 17",
+          "s": 52
+        },
+        {
           "n": "switch 16",
           "s": 52
+        },
+        {
+          "n": "pass-through 14",
+          "s": 78
+        },
+        {
+          "n": "switch 15",
+          "s": 86
+        },
+        {
+          "n": "red key",
+          "s": 88
+        },
+        {
+          "n": "switch 2",
+          "s": 88
+        },
+        {
+          "n": "switch 3",
+          "s": 100
+        },
+        {
+          "n": "switch 4",
+          "s": 105
+        },
+        {
+          "n": "switch 1",
+          "s": 108
+        },
+        {
+          "n": "reactor",
+          "s": 109
+        },
+        {
+          "n": "exit",
+          "s": 117
         }
       ],
-      "total_frames": 17161,
+      "total_frames": 7034,
       "rng_end": {
-        "state": 1166341759,
-        "calls": 200042
-      },
-      "problem": "route confirmation exceeded 286-second simulation budget"
+        "state": 4113426437,
+        "calls": 3196
+      }
     },
     {
       "level_num": 12,

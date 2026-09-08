@@ -654,7 +654,7 @@
         "mine_volume": 18824900.0,
         "mine_volume_normalized": 4.11663,
         "mine_volume_text": "4.1x",
-        "travel_distance": 7143.2,
+        "travel_distance": 7150.7,
         "travel_time_seconds": 143,
         "travel_time_text": "2M:23S",
         "guidebot_count": 0,
@@ -792,6 +792,31 @@
             "index": 6,
             "kind": "trigger",
             "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 7",
+            "seg": 449,
+            "side": 4,
+            "wall": 133,
+            "label_pos": {
+              "x": 0.0,
+              "y": 280.0,
+              "z": 357.5
+            },
+            "distance": 385.9,
+            "trigger": 7,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 455,
+                "side": 4,
+                "wall": 143
+              }
+            ]
+          },
+          {
+            "index": 7,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
             "label": "Pass through trigger 19",
             "seg": 455,
             "side": 4,
@@ -801,7 +826,7 @@
               "y": 280.0,
               "z": 302.5
             },
-            "distance": 440.9,
+            "distance": 62.5,
             "trigger": 19,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -819,7 +844,7 @@
             ]
           },
           {
-            "index": 7,
+            "index": 8,
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
@@ -832,7 +857,7 @@
             "distance": 433.5
           },
           {
-            "index": 8,
+            "index": 9,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

@@ -507,9 +507,9 @@
         "mine_volume": 18126800.0,
         "mine_volume_normalized": 3.96395,
         "mine_volume_text": "4.0x",
-        "travel_distance": 2196.7,
-        "travel_time_seconds": 44,
-        "travel_time_text": "0M:44S",
+        "travel_distance": 4867.0,
+        "travel_time_seconds": 97,
+        "travel_time_text": "1M:37S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -567,17 +567,197 @@
             "index": 3,
             "kind": "trigger",
             "activation_kind": "pass_through_trigger",
-            "label": "Pass through trigger 18",
-            "seg": 430,
-            "side": 5,
-            "wall": 131,
+            "label": "Pass through trigger 6",
+            "seg": 409,
+            "side": 3,
+            "wall": 113,
             "label_pos": {
-              "x": 107.3,
-              "y": -173.3,
-              "z": -73.7
+              "x": -8.2,
+              "y": -172.2,
+              "z": -124.0
             },
-            "distance": 1149.0,
-            "trigger": 18,
+            "distance": 1170.8,
+            "trigger": 6,
+            "trigger_type_id": 1,
+            "trigger_type": "toggle_door",
+            "opens": [
+              {
+                "seg": 555,
+                "side": 5,
+                "wall": 117
+              },
+              {
+                "seg": 550,
+                "side": 3,
+                "wall": 119
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 8",
+            "seg": 555,
+            "side": 5,
+            "wall": 117,
+            "label_pos": {
+              "x": -97.9,
+              "y": -152.6,
+              "z": 153.6
+            },
+            "distance": 403.3,
+            "trigger": 8,
+            "trigger_type_id": 1,
+            "trigger_type": "toggle_door",
+            "opens": [
+              {
+                "seg": 510,
+                "side": 4,
+                "wall": 123
+              },
+              {
+                "seg": 489,
+                "side": 4,
+                "wall": 121
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 10",
+            "seg": 510,
+            "side": 4,
+            "wall": 123,
+            "label_pos": {
+              "x": 160.2,
+              "y": -132.0,
+              "z": 42.0
+            },
+            "distance": 383.7,
+            "trigger": 10,
+            "trigger_type_id": 1,
+            "trigger_type": "toggle_door",
+            "opens": [
+              {
+                "seg": 541,
+                "side": 0,
+                "wall": 127
+              },
+              {
+                "seg": 529,
+                "side": 3,
+                "wall": 124
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 12",
+            "seg": 541,
+            "side": 0,
+            "wall": 127,
+            "label_pos": {
+              "x": -106.1,
+              "y": -113.7,
+              "z": -73.5
+            },
+            "distance": 419.3,
+            "trigger": 12,
+            "trigger_type_id": 1,
+            "trigger_type": "toggle_door",
+            "opens": [
+              {
+                "seg": 512,
+                "side": 5,
+                "wall": 135
+              },
+              {
+                "seg": 520,
+                "side": 0,
+                "wall": 133
+              }
+            ]
+          },
+          {
+            "index": 7,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 14",
+            "seg": 512,
+            "side": 5,
+            "wall": 135,
+            "label_pos": {
+              "x": 106.1,
+              "y": -111.4,
+              "z": 142.4
+            },
+            "distance": 499.4,
+            "trigger": 14,
+            "trigger_type_id": 1,
+            "trigger_type": "toggle_door",
+            "opens": [
+              {
+                "seg": 405,
+                "side": 2,
+                "wall": 139
+              },
+              {
+                "seg": 367,
+                "side": 5,
+                "wall": 137
+              }
+            ]
+          },
+          {
+            "index": 8,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 16",
+            "seg": 405,
+            "side": 2,
+            "wall": 139,
+            "label_pos": {
+              "x": -168.8,
+              "y": -211.5,
+              "z": 21.5
+            },
+            "distance": 517.6,
+            "trigger": 16,
+            "trigger_type_id": 1,
+            "trigger_type": "toggle_door",
+            "opens": [
+              {
+                "seg": 430,
+                "side": 5,
+                "wall": 131
+              },
+              {
+                "seg": 424,
+                "side": 3,
+                "wall": 128
+              }
+            ]
+          },
+          {
+            "index": 9,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 19",
+            "seg": 424,
+            "side": 3,
+            "wall": 128,
+            "label_pos": {
+              "x": 97.3,
+              "y": -173.1,
+              "z": -83.7
+            },
+            "distance": 414.0,
+            "trigger": 19,
             "trigger_type_id": 1,
             "trigger_type": "toggle_door",
             "opens": [
@@ -594,7 +774,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 10,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -604,11 +784,11 @@
               "y": -131.4,
               "z": 217.5
             },
-            "distance": 442.5,
+            "distance": 453.8,
             "key": "red"
           },
           {
-            "index": 5,
+            "index": 11,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
