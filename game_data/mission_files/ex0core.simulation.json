@@ -31,21 +31,21 @@
         },
         {
           "n": "switch 3",
-          "s": 19
-        },
-        {
-          "n": "reactor",
           "s": 25
         },
         {
+          "n": "reactor",
+          "s": 29
+        },
+        {
           "n": "exit",
-          "s": 45
+          "s": 50
         }
       ],
-      "total_frames": 2682,
+      "total_frames": 2974,
       "rng_end": {
-        "state": 599060396,
-        "calls": 1163
+        "state": 3154884597,
+        "calls": 1292
       }
     },
     {
@@ -68,13 +68,13 @@
         },
         {
           "n": "switch 7",
-          "s": 16
+          "s": 22
         }
       ],
-      "total_frames": 954,
+      "total_frames": 1827,
       "rng_end": {
-        "state": 2100638428,
-        "calls": 411
+        "state": 964141416,
+        "calls": 639
       },
       "problem": "route objective activation is not supported"
     },
@@ -98,29 +98,29 @@
         },
         {
           "n": "switch 28",
-          "s": 10
+          "s": 16
         },
         {
           "n": "gold key",
-          "s": 35
+          "s": 44
         },
         {
           "n": "red key",
-          "s": 61
+          "s": 72
         },
         {
           "n": "reactor",
-          "s": 84
+          "s": 94
         },
         {
           "n": "exit",
-          "s": 96
+          "s": 106
         }
       ],
-      "total_frames": 5780,
+      "total_frames": 6355,
       "rng_end": {
-        "state": 4174470001,
-        "calls": 4112
+        "state": 1334084737,
+        "calls": 3968
       }
     },
     {

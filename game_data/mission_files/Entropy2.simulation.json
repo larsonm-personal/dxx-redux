@@ -31,22 +31,22 @@
         },
         {
           "n": "fly-through 13",
-          "s": 39
+          "s": 40
         },
         {
           "n": "pass-through 6",
-          "s": 42
+          "s": 43
         },
         {
           "n": "fly-through 14",
-          "s": 44
+          "s": 45
         },
         {
           "n": "exit",
-          "s": 52
+          "s": 53
         }
       ],
-      "total_frames": 3147,
+      "total_frames": 3194,
       "rng_end": {
         "state": 2835914861,
         "calls": 1876
@@ -80,14 +80,14 @@
         },
         {
           "n": "reactor",
-          "s": 34
+          "s": 35
         },
         {
           "n": "exit",
-          "s": 42
+          "s": 43
         }
       ],
-      "total_frames": 2540,
+      "total_frames": 2588,
       "rng_end": {
         "state": 790436741,
         "calls": 3324
@@ -116,10 +116,10 @@
           "s": 18
         }
       ],
-      "total_frames": 1059,
+      "total_frames": 1052,
       "rng_end": {
-        "state": 4131908619,
-        "calls": 766
+        "state": 1920580197,
+        "calls": 796
       }
     },
     {
@@ -146,17 +146,17 @@
         },
         {
           "n": "switch 2",
-          "s": 21
+          "s": 23
         },
         {
           "n": "reactor",
-          "s": 29
+          "s": 31
         }
       ],
-      "total_frames": 5338,
+      "total_frames": 5464,
       "rng_end": {
-        "state": 1611003340,
-        "calls": 2027
+        "state": 2682250239,
+        "calls": 2026
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -170,7 +170,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 4658,
+      "total_frames": 4657,
       "rng_end": {
         "state": 3453706785,
         "calls": 736
@@ -189,7 +189,7 @@
       "objectives": [
         {
           "n": "pass-through 13",
-          "s": 19
+          "s": 20
         },
         {
           "n": "switch 17",
@@ -197,7 +197,7 @@
         },
         {
           "n": "pass-through 12",
-          "s": 34
+          "s": 33
         },
         {
           "n": "switch 18",
@@ -205,35 +205,35 @@
         },
         {
           "n": "pass-through 10",
-          "s": 51
+          "s": 50
         },
         {
           "n": "switch 19",
-          "s": 57
+          "s": 56
         },
         {
           "n": "pass-through 11",
-          "s": 66
+          "s": 65
         },
         {
           "n": "switch 20",
-          "s": 72
+          "s": 71
         },
         {
           "n": "switch 14",
-          "s": 82
+          "s": 81
         },
         {
           "n": "switch 21",
-          "s": 88
+          "s": 87
         },
         {
           "n": "boss",
-          "s": 95
+          "s": 94
         },
         {
           "n": "switch 6",
-          "s": 119
+          "s": 118
         },
         {
           "n": "switch 3",
@@ -241,14 +241,14 @@
         },
         {
           "n": "switch 0",
-          "s": 137
+          "s": 136
         },
         {
           "n": "exit",
-          "s": 146
+          "s": 145
         }
       ],
-      "total_frames": 8739,
+      "total_frames": 8688,
       "rng_end": {
         "state": 819357621,
         "calls": 3916

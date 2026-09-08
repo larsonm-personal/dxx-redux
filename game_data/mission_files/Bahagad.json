@@ -1537,9 +1537,9 @@
         "mine_volume": 45488000.0,
         "mine_volume_normalized": 9.94729,
         "mine_volume_text": "9.9x",
-        "travel_distance": 10720.4,
-        "travel_time_seconds": 214,
-        "travel_time_text": "3M:34S",
+        "travel_distance": 10456.4,
+        "travel_time_seconds": 209,
+        "travel_time_text": "3M:29S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1691,21 +1691,6 @@
           },
           {
             "index": 6,
-            "kind": "key",
-            "activation_kind": "destroy_key_carrier",
-            "label": "Destroy robot carrying gold key",
-            "seg": 528,
-            "label_pos": {
-              "x": 346.0,
-              "y": -120.0,
-              "z": -512.0
-            },
-            "distance": 2681.3,
-            "key": "gold",
-            "key_carrier_objnum": 14
-          },
-          {
-            "index": 7,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 9",
@@ -1717,7 +1702,7 @@
               "y": -120.0,
               "z": -181.0
             },
-            "distance": 595.3,
+            "distance": 2176.0,
             "trigger": 9,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1745,19 +1730,59 @@
             ]
           },
           {
+            "index": 7,
+            "kind": "key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying gold key",
+            "seg": 528,
+            "label_pos": {
+              "x": 346.0,
+              "y": -120.0,
+              "z": -512.0
+            },
+            "distance": 605.3,
+            "key": "gold",
+            "key_carrier_objnum": 14
+          },
+          {
             "index": 8,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open door",
+            "seg": 530,
+            "side": 5,
+            "wall": 73,
+            "label_pos": {
+              "x": 0.0,
+              "y": -20.0,
+              "z": -199.0
+            },
+            "distance": 1005.3,
+            "opens": [
+              {
+                "seg": 530,
+                "side": 5,
+                "wall": 73
+              },
+              {
+                "seg": 531,
+                "side": 4,
+                "wall": 72
+              }
+            ]
+          },
+          {
+            "index": 9,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 11",
-            "seg": 538,
-            "side": 5,
+            "seg": 530,
             "wall": 84,
             "label_pos": {
               "x": 0.0,
               "y": -20.0,
               "z": -347.0
             },
-            "distance": 632.0,
             "trigger": 11,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1775,7 +1800,7 @@
             ]
           },
           {
-            "index": 9,
+            "index": 10,
             "kind": "key",
             "activation_kind": "destroy_key_carrier",
             "label": "Destroy robot carrying red key",
@@ -1785,12 +1810,12 @@
               "y": -20.0,
               "z": -71.0
             },
-            "distance": 266.0,
+            "distance": 124.0,
             "key": "red",
             "key_carrier_objnum": 15
           },
           {
-            "index": 10,
+            "index": 11,
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
@@ -1803,7 +1828,7 @@
             "distance": 1971.4
           },
           {
-            "index": 11,
+            "index": 12,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

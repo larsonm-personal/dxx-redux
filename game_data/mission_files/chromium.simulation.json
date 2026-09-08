@@ -6,9 +6,10 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
-    "timeout": 4
+    "ok": 1,
+    "timeout": 3
   },
   "levels": [
     {
@@ -35,14 +36,14 @@
         },
         {
           "n": "red key",
-          "s": 40
+          "s": 41
         },
         {
           "n": "reactor",
           "s": 58
         }
       ],
-      "total_frames": 7754,
+      "total_frames": 7748,
       "rng_end": {
         "state": 3331395548,
         "calls": 155
@@ -53,7 +54,7 @@
       "level_num": 2,
       "level_file": "kaylar.rdl",
       "route_input_sha256": "75946BB7CBCB05244BF64E3A3C2B508874105E8A7947FDDF8739F9BE9885BC84",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -66,14 +67,25 @@
         {
           "n": "gold key",
           "s": 12
+        },
+        {
+          "n": "red key",
+          "s": 18
+        },
+        {
+          "n": "reactor",
+          "s": 35
+        },
+        {
+          "n": "exit",
+          "s": 38
         }
       ],
-      "total_frames": 4326,
+      "total_frames": 2305,
       "rng_end": {
-        "state": 835903122,
-        "calls": 37
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3008295217,
+        "calls": 80
+      }
     },
     {
       "level_num": 3,
@@ -98,7 +110,7 @@
           "s": 48
         }
       ],
-      "total_frames": 7855,
+      "total_frames": 7862,
       "rng_end": {
         "state": 208521688,
         "calls": 79

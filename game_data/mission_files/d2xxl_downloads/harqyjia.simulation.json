@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
-    "timeout": 2
+    "ok": 2,
+    "timeout": 3
   },
   "levels": [
     {
@@ -27,7 +27,7 @@
         },
         {
           "n": "blue key",
-          "s": 7
+          "s": 6
         },
         {
           "n": "switch 16",
@@ -47,7 +47,7 @@
         },
         {
           "n": "switch 8",
-          "s": 47
+          "s": 48
         },
         {
           "n": "gold key",
@@ -82,10 +82,10 @@
           "s": 123
         }
       ],
-      "total_frames": 7381,
+      "total_frames": 7408,
       "rng_end": {
-        "state": 1440597678,
-        "calls": 4249
+        "state": 4203400271,
+        "calls": 4250
       }
     },
     {
@@ -104,85 +104,85 @@
         },
         {
           "n": "switch 32",
-          "s": 66
+          "s": 69
         },
         {
           "n": "switch 40",
-          "s": 74
+          "s": 79
         },
         {
           "n": "fly-through 10",
-          "s": 87
+          "s": 93
         },
         {
           "n": "hidden door",
-          "s": 87
+          "s": 93
         },
         {
           "n": "switch 9",
-          "s": 88
+          "s": 94
         },
         {
           "n": "hidden door",
-          "s": 88
+          "s": 94
         },
         {
           "n": "switch 8",
-          "s": 88
+          "s": 94
         },
         {
           "n": "switch 41",
-          "s": 90
+          "s": 96
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 109
+          "s": 115
         },
         {
           "n": "pass-through 15",
-          "s": 113
+          "s": 119
         },
         {
           "n": "hidden door",
-          "s": 113
+          "s": 119
         },
         {
           "n": "switch 42",
-          "s": 115
+          "s": 121
         },
         {
           "n": "pass-through 47",
-          "s": 115
+          "s": 121
         },
         {
           "n": "switch 53",
-          "s": 129
+          "s": 135
         },
         {
           "n": "fly-through 49",
-          "s": 135
+          "s": 141
         },
         {
           "n": "fly-through 50",
-          "s": 135
+          "s": 141
         },
         {
           "n": "fly-through 48",
-          "s": 135
+          "s": 141
         },
         {
           "n": "switch 63",
-          "s": 139
+          "s": 145
         },
         {
           "n": "red key",
-          "s": 150
+          "s": 156
         }
       ],
-      "total_frames": 10729,
+      "total_frames": 11116,
       "rng_end": {
-        "state": 367603691,
-        "calls": 7966
+        "state": 1039856214,
+        "calls": 7953
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -190,7 +190,7 @@
       "level_num": 3,
       "level_file": "harqyj03.rl2",
       "route_input_sha256": "D74E9AA0DBAD35FFA2BECD59E7816218678CE2A1F6891516FF2FC44E476ADD0D",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -214,34 +214,19 @@
         },
         {
           "n": "fly-through 28",
-          "s": 40
+          "s": 41
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 45
-        },
-        {
-          "n": "hidden door",
-          "s": 75
-        },
-        {
-          "n": "red key",
-          "s": 76
-        },
-        {
-          "n": "boss",
-          "s": 108
-        },
-        {
-          "n": "exit",
-          "s": 110
+          "s": 46
         }
       ],
-      "total_frames": 6589,
+      "total_frames": 8103,
       "rng_end": {
-        "state": 1845645418,
-        "calls": 4013
-      }
+        "state": 2921861683,
+        "calls": 2646
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 4,
@@ -267,17 +252,17 @@
         },
         {
           "n": "switch 15",
-          "s": 46
+          "s": 55
         },
         {
           "n": "gold key",
-          "s": 61
+          "s": 63
         }
       ],
-      "total_frames": 4322,
+      "total_frames": 4452,
       "rng_end": {
-        "state": 1416728504,
-        "calls": 1775
+        "state": 1260695941,
+        "calls": 1788
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -293,7 +278,7 @@
       "objectives": [
         {
           "n": "switch 10",
-          "s": 32
+          "s": 33
         },
         {
           "n": "boss",
@@ -304,7 +289,7 @@
           "s": 66
         }
       ],
-      "total_frames": 3949,
+      "total_frames": 3948,
       "rng_end": {
         "state": 582137423,
         "calls": 1690

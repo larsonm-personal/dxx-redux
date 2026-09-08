@@ -27,7 +27,7 @@
         },
         {
           "n": "blastable wall",
-          "s": 36
+          "s": 37
         },
         {
           "n": "gold key",
@@ -46,7 +46,7 @@
           "s": 102
         }
       ],
-      "total_frames": 6118,
+      "total_frames": 6133,
       "rng_end": {
         "state": 1689723728,
         "calls": 2935
@@ -80,33 +80,33 @@
         },
         {
           "n": "switch 2",
-          "s": 47
+          "s": 46
         },
         {
           "n": "gold key",
-          "s": 75
+          "s": 74
         },
         {
           "n": "switch 13",
-          "s": 92
-        },
-        {
-          "n": "red key",
           "s": 119
         },
         {
+          "n": "red key",
+          "s": 124
+        },
+        {
           "n": "reactor",
-          "s": 130
+          "s": 135
         },
         {
           "n": "exit",
-          "s": 141
+          "s": 146
         }
       ],
-      "total_frames": 8475,
+      "total_frames": 8780,
       "rng_end": {
-        "state": 4218811700,
-        "calls": 4835
+        "state": 2884948701,
+        "calls": 4964
       }
     },
     {
@@ -124,7 +124,7 @@
           "s": 19
         }
       ],
-      "total_frames": 6464,
+      "total_frames": 6460,
       "rng_end": {
         "state": 858999435,
         "calls": 1150

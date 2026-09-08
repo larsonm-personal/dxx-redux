@@ -28,25 +28,25 @@
         },
         {
           "n": "switch 2",
-          "s": 16
+          "s": 17
         },
         {
           "n": "red key",
-          "s": 33
+          "s": 36
         },
         {
           "n": "reactor",
-          "s": 52
+          "s": 55
         },
         {
           "n": "exit",
-          "s": 57
+          "s": 60
         }
       ],
-      "total_frames": 3408,
+      "total_frames": 3587,
       "rng_end": {
-        "state": 2142186641,
-        "calls": 1008
+        "state": 794353128,
+        "calls": 1023
       }
     },
     {
@@ -77,29 +77,29 @@
         },
         {
           "n": "switch 1",
-          "s": 135
-        },
-        {
-          "n": "red key",
           "s": 179
         },
         {
+          "n": "red key",
+          "s": 180
+        },
+        {
           "n": "fly-through 4",
-          "s": 238
+          "s": 239
         },
         {
           "n": "reactor",
-          "s": 246
+          "s": 247
         },
         {
           "n": "exit",
-          "s": 250
+          "s": 251
         }
       ],
-      "total_frames": 14993,
+      "total_frames": 15031,
       "rng_end": {
-        "state": 892402610,
-        "calls": 3461
+        "state": 3639609680,
+        "calls": 3447
       }
     },
     {
@@ -118,21 +118,21 @@
         },
         {
           "n": "gold key",
-          "s": 57
+          "s": 56
         },
         {
           "n": "switch 0",
-          "s": 66
+          "s": 89
         },
         {
           "n": "red key",
-          "s": 102
+          "s": 110
         }
       ],
-      "total_frames": 6116,
+      "total_frames": 6617,
       "rng_end": {
-        "state": 2275065959,
-        "calls": 2178
+        "state": 3377447812,
+        "calls": 2131
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -159,10 +159,10 @@
           "s": 48
         }
       ],
-      "total_frames": 4356,
+      "total_frames": 4444,
       "rng_end": {
-        "state": 3082456714,
-        "calls": 1037
+        "state": 1519971579,
+        "calls": 1038
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -182,13 +182,13 @@
         },
         {
           "n": "exit",
-          "s": 31
+          "s": 33
         }
       ],
-      "total_frames": 1879,
+      "total_frames": 1965,
       "rng_end": {
-        "state": 1315204298,
-        "calls": 717
+        "state": 4069223089,
+        "calls": 720
       }
     },
     {
@@ -207,14 +207,14 @@
         },
         {
           "n": "gold key",
-          "s": 37
+          "s": 41
         },
         {
           "n": "switch 0",
-          "s": 47
+          "s": 52
         }
       ],
-      "total_frames": 3904,
+      "total_frames": 4167,
       "rng_end": {
         "state": 1555859974,
         "calls": 1569

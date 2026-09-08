@@ -1618,7 +1618,8 @@ static route_trigger_path_selection select_trigger_firing_path_internal(
     const route_progress_state &progress,
     const std::vector<route_trigger_source> &sources,
     const route_visibility_query &visibility,
-    const switch_guidance_graph *guidance_graph)
+    const switch_guidance_graph *guidance_graph,
+    bool allow_progress = false)
 {
 	route_trigger_path_selection result;
 	// Cached visibility still requires a graph search for every dependency attempt
@@ -1628,7 +1629,7 @@ static route_trigger_path_selection select_trigger_firing_path_internal(
 	double result_score = std::numeric_limits<double>::infinity();
 	double result_shot_distance = std::numeric_limits<double>::infinity();
 	double keyed_shot_distance = std::numeric_limits<double>::infinity();
-	const auto search = search_routes(snapshot, query, progress, false);
+	const auto search = search_routes(snapshot, query, progress, allow_progress);
 	if (!search.problem.empty())
 		return result;
 	const int segments = static_cast<int>(search.visit_order.size());
@@ -1637,6 +1638,10 @@ static route_trigger_path_selection select_trigger_firing_path_internal(
 	for (std::size_t source_index = 0; source_index < sources.size();
 	     ++source_index) {
 		const auto &source = sources[source_index];
+		// Accessible switch rooms use the normal source approach
+		if (allow_progress && valid_segment(snapshot, source.source_segment) &&
+		    search.nodes[source.source_segment].reachable)
+			continue;
 		const int source_base = static_cast<int>(source_index) * segments * 2;
 		if (!trigger_source_wall_valid(
 		        snapshot, progress, source.source_wall) ||
@@ -1966,6 +1971,9 @@ static route_trigger_path_selection select_trigger_firing_path_internal(
 			    });
 			if (detailed_guidance.size() > 8)
 				detailed_guidance.resize(8);
+			if (allow_progress)
+				// Prefer stable center poses when their approach still needs prerequisites
+				detailed_guidance.clear();
 			for (const auto &guidance : detailed_guidance) {
 				double extra_distance = 0.0;
 				route_position terminal;
@@ -1975,7 +1983,7 @@ static route_trigger_path_selection select_trigger_firing_path_internal(
 					accept_position(
 					    guidance.segment, terminal, extra_distance);
 			}
-			for (int index = 0; index < segments; ++index) {
+			for (int index = 0; !allow_progress && index < segments; ++index) {
 				const int segment = search.visit_order[index];
 				double extra_distance = 0.0;
 				route_position terminal;
@@ -3126,11 +3134,14 @@ class dependency_planner
 				return false;
 			return true;
 		}
-		if (wall_state.kind != route_wall_kind::door || !wall_state.hidden ||
-		    wall_state.key != route_key_requirement::none) {
+		if (wall_state.kind != route_wall_kind::door ||
+		    (!wall_state.hidden && wall_state.key == route_key_requirement::none)) {
 			set_problem("conditional shot blocker is not shoot-open");
 			return false;
 		}
+		const int required_key = key_index(wall_state.key);
+		if (required_key >= 0 && !acquire_key(required_key, depth + 1))
+			return false;
 		auto edge = evaluate_route_edge(
 		    snapshot_, query_, state_.progress, topology.segment,
 		    topology.side);
@@ -3153,6 +3164,8 @@ class dependency_planner
 		    !route_progress_open_hidden_wall(
 		        snapshot_, state_.progress, wall))
 			return false;
+		if (!wall_state.hidden)
+			state_.steps.back().label = "Open door";
 		return true;
 	}
 
@@ -3841,6 +3854,21 @@ class dependency_planner
 			    conditional_visibility, &switch_guidance_graph_);
 			conditional_firing = selected_firing.found;
 		}
+		if (!selected_firing.found && visibility_.wall_conditionally_shootable &&
+		    visibility_.wall_first_shot_blocker) {
+			auto conditional_visibility = visibility_;
+			conditional_visibility.wall_shootable = visibility_.wall_conditionally_shootable;
+			conditional_visibility.sample_cache_namespace ^= 0x40000000u;
+			// A switch recess may be inaccessible while an outside firing pose
+			// is reachable after another switch; never depend on this switch itself
+			auto firing_progress = state_.progress;
+			for (const auto &candidate : firing_sources)
+				firing_progress.avoided_triggers[candidate.trigger] = 1;
+			selected_firing = select_trigger_firing_path_internal(
+			    snapshot_, query_, firing_progress, firing_sources,
+			    conditional_visibility, nullptr, true);
+			conditional_firing = selected_firing.found;
+		}
 		if (selected_firing.found)
 			source = selected_firing.source;
 		const bool shootable = valid_wall(snapshot_, source.source_wall) &&
@@ -3918,10 +3946,12 @@ class dependency_planner
 			const int blocker = visibility_.wall_first_shot_blocker(
 			    visibility_.user, selected_firing.terminal_segment,
 			    selected_firing.terminal_position, source.source_wall);
-			if (blocker < 0 ||
-			    !resolve_shot_blocker(
-			        blocker, selected_firing.terminal_segment,
-			        selected_firing.terminal_position, depth + 1)) {
+			if (!(blocker < 0
+			          ? move_to_target(selected_firing.terminal_segment,
+			                           selected_firing.terminal_position, depth + 1)
+			          : resolve_shot_blocker(
+			                blocker, selected_firing.terminal_segment,
+			                selected_firing.terminal_position, depth + 1))) {
 				state_.progress.trigger_in_progress[source.trigger] = 0;
 				if (state_.problem.empty())
 					set_problem("conditional shot blocker unresolved");

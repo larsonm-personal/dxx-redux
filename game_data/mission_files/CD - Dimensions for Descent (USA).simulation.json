@@ -109,7 +109,7 @@
             "s": 80
           }
         ],
-        "total_frames": 4793,
+        "total_frames": 4821,
         "rng_end": {
           "state": 1369828971,
           "calls": 158
@@ -131,22 +131,22 @@
           },
           {
             "n": "destroy robot carrying blue key",
-            "s": 37
+            "s": 36
           },
           {
             "n": "destroy robot carrying red key",
-            "s": 58
+            "s": 57
           },
           {
             "n": "reactor",
-            "s": 74
+            "s": 72
           },
           {
             "n": "exit",
-            "s": 80
+            "s": 78
           }
         ],
-        "total_frames": 4784,
+        "total_frames": 4701,
         "rng_end": {
           "state": 3105560752,
           "calls": 151
@@ -209,19 +209,19 @@
           },
           {
             "n": "fly-through 22",
-            "s": 23
+            "s": 22
           },
           {
             "n": "destroy robot carrying red key",
-            "s": 27
+            "s": 26
           }
         ],
-        "total_frames": 6187,
+        "total_frames": 2084,
         "rng_end": {
-          "state": 204674734,
-          "calls": 153
+          "state": 2776522653,
+          "calls": 164
         },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "problem": "physical route frontier did not open after 8 interaction attempts"
       }
     ]
   },
@@ -297,7 +297,7 @@
             "s": 14
           }
         ],
-        "total_frames": 2485,
+        "total_frames": 2487,
         "rng_end": {
           "state": 3731173240,
           "calls": 47
@@ -331,7 +331,7 @@
         "objectives": [
           {
             "n": "fly-through 15",
-            "s": 5
+            "s": 6
           },
           {
             "n": "destroy robot carrying red key",
@@ -339,14 +339,14 @@
           },
           {
             "n": "reactor",
-            "s": 17
+            "s": 18
           },
           {
             "n": "exit",
             "s": 24
           }
         ],
-        "total_frames": 1437,
+        "total_frames": 1448,
         "rng_end": {
           "state": 2274957893,
           "calls": 60
@@ -431,17 +431,17 @@
           },
           {
             "n": "reactor",
-            "s": 29
+            "s": 30
           },
           {
             "n": "exit",
             "s": 45
           }
         ],
-        "total_frames": 2694,
+        "total_frames": 2701,
         "rng_end": {
-          "state": 3424728103,
-          "calls": 194
+          "state": 4070573798,
+          "calls": 193
         }
       }
     ]
@@ -482,7 +482,7 @@
             "s": 19
           }
         ],
-        "total_frames": 1123,
+        "total_frames": 1121,
         "rng_end": {
           "state": 1775811865,
           "calls": 40
@@ -731,7 +731,7 @@
             "s": 4
           }
         ],
-        "total_frames": 907,
+        "total_frames": 915,
         "rng_end": {
           "state": 3794901700,
           "calls": 19
@@ -772,7 +772,7 @@
             "s": 9
           }
         ],
-        "total_frames": 1163,
+        "total_frames": 1162,
         "rng_end": {
           "state": 3776134388,
           "calls": 35
@@ -802,7 +802,7 @@
             "s": 24
           }
         ],
-        "total_frames": 2830,
+        "total_frames": 2856,
         "rng_end": {
           "state": 3040629214,
           "calls": 41
@@ -833,17 +833,17 @@
           },
           {
             "n": "fly-through 0",
-            "s": 27
+            "s": 28
           },
           {
             "n": "gold key",
             "s": 35
           }
         ],
-        "total_frames": 7169,
+        "total_frames": 7273,
         "rng_end": {
-          "state": 3269224778,
-          "calls": 77
+          "state": 1495896251,
+          "calls": 78
         },
         "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       },
@@ -1041,10 +1041,10 @@
           },
           {
             "n": "exit",
-            "s": 25
+            "s": 26
           }
         ],
-        "total_frames": 1528,
+        "total_frames": 1572,
         "rng_end": {
           "state": 4052745200,
           "calls": 87
@@ -1066,7 +1066,7 @@
           },
           {
             "n": "destroy robot carrying red key",
-            "s": 16
+            "s": 15
           },
           {
             "n": "reactor",
@@ -1077,7 +1077,7 @@
             "s": 36
           }
         ],
-        "total_frames": 2179,
+        "total_frames": 2167,
         "rng_end": {
           "state": 4273116023,
           "calls": 114
@@ -1117,7 +1117,7 @@
             "s": 12
           }
         ],
-        "total_frames": 747,
+        "total_frames": 727,
         "rng_end": {
           "state": 744964398,
           "calls": 25
@@ -1199,14 +1199,14 @@
           },
           {
             "n": "reactor",
-            "s": 74
+            "s": 75
           },
           {
             "n": "exit",
             "s": 78
           }
         ],
-        "total_frames": 4692,
+        "total_frames": 4694,
         "rng_end": {
           "state": 811863863,
           "calls": 178
@@ -1246,14 +1246,14 @@
           },
           {
             "n": "reactor",
-            "s": 20
+            "s": 21
           },
           {
             "n": "exit",
             "s": 23
           }
         ],
-        "total_frames": 1385,
+        "total_frames": 1395,
         "rng_end": {
           "state": 2911203427,
           "calls": 38
@@ -1353,7 +1353,7 @@
             "s": 68
           }
         ],
-        "total_frames": 4089,
+        "total_frames": 4073,
         "rng_end": {
           "state": 769681363,
           "calls": 182
@@ -1393,7 +1393,7 @@
             "s": 12
           }
         ],
-        "total_frames": 703,
+        "total_frames": 732,
         "rng_end": {
           "state": 744964398,
           "calls": 25
@@ -1423,11 +1423,16 @@
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 11
+          }
+        ],
         "total_frames": 4141,
         "rng_end": {
-          "state": 836760821,
-          "calls": 12
+          "state": 675780521,
+          "calls": 24
         },
         "problem": "route confirmation exceeded 69-second simulation budget"
       }
@@ -1606,18 +1611,18 @@
           },
           {
             "n": "red key",
-            "s": 86
+            "s": 80
           },
           {
             "n": "reactor",
-            "s": 95
+            "s": 89
           },
           {
             "n": "exit",
-            "s": 99
+            "s": 93
           }
         ],
-        "total_frames": 5937,
+        "total_frames": 5573,
         "rng_end": {
           "state": 2673245591,
           "calls": 82
@@ -1742,18 +1747,18 @@
           },
           {
             "n": "red key",
-            "s": 17
+            "s": 28
           },
           {
             "n": "reactor",
-            "s": 22
+            "s": 33
           },
           {
             "n": "exit",
-            "s": 26
+            "s": 37
           }
         ],
-        "total_frames": 1532,
+        "total_frames": 2205,
         "rng_end": {
           "state": 2207819405,
           "calls": 52
@@ -1987,7 +1992,7 @@
             "s": 59
           }
         ],
-        "total_frames": 3541,
+        "total_frames": 3542,
         "rng_end": {
           "state": 1948555936,
           "calls": 231
@@ -2040,10 +2045,10 @@
           },
           {
             "n": "exit",
-            "s": 71
+            "s": 72
           }
         ],
-        "total_frames": 4289,
+        "total_frames": 4306,
         "rng_end": {
           "state": 1598124042,
           "calls": 141
@@ -2069,18 +2074,18 @@
           },
           {
             "n": "reactor",
-            "s": 151
+            "s": 212
           },
           {
             "n": "hidden door",
-            "s": 157
+            "s": 217
           },
           {
             "n": "exit",
-            "s": 157
+            "s": 217
           }
         ],
-        "total_frames": 9417,
+        "total_frames": 13041,
         "rng_end": {
           "state": 1660932118,
           "calls": 81
@@ -2117,7 +2122,7 @@
             "s": 112
           }
         ],
-        "total_frames": 6716,
+        "total_frames": 6713,
         "rng_end": {
           "state": 872078403,
           "calls": 70
@@ -2158,10 +2163,10 @@
           },
           {
             "n": "exit",
-            "s": 25
+            "s": 26
           }
         ],
-        "total_frames": 1528,
+        "total_frames": 1572,
         "rng_end": {
           "state": 4052745200,
           "calls": 87
@@ -2202,18 +2207,18 @@
           },
           {
             "n": "red key",
-            "s": 86
+            "s": 80
           },
           {
             "n": "reactor",
-            "s": 95
+            "s": 89
           },
           {
             "n": "exit",
-            "s": 99
+            "s": 93
           }
         ],
-        "total_frames": 5937,
+        "total_frames": 5573,
         "rng_end": {
           "state": 2673245591,
           "calls": 82
@@ -2294,7 +2299,7 @@
             "s": 8
           }
         ],
-        "total_frames": 491,
+        "total_frames": 496,
         "rng_end": {
           "state": 744964398,
           "calls": 25
@@ -2334,7 +2339,7 @@
             "s": 19
           }
         ],
-        "total_frames": 1110,
+        "total_frames": 1113,
         "rng_end": {
           "state": 744964398,
           "calls": 25
@@ -2466,7 +2471,7 @@
             "s": 13
           }
         ],
-        "total_frames": 785,
+        "total_frames": 788,
         "rng_end": {
           "state": 675780521,
           "calls": 24
@@ -2519,7 +2524,7 @@
           "calls": 0
         },
         "objectives": [],
-        "total_frames": 1233,
+        "total_frames": 1221,
         "rng_end": {
           "state": 2111915288,
           "calls": 15

@@ -23,7 +23,7 @@
       "objectives": [
         {
           "n": "red key",
-          "s": 16
+          "s": 15
         },
         {
           "n": "hidden door",
@@ -35,14 +35,14 @@
         },
         {
           "n": "reactor",
-          "s": 64
+          "s": 63
         },
         {
           "n": "exit",
-          "s": 85
+          "s": 84
         }
       ],
-      "total_frames": 5088,
+      "total_frames": 5010,
       "rng_end": {
         "state": 4107034749,
         "calls": 4292
@@ -60,30 +60,30 @@
       "objectives": [
         {
           "n": "switch 1",
-          "s": 5
+          "s": 4
         },
         {
           "n": "switch 10",
-          "s": 17
+          "s": 14
         },
         {
           "n": "red key",
-          "s": 29
+          "s": 26
         },
         {
           "n": "switch 5",
-          "s": 42
+          "s": 39
         },
         {
           "n": "reactor",
-          "s": 50
+          "s": 47
         },
         {
           "n": "exit",
-          "s": 55
+          "s": 52
         }
       ],
-      "total_frames": 3279,
+      "total_frames": 3098,
       "rng_end": {
         "state": 917025743,
         "calls": 4378
@@ -101,26 +101,26 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 13
+          "s": 14
         },
         {
           "n": "gold key",
-          "s": 31
+          "s": 32
         },
         {
           "n": "red key",
-          "s": 58
+          "s": 60
         },
         {
           "n": "reactor",
-          "s": 81
+          "s": 82
         },
         {
           "n": "exit",
-          "s": 86
+          "s": 87
         }
       ],
-      "total_frames": 5161,
+      "total_frames": 5245,
       "rng_end": {
         "state": 3460827591,
         "calls": 5410
@@ -138,25 +138,25 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 31
+          "s": 33
         },
         {
           "n": "hidden door",
-          "s": 43
+          "s": 44
         },
         {
           "n": "hidden door",
-          "s": 45
+          "s": 46
         },
         {
           "n": "hidden door",
-          "s": 48
+          "s": 49
         }
       ],
-      "total_frames": 6573,
+      "total_frames": 6811,
       "rng_end": {
-        "state": 2755226259,
-        "calls": 5622
+        "state": 1812998443,
+        "calls": 5598
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

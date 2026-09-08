@@ -5,10 +5,9 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 4,
-    "timeout": 1
+    "ok": 5
   },
   "levels": [
     {
@@ -23,7 +22,7 @@
       "objectives": [
         {
           "n": "switch 0",
-          "s": 14
+          "s": 15
         },
         {
           "n": "blue key",
@@ -39,30 +38,30 @@
         },
         {
           "n": "gold key",
-          "s": 62
+          "s": 63
         },
         {
           "n": "hidden door",
-          "s": 82
+          "s": 83
         },
         {
           "n": "switch 2",
-          "s": 85
+          "s": 86
         },
         {
           "n": "red key",
-          "s": 88
+          "s": 89
         },
         {
           "n": "reactor",
-          "s": 105
+          "s": 107
         },
         {
           "n": "exit",
-          "s": 107
+          "s": 109
         }
       ],
-      "total_frames": 6443,
+      "total_frames": 6515,
       "rng_end": {
         "state": 943045510,
         "calls": 2721
@@ -80,56 +79,56 @@
       "objectives": [
         {
           "n": "switch 1",
-          "s": 17
+          "s": 19
         },
         {
           "n": "blue key",
-          "s": 28
+          "s": 30
         },
         {
           "n": "switch 7",
-          "s": 32
+          "s": 54
         },
         {
           "n": "blastable wall",
-          "s": 55
-        },
-        {
-          "n": "switch 2",
-          "s": 57
-        },
-        {
-          "n": "gold key",
           "s": 64
         },
         {
-          "n": "switch 5",
+          "n": "switch 2",
           "s": 66
         },
         {
+          "n": "gold key",
+          "s": 73
+        },
+        {
+          "n": "switch 5",
+          "s": 98
+        },
+        {
           "n": "red key",
-          "s": 82
+          "s": 103
         },
         {
           "n": "reactor",
-          "s": 90
+          "s": 111
         },
         {
           "n": "exit",
-          "s": 91
+          "s": 112
         }
       ],
-      "total_frames": 5465,
+      "total_frames": 6711,
       "rng_end": {
-        "state": 1984766789,
-        "calls": 3900
+        "state": 734337280,
+        "calls": 4359
       }
     },
     {
       "level_num": 3,
       "level_file": "auora1.rl2",
       "route_input_sha256": "F10252D4D4BBFB519A42D2299264B0EC6334869BFE10F94229B7AB3188E588D4",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -137,15 +136,42 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 50
+          "s": 37
+        },
+        {
+          "n": "switch 3",
+          "s": 118
+        },
+        {
+          "n": "switch 12",
+          "s": 123
+        },
+        {
+          "n": "gold key",
+          "s": 126
+        },
+        {
+          "n": "switch 13",
+          "s": 172
+        },
+        {
+          "n": "red key",
+          "s": 179
+        },
+        {
+          "n": "reactor",
+          "s": 199
+        },
+        {
+          "n": "exit",
+          "s": 207
         }
       ],
-      "total_frames": 9846,
+      "total_frames": 12395,
       "rng_end": {
-        "state": 1946939785,
-        "calls": 1336
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 2750047954,
+        "calls": 5349
+      }
     },
     {
       "level_num": 4,
@@ -167,41 +193,41 @@
         },
         {
           "n": "switch 10",
-          "s": 19
+          "s": 63
         },
         {
           "n": "gold key",
-          "s": 46
+          "s": 79
         },
         {
           "n": "switch 6",
-          "s": 70
+          "s": 102
         },
         {
           "n": "switch 4",
-          "s": 73
+          "s": 105
         },
         {
           "n": "fly-through 5",
-          "s": 74
+          "s": 106
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 77
+          "s": 109
         },
         {
           "n": "boss",
-          "s": 104
+          "s": 136
         },
         {
           "n": "exit",
-          "s": 105
+          "s": 137
         }
       ],
-      "total_frames": 6292,
+      "total_frames": 8246,
       "rng_end": {
-        "state": 878404543,
-        "calls": 3114
+        "state": 3989394595,
+        "calls": 5094
       }
     },
     {
@@ -248,53 +274,53 @@
         },
         {
           "n": "switch 14",
-          "s": 19
+          "s": 44
         },
         {
           "n": "hidden door",
-          "s": 45
-        },
-        {
-          "n": "switch 15",
-          "s": 46
-        },
-        {
-          "n": "gold key",
           "s": 48
         },
         {
+          "n": "switch 15",
+          "s": 48
+        },
+        {
+          "n": "gold key",
+          "s": 50
+        },
+        {
           "n": "fly-through 3",
-          "s": 81
+          "s": 85
         },
         {
           "n": "switch 7",
-          "s": 90
+          "s": 94
         },
         {
           "n": "fly-through 5",
-          "s": 99
+          "s": 102
         },
         {
           "n": "switch 8",
-          "s": 108
-        },
-        {
-          "n": "red key",
           "s": 112
         },
         {
+          "n": "red key",
+          "s": 116
+        },
+        {
           "n": "boss",
-          "s": 134
+          "s": 138
         },
         {
           "n": "exit",
-          "s": 142
+          "s": 146
         }
       ],
-      "total_frames": 8536,
+      "total_frames": 8778,
       "rng_end": {
-        "state": 634076915,
-        "calls": 5526
+        "state": 2950581854,
+        "calls": 5545
       }
     }
   ]

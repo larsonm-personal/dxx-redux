@@ -114,7 +114,7 @@
           "s": 33
         }
       ],
-      "total_frames": 2001,
+      "total_frames": 2003,
       "rng_end": {
         "state": 456633834,
         "calls": 45
@@ -152,7 +152,7 @@
           "s": 56
         }
       ],
-      "total_frames": 3356,
+      "total_frames": 3376,
       "rng_end": {
         "state": 3423541591,
         "calls": 146
@@ -174,30 +174,30 @@
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 38
+          "s": 37
         },
         {
           "n": "fly-through 2",
-          "s": 46
+          "s": 45
         },
         {
           "n": "fly-through 3",
-          "s": 49
+          "s": 48
         },
         {
           "n": "red key",
-          "s": 58
+          "s": 57
         },
         {
           "n": "reactor",
-          "s": 77
+          "s": 76
         },
         {
           "n": "exit",
-          "s": 84
+          "s": 83
         }
       ],
-      "total_frames": 5037,
+      "total_frames": 4994,
       "rng_end": {
         "state": 2029357497,
         "calls": 136

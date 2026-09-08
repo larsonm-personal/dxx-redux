@@ -42,7 +42,7 @@
       "objectives": [
         {
           "n": "blastable wall",
-          "s": 36
+          "s": 37
         },
         {
           "n": "pass-through 13",
@@ -54,7 +54,7 @@
         },
         {
           "n": "blastable wall",
-          "s": 73
+          "s": 74
         },
         {
           "n": "blastable wall",
@@ -66,10 +66,10 @@
         },
         {
           "n": "exit",
-          "s": 94
+          "s": 93
         }
       ],
-      "total_frames": 5612,
+      "total_frames": 5589,
       "rng_end": {
         "state": 2387351769,
         "calls": 616

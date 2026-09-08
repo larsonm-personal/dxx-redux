@@ -31,29 +31,29 @@
         },
         {
           "n": "blastable wall",
-          "s": 13
+          "s": 14
         },
         {
           "n": "gold key",
-          "s": 34
+          "s": 35
         },
         {
           "n": "switch 10",
-          "s": 59
+          "s": 60
         },
         {
           "n": "blue key",
-          "s": 69
+          "s": 63
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 88
+          "s": 83
         }
       ],
-      "total_frames": 6802,
+      "total_frames": 6410,
       "rng_end": {
-        "state": 428177580,
-        "calls": 10123
+        "state": 1406111866,
+        "calls": 7901
       },
       "problem": "route objective activation is not supported"
     },
@@ -67,7 +67,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 4712,
+      "total_frames": 4724,
       "rng_end": {
         "state": 1513848375,
         "calls": 434

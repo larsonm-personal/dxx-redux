@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
-    "timeout": 16
+    "ok": 2,
+    "timeout": 17
   },
   "levels": [
     {
@@ -32,7 +32,7 @@
       "level_num": 2,
       "level_file": "DH02.RL2",
       "route_input_sha256": "25ECC45BEFEBB02F3F17B4062789DDA3062B889AB89BBE7CECEA72CAF5EDCE47",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -52,22 +52,15 @@
         },
         {
           "n": "switch 9",
-          "s": 27
-        },
-        {
-          "n": "boss",
-          "s": 53
-        },
-        {
-          "n": "exit",
-          "s": 71
+          "s": 54
         }
       ],
-      "total_frames": 4266,
+      "total_frames": 7239,
       "rng_end": {
-        "state": 552378116,
-        "calls": 1747
-      }
+        "state": 1934051813,
+        "calls": 1948
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 3,
@@ -106,7 +99,7 @@
     {
       "level_num": 4,
       "level_file": "DH04.RL2",
-      "route_input_sha256": "99CCEE80140381488A403C8C43F9C67877EC0939FCFD444F81E5212861661310",
+      "route_input_sha256": "885C88E296963426631CACF6FA164C87390B1B343F42ABDE16260845D5AFB9E1",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -124,14 +117,30 @@
         {
           "n": "blue key",
           "s": 62
+        },
+        {
+          "n": "open door",
+          "s": 110
+        },
+        {
+          "n": "switch 7",
+          "s": 111
+        },
+        {
+          "n": "switch 8",
+          "s": 112
+        },
+        {
+          "n": "switch 9",
+          "s": 129
         }
       ],
-      "total_frames": 10546,
+      "total_frames": 8264,
       "rng_end": {
-        "state": 2755215601,
-        "calls": 1680
+        "state": 3716440587,
+        "calls": 3326
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 5,
@@ -193,7 +202,7 @@
           "s": 26
         }
       ],
-      "total_frames": 2239,
+      "total_frames": 2241,
       "rng_end": {
         "state": 1177098591,
         "calls": 1162
@@ -224,10 +233,10 @@
         },
         {
           "n": "red key",
-          "s": 66
+          "s": 70
         }
       ],
-      "total_frames": 4657,
+      "total_frames": 4869,
       "rng_end": {
         "state": 667899573,
         "calls": 2124

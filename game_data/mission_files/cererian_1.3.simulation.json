@@ -24,7 +24,7 @@
       "objectives": [
         {
           "n": "red key",
-          "s": 12
+          "s": 11
         },
         {
           "n": "reactor",
@@ -35,7 +35,7 @@
           "s": 23
         }
       ],
-      "total_frames": 1401,
+      "total_frames": 1386,
       "rng_end": {
         "state": 995405759,
         "calls": 42
@@ -57,18 +57,18 @@
         },
         {
           "n": "red key",
-          "s": 30
+          "s": 31
         },
         {
           "n": "reactor",
-          "s": 49
+          "s": 50
         },
         {
           "n": "exit",
           "s": 61
         }
       ],
-      "total_frames": 3651,
+      "total_frames": 3681,
       "rng_end": {
         "state": 2402686401,
         "calls": 64
@@ -94,7 +94,7 @@
         },
         {
           "n": "red key",
-          "s": 87
+          "s": 88
         },
         {
           "n": "reactor",
@@ -105,7 +105,7 @@
           "s": 131
         }
       ],
-      "total_frames": 7847,
+      "total_frames": 7850,
       "rng_end": {
         "state": 2226230633,
         "calls": 88
@@ -142,7 +142,7 @@
           "s": 157
         }
       ],
-      "total_frames": 9447,
+      "total_frames": 9428,
       "rng_end": {
         "state": 1452336924,
         "calls": 91
@@ -160,7 +160,7 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 13
+          "s": 12
         },
         {
           "n": "gold key",
@@ -168,17 +168,17 @@
         },
         {
           "n": "red key",
-          "s": 69
+          "s": 68
         },
         {
           "n": "reactor",
-          "s": 75
+          "s": 74
         }
       ],
-      "total_frames": 8339,
+      "total_frames": 8246,
       "rng_end": {
-        "state": 344858293,
-        "calls": 76
+        "state": 3269224778,
+        "calls": 77
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -213,7 +213,7 @@
           "s": 85
         }
       ],
-      "total_frames": 5112,
+      "total_frames": 5096,
       "rng_end": {
         "state": 3279009521,
         "calls": 144
@@ -231,10 +231,10 @@
       "objectives": [
         {
           "n": "reactor",
-          "s": 3
+          "s": 2
         }
       ],
-      "total_frames": 1201,
+      "total_frames": 1183,
       "rng_end": {
         "state": 3914758370,
         "calls": 21

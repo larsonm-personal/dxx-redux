@@ -28,17 +28,17 @@
         },
         {
           "n": "blastable wall",
-          "s": 50
+          "s": 49
         },
         {
           "n": "exit",
           "s": 51
         }
       ],
-      "total_frames": 3089,
+      "total_frames": 3073,
       "rng_end": {
-        "state": 1823798819,
-        "calls": 614
+        "state": 1491536401,
+        "calls": 624
       }
     },
     {
@@ -56,7 +56,7 @@
           "s": 34
         }
       ],
-      "total_frames": 2056,
+      "total_frames": 2058,
       "rng_end": {
         "state": 3389348384,
         "calls": 871
@@ -141,18 +141,18 @@
         },
         {
           "n": "fly-through 20",
-          "s": 106
+          "s": 105
         },
         {
           "n": "boss",
-          "s": 148
+          "s": 147
         },
         {
           "n": "exit",
           "s": 161
         }
       ],
-      "total_frames": 9660,
+      "total_frames": 9635,
       "rng_end": {
         "state": 1906008813,
         "calls": 4308
@@ -185,10 +185,10 @@
           "s": 121
         }
       ],
-      "total_frames": 8999,
+      "total_frames": 8919,
       "rng_end": {
-        "state": 1761389047,
-        "calls": 4594
+        "state": 3450565110,
+        "calls": 4593
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     }

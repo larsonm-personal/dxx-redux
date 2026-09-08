@@ -1929,6 +1929,35 @@ int main()
 	assert(conditional_dependency.progress.fired_triggers[0]);
 	assert(conditional_dependency.progress.fired_triggers[1]);
 	assert(conditional_dependency.progress.opened_hidden_walls[3]);
+	// A shot through a keyed door acquires its key before opening the barrier
+	auto keyed_blocker_snapshot = conditional_snapshot;
+	for (int wall : {3, 4}) {
+		keyed_blocker_snapshot.state.walls[wall].hidden = false;
+		keyed_blocker_snapshot.state.walls[wall].locked = false;
+		keyed_blocker_snapshot.state.walls[wall].key = dxx_route::route_key_requirement::gold;
+	}
+	dxx_route::route_state_object firing_key;
+	firing_key.kind = dxx_route::route_object_kind::powerup;
+	firing_key.key = dxx_route::route_key_requirement::gold;
+	firing_key.segment = 0;
+	firing_key.position = keyed_blocker_snapshot.topology.segments[0].center;
+	keyed_blocker_snapshot.state.objects.push_back(firing_key);
+	const auto keyed_shot = dxx_route::resolve_trigger_dependency(
+	    keyed_blocker_snapshot, conditional_query,
+	    dxx_route::initial_route_progress_state(keyed_blocker_snapshot, conditional_query),
+	    1, 1, conditional_visibility);
+	assert(keyed_shot.resolved);
+	assert(keyed_shot.steps.size() == 4);
+	assert(keyed_shot.steps[0].kind == dxx_route::route_semantic_step_kind::key);
+	assert(keyed_shot.steps[1].trigger == 1);
+	assert(keyed_shot.steps[2].label == "Open door");
+	assert(keyed_shot.steps[2].wall == 3);
+	assert(keyed_shot.steps[3].trigger == 0);
+	keyed_blocker_snapshot.state.objects.clear();
+	assert(!dxx_route::resolve_trigger_dependency(
+	            keyed_blocker_snapshot, conditional_query,
+	            dxx_route::initial_route_progress_state(keyed_blocker_snapshot, conditional_query),
+	            1, 1, conditional_visibility).resolved);
 	// A remote switch behind a closed wall needs that wall's opening trigger
 	auto trigger_blocker_snapshot = conditional_snapshot;
 	trigger_blocker_snapshot.state.walls[3].kind = dxx_route::route_wall_kind::closed;

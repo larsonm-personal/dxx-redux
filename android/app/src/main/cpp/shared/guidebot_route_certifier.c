@@ -959,6 +959,7 @@ static int guidebot_select_compiled_switch_guidance(
 	int head = 0;
 	int tail = 0;
 	int segment;
+	int prefer_keyed_frontier = 0;
 
 	if (step->activation_kind !=
 	    LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH)
@@ -988,6 +989,27 @@ static int guidebot_select_compiled_switch_guidance(
 			queue[tail++] = child;
 		}
 	}
+	if (guidebot_valid_segment(view, step->path_terminal_segment) &&
+	    distance[step->path_terminal_segment] < 0 && view->initial_key_mask) {
+		/* Keep the planned firing pose when the player can reach it through
+		 * owned-key doors. An unrelated approach waypoint is not a firing pose */
+		unsigned char reachable[LEVEL_METADATA_MAX_SEGMENTS] = {0};
+		head = tail = 0;
+		queue[tail++] = view->start_segment;
+		reachable[view->start_segment] = 1;
+		while (head < tail) {
+			const int current = queue[head++];
+			for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+				const int child = view->segment_child(view->user, current, side);
+				if (!guidebot_valid_segment(view, child) || reachable[child] ||
+				    !guidebot_route_side_passable(view, current, side, 1, 0, 1, 1))
+					continue;
+				reachable[child] = 1;
+				queue[tail++] = child;
+			}
+		}
+		prefer_keyed_frontier = reachable[step->path_terminal_segment];
+	}
 	for (segment = 0;
 	     segment < step->switch_guidance_candidate_count &&
 	     segment < LEVEL_METADATA_MAX_SWITCH_GUIDANCE_CANDIDATES;
@@ -999,6 +1021,11 @@ static int guidebot_select_compiled_switch_guidance(
 		const int incidence =
 		    step->switch_guidance_candidate_incidence[segment];
 		long long score;
+		if (prefer_keyed_frontier && quality == LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE &&
+		    (!view->wall_shootable_from_position ||
+		     !view->wall_shootable_from_position(view->user, candidate_segment,
+		         step->switch_guidance_candidate_pos[segment], step->wall_num)))
+			continue;
 
 		if (!guidebot_valid_segment(view, candidate_segment) ||
 		    distance[candidate_segment] < 0 ||

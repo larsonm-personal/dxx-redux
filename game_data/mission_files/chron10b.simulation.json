@@ -52,25 +52,25 @@
         },
         {
           "n": "fly-through 7",
-          "s": 89
+          "s": 91
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 98
+          "s": 101
         },
         {
           "n": "reactor",
-          "s": 122
+          "s": 124
         },
         {
           "n": "fly-through 9",
-          "s": 123
+          "s": 125
         }
       ],
-      "total_frames": 11078,
+      "total_frames": 11150,
       "rng_end": {
-        "state": 1084166367,
-        "calls": 5386
+        "state": 725144823,
+        "calls": 5874
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -94,93 +94,93 @@
         },
         {
           "n": "blue key",
-          "s": 43
+          "s": 42
         },
         {
           "n": "switch 19",
-          "s": 58
+          "s": 77
         },
         {
           "n": "switch 8",
-          "s": 74
+          "s": 91
         },
         {
           "n": "fly-through 1",
-          "s": 86
+          "s": 105
         },
         {
           "n": "gold key",
-          "s": 88
+          "s": 107
         },
         {
           "n": "hidden door",
-          "s": 101
+          "s": 120
         },
         {
           "n": "switch 0",
-          "s": 103
+          "s": 122
         },
         {
           "n": "hidden door",
-          "s": 112
+          "s": 131
         },
         {
           "n": "switch 20",
-          "s": 115
+          "s": 134
         },
         {
           "n": "hidden door",
-          "s": 123
+          "s": 142
         },
         {
           "n": "hidden door",
-          "s": 131
+          "s": 149
         },
         {
           "n": "switch 10",
-          "s": 131
+          "s": 149
         },
         {
           "n": "hidden door",
-          "s": 145
+          "s": 164
         },
         {
           "n": "switch 26",
-          "s": 148
+          "s": 167
         },
         {
           "n": "hidden door",
-          "s": 157
+          "s": 176
         },
         {
           "n": "switch 22",
-          "s": 157
+          "s": 176
         },
         {
           "n": "switch 24",
-          "s": 165
+          "s": 183
         },
         {
           "n": "red key",
-          "s": 169
+          "s": 188
         },
         {
           "n": "reactor",
-          "s": 198
+          "s": 217
         },
         {
           "n": "switch 3",
-          "s": 202
+          "s": 221
         },
         {
           "n": "exit",
-          "s": 220
+          "s": 240
         }
       ],
-      "total_frames": 13227,
+      "total_frames": 14390,
       "rng_end": {
-        "state": 1265253096,
-        "calls": 4863
+        "state": 585099851,
+        "calls": 5310
       }
     },
     {
@@ -195,29 +195,29 @@
       "objectives": [
         {
           "n": "switch 2",
-          "s": 9
+          "s": 10
         },
         {
           "n": "switch 1",
-          "s": 15
+          "s": 17
         },
         {
           "n": "switch 4",
-          "s": 34
+          "s": 36
         },
         {
           "n": "switch 5",
-          "s": 51
+          "s": 52
         },
         {
           "n": "blue key",
-          "s": 52
+          "s": 53
         }
       ],
-      "total_frames": 3118,
+      "total_frames": 3204,
       "rng_end": {
-        "state": 3904604604,
-        "calls": 1339
+        "state": 3022501302,
+        "calls": 1329
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },

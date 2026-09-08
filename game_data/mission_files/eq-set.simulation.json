@@ -85,30 +85,14 @@
         {
           "n": "fly-through 6",
           "s": 43
-        },
-        {
-          "n": "hidden door",
-          "s": 47
-        },
-        {
-          "n": "switch 24",
-          "s": 49
-        },
-        {
-          "n": "switch 7",
-          "s": 58
-        },
-        {
-          "n": "switch 18",
-          "s": 63
         }
       ],
-      "total_frames": 4375,
+      "total_frames": 6349,
       "rng_end": {
-        "state": 694153389,
-        "calls": 1300
+        "state": 3308648524,
+        "calls": 875
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 3,
@@ -190,25 +174,25 @@
         },
         {
           "n": "switch 4",
-          "s": 36
+          "s": 50
         },
         {
           "n": "gold key",
-          "s": 55
+          "s": 53
         },
         {
           "n": "red key",
-          "s": 75
+          "s": 73
         },
         {
           "n": "switch 0",
-          "s": 81
+          "s": 79
         }
       ],
-      "total_frames": 5397,
+      "total_frames": 5276,
       "rng_end": {
-        "state": 1896332983,
-        "calls": 2354
+        "state": 1648836699,
+        "calls": 2222
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -282,7 +266,7 @@
     {
       "level_num": 8,
       "level_file": "ebgb.rl2",
-      "route_input_sha256": "F8AD4E1259AA99B0541D6B0E8F29BF65B817515941CC39074FF56AB5EB2D9684",
+      "route_input_sha256": "E875F15171D03D88A1D595DDBC3A6FA3145E40B8EEA7A39550BF8FF8F10AA93D",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -405,7 +389,7 @@
     {
       "level_num": 12,
       "level_file": "ecypher2.rl2",
-      "route_input_sha256": "7C728135F2E47B0E4EE9B786FD4DB17690579C43CA2A774CBA38399B8222B3A4",
+      "route_input_sha256": "2259D56FB8B9478EB3217B9555CE2F2CAE5005A62BAD36F5F17A25B5700741C8",
       "status": "timeout",
       "rng_start": {
         "state": 1,

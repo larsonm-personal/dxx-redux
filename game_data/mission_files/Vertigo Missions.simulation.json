@@ -39,7 +39,7 @@
           "s": 57
         }
       ],
-      "total_frames": 3413,
+      "total_frames": 3405,
       "rng_end": {
         "state": 2274957893,
         "calls": 60
@@ -68,7 +68,7 @@
           "s": 72
         }
       ],
-      "total_frames": 9724,
+      "total_frames": 9727,
       "rng_end": {
         "state": 3212330324,
         "calls": 67
@@ -106,7 +106,7 @@
           "s": 77
         }
       ],
-      "total_frames": 4605,
+      "total_frames": 4606,
       "rng_end": {
         "state": 3008295217,
         "calls": 80
@@ -139,7 +139,7 @@
           "s": 109
         }
       ],
-      "total_frames": 6563,
+      "total_frames": 6526,
       "rng_end": {
         "state": 1024265714,
         "calls": 69
@@ -161,11 +161,11 @@
         },
         {
           "n": "gold key",
-          "s": 70
+          "s": 71
         },
         {
           "n": "red key",
-          "s": 120
+          "s": 121
         },
         {
           "n": "boss",
@@ -173,10 +173,10 @@
         },
         {
           "n": "exit",
-          "s": 173
+          "s": 172
         }
       ],
-      "total_frames": 10354,
+      "total_frames": 10348,
       "rng_end": {
         "state": 3549428584,
         "calls": 127
@@ -202,10 +202,10 @@
         },
         {
           "n": "red key",
-          "s": 53
+          "s": 52
         }
       ],
-      "total_frames": 4242,
+      "total_frames": 4191,
       "rng_end": {
         "state": 2274957893,
         "calls": 60
@@ -240,10 +240,10 @@
         },
         {
           "n": "exit",
-          "s": 87
+          "s": 88
         }
       ],
-      "total_frames": 5244,
+      "total_frames": 5262,
       "rng_end": {
         "state": 1447624116,
         "calls": 99
@@ -277,13 +277,13 @@
         },
         {
           "n": "exit",
-          "s": 107
+          "s": 106
         }
       ],
-      "total_frames": 6397,
+      "total_frames": 6378,
       "rng_end": {
-        "state": 1660932118,
-        "calls": 81
+        "state": 4052745200,
+        "calls": 87
       }
     },
     {
@@ -313,7 +313,7 @@
           "s": 61
         }
       ],
-      "total_frames": 3654,
+      "total_frames": 3650,
       "rng_end": {
         "state": 3212330324,
         "calls": 67
@@ -364,7 +364,7 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 10
+          "s": 9
         },
         {
           "n": "gold key",
@@ -372,21 +372,21 @@
         },
         {
           "n": "red key",
-          "s": 53
+          "s": 52
         },
         {
           "n": "reactor",
-          "s": 67
+          "s": 65
         },
         {
           "n": "exit",
-          "s": 82
+          "s": 80
         }
       ],
-      "total_frames": 4920,
+      "total_frames": 4780,
       "rng_end": {
-        "state": 1660932118,
-        "calls": 81
+        "state": 344858293,
+        "calls": 76
       }
     }
   ]

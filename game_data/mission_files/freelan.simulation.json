@@ -9,8 +9,7 @@
   "status": "partial",
   "level_counts": {
     "ok": 5,
-    "failed": 1,
-    "timeout": 1
+    "timeout": 2
   },
   "levels": [
     {
@@ -46,7 +45,7 @@
       "level_num": 2,
       "level_file": "koklab.rdl",
       "route_input_sha256": "B2C0643EF7375ACA184A04CC5B2BA8FE736A209A8557FAE734D7DDE00610AE39",
-      "status": "failed",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -59,18 +58,14 @@
         {
           "n": "gold key",
           "s": 19
-        },
-        {
-          "n": "red key",
-          "s": 30
         }
       ],
-      "total_frames": 1773,
+      "total_frames": 5375,
       "rng_end": {
-        "state": 3025925713,
-        "calls": 48
+        "state": 3731173240,
+        "calls": 47
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 3,
@@ -84,18 +79,18 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 6
+          "s": 5
         },
         {
           "n": "gold key",
-          "s": 16
+          "s": 15
         },
         {
           "n": "red key",
-          "s": 29
+          "s": 28
         }
       ],
-      "total_frames": 6077,
+      "total_frames": 6014,
       "rng_end": {
         "state": 2402686401,
         "calls": 64
@@ -133,7 +128,7 @@
           "s": 59
         }
       ],
-      "total_frames": 3534,
+      "total_frames": 3526,
       "rng_end": {
         "state": 2801490995,
         "calls": 86
@@ -174,10 +169,10 @@
           "s": 67
         }
       ],
-      "total_frames": 3999,
+      "total_frames": 4001,
       "rng_end": {
-        "state": 2316746429,
-        "calls": 132
+        "state": 1023081650,
+        "calls": 133
       }
     },
     {
@@ -256,7 +251,7 @@
           "s": 79
         }
       ],
-      "total_frames": 4718,
+      "total_frames": 4737,
       "rng_end": {
         "state": 3737188581,
         "calls": 156

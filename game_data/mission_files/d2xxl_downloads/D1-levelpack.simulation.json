@@ -43,7 +43,7 @@
             "s": 146
           }
         ],
-        "total_frames": 8761,
+        "total_frames": 8784,
         "rng_end": {
           "state": 204674734,
           "calls": 153
@@ -88,14 +88,14 @@
           },
           {
             "n": "reactor",
-            "s": 77
+            "s": 78
           },
           {
             "n": "exit",
-            "s": 87
+            "s": 88
           }
         ],
-        "total_frames": 5200,
+        "total_frames": 5265,
         "rng_end": {
           "state": 208521688,
           "calls": 79
@@ -132,17 +132,17 @@
           },
           {
             "n": "blastable wall",
-            "s": 22
+            "s": 23
           },
           {
             "n": "gold key",
-            "s": 25
+            "s": 26
           }
         ],
-        "total_frames": 7184,
+        "total_frames": 7830,
         "rng_end": {
-          "state": 3124316263,
-          "calls": 130
+          "state": 3843909140,
+          "calls": 131
         },
         "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
@@ -171,7 +171,7 @@
           "calls": 0
         },
         "objectives": [],
-        "total_frames": 4606,
+        "total_frames": 4609,
         "rng_end": {
           "state": 3535774167,
           "calls": 18
@@ -188,16 +188,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "CORKSCRW.RDL",
         "route_input_sha256": "CD33F6069B041D54D373C65C19E9B22AE5B5D35EC234ED7C9ADC870460FE7524",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -230,14 +230,21 @@
           {
             "n": "red key",
             "s": 106
+          },
+          {
+            "n": "reactor",
+            "s": 183
+          },
+          {
+            "n": "exit",
+            "s": 197
           }
         ],
-        "total_frames": 14135,
+        "total_frames": 11830,
         "rng_end": {
-          "state": 3075635823,
-          "calls": 122
-        },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+          "state": 3864791157,
+          "calls": 140
+        }
       }
     ]
   },
@@ -270,26 +277,26 @@
           },
           {
             "n": "hidden door",
-            "s": 30
-          },
-          {
-            "n": "gold key",
             "s": 31
           },
           {
+            "n": "gold key",
+            "s": 32
+          },
+          {
             "n": "red key",
-            "s": 49
+            "s": 50
           },
           {
             "n": "reactor",
-            "s": 71
+            "s": 72
           },
           {
             "n": "exit",
-            "s": 77
+            "s": 78
           }
         ],
-        "total_frames": 4617,
+        "total_frames": 4684,
         "rng_end": {
           "state": 4264971915,
           "calls": 126
@@ -358,10 +365,10 @@
           },
           {
             "n": "gold key",
-            "s": 41
+            "s": 40
           }
         ],
-        "total_frames": 3044,
+        "total_frames": 3010,
         "rng_end": {
           "state": 4008331270,
           "calls": 33
@@ -493,16 +500,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "ok",
+    "status": "failed",
     "level_counts": {
-      "ok": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "nwo.rdl",
         "route_input_sha256": "EAAD5E2ED7905DB843AD983790D510AE3BCD7C3346B9ADAA7339F6FE2E30007E",
-        "status": "ok",
+        "status": "timeout",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -510,30 +517,15 @@
         "objectives": [
           {
             "n": "blue key",
-            "s": 9
-          },
-          {
-            "n": "gold key",
-            "s": 31
-          },
-          {
-            "n": "red key",
-            "s": 64
-          },
-          {
-            "n": "reactor",
-            "s": 107
-          },
-          {
-            "n": "exit",
-            "s": 122
+            "s": 11
           }
         ],
-        "total_frames": 7311,
+        "total_frames": 5462,
         "rng_end": {
-          "state": 500965035,
-          "calls": 94
-        }
+          "state": 1448521415,
+          "calls": 34
+        },
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },
@@ -625,7 +617,7 @@
             "s": 2
           }
         ],
-        "total_frames": 4598,
+        "total_frames": 3748,
         "rng_end": {
           "state": 1969681615,
           "calls": 26
@@ -663,10 +655,10 @@
           },
           {
             "n": "destroy robot carrying red key",
-            "s": 31
+            "s": 32
           }
         ],
-        "total_frames": 1880,
+        "total_frames": 1903,
         "rng_end": {
           "state": 508382461,
           "calls": 68
@@ -767,7 +759,7 @@
             "s": 52
           }
         ],
-        "total_frames": 3144,
+        "total_frames": 3143,
         "rng_end": {
           "state": 1627576247,
           "calls": 50

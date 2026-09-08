@@ -1348,8 +1348,18 @@ static int guidebot_route_waypoint_reached(const object *objp,
 		return 0;
 	side = find_connect_side(&Segments[waypoint->segnum],
 	                         &Segments[objp->segnum]);
-	return side >= 0 &&
-	       (WALL_IS_DOORWAY(&Segments[objp->segnum], side) & WID_FLY_FLAG);
+	if (side >= 0 &&
+	    (WALL_IS_DOORWAY(&Segments[objp->segnum], side) & WID_FLY_FLAG)) {
+		/* Consuming a neighboring waypoint must not steer through a wall
+		 * toward its successor before physics crosses the current portal */
+		const ai_static *aip = &objp->ctype.ai_info;
+		const int next = aip->cur_path_index + aip->PATH_DIR;
+		return next >= 0 && next < aip->path_length &&
+		       (Point_segs[aip->hide_index + next].segnum == waypoint->segnum ||
+		        guidebot_route_waypoint_leg_clear(objp, &objp->pos, objp->segnum,
+		            &Point_segs[aip->hide_index + next].point));
+	}
+	return 0;
 }
 #endif
 

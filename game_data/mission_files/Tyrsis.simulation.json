@@ -26,37 +26,37 @@
         },
         {
           "n": "switch 15",
-          "s": 14
+          "s": 24
         },
         {
           "n": "switch 13",
-          "s": 14
+          "s": 33
         },
         {
           "n": "gold key",
-          "s": 36
+          "s": 44
         },
         {
           "n": "red key",
-          "s": 74
+          "s": 82
         },
         {
           "n": "fly-through 22",
-          "s": 89
+          "s": 96
         },
         {
           "n": "reactor",
-          "s": 90
+          "s": 97
         },
         {
           "n": "exit",
-          "s": 100
+          "s": 107
         }
       ],
-      "total_frames": 5981,
+      "total_frames": 6439,
       "rng_end": {
-        "state": 3532897574,
-        "calls": 2945
+        "state": 2888618013,
+        "calls": 3108
       }
     },
     {
@@ -75,45 +75,45 @@
         },
         {
           "n": "gold key",
-          "s": 41
+          "s": 42
         },
         {
           "n": "switch 14",
-          "s": 49
+          "s": 57
         },
         {
           "n": "switch 13",
-          "s": 49
+          "s": 59
         },
         {
           "n": "switch 11",
-          "s": 49
+          "s": 62
         },
         {
           "n": "switch 12",
-          "s": 56
+          "s": 65
         },
         {
           "n": "red key",
-          "s": 60
+          "s": 68
         },
         {
           "n": "boss",
-          "s": 77
+          "s": 85
         },
         {
           "n": "switch 10",
-          "s": 78
+          "s": 87
         },
         {
           "n": "exit",
-          "s": 80
+          "s": 88
         }
       ],
-      "total_frames": 4803,
+      "total_frames": 5300,
       "rng_end": {
-        "state": 473953889,
-        "calls": 2208
+        "state": 4061575722,
+        "calls": 2285
       }
     }
   ]

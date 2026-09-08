@@ -105,7 +105,7 @@
         },
         {
           "n": "red key",
-          "s": 126
+          "s": 125
         },
         {
           "n": "fly-through 19",
@@ -117,10 +117,10 @@
         },
         {
           "n": "exit",
-          "s": 187
+          "s": 186
         }
       ],
-      "total_frames": 11205,
+      "total_frames": 11185,
       "rng_end": {
         "state": 752577037,
         "calls": 180

@@ -1202,7 +1202,8 @@ int find_route_flare_target(object *actor, int *segnum, int *sidenum,
 		    !(Walls[objective_wall].flags & WALL_DOOR_LOCKED) &&
 		    Walls[objective_wall].clip_num >= 0 &&
 		    Walls[objective_wall].clip_num < Num_wall_anims &&
-		    (WallAnims[Walls[objective_wall].clip_num].flags & WCF_HIDDEN) &&
+		    (Walls[objective_wall].keys == KEY_NONE ||
+		     (Walls[objective_wall].keys & Players[Player_num].flags)) &&
 		    set_visible_flare_target(actor, *segnum, *sidenum, direction)) {
 			*wall_num = objective_wall;
 			return 1;
@@ -1809,6 +1810,25 @@ extern "C" void route_confirmation_after_frame(void)
 			fail(ROUTE_CONFIRMATION_TIMEOUT,
 			     "Guide-Bot made no route progress for 60 simulation seconds");
 			return;
+		}
+	}
+	if (State.no_progress_frames == 2 * ROUTE_CONFIRMATION_FIXED_HZ) {
+		const ai_static *aip = &actor->ctype.ai_info;
+		bool on_path = false;
+		for (int index = 0; aip->hide_index >= 0 && index < aip->path_length; ++index)
+			if (Point_segs[aip->hide_index + index].segnum == actor->segnum)
+				on_path = true;
+		if (!on_path && aip->path_length > 0) {
+			// Momentum after a trigger crossing can carry the actor off the new path
+			// Rebuild from its actual segment without changing the objective or timeout
+			if (State.step.activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT &&
+			    State.target_seg == State.semantic_target_seg)
+				create_path_to_segment(actor, State.target_seg, Max_escort_length, 1);
+			else
+				create_guidebot_route_path_to_segment(actor, State.target_seg, Max_escort_length, 1);
+			actor->ctype.ai_info.SKIP_AI_COUNT = 0;
+			Ai_local_info[State.actor_objnum].mode = AIM_GOTO_OBJECT;
+			refine_last_path_point(actor);
 		}
 	}
 	apply_objective_action(actor);

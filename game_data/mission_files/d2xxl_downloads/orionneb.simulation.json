@@ -29,10 +29,10 @@
         },
         {
           "n": "gold key",
-          "s": 42
+          "s": 41
         }
       ],
-      "total_frames": 2543,
+      "total_frames": 2452,
       "rng_end": {
         "state": 3008955749,
         "calls": 28
@@ -129,7 +129,7 @@
           "s": 94
         }
       ],
-      "total_frames": 5661,
+      "total_frames": 5663,
       "rng_end": {
         "state": 2673245591,
         "calls": 82
@@ -151,22 +151,22 @@
         },
         {
           "n": "gold key",
-          "s": 32
+          "s": 31
         },
         {
           "n": "red key",
-          "s": 54
+          "s": 53
         },
         {
           "n": "reactor",
-          "s": 71
+          "s": 70
         },
         {
           "n": "exit",
-          "s": 78
+          "s": 77
         }
       ],
-      "total_frames": 4650,
+      "total_frames": 4626,
       "rng_end": {
         "state": 1495896251,
         "calls": 78
@@ -195,7 +195,7 @@
           "s": 62
         }
       ],
-      "total_frames": 3747,
+      "total_frames": 3748,
       "rng_end": {
         "state": 456633834,
         "calls": 45
@@ -218,13 +218,13 @@
         },
         {
           "n": "gold key",
-          "s": 46
+          "s": 45
         }
       ],
-      "total_frames": 7676,
+      "total_frames": 7189,
       "rng_end": {
-        "state": 2916751166,
-        "calls": 73
+        "state": 4022231744,
+        "calls": 71
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -244,25 +244,25 @@
         },
         {
           "n": "gold key",
-          "s": 40
+          "s": 39
         },
         {
           "n": "red key",
-          "s": 75
+          "s": 74
         },
         {
           "n": "reactor",
-          "s": 89
+          "s": 83
         },
         {
           "n": "exit",
-          "s": 94
+          "s": 87
         }
       ],
-      "total_frames": 5632,
+      "total_frames": 5211,
       "rng_end": {
-        "state": 2226230633,
-        "calls": 88
+        "state": 208521688,
+        "calls": 79
       }
     }
   ]

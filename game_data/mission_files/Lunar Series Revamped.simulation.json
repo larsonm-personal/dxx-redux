@@ -26,7 +26,7 @@
           "s": 11
         }
       ],
-      "total_frames": 2093,
+      "total_frames": 2136,
       "rng_end": {
         "state": 3535774167,
         "calls": 18
@@ -45,14 +45,14 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 12
+          "s": 13
         },
         {
           "n": "red key",
           "s": 33
         }
       ],
-      "total_frames": 2988,
+      "total_frames": 3036,
       "rng_end": {
         "state": 3731173240,
         "calls": 47

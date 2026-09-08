@@ -28,7 +28,7 @@
         },
         {
           "n": "switch 12",
-          "s": 33
+          "s": 32
         },
         {
           "n": "gold key",
@@ -36,13 +36,13 @@
         },
         {
           "n": "fly-through 0",
-          "s": 64
+          "s": 66
         }
       ],
-      "total_frames": 7453,
+      "total_frames": 7583,
       "rng_end": {
-        "state": 2059422092,
-        "calls": 4395
+        "state": 2048936637,
+        "calls": 5252
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -65,7 +65,7 @@
           "s": 36
         }
       ],
-      "total_frames": 2174,
+      "total_frames": 2179,
       "rng_end": {
         "state": 2706250699,
         "calls": 830
@@ -117,7 +117,7 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 14
+          "s": 15
         },
         {
           "n": "gold key",
@@ -125,21 +125,21 @@
         },
         {
           "n": "red key",
-          "s": 54
+          "s": 53
         },
         {
           "n": "reactor",
-          "s": 84
+          "s": 83
         },
         {
           "n": "exit",
-          "s": 91
+          "s": 90
         }
       ],
-      "total_frames": 5479,
+      "total_frames": 5421,
       "rng_end": {
-        "state": 1983819910,
-        "calls": 2465
+        "state": 477778129,
+        "calls": 2480
       }
     },
     {
@@ -158,7 +158,7 @@
         },
         {
           "n": "gold key",
-          "s": 30
+          "s": 31
         },
         {
           "n": "red key",
@@ -166,17 +166,17 @@
         },
         {
           "n": "reactor",
-          "s": 70
+          "s": 69
         },
         {
           "n": "exit",
           "s": 76
         }
       ],
-      "total_frames": 4579,
+      "total_frames": 4578,
       "rng_end": {
-        "state": 2747827544,
-        "calls": 1743
+        "state": 3717999352,
+        "calls": 1711
       }
     },
     {
@@ -202,10 +202,10 @@
           "s": 60
         }
       ],
-      "total_frames": 3621,
+      "total_frames": 3594,
       "rng_end": {
-        "state": 868726942,
-        "calls": 1129
+        "state": 2705106184,
+        "calls": 1119
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -221,17 +221,17 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 24
+          "s": 27
         },
         {
           "n": "gold key",
-          "s": 64
+          "s": 63
         }
       ],
-      "total_frames": 8455,
+      "total_frames": 8366,
       "rng_end": {
-        "state": 3611474342,
-        "calls": 4353
+        "state": 571227266,
+        "calls": 4341
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -255,7 +255,7 @@
         },
         {
           "n": "red key",
-          "s": 75
+          "s": 74
         },
         {
           "n": "reactor",
@@ -263,10 +263,10 @@
         },
         {
           "n": "exit",
-          "s": 93
+          "s": 92
         }
       ],
-      "total_frames": 5558,
+      "total_frames": 5510,
       "rng_end": {
         "state": 2100566895,
         "calls": 3962

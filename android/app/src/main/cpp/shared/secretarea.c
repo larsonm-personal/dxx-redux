@@ -1937,6 +1937,7 @@ static int level_metadata_route_shot_wall_is_passable(
 	if (context->allow_transparency == 3) {
 		const int actionable =
 		    Walls[wall_num].type == WALL_BLASTABLE ||
+		    (Walls[wall_num].type == WALL_DOOR && Walls[wall_num].keys != KEY_NONE && !(Walls[wall_num].flags & WALL_DOOR_LOCKED) && wall_num == context->first_blocker) ||
 		    (Walls[wall_num].type == WALL_CLOSED && wall_num == context->first_blocker &&
 		     secret_area_side_opener_source_wall_at(seg, side, 0, 1) >= 0) ||
 		    (Walls[wall_num].type == WALL_DOOR &&

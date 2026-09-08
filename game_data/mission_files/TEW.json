@@ -1099,7 +1099,7 @@
         "mine_volume": 7519490.0,
         "mine_volume_normalized": 1.64436,
         "mine_volume_text": "1.6x",
-        "travel_distance": 5615.8,
+        "travel_distance": 5598.8,
         "travel_time_seconds": 112,
         "travel_time_text": "1M:52S",
         "guidebot_count": 0,
@@ -1132,18 +1132,43 @@
           },
           {
             "index": 2,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open door",
+            "seg": 317,
+            "side": 0,
+            "wall": 42,
+            "label_pos": {
+              "x": -165.5,
+              "y": -300.0,
+              "z": 148.5
+            },
+            "distance": 454.7,
+            "opens": [
+              {
+                "seg": 317,
+                "side": 0,
+                "wall": 42
+              },
+              {
+                "seg": 318,
+                "side": 2,
+                "wall": 41
+              }
+            ]
+          },
+          {
+            "index": 3,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 0",
-            "seg": 318,
-            "side": 0,
+            "seg": 317,
             "wall": 43,
             "label_pos": {
               "x": -177.0,
               "y": -300.0,
               "z": 152.1
             },
-            "distance": 463.2,
             "trigger": 0,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -1161,7 +1186,7 @@
             ]
           },
           {
-            "index": 3,
+            "index": 4,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -1171,11 +1196,11 @@
               "y": 0.0,
               "z": 162.4
             },
-            "distance": 502.1,
+            "distance": 493.6,
             "key": "gold"
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 1",
@@ -1205,7 +1230,7 @@
             ]
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -1219,7 +1244,7 @@
             "key": "red"
           },
           {
-            "index": 6,
+            "index": 7,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 2",
@@ -1258,7 +1283,7 @@
             ]
           },
           {
-            "index": 7,
+            "index": 8,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -1271,7 +1296,7 @@
             "distance": 77.0
           },
           {
-            "index": 8,
+            "index": 9,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

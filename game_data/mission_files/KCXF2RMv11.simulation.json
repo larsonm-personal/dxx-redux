@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
+    "ok": 2,
     "failed": 1,
-    "timeout": 3,
+    "timeout": 4,
     "unsupported": 1
   },
   "levels": [
@@ -42,7 +42,7 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 35
+          "s": 34
         },
         {
           "n": "fly-through 4",
@@ -54,7 +54,7 @@
         },
         {
           "n": "switch 8",
-          "s": 100
+          "s": 101
         },
         {
           "n": "switch 13",
@@ -62,25 +62,25 @@
         },
         {
           "n": "switch 19",
-          "s": 126
+          "s": 151
         },
         {
           "n": "switch 18",
-          "s": 152
+          "s": 156
         },
         {
           "n": "switch 17",
-          "s": 155
+          "s": 159
         },
         {
           "n": "exit",
-          "s": 165
+          "s": 168
         }
       ],
-      "total_frames": 9899,
+      "total_frames": 10105,
       "rng_end": {
-        "state": 3416695013,
-        "calls": 6300
+        "state": 511835098,
+        "calls": 5885
       }
     },
     {
@@ -104,7 +104,7 @@
       "level_num": 4,
       "level_file": "kcxf2_n4.rl2",
       "route_input_sha256": "99FD1F9F6B064E7CB6AC5E6AD44FE0B1BF359E43915ED044C6A4DCE74573E784",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -129,17 +129,14 @@
         {
           "n": "boss",
           "s": 156
-        },
-        {
-          "n": "exit",
-          "s": 164
         }
       ],
-      "total_frames": 9825,
+      "total_frames": 13350,
       "rng_end": {
-        "state": 819313084,
-        "calls": 5435
-      }
+        "state": 1300709401,
+        "calls": 5416
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 5,
@@ -154,22 +151,14 @@
         {
           "n": "blue key",
           "s": 26
-        },
-        {
-          "n": "switch 6",
-          "s": 73
-        },
-        {
-          "n": "red key",
-          "s": 80
         }
       ],
-      "total_frames": 5586,
+      "total_frames": 7341,
       "rng_end": {
-        "state": 1583537286,
-        "calls": 3489
+        "state": 3672578565,
+        "calls": 2684
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 6,

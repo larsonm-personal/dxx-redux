@@ -64,7 +64,7 @@
           "s": 87
         }
       ],
-      "total_frames": 5219,
+      "total_frames": 5224,
       "rng_end": {
         "state": 856000655,
         "calls": 90
@@ -90,14 +90,14 @@
         },
         {
           "n": "boss",
-          "s": 46
+          "s": 47
         },
         {
           "n": "exit",
-          "s": 50
+          "s": 51
         }
       ],
-      "total_frames": 3027,
+      "total_frames": 3078,
       "rng_end": {
         "state": 361230461,
         "calls": 196
@@ -126,7 +126,7 @@
           "s": 76
         }
       ],
-      "total_frames": 4576,
+      "total_frames": 4578,
       "rng_end": {
         "state": 3772987475,
         "calls": 54

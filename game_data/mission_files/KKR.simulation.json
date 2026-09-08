@@ -32,37 +32,37 @@
         },
         {
           "n": "switch 0",
-          "s": 25
+          "s": 36
         },
         {
           "n": "fly-through 3",
-          "s": 30
+          "s": 51
         },
         {
           "n": "switch 5",
-          "s": 33
+          "s": 54
         },
         {
           "n": "red key",
-          "s": 39
+          "s": 60
         },
         {
           "n": "switch 1",
-          "s": 44
+          "s": 89
         },
         {
           "n": "boss",
-          "s": 87
+          "s": 109
         },
         {
           "n": "exit",
-          "s": 119
+          "s": 144
         }
       ],
-      "total_frames": 7113,
+      "total_frames": 8622,
       "rng_end": {
-        "state": 443438602,
-        "calls": 4749
+        "state": 3713404486,
+        "calls": 6881
       }
     },
     {
@@ -89,45 +89,45 @@
         },
         {
           "n": "switch 6",
-          "s": 23
+          "s": 38
         },
         {
           "n": "blastable wall",
-          "s": 39
-        },
-        {
-          "n": "switch 5",
-          "s": 41
-        },
-        {
-          "n": "gold key",
           "s": 43
         },
         {
+          "n": "switch 5",
+          "s": 44
+        },
+        {
+          "n": "gold key",
+          "s": 47
+        },
+        {
           "n": "switch 16",
-          "s": 45
+          "s": 65
         },
         {
           "n": "red key",
-          "s": 62
+          "s": 68
         },
         {
           "n": "switch 4",
-          "s": 62
+          "s": 77
         },
         {
           "n": "reactor",
-          "s": 80
+          "s": 93
         },
         {
           "n": "exit",
-          "s": 92
+          "s": 104
         }
       ],
-      "total_frames": 5494,
+      "total_frames": 6250,
       "rng_end": {
-        "state": 1631271608,
-        "calls": 4079
+        "state": 1076724611,
+        "calls": 4358
       }
     },
     {
@@ -167,7 +167,7 @@
     {
       "level_num": 5,
       "level_file": "kk5.rl2",
-      "route_input_sha256": "749A1333D100D2AD6C9D1151E8BF233D5A3D8DFC52950C36C82E0D37323818B8",
+      "route_input_sha256": "7D97A8CF58C3AD5E42C1704350ACC3AD01335BBA35F658617FF449E4DA99F4EF",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -179,34 +179,38 @@
           "s": 15
         },
         {
+          "n": "open door",
+          "s": 18
+        },
+        {
           "n": "switch 4",
-          "s": 17
+          "s": 18
         },
         {
           "n": "switch 1",
-          "s": 17
+          "s": 19
         },
         {
           "n": "switch 5",
-          "s": 28
+          "s": 32
         },
         {
           "n": "red key",
-          "s": 36
+          "s": 40
         },
         {
           "n": "boss",
-          "s": 48
+          "s": 52
         },
         {
           "n": "exit",
-          "s": 55
+          "s": 60
         }
       ],
-      "total_frames": 3324,
+      "total_frames": 3592,
       "rng_end": {
-        "state": 1752759203,
-        "calls": 3302
+        "state": 998720860,
+        "calls": 3355
       }
     },
     {

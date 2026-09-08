@@ -52,21 +52,21 @@
         },
         {
           "n": "switch 9",
-          "s": 27
+          "s": 54
         },
         {
           "n": "boss",
-          "s": 44
+          "s": 74
         },
         {
           "n": "exit",
-          "s": 45
+          "s": 76
         }
       ],
-      "total_frames": 2723,
+      "total_frames": 4543,
       "rng_end": {
-        "state": 3772710371,
-        "calls": 678
+        "state": 1718045622,
+        "calls": 1841
       }
     },
     {
@@ -106,7 +106,7 @@
     {
       "level_num": 4,
       "level_file": "DH04.RL2",
-      "route_input_sha256": "E958F643B60855BD477CF29B1D91B53235C528AC86F8154EDE08EA71FDEF9939",
+      "route_input_sha256": "5B4F72A685754395984284DB8ED0E130231C3738605C71857CEC5FDF7DA7BF33",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -124,14 +124,30 @@
         {
           "n": "blue key",
           "s": 62
+        },
+        {
+          "n": "open door",
+          "s": 110
+        },
+        {
+          "n": "switch 7",
+          "s": 111
+        },
+        {
+          "n": "switch 8",
+          "s": 112
+        },
+        {
+          "n": "switch 9",
+          "s": 129
         }
       ],
-      "total_frames": 10546,
+      "total_frames": 8264,
       "rng_end": {
-        "state": 2755215601,
-        "calls": 1680
+        "state": 3716440587,
+        "calls": 3326
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 5,
@@ -197,7 +213,7 @@
           "s": 53
         }
       ],
-      "total_frames": 7728,
+      "total_frames": 7727,
       "rng_end": {
         "state": 230621619,
         "calls": 2774
@@ -228,10 +244,10 @@
         },
         {
           "n": "red key",
-          "s": 66
+          "s": 70
         }
       ],
-      "total_frames": 4657,
+      "total_frames": 4869,
       "rng_end": {
         "state": 667899573,
         "calls": 2124

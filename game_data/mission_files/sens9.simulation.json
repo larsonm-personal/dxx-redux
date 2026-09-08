@@ -5,10 +5,10 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "failed",
   "level_counts": {
-    "ok": 1,
     "failed": 3,
+    "timeout": 1,
     "unsupported": 1
   },
   "levels": [
@@ -61,7 +61,7 @@
           "s": 3
         }
       ],
-      "total_frames": 710,
+      "total_frames": 707,
       "rng_end": {
         "state": 444983185,
         "calls": 240
@@ -72,7 +72,7 @@
       "level_num": 4,
       "level_file": "flw.rl2",
       "route_input_sha256": "DF562D269FAF8099330786FDEFCE22AC3ED3C6145FAFAFFEBE65431C3EC52890",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -97,49 +97,14 @@
         {
           "n": "hidden door",
           "s": 21
-        },
-        {
-          "n": "switch 2",
-          "s": 21
-        },
-        {
-          "n": "gold key",
-          "s": 24
-        },
-        {
-          "n": "hidden door",
-          "s": 34
-        },
-        {
-          "n": "switch 11",
-          "s": 34
-        },
-        {
-          "n": "red key",
-          "s": 42
-        },
-        {
-          "n": "hidden door",
-          "s": 64
-        },
-        {
-          "n": "reactor",
-          "s": 67
-        },
-        {
-          "n": "hidden door",
-          "s": 82
-        },
-        {
-          "n": "exit",
-          "s": 83
         }
       ],
-      "total_frames": 4958,
+      "total_frames": 7706,
       "rng_end": {
-        "state": 1677824788,
-        "calls": 3971
-      }
+        "state": 1189395237,
+        "calls": 1116
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": -1,

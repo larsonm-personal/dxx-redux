@@ -7,8 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 9,
-    "failed": 2
+    "ok": 8,
+    "failed": 2,
+    "timeout": 1
   },
   "levels": [
     {
@@ -35,7 +36,7 @@
         },
         {
           "n": "red key",
-          "s": 52
+          "s": 53
         },
         {
           "n": "reactor",
@@ -46,7 +47,7 @@
           "s": 81
         }
       ],
-      "total_frames": 4883,
+      "total_frames": 4884,
       "rng_end": {
         "state": 4195123807,
         "calls": 2954
@@ -76,14 +77,14 @@
         },
         {
           "n": "reactor",
-          "s": 44
+          "s": 43
         },
         {
           "n": "exit",
-          "s": 47
+          "s": 46
         }
       ],
-      "total_frames": 2798,
+      "total_frames": 2779,
       "rng_end": {
         "state": 763183153,
         "calls": 2384
@@ -93,7 +94,7 @@
       "level_num": 3,
       "level_file": "EPPLAGER.rl2",
       "route_input_sha256": "63ED359F77DDCCB5B6A5A82023BFA0ABB7BCC55533368F43DD7CEB0F56EA2877",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -105,30 +106,15 @@
         },
         {
           "n": "switch 2",
-          "s": 22
-        },
-        {
-          "n": "gold key",
-          "s": 36
-        },
-        {
-          "n": "red key",
-          "s": 68
-        },
-        {
-          "n": "reactor",
-          "s": 96
-        },
-        {
-          "n": "exit",
-          "s": 109
+          "s": 34
         }
       ],
-      "total_frames": 6528,
+      "total_frames": 5990,
       "rng_end": {
-        "state": 729645121,
-        "calls": 6592
-      }
+        "state": 620555859,
+        "calls": 2614
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 4,
@@ -161,10 +147,10 @@
           "s": 79
         }
       ],
-      "total_frames": 4762,
+      "total_frames": 4754,
       "rng_end": {
-        "state": 1970098540,
-        "calls": 1995
+        "state": 3025380742,
+        "calls": 2209
       }
     },
     {
@@ -183,22 +169,22 @@
         },
         {
           "n": "gold key",
-          "s": 36
+          "s": 35
         },
         {
           "n": "red key",
-          "s": 65
+          "s": 64
         },
         {
           "n": "reactor",
-          "s": 95
+          "s": 94
         },
         {
           "n": "exit",
           "s": 111
         }
       ],
-      "total_frames": 6657,
+      "total_frames": 6631,
       "rng_end": {
         "state": 1734514162,
         "calls": 6213
@@ -220,21 +206,21 @@
         },
         {
           "n": "switch 1",
-          "s": 19
+          "s": 32
         },
         {
           "n": "gold key",
-          "s": 26
+          "s": 36
         },
         {
           "n": "red key",
-          "s": 38
+          "s": 48
         }
       ],
-      "total_frames": 2277,
+      "total_frames": 2909,
       "rng_end": {
-        "state": 2859731786,
-        "calls": 1613
+        "state": 2926329220,
+        "calls": 1619
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -270,10 +256,10 @@
         },
         {
           "n": "exit",
-          "s": 100
+          "s": 101
         }
       ],
-      "total_frames": 6022,
+      "total_frames": 6034,
       "rng_end": {
         "state": 3586205253,
         "calls": 5180
@@ -299,21 +285,21 @@
         },
         {
           "n": "switch 2",
-          "s": 16
-        },
-        {
-          "n": "gold key",
           "s": 33
         },
         {
+          "n": "gold key",
+          "s": 35
+        },
+        {
           "n": "red key",
-          "s": 56
+          "s": 57
         }
       ],
-      "total_frames": 3330,
+      "total_frames": 3431,
       "rng_end": {
-        "state": 3998825708,
-        "calls": 1611
+        "state": 1596281759,
+        "calls": 1610
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -337,45 +323,45 @@
         },
         {
           "n": "gold key",
-          "s": 31
+          "s": 34
         },
         {
           "n": "fly-through 4",
-          "s": 51
-        },
-        {
-          "n": "hidden door",
-          "s": 51
-        },
-        {
-          "n": "switch 5",
           "s": 53
         },
         {
+          "n": "hidden door",
+          "s": 53
+        },
+        {
+          "n": "switch 5",
+          "s": 55
+        },
+        {
           "n": "red key",
-          "s": 60
+          "s": 63
         },
         {
           "n": "blastable wall",
-          "s": 66
+          "s": 68
         },
         {
           "n": "switch 6",
-          "s": 67
+          "s": 78
         },
         {
           "n": "reactor",
-          "s": 71
+          "s": 81
         },
         {
           "n": "exit",
-          "s": 78
+          "s": 90
         }
       ],
-      "total_frames": 4683,
+      "total_frames": 5411,
       "rng_end": {
-        "state": 3609107594,
-        "calls": 3597
+        "state": 1951242631,
+        "calls": 4450
       }
     },
     {
@@ -406,7 +392,7 @@
         },
         {
           "n": "red key",
-          "s": 71
+          "s": 70
         },
         {
           "n": "reactor",
@@ -414,10 +400,10 @@
         },
         {
           "n": "exit",
-          "s": 109
+          "s": 108
         }
       ],
-      "total_frames": 6517,
+      "total_frames": 6499,
       "rng_end": {
         "state": 1430025122,
         "calls": 5205
@@ -439,29 +425,29 @@
         },
         {
           "n": "switch 1",
-          "s": 32
+          "s": 44
         },
         {
           "n": "gold key",
-          "s": 34
+          "s": 52
         },
         {
           "n": "red key",
-          "s": 56
+          "s": 74
         },
         {
           "n": "reactor",
-          "s": 80
+          "s": 99
         },
         {
           "n": "exit",
-          "s": 87
+          "s": 106
         }
       ],
-      "total_frames": 5212,
+      "total_frames": 6343,
       "rng_end": {
-        "state": 999721392,
-        "calls": 2967
+        "state": 2962970728,
+        "calls": 3967
       }
     }
   ]

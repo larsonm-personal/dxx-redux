@@ -36,18 +36,18 @@
         },
         {
           "n": "red key",
-          "s": 32
+          "s": 31
         },
         {
           "n": "reactor",
-          "s": 39
+          "s": 38
         },
         {
           "n": "exit",
-          "s": 44
+          "s": 43
         }
       ],
-      "total_frames": 2614,
+      "total_frames": 2588,
       "rng_end": {
         "state": 3838301999,
         "calls": 1978
@@ -69,7 +69,7 @@
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 14
+          "s": 13
         },
         {
           "n": "red key",
@@ -77,14 +77,14 @@
         },
         {
           "n": "reactor",
-          "s": 29
+          "s": 28
         },
         {
           "n": "exit",
-          "s": 30
+          "s": 29
         }
       ],
-      "total_frames": 1785,
+      "total_frames": 1756,
       "rng_end": {
         "state": 3122105187,
         "calls": 1318
@@ -106,7 +106,7 @@
         },
         {
           "n": "switch 3",
-          "s": 21
+          "s": 22
         },
         {
           "n": "gold key",
@@ -114,13 +114,13 @@
         },
         {
           "n": "red key",
-          "s": 35
+          "s": 36
         }
       ],
-      "total_frames": 2122,
+      "total_frames": 2144,
       "rng_end": {
-        "state": 3114770666,
-        "calls": 2349
+        "state": 1990799756,
+        "calls": 2347
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -148,13 +148,17 @@
         },
         {
           "n": "switch 2",
-          "s": 23
+          "s": 31
+        },
+        {
+          "n": "red key",
+          "s": 35
         }
       ],
-      "total_frames": 1986,
+      "total_frames": 2966,
       "rng_end": {
-        "state": 2089524915,
-        "calls": 3542
+        "state": 1631935361,
+        "calls": 4224
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -174,7 +178,7 @@
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 35
+          "s": 36
         },
         {
           "n": "fly-through 2",
@@ -226,10 +230,10 @@
           "s": 18
         }
       ],
-      "total_frames": 1094,
+      "total_frames": 1089,
       "rng_end": {
-        "state": 3386287052,
-        "calls": 491
+        "state": 3244467800,
+        "calls": 463
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -256,7 +260,7 @@
           "s": 25
         }
       ],
-      "total_frames": 1479,
+      "total_frames": 1488,
       "rng_end": {
         "state": 3251531490,
         "calls": 533
@@ -286,7 +290,7 @@
           "s": 24
         }
       ],
-      "total_frames": 1449,
+      "total_frames": 1448,
       "rng_end": {
         "state": 2987822216,
         "calls": 3807
@@ -317,21 +321,21 @@
         },
         {
           "n": "switch 7",
-          "s": 30
+          "s": 34
         },
         {
           "n": "boss",
-          "s": 49
+          "s": 50
         },
         {
           "n": "exit",
           "s": 73
         }
       ],
-      "total_frames": 4408,
+      "total_frames": 4364,
       "rng_end": {
-        "state": 1483765448,
-        "calls": 5023
+        "state": 627063787,
+        "calls": 4894
       }
     },
     {

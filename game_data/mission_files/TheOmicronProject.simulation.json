@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
+    "ok": 2,
     "failed": 1,
-    "timeout": 3
+    "timeout": 4
   },
   "levels": [
     {
@@ -78,11 +78,11 @@
         },
         {
           "n": "switch 32",
-          "s": 100
+          "s": 111
         },
         {
           "n": "switch 28",
-          "s": 116
+          "s": 115
         },
         {
           "n": "switch 29",
@@ -90,7 +90,7 @@
         },
         {
           "n": "switch 30",
-          "s": 124
+          "s": 123
         },
         {
           "n": "switch 31",
@@ -98,17 +98,17 @@
         },
         {
           "n": "reactor",
-          "s": 146
+          "s": 145
         },
         {
           "n": "exit",
           "s": 148
         }
       ],
-      "total_frames": 8907,
+      "total_frames": 8884,
       "rng_end": {
-        "state": 957553217,
-        "calls": 4032
+        "state": 1476720960,
+        "calls": 4039
       }
     },
     {
@@ -152,66 +152,18 @@
       "level_num": 4,
       "level_file": "omicron.rl2",
       "route_input_sha256": "73E2E4E72B3D0D2D83587A0348F4D167183D892E0B53073E9A351AF84C27550B",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [
-        {
-          "n": "blue key",
-          "s": 12
-        },
-        {
-          "n": "switch 0",
-          "s": 15
-        },
-        {
-          "n": "fly-through 29",
-          "s": 21
-        },
-        {
-          "n": "gold key",
-          "s": 21
-        },
-        {
-          "n": "red key",
-          "s": 34
-        },
-        {
-          "n": "fly-through 1",
-          "s": 42
-        },
-        {
-          "n": "fly-through 7",
-          "s": 52
-        },
-        {
-          "n": "fly-through 10",
-          "s": 57
-        },
-        {
-          "n": "switch 13",
-          "s": 61
-        },
-        {
-          "n": "switch 38",
-          "s": 79
-        },
-        {
-          "n": "reactor",
-          "s": 87
-        },
-        {
-          "n": "exit",
-          "s": 101
-        }
-      ],
-      "total_frames": 6058,
+      "objectives": [],
+      "total_frames": 5535,
       "rng_end": {
-        "state": 673297923,
-        "calls": 3718
-      }
+        "state": 1090693511,
+        "calls": 354
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 5,
@@ -232,7 +184,7 @@
           "s": 33
         }
       ],
-      "total_frames": 6279,
+      "total_frames": 6278,
       "rng_end": {
         "state": 1443370903,
         "calls": 1618
@@ -251,14 +203,14 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 5
+          "s": 6
         },
         {
           "n": "blue key",
-          "s": 13
+          "s": 14
         }
       ],
-      "total_frames": 6863,
+      "total_frames": 6857,
       "rng_end": {
         "state": 2962490616,
         "calls": 1199

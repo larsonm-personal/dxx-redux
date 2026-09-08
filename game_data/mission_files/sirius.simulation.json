@@ -8,8 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
-    "timeout": 1
+    "ok": 1,
+    "timeout": 2
   },
   "levels": [
     {
@@ -35,7 +35,7 @@
           "s": 58
         }
       ],
-      "total_frames": 3488,
+      "total_frames": 3484,
       "rng_end": {
         "state": 995405759,
         "calls": 42
@@ -45,7 +45,7 @@
       "level_num": 2,
       "level_file": "sirius2.rdl",
       "route_input_sha256": "6F6F964CA26E4B7915CB6ECF43F1DDC69DC5D536EB0528E8F0358E7C95BC27B5",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -54,29 +54,14 @@
         {
           "n": "blue key",
           "s": 18
-        },
-        {
-          "n": "gold key",
-          "s": 51
-        },
-        {
-          "n": "red key",
-          "s": 74
-        },
-        {
-          "n": "reactor",
-          "s": 99
-        },
-        {
-          "n": "exit",
-          "s": 107
         }
       ],
-      "total_frames": 6395,
+      "total_frames": 6462,
       "rng_end": {
-        "state": 1447624116,
-        "calls": 99
-      }
+        "state": 835903122,
+        "calls": 37
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 3,
@@ -97,7 +82,7 @@
           "s": 28
         }
       ],
-      "total_frames": 6686,
+      "total_frames": 6691,
       "rng_end": {
         "state": 995405759,
         "calls": 42

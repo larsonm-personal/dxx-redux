@@ -22,17 +22,17 @@
       "objectives": [
         {
           "n": "reactor",
-          "s": 3
+          "s": 2
         },
         {
           "n": "red key",
-          "s": 13
+          "s": 12
         }
       ],
       "total_frames": 6001,
       "rng_end": {
-        "state": 18278786,
-        "calls": 67573
+        "state": 4067032669,
+        "calls": 68580
       },
       "problem": "route confirmation exceeded 100-second simulation budget"
     },
@@ -48,21 +48,21 @@
       "objectives": [
         {
           "n": "reactor",
-          "s": 6
+          "s": 7
         },
         {
           "n": "blue key",
-          "s": 20
+          "s": 21
         },
         {
           "n": "red key",
-          "s": 38
+          "s": 40
         }
       ],
       "total_frames": 10081,
       "rng_end": {
-        "state": 2661823460,
-        "calls": 108659
+        "state": 1602365128,
+        "calls": 107423
       },
       "problem": "route confirmation exceeded 168-second simulation budget"
     },
@@ -86,13 +86,13 @@
         },
         {
           "n": "gold key",
-          "s": 58
+          "s": 59
         }
       ],
       "total_frames": 12481,
       "rng_end": {
-        "state": 1495926319,
-        "calls": 141498
+        "state": 2745277109,
+        "calls": 140364
       },
       "problem": "route confirmation exceeded 208-second simulation budget"
     },
@@ -116,13 +116,13 @@
         },
         {
           "n": "gold key",
-          "s": 45
+          "s": 47
         }
       ],
       "total_frames": 10921,
       "rng_end": {
-        "state": 90312273,
-        "calls": 108592
+        "state": 3539735058,
+        "calls": 107173
       },
       "problem": "route confirmation exceeded 182-second simulation budget"
     },
@@ -135,30 +135,13 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [
-        {
-          "n": "reactor",
-          "s": 5
-        },
-        {
-          "n": "blue key",
-          "s": 17
-        },
-        {
-          "n": "gold key",
-          "s": 32
-        },
-        {
-          "n": "destroy robot carrying red key",
-          "s": 54
-        }
-      ],
-      "total_frames": 11521,
+      "objectives": [],
+      "total_frames": 4067,
       "rng_end": {
-        "state": 1465214495,
-        "calls": 117706
+        "state": 3720683301,
+        "calls": 92
       },
-      "problem": "route confirmation exceeded 192-second simulation budget"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 6,
@@ -189,8 +172,8 @@
       ],
       "total_frames": 12721,
       "rng_end": {
-        "state": 1854210293,
-        "calls": 136204
+        "state": 1099004410,
+        "calls": 136029
       },
       "problem": "route confirmation exceeded 212-second simulation budget"
     },

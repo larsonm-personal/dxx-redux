@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
+    "ok": 2,
     "failed": 2,
-    "timeout": 1
+    "timeout": 3
   },
   "levels": [
     {
@@ -31,7 +31,7 @@
           "s": 36
         }
       ],
-      "total_frames": 3148,
+      "total_frames": 3150,
       "rng_end": {
         "state": 3061904516,
         "calls": 851
@@ -62,11 +62,11 @@
         },
         {
           "n": "switch 3",
-          "s": 74
+          "s": 114
         },
         {
           "n": "red key",
-          "s": 128
+          "s": 127
         },
         {
           "n": "boss",
@@ -74,20 +74,20 @@
         },
         {
           "n": "exit",
-          "s": 190
+          "s": 189
         }
       ],
-      "total_frames": 11394,
+      "total_frames": 11352,
       "rng_end": {
-        "state": 3128173454,
-        "calls": 7993
+        "state": 3733653385,
+        "calls": 7992
       }
     },
     {
       "level_num": 3,
       "level_file": "JUNO03.RL2",
       "route_input_sha256": "532C12AFD7EE09D53FD167D5E897AE4B2F55787CD0FD2294C1ECFAC7D5823C6C",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -95,7 +95,7 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 35
+          "s": 34
         },
         {
           "n": "blue key",
@@ -103,32 +103,21 @@
         },
         {
           "n": "gold key",
-          "s": 76
-        },
-        {
-          "n": "red key",
-          "s": 101
-        },
-        {
-          "n": "reactor",
-          "s": 117
-        },
-        {
-          "n": "exit",
-          "s": 130
+          "s": 78
         }
       ],
-      "total_frames": 7816,
+      "total_frames": 9332,
       "rng_end": {
-        "state": 4069126410,
-        "calls": 5005
-      }
+        "state": 3965243816,
+        "calls": 2367
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 4,
       "level_file": "VESTA04.RL2",
       "route_input_sha256": "319513900C4CA30C1BFC586269BAD8E923972A4C1E467696D39941C2EF1E7F5C",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -140,34 +129,31 @@
         },
         {
           "n": "blue key",
-          "s": 30
+          "s": 28
         },
         {
           "n": "gold key",
-          "s": 72
+          "s": 70
         },
         {
           "n": "switch 24",
-          "s": 85
+          "s": 122
         },
         {
           "n": "red key",
-          "s": 119
+          "s": 129
         },
         {
           "n": "reactor",
-          "s": 165
-        },
-        {
-          "n": "exit",
-          "s": 190
+          "s": 174
         }
       ],
-      "total_frames": 11372,
+      "total_frames": 14189,
       "rng_end": {
-        "state": 3571234894,
-        "calls": 7545
-      }
+        "state": 1194807954,
+        "calls": 7205
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 5,
@@ -204,7 +190,7 @@
           "s": 82
         }
       ],
-      "total_frames": 4890,
+      "total_frames": 4893,
       "rng_end": {
         "state": 4120562848,
         "calls": 1767
@@ -255,7 +241,7 @@
           "s": 22
         }
       ],
-      "total_frames": 1331,
+      "total_frames": 1338,
       "rng_end": {
         "state": 1889721200,
         "calls": 727

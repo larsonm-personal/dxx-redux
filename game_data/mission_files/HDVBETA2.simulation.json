@@ -24,7 +24,7 @@
       "objectives": [
         {
           "n": "red key",
-          "s": 22
+          "s": 23
         },
         {
           "n": "reactor",
@@ -35,7 +35,7 @@
           "s": 45
         }
       ],
-      "total_frames": 2700,
+      "total_frames": 2716,
       "rng_end": {
         "state": 1775811865,
         "calls": 40
@@ -51,7 +51,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 1039,
+      "total_frames": 1065,
       "rng_end": {
         "state": 2937909499,
         "calls": 14
@@ -93,7 +93,7 @@
           "s": 82
         }
       ],
-      "total_frames": 4918,
+      "total_frames": 4920,
       "rng_end": {
         "state": 3356693560,
         "calls": 111

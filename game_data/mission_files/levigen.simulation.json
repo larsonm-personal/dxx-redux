@@ -28,21 +28,21 @@
         },
         {
           "n": "switch 1",
-          "s": 44
+          "s": 53
         },
         {
           "n": "reactor",
-          "s": 46
+          "s": 54
         },
         {
           "n": "exit",
-          "s": 58
+          "s": 72
         }
       ],
-      "total_frames": 3497,
+      "total_frames": 4334,
       "rng_end": {
-        "state": 1267393223,
-        "calls": 3106
+        "state": 1899944591,
+        "calls": 3674
       }
     },
     {
@@ -65,29 +65,29 @@
         },
         {
           "n": "switch 2",
-          "s": 56
+          "s": 68
         },
         {
           "n": "red key",
-          "s": 74
+          "s": 80
         },
         {
           "n": "switch 0",
-          "s": 79
+          "s": 106
         },
         {
           "n": "reactor",
-          "s": 110
+          "s": 124
         },
         {
           "n": "exit",
-          "s": 149
+          "s": 164
         }
       ],
-      "total_frames": 8950,
+      "total_frames": 9856,
       "rng_end": {
-        "state": 883495021,
-        "calls": 5972
+        "state": 1916247989,
+        "calls": 5964
       }
     },
     {
@@ -106,13 +106,13 @@
         },
         {
           "n": "switch 14",
-          "s": 22
+          "s": 38
         }
       ],
-      "total_frames": 8472,
+      "total_frames": 15190,
       "rng_end": {
-        "state": 1927364921,
-        "calls": 1288
+        "state": 1826253323,
+        "calls": 1278
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -150,18 +150,18 @@
       "objectives": [
         {
           "n": "switch 0",
-          "s": 38
+          "s": 11
         },
         {
           "n": "fly-through 11",
-          "s": 48
+          "s": 22
         },
         {
           "n": "blue key",
-          "s": 52
+          "s": 25
         }
       ],
-      "total_frames": 7460,
+      "total_frames": 7387,
       "rng_end": {
         "state": 1601123481,
         "calls": 1192
@@ -184,51 +184,51 @@
         },
         {
           "n": "switch 8",
-          "s": 23
+          "s": 35
         },
         {
           "n": "red key",
-          "s": 45
+          "s": 59
         },
         {
           "n": "switch 4",
-          "s": 48
+          "s": 92
         },
         {
           "n": "fly-through 13",
-          "s": 84
+          "s": 103
         },
         {
           "n": "switch 1",
-          "s": 89
+          "s": 106
         },
         {
           "n": "switch 16",
-          "s": 96
+          "s": 113
         },
         {
           "n": "switch 11",
-          "s": 99
+          "s": 117
         },
         {
           "n": "reactor",
-          "s": 102
+          "s": 120
         },
         {
           "n": "exit",
-          "s": 121
+          "s": 138
         }
       ],
-      "total_frames": 7239,
+      "total_frames": 8298,
       "rng_end": {
-        "state": 1533542378,
-        "calls": 5677
+        "state": 1142731099,
+        "calls": 6062
       }
     },
     {
       "level_num": 7,
       "level_file": "lvn-ion.rl2",
-      "route_input_sha256": "5BFD49B97BAD7EFAF5CDB662FB7BBD4BC384FA02D436C58FCFB5877EABEBFB80",
+      "route_input_sha256": "613AFC0D0BDEAD2A67A263BF8A6D76070E9BD64A108870EF35B0DAA502EB72A6",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -240,30 +240,34 @@
           "s": 11
         },
         {
+          "n": "open door",
+          "s": 21
+        },
+        {
           "n": "switch 1",
-          "s": 20
+          "s": 21
         },
         {
           "n": "gold key",
-          "s": 25
+          "s": 26
         },
         {
           "n": "red key",
-          "s": 34
+          "s": 35
         },
         {
           "n": "reactor",
-          "s": 45
+          "s": 44
         },
         {
           "n": "exit",
-          "s": 55
+          "s": 54
         }
       ],
-      "total_frames": 3327,
+      "total_frames": 3260,
       "rng_end": {
-        "state": 125488981,
-        "calls": 1708
+        "state": 1043665322,
+        "calls": 1901
       }
     },
     {
@@ -289,7 +293,7 @@
           "s": 71
         }
       ],
-      "total_frames": 10434,
+      "total_frames": 10435,
       "rng_end": {
         "state": 2045274099,
         "calls": 3222
@@ -316,7 +320,7 @@
         },
         {
           "n": "switch 0",
-          "s": 43
+          "s": 47
         },
         {
           "n": "gold key",
@@ -328,29 +332,29 @@
         },
         {
           "n": "switch 8",
-          "s": 73
+          "s": 93
         },
         {
           "n": "switch 9",
-          "s": 73
+          "s": 118
         },
         {
           "n": "reactor",
-          "s": 89
+          "s": 125
         },
         {
           "n": "switch 5",
-          "s": 116
+          "s": 153
         },
         {
           "n": "exit",
-          "s": 157
+          "s": 193
         }
       ],
-      "total_frames": 9392,
+      "total_frames": 11581,
       "rng_end": {
-        "state": 3407862719,
-        "calls": 5162
+        "state": 1143920096,
+        "calls": 6311
       }
     }
   ]

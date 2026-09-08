@@ -8,9 +8,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 6,
+    "ok": 5,
     "failed": 1,
-    "timeout": 4
+    "timeout": 5
   },
   "levels": [
     {
@@ -44,7 +44,7 @@
           "s": 76
         }
       ],
-      "total_frames": 4555,
+      "total_frames": 4540,
       "rng_end": {
         "state": 3269224778,
         "calls": 77
@@ -81,7 +81,7 @@
           "s": 74
         }
       ],
-      "total_frames": 4451,
+      "total_frames": 4455,
       "rng_end": {
         "state": 3821532770,
         "calls": 149
@@ -99,10 +99,10 @@
       "objectives": [
         {
           "n": "destroy robot carrying blue key",
-          "s": 7
+          "s": 6
         }
       ],
-      "total_frames": 5166,
+      "total_frames": 4702,
       "rng_end": {
         "state": 1964990155,
         "calls": 62
@@ -124,10 +124,10 @@
           "s": 9
         }
       ],
-      "total_frames": 5061,
+      "total_frames": 4972,
       "rng_end": {
-        "state": 2473755763,
-        "calls": 22
+        "state": 3008955749,
+        "calls": 28
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -174,7 +174,7 @@
           "s": 95
         }
       ],
-      "total_frames": 5697,
+      "total_frames": 5693,
       "rng_end": {
         "state": 2805861856,
         "calls": 167
@@ -195,10 +195,10 @@
           "s": 5
         }
       ],
-      "total_frames": 9164,
+      "total_frames": 5512,
       "rng_end": {
-        "state": 744964398,
-        "calls": 25
+        "state": 2102736524,
+        "calls": 43
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -206,50 +206,18 @@
       "level_num": 7,
       "level_file": "alpha-h.rdl",
       "route_input_sha256": "7F09D046DDA137C1D4ADB97C13FBCDDAE73D274CA8FF1417F1F9269A092E3440",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [
-        {
-          "n": "blue key",
-          "s": 25
-        },
-        {
-          "n": "destroy robot carrying gold key",
-          "s": 43
-        },
-        {
-          "n": "hidden door",
-          "s": 94
-        },
-        {
-          "n": "hidden door",
-          "s": 95
-        },
-        {
-          "n": "hidden door",
-          "s": 96
-        },
-        {
-          "n": "red key",
-          "s": 99
-        },
-        {
-          "n": "reactor",
-          "s": 152
-        },
-        {
-          "n": "exit",
-          "s": 160
-        }
-      ],
-      "total_frames": 9624,
+      "objectives": [],
+      "total_frames": 4952,
       "rng_end": {
-        "state": 1694224903,
-        "calls": 226
-      }
+        "state": 2937909499,
+        "calls": 14
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 8,
@@ -279,7 +247,7 @@
         },
         {
           "n": "fly-through 1",
-          "s": 106
+          "s": 107
         },
         {
           "n": "reactor",
@@ -287,13 +255,13 @@
         },
         {
           "n": "exit",
-          "s": 123
+          "s": 124
         }
       ],
-      "total_frames": 7366,
+      "total_frames": 7423,
       "rng_end": {
-        "state": 4264971915,
-        "calls": 126
+        "state": 3549428584,
+        "calls": 127
       }
     },
     {
@@ -341,13 +309,13 @@
         },
         {
           "n": "exit",
-          "s": 84
+          "s": 85
         }
       ],
-      "total_frames": 5061,
+      "total_frames": 5082,
       "rng_end": {
-        "state": 2916751166,
-        "calls": 73
+        "state": 916896761,
+        "calls": 72
       }
     },
     {
