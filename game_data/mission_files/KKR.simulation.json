@@ -7,9 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
+    "ok": 3,
     "failed": 1,
-    "timeout": 1,
     "unsupported": 2
   },
   "levels": [
@@ -69,8 +68,8 @@
     {
       "level_num": 2,
       "level_file": "kk2.rl2",
-      "route_input_sha256": "03AABEE5470F4C6B49BE65B379ED3AA3B92AF22CD88704D783E7B7149F12D7B2",
-      "status": "timeout",
+      "route_input_sha256": "1412FD26A2BEA91C4CC7EE577B99E38853BBC9F1645D83458B3572219E8C4AC8",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -93,16 +92,43 @@
           "s": 23
         },
         {
+          "n": "blastable wall",
+          "s": 39
+        },
+        {
           "n": "switch 5",
-          "s": 23
+          "s": 41
+        },
+        {
+          "n": "gold key",
+          "s": 43
+        },
+        {
+          "n": "switch 16",
+          "s": 45
+        },
+        {
+          "n": "red key",
+          "s": 63
+        },
+        {
+          "n": "switch 4",
+          "s": 63
+        },
+        {
+          "n": "reactor",
+          "s": 81
+        },
+        {
+          "n": "exit",
+          "s": 92
         }
       ],
-      "total_frames": 2320,
+      "total_frames": 5516,
       "rng_end": {
-        "state": 2844797405,
-        "calls": 1124
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 2719835267,
+        "calls": 4102
+      }
     },
     {
       "level_num": 3,

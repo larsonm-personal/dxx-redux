@@ -1021,6 +1021,33 @@
           },
           {
             "index": 4,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 99,
+            "side": 0,
+            "wall": 80,
+            "label_pos": {
+              "x": -56.9,
+              "y": 11.0,
+              "z": 30.0
+            },
+            "distance": 174.6,
+            "opens": [
+              {
+                "seg": 99,
+                "side": 0,
+                "wall": 80
+              },
+              {
+                "seg": 370,
+                "side": 2,
+                "wall": 79
+              }
+            ]
+          },
+          {
+            "index": 5,
             "kind": "trigger",
             "activation_kind": "pass_through_trigger",
             "label": "Pass through trigger 1",
@@ -1032,7 +1059,7 @@
               "y": 11.0,
               "z": 30.0
             },
-            "distance": 212.1,
+            "distance": 37.5,
             "trigger": 1,
             "trigger_type_id": 1,
             "trigger_type": "toggle_door",
@@ -1041,33 +1068,6 @@
                 "seg": 97,
                 "side": 3,
                 "wall": 84
-              }
-            ]
-          },
-          {
-            "index": 5,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 370,
-            "side": 2,
-            "wall": 79,
-            "label_pos": {
-              "x": -56.9,
-              "y": 11.0,
-              "z": 30.0
-            },
-            "distance": 10.0,
-            "opens": [
-              {
-                "seg": 370,
-                "side": 2,
-                "wall": 79
-              },
-              {
-                "seg": 99,
-                "side": 0,
-                "wall": 80
               }
             ]
           },
@@ -1084,7 +1084,7 @@
               "y": -9.0,
               "z": -30.0
             },
-            "distance": 290.5,
+            "distance": 300.5,
             "opens": [
               {
                 "seg": 375,

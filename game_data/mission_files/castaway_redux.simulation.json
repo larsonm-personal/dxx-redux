@@ -7,9 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
+    "ok": 5,
     "failed": 1,
-    "timeout": 1,
     "unsupported": 1,
     "route_mismatch": 3
   },
@@ -527,8 +526,8 @@
     {
       "level_num": -1,
       "level_file": "devoured.rl2",
-      "route_input_sha256": "CB3134DFB32BFE677B8A645A80A5468D60B2A624746CFF487E4D1EAFFE281F66",
-      "status": "timeout",
+      "route_input_sha256": "CBDA14055DB68D16379CC94B0F55A2CDBC44A5459C9AA0A2BD01E50BF0E0C7E4",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -545,14 +544,41 @@
         {
           "n": "switch 16",
           "s": 13
+        },
+        {
+          "n": "blastable wall",
+          "s": 22
+        },
+        {
+          "n": "fly-through 9",
+          "s": 24
+        },
+        {
+          "n": "switch 8",
+          "s": 27
+        },
+        {
+          "n": "switch 3",
+          "s": 45
+        },
+        {
+          "n": "switch 2",
+          "s": 48
+        },
+        {
+          "n": "reactor",
+          "s": 57
+        },
+        {
+          "n": "exit",
+          "s": 69
         }
       ],
-      "total_frames": 1729,
+      "total_frames": 4145,
       "rng_end": {
-        "state": 3260609084,
-        "calls": 699
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 3608215435,
+        "calls": 3966
+      }
     }
   ]
 }

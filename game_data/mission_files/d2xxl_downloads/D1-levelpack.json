@@ -3321,6 +3321,33 @@
           },
           {
             "index": 1,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 260,
+            "side": 2,
+            "wall": 51,
+            "label_pos": {
+              "x": -13.5,
+              "y": 264.0,
+              "z": 14.0
+            },
+            "distance": 612.1,
+            "opens": [
+              {
+                "seg": 260,
+                "side": 2,
+                "wall": 51
+              },
+              {
+                "seg": 259,
+                "side": 0,
+                "wall": 49
+              }
+            ]
+          },
+          {
+            "index": 2,
             "kind": "trigger",
             "activation_kind": "pass_through_trigger",
             "label": "Pass through trigger 50",
@@ -3332,7 +3359,7 @@
               "y": 303.8,
               "z": 17.0
             },
-            "distance": 663.2,
+            "distance": 51.1,
             "trigger": 50,
             "trigger_type_id": 1,
             "trigger_type": "toggle_door",
@@ -3350,33 +3377,6 @@
             ]
           },
           {
-            "index": 2,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 259,
-            "side": 0,
-            "wall": 49,
-            "label_pos": {
-              "x": -13.5,
-              "y": 264.0,
-              "z": 14.0
-            },
-            "distance": 30.0,
-            "opens": [
-              {
-                "seg": 259,
-                "side": 0,
-                "wall": 49
-              },
-              {
-                "seg": 260,
-                "side": 2,
-                "wall": 51
-              }
-            ]
-          },
-          {
             "index": 3,
             "kind": "trigger",
             "activation_kind": "pass_through_trigger",
@@ -3389,7 +3389,7 @@
               "y": -192.0,
               "z": 257.0
             },
-            "distance": 678.3,
+            "distance": 708.3,
             "trigger": 51,
             "trigger_type_id": 1,
             "trigger_type": "toggle_door",
@@ -4994,6 +4994,249 @@
           },
           {
             "index": 1,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 790,
+            "side": 5,
+            "wall": 69,
+            "label_pos": {
+              "x": -34.4,
+              "y": 1.2,
+              "z": 180.5
+            },
+            "distance": 163.2,
+            "opens": [
+              {
+                "seg": 790,
+                "side": 5,
+                "wall": 69
+              },
+              {
+                "seg": 697,
+                "side": 0,
+                "wall": 68
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 701,
+            "side": 2,
+            "wall": 39,
+            "label_pos": {
+              "x": -36.7,
+              "y": 1.5,
+              "z": 182.6
+            },
+            "distance": 10.3,
+            "opens": [
+              {
+                "seg": 701,
+                "side": 2,
+                "wall": 39
+              },
+              {
+                "seg": 700,
+                "side": 0,
+                "wall": 37
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 700,
+            "side": 2,
+            "wall": 38,
+            "label_pos": {
+              "x": -37.9,
+              "y": -0.2,
+              "z": 184.1
+            },
+            "distance": 1.7,
+            "opens": [
+              {
+                "seg": 700,
+                "side": 2,
+                "wall": 38
+              },
+              {
+                "seg": 699,
+                "side": 0,
+                "wall": 35
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 699,
+            "side": 2,
+            "wall": 36,
+            "label_pos": {
+              "x": -39.6,
+              "y": -0.3,
+              "z": 185.2
+            },
+            "distance": 2.2,
+            "opens": [
+              {
+                "seg": 699,
+                "side": 2,
+                "wall": 36
+              },
+              {
+                "seg": 698,
+                "side": 0,
+                "wall": 34
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 706,
+            "side": 5,
+            "wall": 41,
+            "label_pos": {
+              "x": -112.1,
+              "y": 1.0,
+              "z": 292.4
+            },
+            "distance": 136.7,
+            "opens": [
+              {
+                "seg": 706,
+                "side": 5,
+                "wall": 41
+              },
+              {
+                "seg": 708,
+                "side": 2,
+                "wall": 42
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 710,
+            "side": 0,
+            "wall": 43,
+            "label_pos": {
+              "x": -82.5,
+              "y": 1.0,
+              "z": 304.7
+            },
+            "distance": 39.0,
+            "opens": [
+              {
+                "seg": 710,
+                "side": 0,
+                "wall": 43
+              },
+              {
+                "seg": 711,
+                "side": 2,
+                "wall": 45
+              }
+            ]
+          },
+          {
+            "index": 7,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 711,
+            "side": 0,
+            "wall": 44,
+            "label_pos": {
+              "x": -80.7,
+              "y": 1.0,
+              "z": 305.4
+            },
+            "distance": 4.0,
+            "opens": [
+              {
+                "seg": 711,
+                "side": 0,
+                "wall": 44
+              },
+              {
+                "seg": 712,
+                "side": 2,
+                "wall": 47
+              }
+            ]
+          },
+          {
+            "index": 8,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 712,
+            "side": 0,
+            "wall": 46,
+            "label_pos": {
+              "x": -79.4,
+              "y": 1.5,
+              "z": 307.6
+            },
+            "distance": 2.2,
+            "opens": [
+              {
+                "seg": 712,
+                "side": 0,
+                "wall": 46
+              },
+              {
+                "seg": 713,
+                "side": 2,
+                "wall": 48
+              }
+            ]
+          },
+          {
+            "index": 9,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 707,
+            "side": 0,
+            "wall": 84,
+            "label_pos": {
+              "x": -76.3,
+              "y": 2.0,
+              "z": 308.5
+            },
+            "distance": 3.3,
+            "opens": [
+              {
+                "seg": 707,
+                "side": 0,
+                "wall": 84
+              },
+              {
+                "seg": 741,
+                "side": 5,
+                "wall": 85
+              }
+            ]
+          },
+          {
+            "index": 10,
             "kind": "trigger",
             "activation_kind": "pass_through_trigger",
             "label": "Pass through trigger 29",
@@ -5005,7 +5248,7 @@
               "y": 2.0,
               "z": 327.0
             },
-            "distance": 439.6,
+            "distance": 77.1,
             "trigger": 29,
             "trigger_type_id": 1,
             "trigger_type": "toggle_door",
@@ -5023,7 +5266,7 @@
             ]
           },
           {
-            "index": 2,
+            "index": 11,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "blue key",
@@ -5037,249 +5280,6 @@
             "key": "blue"
           },
           {
-            "index": 3,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 741,
-            "side": 5,
-            "wall": 85,
-            "label_pos": {
-              "x": -76.3,
-              "y": 2.0,
-              "z": 308.5
-            },
-            "distance": 858.6,
-            "opens": [
-              {
-                "seg": 741,
-                "side": 5,
-                "wall": 85
-              },
-              {
-                "seg": 707,
-                "side": 0,
-                "wall": 84
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 713,
-            "side": 2,
-            "wall": 48,
-            "label_pos": {
-              "x": -79.4,
-              "y": 1.5,
-              "z": 307.6
-            },
-            "distance": 12.8,
-            "opens": [
-              {
-                "seg": 713,
-                "side": 2,
-                "wall": 48
-              },
-              {
-                "seg": 712,
-                "side": 0,
-                "wall": 46
-              }
-            ]
-          },
-          {
-            "index": 5,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 712,
-            "side": 2,
-            "wall": 47,
-            "label_pos": {
-              "x": -80.7,
-              "y": 1.0,
-              "z": 305.4
-            },
-            "distance": 1.7,
-            "opens": [
-              {
-                "seg": 712,
-                "side": 2,
-                "wall": 47
-              },
-              {
-                "seg": 711,
-                "side": 0,
-                "wall": 44
-              }
-            ]
-          },
-          {
-            "index": 6,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 711,
-            "side": 2,
-            "wall": 45,
-            "label_pos": {
-              "x": -82.5,
-              "y": 1.0,
-              "z": 304.7
-            },
-            "distance": 2.2,
-            "opens": [
-              {
-                "seg": 711,
-                "side": 2,
-                "wall": 45
-              },
-              {
-                "seg": 710,
-                "side": 0,
-                "wall": 43
-              }
-            ]
-          },
-          {
-            "index": 7,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 708,
-            "side": 2,
-            "wall": 42,
-            "label_pos": {
-              "x": -112.1,
-              "y": 1.0,
-              "z": 292.4
-            },
-            "distance": 32.0,
-            "opens": [
-              {
-                "seg": 708,
-                "side": 2,
-                "wall": 42
-              },
-              {
-                "seg": 706,
-                "side": 5,
-                "wall": 41
-              }
-            ]
-          },
-          {
-            "index": 8,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 698,
-            "side": 0,
-            "wall": 34,
-            "label_pos": {
-              "x": -39.6,
-              "y": -0.3,
-              "z": 185.2
-            },
-            "distance": 130.7,
-            "opens": [
-              {
-                "seg": 698,
-                "side": 0,
-                "wall": 34
-              },
-              {
-                "seg": 699,
-                "side": 2,
-                "wall": 36
-              }
-            ]
-          },
-          {
-            "index": 9,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 699,
-            "side": 0,
-            "wall": 35,
-            "label_pos": {
-              "x": -37.9,
-              "y": -0.2,
-              "z": 184.1
-            },
-            "distance": 17.0,
-            "opens": [
-              {
-                "seg": 699,
-                "side": 0,
-                "wall": 35
-              },
-              {
-                "seg": 700,
-                "side": 2,
-                "wall": 38
-              }
-            ]
-          },
-          {
-            "index": 10,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 700,
-            "side": 0,
-            "wall": 37,
-            "label_pos": {
-              "x": -36.7,
-              "y": 1.5,
-              "z": 182.6
-            },
-            "distance": 2.2,
-            "opens": [
-              {
-                "seg": 700,
-                "side": 0,
-                "wall": 37
-              },
-              {
-                "seg": 701,
-                "side": 2,
-                "wall": 39
-              }
-            ]
-          },
-          {
-            "index": 11,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 697,
-            "side": 0,
-            "wall": 68,
-            "label_pos": {
-              "x": -34.4,
-              "y": 1.2,
-              "z": 180.5
-            },
-            "distance": 3.2,
-            "opens": [
-              {
-                "seg": 697,
-                "side": 0,
-                "wall": 68
-              },
-              {
-                "seg": 790,
-                "side": 5,
-                "wall": 69
-              }
-            ]
-          },
-          {
             "index": 12,
             "kind": "key",
             "activation_kind": "pickup_key",
@@ -5290,11 +5290,146 @@
               "y": -182.1,
               "z": 322.1
             },
-            "distance": 1218.6,
+            "distance": 2278.9,
             "key": "gold"
           },
           {
             "index": 13,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 528,
+            "side": 3,
+            "wall": 63,
+            "label_pos": {
+              "x": -184.9,
+              "y": -244.5,
+              "z": 294.1
+            },
+            "distance": 156.0,
+            "opens": [
+              {
+                "seg": 528,
+                "side": 3,
+                "wall": 63
+              },
+              {
+                "seg": 504,
+                "side": 2,
+                "wall": 62
+              }
+            ]
+          },
+          {
+            "index": 14,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 498,
+            "side": 0,
+            "wall": 16,
+            "label_pos": {
+              "x": -289.2,
+              "y": -335.3,
+              "z": 367.4
+            },
+            "distance": 185.9,
+            "opens": [
+              {
+                "seg": 498,
+                "side": 0,
+                "wall": 16
+              },
+              {
+                "seg": 499,
+                "side": 2,
+                "wall": 17
+              }
+            ]
+          },
+          {
+            "index": 15,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 502,
+            "side": 0,
+            "wall": 18,
+            "label_pos": {
+              "x": -289.4,
+              "y": -343.5,
+              "z": 368.3
+            },
+            "distance": 8.1,
+            "opens": [
+              {
+                "seg": 502,
+                "side": 0,
+                "wall": 18
+              },
+              {
+                "seg": 503,
+                "side": 2,
+                "wall": 19
+              }
+            ]
+          },
+          {
+            "index": 16,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 496,
+            "side": 0,
+            "wall": 66,
+            "label_pos": {
+              "x": -288.5,
+              "y": -346.3,
+              "z": 369.3
+            },
+            "distance": 3.2,
+            "opens": [
+              {
+                "seg": 496,
+                "side": 0,
+                "wall": 66
+              },
+              {
+                "seg": 556,
+                "side": 5,
+                "wall": 67
+              }
+            ]
+          },
+          {
+            "index": 17,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 703,
+            "side": 3,
+            "wall": 106,
+            "label_pos": {
+              "x": -105.0,
+              "y": 2.4,
+              "z": 227.9
+            },
+            "distance": 1185.2,
+            "opens": [
+              {
+                "seg": 703,
+                "side": 3,
+                "wall": 106
+              },
+              {
+                "seg": 315,
+                "side": 2,
+                "wall": 107
+              }
+            ]
+          },
+          {
+            "index": 18,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 5",
@@ -5306,7 +5441,7 @@
               "y": 0.4,
               "z": 56.9
             },
-            "distance": 1816.9,
+            "distance": 278.5,
             "trigger": 5,
             "trigger_type_id": 1,
             "trigger_type": "toggle_door",
@@ -5329,7 +5464,7 @@
             ]
           },
           {
-            "index": 14,
+            "index": 19,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -5343,34 +5478,7 @@
             "key": "red"
           },
           {
-            "index": 15,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 315,
-            "side": 2,
-            "wall": 107,
-            "label_pos": {
-              "x": -105.0,
-              "y": 2.4,
-              "z": 227.9
-            },
-            "distance": 393.7,
-            "opens": [
-              {
-                "seg": 315,
-                "side": 2,
-                "wall": 107
-              },
-              {
-                "seg": 703,
-                "side": 3,
-                "wall": 106
-              }
-            ]
-          },
-          {
-            "index": 16,
+            "index": 20,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -5380,10 +5488,10 @@
               "y": -212.0,
               "z": 461.0
             },
-            "distance": 1153.2
+            "distance": 1546.9
           },
           {
-            "index": 17,
+            "index": 21,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

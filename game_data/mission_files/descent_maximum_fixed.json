@@ -1748,6 +1748,33 @@
           },
           {
             "index": 2,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 161,
+            "side": 4,
+            "wall": 34,
+            "label_pos": {
+              "x": 139.6,
+              "y": -13.8,
+              "z": -65.8
+            },
+            "distance": 367.3,
+            "opens": [
+              {
+                "seg": 161,
+                "side": 4,
+                "wall": 34
+              },
+              {
+                "seg": 162,
+                "side": 5,
+                "wall": 35
+              }
+            ]
+          },
+          {
+            "index": 3,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 12",
@@ -1759,7 +1786,7 @@
               "y": 11.2,
               "z": -71.9
             },
-            "distance": 402.3,
+            "distance": 35.0,
             "trigger": 12,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1772,7 +1799,7 @@
             ]
           },
           {
-            "index": 3,
+            "index": 4,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 11",
@@ -1796,7 +1823,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 2",
@@ -1821,7 +1848,7 @@
             ]
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -1835,7 +1862,7 @@
             "key": "red"
           },
           {
-            "index": 6,
+            "index": 7,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -1848,7 +1875,7 @@
             "distance": 523.6
           },
           {
-            "index": 7,
+            "index": 8,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

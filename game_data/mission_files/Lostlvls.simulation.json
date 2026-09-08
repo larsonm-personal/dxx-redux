@@ -288,19 +288,28 @@
     {
       "level_num": 10,
       "level_file": "lost10.rl2",
-      "route_input_sha256": "B2B8C11DFACC8DA0055D47811A3BF65FE071840686254E34F5A0B5B12F079901",
+      "route_input_sha256": "48DA0E0CE04680FC024876CE88D63368EDD4A2320964AC63429873132382F430",
       "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 941,
+      "objectives": [
+        {
+          "n": "blastable wall",
+          "s": 14
+        },
+        {
+          "n": "switch 4",
+          "s": 14
+        }
+      ],
+      "total_frames": 4642,
       "rng_end": {
-        "state": 1897087126,
-        "calls": 465
+        "state": 1629449008,
+        "calls": 1047
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 11,

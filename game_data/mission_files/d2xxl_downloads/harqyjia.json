@@ -391,6 +391,33 @@
           },
           {
             "index": 10,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 637,
+            "side": 2,
+            "wall": 214,
+            "label_pos": {
+              "x": 15.3,
+              "y": -157.7,
+              "z": -633.9
+            },
+            "distance": 1993.3,
+            "opens": [
+              {
+                "seg": 637,
+                "side": 2,
+                "wall": 214
+              },
+              {
+                "seg": 638,
+                "side": 0,
+                "wall": 213
+              }
+            ]
+          },
+          {
+            "index": 11,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 34",
@@ -402,7 +429,7 @@
               "y": -153.9,
               "z": -647.7
             },
-            "distance": 2013.3,
+            "distance": 20.0,
             "trigger": 34,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -460,7 +487,7 @@
             ]
           },
           {
-            "index": 11,
+            "index": 12,
             "kind": "trigger",
             "activation_kind": "pass_through_trigger",
             "label": "Pass through trigger 53",
@@ -490,33 +517,6 @@
             ]
           },
           {
-            "index": 12,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 638,
-            "side": 0,
-            "wall": 213,
-            "label_pos": {
-              "x": 15.3,
-              "y": -157.7,
-              "z": -633.9
-            },
-            "distance": 10.0,
-            "opens": [
-              {
-                "seg": 638,
-                "side": 0,
-                "wall": 213
-              },
-              {
-                "seg": 637,
-                "side": 2,
-                "wall": 214
-              }
-            ]
-          },
-          {
             "index": 13,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
@@ -529,7 +529,7 @@
               "y": -68.9,
               "z": -555.1
             },
-            "distance": 188.1,
+            "distance": 198.1,
             "opens": [
               {
                 "seg": 594,

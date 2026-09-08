@@ -9114,6 +9114,33 @@
           },
           {
             "index": 1,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 299,
+            "side": 5,
+            "wall": 20,
+            "label_pos": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 70.0
+            },
+            "distance": 60.0,
+            "opens": [
+              {
+                "seg": 299,
+                "side": 5,
+                "wall": 20
+              },
+              {
+                "seg": 297,
+                "side": 5,
+                "wall": 21
+              }
+            ]
+          },
+          {
+            "index": 2,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 3",
@@ -9125,7 +9152,7 @@
               "y": 30.0,
               "z": 120.0
             },
-            "distance": 281.2,
+            "distance": 221.2,
             "trigger": 3,
             "trigger_type_id": 1,
             "trigger_type": "toggle_door",
@@ -9138,7 +9165,7 @@
             ]
           },
           {
-            "index": 2,
+            "index": 3,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -9152,7 +9179,7 @@
             "key": "gold"
           },
           {
-            "index": 3,
+            "index": 4,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -9166,7 +9193,7 @@
             "key": "red"
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "blue key",
@@ -9180,7 +9207,7 @@
             "key": "blue"
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -9191,33 +9218,6 @@
               "z": 131.7
             },
             "distance": 1601.1
-          },
-          {
-            "index": 6,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 297,
-            "side": 5,
-            "wall": 21,
-            "label_pos": {
-              "x": 0.0,
-              "y": 0.0,
-              "z": 70.0
-            },
-            "distance": 813.4,
-            "opens": [
-              {
-                "seg": 297,
-                "side": 5,
-                "wall": 21
-              },
-              {
-                "seg": 299,
-                "side": 5,
-                "wall": 20
-              }
-            ]
           },
           {
             "index": 7,
@@ -9231,7 +9231,7 @@
               "y": 57.0,
               "z": -250.0
             },
-            "distance": 344.7
+            "distance": 1158.1
           }
         ]
       }

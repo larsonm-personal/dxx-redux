@@ -8,9 +8,9 @@
     "seed": 1,
     "status": "partial",
     "level_counts": {
-      "ok": 27,
+      "ok": 28,
       "failed": 1,
-      "timeout": 2
+      "timeout": 1
     },
     "levels": [
       {
@@ -427,8 +427,8 @@
       {
         "level_num": 11,
         "level_file": "psx11.rl2",
-        "route_input_sha256": "9489702DFF9729880A104BD5ADB2759081E72013385EF14DA5F514520C58B6B2",
-        "status": "timeout",
+        "route_input_sha256": "575364384321705CEC61AFFF5659DB4943D22FD197E8B0FBFFE38407B88C5F01",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -437,14 +437,41 @@
           {
             "n": "switch 7",
             "s": 1
+          },
+          {
+            "n": "blastable wall",
+            "s": 6
+          },
+          {
+            "n": "fly-through 12",
+            "s": 7
+          },
+          {
+            "n": "switch 11",
+            "s": 10
+          },
+          {
+            "n": "switch 2",
+            "s": 11
+          },
+          {
+            "n": "red key",
+            "s": 15
+          },
+          {
+            "n": "reactor",
+            "s": 20
+          },
+          {
+            "n": "exit",
+            "s": 24
           }
         ],
-        "total_frames": 1055,
+        "total_frames": 1413,
         "rng_end": {
-          "state": 1187663298,
-          "calls": 181
-        },
-        "problem": "physical route frontier did not open after 8 interaction attempts"
+          "state": 1217996431,
+          "calls": 602
+        }
       },
       {
         "level_num": 12,

@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 9,
+    "ok": 10,
     "failed": 2,
-    "timeout": 8
+    "timeout": 7
   },
   "levels": [
     {
@@ -37,7 +37,7 @@
     {
       "level_num": 2,
       "level_file": "polrav.rl2",
-      "route_input_sha256": "59244C700B28A94CD32D475428883A3613D108979BE7B6388E8BC62FFFA1BCD1",
+      "route_input_sha256": "1982DD633BD705ECF0DE8D45988211EF66794D4E29638B7A8B0E2605DD9E725A",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -45,35 +45,35 @@
       },
       "objectives": [
         {
-          "n": "pass-through 1",
-          "s": 10
+          "n": "blastable wall",
+          "s": 7
         },
         {
-          "n": "blastable wall",
-          "s": 10
+          "n": "pass-through 1",
+          "s": 7
         },
         {
           "n": "blue key",
-          "s": 18
+          "s": 15
         },
         {
           "n": "gold key",
-          "s": 44
+          "s": 40
         },
         {
           "n": "red key",
-          "s": 81
+          "s": 77
         },
         {
           "n": "reactor",
-          "s": 97
+          "s": 94
         },
         {
           "n": "exit",
-          "s": 111
+          "s": 107
         }
       ],
-      "total_frames": 6633,
+      "total_frames": 6407,
       "rng_end": {
         "state": 3426037612,
         "calls": 4555
@@ -567,19 +567,43 @@
     {
       "level_num": 18,
       "level_file": "unnil.rl2",
-      "route_input_sha256": "A7A20AF3B1F64C8FDFE191189C31636309999B995F91CD65B5B22BAD3487BDDB",
-      "status": "timeout",
+      "route_input_sha256": "862BD35FCFA5F506CC9F0E4FF1D251AADD387F7349A722E80AC59D8990DA93A7",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 1045,
+      "objectives": [
+        {
+          "n": "blastable wall",
+          "s": 9
+        },
+        {
+          "n": "switch 1",
+          "s": 17
+        },
+        {
+          "n": "gold key",
+          "s": 23
+        },
+        {
+          "n": "red key",
+          "s": 41
+        },
+        {
+          "n": "boss",
+          "s": 61
+        },
+        {
+          "n": "exit",
+          "s": 84
+        }
+      ],
+      "total_frames": 5029,
       "rng_end": {
-        "state": 3863712643,
-        "calls": 262
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 4189441913,
+        "calls": 2248
+      }
     },
     {
       "level_num": 19,

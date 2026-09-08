@@ -1802,6 +1802,33 @@
           },
           {
             "index": 1,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 405,
+            "side": 5,
+            "wall": 85,
+            "label_pos": {
+              "x": 323.0,
+              "y": -55.7,
+              "z": 90.1
+            },
+            "distance": 1043.0,
+            "opens": [
+              {
+                "seg": 405,
+                "side": 5,
+                "wall": 85
+              },
+              {
+                "seg": 406,
+                "side": 4,
+                "wall": 84
+              }
+            ]
+          },
+          {
+            "index": 2,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 4",
@@ -1813,7 +1840,7 @@
               "y": -61.0,
               "z": 132.8
             },
-            "distance": 1085.9,
+            "distance": 42.8,
             "trigger": 4,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -1822,33 +1849,6 @@
                 "seg": 387,
                 "side": 4,
                 "wall": 93
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 406,
-            "side": 4,
-            "wall": 84,
-            "label_pos": {
-              "x": 323.0,
-              "y": -55.7,
-              "z": 90.1
-            },
-            "distance": 34.8,
-            "opens": [
-              {
-                "seg": 406,
-                "side": 4,
-                "wall": 84
-              },
-              {
-                "seg": 405,
-                "side": 5,
-                "wall": 85
               }
             ]
           },
@@ -1864,7 +1864,7 @@
               "y": 13.0,
               "z": 18.2
             },
-            "distance": 197.5,
+            "distance": 232.3,
             "opens": [
               {
                 "seg": 387,

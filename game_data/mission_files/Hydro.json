@@ -853,6 +853,33 @@
           },
           {
             "index": 1,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 210,
+            "side": 2,
+            "wall": 32,
+            "label_pos": {
+              "x": 290.0,
+              "y": -200.0,
+              "z": 299.1
+            },
+            "distance": 1015.4,
+            "opens": [
+              {
+                "seg": 210,
+                "side": 2,
+                "wall": 32
+              },
+              {
+                "seg": 248,
+                "side": 0,
+                "wall": 33
+              }
+            ]
+          },
+          {
+            "index": 2,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 2",
@@ -864,7 +891,7 @@
               "y": -200.0,
               "z": 239.4
             },
-            "distance": 1106.8,
+            "distance": 91.4,
             "trigger": 2,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -873,33 +900,6 @@
                 "seg": 182,
                 "side": 0,
                 "wall": 17
-              }
-            ]
-          },
-          {
-            "index": 2,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 248,
-            "side": 0,
-            "wall": 33,
-            "label_pos": {
-              "x": 290.0,
-              "y": -200.0,
-              "z": 299.1
-            },
-            "distance": 66.4,
-            "opens": [
-              {
-                "seg": 248,
-                "side": 0,
-                "wall": 33
-              },
-              {
-                "seg": 210,
-                "side": 2,
-                "wall": 32
               }
             ]
           },
@@ -914,7 +914,7 @@
               "y": -400.1,
               "z": 418.6
             },
-            "distance": 960.1,
+            "distance": 1026.5,
             "key": "blue"
           },
           {

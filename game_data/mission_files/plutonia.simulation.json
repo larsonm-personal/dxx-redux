@@ -1183,7 +1183,7 @@
     {
       "level_num": -2,
       "level_file": "map32.rl2",
-      "route_input_sha256": "86427B838AF026E73D22835B538E93877C8A3805D92B4B42773BC887B2618AD5",
+      "route_input_sha256": "AFF82B03D122EA5531E6E1E708576202CC058AC2E32CD82B67E14A3BCEB46679",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -1191,42 +1191,42 @@
       },
       "objectives": [
         {
+          "n": "blastable wall",
+          "s": 7
+        },
+        {
           "n": "pass-through 6",
-          "s": 11
+          "s": 21
         },
         {
           "n": "switch 14",
-          "s": 27
+          "s": 37
         },
         {
           "n": "switch 15",
-          "s": 39
+          "s": 48
         },
         {
           "n": "hidden door",
-          "s": 39
+          "s": 48
         },
         {
           "n": "switch 17",
-          "s": 45
-        },
-        {
-          "n": "blastable wall",
-          "s": 50
-        },
-        {
-          "n": "reactor",
           "s": 55
         },
         {
+          "n": "reactor",
+          "s": 64
+        },
+        {
           "n": "exit",
-          "s": 60
+          "s": 69
         }
       ],
-      "total_frames": 3598,
+      "total_frames": 4147,
       "rng_end": {
-        "state": 860186224,
-        "calls": 3031
+        "state": 3540364135,
+        "calls": 3458
       }
     }
   ]

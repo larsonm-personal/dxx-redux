@@ -104,7 +104,7 @@
       {
         "level_num": 0,
         "level_file": "MOON03.RL2",
-        "route_input_sha256": "626D31A0F8F2E66FDD2E2CF81FF61DDF48283981879DFF3DC3133C6B12D7F6F5",
+        "route_input_sha256": "F5E6D3733A46E2DB8C52D32CC2C702E56513716252974FF34F10758E28DF7EF2",
         "status": "ok",
         "rng_start": {
           "state": 1,
@@ -132,6 +132,10 @@
             "s": 48
           },
           {
+            "n": "blastable wall",
+            "s": 61
+          },
+          {
             "n": "switch 23",
             "s": 61
           },
@@ -153,13 +157,13 @@
           },
           {
             "n": "exit",
-            "s": 110
+            "s": 111
           }
         ],
-        "total_frames": 6605,
+        "total_frames": 6637,
         "rng_end": {
-          "state": 4222562952,
-          "calls": 4319
+          "state": 1053602589,
+          "calls": 4388
         }
       }
     ]
@@ -254,16 +258,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "-moon05-.rl2",
-        "route_input_sha256": "8B0DF5783B479D2E2C790E67CCA51BEF4415F2D1889A2DD0D2A7013CC70A1259",
-        "status": "timeout",
+        "route_input_sha256": "C4BFDF5044470E5C1EBDF6548F49721ABC67BD0E79A7C0FBF0C852C742796E2C",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -280,14 +284,41 @@
           {
             "n": "gold key",
             "s": 28
+          },
+          {
+            "n": "blastable wall",
+            "s": 47
+          },
+          {
+            "n": "pass-through 17",
+            "s": 47
+          },
+          {
+            "n": "switch 29",
+            "s": 48
+          },
+          {
+            "n": "red key",
+            "s": 64
+          },
+          {
+            "n": "hidden door",
+            "s": 70
+          },
+          {
+            "n": "boss",
+            "s": 94
+          },
+          {
+            "n": "exit",
+            "s": 99
           }
         ],
-        "total_frames": 2547,
+        "total_frames": 5969,
         "rng_end": {
-          "state": 1307976050,
-          "calls": 709
-        },
-        "problem": "physical route frontier did not open after 8 interaction attempts"
+          "state": 729003353,
+          "calls": 2536
+        }
       }
     ]
   },

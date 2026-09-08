@@ -333,6 +333,33 @@
           },
           {
             "index": 1,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 428,
+            "side": 1,
+            "wall": 101,
+            "label_pos": {
+              "x": 234.3,
+              "y": 10.0,
+              "z": 138.3
+            },
+            "distance": 1206.4,
+            "opens": [
+              {
+                "seg": 428,
+                "side": 1,
+                "wall": 101
+              },
+              {
+                "seg": 429,
+                "side": 3,
+                "wall": 100
+              }
+            ]
+          },
+          {
+            "index": 2,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "switch_shot_quality": "confirmed_steep",
@@ -345,7 +372,7 @@
               "y": -20.0,
               "z": 324.0
             },
-            "distance": 2023.7,
+            "distance": 817.4,
             "trigger": 0,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -363,7 +390,7 @@
             ]
           },
           {
-            "index": 2,
+            "index": 3,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -376,7 +403,7 @@
             "distance": 767.3
           },
           {
-            "index": 3,
+            "index": 4,
             "kind": "trigger",
             "activation_kind": "unresolved_trigger",
             "calculated": false,

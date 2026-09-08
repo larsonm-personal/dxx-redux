@@ -326,7 +326,7 @@
     {
       "level_num": 8,
       "level_file": "pwrcore.rl2",
-      "route_input_sha256": "259C1DFC2E9EB48CDEA84947FCE4E6C64D2EEF88C2AFEDBDB2DF139CBE631B36",
+      "route_input_sha256": "E7D288CEA454F292DF5DC8F87BA6E5EFD271F01D0775869B8AD5E63F38840E53",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -374,34 +374,38 @@
           "s": 49
         },
         {
-          "n": "switch 13",
-          "s": 66
+          "n": "blastable wall",
+          "s": 67
         },
         {
-          "n": "switch 8",
-          "s": 68
+          "n": "switch 13",
+          "s": 67
         },
         {
           "n": "blastable wall",
-          "s": 73
+          "s": 71
+        },
+        {
+          "n": "switch 8",
+          "s": 71
         },
         {
           "n": "red key",
-          "s": 88
+          "s": 85
         },
         {
           "n": "reactor",
-          "s": 111
+          "s": 108
         },
         {
           "n": "exit",
-          "s": 114
+          "s": 111
         }
       ],
-      "total_frames": 6851,
+      "total_frames": 6675,
       "rng_end": {
-        "state": 1840613958,
-        "calls": 3809
+        "state": 1572943126,
+        "calls": 3921
       }
     },
     {

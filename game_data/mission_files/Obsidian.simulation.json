@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 13,
-    "timeout": 4,
+    "ok": 14,
+    "timeout": 3,
     "unsupported": 1
   },
   "levels": [
@@ -101,7 +101,7 @@
     {
       "level_num": 3,
       "level_file": "argntitr.rl2",
-      "route_input_sha256": "083703D60D9744A684F3F609E6CE5F7C28FF9D758F3253711DA7F5B906909CC2",
+      "route_input_sha256": "9DC4EE3B7E1CD20007EF6646D8B88E053398F1DD77D707F536EAF87F313691FF",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -109,94 +109,94 @@
       },
       "objectives": [
         {
+          "n": "blastable wall",
+          "s": 4
+        },
+        {
           "n": "fly-through 6",
-          "s": 9
+          "s": 6
         },
         {
           "n": "fly-through 7",
-          "s": 11
+          "s": 8
         },
         {
           "n": "blastable wall",
-          "s": 11
-        },
-        {
-          "n": "blastable wall",
-          "s": 21
+          "s": 18
         },
         {
           "n": "fly-through 8",
-          "s": 23
+          "s": 19
         },
         {
           "n": "blastable wall",
-          "s": 26
+          "s": 23
         },
         {
           "n": "fly-through 11",
-          "s": 28
+          "s": 25
         },
         {
           "n": "switch 33",
-          "s": 35
+          "s": 32
         },
         {
           "n": "destroy robot carrying blue key",
-          "s": 44
+          "s": 41
         },
         {
           "n": "switch 2",
-          "s": 61
+          "s": 58
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 76
+          "s": 73
         },
         {
           "n": "switch 12",
-          "s": 82
+          "s": 79
         },
         {
           "n": "switch 13",
-          "s": 88
+          "s": 85
         },
         {
           "n": "switch 14",
-          "s": 97
+          "s": 94
         },
         {
           "n": "switch 15",
-          "s": 104
+          "s": 101
         },
         {
           "n": "switch 16",
-          "s": 109
+          "s": 106
         },
         {
           "n": "switch 17",
-          "s": 115
+          "s": 112
         },
         {
           "n": "switch 32",
-          "s": 120
+          "s": 117
         },
         {
           "n": "fly-through 19",
-          "s": 122
+          "s": 119
         },
         {
           "n": "boss",
-          "s": 131
+          "s": 128
         },
         {
           "n": "exit",
-          "s": 141
+          "s": 138
         }
       ],
-      "total_frames": 8444,
+      "total_frames": 8270,
       "rng_end": {
-        "state": 4136410438,
-        "calls": 10209
+        "state": 3503312003,
+        "calls": 10246
       }
     },
     {
@@ -479,8 +479,8 @@
     {
       "level_num": 9,
       "level_file": "cerulea.rl2",
-      "route_input_sha256": "E1891F5A5365022D9C686E7DA237F909BB65D87A3AE4D5366B5EAB8C7CEA3F92",
-      "status": "timeout",
+      "route_input_sha256": "D22724D43DDC548ACF90E86961C2319CE55F2F7F55E25AB40250A1F6AA52F83D",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -489,14 +489,49 @@
         {
           "n": "blue key",
           "s": 12
+        },
+        {
+          "n": "blastable wall",
+          "s": 40
+        },
+        {
+          "n": "fly-through 0",
+          "s": 42
+        },
+        {
+          "n": "pass-through 7",
+          "s": 60
+        },
+        {
+          "n": "switch 8",
+          "s": 61
+        },
+        {
+          "n": "gold key",
+          "s": 66
+        },
+        {
+          "n": "red key",
+          "s": 92
+        },
+        {
+          "n": "fly-through 1",
+          "s": 104
+        },
+        {
+          "n": "boss",
+          "s": 135
+        },
+        {
+          "n": "exit",
+          "s": 159
         }
       ],
-      "total_frames": 1988,
+      "total_frames": 9557,
       "rng_end": {
-        "state": 2555828275,
-        "calls": 1110
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 1735458276,
+        "calls": 5747
+      }
     },
     {
       "level_num": 10,

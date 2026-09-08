@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
+    "ok": 3,
     "failed": 1,
-    "timeout": 4
+    "timeout": 3
   },
   "levels": [
     {
@@ -45,8 +45,8 @@
     {
       "level_num": 2,
       "level_file": "darknite.rl2",
-      "route_input_sha256": "708CC3C396009BDF02B04F923EFB7BC736AB14608089BF8E8CC0DA345755B4F8",
-      "status": "timeout",
+      "route_input_sha256": "C908C827847C131528EA627734FA84C49973FF63D3CC5FA30EF43A9E33DDF476",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -65,16 +65,51 @@
           "s": 45
         },
         {
+          "n": "blastable wall",
+          "s": 86
+        },
+        {
           "n": "switch 19",
-          "s": 72
+          "s": 86
+        },
+        {
+          "n": "red key",
+          "s": 89
+        },
+        {
+          "n": "switch 32",
+          "s": 101
+        },
+        {
+          "n": "switch 28",
+          "s": 117
+        },
+        {
+          "n": "switch 29",
+          "s": 122
+        },
+        {
+          "n": "switch 30",
+          "s": 127
+        },
+        {
+          "n": "switch 31",
+          "s": 131
+        },
+        {
+          "n": "reactor",
+          "s": 148
+        },
+        {
+          "n": "exit",
+          "s": 151
         }
       ],
-      "total_frames": 5273,
+      "total_frames": 9057,
       "rng_end": {
-        "state": 2972838906,
-        "calls": 2397
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 1631271608,
+        "calls": 4079
+      }
     },
     {
       "level_num": 3,

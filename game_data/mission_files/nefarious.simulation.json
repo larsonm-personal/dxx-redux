@@ -8,9 +8,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 9,
+    "ok": 10,
     "failed": 5,
-    "timeout": 5
+    "timeout": 4
   },
   "levels": [
     {
@@ -584,8 +584,8 @@
     {
       "level_num": -3,
       "level_file": "nefars3.rdl",
-      "route_input_sha256": "4F6FDFE9C68EC9F833FD94929630CCC81F2C3C60DA655E76A293BEF3C7F035F6",
-      "status": "timeout",
+      "route_input_sha256": "9E70FA6DF67D240D9F9FE842A8626AC16B0B424117613E87DF47C9ED9D7EB4BA",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -598,14 +598,45 @@
         {
           "n": "blue key",
           "s": 9
+        },
+        {
+          "n": "blastable wall",
+          "s": 26
+        },
+        {
+          "n": "fly-through 3",
+          "s": 27
+        },
+        {
+          "n": "gold key",
+          "s": 32
+        },
+        {
+          "n": "red key",
+          "s": 47
+        },
+        {
+          "n": "blastable wall",
+          "s": 67
+        },
+        {
+          "n": "fly-through 4",
+          "s": 68
+        },
+        {
+          "n": "reactor",
+          "s": 69
+        },
+        {
+          "n": "exit",
+          "s": 71
         }
       ],
-      "total_frames": 1345,
+      "total_frames": 4280,
       "rng_end": {
-        "state": 3074161287,
-        "calls": 98
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 3229838487,
+        "calls": 338
+      }
     }
   ]
 }

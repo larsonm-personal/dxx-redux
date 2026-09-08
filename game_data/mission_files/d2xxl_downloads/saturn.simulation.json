@@ -65,7 +65,7 @@
     {
       "level_num": 3,
       "level_file": "TUNNEL.RL2",
-      "route_input_sha256": "30C80E06E42D17D206820A046DE49EC120D2EBD78B77AA691A0C94854DE6F1BB",
+      "route_input_sha256": "608FDC57B4BAC83684CE6CDDFD05637DDB8AF8535A16248E475F55AC91CE6319",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -73,15 +73,19 @@
       },
       "objectives": [
         {
+          "n": "blastable wall",
+          "s": 4
+        },
+        {
           "n": "switch 51",
-          "s": 9
+          "s": 5
         },
         {
           "n": "switch 22",
-          "s": 43
+          "s": 39
         }
       ],
-      "total_frames": 7596,
+      "total_frames": 7348,
       "rng_end": {
         "state": 309910709,
         "calls": 4684

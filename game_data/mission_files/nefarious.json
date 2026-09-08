@@ -2622,6 +2622,33 @@
           },
           {
             "index": 3,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 217,
+            "side": 3,
+            "wall": 29,
+            "label_pos": {
+              "x": -316.9,
+              "y": -107.4,
+              "z": 87.3
+            },
+            "distance": 1052.2,
+            "opens": [
+              {
+                "seg": 217,
+                "side": 3,
+                "wall": 29
+              },
+              {
+                "seg": 218,
+                "side": 1,
+                "wall": 30
+              }
+            ]
+          },
+          {
+            "index": 4,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 3",
@@ -2633,7 +2660,7 @@
               "y": -107.4,
               "z": 87.3
             },
-            "distance": 1079.7,
+            "distance": 27.5,
             "trigger": 3,
             "trigger_type_id": 1,
             "trigger_type": "toggle_door",
@@ -2642,33 +2669,6 @@
                 "seg": 156,
                 "side": 0,
                 "wall": 27
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 218,
-            "side": 1,
-            "wall": 30,
-            "label_pos": {
-              "x": -316.9,
-              "y": -107.4,
-              "z": 87.3
-            },
-            "distance": 12.5,
-            "opens": [
-              {
-                "seg": 218,
-                "side": 1,
-                "wall": 30
-              },
-              {
-                "seg": 217,
-                "side": 3,
-                "wall": 29
               }
             ]
           },
@@ -2683,7 +2683,7 @@
               "y": -225.0,
               "z": 87.3
             },
-            "distance": 240.3,
+            "distance": 252.8,
             "key": "gold"
           },
           {
@@ -2702,6 +2702,33 @@
           },
           {
             "index": 7,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 447,
+            "side": 3,
+            "wall": 83,
+            "label_pos": {
+              "x": 176.9,
+              "y": -189.2,
+              "z": 87.3
+            },
+            "distance": 1079.0,
+            "opens": [
+              {
+                "seg": 447,
+                "side": 3,
+                "wall": 83
+              },
+              {
+                "seg": 446,
+                "side": 1,
+                "wall": 84
+              }
+            ]
+          },
+          {
+            "index": 8,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 4",
@@ -2713,7 +2740,7 @@
               "y": -189.2,
               "z": 47.3
             },
-            "distance": 1183.5,
+            "distance": 104.5,
             "trigger": 4,
             "trigger_type_id": 1,
             "trigger_type": "toggle_door",
@@ -2731,7 +2758,7 @@
             ]
           },
           {
-            "index": 8,
+            "index": 9,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -2742,33 +2769,6 @@
               "z": 92.4
             },
             "distance": 117.5
-          },
-          {
-            "index": 9,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 446,
-            "side": 1,
-            "wall": 84,
-            "label_pos": {
-              "x": 176.9,
-              "y": -189.2,
-              "z": 87.3
-            },
-            "distance": 60.9,
-            "opens": [
-              {
-                "seg": 446,
-                "side": 1,
-                "wall": 84
-              },
-              {
-                "seg": 447,
-                "side": 3,
-                "wall": 83
-              }
-            ]
           },
           {
             "index": 10,
@@ -2783,7 +2783,7 @@
               "y": -158.9,
               "z": 87.3
             },
-            "distance": 72.2,
+            "distance": 133.2,
             "trigger": 5,
             "trigger_type_id": 8,
             "trigger_type": "exit"

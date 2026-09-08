@@ -182,7 +182,7 @@
     {
       "level_num": 7,
       "level_file": "ironbla2.rdl",
-      "route_input_sha256": "4E4DE4C9F8587D4141193DC46F5870BD6A9912617FECFE2733766E6C09C8CA46",
+      "route_input_sha256": "CF765F2172B465E7280F6296CD990411D4887825009EEB6E973DB042361C28B3",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -202,12 +202,12 @@
           "s": 3
         }
       ],
-      "total_frames": 837,
+      "total_frames": 3959,
       "rng_end": {
-        "state": 2883693444,
-        "calls": 83
+        "state": 2543504875,
+        "calls": 286
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": -1,

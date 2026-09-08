@@ -1581,6 +1581,44 @@ int main()
 	       fly_through_step.aim_position.value);
 	assert(fly_through_step.aim_position.value[0] >
 	       fly_through_step.activation_position.value[0]);
+	/* A fly-through trigger behind a blastable wall needs an explicit prerequisite */
+	auto blast_trigger_snapshot = fly_through_snapshot;
+	blast_trigger_snapshot.topology.segments.resize(3);
+	blast_trigger_snapshot.state.segments.resize(3);
+	blast_trigger_snapshot.topology.walls.resize(4);
+	blast_trigger_snapshot.state.walls.resize(4);
+	auto &approach = blast_trigger_snapshot.topology.segments[2];
+	approach.center.valid = true;
+	approach.center.value = { -1000, 0, 0 };
+	approach.sides[0].child = 0;
+	approach.sides[0].reverse_side = 1;
+	approach.sides[0].wall = 2;
+	auto &return_side = blast_trigger_snapshot.topology.segments[0].sides[1];
+	return_side.child = 2;
+	return_side.reverse_side = 0;
+	return_side.wall = 3;
+	for (int wall = 2; wall < 4; ++wall) {
+		blast_trigger_snapshot.state.walls[wall].kind = dxx_route::route_wall_kind::blastable;
+		blast_trigger_snapshot.topology.walls[wall].segment = wall == 2 ? 2 : 0;
+		blast_trigger_snapshot.topology.walls[wall].side = wall == 2 ? 0 : 1;
+		blast_trigger_snapshot.topology.walls[wall].target = approach.center;
+	}
+	blast_trigger_snapshot.state.start_segment = 2;
+	blast_trigger_snapshot.state.start_position = approach.center;
+	auto blast_trigger_query = planner_query;
+	blast_trigger_query.start = approach.center;
+	const auto blast_trigger_dependency = dxx_route::resolve_trigger_dependency(
+	    blast_trigger_snapshot, blast_trigger_query,
+	    dxx_route::initial_route_progress_state(blast_trigger_snapshot, blast_trigger_query), 1, 0);
+	assert(blast_trigger_dependency.resolved);
+	assert(blast_trigger_dependency.steps.size() == 2);
+	assert(blast_trigger_dependency.steps[0].activation ==
+	       dxx_route::route_activation_kind::destroy_blastable_wall);
+	assert(blast_trigger_dependency.steps[0].wall == 2);
+	assert(blast_trigger_dependency.steps[1].activation ==
+	       dxx_route::route_activation_kind::fly_through_trigger);
+	assert(blast_trigger_dependency.progress.destroyed_blastable_walls[2]);
+	assert(blast_trigger_dependency.progress.destroyed_blastable_walls[3]);
 	auto closed_source_snapshot = triggered_snapshot;
 	closed_source_snapshot.state.segments[0].sides[0].flyable = false;
 	closed_source_snapshot.state.walls[0].kind =

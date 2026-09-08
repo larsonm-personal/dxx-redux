@@ -60,7 +60,7 @@
     {
       "level_num": 2,
       "level_file": "world1b.rl2",
-      "route_input_sha256": "69702261701E97A8C2ED24EE5D06601D7A967BE105941292FACC3807147B8D61",
+      "route_input_sha256": "A7A81EA7F90DEC78158B813C8C15A3EEC5F6974C40B1FEAFFE5C36E573ECFFE4",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -80,34 +80,34 @@
           "s": 49
         },
         {
-          "n": "switch 11",
-          "s": 58
+          "n": "blastable wall",
+          "s": 64
         },
         {
-          "n": "blastable wall",
-          "s": 67
+          "n": "switch 11",
+          "s": 64
         },
         {
           "n": "red key",
-          "s": 70
+          "s": 67
         },
         {
           "n": "switch 2",
-          "s": 90
+          "s": 88
         },
         {
           "n": "reactor",
-          "s": 92
+          "s": 89
         },
         {
           "n": "exit",
-          "s": 102
+          "s": 100
         }
       ],
-      "total_frames": 6133,
+      "total_frames": 5998,
       "rng_end": {
-        "state": 986697615,
-        "calls": 2394
+        "state": 3773260610,
+        "calls": 2357
       }
     },
     {

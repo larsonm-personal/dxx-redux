@@ -1932,6 +1932,33 @@
           },
           {
             "index": 6,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 2,
+            "side": 3,
+            "wall": 32,
+            "label_pos": {
+              "x": 526.2,
+              "y": -232.0,
+              "z": 290.7
+            },
+            "distance": 205.0,
+            "opens": [
+              {
+                "seg": 2,
+                "side": 3,
+                "wall": 32
+              },
+              {
+                "seg": 3,
+                "side": 1,
+                "wall": 31
+              }
+            ]
+          },
+          {
+            "index": 7,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 0",
@@ -1943,7 +1970,7 @@
               "y": -452.0,
               "z": 137.4
             },
-            "distance": 600.0,
+            "distance": 395.0,
             "trigger": 0,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -1961,7 +1988,7 @@
             ]
           },
           {
-            "index": 7,
+            "index": 8,
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
@@ -1974,7 +2001,7 @@
             "distance": 1329.0
           },
           {
-            "index": 8,
+            "index": 9,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

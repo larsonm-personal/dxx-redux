@@ -2109,27 +2109,63 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "GEHENNA.rdl",
-        "route_input_sha256": "3B3F2002B1809492FE49D9ED74D4CEDCE4B7D3DE6F620C20CEA860F9B83F05AA",
-        "status": "timeout",
+        "route_input_sha256": "87132B4F513C434C1A2BAFD8B0DEDE151EBF40ECC1F2AC514A4D4BECBFD16117",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 742,
+        "objectives": [
+          {
+            "n": "blastable wall",
+            "s": 3
+          },
+          {
+            "n": "pass-through 8",
+            "s": 14
+          },
+          {
+            "n": "blue key",
+            "s": 15
+          },
+          {
+            "n": "gold key",
+            "s": 34
+          },
+          {
+            "n": "fly-through 2",
+            "s": 47
+          },
+          {
+            "n": "fly-through 3",
+            "s": 78
+          },
+          {
+            "n": "red key",
+            "s": 126
+          },
+          {
+            "n": "reactor",
+            "s": 132
+          },
+          {
+            "n": "exit",
+            "s": 159
+          }
+        ],
+        "total_frames": 9557,
         "rng_end": {
-          "state": 595337866,
-          "calls": 13
-        },
-        "problem": "physical route frontier did not open after 8 interaction attempts"
+          "state": 4058739037,
+          "calls": 228
+        }
       }
     ]
   },
@@ -2805,7 +2841,7 @@
       {
         "level_num": 5,
         "level_file": "LUPIS5.rdl",
-        "route_input_sha256": "24E533732EF0B8AAEF5C695F6BECD2E9380E1C10AA89AA5972B8E961EA164066",
+        "route_input_sha256": "B92A9AF30360B61428A065518FC7B472046C4E2929BE8C28D01805A9A085C361",
         "status": "timeout",
         "rng_start": {
           "state": 1,
@@ -3114,7 +3150,7 @@
       {
         "level_num": 0,
         "level_file": "LUPIS5.rdl",
-        "route_input_sha256": "88575176BA977CA7CAF1A15AC1A612739473376C732CF0EEBBFFACE926157CDC",
+        "route_input_sha256": "6B20EA8F81729DD548BA6B08B33827B78FAB1B9391EE02B1A87AB3FFFEC34C36",
         "status": "timeout",
         "rng_start": {
           "state": 1,
@@ -4526,27 +4562,63 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "TARTARUS.rdl",
-        "route_input_sha256": "F5CDEAD65D69F56DFB244FBF376435F273E25286C0C233C178C36FF4CAC7279B",
-        "status": "timeout",
+        "route_input_sha256": "CEFBA7D3A982673D942B411FD9E6EB4BDD16C3E16AA089E5D3ECBF0642579A59",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 742,
+        "objectives": [
+          {
+            "n": "blastable wall",
+            "s": 3
+          },
+          {
+            "n": "pass-through 8",
+            "s": 14
+          },
+          {
+            "n": "blue key",
+            "s": 15
+          },
+          {
+            "n": "gold key",
+            "s": 34
+          },
+          {
+            "n": "fly-through 2",
+            "s": 47
+          },
+          {
+            "n": "fly-through 3",
+            "s": 78
+          },
+          {
+            "n": "red key",
+            "s": 126
+          },
+          {
+            "n": "reactor",
+            "s": 132
+          },
+          {
+            "n": "exit",
+            "s": 160
+          }
+        ],
+        "total_frames": 9593,
         "rng_end": {
-          "state": 595337866,
-          "calls": 13
-        },
-        "problem": "physical route frontier did not open after 8 interaction attempts"
+          "state": 146262738,
+          "calls": 229
+        }
       }
     ]
   },

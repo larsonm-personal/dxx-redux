@@ -145,6 +145,33 @@
           },
           {
             "index": 1,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 61,
+            "side": 4,
+            "wall": 1,
+            "label_pos": {
+              "x": -1.9,
+              "y": 47.5,
+              "z": -35.7
+            },
+            "distance": 445.0,
+            "opens": [
+              {
+                "seg": 61,
+                "side": 4,
+                "wall": 1
+              },
+              {
+                "seg": 413,
+                "side": 5,
+                "wall": 0
+              }
+            ]
+          },
+          {
+            "index": 2,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 0",
@@ -156,7 +183,7 @@
               "y": 47.5,
               "z": -15.7
             },
-            "distance": 460.0,
+            "distance": 15.0,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -184,7 +211,7 @@
             ]
           },
           {
-            "index": 2,
+            "index": 3,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 1",
@@ -209,7 +236,7 @@
             ]
           },
           {
-            "index": 3,
+            "index": 4,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 2",
@@ -239,7 +266,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 3",
@@ -269,7 +296,7 @@
             ]
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 4",
@@ -299,7 +326,7 @@
             ]
           },
           {
-            "index": 6,
+            "index": 7,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -312,7 +339,7 @@
             "distance": 990.6
           },
           {
-            "index": 7,
+            "index": 8,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

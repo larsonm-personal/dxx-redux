@@ -61,24 +61,19 @@
     {
       "level_num": 3,
       "level_file": "deadmine.rl2",
-      "route_input_sha256": "63261C7BAD4639F6D3712057B22DF40A3CC96DAD1ED5E45C3588479FBD35A8C7",
+      "route_input_sha256": "26E641FB04D228B0256649FA7B8034C804FF6B0426A9B211D667DF4CE77248CB",
       "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [
-        {
-          "n": "switch 0",
-          "s": 11
-        }
-      ],
-      "total_frames": 1140,
+      "objectives": [],
+      "total_frames": 4229,
       "rng_end": {
-        "state": 4024132204,
-        "calls": 715
+        "state": 1428594928,
+        "calls": 1879
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 4,

@@ -160,7 +160,7 @@
     {
       "level_num": 5,
       "level_file": "Level05.rl2",
-      "route_input_sha256": "E27CD20A337FF71B3B101CD22492F5F2796A135A4E81651411828F24362A192A",
+      "route_input_sha256": "57B65139AA793E7E97FE9430C7FC0E2A54FDDF969A1550B6D599DC33605E9C6E",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -168,38 +168,38 @@
       },
       "objectives": [
         {
-          "n": "switch 2",
-          "s": 21
+          "n": "blastable wall",
+          "s": 16
         },
         {
-          "n": "blastable wall",
-          "s": 22
+          "n": "switch 2",
+          "s": 18
         },
         {
           "n": "blue key",
-          "s": 35
+          "s": 31
         },
         {
           "n": "switch 4",
-          "s": 58
+          "s": 54
         },
         {
           "n": "red key",
-          "s": 65
+          "s": 61
         },
         {
           "n": "reactor",
-          "s": 86
+          "s": 82
         },
         {
           "n": "exit",
-          "s": 93
+          "s": 89
         }
       ],
-      "total_frames": 5580,
+      "total_frames": 5344,
       "rng_end": {
-        "state": 1047822082,
-        "calls": 4213
+        "state": 1721731653,
+        "calls": 4156
       }
     },
     {

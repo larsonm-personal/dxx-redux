@@ -2941,6 +2941,21 @@ class dependency_planner
 		return false;
 	}
 
+	int clear_first_path_blastable_wall(const route_path_result &path, int depth)
+	{
+		int segment = -1;
+		int side = -1;
+		int wall = -1;
+		if (!first_blastable_wall(path, segment, side, wall))
+			return 0;
+		if (!move_to_target(
+		        segment, snapshot_.topology.segments[segment].center, depth + 1) ||
+		    !append_blastable_wall_step(segment, side, wall) ||
+		    !route_progress_destroy_blastable_wall(snapshot_, state_.progress, wall))
+			return -1;
+		return 1;
+	}
+
 	bool side_is_route_exit(int segment, int side) const
 	{
 		if (!valid_segment(snapshot_, segment) || side < 0 ||
@@ -3811,6 +3826,14 @@ class dependency_planner
 			state_.failed_trigger = source.trigger;
 			return false;
 		}
+		/* Reaching a switch can require destroying a wall before activation */
+		if (selected_firing.found) {
+			const int cleared = clear_first_path_blastable_wall(selected_firing.path, depth);
+			if (cleared < 0)
+				return false;
+			if (cleared > 0)
+				return fire_trigger(segment, side, depth + 1, forced_sources);
+		}
 		const auto activation_start = state_;
 		state_.progress.trigger_in_progress[source.trigger] = 1;
 		const int selected_source_segment = source.source_segment;
@@ -3981,22 +4004,11 @@ class dependency_planner
 					if (prepared > 0)
 						continue;
 				}
-				int blast_segment = -1;
-				int blast_side = -1;
-				int blast_wall = -1;
-				if (first_blastable_wall(
-				        direct, blast_segment, blast_side, blast_wall)) {
-					if (!move_to_target(
-					        blast_segment,
-					        snapshot_.topology.segments[blast_segment].center,
-					        depth + 1) ||
-					    !append_blastable_wall_step(
-					        blast_segment, blast_side, blast_wall) ||
-					    !route_progress_destroy_blastable_wall(
-					        snapshot_, state_.progress, blast_wall))
-						return false;
+				const int cleared = clear_first_path_blastable_wall(direct, depth);
+				if (cleared < 0)
+					return false;
+				if (cleared > 0)
 					continue;
-				}
 				if (!accumulate_path(direct))
 					continue;
 				state_.progress.current_segment = goal_segment;

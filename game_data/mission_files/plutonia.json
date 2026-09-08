@@ -5944,9 +5944,9 @@
         "mine_volume": 27836500.0,
         "mine_volume_normalized": 6.08726,
         "mine_volume_text": "6.1x",
-        "travel_distance": 4436.2,
-        "travel_time_seconds": 89,
-        "travel_time_text": "1M:29S",
+        "travel_distance": 4976.1,
+        "travel_time_seconds": 100,
+        "travel_time_text": "1M:40S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -5963,6 +5963,33 @@
           },
           {
             "index": 1,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 138,
+            "side": 4,
+            "wall": 52,
+            "label_pos": {
+              "x": -32.8,
+              "y": 16.0,
+              "z": 192.9
+            },
+            "distance": 386.2,
+            "opens": [
+              {
+                "seg": 138,
+                "side": 4,
+                "wall": 52
+              },
+              {
+                "seg": 139,
+                "side": 5,
+                "wall": 53
+              }
+            ]
+          },
+          {
+            "index": 2,
             "kind": "trigger",
             "activation_kind": "pass_through_trigger",
             "label": "Pass through trigger 6",
@@ -5974,7 +6001,7 @@
               "y": -64.0,
               "z": -159.6
             },
-            "distance": 711.4,
+            "distance": 865.1,
             "trigger": 6,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -5987,7 +6014,7 @@
             ]
           },
           {
-            "index": 2,
+            "index": 3,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 14",
@@ -6022,7 +6049,7 @@
             ]
           },
           {
-            "index": 3,
+            "index": 4,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 15",
@@ -6062,7 +6089,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
@@ -6089,7 +6116,7 @@
             ]
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 17",
@@ -6147,33 +6174,6 @@
             ]
           },
           {
-            "index": 6,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 139,
-            "side": 5,
-            "wall": 53,
-            "label_pos": {
-              "x": -32.8,
-              "y": 16.0,
-              "z": 192.9
-            },
-            "distance": 226.1,
-            "opens": [
-              {
-                "seg": 139,
-                "side": 5,
-                "wall": 53
-              },
-              {
-                "seg": 138,
-                "side": 4,
-                "wall": 52
-              }
-            ]
-          },
-          {
             "index": 7,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
@@ -6184,7 +6184,7 @@
               "y": 146.0,
               "z": -79.6
             },
-            "distance": 500.2
+            "distance": 726.2
           },
           {
             "index": 8,

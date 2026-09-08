@@ -33,7 +33,7 @@
     {
       "level_num": 2,
       "level_file": "BLUE.RDL",
-      "route_input_sha256": "1DA7A9F1541B31A262390966F27515F0D9B5C499B5B5533B2DA7CF486A60F85C",
+      "route_input_sha256": "7145F3FDBB223DB8462122111C827F3539BB3E07631996269A328EFD84357B2B",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -41,38 +41,38 @@
       },
       "objectives": [
         {
+          "n": "blastable wall",
+          "s": 36
+        },
+        {
           "n": "pass-through 13",
-          "s": 43
+          "s": 40
         },
         {
           "n": "blastable wall",
-          "s": 43
+          "s": 72
+        },
+        {
+          "n": "blastable wall",
+          "s": 73
         },
         {
           "n": "blastable wall",
           "s": 75
         },
         {
-          "n": "blastable wall",
-          "s": 76
-        },
-        {
-          "n": "blastable wall",
-          "s": 77
-        },
-        {
           "n": "gold key",
-          "s": 77
+          "s": 75
         },
         {
           "n": "exit",
-          "s": 96
+          "s": 94
         }
       ],
-      "total_frames": 5738,
+      "total_frames": 5612,
       "rng_end": {
-        "state": 3429444377,
-        "calls": 552
+        "state": 2387351769,
+        "calls": 616
       }
     },
     {

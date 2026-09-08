@@ -1250,6 +1250,60 @@
           },
           {
             "index": 3,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 405,
+            "side": 0,
+            "wall": 148,
+            "label_pos": {
+              "x": -30.8,
+              "y": 114.0,
+              "z": -30.0
+            },
+            "distance": 1209.8,
+            "opens": [
+              {
+                "seg": 405,
+                "side": 0,
+                "wall": 148
+              },
+              {
+                "seg": 550,
+                "side": 4,
+                "wall": 149
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 326,
+            "side": 4,
+            "wall": 42,
+            "label_pos": {
+              "x": -27.0,
+              "y": 257.0,
+              "z": -31.5
+            },
+            "distance": 139.6,
+            "opens": [
+              {
+                "seg": 326,
+                "side": 4,
+                "wall": 42
+              },
+              {
+                "seg": 339,
+                "side": 5,
+                "wall": 41
+              }
+            ]
+          },
+          {
+            "index": 5,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 2",
@@ -1261,7 +1315,7 @@
               "y": 584.0,
               "z": 294.0
             },
-            "distance": 2777.5,
+            "distance": 1428.1,
             "trigger": 2,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1279,7 +1333,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 6,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 1",
@@ -1309,7 +1363,7 @@
             ]
           },
           {
-            "index": 5,
+            "index": 7,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -1323,7 +1377,7 @@
             "key": "gold"
           },
           {
-            "index": 6,
+            "index": 8,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -1337,7 +1391,7 @@
             "key": "red"
           },
           {
-            "index": 7,
+            "index": 9,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 0",
@@ -1397,7 +1451,7 @@
             ]
           },
           {
-            "index": 8,
+            "index": 10,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -1410,7 +1464,7 @@
             "distance": 37.5
           },
           {
-            "index": 9,
+            "index": 11,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -2156,6 +2210,33 @@
           },
           {
             "index": 5,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 294,
+            "side": 2,
+            "wall": 18,
+            "label_pos": {
+              "x": -208.0,
+              "y": 0.0,
+              "z": -21.0
+            },
+            "distance": 2173.1,
+            "opens": [
+              {
+                "seg": 294,
+                "side": 2,
+                "wall": 18
+              },
+              {
+                "seg": 214,
+                "side": 2,
+                "wall": 19
+              }
+            ]
+          },
+          {
+            "index": 6,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 11",
@@ -2166,7 +2247,7 @@
               "y": 11.5,
               "z": -235.8
             },
-            "distance": 2478.9,
+            "distance": 305.8,
             "trigger": 11,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -2184,7 +2265,7 @@
             ]
           },
           {
-            "index": 6,
+            "index": 7,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -2198,33 +2279,6 @@
             "key": "red"
           },
           {
-            "index": 7,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 214,
-            "side": 2,
-            "wall": 19,
-            "label_pos": {
-              "x": -208.0,
-              "y": 0.0,
-              "z": -21.0
-            },
-            "distance": 555.2,
-            "opens": [
-              {
-                "seg": 214,
-                "side": 2,
-                "wall": 19
-              },
-              {
-                "seg": 294,
-                "side": 2,
-                "wall": 18
-              }
-            ]
-          },
-          {
             "index": 8,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
@@ -2235,7 +2289,7 @@
               "y": 43.8,
               "z": 452.1
             },
-            "distance": 1533.0
+            "distance": 2088.1
           },
           {
             "index": 9,
@@ -2599,6 +2653,33 @@
           },
           {
             "index": 2,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 1,
+            "side": 2,
+            "wall": 119,
+            "label_pos": {
+              "x": 143.0,
+              "y": 22.5,
+              "z": -66.5
+            },
+            "distance": 1598.7,
+            "opens": [
+              {
+                "seg": 1,
+                "side": 2,
+                "wall": 119
+              },
+              {
+                "seg": 556,
+                "side": 0,
+                "wall": 118
+              }
+            ]
+          },
+          {
+            "index": 3,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 7",
@@ -2610,7 +2691,7 @@
               "y": 22.0,
               "z": -56.5
             },
-            "distance": 1626.4,
+            "distance": 27.7,
             "trigger": 7,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -2619,32 +2700,6 @@
                 "seg": 350,
                 "side": 0,
                 "wall": 82
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 556,
-            "side": 0,
-            "wall": 118,
-            "label_pos": {
-              "x": 143.0,
-              "y": 22.5,
-              "z": -66.5
-            },
-            "opens": [
-              {
-                "seg": 556,
-                "side": 0,
-                "wall": 118
-              },
-              {
-                "seg": 1,
-                "side": 2,
-                "wall": 119
               }
             ]
           },

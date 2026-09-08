@@ -977,6 +977,33 @@
           },
           {
             "index": 4,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 214,
+            "side": 5,
+            "wall": 56,
+            "label_pos": {
+              "x": 190.0,
+              "y": -100.0,
+              "z": -120.0
+            },
+            "distance": 1618.2,
+            "opens": [
+              {
+                "seg": 214,
+                "side": 5,
+                "wall": 56
+              },
+              {
+                "seg": 215,
+                "side": 4,
+                "wall": 57
+              }
+            ]
+          },
+          {
+            "index": 5,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 0",
@@ -988,7 +1015,7 @@
               "y": -80.0,
               "z": -230.0
             },
-            "distance": 1768.2,
+            "distance": 150.0,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1011,33 +1038,6 @@
             ]
           },
           {
-            "index": 5,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 215,
-            "side": 4,
-            "wall": 57,
-            "label_pos": {
-              "x": 190.0,
-              "y": -100.0,
-              "z": -120.0
-            },
-            "distance": 120.0,
-            "opens": [
-              {
-                "seg": 215,
-                "side": 4,
-                "wall": 57
-              },
-              {
-                "seg": 214,
-                "side": 5,
-                "wall": 56
-              }
-            ]
-          },
-          {
             "index": 6,
             "kind": "exit",
             "activation_kind": "enter_exit",
@@ -1050,7 +1050,7 @@
               "y": -210.0,
               "z": -900.0
             },
-            "distance": 1609.9,
+            "distance": 1729.9,
             "trigger": 3,
             "trigger_type_id": 3,
             "trigger_type": "exit"

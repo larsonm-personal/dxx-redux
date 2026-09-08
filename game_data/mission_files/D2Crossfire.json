@@ -207,6 +207,33 @@
           },
           {
             "index": 1,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 60,
+            "side": 4,
+            "wall": 28,
+            "label_pos": {
+              "x": 40.0,
+              "y": 0.0,
+              "z": 550.0
+            },
+            "distance": 580.6,
+            "opens": [
+              {
+                "seg": 60,
+                "side": 4,
+                "wall": 28
+              },
+              {
+                "seg": 61,
+                "side": 5,
+                "wall": 29
+              }
+            ]
+          },
+          {
+            "index": 2,
             "kind": "trigger",
             "activation_kind": "pass_through_trigger",
             "label": "Pass through trigger 1",
@@ -218,7 +245,7 @@
               "y": 0.0,
               "z": 550.0
             },
-            "distance": 650.6,
+            "distance": 70.0,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -236,33 +263,6 @@
             ]
           },
           {
-            "index": 2,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 61,
-            "side": 5,
-            "wall": 29,
-            "label_pos": {
-              "x": 40.0,
-              "y": 0.0,
-              "z": 550.0
-            },
-            "distance": 30.0,
-            "opens": [
-              {
-                "seg": 61,
-                "side": 5,
-                "wall": 29
-              },
-              {
-                "seg": 60,
-                "side": 4,
-                "wall": 28
-              }
-            ]
-          },
-          {
             "index": 3,
             "kind": "key",
             "activation_kind": "pickup_key",
@@ -273,7 +273,7 @@
               "y": -8.8,
               "z": 20.0
             },
-            "distance": 662.1,
+            "distance": 692.1,
             "key": "blue"
           },
           {
@@ -2377,6 +2377,33 @@
           },
           {
             "index": 1,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 153,
+            "side": 1,
+            "wall": 16,
+            "label_pos": {
+              "x": -162.6,
+              "y": 31.3,
+              "z": 328.0
+            },
+            "distance": 647.3,
+            "opens": [
+              {
+                "seg": 153,
+                "side": 1,
+                "wall": 16
+              },
+              {
+                "seg": 186,
+                "side": 5,
+                "wall": 17
+              }
+            ]
+          },
+          {
+            "index": 2,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 1",
@@ -2388,7 +2415,7 @@
               "y": -186.8,
               "z": 730.6
             },
-            "distance": 1510.8,
+            "distance": 863.5,
             "trigger": 1,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -2401,7 +2428,7 @@
             ]
           },
           {
-            "index": 2,
+            "index": 3,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -2415,33 +2442,6 @@
             "key": "gold"
           },
           {
-            "index": 3,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 186,
-            "side": 5,
-            "wall": 17,
-            "label_pos": {
-              "x": -162.6,
-              "y": 31.3,
-              "z": 328.0
-            },
-            "distance": 769.8,
-            "opens": [
-              {
-                "seg": 186,
-                "side": 5,
-                "wall": 17
-              },
-              {
-                "seg": 153,
-                "side": 1,
-                "wall": 16
-              }
-            ]
-          },
-          {
             "index": 4,
             "kind": "key",
             "activation_kind": "pickup_key",
@@ -2452,7 +2452,7 @@
               "y": -20.7,
               "z": 59.3
             },
-            "distance": 656.1,
+            "distance": 1425.9,
             "key": "red"
           },
           {

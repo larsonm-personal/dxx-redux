@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 9,
+    "ok": 10,
     "failed": 1,
-    "timeout": 2
+    "timeout": 1
   },
   "levels": [
     {
@@ -239,7 +239,7 @@
     {
       "level_num": 5,
       "level_file": "THEBE23.RL2",
-      "route_input_sha256": "FCEE39E1143A697A6C671C322F8D6E842B917E111C9C231CC7558C527F669AF1",
+      "route_input_sha256": "B4198DF0AC3EC22F148D4393A8AF98115363AADF9C1C203B7FEEB300E28D9388",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -255,38 +255,46 @@
           "s": 39
         },
         {
+          "n": "blastable wall",
+          "s": 55
+        },
+        {
+          "n": "blastable wall",
+          "s": 57
+        },
+        {
           "n": "switch 2",
-          "s": 39
+          "s": 72
         },
         {
           "n": "switch 1",
-          "s": 78
+          "s": 76
         },
         {
           "n": "gold key",
-          "s": 80
+          "s": 79
         },
         {
           "n": "red key",
-          "s": 117
+          "s": 115
         },
         {
           "n": "switch 0",
-          "s": 138
+          "s": 137
         },
         {
           "n": "reactor",
-          "s": 156
+          "s": 160
         },
         {
           "n": "exit",
-          "s": 171
+          "s": 175
         }
       ],
-      "total_frames": 10275,
+      "total_frames": 10523,
       "rng_end": {
-        "state": 977662510,
-        "calls": 4889
+        "state": 3027152229,
+        "calls": 6172
       }
     },
     {
@@ -427,8 +435,8 @@
     {
       "level_num": 9,
       "level_file": "LEDA27.RL2",
-      "route_input_sha256": "4E51BA5FA5EBBA35134406CAFD13FCCA1F295897E1CA8998D4617F7FADE6139B",
-      "status": "timeout",
+      "route_input_sha256": "980C833A53968C76FC9BED91F0A20BF4F4D57B3AC24FA63EFD828652B409F5BC",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -451,16 +459,31 @@
           "s": 67
         },
         {
+          "n": "blastable wall",
+          "s": 96
+        },
+        {
           "n": "switch 11",
-          "s": 72
+          "s": 99
+        },
+        {
+          "n": "red key",
+          "s": 105
+        },
+        {
+          "n": "reactor",
+          "s": 129
+        },
+        {
+          "n": "exit",
+          "s": 155
         }
       ],
-      "total_frames": 8337,
+      "total_frames": 9312,
       "rng_end": {
-        "state": 3889143500,
-        "calls": 2795
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 768132189,
+        "calls": 5604
+      }
     },
     {
       "level_num": 10,
@@ -526,7 +549,7 @@
     {
       "level_num": 11,
       "level_file": "TRITON29.RL2",
-      "route_input_sha256": "D8CEDC273EAA1924ED365D88BE783B9C0BC9BB0EDAFAD07E7F94B760C7EFCFF8",
+      "route_input_sha256": "653CD1FC7C1224F5115FF27283EE351686F08A1892DD006947722D8361BD04BA",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -536,18 +559,14 @@
         {
           "n": "blue key",
           "s": 19
-        },
-        {
-          "n": "switch 7",
-          "s": 41
         }
       ],
-      "total_frames": 3028,
+      "total_frames": 6111,
       "rng_end": {
-        "state": 2142186641,
-        "calls": 1008
+        "state": 2362427,
+        "calls": 1230
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 12,

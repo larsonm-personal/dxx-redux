@@ -159,6 +159,60 @@
           },
           {
             "index": 2,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 5051,
+            "side": 2,
+            "wall": 201,
+            "label_pos": {
+              "x": -7.0,
+              "y": 60.0,
+              "z": 225.0
+            },
+            "distance": 1359.1,
+            "opens": [
+              {
+                "seg": 5051,
+                "side": 2,
+                "wall": 201
+              },
+              {
+                "seg": 5050,
+                "side": 0,
+                "wall": 202
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 3247,
+            "side": 4,
+            "wall": 197,
+            "label_pos": {
+              "x": 10.0,
+              "y": 55.0,
+              "z": -50.0
+            },
+            "distance": 311.2,
+            "opens": [
+              {
+                "seg": 3247,
+                "side": 4,
+                "wall": 197
+              },
+              {
+                "seg": 3243,
+                "side": 4,
+                "wall": 198
+              }
+            ]
+          },
+          {
+            "index": 4,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 1",
@@ -169,7 +223,7 @@
               "y": 0.0,
               "z": -240.0
             },
-            "distance": 1990.7,
+            "distance": 320.5,
             "trigger": 1,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -197,7 +251,7 @@
             ]
           },
           {
-            "index": 3,
+            "index": 5,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",

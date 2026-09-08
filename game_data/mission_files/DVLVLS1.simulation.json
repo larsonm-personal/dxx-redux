@@ -310,7 +310,7 @@
     {
       "level_num": 9,
       "level_file": "dalvol.rl2",
-      "route_input_sha256": "A71FBC8BB3BDCCB807916E07AE3B924F99157A5FE60323C56470BD2E6391F616",
+      "route_input_sha256": "87152DB205B195A4785A9A70548D9520D47AF278B9C929FB9235629011573FA6",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -346,22 +346,26 @@
           "s": 61
         },
         {
+          "n": "blastable wall",
+          "s": 66
+        },
+        {
           "n": "switch 6",
-          "s": 61
+          "s": 67
         },
         {
           "n": "reactor",
-          "s": 75
+          "s": 72
         },
         {
           "n": "exit",
-          "s": 82
+          "s": 78
         }
       ],
-      "total_frames": 4922,
+      "total_frames": 4709,
       "rng_end": {
-        "state": 2870196260,
-        "calls": 3891
+        "state": 2909095884,
+        "calls": 3563
       }
     },
     {

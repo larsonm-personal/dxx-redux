@@ -14,7 +14,7 @@
     {
       "level_num": 1,
       "level_file": "HARQYJ01.RL2",
-      "route_input_sha256": "5ADD425579528660E0949B1237927D828A137D37A0C82B86D5FA3CF784F85ED4",
+      "route_input_sha256": "AD0EC814F562B6061EE0B37ED7F65F7BC9541018EC4536AE5EF1B68481D04735",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -58,34 +58,34 @@
           "s": 82
         },
         {
+          "n": "blastable wall",
+          "s": 108
+        },
+        {
           "n": "switch 34",
-          "s": 100
+          "s": 108
         },
         {
           "n": "pass-through 53",
           "s": 109
         },
         {
-          "n": "blastable wall",
-          "s": 109
-        },
-        {
           "n": "hidden door",
-          "s": 113
+          "s": 112
         },
         {
           "n": "reactor",
-          "s": 114
+          "s": 113
         },
         {
           "n": "exit",
-          "s": 121
+          "s": 120
         }
       ],
-      "total_frames": 7241,
+      "total_frames": 7181,
       "rng_end": {
-        "state": 2961550964,
-        "calls": 4259
+        "state": 1110308423,
+        "calls": 4258
       }
     },
     {

@@ -460,6 +460,33 @@
           },
           {
             "index": 4,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 284,
+            "side": 5,
+            "wall": 51,
+            "label_pos": {
+              "x": -8.8,
+              "y": 138.2,
+              "z": -421.3
+            },
+            "distance": 797.1,
+            "opens": [
+              {
+                "seg": 284,
+                "side": 5,
+                "wall": 51
+              },
+              {
+                "seg": 285,
+                "side": 4,
+                "wall": 52
+              }
+            ]
+          },
+          {
+            "index": 5,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 2",
@@ -471,7 +498,7 @@
               "y": 70.0,
               "z": -487.7
             },
-            "distance": 1004.3,
+            "distance": 207.2,
             "trigger": 2,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -489,33 +516,6 @@
             ]
           },
           {
-            "index": 5,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 285,
-            "side": 4,
-            "wall": 52,
-            "label_pos": {
-              "x": -8.8,
-              "y": 138.2,
-              "z": -421.3
-            },
-            "distance": 197.2,
-            "opens": [
-              {
-                "seg": 285,
-                "side": 4,
-                "wall": 52
-              },
-              {
-                "seg": 284,
-                "side": 5,
-                "wall": 51
-              }
-            ]
-          },
-          {
             "index": 6,
             "kind": "key",
             "activation_kind": "pickup_key",
@@ -526,7 +526,7 @@
               "y": 135.2,
               "z": -215.0
             },
-            "distance": 368.6,
+            "distance": 565.8,
             "key": "gold"
           },
           {

@@ -13,7 +13,7 @@
     {
       "level_num": 0,
       "level_file": "Uneasy4.rl2",
-      "route_input_sha256": "CB2720E872A0F87C88A5FE4077813E86F1D348DB4A7CB21B10D5398A41E78E0E",
+      "route_input_sha256": "E3C54737AF9A6EA840C038FAA751031AEAA3DA562D52EC1515CFF82A7D5DD8EC",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -25,12 +25,12 @@
           "s": 33
         }
       ],
-      "total_frames": 3045,
+      "total_frames": 6882,
       "rng_end": {
-        "state": 1373261189,
-        "calls": 2812
+        "state": 486407959,
+        "calls": 5842
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }
   ]
 }

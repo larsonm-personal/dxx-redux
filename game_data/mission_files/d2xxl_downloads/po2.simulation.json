@@ -85,36 +85,62 @@
       {
         "level_num": 2,
         "level_file": "titan.rl2",
-        "route_input_sha256": "763DD41EC80BEFA41883DCF38192C86BC6F2136070B224EAFC2817D38BB997B5",
+        "route_input_sha256": "19B50BABF33A0CDD0E1E568BF72C461AC7F25775A05BD8A7ED41E4E7802FDB9D",
         "status": "timeout",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 1041,
+        "objectives": [
+          {
+            "n": "blastable wall",
+            "s": 15
+          },
+          {
+            "n": "pass-through 0",
+            "s": 31
+          },
+          {
+            "n": "hidden door",
+            "s": 56
+          },
+          {
+            "n": "pass-through 4",
+            "s": 70
+          },
+          {
+            "n": "blue key",
+            "s": 87
+          }
+        ],
+        "total_frames": 6034,
         "rng_end": {
-          "state": 1923026025,
-          "calls": 344
+          "state": 2145578813,
+          "calls": 3076
         },
         "problem": "physical route frontier did not open after 8 interaction attempts"
       },
       {
         "level_num": 3,
         "level_file": "ship4.rl2",
-        "route_input_sha256": "662D44BD05075EF3E2D7BBEC4B17FC63930CE625C45FA9078D2DE507C9FE5C9F",
+        "route_input_sha256": "10021232378EFAFFF91D8A5C11BE1FFA0024A6B1787F886F8A90BF4E84428CB9",
         "status": "timeout",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 1029,
+        "objectives": [
+          {
+            "n": "blastable wall",
+            "s": 11
+          }
+        ],
+        "total_frames": 5171,
         "rng_end": {
-          "state": 2213412917,
-          "calls": 716
+          "state": 3691274817,
+          "calls": 1984
         },
-        "problem": "physical route frontier did not open after 8 interaction attempts"
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       },
       {
         "level_num": 4,
@@ -170,19 +196,32 @@
       {
         "level_num": 7,
         "level_file": "lucifer.rl2",
-        "route_input_sha256": "43B3D8F1BDB776E9C647FA2A58D6962DE196CC19C7C5BF9869FE8FABEE3CD032",
+        "route_input_sha256": "084705168E1A37F0678B3F92E1FBFAAEAA1CF4B640F231DBDAEFF6197110BCC4",
         "status": "timeout",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 1862,
+        "objectives": [
+          {
+            "n": "blastable wall",
+            "s": 22
+          },
+          {
+            "n": "switch 8",
+            "s": 24
+          },
+          {
+            "n": "pass-through 2",
+            "s": 35
+          }
+        ],
+        "total_frames": 6668,
         "rng_end": {
-          "state": 2134449477,
-          "calls": 1340
+          "state": 3916630447,
+          "calls": 3386
         },
-        "problem": "physical route frontier did not open after 8 interaction attempts"
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       },
       {
         "level_num": 8,

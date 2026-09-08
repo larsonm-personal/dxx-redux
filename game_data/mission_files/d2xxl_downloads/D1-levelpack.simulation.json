@@ -386,19 +386,19 @@
       {
         "level_num": 0,
         "level_file": "galileo.rdl",
-        "route_input_sha256": "EAA4161D77EE05597D767750E1F7297209C992E161750BBB63DF439581CE7635",
+        "route_input_sha256": "DD7389B4E754FCB07E3A6D034A266BD59818E3FFABC36E98A5F56CD98993B8ED",
         "status": "timeout",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
         "objectives": [],
-        "total_frames": 948,
+        "total_frames": 4070,
         "rng_end": {
-          "state": 2102736524,
-          "calls": 43
+          "state": 2997488038,
+          "calls": 257
         },
-        "problem": "physical route frontier did not open after 8 interaction attempts"
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },
@@ -609,17 +609,26 @@
       {
         "level_num": 0,
         "level_file": "SHOKWAVE.RDL",
-        "route_input_sha256": "2A1B1313C8D066E893DD36009847145386DB6D8F4D7E585A504F9EA1FFC34316",
+        "route_input_sha256": "CC01CE1E043A5499DD530BE04524A23CD1059FBD5C9A10A6E15729E92A2ED8FE",
         "status": "timeout",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 4089,
+        "objectives": [
+          {
+            "n": "blastable wall",
+            "s": 2
+          },
+          {
+            "n": "blastable wall",
+            "s": 2
+          }
+        ],
+        "total_frames": 4598,
         "rng_end": {
-          "state": 3794901700,
-          "calls": 19
+          "state": 1969681615,
+          "calls": 26
         },
         "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }

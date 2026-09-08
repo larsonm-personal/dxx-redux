@@ -62,7 +62,7 @@
       {
         "level_num": 0,
         "level_file": "gigalo02.rl2",
-        "route_input_sha256": "5E78DD822A2A2F3468C1007BA5121A94C6B4920C7197E6F93121D6A7B51B4529",
+        "route_input_sha256": "0BB287AE8936862FDDFF944F55DE5AD8A0398CD8463A90DF82B1479950699D81",
         "status": "timeout",
         "rng_start": {
           "state": 1,

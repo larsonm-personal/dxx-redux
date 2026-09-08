@@ -129,7 +129,7 @@
     {
       "level_num": 4,
       "level_file": "gauntlet.rdl",
-      "route_input_sha256": "9B147B70B259071CC295A787377A282C17F93A800AD555218B99B9FEF5EC38E4",
+      "route_input_sha256": "39DDF1ADF28958C87922C68ABFC7B7B97DF0B5526C32AE7FF87E7F8E8C1DC8FC",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -137,70 +137,70 @@
       },
       "objectives": [
         {
-          "n": "fly-through 0",
-          "s": 20
+          "n": "blastable wall",
+          "s": 17
         },
         {
-          "n": "blastable wall",
-          "s": 20
+          "n": "fly-through 0",
+          "s": 17
         },
         {
           "n": "fly-through 1",
-          "s": 24
+          "s": 21
         },
         {
           "n": "fly-through 2",
-          "s": 27
+          "s": 24
         },
         {
           "n": "fly-through 3",
-          "s": 29
+          "s": 26
         },
         {
           "n": "fly-through 4",
-          "s": 32
+          "s": 29
         },
         {
           "n": "fly-through 5",
-          "s": 34
+          "s": 31
         },
         {
           "n": "fly-through 6",
-          "s": 37
+          "s": 34
         },
         {
           "n": "fly-through 7",
-          "s": 41
+          "s": 38
         },
         {
           "n": "fly-through 8",
-          "s": 43
+          "s": 40
         },
         {
           "n": "fly-through 9",
-          "s": 47
+          "s": 44
         },
         {
           "n": "blue key",
-          "s": 65
+          "s": 62
         },
         {
           "n": "gold key",
-          "s": 115
+          "s": 113
         },
         {
           "n": "reactor",
-          "s": 240
+          "s": 239
         },
         {
           "n": "exit",
-          "s": 248
+          "s": 247
         }
       ],
-      "total_frames": 14902,
+      "total_frames": 14824,
       "rng_end": {
-        "state": 2388714045,
-        "calls": 260
+        "state": 4112870923,
+        "calls": 254
       }
     },
     {

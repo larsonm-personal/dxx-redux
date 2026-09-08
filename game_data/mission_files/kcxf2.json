@@ -656,6 +656,33 @@
           },
           {
             "index": 4,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 201,
+            "side": 0,
+            "wall": 55,
+            "label_pos": {
+              "x": 187.9,
+              "y": -182.1,
+              "z": 456.2
+            },
+            "distance": 2055.9,
+            "opens": [
+              {
+                "seg": 201,
+                "side": 0,
+                "wall": 55
+              },
+              {
+                "seg": 202,
+                "side": 2,
+                "wall": 54
+              }
+            ]
+          },
+          {
+            "index": 5,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 20",
@@ -667,7 +694,7 @@
               "y": -181.9,
               "z": 516.3
             },
-            "distance": 2146.3,
+            "distance": 90.4,
             "trigger": 20,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -685,33 +712,6 @@
             ]
           },
           {
-            "index": 5,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 202,
-            "side": 2,
-            "wall": 54,
-            "label_pos": {
-              "x": 187.9,
-              "y": -182.1,
-              "z": 456.2
-            },
-            "distance": 60.3,
-            "opens": [
-              {
-                "seg": 202,
-                "side": 2,
-                "wall": 54
-              },
-              {
-                "seg": 201,
-                "side": 0,
-                "wall": 55
-              }
-            ]
-          },
-          {
             "index": 6,
             "kind": "boss",
             "activation_kind": "destroy_boss",
@@ -722,7 +722,7 @@
               "y": -73.2,
               "z": -266.9
             },
-            "distance": 2847.7
+            "distance": 2908.0
           },
           {
             "index": 7,
@@ -785,6 +785,60 @@
           },
           {
             "index": 1,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 542,
+            "side": 2,
+            "wall": 149,
+            "label_pos": {
+              "x": -277.5,
+              "y": -139.9,
+              "z": -176.0
+            },
+            "distance": 3031.5,
+            "opens": [
+              {
+                "seg": 542,
+                "side": 2,
+                "wall": 149
+              },
+              {
+                "seg": 539,
+                "side": 0,
+                "wall": 150
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 516,
+            "side": 1,
+            "wall": 147,
+            "label_pos": {
+              "x": -619.0,
+              "y": -140.2,
+              "z": 163.0
+            },
+            "distance": 619.5,
+            "opens": [
+              {
+                "seg": 516,
+                "side": 1,
+                "wall": 147
+              },
+              {
+                "seg": 494,
+                "side": 3,
+                "wall": 148
+              }
+            ]
+          },
+          {
+            "index": 3,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 4",
@@ -796,7 +850,7 @@
               "y": -402.3,
               "z": -415.5
             },
-            "distance": 5269.9,
+            "distance": 1619.0,
             "trigger": 4,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -814,60 +868,6 @@
             ]
           },
           {
-            "index": 2,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 494,
-            "side": 3,
-            "wall": 148,
-            "label_pos": {
-              "x": -619.0,
-              "y": -140.2,
-              "z": 163.0
-            },
-            "distance": 1589.1,
-            "opens": [
-              {
-                "seg": 494,
-                "side": 3,
-                "wall": 148
-              },
-              {
-                "seg": 516,
-                "side": 1,
-                "wall": 147
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "blastable_wall",
-            "activation_kind": "destroy_blastable_wall",
-            "label": "Destroy blastable wall",
-            "seg": 539,
-            "side": 0,
-            "wall": 150,
-            "label_pos": {
-              "x": -277.5,
-              "y": -139.9,
-              "z": -176.0
-            },
-            "distance": 619.6,
-            "opens": [
-              {
-                "seg": 539,
-                "side": 0,
-                "wall": 150
-              },
-              {
-                "seg": 542,
-                "side": 2,
-                "wall": 149
-              }
-            ]
-          },
-          {
             "index": 4,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
@@ -880,7 +880,7 @@
               "y": -81.5,
               "z": 219.9
             },
-            "distance": 2240.2,
+            "distance": 4448.9,
             "opens": [
               {
                 "seg": 352,

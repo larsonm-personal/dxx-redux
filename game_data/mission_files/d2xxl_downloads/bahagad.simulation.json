@@ -61,7 +61,7 @@
       {
         "level_num": 2,
         "level_file": "world1b.rl2",
-        "route_input_sha256": "369F5219E2C65A11B6E77291DD2661DAA8B30DC89824AA457943792AFFC7F3F8",
+        "route_input_sha256": "C980D8F085FB2BCE0311F23A3E8C32AA17880E30C7E4158D8FC0FEAE36BE22B0",
         "status": "ok",
         "rng_start": {
           "state": 1,
@@ -81,34 +81,34 @@
             "s": 49
           },
           {
-            "n": "switch 11",
-            "s": 58
+            "n": "blastable wall",
+            "s": 64
           },
           {
-            "n": "blastable wall",
-            "s": 67
+            "n": "switch 11",
+            "s": 64
           },
           {
             "n": "red key",
-            "s": 70
+            "s": 67
           },
           {
             "n": "switch 2",
-            "s": 90
+            "s": 88
           },
           {
             "n": "reactor",
-            "s": 92
+            "s": 89
           },
           {
             "n": "exit",
-            "s": 102
+            "s": 100
           }
         ],
-        "total_frames": 6133,
+        "total_frames": 5998,
         "rng_end": {
-          "state": 986697615,
-          "calls": 2394
+          "state": 3773260610,
+          "calls": 2357
         }
       },
       {
@@ -439,7 +439,7 @@
       {
         "level_num": 2,
         "level_file": "world1b.rl2",
-        "route_input_sha256": "444F8DB21CCF76128BF982D6E9B121C7EB6337E3A43961D10BADBBC52AD0ECA5",
+        "route_input_sha256": "8A61E5E6F02AD320724E1A878B36AD368C39EFECDAC180A5F2E3250EF165BEB2",
         "status": "ok",
         "rng_start": {
           "state": 1,
@@ -459,34 +459,34 @@
             "s": 49
           },
           {
-            "n": "switch 11",
-            "s": 58
+            "n": "blastable wall",
+            "s": 64
           },
           {
-            "n": "blastable wall",
-            "s": 67
+            "n": "switch 11",
+            "s": 64
           },
           {
             "n": "red key",
-            "s": 70
+            "s": 67
           },
           {
             "n": "switch 2",
-            "s": 90
+            "s": 88
           },
           {
             "n": "reactor",
-            "s": 92
+            "s": 89
           },
           {
             "n": "exit",
-            "s": 102
+            "s": 100
           }
         ],
-        "total_frames": 6133,
+        "total_frames": 5998,
         "rng_end": {
-          "state": 986697615,
-          "calls": 2394
+          "state": 3773260610,
+          "calls": 2357
         }
       },
       {

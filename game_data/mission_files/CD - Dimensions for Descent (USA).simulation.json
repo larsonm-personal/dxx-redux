@@ -1297,7 +1297,7 @@
       {
         "level_num": 0,
         "level_file": "karlmb01.rdl",
-        "route_input_sha256": "13B9CA85DECADFB8E0A2EA09BFD9123449D1151A3D346FD9AC4DC054F05D2514",
+        "route_input_sha256": "06923B2579517057DF0C2C7C7B7135FAB74E3F40F65BB871C5872E59CED6BF9B",
         "status": "ok",
         "rng_start": {
           "state": 1,
@@ -1305,38 +1305,38 @@
         },
         "objectives": [
           {
+            "n": "blastable wall",
+            "s": 2
+          },
+          {
             "n": "fly-through 3",
-            "s": 8
+            "s": 5
           },
           {
             "n": "gold key",
-            "s": 9
+            "s": 6
           },
           {
             "n": "red key",
-            "s": 19
+            "s": 17
           },
           {
             "n": "blue key",
-            "s": 32
+            "s": 30
           },
           {
             "n": "reactor",
-            "s": 56
-          },
-          {
-            "n": "blastable wall",
-            "s": 67
+            "s": 54
           },
           {
             "n": "exit",
-            "s": 71
+            "s": 68
           }
         ],
-        "total_frames": 4231,
+        "total_frames": 4089,
         "rng_end": {
-          "state": 1814397249,
-          "calls": 192
+          "state": 769681363,
+          "calls": 182
         }
       }
     ]
