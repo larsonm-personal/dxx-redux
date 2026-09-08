@@ -84,8 +84,7 @@ struct route_target_inventory {
 	int required_key_mask = 0;
 	bool reactor_found = false;
 	route_target reactor;
-	bool boss_found = false;
-	route_target boss;
+	std::vector<route_target> bosses;
 	std::vector<route_target> exits;
 };
 

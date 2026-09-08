@@ -103,6 +103,7 @@ typedef struct level_metadata_route_step {
 	int trigger_num;
 	int trigger_type;
 	int key_index;
+	/* Live object identity for a key carrier, reactor, or selected boss */
 	int key_carrier_objnum;
 	int can_be_bypassed;
 	int activation_kind;

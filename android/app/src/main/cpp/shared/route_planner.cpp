@@ -2102,13 +2102,14 @@ route_target_inventory discover_route_targets(const route_snapshot &snapshot)
 			result.reactor.object = static_cast<int>(object_index);
 			result.reactor.position = object.position;
 		}
-		if (!result.boss_found && object.kind == route_object_kind::robot &&
+		if (object.kind == route_object_kind::robot &&
 		    object.boss) {
-			result.boss_found = true;
-			result.boss.kind = route_target_kind::boss;
-			result.boss.segment = object.segment;
-			result.boss.object = static_cast<int>(object_index);
-			result.boss.position = object.position;
+			route_target boss;
+			boss.kind = route_target_kind::boss;
+			boss.segment = object.segment;
+			boss.object = static_cast<int>(object_index);
+			boss.position = object.position;
+			result.bosses.push_back(boss);
 		}
 	}
 	if (!result.reactor_found) {
@@ -2994,6 +2995,8 @@ class dependency_planner
 		step.label = label;
 		step.aim_position = target.position;
 		step.label_position = target.position;
+		if (kind == route_semantic_step_kind::reactor || kind == route_semantic_step_kind::boss)
+			step.key_carrier_object = target.object;
 		if (kind == route_semantic_step_kind::reactor)
 			step.activation = route_activation_kind::destroy_reactor;
 		else if (kind == route_semantic_step_kind::boss)
@@ -3435,15 +3438,21 @@ class dependency_planner
 		progressed = false;
 		if (state_.progress.control_center_destroyed)
 			return true;
-		if (targets_.boss_found) {
-			/* Boss levels ghost the ordinary reactor during game initialization */
-			if (!move_primary_with_key_recovery(targets_.boss) ||
-			    !append_target_step(
-			        route_semantic_step_kind::boss, targets_.boss,
-			        "Boss robot"))
-				return false;
-			state_.progress.control_center_destroyed = true;
-			progressed = true;
+		if (!targets_.bosses.empty()) {
+			/* Any boss death opens the exit; an earlier sealed boss must not
+			 * hide a reachable encounter. Never substitute the ghost reactor */
+			const auto initial = state_;
+			for (const auto &boss : targets_.bosses) {
+				state_ = initial;
+				if (!move_primary_with_key_recovery(boss))
+					continue;
+				if (!append_target_step(route_semantic_step_kind::boss, boss, "Boss robot"))
+					return false;
+				state_.progress.control_center_destroyed = true;
+				progressed = true;
+				return true;
+			}
+			return false;
 		} else if (targets_.reactor_found) {
 			if (!move_primary_with_key_recovery(targets_.reactor) ||
 			    !append_target_step(

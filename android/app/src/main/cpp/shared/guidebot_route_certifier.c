@@ -699,8 +699,13 @@ static int guidebot_resolve_primary_object(
 	if (!view->object_count || !view->object_type || !view->object_segment)
 		return 0;
 	count = view->object_count(view->user);
-	for (object = 0; object < count; ++object) {
+	/* Primary steps carry their selected object in the live object slot too */
+	for (int candidate = -1; candidate < count; ++candidate) {
 		int matches;
+		object = candidate < 0 ? step->key_carrier_objnum : candidate;
+		if (object < 0 || object >= count ||
+		    (candidate >= 0 && view->object_segment(view->user, object) != step->seg))
+			continue;
 
 		if (!guidebot_object_alive(view, object))
 			continue;

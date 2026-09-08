@@ -2309,8 +2309,8 @@ int main()
 	const auto targets = dxx_route::discover_route_targets(first);
 	assert(targets.reactor_found);
 	assert(targets.reactor.segment == 0);
-	assert(targets.boss_found);
-	assert(targets.boss.segment == 1);
+	assert(targets.bosses.size() == 1);
+	assert(targets.bosses[0].segment == 1);
 	assert(targets.exits.size() == 1);
 	assert(targets.exits[0].segment == 1);
 	assert(targets.exits[0].side == 0);

@@ -5,10 +5,9 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 9,
-    "failed": 1
+    "ok": 10
   },
   "levels": [
     {
@@ -566,8 +565,8 @@
     {
       "level_num": 9,
       "level_file": "bioform.rl2",
-      "route_input_sha256": "EB1A49441256233FA3C231FC0CFF192721131FB0AE298BC7F784320A9294DA31",
-      "status": "failed",
+      "route_input_sha256": "7FEA6744C780FE59EBAA9CA13F3A4D4635F2FB1C60BF87B1EC105B594F0F209C",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -592,14 +591,29 @@
         {
           "n": "red key",
           "s": 46
+        },
+        {
+          "n": "fly-through 27",
+          "s": 46
+        },
+        {
+          "n": "switch 26",
+          "s": 55
+        },
+        {
+          "n": "boss",
+          "s": 67
+        },
+        {
+          "n": "exit",
+          "s": 70
         }
       ],
-      "total_frames": 2738,
+      "total_frames": 4210,
       "rng_end": {
-        "state": 4168882342,
-        "calls": 3585
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 3055328523,
+        "calls": 4606
+      }
     },
     {
       "level_num": -1,

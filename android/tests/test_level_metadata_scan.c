@@ -1627,6 +1627,18 @@ static int test_route_rejects_reactor_when_boss_is_unreachable(void)
 	failures += expect_string("unreachable boss route status", "failed", level_metadata_route_status_name(state.route_status));
 	failures += expect_int("unreachable boss route steps", 1, state.route_step_count);
 	failures += expect_string("unreachable boss route step", "start", level_metadata_route_step_kind_name(state.route_steps[0].kind));
+	/* A second, reachable boss is a real encounter and opens the same exit */
+	test_object_count_value = 3;
+	test_object_type[2] = TEST_OBJ_ROBOT;
+	test_object_id[2] = TEST_ROBOT_BOSS;
+	test_object_seg[2] = 1;
+	level_metadata_scan_level(&view, &state);
+	failures += expect_string("second boss route status", "ok", level_metadata_route_status_name(state.route_status));
+	failures += expect_int("second boss route steps", 3, state.route_step_count);
+	failures += expect_string("second boss route step", "boss", level_metadata_route_step_kind_name(state.route_steps[1].kind));
+	failures += expect_int("second boss selected segment", 1, state.route_steps[1].seg);
+	failures += expect_int("second boss selected object", 2, state.route_steps[1].key_carrier_objnum);
+	failures += expect_string("second boss route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[2].kind));
 	return failures;
 }
 
