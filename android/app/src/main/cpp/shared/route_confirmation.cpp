@@ -375,7 +375,9 @@ int record_implicitly_completed_steps(const level_metadata_state *metadata,
 		for (int result_index = 0;
 		     result_index < State.summary.objective_count; ++result_index)
 			if (State.summary.objectives[result_index].route_step_index ==
-			    step_index) {
+			    step_index &&
+			    State.summary.objectives[result_index].is_switch_restorer ==
+			        step->is_switch_restorer) {
 				already_recorded = 1;
 				break;
 			}
@@ -392,6 +394,8 @@ int record_implicitly_completed_steps(const level_metadata_state *metadata,
 		result->route_step_index = step_index;
 		result->kind = step->kind;
 		result->activation_kind = step->activation_kind;
+		result->is_switch_restorer = step->is_switch_restorer;
+		result->restored_wall_num = step->restored_wall_num;
 		result->completed_ticks = State.summary.elapsed_ticks;
 		result->completed_frame = State.summary.frame_count;
 		snprintf(result->label, sizeof(result->label), "%s", step->label);
@@ -436,7 +440,8 @@ int objective_was_recorded(const level_metadata_route_step *step, int step_index
 		    &State.summary.objectives[index];
 		if (completed->route_step_index == step_index &&
 		    completed->kind == step->kind &&
-		    completed->activation_kind == step->activation_kind)
+		    completed->activation_kind == step->activation_kind &&
+		    completed->is_switch_restorer == step->is_switch_restorer)
 			return 1;
 	}
 	return 0;
@@ -870,7 +875,8 @@ void record_objective_and_replan(void)
 		if (completed->route_step_index ==
 		        State.summary.current_route_step_index &&
 		    completed->kind == State.step.kind &&
-		    completed->activation_kind == State.step.activation_kind) {
+		    completed->activation_kind == State.step.activation_kind &&
+		    completed->is_switch_restorer == State.step.is_switch_restorer) {
 			/* Restorer triggers can reactivate an already completed semantic
 			 * step while later prerequisites are being resolved.  Execute and
 			 * replan it, but keep one timing entry per authored objective. */
@@ -892,6 +898,8 @@ void record_objective_and_replan(void)
 	result->route_step_index = State.summary.current_route_step_index;
 	result->kind = State.step.kind;
 	result->activation_kind = State.summary.current_activation_kind;
+	result->is_switch_restorer = State.step.is_switch_restorer;
+	result->restored_wall_num = State.step.restored_wall_num;
 	result->completed_ticks = State.summary.elapsed_ticks;
 	result->completed_frame = State.summary.frame_count;
 	snprintf(result->label, sizeof(result->label), "%s", State.step.label);
@@ -1028,6 +1036,18 @@ int apply_flare_fallback(object *actor, int segnum, int sidenum, int wall_num)
 	           : Walls[wall_num].state != WALL_DOOR_CLOSED;
 }
 
+int next_actor_path_index(const object *actor)
+{
+	const ai_static *aip = &actor->ctype.ai_info;
+	int closest = -1;
+	for (int index = 0; aip->hide_index >= 0 && index < aip->path_length; ++index) {
+		if (Point_segs[aip->hide_index + index].segnum == actor->segnum &&
+		    (closest < 0 || abs(index - aip->cur_path_index) < abs(closest - aip->cur_path_index)))
+			closest = index;
+	}
+	return closest >= 0 ? closest + aip->PATH_DIR : aip->cur_path_index;
+}
+
 void recover_path_door(object *actor)
 {
 	ai_static *aip;
@@ -1142,6 +1162,11 @@ int set_visible_flare_target(const object *actor, int segnum, int sidenum,
 	query.thisobjnum = (short) (actor - Objects);
 	query.flags = FQ_IGNORE_POWERUPS;
 	fate = find_vector_intersection(&query, &hit);
+	if (fate == HIT_WALL && hit.hit_side_seg == segnum && hit.hit_side == sidenum)
+		return 1;
+	// Preserve direct door targeting while allowing shots through intervening grates
+	query.flags |= FQ_TRANSPOINT;
+	fate = find_vector_intersection(&query, &hit);
 	return fate == HIT_WALL && hit.hit_side_seg == segnum &&
 	       hit.hit_side == sidenum;
 }
@@ -1183,32 +1208,35 @@ int find_route_flare_target(object *actor, int *segnum, int *sidenum,
 			return 1;
 		}
 	}
-	previous_seg = actor->segnum;
-	for (int lookahead = 0; aip->hide_index >= 0 && lookahead < 3;
-	     ++lookahead) {
-		const int path_offset =
-		    aip->cur_path_index + (lookahead + 1) * aip->PATH_DIR;
-		const int path_index = aip->hide_index + path_offset;
-		int side;
-		if (path_offset < 0 || path_offset >= aip->path_length)
-			break;
-		const int next_seg = Point_segs[path_index].segnum;
-		if (next_seg == previous_seg)
-			continue;
-		side = find_connect_side(&Segments[next_seg], &Segments[previous_seg]);
-		if (side >= 0) {
-			const int candidate_wall =
-			    Segments[previous_seg].sides[side].wall_num;
-			if (wall_accepts_route_flare(candidate_wall) &&
-			    set_visible_flare_target(actor, previous_seg, side,
-			                             direction)) {
-				*segnum = previous_seg;
-				*sidenum = side;
-				*wall_num = candidate_wall;
-				return 1;
+	for (int path_pass = 0; path_pass < 2; ++path_pass) {
+		previous_seg = actor->segnum;
+		const int first_path_offset = path_pass == 0 ? aip->cur_path_index + aip->PATH_DIR : next_actor_path_index(actor);
+		for (int lookahead = 0; aip->hide_index >= 0 && lookahead < 3;
+		     ++lookahead) {
+			const int path_offset =
+			    first_path_offset + lookahead * aip->PATH_DIR;
+			const int path_index = aip->hide_index + path_offset;
+			int side;
+			if (path_offset < 0 || path_offset >= aip->path_length)
+				break;
+			const int next_seg = Point_segs[path_index].segnum;
+			if (next_seg == previous_seg)
+				continue;
+			side = find_connect_side(&Segments[next_seg], &Segments[previous_seg]);
+			if (side >= 0) {
+				const int candidate_wall =
+				    Segments[previous_seg].sides[side].wall_num;
+				if (wall_accepts_route_flare(candidate_wall) &&
+				    set_visible_flare_target(actor, previous_seg, side,
+				                             direction)) {
+					*segnum = previous_seg;
+					*sidenum = side;
+					*wall_num = candidate_wall;
+					return 1;
+				}
 			}
+			previous_seg = next_seg;
 		}
-		previous_seg = next_seg;
 	}
 	if (State.target_seg != State.semantic_target_seg &&
 	    actor_reached_target(actor)) {
@@ -1377,6 +1405,12 @@ void apply_objective_action(object *actor)
 				       Walls[wall_num].state == WALL_DOOR_WAITING ||
 				       Walls[wall_num].state == WALL_DOOR_OPEN)) ||
 				     actor_reached_target(actor))) {
+					// A remote shot can open a door that blocks the next switch's line of fire
+					if (State.step.seg != segnum && wall_num >= 0 && wall_num < Num_walls &&
+					    Walls[wall_num].state != WALL_DOOR_CLOSED) {
+						record_objective_and_replan();
+						break;
+					}
 					if (wall_num >= 0 && wall_num < Num_walls &&
 					    Walls[wall_num].state == WALL_DOOR_CLOSED &&
 					    !apply_flare_fallback(actor, segnum, sidenum,

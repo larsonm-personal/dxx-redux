@@ -430,6 +430,16 @@ static int guidebot_route_find_blocked_segment(object *objp, point_seg *psegs,
 		hit_type = find_vector_intersection(&query, &hit_data);
 		if (hit_type == HIT_NONE)
 			continue;
+		/* A shooting objective can occupy a shallow segment whose center
+		 * overlaps the switch itself. Keep its approach available so normal
+		 * aiming and collision handling can activate the wall from outside */
+		if (hit_type == HIT_WALL && i + 2 == num_points &&
+		    psegs[i + 1].segnum == end_seg && Escort_route_goal.active &&
+		    Escort_route_goal.target_seg == end_seg &&
+		    Escort_route_goal.activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH &&
+		    hit_data.hit_side_seg == Escort_route_goal.objective_seg &&
+		    hit_data.hit_side == Escort_route_goal.objective_side)
+			continue;
 		if (!guidebot_route_hit_is_closed_trigger_barrier(&hit_data)) {
 			object probe;
 			int clearance;

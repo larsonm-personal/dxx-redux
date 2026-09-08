@@ -1609,7 +1609,7 @@ static int test_route_prefers_boss_over_reactor_object(void)
 	return failures;
 }
 
-static int test_route_uses_reactor_when_boss_is_unreachable(void)
+static int test_route_rejects_reactor_when_boss_is_unreachable(void)
 {
 	level_metadata_scan_view view = test_view();
 	level_metadata_state state;
@@ -1623,11 +1623,10 @@ static int test_route_uses_reactor_when_boss_is_unreachable(void)
 	test_object_id[1] = TEST_ROBOT_BOSS;
 	test_object_seg[1] = 3;
 	level_metadata_scan_level(&view, &state);
-	failures += expect_string("unreachable boss reactor route status", "ok", level_metadata_route_status_name(state.route_status));
-	failures += expect_int("unreachable boss reactor route steps", 3, state.route_step_count);
-	failures += expect_string("unreachable boss reactor route step", "reactor", level_metadata_route_step_kind_name(state.route_steps[1].kind));
-	failures += expect_string("unreachable boss reactor route activation", "destroy_reactor", level_metadata_route_activation_kind_name(state.route_steps[1].activation_kind));
-	failures += expect_string("unreachable boss reactor route exit", "exit", level_metadata_route_step_kind_name(state.route_steps[2].kind));
+	/* Game initialization ghosts the reactor while a boss is present */
+	failures += expect_string("unreachable boss route status", "failed", level_metadata_route_status_name(state.route_status));
+	failures += expect_int("unreachable boss route steps", 1, state.route_step_count);
+	failures += expect_string("unreachable boss route step", "start", level_metadata_route_step_kind_name(state.route_steps[0].kind));
 	return failures;
 }
 
@@ -1823,7 +1822,7 @@ int main(void)
 	failures += test_route_visible_reactor_step();
 	failures += test_route_prefers_boss_over_control_center_segment();
 	failures += test_route_prefers_boss_over_reactor_object();
-	failures += test_route_uses_reactor_when_boss_is_unreachable();
+	failures += test_route_rejects_reactor_when_boss_is_unreachable();
 	failures += test_energy_center_distance_bounds();
 	failures += test_guidebot_missing_note();
 	failures += test_guidebot_accessible();

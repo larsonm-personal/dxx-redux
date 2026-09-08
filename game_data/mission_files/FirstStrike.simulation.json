@@ -104,7 +104,7 @@
           "s": 72
         }
       ],
-      "total_frames": 4323,
+      "total_frames": 4302,
       "rng_end": {
         "state": 4022231744,
         "calls": 71
@@ -134,17 +134,17 @@
         },
         {
           "n": "reactor",
-          "s": 77
+          "s": 78
         },
         {
           "n": "exit",
-          "s": 86
+          "s": 87
         }
       ],
-      "total_frames": 5157,
+      "total_frames": 5229,
       "rng_end": {
-        "state": 2226230633,
-        "calls": 88
+        "state": 856000655,
+        "calls": 90
       }
     },
     {
@@ -594,10 +594,10 @@
         },
         {
           "n": "exit",
-          "s": 79
+          "s": 78
         }
       ],
-      "total_frames": 4723,
+      "total_frames": 4702,
       "rng_end": {
         "state": 3269224778,
         "calls": 77

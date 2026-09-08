@@ -3427,28 +3427,14 @@ class dependency_planner
 		if (state_.progress.control_center_destroyed)
 			return true;
 		if (targets_.boss_found) {
-			/* A custom level can provide both control-center actors while making
-			 * only one of them reachable.  Prefer its boss, but do not reject a
-			 * valid reactor completion when the boss route cannot be built. */
-			const auto before_primary = state_;
-			if (move_primary_with_key_recovery(targets_.boss) &&
-			    append_target_step(
+			/* Boss levels ghost the ordinary reactor during game initialization */
+			if (!move_primary_with_key_recovery(targets_.boss) ||
+			    !append_target_step(
 			        route_semantic_step_kind::boss, targets_.boss,
-			        "Boss robot")) {
-				state_.progress.control_center_destroyed = true;
-				progressed = true;
-			} else if (targets_.reactor_found) {
-				state_ = before_primary;
-				state_.problem.clear();
-				if (!move_primary_with_key_recovery(targets_.reactor) ||
-				    !append_target_step(
-				        route_semantic_step_kind::reactor, targets_.reactor,
-				        "Reactor"))
-					return false;
-				state_.progress.control_center_destroyed = true;
-				progressed = true;
-			} else
+			        "Boss robot"))
 				return false;
+			state_.progress.control_center_destroyed = true;
+			progressed = true;
 		} else if (targets_.reactor_found) {
 			if (!move_primary_with_key_recovery(targets_.reactor) ||
 			    !append_target_step(
@@ -3722,7 +3708,8 @@ class dependency_planner
 		raw_sources.erase(
 		    std::remove_if(
 		        raw_sources.begin(), raw_sources.end(), [&](const auto &source) {
-			        return !trigger_source_fits_navigator(snapshot_, query_, source);
+			        return state_flag(state_.progress.avoided_triggers, source.trigger) ||
+		               !trigger_source_fits_navigator(snapshot_, query_, source);
 		        }),
 		    raw_sources.end());
 		if (raw_sources.empty()) {

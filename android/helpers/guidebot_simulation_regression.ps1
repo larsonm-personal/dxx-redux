@@ -108,6 +108,7 @@ function Get-GuidebotExpectedObjectives {
                 route_step_index = [int](Get-GuidebotPropertyValue -InputObject $step -Name 'index' -Default -1)
                 kind = $kind
                 activation_kind = [string](Get-GuidebotPropertyValue -InputObject $step -Name 'activation_kind' -Default '')
+                wall = [int](Get-GuidebotPropertyValue -InputObject $step -Name 'wall' -Default -1)
             }
         }
     )
@@ -129,6 +130,19 @@ function Test-GuidebotObjectiveProjectionMatch {
         $stepIndex = [int](Get-GuidebotPropertyValue $actualItem 'route_step_index' -1)
         if (-not $expectedByIndex.ContainsKey($stepIndex)) { return $false }
         $expectedItem = $expectedByIndex[$stepIndex]
+        $restoredWall = Get-GuidebotPropertyValue $actualItem 'restores_switch_wall' $null
+        if ($null -ne $restoredWall) {
+            # A certified recovery is additional work; the planned switch remains required
+            if ($expectedItem.kind -ne 'trigger' -or $expectedItem.activation_kind -ne 'shoot_switch' -or
+                $expectedItem.wall -lt 0 -or [int]$restoredWall -ne $expectedItem.wall -or
+                [string](Get-GuidebotPropertyValue $actualItem 'kind' '') -ne 'trigger' -or
+                [string](Get-GuidebotPropertyValue $actualItem 'activation_kind' '') -notin
+                @('shoot_switch', 'fly_through_trigger', 'pass_through_trigger') -or
+                $nextExpected -ge $expected.Count -or $stepIndex -ne $expected[$nextExpected].route_step_index) {
+                return $false
+            }
+            continue
+        }
         if ([string](Get-GuidebotPropertyValue $actualItem 'kind' '') -ne $expectedItem.kind -or
             [string](Get-GuidebotPropertyValue $actualItem 'activation_kind' '') -ne $expectedItem.activation_kind) {
             return $false

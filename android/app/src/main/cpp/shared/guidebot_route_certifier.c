@@ -836,6 +836,8 @@ static int guidebot_prepare_switch_restorer(
 				continue;
 			memset(&recovery, 0, sizeof(recovery));
 			recovery.kind = LEVEL_METADATA_ROUTE_TRIGGER;
+			recovery.is_switch_restorer = 1;
+			recovery.restored_wall_num = step->wall_num;
 			recovery.seg = segment;
 			recovery.side = side;
 			recovery.wall_num = source_wall;

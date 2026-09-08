@@ -83,6 +83,29 @@ $restorerEngine.objectives = @(
 $restorer = ConvertTo-GuidebotLevelSimulationResult -Mission $mission -Level $mission.levels[0] -EngineResult $restorerEngine
 Assert-True ($restorer.status -eq 'ok') 'a valid repeated restorer objective was rejected'
 
+# A live switch restoration may precede, but must never replace, the planned switch
+$switchLevel = [pscustomobject]@{
+    route_steps = @([pscustomobject]@{
+        index = 1; kind = 'trigger'; activation_kind = 'shoot_switch'; wall = 81
+    })
+}
+$recoveryObjective = [pscustomobject]@{
+    route_step_index = 1; kind = 'trigger'; activation_kind = 'fly_through_trigger'; restores_switch_wall = 81
+}
+$switchObjective = [pscustomobject]@{
+    route_step_index = 1; kind = 'trigger'; activation_kind = 'shoot_switch'
+}
+Assert-True (Test-GuidebotObjectiveProjectionMatch -Level $switchLevel -Actual @($recoveryObjective, $switchObjective)) `
+    'certified restoration followed by its planned switch was rejected'
+Assert-True (-not (Test-GuidebotObjectiveProjectionMatch -Level $switchLevel -Actual @($recoveryObjective))) `
+    'restoration incorrectly completed the planned switch'
+$wrongRecovery = $recoveryObjective.PSObject.Copy()
+$wrongRecovery.restores_switch_wall = 82
+Assert-True (-not (Test-GuidebotObjectiveProjectionMatch -Level $switchLevel -Actual @($wrongRecovery, $switchObjective))) `
+    'restoration of an unrelated wall was accepted'
+Assert-True (-not (Test-GuidebotObjectiveProjectionMatch -Level $switchLevel -Actual @($switchObjective, $recoveryObjective))) `
+    'out-of-order restoration was accepted'
+
 $emptyFailureEngine = $engine.PSObject.Copy()
 $emptyFailureEngine.status = 'timeout'
 $emptyFailureEngine.objectives = @()

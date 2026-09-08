@@ -657,6 +657,8 @@ static void test_compiled_selector_restores_removed_switch_surface(void)
 	assert(summary.used_prepared_fallback);
 	assert(Live.route_steps[1].trigger_num == 1);
 	assert(Live.route_steps[1].wall_num == 1);
+	assert(Live.route_steps[1].is_switch_restorer);
+	assert(Live.route_steps[1].restored_wall_num == 0);
 	assert(Live.route_steps[1].activation_kind ==
 	       LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER);
 	assert(certificate.source_trigger == 1);

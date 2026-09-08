@@ -28,6 +28,9 @@ typedef struct route_confirmation_objective_result {
 	int route_step_index;
 	int kind;
 	int activation_kind;
+	/* Live recovery restores a planned shooting objective without completing it */
+	int is_switch_restorer;
+	int restored_wall_num;
 	int64_t completed_ticks;
 	unsigned int completed_frame;
 	char label[64];

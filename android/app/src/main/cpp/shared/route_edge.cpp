@@ -51,7 +51,8 @@ int side_progress_trigger(
 		if (!valid_trigger(snapshot, trigger) ||
 		    snapshot.state.triggers[trigger].disabled ||
 		    !route_trigger_opens_path(snapshot.topology.triggers[trigger].kind) ||
-		    state_flag(progress.fired_triggers, trigger))
+		    state_flag(progress.fired_triggers, trigger) ||
+		    state_flag(progress.avoided_triggers, trigger))
 			continue;
 		return trigger;
 	}

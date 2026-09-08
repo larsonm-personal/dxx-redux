@@ -77,6 +77,8 @@ nlohmann::ordered_json serialize_result(const route_confirmation_summary &summar
 		item["activation_kind"] =
 		    level_metadata_route_activation_kind_name(objective.activation_kind);
 		item["activation_kind_id"] = objective.activation_kind;
+		if (objective.is_switch_restorer)
+			item["restores_switch_wall"] = objective.restored_wall_num;
 		item["label"] = objective.label;
 		item["frame"] = objective.completed_frame;
 		item["seconds"] = fixed_seconds(objective.completed_ticks);

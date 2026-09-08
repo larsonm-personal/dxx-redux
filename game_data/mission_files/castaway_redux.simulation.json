@@ -7,17 +7,16 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 5,
-    "failed": 1,
-    "unsupported": 1,
-    "route_mismatch": 3
+    "ok": 6,
+    "failed": 2,
+    "unsupported": 2
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "skorrpyo.rl2",
       "route_input_sha256": "C1BB3CF9191F188CE990B6E50300E261351700BF9F0177B2FAF17400322BEFDD",
-      "status": "route_mismatch",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -56,8 +55,7 @@
       "rng_end": {
         "state": 1280150804,
         "calls": 3459
-      },
-      "problem": "live objective sequence differs from route input"
+      }
     },
     {
       "level_num": 2,
@@ -152,8 +150,8 @@
       ],
       "total_frames": 6619,
       "rng_end": {
-        "state": 3185260802,
-        "calls": 7797
+        "state": 3942626502,
+        "calls": 7777
       }
     },
     {
@@ -176,11 +174,11 @@
         },
         {
           "n": "red key",
-          "s": 64
+          "s": 63
         },
         {
           "n": "switch 2",
-          "s": 95
+          "s": 94
         },
         {
           "n": "reactor",
@@ -188,13 +186,13 @@
         },
         {
           "n": "exit",
-          "s": 124
+          "s": 123
         }
       ],
-      "total_frames": 7459,
+      "total_frames": 7407,
       "rng_end": {
-        "state": 3039520771,
-        "calls": 7302
+        "state": 786945147,
+        "calls": 7310
       }
     },
     {
@@ -260,10 +258,10 @@
           "s": 96
         }
       ],
-      "total_frames": 5743,
+      "total_frames": 5776,
       "rng_end": {
-        "state": 665281505,
-        "calls": 5920
+        "state": 2147182535,
+        "calls": 5922
       }
     },
     {
@@ -294,10 +292,10 @@
         },
         {
           "n": "switch 12",
-          "s": 114
+          "s": 112
         }
       ],
-      "total_frames": 7010,
+      "total_frames": 6920,
       "rng_end": {
         "state": 3684793711,
         "calls": 3450
@@ -423,7 +421,7 @@
       "level_num": 8,
       "level_file": "meta.rl2",
       "route_input_sha256": "903101E9C41143EC9771360BB0C9580D8D91C9E07EADBD0CE1FC928733F2908C",
-      "status": "route_mismatch",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -475,13 +473,13 @@
         "state": 1626871541,
         "calls": 3596
       },
-      "problem": "live objective sequence differs from route input"
+      "problem": "route objective activation is not supported"
     },
     {
       "level_num": 9,
       "level_file": "bioform.rl2",
-      "route_input_sha256": "B75E317ECAF1ADEB1B13A1DF7ACE391C3D6B380F7160756D551D96C5B645F525",
-      "status": "route_mismatch",
+      "route_input_sha256": "EB1A49441256233FA3C231FC0CFF192721131FB0AE298BC7F784320A9294DA31",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -506,22 +504,14 @@
         {
           "n": "red key",
           "s": 46
-        },
-        {
-          "n": "fly-through 27",
-          "s": 46
-        },
-        {
-          "n": "switch 26",
-          "s": 55
         }
       ],
-      "total_frames": 10201,
+      "total_frames": 2738,
       "rng_end": {
-        "state": 969404566,
-        "calls": 4561
+        "state": 4168882342,
+        "calls": 3585
       },
-      "problem": "live objective sequence differs from route input"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": -1,

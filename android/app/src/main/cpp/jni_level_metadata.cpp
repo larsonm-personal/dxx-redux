@@ -346,12 +346,14 @@ static void levelmeta_progress(void *user, const char *stage,
 	}
 	const int percent = completed * 100 / total;
 	const Uint32 now = SDL_GetTicks();
+	// Track observed progress even when its checkpoint write is throttled
+	context->last_completed = completed;
 	if (!new_task && percent <= context->last_percent)
 		return;
-	if (!new_task && percent < 100 && now - context->last_write_ticks < 100)
+	// Rapid task changes and completions share the same disk-write limit
+	if (now - context->last_write_ticks < 100)
 		return;
 	write_level_task_progress(*context, stage, completed, total);
-	context->last_completed = completed;
 	context->last_percent = percent;
 	context->last_write_ticks = now;
 }

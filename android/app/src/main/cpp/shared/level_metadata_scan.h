@@ -106,6 +106,9 @@ typedef struct level_metadata_route_step {
 	int key_carrier_objnum;
 	int can_be_bypassed;
 	int activation_kind;
+	/* Live recovery restores a planned shooting objective without completing it */
+	int is_switch_restorer;
+	int restored_wall_num;
 	int switch_shot_quality;
 	int switch_shot_incidence_cosine;
 	int switch_guidance_candidate_count;
