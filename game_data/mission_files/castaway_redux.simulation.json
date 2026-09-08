@@ -7,11 +7,11 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
-    "failed": 3,
+    "ok": 4,
+    "failed": 1,
     "timeout": 1,
     "unsupported": 1,
-    "route_mismatch": 2
+    "route_mismatch": 3
   },
   "levels": [
     {
@@ -308,8 +308,8 @@
     {
       "level_num": 6,
       "level_file": "cove.rl2",
-      "route_input_sha256": "23A24DA71D1C207DB9A6EFE6B1CB94A11FC459C4D27C2DFF2470C7254528CC43",
-      "status": "failed",
+      "route_input_sha256": "84FFA89C54B51FD004F5E24B30EDC8F8D649219ABE6B045CF97BA0F210D0455A",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -322,14 +322,69 @@
         {
           "n": "blue key",
           "s": 18
+        },
+        {
+          "n": "fly-through 1",
+          "s": 28
+        },
+        {
+          "n": "switch 2",
+          "s": 29
+        },
+        {
+          "n": "gold key",
+          "s": 49
+        },
+        {
+          "n": "fly-through 18",
+          "s": 72
+        },
+        {
+          "n": "switch 19",
+          "s": 73
+        },
+        {
+          "n": "fly-through 38",
+          "s": 92
+        },
+        {
+          "n": "fly-through 9",
+          "s": 104
+        },
+        {
+          "n": "switch 10",
+          "s": 106
+        },
+        {
+          "n": "fly-through 12",
+          "s": 111
+        },
+        {
+          "n": "switch 11",
+          "s": 113
+        },
+        {
+          "n": "red key",
+          "s": 117
+        },
+        {
+          "n": "switch 21",
+          "s": 132
+        },
+        {
+          "n": "boss",
+          "s": 150
+        },
+        {
+          "n": "exit",
+          "s": 173
         }
       ],
-      "total_frames": 1059,
+      "total_frames": 10381,
       "rng_end": {
-        "state": 3251531490,
-        "calls": 533
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 3476506041,
+        "calls": 9352
+      }
     },
     {
       "level_num": 7,
@@ -368,8 +423,8 @@
     {
       "level_num": 8,
       "level_file": "meta.rl2",
-      "route_input_sha256": "5671D4D4948CCA8FD88B0BF7FA9D2ADA58F1A783C302E0826A98F1AA49596391",
-      "status": "failed",
+      "route_input_sha256": "903101E9C41143EC9771360BB0C9580D8D91C9E07EADBD0CE1FC928733F2908C",
+      "status": "route_mismatch",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -390,14 +445,38 @@
         {
           "n": "gold key",
           "s": 28
+        },
+        {
+          "n": "fly-through 15",
+          "s": 52
+        },
+        {
+          "n": "switch 24",
+          "s": 53
+        },
+        {
+          "n": "fly-through 14",
+          "s": 56
+        },
+        {
+          "n": "switch 25",
+          "s": 58
+        },
+        {
+          "n": "fly-through 16",
+          "s": 62
+        },
+        {
+          "n": "switch 26",
+          "s": 63
         }
       ],
-      "total_frames": 1703,
+      "total_frames": 3928,
       "rng_end": {
-        "state": 1976212944,
-        "calls": 1783
+        "state": 1626871541,
+        "calls": 3596
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "live objective sequence differs from route input"
     },
     {
       "level_num": 9,

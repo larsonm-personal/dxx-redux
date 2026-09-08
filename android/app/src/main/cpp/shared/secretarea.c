@@ -1814,6 +1814,16 @@ static int level_metadata_fvi_visibility_credible(
     int target_wall_side,
     fix radius)
 {
+	/* A ray ending on an open switch face can finish in its adjoining segment */
+	if (target_wall_seg >= 0 && target_wall_seg < Num_segments &&
+	    target_wall_side >= 0 && target_wall_side < MAX_SIDES_PER_SEGMENT &&
+	    Segments[target_wall_seg].children[target_wall_side] >= 0 &&
+	    hit_data && hit_data->n_segs >= 2 &&
+	    hit_data->seglist[hit_data->n_segs - 2] == target_wall_seg &&
+	    level_metadata_fvi_segment_chain_valid(
+	        hit_data, start_seg,
+	        Segments[target_wall_seg].children[target_wall_side]))
+		return 1;
 	if (level_metadata_fvi_segment_chain_valid(
 	        hit_data, start_seg, target_seg) ||
 	    level_metadata_fvi_segmented_visibility(
