@@ -21,6 +21,7 @@
 #   .\test_lan.ps1 -GuidebotOwnership
 #   .\test_lan.ps1 -GuidebotHostObserver
 #   .\test_lan.ps1 -GuidebotSlotRemapRestore
+#   .\test_lan.ps1 -SavedLateJoin -Game d2
 #   .\test_lan.ps1 -HostMigration
 #   .\test_lan.ps1 -SpewRecovery
 #   .\test_lan.ps1 -UseRelay
@@ -33,6 +34,7 @@ param(
     [switch]$GuidebotOwnership,
     [switch]$GuidebotHostObserver,
     [switch]$GuidebotSlotRemapRestore,
+    [switch]$SavedLateJoin,
     [switch]$HostMigration,
     [switch]$SpewRecovery,
     [switch]$SpewPickup,
@@ -769,9 +771,10 @@ function Test-DeviceCoopSaveSlot {
 function Get-DeviceLatestCoopAutosaveSlot {
     param([string]$Serial)
 
+    $gameDir = if ($Game -eq "d1") { "d1x-redux" } else { "d2x-redux" }
     $historyJson = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
         "shell", "run-as", $PACKAGE, "cat",
-        "files/d2x-redux/Players/save_sets/coop/d2/coop_autosave_history.json"
+        "files/$gameDir/coop_autosave_history.json"
     ) -Seconds 5
     if (-not $historyJson -or $historyJson -notmatch '^\s*\[') {
         return -1
@@ -790,6 +793,7 @@ function Get-DeviceLatestCoopAutosaveSlot {
 function Set-DeviceCoopRestoreSlot {
     param([string]$Serial, [int]$Slot)
 
+    $gameDir = if ($Game -eq "d1") { "d1x-redux" } else { "d2x-redux" }
     $localPath = Join-Path $REPO_ROOT "temp\coop_restore_slot.txt"
     [System.IO.File]::WriteAllText(
         $localPath,
@@ -800,16 +804,69 @@ function Set-DeviceCoopRestoreSlot {
         "push", $localPath, "/data/local/tmp/coop_restore_slot.txt"
     ) -Seconds 30 | Out-Null
     Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
-        "shell", "run-as", $PACKAGE, "mkdir", "-p", "files/d2x-redux"
+        "shell", "run-as", $PACKAGE, "mkdir", "-p", "files/$gameDir"
     ) -Seconds 5 | Out-Null
     Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
         "shell", "run-as", $PACKAGE, "cp", "/data/local/tmp/coop_restore_slot.txt",
-        "files/d2x-redux/coop_restore_slot.txt"
+        "files/$gameDir/coop_restore_slot.txt"
     ) -Seconds 5 | Out-Null
     $actual = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
-        "shell", "run-as", $PACKAGE, "cat", "files/d2x-redux/coop_restore_slot.txt"
+        "shell", "run-as", $PACKAGE, "cat", "files/$gameDir/coop_restore_slot.txt"
     ) -Seconds 5
     return $actual -and $actual.Trim() -eq $Slot.ToString()
+}
+
+function Invoke-SavedLateJoinScenario {
+    Write-Status "--- Saved client joins after host restores alone ---" "White"
+    if (-not (Start-DeviceGameAutomation -Serial $EMU2 -ScriptName "test_coop_late_join_seed.jsonc")) { return $false }
+    $geared = Wait-ForCondition -Description "host receives client inventory before save" -TimeoutSec 20 -PollMs 500 -Condition {
+        $intro = Get-GameIntrospection -Serial $EMU1
+        if (-not $intro) { return $false }
+        $peer = @($intro.multiplayer.players | Where-Object { $_.callsign -eq $CALLSIGN2 })
+        return $peer.Count -eq 1 -and $peer[0].primary_flags -eq 9 -and $peer[0].homing_ammo -eq 6
+    }
+    if (-not $geared) { return $false }
+    if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName "test_coop_late_join_save.jsonc")) { return $false }
+    $saved = Wait-ForCondition -Description "coop save completes" -TimeoutSec 20 -PollMs 500 -Condition {
+        $result = Get-DeviceAutomationResult -Serial $EMU1
+        return $result -and $result.result -eq "PASS"
+    }
+    if (-not $saved) { return $false }
+    $slot = Get-DeviceLatestCoopAutosaveSlot -Serial $EMU1
+    if ($slot -lt 0) { return $false }
+    foreach ($serial in @($EMU1, $EMU2)) {
+        Adb-Dev-Timeout -Serial $serial -AdbArgs @("shell", "am", "force-stop", $PACKAGE) -Seconds 10 | Out-Null
+        Adb-Dev-Timeout -Serial $serial -AdbArgs @("shell", "run-as", $PACKAGE, "rm", "-f", "files/introspect.json") -Seconds 5 | Out-Null
+    }
+    if (-not (Start-SetupActivity -Serial $EMU1)) { return $false }
+    if (-not (Set-DeviceCoopRestoreSlot -Serial $EMU1 -Slot $slot)) { return $false }
+    Send-MpCommand -Serial $EMU1 -Command "lan_launch" -Extras $hostExtras
+    $lobby = Wait-ForCondition -Description "host enters empty lobby" -TimeoutSec 30 -PollMs 500 -Condition {
+        $intro = Get-GameIntrospection -Serial $EMU1
+        return $intro -and $intro.is_network -and (Get-IntroNumConnected -Intro $intro) -eq 1
+    }
+    if (-not $lobby -or -not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName "test_coop_late_join_start.jsonc")) { return $false }
+    $restored = Wait-ForCondition -Description "host restores save alone" -TimeoutSec 60 -PollMs 1000 -Condition {
+        $intro = Get-GameIntrospection -Serial $EMU1
+        return $intro -and $intro.in_game -and $intro.coop_restore.status -eq "idle" -and
+        (Get-IntroNumConnected -Intro $intro) -eq 1
+    }
+    if (-not $restored -or -not (Start-SetupActivity -Serial $EMU2)) { return $false }
+    Send-MpCommand -Serial $EMU2 -Command "lan_launch" -Extras $joinExtras
+    $recovered = Wait-ForCondition -Description "late join restores saved plasma and six homing missiles" -TimeoutSec 60 -PollMs 1000 -Condition {
+        $intro = Get-GameIntrospection -Serial $EMU2
+        if ($intro -and $intro.in_game -and (Get-IntroNumConnected -Intro $intro) -eq 2) {
+            $localPlayer = @($intro.multiplayer.players | Where-Object { $_.is_me })[0]
+            return $localPlayer.primary_flags -eq 9 -and $localPlayer.homing_ammo -eq 6 -and $intro.player.laser_level -eq 2
+        }
+        Start-DeviceGameAutomation -Serial $EMU1 -ScriptName "test_coop_late_join_accept.jsonc" | Out-Null
+        return $false
+    }
+    if (-not $recovered) {
+        Write-DeviceAutomationDiagnostics -Serial $EMU1
+        Write-DeviceAutomationDiagnostics -Serial $EMU2
+    }
+    return $recovered
 }
 
 function Invoke-SpewRecoveryScenario {
@@ -1080,8 +1137,8 @@ try {
     Start-Sleep -Seconds 1
     Write-Status "Normalized music preferences for LAN launch" "Green"
 
-    if ($GuidebotSlotRemapRestore) {
-        Write-Status "Clearing prior coop saves before slot-remap coverage"
+    if ($GuidebotSlotRemapRestore -or $SavedLateJoin) {
+        Write-Status "Clearing prior coop saves before restore coverage"
         foreach ($emu in @($EMU1, $EMU2)) {
             Adb-Dev-Timeout -Serial $emu -AdbArgs @(
                 "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND",
@@ -1421,6 +1478,9 @@ try {
 
     if ($testPassed -and $GuidebotOwnership) {
         $testPassed = Invoke-GuidebotOwnershipScenario
+    }
+    if ($testPassed -and $SavedLateJoin) {
+        $testPassed = Invoke-SavedLateJoinScenario
     }
     if ($testPassed -and $GuidebotHostObserver) {
         $testPassed = Invoke-GuidebotHostObserverScenario

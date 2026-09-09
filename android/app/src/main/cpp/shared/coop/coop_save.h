@@ -152,7 +152,8 @@ int coop_take_absent_player_with_level(const char *callsign,
                                        coop_player_record *record,
                                        int *source_level);
 
-/* Repopulate the absent player list from save metadata.
+/* Repopulate the absent player list from save metadata, including saved active
+ * players missing from the current session.
  * Called after state_restore_all_sub() loads a coop save. */
 void coop_load_absent_from_metadata(const coop_save_metadata *meta);
 

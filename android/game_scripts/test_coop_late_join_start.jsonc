@@ -1,0 +1,6 @@
+[
+    {"_info": {"games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "select", "text": "Ok", "timeout_ms": 10000},
+    {"action": "wait_for", "timeout_ms": 60000, "expect": {"in_game": "true", "multiplayer.num_connected": "1"}},
+    {"action": "introspect"}
+]

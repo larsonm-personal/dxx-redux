@@ -1,0 +1,4 @@
+[
+    {"_info": {"games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "key", "key": "f6"}
+]

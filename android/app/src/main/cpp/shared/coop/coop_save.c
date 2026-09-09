@@ -726,17 +726,40 @@ int coop_take_absent_player_with_level(const char *callsign,
 void coop_load_absent_from_metadata(const coop_save_metadata *meta)
 {
 	int i, n;
+	unsigned char present[8] = { 0 };
 
 	coop_clear_absent_players();
-	n = meta->num_absent_players;
-	if (n > COOP_MAX_REMEMBERED_PLAYERS)
-		n = COOP_MAX_REMEMBERED_PLAYERS;
-	for (i = 0; i < n; i++) {
-		memcpy(&coop_absent_list[i], &meta->absent_players[i], sizeof(coop_player_record));
-		coop_absent_source_levels[i] = meta->level_num;
+	for (i = 0; i < MAX_PLAYERS; i++) {
+		int saved;
+		if (Players[i].connected != CONNECT_PLAYING &&
+		    Players[i].connected != CONNECT_WAITING)
+			continue;
+		saved = coop_find_player_in_metadata(Players[i].callsign,
+		                                     Netgame.players[i].client_id, meta);
+		if (saved >= 0 && saved < meta->num_active_players)
+			present[saved] = 1;
 	}
-	coop_num_absent = n;
-	COOP_SAVE_LOG(CON_NORMAL, "coop_save: loaded %d absent players from save metadata\n", n);
+	/* A player active in the save may miss the new lobby. Keep that saved
+	 * inventory for the normal late-join recovery path, before older absentees */
+	for (i = 0; i < meta->num_active_players; i++) {
+		if (present[i])
+			continue;
+		coop_absent_list[coop_num_absent] = meta->active_players[i];
+		coop_absent_list[coop_num_absent].was_connected = 0;
+		coop_absent_source_levels[coop_num_absent++] = meta->level_num;
+		COOPLOG("restore retained missing player '%s' from saved slot %d for late join",
+		        meta->active_players[i].callsign, meta->active_players[i].original_slot);
+	}
+	n = meta->num_absent_players;
+	if (n > COOP_MAX_REMEMBERED_PLAYERS - coop_num_absent)
+		n = COOP_MAX_REMEMBERED_PLAYERS - coop_num_absent;
+	for (i = 0; i < n; i++) {
+		coop_absent_list[coop_num_absent] = meta->absent_players[i];
+		coop_absent_source_levels[coop_num_absent++] = meta->level_num;
+	}
+	for (; i < meta->num_absent_players; i++)
+		coop_recovery_remember_record(&meta->absent_players[i]);
+	COOP_SAVE_LOG(CON_NORMAL, "coop_save: loaded %d absent players from save metadata\n", coop_num_absent);
 }
 
 #define COOP_RESTORE_FLAGS_KEYS ( \
