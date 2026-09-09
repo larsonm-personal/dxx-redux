@@ -1,6 +1,7 @@
 #ifdef __ANDROID__
 
 #include "coop_level_restart.h"
+#include "coop_save.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -360,8 +361,12 @@ const rewind_memory_buffer *coop_level_restart_buffer(void)
 void coop_level_restart_transfer_finished(int restored)
 {
 	g_level_restart.busy = 0;
-	if (!restored)
+	if (restored)
+		coop_restore_status_complete();
+	else {
+		coop_restore_status_failed();
 		COOPLOG("level-start restart transfer failed");
+	}
 }
 
 void coop_level_restart_clear(void)

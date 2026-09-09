@@ -1,0 +1,6 @@
+[
+    {"_info": {"games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan"}},
+    // Model a client already showing the banner, without requiring intermediate network states
+    {"action": "set_debug", "field": "coop_restore_status", "value": "waiting"},
+    {"action": "wait_for", "timeout_ms": 60000, "expect": {"coop_restore.status": "idle", "in_game": "true"}}
+]

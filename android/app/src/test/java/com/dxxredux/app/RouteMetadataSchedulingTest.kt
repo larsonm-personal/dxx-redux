@@ -6,6 +6,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class RouteMetadataSchedulingTest {
     @get:Rule
@@ -179,6 +182,36 @@ class RouteMetadataSchedulingTest {
         assertEquals(RouteMetadataLedgerStatus.PARTIAL, restored?.status)
         assertEquals("partial|12", restored?.progressToken)
         assertEquals(42L, restored?.updatedAtMs)
+    }
+
+    @Test
+    fun concurrentLedgerInstancesSerializeReadsAndUpdates() {
+        val root = temporaryFolder.newFolder()
+        val pool = Executors.newFixedThreadPool(4)
+        val start = CountDownLatch(1)
+        try {
+            val workers = (1..4).map {
+                pool.submit {
+                    val ledger = RouteMetadataLedger(root)
+                    start.await()
+                    repeat(8) {
+                        ledger.read("job")
+                        ledger.update("job") { previous ->
+                            RouteMetadataLedgerEntry(
+                                status = RouteMetadataLedgerStatus.PARTIAL,
+                                failureCount = (previous?.failureCount ?: 0) + 1,
+                            )
+                        }
+                        ledger.entries()
+                    }
+                }
+            }
+            start.countDown()
+            workers.forEach { it.get(15, TimeUnit.SECONDS) }
+            assertEquals(32, RouteMetadataLedger(root).read("job")?.failureCount)
+        } finally {
+            pool.shutdownNow()
+        }
     }
 
     private fun result(failureKind: String): LevelMetadataResult =

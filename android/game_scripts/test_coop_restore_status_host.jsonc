@@ -1,0 +1,6 @@
+[
+    {"_info": {"games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "set_debug", "field": "coop_restore_status", "value": "waiting", "post_delay_ms": 2000},
+    {"action": "set_debug", "field": "coop_restore_status", "value": "complete"},
+    {"action": "assert", "expect": {"coop_restore.status": "idle"}}
+]

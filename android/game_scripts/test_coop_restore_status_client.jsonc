@@ -1,0 +1,5 @@
+[
+    {"_info": {"games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {"coop_restore.status": "waiting"}},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {"coop_restore.status": "idle"}}
+]

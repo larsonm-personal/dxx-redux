@@ -22,6 +22,7 @@
 #   .\test_lan.ps1 -GuidebotHostObserver
 #   .\test_lan.ps1 -GuidebotSlotRemapRestore
 #   .\test_lan.ps1 -SavedLateJoin -Game d2
+#   .\test_lan.ps1 -SavedLateJoin -RestoreStatus -Game d2
 #   .\test_lan.ps1 -HostMigration
 #   .\test_lan.ps1 -SpewRecovery
 #   .\test_lan.ps1 -UseRelay
@@ -35,6 +36,7 @@ param(
     [switch]$GuidebotHostObserver,
     [switch]$GuidebotSlotRemapRestore,
     [switch]$SavedLateJoin,
+    [switch]$RestoreStatus,
     [switch]$HostMigration,
     [switch]$SpewRecovery,
     [switch]$SpewPickup,
@@ -869,6 +871,22 @@ function Invoke-SavedLateJoinScenario {
     return $recovered
 }
 
+function Invoke-RestoreStatusScenario {
+    if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_restore_status_host.jsonc" -SecondarySerial $EMU2 -SecondaryScript "test_coop_restore_status_client.jsonc" -Description "restore completion broadcast")) { return $false }
+    if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_restore_checkpoint_host.jsonc" -SecondarySerial $EMU2 -SecondaryScript "test_coop_restore_checkpoint_client.jsonc" -Description "retained checkpoint clears restore status")) { return $false }
+    if (-not (Start-DeviceGameAutomation -Serial $EMU2 -ScriptName "test_coop_restore_status_replay.jsonc")) { return $false }
+    $finished = Wait-ForCondition -Description "delayed restore status packets" -TimeoutSec 30 -PollMs 500 -Condition {
+        $result = Get-DeviceAutomationResult -Serial $EMU2
+        return $result -and $result.result -in @("PASS", "FAIL")
+    }
+    $result = Get-DeviceAutomationResult -Serial $EMU2
+    if (-not $finished -or -not $result -or $result.result -ne "PASS") {
+        Write-DeviceAutomationDiagnostics -Serial $EMU2
+        return $false
+    }
+    return $true
+}
+
 function Invoke-SpewRecoveryScenario {
     Write-Status "--- Death spew, process loss and repeated in-game rejoin ---" "White"
     if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName "test_coop_recovery_host.jsonc")) { return $false }
@@ -1481,6 +1499,9 @@ try {
     }
     if ($testPassed -and $SavedLateJoin) {
         $testPassed = Invoke-SavedLateJoinScenario
+    }
+    if ($testPassed -and $RestoreStatus) {
+        $testPassed = Invoke-RestoreStatusScenario
     }
     if ($testPassed -and $GuidebotHostObserver) {
         $testPassed = Invoke-GuidebotHostObserverScenario

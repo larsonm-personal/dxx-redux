@@ -213,6 +213,9 @@ void coop_restore_status_complete(void)
 {
 	coop_restore_status = 0;
 	coop_restore_status_expires_at = 0;
+#ifdef __ANDROID__
+	multi_send_coop_restore_status(coop_restore_status);
+#endif
 }
 
 void coop_restore_status_failed(void)
@@ -1584,6 +1587,11 @@ void coop_disarm_auto_restore(void)
 	coop_auto_restore_attempted = 0;
 	coop_auto_restore_armed_at = 0;
 	coop_auto_restore_wait_log_second = -1;
-	coop_restore_status_complete();
+	/* Session reset is local, not a completion message for the previous game */
+	coop_restore_status = 0;
+	coop_restore_status_expires_at = 0;
+#ifdef __ANDROID__
+	multi_reset_coop_restore_status();
+#endif
 	coop_progress_restore_attempted_level = 0;
 }

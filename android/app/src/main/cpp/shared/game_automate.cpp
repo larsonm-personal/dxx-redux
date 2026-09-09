@@ -81,6 +81,7 @@ extern "C" {
 #include "hudmsg.h"
 #include "robot.h"
 #include "coop/coop_save.h"
+#include "coop/coop_level_restart.h"
 #include "coop/coop_recovery.h"
 #include "secretarea.h"
 #include "switch.h"
@@ -4102,6 +4103,36 @@ extern "C" void game_automate_tick(void)
 					escort_route_notify_automap_changed(segnum);
 #endif
 				}
+			} else if (s.field == "coop_restore_status") {
+				if (!(Game_mode & GM_MULTI_COOP)) {
+					stop_script_fail("coop_restore_status: active coop game required");
+					break;
+				}
+				if (s.value == "waiting") coop_restore_status_waiting();
+				else if (s.value == "complete") coop_restore_status_complete();
+				else if (s.value == "failed") coop_restore_status_failed();
+				else stop_script_fail("coop_restore_status: unknown status");
+			} else if (s.field == "coop_retained_restore") {
+				if (!(Game_mode & GM_MULTI_COOP) || !multi_i_am_master()) {
+					stop_script_fail("coop_retained_restore: active coop host required");
+					break;
+				}
+				coop_restore_status_waiting();
+				if (!coop_level_restart_load_retained_and_request()) {
+					coop_restore_status_failed();
+					stop_script_fail("coop_retained_restore: retained checkpoint unavailable");
+				}
+			} else if (s.field == "coop_restore_status_packet") {
+				unsigned status, revision;
+				int sender;
+				if (!(Game_mode & GM_MULTI_COOP) || multi_i_am_master() ||
+				    sscanf(s.value.c_str(), "%u,%u,%d", &status, &revision, &sender) != 3 || status > 255) {
+					stop_script_fail("coop_restore_status_packet: client and status,revision,sender required");
+					break;
+				}
+				ubyte packet[6] = { MULTI_COOP_RESTORE_STATUS, (ubyte) status };
+				for (int byte = 0; byte < 4; byte++) packet[2 + byte] = (ubyte) (revision >> (byte * 8));
+				multi_do_coop_restore_status(packet, sender);
 			} else if (s.field == "coop_autosave") {
 				if ((strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) &&
 				    !coop_autosave()) {

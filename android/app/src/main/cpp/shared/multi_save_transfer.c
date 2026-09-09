@@ -86,6 +86,14 @@ static ubyte Rewind_save_transfer_id = 0;
 static int Save_transfer_restore_active;
 static fix64 Save_transfer_timeout_grace_until;
 static int Coop_restore_transfer_failed;
+static uint32_t Coop_restore_status_revision;
+static int Coop_restore_status_sender = -1;
+
+void multi_reset_coop_restore_status(void)
+{
+	Coop_restore_status_revision = 0;
+	Coop_restore_status_sender = -1;
+}
 
 static int multi_rewind_requester_valid(int pnum)
 {
@@ -188,13 +196,28 @@ void multi_send_coop_restore_status(int status)
 		return;
 	multibuf[0] = MULTI_COOP_RESTORE_STATUS;
 	multibuf[1] = (ubyte) status;
-	multi_send_data(multibuf, 2, 2);
+	if (!++Coop_restore_status_revision)
+		++Coop_restore_status_revision;
+	PUT_INTEL_INT(multibuf + 2, Coop_restore_status_revision);
+	COOPLOG("restore status send: status=%d revision=%u", status, Coop_restore_status_revision);
+	multi_send_data(multibuf, 6, 2);
 }
 
-void multi_do_coop_restore_status(const ubyte *buf)
+void multi_do_coop_restore_status(const ubyte *buf, int authenticated_sender)
 {
-	if (multi_i_am_master() || !(Game_mode & GM_MULTI_COOP))
+	uint32_t revision = (uint32_t) GET_INTEL_INT(buf + 2);
+	if (multi_i_am_master() || !(Game_mode & GM_MULTI_COOP) ||
+	    authenticated_sender != multi_who_is_master() || buf[1] > 2 || !revision)
 		return;
+	if (Coop_restore_status_sender == authenticated_sender && Coop_restore_status_revision &&
+	    (int32_t) (revision - Coop_restore_status_revision) <= 0) {
+		COOPLOG("restore status ignored: status=%u revision=%u current=%u",
+		        buf[1], revision, Coop_restore_status_revision);
+		return;
+	}
+	Coop_restore_status_revision = revision;
+	Coop_restore_status_sender = authenticated_sender;
+	COOPLOG("restore status receive: status=%u revision=%u", buf[1], revision);
 	if (buf[1] == 0)
 		coop_restore_status_complete();
 	else if (buf[1] == 1)

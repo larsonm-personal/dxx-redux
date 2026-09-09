@@ -178,7 +178,7 @@ extern int multi_protocol; // set and determinate used protocol
 	VALUE(MULTI_REWIND_SAVE_APPLY    , MULTI_REWIND_SAVE_APPLY_LEN)   \
 	VALUE(MULTI_DIFFICULTY           , 3)   \
 	VALUE(MULTI_REWIND_SAVE_READY    , MULTI_REWIND_SAVE_READY_LEN)   \
-	VALUE(MULTI_COOP_RESTORE_STATUS  , 2)   \
+	VALUE(MULTI_COOP_RESTORE_STATUS  , 6)   \
 	VALUE(MULTI_COOP_POWERUP_COLLECTED, 10)   \
 	VALUE(MULTI_COOP_POWERUP_SNAPSHOT_BEGIN, 5)   \
 	VALUE(MULTI_COOP_POWERUP_SNAPSHOT_ENTRY, 55)   \
@@ -511,7 +511,8 @@ void multi_do_rewind_save_ready(const ubyte *buf);
 void multi_do_rewind_save_chunk(const ubyte *buf);
 void multi_do_rewind_save_apply(const ubyte *buf);
 void multi_send_coop_restore_status(int status);
-void multi_do_coop_restore_status(const ubyte *buf);
+void multi_do_coop_restore_status(const ubyte *buf, int authenticated_sender);
+void multi_reset_coop_restore_status(void);
 void multi_save_transfer_frame(void);
 void multi_send_difficulty(int difficulty);
 void multi_do_difficulty(const ubyte *buf);

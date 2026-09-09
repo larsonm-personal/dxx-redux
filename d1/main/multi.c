@@ -5927,7 +5927,7 @@ multi_process_data_from_player(const ubyte *buf, int len, int authenticated_send
 		case MULTI_REWIND_SAVE_READY:
 			multi_do_rewind_save_ready(buf); break;
 		case MULTI_COOP_RESTORE_STATUS:
-			multi_do_coop_restore_status(buf); break;
+			multi_do_coop_restore_status(buf, authenticated_sender); break;
 		case MULTI_COOP_POWERUP_COLLECTED:
 			coop_powerup_duplication_receive(buf); break;
 		case MULTI_COOP_POWERUP_SNAPSHOT_BEGIN:

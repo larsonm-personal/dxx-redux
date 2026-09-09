@@ -1,0 +1,22 @@
+[
+    {"_info": {"games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan"}},
+    // Simulate delayed, duplicated and unauthenticated status packets through the receiver
+    {"action": "set_debug", "field": "coop_restore_status_packet", "value": "1,100,0"},
+    {"action": "assert", "expect": {"coop_restore.status": "waiting"}},
+    {"action": "set_debug", "field": "coop_restore_status", "value": "complete"},
+    {"action": "set_debug", "field": "coop_restore_status_packet", "value": "1,100,0"},
+    {"action": "assert", "expect": {"coop_restore.status": "idle"}},
+    {"action": "set_debug", "field": "coop_restore_status_packet", "value": "0,101,0"},
+    {"action": "set_debug", "field": "coop_restore_status_packet", "value": "1,100,0"},
+    {"action": "set_debug", "field": "coop_restore_status_packet", "value": "2,99,0"},
+    {"action": "set_debug", "field": "coop_restore_status_packet", "value": "1,101,0"},
+    {"action": "set_debug", "field": "coop_restore_status_packet", "value": "1,1000,1"},
+    {"action": "set_debug", "field": "coop_restore_status_packet", "value": "3,1000,0"},
+    {"action": "assert", "expect": {"coop_restore.status": "idle"}},
+    {"action": "set_debug", "field": "coop_restore_status_packet", "value": "1,102,0"},
+    {"action": "assert", "expect": {"coop_restore.status": "waiting"}},
+    {"action": "set_debug", "field": "coop_restore_status_packet", "value": "2,103,0"},
+    {"action": "assert", "expect": {"coop_restore.status": "error"}},
+    {"action": "set_debug", "field": "coop_restore_status_packet", "value": "0,104,0"},
+    {"action": "assert", "expect": {"coop_restore.status": "idle"}}
+]

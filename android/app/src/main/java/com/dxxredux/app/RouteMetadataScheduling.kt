@@ -188,6 +188,11 @@ internal data class RouteMetadataLedgerEntry(
 internal class RouteMetadataLedger(
     filesDir: File,
 ) {
+    private companion object {
+        // File locks coordinate processes, but overlapping locks in one JVM throw
+        val processLock = Any()
+    }
+
     private val stateFile = File(filesDir, "route_metadata_precompute.json")
     private val lockFile = File(filesDir, "route_metadata_precompute.lock")
 
@@ -235,24 +240,26 @@ internal class RouteMetadataLedger(
             },
         )
 
-    private fun <T> withEntries(block: (Map<String, RouteMetadataLedgerEntry>) -> T): T {
-        lockFile.parentFile?.mkdirs()
-        return RandomAccessFile(lockFile, "rw").use { lock ->
-            lock.channel.lock().use { block(loadEntries()) }
-        }
-    }
-
-    private fun <T> withLockedEntries(block: (MutableMap<String, RouteMetadataLedgerEntry>) -> T): T {
-        lockFile.parentFile?.mkdirs()
-        return RandomAccessFile(lockFile, "rw").use { lock ->
-            lock.channel.lock().use {
-                val entries = loadEntries().toMutableMap()
-                val result = block(entries)
-                saveEntries(entries)
-                result
+    private fun <T> withEntries(block: (Map<String, RouteMetadataLedgerEntry>) -> T): T =
+        synchronized(processLock) {
+            lockFile.parentFile?.mkdirs()
+            RandomAccessFile(lockFile, "rw").use { lock ->
+                lock.channel.lock().use { block(loadEntries()) }
             }
         }
-    }
+
+    private fun <T> withLockedEntries(block: (MutableMap<String, RouteMetadataLedgerEntry>) -> T): T =
+        synchronized(processLock) {
+            lockFile.parentFile?.mkdirs()
+            RandomAccessFile(lockFile, "rw").use { lock ->
+                lock.channel.lock().use {
+                    val entries = loadEntries().toMutableMap()
+                    val result = block(entries)
+                    saveEntries(entries)
+                    result
+                }
+            }
+        }
 
     private fun loadEntries(): Map<String, RouteMetadataLedgerEntry> =
         runCatching {
