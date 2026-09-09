@@ -1,0 +1,35 @@
+# Five-mission routing development set
+
+Add The Enemy Within (TEW.json / TEW.zip) to the shared metadata and simulation selection and update selection coverage. Counterstrike secret -5 stays deferred.
+
+Review the checked-in TEW failures, rerun all 32 TEW levels with the current engine, and distinguish static planning failures from physical navigation and interaction failures. Pursue a representative reproducible failure using geometry and engine state; avoid mission-specific identifiers or forced completion. Keep unsuccessful cases visible in regression JSON.
+
+Validate retained changes with native tests, focused deterministic simulation, both Windows builds when native code changes, scoped quality checks, and the expanded 120-level corpus. Do not edit outstanding_bugs.md.
+
+## Initial evidence
+
+Current-engine TEW baseline android/temp/tew_initial reproduces all eight checked-in failures: level 1 after blue key; level 9 at frontier 117 toward gold key 656; level 13 after opening the blue-key frontier at 106; level 15 exhausts shared planning work after blue key; level 20 cannot extend frontier 372 toward boss 48; level 23 cannot extend frontier 77 toward red key 80; level 26 repeatedly returns from switch 10 to fly-through trigger 11; secret -3 stalls during pass-through trigger 5. Levels 9 and 15 also have incomplete static metadata. These observations classify symptoms, not proven causes for the uninvestigated levels.
+
+## TEW level 1
+
+The actor stops in segment 85 near the planned firing pose in adjacent segment 86, targeting switch wall 34. Native level_metadata_wall_shootable_from_position confirms the shot from the actor's actual position. Simulation required exact segment membership even though the task was shooting, not crossing into the recess. Retain normal same-segment behavior; additionally accept a nearby adjoining-room position for switch actions only, within the existing arrival tolerance and only with the native shot test. Key pickups, fly-through triggers, and physical crossings retain their separate requirements. No TEW identifiers or geometry constants appear in engine behavior.
+
+Two focused runs complete all seven objectives and exit at frame 3631, including verified adjoining-room shots at both switches. Added test_tew_level1_adjacent_switch.ps1 for repeatability, objective order, native-shot evidence, and metadata agreement. The selection test now checks five missions, all 32 TEW levels, and 120 total levels.
+
+This is an example of the generalization issue raised by the user: segment identity was acting as a substitute for action reachability. Future failures should similarly be resolved through the relevant engine capability (shooting, contact, traversal, or trigger state), rather than broad tolerances or per-mission exceptions.
+
+## Validation
+
+The shared mission list and regression menu now include The Enemy Within; metadata resolves TEW.zip and simulation resolves TEW.json. Discovery/sampling and regression-stage tests pass. Both Windows engines build (temp/tew_verified_build.log), all 49 native tests pass (temp/tew_ctest.log), scoped quality checks pass (temp/tew_quality.log), and the focused level test passes (temp/tew1_integration.log). The 120-level core_five_tew_verified run has 112 ok, no formerly passing regressions, and only TEW level 1 changes status. Final corpus verification uses the rebuilt executable before refreshing checked-in simulation JSON. Static metadata is unchanged by this simulation-only correction. Android device behavior was not tested.
+
+Final rebuilt-engine corpus android/temp/core_five_tew_final confirms 112/120 ok with zero previously passing regressions. TEW is 25/32; remaining TEW failures are 9, 13, 15, 20, 23, 26 and secret -3. Counterstrike secret -5 remains deferred. Updated the changed simulation JSON files after comparing every level against the checked-in baseline. The sole status improvement is TEW level 1; other changes reflect earlier valid switch activation timing. No static mission JSON changes were needed.
+
+## TEW level 26 follow-up
+
+Trace why the route repeatedly reactivates fly-through trigger 11 but reaches its controlled door closed before shooting switch 10. Compare authored door timing, current state, and the installed physical path. Retain a general correction with deterministic level and five-mission validation; Counterstrike secret -5 remains deferred.
+
+The timed doors are behaving as authored. Trigger 11 opens door 26, but the physical waypoint route goes 161 -> 160 -> 162 -> ... -> 156 -> 157 and arrives after the door closes. Native visibility proves switch wall 34 is shootable from 161/160 shortly after opening, through the authored line of fire. The mirrored trigger 12 / switch 9 arrangement behaves the same way. Simulation was treating the preferred firing waypoint as mandatory instead of taking a verified shot from the current position. Expand the previous nearby-shot rule to accept any engine-verified shot for the currently selected switch objective, preserving physical frontier prerequisites and existing action types. No door timer, movement speed, budget, or mission-specific behavior changes.
+
+Initial repeat-2 completion: 6277 frames, all 11 objectives and exit; each timed switch is hit 20 frames after its fly-through opener. Added test_tew_level26_timed_switches.ps1 to check both corridor shots, prompt activation, exact objective order, deterministic results, and metadata agreement. Temporary geometry/timing probes removed. Full five-mission validation follows.
+
+Final TEW 26 validation: both Windows engines build (temp/tew26_verified_build.log), all 49 native tests pass (temp/tew26_ctest.log), and scoped quality checks pass. Dedicated repeat-2 tests confirm TEW 26 at 6277 frames and TEW 1 at 3562 frames, with deterministic JSON and metadata agreement. Full 120-level run android/temp/core_five_tew26_probe has 113 ok, no previously passing regressions, and only TEW 26 changes status. Refreshed changed simulation JSON; no static metadata change. TEW now passes 26/32. Remaining TEW: 9, 13, 15, 20, 23, secret -3. Counterstrike secret -5 remains deferred. Android device behavior was not tested.

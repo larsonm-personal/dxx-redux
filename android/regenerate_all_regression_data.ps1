@@ -113,14 +113,14 @@ function Get-RegressionDataStages {
         $metadata = @($stages | Where-Object { $_.Key -eq 'Metadata' })[0]
         $metadata.Key = 'RoutingSetMetadata'
         $metadata.Name = 'Routing development mission metadata'
-        $metadata.Description = 'Windows metadata for Castaway Redux, Counterstrike, First Strike under D2, and Obsidian'
+        $metadata.Description = 'Windows metadata for Castaway Redux, Counterstrike, First Strike under D2, Obsidian, and The Enemy Within'
         $metadata.Arguments = @('-RoutingDevelopmentSet')
         $metadata.DefaultEstimatedRuntime = 180
 
         $simulation = @($stages | Where-Object { $_.Key -eq 'Simulation' })[0]
         $simulation.Key = 'RoutingSetSimulation'
         $simulation.Name = 'Routing development GuideBot simulations'
-        $simulation.Description = 'Headless route confirmation for the four routing development campaigns'
+        $simulation.Description = 'Headless route confirmation for the five routing development campaigns'
         $simulation.Arguments = @('-Mode', 'Headless', '-WriteRegression', '-RoutingDevelopmentSet')
         $simulation.DefaultEstimatedRuntime = 900
         return @($metadata, $simulation)

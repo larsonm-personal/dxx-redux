@@ -375,7 +375,7 @@ int record_implicitly_completed_steps(const level_metadata_state *metadata,
 		for (int result_index = 0;
 		     result_index < State.summary.objective_count; ++result_index)
 			if (State.summary.objectives[result_index].route_step_index ==
-			    step_index &&
+			        step_index &&
 			    State.summary.objectives[result_index].is_switch_restorer ==
 			        step->is_switch_restorer) {
 				already_recorded = 1;
@@ -630,6 +630,7 @@ int prepare_next_goal(int restorer_trigger)
 	actor->ctype.ai_info.SKIP_AI_COUNT = 0;
 	Ai_local_info[State.actor_objnum].mode = AIM_GOTO_OBJECT;
 	refine_last_path_point(actor);
+
 	if (actor->segnum != State.target_seg &&
 	    actor->ctype.ai_info.path_length <= 0) {
 		fail(ROUTE_CONFIRMATION_FAILED, "Guide-Bot path generation returned no path");
@@ -801,6 +802,25 @@ int actor_reached_target(const object *actor)
 	distance = vm_vec_dist_quick(&actor->pos, &State.target_pos);
 	tolerance = actor->size + i2f(4);
 	return distance <= tolerance;
+}
+
+int actor_reached_switch_firing_position(const object *actor)
+{
+	if (actor_reached_target(actor))
+		return 1;
+	if (!actor || State.target_seg != State.semantic_target_seg ||
+	    actor->segnum < 0 || actor->segnum >= Num_segments)
+		return 0;
+	// The selected firing waypoint is guidance, not a prerequisite for a shot
+	// Take a verified opportunity before moving away or a timed door closes
+	const int from[3] = { actor->pos.x, actor->pos.y, actor->pos.z };
+	if (!level_metadata_wall_shootable_from_position(actor->segnum, from, State.step.wall_num))
+		return 0;
+#if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	fprintf(stderr, "ROUTE-CONFIRM verified switch shot actor_seg=%d target_seg=%d wall=%d\n",
+	        actor->segnum, State.target_seg, State.step.wall_num);
+#endif
+	return 1;
 }
 
 int objective_source(int *segnum, int *sidenum)
@@ -1385,7 +1405,7 @@ void apply_objective_action(object *actor)
 			break;
 
 		case LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH:
-			if (actor_reached_target(actor) &&
+			if (actor_reached_switch_firing_position(actor) &&
 			    State.target_seg == State.semantic_target_seg &&
 			    objective_source(&segnum, &sidenum)) {
 				State.action_applied = 1;
@@ -1831,6 +1851,7 @@ extern "C" void route_confirmation_after_frame(void)
 			refine_last_path_point(actor);
 		}
 	}
+
 	apply_objective_action(actor);
 	/* A physical frontier is deliberately not an objective completion.  Hold
 	 * there briefly so door animations and trigger effects can settle, then ask
