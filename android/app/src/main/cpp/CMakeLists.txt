@@ -656,6 +656,7 @@ target_sources(
     dxx-redux-d2
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/jni_main.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_route_metadata.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_route_metadata_progress_policy.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/net/net_udp_reconnect_jni.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/jni_string.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/utf8_codec.c

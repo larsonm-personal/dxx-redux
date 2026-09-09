@@ -333,30 +333,9 @@ internal fun resolveCoopHostResumeRecord(
 ): MultiplayerResumeRecord {
     if (record.role != "host" || record.mode != "coop") return record
     val restorable = coopSaves.filter { it.type == "full_save" || it.type == "level_start_highest" }
-    val requested =
-        when {
-            !record.coopRestoreCheckpointId.isNullOrBlank() -> {
-                restorable.firstOrNull { it.checkpointId == record.coopRestoreCheckpointId }
-            }
-
-            record.coopRestoreSlot != null -> {
-                restorable.firstOrNull {
-                    it.slot == record.coopRestoreSlot &&
-                        (record.coopRestoreSaveTime == null || it.timestamp == record.coopRestoreSaveTime) &&
-                        it.level == (record.coopRestoreLevel ?: record.levelNum)
-                }
-            }
-
-            record.restoreWasSelected -> {
-                return record
-            }
-
-            else -> {
-                null
-            }
-        }
+    // Quick resume follows the latest progress, independent of the previous lobby selection
     val selected =
-        requested ?: restorable.maxWithOrNull(compareBy<CoopSaveEntry> { it.level }.thenBy { it.timestamp })
+        restorable.maxByOrNull { it.timestamp }
             ?: return record.copy(
                 coopRestoreSlot = null,
                 coopRestoreCheckpointId = null,

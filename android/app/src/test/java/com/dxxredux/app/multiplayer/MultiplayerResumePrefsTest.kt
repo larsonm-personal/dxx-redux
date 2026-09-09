@@ -101,8 +101,8 @@ class MultiplayerResumePrefsTest {
     }
 
     @Test
-    fun legacyFreshResumeFallsBackToHighestValidSave() {
-        val retained = coopSave(level = 6, timestamp = 300L).copy(
+    fun legacyFreshResumeSelectsNewestValidSave() {
+        val retained = coopSave(level = 6, timestamp = 100L).copy(
             slot = -1,
             type = "level_start_highest",
             checkpointId = "d2",
@@ -119,7 +119,7 @@ class MultiplayerResumePrefsTest {
     }
 
     @Test
-    fun staleRecordedSlotFallsBackToHighestValidSave() {
+    fun staleRecordedSlotFallsBackToNewestValidSave() {
         val level7 = coopSave(level = 7, timestamp = 200L)
         val stale = hostResumeRecord(level = 6).copy(
             coopRestoreSlot = 5,
@@ -135,8 +135,8 @@ class MultiplayerResumePrefsTest {
     }
 
     @Test
-    fun validTypedCheckpointAndExplicitFreshRemainSelected() {
-        val retained = coopSave(level = 6, timestamp = 300L).copy(
+    fun previousCheckpointAndExplicitFreshYieldToNewestProgress() {
+        val retained = coopSave(level = 6, timestamp = 100L).copy(
             slot = -1,
             type = "level_start_highest",
             checkpointId = "d2",
@@ -148,8 +148,32 @@ class MultiplayerResumePrefsTest {
         )
         val fresh = hostResumeRecord(level = 6).copy(restoreWasSelected = true)
 
-        assertEquals("d2", resolveCoopHostResumeRecord(typed, listOf(level7, retained)).coopRestoreCheckpointId)
-        assertEquals(fresh, resolveCoopHostResumeRecord(fresh, listOf(level7, retained)))
+        assertEquals(level7.slot, resolveCoopHostResumeRecord(typed, listOf(level7, retained)).coopRestoreSlot)
+        assertEquals(level7.slot, resolveCoopHostResumeRecord(fresh, listOf(level7, retained)).coopRestoreSlot)
+    }
+
+    @Test
+    fun newestProgressCanBeOnALowerOrSecretLevel() {
+        val oldSave = coopSave(level = 7, timestamp = 100L)
+        val latest = coopSave(level = -1, timestamp = 300L).copy(slot = 8)
+        val record = hostResumeRecord(level = 7).copy(
+            coopRestoreSlot = oldSave.slot,
+            coopRestoreSaveTime = oldSave.timestamp,
+            coopRestoreLevel = oldSave.level,
+            restoreWasSelected = true,
+        )
+
+        val resolved = resolveCoopHostResumeRecord(record, listOf(oldSave, latest))
+
+        assertEquals(-1, resolved.levelNum)
+        assertEquals(latest.slot, resolved.coopRestoreSlot)
+        assertEquals(latest.timestamp, resolved.coopRestoreSaveTime)
+    }
+
+    @Test
+    fun freshResumeWithoutSavesKeepsItsLevel() {
+        val record = hostResumeRecord(level = 6)
+        assertEquals(record, resolveCoopHostResumeRecord(record.copy(restoreWasSelected = true), emptyList()))
     }
 
     @Test
