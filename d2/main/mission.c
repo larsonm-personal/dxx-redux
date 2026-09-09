@@ -36,6 +36,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "text.h"
 #include "u_mem.h"
 #include "ignorecase.h"
+#ifdef __ANDROID__
+#include "physfsx_android_shared.h"
+#endif
 #include "piggy.h"
 
 //values that describe where a mission is located
@@ -593,6 +596,9 @@ void promote (mle *mission_list, char * mission_name, int * top_place)
 
 void free_mission(void)
 {
+#ifdef __ANDROID__
+	physfsx_android_unmount_mission_directory();
+#endif
     // May become more complex with the editor
     if (Current_mission)
 	{
@@ -822,6 +828,10 @@ int load_mission(mle *mission)
 		free_mission();
 		return 0;		//error!
 	}
+
+#ifdef __ANDROID__
+	physfsx_android_mount_mission_directory(buf);
+#endif
 
 	//for non-builtin missions, load HOG
 	if (!PLAYING_BUILTIN_MISSION)

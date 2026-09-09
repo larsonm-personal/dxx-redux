@@ -304,10 +304,14 @@ internal fun prepareDiscContent(
                 GameFileFormats.parseMissionDescriptor(descriptor.name, descriptor.readText()).assetReferences.values
             }.map { portableGameFilenameIdentity(GameFileFormats.leafName(it)) }
             .toSet()
+    val missionDirectories =
+        files.filter { GameFileFormats.isMissionDescriptor(it.name) }.map { it.parentFile }.toSet()
     files
         .filter { file ->
             !GameFileFormats.isDiscRuntimeFile(file.name) &&
-                portableGameFilenameIdentity(file.name) !in referencedAssets
+                portableGameFilenameIdentity(file.name) !in referencedAssets &&
+                !(file.parentFile in missionDirectories && GameFileFormats.isDiscCompanionFile(file.name)) &&
+                !AndroidGameFileExtensions.isGogAudioFile(file.name)
         }.forEach { check(it.delete()) { "Could not remove unused disc file ${it.name}" } }
     FileSetContentManager(stagingDir).stageDiscContent(
         File(sourceName)
@@ -338,8 +342,13 @@ internal fun hoistNestedImportedGameFiles(setDir: File): Int {
     val candidates =
         setDir
             .walkTopDown()
-            .filter { it.isFile && isDirectGameDataImportName(it.name.lowercase(Locale.US)) }
-            .toList()
+            .filter {
+                it.isFile &&
+                    (
+                        portableGameFilenameIdentity(it.name) in ALL_GAME_FILENAMES ||
+                            AndroidGameFileExtensions.isGogAudioFile(it.name)
+                    )
+            }.toList()
     val candidateGroups = candidates.groupBy { it.name.lowercase(Locale.US) }
     val conflictingGroup =
         candidateGroups.values.firstOrNull { group ->
@@ -1199,6 +1208,30 @@ internal fun extractIsoDiscContent(
             FileSetContentManager(setDir).publishDiscImport(staging, sourceName)
         }
         return extracted to nested
+    } finally {
+        staging.deleteRecursively()
+    }
+}
+
+internal fun importGogContentFromPath(
+    setDir: File,
+    path: String,
+    includeAudio: Boolean,
+): Int {
+    val staging = File(setDir.parentFile, ".installer-import-${System.nanoTime()}")
+    check(staging.mkdirs()) { "Could not stage installer import" }
+    try {
+        val files = GogImportBridge.listFiles(path) ?: return -1
+        val count =
+            GogImportBridge.extractFiles(
+                path,
+                staging.absolutePath,
+                includeAudio = includeAudio,
+                expectedFiles = files,
+            )
+        if (count != files.count { includeAudio || !AndroidGameFileExtensions.isGogAudioFile(it.name) }) return -1
+        if (count > 0) FileSetContentManager(setDir).publishDiscImport(staging, File(path).name)
+        return count
     } finally {
         staging.deleteRecursively()
     }

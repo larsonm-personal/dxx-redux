@@ -149,8 +149,14 @@ int inno_open_fd(int source_fd, inno_archive_t *arc);
 const inno_data_entry_t *inno_file_data_entry(const inno_archive_t *arc,
                                               uint32_t file_index);
 
+/* Container import retains validated paths and companions beside mission descriptors */
+int inno_output_relative_path(const char *destination, char *output, size_t size);
+int inno_is_game_content(const inno_archive_t *arc, const char *destination);
+int inno_extract_file_to_directory(inno_archive_t *arc, int index, const char *directory,
+                                   inno_progress_fn progress, void *user_data);
+
 /*
- * Return nonzero when selected files have distinct flattened output basenames.
+ * Return nonzero when selected files have distinct relative output paths.
  * ASCII case differences collide so the result is safe on Windows and Android.
  */
 int inno_output_names_unique(const inno_archive_t *arc,

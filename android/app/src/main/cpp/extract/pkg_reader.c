@@ -9,6 +9,7 @@
 
 #include "extract_limits.h"
 #include "game_file_extensions.h"
+#include "physical_output_file.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -644,6 +645,22 @@ static int is_safe_output_basename(const char *name)
 	return 1;
 }
 
+static int is_safe_output_path(const char *path)
+{
+	const char *component = path;
+	for (const char *p = path;; p++) {
+		if (*p && *p != '/') continue;
+		char name[256];
+		size_t length = (size_t) (p - component);
+		if (length >= sizeof(name)) return 0;
+		memcpy(name, component, length);
+		name[length] = 0;
+		if (!is_safe_output_basename(name)) return 0;
+		if (!*p) return 1;
+		component = p + 1;
+	}
+}
+
 static int is_game_file(const char *cpio_path, uint32_t mode,
                         const char **basename_out)
 {
@@ -655,13 +672,12 @@ static int is_game_file(const char *cpio_path, uint32_t mode,
 		return PKG_FILE_IGNORED;
 
 	const char *fname = cpio_path + pfx_len;
-	/* Nested POSIX paths are package content, but are not flattened outputs. */
+	/* Preserve validated game-relative directories for mission dependencies */
 	if (strchr(fname, '\\')) {
 		LOG_E("pkg: unsafe Windows separator in game output name\n");
 		return PKG_FILE_INVALID;
 	}
-	if (strchr(fname, '/')) return PKG_FILE_IGNORED;
-	if (!is_safe_output_basename(fname)) {
+	if (!is_safe_output_path(fname)) {
 		LOG_E("pkg: unsafe game output name\n");
 		return PKG_FILE_INVALID;
 	}
@@ -669,15 +685,13 @@ static int is_game_file(const char *cpio_path, uint32_t mode,
 	const char *dot = strrchr(fname, '.');
 	if (!dot) return PKG_FILE_IGNORED;
 
-	for (const char **ext = dxx_android_game_file_extensions; *ext; ext++) {
-		if (_stricmp(dot, *ext) == 0) {
-			if ((mode & 0170000u) != 0100000u) {
-				LOG_E("pkg: game output is not a regular file\n");
-				return PKG_FILE_INVALID;
-			}
-			*basename_out = fname;
-			return PKG_FILE_GAME;
+	if (dxx_has_android_container_file_extension(fname)) {
+		if ((mode & 0170000u) != 0100000u) {
+			LOG_E("pkg: game output is not a regular file\n");
+			return PKG_FILE_INVALID;
 		}
+		*basename_out = fname;
+		return PKG_FILE_GAME;
 	}
 	return PKG_FILE_IGNORED;
 }
@@ -687,7 +701,7 @@ static int build_output_path(char *out, size_t out_size,
 {
 	int length;
 	if (!out || out_size == 0 || !output_dir || !*output_dir ||
-	    !is_safe_output_basename(basename))
+	    !is_safe_output_path(basename))
 		return -1;
 	length = snprintf(out, out_size, "%s/%s", output_dir, basename);
 	return length >= 0 && (size_t) length < out_size ? 0 : -1;
@@ -937,8 +951,8 @@ int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
 		}
 
 		/* Open output file */
-		FILE *fp = fopen(out_path, "wb");
-		if (!fp) {
+		dxx_physical_output_file_t output;
+		if (dxx_physical_output_open(&output, output_dir, basename) < 0) {
 			LOG_E("pkg: cannot create %s: %s\n", out_path, strerror(errno));
 			ret = -1;
 			break;
@@ -956,7 +970,7 @@ int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
 				ok = 0;
 				break;
 			}
-			if (fwrite(buf, 1, (size_t) got, fp) != (size_t) got) {
+			if (dxx_physical_output_write(&output, buf, (size_t) got) < 0) {
 				ok = 0;
 				break;
 			}
@@ -970,13 +984,15 @@ int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
 				break;
 			}
 		}
-		if (fclose(fp) != 0)
-			ok = 0;
 
 		if (!ok || !pkg_manifest_matches(arc, manifest_index++, basename,
 		                                 entry.filesize, (uint32_t) file_crc)) {
 			LOG_E("pkg: failed to extract %s\n", basename);
-			remove(out_path);
+			dxx_physical_output_abort(&output);
+			if (ret != DXX_EXTRACT_CANCELLED) ret = -1;
+			break;
+		}
+		if (dxx_physical_output_finish(&output) < 0) {
 			ret = -1;
 			break;
 		}

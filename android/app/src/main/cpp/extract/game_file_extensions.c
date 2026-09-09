@@ -31,6 +31,8 @@ const char *dxx_android_disc_extract_extensions[] = {
 	"hog", "pig", "ham", "s11", "s22", "dem",
 	"mvl", "msn", "mn2", "rdl", "rl2", "sdl", "sl2",
 	"sow", "dxa", "pog", "hxm", "dtx",
+	"txt", "tex", "txb", "ctb", "sng", "pcx", "hmp", "hmq", "mid", "256", "vham",
+	"wav", "ogg", "mp3", "flac", "m3u",
 	NULL
 };
 
@@ -38,6 +40,11 @@ const char *dxx_android_disc_extract_extensions[] = {
 const char *dxx_android_gog_audio_extensions[] = {
 	".gog", ".inst",
 	NULL
+};
+
+const char *dxx_android_disc_companion_extensions[] = {
+	".txt", ".tex", ".txb", ".ctb", ".sng", ".pcx", ".hmp", ".hmq", ".mid", ".256", ".vham",
+	".wav", ".ogg", ".mp3", ".flac", ".m3u", NULL
 };
 
 /*
@@ -68,4 +75,15 @@ int dxx_has_android_game_file_extension(const char *path)
 int dxx_is_android_gog_audio_extension(const char *path)
 {
 	return dxx_has_any_extension_ci(path, dxx_android_gog_audio_extensions);
+}
+
+int dxx_has_android_container_file_extension(const char *path)
+{
+	const char *dot = strrchr(path, '.');
+	if (!dot) return 0;
+	if (dxx_is_android_gog_audio_extension(path)) return 1;
+	for (const char **ext = dxx_android_disc_extract_extensions; *ext; ext++) {
+		if (dxx_ci_cmp(dot + 1, *ext) == 0) return 1;
+	}
+	return 0;
 }

@@ -63,27 +63,9 @@
 #define _stricmp strcasecmp
 #endif
 
-static int has_game_extension(const char *path)
-{
-	return dxx_has_android_game_file_extension(path);
-}
-
-/* Get just the filename from a path */
-static const char *basename_only(const char *path)
-{
-	const char *p = path;
-	const char *last = path;
-	while (*p) {
-		if (*p == '/' || *p == '\\') last = p + 1;
-		p++;
-	}
-	return last;
-}
-
 static int select_game_output(const char *path, void *user_data)
 {
-	(void) user_data;
-	return has_game_extension(path);
+	return inno_is_game_content((const inno_archive_t *) user_data, path);
 }
 
 static int progress_cb(const char *filename, long long done, long long total, void *ud)
@@ -124,7 +106,7 @@ static int extract_exe(const char *exe_path, const char *out_dir)
 	printf("[\n");
 	for (uint32_t i = 0; i < arc.file_count; i++) {
 		const char *dest = arc.files[i].destination;
-		int is_game = has_game_extension(dest);
+		int is_game = inno_is_game_content(&arc, dest);
 		uint64_t size = 0;
 		const inno_data_entry_t *data = inno_file_data_entry(&arc, i);
 		if (data)
@@ -141,8 +123,8 @@ static int extract_exe(const char *exe_path, const char *out_dir)
 	printf("]\n");
 
 	/* Extract game files */
-	if (!inno_output_names_unique(&arc, select_game_output, NULL)) {
-		fprintf(stderr, "ERROR: Colliding Inno output basenames\n");
+	if (!inno_output_names_unique(&arc, select_game_output, &arc)) {
+		fprintf(stderr, "ERROR: Colliding Inno output paths\n");
 		inno_close(&arc);
 		return 1;
 	}
@@ -151,13 +133,15 @@ static int extract_exe(const char *exe_path, const char *out_dir)
 
 	for (uint32_t i = 0; i < arc.file_count; i++) {
 		const char *dest = arc.files[i].destination;
-		if (!has_game_extension(dest)) continue;
+		if (!inno_is_game_content(&arc, dest)) continue;
 
-		const char *fname = basename_only(dest);
-		char out_path[1024];
-		snprintf(out_path, sizeof(out_path), "%s/%s", out_dir, fname);
+		char fname[INNO_PATH_LEN];
+		if (inno_output_relative_path(dest, fname, sizeof(fname)) < 0) {
+			errors++;
+			continue;
+		}
 
-		if (inno_extract_file(&arc, (int) i, out_path, progress_cb, NULL) == 0) {
+		if (inno_extract_file_to_directory(&arc, (int) i, out_dir, progress_cb, NULL) == 0) {
 			extracted++;
 		} else {
 			fprintf(stderr, "ERROR: Failed to extract %s\n", dest);

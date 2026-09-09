@@ -57,7 +57,7 @@ class DiscImportHoistTest {
     }
 
     @Test
-    fun hoistsCustomMissionFilesFromNestedCdFolders() {
+    fun preservesCustomMissionFilesInTheirSourceDirectory() {
         val setDir = createTempDirectory("disc-import-missions").toFile()
         val nestedDir = File(setDir, "missions").apply { mkdirs() }
         File(nestedDir, "CUSTOM.HOG").writeBytes(byteArrayOf(1, 2, 3))
@@ -66,11 +66,10 @@ class DiscImportHoistTest {
 
         val hoisted = hoistNestedImportedGameFiles(setDir)
 
-        assertEquals(3, hoisted)
-        assertTrue(File(setDir, "CUSTOM.HOG").isFile)
-        assertTrue(File(setDir, "CUSTOM.MSN").isFile)
-        assertTrue(File(setDir, "CUSTOM.MN2").isFile)
-        assertFalse(nestedDir.exists())
+        assertEquals(0, hoisted)
+        assertTrue(File(nestedDir, "CUSTOM.HOG").isFile)
+        assertTrue(File(nestedDir, "CUSTOM.MSN").isFile)
+        assertTrue(File(nestedDir, "CUSTOM.MN2").isFile)
     }
 
     @Test
@@ -89,7 +88,7 @@ class DiscImportHoistTest {
     }
 
     @Test
-    fun deduplicatesIdenticalNestedMissionFiles() {
+    fun preservesIdenticalMissionFilesInSeparateSourceDirectories() {
         val setDir = createTempDirectory("disc-import-identical").toFile()
         val firstDir = File(setDir, "dlotw").apply { mkdirs() }
         val secondDir = File(setDir, "levels").apply { mkdirs() }
@@ -99,10 +98,9 @@ class DiscImportHoistTest {
 
         val hoisted = hoistNestedImportedGameFiles(setDir)
 
-        assertEquals(1, hoisted)
-        assertTrue(File(setDir, "RATRACE.HOG").isFile)
-        assertFalse(firstDir.exists())
-        assertFalse(secondDir.exists())
+        assertEquals(0, hoisted)
+        assertTrue(File(firstDir, "RATRACE.HOG").isFile)
+        assertTrue(File(secondDir, "ratrace.hog").isFile)
     }
 
     @Test

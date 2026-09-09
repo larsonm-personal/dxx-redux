@@ -234,14 +234,14 @@ add_executable(
     extract_gog
     ${CMAKE_CURRENT_SOURCE_DIR}/extract_gog.c ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c
     ${CMAKE_CURRENT_SOURCE_DIR}/json_writer.c ${CMAKE_CURRENT_SOURCE_DIR}/inno_reader.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/pkg_reader.c)
+    ${CMAKE_CURRENT_SOURCE_DIR}/pkg_reader.c ${CMAKE_CURRENT_SOURCE_DIR}/physical_output_file.c)
 target_include_directories(extract_gog PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(extract_gog PRIVATE lzma_sdk_c ZLIB::ZLIB)
 
 add_executable(
     test_gog_fd
     ${CMAKE_CURRENT_SOURCE_DIR}/test_gog_fd.c ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/inno_reader.c)
+    ${CMAKE_CURRENT_SOURCE_DIR}/inno_reader.c ${CMAKE_CURRENT_SOURCE_DIR}/physical_output_file.c)
 target_include_directories(test_gog_fd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(test_gog_fd PRIVATE lzma_sdk_c ZLIB::ZLIB)
 target_compile_definitions(test_gog_fd PRIVATE INNO_READER_TESTING=1)
@@ -249,7 +249,8 @@ target_compile_definitions(test_gog_fd PRIVATE INNO_READER_TESTING=1)
 add_executable(
     test_pkg_toc_bounds
     ${CMAKE_CURRENT_SOURCE_DIR}/test_pkg_toc_bounds.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c ${CMAKE_CURRENT_SOURCE_DIR}/pkg_reader.c)
+    ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c ${CMAKE_CURRENT_SOURCE_DIR}/pkg_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/physical_output_file.c)
 target_include_directories(test_pkg_toc_bounds PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(test_pkg_toc_bounds PRIVATE ZLIB::ZLIB)
 target_compile_definitions(test_pkg_toc_bounds PRIVATE PKG_READER_TESTING=1)

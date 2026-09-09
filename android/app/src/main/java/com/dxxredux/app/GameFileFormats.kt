@@ -261,16 +261,39 @@ object GameFileFormats {
         )
 
     val gameImportExtensions: Set<String> = formats.filterValues { it.gameImport }.keys
-    val discExtractExtensions: Set<String> = formats.filterValues { it.discExtract }.keys
+
+    // Keep synchronized with game_file_extensions.c; companions are filtered after extraction
+    val discCompanionExtensions =
+        setOf(
+            "txt",
+            "tex",
+            "txb",
+            "ctb",
+            "sng",
+            "pcx",
+            "hmp",
+            "hmq",
+            "mid",
+            "256",
+            "vham",
+            "wav",
+            "ogg",
+            "mp3",
+            "flac",
+            "m3u",
+        )
+    val discExtractExtensions: Set<String> = formats.filterValues { it.discExtract }.keys + discCompanionExtensions
     val setGameDataExtensions: Set<String> = formats.filterValues { it.setGameData }.keys
     val gogAudioExtensions: Set<String> = formats.filterValues { it.gogAudio }.keys
 
     // Extraction includes transport archives and recordings; retain only runtime content after unpacking
     fun isDiscRuntimeFile(name: String): Boolean {
         val extension = extensionOf(name)
-        return (extension in discExtractExtensions && extension !in setOf("sow", "dem")) ||
+        return (formats[extension]?.discExtract == true && extension !in setOf("sow", "dem")) ||
             extension in setOf("txb", "ctb", "sng", "hmp", "hmq", "mid", "256", "tex", "vham")
     }
+
+    fun isDiscCompanionFile(name: String): Boolean = extensionOf(name) in discCompanionExtensions
 
     /*
      * Mac HFS/STI media needs auxiliary config, text, and palette files and

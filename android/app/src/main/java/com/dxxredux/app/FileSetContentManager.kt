@@ -96,6 +96,7 @@ internal class FileSetContentManager(
         staging: File,
         sourceName: String,
     ) = synchronized(CONTENT_LOCK) {
+        check(hoistNestedImportedGameFiles(staging) >= 0) { "Conflicting imported base game files" }
         prepareDiscContent(staging, sourceName)
         publishStagedArchiveFiles(staging, setDir)
     }
@@ -103,11 +104,45 @@ internal class FileSetContentManager(
     /** Prepare a single owner in an isolated disc staging directory before archive publication */
     fun stageDiscContent(displayName: String) =
         synchronized(CONTENT_LOCK) {
-            val discovered = FileSetContentCatalog.scan(setDir)
+            val discovered =
+                FileSetContentCatalog.scan(setDir).mapNotNull { entry ->
+                    val retained =
+                        entry.files.indices.filter {
+                            !AndroidGameFileExtensions.isGogAudioFile(
+                                entry.files[it].name,
+                            )
+                        }
+                    if (retained.isEmpty()) {
+                        null
+                    } else {
+                        entry.copy(
+                            files = retained.map { entry.files[it] },
+                            virtualPaths = retained.map { entry.virtualPaths[it] },
+                        )
+                    }
+                }
             if (discovered.isEmpty()) return@synchronized
             check(entriesDir.isDirectory || entriesDir.mkdirs()) { "Could not create disc content directory" }
             val files = discovered.flatMap { it.files }
-            val paths = discovered.flatMap { it.virtualPaths }
+            val missionDirectories =
+                files
+                    .filter {
+                        GameFileFormats.isMissionDescriptor(
+                            it.name,
+                        )
+                    }.map { it.parentFile }
+                    .toSet()
+            val paths =
+                discovered.flatMap { entry ->
+                    entry.files.mapIndexed { index, file ->
+                        val path = file.relativeTo(setDir.canonicalFile).invariantSeparatorsPath
+                        if (file.parentFile in missionDirectories && !path.startsWith("missions/", ignoreCase = true)) {
+                            "missions/$path"
+                        } else {
+                            entry.virtualPaths[index]
+                        }
+                    }
+                }
             val identity = paths.zip(files).joinToString("\n") { (path, file) -> "$path:${sha256(file)}" }
             val id =
                 MessageDigest

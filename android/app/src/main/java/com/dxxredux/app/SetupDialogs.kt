@@ -800,7 +800,7 @@ internal fun GogImportDialog(
                                             )
                                             count = -1
                                         } else if (count > 0) {
-                                            publishStagedArchiveFiles(stagingDir, setDir)
+                                            FileSetContentManager(setDir).publishDiscImport(stagingDir, installerName)
                                         }
                                         val srcManager = AudioSourceManager.forActiveSet(filesDir)
                                         val hasGog =

@@ -35,6 +35,7 @@ class AndroidGameFileExtensionsTest {
     @Test
     fun nativeTablesMirrorAuthoritativeKotlinRoles() {
         val source = nativePolicySource()
+        assertEquals(GameFileFormats.discCompanionExtensions, nativeTable(source, "dxx_android_disc_companion_extensions"))
         assertEquals(
             GameFileFormats.gameImportExtensions,
             nativeTable(source, "dxx_android_game_file_extensions"),
@@ -56,11 +57,11 @@ class AndroidGameFileExtensionsTest {
     @Test
     fun macPolicyExceptionsAreExplicit() {
         assertEquals(
-            setOf("256", "cfg", "txt"),
+            setOf("cfg"),
             GameFileFormats.macDiscExtractExtensions - GameFileFormats.discExtractExtensions,
         )
         assertEquals(
-            setOf("dtx", "hxm", "pog", "rdl", "rl2", "sdl", "sl2"),
+            setOf("dtx", "hxm", "pog", "rdl", "rl2", "sdl", "sl2", "tex", "txb", "ctb", "sng", "pcx", "hmp", "hmq", "mid", "vham", "wav", "ogg", "mp3", "flac", "m3u"),
             GameFileFormats.discExtractExtensions - GameFileFormats.macDiscExtractExtensions,
         )
     }
@@ -85,6 +86,6 @@ class AndroidGameFileExtensionsTest {
         assertTrue(GameFileFormats.hasDiscExtractExtension("LEVEL.RL2"))
         assertTrue(GameFileFormats.hasDiscExtractExtension("SECRET.SL2"))
         assertTrue(GameFileFormats.extensionOf("README.TXT") in GameFileFormats.macDiscExtractExtensions)
-        assertFalse(GameFileFormats.hasDiscExtractExtension("README.TXT"))
+        assertTrue(GameFileFormats.hasDiscExtractExtension("README.TXT"))
     }
 }

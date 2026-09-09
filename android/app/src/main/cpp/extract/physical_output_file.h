@@ -20,6 +20,9 @@ int dxx_physical_output_open(dxx_physical_output_file_t *file,
                              const char *output_dir,
                              const char *relative_path);
 
+/* Prepare parents of a validated relative path without modifying its final leaf */
+int dxx_physical_output_prepare_parents(const char *output_dir, const char *relative_path);
+
 int dxx_physical_output_write(dxx_physical_output_file_t *file,
                               const void *data, size_t size);
 

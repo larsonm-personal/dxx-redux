@@ -9,6 +9,11 @@ int main(void)
 	assert(dxx_has_android_game_file_extension("missions/custom.Mn2"));
 	assert(!dxx_has_android_game_file_extension("readme.txt"));
 	assert(!dxx_has_android_game_file_extension("hog"));
+	assert(dxx_has_android_container_file_extension("newlevel/mad.RDL"));
+	assert(dxx_has_android_container_file_extension("missions/intro.PCX"));
+	assert(dxx_has_android_container_file_extension("missions/readme.TXT"));
+	assert(dxx_has_android_container_file_extension("DESCENT_II.GOG"));
+	assert(!dxx_has_android_container_file_extension("setup.exe"));
 
 	assert(dxx_is_android_gog_audio_extension("descent_ii.GOG"));
 	assert(dxx_is_android_gog_audio_extension("audio/descENT_ii.InSt"));

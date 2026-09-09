@@ -1,0 +1,186 @@
+// Native Anniversary ISO import, bundled ownership, and loose-level launch
+[
+    {
+        "_info": {
+            "games": [
+                "d1"
+            ],
+            "_standalone": false,
+            "_owner": "test_disc_content_import",
+            "vars": {
+                "d1": {
+                    "GAME": "d1"
+                }
+            }
+        }
+    },
+    {
+        "action": "enter_launcher"
+    },
+    {
+        "action": "reset_state"
+    },
+    {
+        "action": "setup_command",
+        "command": "pause_route_metadata_precompute",
+        "post_delay_ms": 1000
+    },
+    {
+        "action": "setup_command",
+        "command": "switch_set",
+        "args": {
+            "name": "default"
+        },
+        "post_delay_ms": 250
+    },
+    {
+        "action": "setup_command",
+        "command": "delete_set",
+        "args": {
+            "name": "automation-anniversary-extras"
+        },
+        "post_delay_ms": 500
+    },
+    {
+        "action": "setup_command",
+        "command": "create_set",
+        "args": {
+            "name": "automation-anniversary-extras"
+        },
+        "post_delay_ms": 250
+    },
+    {
+        "action": "setup_command",
+        "command": "switch_set",
+        "args": {
+            "name": "automation-anniversary-extras"
+        },
+        "post_delay_ms": 250
+    },
+    {
+        "action": "setup_command",
+        "command": "pause_route_metadata_precompute"
+    },
+    {
+        "action": "setup_command",
+        "command": "import_iso",
+        "args": {
+            "iso_path": "/data/local/tmp/descent_anniversary.iso"
+        }
+    },
+    {
+        "action": "wait_for",
+        "field": "import_state.status",
+        "value": "complete",
+        "timeout_ms": 120000
+    },
+    {
+        "action": "wait_for",
+        "field": "content_entry_count",
+        "value": "1",
+        "timeout_ms": 30000
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "d1.ready": "true",
+            "content_entries[0].kind": "mod",
+            "content_entries[0].managed": "true",
+            "content_entries[0].name": "descent anniversary"
+        }
+    },
+    {
+        "action": "setup_command",
+        "command": "pause_route_metadata_precompute"
+    },
+    {
+        "action": "enter_game",
+        "game": "d1"
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 20000
+    },
+    {
+        "action": "wait_for",
+        "field": "screen_mode",
+        "value": "menu",
+        "timeout_ms": 20000
+    },
+    {
+        "action": "select",
+        "text": "Create New",
+        "optional": true,
+        "timeout_ms": 1000,
+        "post_delay_ms": 100
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "optional": true,
+        "timeout_ms": 5000,
+        "post_delay_ms": 100
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "post_delay_ms": 100,
+        "timeout_ms": 10000
+    },
+    {
+        "action": "select_mission",
+        "text": "Mad Decorator!",
+        "post_delay_ms": 100,
+        "timeout_ms": 10000
+    },
+    {
+        "action": "select",
+        "text": "Rookie",
+        "post_delay_ms": 100,
+        "timeout_ms": 10000
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 10000,
+        "post_delay_ms": 100
+    },
+    {
+        "action": "wait_for",
+        "field": "in_game",
+        "value": "true",
+        "timeout_ms": 20000
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "in_game": "true",
+            "current_level_num": "1",
+            "physfs.search_path": {
+                "contains": "/missions/"
+            }
+        }
+    },
+    {
+        "action": "enter_launcher"
+    },
+    {
+        "action": "setup_command",
+        "command": "switch_set",
+        "args": {
+            "name": "default"
+        },
+        "post_delay_ms": 250
+    },
+    {
+        "action": "setup_command",
+        "command": "delete_set",
+        "args": {
+            "name": "automation-anniversary-extras"
+        },
+        "post_delay_ms": 500
+    },
+    {
+        "action": "log",
+        "message": "Anniversary extras imported as one owner and loose Mad Decorator level launched"
+    }
+]

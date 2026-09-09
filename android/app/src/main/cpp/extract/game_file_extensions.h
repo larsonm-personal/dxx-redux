@@ -16,9 +16,12 @@ extern const char *dxx_android_game_file_extensions[];
 extern const char *dxx_android_disc_extract_extensions[];
 extern const char *dxx_android_gog_audio_extensions[];
 extern const char *dxx_android_mac_disc_extract_extensions[];
+extern const char *dxx_android_disc_companion_extensions[];
 
 int dxx_has_any_extension_ci(const char *path, const char *const *extensions);
 int dxx_has_android_game_file_extension(const char *path);
+/* Container extraction includes loose levels and companions beyond direct game imports */
+int dxx_has_android_container_file_extension(const char *path);
 int dxx_is_android_gog_audio_extension(const char *path);
 
 #ifdef __cplusplus

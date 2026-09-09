@@ -1041,7 +1041,7 @@ class SetupActivity : ComponentActivity() {
                         runIo {
                             val fsm = FileSetManager(filesDir)
                             val setDir = fsm.getSetDir(fsm.getActive())
-                            val count = GogImportBridge.extractFiles(path, setDir.absolutePath, null, audio)
+                            val count = importGogContentFromPath(setDir, path, audio)
                             val srcManager = AudioSourceManager(filesDir, setDir)
                             if (audio && count > 0 &&
                                 registerGogAudioSource(

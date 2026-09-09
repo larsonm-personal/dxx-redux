@@ -42,6 +42,8 @@
  */
 
 #include "inno_reader.h"
+#include "physical_output_file.h"
+#include "game_file_extensions.h"
 
 #include "extract_limits.h"
 
@@ -3536,14 +3538,27 @@ const inno_data_entry_t *inno_file_data_entry(const inno_archive_t *arc,
 	return &arc->data_entries[file->location];
 }
 
-static const char *inno_basename(const char *path)
+int inno_output_relative_path(const char *destination, char *output, size_t size)
 {
-	const char *last = path;
-	for (const char *p = path; *p; p++) {
-		if (*p == '/' || *p == '\\')
-			last = p + 1;
+	if (!valid_destination_path(destination) || strlen(destination) >= size) return -1;
+	for (size_t i = 0;; i++) {
+		output[i] = destination[i] == '\\' ? '/' : destination[i];
+		if (!output[i]) return 0;
 	}
-	return last;
+}
+
+int inno_extract_file_to_directory(inno_archive_t *arc, int index, const char *directory,
+                                   inno_progress_fn progress, void *user_data)
+{
+	char relative[INNO_PATH_LEN], output[INNO_PATH_LEN * 2];
+	if (!arc || !arc->files || !directory || index < 0 || (uint32_t) index >= arc->file_count ||
+	    inno_output_relative_path(arc->files[index].destination, relative, sizeof(relative)) < 0)
+		return -1;
+	int length = snprintf(output, sizeof(output), "%s/%s", directory, relative);
+	if (length < 0 || (size_t) length >= sizeof(output)) return -1;
+	/* Create validated parents in isolated extraction output before the atomic writer */
+	if (dxx_physical_output_prepare_parents(directory, relative) < 0) return -1;
+	return inno_extract_file(arc, index, output, progress, user_data);
 }
 
 static int inno_output_name_equal(const char *first, const char *second)
@@ -3553,9 +3568,34 @@ static int inno_output_name_equal(const char *first, const char *second)
 		unsigned char b = (unsigned char) *second++;
 		if (a >= 'A' && a <= 'Z') a = (unsigned char) (a + ('a' - 'A'));
 		if (b >= 'A' && b <= 'Z') b = (unsigned char) (b + ('a' - 'A'));
+		if (a == '\\') a = '/';
+		if (b == '\\') b = '/';
 		if (a != b) return 0;
 	}
 	return *first == *second;
+}
+
+int inno_is_game_content(const inno_archive_t *arc, const char *destination)
+{
+	if (!dxx_has_android_container_file_extension(destination)) return 0;
+	if (!dxx_has_any_extension_ci(destination, dxx_android_disc_companion_extensions)) return 1;
+	char parent[INNO_PATH_LEN];
+	if (inno_output_relative_path(destination, parent, sizeof(parent)) < 0) return 0;
+	char *leaf = strrchr(parent, '/');
+	if (leaf) leaf[1] = 0;
+	else parent[0] = 0;
+	for (uint32_t i = 0; i < arc->file_count; i++) {
+		const char *path = arc->files[i].destination;
+		static const char *descriptors[] = { ".msn", ".mn2", NULL };
+		if (!dxx_has_any_extension_ci(path, descriptors)) continue;
+		char sibling[INNO_PATH_LEN];
+		if (inno_output_relative_path(path, sibling, sizeof(sibling)) < 0) continue;
+		leaf = strrchr(sibling, '/');
+		if (leaf) leaf[1] = 0;
+		else sibling[0] = 0;
+		if (inno_output_name_equal(parent, sibling)) return 1;
+	}
+	return 0;
 }
 
 int inno_output_names_unique(const inno_archive_t *arc,
@@ -3576,8 +3616,7 @@ int inno_output_names_unique(const inno_archive_t *arc,
 				continue;
 			if (!valid_destination_path(second))
 				return 0;
-			if (inno_output_name_equal(inno_basename(first),
-			                           inno_basename(second)))
+			if (inno_output_name_equal(first, second))
 				return 0;
 		}
 	}

@@ -27,34 +27,21 @@
 #include <strings.h>
 #define ci_cmp strcasecmp
 
-static int has_game_extension(const char *path)
-{
-	return dxx_has_android_game_file_extension(path);
-}
-
 /* Audio extensions (.gog/.inst) — subset of game_extensions, optionally skipped */
 static int is_audio_extension(const char *path)
 {
 	return dxx_is_android_gog_audio_extension(path);
 }
 
-static const char *basename_only(const char *path)
-{
-	const char *last = path;
-	for (const char *p = path; *p; p++) {
-		if (*p == '/' || *p == '\\') last = p + 1;
-	}
-	return last;
-}
-
 typedef struct {
 	int include_audio;
+	const inno_archive_t *arc;
 } inno_selection_t;
 
 static int select_inno_output(const char *path, void *user_data)
 {
 	inno_selection_t *selection = (inno_selection_t *) user_data;
-	return has_game_extension(path) &&
+	return inno_is_game_content(selection->arc, path) &&
 	       (selection->include_audio || !is_audio_extension(path));
 }
 
@@ -98,20 +85,21 @@ static void launcher_logf(JNIEnv *env, const char *fmt, ...)
 static jobjectArray build_inno_file_list(JNIEnv *env, inno_archive_t *arc,
                                          jclass strClass)
 {
-	inno_selection_t selection = { 1 };
+	inno_selection_t selection = { 1, arc };
 	if (!inno_output_names_unique(arc, select_inno_output, &selection))
 		return NULL;
 	jsize game_count = 0;
 	for (uint32_t i = 0; i < arc->file_count; i++) {
-		if (has_game_extension(arc->files[i].destination)) game_count++;
+		if (inno_is_game_content(arc, arc->files[i].destination)) game_count++;
 	}
 
 	jobjectArray result = (*env)->NewObjectArray(env, game_count, strClass, NULL);
 	if (!result || (*env)->ExceptionCheck(env)) return NULL;
 	jsize idx = 0;
 	for (uint32_t i = 0; i < arc->file_count; i++) {
-		if (!has_game_extension(arc->files[i].destination)) continue;
-		const char *fname = basename_only(arc->files[i].destination);
+		if (!inno_is_game_content(arc, arc->files[i].destination)) continue;
+		char fname[INNO_PATH_LEN];
+		if (inno_output_relative_path(arc->files[i].destination, fname, sizeof(fname)) < 0) return NULL;
 		uint64_t size = 0;
 		const inno_data_entry_t *data = inno_file_data_entry(arc, i);
 		if (data)
@@ -337,9 +325,9 @@ static int extract_inno_archive(JNIEnv *env, inno_archive_t *arc,
                                 const char *out_dir, jobject progress,
                                 jboolean includeAudio)
 {
-	inno_selection_t selection = { includeAudio != 0 };
+	inno_selection_t selection = { includeAudio != 0, arc };
 	if (!inno_output_names_unique(arc, select_inno_output, &selection)) {
-		LOGE("Colliding Inno output basenames");
+		LOGE("Colliding Inno output paths");
 		return -1;
 	}
 	gog_extract_ctx_t ctx;
@@ -347,7 +335,7 @@ static int extract_inno_archive(JNIEnv *env, inno_archive_t *arc,
 
 	long long total = 0;
 	for (uint32_t i = 0; i < arc->file_count; i++) {
-		if (!has_game_extension(arc->files[i].destination)) continue;
+		if (!inno_is_game_content(arc, arc->files[i].destination)) continue;
 		if (!includeAudio && is_audio_extension(arc->files[i].destination)) continue;
 		const inno_data_entry_t *data = inno_file_data_entry(arc, i);
 		if (data)
@@ -357,9 +345,10 @@ static int extract_inno_archive(JNIEnv *env, inno_archive_t *arc,
 
 	int extracted = 0;
 	for (uint32_t i = 0; i < arc->file_count; i++) {
-		if (!has_game_extension(arc->files[i].destination)) continue;
+		if (!inno_is_game_content(arc, arc->files[i].destination)) continue;
 		if (!includeAudio && is_audio_extension(arc->files[i].destination)) continue;
-		const char *fname = basename_only(arc->files[i].destination);
+		char fname[INNO_PATH_LEN];
+		if (inno_output_relative_path(arc->files[i].destination, fname, sizeof(fname)) < 0) return -1;
 		int is_audio = is_audio_extension(arc->files[i].destination);
 		char out_path[1024];
 		snprintf(out_path, sizeof(out_path), "%s/%s", out_dir, fname);
@@ -374,8 +363,8 @@ static int extract_inno_archive(JNIEnv *env, inno_archive_t *arc,
 			              file_comp_size,
 			              arc->files[i].gog_galaxy ? 1 : 0);
 		}
-		const int file_result = inno_extract_file(arc, (int) i, out_path,
-		                                          progress ? gog_progress_cb : NULL, &ctx);
+		const int file_result = inno_extract_file_to_directory(arc, (int) i, out_dir,
+		                                                       progress ? gog_progress_cb : NULL, &ctx);
 		if (ctx.cancelled) {
 			remove(out_path);
 			return DXX_EXTRACT_CANCELLED;

@@ -426,11 +426,8 @@ static void test_game_output_names(void)
 {
 	static const char *unsafe_names[] = {
 		"", ".", "..", "\\escape.hog", "..\\escape.hog",
-		"nested\\escape.hog", "C:escape.hog", "C:\\escape.hog",
+		"nested\\escape.hog", "/escape.hog", "../escape.hog", "C:escape.hog", "C:\\escape.hog",
 		"bad\037name.hog", "bad?.hog", "bad|name.hog", NULL
-	};
-	static const char *ignored_nested_names[] = {
-		"/escape.hog", "../escape.hog", "nested/escape.hog", NULL
 	};
 	char overlong[PKG_PATH_LEN + 32];
 	uint8_t embedded_nul[128];
@@ -441,13 +438,13 @@ static void test_game_output_names(void)
 	size_t prefix_size;
 
 	CHECK(run_game_name_fixture("DESCENT.HOG") == 1);
-	CHECK(run_game_name_fixture("notes.txt") == 0);
+	CHECK(run_game_name_fixture("notes.txt") == 1);
+	CHECK(run_game_name_fixture("newlevel/mad.rdl") == 1);
+	CHECK(run_game_name_fixture("nested/escape.hog") == 1);
 	CHECK(run_game_mode_fixture("DESCENT.HOG", 0120777) == -1);
 	CHECK(run_game_mode_fixture("DESCENT.HOG", 0010644) == -1);
 	for (const char **name = unsafe_names; *name; name++)
 		CHECK(run_game_name_fixture(*name) == -1);
-	for (const char **name = ignored_nested_names; *name; name++)
-		CHECK(run_game_name_fixture(*name) == 0);
 
 	memset(overlong, 'a', sizeof(overlong));
 	memcpy(overlong + sizeof(overlong) - 5, ".hog", 5);

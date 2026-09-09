@@ -351,8 +351,8 @@ static int check_unicode_destination_paths(void)
 	memcpy(files[0].destination + 4, mixed_utf8, sizeof(mixed_utf8));
 	memcpy(files[1].destination, "two\\", 4);
 	memcpy(files[1].destination + 4, mixed_utf8, sizeof(mixed_utf8));
-	if (inno_output_names_unique(&archive, NULL, NULL)) {
-		fprintf(stderr, "flattened Unicode basename collision accepted\n");
+	if (!inno_output_names_unique(&archive, NULL, NULL)) {
+		fprintf(stderr, "Separate Unicode paths collided\n");
 		failures++;
 	}
 	files[1].destination[4] = 'B';
@@ -361,7 +361,7 @@ static int check_unicode_destination_paths(void)
 		failures++;
 	}
 	strcpy(files[0].destination, "one\\FILE.HOG");
-	strcpy(files[1].destination, "two\\file.hog");
+	strcpy(files[1].destination, "ONE/file.hog");
 	if (inno_output_names_unique(&archive, NULL, NULL)) {
 		fprintf(stderr, "ASCII case-only basename collision accepted\n");
 		failures++;

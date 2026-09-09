@@ -90,9 +90,9 @@ static HANDLE open_root(const char *output_dir)
 	return root;
 }
 
-int dxx_physical_output_open(dxx_physical_output_file_t *file,
-                             const char *output_dir,
-                             const char *relative_path)
+static int physical_output_open(dxx_physical_output_file_t *file,
+                                const char *output_dir,
+                                const char *relative_path, int parents_only)
 {
 	char path[512];
 	char *component;
@@ -131,6 +131,11 @@ int dxx_physical_output_open(dxx_physical_output_file_t *file,
 		}
 		parent = next;
 		component = separator + 1;
+	}
+
+	if (parents_only) {
+		CloseHandle(parent);
+		return 0;
 	}
 
 	file->handle = open_relative(
@@ -226,9 +231,9 @@ static int open_directory_at(int parent_fd, const char *name)
 	return fd;
 }
 
-int dxx_physical_output_open(dxx_physical_output_file_t *file,
-                             const char *output_dir,
-                             const char *relative_path)
+static int physical_output_open(dxx_physical_output_file_t *file,
+                                const char *output_dir,
+                                const char *relative_path, int parents_only)
 {
 	char path[512];
 	char *component;
@@ -271,6 +276,10 @@ int dxx_physical_output_open(dxx_physical_output_file_t *file,
 	if (strlen(component) >= sizeof(file->leaf)) {
 		close(parent);
 		return -1;
+	}
+	if (parents_only) {
+		close(parent);
+		return 0;
 	}
 	memcpy(file->leaf, component, strlen(component) + 1);
 	file->fd = openat(parent, component,
@@ -342,3 +351,15 @@ void dxx_physical_output_abort(dxx_physical_output_file_t *file)
 }
 
 #endif
+
+int dxx_physical_output_open(dxx_physical_output_file_t *file,
+                             const char *output_dir, const char *relative_path)
+{
+	return physical_output_open(file, output_dir, relative_path, 0);
+}
+
+int dxx_physical_output_prepare_parents(const char *output_dir, const char *relative_path)
+{
+	dxx_physical_output_file_t file;
+	return physical_output_open(&file, output_dir, relative_path, 1);
+}
