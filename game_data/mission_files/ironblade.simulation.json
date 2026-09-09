@@ -8,9 +8,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
+    "ok": 4,
     "failed": 3,
-    "timeout": 3
+    "timeout": 1
   },
   "levels": [
     {
@@ -29,10 +29,10 @@
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 25
+          "s": 24
         }
       ],
-      "total_frames": 1512,
+      "total_frames": 1458,
       "rng_end": {
         "state": 3545811950,
         "calls": 89
@@ -43,7 +43,7 @@
       "level_num": 2,
       "level_file": "arkon01.rdl",
       "route_input_sha256": "5F9EB98AC8C713A12F9A61E96F0BCEB2DC81950E5D768A02B33157BDCA0A27FB",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -55,23 +55,30 @@
         },
         {
           "n": "gold key",
-          "s": 41
+          "s": 38
         },
         {
           "n": "red key",
-          "s": 62
+          "s": 61
         },
         {
           "n": "fly-through 4",
-          "s": 75
+          "s": 73
+        },
+        {
+          "n": "reactor",
+          "s": 90
+        },
+        {
+          "n": "exit",
+          "s": 99
         }
       ],
-      "total_frames": 5331,
+      "total_frames": 5956,
       "rng_end": {
-        "state": 872078403,
-        "calls": 70
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 3885567453,
+        "calls": 100
+      }
     },
     {
       "level_num": 3,
@@ -106,11 +113,11 @@
         },
         {
           "n": "hidden door",
-          "s": 43
+          "s": 42
         },
         {
           "n": "gold key",
-          "s": 44
+          "s": 43
         },
         {
           "n": "hidden door",
@@ -118,7 +125,7 @@
         },
         {
           "n": "red key",
-          "s": 83
+          "s": 84
         },
         {
           "n": "reactor",
@@ -129,7 +136,7 @@
           "s": 151
         }
       ],
-      "total_frames": 9063,
+      "total_frames": 9070,
       "rng_end": {
         "state": 1598124042,
         "calls": 141
@@ -150,7 +157,7 @@
           "s": 13
         }
       ],
-      "total_frames": 766,
+      "total_frames": 802,
       "rng_end": {
         "state": 2937909499,
         "calls": 14
@@ -161,7 +168,7 @@
       "level_num": 6,
       "level_file": "arkon03.rdl",
       "route_input_sha256": "F1ECCA68F0A57FE5AC5945D23BF2DCEDBA713C0DEF8FF74C436E463F867FA84A",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -170,14 +177,41 @@
         {
           "n": "blue key",
           "s": 18
+        },
+        {
+          "n": "hidden door",
+          "s": 26
+        },
+        {
+          "n": "gold key",
+          "s": 32
+        },
+        {
+          "n": "hidden door",
+          "s": 56
+        },
+        {
+          "n": "hidden door",
+          "s": 59
+        },
+        {
+          "n": "red key",
+          "s": 61
+        },
+        {
+          "n": "reactor",
+          "s": 86
+        },
+        {
+          "n": "exit",
+          "s": 95
         }
       ],
-      "total_frames": 1844,
+      "total_frames": 5725,
       "rng_end": {
-        "state": 744964398,
-        "calls": 25
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 982848517,
+        "calls": 124
+      }
     },
     {
       "level_num": 7,
@@ -195,17 +229,17 @@
         },
         {
           "n": "hidden door",
-          "s": 3
+          "s": 2
         },
         {
           "n": "hidden door",
-          "s": 3
+          "s": 4
         }
       ],
-      "total_frames": 3959,
+      "total_frames": 4022,
       "rng_end": {
-        "state": 2543504875,
-        "calls": 286
+        "state": 811900218,
+        "calls": 285
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -229,21 +263,21 @@
         },
         {
           "n": "red key",
-          "s": 58
+          "s": 60
         },
         {
           "n": "reactor",
-          "s": 85
+          "s": 74
         },
         {
           "n": "exit",
-          "s": 91
+          "s": 90
         }
       ],
-      "total_frames": 5436,
+      "total_frames": 5378,
       "rng_end": {
-        "state": 344858293,
-        "calls": 76
+        "state": 4022231744,
+        "calls": 71
       }
     }
   ]

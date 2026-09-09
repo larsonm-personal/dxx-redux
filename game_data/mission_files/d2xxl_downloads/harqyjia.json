@@ -126,7 +126,7 @@
         "mine_volume": 9873750.0,
         "mine_volume_normalized": 2.15919,
         "mine_volume_text": "2.2x",
-        "travel_distance": 9194.1,
+        "travel_distance": 9202.9,
         "travel_time_seconds": 184,
         "travel_time_text": "3M:04S",
         "guidebot_count": 0,
@@ -386,7 +386,7 @@
               "y": -232.0,
               "z": -279.7
             },
-            "distance": 2315.7,
+            "distance": 2320.1,
             "key": "red"
           },
           {
@@ -402,7 +402,7 @@
               "y": -157.7,
               "z": -633.9
             },
-            "distance": 1993.3,
+            "distance": 1997.7,
             "opens": [
               {
                 "seg": 637,

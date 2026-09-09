@@ -5,10 +5,10 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
+    "ok": 1,
     "failed": 3,
-    "timeout": 1,
     "unsupported": 1
   },
   "levels": [
@@ -58,10 +58,10 @@
       "objectives": [
         {
           "n": "switch 0",
-          "s": 3
+          "s": 2
         }
       ],
-      "total_frames": 707,
+      "total_frames": 600,
       "rng_end": {
         "state": 444983185,
         "calls": 240
@@ -72,7 +72,7 @@
       "level_num": 4,
       "level_file": "flw.rl2",
       "route_input_sha256": "DF562D269FAF8099330786FDEFCE22AC3ED3C6145FAFAFFEBE65431C3EC52890",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -80,31 +80,66 @@
       "objectives": [
         {
           "n": "switch 0",
-          "s": 5
+          "s": 4
         },
         {
           "n": "hidden door",
-          "s": 12
+          "s": 13
         },
         {
           "n": "hidden door",
-          "s": 15
+          "s": 16
         },
         {
           "n": "blue key",
-          "s": 15
+          "s": 16
         },
         {
           "n": "hidden door",
-          "s": 21
+          "s": 23
+        },
+        {
+          "n": "switch 2",
+          "s": 30
+        },
+        {
+          "n": "gold key",
+          "s": 35
+        },
+        {
+          "n": "hidden door",
+          "s": 47
+        },
+        {
+          "n": "switch 11",
+          "s": 58
+        },
+        {
+          "n": "red key",
+          "s": 59
+        },
+        {
+          "n": "hidden door",
+          "s": 79
+        },
+        {
+          "n": "reactor",
+          "s": 81
+        },
+        {
+          "n": "hidden door",
+          "s": 97
+        },
+        {
+          "n": "exit",
+          "s": 97
         }
       ],
-      "total_frames": 7706,
+      "total_frames": 5821,
       "rng_end": {
-        "state": 1189395237,
-        "calls": 1116
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3858517989,
+        "calls": 4508
+      }
     },
     {
       "level_num": -1,

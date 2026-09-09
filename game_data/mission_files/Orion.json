@@ -250,9 +250,9 @@
         "mine_volume": 20186100.0,
         "mine_volume_normalized": 4.41428,
         "mine_volume_text": "4.4x",
-        "travel_distance": 2626.0,
-        "travel_time_seconds": 53,
-        "travel_time_text": "0M:53S",
+        "travel_distance": 851.1,
+        "travel_time_seconds": 17,
+        "travel_time_text": "0M:17S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -280,23 +280,9 @@
             },
             "distance": 851.1,
             "key": "blue"
-          },
-          {
-            "index": 2,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "gold key",
-            "seg": 54,
-            "label_pos": {
-              "x": 257.5,
-              "y": 203.0,
-              "z": -31.6
-            },
-            "distance": 1774.9,
-            "key": "gold"
           }
         ],
-        "route_problem": "red key unreachable"
+        "route_problem": "gold key unreachable"
       },
       {
         "level_num": 2,

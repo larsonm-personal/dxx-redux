@@ -928,9 +928,9 @@
         "mine_volume": 2483270.0,
         "mine_volume_normalized": 0.543041,
         "mine_volume_text": "0.54x",
-        "travel_distance": 1400.8,
-        "travel_time_seconds": 28,
-        "travel_time_text": "0M:28S",
+        "travel_distance": 3184.2,
+        "travel_time_seconds": 64,
+        "travel_time_text": "1M:04S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -999,10 +999,105 @@
             },
             "distance": 251.1,
             "key": "gold"
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 1",
+            "seg": 61,
+            "wall": 108,
+            "label_pos": {
+              "x": -30.0,
+              "y": 70.4,
+              "z": 289.6
+            },
+            "distance": 509.5,
+            "trigger": 1,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 64,
+                "side": 2,
+                "wall": 45
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 2",
+            "seg": 96,
+            "side": 2,
+            "wall": 47,
+            "label_pos": {
+              "x": -10.0,
+              "y": 93.4,
+              "z": 322.8
+            },
+            "distance": 633.9,
+            "trigger": 2,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 64,
+                "side": 4,
+                "wall": 30
+              },
+              {
+                "seg": 208,
+                "side": 1,
+                "wall": 44
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 64,
+            "side": 4,
+            "wall": 30,
+            "label_pos": {
+              "x": 0.0,
+              "y": 84.7,
+              "z": 327.6
+            },
+            "distance": 567.6,
+            "opens": [
+              {
+                "seg": 64,
+                "side": 4,
+                "wall": 30
+              },
+              {
+                "seg": 87,
+                "side": 1,
+                "wall": 31
+              }
+            ]
+          },
+          {
+            "index": 7,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 85,
+            "label_pos": {
+              "x": 0.0,
+              "y": 22.4,
+              "z": 322.0
+            },
+            "distance": 72.3,
+            "key": "red"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "conditional hidden door cannot be unlocked",
+        "route_problem": "route target unreachable",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
         ]

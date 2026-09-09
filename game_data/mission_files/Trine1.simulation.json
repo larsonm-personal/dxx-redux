@@ -8,9 +8,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 6,
+    "ok": 7,
     "failed": 1,
-    "timeout": 2,
+    "timeout": 1,
     "route_mismatch": 1
   },
   "levels": [
@@ -26,7 +26,7 @@
       "objectives": [
         {
           "n": "red key",
-          "s": 22
+          "s": 23
         },
         {
           "n": "reactor",
@@ -34,10 +34,10 @@
         },
         {
           "n": "exit",
-          "s": 42
+          "s": 43
         }
       ],
-      "total_frames": 2535,
+      "total_frames": 2556,
       "rng_end": {
         "state": 995405759,
         "calls": 42
@@ -59,7 +59,7 @@
         },
         {
           "n": "red key",
-          "s": 43
+          "s": 44
         },
         {
           "n": "reactor",
@@ -67,10 +67,10 @@
         },
         {
           "n": "exit",
-          "s": 71
+          "s": 72
         }
       ],
-      "total_frames": 4274,
+      "total_frames": 4306,
       "rng_end": {
         "state": 948921754,
         "calls": 61
@@ -88,26 +88,26 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 15
+          "s": 14
         },
         {
           "n": "gold key",
-          "s": 38
+          "s": 37
         },
         {
           "n": "red key",
-          "s": 58
+          "s": 57
         },
         {
           "n": "reactor",
-          "s": 74
+          "s": 72
         },
         {
           "n": "exit",
-          "s": 89
+          "s": 86
         }
       ],
-      "total_frames": 5315,
+      "total_frames": 5162,
       "rng_end": {
         "state": 493907821,
         "calls": 84
@@ -133,18 +133,18 @@
         },
         {
           "n": "red key",
-          "s": 58
+          "s": 57
         },
         {
           "n": "reactor",
-          "s": 84
+          "s": 83
         },
         {
           "n": "exit",
-          "s": 90
+          "s": 88
         }
       ],
-      "total_frames": 5374,
+      "total_frames": 5304,
       "rng_end": {
         "state": 2916751166,
         "calls": 73
@@ -162,7 +162,7 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 23
+          "s": 22
         },
         {
           "n": "gold key",
@@ -170,18 +170,18 @@
         },
         {
           "n": "red key",
-          "s": 62
+          "s": 63
         },
         {
           "n": "reactor",
-          "s": 84
+          "s": 83
         },
         {
           "n": "exit",
           "s": 89
         }
       ],
-      "total_frames": 5359,
+      "total_frames": 5344,
       "rng_end": {
         "state": 916896761,
         "calls": 72
@@ -203,13 +203,13 @@
         },
         {
           "n": "gold key",
-          "s": 57
+          "s": 58
         }
       ],
-      "total_frames": 3412,
+      "total_frames": 3459,
       "rng_end": {
-        "state": 2207819405,
-        "calls": 52
+        "state": 2058258651,
+        "calls": 46
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -236,7 +236,7 @@
           "s": 64
         }
       ],
-      "total_frames": 4589,
+      "total_frames": 4564,
       "rng_end": {
         "state": 1228891816,
         "calls": 63
@@ -246,8 +246,8 @@
     {
       "level_num": 8,
       "level_file": "e1m8.rdl",
-      "route_input_sha256": "63A5DDFF5090AE8736FAFD400A3EADDA12AEEF2991F5B921FAA6A6431A03682B",
-      "status": "timeout",
+      "route_input_sha256": "CC276D1C1447E0B2E83F595D70D53A225355CBEAB11DEA5F922402F21877F6F5",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -256,14 +256,33 @@
         {
           "n": "blue key",
           "s": 21
+        },
+        {
+          "n": "gold key",
+          "s": 45
+        },
+        {
+          "n": "fly-through 13",
+          "s": 62
+        },
+        {
+          "n": "red key",
+          "s": 67
+        },
+        {
+          "n": "reactor",
+          "s": 99
+        },
+        {
+          "n": "exit",
+          "s": 116
         }
       ],
-      "total_frames": 6069,
+      "total_frames": 6968,
       "rng_end": {
-        "state": 3834121963,
-        "calls": 30
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 300568396,
+        "calls": 107
+      }
     },
     {
       "level_num": 9,
@@ -289,14 +308,14 @@
         },
         {
           "n": "boss",
-          "s": 43
+          "s": 42
         },
         {
           "n": "exit",
-          "s": 51
+          "s": 50
         }
       ],
-      "total_frames": 3056,
+      "total_frames": 3020,
       "rng_end": {
         "state": 2077067425,
         "calls": 96
@@ -315,18 +334,18 @@
       "objectives": [
         {
           "n": "red key",
-          "s": 15
+          "s": 14
         },
         {
           "n": "reactor",
-          "s": 15
+          "s": 21
         },
         {
           "n": "exit",
-          "s": 41
+          "s": 43
         }
       ],
-      "total_frames": 2467,
+      "total_frames": 2564,
       "rng_end": {
         "state": 3025925713,
         "calls": 48

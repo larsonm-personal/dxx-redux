@@ -24,10 +24,10 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 22
+          "s": 21
         }
       ],
-      "total_frames": 1774,
+      "total_frames": 1738,
       "rng_end": {
         "state": 277647846,
         "calls": 449
@@ -46,17 +46,17 @@
       "objectives": [
         {
           "n": "switch 1",
-          "s": 7
+          "s": 6
         },
         {
           "n": "destroy robot carrying blue key",
           "s": 21
         }
       ],
-      "total_frames": 1254,
+      "total_frames": 1255,
       "rng_end": {
-        "state": 1812429809,
-        "calls": 912
+        "state": 2822236841,
+        "calls": 1304
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -80,18 +80,18 @@
         },
         {
           "n": "blastable wall",
-          "s": 37
+          "s": 36
         },
         {
           "n": "boss",
-          "s": 47
+          "s": 46
         },
         {
           "n": "exit",
-          "s": 69
+          "s": 68
         }
       ],
-      "total_frames": 4119,
+      "total_frames": 4065,
       "rng_end": {
         "state": 1201147563,
         "calls": 4190
@@ -109,41 +109,41 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 25
+          "s": 21
         },
         {
           "n": "gold key",
-          "s": 66
+          "s": 61
         },
         {
           "n": "switch 7",
-          "s": 106
+          "s": 98
         },
         {
           "n": "switch 8",
-          "s": 115
+          "s": 100
         },
         {
           "n": "switch 9",
-          "s": 123
+          "s": 103
         },
         {
           "n": "red key",
-          "s": 131
+          "s": 109
         },
         {
           "n": "reactor",
-          "s": 148
+          "s": 126
         },
         {
           "n": "exit",
-          "s": 156
+          "s": 134
         }
       ],
-      "total_frames": 9383,
+      "total_frames": 8057,
       "rng_end": {
-        "state": 3055328523,
-        "calls": 4606
+        "state": 4276596010,
+        "calls": 4589
       }
     },
     {
@@ -175,7 +175,7 @@
       "objectives": [
         {
           "n": "switch 4",
-          "s": 19
+          "s": 20
         },
         {
           "n": "reactor",
@@ -186,7 +186,7 @@
           "s": 36
         }
       ],
-      "total_frames": 2149,
+      "total_frames": 2147,
       "rng_end": {
         "state": 3014832133,
         "calls": 1148

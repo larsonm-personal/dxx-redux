@@ -1727,7 +1727,7 @@
         "mine_volume": 46220100.0,
         "mine_volume_normalized": 10.1074,
         "mine_volume_text": "10x",
-        "travel_distance": 3205.0,
+        "travel_distance": 3207.7,
         "travel_time_seconds": 64,
         "travel_time_text": "1M:04S",
         "guidebot_count": 0,
@@ -1798,7 +1798,7 @@
               "y": -27.3,
               "z": 39.0
             },
-            "distance": 653.1,
+            "distance": 655.8,
             "trigger": 1,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -2935,15 +2935,15 @@
         "mine_volume": 4480250.0,
         "mine_volume_normalized": 0.979739,
         "mine_volume_text": "0.98x",
-        "travel_distance": 2217.3,
-        "travel_time_seconds": 44,
-        "travel_time_text": "0M:44S",
+        "travel_distance": 3846.5,
+        "travel_time_seconds": 77,
+        "travel_time_text": "1M:17S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
-        "route_required_key_mask": 2,
-        "route_completing_key_mask_set": 12,
+        "route_required_key_mask": 3,
+        "route_completing_key_mask_set": 8,
         "route_steps": [
           {
             "index": 0,
@@ -2956,6 +2956,20 @@
             "index": 1,
             "kind": "key",
             "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 72,
+            "label_pos": {
+              "x": 15.0,
+              "y": -118.0,
+              "z": 0.0
+            },
+            "distance": 927.9,
+            "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
             "label": "red key",
             "seg": 73,
             "label_pos": {
@@ -2963,11 +2977,11 @@
               "y": -118.0,
               "z": 0.0
             },
-            "distance": 858.6,
+            "distance": 1490.7,
             "key": "red"
           },
           {
-            "index": 2,
+            "index": 3,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -2977,10 +2991,10 @@
               "y": -143.0,
               "z": 0.0
             },
-            "distance": 1201.6
+            "distance": 1270.8
           },
           {
-            "index": 3,
+            "index": 4,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -3000,7 +3014,6 @@
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
         "notes": [
-          "blue key not necessary",
           "no guidebot or guidebot start cage placed in this level"
         ]
       },
@@ -3619,9 +3632,9 @@
         "mine_volume": 6834840.0,
         "mine_volume_normalized": 1.49464,
         "mine_volume_text": "1.5x",
-        "travel_distance": 2113.5,
-        "travel_time_seconds": 42,
-        "travel_time_text": "0M:42S",
+        "travel_distance": 2262.5,
+        "travel_time_seconds": 45,
+        "travel_time_text": "0M:45S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -3647,7 +3660,7 @@
               "y": 21.8,
               "z": 289.9
             },
-            "distance": 1054.2
+            "distance": 1128.7
           },
           {
             "index": 2,
@@ -3662,7 +3675,7 @@
               "y": 48.8,
               "z": -389.9
             },
-            "distance": 1059.2,
+            "distance": 1133.7,
             "trigger": 0,
             "trigger_type_id": 3,
             "trigger_type": "exit"

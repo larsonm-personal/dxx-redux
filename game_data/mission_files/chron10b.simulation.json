@@ -9,7 +9,8 @@
   "level_counts": {
     "ok": 1,
     "failed": 1,
-    "timeout": 2
+    "timeout": 1,
+    "unsupported": 1
   },
   "levels": [
     {
@@ -24,55 +25,55 @@
       "objectives": [
         {
           "n": "switch 4",
-          "s": 13
+          "s": 10
         },
         {
           "n": "hidden door",
-          "s": 24
+          "s": 20
         },
         {
           "n": "switch 16",
-          "s": 43
+          "s": 39
         },
         {
           "n": "blue key",
-          "s": 54
+          "s": 50
         },
         {
           "n": "fly-through 17",
-          "s": 67
+          "s": 62
         },
         {
           "n": "fly-through 10",
-          "s": 69
+          "s": 63
         },
         {
           "n": "switch 6",
-          "s": 73
+          "s": 68
         },
         {
           "n": "fly-through 7",
-          "s": 91
+          "s": 82
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 101
+          "s": 93
         },
         {
           "n": "reactor",
-          "s": 124
+          "s": 116
         },
         {
           "n": "fly-through 9",
-          "s": 125
+          "s": 117
         }
       ],
-      "total_frames": 11150,
+      "total_frames": 13334,
       "rng_end": {
-        "state": 725144823,
-        "calls": 5874
+        "state": 4006696694,
+        "calls": 8433
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 2,
@@ -90,97 +91,97 @@
         },
         {
           "n": "switch 4",
-          "s": 18
+          "s": 16
         },
         {
           "n": "blue key",
-          "s": 42
+          "s": 39
         },
         {
           "n": "switch 19",
-          "s": 77
+          "s": 74
         },
         {
           "n": "switch 8",
-          "s": 91
+          "s": 85
         },
         {
           "n": "fly-through 1",
-          "s": 105
+          "s": 101
         },
         {
           "n": "gold key",
-          "s": 107
+          "s": 102
         },
         {
           "n": "hidden door",
-          "s": 120
+          "s": 115
         },
         {
           "n": "switch 0",
-          "s": 122
+          "s": 117
         },
         {
           "n": "hidden door",
-          "s": 131
+          "s": 126
         },
         {
           "n": "switch 20",
-          "s": 134
+          "s": 129
         },
         {
           "n": "hidden door",
-          "s": 142
+          "s": 137
         },
         {
           "n": "hidden door",
-          "s": 149
+          "s": 144
         },
         {
           "n": "switch 10",
-          "s": 149
+          "s": 144
         },
         {
           "n": "hidden door",
-          "s": 164
+          "s": 156
         },
         {
           "n": "switch 26",
-          "s": 167
+          "s": 158
         },
         {
           "n": "hidden door",
-          "s": 176
+          "s": 169
         },
         {
           "n": "switch 22",
-          "s": 176
+          "s": 169
         },
         {
           "n": "switch 24",
-          "s": 183
+          "s": 176
         },
         {
           "n": "red key",
-          "s": 188
+          "s": 180
         },
         {
           "n": "reactor",
-          "s": 217
+          "s": 207
         },
         {
           "n": "switch 3",
-          "s": 221
+          "s": 212
         },
         {
           "n": "exit",
-          "s": 240
+          "s": 229
         }
       ],
-      "total_frames": 14390,
+      "total_frames": 13732,
       "rng_end": {
-        "state": 585099851,
-        "calls": 5310
+        "state": 1087461315,
+        "calls": 5318
       }
     },
     {
@@ -195,7 +196,7 @@
       "objectives": [
         {
           "n": "switch 2",
-          "s": 10
+          "s": 12
         },
         {
           "n": "switch 1",
@@ -203,21 +204,21 @@
         },
         {
           "n": "switch 4",
-          "s": 36
+          "s": 34
         },
         {
           "n": "switch 5",
-          "s": 52
+          "s": 50
         },
         {
           "n": "blue key",
-          "s": 53
+          "s": 52
         }
       ],
-      "total_frames": 3204,
+      "total_frames": 3095,
       "rng_end": {
-        "state": 3022501302,
-        "calls": 1329
+        "state": 2919826395,
+        "calls": 1326
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -225,18 +226,23 @@
       "level_num": -1,
       "level_file": "secret1a.rl2",
       "route_input_sha256": "EA2D3156EE925F88A2090F832C5CC017C23115605F8DA68DA38FBF23B467AC57",
-      "status": "timeout",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 2041,
+      "objectives": [
+        {
+          "n": "boss",
+          "s": 7
+        }
+      ],
+      "total_frames": 515,
       "rng_end": {
-        "state": 916896761,
-        "calls": 72
+        "state": 3423541591,
+        "calls": 146
       },
-      "problem": "route confirmation exceeded 34-second simulation budget"
+      "problem": "route objective activation is not supported"
     }
   ]
 }

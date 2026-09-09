@@ -31,29 +31,29 @@
         },
         {
           "n": "pass-through 2",
-          "s": 21
+          "s": 20
         },
         {
           "n": "switch 0",
-          "s": 23
+          "s": 21
         },
         {
           "n": "gold key",
-          "s": 28
+          "s": 27
         },
         {
           "n": "switch 1",
-          "s": 36
+          "s": 34
         },
         {
           "n": "red key",
-          "s": 40
+          "s": 38
         }
       ],
-      "total_frames": 2380,
+      "total_frames": 2266,
       "rng_end": {
-        "state": 3576833760,
-        "calls": 935
+        "state": 858999435,
+        "calls": 1150
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -69,53 +69,53 @@
       "objectives": [
         {
           "n": "switch 0",
-          "s": 5
+          "s": 4
         },
         {
           "n": "switch 1",
-          "s": 11
+          "s": 8
         },
         {
           "n": "fly-through 3",
-          "s": 23
+          "s": 20
         },
         {
           "n": "fly-through 4",
-          "s": 40
+          "s": 37
         },
         {
           "n": "switch 5",
-          "s": 45
+          "s": 41
         },
         {
           "n": "fly-through 15",
-          "s": 46
+          "s": 42
         },
         {
           "n": "red key",
-          "s": 50
+          "s": 45
         },
         {
           "n": "switch 11",
-          "s": 72
+          "s": 66
         },
         {
           "n": "fly-through 12",
-          "s": 89
+          "s": 83
         },
         {
           "n": "reactor",
-          "s": 98
+          "s": 91
         },
         {
           "n": "exit",
-          "s": 100
+          "s": 95
         }
       ],
-      "total_frames": 6017,
+      "total_frames": 5673,
       "rng_end": {
-        "state": 4110987450,
-        "calls": 5021
+        "state": 2713727768,
+        "calls": 6671
       }
     },
     {
@@ -134,41 +134,41 @@
         },
         {
           "n": "blue key",
-          "s": 16
+          "s": 15
         },
         {
           "n": "gold key",
-          "s": 34
+          "s": 33
         },
         {
           "n": "switch 6",
-          "s": 66
+          "s": 63
         },
         {
           "n": "red key",
-          "s": 86
+          "s": 81
         },
         {
           "n": "pass-through 7",
-          "s": 93
+          "s": 87
         },
         {
           "n": "pass-through 19",
-          "s": 94
+          "s": 88
         },
         {
           "n": "boss",
-          "s": 104
+          "s": 99
         },
         {
           "n": "exit",
-          "s": 114
+          "s": 109
         }
       ],
-      "total_frames": 6825,
+      "total_frames": 6515,
       "rng_end": {
-        "state": 3940970178,
-        "calls": 5045
+        "state": 3854841872,
+        "calls": 5047
       }
     }
   ]

@@ -26,69 +26,69 @@
         },
         {
           "n": "switch 7",
-          "s": 27
+          "s": 26
         },
         {
           "n": "blue key",
-          "s": 29
+          "s": 30
         },
         {
           "n": "switch 8",
-          "s": 35
+          "s": 34
         },
         {
           "n": "gold key",
-          "s": 38
+          "s": 36
         },
         {
           "n": "switch 6",
-          "s": 61
+          "s": 59
         },
         {
           "n": "switch 22",
-          "s": 80
+          "s": 75
         },
         {
           "n": "hidden door",
-          "s": 95
+          "s": 89
         },
         {
           "n": "red key",
-          "s": 97
+          "s": 91
         },
         {
           "n": "switch 20",
-          "s": 116
+          "s": 108
         },
         {
           "n": "switch 19",
-          "s": 116
+          "s": 108
         },
         {
           "n": "hidden door",
-          "s": 135
+          "s": 126
         },
         {
           "n": "switch 9",
-          "s": 169
+          "s": 159
         },
         {
           "n": "hidden door",
-          "s": 209
+          "s": 198
         },
         {
           "n": "reactor",
-          "s": 209
+          "s": 198
         },
         {
           "n": "exit",
-          "s": 234
+          "s": 224
         }
       ],
-      "total_frames": 14026,
+      "total_frames": 13433,
       "rng_end": {
-        "state": 1176167270,
-        "calls": 9793
+        "state": 4251045874,
+        "calls": 9797
       }
     },
     {
@@ -123,25 +123,25 @@
         },
         {
           "n": "gold key",
-          "s": 47
+          "s": 46
         },
         {
           "n": "red key",
-          "s": 73
+          "s": 72
         },
         {
           "n": "boss",
-          "s": 90
+          "s": 89
         },
         {
           "n": "exit",
-          "s": 104
+          "s": 103
         }
       ],
-      "total_frames": 6222,
+      "total_frames": 6155,
       "rng_end": {
-        "state": 4053155480,
-        "calls": 4239
+        "state": 3180037125,
+        "calls": 4220
       }
     }
   ]

@@ -27,13 +27,13 @@
         },
         {
           "n": "red key",
-          "s": 28
+          "s": 30
         }
       ],
-      "total_frames": 6750,
+      "total_frames": 6951,
       "rng_end": {
-        "state": 1194438128,
-        "calls": 1623
+        "state": 552378116,
+        "calls": 1747
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -49,30 +49,30 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 43
+          "s": 44
         },
         {
           "n": "switch 1",
-          "s": 91
+          "s": 87
         },
         {
           "n": "gold key",
-          "s": 98
+          "s": 93
         },
         {
           "n": "red key",
-          "s": 127
+          "s": 123
         },
         {
           "n": "boss",
-          "s": 158
+          "s": 155
         },
         {
           "n": "exit",
-          "s": 160
+          "s": 157
         }
       ],
-      "total_frames": 9596,
+      "total_frames": 9390,
       "rng_end": {
         "state": 1138741998,
         "calls": 5465
@@ -90,26 +90,26 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 50
+          "s": 49
         },
         {
           "n": "gold key",
-          "s": 121
+          "s": 118
         },
         {
           "n": "red key",
-          "s": 199
+          "s": 195
         },
         {
           "n": "boss",
-          "s": 241
+          "s": 237
         },
         {
           "n": "exit",
-          "s": 245
+          "s": 241
         }
       ],
-      "total_frames": 14707,
+      "total_frames": 14464,
       "rng_end": {
         "state": 1646444472,
         "calls": 5871
@@ -127,26 +127,26 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 22
+          "s": 23
         },
         {
           "n": "red key",
-          "s": 77
+          "s": 76
         },
         {
           "n": "gold key",
-          "s": 172
+          "s": 169
         },
         {
           "n": "boss",
-          "s": 241
+          "s": 237
         },
         {
           "n": "exit",
-          "s": 246
+          "s": 242
         }
       ],
-      "total_frames": 14761,
+      "total_frames": 14532,
       "rng_end": {
         "state": 687302841,
         "calls": 6536
@@ -164,14 +164,14 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 43
+          "s": 44
         },
         {
           "n": "gold key",
-          "s": 90
+          "s": 95
         }
       ],
-      "total_frames": 11030,
+      "total_frames": 11411,
       "rng_end": {
         "state": 467477876,
         "calls": 3491
@@ -190,14 +190,14 @@
       "objectives": [
         {
           "n": "boss",
-          "s": 101
+          "s": 102
         },
         {
           "n": "exit",
-          "s": 109
+          "s": 110
         }
       ],
-      "total_frames": 6556,
+      "total_frames": 6603,
       "rng_end": {
         "state": 3624972834,
         "calls": 2005

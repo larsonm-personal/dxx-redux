@@ -23,14 +23,14 @@
       "objectives": [
         {
           "n": "switch 0",
-          "s": 13
+          "s": 12
         },
         {
           "n": "blue key",
-          "s": 29
+          "s": 28
         }
       ],
-      "total_frames": 1749,
+      "total_frames": 1696,
       "rng_end": {
         "state": 3058329110,
         "calls": 593
@@ -49,21 +49,21 @@
       "objectives": [
         {
           "n": "switch 1",
-          "s": 8
+          "s": 9
         },
         {
           "n": "reactor",
-          "s": 15
+          "s": 17
         },
         {
           "n": "exit",
-          "s": 17
+          "s": 18
         }
       ],
-      "total_frames": 1003,
+      "total_frames": 1108,
       "rng_end": {
-        "state": 559132580,
-        "calls": 435
+        "state": 743020753,
+        "calls": 432
       }
     }
   ]

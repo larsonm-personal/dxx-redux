@@ -1383,13 +1383,13 @@
         "mine_volume": 26640100.0,
         "mine_volume_normalized": 5.82564,
         "mine_volume_text": "5.8x",
-        "travel_distance": 1427.7,
-        "travel_time_seconds": 29,
-        "travel_time_text": "0M:29S",
+        "travel_distance": 0.0,
+        "travel_time_seconds": 0,
+        "travel_time_text": "0M:00S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
+        "route_status": "failed",
         "route_required_key_mask": 0,
         "route_completing_key_mask_set": 0,
         "route_steps": [
@@ -1399,23 +1399,9 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 90
-          },
-          {
-            "index": 1,
-            "kind": "key",
-            "activation_kind": "pickup_key",
-            "label": "blue key",
-            "seg": 223,
-            "label_pos": {
-              "x": 715.0,
-              "y": -334.5,
-              "z": 493.0
-            },
-            "distance": 1427.7,
-            "key": "blue"
           }
         ],
-        "route_problem": "red key unreachable"
+        "route_problem": "blue key unreachable"
       }
     ],
     "mission_path": "CHARLIE.MSN",
@@ -4254,7 +4240,7 @@
         "mine_volume": 19845600.0,
         "mine_volume_normalized": 4.33982,
         "mine_volume_text": "4.3x",
-        "travel_distance": 9007.7,
+        "travel_distance": 9011.9,
         "travel_time_seconds": 180,
         "travel_time_text": "3M:00S",
         "guidebot_count": 0,
@@ -4296,7 +4282,7 @@
               "y": -20.0,
               "z": -190.0
             },
-            "distance": 1603.1,
+            "distance": 1604.5,
             "key": "gold"
           },
           {
@@ -4310,7 +4296,7 @@
               "y": 1.0,
               "z": 204.0
             },
-            "distance": 2333.8,
+            "distance": 2335.2,
             "key": "red"
           },
           {
@@ -4324,7 +4310,7 @@
               "y": -20.0,
               "z": -572.0
             },
-            "distance": 3272.8
+            "distance": 3274.2
           },
           {
             "index": 5,
@@ -4975,9 +4961,9 @@
         "mine_volume": 19461800.0,
         "mine_volume_normalized": 4.25589,
         "mine_volume_text": "4.3x",
-        "travel_distance": 8100.8,
-        "travel_time_seconds": 162,
-        "travel_time_text": "2M:42S",
+        "travel_distance": 8535.3,
+        "travel_time_seconds": 171,
+        "travel_time_text": "2M:51S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -5267,6 +5253,58 @@
           },
           {
             "index": 11,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 16",
+            "seg": 393,
+            "side": 2,
+            "wall": 10,
+            "label_pos": {
+              "x": -66.2,
+              "y": -70.8,
+              "z": 617.8
+            },
+            "distance": 598.8,
+            "trigger": 16,
+            "trigger_type_id": 1,
+            "trigger_type": "toggle_door",
+            "opens": [
+              {
+                "seg": 95,
+                "side": 4,
+                "wall": 102
+              }
+            ]
+          },
+          {
+            "index": 12,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 92,
+            "side": 4,
+            "wall": 104,
+            "label_pos": {
+              "x": 71.0,
+              "y": -147.8,
+              "z": 174.2
+            },
+            "distance": 1172.2,
+            "opens": [
+              {
+                "seg": 92,
+                "side": 4,
+                "wall": 104
+              },
+              {
+                "seg": 91,
+                "side": 5,
+                "wall": 105
+              }
+            ]
+          },
+          {
+            "index": 13,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "blue key",
@@ -5276,11 +5314,11 @@
               "y": -40.1,
               "z": 391.5
             },
-            "distance": 824.5,
+            "distance": 324.5,
             "key": "blue"
           },
           {
-            "index": 12,
+            "index": 14,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -5290,11 +5328,11 @@
               "y": -182.1,
               "z": 322.1
             },
-            "distance": 2278.9,
+            "distance": 1442.4,
             "key": "gold"
           },
           {
-            "index": 13,
+            "index": 15,
             "kind": "blastable_wall",
             "activation_kind": "destroy_blastable_wall",
             "label": "Destroy blastable wall",
@@ -5321,7 +5359,7 @@
             ]
           },
           {
-            "index": 14,
+            "index": 16,
             "kind": "blastable_wall",
             "activation_kind": "destroy_blastable_wall",
             "label": "Destroy blastable wall",
@@ -5348,7 +5386,7 @@
             ]
           },
           {
-            "index": 15,
+            "index": 17,
             "kind": "blastable_wall",
             "activation_kind": "destroy_blastable_wall",
             "label": "Destroy blastable wall",
@@ -5375,7 +5413,7 @@
             ]
           },
           {
-            "index": 16,
+            "index": 18,
             "kind": "blastable_wall",
             "activation_kind": "destroy_blastable_wall",
             "label": "Destroy blastable wall",
@@ -5402,7 +5440,7 @@
             ]
           },
           {
-            "index": 17,
+            "index": 19,
             "kind": "blastable_wall",
             "activation_kind": "destroy_blastable_wall",
             "label": "Destroy blastable wall",
@@ -5429,7 +5467,7 @@
             ]
           },
           {
-            "index": 18,
+            "index": 20,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 5",
@@ -5464,7 +5502,7 @@
             ]
           },
           {
-            "index": 19,
+            "index": 21,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -5478,7 +5516,7 @@
             "key": "red"
           },
           {
-            "index": 20,
+            "index": 22,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -5491,7 +5529,7 @@
             "distance": 1546.9
           },
           {
-            "index": 21,
+            "index": 23,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

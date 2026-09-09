@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
+    "ok": 3,
     "failed": 1,
-    "timeout": 2
+    "timeout": 1
   },
   "levels": [
     {
@@ -28,17 +28,17 @@
         },
         {
           "n": "blastable wall",
-          "s": 49
+          "s": 50
         },
         {
           "n": "exit",
-          "s": 51
+          "s": 52
         }
       ],
-      "total_frames": 3073,
+      "total_frames": 3094,
       "rng_end": {
-        "state": 1491536401,
-        "calls": 624
+        "state": 1823798819,
+        "calls": 614
       }
     },
     {
@@ -53,13 +53,13 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 34
+          "s": 39
         }
       ],
-      "total_frames": 2058,
+      "total_frames": 2335,
       "rng_end": {
-        "state": 3389348384,
-        "calls": 871
+        "state": 3104832301,
+        "calls": 1684
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -67,7 +67,7 @@
       "level_num": 3,
       "level_file": "kcxf203.rl2",
       "route_input_sha256": "09E839C4E8E4A228B20EFD1E1BE981B01D3BF915A08B839447E208BEB9741995",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -75,43 +75,46 @@
       "objectives": [
         {
           "n": "fly-through 0",
-          "s": 22
+          "s": 24
         },
         {
           "n": "switch 2",
-          "s": 28
+          "s": 29
         },
         {
           "n": "switch 3",
-          "s": 46
+          "s": 45
         },
         {
           "n": "fly-through 4",
-          "s": 69
+          "s": 66
         },
         {
           "n": "reactor",
-          "s": 82
+          "s": 78
         },
         {
           "n": "fly-through 6",
-          "s": 96
+          "s": 92
         },
         {
           "n": "switch 8",
-          "s": 112
+          "s": 108
         },
         {
           "n": "red key",
-          "s": 136
+          "s": 137
+        },
+        {
+          "n": "exit",
+          "s": 155
         }
       ],
-      "total_frames": 9449,
+      "total_frames": 9288,
       "rng_end": {
-        "state": 695870830,
-        "calls": 3289
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 3707538854,
+        "calls": 3329
+      }
     },
     {
       "level_num": 4,
@@ -125,34 +128,34 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 18
+          "s": 21
         },
         {
           "n": "gold key",
-          "s": 46
+          "s": 51
         },
         {
           "n": "red key",
-          "s": 76
+          "s": 82
         },
         {
           "n": "blastable wall",
-          "s": 104
+          "s": 110
         },
         {
           "n": "fly-through 20",
-          "s": 105
+          "s": 111
         },
         {
           "n": "boss",
-          "s": 147
+          "s": 155
         },
         {
           "n": "exit",
-          "s": 161
+          "s": 168
         }
       ],
-      "total_frames": 9635,
+      "total_frames": 10087,
       "rng_end": {
         "state": 1906008813,
         "calls": 4308
@@ -170,25 +173,25 @@
       "objectives": [
         {
           "n": "blastable wall",
-          "s": 38
+          "s": 41
         },
         {
           "n": "blastable wall",
-          "s": 46
+          "s": 49
         },
         {
           "n": "fly-through 4",
-          "s": 65
+          "s": 68
         },
         {
           "n": "hidden door",
           "s": 121
         }
       ],
-      "total_frames": 8919,
+      "total_frames": 8993,
       "rng_end": {
-        "state": 3450565110,
-        "calls": 4593
+        "state": 1291572824,
+        "calls": 4559
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     }

@@ -1188,7 +1188,7 @@
         "mine_volume": 7738940.0,
         "mine_volume_normalized": 1.69235,
         "mine_volume_text": "1.7x",
-        "travel_distance": 6170.4,
+        "travel_distance": 6173.4,
         "travel_time_seconds": 123,
         "travel_time_text": "2M:03S",
         "guidebot_count": 1,
@@ -1443,7 +1443,7 @@
               "y": -137.3,
               "z": -13.3
             },
-            "distance": 419.4,
+            "distance": 422.4,
             "trigger": 5,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -3078,15 +3078,15 @@
         "mine_volume": 7483210.0,
         "mine_volume_normalized": 1.63642,
         "mine_volume_text": "1.6x",
-        "travel_distance": 1897.1,
-        "travel_time_seconds": 38,
-        "travel_time_text": "0M:38S",
+        "travel_distance": 5646.2,
+        "travel_time_seconds": 113,
+        "travel_time_text": "1M:53S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -3112,43 +3112,18 @@
           },
           {
             "index": 2,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Open door",
-            "seg": 191,
-            "side": 4,
-            "wall": 14,
-            "label_pos": {
-              "x": -69.9,
-              "y": -90.8,
-              "z": 93.9
-            },
-            "distance": 1122.6,
-            "opens": [
-              {
-                "seg": 191,
-                "side": 4,
-                "wall": 14
-              },
-              {
-                "seg": 192,
-                "side": 5,
-                "wall": 15
-              }
-            ]
-          },
-          {
-            "index": 3,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 0",
-            "seg": 191,
+            "seg": 192,
+            "side": 4,
             "wall": 16,
             "label_pos": {
               "x": -69.9,
               "y": -90.8,
               "z": 103.9
             },
+            "distance": 1130.1,
             "trigger": 0,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -3166,7 +3141,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 3,
             "kind": "key",
             "activation_kind": "destroy_key_carrier",
             "label": "Destroy robot carrying gold key",
@@ -3176,14 +3151,86 @@
               "y": 9.3,
               "z": -77.9
             },
-            "distance": 609.4,
+            "distance": 616.9,
             "key": "gold",
             "key_carrier_objnum": 3
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying red key",
+            "seg": 54,
+            "label_pos": {
+              "x": -10.5,
+              "y": 39.2,
+              "z": -613.1
+            },
+            "distance": 676.8,
+            "key": "red",
+            "key_carrier_objnum": 21
+          },
+          {
+            "index": 5,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 4",
+            "seg": 149,
+            "side": 3,
+            "wall": 38,
+            "label_pos": {
+              "x": -9.9,
+              "y": 49.2,
+              "z": -519.1
+            },
+            "distance": 126.3,
+            "trigger": 4,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 57,
+                "side": 5,
+                "wall": 11
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 203,
+            "label_pos": {
+              "x": -70.0,
+              "y": -54.0,
+              "z": 378.1
+            },
+            "distance": 1915.9
+          },
+          {
+            "index": 7,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 36,
+            "side": 4,
+            "wall": 41,
+            "label_pos": {
+              "x": -223.3,
+              "y": -90.8,
+              "z": 245.1
+            },
+            "distance": 1015.0,
+            "trigger": 5,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "shared route planning reached its work budget",
+        "route_note": "key-route optimization reached its work budget",
         "notes": [
+          "key-route optimization reached its work budget",
           "guidebot or guidebot start cage placed in this level"
         ]
       },
@@ -4418,15 +4465,15 @@
         "mine_volume": 15789400.0,
         "mine_volume_normalized": 3.45282,
         "mine_volume_text": "3.5x",
-        "travel_distance": 2695.1,
-        "travel_time_seconds": 54,
-        "travel_time_text": "0M:54S",
+        "travel_distance": 8058.2,
+        "travel_time_seconds": 161,
+        "travel_time_text": "2M:41S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -4451,43 +4498,18 @@
           },
           {
             "index": 2,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "label": "Open door",
-            "seg": 344,
-            "side": 4,
-            "wall": 44,
-            "label_pos": {
-              "x": 170.5,
-              "y": 238.1,
-              "z": -0.1
-            },
-            "distance": 1146.2,
-            "opens": [
-              {
-                "seg": 344,
-                "side": 4,
-                "wall": 44
-              },
-              {
-                "seg": 345,
-                "side": 5,
-                "wall": 45
-              }
-            ]
-          },
-          {
-            "index": 3,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 4",
-            "seg": 344,
+            "seg": 345,
+            "side": 4,
             "wall": 48,
             "label_pos": {
               "x": 178.0,
               "y": 237.9,
               "z": -0.1
             },
+            "distance": 1153.7,
             "trigger": 4,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -4505,7 +4527,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 3,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -4515,13 +4537,59 @@
               "y": 227.9,
               "z": -0.1
             },
-            "distance": 241.2,
+            "distance": 248.7,
             "key": "gold"
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 41,
+            "label_pos": {
+              "x": 237.8,
+              "y": -217.9,
+              "z": -0.1
+            },
+            "distance": 1773.1,
+            "key": "red"
+          },
+          {
+            "index": 5,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 177,
+            "label_pos": {
+              "x": 74.7,
+              "y": 35.1,
+              "z": -1.1
+            },
+            "distance": 1784.5
+          },
+          {
+            "index": 6,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 41,
+            "side": 4,
+            "wall": 51,
+            "label_pos": {
+              "x": 247.8,
+              "y": -217.9,
+              "z": -0.1
+            },
+            "distance": 1790.5,
+            "trigger": 7,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "shared route planning reached its work budget",
+        "route_note": "key-route optimization reached its work budget",
         "notes": [
+          "key-route optimization reached its work budget",
           "guidebot or guidebot start cage placed in this level"
         ]
       },

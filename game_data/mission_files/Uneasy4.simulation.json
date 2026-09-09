@@ -22,13 +22,13 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 34
+          "s": 33
         }
       ],
-      "total_frames": 6939,
+      "total_frames": 7145,
       "rng_end": {
-        "state": 1604505106,
-        "calls": 5797
+        "state": 1605625899,
+        "calls": 5854
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

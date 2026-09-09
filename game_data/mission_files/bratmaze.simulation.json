@@ -25,34 +25,34 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 57
+          "s": 59
         },
         {
           "n": "gold key",
-          "s": 107
+          "s": 110
         },
         {
           "n": "red key",
-          "s": 150
+          "s": 158
         },
         {
           "n": "fly-through 9",
-          "s": 192
+          "s": 200
         },
         {
           "n": "fly-through 15",
-          "s": 193
+          "s": 202
         },
         {
           "n": "fly-through 8",
-          "s": 196
+          "s": 205
         },
         {
           "n": "fly-through 16",
-          "s": 197
+          "s": 206
         }
       ],
-      "total_frames": 12526,
+      "total_frames": 13038,
       "rng_end": {
         "state": 4264971915,
         "calls": 126
@@ -93,37 +93,37 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 28
+          "s": 29
         },
         {
           "n": "gold key",
-          "s": 86
+          "s": 87
         },
         {
           "n": "blastable wall",
-          "s": 123
-        },
-        {
-          "n": "red key",
           "s": 125
         },
         {
+          "n": "red key",
+          "s": 127
+        },
+        {
           "n": "fly-through 19",
-          "s": 166
+          "s": 169
         },
         {
           "n": "reactor",
-          "s": 167
+          "s": 169
         },
         {
           "n": "exit",
-          "s": 186
+          "s": 189
         }
       ],
-      "total_frames": 11185,
+      "total_frames": 11333,
       "rng_end": {
-        "state": 752577037,
-        "calls": 180
+        "state": 1187663298,
+        "calls": 181
       }
     },
     {
@@ -190,17 +190,17 @@
         },
         {
           "n": "reactor",
-          "s": 239
+          "s": 205
         },
         {
           "n": "exit",
-          "s": 247
+          "s": 245
         }
       ],
-      "total_frames": 14824,
+      "total_frames": 14700,
       "rng_end": {
-        "state": 4112870923,
-        "calls": 254
+        "state": 71628745,
+        "calls": 248
       }
     },
     {

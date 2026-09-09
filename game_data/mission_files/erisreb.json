@@ -478,7 +478,7 @@
         "mine_volume": 19639800.0,
         "mine_volume_normalized": 4.29483,
         "mine_volume_text": "4.3x",
-        "travel_distance": 7336.7,
+        "travel_distance": 7371.4,
         "travel_time_seconds": 147,
         "travel_time_text": "2M:27S",
         "guidebot_count": 0,
@@ -506,7 +506,7 @@
               "y": 102.7,
               "z": 417.6
             },
-            "distance": 838.2,
+            "distance": 872.9,
             "key": "blue"
           },
           {
@@ -706,9 +706,9 @@
         "mine_volume": 10690400.0,
         "mine_volume_normalized": 2.33777,
         "mine_volume_text": "2.3x",
-        "travel_distance": 6552.4,
-        "travel_time_seconds": 131,
-        "travel_time_text": "2M:11S",
+        "travel_distance": 6580.7,
+        "travel_time_seconds": 132,
+        "travel_time_text": "2M:12S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -762,7 +762,7 @@
               "y": -91.9,
               "z": 574.3
             },
-            "distance": 2093.4,
+            "distance": 2107.6,
             "key": "red"
           },
           {
@@ -776,7 +776,7 @@
               "y": -86.0,
               "z": -160.0
             },
-            "distance": 1704.0
+            "distance": 1718.2
           },
           {
             "index": 5,
@@ -1162,7 +1162,7 @@
         "mine_volume": 14518500.0,
         "mine_volume_normalized": 3.17489,
         "mine_volume_text": "3.2x",
-        "travel_distance": 2352.7,
+        "travel_distance": 2353.3,
         "travel_time_seconds": 47,
         "travel_time_text": "0M:47S",
         "guidebot_count": 0,
@@ -1235,7 +1235,7 @@
               "y": -41.4,
               "z": -219.8
             },
-            "distance": 934.1
+            "distance": 934.7
           },
           {
             "index": 5,

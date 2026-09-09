@@ -6,10 +6,9 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 7,
-    "timeout": 1
+    "ok": 8
   },
   "levels": [
     {
@@ -78,11 +77,11 @@
       "objectives": [
         {
           "n": "destroy robot carrying blue key",
-          "s": 7
+          "s": 8
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 16
+          "s": 18
         },
         {
           "n": "reactor",
@@ -90,10 +89,10 @@
         },
         {
           "n": "exit",
-          "s": 32
+          "s": 33
         }
       ],
-      "total_frames": 1920,
+      "total_frames": 1956,
       "rng_end": {
         "state": 1024943020,
         "calls": 139
@@ -172,7 +171,7 @@
           "s": 18
         }
       ],
-      "total_frames": 1097,
+      "total_frames": 1090,
       "rng_end": {
         "state": 2965106811,
         "calls": 142
@@ -182,7 +181,7 @@
       "level_num": 7,
       "level_file": "bigred.rdl",
       "route_input_sha256": "538B13DE45224E6C6E7037B59261BC0103D66A5B4639FD2B83CF3E0EB87DC09F",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -195,14 +194,17 @@
         {
           "n": "boss",
           "s": 17
+        },
+        {
+          "n": "exit",
+          "s": 22
         }
       ],
-      "total_frames": 1572,
+      "total_frames": 1339,
       "rng_end": {
-        "state": 2711556952,
-        "calls": 207
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 3737188581,
+        "calls": 156
+      }
     },
     {
       "level_num": 8,

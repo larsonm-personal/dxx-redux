@@ -31,8 +31,8 @@
       ],
       "total_frames": 6001,
       "rng_end": {
-        "state": 4067032669,
-        "calls": 68580
+        "state": 3552834380,
+        "calls": 68715
       },
       "problem": "route confirmation exceeded 100-second simulation budget"
     },
@@ -56,13 +56,13 @@
         },
         {
           "n": "red key",
-          "s": 40
+          "s": 39
         }
       ],
       "total_frames": 10081,
       "rng_end": {
-        "state": 1602365128,
-        "calls": 107423
+        "state": 3130073902,
+        "calls": 108057
       },
       "problem": "route confirmation exceeded 168-second simulation budget"
     },
@@ -82,7 +82,7 @@
         },
         {
           "n": "blue key",
-          "s": 26
+          "s": 27
         },
         {
           "n": "gold key",
@@ -91,8 +91,8 @@
       ],
       "total_frames": 12481,
       "rng_end": {
-        "state": 2745277109,
-        "calls": 140364
+        "state": 485776338,
+        "calls": 140261
       },
       "problem": "route confirmation exceeded 208-second simulation budget"
     },
@@ -108,21 +108,21 @@
       "objectives": [
         {
           "n": "reactor",
-          "s": 8
+          "s": 7
         },
         {
           "n": "blue key",
-          "s": 23
+          "s": 21
         },
         {
           "n": "gold key",
-          "s": 47
+          "s": 43
         }
       ],
       "total_frames": 10921,
       "rng_end": {
-        "state": 3539735058,
-        "calls": 107173
+        "state": 2502152570,
+        "calls": 111069
       },
       "problem": "route confirmation exceeded 182-second simulation budget"
     },
@@ -136,7 +136,7 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 4067,
+      "total_frames": 4261,
       "rng_end": {
         "state": 3720683301,
         "calls": 92
@@ -163,17 +163,17 @@
         },
         {
           "n": "gold key",
-          "s": 47
+          "s": 46
         },
         {
           "n": "red key",
-          "s": 61
+          "s": 59
         }
       ],
       "total_frames": 12721,
       "rng_end": {
-        "state": 1099004410,
-        "calls": 136029
+        "state": 3066214665,
+        "calls": 137656
       },
       "problem": "route confirmation exceeded 212-second simulation budget"
     },
@@ -187,12 +187,12 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 3680,
+      "total_frames": 935,
       "rng_end": {
-        "state": 3524531733,
-        "calls": 492
+        "state": 1800810417,
+        "calls": 1488
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     }
   ]
 }

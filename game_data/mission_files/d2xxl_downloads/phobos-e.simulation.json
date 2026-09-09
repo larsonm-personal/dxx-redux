@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
-    "timeout": 3
+    "ok": 5,
+    "timeout": 1
   },
   "levels": [
     {
@@ -23,33 +23,33 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 17
+          "s": 16
         },
         {
           "n": "switch 1",
-          "s": 28
+          "s": 30
         },
         {
           "n": "gold key",
-          "s": 59
+          "s": 61
         },
         {
           "n": "red key",
-          "s": 93
+          "s": 94
         },
         {
           "n": "boss",
-          "s": 123
+          "s": 125
         },
         {
           "n": "exit",
-          "s": 136
+          "s": 137
         }
       ],
-      "total_frames": 8144,
+      "total_frames": 8226,
       "rng_end": {
-        "state": 1124039579,
-        "calls": 3438
+        "state": 1199725402,
+        "calls": 3453
       }
     },
     {
@@ -64,36 +64,36 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 21
+          "s": 22
         },
         {
           "n": "gold key",
-          "s": 49
+          "s": 50
         },
         {
           "n": "red key",
-          "s": 91
+          "s": 93
         },
         {
           "n": "boss",
-          "s": 139
+          "s": 142
         },
         {
           "n": "exit",
-          "s": 144
+          "s": 148
         }
       ],
-      "total_frames": 8628,
+      "total_frames": 8861,
       "rng_end": {
-        "state": 3403440722,
-        "calls": 3941
+        "state": 2282688454,
+        "calls": 3937
       }
     },
     {
       "level_num": 3,
       "level_file": "phobos3.rl2",
       "route_input_sha256": "F9FC6A4E0AAB107DA67271A057ED481C40FC8026428F4363ED743BDB83DB2581",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -101,11 +101,11 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 22
+          "s": 23
         },
         {
           "n": "switch 1",
-          "s": 56
+          "s": 55
         },
         {
           "n": "gold key",
@@ -117,15 +117,22 @@
         },
         {
           "n": "red key",
-          "s": 87
+          "s": 88
+        },
+        {
+          "n": "boss",
+          "s": 128
+        },
+        {
+          "n": "exit",
+          "s": 151
         }
       ],
-      "total_frames": 5945,
+      "total_frames": 9041,
       "rng_end": {
-        "state": 2139235887,
-        "calls": 2234
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 959446828,
+        "calls": 3851
+      }
     },
     {
       "level_num": 4,
@@ -142,7 +149,7 @@
           "s": 16
         }
       ],
-      "total_frames": 6195,
+      "total_frames": 9625,
       "rng_end": {
         "state": 324888798,
         "calls": 1321
@@ -153,18 +160,26 @@
       "level_num": -1,
       "level_file": "phoscrt1.rl2",
       "route_input_sha256": "A82584DF112650F1451B986DC0C0A2944F0F713ECB6196A9661542B952B2A3D2",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 5105,
+      "objectives": [
+        {
+          "n": "reactor",
+          "s": 24
+        },
+        {
+          "n": "exit",
+          "s": 47
+        }
+      ],
+      "total_frames": 2808,
       "rng_end": {
-        "state": 2280470621,
-        "calls": 484
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1522838962,
+        "calls": 901
+      }
     },
     {
       "level_num": -2,
@@ -185,7 +200,7 @@
           "s": 16
         }
       ],
-      "total_frames": 940,
+      "total_frames": 933,
       "rng_end": {
         "state": 3320089730,
         "calls": 245

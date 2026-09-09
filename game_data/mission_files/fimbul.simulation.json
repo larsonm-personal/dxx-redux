@@ -23,33 +23,33 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 14
+          "s": 15
         },
         {
           "n": "blastable wall",
-          "s": 37
+          "s": 38
         },
         {
           "n": "gold key",
-          "s": 39
+          "s": 41
         },
         {
           "n": "red key",
-          "s": 69
+          "s": 72
         },
         {
           "n": "reactor",
-          "s": 96
+          "s": 99
         },
         {
           "n": "exit",
-          "s": 102
+          "s": 104
         }
       ],
-      "total_frames": 6133,
+      "total_frames": 6250,
       "rng_end": {
-        "state": 1689723728,
-        "calls": 2935
+        "state": 2089553000,
+        "calls": 2943
       }
     },
     {
@@ -64,23 +64,23 @@
       "objectives": [
         {
           "n": "switch 0",
-          "s": 17
+          "s": 16
         },
         {
           "n": "switch 1",
-          "s": 21
+          "s": 19
         },
         {
           "n": "switch 6",
-          "s": 27
+          "s": 24
         },
         {
           "n": "blue key",
-          "s": 33
+          "s": 31
         },
         {
           "n": "switch 2",
-          "s": 46
+          "s": 45
         },
         {
           "n": "gold key",
@@ -88,22 +88,22 @@
         },
         {
           "n": "switch 13",
-          "s": 119
+          "s": 118
         },
         {
           "n": "red key",
-          "s": 124
+          "s": 121
         },
         {
           "n": "reactor",
-          "s": 135
+          "s": 133
         },
         {
           "n": "exit",
-          "s": 146
+          "s": 144
         }
       ],
-      "total_frames": 8780,
+      "total_frames": 8661,
       "rng_end": {
         "state": 2884948701,
         "calls": 4964
@@ -121,13 +121,13 @@
       "objectives": [
         {
           "n": "destroy robot carrying blue key",
-          "s": 19
+          "s": 20
         }
       ],
-      "total_frames": 6460,
+      "total_frames": 6566,
       "rng_end": {
-        "state": 858999435,
-        "calls": 1150
+        "state": 1832367727,
+        "calls": 1146
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

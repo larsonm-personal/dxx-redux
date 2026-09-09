@@ -42,11 +42,15 @@
       "objectives": [
         {
           "n": "blastable wall",
-          "s": 37
+          "s": 36
         },
         {
           "n": "pass-through 13",
-          "s": 40
+          "s": 39
+        },
+        {
+          "n": "blastable wall",
+          "s": 70
         },
         {
           "n": "blastable wall",
@@ -54,25 +58,21 @@
         },
         {
           "n": "blastable wall",
-          "s": 74
-        },
-        {
-          "n": "blastable wall",
-          "s": 75
+          "s": 73
         },
         {
           "n": "gold key",
-          "s": 75
+          "s": 73
         },
         {
           "n": "exit",
-          "s": 93
+          "s": 90
         }
       ],
-      "total_frames": 5589,
+      "total_frames": 5421,
       "rng_end": {
-        "state": 2387351769,
-        "calls": 616
+        "state": 3429444377,
+        "calls": 552
       }
     },
     {

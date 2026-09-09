@@ -35,10 +35,10 @@
           },
           {
             "n": "fly-through 30",
-            "s": 45
+            "s": 44
           }
         ],
-        "total_frames": 6551,
+        "total_frames": 6558,
         "rng_end": {
           "state": 1187668045,
           "calls": 2164
@@ -72,22 +72,14 @@
           {
             "n": "hidden door",
             "s": 2
-          },
-          {
-            "n": "hidden door",
-            "s": 2
-          },
-          {
-            "n": "blue key",
-            "s": 2
           }
         ],
-        "total_frames": 734,
+        "total_frames": 3708,
         "rng_end": {
-          "state": 769681363,
-          "calls": 182
+          "state": 3660534569,
+          "calls": 152
         },
-        "problem": "physical route frontier did not open after 8 interaction attempts"
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
     ]
   },
@@ -119,30 +111,30 @@
           },
           {
             "n": "blue key",
-            "s": 10
+            "s": 9
           },
           {
             "n": "gold key",
-            "s": 30
+            "s": 31
           },
           {
             "n": "red key",
-            "s": 57
+            "s": 61
           },
           {
             "n": "switch 10",
-            "s": 66
+            "s": 71
           },
           {
             "n": "reactor",
-            "s": 75
+            "s": 80
           },
           {
             "n": "exit",
-            "s": 85
+            "s": 91
           }
         ],
-        "total_frames": 5119,
+        "total_frames": 5434,
         "rng_end": {
           "state": 3540364135,
           "calls": 3458
@@ -209,25 +201,25 @@
           },
           {
             "n": "gold key",
-            "s": 24
+            "s": 23
           },
           {
             "n": "red key",
-            "s": 40
+            "s": 38
           },
           {
             "n": "boss",
-            "s": 56
+            "s": 55
           },
           {
             "n": "exit",
             "s": 60
           }
         ],
-        "total_frames": 3596,
+        "total_frames": 3571,
         "rng_end": {
-          "state": 2968394676,
-          "calls": 2659
+          "state": 620555859,
+          "calls": 2614
         }
       }
     ]
@@ -239,16 +231,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "gigaloma.rl2",
         "route_input_sha256": "0D08CBD68CE431AAF11E2FC12685FC889A395156D4A0B793EFCE4645C715CF45",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -256,31 +248,34 @@
         "objectives": [
           {
             "n": "blue key",
-            "s": 13
+            "s": 14
           },
           {
             "n": "gold key",
-            "s": 21
+            "s": 23
           },
           {
             "n": "red key",
-            "s": 31
+            "s": 34
           },
           {
             "n": "switch 1",
-            "s": 37
+            "s": 41
           },
           {
             "n": "boss",
-            "s": 48
+            "s": 52
+          },
+          {
+            "n": "exit",
+            "s": 63
           }
         ],
-        "total_frames": 6537,
+        "total_frames": 3750,
         "rng_end": {
-          "state": 1217092013,
-          "calls": 5140
-        },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+          "state": 3047028441,
+          "calls": 5224
+        }
       }
     ]
   },
@@ -306,7 +301,7 @@
           "calls": 0
         },
         "objectives": [],
-        "total_frames": 3898,
+        "total_frames": 3904,
         "rng_end": {
           "state": 1801414595,
           "calls": 1222
@@ -339,29 +334,29 @@
         "objectives": [
           {
             "n": "gold key",
-            "s": 59
+            "s": 61
           },
           {
             "n": "hidden door",
-            "s": 124
+            "s": 128
           },
           {
             "n": "switch 1",
-            "s": 161
+            "s": 159
           },
           {
             "n": "boss",
-            "s": 210
+            "s": 202
           },
           {
             "n": "exit",
-            "s": 217
+            "s": 208
           }
         ],
-        "total_frames": 12998,
+        "total_frames": 12480,
         "rng_end": {
-          "state": 213828011,
-          "calls": 7518
+          "state": 634953523,
+          "calls": 7510
         }
       }
     ]
@@ -393,7 +388,7 @@
             "s": 13
           }
         ],
-        "total_frames": 4464,
+        "total_frames": 4470,
         "rng_end": {
           "state": 3543880471,
           "calls": 722
@@ -430,42 +425,42 @@
           },
           {
             "n": "switch 76",
-            "s": 22
+            "s": 21
           },
           {
             "n": "switch 78",
-            "s": 25
+            "s": 23
           },
           {
             "n": "switch 79",
-            "s": 31
+            "s": 30
           },
           {
             "n": "switch 80",
-            "s": 42
+            "s": 40
           },
           {
             "n": "switch 81",
-            "s": 46
+            "s": 43
           },
           {
             "n": "red key",
-            "s": 57
+            "s": 53
           },
           {
             "n": "fly-through 37",
-            "s": 73
+            "s": 70
           },
           {
             "n": "boss",
-            "s": 79
+            "s": 76
           },
           {
             "n": "exit",
-            "s": 89
+            "s": 86
           }
         ],
-        "total_frames": 5337,
+        "total_frames": 5142,
         "rng_end": {
           "state": 3710626185,
           "calls": 3384
@@ -480,27 +475,35 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "gigaloma.rl2",
         "route_input_sha256": "45232BD20B3E18E9A073652F8B020DACFFC6DD5156BB390CD6118ED9CCD21C7D",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 3661,
+        "objectives": [
+          {
+            "n": "fly-through 0",
+            "s": 13
+          },
+          {
+            "n": "exit",
+            "s": 16
+          }
+        ],
+        "total_frames": 973,
         "rng_end": {
-          "state": 1440254347,
-          "calls": 1406
-        },
-        "problem": "route confirmation exceeded 61-second simulation budget"
+          "state": 3799286760,
+          "calls": 1535
+        }
       }
     ]
   },
@@ -511,27 +514,35 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "gigaloma.rl2",
         "route_input_sha256": "299A06688BBB494065180A592E8F19FEAFBBB67CCAB09DE2FF856FB65B7B3192",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 4261,
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 11
+          },
+          {
+            "n": "exit",
+            "s": 15
+          }
+        ],
+        "total_frames": 908,
         "rng_end": {
-          "state": 2901314047,
-          "calls": 490
-        },
-        "problem": "route confirmation exceeded 71-second simulation budget"
+          "state": 4124670000,
+          "calls": 791
+        }
       }
     ]
   }

@@ -41,30 +41,30 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 19
+          "s": 20
         },
         {
           "n": "hidden door",
-          "s": 22
-        },
-        {
-          "n": "gold key",
           "s": 23
         },
         {
+          "n": "gold key",
+          "s": 25
+        },
+        {
           "n": "red key",
-          "s": 52
+          "s": 54
         },
         {
           "n": "reactor",
-          "s": 73
+          "s": 74
         },
         {
           "n": "exit",
-          "s": 87
+          "s": 88
         }
       ],
-      "total_frames": 5224,
+      "total_frames": 5255,
       "rng_end": {
         "state": 856000655,
         "calls": 90
@@ -86,18 +86,18 @@
         },
         {
           "n": "blastable wall",
-          "s": 32
+          "s": 31
         },
         {
           "n": "boss",
-          "s": 47
+          "s": 46
         },
         {
           "n": "exit",
-          "s": 51
+          "s": 50
         }
       ],
-      "total_frames": 3078,
+      "total_frames": 3021,
       "rng_end": {
         "state": 361230461,
         "calls": 196
@@ -115,21 +115,21 @@
       "objectives": [
         {
           "n": "red key",
-          "s": 30
+          "s": 32
         },
         {
           "n": "reactor",
-          "s": 60
+          "s": 63
         },
         {
           "n": "exit",
-          "s": 76
+          "s": 80
         }
       ],
-      "total_frames": 4578,
+      "total_frames": 4780,
       "rng_end": {
-        "state": 3772987475,
-        "calls": 54
+        "state": 1266032265,
+        "calls": 56
       }
     }
   ]

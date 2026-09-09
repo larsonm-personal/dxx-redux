@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
+    "ok": 3,
     "failed": 1,
-    "timeout": 2
+    "timeout": 3
   },
   "levels": [
     {
@@ -32,28 +32,28 @@
         },
         {
           "n": "red key",
-          "s": 36
+          "s": 34
         },
         {
           "n": "reactor",
-          "s": 55
+          "s": 52
         },
         {
           "n": "exit",
-          "s": 60
+          "s": 57
         }
       ],
-      "total_frames": 3587,
+      "total_frames": 3394,
       "rng_end": {
-        "state": 794353128,
-        "calls": 1023
+        "state": 2142186641,
+        "calls": 1008
       }
     },
     {
       "level_num": 2,
       "level_file": "aquachsm.rl2",
       "route_input_sha256": "20114F1AD902268CBE7DD468C65E68F800368B42254AD9E892981C8E6AF8187A",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -65,42 +65,23 @@
         },
         {
           "n": "fly-through 3",
-          "s": 82
+          "s": 85
         },
         {
           "n": "switch 11",
-          "s": 88
+          "s": 89
         },
         {
           "n": "gold key",
-          "s": 96
-        },
-        {
-          "n": "switch 1",
-          "s": 179
-        },
-        {
-          "n": "red key",
-          "s": 180
-        },
-        {
-          "n": "fly-through 4",
-          "s": 239
-        },
-        {
-          "n": "reactor",
-          "s": 247
-        },
-        {
-          "n": "exit",
-          "s": 251
+          "s": 95
         }
       ],
-      "total_frames": 15031,
+      "total_frames": 10282,
       "rng_end": {
-        "state": 3639609680,
-        "calls": 3447
-      }
+        "state": 3071740085,
+        "calls": 1612
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 3,
@@ -114,22 +95,22 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 17
+          "s": 19
         },
         {
           "n": "gold key",
-          "s": 56
+          "s": 59
         },
         {
           "n": "switch 0",
-          "s": 89
+          "s": 90
         },
         {
           "n": "red key",
           "s": 110
         }
       ],
-      "total_frames": 6617,
+      "total_frames": 6590,
       "rng_end": {
         "state": 3377447812,
         "calls": 2131
@@ -148,21 +129,21 @@
       "objectives": [
         {
           "n": "switch 1",
-          "s": 29
+          "s": 27
         },
         {
           "n": "blue key",
-          "s": 48
+          "s": 47
         },
         {
           "n": "switch 8",
-          "s": 48
+          "s": 47
         }
       ],
-      "total_frames": 4444,
+      "total_frames": 4333,
       "rng_end": {
-        "state": 1519971579,
-        "calls": 1038
+        "state": 128225525,
+        "calls": 1036
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -178,14 +159,14 @@
       "objectives": [
         {
           "n": "boss",
-          "s": 24
+          "s": 23
         },
         {
           "n": "exit",
-          "s": 33
+          "s": 31
         }
       ],
-      "total_frames": 1965,
+      "total_frames": 1869,
       "rng_end": {
         "state": 4069223089,
         "calls": 720
@@ -207,14 +188,14 @@
         },
         {
           "n": "gold key",
-          "s": 41
+          "s": 36
         },
         {
           "n": "switch 0",
-          "s": 52
+          "s": 48
         }
       ],
-      "total_frames": 4167,
+      "total_frames": 3911,
       "rng_end": {
         "state": 1555859974,
         "calls": 1569
@@ -233,14 +214,14 @@
       "objectives": [
         {
           "n": "boss",
-          "s": 9
+          "s": 8
         },
         {
           "n": "exit",
-          "s": 13
+          "s": 14
         }
       ],
-      "total_frames": 809,
+      "total_frames": 827,
       "rng_end": {
         "state": 898405676,
         "calls": 267

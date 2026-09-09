@@ -23,7 +23,7 @@
       "objectives": [
         {
           "n": "fly-through 16",
-          "s": 6
+          "s": 5
         },
         {
           "n": "fly-through 12",
@@ -31,25 +31,25 @@
         },
         {
           "n": "fly-through 13",
-          "s": 40
+          "s": 41
         },
         {
           "n": "pass-through 6",
-          "s": 43
+          "s": 44
         },
         {
           "n": "fly-through 14",
-          "s": 45
+          "s": 47
         },
         {
           "n": "exit",
-          "s": 53
+          "s": 51
         }
       ],
-      "total_frames": 3194,
+      "total_frames": 3059,
       "rng_end": {
-        "state": 2835914861,
-        "calls": 1876
+        "state": 3650357819,
+        "calls": 1742
       }
     },
     {
@@ -64,15 +64,15 @@
       "objectives": [
         {
           "n": "pass-through 4",
-          "s": 6
+          "s": 5
         },
         {
           "n": "fly-through 5",
-          "s": 11
+          "s": 10
         },
         {
           "n": "fly-through 7",
-          "s": 13
+          "s": 12
         },
         {
           "n": "fly-through 14",
@@ -80,14 +80,14 @@
         },
         {
           "n": "reactor",
-          "s": 35
+          "s": 33
         },
         {
           "n": "exit",
-          "s": 43
+          "s": 41
         }
       ],
-      "total_frames": 2588,
+      "total_frames": 2470,
       "rng_end": {
         "state": 790436741,
         "calls": 3324
@@ -146,14 +146,14 @@
         },
         {
           "n": "switch 2",
-          "s": 23
+          "s": 22
         },
         {
           "n": "reactor",
-          "s": 31
+          "s": 29
         }
       ],
-      "total_frames": 5464,
+      "total_frames": 5344,
       "rng_end": {
         "state": 2682250239,
         "calls": 2026
@@ -189,69 +189,69 @@
       "objectives": [
         {
           "n": "pass-through 13",
-          "s": 20
+          "s": 19
         },
         {
           "n": "switch 17",
-          "s": 25
+          "s": 23
         },
         {
           "n": "pass-through 12",
-          "s": 33
+          "s": 29
         },
         {
           "n": "switch 18",
-          "s": 39
+          "s": 33
         },
         {
           "n": "pass-through 10",
-          "s": 50
+          "s": 42
         },
         {
           "n": "switch 19",
-          "s": 56
+          "s": 46
         },
         {
           "n": "pass-through 11",
-          "s": 65
+          "s": 52
         },
         {
           "n": "switch 20",
-          "s": 71
+          "s": 57
         },
         {
           "n": "switch 14",
-          "s": 81
+          "s": 63
         },
         {
           "n": "switch 21",
-          "s": 87
+          "s": 69
         },
         {
           "n": "boss",
-          "s": 94
+          "s": 76
         },
         {
           "n": "switch 6",
-          "s": 118
+          "s": 95
         },
         {
           "n": "switch 3",
-          "s": 127
+          "s": 105
         },
         {
           "n": "switch 0",
-          "s": 136
+          "s": 114
         },
         {
           "n": "exit",
-          "s": 145
+          "s": 124
         }
       ],
-      "total_frames": 8688,
+      "total_frames": 7410,
       "rng_end": {
-        "state": 819357621,
-        "calls": 3916
+        "state": 1379832279,
+        "calls": 4114
       }
     }
   ]

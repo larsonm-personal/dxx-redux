@@ -8,8 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 1,
-    "timeout": 3
+    "ok": 2,
+    "timeout": 2
   },
   "levels": [
     {
@@ -24,26 +24,26 @@
       "objectives": [
         {
           "n": "blastable wall",
-          "s": 10
-        },
-        {
-          "n": "blue key",
           "s": 11
         },
         {
+          "n": "blue key",
+          "s": 12
+        },
+        {
           "n": "gold key",
-          "s": 26
+          "s": 29
         },
         {
           "n": "red key",
-          "s": 41
+          "s": 45
         },
         {
           "n": "reactor",
-          "s": 58
+          "s": 64
         }
       ],
-      "total_frames": 7748,
+      "total_frames": 7695,
       "rng_end": {
         "state": 3331395548,
         "calls": 155
@@ -70,28 +70,28 @@
         },
         {
           "n": "red key",
-          "s": 18
+          "s": 19
         },
         {
           "n": "reactor",
-          "s": 35
+          "s": 38
         },
         {
           "n": "exit",
-          "s": 38
+          "s": 42
         }
       ],
-      "total_frames": 2305,
+      "total_frames": 2492,
       "rng_end": {
-        "state": 3008295217,
-        "calls": 80
+        "state": 1660932118,
+        "calls": 81
       }
     },
     {
       "level_num": 3,
       "level_file": "deneb.rdl",
       "route_input_sha256": "E873418F76756311896571D918000375968F8D9D36EF1CB9121F4D10E0F0B00A",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -99,23 +99,30 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 10
+          "s": 11
         },
         {
           "n": "gold key",
-          "s": 33
+          "s": 36
         },
         {
           "n": "red key",
-          "s": 48
+          "s": 53
+        },
+        {
+          "n": "reactor",
+          "s": 77
+        },
+        {
+          "n": "exit",
+          "s": 79
         }
       ],
-      "total_frames": 7862,
+      "total_frames": 4744,
       "rng_end": {
-        "state": 208521688,
-        "calls": 79
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1452336924,
+        "calls": 91
+      }
     },
     {
       "level_num": -1,
@@ -129,18 +136,18 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 5
+          "s": 7
         },
         {
           "n": "gold key",
-          "s": 15
+          "s": 18
         },
         {
           "n": "fly-through 0",
-          "s": 34
+          "s": 39
         }
       ],
-      "total_frames": 5621,
+      "total_frames": 5918,
       "rng_end": {
         "state": 2274957893,
         "calls": 60

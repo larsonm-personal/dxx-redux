@@ -882,7 +882,7 @@
         "mine_volume": 3329480.0,
         "mine_volume_normalized": 0.728088,
         "mine_volume_text": "0.73x",
-        "travel_distance": 4048.8,
+        "travel_distance": 4051.2,
         "travel_time_seconds": 81,
         "travel_time_text": "1M:21S",
         "guidebot_count": 0,
@@ -952,7 +952,7 @@
               "y": -218.8,
               "z": -14.2
             },
-            "distance": 1113.1
+            "distance": 1114.3
           },
           {
             "index": 5,
@@ -967,7 +967,7 @@
               "y": -53.8,
               "z": -61.5
             },
-            "distance": 595.8,
+            "distance": 597.0,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -2784,31 +2784,6 @@
           },
           {
             "index": 2,
-            "kind": "trigger",
-            "activation_kind": "fly_through_trigger",
-            "label": "Fly-through trigger 13",
-            "seg": 95,
-            "side": 4,
-            "wall": 25,
-            "label_pos": {
-              "x": -13.8,
-              "y": -224.9,
-              "z": 65.6
-            },
-            "distance": 481.8,
-            "trigger": 13,
-            "trigger_type_id": 1,
-            "trigger_type": "toggle_door",
-            "opens": [
-              {
-                "seg": 186,
-                "side": 4,
-                "wall": 112
-              }
-            ]
-          },
-          {
-            "index": 3,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -2818,8 +2793,33 @@
               "y": -244.9,
               "z": -94.4
             },
-            "distance": 200.0,
+            "distance": 671.8,
             "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 12",
+            "seg": 98,
+            "side": 4,
+            "wall": 169,
+            "label_pos": {
+              "x": 66.2,
+              "y": -224.9,
+              "z": 65.6
+            },
+            "distance": 210.0,
+            "trigger": 12,
+            "trigger_type_id": 1,
+            "trigger_type": "toggle_door",
+            "opens": [
+              {
+                "seg": 186,
+                "side": 4,
+                "wall": 112
+              }
+            ]
           },
           {
             "index": 4,
@@ -2832,7 +2832,7 @@
               "y": -204.9,
               "z": -246.8
             },
-            "distance": 1969.6,
+            "distance": 1769.6,
             "key": "red"
           },
           {

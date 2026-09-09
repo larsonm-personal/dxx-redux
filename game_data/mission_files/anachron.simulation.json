@@ -6,10 +6,9 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 2,
-    "timeout": 1
+    "ok": 3
   },
   "levels": [
     {
@@ -28,28 +27,28 @@
         },
         {
           "n": "red key",
-          "s": 67
+          "s": 66
         },
         {
           "n": "reactor",
-          "s": 99
+          "s": 100
         },
         {
           "n": "exit",
-          "s": 113
+          "s": 114
         }
       ],
-      "total_frames": 6789,
+      "total_frames": 6841,
       "rng_end": {
-        "state": 508382461,
-        "calls": 68
+        "state": 820312479,
+        "calls": 74
       }
     },
     {
       "level_num": 2,
       "level_file": "scktrnst.rdl",
       "route_input_sha256": "B19B9CAE0507AFDBA6F518CC7AA613561C703BB48FE4FB300563F4C5131313F9",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -57,23 +56,30 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 17
+          "s": 16
         },
         {
           "n": "gold key",
-          "s": 56
+          "s": 55
         },
         {
           "n": "red key",
-          "s": 116
+          "s": 114
+        },
+        {
+          "n": "reactor",
+          "s": 170
+        },
+        {
+          "n": "exit",
+          "s": 191
         }
       ],
-      "total_frames": 18001,
+      "total_frames": 11475,
       "rng_end": {
-        "state": 92728044,
-        "calls": 75
-      },
-      "problem": "route confirmation exceeded 300-second simulation budget"
+        "state": 1447624116,
+        "calls": 99
+      }
     },
     {
       "level_num": 3,
@@ -95,22 +101,22 @@
         },
         {
           "n": "gold key",
-          "s": 91
+          "s": 90
         },
         {
           "n": "red key",
-          "s": 180
+          "s": 179
         },
         {
           "n": "boss",
-          "s": 243
+          "s": 242
         },
         {
           "n": "exit",
-          "s": 248
+          "s": 247
         }
       ],
-      "total_frames": 14884,
+      "total_frames": 14833,
       "rng_end": {
         "state": 2754807367,
         "calls": 162

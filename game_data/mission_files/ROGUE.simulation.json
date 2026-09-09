@@ -24,41 +24,41 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 10
+          "s": 13
         },
         {
           "n": "red key",
-          "s": 11
+          "s": 13
         },
         {
           "n": "pass-through 7",
-          "s": 20
+          "s": 23
         },
         {
           "n": "pass-through 6",
-          "s": 22
+          "s": 49
         },
         {
           "n": "blastable wall",
-          "s": 25
+          "s": 52
         },
         {
           "n": "fly-through 8",
-          "s": 26
+          "s": 53
         },
         {
           "n": "reactor",
-          "s": 32
+          "s": 59
         },
         {
           "n": "exit",
-          "s": 39
+          "s": 68
         }
       ],
-      "total_frames": 2365,
+      "total_frames": 4096,
       "rng_end": {
-        "state": 1468890740,
-        "calls": 163
+        "state": 369732668,
+        "calls": 187
       }
     },
     {

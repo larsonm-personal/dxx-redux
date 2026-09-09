@@ -22,45 +22,45 @@
       "objectives": [
         {
           "n": "switch 0",
-          "s": 11
+          "s": 10
         },
         {
           "n": "gold key",
-          "s": 23
+          "s": 22
         },
         {
           "n": "fly-through 11",
-          "s": 57
+          "s": 56
         },
         {
           "n": "switch 13",
-          "s": 58
+          "s": 57
         },
         {
           "n": "blue key",
-          "s": 74
+          "s": 72
         },
         {
           "n": "switch 7",
-          "s": 106
+          "s": 103
         },
         {
           "n": "red key",
-          "s": 124
+          "s": 120
         },
         {
           "n": "boss",
-          "s": 154
+          "s": 151
         },
         {
           "n": "exit",
-          "s": 159
+          "s": 156
         }
       ],
-      "total_frames": 9512,
+      "total_frames": 9359,
       "rng_end": {
-        "state": 3169099054,
-        "calls": 5145
+        "state": 1254560794,
+        "calls": 5053
       }
     }
   ]

@@ -5,9 +5,9 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
-    "timeout": 1,
+    "ok": 1,
     "unsupported": 1
   },
   "levels": [
@@ -39,21 +39,21 @@
         },
         {
           "n": "switch 10",
-          "s": 60
+          "s": 59
         },
         {
           "n": "blue key",
-          "s": 63
+          "s": 62
         },
         {
           "n": "destroy robot carrying red key",
           "s": 83
         }
       ],
-      "total_frames": 6410,
+      "total_frames": 5234,
       "rng_end": {
-        "state": 1406111866,
-        "calls": 7901
+        "state": 783637882,
+        "calls": 5597
       },
       "problem": "route objective activation is not supported"
     },
@@ -61,18 +61,26 @@
       "level_num": 2,
       "level_file": "roberts.rl2",
       "route_input_sha256": "6AEB628F79E5BFF9C5338FFBA2416454DA1C48666D3825076990300355962D93",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4724,
+      "objectives": [
+        {
+          "n": "boss",
+          "s": 24
+        },
+        {
+          "n": "exit",
+          "s": 25
+        }
+      ],
+      "total_frames": 1520,
       "rng_end": {
-        "state": 1513848375,
-        "calls": 434
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1811477471,
+        "calls": 522
+      }
     }
   ]
 }

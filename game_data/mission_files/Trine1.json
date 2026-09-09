@@ -159,7 +159,7 @@
         "mine_volume": 5405520.0,
         "mine_volume_normalized": 1.18208,
         "mine_volume_text": "1.2x",
-        "travel_distance": 2978.5,
+        "travel_distance": 3014.1,
         "travel_time_seconds": 60,
         "travel_time_text": "1M:00S",
         "guidebot_count": 0,
@@ -187,7 +187,7 @@
               "y": -71.2,
               "z": 320.3
             },
-            "distance": 1518.9,
+            "distance": 1554.6,
             "key": "red"
           },
           {
@@ -921,15 +921,15 @@
         "mine_volume": 16056300.0,
         "mine_volume_normalized": 3.51118,
         "mine_volume_text": "3.5x",
-        "travel_distance": 3936.5,
-        "travel_time_seconds": 79,
-        "travel_time_text": "1M:19S",
+        "travel_distance": 7800.8,
+        "travel_time_seconds": 156,
+        "travel_time_text": "2M:36S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
         "route_status": "ok",
-        "route_required_key_mask": 1,
-        "route_completing_key_mask_set": 162,
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -954,6 +954,84 @@
           },
           {
             "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 606,
+            "label_pos": {
+              "x": 2.6,
+              "y": -69.6,
+              "z": -358.3
+            },
+            "distance": 1724.6,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 13",
+            "seg": 232,
+            "side": 5,
+            "wall": 156,
+            "label_pos": {
+              "x": -155.8,
+              "y": 2.6,
+              "z": -258.8
+            },
+            "distance": 1065.1,
+            "trigger": 13,
+            "trigger_type_id": 1,
+            "trigger_type": "toggle_door",
+            "opens": [
+              {
+                "seg": 632,
+                "side": 5,
+                "wall": 144
+              },
+              {
+                "seg": 642,
+                "side": 4,
+                "wall": 146
+              },
+              {
+                "seg": 703,
+                "side": 0,
+                "wall": 143
+              },
+              {
+                "seg": 706,
+                "side": 0,
+                "wall": 141
+              },
+              {
+                "seg": 706,
+                "side": 4,
+                "wall": 139
+              },
+              {
+                "seg": 725,
+                "side": 0,
+                "wall": 134
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 727,
+            "label_pos": {
+              "x": -100.7,
+              "y": -69.4,
+              "z": -382.1
+            },
+            "distance": 305.5,
+            "key": "red"
+          },
+          {
+            "index": 5,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -963,10 +1041,10 @@
               "y": -69.4,
               "z": -272.2
             },
-            "distance": 1502.6
+            "distance": 2021.0
           },
           {
-            "index": 3,
+            "index": 6,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -978,15 +1056,11 @@
               "y": -69.6,
               "z": 151.6
             },
-            "distance": 945.6,
+            "distance": 1196.2,
             "trigger": 0,
             "trigger_type_id": 8,
             "trigger_type": "exit"
           }
-        ],
-        "notes": [
-          "red key not necessary",
-          "gold key not necessary"
         ]
       },
       {
@@ -1011,9 +1085,9 @@
         "mine_volume": 12230600.0,
         "mine_volume_normalized": 2.67459,
         "mine_volume_text": "2.7x",
-        "travel_distance": 3211.5,
-        "travel_time_seconds": 64,
-        "travel_time_text": "1M:04S",
+        "travel_distance": 3245.0,
+        "travel_time_seconds": 65,
+        "travel_time_text": "1M:05S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1074,7 +1148,7 @@
               "y": 141.0,
               "z": -405.2
             },
-            "distance": 1036.5,
+            "distance": 1054.2,
             "key": "red"
           },
           {
@@ -1088,7 +1162,7 @@
               "y": -139.7,
               "z": 267.2
             },
-            "distance": 1618.9
+            "distance": 1634.7
           },
           {
             "index": 4,

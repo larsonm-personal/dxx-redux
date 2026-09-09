@@ -32,17 +32,17 @@
         },
         {
           "n": "switch 15",
-          "s": 34
+          "s": 31
         },
         {
           "n": "exit",
           "s": 41
         }
       ],
-      "total_frames": 2438,
+      "total_frames": 2477,
       "rng_end": {
-        "state": 3827994298,
-        "calls": 3485
+        "state": 1846501461,
+        "calls": 3500
       }
     },
     {
@@ -83,14 +83,42 @@
         {
           "n": "switch 22",
           "s": 40
+        },
+        {
+          "n": "switch 15",
+          "s": 124
+        },
+        {
+          "n": "hidden door",
+          "s": 127
+        },
+        {
+          "n": "switch 17",
+          "s": 127
+        },
+        {
+          "n": "switch 2",
+          "s": 131
+        },
+        {
+          "n": "switch 6",
+          "s": 132
+        },
+        {
+          "n": "pass-through 23",
+          "s": 143
+        },
+        {
+          "n": "pass-through 4",
+          "s": 149
         }
       ],
-      "total_frames": 7373,
+      "total_frames": 18001,
       "rng_end": {
-        "state": 1504923466,
-        "calls": 4685
+        "state": 3284878727,
+        "calls": 9570
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "route confirmation exceeded 300-second simulation budget"
     },
     {
       "level_num": 4,
@@ -104,7 +132,7 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 3
+          "s": 4
         },
         {
           "n": "switch 41",
@@ -116,13 +144,13 @@
         },
         {
           "n": "switch 26",
-          "s": 18
+          "s": 14
         }
       ],
-      "total_frames": 2047,
+      "total_frames": 1616,
       "rng_end": {
-        "state": 1475669976,
-        "calls": 591
+        "state": 1007748763,
+        "calls": 622
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

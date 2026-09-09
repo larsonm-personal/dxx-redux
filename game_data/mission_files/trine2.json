@@ -705,20 +705,6 @@
             "index": 2,
             "kind": "key",
             "activation_kind": "pickup_key",
-            "label": "red key",
-            "seg": 83,
-            "label_pos": {
-              "x": -267.0,
-              "y": -65.3,
-              "z": 479.8
-            },
-            "distance": 2715.0,
-            "key": "red"
-          },
-          {
-            "index": 3,
-            "kind": "key",
-            "activation_kind": "pickup_key",
             "label": "gold key",
             "seg": 147,
             "label_pos": {
@@ -726,8 +712,22 @@
               "y": 212.4,
               "z": -131.0
             },
-            "distance": 3282.0,
+            "distance": 2141.9,
             "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 83,
+            "label_pos": {
+              "x": -267.0,
+              "y": -65.3,
+              "z": 479.8
+            },
+            "distance": 3282.0,
+            "key": "red"
           },
           {
             "index": 4,
@@ -740,7 +740,7 @@
               "y": 236.4,
               "z": -63.2
             },
-            "distance": 2359.6
+            "distance": 2932.7
           },
           {
             "index": 5,

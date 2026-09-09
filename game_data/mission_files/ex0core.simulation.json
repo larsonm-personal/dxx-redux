@@ -23,7 +23,7 @@
       "objectives": [
         {
           "n": "switch 4",
-          "s": 13
+          "s": 12
         },
         {
           "n": "red key",
@@ -35,17 +35,17 @@
         },
         {
           "n": "reactor",
-          "s": 29
+          "s": 27
         },
         {
           "n": "exit",
-          "s": 50
+          "s": 46
         }
       ],
-      "total_frames": 2974,
+      "total_frames": 2777,
       "rng_end": {
-        "state": 3154884597,
-        "calls": 1292
+        "state": 2086258611,
+        "calls": 1238
       }
     },
     {
@@ -60,21 +60,21 @@
       "objectives": [
         {
           "n": "switch 4",
-          "s": 1
+          "s": 0
         },
         {
           "n": "blue key",
-          "s": 9
+          "s": 10
         },
         {
           "n": "switch 7",
-          "s": 22
+          "s": 21
         }
       ],
-      "total_frames": 1827,
+      "total_frames": 1684,
       "rng_end": {
-        "state": 964141416,
-        "calls": 639
+        "state": 2027514900,
+        "calls": 643
       },
       "problem": "route objective activation is not supported"
     },
@@ -90,37 +90,37 @@
       "objectives": [
         {
           "n": "switch 8",
-          "s": 4
+          "s": 3
         },
         {
           "n": "blue key",
-          "s": 8
+          "s": 7
         },
         {
           "n": "switch 28",
-          "s": 16
+          "s": 13
         },
         {
           "n": "gold key",
-          "s": 44
+          "s": 36
         },
         {
           "n": "red key",
-          "s": 72
+          "s": 64
         },
         {
           "n": "reactor",
-          "s": 94
+          "s": 86
         },
         {
           "n": "exit",
-          "s": 106
+          "s": 99
         }
       ],
-      "total_frames": 6355,
+      "total_frames": 5950,
       "rng_end": {
-        "state": 1334084737,
-        "calls": 3968
+        "state": 1723771088,
+        "calls": 4087
       }
     },
     {

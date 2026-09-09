@@ -7,28 +7,33 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
+    "ok": 3,
     "failed": 1,
-    "timeout": 4,
-    "unsupported": 1
+    "timeout": 2,
+    "unsupported": 2
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "kcxf2_n1.rl2",
-      "route_input_sha256": "B6B74AB465EE4746728FA52508F2BCCD97992E80430B371ECF681E790152F847",
-      "status": "timeout",
+      "route_input_sha256": "A424C9306A943CE9FB507EE68C876480B1191BDADD017E93E2BA9E81B14E640C",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 3601,
+      "objectives": [
+        {
+          "n": "switch 3",
+          "s": 23
+        }
+      ],
+      "total_frames": 3782,
       "rng_end": {
-        "state": 2970607865,
-        "calls": 840
+        "state": 2819228775,
+        "calls": 1154
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "route objective activation is not supported"
     },
     {
       "level_num": 2,
@@ -42,7 +47,7 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 34
+          "s": 35
         },
         {
           "n": "fly-through 4",
@@ -50,37 +55,37 @@
         },
         {
           "n": "switch 7",
-          "s": 77
+          "s": 76
         },
         {
           "n": "switch 8",
-          "s": 101
+          "s": 98
         },
         {
           "n": "switch 13",
-          "s": 115
+          "s": 110
         },
         {
           "n": "switch 19",
-          "s": 151
+          "s": 140
         },
         {
           "n": "switch 18",
-          "s": 156
+          "s": 141
         },
         {
           "n": "switch 17",
-          "s": 159
+          "s": 142
         },
         {
           "n": "exit",
-          "s": 168
+          "s": 151
         }
       ],
-      "total_frames": 10105,
+      "total_frames": 9074,
       "rng_end": {
-        "state": 511835098,
-        "calls": 5885
+        "state": 1842711923,
+        "calls": 5910
       }
     },
     {
@@ -104,7 +109,7 @@
       "level_num": 4,
       "level_file": "kcxf2_n4.rl2",
       "route_input_sha256": "99FD1F9F6B064E7CB6AC5E6AD44FE0B1BF359E43915ED044C6A4DCE74573E784",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -112,31 +117,34 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 23
+          "s": 24
         },
         {
           "n": "gold key",
-          "s": 61
+          "s": 63
         },
         {
           "n": "red key",
-          "s": 106
+          "s": 108
         },
         {
           "n": "hidden door",
-          "s": 134
+          "s": 137
         },
         {
           "n": "boss",
-          "s": 156
+          "s": 159
+        },
+        {
+          "n": "exit",
+          "s": 168
         }
       ],
-      "total_frames": 13350,
+      "total_frames": 10072,
       "rng_end": {
-        "state": 1300709401,
-        "calls": 5416
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 859074730,
+        "calls": 5229
+      }
     },
     {
       "level_num": 5,
@@ -151,14 +159,22 @@
         {
           "n": "blue key",
           "s": 26
+        },
+        {
+          "n": "switch 6",
+          "s": 71
+        },
+        {
+          "n": "red key",
+          "s": 77
         }
       ],
-      "total_frames": 7341,
+      "total_frames": 5375,
       "rng_end": {
-        "state": 3672578565,
-        "calls": 2684
+        "state": 1583537286,
+        "calls": 3489
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 6,

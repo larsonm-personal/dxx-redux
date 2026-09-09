@@ -126,7 +126,7 @@
         "mine_volume": 9068240.0,
         "mine_volume_normalized": 1.98304,
         "mine_volume_text": "2.0x",
-        "travel_distance": 5186.1,
+        "travel_distance": 5186.5,
         "travel_time_seconds": 104,
         "travel_time_text": "1M:44S",
         "guidebot_count": 0,
@@ -352,7 +352,7 @@
               "y": 190.0,
               "z": -25.0
             },
-            "distance": 655.9,
+            "distance": 656.2,
             "trigger": 3,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
