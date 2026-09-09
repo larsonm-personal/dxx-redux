@@ -1864,13 +1864,24 @@ extern "C" void route_confirmation_after_frame(void)
 	}
 
 	apply_objective_action(actor);
+	/* A path rebuilt after leaving the route can stop before the requested
+	 * target if a door closed meanwhile. Its reached endpoint is a frontier,
+	 * not a reason to wait forever for the original target */
+	const ai_static *path = &actor->ctype.ai_info;
+	const point_seg *endpoint = path->hide_index >= 0 && path->path_length > 0
+	                                ? &Point_segs[path->hide_index + path->path_length - 1]
+	                                : nullptr;
+	const bool reached_partial_path = endpoint &&
+	                                  endpoint->segnum != State.target_seg && endpoint->segnum == actor->segnum &&
+	                                  path->cur_path_index >= path->path_length - 1 &&
+	                                  vm_vec_dist_quick(&actor->pos, &endpoint->point) <= actor->size + i2f(4);
 	/* A physical frontier is deliberately not an objective completion.  Hold
 	 * there briefly so door animations and trigger effects can settle, then ask
 	 * the live planner to extend the same semantic objective from the actor's
 	 * actual new position. */
 	if (State.summary.status == ROUTE_CONFIRMATION_RUNNING &&
-	    actor_reached_target(actor) &&
-	    State.target_seg != State.semantic_target_seg) {
+	    ((actor_reached_target(actor) && State.target_seg != State.semantic_target_seg) ||
+	     reached_partial_path)) {
 		if ((State.step.activation_kind ==
 		         LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT &&
 		     actor->segnum == State.step.seg) ||

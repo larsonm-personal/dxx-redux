@@ -1769,7 +1769,7 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 	    !memcmp(&motion_goal, goal_point, sizeof(motion_goal))) {
 		vms_vector actual = cur_vel;
 		vm_vec_normalize_quick(&actual);
-		contact_reversed_motion = vm_vec_dot(&actual, &motion_command) < -15 * F1_0 / 16;
+		contact_reversed_motion = vm_vec_dot(&actual, &motion_command) < 0;
 	}
 #endif
 
@@ -1851,10 +1851,11 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	/* Contact can reverse motion without reversing facing. Normalizing and
 	 * blending opposing vectors then perpetuates backward travel. Recognize
-	 * an openable-door reversal, brake while its full-radius approach remains
-	 * blocked, then resume ordinary steering. Never open the wall here */
-	if (robptr->companion && Escort_route_goal.active && contact_reversed_motion && dot > 15 * F1_0 / 16 &&
-	    vm_vec_dot(&norm_vec_to_goal, &norm_cur_vel) < -15 * F1_0 / 16) {
+	 * an openable-door reversal, including oblique impacts, when facing the
+	 * goal but moving away from it. Brake while its full-radius approach
+	 * remains blocked, then resume ordinary steering. Never open the wall here */
+	if (robptr->companion && Escort_route_goal.active && contact_reversed_motion && dot > 0 &&
+	    vm_vec_dot(&norm_vec_to_goal, &norm_cur_vel) < 0) {
 		fvi_query query;
 		fvi_info hit;
 		memset(&query, 0, sizeof(query));
