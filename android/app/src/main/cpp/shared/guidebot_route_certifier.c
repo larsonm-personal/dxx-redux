@@ -75,6 +75,9 @@ static int guidebot_route_side_passable(
 	child = view->segment_child(view->user, segment, side);
 	if (!guidebot_valid_segment(view, child))
 		return 0;
+	if (view->side_is_narrow_portal &&
+	    view->side_is_narrow_portal(view->user, segment, side))
+		return 0;
 	if (view->reverse_side) {
 		reverse = view->reverse_side(view->user, segment, child);
 		if (reverse < 0 || reverse >= LEVEL_METADATA_MAX_SIDES ||

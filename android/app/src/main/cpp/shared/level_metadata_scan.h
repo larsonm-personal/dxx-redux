@@ -188,6 +188,8 @@ typedef struct level_metadata_scan_view {
 	int (*reverse_side)(void *user, int seg, int child);
 	int (*side_is_flyable)(void *user, int seg, int side);
 	int (*side_clearance_radius)(void *user, int seg, int side);
+	/* Whole-portal navigation constraint, distinct from an estimated bad center */
+	int (*side_is_narrow_portal)(void *user, int seg, int side);
 	unsigned int (*segment_transit_mask)(void *user, int seg, int entry_side);
 	int (*side_is_hard_blocked)(void *user, int seg, int side);
 	int (*side_is_control_center_link)(void *user, int seg, int side);

@@ -8,9 +8,9 @@
     "seed": 1,
     "status": "partial",
     "level_counts": {
-      "ok": 17,
+      "ok": 19,
       "failed": 2,
-      "timeout": 3,
+      "timeout": 1,
       "unsupported": 1
     },
     "levels": [
@@ -509,7 +509,7 @@
         "level_num": 14,
         "level_file": "d2xlvl14.rl2",
         "route_input_sha256": "D96F553385AB4F4B1B6A3E7629A098B645109D59DE306784A7C65F6A772EB0D9",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -518,14 +518,29 @@
           {
             "n": "blue key",
             "s": 11
+          },
+          {
+            "n": "gold key",
+            "s": 64
+          },
+          {
+            "n": "red key",
+            "s": 86
+          },
+          {
+            "n": "reactor",
+            "s": 102
+          },
+          {
+            "n": "exit",
+            "s": 111
           }
         ],
-        "total_frames": 4755,
+        "total_frames": 6668,
         "rng_end": {
-          "state": 1511161572,
-          "calls": 371
-        },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+          "state": 542446488,
+          "calls": 1935
+        }
       },
       {
         "level_num": 15,
@@ -571,19 +586,47 @@
       {
         "level_num": 16,
         "level_file": "d2xlvl16.rl2",
-        "route_input_sha256": "0F38D45989B196ECE8A0985E9DCCC620EEBF00ECD73B148F126327CCB2799EF8",
-        "status": "timeout",
+        "route_input_sha256": "4C297437336FA4EC9283F4F5E883C97E900E58CA67555A848AFD768C65D123DB",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 4532,
+        "objectives": [
+          {
+            "n": "switch 5",
+            "s": 8
+          },
+          {
+            "n": "blue key",
+            "s": 14
+          },
+          {
+            "n": "gold key",
+            "s": 29
+          },
+          {
+            "n": "pass-through 18",
+            "s": 50
+          },
+          {
+            "n": "switch 8",
+            "s": 55
+          },
+          {
+            "n": "reactor",
+            "s": 73
+          },
+          {
+            "n": "exit",
+            "s": 93
+          }
+        ],
+        "total_frames": 5581,
         "rng_end": {
-          "state": 568974454,
-          "calls": 369
-        },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+          "state": 3291780114,
+          "calls": 2213
+        }
       },
       {
         "level_num": 17,

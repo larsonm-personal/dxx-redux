@@ -513,7 +513,7 @@
         "mine_volume": 24296800.0,
         "mine_volume_normalized": 5.31321,
         "mine_volume_text": "5.3x",
-        "travel_distance": 9691.2,
+        "travel_distance": 9706.2,
         "travel_time_seconds": 194,
         "travel_time_text": "3M:14S",
         "guidebot_count": 0,
@@ -610,7 +610,7 @@
               "y": -130.0,
               "z": 50.0
             },
-            "distance": 115.0,
+            "distance": 130.0,
             "trigger": 7,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -1952,7 +1952,7 @@
         "mine_volume": 19273000.0,
         "mine_volume_normalized": 4.21461,
         "mine_volume_text": "4.2x",
-        "travel_distance": 10382.3,
+        "travel_distance": 10391.2,
         "travel_time_seconds": 208,
         "travel_time_text": "3M:28S",
         "guidebot_count": 1,
@@ -1982,7 +1982,7 @@
               "y": -210.8,
               "z": 149.7
             },
-            "distance": 1684.9,
+            "distance": 1689.4,
             "trigger": 5,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -2216,7 +2216,7 @@
               "y": 0.0,
               "z": 342.2
             },
-            "distance": 1520.0,
+            "distance": 1524.4,
             "trigger": 4,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -2674,9 +2674,9 @@
         "mine_volume": 12451100.0,
         "mine_volume_normalized": 2.72281,
         "mine_volume_text": "2.7x",
-        "travel_distance": 7369.5,
-        "travel_time_seconds": 147,
-        "travel_time_text": "2M:27S",
+        "travel_distance": 7375.9,
+        "travel_time_seconds": 148,
+        "travel_time_text": "2M:28S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -2702,7 +2702,7 @@
               "y": 65.0,
               "z": -85.2
             },
-            "distance": 529.4,
+            "distance": 535.8,
             "key": "blue",
             "key_carrier_objnum": 15
           },

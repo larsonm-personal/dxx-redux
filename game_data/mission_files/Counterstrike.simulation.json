@@ -5,10 +5,9 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 29,
-    "route_mismatch": 1
+    "ok": 30
   },
   "levels": [
     {
@@ -293,25 +292,25 @@
         },
         {
           "n": "red key",
-          "s": 106
+          "s": 109
         },
         {
           "n": "reactor",
-          "s": 141
+          "s": 143
         },
         {
           "n": "switch 14",
-          "s": 141
+          "s": 143
         },
         {
           "n": "exit",
-          "s": 146
+          "s": 148
         }
       ],
-      "total_frames": 8772,
+      "total_frames": 8907,
       "rng_end": {
-        "state": 3096600093,
-        "calls": 3620
+        "state": 3389010901,
+        "calls": 3628
       }
     },
     {
@@ -1226,8 +1225,8 @@
     {
       "level_num": -5,
       "level_file": "d2leve-s.rl2",
-      "route_input_sha256": "9548EB233FD86EA0F5488878657EFA631326538ED2A44A8DC7117685033B71EB",
-      "status": "route_mismatch",
+      "route_input_sha256": "4FA2B58DC284AA74F7DA920AEB76DCC643F0A21D305C0D83813565FA4417BC8A",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -1244,14 +1243,17 @@
         {
           "n": "reactor",
           "s": 27
+        },
+        {
+          "n": "exit",
+          "s": 32
         }
       ],
-      "total_frames": 1801,
+      "total_frames": 1948,
       "rng_end": {
-        "state": 3027255562,
-        "calls": 909
-      },
-      "problem": "live objective sequence differs from route input"
+        "state": 3435231452,
+        "calls": 923
+      }
     },
     {
       "level_num": -6,

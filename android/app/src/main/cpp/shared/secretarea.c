@@ -938,6 +938,7 @@ typedef struct level_metadata_opener_entry {
 static vms_vector Level_metadata_segment_centers[LEVEL_METADATA_MAX_SEGMENTS];
 static int Level_metadata_segment_clearance[LEVEL_METADATA_MAX_SEGMENTS];
 static int Level_metadata_side_clearance[LEVEL_METADATA_MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
+static unsigned char Level_metadata_narrow_portal[LEVEL_METADATA_MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
 static short Level_metadata_opener_first[LEVEL_METADATA_MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
 static level_metadata_opener_entry Level_metadata_opener_entries[LEVEL_METADATA_MAX_OPENER_ENTRIES];
 static int Level_metadata_opener_entry_count;
@@ -1091,8 +1092,11 @@ static unsigned int secret_area_segment_transit_mask(
 	    entry_side >= MAX_SIDES_PER_SEGMENT ||
 	    Segments[seg].children[entry_side] < 0)
 		return 0;
+	if (Level_metadata_narrow_portal[seg][entry_side])
+		return 0;
 	for (exit_side = 0; exit_side < MAX_SIDES_PER_SEGMENT; ++exit_side) {
-		if (exit_side == entry_side || Segments[seg].children[exit_side] < 0)
+		if (exit_side == entry_side || Segments[seg].children[exit_side] < 0 ||
+		    Level_metadata_narrow_portal[seg][exit_side])
 			continue;
 		if (Level_metadata_segment_clearance[seg] >=
 		        secret_area_player_radius() ||
@@ -1116,6 +1120,52 @@ static int secret_area_compute_segment_clearance_radius(int seg, int radius)
 	probe.segnum = seg;
 	probe.size = radius;
 	return object_intersects_wall(&probe) ? 1 : radius;
+}
+
+/* A portal narrower than edge collision permits cannot support a centered path
+ * Only constrain it when the full ship also intersects actual solid geometry
+ * at its center, so small subdivisions of an open room remain available */
+static int secret_area_portal_too_narrow(int seg, int side, int radius)
+{
+	object probe;
+	int edge;
+	if (radius <= 0)
+		return 0;
+	memset(&probe, 0, sizeof(probe));
+	probe.segnum = seg;
+	probe.size = radius;
+	compute_center_point_on_side(&probe.pos, &Segments[seg], side);
+	if (!object_intersects_wall(&probe))
+		return 0;
+	for (edge = 0; edge < 4; ++edge) {
+		const vms_vector *a = &Vertices[Segments[seg].verts[Side_to_verts[side][edge]]];
+		const vms_vector *b = &Vertices[Segments[seg].verts[Side_to_verts[side][(edge + 1) % 4]]];
+		const double x = (double) b->x - a->x, y = (double) b->y - a->y, z = (double) b->z - a->z;
+		const double length_squared = x * x + y * y + z * z;
+		double width_squared = 0;
+		int vertex;
+		if (length_squared <= 0)
+			continue;
+		for (vertex = 0; vertex < 4; ++vertex) {
+			const vms_vector *p = &Vertices[Segments[seg].verts[Side_to_verts[side][vertex]]];
+			const double px = (double) p->x - a->x, py = (double) p->y - a->y, pz = (double) p->z - a->z;
+			const double cx = y * pz - z * py, cy = z * px - x * pz, cz = x * py - y * px;
+			width_squared = max(width_squared, (cx * cx + cy * cy + cz * cz) / length_squared);
+		}
+		/* Match check_line_to_face_special's 15/20 radius tolerance in
+		 * d1/main/fvi.c and d2/main/fvi.c; retain near-diameter passages */
+		if (width_squared < 2.25 * radius * radius)
+			return 1;
+	}
+	return 0;
+}
+
+static int secret_area_side_is_narrow_portal(void *user, int seg, int side)
+{
+	(void) user;
+	return seg >= 0 && seg < Num_segments && seg < LEVEL_METADATA_MAX_SEGMENTS &&
+	       side >= 0 && side < MAX_SIDES_PER_SEGMENT &&
+	       Level_metadata_narrow_portal[seg][side];
 }
 
 static int secret_area_position_occupiable(
@@ -2390,6 +2440,7 @@ static void secret_area_rebuild_level_topology(void)
 	memset(opener_last, 0xff, sizeof(opener_last));
 	memset(Level_metadata_side_clearance, 0,
 	       sizeof(Level_metadata_side_clearance));
+	memset(Level_metadata_narrow_portal, 0, sizeof(Level_metadata_narrow_portal));
 	memset(
 	    Level_metadata_segment_clearance, 0,
 	    sizeof(Level_metadata_segment_clearance));
@@ -2430,10 +2481,13 @@ static void secret_area_rebuild_level_topology(void)
 	for (seg = 0; seg < Num_segments && seg < LEVEL_METADATA_MAX_SEGMENTS; ++seg) {
 		for (side = 0; side < MAX_SIDES_PER_SEGMENT; ++side)
 			if (Segments[seg].children[side] >= 0 &&
-			    Segments[seg].children[side] < LEVEL_METADATA_MAX_SEGMENTS)
+			    Segments[seg].children[side] < Num_segments &&
+			    Segments[seg].children[side] < LEVEL_METADATA_MAX_SEGMENTS) {
+				Level_metadata_narrow_portal[seg][side] =
+				    secret_area_portal_too_narrow(seg, side, player_radius);
 				Level_metadata_side_clearance[seg][side] =
-				    Level_metadata_segment_clearance
-				        [Segments[seg].children[side]];
+				    Level_metadata_narrow_portal[seg][side] ? 1 : Level_metadata_segment_clearance[Segments[seg].children[side]];
+			}
 	}
 	for (trigger_num = 0; trigger_num < Num_triggers; ++trigger_num) {
 		int link;
@@ -2736,6 +2790,7 @@ static void level_metadata_initialize_scan_view(void)
 	view->reverse_side = secret_area_reverse_side;
 	view->side_is_flyable = secret_area_side_is_flyable;
 	view->side_clearance_radius = secret_area_side_clearance_radius;
+	view->side_is_narrow_portal = secret_area_side_is_narrow_portal;
 	view->segment_transit_mask = secret_area_segment_transit_mask;
 	view->side_is_hard_blocked = secret_area_side_is_hard_blocked;
 	view->side_is_control_center_link = secret_area_side_is_control_center_link;

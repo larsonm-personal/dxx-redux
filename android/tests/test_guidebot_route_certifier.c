@@ -1703,6 +1703,12 @@ static void test_reverse_countdown_link_preserves_ordinary_door_access(void)
 	assert(guidebot_route_side_passable_current(&view, 1, 1));
 }
 
+static int side_is_narrow_portal(void *user, int segment, int side)
+{
+	certifier_fixture *fixture = (certifier_fixture *) user;
+	return fixture->wall[segment][side] == fixture->narrow_wall;
+}
+
 static void test_physical_frontier_can_plan_toward_triggered_link(void)
 {
 	certifier_fixture fixture;
@@ -1734,6 +1740,12 @@ static void test_physical_frontier_matches_engine_across_narrow_portal(void)
 	assert(
 	    guidebot_route_best_physical_frontier(
 	        &view, 0, 3, 200, -1, -1, -1, -1, &Workspace) == 3);
+	/* A bad center estimate can remain usable, but an explicit portal
+	 * constraint must also stop the live frontier from selecting that edge */
+	view.side_is_narrow_portal = side_is_narrow_portal;
+	assert(!guidebot_route_side_passable_current(&view, 0, 0));
+	assert(guidebot_route_best_physical_frontier(
+	           &view, 0, 3, 200, -1, -1, -1, -1, &Workspace) != 3);
 }
 
 static void test_unreachable_switch_uses_physical_frontier(void)

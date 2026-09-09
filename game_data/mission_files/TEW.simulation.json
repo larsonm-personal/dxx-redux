@@ -130,8 +130,8 @@
       ],
       "total_frames": 2711,
       "rng_end": {
-        "state": 3420633278,
-        "calls": 1225
+        "state": 1104050306,
+        "calls": 1269
       }
     },
     {
@@ -179,8 +179,8 @@
       ],
       "total_frames": 5412,
       "rng_end": {
-        "state": 2692760764,
-        "calls": 3643
+        "state": 4264298637,
+        "calls": 3636
       }
     },
     {
@@ -212,8 +212,8 @@
       ],
       "total_frames": 3707,
       "rng_end": {
-        "state": 4067394795,
-        "calls": 2590
+        "state": 4231662437,
+        "calls": 2588
       }
     },
     {
@@ -232,23 +232,23 @@
         },
         {
           "n": "open door",
-          "s": 21
+          "s": 22
         },
         {
           "n": "switch 0",
-          "s": 21
+          "s": 22
         },
         {
           "n": "gold key",
-          "s": 29
+          "s": 30
         },
         {
           "n": "switch 1",
-          "s": 53
+          "s": 54
         },
         {
           "n": "red key",
-          "s": 61
+          "s": 62
         },
         {
           "n": "switch 2",
@@ -256,17 +256,17 @@
         },
         {
           "n": "reactor",
-          "s": 75
+          "s": 76
         },
         {
           "n": "exit",
-          "s": 81
+          "s": 82
         }
       ],
-      "total_frames": 4886,
+      "total_frames": 4944,
       "rng_end": {
-        "state": 2017860009,
-        "calls": 3608
+        "state": 3399618196,
+        "calls": 3587
       }
     },
     {
@@ -931,8 +931,8 @@
       ],
       "total_frames": 3903,
       "rng_end": {
-        "state": 453873281,
-        "calls": 5504
+        "state": 3975588310,
+        "calls": 5521
       }
     },
     {
@@ -1199,10 +1199,10 @@
           "s": 106
         }
       ],
-      "total_frames": 6335,
+      "total_frames": 6338,
       "rng_end": {
-        "state": 2020955155,
-        "calls": 7286
+        "state": 3227628198,
+        "calls": 7169
       }
     },
     {
@@ -1275,17 +1275,17 @@
         },
         {
           "n": "reactor",
-          "s": 18
+          "s": 17
         },
         {
           "n": "exit",
-          "s": 28
+          "s": 27
         }
       ],
-      "total_frames": 1694,
+      "total_frames": 1603,
       "rng_end": {
-        "state": 2911663976,
-        "calls": 5247
+        "state": 1013734990,
+        "calls": 3961
       }
     }
   ]
