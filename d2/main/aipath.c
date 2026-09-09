@@ -47,6 +47,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "escort.h"
 #include "escort_goal_policy.h"
 #include "guidebot_route_internal.h"
+#include "guidebot_path_recovery.h"
 #include "secretarea.h"
 #include "switch.h"
 #endif
@@ -1713,6 +1714,10 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 
 	//	Set velocity (objp->mtype.phys_info.velocity) and orientation (objp->orient) for this object.
 	//--Int3_if(((aip->cur_path_index >= 0) && (aip->cur_path_index < aip->path_length)));
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	if (robptr->companion && Escort_route_goal.active)
+		guidebot_route_recover_approach(objp, &goal_point);
+#endif
 	ai_path_set_orient_and_vel(objp, &goal_point, player_visibility, vec_to_player);
 	//--Int3_if(((aip->cur_path_index >= 0) && (aip->cur_path_index < aip->path_length)));
 

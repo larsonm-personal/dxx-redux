@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 27,
+    "ok": 28,
     "failed": 1,
-    "timeout": 4
+    "timeout": 3
   },
   "levels": [
     {
@@ -427,15 +427,15 @@
         },
         {
           "n": "gold key",
-          "s": 44
+          "s": 45
         },
         {
           "n": "switch 4",
-          "s": 55
+          "s": 56
         },
         {
           "n": "red key",
-          "s": 59
+          "s": 60
         },
         {
           "n": "reactor",
@@ -446,7 +446,7 @@
           "s": 77
         }
       ],
-      "total_frames": 4596,
+      "total_frames": 4622,
       "rng_end": {
         "state": 1225123844,
         "calls": 2515
@@ -493,7 +493,7 @@
       "level_num": 13,
       "level_file": "level13.rl2",
       "route_input_sha256": "C4488FF1C9BF11E891E26D11551117CDA8DD77E48A871E79D14D0059AA4DE440",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -502,14 +502,29 @@
         {
           "n": "blue key",
           "s": 18
+        },
+        {
+          "n": "gold key",
+          "s": 35
+        },
+        {
+          "n": "red key",
+          "s": 53
+        },
+        {
+          "n": "reactor",
+          "s": 61
+        },
+        {
+          "n": "exit",
+          "s": 67
         }
       ],
-      "total_frames": 5494,
+      "total_frames": 4026,
       "rng_end": {
-        "state": 968558934,
-        "calls": 1041
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1003006595,
+        "calls": 2566
+      }
     },
     {
       "level_num": 14,
@@ -609,7 +624,7 @@
           "s": 67
         }
       ],
-      "total_frames": 4004,
+      "total_frames": 4006,
       "rng_end": {
         "state": 2724261021,
         "calls": 2980
@@ -635,34 +650,34 @@
         },
         {
           "n": "gold key",
-          "s": 39
+          "s": 40
         },
         {
           "n": "switch 0",
-          "s": 60
+          "s": 61
         },
         {
           "n": "red key",
-          "s": 67
+          "s": 68
         },
         {
           "n": "switch 3",
-          "s": 92
-        },
-        {
-          "n": "switch 4",
-          "s": 92
-        },
-        {
-          "n": "reactor",
           "s": 93
         },
         {
+          "n": "switch 4",
+          "s": 93
+        },
+        {
+          "n": "reactor",
+          "s": 94
+        },
+        {
           "n": "exit",
-          "s": 99
+          "s": 100
         }
       ],
-      "total_frames": 5948,
+      "total_frames": 6018,
       "rng_end": {
         "state": 1375466702,
         "calls": 4857
@@ -766,17 +781,17 @@
         },
         {
           "n": "gold key",
-          "s": 38
+          "s": 40
         },
         {
           "n": "red key",
-          "s": 73
+          "s": 79
         }
       ],
-      "total_frames": 5354,
+      "total_frames": 5686,
       "rng_end": {
-        "state": 3710626185,
-        "calls": 3384
+        "state": 3773384067,
+        "calls": 3846
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -907,7 +922,7 @@
         },
         {
           "n": "red key",
-          "s": 45
+          "s": 46
         },
         {
           "n": "reactor",
@@ -915,10 +930,10 @@
         },
         {
           "n": "exit",
-          "s": 86
+          "s": 87
         }
       ],
-      "total_frames": 5164,
+      "total_frames": 5193,
       "rng_end": {
         "state": 3922779228,
         "calls": 2587
@@ -1016,7 +1031,7 @@
           "s": 105
         }
       ],
-      "total_frames": 6277,
+      "total_frames": 6272,
       "rng_end": {
         "state": 2785661977,
         "calls": 8488
@@ -1120,18 +1135,18 @@
         },
         {
           "n": "hidden door",
-          "s": 44
+          "s": 45
         },
         {
           "n": "switch 9",
-          "s": 49
+          "s": 50
         },
         {
           "n": "hidden door",
           "s": 86
         }
       ],
-      "total_frames": 8815,
+      "total_frames": 8829,
       "rng_end": {
         "state": 3918510477,
         "calls": 5428

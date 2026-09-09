@@ -34,22 +34,22 @@
         },
         {
           "n": "fly-through 20",
-          "s": 49
+          "s": 51
         },
         {
           "n": "switch 2",
-          "s": 50
+          "s": 52
         },
         {
           "n": "reactor",
-          "s": 53
+          "s": 54
         },
         {
           "n": "exit",
-          "s": 62
+          "s": 63
         }
       ],
-      "total_frames": 3723,
+      "total_frames": 3795,
       "rng_end": {
         "state": 1280150804,
         "calls": 3459

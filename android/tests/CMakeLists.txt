@@ -232,7 +232,10 @@ target_compile_features(test_guidebot_route_certifier PRIVATE cxx_std_11)
 target_link_libraries(test_guidebot_route_certifier PRIVATE ${DXX_TARGET_PREFIX}maths)
 target_include_directories(test_guidebot_route_certifier PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
 
-add_executable(test_android_route_metadata_progress test_android_route_metadata_progress.c)
+add_executable(
+    test_android_route_metadata_progress
+    test_android_route_metadata_progress.c
+    "${DXX_TEST_SHARED_SOURCE_DIR}/android_route_metadata_progress_policy.c")
 target_include_directories(test_android_route_metadata_progress
                            PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
 
