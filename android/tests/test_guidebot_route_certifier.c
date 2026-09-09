@@ -1535,6 +1535,18 @@ static void test_keyed_door_blocks_objective_route_but_not_player_progress(void)
 	assert(!guidebot_route_side_passable_current(&view, 0, 0));
 	assert(guidebot_route_side_progress_reachable_current(&view, 0, 0));
 	assert(guidebot_route_segment_has_player_openable_keyed_door(&view, 0));
+	fixture.wall_clip[0] = view.wall_clip_hidden;
+	assert(!guidebot_route_side_passable_current(&view, 0, 0));
+	assert(guidebot_route_side_progress_reachable_current(&view, 0, 0));
+	assert(guidebot_route_segment_has_player_openable_keyed_door(&view, 0));
+	view.initial_key_mask = 0;
+	assert(!guidebot_route_side_progress_reachable_current(&view, 0, 0));
+	assert(!guidebot_route_segment_has_player_openable_keyed_door(&view, 0));
+	view.initial_key_mask = LEVEL_METADATA_KEY_MASK_BLUE;
+	fixture.wall_extra_flags[0] = view.wall_flag_door_locked;
+	assert(!guidebot_route_side_progress_reachable_current(&view, 0, 0));
+	assert(!guidebot_route_segment_has_player_openable_keyed_door(&view, 0));
+	fixture.wall_extra_flags[0] = 0;
 	fixture.wall_open[0] = 1;
 	assert(guidebot_route_side_passable_current(&view, 0, 0));
 }

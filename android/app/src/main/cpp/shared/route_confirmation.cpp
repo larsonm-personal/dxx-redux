@@ -1146,7 +1146,8 @@ int wall_accepts_route_flare(int wall_num)
 	    (wallp->flags & WALL_DOOR_LOCKED) ||
 	    wallp->clip_num < 0 || wallp->clip_num >= Num_wall_anims)
 		return 0;
-	if (WallAnims[wallp->clip_num].flags & WCF_HIDDEN) {
+	if (wallp->keys == KEY_NONE &&
+	    (WallAnims[wallp->clip_num].flags & WCF_HIDDEN)) {
 		child = Segments[wallp->segnum].children[wallp->sidenum];
 		if (child < 0 || child >= Num_segments ||
 		    !Automap_visited[wallp->segnum] || !Automap_visited[child])

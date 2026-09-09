@@ -139,7 +139,9 @@ static int guidebot_route_side_passable(
 		return 0;
 	if ((flags & view->wall_flag_door_locked) != 0)
 		return 0;
-	if (view->wall_clip_flags &&
+	/* Keyed doors require player assistance even when their animation uses
+	 * the primary texture (the hidden flag) */
+	if (key == view->wall_key_none && view->wall_clip_flags &&
 	    (view->wall_clip_flags(view->user, wall) & view->wall_clip_hidden) != 0 &&
 	    (!view->segment_is_explored ||
 	     !view->segment_is_explored(view->user, segment) ||
@@ -198,9 +200,7 @@ static int guidebot_wall_is_player_openable_keyed_door(
 	flags = view->wall_flags ? view->wall_flags(view->user, wall) : 0;
 	if ((flags & (view->wall_flag_door_opened |
 	              view->wall_flag_door_locked)) != 0 ||
-	    (view->wall_is_opening && view->wall_is_opening(view->user, wall)) ||
-	    (view->wall_clip_flags &&
-	     (view->wall_clip_flags(view->user, wall) & view->wall_clip_hidden) != 0))
+	    (view->wall_is_opening && view->wall_is_opening(view->user, wall)))
 		return 0;
 	return 1;
 }
@@ -993,7 +993,7 @@ static int guidebot_select_compiled_switch_guidance(
 	    distance[step->path_terminal_segment] < 0 && view->initial_key_mask) {
 		/* Keep the planned firing pose when the player can reach it through
 		 * owned-key doors. An unrelated approach waypoint is not a firing pose */
-		unsigned char reachable[LEVEL_METADATA_MAX_SEGMENTS] = {0};
+		unsigned char reachable[LEVEL_METADATA_MAX_SEGMENTS] = { 0 };
 		head = tail = 0;
 		queue[tail++] = view->start_segment;
 		reachable[view->start_segment] = 1;
@@ -1024,7 +1024,7 @@ static int guidebot_select_compiled_switch_guidance(
 		if (prefer_keyed_frontier && quality == LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE &&
 		    (!view->wall_shootable_from_position ||
 		     !view->wall_shootable_from_position(view->user, candidate_segment,
-		         step->switch_guidance_candidate_pos[segment], step->wall_num)))
+		                                         step->switch_guidance_candidate_pos[segment], step->wall_num)))
 			continue;
 
 		if (!guidebot_valid_segment(view, candidate_segment) ||

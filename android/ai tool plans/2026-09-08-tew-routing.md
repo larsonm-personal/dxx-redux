@@ -33,3 +33,14 @@ The timed doors are behaving as authored. Trigger 11 opens door 26, but the phys
 Initial repeat-2 completion: 6277 frames, all 11 objectives and exit; each timed switch is hit 20 frames after its fly-through opener. Added test_tew_level26_timed_switches.ps1 to check both corridor shots, prompt activation, exact objective order, deterministic results, and metadata agreement. Temporary geometry/timing probes removed. Full five-mission validation follows.
 
 Final TEW 26 validation: both Windows engines build (temp/tew26_verified_build.log), all 49 native tests pass (temp/tew26_ctest.log), and scoped quality checks pass. Dedicated repeat-2 tests confirm TEW 26 at 6277 frames and TEW 1 at 3562 frames, with deterministic JSON and metadata agreement. Full 120-level run android/temp/core_five_tew26_probe has 113 ok, no previously passing regressions, and only TEW 26 changes status. Refreshed changed simulation JSON; no static metadata change. TEW now passes 26/32. Remaining TEW: 9, 13, 15, 20, 23, secret -3. Counterstrike secret -5 remains deferred. Android device behavior was not tested.
+
+## TEW level 23 follow-up
+
+Investigate the unopened frontier at segment 77 after the blue key. Inspect wall state and visibility before changing shared interaction rules, then run deterministic level coverage and the five-mission corpus. Counterstrike secret -5 remains deferred.
+
+
+Wall 0 at 77:0 is an unlocked blue-key door with animation flags 12 (including WCF_HIDDEN). The actor owns the key and is at its frontier, but both the live certifier and flare eligibility required exploration beyond the hidden wall. Static planning correctly treated it as a keyed door. Allow owned-key doors with that animation flag to remain player-reachable and identify them as player-assisted frontiers; permit physical flares with the same key/lock validation. Keyless hidden-door discovery remains unchanged. No mission identifiers occur in engine behavior.
+
+The focused integration test completes all four objectives at frame 3819 in two identical runs and verifies a physical flare at the blue-key door. Native coverage includes missing-key and locked-door rejection for the same hidden animation. Both Windows engines build (temp/tew23_build.log); all 49 native tests pass (temp/tew23_ctest.log). Scoped mixed-language quality passes. The D1 full rebuild emits existing POrderList/SOrderList return-path warnings in untouched weapon.c; changed code adds no warnings. Android device behavior was not tested. Full corpus comparison follows.
+
+Final corpus android/temp/core_five_tew23_verified passes 114/120 with no previously passing regressions. TEW is 27/32; only TEW level 23 changes status (timeout to ok), and all other mission simulation files are byte-identical. Updated TEW.simulation.json; static mission metadata remains unchanged. Remaining TEW failures: 9, 13, 15, 20, secret -3. Counterstrike secret -5 remains deferred.
