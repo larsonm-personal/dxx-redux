@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 28,
+    "ok": 29,
     "failed": 1,
-    "timeout": 3
+    "timeout": 2
   },
   "levels": [
     {
@@ -769,7 +769,7 @@
       "level_num": 20,
       "level_file": "level20.rl2",
       "route_input_sha256": "95D65753C2FE0E39D216E4B921FA50F4B8CD0E0B18AD32F7D9A685F39A969E92",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -786,14 +786,21 @@
         {
           "n": "red key",
           "s": 79
+        },
+        {
+          "n": "boss",
+          "s": 111
+        },
+        {
+          "n": "exit",
+          "s": 146
         }
       ],
-      "total_frames": 5686,
+      "total_frames": 8752,
       "rng_end": {
-        "state": 3773384067,
-        "calls": 3846
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 2723477649,
+        "calls": 6128
+      }
     },
     {
       "level_num": 21,
@@ -1165,17 +1172,17 @@
       "objectives": [
         {
           "n": "reactor",
-          "s": 4
+          "s": 2
         },
         {
           "n": "exit",
-          "s": 6
+          "s": 3
         }
       ],
-      "total_frames": 351,
+      "total_frames": 195,
       "rng_end": {
-        "state": 2908542173,
-        "calls": 356
+        "state": 1585341753,
+        "calls": 264
       }
     },
     {

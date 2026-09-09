@@ -60,3 +60,19 @@ Final validation: android/temp/core_five_tew13_verified passes 115/120 with no p
 Move the stateful recovery implementation from the header to a compiled C source, leaving a declaration-only header. Register it in the shared D2 source list used by host and Android builds. Review recent related routing headers for similar implementations, then verify builds and unchanged deterministic TEW 13 results.
 
 Moved recovery into guidebot_path_recovery.c and the related metadata progress policy into android_route_metadata_progress_policy.c; headers now contain declarations and types only. Updated host/Android CMake and the existing progress-policy test target. Other recent routing and texture-diagnostic headers contain no similar function implementations. Both Windows engines build; the final D2 rebuild compiles and links the extracted progress policy, and all 49 native tests pass. TEW 13 repeat-2 integration remains deterministic at 4026 frames. Scoped quality passes. This organization-only follow-up does not regenerate simulation JSON or claim Android device validation.
+
+## TEW level 20 follow-up
+
+Inspect the physical frontier at segment 372 after all keys, toward the boss. Diagnose authored wall properties and live interaction before changing shared routing. Validate retained correction with deterministic level coverage and the five-mission corpus. Keep implementations in source files; Counterstrike secret -5 stays deferred.
+
+TEW 20's goal is the boss. Wall 130 at 722:3 is an ordinary unlocked auto-closing door; its reverse face (wall 131 at 723:1) is a countdown link. The live certifier blocked both directions until the countdown, losing the strategic chain and choosing nearby segment 372 with nothing to interact with. Treat countdown opening as an additional access mechanism, then apply normal approached-face door checks before countdown. The earlier Buddy-proof hypothesis was based on misreading flag 16 and was discarded; no corresponding change remains. All temporary probes removed.
+
+Initial completion is 8752 frames. Added a repeat-2 TEW 20 integration test requiring the five-objective sequence, physical player door interaction, deterministic JSON, and metadata agreement. Native coverage checks directional countdown-door access and preserves locked-door and missing-key rejection.
+
+Focused repeat-2 integration passes at 8752 frames (temp/tew20_integration.log). Both Windows engines build (temp/tew20_verified_build.log); all 49 native tests pass (temp/tew20_ctest.log), including ordinary access opposite a locked countdown face, locked countdown-only frontier behavior, and key requirements. Scoped quality passes. The full D1 rebuild still emits the existing untouched weapon.c return-path warnings. Android device behavior was not tested. Full five-mission comparison follows.
+
+Final corpus android/temp/core_five_tew20_verified passes 116/120 with no previously passing regressions. TEW is 29/32; only level 20 changes status. Refreshed the two changed simulation files (TEW and Castaway Redux); Counterstrike, First Strike, and Obsidian are byte-identical. No static metadata change. Remaining TEW failures: 9, 15, secret -3. Counterstrike secret -5 remains deferred.
+
+## TEW level 9 follow-up
+
+Trace the planned gold-key route against the live physical frontier, then inspect the incomplete reactor route. Retain general fixes only and verify deterministic simulation plus the five-mission set. Preserve prior uncommitted TEW 20 work and defer Counterstrike secret -5.

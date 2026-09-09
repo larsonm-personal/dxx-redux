@@ -1664,6 +1664,7 @@ static void test_deferred_countdown_frontier_stops_before_closed_link(void)
 	view = make_view(&fixture);
 	fixture.wall_open[0] = 1;
 	fixture.control_center_link[1] = 1;
+	fixture.wall_extra_flags[1] = view.wall_flag_door_locked;
 	fixture.wall_open[2] = 1;
 
 	assert(
@@ -1676,6 +1677,30 @@ static void test_deferred_countdown_frontier_stops_before_closed_link(void)
 	assert(
 	    guidebot_route_best_physical_frontier(
 	        &view, 0, 3, 200, -1, -1, -1, -1, &Workspace) == 3);
+}
+
+static void test_reverse_countdown_link_preserves_ordinary_door_access(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+
+	initialize_fixture(&fixture);
+	view = make_view(&fixture);
+	fixture.wall[1][1] = 3;
+	fixture.control_center_link[3] = 1;
+	fixture.wall_extra_flags[3] = view.wall_flag_door_locked;
+	assert(guidebot_route_side_passable_current(&view, 0, 0));
+	assert(!guidebot_route_side_passable_current(&view, 1, 1));
+	fixture.wall_extra_flags[0] = view.wall_flag_door_locked;
+	assert(!guidebot_route_side_passable_current(&view, 0, 0));
+	fixture.wall_extra_flags[0] = 0;
+	fixture.wall_key[0] = view.wall_key_blue;
+	assert(!guidebot_route_side_progress_reachable_current(&view, 0, 0));
+	view.initial_key_mask = LEVEL_METADATA_KEY_MASK_BLUE;
+	assert(guidebot_route_side_progress_reachable_current(&view, 0, 0));
+	assert(!guidebot_route_side_passable_current(&view, 0, 0));
+	view.initial_control_center_destroyed = 1;
+	assert(guidebot_route_side_passable_current(&view, 1, 1));
 }
 
 static void test_physical_frontier_can_plan_toward_triggered_link(void)
@@ -2277,6 +2302,7 @@ int main(int argc, char **argv)
 	test_physical_frontier_follows_strategic_route();
 	test_exit_projection_skips_only_countdown_steps();
 	test_deferred_countdown_frontier_stops_before_closed_link();
+	test_reverse_countdown_link_preserves_ordinary_door_access();
 	test_physical_frontier_can_plan_toward_triggered_link();
 	test_physical_frontier_matches_engine_across_narrow_portal();
 	test_unreachable_switch_uses_physical_frontier();

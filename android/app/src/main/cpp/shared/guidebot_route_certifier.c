@@ -97,9 +97,11 @@ static int guidebot_route_side_passable(
 	if (view->side_is_control_center_link &&
 	    (view->side_is_control_center_link(view->user, segment, side) ||
 	     (reverse >= 0 && view->side_is_control_center_link(
-	                          view->user, child, reverse))))
-		return view->initial_control_center_destroyed ||
-		       allow_control_center_link;
+	                          view->user, child, reverse))) &&
+	    (view->initial_control_center_destroyed || allow_control_center_link))
+		return 1;
+	/* A countdown link is an additional way to open a portal. Before the
+	 * countdown, still honor ordinary door access from the approached face */
 	local_hard_blocked =
 	    view->side_is_hard_blocked &&
 	    view->side_is_hard_blocked(view->user, segment, side);

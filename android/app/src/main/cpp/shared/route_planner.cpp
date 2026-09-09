@@ -4436,6 +4436,15 @@ route_plan_result plan_route(
 			if (diagnostic.problem.empty())
 				diagnostic.problem = "switch activation route unresolved";
 		}
+        if (snapshot.topology.segments.size() == 871) for (const auto &step : diagnostic.steps) {
+            fprintf(stderr, "PARTIAL-PROBE step=%s", step.label.c_str());
+            for (size_t e=0; e<step.path.sides.size(); ++e) {
+                const int seg=step.path.segments[e], side=step.path.sides[e];
+                const int w=snapshot.topology.segments[seg].sides[side].wall;
+                if (w>=0) fprintf(stderr, " %d:%d:w%d", seg, side, w);
+            }
+            fprintf(stderr, "\n");
+        }
 		if (!have_partial ||
 		    diagnostic.steps.size() >= best_partial.steps.size())
 			return diagnostic;
