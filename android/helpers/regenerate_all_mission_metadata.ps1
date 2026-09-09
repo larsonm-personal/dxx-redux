@@ -77,7 +77,8 @@ if ($Engine -eq 'Windows') {
     if ($NoBuild) { $hostArgs.NoBuild = $true }
     if ($routingArchivePaths.Count -gt 0) {
         $hostArgs.ArchivePaths = $routingArchivePaths
-        $hostArgs.CdSourceIds = @('__none__')
+        $routingCdSourceIds = @($routingMissions.CdSourceId | Where-Object { $_ })
+        $hostArgs.CdSourceIds = if ($routingCdSourceIds.Count) { $routingCdSourceIds } else { @('__none__') }
     } elseif ($ArchiveNames) {
         $hostArgs.ArchiveNames = @($ArchiveNames)
         $hostArgs.CdSourceIds = @('__none__')

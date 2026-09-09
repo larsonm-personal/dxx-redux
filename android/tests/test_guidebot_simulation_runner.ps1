@@ -80,13 +80,15 @@ try {
     }
     $routingSet = @(Invoke-DryRun -Name routing_set -RoutingDevelopmentSet)
     $routingFiles = @($routingSet.identity | ForEach-Object { $_.Split('|')[0] } | Select-Object -Unique)
-    if (($routingFiles -join ',') -cne 'castaway_redux.json,Counterstrike.json,FirstStrike.json,Obsidian.json,plutonia.json,TEW.json') {
+    if (($routingFiles -join ',') -cne 'castaway_redux.json,CD - Descent II - The Vertigo Series (USA).json,Counterstrike.json,FirstStrike.json,Obsidian.json,plutonia.json,TEW.json,Vignettes.json') {
         throw "Routing development set selected unexpected mission files: $($routingFiles -join ', ')"
     }
     $tew = @($routingSet | Where-Object { $_.identity -like 'TEW.json|*' })
     $plutonia = @($routingSet | Where-Object { $_.identity -like 'plutonia.json|*' })
-    if ($routingSet.Count -ne 152 -or $tew.Count -ne 32 -or $plutonia.Count -ne 32) {
-        throw 'The six-mission set must include all 32 TEW and 32 Plutonia levels and 152 total levels'
+    $vertigo = @($routingSet | Where-Object { $_.identity -like 'CD - Descent II - The Vertigo Series (USA).json|*' })
+    $vignettes = @($routingSet | Where-Object { $_.identity -like 'Vignettes.json|*' })
+    if ($routingSet.Count -ne 203 -or $tew.Count -ne 32 -or $plutonia.Count -ne 32 -or $vertigo.Count -ne 24 -or $vignettes.Count -ne 27) {
+        throw 'The eight-mission set must include 24 Vertigo and 27 Vignettes levels and 203 total levels'
     }
     $firstStrike = @($routingSet | Where-Object { $_.identity -like 'FirstStrike.json|*' })
     if ($firstStrike.Count -ne 30 -or @($firstStrike | Where-Object engine_mode -ne 'd1_in_d2').Count) {

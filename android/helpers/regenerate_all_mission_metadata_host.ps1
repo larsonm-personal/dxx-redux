@@ -905,7 +905,7 @@ $batchStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 $seenCdDescriptorHashes = @{}
 
 $allCdSources =
-if ($hasArchiveFilter) {
+if ($hasArchiveFilter -and (-not $CdSourceIds -or $CdSourceIds -contains '__none__')) {
     @()
 } else {
     @(Resolve-CdLevelMetadataSources -RepoRoot $repoRoot -ManifestPath $cdSourceManifest -OutputDir $zipDir)

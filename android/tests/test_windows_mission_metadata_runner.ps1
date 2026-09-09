@@ -45,8 +45,8 @@ $containedBuildOutputCount = [regex]::Matches(
     $hostRunner,
     '2>&1\s*\|\s*ForEach-Object \{ Write-Host \(\[string\]\$_\) \}'
 ).Count
-if ($containedBuildOutputCount -lt 5) {
-    throw "All five Gradle and native build invocations must contain console output; found $containedBuildOutputCount"
+if ($containedBuildOutputCount -ne 4) {
+    throw "All four Windows/Linux build and fallback invocations must contain console output; found $containedBuildOutputCount"
 }
 
 $fixtureResult = @(Invoke-NoisyBuildFixture)

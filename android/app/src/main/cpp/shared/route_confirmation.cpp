@@ -1951,7 +1951,12 @@ extern "C" int route_confirmation_drive_companion(object *objp)
 			create_guidebot_route_path_to_segment(objp, State.target_seg, Max_escort_length, 1);
 		refine_last_path_point(objp);
 	}
-	if (actor_reached_target(objp)) {
+	// Being near a firing waypoint is not enough if geometry still blocks the shot
+	const bool needs_primary_shot = !State.action_applied && valid_object(State.target_objnum) &&
+	                                (State.step.activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_REACTOR ||
+	                                 State.step.activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BOSS);
+	if (actor_reached_target(objp) &&
+	    (!needs_primary_shot || target_is_visible(objp, &Objects[State.target_objnum]))) {
 		vm_vec_zero(&objp->mtype.phys_info.velocity);
 		vm_vec_zero(&objp->mtype.phys_info.thrust);
 		return 1;

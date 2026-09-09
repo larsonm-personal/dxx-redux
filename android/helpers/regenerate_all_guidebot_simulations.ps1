@@ -97,6 +97,7 @@ function Get-GuidebotMissionFiles {
     if ($MissionJson) {
         $files = @($files | Where-Object {
                 $relative = $_.FullName.Substring($missionRoot.Length).TrimStart('\', '/').Replace('\', '/')
+                if ($RoutingDevelopmentSet) { return $relative -in $MissionJson }
                 foreach ($pattern in $MissionJson) {
                     if ($_.Name -like $pattern -or $_.BaseName -like $pattern -or $relative -like $pattern) { return $true }
                 }
