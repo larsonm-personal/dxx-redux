@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 30,
-    "timeout": 2
+    "ok": 31,
+    "timeout": 1
   },
   "levels": [
     {
@@ -1132,7 +1132,7 @@
       "level_num": -3,
       "level_file": "slevel2.rl2",
       "route_input_sha256": "7D203B189A6ABF8C1F7BAA983D267CAB57EE031C5FA39708027505C0716DFC7F",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -1169,14 +1169,33 @@
         {
           "n": "hidden door",
           "s": 86
+        },
+        {
+          "n": "pass-through 5",
+          "s": 88
+        },
+        {
+          "n": "hidden door",
+          "s": 92
+        },
+        {
+          "n": "hidden door",
+          "s": 93
+        },
+        {
+          "n": "reactor",
+          "s": 93
+        },
+        {
+          "n": "exit",
+          "s": 106
         }
       ],
-      "total_frames": 8829,
+      "total_frames": 6355,
       "rng_end": {
-        "state": 3918510477,
-        "calls": 5428
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 550942583,
+        "calls": 7282
+      }
     },
     {
       "level_num": -4,

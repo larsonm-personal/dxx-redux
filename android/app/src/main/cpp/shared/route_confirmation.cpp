@@ -1212,8 +1212,10 @@ int find_route_flare_target(object *actor, int *segnum, int *sidenum,
 		}
 	}
 	if (!State.action_applied &&
-	    State.step.activation_kind ==
-	        LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR &&
+	    (State.step.activation_kind ==
+	         LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR ||
+	     State.step.activation_kind ==
+	         LEVEL_METADATA_ROUTE_ACTIVATION_PASS_THROUGH_TRIGGER) &&
 	    objective_source(segnum, sidenum)) {
 		const int objective_wall =
 		    Segments[*segnum].sides[*sidenum].wall_num;
@@ -1507,6 +1509,13 @@ void apply_objective_action(object *actor)
 						     "fly-through trigger has no traversable child segment");
 						break;
 					}
+					// A crossing trigger can be mounted on a closed, openable door
+					const int source_wall = Segments[segnum].sides[sidenum].wall_num;
+					if (source_wall >= 0 && source_wall < Num_walls &&
+					    Walls[source_wall].type == WALL_DOOR &&
+					    Walls[source_wall].state == WALL_DOOR_CLOSED &&
+					    !apply_flare_fallback(actor, segnum, sidenum, source_wall))
+						break;
 					State.action_applied = 1;
 					State.target_seg = child;
 					compute_segment_center(&State.target_pos,
