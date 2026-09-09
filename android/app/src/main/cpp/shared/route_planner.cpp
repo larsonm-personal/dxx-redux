@@ -3493,6 +3493,33 @@ class dependency_planner
 		return false;
 	}
 
+	void destroy_control_center()
+	{
+		state_.progress.control_center_destroyed = true;
+		/* Reactor destruction opens linked doors on both faces. Record the
+		 * predicted wall state as well as passage access so fly-through trigger
+		 * prerequisites see the same opening as ordinary path searches */
+		auto open_wall = [&](int wall) {
+			if (!valid_wall(snapshot_, wall))
+				return;
+			const auto kind = route_progress_wall_kind(snapshot_, state_.progress, wall);
+			if (kind == route_wall_kind::door)
+				state_.progress.wall_opened[wall] = 1;
+			else if (kind == route_wall_kind::blastable)
+				state_.progress.destroyed_blastable_walls[wall] = 1;
+		};
+		for (int segment = 0; segment < static_cast<int>(snapshot_.topology.segments.size()); ++segment)
+			for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+				if (!snapshot_.state.segments[segment].sides[side].control_center_link)
+					continue;
+				const auto &link = snapshot_.topology.segments[segment].sides[side];
+				open_wall(link.wall);
+				if (valid_segment(snapshot_, link.child) && link.reverse_side >= 0 &&
+				    link.reverse_side < LEVEL_METADATA_MAX_SIDES)
+					open_wall(snapshot_.topology.segments[link.child].sides[link.reverse_side].wall);
+			}
+	}
+
 	bool progress_primary(bool &progressed)
 	{
 		progressed = false;
@@ -3508,7 +3535,7 @@ class dependency_planner
 					continue;
 				if (!append_target_step(route_semantic_step_kind::boss, boss, "Boss robot"))
 					return false;
-				state_.progress.control_center_destroyed = true;
+				destroy_control_center();
 				progressed = true;
 				return true;
 			}
@@ -3519,7 +3546,7 @@ class dependency_planner
 			        route_semantic_step_kind::reactor, targets_.reactor,
 			        "Reactor"))
 				return false;
-			state_.progress.control_center_destroyed = true;
+			destroy_control_center();
 			progressed = true;
 		}
 		return true;

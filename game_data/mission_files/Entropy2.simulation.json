@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
-    "timeout": 2
+    "ok": 5,
+    "timeout": 1
   },
   "levels": [
     {
@@ -125,8 +125,8 @@
     {
       "level_num": 4,
       "level_file": "e2v-4.rl2",
-      "route_input_sha256": "745974C3168E25E11B2980BFFE70D24787CE838E18A13ED8520EA8DACF1B7AA7",
-      "status": "timeout",
+      "route_input_sha256": "96FFA836996306C797229915A09331D619473807EA59D8BEED10ABC1096E296E",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -151,14 +151,21 @@
         {
           "n": "reactor",
           "s": 29
+        },
+        {
+          "n": "pass-through 12",
+          "s": 32
+        },
+        {
+          "n": "exit",
+          "s": 52
         }
       ],
-      "total_frames": 5344,
+      "total_frames": 3132,
       "rng_end": {
-        "state": 2682250239,
-        "calls": 2026
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1811460131,
+        "calls": 2150
+      }
     },
     {
       "level_num": 5,

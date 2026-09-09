@@ -7,6 +7,7 @@ function Get-RoutingDevelopmentMissions {
         [pscustomobject]@{ Json = 'TEW.json'; Archive = 'TEW.zip'; BuiltInGame = '' },
         [pscustomobject]@{ Json = 'plutonia.json'; Archive = 'plutonia.zip'; BuiltInGame = '' },
         [pscustomobject]@{ Json = 'CD - Descent II - The Vertigo Series (USA).json'; Archive = ''; BuiltInGame = ''; CdSourceId = 'descent-ii-vertigo-usa' },
-        [pscustomobject]@{ Json = 'Vignettes.json'; Archive = 'Vignettes.zip'; BuiltInGame = '' }
+        [pscustomobject]@{ Json = 'Vignettes.json'; Archive = 'Vignettes.zip'; BuiltInGame = '' },
+        [pscustomobject]@{ Json = 'Entropy2.json'; Archive = 'Entropy2.zip'; BuiltInGame = '' }
     )
 }

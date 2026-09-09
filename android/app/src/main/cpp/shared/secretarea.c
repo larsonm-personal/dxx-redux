@@ -1334,8 +1334,14 @@ static int secret_area_side_is_control_center_link(void *user, int seg, int side
 	if (!control_center_triggers_are_valid(&ControlCenterTriggers, Highest_segment_index))
 		return 0;
 	for (i = 0; i < ControlCenterTriggers.num_links; ++i)
-		if (ControlCenterTriggers.seg[i] == seg && ControlCenterTriggers.side[i] == side)
-			return 1;
+		if (ControlCenterTriggers.seg[i] == seg && ControlCenterTriggers.side[i] == side) {
+			const int wall_num = Segments[seg].sides[side].wall_num;
+			/* Reactor links call wall_toggle in both engines. It opens doors
+			 * and destroys blastable walls, but leaves closed/grate walls intact */
+			return secret_area_wall_index_valid(wall_num) &&
+			       (Walls[wall_num].type == WALL_DOOR ||
+			        Walls[wall_num].type == WALL_BLASTABLE);
+		}
 	return 0;
 }
 
