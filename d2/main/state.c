@@ -1122,7 +1122,7 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 	laser_state.proximity_dropped = PHYSFSX_readSXE32(fp, swap);
 	laser_state.helix_orientation = PHYSFSX_readSXE32(fp, swap);
 	laser_state.smartmines_dropped = PHYSFSX_readSXE32(fp, swap);
-	laser_state.last_omega_fire_time = (int)(GameTime64 + state_read_time_delta(fp, swap));
+	laser_state.last_omega_fire_time = GameTime64 + state_read_time_delta(fp, swap);
 	if (version >= STATE_FIDELITY_VERSION) {
 		state_read_weapon_fidelity_state(fp, swap, apply_runtime_state);
 		state_read_morph_state(fp, swap, apply_runtime_state);

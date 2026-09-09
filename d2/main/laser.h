@@ -108,7 +108,7 @@ typedef struct laser_runtime_state {
 	int proximity_dropped;
 	int helix_orientation;
 	int smartmines_dropped;
-	int last_omega_fire_time;
+	fix64 last_omega_fire_time;
 } laser_runtime_state;
 
 void Laser_render(struct object *obj);
