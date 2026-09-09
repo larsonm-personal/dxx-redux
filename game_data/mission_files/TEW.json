@@ -2361,15 +2361,15 @@
         "mine_volume": 29442700.0,
         "mine_volume_normalized": 6.43852,
         "mine_volume_text": "6.4x",
-        "travel_distance": 1227.7,
-        "travel_time_seconds": 25,
-        "travel_time_text": "0M:25S",
+        "travel_distance": 8567.7,
+        "travel_time_seconds": 171,
+        "travel_time_text": "2M:51S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -2391,11 +2391,121 @@
             },
             "distance": 1227.7,
             "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 3",
+            "seg": 308,
+            "side": 2,
+            "wall": 136,
+            "label_pos": {
+              "x": 608.7,
+              "y": -10.0,
+              "z": -298.9
+            },
+            "distance": 2950.4,
+            "trigger": 3,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 309,
+                "side": 5,
+                "wall": 68
+              },
+              {
+                "seg": 336,
+                "side": 5,
+                "wall": 66
+              },
+              {
+                "seg": 313,
+                "side": 5,
+                "wall": 64
+              },
+              {
+                "seg": 267,
+                "side": 5,
+                "wall": 73
+              },
+              {
+                "seg": 299,
+                "side": 5,
+                "wall": 75
+              },
+              {
+                "seg": 328,
+                "side": 5,
+                "wall": 71
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 270,
+            "label_pos": {
+              "x": 519.1,
+              "y": -10.0,
+              "z": -246.8
+            },
+            "distance": 100.2,
+            "key": "gold"
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 832,
+            "label_pos": {
+              "x": 519.1,
+              "y": -126.3,
+              "z": -528.2
+            },
+            "distance": 1337.9,
+            "key": "red"
+          },
+          {
+            "index": 5,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 344,
+            "label_pos": {
+              "x": 497.8,
+              "y": -100.0,
+              "z": -260.9
+            },
+            "distance": 2800.0
+          },
+          {
+            "index": 6,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 337,
+            "side": 3,
+            "wall": 56,
+            "label_pos": {
+              "x": 519.1,
+              "y": 25.0,
+              "z": -246.8
+            },
+            "distance": 151.5,
+            "trigger": 0,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "shared route planning reached its work budget",
+        "route_note": "key-route optimization reached its work budget",
         "notes": [
+          "key-route optimization reached its work budget",
           "no guidebot or guidebot start cage placed in this level"
         ]
       },

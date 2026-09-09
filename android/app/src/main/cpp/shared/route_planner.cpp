@@ -4360,8 +4360,9 @@ route_plan_result plan_route(
 		    });
 	};
 	auto collect_completing_plans = [&](bool transition_aware_paths) {
-		for (int allowed_key_mask = 0; allowed_key_mask < 8;
-		     ++allowed_key_mask) {
+		// Find a usable route before spending the budget on key minimization
+		for (int trial = -1; trial < 8; ++trial) {
+			const int allowed_key_mask = trial < 0 ? relevant_key_mask : trial;
 			if ((allowed_key_mask & ~relevant_key_mask) != 0)
 				continue;
 			std::vector<int> selected_keys;
@@ -4369,6 +4370,10 @@ route_plan_result plan_route(
 				if (allowed_key_mask & (1 << key))
 					selected_keys.push_back(key);
 			do {
+				if (visibility.analysis_budget &&
+				    (visibility.analysis_budget->exhausted ||
+				     visibility.analysis_budget->was_cancelled))
+					return;
 				std::array<int, 3> key_order = default_key_order;
 				int order_index = 0;
 				for (const int key : selected_keys)
@@ -4376,9 +4381,17 @@ route_plan_result plan_route(
 				for (const int key : default_key_order)
 					if (!(allowed_key_mask & (1 << key)))
 						key_order[order_index++] = key;
+				if (trial < 0)
+					key_order = default_key_order;
+				else if (allowed_key_mask == relevant_key_mask &&
+				         key_order == default_key_order)
+					continue;
 				auto candidate = plan_mode(
 				    allowed_key_mask, key_order, false, false,
 				    transition_aware_paths);
+				// An interrupted comparison cannot invalidate an earlier complete plan
+				if (visibility.analysis_budget && visibility.analysis_budget->exhausted)
+					candidate.status = route_plan_status::partial;
 				if (candidate.status == route_plan_status::ok) {
 #if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 					fprintf(
@@ -4421,8 +4434,8 @@ route_plan_result plan_route(
 					best_partial = std::move(candidate);
 					have_partial = true;
 				}
-			} while (std::next_permutation(
-			    selected_keys.begin(), selected_keys.end()));
+			} while (trial >= 0 && std::next_permutation(
+			                           selected_keys.begin(), selected_keys.end()));
 		}
 	};
 	collect_completing_plans(true);
@@ -4431,20 +4444,13 @@ route_plan_result plan_route(
 	if (completing_plans.empty()) {
 		auto diagnostic = plan_mode(
 		    relevant_key_mask, default_key_order, false, true);
+		if (visibility.analysis_budget && visibility.analysis_budget->exhausted)
+			diagnostic.status = route_plan_status::partial;
 		if (has_unresolved_trigger(diagnostic)) {
 			diagnostic.status = route_plan_status::partial;
 			if (diagnostic.problem.empty())
 				diagnostic.problem = "switch activation route unresolved";
 		}
-        if (snapshot.topology.segments.size() == 871) for (const auto &step : diagnostic.steps) {
-            fprintf(stderr, "PARTIAL-PROBE step=%s", step.label.c_str());
-            for (size_t e=0; e<step.path.sides.size(); ++e) {
-                const int seg=step.path.segments[e], side=step.path.sides[e];
-                const int w=snapshot.topology.segments[seg].sides[side].wall;
-                if (w>=0) fprintf(stderr, " %d:%d:w%d", seg, side, w);
-            }
-            fprintf(stderr, "\n");
-        }
 		if (!have_partial ||
 		    diagnostic.steps.size() >= best_partial.steps.size())
 			return diagnostic;
@@ -4476,6 +4482,11 @@ route_plan_result plan_route(
 	}
 	best->required_key_mask = required_key_mask;
 	best->completing_key_mask_set = completing_key_mask_set;
+	if (visibility.analysis_budget && visibility.analysis_budget->exhausted) {
+		if (!best->note.empty())
+			best->note += "; ";
+		best->note += "key-route optimization reached its work budget";
+	}
 	return std::move(*best);
 }
 
@@ -4951,8 +4962,11 @@ extern "C" int route_planner_plan_view(
 				}
 			}
 		}
-		if (analysis_budget.was_cancelled || analysis_budget.exhausted) {
-			if (analysis_budget.exhausted && result.steps.size() > 1 &&
+		if (analysis_budget.was_cancelled ||
+		    (analysis_budget.exhausted &&
+		     (endpoint_kind != ROUTE_PLANNER_ENDPOINT_END_OF_LEVEL ||
+		      result.status != dxx_route::route_plan_status::ok))) {
+			if (!analysis_budget.was_cancelled && analysis_budget.exhausted && result.steps.size() > 1 &&
 			    project_plan(
 			        result, endpoint_kind, *state, unexplored, *summary,
 			        detail)) {
