@@ -188,6 +188,12 @@ void remove_ordinary_robots(void)
 				vm_vec_zero(&objp->mtype.phys_info.thrust);
 				vm_vec_zero(&objp->mtype.phys_info.rotvel);
 				vm_vec_zero(&objp->mtype.phys_info.rotthrust);
+			} else if (objp->type == OBJ_ROBOT && objnum != State.actor_objnum &&
+			           objp->control_type == CT_NONE &&
+			           objp->ctype.ai_info.dying_start_time) {
+				/* Death rolls advance through AI dispatch before the normal
+				 * explosion releases contents. Only living robots stay frozen */
+				objp->control_type = CT_AI;
 			}
 			continue;
 		}

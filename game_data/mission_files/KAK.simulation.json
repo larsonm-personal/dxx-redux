@@ -7,15 +7,15 @@
   "seed": 1,
   "status": "failed",
   "level_counts": {
-    "failed": 2,
-    "timeout": 2
+    "failed": 3,
+    "timeout": 1
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "toro_s.rl2",
       "route_input_sha256": "9F4282C65B27D8F0B038AA439007CAB4CDB27381BA0D3AD2455D61C298C0E977",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -32,14 +32,18 @@
         {
           "n": "blastable wall",
           "s": 26
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 32
         }
       ],
-      "total_frames": 5318,
+      "total_frames": 1931,
       "rng_end": {
-        "state": 963811686,
-        "calls": 2113
+        "state": 2006275423,
+        "calls": 2186
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 2,
@@ -90,10 +94,10 @@
           "s": 30
         }
       ],
-      "total_frames": 7931,
+      "total_frames": 7017,
       "rng_end": {
-        "state": 1935767572,
-        "calls": 1667
+        "state": 125488981,
+        "calls": 1708
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

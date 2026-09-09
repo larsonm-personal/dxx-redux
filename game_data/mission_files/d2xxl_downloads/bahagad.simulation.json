@@ -8,9 +8,8 @@
     "seed": 1,
     "status": "partial",
     "level_counts": {
-      "ok": 6,
-      "failed": 1,
-      "timeout": 1
+      "ok": 7,
+      "failed": 1
     },
     "levels": [
       {
@@ -332,7 +331,7 @@
         "level_num": 8,
         "level_file": "world2d.rl2",
         "route_input_sha256": "B41D8A30FFC8E833F0E75E5B06F553853A06F80E0F2C1474FD08DDD434D9DA99",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -373,14 +372,25 @@
           {
             "n": "switch 11",
             "s": 95
+          },
+          {
+            "n": "destroy robot carrying red key",
+            "s": 100
+          },
+          {
+            "n": "boss",
+            "s": 132
+          },
+          {
+            "n": "exit",
+            "s": 133
           }
         ],
-        "total_frames": 9432,
+        "total_frames": 7980,
         "rng_end": {
-          "state": 1371383653,
-          "calls": 3612
-        },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+          "state": 3989394595,
+          "calls": 5094
+        }
       }
     ]
   },
@@ -393,9 +403,8 @@
     "seed": 1,
     "status": "partial",
     "level_counts": {
-      "ok": 8,
-      "failed": 1,
-      "timeout": 1
+      "ok": 9,
+      "failed": 1
     },
     "levels": [
       {
@@ -717,7 +726,7 @@
         "level_num": 8,
         "level_file": "world2d.rl2",
         "route_input_sha256": "078A1A428A65EDF76D07FDE2841BB6D057291601E844CC7F8B7A67A3DBFE8717",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -738,14 +747,45 @@
           {
             "n": "switch 4",
             "s": 21
+          },
+          {
+            "n": "destroy robot carrying blue key",
+            "s": 44
+          },
+          {
+            "n": "switch 9",
+            "s": 72
+          },
+          {
+            "n": "destroy robot carrying gold key",
+            "s": 80
+          },
+          {
+            "n": "open door",
+            "s": 94
+          },
+          {
+            "n": "switch 11",
+            "s": 94
+          },
+          {
+            "n": "destroy robot carrying red key",
+            "s": 99
+          },
+          {
+            "n": "boss",
+            "s": 131
+          },
+          {
+            "n": "exit",
+            "s": 132
           }
         ],
-        "total_frames": 6237,
+        "total_frames": 7935,
         "rng_end": {
-          "state": 1770763692,
-          "calls": 1675
-        },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+          "state": 1170844146,
+          "calls": 5189
+        }
       },
       {
         "level_num": -1,

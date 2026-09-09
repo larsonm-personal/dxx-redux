@@ -3275,15 +3275,15 @@
         "mine_volume": 346074000.0,
         "mine_volume_normalized": 75.6792,
         "mine_volume_text": "76x",
-        "travel_distance": 3593.7,
-        "travel_time_seconds": 72,
-        "travel_time_text": "1M:12S",
+        "travel_distance": 4701.0,
+        "travel_time_seconds": 94,
+        "travel_time_text": "1M:34S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -3324,66 +3324,6 @@
           },
           {
             "index": 2,
-            "kind": "trigger",
-            "activation_kind": "fly_through_trigger",
-            "label": "Fly-through trigger 9",
-            "seg": 164,
-            "side": 5,
-            "wall": 51,
-            "label_pos": {
-              "x": -25.0,
-              "y": 54.6,
-              "z": 21.9
-            },
-            "distance": 655.6,
-            "trigger": 9,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 49,
-                "side": 2,
-                "wall": 101
-              },
-              {
-                "seg": 68,
-                "side": 2,
-                "wall": 111
-              },
-              {
-                "seg": 48,
-                "side": 5,
-                "wall": 103
-              },
-              {
-                "seg": 67,
-                "side": 5,
-                "wall": 109
-              },
-              {
-                "seg": 8,
-                "side": 4,
-                "wall": 110
-              },
-              {
-                "seg": 9,
-                "side": 5,
-                "wall": 112
-              },
-              {
-                "seg": 45,
-                "side": 4,
-                "wall": 104
-              },
-              {
-                "seg": 44,
-                "side": 5,
-                "wall": 102
-              }
-            ]
-          },
-          {
-            "index": 3,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "blue key",
@@ -3393,70 +3333,11 @@
               "y": 54.6,
               "z": 21.9
             },
-            "distance": 20.0,
+            "distance": 665.6,
             "key": "blue"
           },
           {
-            "index": 4,
-            "kind": "trigger",
-            "activation_kind": "fly_through_trigger",
-            "label": "Fly-through trigger 12",
-            "seg": 90,
-            "side": 2,
-            "wall": 119,
-            "label_pos": {
-              "x": -140.0,
-              "y": 54.6,
-              "z": 251.9
-            },
-            "distance": 752.4,
-            "trigger": 12,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 119,
-                "side": 2,
-                "wall": 116
-              },
-              {
-                "seg": 100,
-                "side": 5,
-                "wall": 107
-              },
-              {
-                "seg": 36,
-                "side": 4,
-                "wall": 105
-              },
-              {
-                "seg": 118,
-                "side": 2
-              },
-              {
-                "seg": 101,
-                "side": 2,
-                "wall": 106
-              },
-              {
-                "seg": 7,
-                "side": 4,
-                "wall": 115
-              },
-              {
-                "seg": 10,
-                "side": 5,
-                "wall": 113
-              },
-              {
-                "seg": 37,
-                "side": 5,
-                "wall": 108
-              }
-            ]
-          },
-          {
-            "index": 5,
+            "index": 3,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -3466,11 +3347,11 @@
               "y": 54.6,
               "z": 251.9
             },
-            "distance": 37.4,
+            "distance": 759.3,
             "key": "gold"
           },
           {
-            "index": 6,
+            "index": 4,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -3484,7 +3365,7 @@
             "key": "red"
           },
           {
-            "index": 7,
+            "index": 5,
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
@@ -3495,10 +3376,57 @@
               "z": -418.1
             },
             "distance": 1218.0
+          },
+          {
+            "index": 6,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 3",
+            "seg": 254,
+            "side": 4,
+            "wall": 54,
+            "label_pos": {
+              "x": -25.0,
+              "y": 71.7,
+              "z": -381.1
+            },
+            "distance": 56.2,
+            "trigger": 3,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 279,
+                "side": 4,
+                "wall": 74
+              },
+              {
+                "seg": 498,
+                "side": 5,
+                "wall": 75
+              }
+            ]
+          },
+          {
+            "index": 7,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 527,
+            "side": 4,
+            "wall": 126,
+            "label_pos": {
+              "x": -25.9,
+              "y": 233.6,
+              "z": 671.5
+            },
+            "distance": 1091.5,
+            "trigger": 15,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "non-shootable trigger source is behind a closed wall: trigger 3 source 254:4 wall 54",
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",

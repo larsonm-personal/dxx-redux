@@ -5,10 +5,9 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 5,
-    "timeout": 1
+    "ok": 6
   },
   "levels": [
     {
@@ -171,18 +170,54 @@
       "level_num": 5,
       "level_file": "e2v-5.rl2",
       "route_input_sha256": "D27C01AB6DE6F6FEF932821B86F7FED5D7CF8C807D5280FCFFDB3C375B7C7F48",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4657,
+      "objectives": [
+        {
+          "n": "destroy robot carrying red key",
+          "s": 17
+        },
+        {
+          "n": "pass-through 20",
+          "s": 27
+        },
+        {
+          "n": "switch 24",
+          "s": 28
+        },
+        {
+          "n": "switch 25",
+          "s": 33
+        },
+        {
+          "n": "switch 26",
+          "s": 37
+        },
+        {
+          "n": "switch 27",
+          "s": 41
+        },
+        {
+          "n": "switch 28",
+          "s": 42
+        },
+        {
+          "n": "boss",
+          "s": 49
+        },
+        {
+          "n": "exit",
+          "s": 72
+        }
+      ],
+      "total_frames": 4338,
       "rng_end": {
-        "state": 3453706785,
-        "calls": 736
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 4151607207,
+        "calls": 3394
+      }
     },
     {
       "level_num": 6,

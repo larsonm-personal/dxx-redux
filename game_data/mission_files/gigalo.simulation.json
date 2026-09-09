@@ -6,16 +6,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "gigaloma.rl2",
         "route_input_sha256": "DC7C6B44F845F1E3A77EBB193C55778FC0DC203139CA06A4DEF2A93BA211D6C4",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -36,14 +36,29 @@
           {
             "n": "fly-through 30",
             "s": 44
+          },
+          {
+            "n": "destroy robot carrying red key",
+            "s": 50
+          },
+          {
+            "n": "switch 10",
+            "s": 75
+          },
+          {
+            "n": "boss",
+            "s": 102
+          },
+          {
+            "n": "exit",
+            "s": 108
           }
         ],
-        "total_frames": 6558,
+        "total_frames": 6467,
         "rng_end": {
-          "state": 1187668045,
-          "calls": 2164
-        },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+          "state": 2816012112,
+          "calls": 3959
+        }
       }
     ]
   },

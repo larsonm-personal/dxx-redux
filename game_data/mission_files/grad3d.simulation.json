@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
-    "timeout": 2
+    "ok": 5,
+    "timeout": 1
   },
   "levels": [
     {
@@ -28,12 +28,24 @@
         {
           "n": "red key",
           "s": 30
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 56
+        },
+        {
+          "n": "blastable wall",
+          "s": 89
+        },
+        {
+          "n": "boss",
+          "s": 95
         }
       ],
-      "total_frames": 6951,
+      "total_frames": 9349,
       "rng_end": {
-        "state": 552378116,
-        "calls": 1747
+        "state": 44714954,
+        "calls": 4045
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -156,7 +168,7 @@
       "level_num": 5,
       "level_file": "ice.rl2",
       "route_input_sha256": "9E9549297E6F19A398C83418A72E336FE14B451036AE23501CFDA885740E50B4",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -169,14 +181,25 @@
         {
           "n": "gold key",
           "s": 95
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 131
+        },
+        {
+          "n": "boss",
+          "s": 178
+        },
+        {
+          "n": "exit",
+          "s": 183
         }
       ],
-      "total_frames": 11411,
+      "total_frames": 10972,
       "rng_end": {
-        "state": 467477876,
-        "calls": 3491
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 1611761832,
+        "calls": 5695
+      }
     },
     {
       "level_num": 6,
