@@ -3441,6 +3441,53 @@ class dependency_planner
 				last_problem = state_.problem;
 			state_ = key_state;
 		}
+		// A boss or reactor can be fought through grates after opening its room
+		if (visibility_.target_visible_with_open_wall && valid_segment(snapshot_, target.segment)) {
+			const auto preparation_start = state_;
+			const auto search = search_routes(snapshot_, query_, state_.progress, false);
+			for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+				const int wall = snapshot_.topology.segments[target.segment].sides[side].wall;
+				if (!valid_wall(snapshot_, wall) ||
+				    discover_trigger_sources_internal(snapshot_, preparation_start.progress,
+				                                      target.segment, side, false, true)
+				        .empty())
+					continue;
+				for (const int segment : search.visit_order) {
+					const auto &position = snapshot_.topology.segments[segment].center;
+					if (!position.valid)
+						continue;
+					auto visible = [&](const route_position &from) {
+						return consume_analysis_work(visibility_) &&
+						       visibility_.target_visible_with_open_wall(visibility_.user,
+						                                                 segment, from, target.segment, target.position, wall);
+					};
+					bool robust = visible(position);
+					for (int coordinate = 0; robust && query_.navigator.radius > 0 && coordinate < 3; ++coordinate)
+						for (int direction : { -1, 1 }) {
+							auto nearby = position;
+							nearby.value[coordinate] += direction * query_.navigator.radius;
+							if (!visible(nearby)) {
+								robust = false;
+								break;
+							}
+						}
+					if (!robust)
+						continue;
+					state_ = preparation_start;
+					state_.problem.clear();
+					if (!fire_trigger(target.segment, side, 0)) {
+						break;
+					}
+					const auto kind = route_progress_wall_kind(snapshot_, state_.progress, wall);
+					if ((kind == route_wall_kind::open || kind == route_wall_kind::illusion ||
+					     route_progress_wall_opened(snapshot_, state_.progress, wall)) &&
+					    move_to_target(segment, position, 0))
+						return true;
+					break;
+				}
+				state_ = preparation_start;
+			}
+		}
 		if (state_.problem.empty() && !last_problem.empty())
 			state_.problem = last_problem;
 		return false;
@@ -4539,6 +4586,15 @@ bool view_target_visible(
 	           target.value.data()) != 0;
 }
 
+bool view_target_visible_with_open_wall(void *user, int segment,
+                                        const dxx_route::route_position &from, int target_segment,
+                                        const dxx_route::route_position &target, int wall)
+{
+	const auto *context = static_cast<view_visibility_context *>(user);
+	return context->view->target_visible_with_open_wall(context->view->user,
+	                                                    segment, from.value.data(), target_segment, target.value.data(), wall) != 0;
+}
+
 int view_wall_shootable(
     void *user,
     int segment,
@@ -4904,6 +4960,8 @@ extern "C" int route_planner_plan_view(
 		visibility.user = &visibility_context;
 		if (view->target_visible_from_segment)
 			visibility.target_visible = view_target_visible;
+		if (view->target_visible_with_open_wall)
+			visibility.target_visible_with_open_wall = view_target_visible_with_open_wall;
 		if (view->wall_shootable_from_position)
 			visibility.wall_shootable = view_wall_shootable;
 		if (view->wall_potentially_shootable_from_position)

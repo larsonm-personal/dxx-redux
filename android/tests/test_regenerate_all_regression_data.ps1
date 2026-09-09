@@ -53,7 +53,7 @@ Assert-True (($missingMetadataStage[0].Arguments -join ',') -eq '-MissingOnly') 
 $routingStages = @(Get-RegressionDataStages -RepoRoot $repoRoot -Category RoutingSet)
 $routingMissions = @(Get-RoutingDevelopmentMissions)
 Assert-True (($routingMissions.Json -join ',') -eq `
-        'castaway_redux.json,Counterstrike.json,FirstStrike.json,Obsidian.json,TEW.json') `
+        'castaway_redux.json,Counterstrike.json,FirstStrike.json,Obsidian.json,TEW.json,plutonia.json') `
     'Routing development mission order should remain stable'
 Assert-True ($routingStages.Count -eq 2) `
     'Routing development selection should contain metadata and simulation stages'

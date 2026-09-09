@@ -13,7 +13,7 @@ $results = @(Get-ChildItem -LiteralPath (Join-Path $output 'results') `
         -Filter 'TEW.json_0_15_*_run_*.json' |
         Where-Object Name -Match '_run_[0-9]+\.json$' | Sort-Object Name)
 if ($results.Count -ne 2) { throw "Expected two results, found $($results.Count)" }
-$expected = 'blue key|Shoot switch trigger 3|gold key|red key|Boss robot|Exit'
+$expected = 'blue key|Shoot switch trigger 2|Pass through trigger 6|Shoot switch trigger 16|Destroy blastable wall|Open hidden door|Boss robot|Exit'
 $first = $null
 foreach ($file in $results) {
     $result = Get-Content -LiteralPath $file.FullName -Raw | ConvertFrom-Json

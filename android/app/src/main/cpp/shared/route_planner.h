@@ -151,6 +151,9 @@ struct route_visibility_query {
 	void *sample_cache = nullptr;
 	unsigned int sample_cache_namespace = 0;
 	struct route_analysis_budget *analysis_budget = nullptr;
+	bool (*target_visible_with_open_wall)(void *user, int segment,
+	                                      const route_position &from, int target_segment,
+	                                      const route_position &target, int wall) = nullptr;
 };
 
 struct route_analysis_budget {

@@ -8,7 +8,7 @@
   "status": "partial",
   "level_counts": {
     "ok": 29,
-    "failed": 1
+    "route_mismatch": 1
   },
   "levels": [
     {
@@ -759,14 +759,14 @@
         },
         {
           "n": "reactor",
-          "s": 63
+          "s": 61
         },
         {
           "n": "exit",
-          "s": 79
+          "s": 75
         }
       ],
-      "total_frames": 4725,
+      "total_frames": 4483,
       "rng_end": {
         "state": 1611003340,
         "calls": 2027
@@ -1106,14 +1106,14 @@
         },
         {
           "n": "boss",
-          "s": 51
+          "s": 50
         },
         {
           "n": "exit",
-          "s": 53
+          "s": 52
         }
       ],
-      "total_frames": 3155,
+      "total_frames": 3136,
       "rng_end": {
         "state": 2349060121,
         "calls": 1320
@@ -1227,18 +1227,31 @@
       "level_num": -5,
       "level_file": "d2leve-s.rl2",
       "route_input_sha256": "9548EB233FD86EA0F5488878657EFA631326538ED2A44A8DC7117685033B71EB",
-      "status": "failed",
+      "status": "route_mismatch",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "switch 11",
+          "s": 8
+        },
+        {
+          "n": "switch 5",
+          "s": 14
+        },
+        {
+          "n": "reactor",
+          "s": 26
+        }
+      ],
+      "total_frames": 1801,
       "rng_end": {
-        "state": 3914758370,
-        "calls": 21
+        "state": 3027255562,
+        "calls": 909
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "live objective sequence differs from route input"
     },
     {
       "level_num": -6,

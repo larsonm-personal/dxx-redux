@@ -856,7 +856,8 @@ int target_is_visible(const object *actor, const object *target)
 	query.rad = 0;
 	query.thisobjnum = (short) (actor - Objects);
 	query.ignore_obj_list = NULL;
-	query.flags = FQ_CHECK_OBJS | FQ_IGNORE_POWERUPS;
+	// Match weapon rays through transparent openings in grates
+	query.flags = FQ_CHECK_OBJS | FQ_IGNORE_POWERUPS | FQ_TRANSPOINT;
 	fate = find_vector_intersection(&query, &hit);
 	return fate == HIT_NONE ||
 	       (fate == HIT_OBJECT && hit.hit_object == target - Objects);

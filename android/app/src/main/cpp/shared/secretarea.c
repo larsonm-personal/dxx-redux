@@ -1868,6 +1868,55 @@ static int secret_area_target_visible_from_position_uncached(
 	    &hit_data, &from, seg, &target, target_seg, -1, -1, 0);
 }
 
+static int secret_area_planned_wall_passable(void *user, int seg, int side)
+{
+	const int wall_num = *(const int *) user;
+	const int source_seg = Walls[wall_num].segnum;
+	const int source_side = Walls[wall_num].sidenum;
+	return (seg == source_seg && side == source_side) ||
+	       (seg == Segments[source_seg].children[source_side] &&
+	        Segments[seg].children[side] == source_seg);
+}
+
+static int secret_area_target_visible_with_open_wall(
+    void *user, int seg, const int from_pos[3], int target_seg,
+    const int target_pos[3], int wall_num)
+{
+	fvi_info hit_data;
+	fvi_query query;
+	vms_vector from;
+	vms_vector target;
+	(void) user;
+	if (!secret_area_wall_index_valid(wall_num) || seg < 0 || seg >= Num_segments ||
+	    target_seg < 0 || target_seg >= Num_segments || !from_pos || !target_pos ||
+	    Walls[wall_num].segnum < 0 || Walls[wall_num].segnum >= Num_segments ||
+	    Walls[wall_num].sidenum < 0 || Walls[wall_num].sidenum >= MAX_SIDES_PER_SEGMENT)
+		return 0;
+	from.x = from_pos[0];
+	from.y = from_pos[1];
+	from.z = from_pos[2];
+	target.x = target_pos[0];
+	target.y = target_pos[1];
+	target.z = target_pos[2];
+	memset(&query, 0, sizeof(query));
+	memset(&hit_data, 0, sizeof(hit_data));
+	query.p0 = &from;
+	query.p1 = &target;
+	query.startseg = seg;
+	query.thisobjnum = -1;
+	query.flags = FQ_TRANSPOINT | FQ_GET_SEGLIST;
+	query.wall_is_passable = secret_area_planned_wall_passable;
+	query.flags |= FQ_PASSABLE_WALL_CALLBACK;
+	query.wall_is_passable_user = &wall_num;
+	if (!level_metadata_analysis_consume_fvi())
+		return 0;
+	const int fate = find_vector_intersection(&query, &hit_data);
+	if (fate != HIT_NONE)
+		return 0;
+	return level_metadata_fvi_visibility_credible(
+	    &hit_data, &from, seg, &target, target_seg, -1, -1, 0);
+}
+
 int level_metadata_target_visible_from_position(
     int seg,
     const int from_pos[3],
@@ -1935,6 +1984,7 @@ static int level_metadata_route_shot_wall_is_passable(
 	    (WALL_IS_DOORWAY(&Segments[seg], side) & WID_RENDPAST_FLAG))
 		return 0;
 	if (context->allow_transparency == 3) {
+		/* Locked hidden doors need an opening trigger before a shot can pass */
 		const int actionable =
 		    Walls[wall_num].type == WALL_BLASTABLE ||
 		    (Walls[wall_num].type == WALL_DOOR && Walls[wall_num].keys != KEY_NONE && !(Walls[wall_num].flags & WALL_DOOR_LOCKED) && wall_num == context->first_blocker) ||
@@ -1942,6 +1992,8 @@ static int level_metadata_route_shot_wall_is_passable(
 		     secret_area_side_opener_source_wall_at(seg, side, 0, 1) >= 0) ||
 		    (Walls[wall_num].type == WALL_DOOR &&
 		     Walls[wall_num].keys == KEY_NONE &&
+		     (!(Walls[wall_num].flags & WALL_DOOR_LOCKED) ||
+		      secret_area_side_opener_source_wall_at(seg, side, 0, 1) >= 0) &&
 		     Walls[wall_num].clip_num >= 0 &&
 		     Walls[wall_num].clip_num < Num_wall_anims &&
 		     (WallAnims[Walls[wall_num].clip_num].flags & WCF_HIDDEN));
@@ -2052,8 +2104,8 @@ static int level_metadata_wall_shootable_from_position_impl(
 	route_shot_context.conditional_wall = -1;
 	// Closed walls only need a prerequisite when the ray actually hits them
 	route_shot_context.first_blocker = allow_transparency == 3
-	                                          ? level_metadata_wall_first_shot_blocker_from_position(seg, from_pos, wall_num)
-	                                          : -1;
+	                                       ? level_metadata_wall_first_shot_blocker_from_position(seg, from_pos, wall_num)
+	                                       : -1;
 	query.flags |= FQ_PASSABLE_WALL_CALLBACK;
 	query.wall_is_passable = level_metadata_route_shot_wall_is_passable;
 	query.wall_is_passable_user = &route_shot_context;
@@ -2735,6 +2787,7 @@ static void level_metadata_initialize_scan_view(void)
 	    secret_area_wall_shootable_without_transparency_from_position;
 	view->wall_conditionally_shootable_from_position =
 	    secret_area_wall_conditionally_shootable_from_position;
+	view->target_visible_with_open_wall = secret_area_target_visible_with_open_wall;
 	view->wall_first_shot_blocker_from_position =
 	    secret_area_wall_first_shot_blocker_from_position;
 	view->wall_shot_incidence_cosine =

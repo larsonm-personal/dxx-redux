@@ -1929,6 +1929,40 @@ int main()
 	assert(conditional_dependency.progress.fired_triggers[0]);
 	assert(conditional_dependency.progress.fired_triggers[1]);
 	assert(conditional_dependency.progress.opened_hidden_walls[3]);
+	// A boss beyond an impassable grate needs its door opened before it is visible
+	auto gated_boss_snapshot = conditional_snapshot;
+	gated_boss_snapshot.topology.segments[1].sides[1].opener_walls.clear();
+	gated_boss_snapshot.topology.triggers[0].kind = dxx_route::route_trigger_kind::other;
+	gated_boss_snapshot.topology.triggers[0].links.clear();
+	gated_boss_snapshot.topology.triggers[1].kind = dxx_route::route_trigger_kind::open_door;
+	gated_boss_snapshot.topology.segments[0].sides[5].child = -2;
+	gated_boss_snapshot.topology.segments[0].sides[5].center = gated_boss_snapshot.topology.segments[0].center;
+	dxx_route::route_state_object gated_boss;
+	gated_boss.kind = dxx_route::route_object_kind::robot;
+	gated_boss.boss = true;
+	gated_boss.segment = 3;
+	gated_boss.position = gated_boss_snapshot.topology.segments[3].center;
+	gated_boss_snapshot.state.objects = {gated_boss};
+	auto gated_boss_query = conditional_query;
+	gated_boss_query.endpoint = dxx_route::route_endpoint_kind::end_of_level;
+	gated_boss_query.navigator.radius = 65536;
+	auto gated_boss_visibility = conditional_visibility;
+	gated_boss_visibility.target_visible_with_open_wall = [](
+	    void *, int segment, const dxx_route::route_position &, int target_segment,
+	    const dxx_route::route_position &, int wall) {
+		return segment == 1 && target_segment == 3 && wall == 4;
+	};
+	const auto gated_boss_plan = dxx_route::plan_route(
+	    gated_boss_snapshot, gated_boss_query, gated_boss_visibility);
+	assert(gated_boss_plan.status == dxx_route::route_plan_status::ok);
+	assert(gated_boss_plan.steps.size() == 4);
+	assert(gated_boss_plan.steps[1].trigger == 1);
+	assert(gated_boss_plan.steps[2].kind == dxx_route::route_semantic_step_kind::boss);
+	assert(gated_boss_plan.steps[2].path.terminal_segment == 1);
+	assert(gated_boss_plan.steps[3].kind == dxx_route::route_semantic_step_kind::exit);
+	gated_boss_snapshot.topology.triggers[1].kind = dxx_route::route_trigger_kind::unlock_door;
+	assert(dxx_route::plan_route(gated_boss_snapshot, gated_boss_query,
+	           gated_boss_visibility).status != dxx_route::route_plan_status::ok);
 	// A shot through a keyed door acquires its key before opening the barrier
 	auto keyed_blocker_snapshot = conditional_snapshot;
 	for (int wall : {3, 4}) {
