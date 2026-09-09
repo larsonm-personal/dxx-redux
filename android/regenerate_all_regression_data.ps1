@@ -141,32 +141,46 @@ function Select-RegressionDataCategory {
     Write-Host '  M. Search for and watch one GuideBot route'
     Write-Host '  T. Resumable hash-ring sample targeting 45 minutes'
     Write-Host '  Q. Cancel'
+    Write-Host '  Enter categories separated by spaces or commas, in execution order (for example: 4,6)'
     while ($true) {
-        switch ((Read-Host 'Choose a category').Trim().ToLowerInvariant()) {
-            '1' { return 'All' }
-            'all' { return 'All' }
-            '2' { return 'Cd' }
-            'cd' { return 'Cd' }
-            '3' { return 'Fingerprints' }
-            'fingerprints' { return 'Fingerprints' }
-            '4' { return 'Metadata' }
-            'metadata' { return 'Metadata' }
-            '5' { return 'MissingMetadata' }
-            'missing' { return 'MissingMetadata' }
-            'missingmetadata' { return 'MissingMetadata' }
-            '6' { return 'Simulation' }
-            'simulation' { return 'Simulation' }
-            '7' { return 'RoutingSet' }
-            'routing' { return 'RoutingSet' }
-            'routingset' { return 'RoutingSet' }
-            'm' { return 'ManualSimulation' }
-            'manual' { return 'ManualSimulation' }
-            't' { return 'Target45' }
-            'target' { return 'Target45' }
-            'q' { return $null }
-            'quit' { return $null }
-            default { Write-Host 'Enter 1, 2, 3, 4, 5, 6, 7, M, T, or Q' -ForegroundColor Yellow }
+        $choices = @((Read-Host 'Choose categories') -split '[,\s]+' | Where-Object { $_ })
+        $selected = @(foreach ($choice in $choices) {
+                switch ($choice.ToLowerInvariant()) {
+                    '1' { 'All' }
+                    'all' { 'All' }
+                    '2' { 'Cd' }
+                    'cd' { 'Cd' }
+                    '3' { 'Fingerprints' }
+                    'fingerprints' { 'Fingerprints' }
+                    '4' { 'Metadata' }
+                    'metadata' { 'Metadata' }
+                    '5' { 'MissingMetadata' }
+                    'missing' { 'MissingMetadata' }
+                    'missingmetadata' { 'MissingMetadata' }
+                    '6' { 'Simulation' }
+                    'simulation' { 'Simulation' }
+                    '7' { 'RoutingSet' }
+                    'routing' { 'RoutingSet' }
+                    'routingset' { 'RoutingSet' }
+                    'm' { 'ManualSimulation' }
+                    'manual' { 'ManualSimulation' }
+                    't' { 'Target45' }
+                    'target' { 'Target45' }
+                    'q' { 'Cancel' }
+                    'quit' { 'Cancel' }
+                    default { 'Invalid' }
+                }
+            })
+        if ($selected.Count -eq 0 -or $selected -contains 'Invalid') {
+            Write-Host 'Enter 1, 2, 3, 4, 5, 6, 7, M, T, or Q, separated by spaces or commas' -ForegroundColor Yellow
+            continue
         }
+        if ($selected.Count -gt 1 -and @($selected | Where-Object { $_ -in @('ManualSimulation', 'Target45', 'Cancel') }).Count -gt 0) {
+            Write-Host 'Choose M, T, or Q on its own' -ForegroundColor Yellow
+            continue
+        }
+        if ($selected -contains 'Cancel') { return $null }
+        return $selected
     }
 }
 
@@ -483,7 +497,7 @@ if ($MyInvocation.InvocationName -ne '.') {
         exit 0
     }
 
-    if ($Category -eq 'Menu' -and $selectedCategory -eq 'Simulation') {
+    if ($Category -eq 'Menu' -and @($selectedCategory) -contains 'Simulation') {
         while ($true) {
             $modeChoice = (Read-Host 'Simulation mode: H for headless canonical output, V for visible headed diagnostics').Trim().ToLowerInvariant()
             if ($modeChoice -in @('', 'h', 'headless')) { $SimulationMode = 'Headless'; break }
@@ -494,8 +508,10 @@ if ($MyInvocation.InvocationName -ne '.') {
 
     $targetedSample = $Target45Minutes -or $selectedCategory -eq 'Target45'
     $stageCategory = if ($selectedCategory -eq 'Target45' -or $selectedCategory -eq 'Menu') { 'All' } else { $selectedCategory }
-    $effectiveSimulationMode = if ($stageCategory -eq 'All') { 'Headless' } else { $SimulationMode }
-    $stages = @(Get-RegressionDataStages -RepoRoot $script:RepoRoot -Category $stageCategory -SimulationMode $effectiveSimulationMode)
+    $stages = @(foreach ($currentCategory in $stageCategory) {
+            $effectiveSimulationMode = if ($currentCategory -eq 'All') { 'Headless' } else { $SimulationMode }
+            Get-RegressionDataStages -RepoRoot $script:RepoRoot -Category $currentCategory -SimulationMode $effectiveSimulationMode
+        })
     $stages = @(Set-RegressionDataStageEstimates -Stages $stages -ReportDir $ReportDir)
     if ($targetedSample) {
         $sampleStatePath = Join-Path $ReportDir 'runtime_sample_state.json'
@@ -507,7 +523,7 @@ if ($MyInvocation.InvocationName -ne '.') {
         $selectedCategory = 'Target45'
     }
     $results = @(Invoke-RegressionDataStages -Stages $stages -ReportDir $ReportDir `
-            -Category $selectedCategory -RecordTiming:($selectedCategory -eq 'All'))
+            -Category ($selectedCategory -join ',') -RecordTiming:(@($selectedCategory).Count -eq 1 -and $selectedCategory -eq 'All'))
     $failures = @($results | Where-Object Status -eq 'FAIL')
 
     Write-Host ''
