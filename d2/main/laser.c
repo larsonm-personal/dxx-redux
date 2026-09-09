@@ -57,6 +57,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "playsave.h"
 #include "hudmsg.h"
 #include "d1_in_d2.h"
+#ifdef __ANDROID__
+#include "android_log.h"
+#endif
 
 #define NEWHOMER
 
@@ -508,11 +511,69 @@ fix	Omega_charge = MAX_OMEGA_CHARGE;
 
 fix64	Last_omega_fire_time=0;
 
+#ifdef __ANDROID__
+// Android diagnostics for launcher-exported Game Logs
+static unsigned int Omega_debug_fired, Omega_debug_rejected;
+
+static void omega_debug_frame(void)
+{
+	static fix64 last_log_time;
+	static int was_active, last_weapon = -1;
+	fix64 now;
+	const char *reason;
+	const int owned = !!(Players[Player_num].primary_weapon_flags & (1 << OMEGA_INDEX));
+	const int selected = Players[Player_num].primary_weapon;
+	const int active = owned || selected == OMEGA_INDEX;
+
+	if (!debug_log_enabled[DLOG_GAME]) {
+		was_active = 0;
+		Omega_debug_fired = Omega_debug_rejected = 0;
+		return;
+	}
+	if (!active && !was_active)
+		return;
+	now = timer_query();
+	// Use wall time so a stalled or restored game clock cannot suppress diagnostics
+	if (active == was_active && selected == last_weapon && now >= last_log_time && now - last_log_time < F1_0)
+		return;
+	last_log_time = now;
+	was_active = active;
+	last_weapon = selected;
+	if (Omega_charge == MAX_OMEGA_CHARGE)
+		reason = "full";
+	else if (!owned)
+		reason = "not_owned";
+	else if (Player_is_dead)
+		reason = "dead";
+	else if (Last_omega_fire_time > GameTime64)
+		reason = "future_fire_time";
+	else if (Last_omega_fire_time + F1_0/3 > GameTime64)
+		reason = "fire_cooldown";
+	else if (Players[Player_num].energy <= 0)
+		reason = "no_energy";
+	else if (FrameTime/OMEGA_CHARGE_SCALE <= 0)
+		reason = "zero_charge_step";
+	else
+		reason = "charging";
+	debug_log(DLOG_GAME, "[OMEGA] recharge=%s charge=%d min=%d max=%d energy=%d frame=%d game_time=%lld last_fire=%lld next_laser=%lld owned=%d selected=%d primary_flags=%x dead=%d player=%d level=%d fire_state=%u fire_count=%u fired=%u rejected_low_charge=%u",
+		reason, Omega_charge, MIN_OMEGA_CHARGE, MAX_OMEGA_CHARGE, Players[Player_num].energy, FrameTime,
+		(long long)GameTime64, (long long)Last_omega_fire_time, (long long)Next_laser_fire_time,
+		owned, selected, (unsigned int)Players[Player_num].primary_weapon_flags, Player_is_dead, Player_num, Current_level_num,
+		(unsigned int)Controls.fire_primary_state, (unsigned int)Controls.fire_primary_count,
+		Omega_debug_fired, Omega_debug_rejected);
+	Omega_debug_fired = Omega_debug_rejected = 0;
+}
+#endif
+
 // ---------------------------------------------------------------------------------
 //	Call this every frame to recharge the Omega Cannon.
 void omega_charge_frame(void)
 {
 	fix	delta_charge, old_omega_charge;
+
+#ifdef __ANDROID__
+	omega_debug_frame();
+#endif
 
 	if (Omega_charge == MAX_OMEGA_CHARGE)
 		return;
@@ -575,10 +636,18 @@ void do_omega_stuff(object *parent_objp, vms_vector *firing_pos, object *weapon_
 	if (pnum == Player_num) {
 		//	If charge >= min, or (some charge and zero energy), allow to fire.
 		if (!((Omega_charge >= MIN_OMEGA_CHARGE) || (Omega_charge && !Players[pnum].energy))) {
+#ifdef __ANDROID__
+			if (debug_log_enabled[DLOG_GAME])
+				++Omega_debug_rejected;
+#endif
 			obj_delete(weapon_objp-Objects);
 			return;
 		}
 
+#ifdef __ANDROID__
+		if (debug_log_enabled[DLOG_GAME])
+			++Omega_debug_fired;
+#endif
 		Omega_charge -= OMEGA_BASE_TIME;
 		if (Omega_charge < 0)
 			Omega_charge = 0;
