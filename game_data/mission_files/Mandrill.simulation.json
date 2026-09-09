@@ -7,16 +7,15 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
-    "failed": 2,
-    "timeout": 1
+    "ok": 5,
+    "failed": 2
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "mplevel1.rl2",
       "route_input_sha256": "15A11E9126A3BA75FF719620FB9800AEB526BEE396C8148A610CCBDC2BB17C0E",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -25,20 +24,28 @@
         {
           "n": "blue key",
           "s": 21
+        },
+        {
+          "n": "fly-through 0",
+          "s": 36
+        },
+        {
+          "n": "red key",
+          "s": 38
         }
       ],
-      "total_frames": 1738,
+      "total_frames": 2251,
       "rng_end": {
-        "state": 277647846,
-        "calls": 449
+        "state": 2100293115,
+        "calls": 782
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 2,
       "level_file": "mplevel2.rl2",
       "route_input_sha256": "DA45BA3F69F16610B270FE05B5A0234AF56329591CA57B7505BE41D173EB4C2E",
-      "status": "failed",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -50,15 +57,34 @@
         },
         {
           "n": "destroy robot carrying blue key",
-          "s": 21
+          "s": 20
+        },
+        {
+          "n": "gold key",
+          "s": 27
+        },
+        {
+          "n": "switch 2",
+          "s": 42
+        },
+        {
+          "n": "red key",
+          "s": 45
+        },
+        {
+          "n": "reactor",
+          "s": 57
+        },
+        {
+          "n": "exit",
+          "s": 71
         }
       ],
-      "total_frames": 1255,
+      "total_frames": 4271,
       "rng_end": {
-        "state": 2822236841,
-        "calls": 1304
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 3017277417,
+        "calls": 2520
+      }
     },
     {
       "level_num": 3,
@@ -76,25 +102,25 @@
         },
         {
           "n": "switch 1",
-          "s": 20
+          "s": 18
         },
         {
           "n": "blastable wall",
-          "s": 36
+          "s": 32
         },
         {
           "n": "boss",
-          "s": 46
+          "s": 41
         },
         {
           "n": "exit",
-          "s": 68
+          "s": 62
         }
       ],
-      "total_frames": 4065,
+      "total_frames": 3696,
       "rng_end": {
-        "state": 1201147563,
-        "calls": 4190
+        "state": 2437141959,
+        "calls": 2338
       }
     },
     {
@@ -155,11 +181,16 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 11
+        }
+      ],
+      "total_frames": 647,
       "rng_end": {
-        "state": 835903122,
-        "calls": 37
+        "state": 754433246,
+        "calls": 297
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },
@@ -179,17 +210,17 @@
         },
         {
           "n": "reactor",
-          "s": 27
+          "s": 28
         },
         {
           "n": "exit",
-          "s": 36
+          "s": 37
         }
       ],
-      "total_frames": 2147,
+      "total_frames": 2194,
       "rng_end": {
-        "state": 3014832133,
-        "calls": 1148
+        "state": 2784547785,
+        "calls": 1272
       }
     },
     {

@@ -61,7 +61,12 @@ int coop_remap_restored_players(rewind_file *file,
 	int have_meta = state_android_read_coop_metadata_trailer(file, &meta_early);
 	int got_players = 0;
 	unsigned char claimed_slots[MAX_PLAYERS] = { 0 };
+	unsigned char stats_slots[MAX_PLAYERS] = { 0 };
 	int i;
+
+	coop_reset_kill_stats();
+	if (have_meta)
+		Coop_total_robot_score = meta_early.total_robot_score;
 
 	for (i = 0; i < MAX_PLAYERS; i++) {
 		object *obj;
@@ -97,6 +102,9 @@ int coop_remap_restored_players(rewind_file *file,
 			continue;
 		}
 		claimed_slots[saved_slot] = 1;
+		stats_slots[i] = 1;
+		Coop_kill_stats[i].robots_killed = meta_early.robots_killed[saved_slot];
+		Coop_kill_stats[i].score_earned = meta_early.robot_score_earned[saved_slot];
 
 		saved_objnum = Players[i].objnum;
 		coop_restore_player_game_state(&Players[i], &restore_players[saved_slot]);
@@ -128,6 +136,20 @@ int coop_remap_restored_players(rewind_file *file,
 		        obj->control_type, obj->movement_type, obj->mtype.phys_info.flags);
 	}
 
+	/* Preserve the group total by carrying unmatched contributions into the
+	 * remaining statistic slots, after identity-matched players are restored */
+	if (have_meta) {
+		int target = 0;
+		for (i = 0; i < MAX_PLAYERS; i++) {
+			if (claimed_slots[i])
+				continue;
+			while (target < MAX_PLAYERS && stats_slots[target])
+				target++;
+			Coop_kill_stats[target].robots_killed = meta_early.robots_killed[i];
+			Coop_kill_stats[target].score_earned = meta_early.robot_score_earned[i];
+			target++;
+		}
+	}
 	return got_players;
 }
 
@@ -395,7 +417,10 @@ static int coop_build_save_metadata(coop_save_metadata *meta)
 	for (i = 0; i < MAX_PLAYERS; i++) {
 		meta->recovery_restore_serials[i] = coop_recovery_restore_serial(i);
 		meta->recovery_lives[i] = coop_recovery_life(i);
+		meta->robots_killed[i] = Coop_kill_stats[i].robots_killed;
+		meta->robot_score_earned[i] = Coop_kill_stats[i].score_earned;
 	}
+	meta->total_robot_score = Coop_total_robot_score;
 
 	meta->num_active_players = 0;
 	for (i = 0; i < MAX_PLAYERS; i++) {

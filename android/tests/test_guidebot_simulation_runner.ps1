@@ -80,7 +80,7 @@ try {
     }
     $routingSet = @(Invoke-DryRun -Name routing_set -RoutingDevelopmentSet)
     $routingFiles = @($routingSet.identity | ForEach-Object { $_.Split('|')[0] } | Select-Object -Unique)
-    if (($routingFiles -join ',') -cne 'castaway_redux.json,CD - Descent II - The Vertigo Series (USA).json,Counterstrike.json,Entropy2.json,FirstStrike.json,Obsidian.json,plutonia.json,TEW.json,Vignettes.json') {
+    if (($routingFiles -join ',') -cne 'af_d1_beta.json,castaway_redux.json,CD - Descent II - The Vertigo Series (USA).json,Counterstrike.json,descent_maximum_fixed.json,Entropy2.json,FirstStrike.json,Mandrill.json,Obsidian.json,plutonia.json,TEW.json,Vignettes.json') {
         throw "Routing development set selected unexpected mission files: $($routingFiles -join ', ')"
     }
     $tew = @($routingSet | Where-Object { $_.identity -like 'TEW.json|*' })
@@ -88,8 +88,14 @@ try {
     $vertigo = @($routingSet | Where-Object { $_.identity -like 'CD - Descent II - The Vertigo Series (USA).json|*' })
     $vignettes = @($routingSet | Where-Object { $_.identity -like 'Vignettes.json|*' })
     $entropy2 = @($routingSet | Where-Object { $_.identity -like 'Entropy2.json|*' })
-    if ($routingSet.Count -ne 209 -or $tew.Count -ne 32 -or $plutonia.Count -ne 32 -or $vertigo.Count -ne 24 -or $vignettes.Count -ne 27 -or $entropy2.Count -ne 6) {
-        throw 'The nine-mission set must include six Entropy2 levels and 209 total levels'
+    $maximum = @($routingSet | Where-Object { $_.identity -like 'descent_maximum_fixed.json|*' })
+    $af = @($routingSet | Where-Object { $_.identity -like 'af_d1_beta.json|*' })
+    $mandrill = @($routingSet | Where-Object { $_.identity -like 'Mandrill.json|*' })
+    if ($maximum.Count -ne 36 -or $af.Count -ne 10 -or $mandrill.Count -ne 7) {
+        throw 'The expanded set must include both Descent Maximum variants, ten AF levels, and seven Mandrill levels'
+    }
+    if ($routingSet.Count -ne 262 -or $tew.Count -ne 32 -or $plutonia.Count -ne 32 -or $vertigo.Count -ne 24 -or $vignettes.Count -ne 27 -or $entropy2.Count -ne 6) {
+        throw 'The twelve-mission set must include 262 total levels'
     }
     $firstStrike = @($routingSet | Where-Object { $_.identity -like 'FirstStrike.json|*' })
     if ($firstStrike.Count -ne 30 -or @($firstStrike | Where-Object engine_mode -ne 'd1_in_d2').Count) {

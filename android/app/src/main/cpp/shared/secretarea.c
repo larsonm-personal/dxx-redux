@@ -938,6 +938,7 @@ typedef struct level_metadata_opener_entry {
 static vms_vector Level_metadata_segment_centers[LEVEL_METADATA_MAX_SEGMENTS];
 static int Level_metadata_segment_clearance[LEVEL_METADATA_MAX_SEGMENTS];
 static int Level_metadata_side_clearance[LEVEL_METADATA_MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
+static int Level_metadata_clearance_radius;
 static unsigned char Level_metadata_narrow_portal[LEVEL_METADATA_MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
 static short Level_metadata_opener_first[LEVEL_METADATA_MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
 static level_metadata_opener_entry Level_metadata_opener_entries[LEVEL_METADATA_MAX_OPENER_ENTRIES];
@@ -1049,7 +1050,7 @@ static int secret_area_segment_transit_passable(
 	if (entry_seg < 0 || entry_seg >= Num_segments || exit_seg < 0 ||
 	    exit_seg >= Num_segments)
 		return 0;
-	radius = secret_area_player_radius();
+	radius = Level_metadata_clearance_radius;
 	if (radius <= 0)
 		return 0;
 	compute_center_point_on_side(&entry, &Segments[seg], entry_side);
@@ -1099,7 +1100,7 @@ static unsigned int secret_area_segment_transit_mask(
 		    Level_metadata_narrow_portal[seg][exit_side])
 			continue;
 		if (Level_metadata_segment_clearance[seg] >=
-		        secret_area_player_radius() ||
+		        Level_metadata_clearance_radius ||
 		    secret_area_segment_transit_passable(
 		        NULL, seg, entry_side, exit_side) ||
 		    secret_area_segment_transit_passable(
@@ -2429,17 +2430,17 @@ static int secret_area_trigger_opens_side(int trigger_num, int seg, int side)
 	return 0;
 }
 
-static void secret_area_rebuild_level_topology(void)
+static void secret_area_rebuild_level_topology(int clearance_radius)
 {
 	unsigned char clearance_seen[LEVEL_METADATA_MAX_SEGMENTS];
 	int clearance_queue[LEVEL_METADATA_MAX_SEGMENTS];
 	short opener_last[LEVEL_METADATA_MAX_SEGMENTS][MAX_SIDES_PER_SEGMENT];
-	int player_radius = secret_area_player_radius();
 	int seg;
 	int side;
 	int trigger_num;
 
 	Level_metadata_topology_valid = 0;
+	Level_metadata_clearance_radius = clearance_radius;
 	Level_metadata_opener_index_valid = 1;
 	Level_metadata_opener_entry_count = 0;
 	memset(Level_metadata_opener_first, 0xff, sizeof(Level_metadata_opener_first));
@@ -2455,14 +2456,14 @@ static void secret_area_rebuild_level_topology(void)
 		compute_segment_center(&Level_metadata_segment_centers[seg], &Segments[seg]);
 	for (seg = 0; seg < Num_segments && seg < LEVEL_METADATA_MAX_SEGMENTS; ++seg)
 		Level_metadata_segment_clearance[seg] =
-		    secret_area_compute_segment_clearance_radius(seg, player_radius);
+		    secret_area_compute_segment_clearance_radius(seg, clearance_radius);
 	/* Isolated bad centers occur in otherwise navigable skewed geometry. */
 	for (seg = 0; seg < Num_segments && seg < LEVEL_METADATA_MAX_SEGMENTS; ++seg) {
 		int head = 0;
 		int tail = 0;
 		if (clearance_seen[seg] ||
 		    Level_metadata_segment_clearance[seg] <= 0 ||
-		    Level_metadata_segment_clearance[seg] >= player_radius)
+		    Level_metadata_segment_clearance[seg] >= clearance_radius)
 			continue;
 		clearance_seen[seg] = 1;
 		clearance_queue[tail++] = seg;
@@ -2473,7 +2474,7 @@ static void secret_area_rebuild_level_topology(void)
 				if (child < 0 || child >= Num_segments ||
 				    child >= LEVEL_METADATA_MAX_SEGMENTS || clearance_seen[child] ||
 				    Level_metadata_segment_clearance[child] <= 0 ||
-				    Level_metadata_segment_clearance[child] >= player_radius)
+				    Level_metadata_segment_clearance[child] >= clearance_radius)
 					continue;
 				clearance_seen[child] = 1;
 				clearance_queue[tail++] = child;
@@ -2482,7 +2483,7 @@ static void secret_area_rebuild_level_topology(void)
 		if (tail < LEVEL_METADATA_MIN_NARROW_COMPONENT_SEGMENTS)
 			for (head = 0; head < tail; ++head)
 				Level_metadata_segment_clearance[clearance_queue[head]] =
-				    player_radius;
+				    clearance_radius;
 	}
 	for (seg = 0; seg < Num_segments && seg < LEVEL_METADATA_MAX_SEGMENTS; ++seg) {
 		for (side = 0; side < MAX_SIDES_PER_SEGMENT; ++side)
@@ -2490,7 +2491,7 @@ static void secret_area_rebuild_level_topology(void)
 			    Segments[seg].children[side] < Num_segments &&
 			    Segments[seg].children[side] < LEVEL_METADATA_MAX_SEGMENTS) {
 				Level_metadata_narrow_portal[seg][side] =
-				    secret_area_portal_too_narrow(seg, side, player_radius);
+				    secret_area_portal_too_narrow(seg, side, clearance_radius);
 				Level_metadata_side_clearance[seg][side] =
 				    Level_metadata_narrow_portal[seg][side] ? 1 : Level_metadata_segment_clearance[Segments[seg].children[side]];
 			}
@@ -2549,7 +2550,7 @@ static void secret_area_ensure_level_topology(void)
 	    Level_metadata_topology_num_segments != Num_segments ||
 	    Level_metadata_topology_num_walls != Num_walls ||
 	    Level_metadata_topology_num_triggers != Num_triggers)
-		secret_area_rebuild_level_topology();
+		secret_area_rebuild_level_topology(max(Level_metadata_clearance_radius, secret_area_player_radius()));
 }
 
 static int secret_area_side_opener_source_wall_at(int seg, int side, int wanted_index, int allow_keyed_target)
@@ -2862,8 +2863,13 @@ static level_metadata_scan_view *level_metadata_refresh_scan_view(int start_objn
 {
 	level_metadata_scan_view *view = &Level_metadata_scan_view;
 	int start_segment;
+	int clearance_radius = max(secret_area_player_radius(), secret_area_navigator_radius(start_objnum));
 
 	level_metadata_initialize_scan_view();
+	/* Clearance and transit masks must describe the same actor size used by
+	 * the route query, including companions larger than the player ship */
+	if (Level_metadata_clearance_radius != clearance_radius)
+		secret_area_rebuild_level_topology(clearance_radius);
 	secret_area_ensure_level_topology();
 	Level_metadata_game_context.start_objnum = start_objnum;
 	view->num_segments = Num_segments;

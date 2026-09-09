@@ -6,8 +6,8 @@
 #include <string.h>
 
 #define COOP_SAVE_META_TAG   0x434F4F50 /* "COOP" */
-#define COOP_SAVE_META_VER   8
-#define COOP_SAVE_FOOTER_TAG 0x38504643 /* "CFP8" */
+#define COOP_SAVE_META_VER   9
+#define COOP_SAVE_FOOTER_TAG 0x39504643 /* "CFP9" */
 
 typedef struct coop_save_footer {
 	uint32_t tag;

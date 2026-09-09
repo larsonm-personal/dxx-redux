@@ -91,6 +91,9 @@ typedef struct coop_save_metadata {
 	uint32_t recovery_count;          /* v7: ownership ledger entries */
 	uint32_t recovery_restore_serials[8];
 	uint32_t recovery_lives[8];
+	int32_t robots_killed[8];
+	int32_t robot_score_earned[8];
+	int32_t total_robot_score;
 } coop_save_metadata;
 
 /* --- helpers (implemented in coop_save.c) --- */
