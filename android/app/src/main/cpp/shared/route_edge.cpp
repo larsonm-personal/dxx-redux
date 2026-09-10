@@ -88,6 +88,7 @@ bool side_has_active_fired_opener(
 		if (valid_trigger(snapshot, trigger) &&
 		    !snapshot.state.triggers[trigger].disabled &&
 		    route_trigger_opens_path(snapshot.topology.triggers[trigger].kind) &&
+		    snapshot.topology.triggers[trigger].kind != route_trigger_kind::unlock_door &&
 		    state_flag(progress.fired_triggers, trigger))
 			return true;
 	}
@@ -292,10 +293,10 @@ route_edge_decision evaluate_route_edge(
 	                       : valid_wall(snapshot, wall)
 	                           ? snapshot.state.walls[wall].kind
 	                           : route_wall_kind::none;
-	const bool wall_locked =
-	    effective_wall_state
-	        ? route_progress_wall_locked(snapshot, state, wall)
-	        : valid_wall(snapshot, wall) && snapshot.state.walls[wall].locked;
+	/* Lock permissions are directional in every query mode, including legacy
+	 * dependency searches that do not model all wall animation state */
+	const bool wall_locked = valid_wall(snapshot, wall) &&
+	                         route_progress_wall_locked(snapshot, state, wall);
 	const bool wall_opened =
 	    effective_wall_state
 	        ? route_progress_wall_opened(snapshot, state, wall)
@@ -319,8 +320,9 @@ route_edge_decision evaluate_route_edge(
 	    (state_side.control_center_link ||
 	     reverse_state_side.control_center_link))
 		return passable(topology_side.wall);
-	/* The fired-opener index is retained for legacy snapshots that do not carry
-	 * effective wall state. It must never override a modeled close or lock. */
+	/* The fired-opener index is retained for legacy traversal bookkeeping.
+	 * Unlocking changes only the linked face's permission, not the shared door
+	 * animation, so unlock triggers are excluded from this shortcut */
 	if (!wall_changed && edge_has_active_fired_opener(
 	                         snapshot, state, segment, side, child, reverse_side))
 		return passable(topology_side.wall);

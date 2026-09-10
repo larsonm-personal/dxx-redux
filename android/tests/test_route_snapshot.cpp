@@ -760,6 +760,64 @@ dxx_route::route_snapshot make_conditional_hidden_door_snapshot()
 	return snapshot;
 }
 
+dxx_route::route_snapshot make_guided_launch_prerequisite_snapshot()
+{
+	using namespace dxx_route;
+	route_snapshot snapshot;
+	snapshot.topology.segments.resize(3);
+	snapshot.state.segments.resize(3);
+	snapshot.topology.walls.resize(8);
+	snapshot.state.walls.resize(8);
+	snapshot.topology.triggers.resize(2);
+	snapshot.state.triggers.resize(2);
+	for (int segment = 0; segment < 3; ++segment) {
+		auto &center = snapshot.topology.segments[segment].center;
+		center.valid = true;
+		center.value = { segment * 10 * 65536, 0, 0 };
+	}
+	auto side = [&](int from, int face, int to, int reverse, int wall, int opener) {
+		auto &edge = snapshot.topology.segments[from].sides[face];
+		edge.child = to;
+		edge.reverse_side = reverse;
+		edge.wall = wall;
+		edge.center = snapshot.topology.segments[from].center;
+		if (opener >= 0) edge.opener_walls = {opener};
+		snapshot.topology.walls[wall].segment = from;
+		snapshot.topology.walls[wall].side = face;
+		snapshot.topology.walls[wall].target = edge.center;
+		snapshot.state.walls[wall].kind = route_wall_kind::closed;
+	};
+	side(0, 0, 2, 0, 2, 1);
+	side(2, 0, 0, 0, 3, 1);
+	side(0, 1, 1, 0, 4, 0);
+	side(1, 0, 0, 1, 5, 0);
+	side(1, 1, 2, 1, 6, -1);
+	side(2, 1, 1, 1, 7, -1);
+	for (int trigger = 0; trigger < 2; ++trigger) {
+		const int segment = trigger * 2;
+		auto &wall = snapshot.topology.walls[trigger];
+		wall.segment = segment;
+		wall.side = 2;
+		wall.target = snapshot.topology.segments[segment].center;
+		wall.shootable_trigger = true;
+		snapshot.topology.segments[segment].sides[2].wall = trigger;
+		snapshot.state.walls[trigger].kind = route_wall_kind::overlay;
+		snapshot.state.walls[trigger].trigger = trigger;
+		snapshot.topology.triggers[trigger].kind = route_trigger_kind::open_wall;
+		snapshot.topology.triggers[trigger].links.push_back({0, 1 - trigger});
+	}
+	snapshot.topology.segments[0].sides[5].child = -2;
+	snapshot.topology.segments[0].sides[5].center = snapshot.topology.segments[0].center;
+	snapshot.state.start_segment = 0;
+	snapshot.state.start_position = snapshot.topology.segments[0].center;
+	route_state_object reactor;
+	reactor.kind = route_object_kind::control_center;
+	reactor.segment = 2;
+	reactor.position = snapshot.topology.segments[2].center;
+	snapshot.state.objects = {reactor};
+	return snapshot;
+}
+
 dxx_route::route_snapshot make_fleeing_carrier_snapshot(bool fleeing)
 {
 	dxx_route::route_snapshot snapshot;
@@ -1413,16 +1471,45 @@ int main()
 	       dxx_route::route_wall_kind::open);
 	transition_snapshot.topology.triggers[0].kind =
 	    dxx_route::route_trigger_kind::lock_door;
+	transition_progress.wall_locked[0] = 0;
+	transition_progress.wall_locked[1] = 0;
 	assert(dxx_route::route_progress_apply_trigger(
 	    transition_snapshot, transition_progress, 0));
-	assert(transition_progress.wall_locked[0]);
+	assert(!transition_progress.wall_locked[0]);
 	assert(transition_progress.wall_locked[1]);
+	transition_progress.wall_locked[0] = 1;
 	transition_snapshot.topology.triggers[0].kind =
 	    dxx_route::route_trigger_kind::unlock_door;
 	assert(dxx_route::route_progress_apply_trigger(
 	    transition_snapshot, transition_progress, 0));
-	assert(!transition_progress.wall_locked[0]);
+	assert(transition_progress.wall_locked[0]);
 	assert(!transition_progress.wall_locked[1]);
+	/* A one-sided unlock must not authorize travel back through the locked
+	 * face, even though an opener for the shared portal has fired */
+	auto directional_snapshot = transition_snapshot;
+	for (int segment = 0; segment < 2; ++segment) {
+		directional_snapshot.state.segments[segment].sides[0].flyable = false;
+		directional_snapshot.state.segments[segment].sides[0].hard_blocked = false;
+		directional_snapshot.state.segments[segment].sides[0].control_center_link = false;
+		directional_snapshot.state.walls[segment].kind = dxx_route::route_wall_kind::door;
+		directional_snapshot.state.walls[segment].key = dxx_route::route_key_requirement::none;
+		directional_snapshot.state.walls[segment].hidden = false;
+		directional_snapshot.state.walls[segment].locked = true;
+		directional_snapshot.state.walls[segment].opened = false;
+	}
+	auto directional_progress = dxx_route::initial_route_progress_state(
+	    directional_snapshot, planner_query);
+	assert(dxx_route::route_progress_apply_trigger(
+	    directional_snapshot, directional_progress, 0));
+	for (const bool authoritative : { false, true }) {
+		directional_progress.wall_state_authoritative = authoritative;
+		assert(dxx_route::evaluate_route_edge(
+		           directional_snapshot, planner_query, directional_progress, 1, 0)
+		           .progress_cost == LEVEL_METADATA_ROUTE_EDGE_PASSABLE);
+		assert(dxx_route::evaluate_route_edge(
+		           directional_snapshot, planner_query, directional_progress, 0, 0)
+		           .blocker == dxx_route::route_edge_blocker::locked_door);
+	}
 	auto rearm_snapshot = transition_snapshot;
 	rearm_snapshot.topology.triggers.resize(2);
 	rearm_snapshot.state.triggers.resize(2);
@@ -1929,6 +2016,68 @@ int main()
 	assert(conditional_dependency.progress.fired_triggers[0]);
 	assert(conditional_dependency.progress.fired_triggers[1]);
 	assert(conditional_dependency.progress.opened_hidden_walls[3]);
+	// A shot made from the door's own segment still does not request a crossing
+	auto local_shot_snapshot = conditional_snapshot;
+	local_shot_snapshot.topology.segments[0].sides[3].child = 2;
+	local_shot_snapshot.topology.segments[0].sides[3].reverse_side = 3;
+	local_shot_snapshot.topology.segments[2].sides[3].child = 0;
+	local_shot_snapshot.topology.segments[2].sides[3].reverse_side = 3;
+	local_shot_snapshot.state.segments[0].sides[3].flyable = true;
+	local_shot_snapshot.state.segments[2].sides[3].flyable = true;
+	auto local_shot_visible = conditional_visible;
+	local_shot_visible.conditional_segment = 2;
+	local_shot_visible.second_position = local_shot_snapshot.topology.segments[2].center;
+	auto local_shot_visibility = conditional_visibility;
+	local_shot_visibility.user = &local_shot_visible;
+	const auto local_shot_dependency = dxx_route::resolve_trigger_dependency(
+	    local_shot_snapshot, conditional_query,
+	    dxx_route::initial_route_progress_state(local_shot_snapshot, conditional_query),
+	    1, 1, local_shot_visibility);
+	assert(local_shot_dependency.resolved);
+	assert(local_shot_dependency.steps.size() == 3);
+	assert(local_shot_dependency.steps[1].kind == dxx_route::route_semantic_step_kind::hidden_door);
+	assert(local_shot_dependency.steps[1].wall == 3);
+	assert(local_shot_dependency.steps[1].segment == 2);
+	assert(local_shot_dependency.steps[1].side == -1);
+	assert(local_shot_dependency.steps[1].opened_links[0].segment == 2);
+	assert(local_shot_dependency.steps[1].opened_links[0].side == 1);
+	// Guided launch access can require a separate ordinary switch
+	auto launch_snapshot = make_guided_launch_prerequisite_snapshot();
+	dxx_route::route_query launch_query;
+	launch_query.start = launch_snapshot.state.start_position;
+	launch_query.navigator.radius = 65536;
+	dxx_route::route_visibility_query launch_visibility;
+	launch_visibility.wall_shootable = [](
+	    void *, int segment, const dxx_route::route_position &, int wall) -> int {
+		return wall == 0 && segment == 0;
+	};
+	launch_visibility.guided_route = [](
+	    void *, int wall, const int *segments, int count, guided_missile_route *route) {
+		if (wall != 1 || std::find(segments, segments + count, 1) == segments + count) return 0;
+		*route = {};
+		route->wall = wall;
+		route->launch.segment = 1;
+		route->launch.position[0] = 10 * 65536;
+		route->point_count = 1;
+		route->points[0].segment = 2;
+		route->points[0].position[0] = 20 * 65536;
+		return 1;
+	};
+	const auto launch_plan = dxx_route::plan_route(launch_snapshot, launch_query, launch_visibility);
+	assert(launch_plan.status == dxx_route::route_plan_status::ok);
+	assert(launch_plan.steps.size() == 5);
+	assert(launch_plan.steps[1].trigger == 0);
+	assert(launch_plan.steps[1].guided_shot.point_count == 0);
+	assert(launch_plan.steps[2].trigger == 1);
+	assert(launch_plan.steps[2].guided_shot.launch.segment == 1);
+	assert(launch_plan.steps[2].guided_shot.point_count == 1);
+	// A launch area opened by the shot itself is not an actionable dependency
+	launch_snapshot.topology.segments[0].sides[1].opener_walls = {1};
+	launch_snapshot.topology.segments[1].sides[0].opener_walls = {1};
+	launch_snapshot.topology.triggers[0].links.clear();
+	launch_snapshot.topology.triggers[1].links.push_back({0, 1});
+	assert(dxx_route::plan_route(launch_snapshot, launch_query, launch_visibility).status != dxx_route::route_plan_status::ok);
+
 	// A boss beyond an impassable grate needs its door opened before it is visible
 	auto gated_boss_snapshot = conditional_snapshot;
 	gated_boss_snapshot.topology.segments[1].sides[1].opener_walls.clear();
@@ -1960,6 +2109,25 @@ int main()
 	assert(gated_boss_plan.steps[2].kind == dxx_route::route_semantic_step_kind::boss);
 	assert(gated_boss_plan.steps[2].path.terminal_segment == 1);
 	assert(gated_boss_plan.steps[3].kind == dxx_route::route_semantic_step_kind::exit);
+	// A narrow ordinary firing line need not remain clear a ship radius away
+	auto precise_boss_visibility = gated_boss_visibility;
+	precise_boss_visibility.target_visible_with_open_wall = [](
+	    void *, int segment, const dxx_route::route_position &from, int target_segment,
+	    const dxx_route::route_position &, int wall) {
+		return segment == 1 && target_segment == 3 && wall == 4 &&
+		       from.value == std::array<int, 3>{ { 10 * 65536, 0, 0 } };
+	};
+	const auto precise_boss_plan = dxx_route::plan_route(
+	    gated_boss_snapshot, gated_boss_query, precise_boss_visibility);
+	assert(precise_boss_plan.status == dxx_route::route_plan_status::ok);
+	assert(precise_boss_plan.steps.size() == 4);
+	assert(precise_boss_plan.steps[1].trigger == 1);
+	assert(precise_boss_plan.steps[2].path.terminal_segment == 1);
+	precise_boss_visibility.target_visible_with_open_wall = [](
+	    void *, int, const dxx_route::route_position &, int,
+	    const dxx_route::route_position &, int) { return false; };
+	assert(dxx_route::plan_route(gated_boss_snapshot, gated_boss_query,
+	           precise_boss_visibility).status != dxx_route::route_plan_status::ok);
 	gated_boss_snapshot.topology.triggers[1].kind = dxx_route::route_trigger_kind::unlock_door;
 	assert(dxx_route::plan_route(gated_boss_snapshot, gated_boss_query,
 	           gated_boss_visibility).status != dxx_route::route_plan_status::ok);

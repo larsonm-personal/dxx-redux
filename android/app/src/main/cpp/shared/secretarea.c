@@ -24,6 +24,7 @@
 #include "robot.h"
 #include "route_snapshot_c.h"
 #include "route_analysis_cache.h"
+#include "route_confirmation.h"
 #include "secret_area_item_names.h"
 #include "segment.h"
 #include "automap.h"
@@ -2091,6 +2092,56 @@ static int level_metadata_route_shot_wall_is_passable(
 	return 0;
 }
 
+/* Supplement ideal line interpolation with the fixed-point velocity advances
+ * used by a straight flare.  Rounded per-frame positions can hit a nearby face
+ * even when every interpolated point on the ideal line is clear */
+static int secret_area_door_flare_steps_clear(const vms_vector *from, int start_seg,
+                                              const vms_vector *aim, int wall_seg, int wall_side, fix radius)
+{
+	const weapon_info *weapon = &Weapon_info[FLARE_ID];
+	if (weapon->thrust || weapon->drag)
+		return 1;
+#ifdef DXX_BUILD_DESCENT_II
+	if (weapon->speedvar != 128)
+		return 1;
+#endif
+	vms_vector direction, velocity;
+	vm_vec_sub(&direction, aim, from);
+	if (!vm_vec_normalize_quick(&direction)) return 0;
+	vm_vec_copy_scale(&velocity, &direction, weapon->speed[Difficulty_level]);
+	for (int rounding = 0; rounding < 2; ++rounding) {
+		vms_vector current = *from, delta;
+		vm_vec_copy_scale(&delta, &velocity, F1_0 / ROUTE_CONFIRMATION_FIXED_HZ + rounding);
+		const fix advance = vm_vec_mag_quick(&delta);
+		if (advance <= 0) return 0;
+		vms_vector endpoint = *aim;
+		const int frames = vm_vec_dist_quick(&current, &endpoint) / advance + 3;
+		int segment = start_seg, reached = 0;
+		for (int frame = 0; frame < frames; ++frame) {
+			vm_vec_add(&endpoint, &current, &delta);
+			fvi_query query = {};
+			fvi_info hit = {};
+			query.p0 = &current;
+			query.p1 = &endpoint;
+			query.startseg = segment;
+			query.thisobjnum = -1;
+			query.rad = radius;
+			query.flags = FQ_TRANSPOINT;
+			if (!level_metadata_analysis_consume_fvi()) return 0;
+			const int fate = find_vector_intersection(&query, &hit);
+			if (fate == HIT_WALL) {
+				reached = hit.hit_side_seg == wall_seg && hit.hit_side == wall_side;
+				break;
+			}
+			if (fate != HIT_NONE || hit.hit_seg < 0 || hit.hit_seg >= Num_segments) return 0;
+			current = endpoint;
+			segment = hit.hit_seg;
+		}
+		if (!reached) return 0;
+	}
+	return 1;
+}
+
 int level_metadata_door_shot_aim_from_position(int seg, const int from_pos[3], int wall_num, int aim_pos[3])
 {
 	fvi_query query;
@@ -2168,7 +2219,8 @@ int level_metadata_door_shot_aim_from_position(int seg, const int from_pos[3], i
 		if (!level_metadata_analysis_consume_fvi())
 			return 0;
 		if (find_vector_intersection(&query, &hit) == HIT_WALL && hit.hit_side_seg == wall_seg && hit.hit_side == wall_side &&
-		    level_metadata_fvi_segmented_visibility(&from, seg, &end, wall_seg, wall_seg, wall_side, query.rad, F1_0, 1)) {
+		    level_metadata_fvi_segmented_visibility(&from, seg, &end, wall_seg, wall_seg, wall_side, query.rad, F1_0, 1) &&
+		    secret_area_door_flare_steps_clear(&from, seg, &point, wall_seg, wall_side, query.rad)) {
 			aim_pos[0] = point.x;
 			aim_pos[1] = point.y;
 			aim_pos[2] = point.z;

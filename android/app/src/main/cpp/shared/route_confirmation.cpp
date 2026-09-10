@@ -1272,8 +1272,14 @@ int set_visible_flare_target(const object *actor, int segnum, int sidenum,
 	};
 	const int wall = Segments[segnum].sides[sidenum].wall_num;
 	if (wall >= 0 && wall < Num_walls && Walls[wall].type == WALL_DOOR &&
-	    wall == State.step.wall_num && State.step.aim_pos_valid &&
-	    (State.step.aim_pos[0] != target.x || State.step.aim_pos[1] != target.y || State.step.aim_pos[2] != target.z)) {
+	    wall == State.step.wall_num &&
+	    (State.step.seg != segnum ||
+	     (State.step.aim_pos_valid &&
+	      (State.step.aim_pos[0] != target.x || State.step.aim_pos[1] != target.y || State.step.aim_pos[2] != target.z)))) {
+		/* Recheck remote shots from the actual firing position, even when the
+		 * planned aim was the door center.  A single long cast can miss geometry
+		 * that stops the real projectile; use the planner's segmented check and
+		 * face sampling to find an ordinary clear shot from the current pose */
 		const int from[3] = { actor->pos.x, actor->pos.y, actor->pos.z };
 		int aim[3];
 		if (!level_metadata_door_shot_aim_from_position(actor->segnum, from, wall, aim))
@@ -1540,8 +1546,8 @@ void apply_objective_action(object *actor)
 				       Walls[wall_num].state == WALL_DOOR_WAITING ||
 				       Walls[wall_num].state == WALL_DOOR_OPEN)) ||
 				     actor_reached_target(actor))) {
-					// A remote shot can open a door that blocks the next switch's line of fire
-					if (State.step.seg != segnum && wall_num >= 0 && wall_num < Num_walls &&
+					// Firing-position steps open a line of fire without requesting a crossing
+					if ((State.step.seg != segnum || State.step.side < 0) && wall_num >= 0 && wall_num < Num_walls &&
 					    Walls[wall_num].state != WALL_DOOR_CLOSED) {
 						record_objective_and_replan();
 						break;
@@ -2133,6 +2139,22 @@ extern "C" int route_confirmation_drive_companion(object *objp)
 	    (!needs_door_shot || set_visible_flare_target(objp, door_segment, door_side, &flare_direction))) {
 		vm_vec_zero(&objp->mtype.phys_info.velocity);
 		vm_vec_zero(&objp->mtype.phys_info.thrust);
+		return 1;
+	}
+	if (State.target_pos_valid && objp->ctype.ai_info.PATH_DIR > 0 &&
+	    State.step.activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_PICKUP_KEY &&
+	    State.target_seg == State.semantic_target_seg && valid_object(State.target_objnum) &&
+	    Objects[State.target_objnum].type == OBJ_POWERUP &&
+	    vm_vec_dist_quick(&State.target_pos, &Objects[State.target_objnum].pos) >
+	        objp->size + Objects[State.target_objnum].size &&
+	    objp->segnum == Objects[State.target_objnum].segnum &&
+	    objp->ctype.ai_info.path_length > 0 &&
+	    objp->ctype.ai_info.cur_path_index >= objp->ctype.ai_info.path_length - 1) {
+		/* A clearance-adjusted waypoint can lie outside pickup range.  Finish
+		 * the interaction by steering toward the actual key; native full-radius
+		 * physics still decides how far the actor can move */
+		ai_path_set_orient_and_vel(objp, &Objects[State.target_objnum].pos, 2, NULL);
+		speed_up_actor(objp);
 		return 1;
 	}
 	if (State.target_pos_valid && objp->ctype.ai_info.PATH_DIR > 0 &&

@@ -430,6 +430,9 @@ bool trigger_effect_needed(
 		const auto &side = snapshot.topology.segments[link.segment].sides[link.side];
 		if (wall_needs_effect(side.wall))
 			return true;
+		if (kind == route_trigger_kind::unlock_door ||
+		    kind == route_trigger_kind::lock_door)
+			continue;
 		if (valid_segment(snapshot, side.child) && side.reverse_side >= 0 &&
 		    side.reverse_side < LEVEL_METADATA_MAX_SIDES &&
 		    wall_needs_effect(snapshot.topology.segments[side.child]
@@ -920,6 +923,10 @@ bool trigger_targets_wall(
 		const auto &side = snapshot.topology.segments[link.segment].sides[link.side];
 		if (side.wall == target_wall)
 			return true;
+		const auto kind = snapshot.topology.triggers[trigger].kind;
+		if (kind == route_trigger_kind::unlock_door ||
+		    kind == route_trigger_kind::lock_door)
+			continue;
 		if (valid_segment(snapshot, side.child) && side.reverse_side >= 0 &&
 		    side.reverse_side < LEVEL_METADATA_MAX_SIDES &&
 		    snapshot.topology.segments[side.child]
@@ -1086,6 +1093,11 @@ bool route_progress_apply_trigger(
 			continue;
 		const auto &side = snapshot.topology.segments[link.segment].sides[link.side];
 		apply_wall(side.wall);
+		/* Native lock/unlock triggers affect only the linked face.  Door
+		 * animation is paired, but access permissions are directional */
+		if (kind == route_trigger_kind::unlock_door ||
+		    kind == route_trigger_kind::lock_door)
+			continue;
 		if (!valid_segment(snapshot, side.child) || side.reverse_side < 0 ||
 		    side.reverse_side >= LEVEL_METADATA_MAX_SIDES)
 			continue;
@@ -2917,7 +2929,8 @@ class dependency_planner
 		step.segment = valid_segment(snapshot_, action_segment)
 		                   ? action_segment
 		                   : segment;
-		step.side = step.segment == segment ? side : -1;
+		// A firing pose does not request a crossing, even in the door's own room
+		step.side = valid_segment(snapshot_, action_segment) ? -1 : side;
 		step.wall = wall;
 		step.activation = route_activation_kind::open_hidden_door;
 		step.label = "Open hidden door";
@@ -3266,7 +3279,12 @@ class dependency_planner
 			    snapshot_, query_, state_.progress, topology.segment,
 			    topology.side);
 		}
-		if (edge.progress_cost == LEVEL_METADATA_ROUTE_EDGE_BLOCKED) {
+		/* Buddy-proof passage restrictions do not prevent the player's shot
+		 * from opening an unlocked door.  Its key was acquired above, and the
+		 * firing position is verified independently of crossing the barrier */
+		if (edge.progress_cost == LEVEL_METADATA_ROUTE_EDGE_BLOCKED &&
+		    !(edge.blocker == route_edge_blocker::hard_blocked &&
+		      !route_progress_wall_locked(snapshot_, state_.progress, wall))) {
 			set_problem("conditional hidden door cannot be unlocked");
 			return false;
 		}
@@ -3558,48 +3576,53 @@ class dependency_planner
 		// A boss or reactor can be fought through grates after opening its room
 		if (visibility_.target_visible_with_open_wall && valid_segment(snapshot_, target.segment)) {
 			const auto preparation_start = state_;
-			const auto search = search_routes(snapshot_, query_, state_.progress, false);
-			for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
-				const int wall = snapshot_.topology.segments[target.segment].sides[side].wall;
-				if (!valid_wall(snapshot_, wall) ||
-				    discover_trigger_sources_internal(snapshot_, preparation_start.progress,
-				                                      target.segment, side, false, true)
-				        .empty())
-					continue;
-				for (const int segment : search.visit_order) {
-					const auto &position = snapshot_.topology.segments[segment].center;
-					if (!position.valid)
+			// Prefer accessible shots with room for positional error. A grate may
+			// require precise aim without requiring a guided missile; the expanded
+			// search must still resolve the opener and access to the firing pose
+			for (int firing_pass = 0; firing_pass < (expand_firing_search_ ? 2 : 1); ++firing_pass) {
+				const auto search = search_routes(snapshot_, query_, state_.progress, firing_pass != 0);
+				for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
+					const int wall = snapshot_.topology.segments[target.segment].sides[side].wall;
+					if (!valid_wall(snapshot_, wall) ||
+					    discover_trigger_sources_internal(snapshot_, preparation_start.progress,
+					                                      target.segment, side, false, true)
+					        .empty())
 						continue;
-					auto visible = [&](const route_position &from) {
-						return consume_analysis_work(visibility_) &&
-						       visibility_.target_visible_with_open_wall(visibility_.user,
-						                                                 segment, from, target.segment, target.position, wall);
-					};
-					bool robust = visible(position);
-					for (int coordinate = 0; robust && query_.navigator.radius > 0 && coordinate < 3; ++coordinate)
-						for (int direction : { -1, 1 }) {
-							auto nearby = position;
-							nearby.value[coordinate] += direction * query_.navigator.radius;
-							if (!visible(nearby)) {
-								robust = false;
-								break;
+					for (const int segment : search.visit_order) {
+						const auto &position = snapshot_.topology.segments[segment].center;
+						if (!position.valid)
+							continue;
+						auto visible = [&](const route_position &from) {
+							return consume_analysis_work(visibility_) &&
+							       visibility_.target_visible_with_open_wall(visibility_.user,
+							                                                 segment, from, target.segment, target.position, wall);
+						};
+						bool robust = visible(position);
+						for (int coordinate = 0; robust && firing_pass == 0 && query_.navigator.radius > 0 && coordinate < 3; ++coordinate)
+							for (int direction : { -1, 1 }) {
+								auto nearby = position;
+								nearby.value[coordinate] += direction * query_.navigator.radius;
+								if (!visible(nearby)) {
+									robust = false;
+									break;
+								}
 							}
+						if (!robust)
+							continue;
+						state_ = preparation_start;
+						state_.problem.clear();
+						if (!fire_trigger(target.segment, side, 0)) {
+							break;
 						}
-					if (!robust)
-						continue;
-					state_ = preparation_start;
-					state_.problem.clear();
-					if (!fire_trigger(target.segment, side, 0)) {
+						const auto kind = route_progress_wall_kind(snapshot_, state_.progress, wall);
+						if ((kind == route_wall_kind::open || kind == route_wall_kind::illusion ||
+						     route_progress_wall_opened(snapshot_, state_.progress, wall)) &&
+						    move_to_target(segment, position, 0))
+							return true;
 						break;
 					}
-					const auto kind = route_progress_wall_kind(snapshot_, state_.progress, wall);
-					if ((kind == route_wall_kind::open || kind == route_wall_kind::illusion ||
-					     route_progress_wall_opened(snapshot_, state_.progress, wall)) &&
-					    move_to_target(segment, position, 0))
-						return true;
-					break;
+					state_ = preparation_start;
 				}
-				state_ = preparation_start;
 			}
 		}
 		/* An impassable grate can separate the target from its firing room.
@@ -4091,18 +4114,27 @@ class dependency_planner
 			conditional_firing = selected_firing.found;
 		}
 		guided_missile_route guided = {};
+		bool guided_approach = false;
 		if (!selected_firing.found && expand_firing_search_ && visibility_.guided_route) {
-			const auto search = search_routes(snapshot_, query_, state_.progress, false);
-			for (const auto &candidate : firing_sources) {
-				if (!valid_wall(snapshot_, candidate.source_wall) || !snapshot_.topology.walls[candidate.source_wall].shootable_trigger) continue;
-				if (!find_guided_shot(candidate.source_wall, search, guided)) continue;
-				selected_firing.found = true;
-				selected_firing.source = candidate;
-				selected_firing.terminal_segment = guided.launch.segment;
-				selected_firing.terminal_position.valid = true;
-				std::copy(guided.launch.position, guided.launch.position + 3, selected_firing.terminal_position.value.begin());
-				selected_firing.path = build_route_path(search, guided.launch.segment);
-				break;
+			// A verified projectile path may start beyond another switch. Resolve
+			// access to that launch pose without allowing the shot to unlock itself
+			for (int pass = 0; pass < 2 && !selected_firing.found; ++pass) {
+				auto launch_progress = state_.progress;
+				for (const auto &candidate : firing_sources)
+					launch_progress.avoided_triggers[candidate.trigger] = 1;
+				const auto search = search_routes(snapshot_, query_, launch_progress, pass != 0);
+				for (const auto &candidate : firing_sources) {
+					if (!valid_wall(snapshot_, candidate.source_wall) || !snapshot_.topology.walls[candidate.source_wall].shootable_trigger) continue;
+					if (!find_guided_shot(candidate.source_wall, search, guided)) continue;
+					selected_firing.found = true;
+					selected_firing.source = candidate;
+					selected_firing.terminal_segment = guided.launch.segment;
+					selected_firing.terminal_position.valid = true;
+					std::copy(guided.launch.position, guided.launch.position + 3, selected_firing.terminal_position.value.begin());
+					selected_firing.path = build_route_path(search, guided.launch.segment);
+					guided_approach = pass != 0;
+					break;
+				}
 			}
 		}
 		if (selected_firing.found)
@@ -4173,6 +4205,11 @@ class dependency_planner
 		const auto activation_start = state_;
 		state_.progress.trigger_in_progress[source.trigger] = 1;
 		const int selected_source_segment = source.source_segment;
+		if (guided_approach && !move_to_target(selected_firing.terminal_segment,
+		                                       selected_firing.terminal_position, depth + 1)) {
+			state_.progress.trigger_in_progress[source.trigger] = 0;
+			return false;
+		}
 		if (conditional_firing) {
 			if (!consume_analysis_work(visibility_)) {
 				state_.progress.trigger_in_progress[source.trigger] = 0;
@@ -4197,7 +4234,7 @@ class dependency_planner
 			selected_firing.guidance_candidates.clear();
 		}
 		if (selected_firing.found) {
-			if (!conditional_firing &&
+			if (!conditional_firing && !guided_approach &&
 			    !accumulate_path(selected_firing.path)) {
 				state_.progress.trigger_in_progress[source.trigger] = 0;
 				return fire_trigger(

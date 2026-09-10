@@ -297,10 +297,14 @@ static int guidebot_route_best_physical_frontier_internal(
 			    workspace->strategic_distance[child] >= 0)
 				continue;
 			reverse = view->reverse_side(view->user, segment, child);
+			/* Rank frontiers on the same geometry as the physical search.
+			 * A poor segment-center clearance estimate must not disconnect a
+			 * usable approach to a player-openable door; explicit narrow-portal
+			 * constraints still apply in both searches */
 			if (reverse < 0 || reverse >= LEVEL_METADATA_MAX_SIDES ||
 			    !guidebot_route_side_passable(
 			        view, child, reverse, 1,
-			        allow_control_center_link, 1, 1))
+			        allow_control_center_link, 1, 0))
 				continue;
 			workspace->strategic_distance[child] =
 			    workspace->strategic_distance[segment] + 1;

@@ -3873,9 +3873,9 @@
         "mine_volume": 7716210.0,
         "mine_volume_normalized": 1.68738,
         "mine_volume_text": "1.7x",
-        "travel_distance": 8601.4,
-        "travel_time_seconds": 172,
-        "travel_time_text": "2M:52S",
+        "travel_distance": 9167.2,
+        "travel_time_seconds": 183,
+        "travel_time_text": "3M:03S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -3917,6 +3917,32 @@
           },
           {
             "index": 2,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open door",
+            "seg": 83,
+            "wall": 34,
+            "label_pos": {
+              "x": 100.0,
+              "y": 0.0,
+              "z": -251.0
+            },
+            "distance": 282.9,
+            "opens": [
+              {
+                "seg": 89,
+                "side": 5,
+                "wall": 34
+              },
+              {
+                "seg": 90,
+                "side": 4,
+                "wall": 33
+              }
+            ]
+          },
+          {
+            "index": 3,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 7",
@@ -3928,7 +3954,7 @@
               "y": 95.1,
               "z": -288.2
             },
-            "distance": 1001.7,
+            "distance": 1284.6,
             "trigger": 7,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -3946,7 +3972,7 @@
             ]
           },
           {
-            "index": 3,
+            "index": 4,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 9",
@@ -3975,7 +4001,7 @@
             ]
           },
           {
-            "index": 4,
+            "index": 5,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "blue key",
@@ -3989,7 +4015,7 @@
             "key": "blue"
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -4003,7 +4029,7 @@
             "key": "gold"
           },
           {
-            "index": 6,
+            "index": 7,
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open door",
@@ -4029,7 +4055,7 @@
             ]
           },
           {
-            "index": 7,
+            "index": 8,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 29",
@@ -4052,7 +4078,7 @@
             ]
           },
           {
-            "index": 8,
+            "index": 9,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -4066,7 +4092,7 @@
             "key": "red"
           },
           {
-            "index": 9,
+            "index": 10,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -4079,7 +4105,7 @@
             "distance": 1171.2
           },
           {
-            "index": 10,
+            "index": 11,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

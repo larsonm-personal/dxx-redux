@@ -1793,6 +1793,13 @@ static void test_physical_frontier_follows_strategic_route(void)
 	    guidebot_route_best_physical_frontier(
 	        &view, 0, 3, 200, -1, -1, -1, -1, &Workspace) == 1);
 	assert(guidebot_route_segment_has_player_openable_keyed_door(&view, 1));
+	/* Center estimates cannot replace the useful keyed-door frontier with a
+	 * physically reachable dead end that happens to be closer to the goal */
+	fixture.narrow_wall = 0;
+	fixture.narrow_clearance = view.navigator_radius - 1;
+	assert(guidebot_route_best_physical_frontier(
+	           &view, 0, 3, 200, -1, -1, -1, -1, &Workspace) == 1);
+	fixture.narrow_wall = -1;
 	fixture.wall_open[1] = 1;
 	assert(!guidebot_route_segment_has_player_openable_keyed_door(&view, 1));
 	assert(
