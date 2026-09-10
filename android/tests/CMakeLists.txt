@@ -31,6 +31,9 @@ target_include_directories(test_level_section_io PRIVATE "${DXX_TEST_SHARED_SOUR
 target_link_libraries(test_level_section_io PRIVATE ${PHYSFS_LIBRARY})
 
 add_executable(test_rng_seed_resume test_rng_seed_resume.c)
+add_executable(test_swept_edge_clearance test_swept_edge_clearance.c
+                                         "${DXX_TEST_SHARED_SOURCE_DIR}/swept_edge_clearance.c")
+target_include_directories(test_swept_edge_clearance PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
 add_executable(test_headless_diagnostics test_headless_diagnostics.cpp)
 target_link_libraries(test_rng_seed_resume PRIVATE ${DXX_TARGET_PREFIX}maths)
 
@@ -370,6 +373,7 @@ set(DXX_HOST_TEST_TARGETS
     test_level_metadata_scan
     test_level_section_io
     test_route_snapshot
+    test_swept_edge_clearance
     test_route_analysis_cache
     test_guidebot_route_decision
     test_guidebot_route_certifier

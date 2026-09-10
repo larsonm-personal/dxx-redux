@@ -30,25 +30,25 @@
         },
         {
           "n": "fly-through 13",
-          "s": 41
+          "s": 40
         },
         {
           "n": "pass-through 6",
-          "s": 44
+          "s": 43
         },
         {
           "n": "fly-through 14",
-          "s": 47
+          "s": 45
         },
         {
           "n": "exit",
-          "s": 51
+          "s": 52
         }
       ],
-      "total_frames": 3059,
+      "total_frames": 3149,
       "rng_end": {
-        "state": 3650357819,
-        "calls": 1742
+        "state": 3856422143,
+        "calls": 1770
       }
     },
     {
@@ -86,7 +86,7 @@
           "s": 41
         }
       ],
-      "total_frames": 2470,
+      "total_frames": 2465,
       "rng_end": {
         "state": 790436741,
         "calls": 3324
@@ -115,10 +115,10 @@
           "s": 18
         }
       ],
-      "total_frames": 1052,
+      "total_frames": 1062,
       "rng_end": {
-        "state": 1920580197,
-        "calls": 796
+        "state": 4131908619,
+        "calls": 766
       }
     },
     {
@@ -149,7 +149,7 @@
         },
         {
           "n": "reactor",
-          "s": 29
+          "s": 28
         },
         {
           "n": "pass-through 12",
@@ -160,7 +160,7 @@
           "s": 52
         }
       ],
-      "total_frames": 3132,
+      "total_frames": 3142,
       "rng_end": {
         "state": 1811460131,
         "calls": 2150
@@ -210,10 +210,10 @@
         },
         {
           "n": "exit",
-          "s": 72
+          "s": 73
         }
       ],
-      "total_frames": 4338,
+      "total_frames": 4362,
       "rng_end": {
         "state": 4151607207,
         "calls": 3394
@@ -231,69 +231,69 @@
       "objectives": [
         {
           "n": "pass-through 13",
-          "s": 19
+          "s": 17
         },
         {
           "n": "switch 17",
-          "s": 23
+          "s": 21
         },
         {
           "n": "pass-through 12",
-          "s": 29
+          "s": 27
         },
         {
           "n": "switch 18",
-          "s": 33
+          "s": 30
         },
         {
           "n": "pass-through 10",
-          "s": 42
+          "s": 39
         },
         {
           "n": "switch 19",
-          "s": 46
+          "s": 43
         },
         {
           "n": "pass-through 11",
-          "s": 52
+          "s": 50
         },
         {
           "n": "switch 20",
-          "s": 57
+          "s": 54
         },
         {
           "n": "switch 14",
-          "s": 63
+          "s": 61
         },
         {
           "n": "switch 21",
-          "s": 69
+          "s": 67
         },
         {
           "n": "boss",
-          "s": 76
+          "s": 74
         },
         {
           "n": "switch 6",
-          "s": 95
+          "s": 93
         },
         {
           "n": "switch 3",
-          "s": 105
+          "s": 102
         },
         {
           "n": "switch 0",
-          "s": 114
+          "s": 111
         },
         {
           "n": "exit",
-          "s": 124
+          "s": 122
         }
       ],
-      "total_frames": 7410,
+      "total_frames": 7294,
       "rng_end": {
-        "state": 1379832279,
-        "calls": 4114
+        "state": 4017957265,
+        "calls": 3824
       }
     }
   ]

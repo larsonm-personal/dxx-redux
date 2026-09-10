@@ -94,6 +94,7 @@ int level_metadata_route_audit_domain(
 int level_metadata_validate_live_route_certificate(
     int start_objnum, unsigned int *work_units);
 int level_metadata_prepare_guidebot_path_view(int start_objnum);
+int level_metadata_prepare_route_step_current(int start_objnum, level_metadata_route_step *step);
 int level_metadata_get_exit_route_step_current(
     int start_objnum,
     level_metadata_route_step *step,
@@ -134,6 +135,7 @@ unsigned int level_metadata_get_analysis_fvi_count(void);
 void level_metadata_set_persistent_cache_enabled(int enabled);
 void level_metadata_set_defer_guidebot_accessibility(int defer);
 int level_metadata_get_switch_projectile_radius(void);
+int level_metadata_get_weapon_projectile_radius(int weapon_id);
 void level_metadata_set_switch_projectile_radius_override(int radius);
 void level_metadata_choose_level_display_name(
     const char *level_file, const char *current_level_name,

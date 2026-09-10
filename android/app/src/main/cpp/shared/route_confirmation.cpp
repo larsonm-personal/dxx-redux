@@ -64,6 +64,7 @@ struct controller_state {
 	unsigned int wait_frames;
 	unsigned int replan_wait_frames;
 	int pending_restorer_trigger;
+	int crossed_path_closure;
 	unsigned int frontier_extension_count;
 	unsigned int duplicate_objective_count;
 	unsigned int frame_time_remainder;
@@ -383,7 +384,9 @@ int record_implicitly_completed_steps(const level_metadata_state *metadata,
 			if (State.summary.objectives[result_index].route_step_index ==
 			        step_index &&
 			    State.summary.objectives[result_index].is_switch_restorer ==
-			        step->is_switch_restorer) {
+			        step->is_switch_restorer &&
+			    (step->kind != LEVEL_METADATA_ROUTE_TRIGGER ||
+			     State.summary.objectives[result_index].trigger_num == step->trigger_num)) {
 				already_recorded = 1;
 				break;
 			}
@@ -402,6 +405,7 @@ int record_implicitly_completed_steps(const level_metadata_state *metadata,
 		result->activation_kind = step->activation_kind;
 		result->is_switch_restorer = step->is_switch_restorer;
 		result->restored_wall_num = step->restored_wall_num;
+		result->trigger_num = step->trigger_num;
 		result->completed_ticks = State.summary.elapsed_ticks;
 		result->completed_frame = State.summary.frame_count;
 		snprintf(result->label, sizeof(result->label), "%s", step->label);
@@ -447,7 +451,8 @@ int objective_was_recorded(const level_metadata_route_step *step, int step_index
 		if (completed->route_step_index == step_index &&
 		    completed->kind == step->kind &&
 		    completed->activation_kind == step->activation_kind &&
-		    completed->is_switch_restorer == step->is_switch_restorer)
+		    completed->is_switch_restorer == step->is_switch_restorer &&
+		    (step->kind != LEVEL_METADATA_ROUTE_TRIGGER || completed->trigger_num == step->trigger_num))
 			return 1;
 	}
 	return 0;
@@ -458,6 +463,7 @@ int prepare_next_goal(int restorer_trigger)
 	const level_metadata_state *metadata;
 	int selected_index = -1;
 	int route_goal;
+	int reopen_unfired_trigger;
 	object *actor;
 
 	if (!valid_object(State.actor_objnum)) {
@@ -523,7 +529,13 @@ int prepare_next_goal(int restorer_trigger)
 	 * gate.  Continue with the first uncompleted route objective; if its path
 	 * actually reaches a reclosed controlled door, recover_path_door requests
 	 * an explicit restorer replan. */
-	if (restorer_trigger < 0 &&
+	/* An implicit completion only described the old open wall state. If that
+	 * state reverses before the switch was ever fired, its action is needed */
+	reopen_unfired_trigger = metadata->route_steps[selected_index].kind == LEVEL_METADATA_ROUTE_TRIGGER &&
+	                         objective_was_recorded(&metadata->route_steps[selected_index], selected_index) &&
+	                         !escort_route_trigger_was_activated(metadata->route_steps[selected_index].trigger_num);
+	if (restorer_trigger < 0 && !reopen_unfired_trigger &&
+	    metadata->route_steps[selected_index].is_switch_restorer != LEVEL_METADATA_ROUTE_RECOVERY_ACCESS &&
 	    objective_was_recorded(&metadata->route_steps[selected_index],
 	                           selected_index)) {
 		for (int candidate_index = selected_index + 1;
@@ -545,6 +557,17 @@ int prepare_next_goal(int restorer_trigger)
 	        selected_index))
 		return 0;
 	State.step = metadata->route_steps[selected_index];
+	if (reopen_unfired_trigger)
+		State.step.is_switch_restorer = LEVEL_METADATA_ROUTE_RECOVERY_ACCESS;
+	/* Explicit door recovery can revisit a completed switch, so its cached
+	 * firing pose must be ranked from the actor's current side of the door */
+	if (restorer_trigger >= 0) {
+		if (!level_metadata_prepare_route_step_current(State.actor_objnum, &State.step) ||
+		    escort_route_build_goal_for_step(&State.step, &State.goal) == ESCORT_GOAL_UNSPECIFIED) {
+			fail(ROUTE_CONFIRMATION_FAILED, "could not prepare current trigger-door recovery guidance");
+			return 0;
+		}
+	}
 	/* Publish exactly the selected live goal before asking the same physical
 	 * frontier logic used by the in-game Guide-Bot to choose this leg's
 	 * reachable navigation endpoint. */
@@ -903,7 +926,8 @@ void record_objective_and_replan(void)
 		        State.summary.current_route_step_index &&
 		    completed->kind == State.step.kind &&
 		    completed->activation_kind == State.step.activation_kind &&
-		    completed->is_switch_restorer == State.step.is_switch_restorer) {
+		    completed->is_switch_restorer == State.step.is_switch_restorer &&
+		    (State.step.kind != LEVEL_METADATA_ROUTE_TRIGGER || completed->trigger_num == State.step.trigger_num)) {
 			/* Restorer triggers can reactivate an already completed semantic
 			 * step while later prerequisites are being resolved.  Execute and
 			 * replan it, but keep one timing entry per authored objective. */
@@ -927,6 +951,7 @@ void record_objective_and_replan(void)
 	result->activation_kind = State.summary.current_activation_kind;
 	result->is_switch_restorer = State.step.is_switch_restorer;
 	result->restored_wall_num = State.step.restored_wall_num;
+	result->trigger_num = State.step.trigger_num;
 	result->completed_ticks = State.summary.elapsed_ticks;
 	result->completed_frame = State.summary.frame_count;
 	snprintf(result->label, sizeof(result->label), "%s", State.step.label);
@@ -944,6 +969,48 @@ void record_objective_and_replan(void)
 		return;
 	}
 	prepare_next_goal(-1);
+}
+
+int closing_trigger_intersects_path(const object *actor, int trigger_num)
+{
+	const trigger *source = &Triggers[trigger_num];
+	const ai_static *path = &actor->ctype.ai_info;
+	if ((source->type != TT_CLOSE_WALL && source->type != TT_CLOSE_DOOR) ||
+	    (source->flags & TF_DISABLED) ||
+	    path->hide_index < 0 || path->path_length <= 0 ||
+	    (path->PATH_DIR != 1 && path->PATH_DIR != -1) ||
+	    path->hide_index + path->path_length > MAX_POINT_SEGS)
+		return 0;
+	int previous = actor->segnum;
+	for (int index = path->cur_path_index;
+	     index >= 0 && index < path->path_length; index += path->PATH_DIR) {
+		const int next = Point_segs[path->hide_index + index].segnum;
+		for (int link = 0; link < source->num_links && link < MAX_WALLS_PER_LINK; ++link) {
+			const int segment = source->seg[link], side = source->side[link];
+			if (segment < 0 || segment >= Num_segments || side < 0 || side >= MAX_SIDES_PER_SEGMENT)
+				continue;
+			const int child = Segments[segment].children[side];
+			if ((previous == segment && next == child) || (previous == child && next == segment))
+				return 1;
+		}
+		previous = next;
+	}
+	return 0;
+}
+
+int crossed_path_is_closing(void)
+{
+	const trigger *source = &Triggers[State.crossed_path_closure - 1];
+	for (int link = 0; link < source->num_links && link < MAX_WALLS_PER_LINK; ++link) {
+		const int segment = source->seg[link], side = source->side[link];
+		if (segment < 0 || segment >= Num_segments || side < 0 || side >= MAX_SIDES_PER_SEGMENT)
+			continue;
+		const int wall_num = Segments[segment].sides[side].wall_num;
+		if (wall_num >= 0 && wall_num < Num_walls &&
+		    (Walls[wall_num].state == WALL_DOOR_DECLOAKING || Walls[wall_num].state == WALL_DOOR_CLOSING))
+			return 1;
+	}
+	return 0;
 }
 
 void apply_incidental_crossed_trigger(object *actor)
@@ -965,35 +1032,14 @@ void apply_incidental_crossed_trigger(object *actor)
 	trigger_num = Walls[wall_num].trigger;
 	if (trigger_num < 0 || trigger_num >= Num_triggers)
 		return;
-	/* Incidental OPEN_WALL crossings are persistent route state that the
-	 * strategic plan assumes after traversing any leg, including key pickups.
-	 * Limiting these to reactor objectives misses earlier cage-opening effects.
-	 * Other trigger
-	 * kinds can toggle or affect unrelated gameplay and remain explicit route
-	 * objectives. */
-	if (Triggers[trigger_num].type != TT_OPEN_WALL)
+	/* The proxy represents the player following Guide-Bot through this portal
+	 * Native player movement fires every crossed trigger, including door opens
+	 * and closes; restricting this to OPEN_WALL loses real route state */
+	/* Level transitions belong to the explicit exit objective, which verifies
+	 * completion without loading a different level into the running proof */
+	if (Triggers[trigger_num].type == TT_EXIT ||
+	    Triggers[trigger_num].type == TT_SECRET_EXIT)
 		return;
-	{
-		const trigger *triggerp = &Triggers[trigger_num];
-		int effect_needed = 0;
-		for (int link = 0; link < triggerp->num_links; ++link) {
-			const int target_seg = triggerp->seg[link];
-			const int target_side = triggerp->side[link];
-			const int target_wall =
-			    target_seg >= 0 && target_seg < Num_segments &&
-			            target_side >= 0 &&
-			            target_side < MAX_SIDES_PER_SEGMENT
-			        ? Segments[target_seg].sides[target_side].wall_num
-			        : -1;
-			if (target_wall >= 0 && target_wall < Num_walls &&
-			    Walls[target_wall].type != WALL_OPEN) {
-				effect_needed = 1;
-				break;
-			}
-		}
-		if (!effect_needed)
-			return;
-	}
 	/* The named trigger objective below owns both activation and timing. */
 	if ((State.step.activation_kind ==
 	         LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER ||
@@ -1002,8 +1048,13 @@ void apply_incidental_crossed_trigger(object *actor)
 	    State.step.seg == State.previous_actor_seg &&
 	    State.step.side == side)
 		return;
+	const int closes_path = closing_trigger_intersects_path(actor, trigger_num);
 	check_trigger(&Segments[State.previous_actor_seg], (short) side,
 	              (short) State.actor_objnum, 0);
+	if (closes_path) {
+		State.crossed_path_closure = trigger_num + 1;
+		State.replan_wait_frames = 0;
+	}
 #if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	fprintf(stderr,
 	        "ROUTE-CONFIRM incidental trigger=%d seg=%d side=%d actor_seg=%d\n",
@@ -1172,31 +1223,44 @@ int set_visible_flare_target(const object *actor, int segnum, int sidenum,
 	vms_vector start;
 	vms_vector target;
 	vms_vector end;
-	int fate;
 	if (!actor || !direction || segnum < 0 || segnum >= Num_segments ||
 	    sidenum < 0 || sidenum >= MAX_SIDES_PER_SEGMENT)
 		return 0;
 	compute_center_point_on_side(&target, &Segments[segnum], sidenum);
-	vm_vec_sub(direction, &target, &actor->pos);
-	if (!vm_vec_normalize_quick(direction))
-		return 0;
 	start = actor->pos;
-	end = target;
-	vm_vec_scale_add2(&end, direction, F1_0);
 	query.p0 = &start;
 	query.p1 = &end;
 	query.startseg = actor->segnum;
-	query.rad = 0;
 	query.thisobjnum = (short) (actor - Objects);
-	query.flags = FQ_IGNORE_POWERUPS;
-	fate = find_vector_intersection(&query, &hit);
-	if (fate == HIT_WALL && hit.hit_side_seg == segnum && hit.hit_side == sidenum)
+	// Match projectile physics: a transparent texel is not a wall impact
+	query.rad = level_metadata_get_weapon_projectile_radius(FLARE_ID);
+	query.flags = FQ_IGNORE_POWERUPS | FQ_TRANSPOINT;
+	auto hits_face = [&](const vms_vector &point) {
+		vm_vec_sub(direction, &point, &actor->pos);
+		if (!vm_vec_normalize_quick(direction))
+			return false;
+		end = point;
+		vm_vec_scale_add2(&end, direction, F1_0);
+		return find_vector_intersection(&query, &hit) == HIT_WALL &&
+		       hit.hit_side_seg == segnum && hit.hit_side == sidenum;
+	};
+	if (hits_face(target))
 		return 1;
-	// Preserve direct door targeting while allowing shots through intervening grates
-	query.flags |= FQ_TRANSPOINT;
-	fate = find_vector_intersection(&query, &hit);
-	return fate == HIT_WALL && hit.hit_side_seg == segnum &&
-	       hit.hit_side == sidenum;
+	// Aim at an opaque portion when the center of a blastable grate is a hole
+	int vertices[4];
+	get_side_verts(vertices, segnum, sidenum);
+	for (int vertex = 0; vertex < 4; ++vertex) {
+		vms_vector point;
+		vm_vec_avg(&point, &target, &Vertices[vertices[vertex]]);
+		if (hits_face(point))
+			return 1;
+		vms_vector edge;
+		vm_vec_avg(&edge, &Vertices[vertices[vertex]], &Vertices[vertices[(vertex + 1) % 4]]);
+		vm_vec_avg(&point, &target, &edge);
+		if (hits_face(point))
+			return 1;
+	}
+	return 0;
 }
 
 int find_route_flare_target(object *actor, int *segnum, int *sidenum,
@@ -1543,6 +1607,10 @@ void apply_objective_action(object *actor)
 		case LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_REACTOR:
 			if (valid_object(State.target_objnum) &&
 			    target_is_visible(actor, &Objects[State.target_objnum])) {
+#if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+				fprintf(stderr, "ROUTE-CONFIRM verified primary shot actor_seg=%d target_seg=%d object=%d\n",
+				        actor->segnum, Objects[State.target_objnum].segnum, State.target_objnum);
+#endif
 				State.action_applied = 1;
 				apply_damage_to_controlcen(&Objects[State.target_objnum],
 				                           Objects[State.target_objnum].shields + F1_0,
@@ -1555,6 +1623,10 @@ void apply_objective_action(object *actor)
 			if (!State.action_applied &&
 			    valid_object(State.target_objnum) &&
 			    target_is_visible(actor, &Objects[State.target_objnum])) {
+#if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+				fprintf(stderr, "ROUTE-CONFIRM verified primary shot actor_seg=%d target_seg=%d object=%d\n",
+				        actor->segnum, Objects[State.target_objnum].segnum, State.target_objnum);
+#endif
 				State.action_applied = 1;
 				apply_damage_to_robot(&Objects[State.target_objnum],
 				                      Objects[State.target_objnum].shields + F1_0,
@@ -1745,7 +1817,7 @@ extern "C" void route_confirmation_before_frame(void)
 	 * engine API so long verification paths do not involuntarily end the level. */
 	if (reactor_countdown_is_active() && !Reactor_countdown_paused)
 		reactor_countdown_set_paused(1, Countdown_timer);
-	if (State.phase == PHASE_WAIT_FOR_REPLAN && valid_object(State.actor_objnum)) {
+	if ((State.phase == PHASE_WAIT_FOR_REPLAN || State.crossed_path_closure) && valid_object(State.actor_objnum)) {
 		object *actor = &Objects[State.actor_objnum];
 		vm_vec_zero(&actor->mtype.phys_info.velocity);
 		vm_vec_zero(&actor->mtype.phys_info.thrust);
@@ -1792,6 +1864,22 @@ extern "C" void route_confirmation_after_frame(void)
 		return;
 	}
 	apply_incidental_crossed_trigger(actor);
+	if (State.crossed_path_closure) {
+		State.previous_actor_seg = actor->segnum;
+		State.previous_actor_pos = actor->pos;
+		if (crossed_path_is_closing()) {
+			if (++State.replan_wait_frames > 5 * ROUTE_CONFIRMATION_FIXED_HZ)
+				fail(ROUTE_CONFIRMATION_TIMEOUT, "crossed path closure did not settle within 5 seconds");
+			return;
+		}
+#if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+		fprintf(stderr, "ROUTE-CONFIRM replan crossed path closure trigger=%d actor_seg=%d\n",
+		        State.crossed_path_closure - 1, actor->segnum);
+#endif
+		State.crossed_path_closure = 0;
+		prepare_next_goal(-1);
+		return;
+	}
 	if (State.target_pos_valid) {
 		distance = vm_vec_dist_quick(&actor->pos, &State.target_pos);
 		if (distance + F1_0 / 4 < State.best_distance) {
@@ -1972,8 +2060,16 @@ extern "C" int route_confirmation_drive_companion(object *objp)
 	const bool needs_primary_shot = !State.action_applied && valid_object(State.target_objnum) &&
 	                                (State.step.activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_REACTOR ||
 	                                 State.step.activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_BOSS);
+	int door_segment = -1, door_side = -1;
+	vms_vector flare_direction;
+	const bool needs_door_shot = !State.action_applied &&
+	                             State.step.activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_OPEN_HIDDEN_DOOR &&
+	                             State.step.wall_num >= 0 && State.step.wall_num < Num_walls &&
+	                             objective_source(&door_segment, &door_side) &&
+	                             Walls[State.step.wall_num].state == WALL_DOOR_CLOSED;
 	if (actor_reached_target(objp) &&
-	    (!needs_primary_shot || target_is_visible(objp, &Objects[State.target_objnum]))) {
+	    (!needs_primary_shot || target_is_visible(objp, &Objects[State.target_objnum])) &&
+	    (!needs_door_shot || set_visible_flare_target(objp, door_segment, door_side, &flare_direction))) {
 		vm_vec_zero(&objp->mtype.phys_info.velocity);
 		vm_vec_zero(&objp->mtype.phys_info.thrust);
 		return 1;

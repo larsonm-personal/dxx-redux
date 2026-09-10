@@ -1,0 +1,1079 @@
+{
+  "schema": "dxx-guidebot-route-simulation-v1",
+  "mission_filename": "bitesize.mn2",
+  "target_index": 0,
+  "generation": 4,
+  "fixed_hz": 60,
+  "seed": 1,
+  "status": "partial",
+  "level_counts": {
+    "ok": 29,
+    "failed": 1,
+    "unsupported": 1
+  },
+  "levels": [
+    {
+      "level_num": 1,
+      "level_file": "level1-1.rl2",
+      "route_input_sha256": "D0E82A5F2B0004324B14991CC72FAF9CD2C7E266CE206E64D56D3CA8735314AC",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "red key",
+          "s": 5
+        },
+        {
+          "n": "reactor",
+          "s": 12
+        },
+        {
+          "n": "exit",
+          "s": 15
+        }
+      ],
+      "total_frames": 870,
+      "rng_end": {
+        "state": 875936247,
+        "calls": 498
+      }
+    },
+    {
+      "level_num": 2,
+      "level_file": "level1-2.rl2",
+      "route_input_sha256": "F5301D786116AB08B097824B3055CB03658C258A03B346A3BCB3153581BA26EE",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 3
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 7
+        },
+        {
+          "n": "reactor",
+          "s": 11
+        },
+        {
+          "n": "exit",
+          "s": 13
+        }
+      ],
+      "total_frames": 799,
+      "rng_end": {
+        "state": 3271312987,
+        "calls": 686
+      }
+    },
+    {
+      "level_num": 3,
+      "level_file": "level1-3.rl2",
+      "route_input_sha256": "DCE43E068A7C021B8C1AC539DE49347B89D43AB4E0656A13571DDADF767AC007",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 6
+        },
+        {
+          "n": "blastable wall",
+          "s": 13
+        },
+        {
+          "n": "blastable wall",
+          "s": 14
+        },
+        {
+          "n": "gold key",
+          "s": 17
+        },
+        {
+          "n": "blastable wall",
+          "s": 20
+        },
+        {
+          "n": "blastable wall",
+          "s": 22
+        },
+        {
+          "n": "switch 2",
+          "s": 26
+        },
+        {
+          "n": "red key",
+          "s": 33
+        },
+        {
+          "n": "reactor",
+          "s": 43
+        },
+        {
+          "n": "exit",
+          "s": 49
+        }
+      ],
+      "total_frames": 2948,
+      "rng_end": {
+        "state": 3630942800,
+        "calls": 2167
+      }
+    },
+    {
+      "level_num": 4,
+      "level_file": "level1-4.rl2",
+      "route_input_sha256": "6C9E75BD392835ACADB729FDE117BFE0B13043CD7D1FC17FB112B24E994FFCD4",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 14
+        },
+        {
+          "n": "red key",
+          "s": 27
+        },
+        {
+          "n": "boss",
+          "s": 38
+        },
+        {
+          "n": "exit",
+          "s": 49
+        }
+      ],
+      "total_frames": 2911,
+      "rng_end": {
+        "state": 1823622174,
+        "calls": 1769
+      }
+    },
+    {
+      "level_num": 5,
+      "level_file": "level2-1.rl2",
+      "route_input_sha256": "AE4A34CF3F461A7365D1F2FB1910E27D3C2DFB1E9683795F06829650A7A98E6E",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 4
+        },
+        {
+          "n": "red key",
+          "s": 4
+        },
+        {
+          "n": "reactor",
+          "s": 8
+        },
+        {
+          "n": "exit",
+          "s": 9
+        }
+      ],
+      "total_frames": 552,
+      "rng_end": {
+        "state": 4008086470,
+        "calls": 865
+      }
+    },
+    {
+      "level_num": 6,
+      "level_file": "level2-2.rl2",
+      "route_input_sha256": "BD3F422F435651D1C6E9FE53C5A01E9F4FF0E49087BEA7BD9E947C562AC45A75",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 8
+        },
+        {
+          "n": "reactor",
+          "s": 14
+        },
+        {
+          "n": "exit",
+          "s": 15
+        }
+      ],
+      "total_frames": 906,
+      "rng_end": {
+        "state": 2896654120,
+        "calls": 1471
+      }
+    },
+    {
+      "level_num": 7,
+      "level_file": "level2-3.rl2",
+      "route_input_sha256": "D7EBFD1F4722E089C853152C1018488D98556FCA23542970F42569AECB821540",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 8
+        },
+        {
+          "n": "open door",
+          "s": 13
+        },
+        {
+          "n": "gold key",
+          "s": 16
+        },
+        {
+          "n": "open door",
+          "s": 21
+        },
+        {
+          "n": "red key",
+          "s": 24
+        },
+        {
+          "n": "reactor",
+          "s": 30
+        },
+        {
+          "n": "exit",
+          "s": 31
+        }
+      ],
+      "total_frames": 1839,
+      "rng_end": {
+        "state": 2036590899,
+        "calls": 4950
+      }
+    },
+    {
+      "level_num": 8,
+      "level_file": "level2-4.rl2",
+      "route_input_sha256": "A1458863ED8E3F67B5A4473E78A0928DB4EF7C86903DF3C3FC48B42651CD02E8",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "destroy robot carrying red key",
+          "s": 9
+        },
+        {
+          "n": "boss",
+          "s": 9
+        },
+        {
+          "n": "exit",
+          "s": 16
+        }
+      ],
+      "total_frames": 959,
+      "rng_end": {
+        "state": 2875035323,
+        "calls": 590
+      }
+    },
+    {
+      "level_num": 9,
+      "level_file": "level3-1.rl2",
+      "route_input_sha256": "0FA98AC3FED3814345320C5A052195281B1EBD563EC3B9D0769900B43607C125",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "red key",
+          "s": 4
+        },
+        {
+          "n": "reactor",
+          "s": 6
+        },
+        {
+          "n": "exit",
+          "s": 11
+        }
+      ],
+      "total_frames": 685,
+      "rng_end": {
+        "state": 2822133894,
+        "calls": 417
+      }
+    },
+    {
+      "level_num": 10,
+      "level_file": "level3-2.rl2",
+      "route_input_sha256": "F3A8BAEA26AF06F1ED52BDFCF77293558E2FB02E7EDAD603EB88B258F871F464",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blastable wall",
+          "s": 3
+        },
+        {
+          "n": "hidden door",
+          "s": 4
+        },
+        {
+          "n": "blue key",
+          "s": 4
+        },
+        {
+          "n": "switch 3",
+          "s": 13
+        },
+        {
+          "n": "gold key",
+          "s": 14
+        },
+        {
+          "n": "red key",
+          "s": 26
+        },
+        {
+          "n": "reactor",
+          "s": 26
+        },
+        {
+          "n": "exit",
+          "s": 33
+        }
+      ],
+      "total_frames": 2002,
+      "rng_end": {
+        "state": 3601144113,
+        "calls": 6224
+      }
+    },
+    {
+      "level_num": 11,
+      "level_file": "level3-3.rl2",
+      "route_input_sha256": "588A7C08F1FBFF83CBE47B03AFC863572E15F4DC70246631847C4729C5763526",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 7
+        },
+        {
+          "n": "gold key",
+          "s": 13
+        },
+        {
+          "n": "red key",
+          "s": 19
+        },
+        {
+          "n": "pass-through 3",
+          "s": 23
+        },
+        {
+          "n": "reactor",
+          "s": 26
+        },
+        {
+          "n": "exit",
+          "s": 36
+        }
+      ],
+      "total_frames": 2137,
+      "rng_end": {
+        "state": 871209110,
+        "calls": 2513
+      }
+    },
+    {
+      "level_num": 12,
+      "level_file": "level3-4.rl2",
+      "route_input_sha256": "211E4DEAA59F09783C603F941884F1595B3AA13E3B2A4C9BED13917F135C5DD4",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "red key",
+          "s": 2
+        },
+        {
+          "n": "boss",
+          "s": 16
+        },
+        {
+          "n": "exit",
+          "s": 24
+        }
+      ],
+      "total_frames": 1426,
+      "rng_end": {
+        "state": 3017277417,
+        "calls": 2520
+      }
+    },
+    {
+      "level_num": 13,
+      "level_file": "level4-1.rl2",
+      "route_input_sha256": "0C1542FAD8CE5C1A3476F19590E46FE4B1718A2F6C6DE236A4EC7A46D09B48C3",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 5
+        },
+        {
+          "n": "red key",
+          "s": 13
+        },
+        {
+          "n": "switch 1",
+          "s": 14
+        },
+        {
+          "n": "switch 2",
+          "s": 23
+        },
+        {
+          "n": "reactor",
+          "s": 31
+        },
+        {
+          "n": "exit",
+          "s": 43
+        }
+      ],
+      "total_frames": 2564,
+      "rng_end": {
+        "state": 2872424649,
+        "calls": 2040
+      }
+    },
+    {
+      "level_num": 14,
+      "level_file": "level4-2.rl2",
+      "route_input_sha256": "D366C8BB9A72A93E63050109894DAF5C4E548C680739334937D65839E786EE8D",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 6
+        },
+        {
+          "n": "switch 0",
+          "s": 9
+        },
+        {
+          "n": "reactor",
+          "s": 15
+        },
+        {
+          "n": "exit",
+          "s": 18
+        }
+      ],
+      "total_frames": 1067,
+      "rng_end": {
+        "state": 273438635,
+        "calls": 1886
+      }
+    },
+    {
+      "level_num": 15,
+      "level_file": "level4-3.rl2",
+      "route_input_sha256": "B1A5CB5BAEA663D853D07F3680A6666DEDD958595230D5E4B3411A670A7D4FF7",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 3
+        },
+        {
+          "n": "red key",
+          "s": 7
+        },
+        {
+          "n": "reactor",
+          "s": 11
+        },
+        {
+          "n": "exit",
+          "s": 14
+        }
+      ],
+      "total_frames": 838,
+      "rng_end": {
+        "state": 1496429597,
+        "calls": 2084
+      }
+    },
+    {
+      "level_num": 16,
+      "level_file": "level4-4.rl2",
+      "route_input_sha256": "A010EA3F2AA6BC678E91E2D5F842668F330EB47FD98CC5FEA65F1653D7EACDC3",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "red key",
+          "s": 4
+        },
+        {
+          "n": "boss",
+          "s": 19
+        },
+        {
+          "n": "exit",
+          "s": 30
+        }
+      ],
+      "total_frames": 1778,
+      "rng_end": {
+        "state": 542446488,
+        "calls": 1935
+      }
+    },
+    {
+      "level_num": 17,
+      "level_file": "level5-1.rl2",
+      "route_input_sha256": "6E383E3FEBCE27E8C33D90413D9FF2D3CD00EE1DB57D3FBA3E4178EAF39A762C",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 6
+        },
+        {
+          "n": "gold key",
+          "s": 13
+        },
+        {
+          "n": "red key",
+          "s": 20
+        },
+        {
+          "n": "reactor",
+          "s": 24
+        },
+        {
+          "n": "exit",
+          "s": 29
+        }
+      ],
+      "total_frames": 1741,
+      "rng_end": {
+        "state": 2263249756,
+        "calls": 1819
+      }
+    },
+    {
+      "level_num": 18,
+      "level_file": "level5-2.rl2",
+      "route_input_sha256": "33E5BBFE4D03FE1D58A59E71551C816E57BBC29DDD3FB3B14DEC0F8EB09C67E7",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 4
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 8
+        },
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 11
+        },
+        {
+          "n": "reactor",
+          "s": 14
+        },
+        {
+          "n": "exit",
+          "s": 18
+        }
+      ],
+      "total_frames": 1067,
+      "rng_end": {
+        "state": 970133548,
+        "calls": 2571
+      }
+    },
+    {
+      "level_num": 19,
+      "level_file": "level5-3.rl2",
+      "route_input_sha256": "80BD082B1245D2B9257882EB45F93FAE71DCC28F90B02781E46BD5F69A61C26E",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "open door",
+          "s": 6
+        },
+        {
+          "n": "blue key",
+          "s": 10
+        },
+        {
+          "n": "open door",
+          "s": 20
+        },
+        {
+          "n": "gold key",
+          "s": 24
+        },
+        {
+          "n": "open door",
+          "s": 35
+        },
+        {
+          "n": "red key",
+          "s": 39
+        },
+        {
+          "n": "reactor",
+          "s": 47
+        },
+        {
+          "n": "exit",
+          "s": 66
+        }
+      ],
+      "total_frames": 3937,
+      "rng_end": {
+        "state": 2553100588,
+        "calls": 3339
+      }
+    },
+    {
+      "level_num": 20,
+      "level_file": "level5-4.rl2",
+      "route_input_sha256": "D9D9DC4A48D252454F5BA73A12556413869D581C2EDBD2E6CC5AEA3BAF6BDF5A",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 1",
+          "s": 0
+        },
+        {
+          "n": "red key",
+          "s": 2
+        },
+        {
+          "n": "boss",
+          "s": 17
+        },
+        {
+          "n": "exit",
+          "s": 18
+        }
+      ],
+      "total_frames": 1092,
+      "rng_end": {
+        "state": 3865056677,
+        "calls": 1500
+      }
+    },
+    {
+      "level_num": 21,
+      "level_file": "level6-1.rl2",
+      "route_input_sha256": "6F49BA1ADBAF497D7673384854CCB6EC658C45055CC31F365A4B75C634330EDB",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 4
+        },
+        {
+          "n": "gold key",
+          "s": 14
+        },
+        {
+          "n": "reactor",
+          "s": 27
+        },
+        {
+          "n": "exit",
+          "s": 29
+        }
+      ],
+      "total_frames": 1745,
+      "rng_end": {
+        "state": 369875344,
+        "calls": 3127
+      }
+    },
+    {
+      "level_num": 22,
+      "level_file": "level6-2.rl2",
+      "route_input_sha256": "8F7A1193904C1A53718007586CD9B8831247DB658BC0BCBBE372D12B39516EF7",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 2",
+          "s": 3
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 6
+        },
+        {
+          "n": "reactor",
+          "s": 11
+        },
+        {
+          "n": "exit",
+          "s": 13
+        }
+      ],
+      "total_frames": 775,
+      "rng_end": {
+        "state": 3201784020,
+        "calls": 1731
+      }
+    },
+    {
+      "level_num": 23,
+      "level_file": "level6-3.rl2",
+      "route_input_sha256": "5E38D87C7A0D29CBD2DFDB3374A97FA50A65D83E2998346E6920E877BBCE8646",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "pass-through 7",
+          "s": 2
+        },
+        {
+          "n": "switch 6",
+          "s": 3
+        },
+        {
+          "n": "blue key",
+          "s": 4
+        },
+        {
+          "n": "switch 5",
+          "s": 4
+        },
+        {
+          "n": "switch 8",
+          "s": 8
+        },
+        {
+          "n": "gold key",
+          "s": 9
+        },
+        {
+          "n": "switch 11",
+          "s": 9
+        },
+        {
+          "n": "switch 10",
+          "s": 14
+        },
+        {
+          "n": "red key",
+          "s": 15
+        },
+        {
+          "n": "switch 9",
+          "s": 15
+        },
+        {
+          "n": "reactor",
+          "s": 19
+        },
+        {
+          "n": "exit",
+          "s": 20
+        }
+      ],
+      "total_frames": 1184,
+      "rng_end": {
+        "state": 1572943126,
+        "calls": 3921
+      }
+    },
+    {
+      "level_num": 24,
+      "level_file": "level6-4.rl2",
+      "route_input_sha256": "8B72707D0667F934F5CFF0826D4111D4A0EAF6CB815906A0203B7C30078F93CD",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "switch 3",
+          "s": 0
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 10
+        },
+        {
+          "n": "boss",
+          "s": 10
+        },
+        {
+          "n": "exit",
+          "s": 19
+        }
+      ],
+      "total_frames": 1134,
+      "rng_end": {
+        "state": 1150032703,
+        "calls": 7338
+      }
+    },
+    {
+      "level_num": 25,
+      "level_file": "final.rl2",
+      "route_input_sha256": "710C60BA986B1139BDFAA7DB7530CF325924520C591D61B96792A6E14973B04A",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blastable wall",
+          "s": 1
+        },
+        {
+          "n": "hidden door",
+          "s": 2
+        },
+        {
+          "n": "gold key",
+          "s": 2
+        },
+        {
+          "n": "reactor",
+          "s": 4
+        },
+        {
+          "n": "exit",
+          "s": 4
+        }
+      ],
+      "total_frames": 263,
+      "rng_end": {
+        "state": 2503504633,
+        "calls": 328
+      }
+    },
+    {
+      "level_num": -1,
+      "level_file": "level1-s.rl2",
+      "route_input_sha256": "DA8C5CD744517665D428BF5137900720E52FF5F50BB18C6FB1CEA33F173F6F13",
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 0,
+      "rng_end": {
+        "state": 2911203427,
+        "calls": 38
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
+    },
+    {
+      "level_num": -2,
+      "level_file": "level2-s.rl2",
+      "route_input_sha256": "6F3754921D2051FC467B345AC26E18195A4A0945F6AF690932F89139FE344DB4",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "reactor",
+          "s": 3
+        },
+        {
+          "n": "exit",
+          "s": 7
+        }
+      ],
+      "total_frames": 392,
+      "rng_end": {
+        "state": 990237427,
+        "calls": 406
+      }
+    },
+    {
+      "level_num": -3,
+      "level_file": "level3-s.rl2",
+      "route_input_sha256": "E44601726C7A028F9BCB45AFB78556403787BCBD0EC5C294F65E3CDAB1CD845D",
+      "status": "unsupported",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [],
+      "total_frames": 125,
+      "rng_end": {
+        "state": 300568396,
+        "calls": 107
+      },
+      "problem": "route objective activation is not supported"
+    },
+    {
+      "level_num": -4,
+      "level_file": "level4-s.rl2",
+      "route_input_sha256": "70B4EB9587EF238E332E20C4FFBAA27B20A69B956EBCBD472F5599B0DCA86A87",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "reactor",
+          "s": 5
+        },
+        {
+          "n": "exit",
+          "s": 11
+        }
+      ],
+      "total_frames": 672,
+      "rng_end": {
+        "state": 1807779241,
+        "calls": 536
+      }
+    },
+    {
+      "level_num": -5,
+      "level_file": "level5-s.rl2",
+      "route_input_sha256": "BE2EB2CEAF7956BBC3D635F22415BA057C1E010E67F45C1C9A00F6887C2ADDF0",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "reactor",
+          "s": 2
+        },
+        {
+          "n": "exit",
+          "s": 3
+        }
+      ],
+      "total_frames": 188,
+      "rng_end": {
+        "state": 816411927,
+        "calls": 210
+      }
+    },
+    {
+      "level_num": -6,
+      "level_file": "level6-s.rl2",
+      "route_input_sha256": "CA840ECEA2A83935AFF60F8F66BC07DEBD0CC1B270BE6C0842B268BD209F0693",
+      "status": "ok",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "reactor",
+          "s": 8
+        },
+        {
+          "n": "exit",
+          "s": 16
+        }
+      ],
+      "total_frames": 968,
+      "rng_end": {
+        "state": 4097506444,
+        "calls": 555
+      }
+    }
+  ]
+}

@@ -771,18 +771,27 @@ cpp_done1: ;
 		if (guidebot_route_find_blocked_segment(
 		        objp, original_psegs, l_num_points, start_seg, end_seg,
 		        &blocked_segment)) {
-			if (avoid_seg == -1)
-				return create_path_points_avoiding(
+			const int retry_avoid = avoid_seg == -1 ? blocked_segment : avoid_seg;
+			const int retry_avoid2 = avoid_seg == -1 ? avoid_seg2 : blocked_segment;
+			if (avoid_seg == -1 || (avoid_seg2 == -1 && blocked_segment != avoid_seg)) {
+				point_seg *saved = (point_seg *) d_malloc(sizeof(*saved) * (size_t) l_num_points);
+				int result;
+				memcpy(saved, original_psegs, sizeof(*saved) * (size_t) l_num_points);
+				result = create_path_points_avoiding(
 				    objp, start_seg, end_seg, original_psegs, num_points,
-				    max_depth, random_flag, safety_flag, blocked_segment,
-				    avoid_seg2, avoid_edge_from, avoid_edge_to,
+				    max_depth, random_flag, safety_flag, retry_avoid,
+				    retry_avoid2, avoid_edge_from, avoid_edge_to,
 				    avoid_edge_from2, avoid_edge_to2, guidebot_route);
-			if (avoid_seg2 == -1 && blocked_segment != avoid_seg)
-				return create_path_points_avoiding(
-				    objp, start_seg, end_seg, original_psegs, num_points,
-				    max_depth, random_flag, safety_flag, avoid_seg,
-				    blocked_segment, avoid_edge_from, avoid_edge_to,
-				    avoid_edge_from2, avoid_edge_to2, guidebot_route);
+				/* Avoidance must still reach the original endpoint. A disconnected
+				 * fallback can otherwise send repeated replans around a loop */
+				if (result == 0 && *num_points > 0 &&
+				    original_psegs[*num_points - 1].segnum == end_seg) {
+					d_free(saved);
+					return result;
+				}
+				memcpy(original_psegs, saved, sizeof(*saved) * (size_t) l_num_points);
+				d_free(saved);
+			}
 		}
 	}
 #else
@@ -1719,6 +1728,10 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 		guidebot_route_recover_approach(objp, &goal_point);
 #endif
 	ai_path_set_orient_and_vel(objp, &goal_point, player_visibility, vec_to_player);
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	if (robptr->companion && Escort_route_goal.active)
+		guidebot_route_steer_approach(objp);
+#endif
 	//--Int3_if(((aip->cur_path_index >= 0) && (aip->cur_path_index < aip->path_length)));
 
 }

@@ -94,6 +94,17 @@ static int guidebot_route_side_passable(
 	if (view->side_has_exit_trigger &&
 	    view->side_has_exit_trigger(view->user, segment, side))
 		return 0;
+	/* A restoring wall can still be flyable during its closing animation
+	 * Do not build a new route through a passage that is disappearing */
+	if (view->wall_is_restoring && view->wall_num) {
+		wall = view->wall_num(view->user, segment, side);
+		reverse_wall = reverse >= 0 ? view->wall_num(view->user, child, reverse) : -1;
+		if ((wall >= 0 && wall < view->num_walls &&
+		     view->wall_is_restoring(view->user, wall)) ||
+		    (reverse_wall >= 0 && reverse_wall < view->num_walls &&
+		     view->wall_is_restoring(view->user, reverse_wall)))
+			return 0;
+	}
 	if (view->side_is_flyable &&
 	    view->side_is_flyable(view->user, segment, side))
 		return 1;
@@ -952,12 +963,169 @@ static int guidebot_compiled_switch_fallback(
 	return 1;
 }
 
-static int guidebot_select_compiled_switch_guidance(
+/* A recovery must open a blocked edge out of the current physical region
+ * This reuses the reachability scan and performs no collision queries */
+static int guidebot_access_trigger_opens_frontier(
+    const level_metadata_scan_view *view, int trigger, const int *distance)
+{
+	int link;
+	const int type = view->trigger_type(view->user, trigger);
+	for (link = 0; link < view->trigger_link_count(view->user, trigger) &&
+	               link < LEVEL_METADATA_MAX_ROUTE_LINKS;
+	     ++link) {
+		int segment = view->trigger_link_segment(view->user, trigger, link);
+		int side = view->trigger_link_side(view->user, trigger, link);
+		int child, reverse, wall;
+		if (!guidebot_valid_segment(view, segment) || side < 0 || side >= LEVEL_METADATA_MAX_SIDES)
+			continue;
+		wall = view->wall_num(view->user, segment, side);
+		if (wall < 0 || wall >= view->num_walls)
+			continue;
+		if (type == view->trigger_type_open_door &&
+		    view->wall_type(view->user, wall) != view->wall_type_door &&
+		    view->wall_type(view->user, wall) != view->wall_type_blastable)
+			continue;
+		if (type == view->trigger_type_unlock_door &&
+		    (view->wall_type(view->user, wall) != view->wall_type_door ||
+		     !view->wall_flags || !(view->wall_flags(view->user, wall) & view->wall_flag_door_locked) ||
+		     (view->wall_keys && !guidebot_key_allowed(view, view->wall_keys(view->user, wall)))))
+			continue;
+		child = view->segment_child(view->user, segment, side);
+		if (!guidebot_valid_segment(view, child))
+			continue;
+		reverse = view->reverse_side(view->user, segment, child);
+		if (reverse < 0 || reverse >= LEVEL_METADATA_MAX_SIDES ||
+		    view->segment_child(view->user, child, reverse) != segment)
+			continue;
+		if (distance[segment] < 0) {
+			segment = child;
+			side = reverse;
+			child = view->segment_child(view->user, segment, side);
+		}
+		if (distance[segment] < 0 || distance[child] >= 0 ||
+		    guidebot_route_side_passable(view, segment, side, 1, 0, 1, 1) ||
+		    (view->side_is_narrow_portal && view->side_is_narrow_portal(view->user, segment, side)) ||
+		    (view->side_has_exit_trigger && view->side_has_exit_trigger(view->user, segment, side)))
+			continue;
+		if (view->side_clearance_radius && view->navigator_radius > 0) {
+			const int clearance = view->side_clearance_radius(view->user, segment, side);
+			if (clearance > 0 && clearance < view->navigator_radius)
+				continue;
+		}
+		return 1;
+	}
+	return 0;
+}
+
+static int guidebot_prepare_access_action(
+    const level_metadata_scan_view *view, level_metadata_route_step *step,
+    guidebot_route_certifier_summary *summary, const int *distance)
+{
+	int wall, best = -1, best_approach = -1, best_cost = 0;
+	level_metadata_route_step recovery;
+	if (!view->wall_segment || !view->wall_side || !view->wall_trigger || !view->wall_type ||
+	    !view->trigger_type || !view->trigger_link_count || !view->trigger_link_segment ||
+	    !view->trigger_link_side || !view->wall_num || !view->reverse_side ||
+	    !view->segment_center || !view->side_center ||
+	    !guidebot_valid_segment(view, step->path_terminal_segment))
+		return 0;
+	for (wall = 0; wall < view->num_walls; ++wall) {
+		const int segment = view->wall_segment(view->user, wall);
+		const int side = view->wall_side(view->user, wall);
+		const int trigger = view->wall_trigger(view->user, wall);
+		const int shootable = view->wall_is_shootable_trigger && view->wall_is_shootable_trigger(view->user, wall);
+		int approach = segment, cost;
+		if (!guidebot_valid_segment(view, segment) ||
+		    side < 0 || side >= LEVEL_METADATA_MAX_SIDES ||
+		    guidebot_trigger_is_spent(view, trigger) ||
+		    (view->trigger_type(view->user, trigger) != view->trigger_type_open_wall &&
+		     view->trigger_type(view->user, trigger) != view->trigger_type_open_door &&
+		     view->trigger_type(view->user, trigger) != view->trigger_type_unlock_door) ||
+		    (!shootable && (distance[segment] < 0 || !guidebot_route_side_passable_current(view, segment, side))) ||
+		    !guidebot_access_trigger_opens_frontier(view, trigger, distance))
+			continue;
+		/* Remote switches retain approximate guidance until a real shot is clear */
+		if (distance[segment] < 0) {
+			int target[3], position[3], candidate;
+			long double closest = 0;
+			approach = -1;
+			if (!view->side_center(view->user, segment, side, target))
+				continue;
+			for (candidate = 0; candidate < view->num_segments && candidate < LEVEL_METADATA_MAX_SEGMENTS; ++candidate) {
+				long double separation;
+				if (distance[candidate] < 0 || !view->segment_center(view->user, candidate, position))
+					continue;
+				separation = guidebot_position_distance_squared(position, target);
+				if (approach < 0 || separation < closest) {
+					approach = candidate;
+					closest = separation;
+				}
+			}
+			if (approach < 0)
+				continue;
+		}
+		cost = distance[approach] + (approach != segment ? LEVEL_METADATA_MAX_SEGMENTS : 0);
+		if (best < 0 || cost < best_cost) {
+			best = wall;
+			best_approach = approach;
+			best_cost = cost;
+		}
+	}
+	if (best < 0)
+		return 0;
+	memset(&recovery, 0, sizeof(recovery));
+	recovery.kind = LEVEL_METADATA_ROUTE_TRIGGER;
+	recovery.activation_kind = view->wall_is_shootable_trigger && view->wall_is_shootable_trigger(view->user, best)
+	                               ? LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH
+	                               : LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER;
+	recovery.is_switch_restorer = LEVEL_METADATA_ROUTE_RECOVERY_ACCESS;
+	recovery.restored_wall_num = step->wall_num;
+	recovery.seg = best_approach;
+	recovery.side = view->wall_side(view->user, best);
+	recovery.wall_num = best;
+	recovery.trigger_num = view->wall_trigger(view->user, best);
+	recovery.trigger_type = view->trigger_type(view->user, recovery.trigger_num);
+	/* Rebinding the requested switch's firing pose is the original action */
+	if (step->kind == LEVEL_METADATA_ROUTE_TRIGGER &&
+	    recovery.trigger_num == step->trigger_num && recovery.activation_kind == step->activation_kind) {
+		recovery.is_switch_restorer = step->is_switch_restorer;
+		recovery.restored_wall_num = step->restored_wall_num;
+	}
+	recovery.key_index = recovery.key_carrier_objnum = -1;
+	recovery.path_terminal_segment = recovery.seg;
+	recovery.path_segment_count = distance[recovery.seg] + 1;
+	recovery.activation_pos_valid = view->segment_center(view->user, recovery.seg, recovery.activation_pos);
+	recovery.aim_pos_valid = view->side_center(view->user, view->wall_segment(view->user, best), recovery.side, recovery.aim_pos);
+	recovery.label_pos_valid = recovery.aim_pos_valid;
+	memcpy(recovery.label_pos, recovery.aim_pos, sizeof(recovery.label_pos));
+	recovery.switch_shot_quality = LEVEL_METADATA_SWITCH_SHOT_APPROXIMATE;
+	recovery.switch_shot_incidence_cosine = LEVEL_METADATA_SHOT_COSINE_ONE;
+	for (int link = 0; link < view->trigger_link_count(view->user, recovery.trigger_num) &&
+	                   link < LEVEL_METADATA_MAX_ROUTE_LINKS;
+	     ++link) {
+		const int segment = view->trigger_link_segment(view->user, recovery.trigger_num, link);
+		const int side = view->trigger_link_side(view->user, recovery.trigger_num, link);
+		if (!guidebot_valid_segment(view, segment) || side < 0 || side >= LEVEL_METADATA_MAX_SIDES)
+			continue;
+		const int index = recovery.opened_link_count++;
+		recovery.opened_link_seg[index] = segment;
+		recovery.opened_link_side[index] = side;
+		recovery.opened_link_wall[index] = view->wall_num(view->user, segment, side);
+	}
+	snprintf(recovery.label, sizeof(recovery.label), "%s trigger %d",
+	         recovery.activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH ? "Shoot switch" : "Fly-through", recovery.trigger_num);
+	*step = recovery;
+	summary->used_prepared_fallback = 1;
+	return 1;
+}
+
+int guidebot_route_prepare_compiled_step_current(
     const level_metadata_scan_view *view,
     level_metadata_route_step *step,
     guidebot_route_certifier_summary *summary)
 {
 	int distance[LEVEL_METADATA_MAX_SEGMENTS];
+	int player_distance[LEVEL_METADATA_MAX_SEGMENTS];
 	int queue[LEVEL_METADATA_MAX_SEGMENTS];
 	long long best_score = 0;
 	int best = -1;
@@ -965,15 +1133,19 @@ static int guidebot_select_compiled_switch_guidance(
 	int tail = 0;
 	int segment;
 	int prefer_keyed_frontier = 0;
+	int shooting;
+	if (!view || !step || !summary || view->num_segments < 0 ||
+	    view->num_segments > LEVEL_METADATA_MAX_SEGMENTS)
+		return 0;
+	shooting = step->activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH;
 
-	if (step->activation_kind !=
-	    LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH)
-		return 1;
-	if (step->switch_guidance_candidate_count <= 0 || !view->segment_child ||
+	if (!view->segment_child ||
 	    !guidebot_valid_segment(view, view->start_segment))
-		return guidebot_compiled_switch_fallback(view, step, summary);
-	for (segment = 0; segment < view->num_segments; ++segment)
+		return shooting ? guidebot_compiled_switch_fallback(view, step, summary) : 1;
+	for (segment = 0; segment < view->num_segments; ++segment) {
 		distance[segment] = -1;
+		player_distance[segment] = -1;
+	}
 	distance[view->start_segment] = 0;
 	queue[tail++] = view->start_segment;
 	while (head < tail) {
@@ -994,26 +1166,36 @@ static int guidebot_select_compiled_switch_guidance(
 			queue[tail++] = child;
 		}
 	}
+	if (!shooting) {
+		const int target = guidebot_step_target_segment(view, step);
+		if (!guidebot_valid_segment(view, target) || distance[target] >= 0)
+			return 1;
+	}
 	if (guidebot_valid_segment(view, step->path_terminal_segment) &&
 	    distance[step->path_terminal_segment] < 0 && view->initial_key_mask) {
 		/* Keep the planned firing pose when the player can reach it through
 		 * owned-key doors. An unrelated approach waypoint is not a firing pose */
-		unsigned char reachable[LEVEL_METADATA_MAX_SEGMENTS] = { 0 };
 		head = tail = 0;
 		queue[tail++] = view->start_segment;
-		reachable[view->start_segment] = 1;
+		player_distance[view->start_segment] = 0;
 		while (head < tail) {
 			const int current = queue[head++];
 			for (int side = 0; side < LEVEL_METADATA_MAX_SIDES; ++side) {
 				const int child = view->segment_child(view->user, current, side);
-				if (!guidebot_valid_segment(view, child) || reachable[child] ||
+				if (!guidebot_valid_segment(view, child) || player_distance[child] >= 0 ||
 				    !guidebot_route_side_passable(view, current, side, 1, 0, 1, 1))
 					continue;
-				reachable[child] = 1;
+				player_distance[child] = player_distance[current] + 1;
 				queue[tail++] = child;
 			}
 		}
-		prefer_keyed_frontier = reachable[step->path_terminal_segment];
+		prefer_keyed_frontier = player_distance[step->path_terminal_segment] >= 0;
+	}
+	if (!shooting) {
+		if (!prefer_keyed_frontier && !guidebot_prepare_access_action(view, step, summary, distance) &&
+		    player_distance[view->start_segment] >= 0)
+			guidebot_prepare_access_action(view, step, summary, player_distance);
+		return 1;
 	}
 	for (segment = 0;
 	     segment < step->switch_guidance_candidate_count &&
@@ -1049,8 +1231,19 @@ static int guidebot_select_compiled_switch_guidance(
 		best = segment;
 		best_score = score;
 	}
-	if (best < 0)
+	if (best < 0) {
+		/* An authored pose can remain reachable without any cached alternatives */
+		if (guidebot_valid_segment(view, step->path_terminal_segment) &&
+		    distance[step->path_terminal_segment] >= 0)
+			return guidebot_compiled_switch_fallback(view, step, summary);
+		if (!prefer_keyed_frontier && guidebot_prepare_access_action(view, step, summary, distance))
+			return 1;
+		/* The player can open an owned-key door on the way to an access trigger */
+		if (!prefer_keyed_frontier && player_distance[view->start_segment] >= 0 &&
+		    guidebot_prepare_access_action(view, step, summary, player_distance))
+			return 1;
 		return guidebot_compiled_switch_fallback(view, step, summary);
+	}
 	step->seg = step->switch_guidance_candidate_seg[best];
 	step->path_terminal_segment = step->seg;
 	step->path_segment_count = distance[step->seg] + 1;
@@ -1131,7 +1324,7 @@ int guidebot_route_select_compiled_current_state(
 				break;
 			}
 		}
-		if (!guidebot_select_compiled_switch_guidance(
+		if (!guidebot_route_prepare_compiled_step_current(
 		        view, candidate, &local_summary)) {
 			local_summary.rejected_actions++;
 			local_summary.blocking_step = step;

@@ -560,7 +560,7 @@ static void test_compiled_selector_never_restores_collected_key(void)
 	assert(summary.selected_segment == 4);
 	assert(live_plan.first_pending_step == 2);
 	assert(certificate.source_trigger == 1);
-	assert(fixture.segment_child_calls == 0);
+	assert(summary.evaluated_edges <= TEST_SEGMENTS * LEVEL_METADATA_MAX_SIDES);
 }
 
 static void test_compiled_selector_blocks_removed_switch_surface(void)
@@ -802,6 +802,132 @@ static void test_compiled_selector_chooses_reachable_switch_guidance(void)
 	assert(Live.route_steps[1].activation_pos[0] == 20);
 	assert(Live.route_steps[1].switch_shot_quality ==
 	       LEVEL_METADATA_SWITCH_SHOT_CONFIRMED);
+}
+
+static void test_compiled_selector_recovers_access_without_completing_objective(void)
+{
+	int scenario;
+	for (scenario = 0; scenario < 8; ++scenario) {
+		certifier_fixture fixture;
+		level_metadata_scan_view view;
+		route_planner_plan_summary compiled_plan, live_plan;
+		guidebot_route_validity_certificate certificate;
+		guidebot_route_certifier_summary summary;
+		level_metadata_route_step *step;
+		initialize_fixture(&fixture);
+		initialize_plan(&compiled_plan);
+		view = make_view(&fixture);
+		view.start_segment = 0;
+		view.wall_type_closed = 4;
+		view.wall_trigger = wall_trigger;
+		fixture.wall_open[0] = fixture.wall_open[2] = 1;
+		fixture.wall_type[0] = view.wall_type_open;
+		fixture.wall_type[1] = view.wall_type_closed;
+		fixture.wall_shootable[0] = 0;
+		fixture.wall_trigger[0] = 1;
+		fixture.wall_trigger[1] = fixture.wall_trigger[2] = -1;
+		fixture.wall_trigger[3] = 0;
+		fixture.trigger_link_count[1] = 1;
+		fixture.trigger_link_segment[1][0] = 1;
+		fixture.trigger_link_side[1][0] = 0;
+		step = &Prepared.route_steps[1];
+		step->wall_num = 3;
+		step->seg = step->path_terminal_segment = 4;
+		step->opened_link_count = 0;
+		step->switch_guidance_candidate_count = 1;
+		step->switch_guidance_candidate_seg[0] = 4;
+		step->switch_guidance_candidate_pos[0][0] = 104;
+		if (scenario == 1)
+			fixture.trigger_flags[1] = view.trigger_flag_disabled;
+		if (scenario == 2)
+			fixture.trigger_link_count[1] = 0;
+		if (scenario == 3) {
+			fixture.narrow_wall = 1;
+			fixture.narrow_clearance = 5;
+		}
+		if (scenario == 4 || scenario == 5) {
+			fixture.trigger_type[1] = view.trigger_type_unlock_door;
+			fixture.wall_type[1] = view.wall_type_door;
+			fixture.wall_extra_flags[1] = view.wall_flag_door_locked;
+			fixture.wall_key[1] = view.wall_key_blue;
+			if (scenario == 5)
+				view.initial_key_mask = LEVEL_METADATA_KEY_MASK_BLUE;
+		}
+		if (scenario == 6) {
+			step->kind = LEVEL_METADATA_ROUTE_EXIT;
+			step->activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT;
+		}
+		if (scenario == 7) {
+			fixture.wall_shootable[0] = 1;
+			fixture.wall_trigger[3] = 1;
+			step->trigger_num = 1;
+		}
+		assert(select_compiled(&view, &compiled_plan, &live_plan, &certificate, &summary));
+		assert(live_plan.first_pending_step == 1);
+		if (scenario == 0 || scenario == 5 || scenario == 6) {
+			assert(Live.route_steps[1].is_switch_restorer == LEVEL_METADATA_ROUTE_RECOVERY_ACCESS);
+			assert(Live.route_steps[1].activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_FLY_THROUGH_TRIGGER);
+			assert(Live.route_steps[1].trigger_num == 1);
+			assert(Live.route_steps[1].seg == 0);
+		} else if (scenario == 7) {
+			assert(!Live.route_steps[1].is_switch_restorer);
+			assert(Live.route_steps[1].activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH);
+			assert(Live.route_steps[1].trigger_num == step->trigger_num);
+			assert(Live.route_steps[1].wall_num == 0);
+		} else {
+			assert(!Live.route_steps[1].is_switch_restorer);
+			assert(Live.route_steps[1].wall_num == 3);
+		}
+		assert(fixture.wall_shootable_calls == 0);
+		assert(Prepared.route_steps[1].wall_num == 3);
+	}
+}
+
+static void test_access_trigger_beyond_owned_key_door(void)
+{
+	int scenario;
+	for (scenario = 0; scenario < 3; ++scenario) {
+		certifier_fixture fixture;
+		level_metadata_scan_view view;
+		route_planner_plan_summary compiled_plan, live_plan;
+		guidebot_route_validity_certificate certificate;
+		guidebot_route_certifier_summary summary;
+		initialize_fixture(&fixture);
+		initialize_plan(&compiled_plan);
+		view = make_view(&fixture);
+		view.wall_trigger = wall_trigger;
+		view.wall_type_closed = 4;
+		view.start_segment = 0;
+		view.initial_key_mask = scenario ? LEVEL_METADATA_KEY_MASK_BLUE : 0;
+		fixture.detailed_geometry = 1;
+		fixture.wall_key[0] = view.wall_key_blue;
+		if (scenario == 2)
+			fixture.wall_extra_flags[0] = view.wall_flag_door_locked;
+		fixture.wall_open[1] = fixture.wall_open[2] = 1;
+		fixture.wall_type[3] = view.wall_type_closed;
+		for (int wall = 0; wall < TEST_WALLS; ++wall) {
+			fixture.wall_trigger[wall] = -1;
+			fixture.wall_shootable[wall] = 0;
+		}
+		fixture.wall_trigger[2] = 0;
+		fixture.trigger_link_count[0] = 1;
+		fixture.trigger_link_segment[0][0] = 3;
+		fixture.trigger_link_side[0][0] = 0;
+		Prepared.route_steps[1].kind = LEVEL_METADATA_ROUTE_EXIT;
+		Prepared.route_steps[1].activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT;
+		Prepared.route_steps[1].seg = Prepared.route_steps[1].path_terminal_segment = 4;
+		Prepared.route_steps[1].wall_num = 3;
+		assert(select_compiled(&view, &compiled_plan, &live_plan, &certificate, &summary));
+		if (scenario == 1) {
+			assert(Live.route_steps[1].is_switch_restorer == LEVEL_METADATA_ROUTE_RECOVERY_ACCESS);
+			assert(Live.route_steps[1].trigger_num == 0);
+			assert(Live.route_steps[1].seg == 2);
+			assert(!guidebot_route_side_passable_current(&view, 0, 0));
+		} else
+			assert(!Live.route_steps[1].is_switch_restorer);
+		assert(Prepared.route_steps[1].kind == LEVEL_METADATA_ROUTE_EXIT);
+		assert(fixture.wall_shootable_calls == 0);
+	}
 }
 
 static void test_compiled_selector_replaces_switch_aim_with_local_fallback(void)
@@ -1468,6 +1594,30 @@ static void test_visible_unlocked_triggered_door_is_physically_passable(void)
 	fixture.explored[1] = 1;
 	assert(guidebot_route_side_passable_current(&view, 0, 0));
 	assert(!level_metadata_route_step_required_by_world_state(&view, &step));
+}
+
+static void test_restoring_wall_blocks_new_paths(void)
+{
+	certifier_fixture fixture;
+	level_metadata_scan_view view;
+
+	initialize_fixture(&fixture);
+	view = make_view(&fixture);
+	view.wall_is_restoring = wall_is_restoring;
+	fixture.wall_open[0] = 1;
+	fixture.wall_type[0] = view.wall_type_open;
+	assert(guidebot_route_side_passable_current(&view, 0, 0));
+	fixture.wall_restoring[0] = 1;
+	assert(!guidebot_route_side_passable_current(&view, 0, 0));
+	assert(!guidebot_route_side_progress_reachable_current(&view, 0, 0));
+	/* A wall on only the reverse face must also block a currently flyable side */
+	fixture.wall[0][0] = -1;
+	fixture.wall[1][1] = 0;
+	assert(!guidebot_route_side_passable_current(&view, 0, 0));
+	assert(!guidebot_route_side_progress_reachable_current(&view, 0, 0));
+	fixture.wall_restoring[0] = 0;
+	assert(guidebot_route_side_passable_current(&view, 0, 0));
+	assert(guidebot_route_side_progress_reachable_current(&view, 0, 0));
 }
 
 static void test_open_locked_door_is_currently_passable(void)
@@ -2153,14 +2303,18 @@ static certifier_benchmark_result run_compiled_selector_benchmark(void)
 	for (iteration = 0; iteration < 100; ++iteration)
 		assert(select_compiled(
 		    &view, &compiled_plan, &live_plan, &certificate, &summary));
+	fixture.segment_child_calls = 0;
+	fixture.segment_center_calls = 0;
+	fixture.wall_shootable_calls = 0;
 	started = benchmark_wall_us();
 	for (iteration = 0; iteration < 10000; ++iteration)
 		assert(select_compiled(
 		    &view, &compiled_plan, &live_plan, &certificate, &summary));
 	metrics.wall_us = (benchmark_wall_us() - started) / 10000.0;
-	metrics.segment_child_calls = fixture.segment_child_calls;
-	metrics.segment_center_calls = fixture.segment_center_calls;
-	metrics.wall_shootable_calls = fixture.wall_shootable_calls;
+	metrics.evaluated_edges = summary.evaluated_edges;
+	metrics.segment_child_calls = fixture.segment_child_calls / 10000;
+	metrics.segment_center_calls = fixture.segment_center_calls / 10000;
+	metrics.wall_shootable_calls = fixture.wall_shootable_calls / 10000;
 	return metrics;
 }
 
@@ -2254,7 +2408,7 @@ static int run_benchmarks(void)
 	assert(frontier.slices > 1);
 	assert(frontier.max_callbacks_per_slice <= 4096);
 	assert(unexplored.max_callbacks_per_slice <= 1024);
-	assert(compiled.segment_child_calls == 0);
+	assert(compiled.evaluated_edges <= TEST_SEGMENTS * LEVEL_METADATA_MAX_SIDES);
 	assert(compiled.segment_center_calls == 0);
 	assert(compiled.wall_shootable_calls == 0);
 	assert(compiled_switch.evaluated_edges <= BENCHMARK_SEGMENTS *
@@ -2288,6 +2442,8 @@ int main(int argc, char **argv)
 	test_compiled_selector_rebinds_moving_key_object();
 	test_compiled_selector_preserves_reactor_firing_segment();
 	test_compiled_selector_chooses_reachable_switch_guidance();
+	test_compiled_selector_recovers_access_without_completing_objective();
+	test_access_trigger_beyond_owned_key_door();
 	test_compiled_selector_replaces_switch_aim_with_local_fallback();
 	test_current_start_and_accessibility_select_action();
 	test_first_reachable_required_action_preserves_order();
@@ -2308,6 +2464,7 @@ int main(int argc, char **argv)
 	test_solid_illusion_wall_is_not_passable();
 	test_visible_unlocked_triggered_door_is_physically_passable();
 	test_open_locked_door_is_currently_passable();
+	test_restoring_wall_blocks_new_paths();
 	test_keyed_buddy_proof_door_keeps_objective_reachable();
 	test_keyed_door_blocks_objective_route_but_not_player_progress();
 	test_reverse_side_keyed_buddy_proof_door_is_player_reachable();

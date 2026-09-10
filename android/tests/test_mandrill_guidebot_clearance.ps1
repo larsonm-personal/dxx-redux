@@ -5,7 +5,7 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 $runner = Join-Path $repoRoot 'android/helpers/regenerate_all_guidebot_simulations.ps1'
 $output = Join-Path $repoRoot "android/temp/test_mandrill_guidebot_clearance/run_$(Get-Date -Format 'yyyyMMdd_HHmmss_fff')"
-foreach ($level in @(2, 5)) {
+foreach ($level in @(1, 2, 5)) {
     $caseOutput = Join-Path $output "level_$level"
     & (Get-Process -Id $PID).Path -NoProfile -File $runner -MissionJson Mandrill.json `
         -Level $level -Repeat 2 -MaxParallel 1 -NoBuild:$NoBuild -OutputRoot $caseOutput
@@ -23,18 +23,33 @@ foreach ($level in @(2, 5)) {
             if ($result.status -ne 'confirmed' -or ($result.objectives.label -join '|') -cne $sequence) {
                 throw 'Mandrill L2 did not complete its keyed route'
             }
-        } elseif ('blue key' -cnotin $result.objectives.label) {
-            # L5 retains a separate switch-shot dependency after this pickup
-            throw 'Mandrill L5 could not reach the blue-key dead end'
+        } elseif ($level -eq 1) {
+            $sequence = 'blue key|Fly-through trigger 0|red key|Boss robot|Exit'
+            if ($result.status -ne 'confirmed' -or ($result.objectives.label -join '|') -cne $sequence) {
+                throw 'Mandrill L1 did not complete its boss route'
+            }
+            $log = Get-Content -LiteralPath (Join-Path $caseOutput "logs/$($file.BaseName).log") -Raw
+            if ($log -notmatch 'ROUTE-CONFIRM verified primary shot actor_seg=27[23] target_seg=285') {
+                throw 'Mandrill L1 must verify the boss shot from outside its room'
+            }
+        } else {
+            $sequence = 'blue key|Shoot switch trigger 4|Shoot switch trigger 5|gold key|Shoot switch trigger 3|Shoot switch trigger 6|red key|Shoot switch trigger 0|Boss robot|Exit'
+            if ($result.status -ne 'confirmed' -or ($result.objectives.label -join '|') -cne $sequence) {
+                throw 'Mandrill L5 did not complete the switch and key prerequisites'
+            }
+            $log = Get-Content -LiteralPath (Join-Path $caseOutput "logs/$($file.BaseName).log") -Raw
+            if ($log -notmatch 'ROUTE-CONFIRM verified switch shot .* wall=10' -or
+                $log -notmatch 'ROUTE-CONFIRM verified switch shot .* wall=7' -or
+                $log -notmatch 'ROUTE-CONFIRM verified switch shot .* wall=4') {
+                throw 'Mandrill L5 must physically verify the shots through the grates'
+            }
         }
         $signature = $result | ConvertTo-Json -Depth 30 -Compress
         if ($null -eq $first) { $first = $signature }
         elseif ($signature -cne $first) { throw "Nondeterministic Mandrill L$level result" }
     }
-    if ($level -eq 2) {
-        $normalized = Get-Content -LiteralPath (Join-Path $caseOutput 'results/Mandrill.simulation.json') -Raw | ConvertFrom-Json
-        $entry = @($normalized | Where-Object target_index -eq 0 | ForEach-Object levels | Where-Object level_num -eq 2)
-        if ($entry.Count -ne 1 -or $entry[0].status -ne 'ok') { throw 'L2 physical completion disagrees with metadata' }
-    }
+    $normalized = Get-Content -LiteralPath (Join-Path $caseOutput 'results/Mandrill.simulation.json') -Raw | ConvertFrom-Json
+    $entry = @($normalized | Where-Object target_index -eq 0 | ForEach-Object levels | Where-Object level_num -eq $level)
+    if ($entry.Count -ne 1 -or $entry[0].status -ne 'ok') { throw "L$level physical completion disagrees with metadata" }
     Write-Host "PASS Mandrill L${level}: repeated clearance coverage, $($result.frames) frames"
 }

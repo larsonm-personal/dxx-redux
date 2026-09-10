@@ -80,6 +80,12 @@ enum level_metadata_switch_shot_quality {
 
 #define LEVEL_METADATA_SHOT_COSINE_ONE 65536
 
+enum level_metadata_route_recovery_kind {
+	LEVEL_METADATA_ROUTE_RECOVERY_NONE = 0,
+	LEVEL_METADATA_ROUTE_RECOVERY_SWITCH_SURFACE = 1,
+	LEVEL_METADATA_ROUTE_RECOVERY_ACCESS = 2
+};
+
 enum level_metadata_route_edge_cost {
 	LEVEL_METADATA_ROUTE_EDGE_BLOCKED = -1,
 	LEVEL_METADATA_ROUTE_EDGE_PASSABLE = 0,
@@ -107,7 +113,7 @@ typedef struct level_metadata_route_step {
 	int key_carrier_objnum;
 	int can_be_bypassed;
 	int activation_kind;
-	/* Live recovery restores a planned shooting objective without completing it */
+	/* level_metadata_route_recovery_kind; recovery never completes its parent */
 	int is_switch_restorer;
 	int restored_wall_num;
 	int switch_shot_quality;

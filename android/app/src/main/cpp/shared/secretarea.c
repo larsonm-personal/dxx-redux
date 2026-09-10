@@ -485,9 +485,11 @@ void level_metadata_set_defer_guidebot_accessibility(int defer)
 
 static fix Level_metadata_switch_projectile_radius_override;
 
-int level_metadata_get_switch_projectile_radius(void)
+int level_metadata_get_weapon_projectile_radius(int weapon_id)
 {
-	const weapon_info *weapon = &Weapon_info[LASER_ID_L1];
+	if (weapon_id < 0 || weapon_id >= N_weapon_types)
+		return 0;
+	const weapon_info *weapon = &Weapon_info[weapon_id];
 
 	if (weapon->render_type == WEAPON_RENDER_BLOB ||
 	    weapon->render_type == WEAPON_RENDER_VCLIP)
@@ -500,6 +502,11 @@ int level_metadata_get_switch_projectile_radius(void)
 	if (weapon->render_type == WEAPON_RENDER_NONE)
 		return F1_0;
 	return 0;
+}
+
+int level_metadata_get_switch_projectile_radius(void)
+{
+	return level_metadata_get_weapon_projectile_radius(LASER_ID_L1);
 }
 
 void level_metadata_set_switch_projectile_radius_override(int radius)
@@ -2094,6 +2101,7 @@ static int level_metadata_wall_shootable_from_position_impl(
 	fix projectile_radius;
 	int fate;
 	int hit_target_wall;
+	int direct_door_shot;
 	level_metadata_route_shot_context route_shot_context;
 
 	Level_metadata_wall_shot_diagnostics.requests++;
@@ -2142,6 +2150,13 @@ static int level_metadata_wall_shootable_from_position_impl(
 		return 0;
 	}
 	compute_center_point_on_side(&target, &Segments[wall_seg], wall_side);
+	direct_door_shot = Walls[wall_num].type == WALL_DOOR && allow_transparency == 1;
+	if (direct_door_shot) {
+		vms_vector direction;
+		vm_vec_sub(&direction, &target, &from);
+		if (vm_vec_normalize_quick(&direction))
+			vm_vec_scale_add2(&target, &direction, F1_0);
+	}
 	memset(&query, 0, sizeof(query));
 	memset(&hit_data, 0, sizeof(hit_data));
 	query.p0 = &from;
@@ -2163,7 +2178,9 @@ static int level_metadata_wall_shootable_from_position_impl(
 	route_shot_context.first_blocker = allow_transparency == 3
 	                                       ? level_metadata_wall_first_shot_blocker_from_position(seg, from_pos, wall_num)
 	                                       : -1;
-	query.flags |= FQ_PASSABLE_WALL_CALLBACK;
+	// A door-opening shot must hit its actual face, without assuming other doors open
+	if (!direct_door_shot)
+		query.flags |= FQ_PASSABLE_WALL_CALLBACK;
 	query.wall_is_passable = level_metadata_route_shot_wall_is_passable;
 	query.wall_is_passable_user = &route_shot_context;
 	Level_metadata_visibility_summary.misses++;
@@ -2224,7 +2241,7 @@ static int level_metadata_wall_shootable_from_position_impl(
 	 * engine itself documents as occasionally incorrect.  A transparent/no-hit
 	 * trace still needs an independently credible connected traversal.
 	 */
-	fate = hit_target_wall || (allow_transparency && fate == HIT_NONE);
+	fate = hit_target_wall || (!direct_door_shot && allow_transparency && fate == HIT_NONE);
 	if (fate && !hit_target_wall &&
 	    !level_metadata_fvi_visibility_credible(
 	        &hit_data, &from, seg, &target, wall_seg, wall_seg, wall_side,
@@ -2689,7 +2706,7 @@ static int secret_area_trigger_flags(void *user, int trigger_num)
 	return Triggers[trigger_num].flags;
 }
 
-#if defined(DXX_BUILD_DESCENT_II) && defined(__ANDROID__)
+#if defined(DXX_BUILD_DESCENT_II) && (defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER))
 static int secret_area_trigger_was_activated(void *user, int trigger_num)
 {
 	(void) user;
@@ -2834,7 +2851,7 @@ static void level_metadata_initialize_scan_view(void)
 	view->triggered_side_opener_wall_num = secret_area_metadata_triggered_side_opener_wall_num;
 	view->trigger_type = secret_area_trigger_type;
 	view->trigger_flags = secret_area_trigger_flags;
-#if defined(DXX_BUILD_DESCENT_II) && defined(__ANDROID__)
+#if defined(DXX_BUILD_DESCENT_II) && (defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER))
 	view->trigger_was_activated = secret_area_trigger_was_activated;
 #endif
 	view->trigger_link_count = secret_area_trigger_link_count;
@@ -4702,6 +4719,14 @@ int level_metadata_validate_live_route_certificate(
 int level_metadata_prepare_guidebot_path_view(int start_objnum)
 {
 	return level_metadata_refresh_scan_view(start_objnum) != NULL;
+}
+
+int level_metadata_prepare_route_step_current(int start_objnum, level_metadata_route_step *step)
+{
+	guidebot_route_certifier_summary summary = { 0 };
+	if (!step || !level_metadata_refresh_scan_view(start_objnum))
+		return 0;
+	return guidebot_route_prepare_compiled_step_current(&Level_metadata_scan_view, step, &summary);
 }
 
 int level_metadata_get_exit_route_step_current(

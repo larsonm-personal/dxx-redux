@@ -86,8 +86,8 @@ Assert-True ($restorer.status -eq 'ok') 'a valid repeated restorer objective was
 # A live switch restoration may precede, but must never replace, the planned switch
 $switchLevel = [pscustomobject]@{
     route_steps = @([pscustomobject]@{
-        index = 1; kind = 'trigger'; activation_kind = 'shoot_switch'; wall = 81
-    })
+            index = 1; kind = 'trigger'; activation_kind = 'shoot_switch'; wall = 81
+        })
 }
 $recoveryObjective = [pscustomobject]@{
     route_step_index = 1; kind = 'trigger'; activation_kind = 'fly_through_trigger'; restores_switch_wall = 81
@@ -105,6 +105,44 @@ Assert-True (-not (Test-GuidebotObjectiveProjectionMatch -Level $switchLevel -Ac
     'restoration of an unrelated wall was accepted'
 Assert-True (-not (Test-GuidebotObjectiveProjectionMatch -Level $switchLevel -Actual @($switchObjective, $recoveryObjective))) `
     'out-of-order restoration was accepted'
+
+$accessLevel = [pscustomobject]@{
+    route_steps = @([pscustomobject]@{ index = 1; kind = 'exit'; activation_kind = 'enter_exit'; wall = 10 })
+}
+$accessObjective = [pscustomobject]@{
+    route_step_index = 1; kind = 'trigger'; activation_kind = 'shoot_switch'; trigger = 6; access_for_route_step = 1
+}
+$exitObjective = [pscustomobject]@{ route_step_index = 1; kind = 'exit'; activation_kind = 'enter_exit' }
+Assert-True (Test-GuidebotObjectiveProjectionMatch -Level $accessLevel -Actual @($accessObjective, $exitObjective)) `
+    'access recovery followed by the original exit was rejected'
+Assert-True (-not (Test-GuidebotObjectiveProjectionMatch -Level $accessLevel -Actual @($accessObjective))) `
+    'access recovery replaced a required exit'
+Assert-True (-not (Test-GuidebotObjectiveProjectionMatch -Level $accessLevel -Actual @($exitObjective, $accessObjective))) `
+    'access recovery was accepted after its objective completed'
+$wrongAccess = $accessObjective.PSObject.Copy()
+$wrongAccess.access_for_route_step = 2
+Assert-True (-not (Test-GuidebotObjectiveProjectionMatch -Level $accessLevel -Actual @($wrongAccess, $exitObjective))) `
+    'access recovery for a different objective was accepted'
+$wrongAccess = $accessObjective.PSObject.Copy()
+$wrongAccess.trigger = -1
+Assert-True (-not (Test-GuidebotObjectiveProjectionMatch -Level $accessLevel -Actual @($wrongAccess, $exitObjective))) `
+    'access recovery without a source trigger was accepted'
+
+$reclosedLevel = [pscustomobject]@{
+    route_steps = @(
+        [pscustomobject]@{ index = 1; kind = 'hidden_door'; activation_kind = 'open_hidden_door'; wall = 8 },
+        [pscustomobject]@{ index = 2; kind = 'exit'; activation_kind = 'enter_exit'; wall = 10 }
+    )
+}
+$doorObjective = [pscustomobject]@{ route_step_index = 1; kind = 'hidden_door'; activation_kind = 'open_hidden_door' }
+$laterExit = $exitObjective.PSObject.Copy()
+$laterExit.route_step_index = 2
+Assert-True (Test-GuidebotObjectiveProjectionMatch -Level $reclosedLevel -Actual @($doorObjective, $accessObjective, $laterExit)) `
+    'reopening a completed prerequisite before a later objective was rejected'
+Assert-True (-not (Test-GuidebotObjectiveProjectionMatch -Level $reclosedLevel -Actual @($accessObjective, $laterExit))) `
+    'reopening a prerequisite replaced its original completion'
+Assert-True (-not (Test-GuidebotObjectiveProjectionMatch -Level $reclosedLevel -Actual @($doorObjective, $laterExit, $accessObjective))) `
+    'access recovery was accepted after the full route completed'
 
 $emptyFailureEngine = $engine.PSObject.Copy()
 $emptyFailureEngine.status = 'timeout'

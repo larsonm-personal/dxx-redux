@@ -11,6 +11,7 @@ function Get-RoutingDevelopmentMissions {
         [pscustomobject]@{ Json = 'Entropy2.json'; Archive = 'Entropy2.zip'; BuiltInGame = '' },
         [pscustomobject]@{ Json = 'descent_maximum_fixed.json'; Archive = 'descent_maximum_fixed.zip'; BuiltInGame = '' },
         [pscustomobject]@{ Json = 'af_d1_beta.json'; Archive = 'af_d1_beta.zip'; BuiltInGame = '' },
-        [pscustomobject]@{ Json = 'Mandrill.json'; Archive = 'Mandrill.zip'; BuiltInGame = '' }
+        [pscustomobject]@{ Json = 'Mandrill.json'; Archive = 'Mandrill.zip'; BuiltInGame = '' },
+        [pscustomobject]@{ Json = 'bitesize.json'; Archive = 'bitesize.zip'; BuiltInGame = '' }
     )
 }

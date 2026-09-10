@@ -333,7 +333,7 @@ route_edge_decision evaluate_route_edge(
 	const bool hidden_door = wall_state.kind == route_wall_kind::door &&
 	                         wall_state.hidden && !wall_locked &&
 	                         wall_state.key == route_key_requirement::none;
-	if (hidden_door && state_flag(state.opened_hidden_walls, wall))
+	if (wall_kind == route_wall_kind::door && state_flag(state.opened_hidden_walls, wall))
 		return passable(wall);
 	if (hidden_door)
 		return progress(route_edge_blocker::hidden_door,
@@ -363,8 +363,24 @@ route_edge_decision evaluate_route_edge(
 		return progress(route_edge_blocker::trigger,
 		                route_required_action::activate_trigger,
 		                wall, trigger);
-	if (wall_kind == route_wall_kind::door && wall_locked)
+	if (wall_kind == route_wall_kind::door && wall_locked) {
+		const int reverse_wall = snapshot.topology.segments[child].sides[reverse_side].wall;
+		if (state.remote_door_shots && valid_wall(snapshot, reverse_wall) &&
+		    !state_flag(state.avoided_remote_walls, reverse_wall) &&
+		    route_progress_wall_kind(snapshot, state, reverse_wall) == route_wall_kind::door &&
+		    !route_progress_wall_locked(snapshot, state, reverse_wall)) {
+			const auto reverse_key = snapshot.state.walls[reverse_wall].key;
+			if (key_allowed(reverse_key, key_mask))
+				return progress(route_edge_blocker::remote_door,
+				                route_required_action::open_hidden_door, reverse_wall);
+			if (reverse_key != route_key_requirement::unknown &&
+			    reverse_key != forbidden_missing_key &&
+			    ((state.avoided_key_mask | state.key_in_progress) & key_bit(reverse_key)) == 0)
+				return progress(route_edge_blocker::missing_key,
+				                route_required_action::acquire_key, reverse_wall, -1, reverse_key);
+		}
 		return blocked(route_edge_blocker::locked_door, wall);
+	}
 	if (wall_kind == route_wall_kind::door &&
 	    key_allowed(wall_state.key, key_mask))
 		return passable(wall);

@@ -2478,6 +2478,12 @@ int main()
 	assert(fleeing_carrier_plan.steps[2].kind ==
 	       dxx_route::route_semantic_step_kind::unexplored);
 	assert(fleeing_carrier_plan.steps[2].path.segments.front() == 0);
+	dxx_route::route_visibility_query opaque_carrier_visibility;
+	opaque_carrier_visibility.wall_shootable = wall_not_shootable;
+	const auto opaque_carrier_plan = dxx_route::plan_route(
+	    fleeing_carrier_snapshot, fleeing_carrier_query, opaque_carrier_visibility);
+	assert(opaque_carrier_plan.status == dxx_route::route_plan_status::ok);
+	assert(opaque_carrier_plan.steps[2].path.segments.front() == 0);
 	auto stationary_carrier_snapshot = fleeing_carrier_snapshot;
 	stationary_carrier_snapshot.state.objects[0].fleeing = false;
 	const auto stationary_carrier_plan = dxx_route::plan_route(
@@ -2509,6 +2515,61 @@ int main()
 	       dxx_route::route_semantic_step_kind::key);
 	assert(asymmetric_key_plan.steps[2].key ==
 	       dxx_route::route_key_requirement::gold);
+	// A keyed door can have a locked approach and a shootable unlocked reverse face
+	auto remote_door_snapshot = make_fleeing_carrier_snapshot(false);
+	remote_door_snapshot.state.walls[0].locked = true;
+	remote_door_snapshot.state.walls[1].locked = false;
+	for (int wall : { 0, 1 })
+		remote_door_snapshot.state.walls[wall].key = dxx_route::route_key_requirement::blue;
+	for (int wall : { 2, 3 })
+		remote_door_snapshot.state.walls[wall].key = dxx_route::route_key_requirement::gold;
+	auto &gold = remote_door_snapshot.state.objects[0];
+	gold.kind = dxx_route::route_object_kind::powerup;
+	gold.contains_count = 0;
+	gold.contains_key = dxx_route::route_key_requirement::none;
+	gold.key = dxx_route::route_key_requirement::gold;
+	auto blue = gold;
+	blue.segment = 0;
+	blue.position = remote_door_snapshot.state.start_position;
+	blue.key = dxx_route::route_key_requirement::blue;
+	remote_door_snapshot.state.objects.push_back(blue);
+	remote_door_snapshot.topology.walls[1].target = remote_door_snapshot.state.objects[0].position;
+	auto &firing_vertex = remote_door_snapshot.topology.segments[0].vertices[0];
+	firing_vertex = remote_door_snapshot.state.start_position;
+	firing_vertex.value[1] += 2 * LEVEL_METADATA_FIX_SCALE;
+	test_visibility door_visible;
+	door_visible.wall = 1;
+	door_visible.segment = 0;
+	door_visible.position = remote_door_snapshot.state.start_position;
+	door_visible.position.value[1] += LEVEL_METADATA_FIX_SCALE;
+	dxx_route::route_visibility_query door_visibility;
+	door_visibility.user = &door_visible;
+	door_visibility.wall_shootable = wall_shootable;
+	const auto remote_door_plan = dxx_route::plan_route(
+	    remote_door_snapshot, asymmetric_key_query, door_visibility);
+	assert(remote_door_plan.status == dxx_route::route_plan_status::ok);
+	assert(remote_door_plan.steps.size() == 5);
+	assert(remote_door_plan.steps[1].key == dxx_route::route_key_requirement::blue);
+	assert(remote_door_plan.steps[2].wall == 1);
+	assert(remote_door_plan.steps[2].activation == dxx_route::route_activation_kind::open_hidden_door);
+	assert(remote_door_plan.steps[2].path.terminal_segment == 0);
+	assert(remote_door_plan.steps[2].path.terminal_position.value == door_visible.position.value);
+	assert(remote_door_plan.steps[3].key == dxx_route::route_key_requirement::gold);
+	// A shot from inside the locked room cannot justify entry into that room
+	door_visible.segment = 1;
+	door_visible.position = remote_door_snapshot.topology.segments[1].center;
+	assert(dxx_route::plan_route(remote_door_snapshot, asymmetric_key_query, door_visibility).status !=
+	       dxx_route::route_plan_status::ok);
+	door_visible.segment = 0;
+	door_visible.position = remote_door_plan.steps[2].path.terminal_position;
+	remote_door_snapshot.state.walls[1].locked = true;
+	assert(dxx_route::plan_route(remote_door_snapshot, asymmetric_key_query, door_visibility).status !=
+	       dxx_route::route_plan_status::ok);
+	remote_door_snapshot.state.walls[1].locked = false;
+	remote_door_snapshot.state.objects[1].segment = 1;
+	remote_door_snapshot.state.objects[1].position = remote_door_snapshot.topology.segments[1].center;
+	assert(dxx_route::plan_route(remote_door_snapshot, asymmetric_key_query, door_visibility).status !=
+	       dxx_route::route_plan_status::ok);
 	const auto selected_key = dxx_route::select_key_target(
 	    key_snapshot, planner_query,
 	    dxx_route::initial_route_progress_state(key_snapshot, planner_query),

@@ -166,6 +166,10 @@ int guidebot_route_select_exit_step_current_state(
     level_metadata_route_step *selected_step,
     int *selected_index,
     int *selected_segment);
+int guidebot_route_prepare_compiled_step_current(
+    const level_metadata_scan_view *view,
+    level_metadata_route_step *step,
+    guidebot_route_certifier_summary *summary);
 int guidebot_route_select_compiled_current_state(
     const level_metadata_scan_view *view,
     const level_metadata_state *compiled_state,

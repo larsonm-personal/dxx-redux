@@ -13,6 +13,7 @@ enum class route_edge_blocker {
 	hidden_door,
 	hard_blocked,
 	locked_door,
+	remote_door,
 	missing_key,
 	trigger,
 	closed_wall
@@ -44,10 +45,12 @@ struct route_progress_state {
 	int avoided_key_mask = 0;
 	bool control_center_destroyed = false;
 	bool wall_state_authoritative = false;
+	bool remote_door_shots = false;
 	std::vector<unsigned char> fired_triggers;
 	std::vector<unsigned char> consumed_one_shot_triggers;
 	std::vector<unsigned char> trigger_in_progress;
 	std::vector<unsigned char> avoided_triggers;
+	std::vector<unsigned char> avoided_remote_walls;
 	std::vector<route_wall_kind> wall_kinds;
 	std::vector<unsigned char> wall_locked;
 	std::vector<unsigned char> wall_opened;

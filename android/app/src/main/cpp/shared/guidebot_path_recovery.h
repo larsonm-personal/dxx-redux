@@ -8,6 +8,7 @@ struct vms_vector;
 extern "C" {
 #endif
 
+void guidebot_route_steer_approach(struct object *objp);
 void guidebot_route_recover_approach(struct object *objp, struct vms_vector *goal_point);
 
 #ifdef __cplusplus

@@ -1036,6 +1036,11 @@ bool route_progress_apply_trigger(
 		const auto previous_kind = progress.wall_kinds[wall];
 		const auto previous_locked = progress.wall_locked[wall];
 		const auto previous_opened = progress.wall_opened[wall];
+		// A later close or lock supersedes a door opened by a shot
+		if ((kind == route_trigger_kind::close_door || kind == route_trigger_kind::lock_door ||
+		     kind == route_trigger_kind::close_wall || kind == route_trigger_kind::toggle_door) &&
+		    wall < static_cast<int>(progress.opened_hidden_walls.size()))
+			progress.opened_hidden_walls[wall] = 0;
 		switch (kind) {
 			case route_trigger_kind::open_door:
 				progress.wall_opened[wall] = 1;
@@ -1619,7 +1624,8 @@ static route_trigger_path_selection select_trigger_firing_path_internal(
     const std::vector<route_trigger_source> &sources,
     const route_visibility_query &visibility,
     const switch_guidance_graph *guidance_graph,
-    bool allow_progress = false)
+    bool allow_progress = false,
+    bool include_remote_prerequisite_poses = false)
 {
 	route_trigger_path_selection result;
 	// Cached visibility still requires a graph search for every dependency attempt
@@ -1638,8 +1644,9 @@ static route_trigger_path_selection select_trigger_firing_path_internal(
 	for (std::size_t source_index = 0; source_index < sources.size();
 	     ++source_index) {
 		const auto &source = sources[source_index];
-		// Accessible switch rooms use the normal source approach
-		if (allow_progress && valid_segment(snapshot, source.source_segment) &&
+		// Prefer the normal source approach before expanding prerequisite poses
+		if (allow_progress && !include_remote_prerequisite_poses &&
+		    valid_segment(snapshot, source.source_segment) &&
 		    search.nodes[source.source_segment].reachable)
 			continue;
 		const int source_base = static_cast<int>(source_index) * segments * 2;
@@ -1971,7 +1978,7 @@ static route_trigger_path_selection select_trigger_firing_path_internal(
 			    });
 			if (detailed_guidance.size() > 8)
 				detailed_guidance.resize(8);
-			if (allow_progress)
+			if (allow_progress && !include_remote_prerequisite_poses)
 				// Prefer stable center poses when their approach still needs prerequisites
 				detailed_guidance.clear();
 			for (const auto &guidance : detailed_guidance) {
@@ -2337,16 +2344,20 @@ class dependency_planner
 	    bool allow_unresolved_triggers = false,
 	    int semantic_key_mask = -1,
 	    std::array<int, 3> semantic_key_order = { { 0, 2, 1 } },
-	    bool transition_aware_paths = true)
+	    bool transition_aware_paths = true,
+	    bool expand_firing_search = false)
 	    : snapshot_(snapshot), query_(query), visibility_(visibility),
 	      targets_(discover_route_targets(snapshot)),
 	      switch_guidance_graph_(build_switch_guidance_graph(snapshot, query)),
 	      allow_unresolved_triggers_(allow_unresolved_triggers),
 	      semantic_key_mask_(semantic_key_mask),
 	      semantic_key_order_(semantic_key_order),
-	      transition_aware_paths_(transition_aware_paths)
+	      transition_aware_paths_(transition_aware_paths),
+	      expand_firing_search_(expand_firing_search)
 	{
 		state_.progress = progress;
+		state_.progress.remote_door_shots = visibility.wall_shootable != nullptr;
+		state_.progress.avoided_remote_walls.resize(snapshot.state.walls.size());
 		if (semantic_key_mask_ >= 0)
 			state_.progress.wall_state_authoritative = true;
 		state_.hidden_door_in_progress.resize(snapshot.state.walls.size());
@@ -2649,6 +2660,7 @@ class dependency_planner
 		visibility_target.source_segment = target.segment;
 		visibility_target.source_position = target.position;
 		const int total = static_cast<int>(search.visit_order.size());
+		route_path_result narrow_firing_path;
 		report_progress(visibility_, "route_target_visibility", 0, total);
 		for (int index = 0; index < total; ++index) {
 			const int segment = search.visit_order[index];
@@ -2683,8 +2695,15 @@ class dependency_planner
 						break;
 					}
 				}
-			if (!robust_visibility)
+			if (!robust_visibility) {
+				if (expand_firing_search_ && !narrow_firing_path.reached) {
+					narrow_firing_path = build_route_path(search, segment);
+					narrow_firing_path.distance += extra_distance;
+					narrow_firing_path.terminal_segment = segment;
+					narrow_firing_path.terminal_position = terminal;
+				}
 				continue;
+			}
 			auto path = build_route_path(search, segment);
 			path.distance += extra_distance;
 			path.progress_weight = 0;
@@ -2694,6 +2713,11 @@ class dependency_planner
 			    visibility_, "route_target_visibility", total, total);
 			return path;
 		}
+		/* A narrow confirmed shot remains useful when no complete ordinary
+		 * route exists. Prefer broad firing areas, but do not require the whole
+		 * Guide-Bot radius to fit through a projectile's line of fire */
+		if (narrow_firing_path.reached)
+			return narrow_firing_path;
 		/* D2 bosses can engage or teleport from a room sealed by a
 		 * buddy-proof wall.  Route the Guide-Bot to the player handoff point
 		 * instead of treating the boss, and therefore the exit, as unreachable. */
@@ -3096,11 +3120,49 @@ class dependency_planner
 		return true;
 	}
 
+	bool open_remote_door(int wall, int depth)
+	{
+		if (!valid_wall(snapshot_, wall) || !visibility_.wall_shootable) {
+			set_problem("remote door shooting unavailable");
+			return false;
+		}
+		const auto &topology = snapshot_.topology.walls[wall];
+		route_trigger_source source;
+		source.source_wall = wall;
+		source.source_segment = topology.segment;
+		source.source_side = topology.side;
+		source.source_position = topology.target;
+		// Only consider positions reachable before this door has opened
+		const auto search = search_routes(snapshot_, query_, state_.progress, false);
+		int best_segment = -1;
+		route_position best_position;
+		double best_distance = std::numeric_limits<double>::infinity();
+		for (const int segment : search.visit_order) {
+			route_position position;
+			double extra_distance = 0.0;
+			if (!visible_source_position(snapshot_, state_.progress, source, visibility_,
+			                             segment, position, extra_distance))
+				continue;
+			const double distance = search.nodes[segment].distance + extra_distance +
+			                        point_distance(position, topology.target);
+			if (distance < best_distance) {
+				best_distance = distance;
+				best_segment = segment;
+				best_position = position;
+			}
+		}
+		if (best_segment < 0) {
+			set_problem("unlocked door face has no reachable firing position");
+			return false;
+		}
+		return resolve_shot_blocker(wall, best_segment, best_position, depth + 1, true);
+	}
+
 	bool resolve_shot_blocker(
 	    int wall,
 	    int firing_segment,
 	    const route_position &firing_position,
-	    int depth)
+	    int depth, bool remote_door = false)
 	{
 		if (!valid_wall(snapshot_, wall) ||
 		    !valid_segment(snapshot_, firing_segment) ||
@@ -3135,7 +3197,7 @@ class dependency_planner
 			return true;
 		}
 		if (wall_state.kind != route_wall_kind::door ||
-		    (!wall_state.hidden && wall_state.key == route_key_requirement::none)) {
+		    (!remote_door && !wall_state.hidden && wall_state.key == route_key_requirement::none)) {
 			set_problem("conditional shot blocker is not shoot-open");
 			return false;
 		}
@@ -3278,7 +3340,8 @@ class dependency_planner
 			const auto reverse = evaluate_route_edge(
 			    snapshot_, query_, state_.progress, carrier_side_segment,
 			    reverse_side);
-			if (reverse.progress_cost != LEVEL_METADATA_ROUTE_EDGE_BLOCKED)
+			if (reverse.progress_cost != LEVEL_METADATA_ROUTE_EDGE_BLOCKED &&
+			    reverse.blocker != route_edge_blocker::remote_door)
 				continue;
 			const auto &anchor =
 			    snapshot_.topology.segments[anchor_segment].center;
@@ -3941,6 +4004,13 @@ class dependency_planner
 			selected_firing = select_trigger_firing_path_internal(
 			    snapshot_, query_, firing_progress, firing_sources,
 			    conditional_visibility, nullptr, true);
+			/* Optimistic switch-room access may depend on keys unlocked by this
+			 * switch. If the normal search fails, retain remote poses and their
+			 * bounded detailed samples before resolving the approach prerequisites */
+			if (!selected_firing.found && expand_firing_search_)
+				selected_firing = select_trigger_firing_path_internal(
+				    snapshot_, query_, firing_progress, firing_sources,
+				    conditional_visibility, nullptr, true, true);
 			conditional_firing = selected_firing.found;
 		}
 		if (selected_firing.found)
@@ -4172,6 +4242,7 @@ class dependency_planner
 		}
 		const int saved_avoided_keys = state_.progress.avoided_key_mask;
 		const auto saved_avoided_triggers = state_.progress.avoided_triggers;
+		const auto saved_avoided_remote_walls = state_.progress.avoided_remote_walls;
 		std::string last_dependency_problem;
 		std::string unresolved_trigger_problem;
 		int unresolved_trigger_segment = -1;
@@ -4200,6 +4271,7 @@ class dependency_planner
 				state_.progress.current_position = goal_position;
 				state_.progress.avoided_key_mask = saved_avoided_keys;
 				state_.progress.avoided_triggers = saved_avoided_triggers;
+				state_.progress.avoided_remote_walls = saved_avoided_remote_walls;
 				state_.failed_key = -1;
 				state_.failed_trigger = -1;
 				return true;
@@ -4211,6 +4283,7 @@ class dependency_planner
 				if (acquire_recovery_key(depth + 1)) {
 					state_.progress.avoided_key_mask = saved_avoided_keys;
 					state_.progress.avoided_triggers = saved_avoided_triggers;
+					state_.progress.avoided_remote_walls = saved_avoided_remote_walls;
 					state_.failed_key = -1;
 					state_.failed_trigger = -1;
 					continue;
@@ -4231,6 +4304,7 @@ class dependency_planner
 				        : "route target unreachable");
 				state_.progress.avoided_key_mask = saved_avoided_keys;
 				state_.progress.avoided_triggers = saved_avoided_triggers;
+				state_.progress.avoided_remote_walls = saved_avoided_remote_walls;
 				return false;
 			}
 			const auto &block = optimistic.first_obstruction;
@@ -4303,20 +4377,33 @@ class dependency_planner
 					    optimistic.first_obstruction_side, block);
 					state_.progress.avoided_key_mask = saved_avoided_keys;
 					state_.progress.avoided_triggers = saved_avoided_triggers;
+					state_.progress.avoided_remote_walls = saved_avoided_remote_walls;
 					return false;
 				}
 				continue;
 			}
-			if (block.blocker == route_edge_blocker::hidden_door) {
-				if (!open_hidden_door(
-				        optimistic.first_obstruction_segment,
-				        optimistic.first_obstruction_side, block.wall,
-				        depth + 1)) {
+			if (block.blocker == route_edge_blocker::hidden_door ||
+			    block.blocker == route_edge_blocker::remote_door) {
+				const auto saved = state_;
+				const bool opened = block.blocker == route_edge_blocker::remote_door
+				                        ? open_remote_door(block.wall, depth + 1)
+				                        : open_hidden_door(
+				                              optimistic.first_obstruction_segment,
+				                              optimistic.first_obstruction_side, block.wall,
+				                              depth + 1);
+				if (!opened) {
+					if (block.blocker == route_edge_blocker::remote_door) {
+						last_dependency_problem = state_.problem;
+						state_ = saved;
+						state_.progress.avoided_remote_walls[block.wall] = 1;
+						continue;
+					}
 					note_unresolved_obstruction(
 					    optimistic.first_obstruction_segment,
 					    optimistic.first_obstruction_side, block);
 					state_.progress.avoided_key_mask = saved_avoided_keys;
 					state_.progress.avoided_triggers = saved_avoided_triggers;
+					state_.progress.avoided_remote_walls = saved_avoided_remote_walls;
 					return false;
 				}
 				continue;
@@ -4324,6 +4411,7 @@ class dependency_planner
 			set_problem("unsupported route dependency");
 			state_.progress.avoided_key_mask = saved_avoided_keys;
 			state_.progress.avoided_triggers = saved_avoided_triggers;
+			state_.progress.avoided_remote_walls = saved_avoided_remote_walls;
 			return false;
 		}
 		set_problem(
@@ -4332,6 +4420,7 @@ class dependency_planner
 		        : "route dependency iteration limit");
 		state_.progress.avoided_key_mask = saved_avoided_keys;
 		state_.progress.avoided_triggers = saved_avoided_triggers;
+		state_.progress.avoided_remote_walls = saved_avoided_remote_walls;
 		return false;
 	}
 
@@ -4344,6 +4433,7 @@ class dependency_planner
 	int semantic_key_mask_;
 	std::array<int, 3> semantic_key_order_;
 	bool transition_aware_paths_;
+	bool expand_firing_search_;
 	dependency_state state_;
 };
 
@@ -4367,6 +4457,7 @@ route_plan_result plan_route(
     const route_visibility_query &visibility,
     bool allow_transition_compatibility)
 {
+	bool expand_firing_search = false;
 	auto plan_once = [&](const route_query &attempt, bool allow_unresolved,
 	                     int semantic_key_mask,
 	                     const std::array<int, 3> &semantic_key_order,
@@ -4375,7 +4466,7 @@ route_plan_result plan_route(
 		    snapshot, attempt,
 		    initial_route_progress_state(snapshot, attempt), visibility,
 		    allow_unresolved, semantic_key_mask, semantic_key_order,
-		    transition_aware_paths);
+		    transition_aware_paths, expand_firing_search);
 		if (attempt.endpoint == route_endpoint_kind::end_of_level)
 			return planner.plan_end_level();
 		if (attempt.endpoint == route_endpoint_kind::unexplored)
@@ -4515,6 +4606,14 @@ route_plan_result plan_route(
 	collect_completing_plans(true);
 	if (allow_transition_compatibility && completing_plans.empty())
 		collect_completing_plans(false);
+	/* Expand switch approaches only after the ordinary search has no complete
+	 * route, preserving its successful choices and sharing the remaining budget */
+	if (completing_plans.empty()) {
+		expand_firing_search = true;
+		collect_completing_plans(true);
+		if (allow_transition_compatibility && completing_plans.empty())
+			collect_completing_plans(false);
+	}
 	if (completing_plans.empty()) {
 		auto diagnostic = plan_mode(
 		    relevant_key_mask, default_key_order, false, true);

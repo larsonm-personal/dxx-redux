@@ -47,9 +47,26 @@ internal object RouteMetadataBackground {
         var currentReported = false
         val progressTracker = RouteMetadataCurrentProgressTracker(currentLevelNum)
 
-        fun reportCurrent(ready: Boolean) {
+        fun reportCurrent(
+            ready: Boolean,
+            failureDetail: String = "analysis ended without a current-level result",
+        ) {
             if (!currentReported) {
                 currentReported = true
+                if (!ready) {
+                    val message =
+                        "Route metadata unavailable game=$game mission=$mission " +
+                            "level=$currentLevelNum file=$currentLevelFile reason=$failureDetail"
+                    DebugLog.log(DebugLogCategory.GAME, message)
+                    Log.w("DXX-RouteMetadata", message)
+                    runCatching {
+                        monitor.coordinatorEvent(
+                            "current_level_unavailable",
+                            "game=$game level=$currentLevelNum file=$currentLevelFile reason=$failureDetail",
+                            mission,
+                        )
+                    }.onFailure { Log.w("DXX-RouteMetadata", "Could not persist failure diagnostic", it) }
+                }
                 onCurrentReady(ready)
             }
         }
@@ -96,7 +113,12 @@ internal object RouteMetadataBackground {
                         progressTracker.onFailure(level.levelNum)?.let {
                             onCurrentProgress(it.permille, it.state)
                         }
-                        reportCurrent(false)
+                        reportCurrent(
+                            false,
+                            "cached_failure kind=${existing.failureKind} " +
+                                "count=${existing.failureCount} updated_at_ms=${existing.updatedAtMs} " +
+                                "fingerprint=${existing.failureFingerprint}",
+                        )
                     }
                     continue
                 }
@@ -178,7 +200,16 @@ internal object RouteMetadataBackground {
                             progressTracker.onFailure(level.levelNum)?.let {
                                 onCurrentProgress(it.permille, it.state)
                             }
-                            reportCurrent(false)
+                            reportCurrent(
+                                false,
+                                "worker_failure kind=${assessment.failureKind} " +
+                                    "status=${result.status} readiness=${row?.routeReadiness.orEmpty()} " +
+                                    "cache_published=$cachePublished count=${recorded.failureCount} " +
+                                    "fingerprint=${assessment.failureFingerprint} " +
+                                    "problems=${(result.problems + row?.problems.orEmpty()).distinct().joinToString(
+                                        "; ",
+                                    )}",
+                            )
                         }
                         Log.w(
                             "DXX-RouteMetadata",
@@ -192,6 +223,10 @@ internal object RouteMetadataBackground {
             }
             monitor.inGameMissionFinished(mission, levels.size)
         } catch (e: CancellationException) {
+            reportCurrent(false, "cancelled")
+            throw e
+        } catch (e: Exception) {
+            reportCurrent(false, "exception=${e.javaClass.simpleName} message=${e.message.orEmpty()}")
             throw e
         } finally {
             reportCurrent(false)

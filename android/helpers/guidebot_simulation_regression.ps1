@@ -131,6 +131,21 @@ function Test-GuidebotObjectiveProjectionMatch {
         if (-not $expectedByIndex.ContainsKey($stepIndex)) { return $false }
         $expectedItem = $expectedByIndex[$stepIndex]
         $restoredWall = Get-GuidebotPropertyValue $actualItem 'restores_switch_wall' $null
+        $accessStep = Get-GuidebotPropertyValue $actualItem 'access_for_route_step' $null
+        if ($null -ne $accessStep) {
+            # Access work does not complete or replace the pending objective
+            # A reclosed prerequisite can also refer back to an already completed step
+            if ($null -ne $restoredWall -or [int]$accessStep -ne $stepIndex -or
+                [string](Get-GuidebotPropertyValue $actualItem 'kind' '') -ne 'trigger' -or
+                [int](Get-GuidebotPropertyValue $actualItem 'trigger' -1) -lt 0 -or
+                [string](Get-GuidebotPropertyValue $actualItem 'activation_kind' '') -notin
+                @('shoot_switch', 'fly_through_trigger', 'pass_through_trigger') -or
+                $nextExpected -ge $expected.Count -or
+                ($stepIndex -ne $expected[$nextExpected].route_step_index -and -not $seen.ContainsKey($stepIndex))) {
+                return $false
+            }
+            continue
+        }
         if ($null -ne $restoredWall) {
             # A certified recovery is additional work; the planned switch remains required
             if ($expectedItem.kind -ne 'trigger' -or $expectedItem.activation_kind -ne 'shoot_switch' -or
