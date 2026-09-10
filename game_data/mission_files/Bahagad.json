@@ -1984,7 +1984,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open door",
             "seg": 530,
-            "side": 5,
             "wall": 73,
             "label_pos": {
               "x": 0.0,

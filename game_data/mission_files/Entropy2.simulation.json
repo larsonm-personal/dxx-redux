@@ -295,7 +295,7 @@
         },
         {
           "n": "switch 6",
-          "s": 96
+          "s": 95
         },
         {
           "n": "switch 3",
@@ -303,21 +303,21 @@
         },
         {
           "n": "switch 0",
-          "s": 113
+          "s": 112
         },
         {
           "n": "exit",
-          "s": 124
+          "s": 123
         }
       ],
-      "total_frames": 7424,
+      "total_frames": 7379,
       "rng_end": {
         "state": 4017957265,
         "calls": 3824
       },
       "reactor_escape": {
         "countdown_seconds": 50.0,
-        "simulated_seconds": 47.116669,
+        "simulated_seconds": 46.366669,
         "difficulty": 2
       }
     }

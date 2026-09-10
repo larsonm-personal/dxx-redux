@@ -244,14 +244,14 @@
           "s": 15
         }
       ],
-      "total_frames": 884,
+      "total_frames": 875,
       "rng_end": {
-        "state": 3391122582,
-        "calls": 1489
+        "state": 1160430679,
+        "calls": 1426
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 1.71666,
+        "simulated_seconds": 1.833328,
         "difficulty": 2
       }
     },

@@ -749,14 +749,14 @@
         },
         {
           "n": "reactor",
-          "s": 85
+          "s": 84
         },
         {
           "n": "exit",
           "s": 93
         }
       ],
-      "total_frames": 5601,
+      "total_frames": 5576,
       "rng_end": {
         "state": 4018601048,
         "calls": 5071
@@ -795,17 +795,17 @@
         },
         {
           "n": "exit",
-          "s": 69
+          "s": 70
         }
       ],
-      "total_frames": 4159,
+      "total_frames": 4176,
       "rng_end": {
         "state": 1017304121,
         "calls": 2568
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 6.650009,
+        "simulated_seconds": 6.649994,
         "difficulty": 2
       }
     },
@@ -894,14 +894,14 @@
           "s": 69
         }
       ],
-      "total_frames": 4156,
+      "total_frames": 4162,
       "rng_end": {
         "state": 1379390971,
         "calls": 6926
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 7.466675,
+        "simulated_seconds": 7.566666,
         "difficulty": 2
       }
     },
@@ -978,14 +978,14 @@
           "s": 102
         }
       ],
-      "total_frames": 6108,
+      "total_frames": 6109,
       "rng_end": {
         "state": 2478541615,
         "calls": 5050
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 7.699997,
+        "simulated_seconds": 7.700012,
         "difficulty": 2
       }
     },
@@ -1089,7 +1089,7 @@
         },
         {
           "n": "gold key",
-          "s": 60
+          "s": 61
         },
         {
           "n": "hidden door",
@@ -1108,14 +1108,14 @@
           "s": 115
         }
       ],
-      "total_frames": 6910,
+      "total_frames": 6920,
       "rng_end": {
         "state": 1254560794,
         "calls": 5053
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 7.166656,
+        "simulated_seconds": 7.116669,
         "difficulty": 2
       }
     },

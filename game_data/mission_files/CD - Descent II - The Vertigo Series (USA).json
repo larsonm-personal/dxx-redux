@@ -2713,7 +2713,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open door",
             "seg": 392,
-            "side": 4,
             "wall": 52,
             "label_pos": {
               "x": 160.1,

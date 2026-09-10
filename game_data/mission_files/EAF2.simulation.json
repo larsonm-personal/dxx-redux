@@ -13,7 +13,7 @@
     {
       "level_num": 1,
       "level_file": "Enc2-1.rl2",
-      "route_input_sha256": "3A5CE2D8E28AB5E24F4761F1FDA12943F2779B15900B0B570C2A9ACF69316477",
+      "route_input_sha256": "239367C12BDD363B5C76580CE9DCFFF1AF7AA292DE6D76C8D7B4E1066F1DD6F5",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -26,37 +26,37 @@
         },
         {
           "n": "open door",
-          "s": 29
+          "s": 28
         },
         {
           "n": "switch 0",
-          "s": 29
+          "s": 28
         },
         {
           "n": "blue key",
-          "s": 43
+          "s": 42
         },
         {
           "n": "switch 1",
-          "s": 47
+          "s": 46
         },
         {
           "n": "reactor",
-          "s": 66
+          "s": 64
         },
         {
           "n": "exit",
-          "s": 86
+          "s": 85
         }
       ],
-      "total_frames": 5152,
+      "total_frames": 5089,
       "rng_end": {
-        "state": 2319406211,
-        "calls": 8198
+        "state": 3867290404,
+        "calls": 8243
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 20.099991,
+        "simulated_seconds": 20.550003,
         "difficulty": 2
       }
     },

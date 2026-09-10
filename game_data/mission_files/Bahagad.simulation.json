@@ -49,7 +49,7 @@
           "s": 57
         }
       ],
-      "total_frames": 3418,
+      "total_frames": 3413,
       "rng_end": {
         "state": 2211323218,
         "calls": 4197
@@ -389,7 +389,7 @@
           "s": 183
         }
       ],
-      "total_frames": 11002,
+      "total_frames": 11004,
       "rng_end": {
         "state": 3143601409,
         "calls": 15104
@@ -403,7 +403,7 @@
     {
       "level_num": 8,
       "level_file": "world2d.rl2",
-      "route_input_sha256": "DA8574C32D847E0996B27160C1CFFBD7FFA30426BA20B0ED2A2C306CB783D7D4",
+      "route_input_sha256": "52E5C86043B5154128E2E890B22EA26FFB0122114243C7FA492346CD549B1824",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -440,11 +440,11 @@
         },
         {
           "n": "open door",
-          "s": 92
+          "s": 91
         },
         {
           "n": "switch 11",
-          "s": 92
+          "s": 91
         },
         {
           "n": "destroy robot carrying red key",
@@ -452,21 +452,21 @@
         },
         {
           "n": "boss",
-          "s": 129
+          "s": 128
         },
         {
           "n": "exit",
-          "s": 130
+          "s": 129
         }
       ],
-      "total_frames": 7790,
+      "total_frames": 7726,
       "rng_end": {
-        "state": 4085886338,
-        "calls": 5109
+        "state": 717805252,
+        "calls": 5139
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 1.050003,
+        "simulated_seconds": 1.016663,
         "difficulty": 2
       }
     },

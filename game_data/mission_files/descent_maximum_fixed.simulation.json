@@ -358,7 +358,7 @@
       {
         "level_num": 9,
         "level_file": "psx09.rl2",
-        "route_input_sha256": "D50DC6A14F1A1FBC5EACAE50E18D2FAA05E7E2AAE4A890E7D98C983693957138",
+        "route_input_sha256": "700C12D5DBBED44ABC4D1C346D643A246467EA5D9E9A58ADFCA7C91E20A2B0E8",
         "status": "ok",
         "rng_start": {
           "state": 1,
@@ -424,7 +424,7 @@
       {
         "level_num": 10,
         "level_file": "psx10.rl2",
-        "route_input_sha256": "A9CD251803F0B381DECB96E442D2169B62859F83681C9BCEBA0330BE1018472F",
+        "route_input_sha256": "4FA500B391B4D45B4CA6A20E98A445AE94945DD18F50F01C8F212A0544F690EA",
         "status": "ok",
         "rng_start": {
           "state": 1,
@@ -536,7 +536,7 @@
       {
         "level_num": 12,
         "level_file": "psx12.rl2",
-        "route_input_sha256": "A4C1B1CDB548E87FA75B85447C7C916EB84D0E152B287CB0FF26E9EDC3ADAECB",
+        "route_input_sha256": "0B406C399A53110A3BEED8445192513F860CA15EA210AF16ED9FA32947342FB7",
         "status": "ok",
         "rng_start": {
           "state": 1,
@@ -565,7 +565,7 @@
           },
           {
             "n": "open door",
-            "s": 46
+            "s": 45
           },
           {
             "n": "switch 2",
@@ -584,10 +584,10 @@
             "s": 69
           }
         ],
-        "total_frames": 4146,
+        "total_frames": 4162,
         "rng_end": {
-          "state": 2540480074,
-          "calls": 1869
+          "state": 1524348066,
+          "calls": 1877
         },
         "reactor_escape": {
           "countdown_seconds": 45.0,
@@ -676,14 +676,14 @@
             "s": 83
           }
         ],
-        "total_frames": 4966,
+        "total_frames": 4965,
         "rng_end": {
           "state": 3896792808,
           "calls": 1791
         },
         "reactor_escape": {
           "countdown_seconds": 45.0,
-          "simulated_seconds": 8.449997,
+          "simulated_seconds": 8.450012,
           "difficulty": 2
         }
       },
@@ -890,7 +890,7 @@
       {
         "level_num": 19,
         "level_file": "psx19.rl2",
-        "route_input_sha256": "5E543B8D1538FD9D06AD4241AFD3F91302E6BF6043936A965688323F7ED89776",
+        "route_input_sha256": "3F0E9A689BFE63388556BD0A0F1AC12FE78EE5CAF5BE1842475C8CEEF69F3FF7",
         "status": "ok",
         "rng_start": {
           "state": 1,
@@ -911,7 +911,7 @@
           },
           {
             "n": "open door",
-            "s": 54
+            "s": 53
           },
           {
             "n": "switch 2",
@@ -919,36 +919,36 @@
           },
           {
             "n": "switch 9",
-            "s": 56
+            "s": 57
           },
           {
             "n": "red key",
-            "s": 58
+            "s": 59
           },
           {
             "n": "reactor",
-            "s": 60
+            "s": 61
           },
           {
             "n": "exit",
-            "s": 62
+            "s": 63
           }
         ],
-        "total_frames": 3719,
+        "total_frames": 3780,
         "rng_end": {
-          "state": 3847820079,
-          "calls": 3002
+          "state": 3115304823,
+          "calls": 3186
         },
         "reactor_escape": {
           "countdown_seconds": 45.0,
-          "simulated_seconds": 1.699997,
+          "simulated_seconds": 1.733337,
           "difficulty": 2
         }
       },
       {
         "level_num": 20,
         "level_file": "psx20.rl2",
-        "route_input_sha256": "9027605DC20EDCED35BF6F00BB11C0739825E7987F264961E9A2A8931EDF7D4F",
+        "route_input_sha256": "ED702CAA7B0EEC8AE7A2FADA3143ED0E4D2BA28F896978BF8A6A962C13F869D7",
         "status": "ok",
         "rng_start": {
           "state": 1,
@@ -969,15 +969,15 @@
           },
           {
             "n": "destroy robot carrying gold key",
-            "s": 15
+            "s": 16
           },
           {
             "n": "open door",
-            "s": 27
+            "s": 28
           },
           {
             "n": "switch 1",
-            "s": 27
+            "s": 28
           },
           {
             "n": "destroy robot carrying red key",
@@ -989,17 +989,17 @@
           },
           {
             "n": "boss",
-            "s": 68
+            "s": 67
           },
           {
             "n": "exit",
-            "s": 85
+            "s": 84
           }
         ],
-        "total_frames": 5071,
+        "total_frames": 5055,
         "rng_end": {
-          "state": 3374368235,
-          "calls": 2334
+          "state": 1702214604,
+          "calls": 2539
         },
         "reactor_escape": {
           "countdown_seconds": 45.0,
@@ -1010,7 +1010,7 @@
       {
         "level_num": 21,
         "level_file": "psx21.rl2",
-        "route_input_sha256": "C1D8F85C15D24158DB445F5909AC4D660860FEDC3B068BCB095F70973CC0AE97",
+        "route_input_sha256": "10C63C100DE282B07B38C1795327223BC5EA11336A6CC749B10DC108E40326C5",
         "status": "ok",
         "rng_start": {
           "state": 1,
@@ -1376,7 +1376,7 @@
       {
         "level_num": -4,
         "level_file": "psxs4a.rl2",
-        "route_input_sha256": "61C6A7819738D6F2A34D82D8940C769D651D98234B84347267FCB5D273C9E6BC",
+        "route_input_sha256": "C740A3275E48359DFFCE74B7440B87F373043FB49ED4EC4D908C2A633D80A63D",
         "status": "ok",
         "rng_start": {
           "state": 1,

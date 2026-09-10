@@ -1236,7 +1236,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
             "seg": 272,
-            "side": 3,
             "wall": 95,
             "label_pos": {
               "x": -74.1,
@@ -1601,7 +1600,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
             "seg": 240,
-            "side": 4,
             "wall": 54,
             "label_pos": {
               "x": 227.7,
@@ -2068,7 +2066,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open door",
             "seg": 75,
-            "side": 4,
             "wall": 69,
             "label_pos": {
               "x": -236.2,
@@ -3331,7 +3328,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open door",
             "seg": 118,
-            "side": 5,
             "wall": 33,
             "label_pos": {
               "x": -272.1,
@@ -3536,7 +3532,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open door",
             "seg": 273,
-            "side": 4,
             "wall": 13,
             "label_pos": {
               "x": 57.3,
@@ -3601,7 +3596,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open door",
             "seg": 279,
-            "side": 4,
             "wall": 16,
             "label_pos": {
               "x": 57.9,
@@ -3868,7 +3862,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
             "seg": 271,
-            "side": 4,
             "wall": 82,
             "label_pos": {
               "x": -203.1,
@@ -5286,7 +5279,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
             "seg": 18,
-            "side": 3,
             "wall": 34,
             "label_pos": {
               "x": 25.7,

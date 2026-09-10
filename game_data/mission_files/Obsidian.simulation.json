@@ -322,21 +322,21 @@
         },
         {
           "n": "blue key",
-          "s": 59
+          "s": 58
         },
         {
           "n": "switch 14",
-          "s": 73
+          "s": 72
         },
         {
           "n": "exit",
           "s": 77
         }
       ],
-      "total_frames": 4629,
+      "total_frames": 4635,
       "rng_end": {
-        "state": 3822900233,
-        "calls": 5816
+        "state": 1286988358,
+        "calls": 5857
       }
     },
     {
@@ -599,52 +599,52 @@
         },
         {
           "n": "open door",
-          "s": 50
+          "s": 51
         },
         {
           "n": "switch 0",
-          "s": 50
+          "s": 51
         },
         {
           "n": "switch 7",
-          "s": 72
+          "s": 73
         },
         {
           "n": "switch 9",
-          "s": 72
+          "s": 73
         },
         {
           "n": "switch 6",
-          "s": 84
+          "s": 85
         },
         {
           "n": "red key",
-          "s": 84
+          "s": 86
         },
         {
           "n": "reactor",
-          "s": 88
+          "s": 90
         },
         {
           "n": "exit",
-          "s": 114
+          "s": 116
         }
       ],
-      "total_frames": 6860,
+      "total_frames": 6940,
       "rng_end": {
-        "state": 673614546,
-        "calls": 16613
+        "state": 2537437000,
+        "calls": 16671
       },
       "reactor_escape": {
         "countdown_seconds": 150.0,
-        "simulated_seconds": 25.850006,
+        "simulated_seconds": 25.866669,
         "difficulty": 2
       }
     },
     {
       "level_num": 11,
       "level_file": "quoxir.rl2",
-      "route_input_sha256": "88C9A94BC22BAE27F44CFD8F0FF124D8EC8B140B867AEBB41AD8FC194E84795F",
+      "route_input_sha256": "96AEE2D127DACEFD5F65C0091AB6E3E37C8E3C1D0053D208CAA492BC91C978CE",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -685,7 +685,7 @@
         },
         {
           "n": "open door",
-          "s": 58
+          "s": 57
         },
         {
           "n": "switch 17",
@@ -693,7 +693,7 @@
         },
         {
           "n": "switch 16",
-          "s": 60
+          "s": 59
         },
         {
           "n": "pass-through 14",
@@ -701,15 +701,15 @@
         },
         {
           "n": "switch 15",
-          "s": 70
+          "s": 69
         },
         {
           "n": "red key",
-          "s": 75
+          "s": 74
         },
         {
           "n": "switch 2",
-          "s": 86
+          "s": 85
         },
         {
           "n": "switch 3",
@@ -717,7 +717,7 @@
         },
         {
           "n": "switch 4",
-          "s": 91
+          "s": 90
         },
         {
           "n": "switch 1",
@@ -729,17 +729,17 @@
         },
         {
           "n": "exit",
-          "s": 101
+          "s": 100
         }
       ],
-      "total_frames": 6060,
+      "total_frames": 6011,
       "rng_end": {
         "state": 654105195,
         "calls": 5278
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 7.516678,
+        "simulated_seconds": 7.516663,
         "difficulty": 2
       }
     },
@@ -828,7 +828,7 @@
     {
       "level_num": 13,
       "level_file": "o3tdepot.rl2",
-      "route_input_sha256": "7B4DC4091B2CA757F27CC458D66FDF0F00A8BC5297321DE3A5FC8199E328AB02",
+      "route_input_sha256": "5EC8CEA1AA0463463350383C6FB1E82278BBF52F5F0585E0EEBF5CC5809E58C5",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -853,49 +853,49 @@
         },
         {
           "n": "open door",
-          "s": 42
+          "s": 41
         },
         {
           "n": "switch 7",
-          "s": 42
+          "s": 41
         },
         {
           "n": "pass-through 3",
-          "s": 50
+          "s": 48
         },
         {
           "n": "switch 2",
-          "s": 51
+          "s": 49
         },
         {
           "n": "switch 6",
-          "s": 52
+          "s": 51
         },
         {
           "n": "switch 8",
-          "s": 66
+          "s": 65
         },
         {
           "n": "red key",
-          "s": 77
+          "s": 76
         },
         {
           "n": "boss",
-          "s": 91
+          "s": 90
         },
         {
           "n": "exit",
-          "s": 109
+          "s": 108
         }
       ],
-      "total_frames": 6521,
+      "total_frames": 6479,
       "rng_end": {
-        "state": 2111636178,
-        "calls": 10469
+        "state": 1216573130,
+        "calls": 10445
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 17.933319,
+        "simulated_seconds": 17.849991,
         "difficulty": 2
       }
     },

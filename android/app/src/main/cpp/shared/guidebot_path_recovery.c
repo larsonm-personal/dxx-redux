@@ -186,9 +186,10 @@ void guidebot_route_recover_approach(object *objp, vms_vector *goal_point)
 		}
 	}
 	/* A portal can require an off-center approach even when both waypoints
-	 * are occupiable. Search nearby interior positions with two clear legs */
+	 * are occupiable. A long sweep can miss a rim hit by short movement steps;
+	 * use the same stepped check that validates the replacement legs */
 	if (!recovering && progress_time >= F1_0 / 4 &&
-	    !guidebot_route_waypoint_leg_clear(objp, &objp->pos, objp->segnum, goal_point)) {
+	    !recovery_leg_clear(objp, &objp->pos, objp->segnum, goal_point)) {
 		const int previous = aip->cur_path_index - aip->PATH_DIR;
 		const int segments[2] = { previous >= 0 && previous < aip->path_length ? Point_segs[aip->hide_index + previous].segnum : -1,
 			                      objp->segnum };
@@ -211,7 +212,7 @@ void guidebot_route_recover_approach(object *objp, vms_vector *goal_point)
 		}
 	}
 	if (!recovering && progress_time >= F1_0 &&
-	    !guidebot_route_waypoint_leg_clear(objp, &objp->pos, objp->segnum, goal_point)) {
+	    !recovery_leg_clear(objp, &objp->pos, objp->segnum, goal_point)) {
 		progress_time = 0;
 		if (recover_alternate_path(objp, goal_point)) {
 			precise_recovery = 0;

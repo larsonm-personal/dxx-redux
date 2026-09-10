@@ -1326,7 +1326,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
             "seg": 520,
-            "side": 4,
             "wall": 83,
             "label_pos": {
               "x": -345.8,

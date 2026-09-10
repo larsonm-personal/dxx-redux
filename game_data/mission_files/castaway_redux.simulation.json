@@ -231,7 +231,7 @@
     {
       "level_num": 4,
       "level_file": "u1bunker.rl2",
-      "route_input_sha256": "AAE060AAE90FEDF58FEF85E379B14B87BD4B67F8237751D9F73E2E06B3A4ECCD",
+      "route_input_sha256": "E09F42E1AA3B454FB3B749B86A7B815F366CE7EECCE74C041A12F04DA48DE80A",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -358,7 +358,7 @@
         },
         {
           "n": "red key",
-          "s": 135
+          "s": 136
         },
         {
           "n": "reactor",
@@ -366,13 +366,13 @@
         },
         {
           "n": "exit",
-          "s": 179
+          "s": 180
         }
       ],
-      "total_frames": 10756,
+      "total_frames": 10773,
       "rng_end": {
-        "state": 1925966869,
-        "calls": 15340
+        "state": 4026538794,
+        "calls": 15341
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
@@ -459,14 +459,14 @@
           "s": 156
         }
       ],
-      "total_frames": 9345,
+      "total_frames": 9347,
       "rng_end": {
         "state": 2845486997,
         "calls": 19564
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 22.733337,
+        "simulated_seconds": 22.766663,
         "difficulty": 2
       }
     },
@@ -677,7 +677,7 @@
           "s": 66
         }
       ],
-      "total_frames": 3966,
+      "total_frames": 3973,
       "rng_end": {
         "state": 3247500175,
         "calls": 11610
@@ -720,7 +720,7 @@
         },
         {
           "n": "blastable wall",
-          "s": 25
+          "s": 24
         },
         {
           "n": "fly-through 9",
@@ -748,17 +748,17 @@
         },
         {
           "n": "exit",
-          "s": 63
+          "s": 62
         }
       ],
-      "total_frames": 3752,
+      "total_frames": 3732,
       "rng_end": {
-        "state": 1677824788,
-        "calls": 3971
+        "state": 2879788960,
+        "calls": 4071
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 7.783325,
+        "simulated_seconds": 7.416672,
         "difficulty": 2
       }
     }

@@ -363,11 +363,11 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 15
+          "s": 14
         },
         {
           "n": "gold key",
-          "s": 36
+          "s": 35
         },
         {
           "n": "red key",
@@ -375,14 +375,14 @@
         },
         {
           "n": "reactor",
-          "s": 124
+          "s": 123
         },
         {
           "n": "exit",
-          "s": 126
+          "s": 125
         }
       ],
-      "total_frames": 7568,
+      "total_frames": 7526,
       "rng_end": {
         "state": 1595650343,
         "calls": 5058
