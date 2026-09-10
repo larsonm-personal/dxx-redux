@@ -53,6 +53,9 @@ typedef struct route_confirmation_summary {
 	int fixed_hz;
 	unsigned int frame_count;
 	int64_t elapsed_ticks;
+	int reactor_countdown_observed;
+	int64_t reactor_destroyed_ticks;
+	int reactor_countdown_ticks;
 	int objective_count;
 	int current_route_step_index;
 	int current_kind;

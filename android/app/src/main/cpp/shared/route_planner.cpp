@@ -691,10 +691,10 @@ bool visible_source_detailed_position(
     const route_visibility_query &visibility,
     int segment,
     route_position &position,
-    double &extra_distance)
+    double &extra_distance, bool near_faces = false)
 {
 	static constexpr int sample_weights[] = { 1 };
-	static constexpr int face_sample_weights[] = { 1, 3 };
+	static constexpr int face_sample_weights[] = { 1, 3, 7, 15 };
 	/* Each physical segment edge appears on two faces. Sample it once. */
 	static constexpr int segment_edges[12][2] = {
 		{ 7, 6 },
@@ -715,7 +715,7 @@ bool visible_source_detailed_position(
 	const auto &topology_segment = snapshot.topology.segments[segment];
 	bool found = false;
 	if (find_cached_visibility_sample(
-	        snapshot, source, visibility, segment, 1, position,
+	        snapshot, source, visibility, segment, near_faces ? 2 : 1, position,
 	        extra_distance, found))
 		return found;
 	double best_distance = std::numeric_limits<double>::infinity();
@@ -739,6 +739,8 @@ bool visible_source_detailed_position(
 		if (!side_center.valid)
 			continue;
 		for (const int weight : face_sample_weights) {
+			if (!near_faces && weight > 3)
+				break;
 			const auto candidate = weighted_position(
 			    topology_segment.center, side_center, weight);
 			consider(candidate);
@@ -770,7 +772,7 @@ bool visible_source_detailed_position(
 		}
 	}
 	store_cached_visibility_sample(
-	    snapshot, source, visibility, segment, 1, position, extra_distance,
+	    snapshot, source, visibility, segment, near_faces ? 2 : 1, position, extra_distance,
 	    found);
 	return found;
 }
@@ -3120,6 +3122,18 @@ class dependency_planner
 		return true;
 	}
 
+	bool find_guided_shot(int wall, const route_search_result &search, guided_missile_route &result)
+	{
+		if (!expand_firing_search_ || !visibility_.guided_route || search.visit_order.empty() || !consume_analysis_work(visibility_)) return false;
+		return visibility_.guided_route(visibility_.user, wall, search.visit_order.data(), (int) search.visit_order.size(), &result) != 0;
+	}
+
+	void annotate_guided_shot(const guided_missile_route &shot)
+	{
+		state_.steps.back().guided_shot = shot;
+		state_.steps.back().label = "Shoot using guided missile";
+	}
+
 	bool open_remote_door(int wall, int depth)
 	{
 		if (!valid_wall(snapshot_, wall) || !visibility_.wall_shootable) {
@@ -3136,6 +3150,7 @@ class dependency_planner
 		const auto search = search_routes(snapshot_, query_, state_.progress, false);
 		int best_segment = -1;
 		route_position best_position;
+		route_position best_aim;
 		double best_distance = std::numeric_limits<double>::infinity();
 		for (const int segment : search.visit_order) {
 			route_position position;
@@ -3151,11 +3166,47 @@ class dependency_planner
 				best_position = position;
 			}
 		}
+		if (best_segment < 0 && expand_firing_search_ && visibility_.door_shot_aim) {
+			auto base_visibility = visibility_;
+			route_visibility_query alternative;
+			alternative.user = &base_visibility;
+			alternative.analysis_budget = visibility_.analysis_budget;
+			alternative.wall_shootable = [](void *user, int segment, const route_position &from, int target_wall) {
+				const auto &visibility = *static_cast<route_visibility_query *>(user);
+				route_position aim;
+				return visibility.door_shot_aim(visibility.user, segment, from, target_wall, aim);
+			};
+			for (const int segment : search.visit_order) {
+				route_position position, aim;
+				double extra_distance = 0;
+				if (!visible_source_position(snapshot_, state_.progress, source, alternative, segment, position, extra_distance) &&
+				    !visible_source_detailed_position(snapshot_, source, alternative, segment, position, extra_distance, true))
+					continue;
+				const double distance = search.nodes[segment].distance + extra_distance + point_distance(position, topology.target);
+				if (distance >= best_distance || !visibility_.door_shot_aim(visibility_.user, segment, position, wall, aim))
+					continue;
+				best_distance = distance;
+				best_segment = segment;
+				best_position = position;
+				best_aim = aim;
+			}
+		}
+		guided_missile_route guided = {};
+		if (best_segment < 0 && find_guided_shot(wall, search, guided)) {
+			best_segment = guided.launch.segment;
+			best_position.valid = true;
+			std::copy(guided.launch.position, guided.launch.position + 3, best_position.value.begin());
+		}
 		if (best_segment < 0) {
 			set_problem("unlocked door face has no reachable firing position");
 			return false;
 		}
-		return resolve_shot_blocker(wall, best_segment, best_position, depth + 1, true);
+		if (!resolve_shot_blocker(wall, best_segment, best_position, depth + 1, true))
+			return false;
+		if (best_aim.valid)
+			state_.steps.back().aim_position = best_aim;
+		if (guided.point_count > 0) annotate_guided_shot(guided);
+		return true;
 	}
 
 	bool resolve_shot_blocker(
@@ -3550,6 +3601,32 @@ class dependency_planner
 				}
 				state_ = preparation_start;
 			}
+		}
+		/* An impassable grate can separate the target from its firing room.
+		 * Resolve access to a verified ordinary firing pose, rather than
+		 * requiring passage into the target segment itself */
+		if (expand_firing_search_) {
+			const auto preparation_start = state_;
+			const auto search = search_routes(snapshot_, query_, state_.progress, true);
+			route_trigger_source source;
+			source.source_segment = target.segment;
+			source.source_position = target.position;
+			for (const int segment : search.visit_order) {
+				if (segment == target.segment)
+					continue;
+				route_position position;
+				double extra_distance = 0;
+				if (!visible_source_center_position(snapshot_, preparation_start.progress,
+				                                    source, visibility_, segment, position, extra_distance) &&
+				    !visible_source_detailed_position(snapshot_, source, visibility_,
+				                                      segment, position, extra_distance))
+					continue;
+				state_ = preparation_start;
+				state_.problem.clear();
+				if (move_to_target(segment, position, 0))
+					return true;
+			}
+			state_ = preparation_start;
 		}
 		if (state_.problem.empty() && !last_problem.empty())
 			state_.problem = last_problem;
@@ -4013,6 +4090,21 @@ class dependency_planner
 				    conditional_visibility, nullptr, true, true);
 			conditional_firing = selected_firing.found;
 		}
+		guided_missile_route guided = {};
+		if (!selected_firing.found && expand_firing_search_ && visibility_.guided_route) {
+			const auto search = search_routes(snapshot_, query_, state_.progress, false);
+			for (const auto &candidate : firing_sources) {
+				if (!valid_wall(snapshot_, candidate.source_wall) || !snapshot_.topology.walls[candidate.source_wall].shootable_trigger) continue;
+				if (!find_guided_shot(candidate.source_wall, search, guided)) continue;
+				selected_firing.found = true;
+				selected_firing.source = candidate;
+				selected_firing.terminal_segment = guided.launch.segment;
+				selected_firing.terminal_position.valid = true;
+				std::copy(guided.launch.position, guided.launch.position + 3, selected_firing.terminal_position.value.begin());
+				selected_firing.path = build_route_path(search, guided.launch.segment);
+				break;
+			}
+		}
 		if (selected_firing.found)
 			source = selected_firing.source;
 		const bool shootable = valid_wall(snapshot_, source.source_wall) &&
@@ -4154,6 +4246,7 @@ class dependency_planner
 			state_.progress.trigger_in_progress[source.trigger] = 0;
 			return false;
 		}
+		if (guided.point_count > 0) annotate_guided_shot(guided);
 		if (selected_firing.found && selected_firing.uses_transparent_surface)
 			state_.steps.back().uses_transparent_surface = true;
 		if (selected_firing.found && shootable) {
@@ -4732,6 +4825,20 @@ int view_wall_shootable(
 	           context->view->user, segment, from.value.data(), wall) != 0;
 }
 
+int view_guided_route(void *user, int wall, const int *segments, int count, guided_missile_route *result)
+{
+	const auto *context = static_cast<view_visibility_context *>(user);
+	return context->view->guided_route(context->view->user, wall, segments, count, result);
+}
+
+int view_door_shot_aim(void *user, int segment, const dxx_route::route_position &from, int wall, dxx_route::route_position &aim)
+{
+	const auto *context = static_cast<view_visibility_context *>(user);
+	const int found = context->view->door_shot_aim_from_position(context->view->user, segment, from.value.data(), wall, aim.value.data());
+	aim.valid = found != 0;
+	return found;
+}
+
 int view_wall_potentially_shootable(
     void *user,
     int segment,
@@ -4916,6 +5023,8 @@ bool project_step(
 	destination.key_carrier_objnum = source.key_carrier_object;
 	destination.can_be_bypassed = source.can_be_bypassed ? 1 : 0;
 	destination.activation_kind = static_cast<int>(source.activation);
+	destination.requires_guided_missile = source.guided_shot.point_count > 0;
+	destination.guided_missile_point_count = source.guided_shot.point_count;
 	destination.switch_shot_quality = source.switch_shot_quality;
 	destination.switch_shot_incidence_cosine =
 	    source.switch_shot_incidence_cosine;
@@ -5090,6 +5199,10 @@ extern "C" int route_planner_plan_view(
 			visibility.target_visible_with_open_wall = view_target_visible_with_open_wall;
 		if (view->wall_shootable_from_position)
 			visibility.wall_shootable = view_wall_shootable;
+		if (view->guided_route)
+			visibility.guided_route = view_guided_route;
+		if (view->door_shot_aim_from_position)
+			visibility.door_shot_aim = view_door_shot_aim;
 		if (view->wall_potentially_shootable_from_position)
 			visibility.wall_potentially_shootable =
 			    view_wall_potentially_shootable;

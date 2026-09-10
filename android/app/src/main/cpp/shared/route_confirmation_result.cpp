@@ -44,6 +44,13 @@ nlohmann::ordered_json serialize_result(const route_confirmation_summary &summar
 	result["difficulty"] = Difficulty_level;
 	result["frames"] = summary.frame_count;
 	result["simulation_seconds"] = fixed_seconds(summary.elapsed_ticks);
+	if (summary.status == ROUTE_CONFIRMATION_CONFIRMED && summary.reactor_countdown_observed) {
+		result["reactor_escape"] = {
+			{ "countdown_seconds", fixed_seconds(summary.reactor_countdown_ticks) },
+			{ "simulated_seconds", fixed_seconds(summary.elapsed_ticks - summary.reactor_destroyed_ticks) },
+			{ "difficulty", Difficulty_level }
+		};
+	}
 	result["rng_start"] = {
 		{ "simulation",
 		  { { "state", summary.rng_start.simulation.state },

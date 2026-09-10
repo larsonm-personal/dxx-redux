@@ -6,28 +6,47 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 3,
-    "failed": 1
+    "ok": 4
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "level1.rdl",
-      "route_input_sha256": "3573020E4AE09929BF630E19C11863CCF1F33E25E708F2A30FEC2FBD50B737C5",
-      "status": "failed",
+      "route_input_sha256": "916ABACE2032B503459C243009A15124C2A068736468BF1CC0FF16A97800258F",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 12
+        },
+        {
+          "n": "gold key",
+          "s": 18
+        },
+        {
+          "n": "red key",
+          "s": 61
+        },
+        {
+          "n": "reactor",
+          "s": 71
+        },
+        {
+          "n": "exit",
+          "s": 74
+        }
+      ],
+      "total_frames": 4427,
       "rng_end": {
-        "state": 2516284547,
-        "calls": 6
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 1062173809,
+        "calls": 5904
+      }
     },
     {
       "level_num": 2,
@@ -41,7 +60,7 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 20
+          "s": 19
         },
         {
           "n": "hidden door",
@@ -49,25 +68,25 @@
         },
         {
           "n": "gold key",
-          "s": 25
+          "s": 24
         },
         {
           "n": "red key",
-          "s": 54
+          "s": 53
         },
         {
           "n": "reactor",
-          "s": 74
+          "s": 72
         },
         {
           "n": "exit",
-          "s": 88
+          "s": 84
         }
       ],
-      "total_frames": 5255,
+      "total_frames": 5058,
       "rng_end": {
-        "state": 856000655,
-        "calls": 90
+        "state": 3241005425,
+        "calls": 2576
       }
     },
     {
@@ -90,17 +109,17 @@
         },
         {
           "n": "boss",
-          "s": 46
+          "s": 47
         },
         {
           "n": "exit",
-          "s": 50
+          "s": 51
         }
       ],
-      "total_frames": 3021,
+      "total_frames": 3061,
       "rng_end": {
-        "state": 361230461,
-        "calls": 196
+        "state": 883752822,
+        "calls": 2673
       }
     },
     {
@@ -119,17 +138,17 @@
         },
         {
           "n": "reactor",
-          "s": 63
+          "s": 62
         },
         {
           "n": "exit",
-          "s": 80
+          "s": 78
         }
       ],
-      "total_frames": 4780,
+      "total_frames": 4709,
       "rng_end": {
-        "state": 1266032265,
-        "calls": 56
+        "state": 693644259,
+        "calls": 5286
       }
     }
   ]

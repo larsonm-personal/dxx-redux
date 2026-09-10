@@ -25,15 +25,15 @@
       "objectives": [
         {
           "n": "switch 3",
-          "s": 23
+          "s": 22
         }
       ],
-      "total_frames": 3782,
+      "total_frames": 1310,
       "rng_end": {
-        "state": 2819228775,
-        "calls": 1154
+        "state": 2604806732,
+        "calls": 363
       },
-      "problem": "route objective activation is not supported"
+      "problem": "guided missile objective requires equipment and flight verification"
     },
     {
       "level_num": 2,
@@ -47,11 +47,11 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 35
+          "s": 36
         },
         {
           "n": "fly-through 4",
-          "s": 61
+          "s": 62
         },
         {
           "n": "switch 7",
@@ -63,29 +63,29 @@
         },
         {
           "n": "switch 13",
-          "s": 110
+          "s": 109
         },
         {
           "n": "switch 19",
-          "s": 140
-        },
-        {
-          "n": "switch 18",
           "s": 141
         },
         {
-          "n": "switch 17",
+          "n": "switch 18",
           "s": 142
         },
         {
+          "n": "switch 17",
+          "s": 143
+        },
+        {
           "n": "exit",
-          "s": 151
+          "s": 152
         }
       ],
-      "total_frames": 9074,
+      "total_frames": 9091,
       "rng_end": {
-        "state": 1842711923,
-        "calls": 5910
+        "state": 2981431152,
+        "calls": 9943
       }
     },
     {
@@ -117,33 +117,33 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 24
+          "s": 22
         },
         {
           "n": "gold key",
-          "s": 63
+          "s": 61
         },
         {
           "n": "red key",
-          "s": 108
+          "s": 107
         },
         {
           "n": "hidden door",
-          "s": 137
+          "s": 135
         },
         {
           "n": "boss",
-          "s": 159
+          "s": 157
         },
         {
           "n": "exit",
-          "s": 168
+          "s": 165
         }
       ],
-      "total_frames": 10072,
+      "total_frames": 9914,
       "rng_end": {
-        "state": 859074730,
-        "calls": 5229
+        "state": 991474089,
+        "calls": 13848
       }
     },
     {
@@ -158,28 +158,36 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 26
+          "s": 28
         },
         {
           "n": "switch 6",
-          "s": 71
+          "s": 73
         },
         {
           "n": "red key",
-          "s": 77
+          "s": 79
+        },
+        {
+          "n": "switch 5",
+          "s": 85
+        },
+        {
+          "n": "fly-through 10",
+          "s": 105
         }
       ],
-      "total_frames": 5375,
+      "total_frames": 10678,
       "rng_end": {
-        "state": 1583537286,
-        "calls": 3489
+        "state": 3662873548,
+        "calls": 8683
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 6,
       "level_file": "kcxf2_n6.rl2",
-      "route_input_sha256": "FB7C37D786ED460BAD095D36A1A4B03744FF8A0C54B32D7EF1A4962961D084A7",
+      "route_input_sha256": "BF184ABFFABFA73DE8F5FFE8F3BC1E525A1381244808B40A0877618D91394521",
       "status": "failed",
       "rng_start": {
         "state": 1,

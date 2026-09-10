@@ -7,10 +7,10 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 16,
-    "failed": 6,
-    "timeout": 4,
-    "unsupported": 2
+    "ok": 20,
+    "failed": 1,
+    "timeout": 2,
+    "unsupported": 5
   },
   "levels": [
     {
@@ -25,36 +25,36 @@
       "objectives": [
         {
           "n": "destroy robot carrying red key",
-          "s": 27
+          "s": 22
         },
         {
           "n": "blue key",
-          "s": 46
+          "s": 40
         },
         {
           "n": "switch 3",
-          "s": 64
+          "s": 59
         },
         {
           "n": "reactor",
-          "s": 76
+          "s": 71
         },
         {
           "n": "exit",
-          "s": 88
+          "s": 83
         }
       ],
-      "total_frames": 5279,
+      "total_frames": 4970,
       "rng_end": {
-        "state": 2844557587,
-        "calls": 3958
+        "state": 2841195932,
+        "calls": 8155
       }
     },
     {
       "level_num": 2,
       "level_file": "as02.rl2",
-      "route_input_sha256": "FA559FB7F90B8C1EB6D31D61CB0F804BE49D8FA94A283BD3BCC79158A202EE47",
-      "status": "failed",
+      "route_input_sha256": "259ABE355D52AEEDB65F0A602B423D9186AD98AF063F738647AB596B158676FA",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -74,15 +74,22 @@
         },
         {
           "n": "red key",
-          "s": 25
+          "s": 24
+        },
+        {
+          "n": "reactor",
+          "s": 35
+        },
+        {
+          "n": "exit",
+          "s": 44
         }
       ],
-      "total_frames": 1475,
+      "total_frames": 2664,
       "rng_end": {
-        "state": 2572341065,
-        "calls": 1400
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 1801367326,
+        "calls": 2025
+      }
     },
     {
       "level_num": 3,
@@ -99,7 +106,7 @@
           "s": 10
         }
       ],
-      "total_frames": 5510,
+      "total_frames": 5529,
       "rng_end": {
         "state": 3747147131,
         "calls": 910
@@ -126,33 +133,33 @@
         },
         {
           "n": "switch 1",
-          "s": 17
+          "s": 16
         },
         {
           "n": "gold key",
-          "s": 31
+          "s": 30
         },
         {
           "n": "red key",
-          "s": 36
+          "s": 35
         },
         {
           "n": "switch 2",
-          "s": 59
+          "s": 58
         },
         {
           "n": "boss",
-          "s": 74
+          "s": 73
         },
         {
           "n": "exit",
-          "s": 128
+          "s": 106
         }
       ],
-      "total_frames": 7694,
+      "total_frames": 6377,
       "rng_end": {
-        "state": 4252481519,
-        "calls": 2810
+        "state": 1889182676,
+        "calls": 8131
       }
     },
     {
@@ -187,21 +194,21 @@
         },
         {
           "n": "red key",
-          "s": 72
+          "s": 71
         },
         {
           "n": "reactor",
-          "s": 103
+          "s": 102
         },
         {
           "n": "exit",
-          "s": 130
+          "s": 128
         }
       ],
-      "total_frames": 7770,
+      "total_frames": 7684,
       "rng_end": {
-        "state": 2930702215,
-        "calls": 4962
+        "state": 2526878504,
+        "calls": 10687
       }
     },
     {
@@ -220,21 +227,21 @@
         },
         {
           "n": "switch 1",
-          "s": 19
+          "s": 18
         },
         {
           "n": "reactor",
-          "s": 21
+          "s": 19
         },
         {
           "n": "exit",
-          "s": 31
+          "s": 30
         }
       ],
-      "total_frames": 1884,
+      "total_frames": 1776,
       "rng_end": {
-        "state": 572750190,
-        "calls": 2265
+        "state": 1326565041,
+        "calls": 1744
       }
     },
     {
@@ -253,7 +260,7 @@
         },
         {
           "n": "hidden door",
-          "s": 41
+          "s": 40
         },
         {
           "n": "gold key",
@@ -265,17 +272,17 @@
         },
         {
           "n": "boss",
-          "s": 86
+          "s": 84
         },
         {
           "n": "exit",
-          "s": 99
+          "s": 98
         }
       ],
-      "total_frames": 5929,
+      "total_frames": 5852,
       "rng_end": {
-        "state": 1966062178,
-        "calls": 3221
+        "state": 3670294233,
+        "calls": 3176
       }
     },
     {
@@ -319,7 +326,7 @@
       "level_num": 9,
       "level_file": "as09.rl2",
       "route_input_sha256": "E0EF9D4F5FBBAFF6CF11C4B3A653869C001B342CCCF57DFE273BFED7204C4A4F",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -343,7 +350,7 @@
         },
         {
           "n": "switch 2",
-          "s": 13
+          "s": 12
         },
         {
           "n": "switch 3",
@@ -355,19 +362,22 @@
         },
         {
           "n": "switch 5",
-          "s": 32
+          "s": 33
         },
         {
           "n": "reactor",
-          "s": 33
+          "s": 34
+        },
+        {
+          "n": "exit",
+          "s": 44
         }
       ],
-      "total_frames": 5747,
+      "total_frames": 2615,
       "rng_end": {
-        "state": 2081872070,
-        "calls": 2657
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3592483429,
+        "calls": 2844
+      }
     },
     {
       "level_num": 10,
@@ -426,7 +436,7 @@
         },
         {
           "n": "blastable wall",
-          "s": 40
+          "s": 39
         },
         {
           "n": "switch 0",
@@ -434,24 +444,24 @@
         },
         {
           "n": "boss",
-          "s": 63
+          "s": 62
         },
         {
           "n": "exit",
-          "s": 66
+          "s": 64
         }
       ],
-      "total_frames": 3944,
+      "total_frames": 3827,
       "rng_end": {
-        "state": 2739312304,
-        "calls": 2711
+        "state": 1513418093,
+        "calls": 4692
       }
     },
     {
       "level_num": 12,
       "level_file": "as12.rl2",
-      "route_input_sha256": "FE3D3EC80FA1AF143F5E750F3503102263CC5BD9D519A690E6274A2BA3A99BD0",
-      "status": "failed",
+      "route_input_sha256": "2654F2A308969AAC79F4D83A25513B689A28F92CDF637B0031D85AE5393D659C",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -459,33 +469,40 @@
       "objectives": [
         {
           "n": "switch 2",
-          "s": 7
+          "s": 5
         },
         {
           "n": "fly-through 3",
-          "s": 9
+          "s": 7
         },
         {
           "n": "gold key",
-          "s": 10
+          "s": 8
         },
         {
           "n": "red key",
-          "s": 29
+          "s": 27
+        },
+        {
+          "n": "boss",
+          "s": 44
+        },
+        {
+          "n": "exit",
+          "s": 51
         }
       ],
-      "total_frames": 1767,
+      "total_frames": 3051,
       "rng_end": {
-        "state": 3675174610,
-        "calls": 1253
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 1099679833,
+        "calls": 3816
+      }
     },
     {
       "level_num": 13,
       "level_file": "as13.rl2",
       "route_input_sha256": "A6B7E947607725C66093AA8D7D3AB5BE1B1CB2FDF764DBF5FA45B65C8A5A54C3",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -505,28 +522,21 @@
         },
         {
           "n": "fly-through 14",
-          "s": 66
-        },
-        {
-          "n": "boss",
-          "s": 97
-        },
-        {
-          "n": "exit",
-          "s": 126
+          "s": 67
         }
       ],
-      "total_frames": 7547,
+      "total_frames": 5918,
       "rng_end": {
-        "state": 3111564362,
-        "calls": 4429
-      }
+        "state": 2310218025,
+        "calls": 8856
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 14,
       "level_file": "as14.rl2",
       "route_input_sha256": "E557DDE3D59A94463D49766EDC4245EA710CC818A04CEF2C258BE623EC0ADD09",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -539,14 +549,21 @@
         {
           "n": "boss",
           "s": 18
+        },
+        {
+          "n": "fly-through 6",
+          "s": 30
+        },
+        {
+          "n": "exit",
+          "s": 33
         }
       ],
-      "total_frames": 2304,
+      "total_frames": 2006,
       "rng_end": {
-        "state": 2708890850,
-        "calls": 1045
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 3502499663,
+        "calls": 1434
+      }
     },
     {
       "level_num": 15,
@@ -564,13 +581,13 @@
         },
         {
           "n": "exit",
-          "s": 47
+          "s": 46
         }
       ],
-      "total_frames": 2817,
+      "total_frames": 2787,
       "rng_end": {
-        "state": 1210864209,
-        "calls": 1072
+        "state": 4027415416,
+        "calls": 1071
       }
     },
     {
@@ -585,27 +602,27 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 12
+          "s": 13
         },
         {
           "n": "switch 3",
-          "s": 33
+          "s": 34
         },
         {
           "n": "hidden door",
-          "s": 43
+          "s": 44
         },
         {
           "n": "hidden door",
-          "s": 45
+          "s": 46
         },
         {
           "n": "switch 5",
-          "s": 45
+          "s": 46
         },
         {
           "n": "gold key",
-          "s": 56
+          "s": 57
         },
         {
           "n": "red key",
@@ -620,10 +637,10 @@
           "s": 126
         }
       ],
-      "total_frames": 7575,
+      "total_frames": 7586,
       "rng_end": {
-        "state": 3389010901,
-        "calls": 3628
+        "state": 3913223203,
+        "calls": 11366
       }
     },
     {
@@ -638,7 +655,7 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 9
+          "s": 10
         },
         {
           "n": "switch 0",
@@ -654,40 +671,45 @@
         },
         {
           "n": "boss",
-          "s": 59
+          "s": 60
         },
         {
           "n": "exit",
-          "s": 73
+          "s": 74
         }
       ],
-      "total_frames": 4373,
+      "total_frames": 4415,
       "rng_end": {
-        "state": 1466968295,
-        "calls": 2050
+        "state": 755517996,
+        "calls": 2059
       }
     },
     {
       "level_num": 18,
       "level_file": "as18.rl2",
-      "route_input_sha256": "79EB6C07069D8DC4A634C625825F36A7231ABC42624829736BF12A48D7FA3942",
-      "status": "failed",
+      "route_input_sha256": "0F1FD82C97CA8377D036943F75587F44A90F942E13CD26CF3BDD356E5EF97DE5",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 2
+        }
+      ],
+      "total_frames": 140,
       "rng_end": {
-        "state": 3212330324,
-        "calls": 67
+        "state": 648760710,
+        "calls": 161
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "guided missile objective requires equipment and flight verification"
     },
     {
       "level_num": 19,
       "level_file": "as19.rl2",
-      "route_input_sha256": "D05EE0749000DAF277B3B8A58071CE2FBAA12889EE2C692D21DEE6FC3B261665",
+      "route_input_sha256": "D72953C7D1D94A6D25928691927EB4B2F82EC1DAA781C0D66047389C59B66901",
       "status": "unsupported",
       "rng_start": {
         "state": 1,
@@ -699,18 +721,18 @@
           "s": 5
         }
       ],
-      "total_frames": 631,
+      "total_frames": 311,
       "rng_end": {
-        "state": 3389101409,
-        "calls": 416
+        "state": 437894538,
+        "calls": 269
       },
-      "problem": "route objective activation is not supported"
+      "problem": "guided missile objective requires equipment and flight verification"
     },
     {
       "level_num": 20,
       "level_file": "as20.rl2",
       "route_input_sha256": "A5A52CAD666190DE3893D0058281461739B90082B5C7992D7CEA01A2D148417D",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -718,23 +740,30 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 8
+          "s": 9
         },
         {
           "n": "pass-through 3",
-          "s": 10
+          "s": 11
         },
         {
           "n": "red key",
-          "s": 15
+          "s": 16
+        },
+        {
+          "n": "reactor",
+          "s": 28
+        },
+        {
+          "n": "exit",
+          "s": 33
         }
       ],
-      "total_frames": 1605,
+      "total_frames": 1978,
       "rng_end": {
-        "state": 2487617850,
-        "calls": 1309
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 607577557,
+        "calls": 3116
+      }
     },
     {
       "level_num": 21,
@@ -799,16 +828,16 @@
           "s": 72
         }
       ],
-      "total_frames": 4296,
+      "total_frames": 4301,
       "rng_end": {
-        "state": 3501331596,
-        "calls": 2603
+        "state": 783637882,
+        "calls": 5597
       }
     },
     {
       "level_num": 22,
       "level_file": "as22.rl2",
-      "route_input_sha256": "BA4E05C71CD058ACDA732B9585B6275580903F0FD6742976F3A7B7C4B2F11A7C",
+      "route_input_sha256": "FFB7CBF598367E52C7490263C415E25A19E36EAF46DB4A14CFDD5018B5A68C7F",
       "status": "unsupported",
       "rng_start": {
         "state": 1,
@@ -824,12 +853,12 @@
           "s": 19
         }
       ],
-      "total_frames": 1566,
+      "total_frames": 1146,
       "rng_end": {
-        "state": 3498291313,
-        "calls": 784
+        "state": 1747193403,
+        "calls": 718
       },
-      "problem": "route objective activation is not supported"
+      "problem": "guided missile objective requires equipment and flight verification"
     },
     {
       "level_num": 23,
@@ -851,8 +880,8 @@
     {
       "level_num": 24,
       "level_file": "as24.rl2",
-      "route_input_sha256": "C28A212B79A2EA686CA86E4D9C0245E993ECB9A8B5F881BEE68EC827DE67B265",
-      "status": "failed",
+      "route_input_sha256": "ED2A48A0B34024473FFB2B70F4B43AC048400CA6A3ADFF5E638DA2A1361C3A7F",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -863,7 +892,7 @@
         "state": 1303003706,
         "calls": 29
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "guided missile objective requires equipment and flight verification"
     },
     {
       "level_num": 25,
@@ -897,24 +926,24 @@
         },
         {
           "n": "boss",
-          "s": 38
+          "s": 36
         },
         {
           "n": "exit",
-          "s": 63
+          "s": 62
         }
       ],
-      "total_frames": 3794,
+      "total_frames": 3723,
       "rng_end": {
-        "state": 1904370089,
-        "calls": 1560
+        "state": 414948077,
+        "calls": 6356
       }
     },
     {
       "level_num": 26,
       "level_file": "as26.rl2",
-      "route_input_sha256": "1278FCEAE0DF9ED5DB97583ACE1F95BC0DCFF2AC7DDB61272B6FEE994AC06188",
-      "status": "failed",
+      "route_input_sha256": "965181556E66A27C5DBEBE07E22142B022B1EA1D9AC223A9FAFE8B1FA334B3E7",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -925,7 +954,7 @@
         "state": 3535774167,
         "calls": 18
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "guided missile objective requires equipment and flight verification"
     },
     {
       "level_num": 27,
@@ -947,13 +976,13 @@
         },
         {
           "n": "exit",
-          "s": 44
+          "s": 43
         }
       ],
-      "total_frames": 2645,
+      "total_frames": 2574,
       "rng_end": {
-        "state": 2081872070,
-        "calls": 2657
+        "state": 3031511141,
+        "calls": 7452
       }
     },
     {
@@ -979,10 +1008,10 @@
           "s": 34
         }
       ],
-      "total_frames": 2011,
+      "total_frames": 2017,
       "rng_end": {
-        "state": 2946671141,
-        "calls": 1372
+        "state": 3770705409,
+        "calls": 2560
       }
     }
   ]

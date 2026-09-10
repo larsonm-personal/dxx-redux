@@ -6,163 +6,349 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
-    "failed": 9
+    "ok": 5,
+    "timeout": 2,
+    "route_mismatch": 2
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "08thdrs.rdl",
-      "route_input_sha256": "1E7D57D572DF0F9FC1237A5D0080666C705D9D6AA477E66931D4EAE7FA5276E5",
-      "status": "failed",
+      "route_input_sha256": "6ED05F6CB74113F35BE849EC1223090907CC400D8B79DEA6643B122BBB4723FC",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "open door",
+          "s": 2
+        },
+        {
+          "n": "open door",
+          "s": 11
+        },
+        {
+          "n": "open door",
+          "s": 22
+        },
+        {
+          "n": "open door",
+          "s": 36
+        }
+      ],
+      "total_frames": 9061,
       "rng_end": {
-        "state": 2516284547,
-        "calls": 6
+        "state": 361230461,
+        "calls": 196
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "route confirmation exceeded 151-second simulation budget"
     },
     {
       "level_num": 2,
       "level_file": "01easytr.rdl",
-      "route_input_sha256": "7FD66AC7DCFC5513D3E3180AEAB80CD55F1361B561ACE5A7AEF054509878B704",
-      "status": "failed",
+      "route_input_sha256": "45061E6D10BF9CFAB03C85F00EB147B6057D242217F76DF585B477E15AB88841",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "fly-through 1",
+          "s": 1
+        },
+        {
+          "n": "reactor",
+          "s": 8
+        },
+        {
+          "n": "exit",
+          "s": 9
+        }
+      ],
+      "total_frames": 546,
       "rng_end": {
-        "state": 2516284547,
-        "calls": 6
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 3834121963,
+        "calls": 30
+      }
     },
     {
       "level_num": 3,
       "level_file": "09easyrv.rdl",
-      "route_input_sha256": "079CE3FDF10AC61717C56FC01B1D9E2391BC82A67EDB270F38D20B626CBD9A6F",
-      "status": "failed",
+      "route_input_sha256": "7102ABFA655EBF233D7925331A1742804AA4AADB9483DB8F7B5257773DDA220F",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "fly-through 1",
+          "s": 1
+        },
+        {
+          "n": "reactor",
+          "s": 8
+        },
+        {
+          "n": "exit",
+          "s": 9
+        }
+      ],
+      "total_frames": 562,
       "rng_end": {
-        "state": 2516284547,
-        "calls": 6
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 3397090333,
+        "calls": 36
+      }
     },
     {
       "level_num": 4,
       "level_file": "05gngrnd.rdl",
-      "route_input_sha256": "EF39A5B1F9F3C68A85EF22452F3658EB0C0C972EE29739F1E8D34FAA0B099397",
-      "status": "failed",
+      "route_input_sha256": "43BE8B36CA2217596D4DC47FD05BDEACC45AFC00C2F7044641C2F5666CF8C0D6",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "fly-through 8",
+          "s": 0
+        },
+        {
+          "n": "fly-through 7",
+          "s": 5
+        },
+        {
+          "n": "fly-through 5",
+          "s": 11
+        },
+        {
+          "n": "fly-through 6",
+          "s": 16
+        },
+        {
+          "n": "fly-through 3",
+          "s": 22
+        },
+        {
+          "n": "fly-through 4",
+          "s": 27
+        },
+        {
+          "n": "fly-through 1",
+          "s": 32
+        },
+        {
+          "n": "fly-through 2",
+          "s": 38
+        },
+        {
+          "n": "reactor",
+          "s": 44
+        },
+        {
+          "n": "exit",
+          "s": 45
+        }
+      ],
+      "total_frames": 2700,
       "rng_end": {
-        "state": 2516284547,
-        "calls": 6
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 4247911497,
+        "calls": 120
+      }
     },
     {
       "level_num": 5,
       "level_file": "02ddgng1.rdl",
-      "route_input_sha256": "2131EA743A73C4C45035648C232FCD760A007A656AF1BEAC501173F96E4B5CF6",
-      "status": "failed",
+      "route_input_sha256": "07CD3385C40C8863DD84421C4BEC441B461144ACBBA1E0434D6E159E2DBB2FC1",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "pass-through 1",
+          "s": 2
+        },
+        {
+          "n": "pass-through 3",
+          "s": 15
+        },
+        {
+          "n": "pass-through 4",
+          "s": 25
+        },
+        {
+          "n": "pass-through 6",
+          "s": 38
+        },
+        {
+          "n": "reactor",
+          "s": 44
+        },
+        {
+          "n": "exit",
+          "s": 46
+        }
+      ],
+      "total_frames": 2736,
       "rng_end": {
-        "state": 2516284547,
-        "calls": 6
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 500965035,
+        "calls": 94
+      }
     },
     {
       "level_num": 6,
       "level_file": "03strght.rdl",
       "route_input_sha256": "C45CA149CBFF1A8DAE26D145A851BE6818DA1B823D74250A0CA7DE01F90A5A5D",
-      "status": "failed",
+      "status": "route_mismatch",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "fly-through 1",
+          "s": 0
+        },
+        {
+          "n": "pass-through 2",
+          "s": 6
+        },
+        {
+          "n": "pass-through 3",
+          "s": 11
+        },
+        {
+          "n": "pass-through 4",
+          "s": 17
+        },
+        {
+          "n": "pass-through 5",
+          "s": 22
+        },
+        {
+          "n": "pass-through 6",
+          "s": 28
+        }
+      ],
+      "total_frames": 1801,
       "rng_end": {
-        "state": 2516284547,
-        "calls": 6
+        "state": 493907821,
+        "calls": 84
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "live objective sequence differs from route input"
     },
     {
       "level_num": 7,
       "level_file": "06ddgths.rdl",
-      "route_input_sha256": "0266395CD10CF2658DC35646D0BC4A994969834EA68AE2F0103856F328A2DF3D",
-      "status": "failed",
+      "route_input_sha256": "EEE1F70282FD77BA1F245D13E0BA27560ED6A7C9E8CB0204E959C04DC70B6983",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "pass-through 5",
+          "s": 2
+        },
+        {
+          "n": "pass-through 4",
+          "s": 6
+        },
+        {
+          "n": "pass-through 3",
+          "s": 11
+        },
+        {
+          "n": "pass-through 2",
+          "s": 15
+        },
+        {
+          "n": "pass-through 1",
+          "s": 19
+        },
+        {
+          "n": "reactor",
+          "s": 23
+        },
+        {
+          "n": "exit",
+          "s": 25
+        }
+      ],
+      "total_frames": 1490,
       "rng_end": {
-        "state": 2516284547,
-        "calls": 6
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 3758492830,
+        "calls": 105
+      }
     },
     {
       "level_num": 8,
       "level_file": "04bmpyrd.rdl",
       "route_input_sha256": "25AAE3F448F6E7A675D823600C6A415B983C8E2181FBA480699AD216D16DDE7A",
-      "status": "failed",
+      "status": "route_mismatch",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "fly-through 1",
+          "s": 0
+        },
+        {
+          "n": "pass-through 2",
+          "s": 5
+        },
+        {
+          "n": "pass-through 3",
+          "s": 10
+        },
+        {
+          "n": "reactor",
+          "s": 17
+        },
+        {
+          "n": "exit",
+          "s": 18
+        }
+      ],
+      "total_frames": 1088,
       "rng_end": {
-        "state": 2516284547,
-        "calls": 6
+        "state": 2274957893,
+        "calls": 60
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "live objective sequence differs from route input"
     },
     {
       "level_num": 9,
       "level_file": "07cornrs.rdl",
-      "route_input_sha256": "6150AB2969CF4267391C83BB4DDB337FD07B6C7A97B5F8297C5B8B81B3965E4A",
-      "status": "failed",
+      "route_input_sha256": "83ABC693F78D2EA4A9CA989E6A27F6EF0363FC0CD42BF509140F5C4968FC3146",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "fly-through 1",
+          "s": 1
+        }
+      ],
+      "total_frames": 7021,
       "rng_end": {
-        "state": 2516284547,
-        "calls": 6
+        "state": 3279009521,
+        "calls": 144
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "route confirmation exceeded 117-second simulation budget"
     }
   ]
 }

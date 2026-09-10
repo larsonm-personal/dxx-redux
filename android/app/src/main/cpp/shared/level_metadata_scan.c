@@ -216,6 +216,9 @@ int level_metadata_route_step_required_by_world_state(
 			}
 			return 0;
 		case LEVEL_METADATA_ROUTE_HIDDEN_DOOR:
+			// Visiting both sides does not make a guided-shot door locally reopenable
+			if (step->requires_guided_missile)
+				return !level_metadata_route_wall_passable(view, step->wall_num);
 			/* Once both sides have been visited, this is a discovered,
 			 * reopenable door rather than an unfinished route objective. */
 			if (step->wall_num >= 0 && step->wall_num < view->num_walls &&

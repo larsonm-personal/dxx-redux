@@ -15,7 +15,7 @@
     {
       "level_num": 1,
       "level_file": "drmtower.rl2",
-      "route_input_sha256": "741107AA9A24F9364D54976B32129F90851A719A7ADAECF37B90AF7F22EE3307",
+      "route_input_sha256": "720EAEEFB1D0787E1C4B568BC6F8F04C3EF6F595622767D97942D7ED7247C948",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -28,13 +28,13 @@
         },
         {
           "n": "blue key",
-          "s": 28
+          "s": 27
         }
       ],
-      "total_frames": 6199,
+      "total_frames": 6158,
       "rng_end": {
-        "state": 1946939785,
-        "calls": 1336
+        "state": 1912213429,
+        "calls": 10060
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -51,12 +51,20 @@
         {
           "n": "fly-through 3",
           "s": 1
+        },
+        {
+          "n": "blue key",
+          "s": 18
+        },
+        {
+          "n": "fly-through 6",
+          "s": 19
         }
       ],
-      "total_frames": 4371,
+      "total_frames": 5729,
       "rng_end": {
-        "state": 342273387,
-        "calls": 414
+        "state": 3952391097,
+        "calls": 9864
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -80,27 +88,27 @@
         },
         {
           "n": "red key",
-          "s": 64
+          "s": 65
         },
         {
           "n": "reactor",
-          "s": 77
+          "s": 78
         },
         {
           "n": "exit",
-          "s": 92
+          "s": 93
         }
       ],
-      "total_frames": 5530,
+      "total_frames": 5566,
       "rng_end": {
-        "state": 3674684925,
-        "calls": 1860
+        "state": 2844596018,
+        "calls": 10245
       }
     },
     {
       "level_num": 4,
       "level_file": "area51.rl2",
-      "route_input_sha256": "F63CCBFB6677795D650DCA27503D74DF825F533442270FD0D03E5DC41FD16A52",
+      "route_input_sha256": "EDB291FE44422F0413873449A1976069FCE4754D57CEAB27EDCEED77A5625DD1",
       "status": "failed",
       "rng_start": {
         "state": 1,

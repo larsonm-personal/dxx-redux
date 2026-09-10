@@ -30,7 +30,7 @@
         },
         {
           "n": "hidden door",
-          "s": 49
+          "s": 50
         },
         {
           "n": "switch 1",
@@ -38,33 +38,33 @@
         },
         {
           "n": "gold key",
-          "s": 60
+          "s": 59
         },
         {
           "n": "hidden door",
-          "s": 80
+          "s": 78
         },
         {
           "n": "switch 2",
-          "s": 83
+          "s": 80
         },
         {
           "n": "red key",
-          "s": 86
+          "s": 84
         },
         {
           "n": "reactor",
-          "s": 105
+          "s": 103
         },
         {
           "n": "exit",
-          "s": 107
+          "s": 105
         }
       ],
-      "total_frames": 6414,
+      "total_frames": 6285,
       "rng_end": {
-        "state": 4038986404,
-        "calls": 2739
+        "state": 1425954287,
+        "calls": 3322
       }
     },
     {
@@ -79,31 +79,31 @@
       "objectives": [
         {
           "n": "switch 1",
-          "s": 15
+          "s": 14
         },
         {
           "n": "blue key",
-          "s": 24
+          "s": 23
         },
         {
           "n": "switch 7",
-          "s": 42
+          "s": 44
         },
         {
           "n": "blastable wall",
-          "s": 49
-        },
-        {
-          "n": "switch 2",
           "s": 51
         },
         {
+          "n": "switch 2",
+          "s": 53
+        },
+        {
           "n": "gold key",
-          "s": 59
+          "s": 61
         },
         {
           "n": "switch 5",
-          "s": 83
+          "s": 84
         },
         {
           "n": "red key",
@@ -115,13 +115,13 @@
         },
         {
           "n": "exit",
-          "s": 97
+          "s": 98
         }
       ],
-      "total_frames": 5823,
+      "total_frames": 5855,
       "rng_end": {
-        "state": 776873212,
-        "calls": 4347
+        "state": 4283489942,
+        "calls": 7121
       }
     },
     {
@@ -140,37 +140,37 @@
         },
         {
           "n": "switch 3",
-          "s": 79
+          "s": 80
         },
         {
           "n": "switch 12",
-          "s": 82
+          "s": 84
         },
         {
           "n": "gold key",
-          "s": 86
+          "s": 87
         },
         {
           "n": "switch 13",
-          "s": 128
+          "s": 130
         },
         {
           "n": "red key",
-          "s": 133
+          "s": 134
         },
         {
           "n": "reactor",
-          "s": 151
+          "s": 152
         },
         {
           "n": "exit",
-          "s": 158
+          "s": 160
         }
       ],
-      "total_frames": 9502,
+      "total_frames": 9572,
       "rng_end": {
-        "state": 2908269169,
-        "calls": 6416
+        "state": 3669748063,
+        "calls": 13450
       }
     },
     {
@@ -193,7 +193,7 @@
         },
         {
           "n": "switch 10",
-          "s": 42
+          "s": 43
         },
         {
           "n": "gold key",
@@ -201,7 +201,7 @@
         },
         {
           "n": "switch 6",
-          "s": 77
+          "s": 78
         },
         {
           "n": "switch 4",
@@ -209,11 +209,11 @@
         },
         {
           "n": "fly-through 5",
-          "s": 81
+          "s": 82
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 84
+          "s": 85
         },
         {
           "n": "boss",
@@ -224,10 +224,10 @@
           "s": 111
         }
       ],
-      "total_frames": 6636,
+      "total_frames": 6646,
       "rng_end": {
-        "state": 1179848895,
-        "calls": 3882
+        "state": 1007928939,
+        "calls": 10398
       }
     },
     {
@@ -278,49 +278,49 @@
         },
         {
           "n": "hidden door",
-          "s": 37
+          "s": 38
         },
         {
           "n": "switch 15",
-          "s": 37
+          "s": 38
         },
         {
           "n": "gold key",
-          "s": 40
+          "s": 41
         },
         {
           "n": "fly-through 3",
-          "s": 75
+          "s": 74
         },
         {
           "n": "switch 7",
-          "s": 76
+          "s": 75
         },
         {
           "n": "fly-through 5",
-          "s": 87
+          "s": 85
         },
         {
           "n": "switch 8",
-          "s": 88
+          "s": 87
         },
         {
           "n": "red key",
-          "s": 95
+          "s": 93
         },
         {
           "n": "boss",
-          "s": 117
+          "s": 115
         },
         {
           "n": "exit",
-          "s": 125
+          "s": 124
         }
       ],
-      "total_frames": 7521,
+      "total_frames": 7412,
       "rng_end": {
-        "state": 2950581854,
-        "calls": 5545
+        "state": 2036664933,
+        "calls": 13084
       }
     }
   ]

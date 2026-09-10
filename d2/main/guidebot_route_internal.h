@@ -35,6 +35,7 @@ typedef struct escort_route_goal {
 	int target_seg;
 	int objective_kind;
 	int activation_kind;
+	int requires_guided_missile;
 	int objective_seg;
 	int objective_side;
 	int objective_wall;

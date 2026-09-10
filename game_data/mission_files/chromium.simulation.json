@@ -8,8 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
-    "timeout": 2
+    "ok": 3,
+    "timeout": 1
   },
   "levels": [
     {
@@ -32,18 +32,18 @@
         },
         {
           "n": "gold key",
-          "s": 29
+          "s": 30
         },
         {
           "n": "red key",
-          "s": 45
+          "s": 46
         },
         {
           "n": "reactor",
           "s": 64
         }
       ],
-      "total_frames": 7695,
+      "total_frames": 7689,
       "rng_end": {
         "state": 3331395548,
         "calls": 155
@@ -70,21 +70,21 @@
         },
         {
           "n": "red key",
-          "s": 19
+          "s": 24
         },
         {
           "n": "reactor",
-          "s": 38
+          "s": 44
         },
         {
           "n": "exit",
-          "s": 42
+          "s": 47
         }
       ],
-      "total_frames": 2492,
+      "total_frames": 2812,
       "rng_end": {
-        "state": 1660932118,
-        "calls": 81
+        "state": 3720683301,
+        "calls": 92
       }
     },
     {
@@ -128,7 +128,7 @@
       "level_num": -1,
       "level_file": "ifpun.rdl",
       "route_input_sha256": "F0AD583C961476D901731906D2734A887FE050C89843D76BFBE18F4487E54023",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -136,23 +136,38 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 7
+          "s": 6
         },
         {
           "n": "gold key",
-          "s": 18
+          "s": 17
         },
         {
           "n": "fly-through 0",
-          "s": 39
+          "s": 37
+        },
+        {
+          "n": "red key",
+          "s": 44
+        },
+        {
+          "n": "fly-through 1",
+          "s": 61
+        },
+        {
+          "n": "reactor",
+          "s": 61
+        },
+        {
+          "n": "exit",
+          "s": 69
         }
       ],
-      "total_frames": 5918,
+      "total_frames": 4167,
       "rng_end": {
-        "state": 2274957893,
-        "calls": 60
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 4273116023,
+        "calls": 114
+      }
     }
   ]
 }

@@ -51,7 +51,7 @@ function ConvertTo-GuidebotRouteProjection {
     )
 
     $steps = foreach ($step in @(Get-GuidebotPropertyValue -InputObject $Level -Name 'route_steps' -Default @())) {
-        [ordered]@{
+        $projectedStep = [ordered]@{
             index = [int](Get-GuidebotPropertyValue -InputObject $step -Name 'index' -Default -1)
             kind = [string](Get-GuidebotPropertyValue -InputObject $step -Name 'kind' -Default '')
             activation_kind = [string](Get-GuidebotPropertyValue -InputObject $step -Name 'activation_kind' -Default '')
@@ -62,6 +62,9 @@ function ConvertTo-GuidebotRouteProjection {
             key = [string](Get-GuidebotPropertyValue -InputObject $step -Name 'key' -Default '')
             key_carrier_objnum = [int](Get-GuidebotPropertyValue -InputObject $step -Name 'key_carrier_objnum' -Default -1)
         }
+        $requiredWeapon = [string](Get-GuidebotPropertyValue -InputObject $step -Name 'required_weapon' -Default '')
+        if ($requiredWeapon.Length -gt 0) { $projectedStep.required_weapon = $requiredWeapon }
+        $projectedStep
     }
     return [ordered]@{
         mission_filename = [string](Get-GuidebotPropertyValue -InputObject $Mission -Name 'mission_filename' -Default '')
@@ -242,6 +245,19 @@ function ConvertTo-GuidebotLevelSimulationResult {
         rng_end = ConvertTo-GuidebotRngBoundary (Get-GuidebotPropertyValue $EngineResult 'rng_end')
     }
     $notes = @(Get-GuidebotPropertyValue $EngineResult 'notes' @())
+    $escape = Get-GuidebotPropertyValue $EngineResult 'reactor_escape'
+    if ($engineStatus -eq 'confirmed' -and $null -ne $escape) {
+        $countdown = [double]$escape.countdown_seconds
+        $travel = [double]$escape.simulated_seconds
+        $record.reactor_escape = $escape
+        # Completed simulation travel is not a shortest-path proof; flag only extreme mismatches
+        if (($countdown -le 0 -and $travel -ge 5) -or
+            ($countdown -gt 0 -and $travel -gt 3 * $countdown -and $travel -gt $countdown + 30)) {
+            $notes += [string]::Format([Globalization.CultureInfo]::InvariantCulture,
+                'Likely insufficient reactor escape time: simulated reactor-to-exit travel {0:0.0}s, countdown {1:0.0}s (difficulty {2}); countdown paused during route verification',
+                $travel, $countdown, $escape.difficulty)
+        }
+    }
     if ($notes.Count) { $record.notes = $notes }
     if ($status -ne 'ok') {
         $problem = if (-not $projectionMatches) {

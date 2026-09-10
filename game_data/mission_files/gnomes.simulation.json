@@ -27,11 +27,11 @@
         },
         {
           "n": "gold key",
-          "s": 24
+          "s": 25
         },
         {
           "n": "red key",
-          "s": 47
+          "s": 48
         },
         {
           "n": "reactor",
@@ -42,10 +42,10 @@
           "s": 71
         }
       ],
-      "total_frames": 4288,
+      "total_frames": 4272,
       "rng_end": {
-        "state": 2077067425,
-        "calls": 96
+        "state": 500965035,
+        "calls": 94
       }
     },
     {
@@ -64,25 +64,25 @@
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 27
+          "s": 29
         },
         {
           "n": "red key",
-          "s": 46
+          "s": 47
         },
         {
           "n": "reactor",
-          "s": 58
+          "s": 60
         },
         {
           "n": "exit",
-          "s": 67
+          "s": 68
         }
       ],
-      "total_frames": 3995,
+      "total_frames": 4058,
       "rng_end": {
-        "state": 2571702646,
-        "calls": 113
+        "state": 1621937922,
+        "calls": 117
       }
     },
     {
@@ -109,25 +109,25 @@
         },
         {
           "n": "red key",
-          "s": 45
+          "s": 46
         },
         {
           "n": "fly-through 5",
-          "s": 75
-        },
-        {
-          "n": "reactor",
           "s": 76
         },
         {
+          "n": "reactor",
+          "s": 78
+        },
+        {
           "n": "exit",
-          "s": 100
+          "s": 104
         }
       ],
-      "total_frames": 6023,
+      "total_frames": 6217,
       "rng_end": {
-        "state": 204674734,
-        "calls": 153
+        "state": 2581092098,
+        "calls": 6261
       }
     },
     {
@@ -154,14 +154,14 @@
         },
         {
           "n": "boss",
-          "s": 110
+          "s": 109
         },
         {
           "n": "exit",
-          "s": 112
+          "s": 111
         }
       ],
-      "total_frames": 6710,
+      "total_frames": 6667,
       "rng_end": {
         "state": 2675232640,
         "calls": 135

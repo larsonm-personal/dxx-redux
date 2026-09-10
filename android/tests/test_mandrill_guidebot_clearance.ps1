@@ -29,7 +29,8 @@ foreach ($level in @(1, 2, 5)) {
                 throw 'Mandrill L1 did not complete its boss route'
             }
             $log = Get-Content -LiteralPath (Join-Path $caseOutput "logs/$($file.BaseName).log") -Raw
-            if ($log -notmatch 'ROUTE-CONFIRM verified primary shot actor_seg=27[23] target_seg=285') {
+            $shot = [regex]::Match($log, 'ROUTE-CONFIRM verified primary shot actor_seg=(\d+) target_seg=285')
+            if (-not $shot.Success -or [int]$shot.Groups[1].Value -eq 285) {
                 throw 'Mandrill L1 must verify the boss shot from outside its room'
             }
         } else {

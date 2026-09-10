@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 11,
-    "failed": 2,
-    "timeout": 6
+    "ok": 12,
+    "failed": 3,
+    "timeout": 4
   },
   "levels": [
     {
@@ -46,7 +46,7 @@
       "objectives": [
         {
           "n": "blastable wall",
-          "s": 7
+          "s": 6
         },
         {
           "n": "pass-through 1",
@@ -54,11 +54,11 @@
         },
         {
           "n": "blue key",
-          "s": 15
+          "s": 14
         },
         {
           "n": "gold key",
-          "s": 41
+          "s": 40
         },
         {
           "n": "red key",
@@ -70,13 +70,13 @@
         },
         {
           "n": "exit",
-          "s": 107
+          "s": 108
         }
       ],
-      "total_frames": 6438,
+      "total_frames": 6454,
       "rng_end": {
-        "state": 1609406109,
-        "calls": 4516
+        "state": 422917469,
+        "calls": 7396
       }
     },
     {
@@ -103,11 +103,11 @@
         },
         {
           "n": "fly-through 3",
-          "s": 115
+          "s": 114
         },
         {
           "n": "red key",
-          "s": 147
+          "s": 146
         },
         {
           "n": "fly-through 5",
@@ -119,10 +119,10 @@
         },
         {
           "n": "exit",
-          "s": 234
+          "s": 233
         }
       ],
-      "total_frames": 14016,
+      "total_frames": 14003,
       "rng_end": {
         "state": 3345824544,
         "calls": 7783
@@ -148,17 +148,17 @@
         },
         {
           "n": "boss",
-          "s": 87
+          "s": 86
         },
         {
           "n": "exit",
-          "s": 109
+          "s": 108
         }
       ],
-      "total_frames": 6568,
+      "total_frames": 6504,
       "rng_end": {
-        "state": 3234263244,
-        "calls": 4331
+        "state": 2686877092,
+        "calls": 7091
       }
     },
     {
@@ -196,14 +196,18 @@
           "s": 77
         },
         {
+          "n": "fly-through 14",
+          "s": 81
+        },
+        {
           "n": "exit",
-          "s": 108
+          "s": 109
         }
       ],
-      "total_frames": 6453,
+      "total_frames": 6557,
       "rng_end": {
-        "state": 3210270829,
-        "calls": 3924
+        "state": 1516143077,
+        "calls": 3996
       }
     },
     {
@@ -256,7 +260,11 @@
         },
         {
           "n": "blue key",
-          "s": 36
+          "s": 35
+        },
+        {
+          "n": "fly-through 7",
+          "s": 35
         },
         {
           "n": "fly-through 7",
@@ -264,15 +272,15 @@
         },
         {
           "n": "fly-through 12",
-          "s": 58
+          "s": 59
         },
         {
           "n": "switch 3",
-          "s": 89
+          "s": 90
         },
         {
           "n": "switch 2",
-          "s": 109
+          "s": 111
         },
         {
           "n": "switch 1",
@@ -280,17 +288,17 @@
         },
         {
           "n": "reactor",
-          "s": 168
+          "s": 149
         },
         {
           "n": "exit",
-          "s": 191
+          "s": 152
         }
       ],
-      "total_frames": 11430,
+      "total_frames": 9121,
       "rng_end": {
-        "state": 3328851602,
-        "calls": 8229
+        "state": 871823235,
+        "calls": 7430
       }
     },
     {
@@ -339,18 +347,31 @@
       "level_num": 11,
       "level_file": "quetga.rl2",
       "route_input_sha256": "BBB53B5FD9903544186761202812763D8F165BC3F66FAD34EAE195E7C7BEECDE",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 3922,
+      "objectives": [
+        {
+          "n": "blastable wall",
+          "s": 5
+        },
+        {
+          "n": "blue key",
+          "s": 6
+        },
+        {
+          "n": "gold key",
+          "s": 22
+        }
+      ],
+      "total_frames": 1325,
       "rng_end": {
-        "state": 1331198373,
-        "calls": 476
+        "state": 1530184919,
+        "calls": 3346
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 12,
@@ -372,7 +393,7 @@
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 27
+          "s": 26
         },
         {
           "n": "boss",
@@ -383,7 +404,7 @@
           "s": 39
         }
       ],
-      "total_frames": 2343,
+      "total_frames": 2330,
       "rng_end": {
         "state": 3044742943,
         "calls": 2762
@@ -438,7 +459,7 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 24
+          "s": 23
         },
         {
           "n": "red key",
@@ -446,14 +467,14 @@
         },
         {
           "n": "boss",
-          "s": 75
+          "s": 74
         },
         {
           "n": "exit",
           "s": 76
         }
       ],
-      "total_frames": 4583,
+      "total_frames": 4563,
       "rng_end": {
         "state": 1576629478,
         "calls": 2753
@@ -463,7 +484,7 @@
       "level_num": 15,
       "level_file": "magfall.rl2",
       "route_input_sha256": "31F9FAD6EDEE153235A97C17794C4FE5E5B010F6AB3710C30E0D3BA2D4B25E20",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -479,15 +500,30 @@
         },
         {
           "n": "red key",
-          "s": 87
+          "s": 86
+        },
+        {
+          "n": "reactor",
+          "s": 95
+        },
+        {
+          "n": "exit",
+          "s": 103
         }
       ],
-      "total_frames": 5989,
+      "total_frames": 6174,
       "rng_end": {
-        "state": 1688554078,
-        "calls": 2473
+        "state": 3406875888,
+        "calls": 11095
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "reactor_escape": {
+        "countdown_seconds": 0.0,
+        "simulated_seconds": 8.0,
+        "difficulty": 2
+      },
+      "notes": [
+        "Likely insufficient reactor escape time: simulated reactor-to-exit travel 8.0s, countdown 0.0s (difficulty 2); countdown paused during route verification"
+      ]
     },
     {
       "level_num": 16,
@@ -517,21 +553,25 @@
         },
         {
           "n": "fly-through 7",
-          "s": 16
+          "s": 17
         },
         {
           "n": "reactor",
-          "s": 25
+          "s": 27
         },
         {
           "n": "fly-through 3",
-          "s": 29
+          "s": 31
+        },
+        {
+          "n": "fly-through 3",
+          "s": 31
         }
       ],
-      "total_frames": 2448,
+      "total_frames": 2589,
       "rng_end": {
-        "state": 2896654120,
-        "calls": 1471
+        "state": 2916678415,
+        "calls": 1498
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -563,13 +603,13 @@
         },
         {
           "n": "exit",
-          "s": 56
+          "s": 55
         }
       ],
-      "total_frames": 3348,
+      "total_frames": 3328,
       "rng_end": {
-        "state": 743471179,
-        "calls": 1726
+        "state": 1706545785,
+        "calls": 7624
       }
     },
     {
@@ -595,6 +635,10 @@
           "s": 23
         },
         {
+          "n": "switch 6",
+          "s": 24
+        },
+        {
           "n": "red key",
           "s": 41
         },
@@ -607,10 +651,10 @@
           "s": 87
         }
       ],
-      "total_frames": 5204,
+      "total_frames": 5200,
       "rng_end": {
-        "state": 3558432468,
-        "calls": 2243
+        "state": 3004981716,
+        "calls": 2499
       }
     },
     {

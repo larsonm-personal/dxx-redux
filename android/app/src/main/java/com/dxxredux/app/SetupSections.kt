@@ -4322,44 +4322,48 @@ private fun LevelMetadataRouteStep.routeStepDetails(): String =
     }.joinToString(", ")
 
 private fun LevelMetadataRouteStep.routeActivationLabel(): String =
-    when (activationKind) {
-        "pickup_key" -> {
-            key
-                .ifBlank { "" }
-                .replaceFirstChar { it.uppercase() }
-                .let { if (it.isBlank()) "Collect key" else "Collect $it key" }
-        }
+    if (requiredWeapon == "guided_missile") {
+        "Shoot using guided missile"
+    } else {
+        when (activationKind) {
+            "pickup_key" -> {
+                key
+                    .ifBlank { "" }
+                    .replaceFirstChar { it.uppercase() }
+                    .let { if (it.isBlank()) "Collect key" else "Collect $it key" }
+            }
 
-        "shoot_switch" -> {
-            "Shoot switch"
-        }
+            "shoot_switch" -> {
+                "Shoot switch"
+            }
 
-        "fly_through_trigger" -> {
-            "Fly through trigger"
-        }
+            "fly_through_trigger" -> {
+                "Fly through trigger"
+            }
 
-        "pass_through_trigger" -> {
-            "Pass through trigger"
-        }
+            "pass_through_trigger" -> {
+                "Pass through trigger"
+            }
 
-        "open_hidden_door" -> {
-            "Open hidden door"
-        }
+            "open_hidden_door" -> {
+                "Open hidden door"
+            }
 
-        "destroy_reactor" -> {
-            "Destroy reactor"
-        }
+            "destroy_reactor" -> {
+                "Destroy reactor"
+            }
 
-        "destroy_boss" -> {
-            "Destroy boss"
-        }
+            "destroy_boss" -> {
+                "Destroy boss"
+            }
 
-        "enter_exit" -> {
-            "Enter exit"
-        }
+            "enter_exit" -> {
+                "Enter exit"
+            }
 
-        else -> {
-            ""
+            else -> {
+                ""
+            }
         }
     }
 

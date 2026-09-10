@@ -6,7 +6,7 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 $helper = Join-Path $repoRoot 'android/clean-workspace.ps1'
 $fixture = Join-Path $repoRoot "temp/cleanup-fixture-$([guid]::NewGuid().ToString('N'))"
 $old = [DateTime]::UtcNow.AddDays(-90)
-$state = [pscustomobject]@{ Answers = [Collections.Generic.Queue[string]]::new(); Prompts = 0; Busy = $false; OnAnswer = $null }
+$state = [pscustomobject]@{ Answers = [Collections.Generic.Queue[string]]::new(); Prompts = 0; Busy = $false; OnAnswer = $null; OnIdle = $null; IdleChecks = 0 }
 $heldLock = $null
 
 ${function:Read-Host} = {
@@ -20,6 +20,8 @@ ${function:Read-Host} = {
 ${function:Get-CimInstance} = {
     param([string]$ClassName)
     if ($ClassName -ne 'Win32_Process') { throw "Unexpected inventory: $ClassName" }
+    $state.IdleChecks++
+    if ($state.OnIdle) { & $state.OnIdle }
     if ($state.Busy) {
         [pscustomobject]@{ ProcessId = -10; Name = 'ninja.exe'; CommandLine = 'synthetic active build' }
     }
@@ -77,81 +79,78 @@ try {
 
     $state.Busy = $true
     $blocked = $false
-    try { & $helper -RepositoryRoot $fixture -AutoOnly } catch {
+    try { & $helper -RepositoryRoot $fixture -AutoOnly -BusyWaitSeconds 0 } catch {
         $blocked = $_.Exception.Message -match 'processes are active'
         if (-not $blocked) { throw }
     }
     if (-not $blocked) { throw 'Active build was not blocked' }
     $state.Busy = $false
+    # A transient producer is waited out without asking or deleting while busy
+    $state.Busy = $true
+    $state.IdleChecks = 0
+    $state.OnIdle = { if ($state.IdleChecks -ge 2) { $state.Busy = $false } }
+    & $helper -RepositoryRoot $fixture -TemporaryOnly -TempDays 3650 -BusyWaitSeconds 2
+    $state.OnIdle = $null
+    Assert-CleanupExists 'temp/old.log'
 
-    & $helper -RepositoryRoot $fixture -AutoOnly
-    Assert-CleanupExists 'temp/old.log' $false
-    Assert-CleanupExists 'temp/copy [1].tmp' $false
-    foreach ($path in @('temp/recent.log', 'temp/tracked.log', 'temp/user-notes.txt',
-            'temp/review.json', 'temp/runs/old/result.json', 'temp/runs/new/result.json',
+    # Fresh and arbitrary-name outputs are disposable without an age limit
+    Add-Content -LiteralPath (Join-Path $fixture '.gitignore') -Value "tmp/`nandroid/temp/`n*.tmp`n*.log"
+    foreach ($path in @('android/tools/deep/tmp/custom_run/engine/game.exe',
+            'android/tools/deep/tmp/custom_run/raw/assets.hog',
+            'android/temp/custom_name/results/report.json', 'temp/backup.cpp',
+            'temp/emulator/Test.avd/config.ini',
+            'temp/generated-build/CMakeCache.txt', 'temp/generated-build/_deps/vendor-src/.git/config',
+            'temp/mixed/keep.txt', 'temp/mixed/disposable.bin', 'misc/copy [2].tmp')) {
+        New-CleanupFixtureFile $path
+    }
+    New-Item -ItemType Directory -Path (Join-Path $fixture 'temp/emulator/Test.avd/hardware-qemu.ini.lock') -Force | Out-Null
+    New-Item -ItemType Directory -Path (Join-Path $fixture 'temp/emulator/Test.avd/snapshot.lock.lock') -Force | Out-Null
+    & git -C $fixture add -f temp/mixed/keep.txt outside/precious.log
+    & $helper -RepositoryRoot $fixture -TemporaryOnly -AutoOnly
+    foreach ($path in @('temp/old.log', 'temp/copy [1].tmp', 'temp/recent.log', 'temp/review.json',
+            'temp/runs/old/result.json', 'temp/runs/new/result.json', 'temp/backup.cpp',
+            'temp/mixed/disposable.bin', 'temp/generated-build', 'temp/emulator', 'android/tools/deep/tmp',
+            'android/temp/custom_name', 'misc/copy [2].tmp')) {
+        Assert-CleanupExists $path $false
+    }
+    foreach ($path in @('temp/tracked.log', 'temp/user-notes.txt', 'temp/mixed/keep.txt',
             'temp/locked/result.log', 'temp/nested-repo/.git/config',
             'build-old/output.obj', 'build-protected/keep.cpp', 'downloads/tool.zip',
             'game_data/precious.log', 'android/regression_demos/precious.dximdemo', 'outside/precious.log')) {
         Assert-CleanupExists $path
     }
-    if ($state.Prompts) { throw 'AutoOnly prompted' }
-
-    $state.Answers.Enqueue('noToAll')
+    if ($state.Prompts) { throw 'Temporary cleanup prompted' }
+    # Normal cleanup also removes old disposable artifacts without asking
     & $helper -RepositoryRoot $fixture
-    if ($state.Prompts -ne 1) { throw 'NoToAll did not suppress later prompts' }
-    Assert-CleanupExists 'build-old/output.obj'
-
-    # Explicit approval is required for each remaining ambiguous artifact
-    1..20 | ForEach-Object { $state.Answers.Enqueue('yes') }
-    & $helper -RepositoryRoot $fixture
-    foreach ($path in @('build-old', 'downloads/tool.zip', 'temp/review.json', 'temp/runs/old', 'server/target')) {
+    foreach ($path in @('build-old', 'downloads/tool.zip', 'server/target')) {
         Assert-CleanupExists $path $false
     }
-    foreach ($path in @('temp/recent.log', 'temp/tracked.log', 'temp/user-notes.txt',
-            'build-protected/keep.cpp', 'outside/precious.log', 'temp/locked/result.log')) {
-        Assert-CleanupExists $path
+    if ($state.Prompts) { throw 'Default cleanup prompted' }
+
+    # A file created after discovery invalidates the whole deletion candidate
+    New-CleanupFixtureFile 'temp/race/original.bin'
+    $state.IdleChecks = 0
+    $state.OnIdle = {
+        if ($state.IdleChecks -eq 2) { New-CleanupFixtureFile 'temp/race/late.bin' }
     }
-    # Recheck files created and Git state changed while a prompt is open
-    New-CleanupFixtureFile 'build-race/output.obj'
-    (Get-Item -LiteralPath (Join-Path $fixture 'build-race/output.obj')).LastWriteTimeUtc = $old
-    (Get-Item -LiteralPath (Join-Path $fixture 'build-race')).LastWriteTimeUtc = $old
-    $state.Answers.Clear()
-    $state.Answers.Enqueue('yes')
-    $raceFile = Join-Path $fixture 'build-race/new-result.log'
-    $state.OnAnswer = { [IO.File]::WriteAllText($raceFile, 'new result during prompt') }.GetNewClosure()
-    & $helper -RepositoryRoot $fixture
-    Assert-CleanupExists 'build-race/new-result.log'
+    & $helper -RepositoryRoot $fixture -TemporaryOnly
+    Assert-CleanupExists 'temp/race/late.bin'
+    $state.OnIdle = $null
+    & $helper -RepositoryRoot $fixture -TemporaryOnly
+    Assert-CleanupExists 'temp/race' $false
 
-    New-CleanupFixtureFile 'build-stage/keep.obj'
-    (Get-Item -LiteralPath (Join-Path $fixture 'build-stage/keep.obj')).LastWriteTimeUtc = $old
-    (Get-Item -LiteralPath (Join-Path $fixture 'build-stage')).LastWriteTimeUtc = $old
-    $state.Answers.Enqueue('yes')
-    $state.OnAnswer = {
-        & git -C $fixture add -f build-stage/keep.obj
-        if ($LASTEXITCODE -ne 0) { throw 'Could not stage fixture during prompt' }
-    }.GetNewClosure()
-    & $helper -RepositoryRoot $fixture
-    Assert-CleanupExists 'build-stage/keep.obj'
-
-    New-CleanupFixtureFile 'temp/decline.json'
-    (Get-Item -LiteralPath (Join-Path $fixture 'temp/decline.json')).LastWriteTimeUtc = $old
-    $state.OnAnswer = $null
-    $state.Answers.Enqueue('')
-    & $helper -RepositoryRoot $fixture
-    Assert-CleanupExists 'temp/decline.json'
-    $state.Answers.Enqueue('quit')
-    & $helper -RepositoryRoot $fixture
-    Assert-CleanupExists 'temp/decline.json'
-    New-CleanupFixtureFile 'temp/group.json'
-    (Get-Item -LiteralPath (Join-Path $fixture 'temp/group.json')).LastWriteTimeUtc = $old
-    $state.Answers.Enqueue('folder')
-    $state.Answers.Enqueue('yes')
-    $beforeGroup = $state.Prompts
-    & $helper -RepositoryRoot $fixture
-    if ($state.Prompts -ne $beforeGroup + 2) { throw 'Folder approval did not replace individual prompts' }
-    Assert-CleanupExists 'temp/decline.json' $false
-    Assert-CleanupExists 'temp/group.json' $false
-    Assert-CleanupExists 'temp/recent.log'
+    # Staging an existing candidate after discovery must also protect it
+    New-CleanupFixtureFile 'temp/staged/keep.bin'
+    $state.IdleChecks = 0
+    $state.OnIdle = {
+        if ($state.IdleChecks -eq 2) {
+            & git -C $fixture add -f temp/staged/keep.bin
+            if ($LASTEXITCODE -ne 0) { throw 'Could not stage candidate' }
+        }
+    }
+    & $helper -RepositoryRoot $fixture -TemporaryOnly
+    Assert-CleanupExists 'temp/staged/keep.bin'
+    $state.OnIdle = $null
     # Hashed native builds are separate families for each module and configuration
     Add-Content -LiteralPath (Join-Path $fixture '.gitignore') -Value ".cxx/`nandroid/build-outputs/"
     $generationFiles = @(
@@ -198,7 +197,7 @@ try {
     $beforeBuilds = $state.Prompts
     & $helper -RepositoryRoot $fixture -Preview
     Assert-CleanupExists $generationFiles[0]
-    & $helper -RepositoryRoot $fixture -AutoOnly -KeepBuildGenerations 2 -BuildGraceHours 24
+    & $helper -RepositoryRoot $fixture -BuildsOnly -AutoOnly -KeepBuildGenerations 2 -BuildGraceHours 24
     Assert-CleanupExists $generationFiles[0] $false
     Assert-CleanupExists $generationFiles[1] $false
     Assert-CleanupExists $generationFiles[4]
@@ -256,7 +255,7 @@ try {
     Assert-CleanupExists "$run/raw/mission/assets.hog"
     $state.Busy = $true
     $blocked = $false
-    try { & $helper -RepositoryRoot $fixture -PayloadsOnly -AutoOnly } catch { $blocked = $true }
+    try { & $helper -RepositoryRoot $fixture -PayloadsOnly -AutoOnly -BusyWaitSeconds 0 } catch { $blocked = $true }
     $state.Busy = $false
     if (-not $blocked) { throw 'Active regression payload cleanup was not blocked' }
     & $helper -RepositoryRoot $fixture -PayloadsOnly -AutoOnly
@@ -269,7 +268,7 @@ try {
         Assert-CleanupExists $path
     }
     if ($state.Prompts -ne $beforeBuilds) { throw 'Regression payload cleanup prompted' }
-    Write-Host 'PASS: cleanup safety, prompts, build generations, and regression payload retention'
+    Write-Host 'PASS: unattended recursive temp cleanup, safety, build generations, and payload retention'
 } finally {
     if ($heldLock) { $heldLock.Dispose() }
     # Validate the fixture boundary before removing only this test's own files

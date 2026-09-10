@@ -8,14 +8,15 @@
   "status": "partial",
   "level_counts": {
     "ok": 10,
-    "timeout": 2
+    "timeout": 1,
+    "unsupported": 1
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "level1.rl2",
       "route_input_sha256": "0C407FFD3B3BF48AD7D7F7DF8549D2762EAEF4F0CD49FE20896644848B747333",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -31,29 +32,32 @@
         },
         {
           "n": "red key",
-          "s": 44
+          "s": 42
         },
         {
           "n": "switch 3",
-          "s": 69
+          "s": 67
         },
         {
           "n": "reactor",
-          "s": 71
+          "s": 69
+        },
+        {
+          "n": "exit",
+          "s": 80
         }
       ],
-      "total_frames": 5355,
+      "total_frames": 4795,
       "rng_end": {
-        "state": 2319406211,
-        "calls": 8198
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 1061725192,
+        "calls": 10591
+      }
     },
     {
       "level_num": 2,
       "level_file": "level2.rl2",
       "route_input_sha256": "FE6832E6061473557E05D65AF6BB178B8850A58F9CE5447453C0970F9E8DB13E",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -69,42 +73,19 @@
         },
         {
           "n": "switch 7",
-          "s": 29
+          "s": 30
         },
         {
           "n": "fly-through 8",
           "s": 34
-        },
-        {
-          "n": "gold key",
-          "s": 40
-        },
-        {
-          "n": "red key",
-          "s": 69
-        },
-        {
-          "n": "switch 1",
-          "s": 121
-        },
-        {
-          "n": "switch 9",
-          "s": 127
-        },
-        {
-          "n": "reactor",
-          "s": 152
-        },
-        {
-          "n": "exit",
-          "s": 181
         }
       ],
-      "total_frames": 10840,
+      "total_frames": 2882,
       "rng_end": {
-        "state": 3483935580,
-        "calls": 5915
-      }
+        "state": 3276219314,
+        "calls": 1413
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 3,
@@ -130,19 +111,19 @@
         },
         {
           "n": "gold key",
-          "s": 50
+          "s": 51
         },
         {
           "n": "blastable wall",
-          "s": 60
+          "s": 61
         },
         {
           "n": "blastable wall",
-          "s": 63
+          "s": 62
         },
         {
           "n": "red key",
-          "s": 78
+          "s": 77
         },
         {
           "n": "switch 12",
@@ -166,17 +147,17 @@
         },
         {
           "n": "reactor",
-          "s": 140
+          "s": 141
         },
         {
           "n": "exit",
-          "s": 155
+          "s": 160
         }
       ],
-      "total_frames": 9291,
+      "total_frames": 9593,
       "rng_end": {
-        "state": 3361890760,
-        "calls": 7327
+        "state": 1490190008,
+        "calls": 15343
       }
     },
     {
@@ -199,32 +180,32 @@
         },
         {
           "n": "switch 6",
-          "s": 81
+          "s": 79
         },
         {
           "n": "switch 7",
-          "s": 103
+          "s": 101
         },
         {
           "n": "reactor",
-          "s": 125
+          "s": 122
         },
         {
           "n": "exit",
-          "s": 134
+          "s": 131
         }
       ],
-      "total_frames": 8055,
+      "total_frames": 7885,
       "rng_end": {
-        "state": 3332410724,
-        "calls": 4339
+        "state": 1796059471,
+        "calls": 7066
       }
     },
     {
       "level_num": 5,
       "level_file": "csparto.rl2",
       "route_input_sha256": "D279527829F96F2EBE4D922BECA552DE118EFC5E9086D4A2A016908D51783BFB",
-      "status": "ok",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -252,22 +233,15 @@
         },
         {
           "n": "switch 1",
-          "s": 35
-        },
-        {
-          "n": "locate and activate switch trigger 8",
-          "s": 35
-        },
-        {
-          "n": "exit",
-          "s": 47
+          "s": 36
         }
       ],
-      "total_frames": 2846,
+      "total_frames": 2352,
       "rng_end": {
-        "state": 1812430396,
-        "calls": 1723
-      }
+        "state": 814727458,
+        "calls": 1237
+      },
+      "problem": "route objective activation is not supported"
     },
     {
       "level_num": 6,
@@ -285,47 +259,95 @@
         },
         {
           "n": "gold key",
-          "s": 46
+          "s": 50
         },
         {
           "n": "red key",
-          "s": 83
+          "s": 86
         },
         {
           "n": "fly-through 6",
-          "s": 123
+          "s": 125
         },
         {
           "n": "boss",
-          "s": 137
+          "s": 139
         },
         {
           "n": "exit",
-          "s": 140
+          "s": 142
         }
       ],
-      "total_frames": 8396,
+      "total_frames": 8526,
       "rng_end": {
-        "state": 3809282641,
-        "calls": 3120
+        "state": 548304943,
+        "calls": 5818
       }
     },
     {
       "level_num": 7,
       "level_file": "abandon.rl2",
       "route_input_sha256": "41842CB61E54EC77AC883C9BD61B1535CEA86766B8A299B33908E490D495EDBB",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 1388,
+      "objectives": [
+        {
+          "n": "fly-through 0",
+          "s": 9
+        },
+        {
+          "n": "switch 14",
+          "s": 17
+        },
+        {
+          "n": "switch 15",
+          "s": 21
+        },
+        {
+          "n": "fly-through 6",
+          "s": 26
+        },
+        {
+          "n": "switch 1",
+          "s": 44
+        },
+        {
+          "n": "blue key",
+          "s": 65
+        },
+        {
+          "n": "switch 3",
+          "s": 81
+        },
+        {
+          "n": "gold key",
+          "s": 87
+        },
+        {
+          "n": "switch 15",
+          "s": 87
+        },
+        {
+          "n": "red key",
+          "s": 102
+        },
+        {
+          "n": "reactor",
+          "s": 126
+        },
+        {
+          "n": "exit",
+          "s": 135
+        }
+      ],
+      "total_frames": 8072,
       "rng_end": {
-        "state": 4107399316,
-        "calls": 1027
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 741214722,
+        "calls": 16757
+      }
     },
     {
       "level_num": 8,
@@ -355,7 +377,7 @@
         },
         {
           "n": "switch 5",
-          "s": 9
+          "s": 10
         },
         {
           "n": "switch 7",
@@ -371,45 +393,45 @@
         },
         {
           "n": "blastable wall",
-          "s": 45
+          "s": 46
         },
         {
           "n": "gold key",
-          "s": 51
+          "s": 50
         },
         {
           "n": "blastable wall",
-          "s": 71
+          "s": 69
         },
         {
           "n": "switch 13",
-          "s": 71
+          "s": 69
         },
         {
           "n": "blastable wall",
-          "s": 74
+          "s": 72
         },
         {
           "n": "switch 8",
-          "s": 74
+          "s": 72
         },
         {
           "n": "red key",
-          "s": 88
+          "s": 86
         },
         {
           "n": "reactor",
-          "s": 111
+          "s": 109
         },
         {
           "n": "exit",
-          "s": 115
+          "s": 112
         }
       ],
-      "total_frames": 6877,
+      "total_frames": 6733,
       "rng_end": {
-        "state": 4125700720,
-        "calls": 4055
+        "state": 1773002895,
+        "calls": 10330
       }
     },
     {
@@ -459,10 +481,10 @@
           "s": 74
         }
       ],
-      "total_frames": 4421,
+      "total_frames": 4427,
       "rng_end": {
-        "state": 1685365463,
-        "calls": 3858
+        "state": 1210657932,
+        "calls": 4651
       }
     },
     {
@@ -489,19 +511,19 @@
         },
         {
           "n": "blue key",
-          "s": 40
+          "s": 39
         },
         {
           "n": "blastable wall",
-          "s": 52
+          "s": 51
         },
         {
           "n": "gold key",
-          "s": 58
+          "s": 59
         },
         {
           "n": "red key",
-          "s": 69
+          "s": 71
         },
         {
           "n": "boss",
@@ -509,13 +531,13 @@
         },
         {
           "n": "exit",
-          "s": 92
+          "s": 93
         }
       ],
-      "total_frames": 5540,
+      "total_frames": 5576,
       "rng_end": {
-        "state": 1232218944,
-        "calls": 5575
+        "state": 3387460488,
+        "calls": 13279
       }
     },
     {
@@ -546,25 +568,25 @@
         },
         {
           "n": "blastable wall",
-          "s": 39
+          "s": 38
         },
         {
           "n": "blastable wall",
-          "s": 46
+          "s": 45
         },
         {
           "n": "boss",
-          "s": 53
+          "s": 52
         },
         {
           "n": "exit",
-          "s": 97
+          "s": 96
         }
       ],
-      "total_frames": 5800,
+      "total_frames": 5772,
       "rng_end": {
-        "state": 956422693,
-        "calls": 3420
+        "state": 1585237089,
+        "calls": 8864
       }
     },
     {
@@ -587,33 +609,33 @@
         },
         {
           "n": "switch 5",
-          "s": 51
+          "s": 50
         },
         {
           "n": "switch 1",
-          "s": 58
+          "s": 64
         },
         {
           "n": "blastable wall",
-          "s": 84
+          "s": 89
         },
         {
           "n": "red key",
-          "s": 90
+          "s": 95
         },
         {
           "n": "boss",
-          "s": 143
+          "s": 148
         },
         {
           "n": "exit",
-          "s": 175
+          "s": 180
         }
       ],
-      "total_frames": 10503,
+      "total_frames": 10785,
       "rng_end": {
-        "state": 3965719745,
-        "calls": 6464
+        "state": 2113664212,
+        "calls": 15043
       }
     }
   ]

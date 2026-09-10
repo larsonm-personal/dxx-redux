@@ -39,9 +39,9 @@
     "seed": 1,
     "status": "partial",
     "level_counts": {
-      "ok": 3,
+      "ok": 5,
       "failed": 2,
-      "timeout": 3,
+      "timeout": 1,
       "unsupported": 1
     },
     "levels": [
@@ -98,25 +98,25 @@
           },
           {
             "n": "pass-through 0",
-            "s": 31
+            "s": 38
           },
           {
             "n": "hidden door",
-            "s": 56
+            "s": 61
           },
           {
             "n": "pass-through 4",
-            "s": 71
+            "s": 76
           },
           {
             "n": "blue key",
-            "s": 87
+            "s": 93
           }
         ],
-        "total_frames": 6081,
+        "total_frames": 6371,
         "rng_end": {
-          "state": 821933189,
-          "calls": 3068
+          "state": 3395673800,
+          "calls": 2975
         },
         "problem": "physical route frontier did not open after 8 interaction attempts"
       },
@@ -124,7 +124,7 @@
         "level_num": 3,
         "level_file": "ship4.rl2",
         "route_input_sha256": "76C14372F9E9E25B386AEBE47EF8332804AC08B4E53B280A4149E74D985566C9",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -132,56 +132,67 @@
         "objectives": [
           {
             "n": "blastable wall",
-            "s": 11
+            "s": 9
           },
           {
             "n": "pass-through 0",
-            "s": 26
+            "s": 23
           },
           {
             "n": "pass-through 1",
-            "s": 44
+            "s": 41
           },
           {
             "n": "pass-through 2",
-            "s": 50
+            "s": 46
           },
           {
             "n": "gold key",
-            "s": 60
+            "s": 57
           },
           {
             "n": "blastable wall",
-            "s": 82
+            "s": 78
           },
           {
             "n": "red key",
-            "s": 83
+            "s": 79
+          },
+          {
+            "n": "switch 7",
+            "s": 93
+          },
+          {
+            "n": "boss",
+            "s": 101
+          },
+          {
+            "n": "exit",
+            "s": 123
           }
         ],
-        "total_frames": 9248,
+        "total_frames": 7359,
         "rng_end": {
-          "state": 2907452818,
-          "calls": 5413
-        },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+          "state": 4054776844,
+          "calls": 7339
+        }
       },
       {
         "level_num": 4,
         "level_file": "mam.rl2",
-        "route_input_sha256": "858E2D449C323A65C2B3F000D4C4FC2B336EEBF9AE8842D6366C6E2223F0022F",
+        "route_input_sha256": "066CC55FAC18D3AF843716051027D9A2A8AA6B2BFC48519F1A4B5AA5B3675075",
         "status": "unsupported",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
         "objectives": [],
-        "total_frames": 754,
+        "total_frames": 0,
         "rng_end": {
-          "state": 3302295110,
-          "calls": 737
+          "state": 1,
+          "calls": 0
         },
-        "problem": "route objective activation is not supported"
+        "problem": "guided missile objective requires equipment and flight verification"
       },
       {
         "level_num": 5,
@@ -221,7 +232,7 @@
         "level_num": 7,
         "level_file": "lucifer.rl2",
         "route_input_sha256": "084705168E1A37F0678B3F92E1FBFAAEAA1CF4B640F231DBDAEFF6197110BCC4",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -238,14 +249,45 @@
           {
             "n": "pass-through 2",
             "s": 30
+          },
+          {
+            "n": "blastable wall",
+            "s": 47
+          },
+          {
+            "n": "blue key",
+            "s": 59
+          },
+          {
+            "n": "pass-through 3",
+            "s": 84
+          },
+          {
+            "n": "gold key",
+            "s": 95
+          },
+          {
+            "n": "red key",
+            "s": 115
+          },
+          {
+            "n": "pass-through 5",
+            "s": 132
+          },
+          {
+            "n": "boss",
+            "s": 175
+          },
+          {
+            "n": "exit",
+            "s": 180
           }
         ],
-        "total_frames": 6424,
+        "total_frames": 10801,
         "rng_end": {
-          "state": 2183620647,
-          "calls": 3266
-        },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+          "state": 1323635370,
+          "calls": 6765
+        }
       },
       {
         "level_num": 8,

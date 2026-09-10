@@ -5,10 +5,10 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
-    "failed": 1,
-    "timeout": 1
+    "ok": 1,
+    "failed": 1
   },
   "levels": [
     {
@@ -32,7 +32,7 @@
       "level_num": -1,
       "level_file": "level.rl2",
       "route_input_sha256": "058E2C912920FEC4590F82D33CD621019439E8A2BEBA87323FA0273D19CB23D9",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -48,7 +48,7 @@
         },
         {
           "n": "gold key",
-          "s": 37
+          "s": 36
         },
         {
           "n": "switch 4",
@@ -57,14 +57,33 @@
         {
           "n": "red key",
           "s": 54
+        },
+        {
+          "n": "switch 0",
+          "s": 80
+        },
+        {
+          "n": "switch 7",
+          "s": 93
+        },
+        {
+          "n": "reactor",
+          "s": 98
+        },
+        {
+          "n": "switch 7",
+          "s": 98
+        },
+        {
+          "n": "exit",
+          "s": 103
         }
       ],
-      "total_frames": 3967,
+      "total_frames": 6202,
       "rng_end": {
-        "state": 1151372233,
-        "calls": 3320
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 3902390859,
+        "calls": 15550
+      }
     }
   ]
 }

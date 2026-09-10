@@ -282,7 +282,7 @@
             "key": "blue"
           }
         ],
-        "route_problem": "gold key unreachable"
+        "route_problem": "shared route planning reached its work budget"
       },
       {
         "level_num": 2,
@@ -306,15 +306,15 @@
         "mine_volume": 30383100.0,
         "mine_volume_normalized": 6.64416,
         "mine_volume_text": "6.6x",
-        "travel_distance": 2506.6,
-        "travel_time_seconds": 50,
-        "travel_time_text": "0M:50S",
+        "travel_distance": 6053.7,
+        "travel_time_seconds": 121,
+        "travel_time_text": "2M:01S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -350,9 +350,79 @@
             },
             "distance": 1231.6,
             "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 243,
+            "wall": 0,
+            "label_pos": {
+              "x": 668.8,
+              "y": -281.0,
+              "z": 157.0
+            },
+            "distance": 1472.5,
+            "opens": [
+              {
+                "seg": 135,
+                "side": 4,
+                "wall": 0
+              },
+              {
+                "seg": 199,
+                "side": 1,
+                "wall": 2
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 135,
+            "label_pos": {
+              "x": 658.4,
+              "y": -281.2,
+              "z": 185.4
+            },
+            "distance": 519.9,
+            "key": "red"
+          },
+          {
+            "index": 5,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 81,
+            "label_pos": {
+              "x": 440.6,
+              "y": -249.8,
+              "z": -160.0
+            },
+            "distance": 910.0
+          },
+          {
+            "index": 6,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 62,
+            "side": 4,
+            "wall": 58,
+            "label_pos": {
+              "x": 415.2,
+              "y": -628.0,
+              "z": -40.5
+            },
+            "distance": 644.8,
+            "trigger": 2,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
-        ],
-        "route_problem": "red key unreachable"
+        ]
       },
       {
         "level_num": 3,
@@ -704,15 +774,15 @@
         "mine_volume": 37170800.0,
         "mine_volume_normalized": 8.1285,
         "mine_volume_text": "8.1x",
-        "travel_distance": 4565.4,
-        "travel_time_seconds": 91,
-        "travel_time_text": "1M:31S",
+        "travel_distance": 10149.6,
+        "travel_time_seconds": 203,
+        "travel_time_text": "3M:23S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -775,9 +845,80 @@
             },
             "distance": 20.0,
             "key": "gold"
+          },
+          {
+            "index": 4,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 105,
+            "side": 4,
+            "wall": 59,
+            "label_pos": {
+              "x": 100.0,
+              "y": -170.0,
+              "z": 370.0
+            },
+            "distance": 1630.1,
+            "opens": [
+              {
+                "seg": 105,
+                "side": 4,
+                "wall": 59
+              },
+              {
+                "seg": 104,
+                "side": 5,
+                "wall": 58
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 103,
+            "label_pos": {
+              "x": 70.0,
+              "y": -170.0,
+              "z": 370.0
+            },
+            "distance": 40.0,
+            "key": "red"
+          },
+          {
+            "index": 6,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 26,
+            "label_pos": {
+              "x": -650.0,
+              "y": -210.0,
+              "z": 370.0
+            },
+            "distance": 1925.7
+          },
+          {
+            "index": 7,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 166,
+            "side": 4,
+            "wall": 68,
+            "label_pos": {
+              "x": 0.0,
+              "y": 150.0,
+              "z": 460.0
+            },
+            "distance": 1988.4,
+            "trigger": 0,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
-        ],
-        "route_problem": "red key unreachable"
+        ]
       },
       {
         "level_num": 7,

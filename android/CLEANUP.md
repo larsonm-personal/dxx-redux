@@ -1,112 +1,36 @@
 # Workspace cleanup
 
-Run from the repository root:
+Run from the repository root. Cleanup is unattended: eligible artifacts are removed without confirmation
 
 ```powershell
 .\android\clean-workspace.ps1 -Preview
 .\android\clean-workspace.ps1
+# Fast emergency cleanup: all temporary workspace files, without build scans
+.\android\clean-workspace.ps1 -TemporaryOnly
 ```
 
-Mission metadata and guidebot runs can retain gigabytes of duplicate extracted
-assets. The cleaner automatically removes per-mission directories under `raw`
-and `stages` in timestamped `android/temp/mission_zip_host_metadata` and
-`android/temp/guidebot_simulation_regression` runs, including metadata workers.
-It keeps JSON files directly under `raw`, summaries, logs, and simulation results.
-These payloads need no newer replacement run: the original mission archives remain
-in `game_data`. A one-hour grace period uses both creation and modification times,
-because asset copies preserve old source modification dates. Active-process and
-Git/link/lock protections still apply.
-Payload-only trees are checked and deleted as groups; folders mixed with reports
-are cleaned per mission so the reports remain available.
+The default removes every ignored file type inside scratch directories, including fresh files. This includes custom-named runs, copied engines, extracted assets, partial/failed runs, reports, JSON, logs, scripts, source backups and hidden files. Scratch roots are discovered at arbitrary repository depths: `temp`, `temp_*`, `temp-*`, `tmp`, `tmp_*`, `tmp-*`, `.tmp`, `.temp`, `test-results`, `test-reports`, `regression-results` and `regression-output`. There is no timestamp naming requirement or fixed runner allowlist. Ignored loose `.tmp`, `.temp` and `.log` files outside these roots are also eligible
+
+Scratch files are disposable. Put evidence or work that must survive cleanup in a non-temporary, Git-visible location. `-TempDays N` explicitly retains temporary files newer than N days, using both creation and modification times; the default is zero. Reports in temp are not retained by the default cleanup
+
+The cleaner protects tracked files (even forcibly added ignored files), untracked non-ignored work, original `game_data`, emulator source assets, recorded regression demos, fixtures, nested repositories, links/junctions and held locks. Protected children do not strand disposable siblings. It never follows links or deletes outside the resolved Git workspace. An ignored filename alone does not make arbitrary source/assets disposable
+
+Active build/test/formatter/emulator jobs block deletion. The script waits up to 60 seconds for them automatically (`-BusyWaitSeconds` controls this), then exits if they remain active. It does not terminate jobs or ask for permission. Known stale emulator marker directories are removable only through this idle-checked temporary cleanup; held file locks remain protected. It rechecks process activity, Git state, containment, links, modification/creation times, file count and bytes before deletion. Newly changed candidates are preserved. Locked/unreadable artifacts are reported and other eligible artifacts can still be removed. Run again once jobs finish or locks are released
+
+`-Preview` and `-WhatIf` never delete; add `-Verbose` to list each candidate. `-AutoOnly` remains accepted by existing callers; cleanup is now always automatic. `-TemporaryOnly`, `-BuildsOnly` and `-PayloadsOnly` are mutually exclusive
+
+Outside scratch roots, normal cleanup also removes old generated build/download artifacts (default `-ArtifactDays 30`) and superseded native/package generations. It preserves the newest generation of each recognized build family; `-KeepBuildGenerations` and `-BuildGraceHours` adjust that retention. Explicit temporary cleanup takes precedence for builds located inside a scratch root. Use `-BuildsOnly` to apply build retention without clearing scratch files
 
 ```powershell
-# Fast, focused preview and cleanup of reproducible regression payloads
-.\android\clean-workspace.ps1 -PayloadsOnly -Preview
-.\android\clean-workspace.ps1 -PayloadsOnly -AutoOnly
-```
-
-`-PayloadGraceHours` adjusts the one-hour grace period. `-PayloadsOnly` skips build
-and general artifact scans and cannot be combined with `-BuildsOnly`.
-
-The normal interactive run automatically removes ignored loose `.log`, `.tmp`,
-and `.temp` files at least 7 days old in known scratch directories. It also
-automatically removes superseded build generations without confirmation:
-
-- Each Android module's `.cxx/<configuration>/<build-id>` is ranked separately
-  for Debug, Release, and other configurations
-- CMake build trees in recognized build/temp locations are grouped by source
-  project, configuration, architecture, generator/toolchain, and feature flags
-- Versioned APK/AAB/ZIP outputs are grouped by parent folder, package name,
-  and extension, including the unique suffixes used by deployment builds
-
-The newest generation in each family is always kept, including when it is old.
-Ordering uses the newest write anywhere in each generation, not hash-name order
-or the parent directory's timestamp. The default keeps exactly one generation
-with no age exemption; ties are resolved by path. `-KeepBuildGenerations 2` retains
-two generations; `-BuildGraceHours 24` explicitly opts into a grace period. These automatic build
-rules are independent of `-ArtifactDays` and apply with `-AutoOnly` as well.
-The retained replacement must still exist when an older build is deleted.
-Discovery looks up to four levels below known output roots; source trees and
-unidentified build layouts are not guessed to be interchangeable generations.
-
-Other eligible artifacts require confirmation. Enter keeps them,
-`noToAll` skips the remaining review items, and `quit` stops the run.
-Choose `folder` to list the remaining review candidates of the same category in
-that parent folder, then confirm that exact group with `yes`. Only the listed
-old candidates are approved; the parent folder and recent siblings are kept.
-There is no global yes-to-all option. Automatic deletion may already have
-happened before `quit`.
-
-Review items must be at least 30 days old, including their newest descendant.
-These include repository build directories, Android native and Gradle outputs,
-Rust target outputs, local download caches, packages in `android/build-outputs`,
-and scratch/regression output directories. Scratch collections with recent runs
-are inspected up to two further levels to find older independent artifacts.
-Sizes shown are logical file sizes; compression and hard links affect disk savings.
-
-```powershell
-# Old loose temporary files and superseded builds, without interactive questions
-.\android\clean-workspace.ps1 -AutoOnly
-
-# Preview while keeping the newest two builds per family
-.\android\clean-workspace.ps1 -Preview -KeepBuildGenerations 2
-
-# Restrict cleanup to superseded builds and versioned build packages
 .\android\clean-workspace.ps1 -BuildsOnly
-
-# Preview a different retention window
-.\android\clean-workspace.ps1 -Preview -TempDays 14 -ArtifactDays 60
+.\android\clean-workspace.ps1 -Preview -TempDays 7 -KeepBuildGenerations 2
 ```
 
-`-Preview` and `-WhatIf` never delete or prompt. Preview a shorter retention window
-before applying it. Recent files remain protected even inside old directories.
-Git-tracked files and untracked non-ignored files protect their containing trees.
-Trees with links, unrelated nested repositories, held locks, directory lock markers, or
-unreadable entries are preserved. Released lock files left by CMake/Gradle do
-not block review of an old build tree. Git state, timestamps, size, and file count are rechecked before
-each deletion. Active build/test/formatter processes block deletion; the helper
-does not stop processes. Close tools before cleanup, and do not start new work
-during a cleanup run. Windows process checks are required for deletion; other
-hosts support preview only.
+`-PayloadsOnly` retains the older narrow report-preserving policy for timestamped `mission_zip_host_metadata` and `guidebot_simulation_regression` outputs. It removes reproducible `raw`/`stages` mission payloads with a configurable one-hour `-PayloadGraceHours` grace. Use `-TemporaryOnly` or the default for comprehensive reclamation across arbitrary run names
 
-Discovery is confined to known generated directories inside this repository.
-It does not clean `game_data`, recorded regression demos, test fixtures, source
-assets, credentials, SDK installations, external dependency directories, or
-global Gradle/vcpkg caches. An ignored file alone is not evidence of disposable
-content. Use the SDK manager to remove SDK packages and their dependencies.
+Discovery does not traverse SDKs or global caches outside the repository. Dependency/build trees outside scratch roots use their separate retention rules rather than generic recursive scratch discovery. Windows process checks are currently required for deletion; other platforms support preview. Sizes reported are logical bytes; drive free-space change is the authoritative measure of reclaimed capacity
 
-Identified build generations include their CMake FetchContent dependency clones:
-`<CMake binary directory>/_deps/*-src/.git`, with `CMakeCache.txt` present in
-the owning binary directory (or the matching live ABI sibling for `.stale-*`
-recovery directories). These downloaded sources, including build-local
-patches and dependency submodules, are disposable with that build. Submodule
-`.git` files are deleted as files; their referenced paths are never traversed.
-Other nested repositories remain protected.
-
-For the existing narrower timestamp-generation retention policy, use
-`android/helpers/clean-old-artifacts.ps1`; its behavior is unchanged.
-
-Test the new helper without touching real artifacts:
+Validate safely against a synthetic Git repository:
 
 ```powershell
 .\android\tests\test_clean_workspace.ps1

@@ -390,15 +390,15 @@
         "mine_volume": 4976880.0,
         "mine_volume_normalized": 1.08834,
         "mine_volume_text": "1.1x",
-        "travel_distance": 1737.1,
-        "travel_time_seconds": 35,
-        "travel_time_text": "0M:35S",
+        "travel_distance": 2295.7,
+        "travel_time_seconds": 46,
+        "travel_time_text": "0M:46S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -472,10 +472,40 @@
             },
             "distance": 569.6,
             "key": "red"
+          },
+          {
+            "index": 5,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 569,
+            "label_pos": {
+              "x": 1.1,
+              "y": 18.5,
+              "z": 40.6
+            },
+            "distance": 473.9
+          },
+          {
+            "index": 6,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 574,
+            "side": 0,
+            "wall": 108,
+            "label_pos": {
+              "x": 94.5,
+              "y": 121.5,
+              "z": 86.1
+            },
+            "distance": 84.7,
+            "trigger": 2,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "route target unreachable",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
         ]
@@ -840,15 +870,15 @@
         "mine_volume": 3741450.0,
         "mine_volume_normalized": 0.818178,
         "mine_volume_text": "0.82x",
-        "travel_distance": 1384.4,
-        "travel_time_seconds": 28,
-        "travel_time_text": "0M:28S",
+        "travel_distance": 3564.5,
+        "travel_time_seconds": 71,
+        "travel_time_text": "1M:11S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -898,10 +928,40 @@
             },
             "distance": 812.5,
             "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 300,
+            "label_pos": {
+              "x": 0.0,
+              "y": -181.0,
+              "z": 457.7
+            },
+            "distance": 1135.8
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 196,
+            "side": 5,
+            "wall": 163,
+            "label_pos": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": -70.0
+            },
+            "distance": 1044.3,
+            "trigger": 11,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "route target unreachable",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
         ]
@@ -928,15 +988,15 @@
         "mine_volume": 2483270.0,
         "mine_volume_normalized": 0.543041,
         "mine_volume_text": "0.54x",
-        "travel_distance": 3184.2,
-        "travel_time_seconds": 64,
-        "travel_time_text": "1M:04S",
+        "travel_distance": 3950.5,
+        "travel_time_seconds": 79,
+        "travel_time_text": "1M:19S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -1037,7 +1097,7 @@
               "y": 93.4,
               "z": 322.8
             },
-            "distance": 633.9,
+            "distance": 623.9,
             "trigger": 2,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -1067,7 +1127,7 @@
               "y": 84.7,
               "z": 327.6
             },
-            "distance": 567.6,
+            "distance": 557.6,
             "opens": [
               {
                 "seg": 64,
@@ -1094,10 +1154,40 @@
             },
             "distance": 72.3,
             "key": "red"
+          },
+          {
+            "index": 8,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 265,
+            "label_pos": {
+              "x": 0.0,
+              "y": 180.0,
+              "z": 540.0
+            },
+            "distance": 375.3
+          },
+          {
+            "index": 9,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 261,
+            "side": 5,
+            "wall": 88,
+            "label_pos": {
+              "x": 0.0,
+              "y": 180.0,
+              "z": 170.0
+            },
+            "distance": 411.0,
+            "trigger": 0,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "route target unreachable",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
         ]
@@ -1124,15 +1214,15 @@
         "mine_volume": 6168660.0,
         "mine_volume_normalized": 1.34896,
         "mine_volume_text": "1.3x",
-        "travel_distance": 1219.6,
-        "travel_time_seconds": 24,
-        "travel_time_text": "0M:24S",
+        "travel_distance": 1845.3,
+        "travel_time_seconds": 37,
+        "travel_time_text": "0M:37S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -1184,10 +1274,40 @@
             },
             "distance": 619.6,
             "key": "red"
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 704,
+            "label_pos": {
+              "x": 260.0,
+              "y": -1.0,
+              "z": 180.0
+            },
+            "distance": 499.6
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 730,
+            "side": 2,
+            "wall": 136,
+            "label_pos": {
+              "x": 270.0,
+              "y": 40.0,
+              "z": 140.0
+            },
+            "distance": 126.0,
+            "trigger": 0,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "route target unreachable",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -1359,15 +1479,15 @@
         "mine_volume": 3604530.0,
         "mine_volume_normalized": 0.788237,
         "mine_volume_text": "0.79x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 3808.7,
+        "travel_time_seconds": 76,
+        "travel_time_text": "1M:16S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "failed",
+        "route_status": "ok",
         "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -1375,10 +1495,232 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 33
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 5",
+            "seg": 116,
+            "side": 1,
+            "wall": 152,
+            "label_pos": {
+              "x": -2.3,
+              "y": -43.3,
+              "z": 180.8
+            },
+            "distance": 447.9,
+            "trigger": 5,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 46,
+                "side": 4,
+                "wall": 19
+              },
+              {
+                "seg": 149,
+                "side": 3,
+                "wall": 55
+              },
+              {
+                "seg": 14,
+                "side": 3,
+                "wall": 18
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 0",
+            "seg": 211,
+            "side": 5,
+            "wall": 96,
+            "label_pos": {
+              "x": 15.2,
+              "y": -132.6,
+              "z": -234.2
+            },
+            "distance": 703.6,
+            "trigger": 0,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 259,
+                "side": 4,
+                "wall": 66
+              },
+              {
+                "seg": 258,
+                "side": 4,
+                "wall": 64
+              },
+              {
+                "seg": 255,
+                "side": 4,
+                "wall": 60
+              },
+              {
+                "seg": 256,
+                "side": 4,
+                "wall": 62
+              },
+              {
+                "seg": 257,
+                "side": 4,
+                "wall": 68
+              },
+              {
+                "seg": 292,
+                "side": 2,
+                "wall": 74
+              },
+              {
+                "seg": 291,
+                "side": 0,
+                "wall": 72
+              },
+              {
+                "seg": 290,
+                "side": 0,
+                "wall": 70
+              },
+              {
+                "seg": 293,
+                "side": 2,
+                "wall": 97
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 2",
+            "seg": 294,
+            "side": 5,
+            "wall": 148,
+            "label_pos": {
+              "x": 24.2,
+              "y": -137.0,
+              "z": -323.6
+            },
+            "distance": 105.0,
+            "trigger": 2,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 42,
+                "side": 3,
+                "wall": 25
+              },
+              {
+                "seg": 58,
+                "side": 5,
+                "wall": 22
+              },
+              {
+                "seg": 3,
+                "side": 1,
+                "wall": 102
+              },
+              {
+                "seg": 74,
+                "side": 4,
+                "wall": 103
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 294,
+            "side": 1,
+            "wall": 99,
+            "label_pos": {
+              "x": 23.2,
+              "y": -126.6,
+              "z": -314.2
+            },
+            "distance": 5.0,
+            "opens": [
+              {
+                "seg": 294,
+                "side": 1,
+                "wall": 99
+              },
+              {
+                "seg": 315,
+                "side": 1,
+                "wall": 100
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 6",
+            "seg": 373,
+            "side": 5,
+            "wall": 153,
+            "label_pos": {
+              "x": -20.0,
+              "y": 40.0,
+              "z": 130.0
+            },
+            "distance": 1378.0,
+            "trigger": 6,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 58,
+                "side": 3,
+                "wall": 123
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 425,
+            "label_pos": {
+              "x": 0.0,
+              "y": -324.0,
+              "z": 0.0
+            },
+            "distance": 1018.2
+          },
+          {
+            "index": 7,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 445,
+            "side": 0,
+            "wall": 145,
+            "label_pos": {
+              "x": -70.0,
+              "y": -320.0,
+              "z": 140.0
+            },
+            "distance": 151.0,
+            "trigger": 4,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "route target unreachable",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]

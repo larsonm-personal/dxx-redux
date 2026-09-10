@@ -28,21 +28,21 @@
         },
         {
           "n": "red key",
-          "s": 25
+          "s": 17
         },
         {
           "n": "reactor",
-          "s": 29
+          "s": 22
         },
         {
           "n": "exit",
-          "s": 32
+          "s": 24
         }
       ],
-      "total_frames": 1915,
+      "total_frames": 1466,
       "rng_end": {
-        "state": 1228891816,
-        "calls": 63
+        "state": 4200531631,
+        "calls": 58
       }
     },
     {
@@ -68,10 +68,10 @@
           "s": 28
         }
       ],
-      "total_frames": 1681,
+      "total_frames": 1690,
       "rng_end": {
-        "state": 2102736524,
-        "calls": 43
+        "state": 304110280,
+        "calls": 8095
       }
     },
     {
@@ -89,10 +89,10 @@
           "s": 14
         }
       ],
-      "total_frames": 2092,
+      "total_frames": 2173,
       "rng_end": {
-        "state": 3823029677,
-        "calls": 20
+        "state": 4146364565,
+        "calls": 4972
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -120,7 +120,7 @@
         },
         {
           "n": "hidden door",
-          "s": 67
+          "s": 66
         },
         {
           "n": "hidden door",
@@ -152,11 +152,11 @@
         },
         {
           "n": "hidden door",
-          "s": 78
+          "s": 77
         },
         {
           "n": "hidden door",
-          "s": 79
+          "s": 78
         },
         {
           "n": "hidden door",
@@ -168,21 +168,21 @@
         },
         {
           "n": "hidden door",
-          "s": 83
+          "s": 82
         },
         {
           "n": "reactor",
-          "s": 83
+          "s": 82
         },
         {
           "n": "exit",
-          "s": 105
+          "s": 104
         }
       ],
-      "total_frames": 6306,
+      "total_frames": 6262,
       "rng_end": {
-        "state": 1282664340,
-        "calls": 259
+        "state": 2035161149,
+        "calls": 6916
       }
     },
     {
@@ -209,17 +209,17 @@
         },
         {
           "n": "reactor",
-          "s": 43
+          "s": 44
         },
         {
           "n": "exit",
-          "s": 52
+          "s": 53
         }
       ],
-      "total_frames": 3146,
+      "total_frames": 3159,
       "rng_end": {
-        "state": 2916751166,
-        "calls": 73
+        "state": 841974512,
+        "calls": 7511
       }
     },
     {
@@ -250,10 +250,10 @@
         },
         {
           "n": "exit",
-          "s": 106
+          "s": 107
         }
       ],
-      "total_frames": 6367,
+      "total_frames": 6398,
       "rng_end": {
         "state": 856000655,
         "calls": 90
@@ -275,7 +275,7 @@
         },
         {
           "n": "gold key",
-          "s": 44
+          "s": 43
         },
         {
           "n": "red key",
@@ -290,10 +290,10 @@
           "s": 125
         }
       ],
-      "total_frames": 7524,
+      "total_frames": 7497,
       "rng_end": {
-        "state": 3549428584,
-        "calls": 127
+        "state": 2784727109,
+        "calls": 6716
       }
     },
     {
@@ -311,7 +311,7 @@
           "s": 42
         }
       ],
-      "total_frames": 6331,
+      "total_frames": 6332,
       "rng_end": {
         "state": 1223573862,
         "calls": 65

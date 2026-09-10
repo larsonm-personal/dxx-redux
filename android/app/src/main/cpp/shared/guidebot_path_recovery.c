@@ -8,10 +8,35 @@
 #include "ai.h"
 #include "game.h"
 #include "gameseg.h"
+#include "wall.h"
+#include "maths.h"
 #include "guidebot_route_internal.h"
 
 static int precise_recovery;
 static vms_vector precise_recovery_point;
+
+/* Match the short collision sweeps used by movement when validating a recovery leg */
+static int recovery_leg_clear(const object *objp, const vms_vector *from,
+                              int segnum, const vms_vector *to)
+{
+	vms_vector current = *from;
+	const int chunks = vm_vec_dist(from, to) / F1_0 + 1;
+	if (!guidebot_route_waypoint_leg_clear(objp, from, segnum, to))
+		return 0;
+	for (int chunk = 1; chunk <= chunks; ++chunk) {
+		vms_vector next;
+		next.x = from->x + (fix) (((long long) to->x - from->x) * chunk / chunks);
+		next.y = from->y + (fix) (((long long) to->y - from->y) * chunk / chunks);
+		next.z = from->z + (fix) (((long long) to->z - from->z) * chunk / chunks);
+		if (!guidebot_route_waypoint_leg_clear(objp, &current, segnum, &next))
+			return 0;
+		segnum = find_point_seg(&next, segnum);
+		if (segnum < 0)
+			return 0;
+		current = next;
+	}
+	return 1;
+}
 
 /* Find an occupiable interior waypoint with a verified incoming and outgoing leg */
 static int find_recovery_waypoint(const object *objp, int segnum,
@@ -34,13 +59,75 @@ static int find_recovery_waypoint(const object *objp, int segnum,
 		}
 		if (find_point_seg(&point, segnum) != segnum ||
 		    vm_vec_dist(&objp->pos, &point) <= F1_0 ||
-		    !guidebot_route_waypoint_leg_clear(objp, &objp->pos, objp->segnum, &point) ||
-		    !guidebot_route_waypoint_leg_clear(objp, &point, segnum, to))
+		    !recovery_leg_clear(objp, &objp->pos, objp->segnum, &point) ||
+		    !recovery_leg_clear(objp, &point, segnum, to))
 			continue;
 		*result = point;
 		return 1;
 	}
 	return 0;
+}
+
+/* A failed approach is not proof that the objective is unreachable. Try a
+ * different topological route, preserving the goal and trigger exclusions */
+static int recover_alternate_path(object *objp, vms_vector *goal_point)
+{
+	ai_static *aip = &objp->ctype.ai_info;
+	ai_local *ailp = &Ai_local_info[objp - Objects];
+	const int used = (int) (Point_segs_free_ptr - Point_segs);
+	const int depth = Max_escort_length;
+	int next_seg = -1;
+	unsigned int rng, rng_calls;
+	if (aip->PATH_DIR != 1 || aip->hide_index < 0 || aip->path_length <= 1 ||
+	    aip->cur_path_index < 0 || aip->cur_path_index >= aip->path_length ||
+	    aip->hide_index + aip->path_length > used || depth <= 0 ||
+	    depth > MAX_SEGMENTS || used + 2 * (depth + 2) + 2 * MAX_PATH_LENGTH > MAX_POINT_SEGS / 2)
+		return 0;
+	for (int i = aip->cur_path_index; i < aip->path_length; ++i) {
+		next_seg = Point_segs[aip->hide_index + i].segnum;
+		if (next_seg != objp->segnum)
+			break;
+	}
+	if (next_seg < 0 || next_seg > Highest_segment_index || next_seg == objp->segnum)
+		return 0;
+	const int side = find_connect_side(&Segments[next_seg], &Segments[objp->segnum]);
+	/* Only reconsider a presently open portal, never bypass a closed door */
+	if (side < 0 || !(WALL_IS_DOORWAY(&Segments[objp->segnum], side) & WID_FLY_FLAG))
+		return 0;
+	const int goal = Point_segs[aip->hide_index + aip->path_length - 1].segnum;
+	if (goal < 0 || goal > Highest_segment_index || goal == objp->segnum || !d_rand_get_state(&rng))
+		return 0;
+	const ai_static saved_ai = *aip;
+	const ai_local saved_local = *ailp;
+	rng_calls = d_rand_get_call_count();
+	/* Leave enough room for all safety points below the GC threshold. This
+	 * keeps the original path intact until the replacement is accepted */
+	int accepted = create_path_to_segment_avoiding_edges(objp, goal, depth, 1,
+	                                                     objp->segnum, next_seg, -1, -1);
+	for (int i = 1; accepted && i < aip->path_length; ++i) {
+		const int from = Point_segs[aip->hide_index + i - 1].segnum;
+		const int to = Point_segs[aip->hide_index + i].segnum;
+		const int avoid_from[2] = { Escort_route_avoid_from_seg, Escort_route_avoid_from_seg2 };
+		const int avoid_to[2] = { Escort_route_avoid_seg, Escort_route_avoid_seg2 };
+		for (int edge = 0; edge < 2; ++edge)
+			if ((from == avoid_from[edge] && to == avoid_to[edge]) ||
+			    (to == avoid_from[edge] && from == avoid_to[edge]))
+				accepted = 0;
+	}
+	if (!accepted) {
+		*aip = saved_ai;
+		*ailp = saved_local;
+		Point_segs_free_ptr = Point_segs + used;
+		d_rand_set_state(rng);
+		d_rand_set_call_count(rng_calls);
+		return 0;
+	}
+	*goal_point = Point_segs[aip->hide_index].point;
+#if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	fprintf(stderr, "ROUTE-CONFIRM recover alternate actor_seg=%d avoided_seg=%d goal=%d points=%d\n",
+	        objp->segnum, next_seg, goal, aip->path_length);
+#endif
+	return 1;
 }
 
 /* Finish a skipped clear approach after a sustained stall at a portal rim
@@ -121,6 +208,14 @@ void guidebot_route_recover_approach(object *objp, vms_vector *goal_point)
 				        objp->segnum, segnum, aip->cur_path_index);
 #endif
 			}
+		}
+	}
+	if (!recovering && progress_time >= F1_0 &&
+	    !guidebot_route_waypoint_leg_clear(objp, &objp->pos, objp->segnum, goal_point)) {
+		progress_time = 0;
+		if (recover_alternate_path(objp, goal_point)) {
+			precise_recovery = 0;
+			return;
 		}
 	}
 	if (recovering) {

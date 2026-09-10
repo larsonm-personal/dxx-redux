@@ -7,15 +7,16 @@
   "seed": 1,
   "status": "failed",
   "level_counts": {
-    "failed": 3,
-    "timeout": 1
+    "failed": 2,
+    "timeout": 1,
+    "unsupported": 1
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "toro_s.rl2",
-      "route_input_sha256": "9F4282C65B27D8F0B038AA439007CAB4CDB27381BA0D3AD2455D61C298C0E977",
-      "status": "failed",
+      "route_input_sha256": "ACEBC4A3BB17EACF9D16DF0F0F9062AF09C92A276E146F051F28D10A7B131E29",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -36,19 +37,23 @@
         {
           "n": "destroy robot carrying gold key",
           "s": 32
+        },
+        {
+          "n": "switch 3",
+          "s": 54
         }
       ],
-      "total_frames": 1931,
+      "total_frames": 3210,
       "rng_end": {
-        "state": 2006275423,
-        "calls": 2186
+        "state": 3935206081,
+        "calls": 9024
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "guided missile objective requires equipment and flight verification"
     },
     {
       "level_num": 2,
       "level_file": "fearon.rl2",
-      "route_input_sha256": "AA29AB32807316CC15BB99CD48057C7750AFFE5946D4668B3C0895E926D48302",
+      "route_input_sha256": "C0DF2015AEA541DED5F3E84E64EE6EE0461479AA7D970BEC66A57EE57C02C911",
       "status": "failed",
       "rng_start": {
         "state": 1,
@@ -91,13 +96,13 @@
       "objectives": [
         {
           "n": "boss",
-          "s": 30
+          "s": 29
         }
       ],
-      "total_frames": 7017,
+      "total_frames": 7968,
       "rng_end": {
-        "state": 125488981,
-        "calls": 1708
+        "state": 1935767572,
+        "calls": 1667
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

@@ -7,9 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
-    "failed": 4,
-    "timeout": 2
+    "ok": 7,
+    "timeout": 3
   },
   "levels": [
     {
@@ -40,17 +39,17 @@
         },
         {
           "n": "reactor",
-          "s": 42
+          "s": 41
         },
         {
           "n": "exit",
-          "s": 47
+          "s": 46
         }
       ],
-      "total_frames": 2830,
+      "total_frames": 2765,
       "rng_end": {
-        "state": 3258111654,
-        "calls": 2049
+        "state": 3838301999,
+        "calls": 1978
       }
     },
     {
@@ -73,18 +72,18 @@
         },
         {
           "n": "red key",
-          "s": 28
+          "s": 27
         },
         {
           "n": "reactor",
-          "s": 30
+          "s": 28
         },
         {
           "n": "exit",
-          "s": 30
+          "s": 29
         }
       ],
-      "total_frames": 1825,
+      "total_frames": 1760,
       "rng_end": {
         "state": 3122105187,
         "calls": 1318
@@ -93,8 +92,8 @@
     {
       "level_num": 3,
       "level_file": "lunp.rl2",
-      "route_input_sha256": "11A8782D050A474416FD399632284FC35569893CA9045CA58080F5EA47384A7E",
-      "status": "failed",
+      "route_input_sha256": "AC6D867818907DB6623105BD947C553633C99EE77B253A01426390A7CF3F9177",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -102,7 +101,7 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 9
+          "s": 10
         },
         {
           "n": "switch 3",
@@ -114,15 +113,22 @@
         },
         {
           "n": "red key",
-          "s": 36
+          "s": 37
+        },
+        {
+          "n": "reactor",
+          "s": 43
+        },
+        {
+          "n": "exit",
+          "s": 44
         }
       ],
-      "total_frames": 2153,
+      "total_frames": 2652,
       "rng_end": {
-        "state": 1837072543,
-        "calls": 2378
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 3922779228,
+        "calls": 2587
+      }
     },
     {
       "level_num": 4,
@@ -145,22 +151,14 @@
         {
           "n": "destroy robot carrying gold key",
           "s": 22
-        },
-        {
-          "n": "switch 2",
-          "s": 30
-        },
-        {
-          "n": "red key",
-          "s": 34
         }
       ],
-      "total_frames": 2957,
+      "total_frames": 4992,
       "rng_end": {
-        "state": 4203400271,
-        "calls": 4250
+        "state": 3356196678,
+        "calls": 3553
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 5,
@@ -174,7 +172,7 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 19
+          "s": 18
         },
         {
           "n": "destroy robot carrying gold key",
@@ -194,24 +192,24 @@
         },
         {
           "n": "reactor",
-          "s": 79
+          "s": 80
         },
         {
           "n": "exit",
           "s": 87
         }
       ],
-      "total_frames": 5244,
+      "total_frames": 5236,
       "rng_end": {
-        "state": 2857335690,
-        "calls": 6925
+        "state": 4015514952,
+        "calls": 6943
       }
     },
     {
       "level_num": 6,
       "level_file": "mimu.rl2",
-      "route_input_sha256": "D785C9ECFF1B5FA204CE6030F314853D9DD9C9844812ED89815B5997BF6E3636",
-      "status": "failed",
+      "route_input_sha256": "7D97851DDF50976F5103A9C0B63B29F5A8015A8EB720EB5D480BE6B434CD3FCD",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -228,19 +226,23 @@
         {
           "n": "red key",
           "s": 20
+        },
+        {
+          "n": "reactor",
+          "s": 40
         }
       ],
-      "total_frames": 1202,
+      "total_frames": 8941,
       "rng_end": {
-        "state": 2027514900,
-        "calls": 643
+        "state": 2893168165,
+        "calls": 2396
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "route confirmation exceeded 149-second simulation budget"
     },
     {
       "level_num": 7,
       "level_file": "titi.rl2",
-      "route_input_sha256": "3AAA03D8CC1293E9E22F278CB2F7124AA91B6FCAD2B95FA1A2C77592D9340309",
+      "route_input_sha256": "48EE1089231A090F3DCF50DB6BBF075B4ACF65F4F3C0C6145BD70D94D36CC4C2",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -249,21 +251,29 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 10
+          "s": 11
+        },
+        {
+          "n": "switch 2",
+          "s": 15
+        },
+        {
+          "n": "switch 1",
+          "s": 15
         }
       ],
-      "total_frames": 1431,
+      "total_frames": 1466,
       "rng_end": {
-        "state": 4199616355,
-        "calls": 294
+        "state": 3663127001,
+        "calls": 360
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 8,
       "level_file": "nes.rl2",
-      "route_input_sha256": "BF45A39A50CF0480B126EC0442BAADEE2A06311DEE4B1D9E596CEEA45E83DFA4",
-      "status": "failed",
+      "route_input_sha256": "9CFB2A303062E9CAC489CFAAC16A67173B045B08DAE76BA95C9947A2D4117BFA",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -275,19 +285,26 @@
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 15
+          "s": 17
         },
         {
           "n": "red key",
-          "s": 27
+          "s": 29
+        },
+        {
+          "n": "reactor",
+          "s": 39
+        },
+        {
+          "n": "exit",
+          "s": 42
         }
       ],
-      "total_frames": 1643,
+      "total_frames": 2501,
       "rng_end": {
-        "state": 3210270829,
-        "calls": 3924
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 3460827591,
+        "calls": 5410
+      }
     },
     {
       "level_num": 9,
@@ -305,47 +322,75 @@
         },
         {
           "n": "gold key",
-          "s": 17
+          "s": 16
         },
         {
           "n": "red key",
-          "s": 30
+          "s": 28
         },
         {
           "n": "switch 7",
-          "s": 36
+          "s": 34
         },
         {
           "n": "boss",
-          "s": 51
+          "s": 49
         },
         {
           "n": "exit",
-          "s": 74
+          "s": 72
         }
       ],
-      "total_frames": 4466,
+      "total_frames": 4315,
       "rng_end": {
-        "state": 2792988436,
-        "calls": 4995
+        "state": 2807456022,
+        "calls": 4945
       }
     },
     {
       "level_num": -1,
       "level_file": "veswo.rl2",
-      "route_input_sha256": "98D43F54E6720FE7049EA2A5B1336C389A84BBA5C32C101D3F1227FB141D6528",
-      "status": "failed",
+      "route_input_sha256": "5AF8C3761819E2993301A3305EC47E3B4FC642EA2FC79D09E2BC40A06A69C965",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "switch 5",
+          "s": 6
+        },
+        {
+          "n": "fly-through 0",
+          "s": 17
+        },
+        {
+          "n": "switch 2",
+          "s": 17
+        },
+        {
+          "n": "hidden door",
+          "s": 19
+        },
+        {
+          "n": "switch 6",
+          "s": 44
+        },
+        {
+          "n": "reactor",
+          "s": 53
+        },
+        {
+          "n": "exit",
+          "s": 55
+        }
+      ],
+      "total_frames": 3308,
       "rng_end": {
-        "state": 1660932118,
-        "calls": 81
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 4264298637,
+        "calls": 3636
+      }
     }
   ]
 }

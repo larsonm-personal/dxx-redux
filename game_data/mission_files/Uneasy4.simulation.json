@@ -23,12 +23,20 @@
         {
           "n": "blue key",
           "s": 33
+        },
+        {
+          "n": "blastable wall",
+          "s": 55
+        },
+        {
+          "n": "blastable wall",
+          "s": 61
         }
       ],
-      "total_frames": 7145,
+      "total_frames": 7259,
       "rng_end": {
-        "state": 1605625899,
-        "calls": 5854
+        "state": 3101137346,
+        "calls": 9397
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

@@ -6,17 +6,16 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 2,
-    "timeout": 1
+    "ok": 3
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "fuego.rdl",
       "route_input_sha256": "5A3E0ADE64F093F421F33AD287028DA781065063E21B8DF44C63B7C3A2B721BA",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -29,14 +28,33 @@
         {
           "n": "gold key",
           "s": 31
+        },
+        {
+          "n": "hidden door",
+          "s": 60
+        },
+        {
+          "n": "hidden door",
+          "s": 64
+        },
+        {
+          "n": "red key",
+          "s": 66
+        },
+        {
+          "n": "reactor",
+          "s": 90
+        },
+        {
+          "n": "exit",
+          "s": 94
         }
       ],
-      "total_frames": 7081,
+      "total_frames": 5655,
       "rng_end": {
-        "state": 1964990155,
-        "calls": 62
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 2027588269,
+        "calls": 6932
+      }
     },
     {
       "level_num": 2,
@@ -58,21 +76,21 @@
         },
         {
           "n": "red key",
-          "s": 53
+          "s": 54
         },
         {
           "n": "reactor",
-          "s": 72
+          "s": 73
         },
         {
           "n": "exit",
-          "s": 78
+          "s": 79
         }
       ],
-      "total_frames": 4677,
+      "total_frames": 4754,
       "rng_end": {
-        "state": 2883693444,
-        "calls": 83
+        "state": 4170751058,
+        "calls": 7525
       }
     },
     {
@@ -106,10 +124,10 @@
           "s": 74
         }
       ],
-      "total_frames": 4434,
+      "total_frames": 4469,
       "rng_end": {
-        "state": 3826077128,
-        "calls": 159
+        "state": 1018585940,
+        "calls": 2627
       }
     }
   ]

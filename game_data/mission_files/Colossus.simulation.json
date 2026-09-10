@@ -8,15 +8,15 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 1,
-    "failed": 2,
+    "ok": 2,
+    "failed": 1,
     "timeout": 1
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "PLAIN.RDL",
-      "route_input_sha256": "AD55AC652FFB8230E48BA5A735ECADDF14F9AEA2601BF936A6B5292F9458A265",
+      "route_input_sha256": "88A0CA5CA8BBE00E1E57CFF46531EBBC02C34D739F532B20EB04759DF0760A14",
       "status": "failed",
       "rng_start": {
         "state": 1,
@@ -42,11 +42,15 @@
       "objectives": [
         {
           "n": "blastable wall",
-          "s": 36
+          "s": 35
         },
         {
           "n": "pass-through 13",
           "s": 39
+        },
+        {
+          "n": "blastable wall",
+          "s": 69
         },
         {
           "n": "blastable wall",
@@ -57,22 +61,18 @@
           "s": 72
         },
         {
-          "n": "blastable wall",
-          "s": 73
-        },
-        {
           "n": "gold key",
-          "s": 73
+          "s": 72
         },
         {
           "n": "exit",
           "s": 90
         }
       ],
-      "total_frames": 5421,
+      "total_frames": 5378,
       "rng_end": {
-        "state": 3429444377,
-        "calls": 552
+        "state": 2968394676,
+        "calls": 2659
       }
     },
     {
@@ -95,19 +95,43 @@
     {
       "level_num": 4,
       "level_file": "RED.RDL",
-      "route_input_sha256": "61AA7D7E3683213EDF12CFCB9DC8A77D545527324C95A0E1DADC4BBE0CEA7DB4",
-      "status": "failed",
+      "route_input_sha256": "32445AD6D75FD1BFE2842A873740DFA9F7BF2FF3ABB2F6EDE6196E4685BCC391",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "pass-through 5",
+          "s": 18
+        },
+        {
+          "n": "pass-through 3",
+          "s": 31
+        },
+        {
+          "n": "pass-through 4",
+          "s": 43
+        },
+        {
+          "n": "pass-through 11",
+          "s": 55
+        },
+        {
+          "n": "boss",
+          "s": 74
+        },
+        {
+          "n": "exit",
+          "s": 90
+        }
+      ],
+      "total_frames": 5414,
       "rng_end": {
-        "state": 2516284547,
-        "calls": 6
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 2358149846,
+        "calls": 145
+      }
     }
   ]
 }

@@ -80,7 +80,7 @@
           },
           {
             "n": "red key",
-            "s": 14
+            "s": 13
           },
           {
             "n": "reactor",
@@ -91,10 +91,10 @@
             "s": 27
           }
         ],
-        "total_frames": 1622,
+        "total_frames": 1630,
         "rng_end": {
-          "state": 2207819405,
-          "calls": 52
+          "state": 2054802212,
+          "calls": 51
         }
       }
     ]
@@ -107,16 +107,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "failed": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "merc03.rdl",
-        "route_input_sha256": "B6CEA786789A0406B8CBBF3A1DE9756BA165BF1916AF303D78235248AE28C00C",
-        "status": "failed",
+        "route_input_sha256": "02A82C4D78E75715528892652C2601F16D6EB06B9219C3C8781161D516B7A369",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -129,14 +129,21 @@
           {
             "n": "red key",
             "s": 79
+          },
+          {
+            "n": "reactor",
+            "s": 97
+          },
+          {
+            "n": "exit",
+            "s": 100
           }
         ],
-        "total_frames": 4724,
+        "total_frames": 6004,
         "rng_end": {
-          "state": 1969681615,
-          "calls": 26
-        },
-        "problem": "live Guide-Bot route has no actionable goal"
+          "state": 3002557145,
+          "calls": 2152
+        }
       }
     ]
   },
@@ -181,14 +188,14 @@
           },
           {
             "n": "reactor",
-            "s": 52
+            "s": 53
           },
           {
             "n": "exit",
             "s": 70
           }
         ],
-        "total_frames": 4213,
+        "total_frames": 4222,
         "rng_end": {
           "state": 3885567453,
           "calls": 100
@@ -297,11 +304,11 @@
           },
           {
             "n": "destroy robot carrying blue key",
-            "s": 10
+            "s": 9
           },
           {
             "n": "gold key",
-            "s": 18
+            "s": 19
           },
           {
             "n": "red key",
@@ -313,13 +320,13 @@
           },
           {
             "n": "exit",
-            "s": 87
+            "s": 85
           }
         ],
-        "total_frames": 5225,
+        "total_frames": 5120,
         "rng_end": {
-          "state": 1573908495,
-          "calls": 218
+          "state": 259061104,
+          "calls": 215
         }
       }
     ]

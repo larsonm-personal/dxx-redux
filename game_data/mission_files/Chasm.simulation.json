@@ -7,8 +7,7 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
-    "failed": 1,
+    "ok": 4,
     "timeout": 3
   },
   "levels": [
@@ -32,7 +31,7 @@
         },
         {
           "n": "red key",
-          "s": 34
+          "s": 33
         },
         {
           "n": "reactor",
@@ -43,7 +42,7 @@
           "s": 57
         }
       ],
-      "total_frames": 3394,
+      "total_frames": 3395,
       "rng_end": {
         "state": 2142186641,
         "calls": 1008
@@ -53,7 +52,7 @@
       "level_num": 2,
       "level_file": "aquachsm.rl2",
       "route_input_sha256": "20114F1AD902268CBE7DD468C65E68F800368B42254AD9E892981C8E6AF8187A",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -68,26 +67,53 @@
           "s": 85
         },
         {
-          "n": "switch 11",
+          "n": "fly-through 3",
           "s": 89
         },
         {
+          "n": "switch 11",
+          "s": 93
+        },
+        {
+          "n": "fly-through 10",
+          "s": 104
+        },
+        {
           "n": "gold key",
-          "s": 95
+          "s": 113
+        },
+        {
+          "n": "switch 1",
+          "s": 197
+        },
+        {
+          "n": "red key",
+          "s": 200
+        },
+        {
+          "n": "fly-through 4",
+          "s": 262
+        },
+        {
+          "n": "reactor",
+          "s": 271
+        },
+        {
+          "n": "exit",
+          "s": 274
         }
       ],
-      "total_frames": 10282,
+      "total_frames": 16448,
       "rng_end": {
-        "state": 3071740085,
-        "calls": 1612
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 3687396368,
+        "calls": 10167
+      }
     },
     {
       "level_num": 3,
       "level_file": "lavachsm.rl2",
-      "route_input_sha256": "D8E0A2BA2569A8C847ECFB77B74F35084654C87ABDF6C77EDB63E5AB0AB251FD",
-      "status": "failed",
+      "route_input_sha256": "B6FAB2B579370B25FE8E72D0CA38ABC3350C1030073BFB4A458764311D39FB51",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -103,19 +129,23 @@
         },
         {
           "n": "switch 0",
-          "s": 90
+          "s": 92
         },
         {
           "n": "red key",
-          "s": 110
+          "s": 111
+        },
+        {
+          "n": "reactor",
+          "s": 172
         }
       ],
-      "total_frames": 6590,
+      "total_frames": 18001,
       "rng_end": {
-        "state": 3377447812,
-        "calls": 2131
+        "state": 3079502286,
+        "calls": 8697
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "route confirmation exceeded 300-second simulation budget"
     },
     {
       "level_num": 4,
@@ -133,17 +163,21 @@
         },
         {
           "n": "blue key",
-          "s": 47
+          "s": 46
         },
         {
           "n": "switch 8",
-          "s": 47
+          "s": 46
+        },
+        {
+          "n": "switch 9",
+          "s": 56
         }
       ],
-      "total_frames": 4333,
+      "total_frames": 5150,
       "rng_end": {
-        "state": 128225525,
-        "calls": 1036
+        "state": 1575254495,
+        "calls": 7178
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -184,7 +218,7 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 13
+          "s": 12
         },
         {
           "n": "gold key",
@@ -192,13 +226,13 @@
         },
         {
           "n": "switch 0",
-          "s": 48
+          "s": 47
         }
       ],
-      "total_frames": 3911,
+      "total_frames": 3778,
       "rng_end": {
-        "state": 1555859974,
-        "calls": 1569
+        "state": 1379390971,
+        "calls": 6926
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

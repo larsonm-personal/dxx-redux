@@ -5,9 +5,10 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
-    "timeout": 7
+    "ok": 1,
+    "timeout": 6
   },
   "levels": [
     {
@@ -31,8 +32,8 @@
       ],
       "total_frames": 6001,
       "rng_end": {
-        "state": 3552834380,
-        "calls": 68715
+        "state": 590653153,
+        "calls": 68640
       },
       "problem": "route confirmation exceeded 100-second simulation budget"
     },
@@ -56,13 +57,13 @@
         },
         {
           "n": "red key",
-          "s": 39
+          "s": 41
         }
       ],
       "total_frames": 10081,
       "rng_end": {
-        "state": 3130073902,
-        "calls": 108057
+        "state": 2639993196,
+        "calls": 106443
       },
       "problem": "route confirmation exceeded 168-second simulation budget"
     },
@@ -91,8 +92,8 @@
       ],
       "total_frames": 12481,
       "rng_end": {
-        "state": 485776338,
-        "calls": 140261
+        "state": 4076335175,
+        "calls": 145058
       },
       "problem": "route confirmation exceeded 208-second simulation budget"
     },
@@ -121,8 +122,8 @@
       ],
       "total_frames": 10921,
       "rng_end": {
-        "state": 2502152570,
-        "calls": 111069
+        "state": 2078062481,
+        "calls": 110832
       },
       "problem": "route confirmation exceeded 182-second simulation budget"
     },
@@ -136,10 +137,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 4261,
+      "total_frames": 3940,
       "rng_end": {
-        "state": 3720683301,
-        "calls": 92
+        "state": 1452336924,
+        "calls": 91
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -167,13 +168,13 @@
         },
         {
           "n": "red key",
-          "s": 59
+          "s": 60
         }
       ],
       "total_frames": 12721,
       "rng_end": {
-        "state": 3066214665,
-        "calls": 137656
+        "state": 1428256920,
+        "calls": 142991
       },
       "problem": "route confirmation exceeded 212-second simulation budget"
     },
@@ -181,18 +182,42 @@
       "level_num": 7,
       "level_file": "level07.rl2",
       "route_input_sha256": "137307209E0A3BACB712DF1552591FFFD6987D07F0350DBDE0E2D8961D4C2E46",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 935,
+      "objectives": [
+        {
+          "n": "reactor",
+          "s": 10
+        },
+        {
+          "n": "blue key",
+          "s": 33
+        },
+        {
+          "n": "gold key",
+          "s": 49
+        },
+        {
+          "n": "switch 7",
+          "s": 90
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 122
+        },
+        {
+          "n": "exit",
+          "s": 127
+        }
+      ],
+      "total_frames": 7637,
       "rng_end": {
-        "state": 1800810417,
-        "calls": 1488
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 544445334,
+        "calls": 6865
+      }
     }
   ]
 }

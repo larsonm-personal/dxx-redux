@@ -45,6 +45,15 @@ $hash1 = Get-GuidebotRouteInputHash -Mission $mission -Level $mission.levels[0]
 $hash2 = Get-GuidebotRouteInputHash -Mission $mission -Level $mission.levels[0]
 Assert-True ($hash1 -eq $hash2 -and $hash1.Length -eq 64) 'route projection hash is not stable'
 
+$shotLevel = $mission.levels[0].PSObject.Copy()
+$shotLevel.route_steps = @([pscustomobject]@{ index = 1; kind = 'trigger'; activation_kind = 'shoot_switch'; seg = 2; wall = 7; trigger = 3 })
+$ordinaryShotHash = Get-GuidebotRouteInputHash -Mission $mission -Level $shotLevel
+$shotLevel.route_steps[0] | Add-Member -NotePropertyName required_weapon -NotePropertyValue 'guided_missile'
+$guidedShotHash = Get-GuidebotRouteInputHash -Mission $mission -Level $shotLevel
+Assert-True ($ordinaryShotHash -ne $guidedShotHash) 'guided weapon requirement did not invalidate the route input hash'
+$shotLevel.route_steps[0].required_weapon = ''
+Assert-True ((Get-GuidebotRouteInputHash -Mission $mission -Level $shotLevel) -eq $ordinaryShotHash) 'empty weapon requirement changed an ordinary route hash'
+
 $levelResult = ConvertTo-GuidebotLevelSimulationResult -Mission $mission -Level $mission.levels[0] -EngineResult $engine
 Assert-True ($levelResult.status -eq 'ok') 'confirmed matching route did not normalize to ok'
 Assert-True ($levelResult.rng_end.state -eq 42 -and $null -eq $levelResult.rng_end.PSObject.Properties['effects']) `
@@ -255,6 +264,31 @@ foreach ($case in $failureCases) {
     Assert-True ($firstFailure.problem -eq $case.Problem) 'failure category was lost'
     if ($case.ContainsKey('Exit')) { Assert-True ($firstFailure.exit_code -eq $case.Exit) 'native exit code was lost' }
     if ($case.ContainsKey('Timeout')) { Assert-True ($firstFailure.timeout_seconds -eq $case.Timeout) 'timeout budget was lost' }
+}
+
+# Escape timing is advisory and must not turn a physically confirmed route into a failure
+foreach ($case in @(
+        @{ Countdown = 0; Travel = 8; Warn = $true },
+        @{ Countdown = -1; Travel = 8; Warn = $true },
+        @{ Countdown = 0; Travel = 4; Warn = $false },
+        @{ Countdown = 45; Travel = 50; Warn = $false },
+        @{ Countdown = 45; Travel = 135; Warn = $false },
+        @{ Countdown = 10; Travel = 40; Warn = $false },
+        @{ Countdown = 45; Travel = 136; Warn = $true }
+    )) {
+    $escapeEngine = $engine.PSObject.Copy()
+    $escapeEngine | Add-Member -NotePropertyName notes -NotePropertyValue @('invalid texture 999, 2 occurrences') -Force
+    $escapeEngine | Add-Member -NotePropertyName reactor_escape -NotePropertyValue ([pscustomobject]@{
+            countdown_seconds = $case.Countdown; simulated_seconds = $case.Travel; difficulty = 2
+        }) -Force
+    $escapeRecord = ConvertTo-GuidebotLevelSimulationResult -Mission $mission -Level $mission.levels[0] -EngineResult $escapeEngine
+    Assert-True ($escapeRecord.status -eq 'ok') 'escape warning changed route completion status'
+    Assert-True ($escapeRecord.notes[0] -eq 'invalid texture 999, 2 occurrences') 'escape warning lost the texture note'
+    Assert-True (($escapeRecord.notes.Count -eq 2) -eq $case.Warn) 'escape warning threshold is incorrect'
+    Assert-True ($escapeRecord.reactor_escape.simulated_seconds -eq $case.Travel) 'escape timing evidence was lost'
+    $escapeEngine.status = 'timeout'
+    $incompleteEscape = ConvertTo-GuidebotLevelSimulationResult -Mission $mission -Level $mission.levels[0] -EngineResult $escapeEngine
+    Assert-True ($incompleteEscape.notes.Count -eq 1) 'incomplete navigation must not be treated as a proven escape duration'
 }
 
 Write-Host 'GuideBot simulation schema tests passed'

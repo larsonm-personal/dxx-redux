@@ -7,9 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 1,
-    "failed": 3,
-    "unsupported": 1
+    "ok": 4,
+    "failed": 1
   },
   "levels": [
     {
@@ -32,25 +31,61 @@
     {
       "level_num": 2,
       "level_file": "vert.rl2",
-      "route_input_sha256": "25E76BC79D54E7445A6DEBB56D82FD2A3169451C984090B736A27FE44BC02E90",
-      "status": "failed",
+      "route_input_sha256": "32E9923DAA758D054C1A337F0EE2C20602F6336105630F5806957A858FB2A5CA",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "open door",
+          "s": 1
+        },
+        {
+          "n": "blue key",
+          "s": 4
+        },
+        {
+          "n": "switch 15",
+          "s": 8
+        },
+        {
+          "n": "switch 4",
+          "s": 15
+        },
+        {
+          "n": "gold key",
+          "s": 29
+        },
+        {
+          "n": "switch 16",
+          "s": 44
+        },
+        {
+          "n": "red key",
+          "s": 49
+        },
+        {
+          "n": "reactor",
+          "s": 51
+        },
+        {
+          "n": "exit",
+          "s": 60
+        }
+      ],
+      "total_frames": 3608,
       "rng_end": {
-        "state": 1,
-        "calls": 0
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 3519112525,
+        "calls": 7028
+      }
     },
     {
       "level_num": 3,
       "level_file": "sativa.rl2",
-      "route_input_sha256": "F438D69EBE698926A39FFF2DA1A3C6A35EE7EE9A35D4F5CC48FF3BC8A653E95F",
-      "status": "unsupported",
+      "route_input_sha256": "30BE897946B01F69456010DE0F51A3407B4AC97F900549905C1BCAC969004B7D",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -59,14 +94,77 @@
         {
           "n": "switch 0",
           "s": 2
+        },
+        {
+          "n": "switch 2",
+          "s": 14
+        },
+        {
+          "n": "switch 6",
+          "s": 23
+        },
+        {
+          "n": "fly-through 16",
+          "s": 31
+        },
+        {
+          "n": "hidden door",
+          "s": 42
+        },
+        {
+          "n": "switch 1",
+          "s": 42
+        },
+        {
+          "n": "blue key",
+          "s": 52
+        },
+        {
+          "n": "switch 5",
+          "s": 72
+        },
+        {
+          "n": "gold key",
+          "s": 74
+        },
+        {
+          "n": "switch 13",
+          "s": 99
+        },
+        {
+          "n": "fly-through 3",
+          "s": 104
+        },
+        {
+          "n": "switch 11",
+          "s": 106
+        },
+        {
+          "n": "red key",
+          "s": 111
+        },
+        {
+          "n": "switch 12",
+          "s": 111
+        },
+        {
+          "n": "switch 15",
+          "s": 139
+        },
+        {
+          "n": "reactor",
+          "s": 141
+        },
+        {
+          "n": "exit",
+          "s": 159
         }
       ],
-      "total_frames": 600,
+      "total_frames": 9568,
       "rng_end": {
-        "state": 444983185,
-        "calls": 240
-      },
-      "problem": "route objective activation is not supported"
+        "state": 1898726726,
+        "calls": 8161
+      }
     },
     {
       "level_num": 4,
@@ -100,7 +198,7 @@
         },
         {
           "n": "switch 2",
-          "s": 30
+          "s": 31
         },
         {
           "n": "gold key",
@@ -108,55 +206,63 @@
         },
         {
           "n": "hidden door",
-          "s": 47
+          "s": 46
         },
         {
           "n": "switch 11",
-          "s": 58
+          "s": 56
         },
         {
           "n": "red key",
-          "s": 59
+          "s": 58
         },
         {
           "n": "hidden door",
-          "s": 79
+          "s": 77
         },
         {
           "n": "reactor",
-          "s": 81
+          "s": 79
         },
         {
           "n": "hidden door",
-          "s": 97
+          "s": 94
         },
         {
           "n": "exit",
-          "s": 97
+          "s": 94
         }
       ],
-      "total_frames": 5821,
+      "total_frames": 5640,
       "rng_end": {
-        "state": 3858517989,
-        "calls": 4508
+        "state": 1207947477,
+        "calls": 10540
       }
     },
     {
       "level_num": -1,
       "level_file": "hash.rl2",
-      "route_input_sha256": "6EE957886271AAB28EE10C641CD0627DBE0135DD8EFCA02B238F2AEA10676C02",
-      "status": "failed",
+      "route_input_sha256": "5D93ABDD3C3AB3A9B5F9F05516736FBA5BFCE7797F061699EA02190B0A2B2658",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "reactor",
+          "s": 1
+        },
+        {
+          "n": "exit",
+          "s": 3
+        }
+      ],
+      "total_frames": 186,
       "rng_end": {
-        "state": 1448521415,
-        "calls": 34
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 4264971915,
+        "calls": 126
+      }
     }
   ]
 }

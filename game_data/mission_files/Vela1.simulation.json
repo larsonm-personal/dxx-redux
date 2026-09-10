@@ -30,11 +30,11 @@
         },
         {
           "n": "gold key",
-          "s": 38
+          "s": 37
         },
         {
           "n": "switch 29",
-          "s": 42
+          "s": 43
         },
         {
           "n": "switch 32",
@@ -42,31 +42,43 @@
         },
         {
           "n": "switch 35",
-          "s": 69
+          "s": 66
         },
         {
           "n": "fly-through 33",
-          "s": 73
+          "s": 70
         },
         {
           "n": "switch 36",
-          "s": 82
+          "s": 78
         },
         {
           "n": "switch 37",
-          "s": 83
+          "s": 79
         },
         {
           "n": "switch 38",
-          "s": 84
+          "s": 80
         },
         {
           "n": "switch 40",
-          "s": 104
+          "s": 100
         },
         {
           "n": "red key",
-          "s": 106
+          "s": 102
+        },
+        {
+          "n": "hidden door",
+          "s": 125
+        },
+        {
+          "n": "hidden door",
+          "s": 127
+        },
+        {
+          "n": "hidden door",
+          "s": 128
         },
         {
           "n": "hidden door",
@@ -82,37 +94,25 @@
         },
         {
           "n": "hidden door",
-          "s": 133
+          "s": 132
         },
         {
           "n": "hidden door",
           "s": 134
         },
         {
-          "n": "hidden door",
-          "s": 135
-        },
-        {
-          "n": "hidden door",
-          "s": 136
-        },
-        {
-          "n": "hidden door",
-          "s": 137
-        },
-        {
           "n": "reactor",
-          "s": 142
+          "s": 139
         },
         {
           "n": "exit",
-          "s": 147
+          "s": 143
         }
       ],
-      "total_frames": 8825,
+      "total_frames": 8602,
       "rng_end": {
-        "state": 3142535340,
-        "calls": 6027
+        "state": 2004497749,
+        "calls": 12460
       }
     },
     {
@@ -143,7 +143,7 @@
         },
         {
           "n": "fly-through 18",
-          "s": 54
+          "s": 55
         },
         {
           "n": "fly-through 19",
@@ -155,7 +155,7 @@
         },
         {
           "n": "switch 28",
-          "s": 82
+          "s": 83
         },
         {
           "n": "reactor",
@@ -163,13 +163,13 @@
         },
         {
           "n": "exit",
-          "s": 114
+          "s": 116
         }
       ],
-      "total_frames": 6842,
+      "total_frames": 6940,
       "rng_end": {
-        "state": 766737620,
-        "calls": 4803
+        "state": 3494881354,
+        "calls": 11597
       }
     }
   ]

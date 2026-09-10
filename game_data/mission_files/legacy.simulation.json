@@ -5,17 +5,16 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 2,
-    "failed": 1
+    "ok": 3
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "pyrstatn.rl2",
-      "route_input_sha256": "6DD00D24C966D32A5AF7AC5C866DF4FD9F3B419F849FA05A91F57EA6AE96594D",
-      "status": "failed",
+      "route_input_sha256": "2C87C57C5DDCCE128BA4E7B2BFA3DE2089C39EFF0BCA79301B8D04F383F7D003",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -31,31 +30,46 @@
         },
         {
           "n": "pass-through 2",
-          "s": 20
-        },
-        {
-          "n": "switch 0",
           "s": 21
         },
         {
+          "n": "switch 0",
+          "s": 22
+        },
+        {
           "n": "gold key",
-          "s": 27
+          "s": 28
         },
         {
           "n": "switch 1",
-          "s": 34
+          "s": 35
         },
         {
           "n": "red key",
           "s": 38
+        },
+        {
+          "n": "hidden door",
+          "s": 64
+        },
+        {
+          "n": "fly-through 10",
+          "s": 65
+        },
+        {
+          "n": "reactor",
+          "s": 66
+        },
+        {
+          "n": "exit",
+          "s": 71
         }
       ],
-      "total_frames": 2266,
+      "total_frames": 4251,
       "rng_end": {
-        "state": 858999435,
-        "calls": 1150
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 1935881801,
+        "calls": 5752
+      }
     },
     {
       "level_num": 2,
@@ -109,13 +123,13 @@
         },
         {
           "n": "exit",
-          "s": 95
+          "s": 94
         }
       ],
-      "total_frames": 5673,
+      "total_frames": 5635,
       "rng_end": {
-        "state": 2713727768,
-        "calls": 6671
+        "state": 3856413426,
+        "calls": 8005
       }
     },
     {
@@ -138,7 +152,7 @@
         },
         {
           "n": "gold key",
-          "s": 33
+          "s": 32
         },
         {
           "n": "switch 6",
@@ -150,11 +164,11 @@
         },
         {
           "n": "pass-through 7",
-          "s": 87
+          "s": 88
         },
         {
           "n": "pass-through 19",
-          "s": 88
+          "s": 89
         },
         {
           "n": "boss",
@@ -165,10 +179,10 @@
           "s": 109
         }
       ],
-      "total_frames": 6515,
+      "total_frames": 6517,
       "rng_end": {
-        "state": 3854841872,
-        "calls": 5047
+        "state": 1886132419,
+        "calls": 13254
       }
     }
   ]

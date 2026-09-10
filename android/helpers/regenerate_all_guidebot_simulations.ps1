@@ -714,7 +714,7 @@ if ($Mode -eq 'Headless') {
             $resultsByIdentity[$item.Identity] = New-GuidebotUnsupportedResult `
                 -Mission $item.Mission -LevelRecord $item.Level
             $progressState.Retired++
-            Write-GuidebotStatus "[$($progressState.Retired)/$($selectedItems.Count)] UNSUPPORTED: $($item.Identity)" 'Yellow'
+            Write-GuidebotStatus "[$($progressState.Retired)/$($selectedItems.Count)] Recorded: $($item.Identity)"
             Publish-GuidebotResult -Item $item
             continue
         }
@@ -835,6 +835,7 @@ if ($Mode -eq 'Headless') {
                     -Mission $task.Item.Mission -LevelRecord $task.Item.Level -Problem $problem
                 $infrastructureFailures.Add([ordered]@{ identity = $task.Item.Identity; problem = $problem })
                 $color = 'Red'
+                $progressLabel = 'INFRASTRUCTURE_ERROR'
             } else {
                 $reference = $state.Runs[1]
                 $result = ConvertTo-GuidebotLevelSimulationResult -Mission $task.Item.Mission `
@@ -847,10 +848,12 @@ if ($Mode -eq 'Headless') {
                     }
                 }
                 $resultsByIdentity[$task.Item.Identity] = $result
-                $color = if ($result.status -eq 'ok') { 'Green' } else { 'Yellow' }
+                # Routing outcomes belong in the regression JSON; console errors mean broken infrastructure
+                $color = 'Cyan'
+                $progressLabel = 'Recorded'
             }
             $progressState.Retired++
-            Write-GuidebotStatus "[$($progressState.Retired)/$($selectedItems.Count)] $($resultsByIdentity[$task.Item.Identity].status.ToUpperInvariant()): $($task.Item.Identity)" $color
+            Write-GuidebotStatus "[$($progressState.Retired)/$($selectedItems.Count)] ${progressLabel}: $($task.Item.Identity)" $color
             Publish-GuidebotResult -Item $task.Item
         }
     }
@@ -864,7 +867,7 @@ if ($Mode -eq 'Headless') {
             if (Test-GuidebotLevelAssetUnavailable -LevelRecord $item.Level) {
                 $resultsByIdentity[$item.Identity] = New-GuidebotUnsupportedResult `
                     -Mission $item.Mission -LevelRecord $item.Level
-                Write-GuidebotStatus "UNSUPPORTED: $($item.Identity): $($resultsByIdentity[$item.Identity].problem)" 'Yellow'
+                Write-GuidebotStatus "Recorded: $($item.Identity)"
             } else {
                 if (-not $stageByMetadata.ContainsKey($metadataKey)) {
                     $stageByMetadata[$metadataKey] = Initialize-GuidebotMissionStage -MetadataFile $item.MetadataFile
@@ -917,3 +920,4 @@ if ($infrastructureFailures.Count) {
     }
     exit 1
 }
+exit 0

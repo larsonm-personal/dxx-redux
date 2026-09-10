@@ -35,17 +35,17 @@
         },
         {
           "n": "reactor",
-          "s": 58
+          "s": 59
         },
         {
           "n": "exit",
-          "s": 79
+          "s": 80
         }
       ],
-      "total_frames": 4713,
+      "total_frames": 4820,
       "rng_end": {
-        "state": 1179259537,
-        "calls": 3568
+        "state": 1815391988,
+        "calls": 9763
       }
     },
     {
@@ -64,29 +64,29 @@
         },
         {
           "n": "switch 10",
-          "s": 15
+          "s": 14
         },
         {
           "n": "red key",
-          "s": 28
+          "s": 29
         },
         {
           "n": "switch 5",
-          "s": 40
+          "s": 41
         },
         {
           "n": "reactor",
-          "s": 48
+          "s": 49
         },
         {
           "n": "exit",
-          "s": 51
+          "s": 53
         }
       ],
-      "total_frames": 3088,
+      "total_frames": 3190,
       "rng_end": {
-        "state": 441376635,
-        "calls": 4494
+        "state": 3240699620,
+        "calls": 14707
       }
     },
     {
@@ -105,25 +105,25 @@
         },
         {
           "n": "gold key",
-          "s": 34
+          "s": 33
         },
         {
           "n": "red key",
-          "s": 63
+          "s": 62
         },
         {
           "n": "reactor",
-          "s": 86
+          "s": 85
         },
         {
           "n": "exit",
           "s": 90
         }
       ],
-      "total_frames": 5414,
+      "total_frames": 5412,
       "rng_end": {
-        "state": 819313084,
-        "calls": 5435
+        "state": 538956367,
+        "calls": 10906
       }
     },
     {
@@ -150,13 +150,13 @@
         },
         {
           "n": "hidden door",
-          "s": 50
+          "s": 49
         }
       ],
-      "total_frames": 6657,
+      "total_frames": 9576,
       "rng_end": {
-        "state": 1990799756,
-        "calls": 2347
+        "state": 1515734111,
+        "calls": 10634
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     }

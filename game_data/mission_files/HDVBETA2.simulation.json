@@ -70,33 +70,33 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 24
+          "s": 23
         },
         {
           "n": "gold key",
-          "s": 40
+          "s": 39
         },
         {
           "n": "red key",
-          "s": 53
+          "s": 52
         },
         {
           "n": "fly-through 1",
-          "s": 78
+          "s": 76
         },
         {
           "n": "reactor",
-          "s": 78
+          "s": 76
         },
         {
           "n": "exit",
-          "s": 87
+          "s": 85
         }
       ],
-      "total_frames": 5238,
+      "total_frames": 5129,
       "rng_end": {
-        "state": 3356693560,
-        "calls": 111
+        "state": 3501331596,
+        "calls": 2603
       }
     }
   ]

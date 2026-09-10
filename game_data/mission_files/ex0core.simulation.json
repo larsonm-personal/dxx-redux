@@ -5,10 +5,9 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 3,
-    "unsupported": 1
+    "ok": 4
   },
   "levels": [
     {
@@ -23,7 +22,7 @@
       "objectives": [
         {
           "n": "switch 4",
-          "s": 12
+          "s": 13
         },
         {
           "n": "red key",
@@ -39,10 +38,10 @@
         },
         {
           "n": "exit",
-          "s": 46
+          "s": 47
         }
       ],
-      "total_frames": 2777,
+      "total_frames": 2798,
       "rng_end": {
         "state": 2086258611,
         "calls": 1238
@@ -51,8 +50,8 @@
     {
       "level_num": 2,
       "level_file": "pharioka.rl2",
-      "route_input_sha256": "65FE6D905D664B3F73CCBB0ED37BFF242CE4E7C67FF86E1F42A1CDD6CE643B1E",
-      "status": "unsupported",
+      "route_input_sha256": "9B1780ABCCC7893B19114ABAFC324A7EF8E31308D934DD53B2009DB0630BCDF2",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -67,16 +66,31 @@
           "s": 10
         },
         {
-          "n": "switch 7",
-          "s": 21
+          "n": "switch 6",
+          "s": 22
+        },
+        {
+          "n": "fly-through 13",
+          "s": 34
+        },
+        {
+          "n": "red key",
+          "s": 35
+        },
+        {
+          "n": "boss",
+          "s": 56
+        },
+        {
+          "n": "exit",
+          "s": 67
         }
       ],
-      "total_frames": 1684,
+      "total_frames": 4004,
       "rng_end": {
-        "state": 2027514900,
-        "calls": 643
-      },
-      "problem": "route objective activation is not supported"
+        "state": 1246181711,
+        "calls": 5018
+      }
     },
     {
       "level_num": 3,
@@ -102,25 +116,25 @@
         },
         {
           "n": "gold key",
-          "s": 36
+          "s": 41
         },
         {
           "n": "red key",
-          "s": 64
+          "s": 67
         },
         {
           "n": "reactor",
-          "s": 86
+          "s": 90
         },
         {
           "n": "exit",
-          "s": 99
+          "s": 104
         }
       ],
-      "total_frames": 5950,
+      "total_frames": 6227,
       "rng_end": {
-        "state": 1723771088,
-        "calls": 4087
+        "state": 2947088214,
+        "calls": 9745
       }
     },
     {

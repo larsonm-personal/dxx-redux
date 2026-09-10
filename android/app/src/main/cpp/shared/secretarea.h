@@ -59,6 +59,7 @@ void level_metadata_rescan_route_from_object(int objnum);
 void level_metadata_rescan_route_to_segment_from_object(int objnum, int target_seg);
 int level_metadata_rescan_unexplored_route_from_object(int objnum, level_metadata_unexplored_route *result);
 int level_metadata_wall_shootable_from_position(int seg, const int from_pos[3], int wall_num);
+int level_metadata_door_shot_aim_from_position(int seg, const int from_pos[3], int wall_num, int aim_pos[3]);
 int level_metadata_wall_potentially_shootable_from_position(int seg, const int from_pos[3], int wall_num);
 int level_metadata_wall_conditionally_shootable_from_position(int seg, const int from_pos[3], int wall_num);
 int level_metadata_wall_first_shot_blocker_from_position(int seg, const int from_pos[3], int wall_num);

@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-#define GUIDEBOT_ROUTE_DECISION_VERSION       2
+#define GUIDEBOT_ROUTE_DECISION_VERSION       3
 #define GUIDEBOT_ROUTE_SHADOW_FIXTURE_VERSION 1
 
 enum guidebot_route_decision_status {
@@ -89,6 +89,7 @@ typedef struct guidebot_route_decision {
 	int requested_target_segment;
 	int objective_kind;
 	int activation_kind;
+	int requires_guided_missile;
 	int objective_trigger;
 	int objective_wall;
 	int objective_key;

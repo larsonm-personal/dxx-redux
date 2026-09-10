@@ -6,10 +6,9 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 6,
-    "failed": 1
+    "ok": 7
   },
   "levels": [
     {
@@ -35,7 +34,7 @@
           "s": 11
         }
       ],
-      "total_frames": 688,
+      "total_frames": 656,
       "rng_end": {
         "state": 2577478752,
         "calls": 39
@@ -44,8 +43,8 @@
     {
       "level_num": 2,
       "level_file": "koklab.rdl",
-      "route_input_sha256": "B2C0643EF7375ACA184A04CC5B2BA8FE736A209A8557FAE734D7DDE00610AE39",
-      "status": "failed",
+      "route_input_sha256": "659203523FDFD01B6272A1E8710DE8CE42F18879B2D74605175758F05EE639BD",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -53,23 +52,30 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 14
+          "s": 15
         },
         {
           "n": "gold key",
-          "s": 22
+          "s": 23
         },
         {
           "n": "red key",
-          "s": 36
+          "s": 37
+        },
+        {
+          "n": "reactor",
+          "s": 53
+        },
+        {
+          "n": "exit",
+          "s": 71
         }
       ],
-      "total_frames": 2162,
+      "total_frames": 4273,
       "rng_end": {
-        "state": 3025925713,
-        "calls": 48
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 2077067425,
+        "calls": 96
+      }
     },
     {
       "level_num": 3,
@@ -102,7 +108,7 @@
           "s": 49
         }
       ],
-      "total_frames": 2947,
+      "total_frames": 2949,
       "rng_end": {
         "state": 3269224778,
         "calls": 77
@@ -120,29 +126,29 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 10
+          "s": 9
         },
         {
           "n": "gold key",
-          "s": 30
+          "s": 34
         },
         {
           "n": "red key",
-          "s": 52
+          "s": 55
         },
         {
           "n": "reactor",
-          "s": 56
+          "s": 60
         },
         {
           "n": "exit",
-          "s": 65
+          "s": 69
         }
       ],
-      "total_frames": 3928,
+      "total_frames": 4165,
       "rng_end": {
-        "state": 4052745200,
-        "calls": 87
+        "state": 500965035,
+        "calls": 94
       }
     },
     {
@@ -161,29 +167,29 @@
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 24
+          "s": 22
         },
         {
           "n": "red key",
-          "s": 50
+          "s": 46
         },
         {
           "n": "fly-through 0",
-          "s": 76
+          "s": 72
         },
         {
           "n": "reactor",
-          "s": 76
+          "s": 72
         },
         {
           "n": "exit",
-          "s": 85
+          "s": 80
         }
       ],
-      "total_frames": 5105,
+      "total_frames": 4770,
       "rng_end": {
-        "state": 2675232640,
-        "calls": 135
+        "state": 2316746429,
+        "calls": 132
       }
     },
     {
@@ -198,11 +204,11 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 14
+          "s": 13
         },
         {
           "n": "gold key",
-          "s": 25
+          "s": 24
         },
         {
           "n": "fly-through 1",
@@ -210,25 +216,25 @@
         },
         {
           "n": "fly-through 2",
-          "s": 47
+          "s": 46
         },
         {
           "n": "red key",
-          "s": 47
+          "s": 46
         },
         {
           "n": "reactor",
-          "s": 82
+          "s": 81
         },
         {
           "n": "exit",
           "s": 95
         }
       ],
-      "total_frames": 5707,
+      "total_frames": 5678,
       "rng_end": {
-        "state": 2455359789,
-        "calls": 148
+        "state": 745569348,
+        "calls": 147
       }
     },
     {
@@ -262,7 +268,7 @@
           "s": 83
         }
       ],
-      "total_frames": 4984,
+      "total_frames": 4985,
       "rng_end": {
         "state": 3737188581,
         "calls": 156

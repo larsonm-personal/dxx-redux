@@ -953,15 +953,15 @@
         "mine_volume": 35909600.0,
         "mine_volume_normalized": 7.8527,
         "mine_volume_text": "7.9x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 15458.3,
+        "travel_time_seconds": 309,
+        "travel_time_text": "5M:09S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
-        "route_status": "failed",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -969,10 +969,219 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 399
+          },
+          {
+            "index": 1,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open door",
+            "seg": 311,
+            "wall": 23,
+            "label_pos": {
+              "x": 91.5,
+              "y": 4.5,
+              "z": 796.5
+            },
+            "distance": 938.8,
+            "opens": [
+              {
+                "seg": 303,
+                "side": 0,
+                "wall": 23
+              },
+              {
+                "seg": 300,
+                "side": 0,
+                "wall": 17
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 70,
+            "label_pos": {
+              "x": 248.5,
+              "y": -108.0,
+              "z": 607.5
+            },
+            "distance": 2431.5,
+            "key": "blue"
+          },
+          {
+            "index": 3,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 86,
+            "side": 2,
+            "wall": 1,
+            "label_pos": {
+              "x": 585.5,
+              "y": -38.8,
+              "z": 46.0
+            },
+            "distance": 4082.2,
+            "opens": [
+              {
+                "seg": 86,
+                "side": 2,
+                "wall": 1
+              },
+              {
+                "seg": 78,
+                "side": 0,
+                "wall": 0
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 78,
+            "label_pos": {
+              "x": 575.5,
+              "y": -36.4,
+              "z": 26.6
+            },
+            "distance": 32.5,
+            "key": "gold"
+          },
+          {
+            "index": 5,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 3",
+            "seg": 218,
+            "side": 0,
+            "wall": 120,
+            "label_pos": {
+              "x": -314.8,
+              "y": 42.0,
+              "z": 816.5
+            },
+            "distance": 2846.4,
+            "trigger": 3,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 215,
+                "side": 3,
+                "wall": 121
+              },
+              {
+                "seg": 168,
+                "side": 2,
+                "wall": 119
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 229,
+            "label_pos": {
+              "x": -319.0,
+              "y": -79.5,
+              "z": 722.2
+            },
+            "distance": 1016.9,
+            "key": "red"
+          },
+          {
+            "index": 7,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 131,
+            "side": 2,
+            "wall": 10,
+            "label_pos": {
+              "x": 423.5,
+              "y": 45.5,
+              "z": 724.5
+            },
+            "distance": 2217.6,
+            "opens": [
+              {
+                "seg": 131,
+                "side": 2,
+                "wall": 10
+              },
+              {
+                "seg": 113,
+                "side": 2,
+                "wall": 6
+              }
+            ]
+          },
+          {
+            "index": 8,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 119,
+            "side": 5,
+            "wall": 7,
+            "label_pos": {
+              "x": 499.5,
+              "y": 43.5,
+              "z": 687.0
+            },
+            "distance": 90.1,
+            "opens": [
+              {
+                "seg": 119,
+                "side": 5,
+                "wall": 7
+              },
+              {
+                "seg": 120,
+                "side": 2,
+                "wall": 8
+              }
+            ]
+          },
+          {
+            "index": 9,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 121,
+            "label_pos": {
+              "x": 538.8,
+              "y": 40.0,
+              "z": 723.2
+            },
+            "distance": 248.5
+          },
+          {
+            "index": 10,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 162,
+            "side": 2,
+            "wall": 78,
+            "label_pos": {
+              "x": -94.0,
+              "y": 27.0,
+              "z": 327.0
+            },
+            "distance": 1553.8,
+            "trigger": 2,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "blue key unreachable",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
         ]

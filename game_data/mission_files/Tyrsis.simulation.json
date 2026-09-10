@@ -38,25 +38,25 @@
         },
         {
           "n": "red key",
-          "s": 80
+          "s": 78
         },
         {
           "n": "fly-through 22",
-          "s": 96
+          "s": 93
         },
         {
           "n": "reactor",
-          "s": 97
+          "s": 94
         },
         {
           "n": "exit",
-          "s": 108
+          "s": 104
         }
       ],
-      "total_frames": 6466,
+      "total_frames": 6264,
       "rng_end": {
-        "state": 2888618013,
-        "calls": 3108
+        "state": 485824762,
+        "calls": 8285
       }
     },
     {
@@ -71,7 +71,7 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 20
+          "s": 19
         },
         {
           "n": "gold key",
@@ -87,7 +87,7 @@
         },
         {
           "n": "switch 11",
-          "s": 56
+          "s": 55
         },
         {
           "n": "switch 12",
@@ -95,7 +95,7 @@
         },
         {
           "n": "red key",
-          "s": 60
+          "s": 59
         },
         {
           "n": "boss",
@@ -110,10 +110,10 @@
           "s": 80
         }
       ],
-      "total_frames": 4828,
+      "total_frames": 4824,
       "rng_end": {
-        "state": 931944423,
-        "calls": 2306
+        "state": 1133683505,
+        "calls": 7760
       }
     }
   ]

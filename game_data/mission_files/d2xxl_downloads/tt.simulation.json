@@ -26,15 +26,15 @@
         },
         {
           "n": "gold key",
-          "s": 22
+          "s": 21
         },
         {
           "n": "fly-through 11",
-          "s": 56
+          "s": 55
         },
         {
           "n": "switch 13",
-          "s": 57
+          "s": 56
         },
         {
           "n": "blue key",
@@ -42,25 +42,25 @@
         },
         {
           "n": "switch 7",
-          "s": 103
+          "s": 102
         },
         {
           "n": "red key",
-          "s": 120
+          "s": 119
         },
         {
           "n": "boss",
-          "s": 151
+          "s": 149
         },
         {
           "n": "exit",
-          "s": 156
+          "s": 154
         }
       ],
-      "total_frames": 9359,
+      "total_frames": 9249,
       "rng_end": {
-        "state": 1254560794,
-        "calls": 5053
+        "state": 46790106,
+        "calls": 9469
       }
     }
   ]

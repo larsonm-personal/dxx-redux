@@ -733,7 +733,7 @@
             "key": "gold"
           }
         ],
-        "route_problem": "red key unreachable"
+        "route_problem": "shared route planning reached its work budget"
       },
       {
         "level_num": 7,

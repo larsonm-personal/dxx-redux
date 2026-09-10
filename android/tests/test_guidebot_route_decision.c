@@ -122,6 +122,22 @@ static void test_objective_identity_ties_are_total_and_stable(void)
 	assert(guidebot_route_objective_identity_compare(&second, NULL) < 0);
 }
 
+static void test_guided_requirement_changes_instruction_identity(void)
+{
+    level_metadata_state state;
+    route_planner_plan_summary plan;
+    route_snapshot_summary snapshot;
+    guidebot_route_decision ordinary, guided;
+    initialize_trigger_plan(&state, &plan);
+    initialize_snapshot(&snapshot);
+    assert(guidebot_route_decision_project(&state, &plan, &snapshot, 2, -1, &ordinary));
+    state.route_steps[plan.first_pending_step].requires_guided_missile = 1;
+    assert(guidebot_route_decision_project(&state, &plan, &snapshot, 2, -1, &guided));
+    assert(guided.requires_guided_missile);
+    assert(!guidebot_route_decision_semantic_equal(&ordinary, &guided));
+    assert(!guidebot_route_decision_guidance_equal(&ordinary, &guided));
+}
+
 static void test_unrelated_object_state_does_not_invalidate_trigger(void)
 {
 	level_metadata_state state;
@@ -412,6 +428,7 @@ int main(void)
 {
 	test_equivalent_inputs_are_equal();
 	test_objective_identity_ties_are_total_and_stable();
+	test_guided_requirement_changes_instruction_identity();
 	test_unrelated_object_state_does_not_invalidate_trigger();
 	test_object_and_automap_dependencies_follow_objective();
 	test_actor_profile_changes_only_input_identity();

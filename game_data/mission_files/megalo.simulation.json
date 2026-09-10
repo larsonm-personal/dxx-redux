@@ -24,13 +24,13 @@
         "objectives": [
           {
             "n": "blue key",
-            "s": 8
+            "s": 6
           }
         ],
-        "total_frames": 4950,
+        "total_frames": 5261,
         "rng_end": {
-          "state": 3776134388,
-          "calls": 35
+          "state": 1116175964,
+          "calls": 27
         },
         "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
@@ -61,13 +61,17 @@
         "objectives": [
           {
             "n": "blue key",
-            "s": 16
+            "s": 17
+          },
+          {
+            "n": "red key",
+            "s": 40
           }
         ],
-        "total_frames": 5089,
+        "total_frames": 6372,
         "rng_end": {
-          "state": 2577478752,
-          "calls": 39
+          "state": 1627576247,
+          "calls": 50
         },
         "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
@@ -98,13 +102,25 @@
         "objectives": [
           {
             "n": "destroy robot carrying blue key",
-            "s": 23
+            "s": 22
+          },
+          {
+            "n": "destroy robot carrying gold key",
+            "s": 57
+          },
+          {
+            "n": "destroy robot carrying red key",
+            "s": 99
+          },
+          {
+            "n": "reactor",
+            "s": 115
           }
         ],
-        "total_frames": 5756,
+        "total_frames": 11841,
         "rng_end": {
-          "state": 290603296,
-          "calls": 103
+          "state": 833753756,
+          "calls": 7899
         },
         "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
@@ -173,10 +189,10 @@
           "calls": 0
         },
         "objectives": [],
-        "total_frames": 3849,
+        "total_frames": 4078,
         "rng_end": {
-          "state": 595337866,
-          "calls": 13
+          "state": 1969681615,
+          "calls": 26
         },
         "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
@@ -226,10 +242,10 @@
             "s": 65
           }
         ],
-        "total_frames": 3898,
+        "total_frames": 3918,
         "rng_end": {
-          "state": 1598124042,
-          "calls": 141
+          "state": 54769392,
+          "calls": 6487
         }
       }
     ]
@@ -256,11 +272,16 @@
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 4473,
+        "objectives": [
+          {
+            "n": "blastable wall",
+            "s": 21
+          }
+        ],
+        "total_frames": 5124,
         "rng_end": {
-          "state": 2623347250,
-          "calls": 261
+          "state": 2098299345,
+          "calls": 176
         },
         "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
@@ -314,16 +335,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "megaloma.rdl",
         "route_input_sha256": "9F53D20A3DF0FBAEF6E0EEF33D3A59DC5DD8A64BA6CB7E3D51811995208B0C30",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -340,14 +361,69 @@
           {
             "n": "fly-through 26",
             "s": 8
+          },
+          {
+            "n": "fly-through 28",
+            "s": 11
+          },
+          {
+            "n": "fly-through 29",
+            "s": 13
+          },
+          {
+            "n": "fly-through 16",
+            "s": 13
+          },
+          {
+            "n": "fly-through 34",
+            "s": 19
+          },
+          {
+            "n": "fly-through 4",
+            "s": 21
+          },
+          {
+            "n": "fly-through 36",
+            "s": 33
+          },
+          {
+            "n": "fly-through 12",
+            "s": 42
+          },
+          {
+            "n": "fly-through 11",
+            "s": 52
+          },
+          {
+            "n": "fly-through 33",
+            "s": 65
+          },
+          {
+            "n": "fly-through 14",
+            "s": 76
+          },
+          {
+            "n": "fly-through 1",
+            "s": 82
+          },
+          {
+            "n": "red key",
+            "s": 97
+          },
+          {
+            "n": "reactor",
+            "s": 107
+          },
+          {
+            "n": "exit",
+            "s": 120
           }
         ],
-        "total_frames": 1045,
+        "total_frames": 7203,
         "rng_end": {
-          "state": 3025925713,
-          "calls": 48
-        },
-        "problem": "physical route frontier did not open after 8 interaction attempts"
+          "state": 2356040460,
+          "calls": 6571
+        }
       }
     ]
   },
@@ -388,17 +464,17 @@
           },
           {
             "n": "boss",
-            "s": 37
+            "s": 38
           },
           {
             "n": "exit",
             "s": 50
           }
         ],
-        "total_frames": 3027,
+        "total_frames": 3026,
         "rng_end": {
-          "state": 2754807367,
-          "calls": 162
+          "state": 195279476,
+          "calls": 5283
         }
       }
     ]
@@ -441,8 +517,8 @@
         ],
         "total_frames": 2354,
         "rng_end": {
-          "state": 675780521,
-          "calls": 24
+          "state": 1286376369,
+          "calls": 2512
         },
         "problem": "live Guide-Bot route has no actionable goal"
       }
@@ -473,8 +549,8 @@
         "objectives": [],
         "total_frames": 3361,
         "rng_end": {
-          "state": 3772987475,
-          "calls": 54
+          "state": 86411013,
+          "calls": 5500
         },
         "problem": "route confirmation exceeded 56-second simulation budget"
       }

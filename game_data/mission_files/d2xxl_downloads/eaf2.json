@@ -338,15 +338,15 @@
         "mine_volume": 36606500.0,
         "mine_volume_normalized": 8.0051,
         "mine_volume_text": "8.0x",
-        "travel_distance": 5081.9,
-        "travel_time_seconds": 102,
-        "travel_time_text": "1M:42S",
+        "travel_distance": 9568.6,
+        "travel_time_seconds": 191,
+        "travel_time_text": "3M:11S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -397,51 +397,21 @@
           },
           {
             "index": 2,
-            "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 5",
-            "seg": 348,
-            "side": 5,
-            "wall": 73,
+            "kind": "key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying red key",
+            "seg": 288,
             "label_pos": {
-              "x": 2.4,
-              "y": -120.0,
-              "z": -466.7
+              "x": 3.8,
+              "y": -3.8,
+              "z": 292.4
             },
-            "distance": 809.1,
-            "trigger": 5,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 304,
-                "side": 1,
-                "wall": 69
-              },
-              {
-                "seg": 305,
-                "side": 1,
-                "wall": 71
-              }
-            ]
+            "distance": 1078.7,
+            "key": "red",
+            "key_carrier_objnum": 65
           },
           {
             "index": 3,
-            "kind": "key",
-            "activation_kind": "destroy_key_carrier",
-            "label": "Destroy robot carrying blue key",
-            "seg": 325,
-            "label_pos": {
-              "x": 2.4,
-              "y": 150.0,
-              "z": -323.2
-            },
-            "distance": 413.6,
-            "key": "blue",
-            "key_carrier_objnum": 11
-          },
-          {
-            "index": 4,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 4",
@@ -453,7 +423,7 @@
               "y": -40.0,
               "z": 50.3
             },
-            "distance": 1045.3,
+            "distance": 886.4,
             "trigger": 4,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -481,7 +451,7 @@
             ]
           },
           {
-            "index": 5,
+            "index": 4,
             "kind": "key",
             "activation_kind": "destroy_key_carrier",
             "label": "Destroy robot carrying gold key",
@@ -496,23 +466,183 @@
             "key_carrier_objnum": 70
           },
           {
+            "index": 5,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 5",
+            "seg": 348,
+            "side": 5,
+            "wall": 73,
+            "label_pos": {
+              "x": 2.4,
+              "y": -120.0,
+              "z": -466.7
+            },
+            "distance": 1283.8,
+            "trigger": 5,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 304,
+                "side": 1,
+                "wall": 69
+              },
+              {
+                "seg": 305,
+                "side": 1,
+                "wall": 71
+              }
+            ]
+          },
+          {
             "index": 6,
             "kind": "key",
             "activation_kind": "destroy_key_carrier",
-            "label": "Destroy robot carrying red key",
-            "seg": 288,
+            "label": "Destroy robot carrying blue key",
+            "seg": 325,
             "label_pos": {
-              "x": 3.8,
-              "y": -3.8,
-              "z": 292.4
+              "x": 2.4,
+              "y": 150.0,
+              "z": -323.2
             },
-            "distance": 1361.1,
-            "key": "red",
-            "key_carrier_objnum": 65
+            "distance": 413.6,
+            "key": "blue",
+            "key_carrier_objnum": 11
+          },
+          {
+            "index": 7,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 0",
+            "seg": 535,
+            "side": 2,
+            "wall": 56,
+            "label_pos": {
+              "x": 2.4,
+              "y": -20.0,
+              "z": -515.3
+            },
+            "distance": 362.4,
+            "trigger": 0,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 421,
+                "side": 0,
+                "wall": 44
+              },
+              {
+                "seg": 446,
+                "side": 0,
+                "wall": 46
+              },
+              {
+                "seg": 449,
+                "side": 2,
+                "wall": 48
+              },
+              {
+                "seg": 422,
+                "side": 2,
+                "wall": 50
+              }
+            ]
+          },
+          {
+            "index": 8,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 1",
+            "seg": 538,
+            "side": 2,
+            "wall": 65,
+            "label_pos": {
+              "x": 2.4,
+              "y": -20.0,
+              "z": 515.3
+            },
+            "distance": 1346.4,
+            "trigger": 1,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 471,
+                "side": 5,
+                "wall": 54
+              }
+            ]
+          },
+          {
+            "index": 9,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 2",
+            "seg": 532,
+            "side": 4,
+            "wall": 66,
+            "label_pos": {
+              "x": -529.4,
+              "y": 0.0,
+              "z": 0.2
+            },
+            "distance": 938.0,
+            "trigger": 2,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 550,
+                "side": 2,
+                "wall": 95
+              },
+              {
+                "seg": 519,
+                "side": 4,
+                "wall": 97
+              },
+              {
+                "seg": 551,
+                "side": 0,
+                "wall": 99
+              }
+            ]
+          },
+          {
+            "index": 10,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 569,
+            "label_pos": {
+              "x": 457.1,
+              "y": -210.0,
+              "z": 0.2
+            },
+            "distance": 1468.3
+          },
+          {
+            "index": 11,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 548,
+            "side": 1,
+            "wall": 93,
+            "label_pos": {
+              "x": 334.7,
+              "y": 170.0,
+              "z": 0.3
+            },
+            "distance": 338.2,
+            "trigger": 11,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "route target unreachable",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]

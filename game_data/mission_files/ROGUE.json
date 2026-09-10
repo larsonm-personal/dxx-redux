@@ -477,16 +477,8 @@
         "route_status": "failed",
         "route_required_key_mask": 0,
         "route_completing_key_mask_set": 0,
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "activation_kind": "none",
-            "label": "Start",
-            "seg": 595
-          }
-        ],
-        "route_problem": "blue key unreachable"
+        "route_steps": [],
+        "route_problem": "shared route planning exceeded its work budget"
       },
       {
         "level_num": 3,
@@ -510,13 +502,13 @@
         "mine_volume": 13090700.0,
         "mine_volume_normalized": 2.86266,
         "mine_volume_text": "2.9x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 10351.2,
+        "travel_time_seconds": 207,
+        "travel_time_text": "3M:27S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "failed",
+        "route_status": "partial",
         "route_required_key_mask": 0,
         "route_completing_key_mask_set": 0,
         "route_steps": [
@@ -526,9 +518,192 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 798
+          },
+          {
+            "index": 1,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open door",
+            "seg": 311,
+            "wall": 149,
+            "label_pos": {
+              "x": -20.0,
+              "y": -200.0,
+              "z": -115.0
+            },
+            "distance": 1007.1,
+            "opens": [
+              {
+                "seg": 307,
+                "side": 0,
+                "wall": 149
+              },
+              {
+                "seg": 131,
+                "side": 2,
+                "wall": 148
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "gold key",
+            "seg": 228,
+            "label_pos": {
+              "x": -241.2,
+              "y": -197.5,
+              "z": 344.6
+            },
+            "distance": 1902.0,
+            "key": "gold"
+          },
+          {
+            "index": 3,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open door",
+            "seg": 589,
+            "wall": 120,
+            "label_pos": {
+              "x": 70.0,
+              "y": -159.5,
+              "z": 220.0
+            },
+            "distance": 2490.5,
+            "opens": [
+              {
+                "seg": 540,
+                "side": 2,
+                "wall": 120
+              },
+              {
+                "seg": 541,
+                "side": 4,
+                "wall": 121
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 535,
+            "label_pos": {
+              "x": 0.1,
+              "y": -142.5,
+              "z": 239.9
+            },
+            "distance": 1950.7,
+            "key": "blue"
+          },
+          {
+            "index": 5,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 507,
+            "side": 0,
+            "wall": 80,
+            "label_pos": {
+              "x": 130.0,
+              "y": 200.0,
+              "z": 120.0
+            },
+            "distance": 1248.2,
+            "opens": [
+              {
+                "seg": 507,
+                "side": 0,
+                "wall": 80
+              },
+              {
+                "seg": 360,
+                "side": 0,
+                "wall": 81
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 339,
+            "label_pos": {
+              "x": 0.0,
+              "y": 240.0,
+              "z": 80.0
+            },
+            "distance": 267.6,
+            "key": "red"
+          },
+          {
+            "index": 7,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 650,
+            "label_pos": {
+              "x": 0.0,
+              "y": -140.0,
+              "z": 140.0
+            },
+            "distance": 1485.1
+          },
+          {
+            "index": 8,
+            "kind": "trigger",
+            "activation_kind": "unresolved_trigger",
+            "calculated": false,
+            "label": "Locate and activate switch trigger 2",
+            "seg": 336,
+            "wall": 158,
+            "label_pos": {
+              "x": 0.0,
+              "y": 200.0,
+              "z": 210.0
+            },
+            "trigger": 2,
+            "trigger_type_id": 1,
+            "trigger_type": "toggle_door",
+            "opens": [
+              {
+                "seg": 382,
+                "side": 1,
+                "wall": 94
+              },
+              {
+                "seg": 336,
+                "side": 3,
+                "wall": 78
+              },
+              {
+                "seg": 373,
+                "side": 2,
+                "wall": 85
+              },
+              {
+                "seg": 505,
+                "side": 3,
+                "wall": 82
+              },
+              {
+                "seg": 376,
+                "side": 2,
+                "wall": 88
+              },
+              {
+                "seg": 509,
+                "side": 1,
+                "wall": 90
+              }
+            ]
           }
         ],
-        "route_problem": "blue key unreachable"
+        "route_problem": "shared route planning reached its work budget"
       },
       {
         "level_num": 4,
@@ -552,13 +727,13 @@
         "mine_volume": 9869730.0,
         "mine_volume_normalized": 2.15831,
         "mine_volume_text": "2.2x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 3517.7,
+        "travel_time_seconds": 70,
+        "travel_time_text": "1M:10S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "failed",
+        "route_status": "partial",
         "route_required_key_mask": 0,
         "route_completing_key_mask_set": 0,
         "route_steps": [
@@ -568,9 +743,125 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 549
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 9",
+            "seg": 416,
+            "side": 5,
+            "wall": 31,
+            "label_pos": {
+              "x": 120.0,
+              "y": -180.0,
+              "z": 340.0
+            },
+            "distance": 867.6,
+            "trigger": 9,
+            "trigger_type_id": 1,
+            "trigger_type": "toggle_door",
+            "opens": [
+              {
+                "seg": 438,
+                "side": 3,
+                "wall": 14
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open door",
+            "seg": 362,
+            "wall": 62,
+            "label_pos": {
+              "x": 150.0,
+              "y": -200.0,
+              "z": 80.0
+            },
+            "distance": 851.8,
+            "opens": [
+              {
+                "seg": 371,
+                "side": 2,
+                "wall": 62
+              },
+              {
+                "seg": 354,
+                "side": 2,
+                "wall": 63
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 10",
+            "seg": 371,
+            "side": 2,
+            "wall": 62,
+            "label_pos": {
+              "x": 150.0,
+              "y": -200.0,
+              "z": 80.0
+            },
+            "distance": 289.3,
+            "trigger": 10,
+            "trigger_type_id": 1,
+            "trigger_type": "toggle_door",
+            "opens": [
+              {
+                "seg": 369,
+                "side": 2,
+                "wall": 61
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open door",
+            "seg": 338,
+            "wall": 42,
+            "label_pos": {
+              "x": 120.0,
+              "y": -220.0,
+              "z": 530.0
+            },
+            "distance": 397.7,
+            "opens": [
+              {
+                "seg": 311,
+                "side": 0,
+                "wall": 42
+              },
+              {
+                "seg": 312,
+                "side": 4,
+                "wall": 43
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 542,
+            "label_pos": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 60.0
+            },
+            "distance": 1111.4,
+            "key": "blue"
           }
         ],
-        "route_problem": "blue key unreachable"
+        "route_problem": "shared route planning reached its work budget"
       },
       {
         "level_num": 5,
@@ -603,16 +894,8 @@
         "route_status": "failed",
         "route_required_key_mask": 0,
         "route_completing_key_mask_set": 0,
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "activation_kind": "none",
-            "label": "Start",
-            "seg": 751
-          }
-        ],
-        "route_problem": "gold key unreachable"
+        "route_steps": [],
+        "route_problem": "shared route planning exceeded its work budget"
       }
     ],
     "mission_path": "ROG.MSN",

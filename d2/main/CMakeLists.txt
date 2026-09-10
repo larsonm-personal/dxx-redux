@@ -29,7 +29,7 @@ set(D2X_MAIN_SOURCES
     fireball.c
     fuelcen.c
     fvi.c
-    ../../android/app/src/main/cpp/shared/swept_edge_clearance.c
+    ../../android/app/src/main/cpp/shared/route_collision.c
     game.c
     gamecntl.c
     gamefont.c
@@ -85,6 +85,7 @@ set(D2X_MAIN_SOURCES
     ../../android/app/src/main/cpp/shared/route_edge.cpp
     ../../android/app/src/main/cpp/shared/route_planner.cpp
     ../../android/app/src/main/cpp/shared/route_analysis_cache.c
+    ../../android/app/src/main/cpp/shared/guided_missile_route.cpp
     ../../android/app/src/main/cpp/shared/route_confirmation.cpp
     ../../android/app/src/main/cpp/shared/route_confirmation_result.cpp
     ../../android/app/src/main/cpp/shared/guidebot_route_decision.c

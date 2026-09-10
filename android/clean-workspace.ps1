@@ -1,25 +1,16 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-    Clean old generated workspace files, prompting before removing reusable artifacts
+    Remove generated workspace temp files unattended
 .DESCRIPTION
-    Default: delete ignored loose .log/.tmp/.temp files older than TempDays in
-    known scratch directories, and prompt for older build/download/regression
-    artifacts. Superseded native builds and versioned packages are automatic,
-    keeping the newest generation per family without an age exemption
-    Enter keeps a prompted item. NoToAll skips all remaining prompts
-    Use -Preview or -WhatIf to inspect without deleting or prompting
-    Use -AutoOnly for unattended cleanup of temporary files and superseded builds
-    Source files, Git-visible files, game data, demos, fixtures, SDKs, global
-    caches, nested repositories, links, and recent artifacts are preserved
-.EXAMPLE
-    .\android\clean-workspace.ps1 -Preview
-.EXAMPLE
-    .\android\clean-workspace.ps1
-.EXAMPLE
-    .\android\clean-workspace.ps1 -AutoOnly -TempDays 14
+    Deletes all ignored scratch contents by default, including fresh arbitrary
+    runner outputs, engine copies, reports, logs and backups. Discovers temp
+    roots at any repository depth outside source assets and dependency trees
+    Preserves tracked/nonignored work, nested repositories, links and live jobs
+    Preview and WhatIf never delete. TemporaryOnly skips build/download scans
+    Build generation retention and producer-specific cleanup remain available
 #>
-[CmdletBinding(SupportsShouldProcess = $true)]
+[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'None')]
 param(
     [switch]$Preview,
     [switch]$AutoOnly,
@@ -27,8 +18,10 @@ param(
     [string[]]$BuildRoots,
     [switch]$Producer,
     [switch]$PayloadsOnly,
+    [switch]$TemporaryOnly,
+    [ValidateRange(0, 3600)][int]$BusyWaitSeconds = 60,
     [ValidateRange(0, 8760)][double]$PayloadGraceHours = 1,
-    [ValidateRange(1, 3650)][int]$TempDays = 7,
+    [ValidateRange(0, 3650)][int]$TempDays = 0,
     [ValidateRange(1, 3650)][int]$ArtifactDays = 30,
     [ValidateRange(1, 100)][int]$KeepBuildGenerations = 1,
     [ValidateRange(0, 8760)][double]$BuildGraceHours = 0,
@@ -37,7 +30,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 if ($Producer -and (-not $BuildsOnly -or -not $BuildRoots)) { throw 'Producer cleanup requires BuildsOnly and explicit BuildRoots' }
-if ($BuildsOnly -and $PayloadsOnly) { throw 'BuildsOnly and PayloadsOnly cannot be combined' }
+if (@($BuildsOnly, $PayloadsOnly, $TemporaryOnly | Where-Object { $_ }).Count -gt 1) { throw 'BuildsOnly, PayloadsOnly and TemporaryOnly are mutually exclusive' }
 Set-StrictMode -Version Latest
 if (-not $RepositoryRoot) { $RepositoryRoot = Split-Path $PSScriptRoot }
 $RepositoryRoot = [IO.Path]::GetFullPath($RepositoryRoot).TrimEnd('\', '/')
@@ -107,42 +100,49 @@ function Test-CleanupGitProtection {
 function Assert-CleanupIdle {
     # Do not kill processes or confuse idle Gradle/Kotlin daemons with active builds
     if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) {
-        $processes = @(Get-CimInstance Win32_Process)
-        $producerAncestors = @($PID)
-        if ($Producer) {
-            # Gradle daemons launch cleanup separately from the wrapper's test/build caller
-            $clients = @($PID) + @($processes | Where-Object {
-                    $_.CommandLine -and $_.CommandLine.Contains($RepositoryRoot) -and $_.CommandLine -match 'GradleWrapperMain'
-                } | ForEach-Object ProcessId)
-            foreach ($clientId in $clients) {
-                $currentId = $clientId
-                if ($currentId -notin $producerAncestors) { $producerAncestors += $currentId }
-                while ($currentId) {
-                    $owner = $processes | Where-Object ProcessId -eq $currentId | Select-Object -First 1
-                    if (-not $owner -or $owner.ParentProcessId -in $producerAncestors) { break }
-                    $currentId = $owner.ParentProcessId
-                    $producerAncestors += $currentId
+        $idleWait = [Diagnostics.Stopwatch]::StartNew()
+        while ($true) {
+            $processes = @(Get-CimInstance Win32_Process)
+            $producerAncestors = @($PID)
+            if ($Producer) {
+                # Gradle daemons launch cleanup separately from the wrapper's test/build caller
+                $clients = @($PID) + @($processes | Where-Object {
+                        $_.CommandLine -and $_.CommandLine.Contains($RepositoryRoot) -and $_.CommandLine -match 'GradleWrapperMain'
+                    } | ForEach-Object ProcessId)
+                foreach ($clientId in $clients) {
+                    $currentId = $clientId
+                    if ($currentId -notin $producerAncestors) { $producerAncestors += $currentId }
+                    while ($currentId) {
+                        $owner = $processes | Where-Object ProcessId -eq $currentId | Select-Object -First 1
+                        if (-not $owner -or $owner.ParentProcessId -in $producerAncestors) { break }
+                        $currentId = $owner.ParentProcessId
+                        $producerAncestors += $currentId
+                    }
                 }
             }
+            $busy = @($processes | Where-Object {
+                    $_.ProcessId -notin $producerAncestors -and
+                    (
+                        $_.Name -match '^(cl|clang|clang\+\+|ninja|cmake|ctest|cargo|rustc|dxx-redux.*|d[12]x-redux|emulator|qemu-system-.*)\.exe$' -or
+                        ($_.CommandLine -and $_.CommandLine.Contains($RepositoryRoot) -and
+                        $_.CommandLine -match '(GradleWrapperMain|run[_-].*tests?\.ps1|test_[^ ]+\.ps1|regenerate[^ ]*\.ps1|run_mission[^ ]*\.ps1|run-code-quality\.ps1)')
+                    )
+                })
+            if (-not $busy.Count) { break }
+            if ($idleWait.Elapsed.TotalSeconds -ge $BusyWaitSeconds) {
+                throw "Build/test/formatter processes are active (PIDs: $($busy.ProcessId -join ', ')); idle wait expired after $BusyWaitSeconds seconds"
+            }
+            Write-Progress -Activity 'Waiting for active jobs before cleanup' -Status (($busy | ForEach-Object { "$($_.Name) PID $($_.ProcessId)" }) -join ', ')
+            Start-Sleep -Seconds 1
         }
-        $busy = @($processes | Where-Object {
-                $_.ProcessId -notin $producerAncestors -and
-                (
-                    $_.Name -match '^(cl|clang|clang\+\+|ninja|cmake|ctest|cargo|rustc|dxx-redux.*)\.exe$' -or
-                    ($_.CommandLine -and $_.CommandLine.Contains($RepositoryRoot) -and
-                    $_.CommandLine -match '(GradleWrapperMain|run[_-].*tests?\.ps1|test_[^ ]+\.ps1|regenerate[^ ]*\.ps1|run_mission[^ ]*\.ps1|run-code-quality\.ps1)')
-                )
-            })
-        if ($busy.Count) {
-            throw "Build/test/formatter processes are active (PIDs: $($busy.ProcessId -join ', ')); stop them before cleanup or use -Preview"
-        }
+        Write-Progress -Activity 'Waiting for active jobs before cleanup' -Completed
     } else {
         throw 'Deletion currently requires Windows process checks; use -Preview on other hosts'
     }
 }
 
 function Get-CleanupTreeInfo {
-    param([string]$Path, [switch]$AllowBuildDependencies, [switch]$IncludeCreationTime, [switch]$IgnoreRootWriteTime)
+    param([string]$Path, [switch]$AllowBuildDependencies, [switch]$IncludeCreationTime, [switch]$IgnoreRootWriteTime, [switch]$AllowEmulatorLockMarkers)
     Assert-CleanupPath $Path
     $stack = [Collections.Generic.Stack[IO.FileSystemInfo]]::new()
     $stack.Push((Get-Item -LiteralPath $Path -Force))
@@ -186,9 +186,17 @@ function Get-CleanupTreeInfo {
                 }
                 if ($child.Name -match '(\.(lock|lck)(\.json)?$|^\.ninja_lock$)') {
                     # CMake/Gradle leave lock files behind after releasing the lock
-                    if ($child -is [IO.DirectoryInfo]) { throw "Preserving directory lock: $($child.FullName)" }
-                    $lockStream = [IO.File]::Open($child.FullName, 'Open', 'Read', 'None')
-                    $lockStream.Dispose()
+                    if ($child -is [IO.DirectoryInfo]) {
+                        # Emulator processes are checked before every deletion; these
+                        # known marker directories remain after an unclean shutdown
+                        $orphanMarker = $AllowEmulatorLockMarkers -and $item.Name -like '*.avd' -and
+                        $child.Name -in @('hardware-qemu.ini.lock', 'snapshot.lock.lock') -and
+                        (Test-Path -LiteralPath (Join-Path $item.FullName 'config.ini') -PathType Leaf)
+                        if (-not $orphanMarker) { throw "Preserving directory lock: $($child.FullName)" }
+                    } else {
+                        $lockStream = [IO.File]::Open($child.FullName, 'Open', 'Read', 'None')
+                        $lockStream.Dispose()
+                    }
                 }
                 $stack.Push($child)
             }
@@ -235,6 +243,71 @@ function Add-CleanupCandidate {
             Path = $Item.FullName; Category = $Category; Automatic = $automatic
             Bytes = $info.Bytes; Count = $info.Count; Latest = $info.Latest; Days = $age; Retained = $null
         })
+}
+
+function Add-TemporaryCandidate {
+    param([IO.FileSystemInfo]$Item)
+    if ($Item.Attributes -band [IO.FileAttributes]::ReparsePoint) { return }
+    if ($Item.PSIsContainer -and @('.git', '.hg', '.svn' | Where-Object {
+                Test-Path -LiteralPath (Join-Path $Item.FullName $_)
+            }).Count) { return }
+    if (-not $Item.PSIsContainer -and $protectedPaths.Contains($Item.FullName)) { return }
+    $descend = $Item.PSIsContainer -and $protectedPaths.Contains($Item.FullName)
+    if (-not $descend) {
+        try {
+            $info = Get-CleanupTreeInfo $Item.FullName -IncludeCreationTime -AllowBuildDependencies -AllowEmulatorLockMarkers
+            if ($Item.Name -match '\.(lock|lck)(\.json)?$' -and -not $Item.PSIsContainer) {
+                $stream = [IO.File]::Open($Item.FullName, 'Open', 'Read', 'None')
+                $stream.Dispose()
+            }
+            if ($TempDays -eq 0 -or $info.Latest -le $now.AddDays(-$TempDays)) {
+                if ($seen.Add($Item.FullName)) {
+                    $candidates.Add([pscustomobject]@{
+                            Path = $Item.FullName; Category = 'temporary'; Automatic = $true
+                            Bytes = $info.Bytes; Count = $info.Count; Latest = $info.Latest
+                            Days = $TempDays; Retained = $null
+                        })
+                }
+                return
+            }
+            $descend = $Item.PSIsContainer
+        } catch {
+            Write-Warning $_.Exception.Message
+            # A protected subtree must not strand unrelated siblings in a collection
+            $descend = $Item.PSIsContainer -and $_.Exception.Message -match 'containing a (link|nested repository)'
+        }
+    }
+    if ($descend) {
+        foreach ($child in Get-ChildItem -LiteralPath $Item.FullName -Force) {
+            Add-TemporaryCandidate $child
+        }
+    }
+}
+
+function Find-TemporaryFiles {
+    # Discover by scratch role, not timestamp format or a list of individual runs
+    $pending = [Collections.Generic.Stack[string]]::new()
+    $pending.Push($RepositoryRoot)
+    while ($pending.Count) {
+        $directory = $pending.Pop()
+        foreach ($item in Get-ChildItem -LiteralPath $directory -Force) {
+            if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { continue }
+            if ($item.PSIsContainer) {
+                if ($item.Name -match '^(temp(?:[_-].*)?|tmp(?:[_-].*)?|\.tmp|\.temp|test-results|test-reports|regression-results|regression-output)$') {
+                    Add-TemporaryCandidate $item
+                } elseif ($item.Name -notin @('.git', '.hg', '.svn', 'game_data', 'game_data_to_copy_to_emulator',
+                        'regression_demos', 'fixtures', 'node_modules', 'vcpkg_installed', '_deps', '.gradle', '.cxx') -and
+                    $item.Name -notmatch '^build(?:$|[_-]|d[12]|2)' -and
+                    -not (Test-Path -LiteralPath (Join-Path $item.FullName '.git')) -and
+                    -not (Test-Path -LiteralPath (Join-Path $item.FullName '.hg')) -and
+                    -not (Test-Path -LiteralPath (Join-Path $item.FullName '.svn'))) {
+                    $pending.Push($item.FullName)
+                }
+            } elseif ($item.Extension -in @('.tmp', '.temp', '.log')) {
+                Add-TemporaryCandidate $item
+            }
+        }
+    }
 }
 
 function Add-BuildGeneration {
@@ -378,7 +451,8 @@ if ($LASTEXITCODE -ne 0 -or -not ([IO.Path]::GetFullPath($gitRoot)).Equals($Repo
 }
 Update-ProtectedPaths
 if (-not $dryRun) { Assert-CleanupIdle }
-if (-not $BuildsOnly) { Find-RegressionPayloads }
+if ($PayloadsOnly) { Find-RegressionPayloads }
+if (-not $BuildsOnly -and -not $PayloadsOnly) { Find-TemporaryFiles }
 $roots = [Collections.Generic.List[object]]::new()
 foreach ($parentRelative in @('', 'android', 'server')) {
     $parent = if ($parentRelative) { Join-Path $RepositoryRoot $parentRelative } else { $RepositoryRoot }
@@ -424,7 +498,8 @@ if ($BuildRoots) {
 }
 $discoveredBuildRoots = [Collections.Generic.HashSet[string]]::new($comparer)
 foreach ($root in $roots) {
-    if ($PayloadsOnly) { break }
+    if ($PayloadsOnly -or $TemporaryOnly) { break }
+    if (-not $BuildsOnly -and $root.Category -eq 'scratch') { continue }
     if ($root.Category -notin @('build', 'scratch')) { continue }
     if (-not $discoveredBuildRoots.Add($root.Item.FullName)) { continue }
     Write-Host "Finding build generations in $($root.Item.FullName)"
@@ -447,7 +522,8 @@ foreach ($family in $buildGenerations | Group-Object Family) {
     }
 }
 foreach ($root in $roots) {
-    if ($BuildsOnly -or $PayloadsOnly) { break }
+    if ($BuildsOnly -or $PayloadsOnly -or $TemporaryOnly) { break }
+    if ($root.Category -eq 'scratch') { continue }
     Write-Host "Scanning $($root.Item.FullName)"
     try { Assert-CleanupPath $root.Item.FullName } catch { Write-Warning $_.Exception.Message; continue }
     if ($root.Children) {
@@ -458,52 +534,16 @@ foreach ($root in $roots) {
 }
 
 $ordered = @($candidates | Sort-Object Bytes -Descending)
-$auto = @($ordered | Where-Object Automatic)
-$review = @($ordered | Where-Object { -not $_.Automatic })
 Write-Progress -Activity 'Scanning cleanup candidates' -Completed
-$autoBytes = 0L
-$reviewBytes = 0L
-foreach ($item in $auto) { $autoBytes += $item.Bytes }
-foreach ($item in $review) { $reviewBytes += $item.Bytes }
-Write-Host "Automatic: $($auto.Count) temporary files, regression payloads, and superseded builds ($(Format-CleanupBytes $autoBytes))"
-Write-Host "Review: $($review.Count) artifacts ($(Format-CleanupBytes $reviewBytes))"
-Write-Host 'Review items may contain useful diagnostics or require rebuilding/downloading'
+$totalBytes = 0L
+foreach ($item in $ordered) { $totalBytes += $item.Bytes }
+Write-Host "Automatic cleanup: $($ordered.Count) artifacts ($(Format-CleanupBytes $totalBytes))"
 $removed = 0
 $reclaimed = 0L
-$skipPrompts = $AutoOnly.IsPresent
-$approved = [Collections.Generic.HashSet[string]]::new($comparer)
-$reviewed = [Collections.Generic.HashSet[string]]::new($comparer)
 foreach ($candidate in $ordered) {
-    $action = if ($candidate.Automatic) { 'AUTO' } else { 'ASK' }
-    $description = "[$action] $(Format-CleanupBytes $candidate.Bytes) | $($candidate.Category) | last write $($candidate.Latest.ToString('yyyy-MM-dd')) | $($candidate.Path)"
-    Write-Host $description
+    Write-Verbose "[AUTO] $(Format-CleanupBytes $candidate.Bytes) | $($candidate.Category) | $($candidate.Path)"
+    Write-Progress -Activity 'Removing generated artifacts' -Status $candidate.Path
     if ($dryRun) { continue }
-    if (-not $candidate.Automatic) {
-        if ($skipPrompts) { continue }
-        if (-not $approved.Contains($candidate.Path)) {
-            $answer = Read-Host 'Delete this artifact? [y/N/folder/noToAll/quit]'
-            if ($answer -match '^(?i:q|quit)$') { break }
-            if ($answer -match '^(?i:notoall)$') { $skipPrompts = $true; continue }
-            if ($answer -match '^(?i:folder)$') {
-                $parent = [IO.Path]::GetDirectoryName($candidate.Path)
-                $siblings = @($review | Where-Object {
-                        -not $reviewed.Contains($_.Path) -and $_.Category -eq $candidate.Category -and
-                        [IO.Path]::GetDirectoryName($_.Path).Equals($parent, $comparison)
-                    })
-                $groupBytes = 0L
-                foreach ($sibling in $siblings) {
-                    Write-Host "  $(Format-CleanupBytes $sibling.Bytes) | $($sibling.Path)"
-                    $groupBytes += $sibling.Bytes
-                }
-                $answer = Read-Host "Delete these $($siblings.Count) listed artifacts ($(Format-CleanupBytes $groupBytes))? [y/N]"
-                if ($answer -match '^(?i:y|yes)$') {
-                    foreach ($sibling in $siblings) { $null = $approved.Add($sibling.Path) }
-                }
-            }
-            $null = $reviewed.Add($candidate.Path)
-            if ($answer -notmatch '^(?i:y|yes)$') { continue }
-        }
-    }
     Assert-CleanupIdle
     if (Test-CleanupGitProtection $candidate.Path) { Write-Warning "Now protected by Git: $($candidate.Path)"; continue }
     try {
@@ -514,15 +554,16 @@ foreach ($candidate in $ordered) {
                 continue
             }
         }
-        $current = Get-CleanupTreeInfo $candidate.Path -AllowBuildDependencies:([bool]$candidate.Retained) `
-            -IncludeCreationTime:($candidate.Category -like 'regression-payload*') `
-            -IgnoreRootWriteTime:($candidate.Category -eq 'regression-payload-group')
+        $current = Get-CleanupTreeInfo $candidate.Path -AllowBuildDependencies:([bool]$candidate.Retained -or $candidate.Category -eq 'temporary') `
+            -IncludeCreationTime:($candidate.Category -like 'regression-payload*' -or $candidate.Category -eq 'temporary') `
+            -IgnoreRootWriteTime:($candidate.Category -eq 'regression-payload-group') `
+            -AllowEmulatorLockMarkers:($candidate.Category -eq 'temporary')
         if ($current.Latest -ne $candidate.Latest -or $current.Bytes -ne $candidate.Bytes -or
             $current.Count -ne $candidate.Count -or ($candidate.Days -gt 0 -and $current.Latest -gt [DateTime]::UtcNow.AddDays(-$candidate.Days))) {
             Write-Warning "Changed since scan; preserving $($candidate.Path)"
             continue
         }
-        if ($PSCmdlet.ShouldProcess($candidate.Path, 'Delete old generated artifact')) {
+        if ($PSCmdlet.ShouldProcess($candidate.Path, 'Delete generated artifact')) {
             # The full tree and its ancestors were checked immediately above
             Remove-Item -LiteralPath $candidate.Path -Recurse -Force -ErrorAction Stop
             $removed++
@@ -530,5 +571,6 @@ foreach ($candidate in $ordered) {
         }
     } catch { Write-Warning "Preserved or incompletely removed $($candidate.Path): $($_.Exception.Message)" }
 }
+Write-Progress -Activity 'Removing generated artifacts' -Completed
 if ($dryRun) { Write-Host 'Preview only: no files deleted and no prompts answered' }
 Write-Host "Removed $removed artifacts ($(Format-CleanupBytes $reclaimed)); sizes are logical bytes, not guaranteed disk savings"

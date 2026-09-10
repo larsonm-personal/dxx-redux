@@ -285,15 +285,15 @@
         "mine_volume": 49783300.0,
         "mine_volume_normalized": 10.8866,
         "mine_volume_text": "11x",
-        "travel_distance": 6225.9,
-        "travel_time_seconds": 125,
-        "travel_time_text": "2M:05S",
+        "travel_distance": 4614.7,
+        "travel_time_seconds": 92,
+        "travel_time_text": "1M:32S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 3,
+        "route_completing_key_mask_set": 8,
         "route_steps": [
           {
             "index": 0,
@@ -355,79 +355,6 @@
             "index": 3,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 7",
-            "seg": 40,
-            "wall": 51,
-            "label_pos": {
-              "x": 143.4,
-              "y": -275.8,
-              "z": -214.1
-            },
-            "distance": 969.7,
-            "trigger": 7,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 45,
-                "side": 3,
-                "wall": 47
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "trigger",
-            "activation_kind": "unresolved_trigger",
-            "calculated": false,
-            "label": "Locate and activate switch trigger 12",
-            "seg": 48,
-            "wall": 75,
-            "label_pos": {
-              "x": 183.4,
-              "y": -285.8,
-              "z": -194.1
-            },
-            "trigger": 12,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 48,
-                "side": 0,
-                "wall": 58
-              }
-            ]
-          },
-          {
-            "index": 5,
-            "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 5",
-            "seg": 78,
-            "side": 0,
-            "wall": 52,
-            "label_pos": {
-              "x": 13.4,
-              "y": -15.8,
-              "z": -194.1
-            },
-            "distance": 805.6,
-            "trigger": 5,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 43,
-                "side": 2,
-                "wall": 50
-              }
-            ]
-          },
-          {
-            "index": 6,
-            "kind": "trigger",
-            "activation_kind": "shoot_switch",
             "switch_shot_quality": "confirmed_steep",
             "switch_shot_incidence_cosine": 0.2394256591796875,
             "label": "Shoot switch trigger 6",
@@ -438,7 +365,7 @@
               "y": -275.8,
               "z": -184.1
             },
-            "distance": 805.6,
+            "distance": 969.7,
             "trigger": 6,
             "trigger_type_id": 7,
             "trigger_type": "unlock_door",
@@ -461,7 +388,7 @@
             ]
           },
           {
-            "index": 7,
+            "index": 4,
             "kind": "trigger",
             "activation_kind": "fly_through_trigger",
             "label": "Fly-through trigger 13",
@@ -491,7 +418,7 @@
             ]
           },
           {
-            "index": 8,
+            "index": 5,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -505,7 +432,7 @@
             "key": "red"
           },
           {
-            "index": 9,
+            "index": 6,
             "kind": "boss",
             "activation_kind": "destroy_boss",
             "label": "Boss robot",
@@ -518,7 +445,7 @@
             "distance": 1253.5
           },
           {
-            "index": 10,
+            "index": 7,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -537,7 +464,6 @@
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "switch activation route unresolved",
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",

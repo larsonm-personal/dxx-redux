@@ -5,17 +5,16 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 6,
-    "failed": 1
+    "ok": 7
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "mplevel1.rl2",
-      "route_input_sha256": "15A11E9126A3BA75FF719620FB9800AEB526BEE396C8148A610CCBDC2BB17C0E",
-      "status": "failed",
+      "route_input_sha256": "A07424E7897E64182823D00869C3C6CFF22B640ECB2CEC4804D7AF59B7ACD4FA",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -31,15 +30,22 @@
         },
         {
           "n": "red key",
-          "s": 37
+          "s": 38
+        },
+        {
+          "n": "boss",
+          "s": 53
+        },
+        {
+          "n": "exit",
+          "s": 61
         }
       ],
-      "total_frames": 2237,
+      "total_frames": 3654,
       "rng_end": {
-        "state": 2100293115,
-        "calls": 782
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 912700672,
+        "calls": 1287
+      }
     },
     {
       "level_num": 2,
@@ -80,7 +86,7 @@
           "s": 71
         }
       ],
-      "total_frames": 4266,
+      "total_frames": 4271,
       "rng_end": {
         "state": 3017277417,
         "calls": 2520
@@ -117,7 +123,7 @@
           "s": 63
         }
       ],
-      "total_frames": 3756,
+      "total_frames": 3780,
       "rng_end": {
         "state": 1376061655,
         "calls": 2322
@@ -163,13 +169,13 @@
         },
         {
           "n": "exit",
-          "s": 126
+          "s": 127
         }
       ],
-      "total_frames": 7589,
+      "total_frames": 7594,
       "rng_end": {
-        "state": 1671904012,
-        "calls": 4523
+        "state": 1210303219,
+        "calls": 4502
       }
     },
     {
@@ -188,7 +194,7 @@
         },
         {
           "n": "switch 4",
-          "s": 24
+          "s": 23
         },
         {
           "n": "switch 5",
@@ -204,7 +210,7 @@
         },
         {
           "n": "switch 6",
-          "s": 60
+          "s": 59
         },
         {
           "n": "red key",
@@ -223,10 +229,10 @@
           "s": 105
         }
       ],
-      "total_frames": 6281,
+      "total_frames": 6286,
       "rng_end": {
-        "state": 4198207093,
-        "calls": 2700
+        "state": 2968394676,
+        "calls": 2659
       }
     },
     {
@@ -256,10 +262,10 @@
           "s": 43
         }
       ],
-      "total_frames": 2571,
+      "total_frames": 2580,
       "rng_end": {
-        "state": 698505306,
-        "calls": 5245
+        "state": 2233753302,
+        "calls": 5265
       }
     },
     {

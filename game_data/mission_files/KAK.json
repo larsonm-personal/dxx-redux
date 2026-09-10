@@ -126,9 +126,9 @@
         "mine_volume": 12978900.0,
         "mine_volume_normalized": 2.83822,
         "mine_volume_text": "2.8x",
-        "travel_distance": 2066.9,
-        "travel_time_seconds": 41,
-        "travel_time_text": "0M:41S",
+        "travel_distance": 7454.7,
+        "travel_time_seconds": 149,
+        "travel_time_text": "2M:29S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -238,6 +238,137 @@
             "distance": 253.5,
             "key": "gold",
             "key_carrier_objnum": 59
+          },
+          {
+            "index": 5,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 3",
+            "seg": 396,
+            "wall": 77,
+            "label_pos": {
+              "x": -152.5,
+              "y": -114.0,
+              "z": -388.0
+            },
+            "distance": 1498.8,
+            "trigger": 3,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 52,
+                "side": 5,
+                "wall": 10
+              },
+              {
+                "seg": 51,
+                "side": 4,
+                "wall": 9
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "required_weapon": "guided_missile",
+            "label": "Shoot using guided missile",
+            "seg": 402,
+            "wall": 75,
+            "label_pos": {
+              "x": -126.5,
+              "y": -114.0,
+              "z": -445.0
+            },
+            "distance": 1842.0,
+            "opens": [
+              {
+                "seg": 405,
+                "side": 5,
+                "wall": 75
+              },
+              {
+                "seg": 402,
+                "side": 4,
+                "wall": 76
+              }
+            ]
+          },
+          {
+            "index": 7,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 2",
+            "seg": 405,
+            "side": 4,
+            "wall": 74,
+            "label_pos": {
+              "x": -126.5,
+              "y": -114.0,
+              "z": -464.0
+            },
+            "distance": 23.2,
+            "trigger": 2,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 595,
+                "side": 0,
+                "wall": 157
+              },
+              {
+                "seg": 357,
+                "side": 0,
+                "wall": 46
+              },
+              {
+                "seg": 359,
+                "side": 0,
+                "wall": 48
+              }
+            ]
+          },
+          {
+            "index": 8,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 5",
+            "seg": 359,
+            "side": 0,
+            "wall": 48,
+            "label_pos": {
+              "x": 306.7,
+              "y": -138.2,
+              "z": -217.6
+            },
+            "distance": 1646.6,
+            "trigger": 5,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 420,
+                "side": 0,
+                "wall": 78
+              }
+            ]
+          },
+          {
+            "index": 9,
+            "kind": "key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying red key",
+            "seg": 419,
+            "label_pos": {
+              "x": 102.1,
+              "y": -113.0,
+              "z": -102.6
+            },
+            "distance": 377.2,
+            "key": "red",
+            "key_carrier_objnum": 60
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
@@ -277,17 +408,9 @@
         "route_status": "failed",
         "route_required_key_mask": 0,
         "route_completing_key_mask_set": 0,
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "activation_kind": "none",
-            "label": "Start",
-            "seg": 50
-          }
-        ],
+        "route_steps": [],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "route target unreachable",
+        "route_problem": "shared route planning exceeded its work budget",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]

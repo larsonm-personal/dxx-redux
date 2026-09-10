@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
+    "ok": 4,
     "failed": 1,
-    "timeout": 3
+    "timeout": 2
   },
   "levels": [
     {
@@ -36,24 +36,24 @@
         },
         {
           "n": "reactor",
-          "s": 23
+          "s": 22
         },
         {
           "n": "exit",
           "s": 28
         }
       ],
-      "total_frames": 1696,
+      "total_frames": 1678,
       "rng_end": {
-        "state": 1770763692,
-        "calls": 1675
+        "state": 3417499190,
+        "calls": 1713
       }
     },
     {
       "level_num": 2,
       "level_file": "darknite.rl2",
       "route_input_sha256": "200DE01C5B8466F6EB4BE0B36EB92B0CD0F0DFC710A93EB3707F562E31294DE4",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -66,57 +66,14 @@
         {
           "n": "pass-through 9",
           "s": 12
-        },
-        {
-          "n": "gold key",
-          "s": 43
-        },
-        {
-          "n": "blastable wall",
-          "s": 84
-        },
-        {
-          "n": "switch 19",
-          "s": 85
-        },
-        {
-          "n": "red key",
-          "s": 86
-        },
-        {
-          "n": "switch 32",
-          "s": 109
-        },
-        {
-          "n": "switch 28",
-          "s": 114
-        },
-        {
-          "n": "switch 29",
-          "s": 117
-        },
-        {
-          "n": "switch 30",
-          "s": 120
-        },
-        {
-          "n": "switch 31",
-          "s": 123
-        },
-        {
-          "n": "reactor",
-          "s": 140
-        },
-        {
-          "n": "exit",
-          "s": 142
         }
       ],
-      "total_frames": 8548,
+      "total_frames": 2283,
       "rng_end": {
-        "state": 696714652,
-        "calls": 4059
-      }
+        "state": 2847895613,
+        "calls": 772
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 3,
@@ -149,10 +106,10 @@
           "s": 70
         }
       ],
-      "total_frames": 4205,
+      "total_frames": 4200,
       "rng_end": {
-        "state": 2755215601,
-        "calls": 1680
+        "state": 1302934085,
+        "calls": 10300
       }
     },
     {
@@ -165,10 +122,10 @@
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 5535,
+      "total_frames": 4071,
       "rng_end": {
-        "state": 1090693511,
-        "calls": 354
+        "state": 636212583,
+        "calls": 898
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -176,7 +133,7 @@
       "level_num": 5,
       "level_file": "shi4evr.rl2",
       "route_input_sha256": "2D9BBDEE5B51EB098C7E264CD3085DE7DBDF10EE476338496FFBF58455DF8B33",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -189,20 +146,31 @@
         {
           "n": "fly-through 26",
           "s": 29
+        },
+        {
+          "n": "fly-through 16",
+          "s": 51
+        },
+        {
+          "n": "reactor",
+          "s": 52
+        },
+        {
+          "n": "exit",
+          "s": 78
         }
       ],
-      "total_frames": 6020,
+      "total_frames": 4685,
       "rng_end": {
-        "state": 1443370903,
-        "calls": 1618
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 866325920,
+        "calls": 6631
+      }
     },
     {
       "level_num": 6,
       "level_file": "dartdet2.rl2",
       "route_input_sha256": "FF159BD967110C4441FC0B81B7925D5DA70CD43813AEC5337EFEEF085861B2B5",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -210,19 +178,38 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 6
+          "s": 5
         },
         {
           "n": "blue key",
-          "s": 14
+          "s": 13
+        },
+        {
+          "n": "gold key",
+          "s": 69
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 95
+        },
+        {
+          "n": "switch 8",
+          "s": 129
+        },
+        {
+          "n": "reactor",
+          "s": 136
+        },
+        {
+          "n": "exit",
+          "s": 147
         }
       ],
-      "total_frames": 6855,
+      "total_frames": 8815,
       "rng_end": {
-        "state": 2691287863,
-        "calls": 1202
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 908434829,
+        "calls": 4404
+      }
     },
     {
       "level_num": 7,

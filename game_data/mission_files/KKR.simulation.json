@@ -7,9 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
-    "failed": 1,
-    "unsupported": 2
+    "ok": 5,
+    "unsupported": 1
   },
   "levels": [
     {
@@ -36,33 +35,33 @@
         },
         {
           "n": "fly-through 3",
-          "s": 51
+          "s": 53
         },
         {
           "n": "switch 5",
-          "s": 54
+          "s": 56
         },
         {
           "n": "red key",
-          "s": 60
+          "s": 62
         },
         {
           "n": "switch 1",
-          "s": 88
+          "s": 90
         },
         {
           "n": "boss",
-          "s": 105
+          "s": 107
         },
         {
           "n": "exit",
-          "s": 139
+          "s": 140
         }
       ],
-      "total_frames": 8328,
+      "total_frames": 8417,
       "rng_end": {
-        "state": 3690732002,
-        "calls": 4885
+        "state": 1521154819,
+        "calls": 10630
       }
     },
     {
@@ -93,15 +92,15 @@
         },
         {
           "n": "blastable wall",
-          "s": 43
+          "s": 42
         },
         {
           "n": "switch 5",
-          "s": 44
+          "s": 43
         },
         {
           "n": "gold key",
-          "s": 46
+          "s": 45
         },
         {
           "n": "switch 16",
@@ -121,31 +120,59 @@
         },
         {
           "n": "exit",
-          "s": 110
+          "s": 107
         }
       ],
-      "total_frames": 6602,
+      "total_frames": 6444,
       "rng_end": {
-        "state": 4174865116,
-        "calls": 4507
+        "state": 2745477326,
+        "calls": 12025
       }
     },
     {
       "level_num": 3,
       "level_file": "kk3.rl2",
-      "route_input_sha256": "D6851120B5DD0E27C15059320B129CF56C1BDF03C0F60F8B0735559EA0765F1E",
-      "status": "failed",
+      "route_input_sha256": "A6F0A1271CA6C5AB6B091B528486F74164A8BEFBF98C760A1B465A60E2BD07BA",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "open door",
+          "s": 19
+        },
+        {
+          "n": "blue key",
+          "s": 23
+        },
+        {
+          "n": "gold key",
+          "s": 40
+        },
+        {
+          "n": "open door",
+          "s": 59
+        },
+        {
+          "n": "red key",
+          "s": 69
+        },
+        {
+          "n": "boss",
+          "s": 101
+        },
+        {
+          "n": "exit",
+          "s": 125
+        }
+      ],
+      "total_frames": 7478,
       "rng_end": {
-        "state": 835903122,
-        "calls": 37
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 3805390548,
+        "calls": 8387
+      }
     },
     {
       "level_num": 4,
@@ -180,15 +207,15 @@
         },
         {
           "n": "open door",
-          "s": 18
+          "s": 17
         },
         {
           "n": "switch 4",
-          "s": 18
+          "s": 17
         },
         {
           "n": "switch 1",
-          "s": 18
+          "s": 17
         },
         {
           "n": "switch 5",
@@ -196,28 +223,28 @@
         },
         {
           "n": "red key",
-          "s": 37
+          "s": 36
         },
         {
           "n": "boss",
-          "s": 49
+          "s": 48
         },
         {
           "n": "exit",
-          "s": 57
+          "s": 55
         }
       ],
-      "total_frames": 3390,
+      "total_frames": 3301,
       "rng_end": {
-        "state": 998720860,
-        "calls": 3355
+        "state": 3411913598,
+        "calls": 3337
       }
     },
     {
       "level_num": -1,
       "level_file": "secret1.rl2",
-      "route_input_sha256": "86F025966EFE824B2F12DF640829B0702FA6C8ED666C26A4C99CBB4550565946",
-      "status": "unsupported",
+      "route_input_sha256": "BDD2FAA9E018AB87BFB1EC4A622A5C98B303DFC393A981D49F4475E781CD2A9A",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -226,14 +253,21 @@
         {
           "n": "fly-through 12",
           "s": 4
+        },
+        {
+          "n": "reactor",
+          "s": 16
+        },
+        {
+          "n": "exit",
+          "s": 28
         }
       ],
-      "total_frames": 503,
+      "total_frames": 1709,
       "rng_end": {
-        "state": 4199616355,
-        "calls": 294
-      },
-      "problem": "route objective activation is not supported"
+        "state": 236462006,
+        "calls": 817
+      }
     }
   ]
 }

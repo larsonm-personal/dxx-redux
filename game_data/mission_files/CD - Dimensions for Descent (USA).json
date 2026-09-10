@@ -814,7 +814,7 @@
         "mine_volume": 6655060.0,
         "mine_volume_normalized": 1.45532,
         "mine_volume_text": "1.5x",
-        "travel_distance": 2563.2,
+        "travel_distance": 2553.3,
         "travel_time_seconds": 51,
         "travel_time_text": "0M:51S",
         "guidebot_count": 0,
@@ -898,31 +898,6 @@
           },
           {
             "index": 4,
-            "kind": "trigger",
-            "activation_kind": "fly_through_trigger",
-            "label": "Fly-through trigger 24",
-            "seg": 270,
-            "side": 4,
-            "wall": 111,
-            "label_pos": {
-              "x": 329.5,
-              "y": 512.9,
-              "z": -1210.0
-            },
-            "distance": 573.4,
-            "trigger": 24,
-            "trigger_type_id": 1,
-            "trigger_type": "toggle_door",
-            "opens": [
-              {
-                "seg": 242,
-                "side": 1,
-                "wall": 106
-              }
-            ]
-          },
-          {
-            "index": 5,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -934,7 +909,7 @@
               "y": 385.0,
               "z": -964.0
             },
-            "distance": 649.0,
+            "distance": 1212.5,
             "trigger": 31,
             "trigger_type_id": 8,
             "trigger_type": "exit"
@@ -6431,9 +6406,9 @@
         "mine_volume": 6730610.0,
         "mine_volume_normalized": 1.47185,
         "mine_volume_text": "1.5x",
-        "travel_distance": 1666.3,
-        "travel_time_seconds": 33,
-        "travel_time_text": "0M:33S",
+        "travel_distance": 1813.1,
+        "travel_time_seconds": 36,
+        "travel_time_text": "0M:36S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -6528,7 +6503,7 @@
               "y": 256.1,
               "z": -241.1
             },
-            "distance": 741.2
+            "distance": 887.9
           },
           {
             "index": 5,
@@ -10648,15 +10623,15 @@
         "mine_volume": 2548680.0,
         "mine_volume_normalized": 0.557344,
         "mine_volume_text": "0.56x",
-        "travel_distance": 1926.0,
-        "travel_time_seconds": 39,
-        "travel_time_text": "0M:39S",
+        "travel_distance": 3149.7,
+        "travel_time_seconds": 63,
+        "travel_time_text": "1M:03S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -10791,9 +10766,39 @@
             },
             "distance": 18.5,
             "key": "red"
+          },
+          {
+            "index": 7,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 8,
+            "label_pos": {
+              "x": -341.1,
+              "y": -95.5,
+              "z": -16.1
+            },
+            "distance": 1098.2
+          },
+          {
+            "index": 8,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 11,
+            "side": 0,
+            "wall": 102,
+            "label_pos": {
+              "x": -352.2,
+              "y": -63.3,
+              "z": 9.0
+            },
+            "distance": 125.6,
+            "trigger": 19,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
-        ],
-        "route_problem": "route target unreachable"
+        ]
       }
     ],
     "target_index": 27

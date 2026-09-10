@@ -1017,6 +1017,44 @@ static int guidebot_access_trigger_opens_frontier(
 	return 0;
 }
 
+/* Preserve the exit destination type when a different live exit is reachable */
+static int guidebot_prepare_alternative_exit(
+    const level_metadata_scan_view *view, level_metadata_route_step *step,
+    const int *distance)
+{
+	int best = -1, best_distance = 0;
+	if (step->kind != LEVEL_METADATA_ROUTE_EXIT ||
+	    step->activation_kind != LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT ||
+	    !view->wall_segment || !view->wall_side || !view->wall_trigger ||
+	    !view->trigger_type || !view->side_is_flyable || !view->segment_center || !view->side_center ||
+	    (step->trigger_type != view->trigger_type_exit && step->trigger_type != view->trigger_type_secret_exit))
+		return 0;
+	for (int wall = 0; wall < view->num_walls; ++wall) {
+		const int seg = view->wall_segment(view->user, wall);
+		const int side = view->wall_side(view->user, wall);
+		const int trigger = view->wall_trigger(view->user, wall);
+		if (!guidebot_valid_segment(view, seg) || distance[seg] < 0 || side < 0 || side >= LEVEL_METADATA_MAX_SIDES ||
+		    guidebot_trigger_is_spent(view, trigger) || view->trigger_type(view->user, trigger) != step->trigger_type ||
+		    !view->side_is_flyable(view->user, seg, side))
+			continue;
+		if (best < 0 || distance[seg] < best_distance) {
+			best = wall;
+			best_distance = distance[seg];
+		}
+	}
+	if (best < 0)
+		return 0;
+	step->wall_num = best;
+	step->seg = view->wall_segment(view->user, best);
+	step->side = view->wall_side(view->user, best);
+	step->trigger_num = view->wall_trigger(view->user, best);
+	step->path_terminal_segment = step->seg;
+	step->path_segment_count = best_distance + 1;
+	step->activation_pos_valid = view->segment_center(view->user, step->seg, step->activation_pos);
+	step->label_pos_valid = view->side_center(view->user, step->seg, step->side, step->label_pos);
+	return 1;
+}
+
 static int guidebot_prepare_access_action(
     const level_metadata_scan_view *view, level_metadata_route_step *step,
     guidebot_route_certifier_summary *summary, const int *distance)
@@ -1137,7 +1175,7 @@ int guidebot_route_prepare_compiled_step_current(
 	if (!view || !step || !summary || view->num_segments < 0 ||
 	    view->num_segments > LEVEL_METADATA_MAX_SEGMENTS)
 		return 0;
-	shooting = step->activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH;
+	shooting = !step->requires_guided_missile && step->activation_kind == LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH;
 
 	if (!view->segment_child ||
 	    !guidebot_valid_segment(view, view->start_segment))
@@ -1169,6 +1207,8 @@ int guidebot_route_prepare_compiled_step_current(
 	if (!shooting) {
 		const int target = guidebot_step_target_segment(view, step);
 		if (!guidebot_valid_segment(view, target) || distance[target] >= 0)
+			return 1;
+		if (guidebot_prepare_alternative_exit(view, step, distance))
 			return 1;
 	}
 	if (guidebot_valid_segment(view, step->path_terminal_segment) &&
@@ -1755,6 +1795,8 @@ static int guidebot_prepare_shoot_switch_position(
 	int firing_pos[3];
 	int original_segment;
 
+	if (step->requires_guided_missile)
+		return step->activation_pos_valid && step->guided_missile_point_count > 0 ? GUIDEBOT_ROUTE_CERTIFIER_VALID : GUIDEBOT_ROUTE_CERTIFIER_INVALID;
 	if (step->activation_kind !=
 	    LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH)
 		return GUIDEBOT_ROUTE_CERTIFIER_VALID;

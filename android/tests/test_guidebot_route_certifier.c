@@ -1594,6 +1594,55 @@ static void test_visible_unlocked_triggered_door_is_physically_passable(void)
 	fixture.explored[1] = 1;
 	assert(guidebot_route_side_passable_current(&view, 0, 0));
 	assert(!level_metadata_route_step_required_by_world_state(&view, &step));
+
+    /* A guided opening must be repeated when the discovered door closes */
+    step.requires_guided_missile = 1;
+    assert(level_metadata_route_step_required_by_world_state(&view, &step));
+    fixture.wall_open[0] = 1;
+    assert(!level_metadata_route_step_required_by_world_state(&view, &step));
+    fixture.wall_open[0] = 0;
+    assert(level_metadata_route_step_required_by_world_state(&view, &step));
+}
+
+static void test_alternative_exit_preserves_destination_type(void)
+{
+    certifier_fixture fixture;
+    level_metadata_scan_view view;
+    level_metadata_route_step original, step;
+    guidebot_route_certifier_summary summary;
+    initialize_fixture(&fixture);
+    view = make_view(&fixture);
+    view.wall_trigger = wall_trigger;
+    view.trigger_type_exit = 3;
+    view.trigger_type_secret_exit = 4;
+    fixture.wall_open[0] = 1;
+    fixture.wall_extra_flags[1] = view.wall_flag_door_locked;
+    fixture.trigger_type[0] = view.trigger_type_exit;
+    fixture.trigger_type[1] = view.trigger_type_secret_exit;
+    memset(&original, 0, sizeof(original));
+    original.kind = LEVEL_METADATA_ROUTE_EXIT;
+    original.activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT;
+    original.trigger_type = view.trigger_type_exit;
+    original.seg = original.path_terminal_segment = 3;
+    original.wall_num = 3;
+    memset(&summary, 0, sizeof(summary));
+    step = original;
+    assert(guidebot_route_prepare_compiled_step_current(&view, &step, &summary));
+    assert(step.seg == 0 && step.wall_num == 0 && step.trigger_num == 0);
+    assert(step.trigger_type == view.trigger_type_exit);
+    fixture.trigger_flags[0] = view.trigger_flag_disabled;
+    step = original;
+    assert(guidebot_route_prepare_compiled_step_current(&view, &step, &summary));
+    assert(step.wall_num == original.wall_num);
+    fixture.trigger_flags[0] = 0;
+    fixture.trigger_type[0] = view.trigger_type_secret_exit;
+    step = original;
+    assert(guidebot_route_prepare_compiled_step_current(&view, &step, &summary));
+    assert(step.wall_num == original.wall_num);
+    original.trigger_type = view.trigger_type_secret_exit;
+    step = original;
+    assert(guidebot_route_prepare_compiled_step_current(&view, &step, &summary));
+    assert(step.wall_num == 0 && step.trigger_type == view.trigger_type_secret_exit);
 }
 
 static void test_restoring_wall_blocks_new_paths(void)
@@ -2464,6 +2513,7 @@ int main(int argc, char **argv)
 	test_solid_illusion_wall_is_not_passable();
 	test_visible_unlocked_triggered_door_is_physically_passable();
 	test_open_locked_door_is_currently_passable();
+	test_alternative_exit_preserves_destination_type();
 	test_restoring_wall_blocks_new_paths();
 	test_keyed_buddy_proof_door_keeps_objective_reachable();
 	test_keyed_door_blocks_objective_route_but_not_player_progress();

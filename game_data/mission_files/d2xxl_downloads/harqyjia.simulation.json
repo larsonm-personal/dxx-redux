@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
-    "timeout": 2
+    "ok": 4,
+    "timeout": 1
   },
   "levels": [
     {
@@ -51,7 +51,7 @@
         },
         {
           "n": "gold key",
-          "s": 53
+          "s": 52
         },
         {
           "n": "red key",
@@ -82,10 +82,10 @@
           "s": 121
         }
       ],
-      "total_frames": 7253,
+      "total_frames": 7241,
       "rng_end": {
-        "state": 841718948,
-        "calls": 4275
+        "state": 2243486443,
+        "calls": 11294
       }
     },
     {
@@ -104,11 +104,11 @@
         },
         {
           "n": "switch 32",
-          "s": 67
+          "s": 66
         },
         {
           "n": "switch 40",
-          "s": 75
+          "s": 74
         },
         {
           "n": "fly-through 10",
@@ -136,15 +136,15 @@
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 108
+          "s": 107
         },
         {
           "n": "pass-through 15",
-          "s": 112
+          "s": 111
         },
         {
           "n": "hidden door",
-          "s": 112
+          "s": 111
         },
         {
           "n": "switch 42",
@@ -152,45 +152,45 @@
         },
         {
           "n": "pass-through 47",
-          "s": 113
+          "s": 114
         },
         {
           "n": "switch 53",
-          "s": 128
+          "s": 130
         },
         {
           "n": "fly-through 49",
-          "s": 133
+          "s": 136
         },
         {
           "n": "fly-through 50",
-          "s": 133
+          "s": 136
         },
         {
           "n": "fly-through 48",
-          "s": 133
+          "s": 136
         },
         {
           "n": "switch 63",
-          "s": 138
+          "s": 140
         },
         {
           "n": "red key",
-          "s": 149
+          "s": 151
         },
         {
           "n": "reactor",
-          "s": 176
+          "s": 178
         },
         {
           "n": "exit",
-          "s": 183
+          "s": 185
         }
       ],
-      "total_frames": 10957,
+      "total_frames": 11101,
       "rng_end": {
-        "state": 1284623849,
-        "calls": 11224
+        "state": 352727154,
+        "calls": 16325
       }
     },
     {
@@ -217,29 +217,33 @@
         },
         {
           "n": "blue key",
-          "s": 27
+          "s": 26
         },
         {
           "n": "fly-through 28",
-          "s": 37
+          "s": 35
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 44
+          "s": 41
+        },
+        {
+          "n": "fly-through 15",
+          "s": 42
         }
       ],
-      "total_frames": 8174,
+      "total_frames": 7276,
       "rng_end": {
-        "state": 1191227405,
-        "calls": 2740
+        "state": 2262298498,
+        "calls": 14837
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "semantic objective repeated without route advancement"
     },
     {
       "level_num": 4,
       "level_file": "harqyj04.rl2",
       "route_input_sha256": "5A52E2DB3A8025ACDEB05050999EE3B782087842A3D0DC883199C6A2D29442BF",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -264,14 +268,33 @@
         {
           "n": "gold key",
           "s": 59
+        },
+        {
+          "n": "switch 18",
+          "s": 65
+        },
+        {
+          "n": "switch 1",
+          "s": 106
+        },
+        {
+          "n": "red key",
+          "s": 145
+        },
+        {
+          "n": "boss",
+          "s": 171
+        },
+        {
+          "n": "exit",
+          "s": 176
         }
       ],
-      "total_frames": 4233,
+      "total_frames": 10545,
       "rng_end": {
-        "state": 1260695941,
-        "calls": 1788
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 4028167740,
+        "calls": 11963
+      }
     },
     {
       "level_num": -1,
@@ -289,17 +312,17 @@
         },
         {
           "n": "boss",
-          "s": 63
+          "s": 64
         },
         {
           "n": "exit",
           "s": 66
         }
       ],
-      "total_frames": 3942,
+      "total_frames": 3986,
       "rng_end": {
-        "state": 582137423,
-        "calls": 1690
+        "state": 1810366979,
+        "calls": 17030
       }
     }
   ]

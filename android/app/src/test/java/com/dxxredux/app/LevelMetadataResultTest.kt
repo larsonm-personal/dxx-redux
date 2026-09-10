@@ -256,6 +256,29 @@ class LevelMetadataResultTest {
     }
 
     @Test
+    fun fromJsonPreservesGuidedWeaponRequirementForSwitchesAndDoors() {
+        val result = LevelMetadataResult.fromJson(
+            """
+            {
+              "status": "ok", "source": "Guided route", "game": "d2",
+              "mission_name": "guided", "mission_filename": "guided.mn2",
+              "levels": [{ "level_num": 1, "route_steps": [
+                { "index": 1, "kind": "trigger", "activation_kind": "shoot_switch",
+                  "required_weapon": "guided_missile", "label": "Shoot using guided missile" },
+                { "index": 2, "kind": "hidden_door", "activation_kind": "open_hidden_door",
+                  "required_weapon": "guided_missile", "label": "Shoot using guided missile" },
+                { "index": 3, "kind": "trigger", "activation_kind": "shoot_switch" }
+              ]}], "problems": []
+            }
+            """.trimIndent(),
+        )
+        val steps = result.levels.single().routeSteps
+        assertEquals(listOf("guided_missile", "guided_missile", ""), steps.map { it.requiredWeapon })
+        assertEquals("Shoot using guided missile", steps[0].label)
+        assertEquals("Shoot using guided missile", steps[1].label)
+    }
+
+    @Test
     fun fromJsonReadsObjectiveLabelPosition() {
         val result =
             LevelMetadataResult.fromJson(

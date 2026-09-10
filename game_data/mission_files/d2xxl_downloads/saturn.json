@@ -268,18 +268,10 @@
         "route_status": "failed",
         "route_required_key_mask": 0,
         "route_completing_key_mask_set": 0,
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "activation_kind": "none",
-            "label": "Start",
-            "seg": 405
-          }
-        ],
+        "route_steps": [],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
         "guidebot_note": "guidebot is present but not reachable from the start",
-        "route_problem": "gold key unreachable",
+        "route_problem": "shared route planning exceeded its work budget",
         "notes": [
           "guidebot or guidebot start cage placed in this level",
           "guidebot is present but not reachable from the start"
@@ -1201,13 +1193,13 @@
         "mine_volume": 58941000.0,
         "mine_volume_normalized": 12.8892,
         "mine_volume_text": "13x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 2482.3,
+        "travel_time_seconds": 50,
+        "travel_time_text": "0M:50S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
-        "route_status": "failed",
+        "route_status": "partial",
         "route_required_key_mask": 0,
         "route_completing_key_mask_set": 0,
         "route_steps": [
@@ -1217,10 +1209,105 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 102
+          },
+          {
+            "index": 1,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open door",
+            "seg": 711,
+            "wall": 223,
+            "label_pos": {
+              "x": 175.0,
+              "y": 78.0,
+              "z": 61.0
+            },
+            "distance": 492.7,
+            "opens": [
+              {
+                "seg": 715,
+                "side": 4,
+                "wall": 223
+              },
+              {
+                "seg": 716,
+                "side": 5,
+                "wall": 224
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "blue key",
+            "seg": 267,
+            "label_pos": {
+              "x": -30.0,
+              "y": 216.0,
+              "z": 30.0
+            },
+            "distance": 1150.7,
+            "key": "blue"
+          },
+          {
+            "index": 3,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "switch_shot_quality": "confirmed_steep",
+            "switch_shot_incidence_cosine": 0.1566619873046875,
+            "label": "Shoot switch trigger 2",
+            "seg": 413,
+            "wall": 0,
+            "label_pos": {
+              "x": -30.0,
+              "y": -18.0,
+              "z": -30.1
+            },
+            "distance": 533.4,
+            "trigger": 2,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 408,
+                "side": 0,
+                "wall": 92
+              },
+              {
+                "seg": 401,
+                "side": 2,
+                "wall": 90
+              },
+              {
+                "seg": 400,
+                "side": 0,
+                "wall": 89
+              },
+              {
+                "seg": 416,
+                "side": 2,
+                "wall": 98
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "key",
+            "activation_kind": "pickup_key",
+            "label": "red key",
+            "seg": 404,
+            "label_pos": {
+              "x": -30.0,
+              "y": 4.0,
+              "z": 30.0
+            },
+            "distance": 305.4,
+            "key": "red"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "gold key unreachable",
+        "route_problem": "shared route planning reached its work budget",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
         ]

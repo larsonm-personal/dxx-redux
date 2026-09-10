@@ -23,7 +23,6 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "dxxerror.h"
 #include "inferno.h"
 #include "fvi.h"
-#include "swept_edge_clearance.h"
 #include "segment.h"
 #include "object.h"
 #include "wall.h"
@@ -283,26 +282,7 @@ static int check_line_to_face(vms_vector *newp,const vms_vector *p0,const vms_ve
 	if (rad!=0)
 		vm_vec_scale_add2(&checkp,&norm,-rad);
 
-	const int result = check_sphere_to_face(&checkp,seg,s,facenum,nv,rad,vertex_list);
-	if (result == IT_EDGE && rad > 0 && seg->sides[side].wall_num < 0) {
-		const double from[3] = {p0->x, p0->y, p0->z};
-		const double to[3] = {p1->x, p1->y, p1->z};
-		int edge;
-		/* The projected plane contact can overlap an edge that the actual
-		 * swept sphere never reaches. Preserve every possible edge contact
-		 * and the existing contact behavior of interactive walls */
-		for (edge = 0; edge < nv; ++edge) {
-			const vms_vector *v0 = &Vertices[vertex_list[facenum * 3 + edge]];
-			const vms_vector *v1 = &Vertices[vertex_list[facenum * 3 + (edge + 1) % nv]];
-			const double start[3] = {v0->x, v0->y, v0->z};
-			const double end[3] = {v1->x, v1->y, v1->z};
-			if (!dxx_swept_sphere_misses_edge(from, to, start, end, (double) rad + 1))
-				break;
-		}
-		if (edge == nv)
-			return IT_NONE;
-	}
-	return result;
+	return check_sphere_to_face(&checkp,seg,s,facenum,nv,rad,vertex_list);
 
 }
 

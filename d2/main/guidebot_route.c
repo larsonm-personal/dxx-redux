@@ -610,6 +610,8 @@ const char *escort_route_goal_label(void)
 
 const char *escort_get_route_goal_instruction(void)
 {
+	if (Escort_route_goal.requires_guided_missile)
+		return "shoot using guided missile";
 	if (Escort_route_goal.objective_kind == ESCORT_ROUTE_OBJECTIVE_UNEXPLORED)
 		return "unexplored";
 	if (Escort_route_goal.guidance_mode ==
@@ -1472,6 +1474,7 @@ static void escort_route_build_step_goal(
 	goal->target_seg = target_seg;
 	goal->objective_kind = step->kind;
 	goal->activation_kind = step->activation_kind;
+	goal->requires_guided_missile = step->requires_guided_missile;
 	goal->objective_seg = step->seg;
 	goal->objective_side = step->side;
 	goal->objective_wall = step->wall_num;
@@ -1849,6 +1852,7 @@ static int escort_route_goal_semantic_equal(
 	return left && right && left->active && right->active &&
 	       left->objective_kind == right->objective_kind &&
 	       left->activation_kind == right->activation_kind &&
+	       left->requires_guided_missile == right->requires_guided_missile &&
 	       left->objective_seg == right->objective_seg &&
 	       left->objective_side == right->objective_side &&
 	       left->objective_wall == right->objective_wall &&

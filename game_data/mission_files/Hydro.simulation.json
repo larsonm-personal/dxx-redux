@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 15,
-    "failed": 3,
+    "ok": 16,
+    "failed": 2,
     "timeout": 5
   },
   "levels": [
@@ -32,20 +32,20 @@
         },
         {
           "n": "exit",
-          "s": 51
+          "s": 52
         }
       ],
-      "total_frames": 3078,
+      "total_frames": 3094,
       "rng_end": {
-        "state": 1481476935,
-        "calls": 2978
+        "state": 1405785794,
+        "calls": 2997
       }
     },
     {
       "level_num": 2,
       "level_file": "Level02.rl2",
-      "route_input_sha256": "A511B6EF408CC209227709871DAAC8D6DC3A58148D38B388D88CB2F9E98E42E8",
-      "status": "failed",
+      "route_input_sha256": "29285CE4B51628E3F59E7D1EDA45A1AF501221BAC7802888724E98BBC6DDCC78",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -61,23 +61,19 @@
         },
         {
           "n": "blue key",
-          "s": 26
+          "s": 25
         },
         {
           "n": "switch 6",
-          "s": 46
-        },
-        {
-          "n": "red key",
-          "s": 48
+          "s": 27
         }
       ],
-      "total_frames": 2863,
+      "total_frames": 2198,
       "rng_end": {
-        "state": 3068847184,
-        "calls": 1655
+        "state": 3754837988,
+        "calls": 1139
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 3,
@@ -95,7 +91,7 @@
         },
         {
           "n": "blue key",
-          "s": 18
+          "s": 16
         },
         {
           "n": "switch 1",
@@ -103,7 +99,7 @@
         },
         {
           "n": "gold key",
-          "s": 66
+          "s": 65
         },
         {
           "n": "red key",
@@ -118,10 +114,10 @@
           "s": 143
         }
       ],
-      "total_frames": 8568,
+      "total_frames": 8559,
       "rng_end": {
-        "state": 679753307,
-        "calls": 4782
+        "state": 741656181,
+        "calls": 4748
       }
     },
     {
@@ -136,53 +132,53 @@
       "objectives": [
         {
           "n": "switch 6",
-          "s": 22
+          "s": 20
         },
         {
           "n": "switch 5",
-          "s": 31
+          "s": 30
         },
         {
           "n": "switch 2",
-          "s": 37
+          "s": 35
         },
         {
           "n": "blue key",
-          "s": 47
+          "s": 46
         },
         {
           "n": "switch 8",
-          "s": 70
+          "s": 67
         },
         {
           "n": "switch 14",
-          "s": 82
+          "s": 79
         },
         {
           "n": "gold key",
-          "s": 94
+          "s": 92
         },
         {
           "n": "switch 12",
-          "s": 122
+          "s": 120
         },
         {
           "n": "red key",
-          "s": 135
+          "s": 132
         },
         {
           "n": "boss",
-          "s": 155
+          "s": 156
         },
         {
           "n": "exit",
           "s": 160
         }
       ],
-      "total_frames": 9592,
+      "total_frames": 9621,
       "rng_end": {
-        "state": 1143920096,
-        "calls": 6311
+        "state": 1357885756,
+        "calls": 14267
       }
     },
     {
@@ -197,7 +193,7 @@
       "objectives": [
         {
           "n": "blastable wall",
-          "s": 16
+          "s": 15
         },
         {
           "n": "switch 2",
@@ -217,17 +213,17 @@
         },
         {
           "n": "reactor",
-          "s": 79
+          "s": 77
         },
         {
           "n": "exit",
-          "s": 86
+          "s": 84
         }
       ],
-      "total_frames": 5167,
+      "total_frames": 5054,
       "rng_end": {
-        "state": 2211323218,
-        "calls": 4197
+        "state": 2378905023,
+        "calls": 6698
       }
     },
     {
@@ -259,15 +255,15 @@
       "objectives": [
         {
           "n": "switch 1",
-          "s": 14
+          "s": 13
         },
         {
           "n": "blue key",
-          "s": 25
+          "s": 24
         },
         {
           "n": "switch 7",
-          "s": 55
+          "s": 54
         },
         {
           "n": "gold key",
@@ -287,17 +283,17 @@
         },
         {
           "n": "reactor",
-          "s": 129
+          "s": 128
         },
         {
           "n": "exit",
-          "s": 133
+          "s": 132
         }
       ],
-      "total_frames": 8003,
+      "total_frames": 7943,
       "rng_end": {
-        "state": 3657463003,
-        "calls": 5166
+        "state": 2303128554,
+        "calls": 12845
       }
     },
     {
@@ -316,7 +312,7 @@
         },
         {
           "n": "blue key",
-          "s": 23
+          "s": 22
         },
         {
           "n": "switch 2",
@@ -328,25 +324,25 @@
         },
         {
           "n": "gold key",
-          "s": 55
+          "s": 56
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 64
+          "s": 65
         },
         {
           "n": "boss",
-          "s": 79
+          "s": 80
         },
         {
           "n": "exit",
-          "s": 92
+          "s": 93
         }
       ],
-      "total_frames": 5517,
+      "total_frames": 5552,
       "rng_end": {
-        "state": 841718948,
-        "calls": 4275
+        "state": 1201147563,
+        "calls": 4190
       }
     },
     {
@@ -389,20 +385,20 @@
         },
         {
           "n": "exit",
-          "s": 67
+          "s": 68
         }
       ],
-      "total_frames": 4043,
+      "total_frames": 4068,
       "rng_end": {
-        "state": 1525813539,
-        "calls": 1894
+        "state": 1718045622,
+        "calls": 1841
       }
     },
     {
       "level_num": 10,
       "level_file": "Level10.rl2",
       "route_input_sha256": "E3A9EB062089E99855F3AA35D9E939E521D0CCF6EAF90A0415CFD36A8C74511A",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -426,15 +422,26 @@
         },
         {
           "n": "switch 4",
-          "s": 54
+          "s": 65
+        },
+        {
+          "n": "red key",
+          "s": 73
+        },
+        {
+          "n": "reactor",
+          "s": 82
+        },
+        {
+          "n": "exit",
+          "s": 102
         }
       ],
-      "total_frames": 3697,
+      "total_frames": 6136,
       "rng_end": {
-        "state": 3872261621,
-        "calls": 1804
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 3982971999,
+        "calls": 6538
+      }
     },
     {
       "level_num": 11,
@@ -464,17 +471,17 @@
         },
         {
           "n": "reactor",
-          "s": 111
+          "s": 110
         },
         {
           "n": "exit",
-          "s": 127
+          "s": 126
         }
       ],
-      "total_frames": 7605,
+      "total_frames": 7589,
       "rng_end": {
-        "state": 4255738964,
-        "calls": 3395
+        "state": 1531182561,
+        "calls": 3360
       }
     },
     {
@@ -489,29 +496,29 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 39
+          "s": 40
         },
         {
           "n": "gold key",
-          "s": 84
+          "s": 86
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 132
+          "s": 134
         },
         {
           "n": "boss",
-          "s": 160
+          "s": 162
         },
         {
           "n": "exit",
-          "s": 161
+          "s": 163
         }
       ],
-      "total_frames": 9665,
+      "total_frames": 9750,
       "rng_end": {
-        "state": 3031535636,
-        "calls": 3715
+        "state": 1268862892,
+        "calls": 9355
       }
     },
     {
@@ -571,19 +578,19 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 12
+          "s": 11
         },
         {
           "n": "switch 10",
-          "s": 38
+          "s": 39
         },
         {
           "n": "switch 2",
-          "s": 62
+          "s": 63
         },
         {
           "n": "gold key",
-          "s": 72
+          "s": 73
         },
         {
           "n": "switch 9",
@@ -594,10 +601,10 @@
           "s": 111
         }
       ],
-      "total_frames": 10757,
+      "total_frames": 8121,
       "rng_end": {
-        "state": 205921497,
-        "calls": 7784
+        "state": 3568656586,
+        "calls": 7885
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -638,11 +645,11 @@
         },
         {
           "n": "switch 1",
-          "s": 71
+          "s": 70
         },
         {
           "n": "gold key",
-          "s": 88
+          "s": 87
         },
         {
           "n": "switch 2",
@@ -650,18 +657,18 @@
         },
         {
           "n": "red key",
-          "s": 121
+          "s": 122
         },
         {
           "n": "boss",
-          "s": 169
+          "s": 159
         },
         {
           "n": "exit",
-          "s": 191
+          "s": 182
         }
       ],
-      "total_frames": 11467,
+      "total_frames": 10918,
       "rng_end": {
         "state": 3039520771,
         "calls": 7302
@@ -716,17 +723,17 @@
         },
         {
           "n": "hidden door",
-          "s": 79
+          "s": 77
         },
         {
           "n": "reactor",
-          "s": 82
+          "s": 81
         }
       ],
       "total_frames": 15601,
       "rng_end": {
-        "state": 775365638,
-        "calls": 5153
+        "state": 3949885492,
+        "calls": 5091
       },
       "problem": "route confirmation exceeded 260-second simulation budget"
     },
@@ -750,10 +757,10 @@
         },
         {
           "n": "exit",
-          "s": 47
+          "s": 49
         }
       ],
-      "total_frames": 2829,
+      "total_frames": 2921,
       "rng_end": {
         "state": 1907790916,
         "calls": 2195

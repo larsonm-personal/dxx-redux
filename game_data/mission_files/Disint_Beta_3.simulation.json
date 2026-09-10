@@ -7,17 +7,16 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 9,
-    "failed": 5,
-    "timeout": 1,
-    "unsupported": 2
+    "ok": 11,
+    "failed": 3,
+    "unsupported": 3
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "01carbo.rl2",
       "route_input_sha256": "80FD39EA8AC6B660A7C470524A4A0B6381EC7ECBA6C926701389A4E63F5C11FC",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -33,15 +32,38 @@
         },
         {
           "n": "switch 3",
-          "s": 8
+          "s": 7
+        },
+        {
+          "n": "switch 4",
+          "s": 13
+        },
+        {
+          "n": "fly-through 1",
+          "s": 22
+        },
+        {
+          "n": "switch 2",
+          "s": 30
+        },
+        {
+          "n": "red key",
+          "s": 36
+        },
+        {
+          "n": "reactor",
+          "s": 44
+        },
+        {
+          "n": "exit",
+          "s": 53
         }
       ],
-      "total_frames": 1327,
+      "total_frames": 3192,
       "rng_end": {
-        "state": 3803195639,
-        "calls": 754
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 3952730275,
+        "calls": 2022
+      }
     },
     {
       "level_num": 2,
@@ -71,17 +93,17 @@
         },
         {
           "n": "reactor",
-          "s": 45
+          "s": 41
         },
         {
           "n": "exit",
-          "s": 71
+          "s": 133
         }
       ],
-      "total_frames": 4240,
+      "total_frames": 7952,
       "rng_end": {
-        "state": 1305682434,
-        "calls": 2421
+        "state": 3096600093,
+        "calls": 3620
       }
     },
     {
@@ -112,28 +134,32 @@
         },
         {
           "n": "switch 17",
-          "s": 16
+          "s": 15
         },
         {
           "n": "reactor",
-          "s": 23
+          "s": 22
+        },
+        {
+          "n": "fly-through 2",
+          "s": 27
         },
         {
           "n": "exit",
-          "s": 34
+          "s": 33
         }
       ],
-      "total_frames": 2069,
+      "total_frames": 2000,
       "rng_end": {
-        "state": 1643098370,
-        "calls": 1653
+        "state": 570149541,
+        "calls": 2268
       }
     },
     {
       "level_num": 4,
       "level_file": "04illu.rl2",
-      "route_input_sha256": "534E5AD215A40BF3F36823ECFC277EB9BE2CA9F63B5DA30742C3B92F95E19A1C",
-      "status": "failed",
+      "route_input_sha256": "DEB1B1D97F95D0DA839BFF188642C3959B0B66D38DDF403F2168DCF4C279301B",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -144,24 +170,33 @@
         "state": 2122112351,
         "calls": 138
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "guided missile objective requires equipment and flight verification"
     },
     {
       "level_num": 5,
       "level_file": "05extc.rl2",
-      "route_input_sha256": "21EC764FCEE02A3AC2695E80963AEE2BDADA5FF38C1F154C4AB83B915CB6D86F",
-      "status": "failed",
+      "route_input_sha256": "485698F6B1C15AE07E38D6A70C059BC0FE45910839DB2C15F2FB3511FC3BE4BA",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "open door",
+          "s": 14
+        },
+        {
+          "n": "switch 0",
+          "s": 15
+        }
+      ],
+      "total_frames": 901,
       "rng_end": {
-        "state": 1,
-        "calls": 0
+        "state": 4026811829,
+        "calls": 332
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "guided missile objective requires equipment and flight verification"
     },
     {
       "level_num": 6,
@@ -226,7 +261,7 @@
         },
         {
           "n": "red key",
-          "s": 44
+          "s": 43
         },
         {
           "n": "blastable wall",
@@ -241,33 +276,57 @@
           "s": 90
         }
       ],
-      "total_frames": 5392,
+      "total_frames": 5376,
       "rng_end": {
-        "state": 2159170241,
-        "calls": 2880
+        "state": 1121683269,
+        "calls": 2876
       }
     },
     {
       "level_num": 9,
       "level_file": "13ipbl.rl2",
-      "route_input_sha256": "18BD835E6F1572F227843E5841300FA0A52441B96E6DB1FFBB1C20CE9822153F",
-      "status": "unsupported",
+      "route_input_sha256": "EC548FC2C34F32C88E1F4FB4D89280CC6E0C21D5DEBA486FA09C5C62C7FF6948",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 49,
+      "objectives": [
+        {
+          "n": "switch 10",
+          "s": 6
+        },
+        {
+          "n": "switch 11",
+          "s": 20
+        },
+        {
+          "n": "fly-through 2",
+          "s": 60
+        },
+        {
+          "n": "blue key",
+          "s": 63
+        },
+        {
+          "n": "switch 7",
+          "s": 110
+        },
+        {
+          "n": "exit",
+          "s": 136
+        }
+      ],
+      "total_frames": 8142,
       "rng_end": {
-        "state": 1452336924,
-        "calls": 91
-      },
-      "problem": "route objective activation is not supported"
+        "state": 1616134106,
+        "calls": 8957
+      }
     },
     {
       "level_num": 10,
       "level_file": "14sele.rl2",
-      "route_input_sha256": "492CEE8CF6EBC110C59BEE06EAB44A6EE28D0BCCA9D1D69159968301C2F43CB1",
+      "route_input_sha256": "4CC60F0F90A6B8378BA8A19B1B3834E2CEAD94C50F8610A494486F0C9C947A1C",
       "status": "unsupported",
       "rng_start": {
         "state": 1,
@@ -279,12 +338,12 @@
           "s": 8
         }
       ],
-      "total_frames": 660,
+      "total_frames": 463,
       "rng_end": {
-        "state": 274854673,
-        "calls": 368
+        "state": 2623347250,
+        "calls": 261
       },
-      "problem": "route objective activation is not supported"
+      "problem": "guided missile objective requires equipment and flight verification"
     },
     {
       "level_num": 11,
@@ -306,17 +365,17 @@
         },
         {
           "n": "reactor",
-          "s": 67
+          "s": 68
         },
         {
           "n": "exit",
-          "s": 77
+          "s": 78
         }
       ],
-      "total_frames": 4606,
+      "total_frames": 4695,
       "rng_end": {
-        "state": 2079425723,
-        "calls": 3150
+        "state": 3185666294,
+        "calls": 5873
       }
     },
     {
@@ -331,7 +390,7 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 6
+          "s": 7
         },
         {
           "n": "hidden door",
@@ -339,7 +398,7 @@
         },
         {
           "n": "blue key",
-          "s": 12
+          "s": 13
         },
         {
           "n": "switch 4",
@@ -351,11 +410,11 @@
         },
         {
           "n": "blastable wall",
-          "s": 34
+          "s": 35
         },
         {
           "n": "red key",
-          "s": 40
+          "s": 41
         },
         {
           "n": "switch 2",
@@ -363,17 +422,17 @@
         },
         {
           "n": "boss",
-          "s": 65
+          "s": 67
         },
         {
           "n": "exit",
-          "s": 82
+          "s": 83
         }
       ],
-      "total_frames": 4943,
+      "total_frames": 5002,
       "rng_end": {
-        "state": 1820422358,
-        "calls": 2705
+        "state": 1368168286,
+        "calls": 12457
       }
     },
     {
@@ -404,7 +463,7 @@
         },
         {
           "n": "switch 8",
-          "s": 93
+          "s": 92
         },
         {
           "n": "switch 9",
@@ -412,17 +471,17 @@
         },
         {
           "n": "reactor",
-          "s": 102
+          "s": 101
         },
         {
           "n": "exit",
           "s": 120
         }
       ],
-      "total_frames": 7194,
+      "total_frames": 7174,
       "rng_end": {
-        "state": 2885752461,
-        "calls": 4148
+        "state": 1493199978,
+        "calls": 9133
       }
     },
     {

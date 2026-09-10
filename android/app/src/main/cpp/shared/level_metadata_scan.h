@@ -1,6 +1,8 @@
 #ifndef DXX_LEVEL_METADATA_SCAN_H
 #define DXX_LEVEL_METADATA_SCAN_H
 
+#include "guided_missile_route.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -113,6 +115,8 @@ typedef struct level_metadata_route_step {
 	int key_carrier_objnum;
 	int can_be_bypassed;
 	int activation_kind;
+	int requires_guided_missile;
+	int guided_missile_point_count;
 	/* level_metadata_route_recovery_kind; recovery never completes its parent */
 	int is_switch_restorer;
 	int restored_wall_num;
@@ -238,6 +242,8 @@ typedef struct level_metadata_scan_view {
 	int (*target_visible_from_segment)(void *user, int seg, const int from_pos[3], int target_seg, const int target_pos[3]);
 	int (*target_visible_with_open_wall)(void *user, int seg, const int from_pos[3], int target_seg, const int target_pos[3], int wall_num);
 	int (*wall_shootable_from_position)(void *user, int seg, const int from_pos[3], int wall_num);
+	int (*door_shot_aim_from_position)(void *user, int seg, const int from_pos[3], int wall_num, int aim_pos[3]);
+	int (*guided_route)(void *user, int wall, const int *segments, int count, guided_missile_route *result);
 	int (*wall_potentially_shootable_from_position)(void *user, int seg, const int from_pos[3], int wall_num);
 	int (*wall_shootable_without_transparency_from_position)(void *user, int seg, const int from_pos[3], int wall_num);
 	int (*wall_conditionally_shootable_from_position)(void *user, int seg, const int from_pos[3], int wall_num);

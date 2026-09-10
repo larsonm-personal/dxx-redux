@@ -10,6 +10,7 @@ extern "C" {
 #include "collide.h"
 #include "cntrlcen.h"
 #include "controls.h"
+#include "endlevel.h"
 #include "escort.h"
 #include "fireball.h"
 #include "fvi.h"
@@ -20,6 +21,7 @@ extern "C" {
 #include "inferno.h"
 #include "laser.h"
 #include "maths.h"
+#include "mission.h"
 #include "object.h"
 #include "player.h"
 #include "powerup.h"
@@ -64,6 +66,7 @@ struct controller_state {
 	unsigned int wait_frames;
 	unsigned int replan_wait_frames;
 	int pending_restorer_trigger;
+	int pending_restorer_wall;
 	int crossed_path_closure;
 	unsigned int frontier_extension_count;
 	unsigned int duplicate_objective_count;
@@ -458,7 +461,7 @@ int objective_was_recorded(const level_metadata_route_step *step, int step_index
 	return 0;
 }
 
-int prepare_next_goal(int restorer_trigger)
+int prepare_next_goal(int restorer_trigger, int restorer_wall = -1)
 {
 	const level_metadata_state *metadata;
 	int selected_index = -1;
@@ -475,6 +478,7 @@ int prepare_next_goal(int restorer_trigger)
 	if (level_metadata_live_route_work_pending()) {
 		State.phase = PHASE_WAIT_FOR_REPLAN;
 		State.pending_restorer_trigger = restorer_trigger;
+		State.pending_restorer_wall = restorer_wall;
 		return 1;
 	}
 	State.replan_wait_frames = 0;
@@ -509,13 +513,14 @@ int prepare_next_goal(int restorer_trigger)
 		fail(ROUTE_CONFIRMATION_FAILED, "live Guide-Bot route has no actionable goal");
 		return 0;
 	}
-	if (restorer_trigger >= 0) {
+	if (restorer_trigger >= 0 || restorer_wall >= 0) {
 		for (int candidate_index = 0;
 		     candidate_index < metadata->route_step_count; ++candidate_index) {
 			const level_metadata_route_step *candidate =
 			    &metadata->route_steps[candidate_index];
-			if (candidate->trigger_num != restorer_trigger)
-				continue;
+			if (restorer_wall >= 0) {
+				if (candidate->kind != LEVEL_METADATA_ROUTE_HIDDEN_DOOR || candidate->wall_num != restorer_wall) continue;
+			} else if (candidate->trigger_num != restorer_trigger) continue;
 			route_goal =
 			    escort_route_build_goal_for_step(candidate, &State.goal);
 			if (route_goal != ESCORT_GOAL_UNSPECIFIED) {
@@ -534,7 +539,7 @@ int prepare_next_goal(int restorer_trigger)
 	reopen_unfired_trigger = metadata->route_steps[selected_index].kind == LEVEL_METADATA_ROUTE_TRIGGER &&
 	                         objective_was_recorded(&metadata->route_steps[selected_index], selected_index) &&
 	                         !escort_route_trigger_was_activated(metadata->route_steps[selected_index].trigger_num);
-	if (restorer_trigger < 0 && !reopen_unfired_trigger &&
+	if (restorer_trigger < 0 && restorer_wall < 0 && !reopen_unfired_trigger &&
 	    metadata->route_steps[selected_index].is_switch_restorer != LEVEL_METADATA_ROUTE_RECOVERY_ACCESS &&
 	    objective_was_recorded(&metadata->route_steps[selected_index],
 	                           selected_index)) {
@@ -557,6 +562,7 @@ int prepare_next_goal(int restorer_trigger)
 	        selected_index))
 		return 0;
 	State.step = metadata->route_steps[selected_index];
+
 	if (reopen_unfired_trigger)
 		State.step.is_switch_restorer = LEVEL_METADATA_ROUTE_RECOVERY_ACCESS;
 	/* Explicit door recovery can revisit a completed switch, so its cached
@@ -572,6 +578,13 @@ int prepare_next_goal(int restorer_trigger)
 	 * frontier logic used by the in-game Guide-Bot to choose this leg's
 	 * reachable navigation endpoint. */
 	Escort_route_goal = State.goal;
+	if (State.step.requires_guided_missile) {
+#if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+		fprintf(stderr, "ROUTE-CONFIRM guided wall=%d trigger=%d launch=%d points=%d instruction=%s\n", State.step.wall_num, State.step.trigger_num, State.step.seg, State.step.guided_missile_point_count, escort_get_route_goal_instruction());
+#endif
+		fail(ROUTE_CONFIRMATION_UNSUPPORTED, "guided missile objective requires equipment and flight verification");
+		return 0;
+	}
 #if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	fprintf(stderr,
 	        "ROUTE-CONFIRM goal step=%d kind=%d activation=%d actor_seg=%d "
@@ -1134,6 +1147,7 @@ void recover_path_door(object *actor)
 	int side = -1;
 	int wall_num;
 	int controlling_trigger;
+	int opposite_wall = -1;
 	if (!actor)
 		return;
 	aip = &actor->ctype.ai_info;
@@ -1161,30 +1175,42 @@ void recover_path_door(object *actor)
 	if (wall_num < 0 || wall_num >= Num_walls)
 		return;
 	controlling_trigger = Walls[wall_num].controlling_trigger;
-	if (controlling_trigger < 0) {
-		const int opposite_side = find_connect_side(
-		    &Segments[actor->segnum], &Segments[next_seg]);
-		const int opposite_wall =
-		    opposite_side >= 0
-		        ? Segments[next_seg].sides[opposite_side].wall_num
-		        : -1;
-		if (opposite_wall >= 0 && opposite_wall < Num_walls)
-			controlling_trigger =
-			    Walls[opposite_wall].controlling_trigger;
+	const int opposite_side = find_connect_side(&Segments[actor->segnum], &Segments[next_seg]);
+	if (opposite_side >= 0) opposite_wall = Segments[next_seg].sides[opposite_side].wall_num;
+	if (controlling_trigger < 0 && opposite_wall >= 0 && opposite_wall < Num_walls)
+		controlling_trigger = Walls[opposite_wall].controlling_trigger;
+	int remote_reopener = 0;
+	const level_metadata_state *metadata = level_metadata_get_live_route_state();
+	if (metadata && opposite_wall >= 0 && opposite_wall < Num_walls &&
+	    Walls[opposite_wall].type == WALL_DOOR && !(Walls[opposite_wall].flags & WALL_DOOR_LOCKED)) {
+		for (int index = 0; index < metadata->route_step_count; ++index) {
+			const level_metadata_route_step *step = &metadata->route_steps[index];
+			if (step->kind == LEVEL_METADATA_ROUTE_HIDDEN_DOOR && step->wall_num == opposite_wall) {
+				remote_reopener = 1;
+				break;
+			}
+		}
 	}
 	if (Walls[wall_num].type == WALL_DOOR &&
 	    Walls[wall_num].state == WALL_DOOR_CLOSED &&
 	    (Walls[wall_num].flags & WALL_DOOR_LOCKED) &&
-	    controlling_trigger >= 0 &&
+	    (controlling_trigger >= 0 || remote_reopener) &&
 	    actor_is_close_to_side(actor, actor->segnum, side)) {
+		if (controlling_trigger >= 0) {
 #if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
-		fprintf(stderr,
-		        "ROUTE-CONFIRM replan closed trigger door wall=%d trigger=%d "
-		        "seg=%d side=%d actor_seg=%d\n",
-		        wall_num, controlling_trigger, actor->segnum, side,
-		        actor->segnum);
+			fprintf(stderr,
+			        "ROUTE-CONFIRM replan closed trigger door wall=%d trigger=%d "
+			        "seg=%d side=%d actor_seg=%d\n",
+			        wall_num, controlling_trigger, actor->segnum, side,
+			        actor->segnum);
 #endif
-		prepare_next_goal(controlling_trigger);
+			prepare_next_goal(controlling_trigger);
+		} else {
+#if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+			fprintf(stderr, "ROUTE-CONFIRM replan closed remote door wall=%d remote=%d actor_seg=%d\n", wall_num, opposite_wall, actor->segnum);
+#endif
+			prepare_next_goal(-1, opposite_wall);
+		}
 		return;
 	}
 	if (Walls[wall_num].type == WALL_DOOR)
@@ -1244,6 +1270,20 @@ int set_visible_flare_target(const object *actor, int segnum, int sidenum,
 		return find_vector_intersection(&query, &hit) == HIT_WALL &&
 		       hit.hit_side_seg == segnum && hit.hit_side == sidenum;
 	};
+	const int wall = Segments[segnum].sides[sidenum].wall_num;
+	if (wall >= 0 && wall < Num_walls && Walls[wall].type == WALL_DOOR &&
+	    wall == State.step.wall_num && State.step.aim_pos_valid &&
+	    (State.step.aim_pos[0] != target.x || State.step.aim_pos[1] != target.y || State.step.aim_pos[2] != target.z)) {
+		const int from[3] = { actor->pos.x, actor->pos.y, actor->pos.z };
+		int aim[3];
+		if (!level_metadata_door_shot_aim_from_position(actor->segnum, from, wall, aim))
+			return 0;
+		target.x = aim[0];
+		target.y = aim[1];
+		target.z = aim[2];
+		vm_vec_sub(direction, &target, &actor->pos);
+		return vm_vec_normalize_quick(direction) != 0;
+	}
 	if (hits_face(target))
 		return 1;
 	// Aim at an opaque portion when the center of a blastable grate is a hole
@@ -1506,6 +1546,10 @@ void apply_objective_action(object *actor)
 						record_objective_and_replan();
 						break;
 					}
+					/* Preserve the approach to this doorway before routing across it
+					 * A remote opening must not select an unrelated path to its far side */
+					if (actor->segnum != segnum)
+						break;
 					if (wall_num >= 0 && wall_num < Num_walls &&
 					    Walls[wall_num].state == WALL_DOOR_CLOSED &&
 					    !apply_flare_fallback(actor, segnum, sidenum,
@@ -1815,8 +1859,25 @@ extern "C" void route_confirmation_before_frame(void)
 	/* The route proof must be allowed to finish after demonstrating that the
 	 * reactor can be destroyed.  Pause the normal escape countdown through its
 	 * engine API so long verification paths do not involuntarily end the level. */
-	if (reactor_countdown_is_active() && !Reactor_countdown_paused)
-		reactor_countdown_set_paused(1, Countdown_timer);
+	if (Control_center_destroyed && !Endlevel_sequence && !Reactor_countdown_paused) {
+		/* Built-in final levels skip the native countdown in single-player */
+		if (!(!is_D2_OEM && !is_MAC_SHARE && !is_SHAREWARE &&
+		      PLAYING_BUILTIN_MISSION && Current_level_num == Last_level)) {
+			State.summary.reactor_countdown_observed = 1;
+			State.summary.reactor_destroyed_ticks = State.summary.elapsed_ticks;
+			State.summary.reactor_countdown_ticks = Countdown_timer;
+		}
+		/* The live pause API deliberately rejects expired countdowns.  Authored
+		 * zero/negative timers must still be frozen in this route-only sandbox,
+		 * before the native death sequence attempts a modal dialog or level load */
+		if (!reactor_countdown_set_paused(1, Countdown_timer)) {
+#if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+			fprintf(stderr, "ROUTE-CONFIRM sandbox pause expired reactor countdown ticks=%d base_seconds=%d\n",
+			        Countdown_timer, Base_control_center_explosion_time);
+#endif
+			Reactor_countdown_paused = 1;
+		}
+	}
 	if ((State.phase == PHASE_WAIT_FOR_REPLAN || State.crossed_path_closure) && valid_object(State.actor_objnum)) {
 		object *actor = &Objects[State.actor_objnum];
 		vm_vec_zero(&actor->mtype.phys_info.velocity);
@@ -1860,7 +1921,7 @@ extern "C" void route_confirmation_after_frame(void)
 		if (++State.replan_wait_frames > 5 * ROUTE_CONFIRMATION_FIXED_HZ)
 			fail(ROUTE_CONFIRMATION_TIMEOUT, "pending route transition did not settle within 5 seconds");
 		else
-			prepare_next_goal(State.pending_restorer_trigger);
+			prepare_next_goal(State.pending_restorer_trigger, State.pending_restorer_wall);
 		return;
 	}
 	apply_incidental_crossed_trigger(actor);

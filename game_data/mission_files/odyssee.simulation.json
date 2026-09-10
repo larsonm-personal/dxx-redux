@@ -54,7 +54,7 @@
         },
         {
           "n": "red key",
-          "s": 91
+          "s": 90
         },
         {
           "n": "switch 20",
@@ -62,33 +62,33 @@
         },
         {
           "n": "switch 19",
-          "s": 108
+          "s": 109
         },
         {
           "n": "hidden door",
-          "s": 126
+          "s": 127
         },
         {
           "n": "switch 9",
-          "s": 159
+          "s": 160
         },
         {
           "n": "hidden door",
-          "s": 198
+          "s": 199
         },
         {
           "n": "reactor",
-          "s": 198
+          "s": 199
         },
         {
           "n": "exit",
-          "s": 224
+          "s": 225
         }
       ],
-      "total_frames": 13433,
+      "total_frames": 13492,
       "rng_end": {
-        "state": 4251045874,
-        "calls": 9797
+        "state": 1931428181,
+        "calls": 17580
       }
     },
     {
@@ -115,11 +115,11 @@
         },
         {
           "n": "hidden door",
-          "s": 7
+          "s": 8
         },
         {
           "n": "blue key",
-          "s": 22
+          "s": 23
         },
         {
           "n": "gold key",
@@ -127,21 +127,21 @@
         },
         {
           "n": "red key",
-          "s": 72
+          "s": 73
         },
         {
           "n": "boss",
-          "s": 89
+          "s": 90
         },
         {
           "n": "exit",
-          "s": 103
+          "s": 104
         }
       ],
-      "total_frames": 6155,
+      "total_frames": 6228,
       "rng_end": {
-        "state": 3180037125,
-        "calls": 4220
+        "state": 858592857,
+        "calls": 12520
       }
     }
   ]

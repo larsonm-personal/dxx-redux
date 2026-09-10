@@ -30,26 +30,30 @@
           "s": 30
         },
         {
+          "n": "switch 0",
+          "s": 32
+        },
+        {
           "n": "gold key",
-          "s": 61
+          "s": 58
         },
         {
           "n": "red key",
-          "s": 94
+          "s": 93
         },
         {
           "n": "boss",
-          "s": 125
+          "s": 123
         },
         {
           "n": "exit",
-          "s": 137
+          "s": 136
         }
       ],
-      "total_frames": 8226,
+      "total_frames": 8156,
       "rng_end": {
-        "state": 1199725402,
-        "calls": 3453
+        "state": 1149812319,
+        "calls": 3978
       }
     },
     {
@@ -68,7 +72,7 @@
         },
         {
           "n": "gold key",
-          "s": 50
+          "s": 49
         },
         {
           "n": "red key",
@@ -80,13 +84,13 @@
         },
         {
           "n": "exit",
-          "s": 148
+          "s": 147
         }
       ],
-      "total_frames": 8861,
+      "total_frames": 8820,
       "rng_end": {
-        "state": 2282688454,
-        "calls": 3937
+        "state": 3863488330,
+        "calls": 6733
       }
     },
     {
@@ -109,29 +113,29 @@
         },
         {
           "n": "gold key",
-          "s": 57
+          "s": 58
         },
         {
           "n": "switch 0",
-          "s": 85
+          "s": 86
         },
         {
           "n": "red key",
-          "s": 88
+          "s": 89
         },
         {
           "n": "boss",
-          "s": 128
+          "s": 131
         },
         {
           "n": "exit",
-          "s": 151
+          "s": 155
         }
       ],
-      "total_frames": 9041,
+      "total_frames": 9307,
       "rng_end": {
-        "state": 959446828,
-        "calls": 3851
+        "state": 2698671303,
+        "calls": 6690
       }
     },
     {
@@ -149,10 +153,10 @@
           "s": 16
         }
       ],
-      "total_frames": 9625,
+      "total_frames": 6368,
       "rng_end": {
-        "state": 324888798,
-        "calls": 1321
+        "state": 2972414875,
+        "calls": 5486
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -175,7 +179,7 @@
           "s": 47
         }
       ],
-      "total_frames": 2808,
+      "total_frames": 2811,
       "rng_end": {
         "state": 1522838962,
         "calls": 901

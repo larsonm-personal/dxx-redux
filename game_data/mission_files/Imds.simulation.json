@@ -5,17 +5,16 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 1,
-    "failed": 1
+    "ok": 2
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "Volcano.rl2",
-      "route_input_sha256": "42AFA19BDC454A58CD0EF5022B1A0DF9556323D57E334F12DE7943433208A843",
-      "status": "failed",
+      "route_input_sha256": "9C48297EC378A8BACA3443709448729FC04EBAB9C6C3EDEFFF944ADB9B22B1D1",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -28,14 +27,45 @@
         {
           "n": "blue key",
           "s": 28
+        },
+        {
+          "n": "open door",
+          "s": 52
+        },
+        {
+          "n": "gold key",
+          "s": 63
+        },
+        {
+          "n": "switch 6",
+          "s": 76
+        },
+        {
+          "n": "red key",
+          "s": 78
+        },
+        {
+          "n": "switch 4",
+          "s": 94
+        },
+        {
+          "n": "switch 3",
+          "s": 95
+        },
+        {
+          "n": "reactor",
+          "s": 98
+        },
+        {
+          "n": "exit",
+          "s": 108
         }
       ],
-      "total_frames": 1696,
+      "total_frames": 6488,
       "rng_end": {
-        "state": 3058329110,
-        "calls": 593
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 3809604163,
+        "calls": 10822
+      }
     },
     {
       "level_num": -1,
@@ -57,10 +87,10 @@
         },
         {
           "n": "exit",
-          "s": 18
+          "s": 19
         }
       ],
-      "total_frames": 1108,
+      "total_frames": 1114,
       "rng_end": {
         "state": 743020753,
         "calls": 432

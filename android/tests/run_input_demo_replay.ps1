@@ -1370,7 +1370,10 @@ if (-not (Test-Path -LiteralPath $outRoot)) {
     New-Item -ItemType Directory -Path $outRoot -Force | Out-Null
 }
 
-$candidateList = Get-DemoCandidates -RequestedRoot $SearchRoot
+$candidateList = @()
+if (-not $DemoPath -or $ListOnly) {
+    $candidateList = Get-DemoCandidates -RequestedRoot $SearchRoot
+}
 if ($ListOnly) {
     Show-DemoCandidates -Candidates $candidateList
     exit 0

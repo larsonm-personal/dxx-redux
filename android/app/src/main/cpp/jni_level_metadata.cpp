@@ -794,6 +794,7 @@ static json serialize_route_steps(const level_metadata_state *metadata)
 		item["index"] = index;
 		item["kind"] = level_metadata_route_step_kind_name(step.kind);
 		item["activation_kind"] = level_metadata_route_activation_kind_name(step.activation_kind);
+		if (step.requires_guided_missile) item["required_weapon"] = "guided_missile";
 		if (step.switch_shot_quality != LEVEL_METADATA_SWITCH_SHOT_NONE &&
 		    step.switch_shot_quality != LEVEL_METADATA_SWITCH_SHOT_CONFIRMED) {
 			item["switch_shot_quality"] =

@@ -6,10 +6,9 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "partial",
+    "status": "ok",
     "level_counts": {
-      "ok": 7,
-      "failed": 1
+      "ok": 8
     },
     "levels": [
       {
@@ -32,29 +31,29 @@
           },
           {
             "n": "switch 6",
-            "s": 31
+            "s": 32
           },
           {
             "n": "red key",
-            "s": 39
+            "s": 38
           },
           {
             "n": "switch 13",
-            "s": 49
+            "s": 48
           },
           {
             "n": "reactor",
-            "s": 50
+            "s": 49
           },
           {
             "n": "exit",
-            "s": 58
+            "s": 57
           }
         ],
-        "total_frames": 3470,
+        "total_frames": 3418,
         "rng_end": {
-          "state": 633348974,
-          "calls": 1753
+          "state": 2211323218,
+          "calls": 4197
         }
       },
       {
@@ -77,7 +76,7 @@
           },
           {
             "n": "gold key",
-            "s": 48
+            "s": 49
           },
           {
             "n": "blastable wall",
@@ -88,26 +87,30 @@
             "s": 62
           },
           {
+            "n": "switch 11",
+            "s": 66
+          },
+          {
             "n": "red key",
-            "s": 64
+            "s": 67
           },
           {
             "n": "switch 2",
-            "s": 84
-          },
-          {
-            "n": "reactor",
             "s": 86
           },
           {
+            "n": "reactor",
+            "s": 87
+          },
+          {
             "n": "exit",
-            "s": 96
+            "s": 98
           }
         ],
-        "total_frames": 5785,
+        "total_frames": 5860,
         "rng_end": {
-          "state": 2083726806,
-          "calls": 2449
+          "state": 2049978194,
+          "calls": 9829
         }
       },
       {
@@ -134,15 +137,15 @@
           },
           {
             "n": "switch 4",
-            "s": 58
+            "s": 60
           },
           {
             "n": "gold key",
-            "s": 64
+            "s": 65
           },
           {
             "n": "switch 8",
-            "s": 99
+            "s": 100
           },
           {
             "n": "red key",
@@ -150,11 +153,11 @@
           },
           {
             "n": "fly-through 9",
-            "s": 101
+            "s": 102
           },
           {
             "n": "switch 10",
-            "s": 102
+            "s": 103
           },
           {
             "n": "reactor",
@@ -165,10 +168,10 @@
             "s": 157
           }
         ],
-        "total_frames": 9448,
+        "total_frames": 9411,
         "rng_end": {
-          "state": 2793295319,
-          "calls": 5138
+          "state": 2593083429,
+          "calls": 10076
         }
       },
       {
@@ -183,7 +186,7 @@
         "objectives": [
           {
             "n": "switch 6",
-            "s": 11
+            "s": 10
           },
           {
             "n": "blue key",
@@ -218,411 +221,16 @@
             "s": 69
           }
         ],
-        "total_frames": 4127,
+        "total_frames": 4123,
         "rng_end": {
-          "state": 4178164351,
-          "calls": 2410
+          "state": 1497923694,
+          "calls": 7641
         }
       },
       {
         "level_num": 5,
         "level_file": "world2a.rl2",
         "route_input_sha256": "484AA359639B166E7296ED6F1A7914E99BE72E1724355F8BAD5EB3ECA64A3450",
-        "status": "ok",
-        "rng_start": {
-          "state": 1,
-          "calls": 0
-        },
-        "objectives": [
-          {
-            "n": "destroy robot carrying blue key",
-            "s": 20
-          },
-          {
-            "n": "switch 17",
-            "s": 47
-          },
-          {
-            "n": "gold key",
-            "s": 50
-          },
-          {
-            "n": "red key",
-            "s": 81
-          },
-          {
-            "n": "switch 1",
-            "s": 108
-          },
-          {
-            "n": "reactor",
-            "s": 109
-          },
-          {
-            "n": "exit",
-            "s": 117
-          }
-        ],
-        "total_frames": 7034,
-        "rng_end": {
-          "state": 1195690035,
-          "calls": 5206
-        }
-      },
-      {
-        "level_num": 6,
-        "level_file": "world2b.rl2",
-        "route_input_sha256": "1BA261FA8EB40395E4493F7AF1FCD1AB9AF6E463188FDD6C379898B52B7F6071",
-        "status": "ok",
-        "rng_start": {
-          "state": 1,
-          "calls": 0
-        },
-        "objectives": [
-          {
-            "n": "blue key",
-            "s": 18
-          },
-          {
-            "n": "gold key",
-            "s": 56
-          },
-          {
-            "n": "switch 11",
-            "s": 71
-          },
-          {
-            "n": "red key",
-            "s": 73
-          },
-          {
-            "n": "reactor",
-            "s": 86
-          },
-          {
-            "n": "exit",
-            "s": 95
-          }
-        ],
-        "total_frames": 5718,
-        "rng_end": {
-          "state": 1483342298,
-          "calls": 2301
-        }
-      },
-      {
-        "level_num": 7,
-        "level_file": "world2c.rl2",
-        "route_input_sha256": "21813E9ACD3659B2BCA9226239E3EA610C06412553C1440600AAF4BC2898EFC1",
-        "status": "failed",
-        "rng_start": {
-          "state": 1,
-          "calls": 0
-        },
-        "objectives": [],
-        "total_frames": 0,
-        "rng_end": {
-          "state": 1,
-          "calls": 0
-        },
-        "problem": "live Guide-Bot route has no actionable goal"
-      },
-      {
-        "level_num": 8,
-        "level_file": "world2d.rl2",
-        "route_input_sha256": "B41D8A30FFC8E833F0E75E5B06F553853A06F80E0F2C1474FD08DDD434D9DA99",
-        "status": "ok",
-        "rng_start": {
-          "state": 1,
-          "calls": 0
-        },
-        "objectives": [
-          {
-            "n": "switch 1",
-            "s": 10
-          },
-          {
-            "n": "switch 2",
-            "s": 10
-          },
-          {
-            "n": "switch 3",
-            "s": 20
-          },
-          {
-            "n": "switch 4",
-            "s": 21
-          },
-          {
-            "n": "destroy robot carrying blue key",
-            "s": 44
-          },
-          {
-            "n": "switch 9",
-            "s": 72
-          },
-          {
-            "n": "destroy robot carrying gold key",
-            "s": 81
-          },
-          {
-            "n": "open door",
-            "s": 95
-          },
-          {
-            "n": "switch 11",
-            "s": 95
-          },
-          {
-            "n": "destroy robot carrying red key",
-            "s": 100
-          },
-          {
-            "n": "boss",
-            "s": 132
-          },
-          {
-            "n": "exit",
-            "s": 133
-          }
-        ],
-        "total_frames": 7980,
-        "rng_end": {
-          "state": 3989394595,
-          "calls": 5094
-        }
-      }
-    ]
-  },
-  {
-    "schema": "dxx-guidebot-route-simulation-v1",
-    "mission_filename": "bahagad.mn2",
-    "target_index": 1,
-    "generation": 4,
-    "fixed_hz": 60,
-    "seed": 1,
-    "status": "partial",
-    "level_counts": {
-      "ok": 9,
-      "failed": 1
-    },
-    "levels": [
-      {
-        "level_num": 1,
-        "level_file": "world1a.rl2",
-        "route_input_sha256": "648D9A635620123FE72439420F85760B2BE4E7721A4CC3A48077A7A4E93B9302",
-        "status": "ok",
-        "rng_start": {
-          "state": 1,
-          "calls": 0
-        },
-        "objectives": [
-          {
-            "n": "switch 3",
-            "s": 12
-          },
-          {
-            "n": "blue key",
-            "s": 18
-          },
-          {
-            "n": "switch 6",
-            "s": 31
-          },
-          {
-            "n": "red key",
-            "s": 39
-          },
-          {
-            "n": "switch 13",
-            "s": 49
-          },
-          {
-            "n": "reactor",
-            "s": 50
-          },
-          {
-            "n": "exit",
-            "s": 58
-          }
-        ],
-        "total_frames": 3470,
-        "rng_end": {
-          "state": 633348974,
-          "calls": 1753
-        }
-      },
-      {
-        "level_num": 2,
-        "level_file": "world1b.rl2",
-        "route_input_sha256": "8A61E5E6F02AD320724E1A878B36AD368C39EFECDAC180A5F2E3250EF165BEB2",
-        "status": "ok",
-        "rng_start": {
-          "state": 1,
-          "calls": 0
-        },
-        "objectives": [
-          {
-            "n": "blue key",
-            "s": 20
-          },
-          {
-            "n": "switch 9",
-            "s": 40
-          },
-          {
-            "n": "gold key",
-            "s": 48
-          },
-          {
-            "n": "blastable wall",
-            "s": 62
-          },
-          {
-            "n": "switch 11",
-            "s": 62
-          },
-          {
-            "n": "red key",
-            "s": 64
-          },
-          {
-            "n": "switch 2",
-            "s": 84
-          },
-          {
-            "n": "reactor",
-            "s": 86
-          },
-          {
-            "n": "exit",
-            "s": 96
-          }
-        ],
-        "total_frames": 5785,
-        "rng_end": {
-          "state": 2083726806,
-          "calls": 2449
-        }
-      },
-      {
-        "level_num": 3,
-        "level_file": "world1c.rl2",
-        "route_input_sha256": "CC838E85681D2FC8EFEA6C314D4ECF8C4F85C8D197D303FE347F4A810D5A7595",
-        "status": "ok",
-        "rng_start": {
-          "state": 1,
-          "calls": 0
-        },
-        "objectives": [
-          {
-            "n": "switch 4",
-            "s": 25
-          },
-          {
-            "n": "switch 3",
-            "s": 26
-          },
-          {
-            "n": "blue key",
-            "s": 27
-          },
-          {
-            "n": "switch 5",
-            "s": 58
-          },
-          {
-            "n": "gold key",
-            "s": 64
-          },
-          {
-            "n": "switch 9",
-            "s": 99
-          },
-          {
-            "n": "red key",
-            "s": 101
-          },
-          {
-            "n": "fly-through 10",
-            "s": 101
-          },
-          {
-            "n": "switch 11",
-            "s": 102
-          },
-          {
-            "n": "reactor",
-            "s": 137
-          },
-          {
-            "n": "exit",
-            "s": 157
-          }
-        ],
-        "total_frames": 9448,
-        "rng_end": {
-          "state": 2793295319,
-          "calls": 5138
-        }
-      },
-      {
-        "level_num": 4,
-        "level_file": "world1d.rl2",
-        "route_input_sha256": "9D7C10E40F555B96C473B7652C17DC650E3202ED28120FD3113CD3D02E20F787",
-        "status": "ok",
-        "rng_start": {
-          "state": 1,
-          "calls": 0
-        },
-        "objectives": [
-          {
-            "n": "switch 6",
-            "s": 11
-          },
-          {
-            "n": "blue key",
-            "s": 13
-          },
-          {
-            "n": "switch 7",
-            "s": 17
-          },
-          {
-            "n": "switch 9",
-            "s": 18
-          },
-          {
-            "n": "gold key",
-            "s": 21
-          },
-          {
-            "n": "red key",
-            "s": 32
-          },
-          {
-            "n": "boss",
-            "s": 59
-          },
-          {
-            "n": "switch 3",
-            "s": 63
-          },
-          {
-            "n": "exit",
-            "s": 69
-          }
-        ],
-        "total_frames": 4152,
-        "rng_end": {
-          "state": 3954677940,
-          "calls": 2403
-        }
-      },
-      {
-        "level_num": 5,
-        "level_file": "world2a.rl2",
-        "route_input_sha256": "97E033A4E4199D698C8B637A02A0A303FFA55521684FC5C6A32CCF6143FAA982",
         "status": "ok",
         "rng_start": {
           "state": 1,
@@ -658,10 +266,444 @@
             "s": 117
           }
         ],
-        "total_frames": 6991,
+        "total_frames": 6992,
         "rng_end": {
-          "state": 2817155961,
-          "calls": 5320
+          "state": 1387394731,
+          "calls": 10334
+        }
+      },
+      {
+        "level_num": 6,
+        "level_file": "world2b.rl2",
+        "route_input_sha256": "1BA261FA8EB40395E4493F7AF1FCD1AB9AF6E463188FDD6C379898B52B7F6071",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 18
+          },
+          {
+            "n": "gold key",
+            "s": 56
+          },
+          {
+            "n": "switch 11",
+            "s": 71
+          },
+          {
+            "n": "red key",
+            "s": 72
+          },
+          {
+            "n": "reactor",
+            "s": 86
+          },
+          {
+            "n": "exit",
+            "s": 95
+          }
+        ],
+        "total_frames": 5690,
+        "rng_end": {
+          "state": 1017716686,
+          "calls": 5113
+        }
+      },
+      {
+        "level_num": 7,
+        "level_file": "world2c.rl2",
+        "route_input_sha256": "AB81958AEDC409EBA636424305887E32C8A8BF75973EDD0A38B9AECBC76D04C5",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 11
+          },
+          {
+            "n": "blue key",
+            "s": 16
+          },
+          {
+            "n": "switch 2",
+            "s": 40
+          },
+          {
+            "n": "switch 5",
+            "s": 69
+          },
+          {
+            "n": "switch 6",
+            "s": 91
+          },
+          {
+            "n": "red key",
+            "s": 124
+          },
+          {
+            "n": "switch 1",
+            "s": 157
+          },
+          {
+            "n": "reactor",
+            "s": 158
+          },
+          {
+            "n": "exit",
+            "s": 184
+          }
+        ],
+        "total_frames": 11011,
+        "rng_end": {
+          "state": 3143601409,
+          "calls": 15104
+        }
+      },
+      {
+        "level_num": 8,
+        "level_file": "world2d.rl2",
+        "route_input_sha256": "B41D8A30FFC8E833F0E75E5B06F553853A06F80E0F2C1474FD08DDD434D9DA99",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 1",
+            "s": 8
+          },
+          {
+            "n": "switch 2",
+            "s": 8
+          },
+          {
+            "n": "switch 3",
+            "s": 18
+          },
+          {
+            "n": "switch 4",
+            "s": 20
+          },
+          {
+            "n": "destroy robot carrying blue key",
+            "s": 44
+          },
+          {
+            "n": "switch 9",
+            "s": 73
+          },
+          {
+            "n": "destroy robot carrying gold key",
+            "s": 81
+          },
+          {
+            "n": "open door",
+            "s": 95
+          },
+          {
+            "n": "switch 11",
+            "s": 95
+          },
+          {
+            "n": "destroy robot carrying red key",
+            "s": 100
+          },
+          {
+            "n": "boss",
+            "s": 131
+          },
+          {
+            "n": "exit",
+            "s": 132
+          }
+        ],
+        "total_frames": 7918,
+        "rng_end": {
+          "state": 127047679,
+          "calls": 5098
+        }
+      }
+    ]
+  },
+  {
+    "schema": "dxx-guidebot-route-simulation-v1",
+    "mission_filename": "bahagad.mn2",
+    "target_index": 1,
+    "generation": 4,
+    "fixed_hz": 60,
+    "seed": 1,
+    "status": "ok",
+    "level_counts": {
+      "ok": 10
+    },
+    "levels": [
+      {
+        "level_num": 1,
+        "level_file": "world1a.rl2",
+        "route_input_sha256": "648D9A635620123FE72439420F85760B2BE4E7721A4CC3A48077A7A4E93B9302",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 3",
+            "s": 12
+          },
+          {
+            "n": "blue key",
+            "s": 18
+          },
+          {
+            "n": "switch 6",
+            "s": 32
+          },
+          {
+            "n": "red key",
+            "s": 38
+          },
+          {
+            "n": "switch 13",
+            "s": 48
+          },
+          {
+            "n": "reactor",
+            "s": 49
+          },
+          {
+            "n": "exit",
+            "s": 57
+          }
+        ],
+        "total_frames": 3418,
+        "rng_end": {
+          "state": 2211323218,
+          "calls": 4197
+        }
+      },
+      {
+        "level_num": 2,
+        "level_file": "world1b.rl2",
+        "route_input_sha256": "8A61E5E6F02AD320724E1A878B36AD368C39EFECDAC180A5F2E3250EF165BEB2",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 20
+          },
+          {
+            "n": "switch 9",
+            "s": 40
+          },
+          {
+            "n": "gold key",
+            "s": 49
+          },
+          {
+            "n": "blastable wall",
+            "s": 62
+          },
+          {
+            "n": "switch 11",
+            "s": 62
+          },
+          {
+            "n": "switch 11",
+            "s": 66
+          },
+          {
+            "n": "red key",
+            "s": 67
+          },
+          {
+            "n": "switch 2",
+            "s": 86
+          },
+          {
+            "n": "reactor",
+            "s": 87
+          },
+          {
+            "n": "exit",
+            "s": 98
+          }
+        ],
+        "total_frames": 5860,
+        "rng_end": {
+          "state": 2089287617,
+          "calls": 9792
+        }
+      },
+      {
+        "level_num": 3,
+        "level_file": "world1c.rl2",
+        "route_input_sha256": "CC838E85681D2FC8EFEA6C314D4ECF8C4F85C8D197D303FE347F4A810D5A7595",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 4",
+            "s": 25
+          },
+          {
+            "n": "switch 3",
+            "s": 26
+          },
+          {
+            "n": "blue key",
+            "s": 27
+          },
+          {
+            "n": "switch 5",
+            "s": 60
+          },
+          {
+            "n": "gold key",
+            "s": 65
+          },
+          {
+            "n": "switch 9",
+            "s": 102
+          },
+          {
+            "n": "red key",
+            "s": 103
+          },
+          {
+            "n": "fly-through 10",
+            "s": 103
+          },
+          {
+            "n": "switch 11",
+            "s": 104
+          },
+          {
+            "n": "reactor",
+            "s": 139
+          },
+          {
+            "n": "exit",
+            "s": 160
+          }
+        ],
+        "total_frames": 9573,
+        "rng_end": {
+          "state": 4132131552,
+          "calls": 10151
+        }
+      },
+      {
+        "level_num": 4,
+        "level_file": "world1d.rl2",
+        "route_input_sha256": "9D7C10E40F555B96C473B7652C17DC650E3202ED28120FD3113CD3D02E20F787",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "switch 6",
+            "s": 10
+          },
+          {
+            "n": "blue key",
+            "s": 13
+          },
+          {
+            "n": "switch 7",
+            "s": 17
+          },
+          {
+            "n": "switch 9",
+            "s": 18
+          },
+          {
+            "n": "gold key",
+            "s": 21
+          },
+          {
+            "n": "red key",
+            "s": 32
+          },
+          {
+            "n": "boss",
+            "s": 59
+          },
+          {
+            "n": "switch 3",
+            "s": 63
+          },
+          {
+            "n": "exit",
+            "s": 69
+          }
+        ],
+        "total_frames": 4123,
+        "rng_end": {
+          "state": 3614788585,
+          "calls": 7640
+        }
+      },
+      {
+        "level_num": 5,
+        "level_file": "world2a.rl2",
+        "route_input_sha256": "97E033A4E4199D698C8B637A02A0A303FFA55521684FC5C6A32CCF6143FAA982",
+        "status": "ok",
+        "rng_start": {
+          "state": 1,
+          "calls": 0
+        },
+        "objectives": [
+          {
+            "n": "destroy robot carrying blue key",
+            "s": 20
+          },
+          {
+            "n": "switch 17",
+            "s": 46
+          },
+          {
+            "n": "gold key",
+            "s": 50
+          },
+          {
+            "n": "red key",
+            "s": 80
+          },
+          {
+            "n": "switch 1",
+            "s": 106
+          },
+          {
+            "n": "reactor",
+            "s": 107
+          },
+          {
+            "n": "exit",
+            "s": 116
+          }
+        ],
+        "total_frames": 6952,
+        "rng_end": {
+          "state": 1580490629,
+          "calls": 10492
         }
       },
       {
@@ -688,7 +730,7 @@
           },
           {
             "n": "red key",
-            "s": 73
+            "s": 72
           },
           {
             "n": "reactor",
@@ -699,28 +741,64 @@
             "s": 95
           }
         ],
-        "total_frames": 5718,
+        "total_frames": 5690,
         "rng_end": {
-          "state": 1483342298,
-          "calls": 2301
+          "state": 1017716686,
+          "calls": 5113
         }
       },
       {
         "level_num": 7,
         "level_file": "world2c.rl2",
-        "route_input_sha256": "BD523CCE1330733D3B21BF2054CDBA03153EC5F6A8502E66B530D6B335B3E708",
-        "status": "failed",
+        "route_input_sha256": "16BF39FF3C2AA77B602D7363F74F1A963B8386498AE8FC49CAD86EB91FF7E055",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 0,
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 11
+          },
+          {
+            "n": "blue key",
+            "s": 16
+          },
+          {
+            "n": "switch 2",
+            "s": 40
+          },
+          {
+            "n": "switch 5",
+            "s": 69
+          },
+          {
+            "n": "switch 6",
+            "s": 91
+          },
+          {
+            "n": "red key",
+            "s": 124
+          },
+          {
+            "n": "switch 1",
+            "s": 157
+          },
+          {
+            "n": "reactor",
+            "s": 158
+          },
+          {
+            "n": "exit",
+            "s": 184
+          }
+        ],
+        "total_frames": 11011,
         "rng_end": {
-          "state": 1,
-          "calls": 0
-        },
-        "problem": "live Guide-Bot route has no actionable goal"
+          "state": 3143601409,
+          "calls": 15104
+        }
       },
       {
         "level_num": 8,
@@ -734,57 +812,57 @@
         "objectives": [
           {
             "n": "switch 1",
-            "s": 10
+            "s": 8
           },
           {
             "n": "switch 2",
-            "s": 10
+            "s": 8
           },
           {
             "n": "switch 3",
-            "s": 20
+            "s": 18
           },
           {
             "n": "switch 4",
-            "s": 21
+            "s": 20
           },
           {
             "n": "destroy robot carrying blue key",
-            "s": 44
+            "s": 43
           },
           {
             "n": "switch 9",
-            "s": 72
+            "s": 71
           },
           {
             "n": "destroy robot carrying gold key",
-            "s": 80
+            "s": 79
           },
           {
             "n": "open door",
-            "s": 94
+            "s": 92
           },
           {
             "n": "switch 11",
-            "s": 94
+            "s": 92
           },
           {
             "n": "destroy robot carrying red key",
-            "s": 99
+            "s": 97
           },
           {
             "n": "boss",
-            "s": 131
+            "s": 129
           },
           {
             "n": "exit",
-            "s": 132
+            "s": 130
           }
         ],
-        "total_frames": 7935,
+        "total_frames": 7790,
         "rng_end": {
-          "state": 1170844146,
-          "calls": 5189
+          "state": 4085886338,
+          "calls": 5109
         }
       },
       {
@@ -808,8 +886,8 @@
         ],
         "total_frames": 993,
         "rng_end": {
-          "state": 3926199050,
-          "calls": 397
+          "state": 3809864904,
+          "calls": 1439
         }
       },
       {
@@ -835,7 +913,7 @@
             "s": 35
           }
         ],
-        "total_frames": 2107,
+        "total_frames": 2116,
         "rng_end": {
           "state": 1307976050,
           "calls": 709

@@ -7,9 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 1,
+    "ok": 2,
     "failed": 1,
-    "timeout": 1,
     "unsupported": 1
   },
   "levels": [
@@ -17,7 +16,7 @@
       "level_num": 1,
       "level_file": "dropship.rl2",
       "route_input_sha256": "8B85BEEAFFB67DF469356BD33C101F7D5720B91A1437243D4AAC2B6572F41475",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -29,31 +28,31 @@
         },
         {
           "n": "hidden door",
-          "s": 20
+          "s": 19
         },
         {
           "n": "switch 16",
-          "s": 39
+          "s": 37
         },
         {
           "n": "blue key",
-          "s": 50
+          "s": 48
         },
         {
           "n": "fly-through 17",
-          "s": 62
+          "s": 61
         },
         {
           "n": "fly-through 10",
-          "s": 63
+          "s": 62
         },
         {
           "n": "switch 6",
-          "s": 68
+          "s": 67
         },
         {
           "n": "fly-through 7",
-          "s": 82
+          "s": 83
         },
         {
           "n": "destroy robot carrying red key",
@@ -66,14 +65,25 @@
         {
           "n": "fly-through 9",
           "s": 117
+        },
+        {
+          "n": "switch 12",
+          "s": 117
+        },
+        {
+          "n": "switch 11",
+          "s": 124
+        },
+        {
+          "n": "exit",
+          "s": 130
         }
       ],
-      "total_frames": 13334,
+      "total_frames": 7816,
       "rng_end": {
-        "state": 4006696694,
-        "calls": 8433
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 2802285162,
+        "calls": 11693
+      }
     },
     {
       "level_num": 2,
@@ -99,89 +109,89 @@
         },
         {
           "n": "switch 19",
-          "s": 74
+          "s": 70
         },
         {
           "n": "switch 8",
-          "s": 85
+          "s": 81
         },
         {
           "n": "fly-through 1",
-          "s": 101
+          "s": 95
         },
         {
           "n": "gold key",
-          "s": 102
+          "s": 97
         },
         {
           "n": "hidden door",
-          "s": 115
+          "s": 110
         },
         {
           "n": "switch 0",
-          "s": 117
+          "s": 111
         },
         {
           "n": "hidden door",
-          "s": 126
+          "s": 118
         },
         {
           "n": "switch 20",
-          "s": 129
+          "s": 120
         },
         {
           "n": "hidden door",
-          "s": 137
+          "s": 128
         },
         {
           "n": "hidden door",
-          "s": 144
+          "s": 135
         },
         {
           "n": "switch 10",
-          "s": 144
+          "s": 135
         },
         {
           "n": "hidden door",
-          "s": 156
+          "s": 147
         },
         {
           "n": "switch 26",
-          "s": 158
+          "s": 149
         },
         {
           "n": "hidden door",
-          "s": 169
+          "s": 159
         },
         {
           "n": "switch 22",
-          "s": 169
+          "s": 159
         },
         {
           "n": "switch 24",
-          "s": 176
+          "s": 167
         },
         {
           "n": "red key",
-          "s": 180
+          "s": 173
         },
         {
           "n": "reactor",
-          "s": 207
+          "s": 199
         },
         {
           "n": "switch 3",
-          "s": 212
+          "s": 203
         },
         {
           "n": "exit",
-          "s": 229
+          "s": 222
         }
       ],
-      "total_frames": 13732,
+      "total_frames": 13312,
       "rng_end": {
-        "state": 1087461315,
-        "calls": 5318
+        "state": 1193882006,
+        "calls": 13521
       }
     },
     {
@@ -200,25 +210,25 @@
         },
         {
           "n": "switch 1",
-          "s": 17
+          "s": 16
         },
         {
           "n": "switch 4",
-          "s": 34
+          "s": 33
         },
         {
           "n": "switch 5",
-          "s": 50
+          "s": 49
         },
         {
           "n": "blue key",
-          "s": 52
+          "s": 50
         }
       ],
-      "total_frames": 3095,
+      "total_frames": 3010,
       "rng_end": {
-        "state": 2919826395,
-        "calls": 1326
+        "state": 1946939785,
+        "calls": 1336
       },
       "problem": "live Guide-Bot route has no actionable goal"
     },

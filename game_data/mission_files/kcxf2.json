@@ -255,15 +255,15 @@
         "mine_volume": 13717000.0,
         "mine_volume_normalized": 2.99963,
         "mine_volume_text": "3.0x",
-        "travel_distance": 2730.8,
-        "travel_time_seconds": 55,
-        "travel_time_text": "0M:55S",
+        "travel_distance": 9102.2,
+        "travel_time_seconds": 182,
+        "travel_time_text": "3M:02S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 1,
+        "route_completing_key_mask_set": 2,
         "route_steps": [
           {
             "index": 0,
@@ -285,10 +285,182 @@
             },
             "distance": 2730.8,
             "key": "blue"
+          },
+          {
+            "index": 2,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 1",
+            "seg": 329,
+            "side": 5,
+            "wall": 19,
+            "label_pos": {
+              "x": 56.5,
+              "y": -317.9,
+              "z": 706.1
+            },
+            "distance": 1197.6,
+            "trigger": 1,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 330,
+                "side": 3,
+                "wall": 17
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 442,
+            "side": 4,
+            "wall": 51,
+            "label_pos": {
+              "x": 130.2,
+              "y": -401.6,
+              "z": 722.7
+            },
+            "distance": 1093.3,
+            "opens": [
+              {
+                "seg": 442,
+                "side": 4,
+                "wall": 51
+              },
+              {
+                "seg": 430,
+                "side": 0,
+                "wall": 50
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "activation_kind": "fly_through_trigger",
+            "label": "Fly-through trigger 3",
+            "seg": 422,
+            "side": 5,
+            "wall": 27,
+            "label_pos": {
+              "x": 72.2,
+              "y": -378.9,
+              "z": 712.1
+            },
+            "distance": 109.2,
+            "trigger": 3,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 451,
+                "side": 2,
+                "wall": 24
+              },
+              {
+                "seg": 450,
+                "side": 0,
+                "wall": 25
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 5",
+            "seg": 462,
+            "side": 3,
+            "wall": 33,
+            "label_pos": {
+              "x": 423.3,
+              "y": -458.5,
+              "z": 506.2
+            },
+            "distance": 1694.6,
+            "trigger": 5,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 460,
+                "side": 4,
+                "wall": 30
+              },
+              {
+                "seg": 464,
+                "side": 5,
+                "wall": 29
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 7",
+            "seg": 464,
+            "side": 4,
+            "wall": 37,
+            "label_pos": {
+              "x": 387.7,
+              "y": -445.8,
+              "z": 550.5
+            },
+            "distance": 59.7,
+            "trigger": 7,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 317,
+                "side": 2,
+                "wall": 36
+              },
+              {
+                "seg": 466,
+                "side": 0,
+                "wall": 35
+              }
+            ]
+          },
+          {
+            "index": 7,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 577,
+            "label_pos": {
+              "x": 567.0,
+              "y": -197.1,
+              "z": 767.0
+            },
+            "distance": 1844.8
+          },
+          {
+            "index": 8,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 585,
+            "side": 3,
+            "wall": 53,
+            "label_pos": {
+              "x": 678.0,
+              "y": -305.5,
+              "z": 520.5
+            },
+            "distance": 372.1,
+            "trigger": 8,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "route target unreachable",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]

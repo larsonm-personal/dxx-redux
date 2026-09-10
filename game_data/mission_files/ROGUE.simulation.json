@@ -9,7 +9,9 @@
   "status": "partial",
   "level_counts": {
     "ok": 1,
-    "failed": 4
+    "failed": 2,
+    "timeout": 1,
+    "route_mismatch": 1
   },
   "levels": [
     {
@@ -24,7 +26,7 @@
       "objectives": [
         {
           "n": "hidden door",
-          "s": 13
+          "s": 12
         },
         {
           "n": "red key",
@@ -32,39 +34,39 @@
         },
         {
           "n": "pass-through 7",
-          "s": 23
+          "s": 22
         },
         {
           "n": "pass-through 6",
-          "s": 49
+          "s": 25
         },
         {
           "n": "blastable wall",
-          "s": 52
+          "s": 28
         },
         {
           "n": "fly-through 8",
-          "s": 53
+          "s": 28
         },
         {
           "n": "reactor",
-          "s": 59
+          "s": 35
         },
         {
           "n": "exit",
-          "s": 68
+          "s": 43
         }
       ],
-      "total_frames": 4096,
+      "total_frames": 2604,
       "rng_end": {
-        "state": 369732668,
-        "calls": 187
+        "state": 648760710,
+        "calls": 161
       }
     },
     {
       "level_num": 2,
       "level_file": "level02.rdl",
-      "route_input_sha256": "053DA53B11FB4A47B240BD45D393AA4E9E3EB25AB937026875BCE6D60309CAC1",
+      "route_input_sha256": "717A70CF60054FEF83B82E0969FE81DBBE173DB3BB32A546D399528CFD7BB45A",
       "status": "failed",
       "rng_start": {
         "state": 1,
@@ -81,41 +83,90 @@
     {
       "level_num": 3,
       "level_file": "level03.rdl",
-      "route_input_sha256": "00C1C7FB061EEE61F34DC032001A22500CB603CF08355EE30F0FAD4FB28ED215",
-      "status": "failed",
+      "route_input_sha256": "77671214FC600E066653B55E221DF5EC8EB71E0308CBC7422051C38DA50CD77C",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
       "objectives": [],
-      "total_frames": 0,
+      "total_frames": 4460,
       "rng_end": {
-        "state": 2516284547,
-        "calls": 6
+        "state": 2675232640,
+        "calls": 135
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 4,
       "level_file": "level04.rdl",
-      "route_input_sha256": "651FBBFD4E96366514FA5BC15CC277F9727433C4A8E48A6EB7E25E676A642ED1",
-      "status": "failed",
+      "route_input_sha256": "315A1AF236F5660195A093D1380AF428B1A683028E4B924A2833A7DCC89F6BCA",
+      "status": "route_mismatch",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "fly-through 9",
+          "s": 12
+        },
+        {
+          "n": "open door",
+          "s": 26
+        },
+        {
+          "n": "pass-through 10",
+          "s": 30
+        },
+        {
+          "n": "open door",
+          "s": 36
+        },
+        {
+          "n": "blue key",
+          "s": 49
+        },
+        {
+          "n": "fly-through 15",
+          "s": 83
+        },
+        {
+          "n": "blastable wall",
+          "s": 90
+        },
+        {
+          "n": "fly-through 12",
+          "s": 96
+        },
+        {
+          "n": "blastable wall",
+          "s": 99
+        },
+        {
+          "n": "pass-through 13",
+          "s": 100
+        },
+        {
+          "n": "blastable wall",
+          "s": 108
+        },
+        {
+          "n": "gold key",
+          "s": 112
+        }
+      ],
+      "total_frames": 8881,
       "rng_end": {
-        "state": 2516284547,
-        "calls": 6
+        "state": 825991912,
+        "calls": 2815
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "live objective sequence differs from route input"
     },
     {
       "level_num": 5,
       "level_file": "level13.rdl",
-      "route_input_sha256": "98F89FD91901F8AB4046383A333DE8CAAB0C97011B8607CB08CD9D51514BBBBF",
+      "route_input_sha256": "AAB1139FF4EC891464920AE4304F3CB09496648DCB8DEB8798228D468400ECB8",
       "status": "failed",
       "rng_start": {
         "state": 1,

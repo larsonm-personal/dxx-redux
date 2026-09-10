@@ -11,6 +11,7 @@
 #include "gameseg.h"
 #include "gameseq.h"
 #include "fvi.h"
+#include "route_collision.h"
 #include "hudmsg.h"
 #include "laser.h"
 #include "guidebot_route_certifier.h"
@@ -527,7 +528,8 @@ enum level_metadata_visibility_target_kind {
 	LEVEL_METADATA_VISIBILITY_TARGET_WALL_STRICT = 3,
 	LEVEL_METADATA_VISIBILITY_POSITION_OCCUPIABLE = 4,
 	LEVEL_METADATA_VISIBILITY_TARGET_WALL_POTENTIAL = 5,
-	LEVEL_METADATA_VISIBILITY_TARGET_WALL_CONDITIONAL = 6
+	LEVEL_METADATA_VISIBILITY_TARGET_WALL_CONDITIONAL = 6,
+	LEVEL_METADATA_VISIBILITY_DOOR_AIM_REJECTED = 7
 };
 
 #define LEVEL_METADATA_SWITCH_SHOT_MODEL_VERSION 2
@@ -1801,7 +1803,7 @@ static int level_metadata_fvi_segmented_visibility(
     int target_seg,
     int target_wall_seg,
     int target_wall_side,
-    fix radius)
+    fix radius, fix max_span, int require_wall_impact)
 {
 	fix distance;
 	int chunks;
@@ -1817,7 +1819,7 @@ static int level_metadata_fvi_segmented_visibility(
 		vms_vector distance_target = *target;
 		distance = vm_vec_dist_quick(&current, &distance_target);
 	}
-	chunks = distance / LEVEL_METADATA_FVI_CONFIRM_SPAN + 1;
+	chunks = distance / max_span + 1;
 	for (chunk = 1; chunk <= chunks; ++chunk) {
 		fvi_info hit_data;
 		fvi_query query;
@@ -1847,6 +1849,9 @@ static int level_metadata_fvi_segmented_visibility(
 		if (!level_metadata_analysis_consume_fvi())
 			return 0;
 		fate = find_vector_intersection(&query, &hit_data);
+		if (require_wall_impact && fate == HIT_WALL &&
+		    hit_data.hit_side_seg == target_wall_seg && hit_data.hit_side == target_wall_side)
+			return 1;
 		if (fate == HIT_NONE)
 			endpoint_seg = hit_data.hit_seg;
 		else if (
@@ -1854,14 +1859,16 @@ static int level_metadata_fvi_segmented_visibility(
 		    hit_data.hit_side_seg == target_wall_seg &&
 		    hit_data.hit_side == target_wall_side)
 			endpoint_seg = target_wall_seg;
-		else
+		else {
 			return 0;
+		}
 		if (endpoint_seg < 0 || endpoint_seg >= Num_segments ||
 		    !level_metadata_fvi_segment_chain_valid(
-		        &hit_data, current_seg, endpoint_seg))
+		        &hit_data, current_seg, endpoint_seg)) {
 			return 0;
+		}
 		if (chunk == chunks)
-			return endpoint_seg == target_seg;
+			return !require_wall_impact && endpoint_seg == target_seg;
 		current = endpoint;
 		current_seg = endpoint_seg;
 	}
@@ -1892,7 +1899,7 @@ static int level_metadata_fvi_visibility_credible(
 	        hit_data, start_seg, target_seg) ||
 	    level_metadata_fvi_segmented_visibility(
 	        from, start_seg, target, target_seg, target_wall_seg,
-	        target_wall_side, radius))
+	        target_wall_side, radius, LEVEL_METADATA_FVI_CONFIRM_SPAN, 0))
 		return 1;
 	return 0;
 }
@@ -2082,6 +2089,114 @@ static int level_metadata_route_shot_wall_is_passable(
 		return 1;
 	}
 	return 0;
+}
+
+int level_metadata_door_shot_aim_from_position(int seg, const int from_pos[3], int wall_num, int aim_pos[3])
+{
+	fvi_query query;
+	fvi_info hit;
+	vms_vector from, center, point, end, direction;
+	int wall_seg, wall_side;
+	if (seg < 0 || seg >= Num_segments || !from_pos || !aim_pos ||
+	    !secret_area_wall_index_valid(wall_num) || Walls[wall_num].type != WALL_DOOR)
+		return 0;
+	wall_seg = Walls[wall_num].segnum;
+	wall_side = Walls[wall_num].sidenum;
+	if (wall_seg < 0 || wall_seg >= Num_segments || wall_side < 0 || wall_side >= MAX_SIDES_PER_SEGMENT)
+		return 0;
+	level_metadata_visibility_key key = {};
+	int cached = 0;
+	key.kind = LEVEL_METADATA_VISIBILITY_DOOR_AIM_REJECTED;
+	key.from_seg = seg;
+	memcpy(key.from_pos, from_pos, sizeof(key.from_pos));
+	key.target_id = wall_num;
+	key.clearance_radius = secret_area_player_radius();
+	if (level_metadata_visibility_cache_lookup(&key, &cached)) return 0;
+	from.x = from_pos[0];
+	from.y = from_pos[1];
+	from.z = from_pos[2];
+	if (!secret_area_position_occupiable_cached(seg, &from, secret_area_player_radius()))
+		return 0;
+	object probe;
+	memset(&probe, 0, sizeof(probe));
+	probe.pos = from;
+	probe.segnum = seg;
+	probe.size = secret_area_player_radius();
+	if (route_object_intersects_blocking_wall(&probe))
+		return 0;
+	compute_center_point_on_side(&center, &Segments[wall_seg], wall_side);
+	memset(&query, 0, sizeof(query));
+	query.p0 = &from;
+	query.p1 = &end;
+	query.startseg = seg;
+	query.thisobjnum = -1;
+	query.rad = level_metadata_get_weapon_projectile_radius(FLARE_ID);
+	query.flags = FQ_TRANSPOINT;
+	// Retain the ordinary center shot before sampling the face around it
+	for (int sample = 0; sample < 62; ++sample) {
+		// Reserve visibility work for alternatives after ordinary aim sampling
+		if (Level_metadata_analysis_fvi_count >= Level_metadata_analysis_fvi_limit * 3 / 4) return 0;
+		point = center;
+		if (sample > 0 && sample < 13) {
+			const int vertex = (sample - 1) / 3;
+			const int weight = (sample - 1) % 3 + 1;
+			const vms_vector *corner = &Vertices[Segments[wall_seg].verts[Side_to_verts[wall_side][vertex]]];
+			point.x += (int) (((long long) corner->x - center.x) * weight / 4);
+			point.y += (int) (((long long) corner->y - center.y) * weight / 4);
+			point.z += (int) (((long long) corner->z - center.z) * weight / 4);
+		} else if (sample >= 13) {
+			const int u = (sample - 13) % 7 + 1;
+			const int v = (sample - 13) / 7 + 1;
+			const int weights[4] = { (8 - u) * (8 - v), u * (8 - v), u * v, (8 - u) * v };
+			long long x = 0, y = 0, z = 0;
+			for (int vertex = 0; vertex < 4; ++vertex) {
+				const vms_vector *corner = &Vertices[Segments[wall_seg].verts[Side_to_verts[wall_side][vertex]]];
+				x += (long long) corner->x * weights[vertex];
+				y += (long long) corner->y * weights[vertex];
+				z += (long long) corner->z * weights[vertex];
+			}
+			point.x = (fix) (x / 64);
+			point.y = (fix) (y / 64);
+			point.z = (fix) (z / 64);
+		}
+		vm_vec_sub(&direction, &point, &from);
+		if (!vm_vec_normalize_quick(&direction))
+			continue;
+		end = point;
+		vm_vec_scale_add2(&end, &direction, F1_0);
+		memset(&hit, 0, sizeof(hit));
+		if (!level_metadata_analysis_consume_fvi())
+			return 0;
+		if (find_vector_intersection(&query, &hit) == HIT_WALL && hit.hit_side_seg == wall_seg && hit.hit_side == wall_side &&
+		    level_metadata_fvi_segmented_visibility(&from, seg, &end, wall_seg, wall_seg, wall_side, query.rad, F1_0, 1)) {
+			aim_pos[0] = point.x;
+			aim_pos[1] = point.y;
+			aim_pos[2] = point.z;
+			return 1;
+		}
+	}
+	if (!Level_metadata_analysis_budget_exhausted && !Level_metadata_analysis_cancelled) level_metadata_visibility_cache_store(&key, 0);
+	return 0;
+}
+
+#if defined(DXX_BUILD_DESCENT_II)
+static int secret_area_guided_work(void *user)
+{
+	(void) user;
+	return level_metadata_analysis_consume_fvi();
+}
+
+static int secret_area_guided_route(void *user, int wall, const int *segments, int count, guided_missile_route *result)
+{
+	(void) user;
+	return guided_missile_route_find(wall, segments, count, secret_area_player_radius(), secret_area_guided_work, NULL, result);
+}
+#endif
+
+static int secret_area_door_shot_aim_from_position(void *user, int seg, const int from_pos[3], int wall_num, int aim_pos[3])
+{
+	(void) user;
+	return level_metadata_door_shot_aim_from_position(seg, from_pos, wall_num, aim_pos);
 }
 
 static int level_metadata_wall_shootable_from_position_impl(
@@ -2860,6 +2975,10 @@ static void level_metadata_initialize_scan_view(void)
 	view->target_visible_from_segment = secret_area_target_visible_from_segment;
 	view->wall_shootable_from_position =
 	    secret_area_wall_shootable_from_position;
+	view->door_shot_aim_from_position = secret_area_door_shot_aim_from_position;
+#if defined(DXX_BUILD_DESCENT_II)
+	view->guided_route = secret_area_guided_route;
+#endif
 	view->wall_potentially_shootable_from_position =
 	    secret_area_wall_potentially_shootable_from_position;
 	view->wall_shootable_without_transparency_from_position =

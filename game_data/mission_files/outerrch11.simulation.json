@@ -8,8 +8,7 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 5,
-    "failed": 1,
+    "ok": 6,
     "timeout": 1
   },
   "levels": [
@@ -36,10 +35,10 @@
           "s": 37
         }
       ],
-      "total_frames": 2200,
+      "total_frames": 2234,
       "rng_end": {
-        "state": 456633834,
-        "calls": 45
+        "state": 2884975258,
+        "calls": 3901
       }
     },
     {
@@ -62,21 +61,21 @@
         },
         {
           "n": "red key",
-          "s": 18
+          "s": 17
         },
         {
           "n": "reactor",
-          "s": 29
+          "s": 28
         },
         {
           "n": "exit",
           "s": 42
         }
       ],
-      "total_frames": 2543,
+      "total_frames": 2490,
       "rng_end": {
-        "state": 344858293,
-        "calls": 76
+        "state": 3051595996,
+        "calls": 5019
       }
     },
     {
@@ -103,13 +102,13 @@
         },
         {
           "n": "exit",
-          "s": 63
+          "s": 67
         }
       ],
-      "total_frames": 3753,
+      "total_frames": 4043,
       "rng_end": {
-        "state": 92728044,
-        "calls": 75
+        "state": 3835377864,
+        "calls": 2463
       }
     },
     {
@@ -128,7 +127,7 @@
         },
         {
           "n": "hidden door",
-          "s": 4
+          "s": 3
         },
         {
           "n": "hidden door",
@@ -136,7 +135,7 @@
         },
         {
           "n": "fly-through 1",
-          "s": 11
+          "s": 10
         }
       ],
       "total_frames": 10441,
@@ -166,29 +165,29 @@
         },
         {
           "n": "gold key",
-          "s": 32
+          "s": 33
         },
         {
           "n": "hidden door",
-          "s": 38
+          "s": 39
         },
         {
           "n": "red key",
-          "s": 48
+          "s": 49
         },
         {
           "n": "reactor",
-          "s": 71
+          "s": 72
         },
         {
           "n": "exit",
-          "s": 80
+          "s": 81
         }
       ],
-      "total_frames": 4815,
+      "total_frames": 4854,
       "rng_end": {
-        "state": 3684228113,
-        "calls": 112
+        "state": 2768896130,
+        "calls": 7413
       }
     },
     {
@@ -222,17 +221,17 @@
           "s": 66
         }
       ],
-      "total_frames": 3956,
+      "total_frames": 3949,
       "rng_end": {
-        "state": 2029357497,
-        "calls": 136
+        "state": 233710662,
+        "calls": 7393
       }
     },
     {
       "level_num": -1,
       "level_file": "infernal.rdl",
-      "route_input_sha256": "72777A9D91D59E901BF21A1695CF106B42BE952F831A550A03B30C5A79F10B5A",
-      "status": "failed",
+      "route_input_sha256": "5D26140EE7829C998EBF8D6F86332C014881B43061F68552F3A79F87DDF6B180",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -249,14 +248,29 @@
         {
           "n": "red key",
           "s": 54
+        },
+        {
+          "n": "hidden door",
+          "s": 88
+        },
+        {
+          "n": "hidden door",
+          "s": 90
+        },
+        {
+          "n": "reactor",
+          "s": 94
+        },
+        {
+          "n": "exit",
+          "s": 108
         }
       ],
-      "total_frames": 3257,
+      "total_frames": 6471,
       "rng_end": {
-        "state": 2240736910,
-        "calls": 57
-      },
-      "problem": "live Guide-Bot route has no actionable goal"
+        "state": 709449349,
+        "calls": 6652
+      }
     }
   ]
 }

@@ -47,12 +47,16 @@
           "s": 2
         },
         {
+          "n": "switch 9",
+          "s": 28
+        },
+        {
           "n": "red key",
-          "s": 27
+          "s": 55
         },
         {
           "n": "switch 9",
-          "s": 53
+          "s": 55
         },
         {
           "n": "boss",
@@ -60,13 +64,13 @@
         },
         {
           "n": "exit",
-          "s": 75
+          "s": 74
         }
       ],
-      "total_frames": 4472,
+      "total_frames": 4447,
       "rng_end": {
-        "state": 1718045622,
-        "calls": 1841
+        "state": 1906008813,
+        "calls": 4308
       }
     },
     {
@@ -84,22 +88,30 @@
           "s": 15
         },
         {
+          "n": "fly-through 3",
+          "s": 15
+        },
+        {
           "n": "blue key",
-          "s": 28
+          "s": 27
+        },
+        {
+          "n": "fly-through 1",
+          "s": 35
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 56
+          "s": 68
         },
         {
           "n": "switch 17",
-          "s": 68
+          "s": 80
         }
       ],
-      "total_frames": 4927,
+      "total_frames": 5626,
       "rng_end": {
-        "state": 3003234198,
-        "calls": 1745
+        "state": 3444936998,
+        "calls": 1921
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -114,38 +126,58 @@
       },
       "objectives": [
         {
+          "n": "fly-through 0",
+          "s": 3
+        },
+        {
           "n": "switch 4",
-          "s": 38
+          "s": 5
         },
         {
-          "n": "switch 5",
-          "s": 48
-        },
-        {
-          "n": "blue key",
-          "s": 60
-        },
-        {
-          "n": "open door",
-          "s": 107
+          "n": "switch 3",
+          "s": 16
         },
         {
           "n": "switch 7",
-          "s": 107
+          "s": 16
         },
         {
-          "n": "switch 8",
+          "n": "switch 13",
+          "s": 16
+        },
+        {
+          "n": "switch 5",
+          "s": 51
+        },
+        {
+          "n": "blue key",
+          "s": 62
+        },
+        {
+          "n": "open door",
           "s": 108
         },
         {
+          "n": "switch 7",
+          "s": 108
+        },
+        {
+          "n": "switch 8",
+          "s": 109
+        },
+        {
           "n": "switch 9",
-          "s": 124
+          "s": 125
+        },
+        {
+          "n": "switch 11",
+          "s": 128
         }
       ],
-      "total_frames": 7959,
+      "total_frames": 8565,
       "rng_end": {
-        "state": 1186941160,
-        "calls": 3327
+        "state": 1675774670,
+        "calls": 5369
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -164,18 +196,22 @@
           "s": 7
         },
         {
+          "n": "fly-through 5",
+          "s": 7
+        },
+        {
           "n": "boss",
-          "s": 22
+          "s": 20
         },
         {
           "n": "exit",
-          "s": 35
+          "s": 33
         }
       ],
-      "total_frames": 2102,
+      "total_frames": 1983,
       "rng_end": {
-        "state": 3959185378,
-        "calls": 1301
+        "state": 2026383973,
+        "calls": 4892
       }
     },
     {
@@ -235,22 +271,34 @@
           "s": 19
         },
         {
+          "n": "switch 2",
+          "s": 32
+        },
+        {
           "n": "blue key",
-          "s": 40
+          "s": 45
         },
         {
           "n": "switch 3",
-          "s": 40
+          "s": 45
         },
         {
           "n": "red key",
-          "s": 68
+          "s": 72
+        },
+        {
+          "n": "fly-through 5",
+          "s": 82
+        },
+        {
+          "n": "switch 4",
+          "s": 87
         }
       ],
-      "total_frames": 4726,
+      "total_frames": 6234,
       "rng_end": {
-        "state": 2285161921,
-        "calls": 2112
+        "state": 1689790861,
+        "calls": 9524
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -299,22 +347,38 @@
       },
       "objectives": [
         {
+          "n": "switch 2",
+          "s": 13
+        },
+        {
+          "n": "switch 3",
+          "s": 13
+        },
+        {
+          "n": "switch 4",
+          "s": 13
+        },
+        {
+          "n": "switch 1",
+          "s": 27
+        },
+        {
           "n": "hidden door",
-          "s": 8
+          "s": 35
         },
         {
           "n": "pass-through 0",
-          "s": 15
+          "s": 43
         },
         {
           "n": "pass-through 6",
-          "s": 16
+          "s": 43
         }
       ],
-      "total_frames": 1782,
+      "total_frames": 3427,
       "rng_end": {
-        "state": 3818017060,
-        "calls": 563
+        "state": 956006015,
+        "calls": 1386
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -331,12 +395,20 @@
         {
           "n": "pass-through 10",
           "s": 13
+        },
+        {
+          "n": "switch 9",
+          "s": 23
+        },
+        {
+          "n": "red key",
+          "s": 34
         }
       ],
-      "total_frames": 1979,
+      "total_frames": 2533,
       "rng_end": {
-        "state": 762735797,
-        "calls": 588
+        "state": 1578208502,
+        "calls": 753
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -365,14 +437,26 @@
         {
           "n": "switch 14",
           "s": 18
+        },
+        {
+          "n": "fly-through 1",
+          "s": 21
+        },
+        {
+          "n": "fly-through 2",
+          "s": 27
+        },
+        {
+          "n": "fly-through 4",
+          "s": 38
         }
       ],
-      "total_frames": 1661,
+      "total_frames": 8881,
       "rng_end": {
-        "state": 3251531490,
-        "calls": 533
+        "state": 3164801743,
+        "calls": 2586
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "route confirmation exceeded 148-second simulation budget"
     },
     {
       "level_num": 13,
@@ -394,27 +478,27 @@
         },
         {
           "n": "hidden door",
-          "s": 45
+          "s": 44
         },
         {
           "n": "switch 1",
-          "s": 45
+          "s": 44
         },
         {
           "n": "exit",
-          "s": 64
+          "s": 63
         }
       ],
-      "total_frames": 3848,
+      "total_frames": 3773,
       "rng_end": {
-        "state": 3551035395,
-        "calls": 1158
+        "state": 727351043,
+        "calls": 9606
       }
     },
     {
       "level_num": 14,
       "level_file": "DH14.RL2",
-      "route_input_sha256": "3078C7CAE680F3D3A3B4CA9988D2BC807431A0405E8526E3D0828C6589EF4EBC",
+      "route_input_sha256": "E0048DE046BA86380673375E6CB85EE8C91B4054237983BCCC7EB705E0F7B8F9",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -426,62 +510,62 @@
           "s": 5
         },
         {
+          "n": "fly-through 0",
+          "s": 23
+        },
+        {
           "n": "switch 10",
-          "s": 10
+          "s": 39
         },
         {
           "n": "hidden door",
-          "s": 21
+          "s": 49
         },
         {
           "n": "pass-through 6",
-          "s": 26
+          "s": 54
         },
         {
           "n": "hidden door",
-          "s": 26
-        },
-        {
-          "n": "hidden door",
-          "s": 26
+          "s": 54
         },
         {
           "n": "switch 8",
-          "s": 29
+          "s": 57
         },
         {
           "n": "hidden door",
-          "s": 32
+          "s": 60
         },
         {
           "n": "switch 5",
-          "s": 32
+          "s": 60
         },
         {
           "n": "hidden door",
-          "s": 38
+          "s": 66
         },
         {
           "n": "switch 4",
-          "s": 38
+          "s": 66
         },
         {
           "n": "hidden door",
-          "s": 41
+          "s": 68
         },
         {
           "n": "blue key",
-          "s": 41
+          "s": 68
         },
         {
           "n": "switch 14",
-          "s": 43
+          "s": 69
         }
       ],
-      "total_frames": 3184,
+      "total_frames": 4789,
       "rng_end": {
-        "state": 623386897,
-        "calls": 880
+        "state": 4198708919,
+        "calls": 4402
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -497,17 +581,29 @@
       "objectives": [
         {
           "n": "pass-through 12",
-          "s": 12
+          "s": 11
         },
         {
           "n": "switch 14",
-          "s": 25
+          "s": 24
+        },
+        {
+          "n": "fly-through 1",
+          "s": 29
+        },
+        {
+          "n": "switch 7",
+          "s": 33
+        },
+        {
+          "n": "switch 8",
+          "s": 38
         }
       ],
-      "total_frames": 2671,
+      "total_frames": 3434,
       "rng_end": {
-        "state": 380839095,
-        "calls": 818
+        "state": 3130993679,
+        "calls": 1242
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

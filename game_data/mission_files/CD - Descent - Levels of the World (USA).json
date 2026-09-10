@@ -7980,15 +7980,15 @@
         "mine_volume": 29588700.0,
         "mine_volume_normalized": 6.47045,
         "mine_volume_text": "6.5x",
-        "travel_distance": 3037.3,
-        "travel_time_seconds": 61,
-        "travel_time_text": "1M:01S",
+        "travel_distance": 5206.3,
+        "travel_time_seconds": 104,
+        "travel_time_text": "1M:44S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 7,
+        "route_completing_key_mask_set": 128,
         "route_steps": [
           {
             "index": 0,
@@ -8117,9 +8117,39 @@
             },
             "distance": 418.3,
             "key": "red"
+          },
+          {
+            "index": 7,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 101,
+            "label_pos": {
+              "x": 480.5,
+              "y": 0.5,
+              "z": 600.5
+            },
+            "distance": 1117.0
+          },
+          {
+            "index": 8,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 173,
+            "side": 0,
+            "wall": 39,
+            "label_pos": {
+              "x": 200.0,
+              "y": 20.0,
+              "z": 740.0
+            },
+            "distance": 1052.0,
+            "trigger": 24,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
-        ],
-        "route_problem": "route target unreachable"
+        ]
       }
     ],
     "target_index": 20
@@ -9857,7 +9887,7 @@
             "key": "blue"
           }
         ],
-        "route_problem": "red key unreachable"
+        "route_problem": "shared route planning reached its work budget"
       }
     ],
     "target_index": 25
@@ -16441,15 +16471,15 @@
         "mine_volume": 11369200.0,
         "mine_volume_normalized": 2.48621,
         "mine_volume_text": "2.5x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 950.2,
+        "travel_time_seconds": 19,
+        "travel_time_text": "0M:19S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "failed",
+        "route_status": "ok",
         "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -16457,9 +16487,39 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 47
+          },
+          {
+            "index": 1,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 20,
+            "label_pos": {
+              "x": 0.0,
+              "y": 40.0,
+              "z": 315.0
+            },
+            "distance": 862.1
+          },
+          {
+            "index": 2,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 15,
+            "side": 2,
+            "wall": 0,
+            "label_pos": {
+              "x": 0.0,
+              "y": 40.0,
+              "z": 225.0
+            },
+            "distance": 88.1,
+            "trigger": 2,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
-        ],
-        "route_problem": "route target unreachable"
+        ]
       }
     ],
     "target_index": 42
@@ -18139,15 +18199,15 @@
         "mine_volume": 3533530.0,
         "mine_volume_normalized": 0.772712,
         "mine_volume_text": "0.77x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 534.7,
+        "travel_time_seconds": 11,
+        "travel_time_text": "0M:11S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "failed",
+        "route_status": "ok",
         "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -18155,9 +18215,39 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 12
+          },
+          {
+            "index": 1,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 10,
+            "label_pos": {
+              "x": 70.0,
+              "y": 70.0,
+              "z": -160.0
+            },
+            "distance": 68.6
+          },
+          {
+            "index": 2,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 66,
+            "side": 0,
+            "wall": 3,
+            "label_pos": {
+              "x": 70.0,
+              "y": 70.0,
+              "z": 285.0
+            },
+            "distance": 466.2,
+            "trigger": 3,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
-        ],
-        "route_problem": "route target unreachable"
+        ]
       }
     ],
     "target_index": 47
@@ -28954,15 +29044,15 @@
         "mine_volume": 2446650.0,
         "mine_volume_normalized": 0.535032,
         "mine_volume_text": "0.54x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 355.8,
+        "travel_time_seconds": 7,
+        "travel_time_text": "0M:07S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "failed",
+        "route_status": "ok",
         "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -28970,9 +29060,66 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 28
+          },
+          {
+            "index": 1,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 124,
+            "side": 4,
+            "wall": 5,
+            "label_pos": {
+              "x": 121.0,
+              "y": -51.0,
+              "z": 80.0
+            },
+            "distance": 207.3,
+            "opens": [
+              {
+                "seg": 124,
+                "side": 4,
+                "wall": 5
+              },
+              {
+                "seg": 13,
+                "side": 1,
+                "wall": 4
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 11,
+            "label_pos": {
+              "x": 121.0,
+              "y": -81.0,
+              "z": 80.0
+            },
+            "distance": 15.5
+          },
+          {
+            "index": 3,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 12,
+            "side": 1,
+            "wall": 0,
+            "label_pos": {
+              "x": 121.0,
+              "y": 71.0,
+              "z": 80.0
+            },
+            "distance": 133.0,
+            "trigger": 1,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
-        ],
-        "route_problem": "route target unreachable"
+        ]
       }
     ],
     "target_index": 72
@@ -31766,7 +31913,7 @@
             "key": "gold"
           }
         ],
-        "route_problem": "red key unreachable"
+        "route_problem": "shared route planning reached its work budget"
       }
     ],
     "target_index": 79
@@ -36193,15 +36340,15 @@
         "mine_volume": 11071400.0,
         "mine_volume_normalized": 2.4211,
         "mine_volume_text": "2.4x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 868.7,
+        "travel_time_seconds": 17,
+        "travel_time_text": "0M:17S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "failed",
+        "route_status": "ok",
         "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -36209,9 +36356,39 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 17
+          },
+          {
+            "index": 1,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 0,
+            "label_pos": {
+              "x": 70.0,
+              "y": -101.0,
+              "z": 110.0
+            },
+            "distance": 534.7
+          },
+          {
+            "index": 2,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 13,
+            "side": 1,
+            "wall": 0,
+            "label_pos": {
+              "x": 70.0,
+              "y": 31.0,
+              "z": 110.0
+            },
+            "distance": 334.1,
+            "trigger": 2,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
-        ],
-        "route_problem": "route target unreachable"
+        ]
       }
     ],
     "target_index": 90
@@ -38547,7 +38724,7 @@
             "key": "blue"
           }
         ],
-        "route_problem": "red key unreachable"
+        "route_problem": "shared route planning reached its work budget"
       }
     ],
     "target_index": 96

@@ -20,7 +20,7 @@ set(D1X_MAIN_SOURCES
     fireball.c
     fuelcen.c
     fvi.c
-    ../../android/app/src/main/cpp/shared/swept_edge_clearance.c
+    ../../android/app/src/main/cpp/shared/route_collision.c
     game.c
     gamecntl.c
     gamefont.c

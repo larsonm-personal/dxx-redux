@@ -154,6 +154,8 @@ struct route_visibility_query {
 	bool (*target_visible_with_open_wall)(void *user, int segment,
 	                                      const route_position &from, int target_segment,
 	                                      const route_position &target, int wall) = nullptr;
+	int (*door_shot_aim)(void *user, int segment, const route_position &from, int wall, route_position &aim) = nullptr;
+	int (*guided_route)(void *user, int wall, const int *segments, int count, guided_missile_route *result) = nullptr;
 };
 
 struct route_analysis_budget {
@@ -238,6 +240,7 @@ struct route_semantic_step {
 	std::vector<route_trigger_path_selection::guidance_candidate>
 	    switch_guidance_candidates;
 	route_activation_kind activation = route_activation_kind::none;
+	guided_missile_route guided_shot = {};
 	route_position activation_position;
 	route_position aim_position;
 	route_position label_position;

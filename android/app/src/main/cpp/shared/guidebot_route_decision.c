@@ -111,6 +111,7 @@ static unsigned long long guidebot_semantic_hash(
 	hash = guidebot_hash_int(hash, decision->requested_target_segment);
 	hash = guidebot_hash_int(hash, decision->objective_kind);
 	hash = guidebot_hash_int(hash, decision->activation_kind);
+	hash = guidebot_hash_int(hash, decision->requires_guided_missile);
 	hash = guidebot_hash_int(hash, decision->objective_trigger);
 	hash = guidebot_hash_int(hash, decision->objective_wall);
 	hash = guidebot_hash_int(hash, decision->objective_key);
@@ -249,6 +250,7 @@ int guidebot_route_decision_project(
 	if (step) {
 		decision->objective_kind = step->kind;
 		decision->activation_kind = step->activation_kind;
+		decision->requires_guided_missile = step->requires_guided_missile;
 		decision->objective_trigger = step->trigger_num;
 		decision->objective_wall = step->wall_num;
 		decision->objective_key = step->key_index;
@@ -288,6 +290,7 @@ int guidebot_route_decision_semantic_equal(
 	       left->requested_target_segment == right->requested_target_segment &&
 	       left->objective_kind == right->objective_kind &&
 	       left->activation_kind == right->activation_kind &&
+	       left->requires_guided_missile == right->requires_guided_missile &&
 	       left->objective_trigger == right->objective_trigger &&
 	       left->objective_wall == right->objective_wall &&
 	       left->objective_key == right->objective_key &&

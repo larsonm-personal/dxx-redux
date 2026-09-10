@@ -1640,15 +1640,15 @@
         "mine_volume": 14594100.0,
         "mine_volume_normalized": 3.19143,
         "mine_volume_text": "3.2x",
-        "travel_distance": 855.3,
-        "travel_time_seconds": 17,
-        "travel_time_text": "0M:17S",
+        "travel_distance": 1768.3,
+        "travel_time_seconds": 35,
+        "travel_time_text": "0M:35S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 4,
         "route_steps": [
           {
             "index": 0,
@@ -1670,9 +1670,39 @@
             },
             "distance": 855.3,
             "key": "red"
+          },
+          {
+            "index": 2,
+            "kind": "boss",
+            "activation_kind": "destroy_boss",
+            "label": "Boss robot",
+            "seg": 360,
+            "label_pos": {
+              "x": 135.0,
+              "y": -180.0,
+              "z": 990.0
+            },
+            "distance": 617.0
+          },
+          {
+            "index": 3,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 266,
+            "side": 2,
+            "wall": 16,
+            "label_pos": {
+              "x": 135.0,
+              "y": -90.0,
+              "z": 1150.0
+            },
+            "distance": 296.0,
+            "trigger": 0,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
         ],
-        "route_problem": "route target unreachable",
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists"
@@ -1953,15 +1983,15 @@
         "mine_volume": 9174360.0,
         "mine_volume_normalized": 2.00624,
         "mine_volume_text": "2.0x",
-        "travel_distance": 1036.3,
-        "travel_time_seconds": 21,
-        "travel_time_text": "0M:21S",
+        "travel_distance": 1831.8,
+        "travel_time_seconds": 37,
+        "travel_time_text": "0M:37S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 4,
         "route_steps": [
           {
             "index": 0,
@@ -1983,9 +2013,39 @@
             },
             "distance": 1036.3,
             "key": "red"
+          },
+          {
+            "index": 2,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 428,
+            "label_pos": {
+              "x": 1.0,
+              "y": -88.6,
+              "z": -110.8
+            },
+            "distance": 628.6
+          },
+          {
+            "index": 3,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 351,
+            "side": 4,
+            "wall": 135,
+            "label_pos": {
+              "x": 0.0,
+              "y": -25.0,
+              "z": 145.0
+            },
+            "distance": 167.0,
+            "trigger": 1,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
-        ],
-        "route_problem": "route target unreachable"
+        ]
       },
       {
         "level_num": 18,
@@ -2939,15 +2999,15 @@
         "mine_volume": 10025500.0,
         "mine_volume_normalized": 2.19236,
         "mine_volume_text": "2.2x",
-        "travel_distance": 485.5,
-        "travel_time_seconds": 10,
-        "travel_time_text": "0M:10S",
+        "travel_distance": 1084.3,
+        "travel_time_seconds": 22,
+        "travel_time_text": "0M:22S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 4,
         "route_steps": [
           {
             "index": 0,
@@ -2996,9 +3056,64 @@
             },
             "distance": 39.1,
             "key": "red"
+          },
+          {
+            "index": 3,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open door",
+            "seg": 341,
+            "wall": 36,
+            "label_pos": {
+              "x": 0.0,
+              "y": -17.1,
+              "z": 340.2
+            },
+            "opens": [
+              {
+                "seg": 269,
+                "side": 5,
+                "wall": 36
+              },
+              {
+                "seg": 166,
+                "side": 4,
+                "wall": 4
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 562,
+            "label_pos": {
+              "x": 0.0,
+              "y": 8.4,
+              "z": 588.8
+            },
+            "distance": 346.3
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 339,
+            "side": 4,
+            "wall": 45,
+            "label_pos": {
+              "x": 0.0,
+              "y": -20.6,
+              "z": 583.5
+            },
+            "distance": 252.4,
+            "trigger": 0,
+            "trigger_type_id": 8,
+            "trigger_type": "exit"
           }
-        ],
-        "route_problem": "route target unreachable"
+        ]
       },
       {
         "level_num": -2,
