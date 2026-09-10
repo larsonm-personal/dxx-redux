@@ -53,5 +53,12 @@ int state_get_save_file(char *fname, char * dsc, int blind_save);
 int state_get_restore_file(char *fname);
 int state_get_game_id(char *filename);
 
+#ifdef __ANDROID__
+/* Consume a failed world restore at an event-loop boundary */
+int state_restore_take_menu_request(void);
+#ifdef INTROSPECT_ON
+void state_restore_test_fail_after_hide(void);
 #endif
- 
+#endif
+
+#endif

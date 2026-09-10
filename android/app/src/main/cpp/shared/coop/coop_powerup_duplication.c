@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "android_log.h"
+#include "android_crash_handler.h"
 #include "byteswap.h"
 #include "coop_powerup_duplication.h"
 #include "game.h"
@@ -230,6 +231,13 @@ int coop_powerup_duplication_set_pending(
 	return 1;
 }
 
+static coop_gear_restore_result restore_result;
+
+coop_gear_restore_result coop_powerup_duplication_restore_result(void)
+{
+	return restore_result;
+}
+
 int coop_powerup_duplication_apply_pending(void)
 {
 	coop_powerup_collection *validated = NULL;
@@ -237,13 +245,18 @@ int coop_powerup_duplication_apply_pending(void)
 	size_t validated_count = 0;
 	size_t i;
 
-	if (!Netgame.DuplicateEnergyShields && pending_count)
-		return 0;
+	restore_result = (coop_gear_restore_result) { 0 };
+	if (!Netgame.DuplicateEnergyShields && pending_count) {
+		android_restore_discard("pickups", "duplication disabled; discarded section", 0, 0, -1, -1);
+		goto discard_section;
+	}
 	if (pending_count) {
 		validated = (coop_powerup_collection *) malloc(
 		    pending_count * sizeof(*validated));
-		if (!validated)
-			return 0;
+		if (!validated) {
+			android_restore_discard("pickups", "allocation failed; discarded section", 0, 0, -1, -1);
+			goto discard_section;
+		}
 	}
 	for (i = 0; i < pending_count; i++) {
 		coop_powerup_collection item = pending_collections[i];
@@ -253,8 +266,9 @@ int coop_powerup_duplication_apply_pending(void)
 		if (!memchr(item.client_id, '\0', sizeof(item.client_id)) ||
 		    !memchr(item.callsign, '\0', sizeof(item.callsign)) ||
 		    (!item.client_id[0] && !item.callsign[0])) {
-			free(validated);
-			return 0;
+			discarded_count++;
+			android_restore_discard("pickups", "invalid identity", (unsigned) i, item.object_signature, item.object_index, item.powerup_id);
+			continue;
 		}
 		if (objnum < 0 || objnum > Highest_object_index ||
 		    Objects[objnum].signature != item.object_signature) {
@@ -272,6 +286,7 @@ int coop_powerup_duplication_apply_pending(void)
 		    (Objects[objnum].flags & OF_SHOULD_BE_DEAD) ||
 		    !coop_powerup_duplication_eligible(&Objects[objnum])) {
 			discarded_count++;
+			android_restore_discard("pickups", "missing or ineligible powerup", (unsigned) i, item.object_signature, item.object_index, item.powerup_id);
 			continue;
 		}
 		item.object_index = (int16_t) objnum;
@@ -281,23 +296,29 @@ int coop_powerup_duplication_apply_pending(void)
 			    same_identity(&validated[j], item.client_id,
 			                  item.callsign)) {
 				discarded_count++;
+				android_restore_discard("pickups", "duplicate pickup record", (unsigned) i, item.object_signature, item.object_index, item.powerup_id);
 				break;
 			}
 		if (j < (int) validated_count)
 			continue;
 		validated[validated_count++] = item;
 	}
-	if (!coop_powerup_duplication_replace(validated, validated_count)) {
-		free(validated);
-		return 0;
-	}
-	free(validated);
+	/* Adopt the validated allocation without another allocation failure point */
+	free(collections);
+	collections = validated;
+	collection_count = collection_capacity = validated_count;
+	restore_result.accepted = validated_count;
+	restore_result.discarded = discarded_count;
+	goto done;
+discard_section:
+	free(collections);
+	collections = NULL;
+	collection_count = collection_capacity = 0;
+	restore_result.discarded = pending_count;
+done:
 	free(pending_collections);
 	pending_collections = NULL;
 	pending_count = 0;
-	if (discarded_count)
-		COOPLOG("discarded %u stale restored pickup records",
-		        (unsigned int) discarded_count);
 	return 1;
 }
 

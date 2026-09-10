@@ -1,15 +1,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "android_log.h"
+#include "android_crash_handler.h"
 #include <string.h>
 
 #include "coop_recovery.h"
 #include "byteswap.h"
 #include "console.h"
 #include "dxxerror.h"
-#ifdef DXX_BUILD_DESCENT_II
 #include "laser.h"
-#endif
 #include "game.h"
 #include "multi.h"
 #include "powerup.h"
@@ -131,6 +130,11 @@ static void send_item(const coop_recovery_item *item, int operation, int target)
 		multi_send_data(buf, sizeof(buf), 2);
 }
 
+static int has_world_gear(const coop_recovery_item *item)
+{
+	return item->state == COOP_RECOVERY_LIVE || item->state == COOP_RECOVERY_RECLAIMING;
+}
+
 static int bound_object(const coop_recovery_item *item)
 {
 	int objnum = item->object_index;
@@ -144,12 +148,30 @@ static int bound_object(const coop_recovery_item *item)
 static void remove_world(coop_recovery_item *item)
 {
 	int objnum = bound_object(item);
+	COOPLOG("recovery remove epoch=%u id=%u revision=%u state=%u saved_sig=%d bound=%d remote=%d owner=%d",
+	        epoch, item->id, item->revision, item->state, item->signature, objnum, item->remote_index, item->network_owner);
 	if (objnum >= 0) {
 		Objects[objnum].flags |= OF_SHOULD_BE_DEAD;
 		if (multi_i_am_master())
 			multi_send_remobj(objnum);
 	}
-	item->object_index = -1;
+	item->object_index = item->remote_index = -1;
+}
+
+/* A remote slot can outlive the object it once named */
+static int mapped_object(const coop_recovery_item *item)
+{
+	sbyte owner;
+	if (item->remote_index < 0 || item->remote_index >= MAX_OBJECTS ||
+	    item->network_owner < -1 || item->network_owner >= N_players) return -1;
+	int objnum = objnum_remote_to_local(item->remote_index, item->network_owner);
+	if (objnum < 0 || objnum > Highest_object_index ||
+	    Objects[objnum].type != OBJ_POWERUP || Objects[objnum].id != item->powerup ||
+	    (Objects[objnum].flags & OF_SHOULD_BE_DEAD) || !(Objects[objnum].flags & OF_COOP_RECOVERY)) return -1;
+	if (objnum_local_to_remote(objnum, &owner) != item->remote_index || owner != item->network_owner) return -1;
+	for (size_t i = 0; i < count; i++)
+		if (items[i].id != item->id && has_world_gear(&items[i]) && bound_object(&items[i]) == objnum) return -1;
+	return objnum;
 }
 
 static coop_recovery_gear from_record(const coop_player_record *rec)
@@ -477,8 +499,10 @@ void coop_recovery_note_remove(object *powerup)
 	if (!coop_recovery_active() || !(powerup->flags & OF_COOP_RECOVERY)) return;
 	coop_recovery_item *item = find_object(powerup);
 	if (item && item->state == COOP_RECOVERY_LIVE) {
+		COOPLOG("recovery retire epoch=%u id=%u revision=%u sig=%d object=%d remote=%d owner=%d",
+		        epoch, item->id, item->revision, item->signature, item->object_index, item->remote_index, item->network_owner);
 		item->state = COOP_RECOVERY_TAKEN;
-		item->object_index = -1;
+		item->object_index = item->remote_index = -1;
 	}
 }
 
@@ -635,7 +659,7 @@ void coop_recovery_receive(const ubyte *buf, int sender)
 			player_life[incoming.id - 1] = incoming.life;
 		return;
 	}
-	if (!incoming.id || incoming.state < COOP_RECOVERY_LIVE || incoming.state > COOP_RECOVERY_RECLAIMING ||
+	if (!incoming.id || incoming.id == UINT32_MAX || incoming.state < COOP_RECOVERY_LIVE || incoming.state > COOP_RECOVERY_RECLAIMING ||
 	    !memchr(incoming.client_id, 0, sizeof(incoming.client_id)) || !memchr(incoming.callsign, 0, sizeof(incoming.callsign))) return;
 	size_t index;
 	for (index = 0; index < count && items[index].id != incoming.id; index++) {}
@@ -660,8 +684,19 @@ void coop_recovery_receive(const ubyte *buf, int sender)
 	int prior_object = index < count ? bound_object(&items[index]) : -1;
 	if (index < count) {
 		intersect_gear(&incoming.gear, &items[index].gear);
+		if (has_world_gear(&items[index]) && has_world_gear(&incoming) &&
+		    items[index].object_index >= 0 && prior_object < 0) {
+			/* Once observed locally, an ID cannot acquire a replacement generation */
+			android_restore_discard("recovery", "lost object generation; ignored replayed binding", incoming.id,
+			                        items[index].signature, items[index].object_index, items[index].powerup);
+			memset(&incoming.gear, 0, sizeof(incoming.gear));
+			incoming.state = COOP_RECOVERY_TAKEN;
+			incoming.remote_index = -1;
+		}
 		if (incoming.state == COOP_RECOVERY_LIVE &&
 		    (items[index].state == COOP_RECOVERY_CREDIT || items[index].state == COOP_RECOVERY_TAKEN)) incoming.state = items[index].state;
+		/* A delayed freeze must not restore a retired remote binding either */
+		if (!has_world_gear(&items[index])) incoming.remote_index = -1;
 	}
 	if (index == count) {
 		if (!reserve(count + 1)) Error("Cannot receive coop drop tags");
@@ -669,17 +704,24 @@ void coop_recovery_receive(const ubyte *buf, int sender)
 		freeze_waiting[index] = 0;
 	}
 	incoming.object_index = -1;
-	if (incoming.remote_index >= 0) {
-		int objnum = prior_object >= 0 ? prior_object : objnum_remote_to_local(incoming.remote_index, incoming.network_owner);
+	if (incoming.remote_index >= 0 && has_world_gear(&incoming)) {
+		int objnum = prior_object >= 0 ? prior_object : mapped_object(&incoming);
 		if (objnum >= 0 && objnum <= Highest_object_index && Objects[objnum].type == OBJ_POWERUP &&
 		    Objects[objnum].id == incoming.powerup && (Objects[objnum].flags & OF_COOP_RECOVERY)) {
+			COOPLOG("recovery receive bind epoch=%u id=%u revision=%u remote_sig=%d local_sig=%d object=%d remote=%d owner=%d",
+			        epoch, incoming.id, incoming.revision, incoming.signature, Objects[objnum].signature, objnum, incoming.remote_index, incoming.network_owner);
 			incoming.object_index = (int16_t) objnum;
 			incoming.signature = Objects[objnum].signature;
 		}
 	}
 	if (buf[1] == REC_FREEZE) incoming.state = COOP_RECOVERY_RECLAIMING;
 	items[index] = incoming;
-	if (incoming.state != COOP_RECOVERY_LIVE && incoming.state != COOP_RECOVERY_RECLAIMING) remove_world(&items[index]);
+	if (!has_world_gear(&incoming)) {
+		/* Only retire a previously verified local binding, never a reused remote slot */
+		items[index].object_index = (int16_t) prior_object;
+		if (prior_object >= 0) items[index].signature = Objects[prior_object].signature;
+		remove_world(&items[index]);
+	}
 	if (next_id <= incoming.id) next_id = incoming.id + 1;
 	if (buf[1] == REC_FREEZE) send_item(&items[index], REC_FROZEN, sender);
 }
@@ -689,20 +731,22 @@ void coop_recovery_frame(void)
 	if (!coop_recovery_active()) return;
 	for (size_t i = 0; i < count; i++) {
 		coop_recovery_item *item = &items[i];
+		if (!has_world_gear(item)) {
+			item->remote_index = -1;
+			continue;
+		}
 		if (item->remote_index < 0 || item->object_index >= 0) continue;
 		int newer = 0;
 		for (size_t n = 0; n < count; n++)
 			if (items[n].id > item->id && items[n].remote_index == item->remote_index && items[n].network_owner == item->network_owner) newer = 1;
 		if (newer) continue;
-		int objnum = objnum_remote_to_local(item->remote_index, item->network_owner);
+		int objnum = mapped_object(item);
 		if (objnum >= 0 && objnum <= Highest_object_index && Objects[objnum].type == OBJ_POWERUP &&
 		    Objects[objnum].id == item->powerup && (Objects[objnum].flags & OF_COOP_RECOVERY)) {
+			COOPLOG("recovery frame bind epoch=%u id=%u revision=%u remote_sig=%d local_sig=%d object=%d remote=%d owner=%d",
+			        epoch, item->id, item->revision, item->signature, Objects[objnum].signature, objnum, item->remote_index, item->network_owner);
 			item->object_index = (int16_t) objnum;
 			item->signature = Objects[objnum].signature;
-			if (item->state != COOP_RECOVERY_LIVE && item->state != COOP_RECOVERY_RECLAIMING) {
-				remove_world(item);
-				item->remote_index = -1;
-			}
 		}
 	}
 }
@@ -791,39 +835,106 @@ int coop_recovery_set_pending(const coop_recovery_item *data, size_t size)
 	return 1;
 }
 
+static coop_gear_restore_result restore_result;
+
+coop_gear_restore_result coop_recovery_restore_result(void)
+{
+	return restore_result;
+}
+
+static const char *validate_saved_gear(const coop_recovery_item *item)
+{
+	const coop_recovery_gear *gear = &item->gear;
+	if (!item->id || item->id == UINT32_MAX ||
+	    !memchr(item->client_id, 0, sizeof(item->client_id)) ||
+	    !memchr(item->callsign, 0, sizeof(item->callsign)) ||
+	    (!item->client_id[0] && !item->callsign[0]) ||
+	    item->state < COOP_RECOVERY_LIVE || item->state > COOP_RECOVERY_RECLAIMING) return "invalid identity or state";
+	if ((gear->primary >> MAX_PRIMARY_WEAPONS) || (gear->flags & ~equipment_flags()) ||
+	    gear->laser >
+#ifdef DXX_BUILD_DESCENT_II
+	        MAX_SUPER_LASER_LEVEL
+#else
+	        MAX_LASER_LEVEL
+#endif
+	    || gear->omega < 0 || gear->omega > F1_0 ||
+	    gear->vulcan > (unsigned) Primary_ammo_max[VULCAN_INDEX] * 2)
+		return "invalid gear values";
+	for (int i = 0; i < COOP_SAVE_MAX_WEAPONS; i++)
+		if ((i >= MAX_SECONDARY_WEAPONS && gear->missiles[i]) ||
+		    (i < MAX_SECONDARY_WEAPONS && gear->missiles[i] > Secondary_ammo_max[i] * 2)) return "invalid missile count";
+	return NULL;
+}
+
+void coop_recovery_prepare_save(void)
+{
+	size_t kept = 0;
+	for (size_t i = 0; i < count; i++) {
+		const char *reason = validate_saved_gear(&items[i]);
+		if (!reason && items[i].state == COOP_RECOVERY_LIVE) {
+			int objnum = bound_object(&items[i]);
+			if (objnum < 0 || (Objects[objnum].flags & OF_SHOULD_BE_DEAD)) reason = "discarded stale gear before save";
+		}
+		if (reason) {
+			android_restore_discard("recovery", reason, items[i].id, items[i].signature, items[i].object_index, items[i].powerup);
+			continue;
+		}
+		items[kept] = items[i];
+		freeze_waiting[kept++] = freeze_waiting[i];
+	}
+	count = kept;
+}
+
 int coop_recovery_apply_pending(void)
 {
 	size_t i;
-	if (!reserve(pending_count)) return 0;
-	for (i = 0; i < pending_count; i++) {
-		coop_recovery_item *item = &pending[i];
-		int j, found = -1;
-		if (!item->id || item->id == UINT32_MAX || !memchr(item->client_id, 0, sizeof(item->client_id)) ||
-		    !memchr(item->callsign, 0, sizeof(item->callsign)) ||
-		    item->state < COOP_RECOVERY_LIVE || item->state > COOP_RECOVERY_RECLAIMING) return 0;
-		for (size_t n = 0; n < i; n++)
-			if (pending[n].id == item->id) return 0;
-		if (item->state == COOP_RECOVERY_LIVE || (item->state == COOP_RECOVERY_RECLAIMING && item->remote_index >= 0)) {
-			for (j = 0; j <= Highest_object_index; j++)
-				if (Objects[j].signature == item->signature && Objects[j].type == OBJ_POWERUP && Objects[j].id == item->powerup) {
-					if (found != -1) return 0;
-					found = j;
-				}
-			if (found < 0) return 0;
-			item->object_index = (int16_t) found;
-			item->remote_index = (int16_t) objnum_local_to_remote(found, &item->network_owner);
-		} else {
-			item->object_index = item->remote_index = -1;
-		}
+	restore_result = (coop_gear_restore_result) { 0 };
+	if (!reserve(pending_count)) {
+		restore_result.discarded = pending_count;
+		android_restore_discard("recovery", "allocation failed; discarded section", 0, 0, -1, -1);
+		coop_recovery_reset();
+		goto done;
 	}
+	/* Validate against the saved world before adopting peer-local network mappings */
 	coop_recovery_reset();
 	for (i = 0; i < pending_count; i++) {
-		items[count++] = pending[i];
+		coop_recovery_item item = pending[i];
+		const char *reason = validate_saved_gear(&item);
+		int found = -1;
+		for (size_t n = 0; n < pending_count && !reason; n++) {
+			if (n == i) continue;
+			if (pending[n].id == item.id) reason = "duplicate recovery ID";
+			else if (has_world_gear(&item) && has_world_gear(&pending[n]) &&
+			         item.signature == pending[n].signature) reason = "conflicting object claims";
+		}
+		if (!reason && (item.state == COOP_RECOVERY_LIVE ||
+		                (item.state == COOP_RECOVERY_RECLAIMING && item.remote_index >= 0))) {
+			for (int j = 0; j <= Highest_object_index; j++) {
+				if (Objects[j].signature != item.signature || Objects[j].type != OBJ_POWERUP ||
+				    Objects[j].id != item.powerup || (Objects[j].flags & OF_SHOULD_BE_DEAD)) continue;
+				if (found != -1) {
+					reason = "ambiguous object signature";
+					break;
+				}
+				found = j;
+			}
+			if (found < 0) reason = "missing or deleted powerup";
+		}
+		if (reason) {
+			restore_result.discarded++;
+			android_restore_discard("recovery", reason, item.id, item.signature, item.object_index, item.powerup);
+			continue;
+		}
+		item.object_index = item.remote_index = (int16_t) found;
+		if (found >= 0) item.remote_index = (int16_t) objnum_local_to_remote(found, &item.network_owner);
 		/* A loaded save is a new authoritative world; restart any pending freeze */
-		if (items[i].state == COOP_RECOVERY_RECLAIMING) items[i].state = items[i].object_index >= 0 ? COOP_RECOVERY_LIVE : COOP_RECOVERY_CREDIT;
-		freeze_waiting[i] = 0;
-		if (next_id <= items[i].id) next_id = items[i].id + 1;
+		if (item.state == COOP_RECOVERY_RECLAIMING) item.state = found >= 0 ? COOP_RECOVERY_LIVE : COOP_RECOVERY_CREDIT;
+		items[count] = item;
+		freeze_waiting[count++] = 0;
+		if (next_id <= item.id) next_id = item.id + 1;
 	}
+	restore_result.accepted = count;
+done:
 	free(pending);
 	pending = NULL;
 	pending_count = 0;

@@ -57,6 +57,7 @@ $desktopExe = Join-Path $repoRoot 'buildd2\main\d2x-redux.exe'
 $batchStart = [DateTime]::UtcNow
 . (Join-Path $scriptDir 'guidebot_simulation_regression.ps1')
 . (Join-Path $scriptDir 'mission_archive_variants.ps1')
+. (Join-Path $PSScriptRoot 'mission_rar_archive.ps1')
 . (Join-Path $scriptDir 'runtime_targeted_sampling.ps1')
 . (Join-Path $scriptDir 'cd_level_metadata_sources.ps1')
 . (Join-Path $scriptDir 'headless_process_pool.ps1')
@@ -167,6 +168,10 @@ function Expand-GuidebotMissionArchive {
     )
 
     New-Item -ItemType Directory -Path $Destination -Force | Out-Null
+    if ($Archive.Extension -eq '.rar') {
+        Invoke-MissionRarArchive -ArchivePath $Archive.FullName -Destination $Destination
+        return
+    }
     if ($Archive.Extension.Equals('.7z', [StringComparison]::OrdinalIgnoreCase)) {
         $output = & (Get-GuidebotSevenZip) x -y "-o$Destination" -- $Archive.FullName 2>&1
         if ($LASTEXITCODE -ne 0) { throw "7z extraction failed for $($Archive.Name): $($output -join ' ')" }
@@ -206,7 +211,7 @@ function Initialize-GuidebotMissionStage {
         return [pscustomobject]@{ ExtraDir = ''; Source = 'builtin' }
     }
     $archive = @(
-        foreach ($extension in @('.zip', '.7z')) {
+        foreach ($extension in @('.zip', '.7z', '.rar')) {
             $candidate = Join-Path $MetadataFile.DirectoryName ($MetadataFile.BaseName + $extension)
             if (Test-Path -LiteralPath $candidate -PathType Leaf) { Get-Item -LiteralPath $candidate }
         }

@@ -30,6 +30,11 @@
 
 param(
     [string]$Game = "d2",
+    [string]$MissionFile,
+    [int]$InitialLevel = 1,
+    [string]$HostCallsign = "LanHost",
+    [string]$JoinCallsign = "LanJoin",
+    [string]$RestoreSavePath,
     [switch]$SkipBuild,
     [switch]$UseRelay,
     [switch]$GuidebotOwnership,
@@ -37,6 +42,9 @@ param(
     [switch]$GuidebotSlotRemapRestore,
     [switch]$SavedLateJoin,
     [switch]$RestoreStatus,
+    [switch]$RestoreResilience,
+    [ValidateSet("unexpected_exit", "interrupted_restore", "normal_quit", "fail_after_hide")]
+    [string]$RestoreReportCase,
     [switch]$HostMigration,
     [switch]$SpewRecovery,
     [switch]$SpewPickup,
@@ -60,12 +68,12 @@ $EMULATOR = Resolve-RegressionAndroidSdkTool -DepBase $DEP_BASE -Subdir "emulato
 $EMU1 = "emulator-5554"  # Player 1 (host)
 $EMU2 = "emulator-5556"  # Player 2 (joiner)
 $AVD_MAP = @{ $EMU1 = "Nexus5X_Light_1"; $EMU2 = "Nexus5X_Light_2" }
-$CALLSIGN1 = "LanHost"
-$CALLSIGN2 = "LanJoin"
+$CALLSIGN1 = $HostCallsign
+$CALLSIGN2 = $JoinCallsign
 $MIGRATED_HOST_PORT = 42425
 
 # Mission filenames as used by the engine (not display names)
-$MISSION = if ($Game -eq "d1") { "" } else { "d2" }
+$MISSION = if ($MissionFile) { $MissionFile } elseif ($Game -eq "d1") { "" } else { "d2" }
 $MODE = "coop"
 
 $relayProc = $null
@@ -871,6 +879,138 @@ function Invoke-SavedLateJoinScenario {
     return $recovered
 }
 
+function Invoke-RestoreResilienceScenario {
+    Write-Status "--- Missing gear restore, report publication, and clean round trip ---" "White"
+    $gameDir = if ($Game -eq "d1") { "d1x-redux" } else { "d2x-redux" }
+    $missionKey = if ($Game -eq "d1") { "default" } else { "d2" }
+    $fixtureTool = Join-Path $REPO_ROOT "build$Game/tests/coop_restore_fixture.exe"
+    if (-not (Test-Path -LiteralPath $fixtureTool)) { throw "Build coop_restore_fixture for $Game first" }
+    if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_restore_resilience_seed.jsonc" `
+                -SecondarySerial $EMU2 -SecondaryScript "test_coop_late_join_seed.jsonc" -Description "known inventory before restore")) { return $false }
+    for ($cycle = 1; $cycle -le 3; $cycle++) {
+        if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName "test_coop_late_join_save.jsonc")) { return $false }
+        if (-not (Wait-ForCondition -Description "resilience save completes" -TimeoutSec 30 -PollMs 500 -Condition {
+                    $result = Get-DeviceAutomationResult -Serial $EMU1
+                    return $result -and $result.result -eq "PASS"
+                })) { return $false }
+        $slot = Get-DeviceLatestCoopAutosaveSlot -Serial $EMU1
+        if ($slot -lt 0) { return $false }
+        $save = "files/$gameDir/Players/save_sets/coop/$missionKey/coopsave.mg$slot"
+        foreach ($serial in @($EMU1, $EMU2)) {
+            Adb-Dev-Timeout -Serial $serial -AdbArgs @("shell", "am", "force-stop", $PACKAGE) -Seconds 10 | Out-Null
+        }
+        if ($cycle -le 2) {
+            $original = Join-Path $REPO_ROOT "temp/coop-resilience-original.mg$slot"
+            $modified = Join-Path $REPO_ROOT "temp/coop-resilience-missing.mg$slot"
+            # PowerShell 7.4+ preserves bytes when redirecting native stdout
+            & $ADB -s $EMU1 exec-out run-as $PACKAGE cat $save > $original
+            if ($LASTEXITCODE -ne 0) { throw "Could not pull fixture source" }
+            $fixtureArgs = @($original, $modified)
+            if ($cycle -eq 2) { $fixtureArgs += "bad_counts" }
+            & $fixtureTool @fixtureArgs | ForEach-Object { Write-Status $_ }
+            if ($LASTEXITCODE -ne 0) { throw "Could not create missing-gear fixture" }
+            Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("push", $modified, "/data/local/tmp/coop-resilience.mg") -Seconds 15 | Out-Null
+            Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "run-as", $PACKAGE, "cp", "/data/local/tmp/coop-resilience.mg", $save) -Seconds 10 | Out-Null
+        }
+        foreach ($serial in @($EMU1, $EMU2)) {
+            if (-not (Start-SetupActivity -Serial $serial)) { return $false }
+            Send-MpCommand -Serial $serial -Command "set_callsign" -Extras @("--es", "callsign", $(if ($serial -eq $EMU1) { $CALLSIGN1 } else { $CALLSIGN2 }))
+            Adb-Dev-Timeout -Serial $serial -AdbArgs @("shell", "run-as", $PACKAGE, "rm", "-f", "files/introspect.json") -Seconds 5 | Out-Null
+        }
+        if (-not (Set-DeviceCoopRestoreSlot -Serial $EMU1 -Slot $slot)) { return $false }
+        Send-MpCommand -Serial $EMU1 -Command "lan_launch" -Extras $hostExtras
+        if (-not (Wait-ForCondition -Description "fresh restore host lobby" -TimeoutSec 30 -PollMs 500 -Condition {
+                    $intro = Get-GameIntrospection -Serial $EMU1
+                    return $intro -and $intro.is_network -and (Get-IntroNumConnected -Intro $intro) -eq 1
+                })) { return $false }
+        Send-MpCommand -Serial $EMU2 -Command "lan_launch" -Extras $joinExtras
+        if (-not (Wait-ForCondition -Description "both fresh engines accept automation" -TimeoutSec 60 -PollMs 1000 -Condition {
+                    $hostIntro = Get-GameIntrospection -Serial $EMU1
+                    $clientIntro = Get-GameIntrospection -Serial $EMU2
+                    return $hostIntro -and $clientIntro -and $hostIntro.in_game -and $clientIntro.in_game -and
+                    (Get-IntroNumConnected -Intro $hostIntro) -eq 2 -and (Get-IntroNumConnected -Intro $clientIntro) -eq 2
+                })) { return $false }
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_restore_resilience_verify.jsonc" `
+                    -SecondarySerial $EMU2 -SecondaryScript "test_coop_restore_resilience_verify.jsonc" `
+                    -Description "two-peer restore with unchanged inventory (cycle $cycle)" -TimeoutSec 90)) { return $false }
+        foreach ($serial in @($EMU1, $EMU2)) {
+            $pidNow = (Adb-Dev-Timeout -Serial $serial -AdbArgs @("shell", "pidof", "${PACKAGE}:game") -Seconds 5).Trim()
+            if (-not $pidNow) { throw "Game process exited after restore" }
+            $intro = Get-GameIntrospection -Serial $serial
+            $localPlayer = @($intro.multiplayer.players | Where-Object { $_.is_me })[0]
+            if ($localPlayer.homing_ammo -ne 6) { throw "Restore lost valid inventory or refunded discarded gear" }
+            $markers = Adb-Dev-Timeout -Serial $serial -AdbArgs @("shell", "run-as", $PACKAGE, "ls", "files/tombstones") -Seconds 5
+            $marker = @($markers -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ -match "^engine_pending_.*_${pidNow}\.txt$" })
+            if ($marker.Count -ne 1) { throw "Missing durable session marker" }
+            $markerBody = Adb-Dev-Timeout -Serial $serial -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/tombstones/$($marker[0].Trim())") -Seconds 5
+            if ($markerBody -notmatch "Phase: restore complete" -or $markerBody -notmatch "Restore active: 0") { throw "Restore did not complete in this process" }
+            $reports = Adb-Dev-Timeout -Serial $serial -AdbArgs @("shell", "run-as", $PACKAGE, "ls", "files/tombstones") -Seconds 5
+            $reports = @($reports -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ -match "^crash_error_restore_.*_${pidNow}_\d+\.txt$" })
+            if ($cycle -le 2) {
+                if ($reports.Count -ne 1) { throw "Expected one shareable recovery report for $serial, got $($reports.Count)" }
+                $report = Adb-Dev-Timeout -Serial $serial -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/tombstones/$($reports[0].Trim())") -Seconds 5
+                $expectedReason = if ($cycle -eq 1) { "missing or deleted powerup" } else { "unreadable optional section" }
+                if ($report -notmatch "Save restore recovered" -or $report -notmatch $expectedReason) {
+                    throw "Recovery report did not identify discarded fixture gear"
+                }
+            } elseif ($reports.Count) { throw "Discarded gear returned after saving and reloading" }
+        }
+    }
+    return Wait-BidirectionalPdata -FirstSerial $EMU1 -FirstRemoteSlot 1 -SecondSerial $EMU2 -SecondRemoteSlot 0 `
+        -Description "continued network updates after tolerant restore"
+}
+
+function Invoke-RestoreReportScenario {
+    Write-Status "--- Restore report case: $RestoreReportCase ---" "White"
+    $gamePid = (Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "pidof", "${PACKAGE}:game") -Seconds 5).Trim()
+    if (-not $gamePid) { throw "No host game process for report test" }
+    $files = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "run-as", $PACKAGE, "ls", "files/tombstones") -Seconds 5
+    $marker = @($files -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ -match "^engine_pending_.*_${gamePid}\.txt$" })
+    if ($marker.Count -ne 1) { throw "No unique session marker before report test" }
+    $sessionKey = $marker[0].Replace("engine_pending_", "").Replace(".txt", "")
+    $reportPath = "files/tombstones/crash_error_exit_$sessionKey.txt"
+    if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName "test_restore_report_$RestoreReportCase.jsonc")) { return $false }
+    if ($RestoreReportCase -eq "interrupted_restore") {
+        if (-not (Wait-ForCondition -Description "durable interrupted-restore evidence" -TimeoutSec 15 -PollMs 500 -Condition {
+                    $body = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/tombstones/$($marker[0])") -Seconds 5
+                    return $body -match "Restore active: 1" -and $body -match "injected restore interruption"
+                })) { return $false }
+        Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "run-as", $PACKAGE, "kill", "-9", $gamePid) -Seconds 5 | Out-Null
+    }
+    if ($RestoreReportCase -eq "fail_after_hide") {
+        if (-not (Wait-ForCondition -Description "core restore failure returns to visible menu" -TimeoutSec 60 -PollMs 1000 -Condition {
+                    $intro = Get-GameIntrospection -Serial $EMU1
+                    return $intro -and -not $intro.in_game -and $intro.screen_mode -eq "menu" -and $intro.window_count -gt 0
+                })) { return $false }
+        $files = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "run-as", $PACKAGE, "ls", "files/tombstones") -Seconds 5
+        $reports = @($files -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ -match "^crash_error_restore_${sessionKey}_\d+\.txt$" })
+        if ($reports.Count -ne 1) { throw "Core restore failure did not publish one report" }
+        $report = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/tombstones/$($reports[0])") -Seconds 5
+        if ($report -notmatch "Save restore failure" -or $report -notmatch "Visible window: 1" -or
+            $report -notmatch "Failure phase: injected core restore failure after hiding window") { throw "Core failure report lacks visible recovery evidence" }
+        return $true
+    }
+    if (-not (Wait-ForCondition -Description "host game process exits" -TimeoutSec 30 -PollMs 500 -Condition {
+                $current = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "pidof", "${PACKAGE}:game") -Seconds 5
+                return -not $current.Trim()
+            })) { return $false }
+    if (-not (Start-SetupActivity -Serial $EMU1)) { return $false }
+    $report = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "run-as", $PACKAGE, "cat", $reportPath) -Seconds 5
+    if ($RestoreReportCase -eq "normal_quit") {
+        $files = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "run-as", $PACKAGE, "ls", "files/tombstones") -Seconds 5
+        if (($files -split "`n" | ForEach-Object { $_.Trim() }) -contains "crash_error_exit_$sessionKey.txt") { throw "Intentional quit produced an unexpected-exit report" }
+    } else {
+        $title = if ($RestoreReportCase -eq "interrupted_restore") { "Interrupted save restore" } else { "Unexpected engine exit" }
+        if ($report -notmatch $title -or $report -notmatch "injected restore interruption") { throw "Missing standalone exit report with restore evidence" }
+        if (-not (Start-SetupActivity -Serial $EMU1)) { return $false }
+        $again = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "run-as", $PACKAGE, "cat", $reportPath) -Seconds 5
+        if ($again -ne $report) { throw "Launcher resume rewrote the completed report" }
+    }
+    $files = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "run-as", $PACKAGE, "ls", "files/tombstones") -Seconds 5
+    if (($files -split "`n" | ForEach-Object { $_.Trim() }) -contains $marker[0]) { throw "Completed exit still has a pending session marker" }
+    return $true
+}
+
 function Invoke-RestoreStatusScenario {
     if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_restore_status_host.jsonc" -SecondarySerial $EMU2 -SecondaryScript "test_coop_restore_status_client.jsonc" -Description "restore completion broadcast")) { return $false }
     if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_restore_checkpoint_host.jsonc" -SecondarySerial $EMU2 -SecondaryScript "test_coop_restore_checkpoint_client.jsonc" -Description "retained checkpoint clears restore status")) { return $false }
@@ -1089,6 +1229,10 @@ try {
     Write-Status "Game: $Game | Mission: $MISSION | Mode: $MODE"
     Write-Status ""
 
+    if ($SpewRecovery -and ($RestoreResilience -or $SpewPickup -or $SpewPartialPickup)) {
+        throw "Run SpewRecovery separately: it requires the fresh game's initial inventory"
+    }
+
     if (($GuidebotOwnership -or $GuidebotHostObserver -or $GuidebotSlotRemapRestore) -and $Game -ne "d2") {
         Write-Status "FAIL: Guide-Bot LAN scenarios currently require D2" "Red"
         exit 1
@@ -1254,13 +1398,25 @@ try {
     Start-Sleep -Seconds 1
 
     # Host (EMU1)
+    if ($RestoreSavePath) {
+        if (-not (Test-Path -LiteralPath $RestoreSavePath -PathType Leaf)) { throw "RestoreSavePath does not exist" }
+        $script:ProvidedSaveHash = (Get-FileHash -LiteralPath $RestoreSavePath -Algorithm SHA256).Hash
+        $providedMissionKey = if ($MISSION) { $MISSION } else { "default" }
+        if ($providedMissionKey -notmatch '^[A-Za-z0-9_-]+$') { throw "Use a simple mission filename for provided-save coverage" }
+        $providedGameDir = if ($Game -eq "d1") { "d1x-redux" } else { "d2x-redux" }
+        $providedSaveDir = "files/$providedGameDir/Players/save_sets/coop/$providedMissionKey"
+        Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("push", $RestoreSavePath, "/data/local/tmp/coop-provided-save.mg") -Seconds 30 | Out-Null
+        Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "run-as", $PACKAGE, "mkdir", "-p", $providedSaveDir) -Seconds 5 | Out-Null
+        Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "run-as", $PACKAGE, "cp", "/data/local/tmp/coop-provided-save.mg", "$providedSaveDir/coopsave.mg9") -Seconds 5 | Out-Null
+        if (-not (Set-DeviceCoopRestoreSlot -Serial $EMU1 -Slot 9)) { throw "Could not stage supplied save" }
+    }
     Write-Status "Sending lan_launch host to $EMU1..."
     $hostExtras = @(
         "--es", "game", $Game,
         "--es", "mp_mode", "host",
         "--es", "mode", $MODE,
         "--ei", "max_players", "2",
-        "--ei", "level_num", "1",
+        "--ei", "level_num", "$InitialLevel",
         "--ei", "difficulty", "1",
         "--es", "callsign", $CALLSIGN1
     )
@@ -1308,7 +1464,7 @@ try {
         "--es", "mp_mode", "join",
         "--es", "mode", $MODE,
         "--ei", "max_players", "2",
-        "--ei", "level_num", "1",
+        "--ei", "level_num", "$InitialLevel",
         "--ei", "difficulty", "1",
         "--es", "callsign", $CALLSIGN2
     )
@@ -1499,6 +1655,32 @@ try {
     }
     if ($testPassed -and $SavedLateJoin) {
         $testPassed = Invoke-SavedLateJoinScenario
+    }
+    if ($testPassed -and $RestoreResilience) {
+        $testPassed = Invoke-RestoreResilienceScenario
+    }
+    if ($testPassed -and $RestoreSavePath) {
+        $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_restore_resilience_verify.jsonc" `
+            -SecondarySerial $EMU2 -SecondaryScript "test_coop_restore_resilience_verify.jsonc" -Description "provided cooperative save completes on both peers" -TimeoutSec 90
+        if (-not $testPassed) { throw "Provided save did not restore" }
+        foreach ($serial in @($EMU1, $EMU2)) {
+            $gamePid = (Adb-Dev-Timeout -Serial $serial -AdbArgs @("shell", "pidof", "${PACKAGE}:game") -Seconds 5).Trim()
+            $files = Adb-Dev-Timeout -Serial $serial -AdbArgs @("shell", "run-as", $PACKAGE, "ls", "files/tombstones") -Seconds 5
+            $reports = @($files -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ -match "^crash_error_restore_.*_${gamePid}_\d+\.txt$" })
+            if ($reports.Count -ne 1) { throw "Expected one recovery report for provided save" }
+            $body = Adb-Dev-Timeout -Serial $serial -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/tombstones/$($reports[0])") -Seconds 5
+            if ($body -notmatch "Save restore recovered" -or $body -notmatch "Visible window: 1") { throw "Provided save failed to recover visibly" }
+            [IO.File]::WriteAllText((Join-Path $REPO_ROOT "temp/coop-provided-$serial-report.txt"), $body)
+            $intro = Get-GameIntrospection -Serial $serial
+            $rawIntro = Adb-Dev-Timeout -Serial $serial -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/introspect.json") -Seconds 5
+            [IO.File]::WriteAllText((Join-Path $REPO_ROOT "temp/coop-provided-$serial-introspect.json"), $rawIntro)
+            if ($intro.current_level_num -ne $InitialLevel) { throw "Provided save restored the wrong level" }
+        }
+        if ((Get-FileHash -LiteralPath $RestoreSavePath -Algorithm SHA256).Hash -ne $script:ProvidedSaveHash) { throw "Original supplied save changed" }
+        $testPassed = Wait-BidirectionalPdata -FirstSerial $EMU1 -FirstRemoteSlot 1 -SecondSerial $EMU2 -SecondRemoteSlot 0 -Description "network updates after supplied save restore"
+    }
+    if ($testPassed -and $RestoreReportCase) {
+        $testPassed = Invoke-RestoreReportScenario
     }
     if ($testPassed -and $RestoreStatus) {
         $testPassed = Invoke-RestoreStatusScenario

@@ -74,6 +74,14 @@ target_include_directories(
                                ${PHYSFS_INCLUDE_DIR} ${SDL_INCLUDE_DIR})
 set_property(TARGET test_coop_recovery PROPERTY C_STANDARD 11)
 
+add_executable(coop_restore_fixture coop_restore_fixture.c)
+set_property(TARGET coop_restore_fixture PROPERTY C_STANDARD 11)
+target_include_directories(coop_restore_fixture PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}/coop"
+                                                        ${PHYSFS_INCLUDE_DIR} ${SDL_INCLUDE_DIR})
+if(DXX_TEST_GAME STREQUAL "d2")
+    target_compile_definitions(coop_restore_fixture PRIVATE DXX_BUILD_DESCENT_II=1)
+endif()
+
 add_executable(test_hud_layout test_hud_layout.c)
 target_include_directories(test_hud_layout PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
 

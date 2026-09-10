@@ -16,6 +16,7 @@ function Get-RoutingDevelopmentMissions {
         [pscustomobject]@{ Json = 'Lostlvls.json'; Archive = 'Lostlvls.zip'; BuiltInGame = '' },
         [pscustomobject]@{ Json = 'EAF2.json'; Archive = 'EAF2.zip'; BuiltInGame = '' },
         [pscustomobject]@{ Json = 'EAF.json'; Archive = 'EAF.zip'; BuiltInGame = '' },
-        [pscustomobject]@{ Json = 'Bahagad.json'; Archive = 'Bahagad.zip'; BuiltInGame = '' }
+        [pscustomobject]@{ Json = 'Bahagad.json'; Archive = 'Bahagad.zip'; BuiltInGame = '' },
+        [pscustomobject]@{ Json = 'diehard.json'; Archive = 'diehard.7z'; BuiltInGame = '' }
     )
 }

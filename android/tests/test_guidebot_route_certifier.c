@@ -357,6 +357,7 @@ static level_metadata_scan_view make_view(certifier_fixture *fixture)
 	view.wall_type_open = 3;
 	view.wall_flag_door_opened = 2;
 	view.wall_flag_door_locked = 4;
+	view.wall_flag_buddy_proof = 128;
 	view.wall_clip_hidden = 8;
 	view.wall_key_none = 0;
 	view.wall_key_blue = 1;
@@ -1733,18 +1734,18 @@ static void test_keyed_door_blocks_objective_route_but_not_player_progress(void)
 	assert(!fixture.hard_blocked[0]);
 	assert(!guidebot_route_side_passable_current(&view, 0, 0));
 	assert(guidebot_route_side_progress_reachable_current(&view, 0, 0));
-	assert(guidebot_route_segment_has_player_openable_keyed_door(&view, 0));
+	assert(guidebot_route_segment_has_player_openable_door(&view, 0));
 	fixture.wall_clip[0] = view.wall_clip_hidden;
 	assert(!guidebot_route_side_passable_current(&view, 0, 0));
 	assert(guidebot_route_side_progress_reachable_current(&view, 0, 0));
-	assert(guidebot_route_segment_has_player_openable_keyed_door(&view, 0));
+	assert(guidebot_route_segment_has_player_openable_door(&view, 0));
 	view.initial_key_mask = 0;
 	assert(!guidebot_route_side_progress_reachable_current(&view, 0, 0));
-	assert(!guidebot_route_segment_has_player_openable_keyed_door(&view, 0));
+	assert(!guidebot_route_segment_has_player_openable_door(&view, 0));
 	view.initial_key_mask = LEVEL_METADATA_KEY_MASK_BLUE;
 	fixture.wall_extra_flags[0] = view.wall_flag_door_locked;
 	assert(!guidebot_route_side_progress_reachable_current(&view, 0, 0));
-	assert(!guidebot_route_segment_has_player_openable_keyed_door(&view, 0));
+	assert(!guidebot_route_segment_has_player_openable_door(&view, 0));
 	fixture.wall_extra_flags[0] = 0;
 	fixture.wall_open[0] = 1;
 	assert(guidebot_route_side_passable_current(&view, 0, 0));
@@ -1764,7 +1765,24 @@ static void test_reverse_side_keyed_buddy_proof_door_is_player_reachable(void)
 
 	assert(!guidebot_route_side_passable_current(&view, 0, 0));
 	assert(guidebot_route_side_progress_reachable_current(&view, 0, 0));
-	assert(guidebot_route_segment_has_player_openable_keyed_door(&view, 0));
+	assert(guidebot_route_segment_has_player_openable_door(&view, 0));
+	/* An unkeyed Buddy-proof door still needs player assistance */
+	fixture.wall_key[1] = view.wall_key_none;
+	fixture.wall_extra_flags[1] = view.wall_flag_buddy_proof;
+	view.initial_key_mask = 0;
+	assert(!guidebot_route_side_passable_current(&view, 0, 0));
+	assert(!guidebot_route_side_progress_reachable_current(&view, 0, 0));
+	/* The authored entrance has no trigger prerequisite */
+	view.triggered_side_opener_count = NULL;
+	assert(guidebot_route_side_progress_reachable_current(&view, 0, 0));
+	assert(guidebot_route_segment_has_player_openable_door(&view, 0));
+	fixture.wall_extra_flags[1] |= view.wall_flag_door_locked;
+	assert(!guidebot_route_side_progress_reachable_current(&view, 0, 0));
+	assert(!guidebot_route_segment_has_player_openable_door(&view, 0));
+	fixture.wall_extra_flags[1] = view.wall_flag_buddy_proof;
+	fixture.wall_key[1] = view.wall_key_blue;
+	assert(!guidebot_route_side_progress_reachable_current(&view, 0, 0));
+	assert(!guidebot_route_segment_has_player_openable_door(&view, 0));
 }
 
 static void test_physical_frontier_follows_strategic_route(void)
@@ -1792,7 +1810,7 @@ static void test_physical_frontier_follows_strategic_route(void)
 	assert(
 	    guidebot_route_best_physical_frontier(
 	        &view, 0, 3, 200, -1, -1, -1, -1, &Workspace) == 1);
-	assert(guidebot_route_segment_has_player_openable_keyed_door(&view, 1));
+	assert(guidebot_route_segment_has_player_openable_door(&view, 1));
 	/* Center estimates cannot replace the useful keyed-door frontier with a
 	 * physically reachable dead end that happens to be closer to the goal */
 	fixture.narrow_wall = 0;
@@ -1801,7 +1819,7 @@ static void test_physical_frontier_follows_strategic_route(void)
 	           &view, 0, 3, 200, -1, -1, -1, -1, &Workspace) == 1);
 	fixture.narrow_wall = -1;
 	fixture.wall_open[1] = 1;
-	assert(!guidebot_route_segment_has_player_openable_keyed_door(&view, 1));
+	assert(!guidebot_route_segment_has_player_openable_door(&view, 1));
 	assert(
 	    guidebot_route_best_physical_frontier(
 	        &view, 0, 3, 200, -1, -1, -1, -1, &Workspace) == 3);
@@ -1810,7 +1828,7 @@ static void test_physical_frontier_follows_strategic_route(void)
 	        &view, 0, 3, 200, 1, 2, -1, -1, &Workspace) == 1);
 	fixture.wall_open[1] = 0;
 	view.initial_key_mask = 0;
-	assert(!guidebot_route_segment_has_player_openable_keyed_door(&view, 1));
+	assert(!guidebot_route_segment_has_player_openable_door(&view, 1));
 	assert(
 	    guidebot_route_best_physical_frontier(
 	        &view, 0, 3, 200, -1, -1, -1, -1, &Workspace) == 4);

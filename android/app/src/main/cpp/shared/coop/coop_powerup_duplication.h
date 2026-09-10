@@ -6,10 +6,13 @@
 
 #include "object.h"
 #include "pstypes.h"
+#include "coop_gear_restore.h"
 
 #define COOP_POWERUP_CLIENT_ID_LEN 36
 #define COOP_POWERUP_CALLSIGN_LEN  8
 
+/* Android's disk ABI, independent of legacy desktop header packing */
+#pragma pack(push, 4)
 typedef struct coop_powerup_collection {
 	int16_t object_index;
 	int32_t object_signature;
@@ -17,6 +20,7 @@ typedef struct coop_powerup_collection {
 	char client_id[COOP_POWERUP_CLIENT_ID_LEN + 1];
 	char callsign[COOP_POWERUP_CALLSIGN_LEN + 1];
 } coop_powerup_collection;
+#pragma pack(pop)
 
 int coop_powerup_duplication_active(void);
 int coop_powerup_duplication_eligible(const object *powerup);
@@ -31,6 +35,7 @@ int coop_powerup_duplication_replace(const coop_powerup_collection *items,
 int coop_powerup_duplication_set_pending(
     const coop_powerup_collection *items, size_t count);
 int coop_powerup_duplication_apply_pending(void);
+coop_gear_restore_result coop_powerup_duplication_restore_result(void);
 
 void coop_powerup_duplication_send(const object *powerup);
 void coop_powerup_duplication_receive(const ubyte *buf);

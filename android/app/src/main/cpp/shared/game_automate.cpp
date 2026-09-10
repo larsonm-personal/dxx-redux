@@ -48,6 +48,7 @@ extern "C" {
 #include "android_screen_advance.h"
 #include "android_graphics_options.h"
 #include "android_log.h"
+#include "android_crash_handler.h"
 #include "android_menu_scale.h"
 #include "android_music_control.h"
 #include "android_texture_debug.h"
@@ -4103,6 +4104,24 @@ extern "C" void game_automate_tick(void)
 					escort_route_notify_automap_changed(segnum);
 #endif
 				}
+			} else if (s.field == "restore_diagnostic_test") {
+#ifdef ANDROID
+				if (!Game_wind) {
+					stop_script_fail("restore diagnostic test requires a game window");
+					break;
+				}
+				if (s.value == "fail_after_hide") {
+					state_restore_test_fail_after_hide();
+				} else if (s.value == "unexpected_exit" || s.value == "interrupted_restore") {
+					android_restore_begin("test", "diagnostic fault injection", Current_level_num, multi_i_am_master(), 1);
+					android_restore_phase("injected restore interruption");
+					if (s.value == "unexpected_exit") window_set_visible(Game_wind, 0);
+				} else {
+					stop_script_fail("unknown restore diagnostic test");
+				}
+#else
+				stop_script_fail("restore diagnostic test requires Android");
+#endif
 			} else if (s.field == "coop_restore_status") {
 				if (!(Game_mode & GM_MULTI_COOP)) {
 					stop_script_fail("coop_restore_status: active coop game required");

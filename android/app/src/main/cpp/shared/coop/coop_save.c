@@ -16,6 +16,7 @@
 #include "coop_player_session.h"
 #include "coop_powerup_duplication.h"
 #include "coop_recovery.h"
+#include "android_crash_handler.h"
 #include "coop_restore_remap.h"
 
 #include "player.h"
@@ -398,7 +399,6 @@ static int coop_build_save_metadata(coop_save_metadata *meta)
 	if (!meta || !(Game_mode & GM_MULTI_COOP))
 		return 0;
 
-	coop_recovery_frame();
 	memset(meta, 0, sizeof(*meta));
 	meta->tag = COOP_SAVE_META_TAG;
 	meta->version = COOP_SAVE_META_VER;
@@ -442,6 +442,8 @@ static int coop_build_save_metadata(coop_save_metadata *meta)
 
 static int coop_write_save_payload(rewind_file *file)
 {
+	/* Only normalize the ledger here; objects have already been serialized */
+	coop_recovery_prepare_save();
 	size_t count = coop_powerup_duplication_count();
 	const coop_powerup_collection *items =
 	    coop_powerup_duplication_data();
@@ -514,6 +516,9 @@ int coop_read_save_metadata_rewind(rewind_file *file,
 	uint32_t checksum = 2166136261u;
 	int result = 0;
 
+	/* A failed preflight must not leave gear from a previous save pending */
+	coop_powerup_duplication_set_pending(NULL, 0);
+	coop_recovery_set_pending(NULL, 0);
 	if (!file || !meta ||
 	    trailer_end < (PHYSFS_sint64) sizeof(footer))
 		return 0;
@@ -523,10 +528,7 @@ int coop_read_save_metadata_rewind(rewind_file *file,
 	    rewind_file_read(file, &footer, sizeof(footer), 1) != 1 ||
 	    footer.tag != COOP_SAVE_FOOTER_TAG ||
 	    footer.version != COOP_SAVE_META_VER ||
-	    footer.payload_size < sizeof(*meta) ||
-	    footer.collection_count >
-	        (footer.payload_size - sizeof(*meta)) /
-	            sizeof(coop_powerup_collection))
+	    footer.payload_size < sizeof(*meta))
 		goto done;
 	payload_start = trailer_end - (PHYSFS_sint64) sizeof(footer) -
 	                footer.payload_size;
@@ -534,33 +536,24 @@ int coop_read_save_metadata_rewind(rewind_file *file,
 	    !rewind_file_seek(file, payload_start) ||
 	    rewind_file_read(file, meta, sizeof(*meta), 1) != 1)
 		goto done;
-	items_size = footer.collection_count *
-	             sizeof(coop_powerup_collection);
-	if (items_size) {
-		items = (coop_powerup_collection *) malloc(items_size);
-		if (!items ||
-		    rewind_file_read(file, items, items_size, 1) != 1)
-			goto done;
-	}
-	recovery_size = footer.payload_size - sizeof(*meta) - items_size;
-	if (meta->recovery_count > recovery_size / sizeof(*recovery) ||
-	    recovery_size != meta->recovery_count * sizeof(*recovery)) goto done;
-	if (recovery_size) {
-		recovery = (coop_recovery_item *) malloc(recovery_size);
-		if (!recovery || rewind_file_read(file, recovery, recovery_size, 1) != 1) goto done;
-	}
+	/* Check the complete bounded payload without allocating optional gear */
 	checksum = coop_save_checksum(meta, sizeof(*meta), checksum);
-	if (items_size)
-		checksum = coop_save_checksum(items, items_size, checksum);
-	if (recovery_size) checksum = coop_save_checksum(recovery, recovery_size, checksum);
+	{
+		uint8_t chunk[2048];
+		size_t remaining = footer.payload_size - sizeof(*meta);
+		while (remaining) {
+			size_t bytes = remaining < sizeof(chunk) ? remaining : sizeof(chunk);
+			if (rewind_file_read(file, chunk, bytes, 1) != 1) goto done;
+			checksum = coop_save_checksum(chunk, bytes, checksum);
+			remaining -= bytes;
+		}
+	}
 	if (checksum != footer.checksum ||
 	    meta->tag != COOP_SAVE_META_TAG ||
 	    meta->version != COOP_SAVE_META_VER ||
 	    meta->num_active_players > 8 ||
 	    meta->num_absent_players > COOP_MAX_REMEMBERED_PLAYERS ||
-	    meta->duplicate_energy_shields > 1 ||
-	    (!meta->duplicate_energy_shields &&
-	     footer.collection_count)) {
+	    meta->duplicate_energy_shields > 1) {
 		con_printf(CON_URGENT, "coop_save: invalid metadata (ver=%d, active=%d, absent=%d)\n",
 		           meta->version, meta->num_active_players, meta->num_absent_players);
 		goto done;
@@ -573,10 +566,32 @@ int coop_read_save_metadata_rewind(rewind_file *file,
 		           meta->difficulty_min, meta->difficulty_max);
 		goto done;
 	}
-	if (!coop_powerup_duplication_set_pending(
-	        items, footer.collection_count) ||
-	    !coop_recovery_set_pending(recovery, meta->recovery_count))
-		goto done;
+	if (footer.collection_count > (footer.payload_size - sizeof(*meta)) / sizeof(*items))
+		goto discard_gear;
+	items_size = (size_t) footer.collection_count * sizeof(*items);
+	recovery_size = footer.payload_size - sizeof(*meta) - items_size;
+	if (meta->recovery_count > recovery_size / sizeof(*recovery) ||
+	    recovery_size != (size_t) meta->recovery_count * sizeof(*recovery)) goto discard_gear;
+	if (!rewind_file_seek(file, payload_start + sizeof(*meta))) goto discard_gear;
+	if (items_size) {
+		items = (coop_powerup_collection *) malloc(items_size);
+		if (!items || rewind_file_read(file, items, items_size, 1) != 1) goto discard_gear;
+	}
+	if (recovery_size) {
+		recovery = (coop_recovery_item *) malloc(recovery_size);
+		if (!recovery || rewind_file_read(file, recovery, recovery_size, 1) != 1) goto discard_gear;
+	}
+	if (!coop_powerup_duplication_set_pending(items, footer.collection_count) ||
+	    !coop_recovery_set_pending(recovery, meta->recovery_count)) goto discard_gear;
+	goto gear_ready;
+discard_gear:
+	coop_powerup_duplication_set_pending(NULL, 0);
+	coop_recovery_set_pending(NULL, 0);
+	android_restore_discard("gear", "unreadable optional section; discarded all gear records", 0, 0, -1, -1);
+gear_ready:
+#ifdef ANDROID
+	android_restore_metadata(meta->mission_name, meta->level_num, footer.checksum);
+#endif
 	COOP_SAVE_LOG(CON_DEBUG,
 	              "coop_save: read metadata trailer (ver=%d, %d active, %d absent, %u pickups)\n",
 	              meta->version, meta->num_active_players,

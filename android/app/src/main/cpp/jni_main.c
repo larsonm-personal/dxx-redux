@@ -334,8 +334,10 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 	if (!g_activity || (*env)->ExceptionCheck(env)) goto startup_failed;
 	android_log_startup_argv("before-main", argc, argv_startup,
 	                         input_demo_replay_path, resume_save_path, resume_callsign);
+	android_engine_session_begin();
 	main(argc, argv_startup);
 	debug_log(DLOG_GAME, "jni startup main returned");
+	android_engine_session_returned();
 	free(input_demo_replay_path);
 	free(resume_save_path);
 	free(resume_callsign);

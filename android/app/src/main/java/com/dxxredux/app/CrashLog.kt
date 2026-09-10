@@ -45,6 +45,7 @@ object CrashLog {
     /** List existing crash files, newest first. */
     fun listCrashFiles(context: Context): List<File> {
         val appContext = context.applicationContext
+        GameProcessExitDiagnostics.logRecent(appContext)
         maybeBackfillMissingXCrashSections(appContext)
         return listCrashFilesRaw(appContext)
     }
@@ -88,7 +89,7 @@ object CrashLog {
         getTombstoneDir(appContext).listFiles()?.forEach { file ->
             if (file.name.startsWith("tombstone_")) {
                 TombstoneManager.deleteTombstone(file)
-            } else {
+            } else if (isCrashReportFile(file)) {
                 file.delete()
             }
         }
@@ -358,8 +359,8 @@ object CrashLog {
         }
     }
 
-    private fun isCrashReportFile(file: File): Boolean {
-        if (!file.isFile) return false
+    internal fun isCrashReportFile(file: File): Boolean {
+        if (!file.isFile || file.name.endsWith(".tmp")) return false
         return file.name.startsWith("tombstone_") || file.name.startsWith("crash_error_")
     }
 

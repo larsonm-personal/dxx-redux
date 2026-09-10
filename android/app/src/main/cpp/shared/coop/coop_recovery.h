@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include "coop_save.h"
 #include "object.h"
+#include "coop_gear_restore.h"
 
 /* Android coop protocol: packed, fixed-width records on our little-endian ABIs
  * Keep MULTI_COOP_RECOVERY's 160-byte envelope in both multi.h files in sync */
@@ -76,5 +77,7 @@ size_t coop_recovery_count(void);
 const coop_recovery_item *coop_recovery_data(void);
 int coop_recovery_set_pending(const coop_recovery_item *items, size_t count);
 int coop_recovery_apply_pending(void);
+coop_gear_restore_result coop_recovery_restore_result(void);
+void coop_recovery_prepare_save(void);
 
 #endif

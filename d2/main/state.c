@@ -64,6 +64,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "controls.h"
 #include "laser.h"
 #include "state.h"
+#include "android_crash_handler.h"
 #include "collide.h"
 #include "multi.h"
 #include "escort.h"
@@ -2850,7 +2851,36 @@ void ShowLevelIntro(int level_num);
 extern void do_cloak_invul_secret_stuff(fix64 old_gametime);
 extern void copy_defaults_to_robot(object *objp);
 
+#ifdef __ANDROID__
+static int restore_requires_menu;
+#ifdef INTROSPECT_ON
+static int restore_test_fail_after_hide;
+void state_restore_test_fail_after_hide(void) { restore_test_fail_after_hide = 1; }
+#endif
+int state_restore_take_menu_request(void)
+{
+	int requested = restore_requires_menu;
+	restore_requires_menu = 0;
+	return requested;
+}
+
+static int state_restore_all_sub_impl(char *filename, int secret_restore, int *world_changed);
 int state_restore_all_sub(char *filename, int secret_restore)
+{
+	int world_changed = 0;
+	android_restore_begin("d2", filename, Current_level_num,
+	                      (Game_mode & GM_MULTI_COOP) && multi_i_am_master(),
+	                      Game_wind && window_is_visible(Game_wind));
+	int result = state_restore_all_sub_impl(filename, secret_restore, &world_changed);
+	if (Game_wind && !window_is_visible(Game_wind)) window_set_visible(Game_wind, 1);
+	if (!result && world_changed) restore_requires_menu = 1;
+	android_restore_finished(result, Game_wind && window_is_visible(Game_wind));
+	return result;
+}
+static int state_restore_all_sub_impl(char *filename, int secret_restore, int *world_changed)
+#else
+int state_restore_all_sub(char *filename, int secret_restore)
+#endif
 {
 	int version,i, j, segnum, coop_player_got[MAX_PLAYERS], coop_org_objnum = Players[Player_num].objnum;
 	object * obj;
@@ -3046,6 +3076,10 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	}
 	#endif
 
+#ifdef __ANDROID__
+	*world_changed = 1;
+	android_restore_phase("replacing world");
+#endif
 // Start new game....
 	if (!(Game_mode & GM_MULTI_COOP))
 	{
@@ -3070,6 +3104,15 @@ int state_restore_all_sub(char *filename, int secret_restore)
 
 	if (Game_wind)
 		window_set_visible(Game_wind, 0);
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+	if (restore_test_fail_after_hide) {
+		restore_test_fail_after_hide = 0;
+		android_restore_phase("injected core restore failure after hiding window");
+		PHYSFS_close(fp);
+		return 0;
+	}
+#endif
+
 
 //Read player info
 
@@ -3633,12 +3676,13 @@ int state_restore_all_sub(char *filename, int secret_restore)
 				coop_meta.num_active_players, coop_meta.num_absent_players);
 			Netgame.DuplicateEnergyShields =
 				coop_meta.duplicate_energy_shields;
-			if (!coop_powerup_duplication_apply_pending() || !coop_recovery_apply_pending()) {
-				con_printf(CON_URGENT,
-					"coop_save: invalid per-player powerup state\n");
-				PHYSFS_close(fp);
-				return 0;
-			}
+            android_restore_phase("applying optional gear");
+            coop_powerup_duplication_apply_pending();
+            coop_recovery_apply_pending();
+            coop_gear_restore_result pickups = coop_powerup_duplication_restore_result();
+            coop_gear_restore_result recovery = coop_recovery_restore_result();
+            android_restore_gear_summary((unsigned) pickups.accepted, (unsigned) pickups.discarded,
+                                         (unsigned) recovery.accepted, (unsigned) recovery.discarded);
 			/* Restore inventory revisions with the saved player slot mapping */
             for (int rp = 0; rp < MAX_PLAYERS; rp++) {
                 int saved = coop_find_player_in_metadata(Players[rp].callsign,

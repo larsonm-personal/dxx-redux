@@ -55,7 +55,7 @@ static int guidebot_route_side_passable(
     const level_metadata_scan_view *view,
     int segment,
     int side,
-    int allow_player_keyed_door,
+    int allow_player_assisted_door,
     int allow_control_center_link,
     int allow_triggered_link,
     int check_clearance)
@@ -123,7 +123,7 @@ static int guidebot_route_side_passable(
 	    view->side_is_hard_blocked && reverse >= 0 &&
 	    view->side_is_hard_blocked(view->user, child, reverse);
 	hard_blocked = local_hard_blocked || reverse_hard_blocked;
-	if (hard_blocked && !allow_player_keyed_door)
+	if (hard_blocked && !allow_player_assisted_door)
 		return 0;
 	wall = view->wall_num ? view->wall_num(view->user, segment, side) : -1;
 	reverse_wall = view->wall_num && reverse >= 0 ? view->wall_num(view->user, child, reverse) : -1;
@@ -142,11 +142,17 @@ static int guidebot_route_side_passable(
 		return 0;
 	key = view->wall_keys ? view->wall_keys(view->user, wall)
 	                      : view->wall_key_none;
-	if (hard_blocked &&
-	    (key == view->wall_key_none || !guidebot_key_allowed(view, key)))
+	if (hard_blocked && !guidebot_key_allowed(view, key))
 		return 0;
 	type = view->wall_type ? view->wall_type(view->user, wall) : -1;
 	flags = view->wall_flags ? view->wall_flags(view->user, wall) : 0;
+	/* Buddy-proof blocks companion access, but an unlocked door can still
+	 * supply a player-assisted frontier even when it needs no key */
+	if (hard_blocked && key == view->wall_key_none &&
+	    (type != view->wall_type_door ||
+	     !(flags & view->wall_flag_buddy_proof) ||
+	     (flags & view->wall_flag_door_locked)))
+		return 0;
 	if (type == view->wall_type_open ||
 	    (flags & view->wall_flag_door_opened) != 0 ||
 	    (view->wall_is_opening && view->wall_is_opening(view->user, wall)))
@@ -167,7 +173,7 @@ static int guidebot_route_side_passable(
 	 * doors but does not open them on collision.  Keep those doors out of the
 	 * physical route; the strategic route may still cross them when the player
 	 * owns the key. */
-	if (key != view->wall_key_none && !allow_player_keyed_door)
+	if (key != view->wall_key_none && !allow_player_assisted_door)
 		return 0;
 	if (view->triggered_side_opener_count &&
 	    (view->triggered_side_opener_count(view->user, segment, side) > 0 ||
@@ -199,7 +205,7 @@ int guidebot_route_side_progress_reachable_current(
 	return guidebot_route_side_passable(view, segment, side, 1, 0, 0, 1);
 }
 
-static int guidebot_wall_is_player_openable_keyed_door(
+static int guidebot_wall_is_player_openable_door(
     const level_metadata_scan_view *view,
     int wall)
 {
@@ -210,10 +216,12 @@ static int guidebot_wall_is_player_openable_keyed_door(
 	    !view->wall_type)
 		return 0;
 	key = view->wall_keys(view->user, wall);
-	if (key == view->wall_key_none || !guidebot_key_allowed(view, key) ||
+	if (!guidebot_key_allowed(view, key) ||
 	    view->wall_type(view->user, wall) != view->wall_type_door)
 		return 0;
 	flags = view->wall_flags ? view->wall_flags(view->user, wall) : 0;
+	if (key == view->wall_key_none && !(flags & view->wall_flag_buddy_proof))
+		return 0;
 	if ((flags & (view->wall_flag_door_opened |
 	              view->wall_flag_door_locked)) != 0 ||
 	    (view->wall_is_opening && view->wall_is_opening(view->user, wall)))
@@ -221,7 +229,7 @@ static int guidebot_wall_is_player_openable_keyed_door(
 	return 1;
 }
 
-int guidebot_route_segment_has_player_openable_keyed_door(
+int guidebot_route_segment_has_player_openable_door(
     const level_metadata_scan_view *view,
     int segment)
 {
@@ -234,7 +242,7 @@ int guidebot_route_segment_has_player_openable_keyed_door(
 		const int child = view->segment_child(view->user, segment, side);
 		const int wall = view->wall_num(view->user, segment, side);
 
-		if (guidebot_wall_is_player_openable_keyed_door(view, wall))
+		if (guidebot_wall_is_player_openable_door(view, wall))
 			return 1;
 		if (guidebot_valid_segment(view, child) && view->reverse_side) {
 			const int reverse =
@@ -242,7 +250,7 @@ int guidebot_route_segment_has_player_openable_keyed_door(
 			const int reverse_wall =
 			    reverse >= 0 && reverse < LEVEL_METADATA_MAX_SIDES ? view->wall_num(view->user, child, reverse) : -1;
 
-			if (guidebot_wall_is_player_openable_keyed_door(
+			if (guidebot_wall_is_player_openable_door(
 			        view, reverse_wall))
 				return 1;
 		}

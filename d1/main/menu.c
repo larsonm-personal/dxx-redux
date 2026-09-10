@@ -639,6 +639,9 @@ int do_option ( int select)
 			#ifdef EDITOR
 			if (! SafetyCheck()) break;
 			#endif
+#ifdef __ANDROID__
+			android_engine_expected_exit("main menu quit");
+#endif
 			return 0;
 
 		case MENU_NEW_PLAYER:

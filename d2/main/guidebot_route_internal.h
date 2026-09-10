@@ -44,7 +44,7 @@ typedef struct escort_route_goal {
 	int objective_key_index;
 	int guidance_mode;
 	int guidance_seg;
-	int frontier_player_keyed_door;
+	int frontier_player_openable_door;
 	char label[LEVEL_METADATA_ROUTE_LABEL_LEN];
 } escort_route_goal;
 

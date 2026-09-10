@@ -14,7 +14,7 @@
 #define CHECK(c) do { if (!(c)) { fprintf(stderr, "%s:%d: %s\n", __FILE__, __LINE__, #c); exit(1); } } while (0)
 
 object Objects[MAX_OBJECTS];
-int Highest_object_index, Game_mode, Player_num, Difficulty_level;
+int Highest_object_index, Game_mode, Player_num, Difficulty_level, N_players;
 struct netgame_info Netgame;
 #ifdef DXX_BUILD_DESCENT_II
 player Players[MAX_PLAYERS + 4];
@@ -47,6 +47,7 @@ void PALETTE_FLASH_ADD(int red, int green, int blue)
 }
 static int master;
 static int mapping_offset;
+static int reused_remote;
 static ubyte packets[4096][160];
 static int packet_count;
 
@@ -59,7 +60,7 @@ int d_stricmp(const char *a, const char *b)
 #endif
 }
 int objnum_local_to_remote(int n, sbyte *owner) { *owner = -1; return n + mapping_offset; }
-int objnum_remote_to_local(int n, int owner) { (void)owner; return n - mapping_offset; }
+int objnum_remote_to_local(int n, int owner) { (void)owner; return n == reused_remote ? 10 : n - mapping_offset; }
 int multi_i_am_master(void) { return master; }
 int multi_who_is_master(void) { return 0; }
 fix64 timer_query(void) { return 100 * F1_0; }
@@ -116,7 +117,9 @@ static void reset(void)
     Player_num = 0;
     master = 1;
     Highest_object_index = 30;
+    N_players = 3;
     Net_create_loc = packet_count = mapping_offset = 0;
+    reused_remote = -1;
     for (int i = 0; i < 3; i++) {
         snprintf(Players[i].callsign, sizeof(Players[i].callsign), "p%d", i);
         snprintf(Netgame.players[i].client_id, sizeof(Netgame.players[i].client_id), "identity-%d", i);
@@ -335,6 +338,7 @@ static void test_reordered_collection_and_reclaim(void)
     uint32_t generation = coop_recovery_epoch();
     CHECK(coop_recovery_set_pending(&initial, 1));
     coop_recovery_begin_restore(generation);
+    Objects[10].flags &= ~OF_SHOULD_BE_DEAD;
     CHECK(coop_recovery_apply_pending());
     coop_recovery_end_restore();
     Objects[10].flags &= ~OF_SHOULD_BE_DEAD;
@@ -430,8 +434,181 @@ static void test_repeated_freeze_preserves_local_collection(void)
     CHECK(coop_recovery_pickup_blocked(&Objects[10]));
 }
 
+static void test_consumed_remote_slot_cannot_remove_new_host_gear(void)
+{
+    reset();
+    mapping_offset = 100;
+    Players[1].secondary_ammo[HOMING_INDEX] = 4;
+    egg(10, POW_HOMING_AMMO_4);
+    coop_recovery_drop(1, 0);
+    coop_recovery_item retired = coop_recovery_data()[0];
+    /* A remove packet retires the old object before its receipt arrives */
+    coop_recovery_note_remove(&Objects[10]);
+    Objects[10].type = OBJ_NONE;
+    /* The old remote mapping still points here, but this is new host gear */
+    Net_create_loc = 0;
+    mapping_offset = 0;
+    reused_remote = 110;
+    Players[0].secondary_ammo[HOMING_INDEX] = 4;
+    egg(10, POW_HOMING_AMMO_4);
+    Objects[10].signature = 18117;
+    coop_recovery_drop(0, 0);
+    coop_recovery_frame();
+    CHECK(!(Objects[10].flags & OF_SHOULD_BE_DEAD));
+    CHECK(coop_recovery_data()[0].signature != 18117);
+    /* Delayed terminal and older live packets must not revive that binding */
+    ubyte delayed[160] = {0};
+    delayed[1] = 1; /* REC_ITEM */
+    PUT_INTEL_INT(delayed + 4, coop_recovery_epoch());
+    retired.state = COOP_RECOVERY_TAKEN;
+    retired.revision++;
+    memcpy(delayed + 16, &retired, sizeof(retired));
+    master = 0;
+    Player_num = 2;
+    coop_recovery_receive(delayed, 0);
+    retired.state = COOP_RECOVERY_LIVE;
+    retired.revision--;
+    memcpy(delayed + 16, &retired, sizeof(retired));
+    coop_recovery_receive(delayed, 0);
+    coop_recovery_frame();
+    CHECK(!(Objects[10].flags & OF_SHOULD_BE_DEAD));
+    CHECK(coop_recovery_data()[0].object_index == -1);
+}
+
+static void test_replayed_live_tag_cannot_rebind_a_lost_generation(void)
+{
+    reset();
+    Players[1].secondary_ammo[HOMING_INDEX] = 4;
+    egg(10, POW_HOMING_AMMO_4);
+    coop_recovery_drop(1, 0);
+    coop_recovery_item old = coop_recovery_data()[0];
+    /* Same owner/index and type, but a different local object generation */
+    Objects[10].signature = 18117;
+    ubyte delayed[160] = {0};
+    delayed[1] = 1;
+    PUT_INTEL_INT(delayed + 4, coop_recovery_epoch());
+    memcpy(delayed + 16, &old, sizeof(old));
+    master = 0;
+    Player_num = 2;
+    coop_recovery_receive(delayed, 0);
+    CHECK(coop_recovery_data()[0].gear.missiles[HOMING_INDEX] == 0);
+    old.state = COOP_RECOVERY_TAKEN;
+    old.revision++;
+    memcpy(delayed + 16, &old, sizeof(old));
+    coop_recovery_receive(delayed, 0);
+    coop_recovery_frame();
+    CHECK(!(Objects[10].flags & OF_SHOULD_BE_DEAD));
+}
+
+static void test_terminal_receipt_preserves_known_partial_pickup_credit(void)
+{
+    reset();
+    Players[1].secondary_ammo[HOMING_INDEX] = 4;
+    egg(10, POW_HOMING_AMMO_4);
+    coop_recovery_drop(1, 0);
+    Player_num = 1;
+    coop_player_record before;
+    coop_snapshot_player(1, &before);
+    Players[1].secondary_ammo[HOMING_INDEX]++;
+    coop_recovery_note_pickup(&Objects[10], &before, 1);
+    coop_recovery_item receipt = coop_recovery_data()[0];
+    CHECK(receipt.state == COOP_RECOVERY_CREDIT);
+    CHECK(receipt.gear.missiles[HOMING_INDEX] == 3);
+    Objects[10].type = OBJ_NONE;
+    ubyte packet[160] = {0};
+    packet[1] = 1;
+    PUT_INTEL_INT(packet + 4, coop_recovery_epoch());
+    memcpy(packet + 16, &receipt, sizeof(receipt));
+    master = 0;
+    coop_recovery_receive(packet, 0);
+    CHECK(coop_recovery_data()[0].gear.missiles[HOMING_INDEX] == 3);
+}
+
+static void test_delayed_freeze_cannot_rebind_consumed_gear(void)
+{
+    reset();
+    Players[1].secondary_ammo[HOMING_INDEX] = 4;
+    egg(10, POW_HOMING_AMMO_4);
+    coop_recovery_drop(1, 0);
+    coop_recovery_item original = coop_recovery_data()[0];
+    coop_recovery_note_remove(&Objects[10]);
+    Objects[10].signature = 18117;
+    ubyte packet[160] = {0};
+    packet[1] = 3; /* REC_FREEZE */
+    original.revision++;
+    PUT_INTEL_INT(packet + 4, coop_recovery_epoch());
+    memcpy(packet + 16, &original, sizeof(original));
+    master = 0;
+    Player_num = 2;
+    coop_recovery_receive(packet, 0);
+    coop_recovery_frame();
+    CHECK(coop_recovery_data()[0].object_index == -1);
+    CHECK(!(Objects[10].flags & OF_SHOULD_BE_DEAD));
+}
+
+static void test_restore_discards_missing_gear(void)
+{
+    reset();
+    Players[1].secondary_ammo[HOMING_INDEX] = 4;
+    egg(10, POW_HOMING_AMMO_4);
+    coop_recovery_drop(1, 0);
+    coop_recovery_item saved[2];
+    saved[0] = coop_recovery_data()[0];
+    saved[1] = saved[0];
+    saved[1].id = 81;
+    saved[1].signature = 18117;
+    saved[1].object_index = 254;
+    saved[1].remote_index = 254;
+    CHECK(coop_recovery_set_pending(saved, 2));
+    CHECK(coop_recovery_apply_pending());
+    CHECK(coop_recovery_count() == 1);
+    CHECK(coop_recovery_restore_result().discarded == 1);
+    CHECK(coop_recovery_data()[0].id == saved[0].id);
+    CHECK(coop_recovery_set_pending(coop_recovery_data(), coop_recovery_count()));
+    CHECK(coop_recovery_apply_pending());
+    coop_player_record returning;
+    coop_snapshot_player(1, &returning);
+    returning.secondary_ammo[HOMING_INDEX] = 0;
+    CHECK(coop_recovery_prepare_rejoin(1, &returning) == 1);
+    CHECK(returning.secondary_ammo[HOMING_INDEX] == 4);
+}
+
+static void test_restore_discards_conflicts_without_inventory_credit(void)
+{
+    reset();
+    Players[1].secondary_ammo[HOMING_INDEX] = 4;
+    egg(10, POW_HOMING_AMMO_4);
+    coop_recovery_drop(1, 0);
+    coop_recovery_item original = coop_recovery_data()[0];
+    for (int conflict = 0; conflict < 3; conflict++) {
+        coop_recovery_item saved[3] = {original, original, original};
+        /* An unrelated terminal record survives every malformed claim */
+        saved[2].id = 90;
+        saved[2].state = COOP_RECOVERY_TAKEN;
+        saved[2].object_index = saved[2].remote_index = -1;
+        if (conflict == 1) saved[1].id = 81; /* Distinct IDs claim one object */
+        if (conflict == 2) {
+            saved[1].id = 81;
+            saved[1].signature = 18117;
+            saved[1].gear.missiles[HOMING_INDEX] = UINT16_MAX;
+        }
+        CHECK(coop_recovery_set_pending(saved, 3));
+        CHECK(coop_recovery_apply_pending());
+        CHECK(coop_recovery_restore_result().discarded == (conflict == 2 ? 1 : 2));
+        CHECK(coop_recovery_count() == (conflict == 2 ? 2 : 1));
+        CHECK(!(Objects[10].flags & OF_SHOULD_BE_DEAD));
+        CHECK(Players[1].secondary_ammo[HOMING_INDEX] == 4);
+    }
+}
+
 int main(void)
 {
+    test_delayed_freeze_cannot_rebind_consumed_gear();
+    test_terminal_receipt_preserves_known_partial_pickup_credit();
+    test_replayed_live_tag_cannot_rebind_a_lost_generation();
+    test_restore_discards_conflicts_without_inventory_credit();
+    test_consumed_remote_slot_cannot_remove_new_host_gear();
+    test_restore_discards_missing_gear();
     test_repeated_freeze_preserves_local_collection();
     test_remove_before_partial_collection();
     test_reordered_collection_and_reclaim();

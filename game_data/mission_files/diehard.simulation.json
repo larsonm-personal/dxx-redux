@@ -7,26 +7,49 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
-    "timeout": 16
+    "ok": 11,
+    "failed": 1,
+    "timeout": 6,
+    "unsupported": 1
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "DH01.RL2",
       "route_input_sha256": "C27A8DB6C0F0427F05BC9EDFBB7F2EE1A21E433524F53128F3235C74BF287D8D",
-      "status": "timeout",
+      "status": "failed",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 527,
+      "objectives": [
+        {
+          "n": "switch 1",
+          "s": 13
+        },
+        {
+          "n": "switch 2",
+          "s": 23
+        },
+        {
+          "n": "blue key",
+          "s": 36
+        },
+        {
+          "n": "pass-through 7",
+          "s": 58
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 69
+        }
+      ],
+      "total_frames": 4121,
       "rng_end": {
-        "state": 1116175964,
-        "calls": 27
+        "state": 4251520053,
+        "calls": 5836
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "live Guide-Bot route has no actionable goal"
     },
     {
       "level_num": 2,
@@ -82,7 +105,7 @@
       "level_num": 3,
       "level_file": "DH03.RL2",
       "route_input_sha256": "A6C3926C474FD0E27857BC600D37130E4D2C992E1B22E7A465AF974E473ED05D",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -101,30 +124,46 @@
           "s": 27
         },
         {
-          "n": "fly-through 1",
-          "s": 35
-        },
-        {
           "n": "destroy robot carrying red key",
-          "s": 68
+          "s": 56
         },
         {
           "n": "switch 17",
-          "s": 80
+          "s": 71
+        },
+        {
+          "n": "pass-through 18",
+          "s": 72
+        },
+        {
+          "n": "switch 16",
+          "s": 87
+        },
+        {
+          "n": "boss",
+          "s": 119
+        },
+        {
+          "n": "exit",
+          "s": 131
         }
       ],
-      "total_frames": 5626,
+      "total_frames": 7869,
       "rng_end": {
-        "state": 3444936998,
-        "calls": 1921
+        "state": 1186941160,
+        "calls": 3327
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "reactor_escape": {
+        "countdown_seconds": 80.0,
+        "simulated_seconds": 6.183334,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 4,
       "level_file": "DH04.RL2",
       "route_input_sha256": "F15B29C7F4A3BA07048E7693DBAFAF199028CFB4232182F0835E32B87FC90760",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -168,23 +207,55 @@
         },
         {
           "n": "switch 8",
-          "s": 109
+          "s": 123
         },
         {
           "n": "switch 9",
-          "s": 126
+          "s": 128
+        },
+        {
+          "n": "pass-through 10",
+          "s": 138
         },
         {
           "n": "switch 11",
-          "s": 128
+          "s": 138
+        },
+        {
+          "n": "fly-through 12",
+          "s": 147
+        },
+        {
+          "n": "gold key",
+          "s": 149
+        },
+        {
+          "n": "switch 13",
+          "s": 174
+        },
+        {
+          "n": "destroy robot carrying red key",
+          "s": 206
+        },
+        {
+          "n": "boss",
+          "s": 249
+        },
+        {
+          "n": "exit",
+          "s": 255
         }
       ],
-      "total_frames": 8588,
+      "total_frames": 15294,
       "rng_end": {
-        "state": 1675774670,
-        "calls": 5369
+        "state": 3034174885,
+        "calls": 17884
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 0.28334,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 5,
@@ -287,47 +358,48 @@
         {
           "n": "blue key",
           "s": 45
-        },
-        {
-          "n": "switch 3",
-          "s": 45
-        },
-        {
-          "n": "red key",
-          "s": 72
-        },
-        {
-          "n": "fly-through 5",
-          "s": 82
-        },
-        {
-          "n": "switch 4",
-          "s": 87
         }
       ],
-      "total_frames": 6234,
+      "total_frames": 16381,
       "rng_end": {
-        "state": 1689790861,
-        "calls": 9524
+        "state": 1346266323,
+        "calls": 9142
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "route confirmation exceeded 273-second simulation budget"
     },
     {
       "level_num": 8,
       "level_file": "DH08.RL2",
       "route_input_sha256": "E997B04C145D0A37758E0DC328CCCB5CC1841108CBF5EFC343FF6826B480BA50",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 3601,
+      "objectives": [
+        {
+          "n": "red key",
+          "s": 0
+        },
+        {
+          "n": "boss",
+          "s": 17
+        },
+        {
+          "n": "exit",
+          "s": 32
+        }
+      ],
+      "total_frames": 1930,
       "rng_end": {
-        "state": 684462146,
-        "calls": 53
+        "state": 3532497610,
+        "calls": 1229
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "reactor_escape": {
+        "countdown_seconds": 114.0,
+        "simulated_seconds": 3.516663,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 9,
@@ -338,13 +410,26 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 785,
+      "objectives": [
+        {
+          "n": "hidden door",
+          "s": 21
+        },
+        {
+          "n": "pass-through 1",
+          "s": 22
+        },
+        {
+          "n": "blue key",
+          "s": 28
+        }
+      ],
+      "total_frames": 15241,
       "rng_end": {
-        "state": 3075635823,
-        "calls": 122
+        "state": 2130126544,
+        "calls": 6647
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "route confirmation exceeded 254-second simulation budget"
     },
     {
       "level_num": 10,
@@ -374,29 +459,29 @@
         },
         {
           "n": "hidden door",
-          "s": 35
+          "s": 42
         },
         {
           "n": "pass-through 0",
-          "s": 43
+          "s": 49
         },
         {
           "n": "pass-through 6",
-          "s": 43
+          "s": 50
         }
       ],
-      "total_frames": 3427,
+      "total_frames": 8602,
       "rng_end": {
-        "state": 956006015,
-        "calls": 1386
+        "state": 2835492050,
+        "calls": 1765
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 11,
       "level_file": "DH11.RL2",
       "route_input_sha256": "4F7A4FBA27C479775968397EC090A636F01E7BCBBBA968F7E1BFE1CD694534D4",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -404,23 +489,43 @@
       "objectives": [
         {
           "n": "pass-through 10",
-          "s": 13
+          "s": 15
         },
         {
           "n": "switch 9",
-          "s": 23
+          "s": 24
         },
         {
           "n": "red key",
-          "s": 34
+          "s": 35
+        },
+        {
+          "n": "pass-through 12",
+          "s": 58
+        },
+        {
+          "n": "fly-through 12",
+          "s": 58
+        },
+        {
+          "n": "reactor",
+          "s": 59
+        },
+        {
+          "n": "exit",
+          "s": 68
         }
       ],
-      "total_frames": 2533,
+      "total_frames": 4058,
       "rng_end": {
-        "state": 1578208502,
-        "calls": 753
+        "state": 2155642961,
+        "calls": 1584
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "reactor_escape": {
+        "countdown_seconds": 10.0,
+        "simulated_seconds": 8.933334,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 12,
@@ -514,7 +619,7 @@
       "level_num": 14,
       "level_file": "DH14.RL2",
       "route_input_sha256": "E33293CFBEB31A4DC7ECB33FC65CF8A7D6A9ECDBF461FBE82F4C1AB7E9A36F22",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -571,20 +676,44 @@
         {
           "n": "blue key",
           "s": 66
+        },
+        {
+          "n": "switch 14",
+          "s": 97
+        },
+        {
+          "n": "red key",
+          "s": 100
+        },
+        {
+          "n": "pass-through 16",
+          "s": 113
+        },
+        {
+          "n": "boss",
+          "s": 128
+        },
+        {
+          "n": "exit",
+          "s": 131
         }
       ],
-      "total_frames": 4594,
+      "total_frames": 7856,
       "rng_end": {
-        "state": 118017279,
-        "calls": 3818
+        "state": 4280204355,
+        "calls": 8262
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 3.066666,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 15,
       "level_file": "DH15.RL2",
       "route_input_sha256": "E24E731ECB70AAF7DFC6415AD5C3FB2F98143ADF352006A0CBB6FDCDF9DD5DE9",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -609,14 +738,30 @@
         {
           "n": "switch 8",
           "s": 38
+        },
+        {
+          "n": "red key",
+          "s": 56
+        },
+        {
+          "n": "reactor",
+          "s": 67
+        },
+        {
+          "n": "exit",
+          "s": 76
         }
       ],
-      "total_frames": 3434,
+      "total_frames": 4557,
       "rng_end": {
-        "state": 3130993679,
-        "calls": 1242
+        "state": 1424558862,
+        "calls": 5561
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "reactor_escape": {
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 8.616669,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 16,
@@ -627,11 +772,28 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 795,
+      "objectives": [
+        {
+          "n": "fly-through 10",
+          "s": 11
+        },
+        {
+          "n": "switch 8",
+          "s": 23
+        },
+        {
+          "n": "fly-through 0",
+          "s": 37
+        },
+        {
+          "n": "blue key",
+          "s": 41
+        }
+      ],
+      "total_frames": 4050,
       "rng_end": {
-        "state": 3885567453,
-        "calls": 100
+        "state": 890859284,
+        "calls": 899
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },
@@ -639,52 +801,95 @@
       "level_num": 17,
       "level_file": "DH17.RL2",
       "route_input_sha256": "CB7F73D2C41BD59B39072EA5B244AFBD6D746B66C82C3EBF142617D22F957FE4",
-      "status": "timeout",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 823,
+      "objectives": [
+        {
+          "n": "pass-through 19",
+          "s": 8
+        },
+        {
+          "n": "red key",
+          "s": 13
+        },
+        {
+          "n": "boss",
+          "s": 42
+        }
+      ],
+      "total_frames": 2975,
       "rng_end": {
-        "state": 2881533255,
-        "calls": 418
+        "state": 4107034749,
+        "calls": 4292
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "problem": "route objective activation is not supported"
     },
     {
       "level_num": 18,
       "level_file": "DH18.RL2",
       "route_input_sha256": "84E490FBB2EFDA0591F11607FC16452063C01A58CF51242254277F3FA99E7405",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 795,
+      "objectives": [
+        {
+          "n": "destroy robot carrying red key",
+          "s": 9
+        },
+        {
+          "n": "boss",
+          "s": 9
+        },
+        {
+          "n": "exit",
+          "s": 17
+        }
+      ],
+      "total_frames": 1011,
       "rng_end": {
-        "state": 43796357,
-        "calls": 252
+        "state": 1475669976,
+        "calls": 591
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "reactor_escape": {
+        "countdown_seconds": 120.0,
+        "simulated_seconds": 1.816666,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 19,
       "level_file": "DH19.RL2",
       "route_input_sha256": "32D3A2C2F9D5832550C350B47D7BDE5CC751AA46229AC6C80CB79736A43FD4E1",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 508,
+      "objectives": [
+        {
+          "n": "boss",
+          "s": 9
+        },
+        {
+          "n": "exit",
+          "s": 15
+        }
+      ],
+      "total_frames": 904,
       "rng_end": {
-        "state": 3008955749,
-        "calls": 28
+        "state": 1026108661,
+        "calls": 2060
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 6.550003,
+        "difficulty": 2
+      }
     }
   ]
 }

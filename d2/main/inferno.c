@@ -294,8 +294,15 @@ int standard_handler(d_event *event)
 		}
 		
 		// Close front window, let the code flow continue until all windows closed or quit cancelled
-		if (!window_close(wind))
+#ifdef __ANDROID__
+		android_engine_expected_exit("user quit");
+#endif
+		if (!window_close(wind)) {
 			Quitting = 0;
+#ifdef __ANDROID__
+			android_engine_expected_exit("");
+#endif
+		}
 		
 		return 1;
 	}

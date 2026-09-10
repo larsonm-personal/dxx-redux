@@ -2051,7 +2051,7 @@ void escort_create_path_to_goal(object *objp)
 						Escort_route_goal.guidance_mode =
 						    ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT;
 						Escort_route_goal.guidance_seg = partial_seg;
-						Escort_route_goal.frontier_player_keyed_door = 0;
+						Escort_route_goal.frontier_player_openable_door = 0;
 						path_goal_seg = partial_seg;
 					} else
 #endif
@@ -2090,7 +2090,7 @@ void escort_create_path_to_goal(object *objp)
 			    path_goal_seg != goal_seg)
 				buddy_message("Can't reach EXIT yet; navigating as close as possible");
 			else if (path_goal_seg != goal_seg &&
-			         !Escort_route_goal.frontier_player_keyed_door)
+			         !Escort_route_goal.frontier_player_openable_door)
 				buddy_message("Can't reach next yet; navigating as close as possible");
 			else if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT &&
 			         Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_EXIT)

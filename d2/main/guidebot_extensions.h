@@ -53,7 +53,7 @@ extern int escort_get_route_goal_objective_key_index(void);
 extern int escort_get_route_goal_guidance_mode(void);
 extern int escort_get_route_goal_guidance_seg(void);
 extern int escort_get_route_goal_guidance_side(void);
-extern int escort_get_route_goal_frontier_player_keyed_door(void);
+extern int escort_get_route_goal_frontier_player_openable_door(void);
 extern int escort_get_route_goal_path_endpoint_seg(void);
 extern const char *escort_get_route_goal_instruction(void);
 extern int escort_get_route_target_mode(void);

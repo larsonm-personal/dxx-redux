@@ -81,7 +81,7 @@ function Invoke-SystemPowerShellUpdate {
     Write-Warning "Save work in every PowerShell terminal before continuing"
     if (-not $Force) {
         $confirmation = Read-Host "Type INSTALL to continue, or press Enter to cancel"
-        if ($confirmation -cne "INSTALL") {
+        if ($confirmation -ine "INSTALL") {
             Write-Host "System PowerShell update cancelled"
             return $false
         }

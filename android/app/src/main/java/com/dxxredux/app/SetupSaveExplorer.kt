@@ -1,9 +1,7 @@
 package com.dxxredux.app
 
+import android.content.Intent
 import android.graphics.Bitmap
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -59,7 +57,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -155,35 +152,8 @@ internal fun SaveExplorerDialog(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    var exportPath by rememberSaveable { mutableStateOf<String?>(null) }
-    var exportError by remember { mutableStateOf<String?>(null) }
-    val exportLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
-            val path = exportPath
-            exportPath = null
-            if (uri != null && path != null) {
-                scope.launch {
-                    val error =
-                        withContext(Dispatchers.IO) {
-                            try {
-                                File(path).inputStream().use { input ->
-                                    checkNotNull(context.contentResolver.openOutputStream(uri, "wt")) {
-                                        "Could not open the export destination"
-                                    }.use { output -> input.copyTo(output) }
-                                }
-                                null
-                            } catch (e: Exception) {
-                                e.message ?: "Could not export the save"
-                            }
-                        }
-                    if (error != null) {
-                        exportError = error
-                    } else {
-                        Toast.makeText(context, "Save exported", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-        }
+    var sharing by remember { mutableStateOf(false) }
+    var shareError by remember { mutableStateOf<String?>(null) }
     var refreshKey by remember { mutableIntStateOf(0) }
     val pagerState = rememberPagerState(pageCount = { saveExplorerModes.size })
     var selectedGame by remember { mutableStateOf("") }
@@ -347,14 +317,37 @@ internal fun SaveExplorerDialog(
                         onOpenDetails = { pendingDetails = it },
                         onLoadCandidate = onLoadCandidate,
                         onDelete = { pendingDelete = it },
-                        onExport = { slot ->
-                            if (exportPath == null) {
-                                exportPath = slot.path
-                                try {
-                                    exportLauncher.launch(File(slot.path).name)
-                                } catch (e: Exception) {
-                                    exportPath = null
-                                    exportError = e.message ?: "Could not open the export destination picker"
+                        onShare = { slot ->
+                            if (!sharing) {
+                                sharing = true
+                                scope.launch {
+                                    try {
+                                        val uri =
+                                            withContext(Dispatchers.IO) {
+                                                val source = File(slot.path)
+                                                FileProviderGrantStore.publish(
+                                                    context,
+                                                    FileProviderGrantStore.FILE_VIEW,
+                                                    saveExplorerShareFilename(slot),
+                                                    source.length(),
+                                                ) { temporary ->
+                                                    LauncherFileCopy.copyFileToFile(source, temporary, source.name)
+                                                }
+                                            }
+                                        val intent =
+                                            Intent(Intent.ACTION_SEND).apply {
+                                                type = "application/octet-stream"
+                                                putExtra(Intent.EXTRA_STREAM, uri)
+                                                attachReadGrant(uri)
+                                            }
+                                        context.startActivity(Intent.createChooser(intent, "Share Save"))
+                                    } catch (e: kotlinx.coroutines.CancellationException) {
+                                        throw e
+                                    } catch (e: Exception) {
+                                        shareError = e.message ?: "Could not share the save"
+                                    } finally {
+                                        sharing = false
+                                    }
                                 }
                             }
                         },
@@ -374,12 +367,12 @@ internal fun SaveExplorerDialog(
         }
     }
 
-    exportError?.let { message ->
+    shareError?.let { message ->
         AlertDialog(
-            onDismissRequest = { exportError = null },
-            title = { Text("Export failed") },
+            onDismissRequest = { shareError = null },
+            title = { Text("Share failed") },
             text = { Text(message) },
-            confirmButton = { TextButton(onClick = { exportError = null }) { Text("OK") } },
+            confirmButton = { TextButton(onClick = { shareError = null }) { Text("OK") } },
         )
     }
 
@@ -555,7 +548,7 @@ private fun SaveExplorerPage(
     onOpenDetails: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
     onLoadCandidate: (ResumeSaveBridge.ResumeSaveCandidate) -> Unit,
     onDelete: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
-    onExport: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
+    onShare: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
 ) {
     when (mode) {
         SaveExplorerMode.Choose -> {
@@ -578,7 +571,7 @@ private fun SaveExplorerPage(
                 onOpenDetails = onOpenDetails,
                 onLoadCandidate = onLoadCandidate,
                 onDelete = onDelete,
-                onExport = onExport,
+                onShare = onShare,
             )
         }
 
@@ -614,7 +607,7 @@ private fun SaveExplorerPage(
                     onOpenDetails = onOpenDetails,
                     onLoadCandidate = onLoadCandidate,
                     onDelete = onDelete,
-                    onExport = onExport,
+                    onShare = onShare,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -640,7 +633,7 @@ private fun SaveExplorerPage(
                     onOpenDetails = onOpenDetails,
                     onLoadCandidate = onLoadCandidate,
                     onDelete = onDelete,
-                    onExport = onExport,
+                    onShare = onShare,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -657,7 +650,7 @@ private fun SaveExplorerSlotPageBody(
     onOpenDetails: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
     onLoadCandidate: (ResumeSaveBridge.ResumeSaveCandidate) -> Unit,
     onDelete: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
-    onExport: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
+    onShare: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
     modifier: Modifier = Modifier.fillMaxSize(),
 ) {
     if (slots == null) {
@@ -683,7 +676,7 @@ private fun SaveExplorerSlotPageBody(
                     onOpenDetails = onOpenDetails,
                     onLoadCandidate = onLoadCandidate,
                     onDelete = onDelete,
-                    onExport = onExport,
+                    onShare = onShare,
                 )
             }
         }
@@ -863,7 +856,7 @@ private fun SaveExplorerSlotRow(
     onOpenDetails: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
     onLoadCandidate: (ResumeSaveBridge.ResumeSaveCandidate) -> Unit,
     onDelete: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
-    onExport: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
+    onShare: (SaveExplorerBridge.SaveExplorerSlot) -> Unit,
 ) {
     val slot = row.slot
     val candidateState =
@@ -970,12 +963,12 @@ private fun SaveExplorerSlotRow(
                         Text("Delete", fontSize = 10.sp, lineHeight = 12.sp, maxLines = 1)
                     }
                     TextButton(
-                        onClick = { slot?.let(onExport) },
+                        onClick = { slot?.let(onShare) },
                         enabled = slot != null,
                         modifier = Modifier.weight(1f),
                         contentPadding = PaddingValues(horizontal = 8.dp),
                     ) {
-                        Text("Export", fontSize = 10.sp, lineHeight = 12.sp, maxLines = 1)
+                        Text("Share", fontSize = 10.sp, lineHeight = 12.sp, maxLines = 1)
                     }
                 }
             }
@@ -1285,3 +1278,15 @@ private fun saveExplorerTime(unixSeconds: Long): String {
 }
 
 private fun saveExplorerSize(bytes: Long): String = if (bytes > 0L) formatBinarySize(bytes) else "-"
+
+internal fun saveExplorerShareFilename(slot: SaveExplorerBridge.SaveExplorerSlot): String {
+    fun component(value: String): String = value.replace(Regex("[^A-Za-z0-9_-]"), "_")
+    val source = File(slot.path)
+    val pilot = component(slot.pilot.ifBlank { slot.callsign.ifBlank { source.nameWithoutExtension } }).take(32)
+    val scope = component(slot.scope.ifBlank { "single" }).take(12)
+    val mission = component(slot.missionName.ifBlank { slot.missionKey.ifBlank { "unknown" } }.take(10))
+    val timestamp = slot.saveTimeUnixSeconds.takeIf { it > 0 } ?: slot.modifiedUnixSeconds.coerceAtLeast(0)
+    val kind = component(slot.saveKind.ifBlank { "unknown" }).take(20)
+    val extension = source.extension.let { if (it.isBlank()) "" else ".$it" }
+    return "${pilot}_${scope}_${mission}_${timestamp}_$kind$extension"
+}

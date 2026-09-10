@@ -163,7 +163,7 @@ foreach ($source in $archiveSources) {
     } elseif ($MissingOnly) {
         @($archiveItemsBySource[$source.Id] | Select-Object -ExpandProperty Name)
     } else {
-        @("*.zip", "*.7z")
+        @("*.zip", "*.7z", "*.rar")
     }
     if ($patterns.Count -eq 0) {
         $reason = if ($MissingOnly) { "no missing regression JSON files" } else { "empty metadata sample" }

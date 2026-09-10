@@ -27,6 +27,7 @@ $repoRoot = Split-Path -Parent $androidRoot
 . (Join-Path $scriptDir "host_metadata_worker.ps1")
 . (Join-Path $scriptDir "mission_archive_sources.ps1")
 . (Join-Path $scriptDir "mission_archive_variants.ps1")
+. (Join-Path $PSScriptRoot 'mission_rar_archive.ps1')
 . (Join-Path $scriptDir "host_metadata_workspace.ps1")
 . (Join-Path $scriptDir "headless_process_pool.ps1")
 Initialize-RegressionProcessLifetime
@@ -696,6 +697,10 @@ function Expand-MissionArchive {
         Remove-Item -LiteralPath $RawArchiveDir -Recurse -Force
     }
     New-Item -ItemType Directory -Force -Path $RawArchiveDir | Out-Null
+    if ($Archive.Extension -eq '.rar') {
+        Invoke-MissionRarArchive -ArchivePath $Archive.FullName -Destination $RawArchiveDir
+        return
+    }
     if ($Archive.Extension.Equals(".7z", [StringComparison]::OrdinalIgnoreCase)) {
         $sevenZip = Get-7zaPath
         $output = & $sevenZip x -y "-o$RawArchiveDir" -- $Archive.FullName 2>&1
@@ -1036,7 +1041,7 @@ if (-not $CdSourcesOnly) {
     $archives = @(
         foreach ($source in $archiveSources) {
             Get-ChildItem -LiteralPath $source.Directory -File |
-                Where-Object { $_.Extension.ToLowerInvariant() -in @(".zip", ".7z") } |
+                Where-Object { $_.Extension.ToLowerInvariant() -in @(".zip", ".7z", ".rar") } |
                 ForEach-Object { [pscustomobject]@{ Archive = $_; Source = $source } }
             }
         ) | Sort-Object @{ Expression = { $_.Source.Id } }, @{ Expression = { $_.Archive.Name } }

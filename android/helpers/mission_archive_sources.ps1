@@ -20,7 +20,7 @@ function Get-MissionArchiveSources {
 function Get-AvailableMissionArchiveSources {
     param(
         [Parameter(Mandatory = $true)][object[]]$Sources,
-        [string[]]$Extensions = @(".zip", ".7z")
+        [string[]]$Extensions = @(".zip", ".7z", ".rar")
     )
 
     $available = @()
@@ -44,7 +44,7 @@ function Get-AvailableMissionArchiveSources {
 function Get-MissionArchives {
     param(
         [Parameter(Mandatory = $true)]$Source,
-        [string[]]$Extensions = @(".zip", ".7z")
+        [string[]]$Extensions = @(".zip", ".7z", ".rar")
     )
 
     return @(Get-ChildItem -LiteralPath $Source.Directory -File |

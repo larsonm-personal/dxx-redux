@@ -463,6 +463,10 @@ endif() # OPENGL
 # 1. Add D1 source tree
 # ──────────────────────────────────────────────────────────────
 set(DXX_TARGET_PREFIX "d1_")
+# NDK headers may include stdbool.h after an engine header has declared its legacy bool Select the
+# standard C type before either header so declarations and definitions agree
+add_compile_options("$<$<COMPILE_LANGUAGE:C>:-include>" "$<$<COMPILE_LANGUAGE:C>:stdbool.h>")
+
 add_subdirectory("${D1_SRC}" "${CMAKE_CURRENT_BINARY_DIR}/d1")
 target_sources(
     ${DXX_TARGET_PREFIX}misc

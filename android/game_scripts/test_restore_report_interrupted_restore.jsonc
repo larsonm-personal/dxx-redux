@@ -1,0 +1,5 @@
+[
+    {"_info": {"games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "set_debug", "field": "restore_diagnostic_test", "value": "interrupted_restore"},
+    {"action": "introspect"}
+]

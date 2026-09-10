@@ -122,7 +122,7 @@ static int test_restore_remaps_and_prunes_stale_records(void)
 	return 1;
 }
 
-static int test_restore_rejects_invalid_identity(void)
+static int test_restore_discards_invalid_identity(void)
 {
 	coop_powerup_collection pending = { 0 };
 
@@ -134,14 +134,36 @@ static int test_restore_rejects_invalid_identity(void)
 	memset(pending.callsign, 'x', sizeof(pending.callsign));
 
 	CHECK(coop_powerup_duplication_set_pending(&pending, 1));
-	CHECK(!coop_powerup_duplication_apply_pending());
+	CHECK(coop_powerup_duplication_apply_pending());
+	CHECK(coop_powerup_duplication_count() == 0);
+	CHECK(coop_powerup_duplication_restore_result().discarded == 1);
+	return 1;
+}
+
+static int test_restore_discards_tracking_when_duplication_disabled(void)
+{
+	coop_powerup_collection pending = { 0 };
+	reset_test_state();
+	set_powerup(2, 50, POW_ENERGY);
+	memcpy(pending.callsign, "touch", sizeof("touch"));
+	pending.object_index = 2;
+	pending.object_signature = 50;
+	pending.powerup_id = POW_ENERGY;
+	Netgame.DuplicateEnergyShields = 0;
+	CHECK(coop_powerup_duplication_set_pending(&pending, 1));
+	CHECK(coop_powerup_duplication_apply_pending());
+	CHECK(coop_powerup_duplication_count() == 0);
+	CHECK(coop_powerup_duplication_restore_result().discarded == 1);
+	CHECK(Objects[2].type == OBJ_POWERUP);
+	CHECK(!(Objects[2].flags & OF_SHOULD_BE_DEAD));
 	return 1;
 }
 
 int main(void)
 {
 	if (!test_restore_remaps_and_prunes_stale_records() ||
-	    !test_restore_rejects_invalid_identity())
+	    !test_restore_discards_invalid_identity() ||
+	    !test_restore_discards_tracking_when_duplication_disabled())
 		return 1;
 	coop_powerup_duplication_reset();
 	puts("coop powerup duplication tests passed");

@@ -1,0 +1,7 @@
+[
+    {"_info": {"games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "set_debug", "field": "android_game_request", "value": "quick_save"},
+    {"action": "wait_ms", "ms": 3000},
+    {"action": "set_debug", "field": "restore_diagnostic_test", "value": "fail_after_hide"},
+    {"action": "set_debug", "field": "android_game_request", "value": "quick_load"}
+]

@@ -1128,6 +1128,15 @@ window *Game_wind = NULL;
 // Event handler for the game
 int game_handler(window *wind, d_event *event, void *data)
 {
+#ifdef __ANDROID__
+	if (event->type != EVENT_WINDOW_CLOSE && event->type != EVENT_WINDOW_CLOSED &&
+	    state_restore_take_menu_request()) {
+		set_screen_mode(SCREEN_MENU);
+		window_close(wind);
+		return 1;
+	}
+#endif
+
 	data = data;
 
 	switch (event->type)
@@ -1359,6 +1368,13 @@ void GameProcessFrame(void)
 	if (Game_mode & GM_MULTI)
 	{
 		multi_do_frame();
+#ifdef __ANDROID__
+		if (state_restore_take_menu_request()) {
+			set_screen_mode(SCREEN_MENU);
+			if (Game_wind) window_close(Game_wind);
+			return;
+		}
+#endif
 		if (Netgame.PlayTimeAllowed && ThisLevelTime>=i2f((Netgame.PlayTimeAllowed*5*60)))
 			multi_check_for_killgoal_winner();
 	}

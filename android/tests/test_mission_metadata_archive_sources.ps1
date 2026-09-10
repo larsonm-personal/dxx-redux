@@ -59,12 +59,14 @@ try {
             @{ ArchiveNames = @(); ArchivePaths = @() })) {
         $selection = & $selectArchives @options
         Assert-True (-not $selection.Filtered) "Absent or empty filters must retain built-in and CD missions"
-        Assert-True ($selection.Archives.Count -eq 4) "Absent or empty filters must retain all archives"
+        Assert-True ($selection.Archives.Count -eq 5) "Absent or empty filters must retain all archives"
     }
     $selection = & $selectArchives -ArchiveName 'primary.zip'
     Assert-True ($selection.Filtered -and $selection.Archives.Count -eq 1) "Single-name selection must still filter"
     $selection = & $selectArchives -ArchiveNames @('primary.zip', 'secondary.7z')
     Assert-True ($selection.Filtered -and $selection.Archives.Count -eq 2) "Multiple-name selection must still filter"
+    $selection = & $selectArchives -ArchiveName 'secondary.rar'
+    Assert-True ($selection.Archives.Count -eq 1) 'RAR name selection must retain the archive'
     $selectedPath = Join-Path $secondary.FullName "complete.zip"
     $selection = & $selectArchives -ArchivePaths @($selectedPath)
     Assert-True ($selection.Filtered -and $selection.Archives.Count -eq 1 -and
@@ -74,8 +76,8 @@ try {
     Assert-True (($primaryMissing.Name -join ',') -eq 'primary.zip') `
         "Primary missing selection should exclude archives with matching JSON"
     $secondaryMissing = @(Get-MissingMissionMetadataArchives -Source $sources[1])
-    Assert-True (($secondaryMissing.Name -join ',') -eq 'secondary.7z') `
-        "Special-source missing selection should support .7z and exclude matching JSON"
+    Assert-True (($secondaryMissing.Name -join ',') -eq 'secondary.7z,secondary.rar') `
+        "Special-source missing selection should support .7z/.rar and exclude matching JSON"
 
     $fingerprintItems = @($sources | ForEach-Object { Get-MissionArchiveSampleItems -Source $_ })
     Assert-True ($fingerprintItems.Count -eq 5) "Fingerprint discovery should include both archive sources and RAR files"

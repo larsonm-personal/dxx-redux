@@ -4,7 +4,7 @@
 param(
     [string]$ZipDir = "C:\local\dxx-redux\game_data\mission_files",
     [string]$OutDir = "",
-    [string[]]$Pattern = @("*.zip", "*.7z"),
+    [string[]]$Pattern = @("*.zip", "*.7z", "*.rar"),
     [string]$RegressionJsonDir = "",
     [switch]$Install,
     [switch]$IncludeLarge,
@@ -23,6 +23,7 @@ $helpersDir = Split-Path -Parent $PSCommandPath
 $androidRoot = Split-Path -Parent $helpersDir
 . (Join-Path $helpersDir "test_helpers.ps1")
 . (Join-Path $helpersDir "bounded_extraction.ps1")
+. (Join-Path $PSScriptRoot 'mission_rar_archive.ps1')
 . (Join-Path $helpersDir "mission_zip_batch_recovery.ps1")
 . (Join-Path $helpersDir "normalized_json_text.ps1")
 if (-not $env:ANDROID_SERIAL) {
@@ -358,6 +359,14 @@ function Get-MissionArchiveEntryNames {
     param([Parameter(Mandatory = $true)][string]$ArchivePath)
 
     $ext = [IO.Path]::GetExtension($ArchivePath).ToLowerInvariant()
+    if ($ext -eq '.rar') {
+        $listingRoot = Join-Path $OutDir ('rar_list_' + [guid]::NewGuid().ToString('N'))
+        try {
+            return @(Invoke-MissionRarArchive -ArchivePath $ArchivePath -Destination $listingRoot -List)
+        } finally {
+            if (Test-Path -LiteralPath $listingRoot) { Remove-Item -LiteralPath $listingRoot -Recurse -Force }
+        }
+    }
     if ($ext -eq ".7z") {
         $sevenZip = Get-7zaPath
         $listingRoot = Join-Path ([IO.Path]::GetTempPath()) ("dxx_7z_list_" + [guid]::NewGuid().ToString('N'))
@@ -394,7 +403,7 @@ function Get-MissionZipGameHint {
     param([Parameter(Mandatory = $true)][string]$ZipPath)
 
     $counts = @{ d1 = 0; d2 = 0; problems = @() }
-    if ([IO.Path]::GetExtension($ZipPath).Equals(".7z", [StringComparison]::OrdinalIgnoreCase)) {
+    if ([IO.Path]::GetExtension($ZipPath).ToLowerInvariant() -in @(".7z", ".rar")) {
         Add-MissionZipGameHints -EntryNames (Get-MissionArchiveEntryNames -ArchivePath $ZipPath) -Counts $counts
     } else {
         $archive = [System.IO.Compression.ZipFile]::OpenRead($ZipPath)

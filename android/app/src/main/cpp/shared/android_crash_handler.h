@@ -32,10 +32,25 @@ void crash_breadcrumb_v(const char *fmt, ...);
 void android_finish_and_exit(const char *message);
 void android_fatal_error_exit(const char *message) __attribute__((noreturn));
 
+/* Normal-context restore diagnostics, also surfaced in Advanced crash reports */
+void android_restore_discard(const char *section, const char *reason,
+                             unsigned int id, int signature, int object_index, int powerup);
+void android_engine_session_begin(void);
+void android_engine_expected_exit(const char *reason);
+void android_engine_session_returned(void);
+void android_restore_begin(const char *game, const char *filename, int level, int host, int visible);
+void android_restore_phase(const char *phase);
+void android_restore_metadata(const char *mission, int level, unsigned int checksum);
+void android_restore_gear_summary(unsigned int pickups_kept, unsigned int pickups_discarded,
+                                  unsigned int recovery_kept, unsigned int recovery_discarded);
+void android_restore_finished(int success, int visible);
+
 /* android port: notify Kotlin layer that this client has become the new host
  * after the original host disconnected.  Starts LAN broadcasting so the
  * old host can find and rejoin the migrated game. */
 void android_notify_host_migration(void);
+#else
+#define android_restore_discard(...) ((void) 0)
 #endif
 
 #endif /* ANDROID_CRASH_HANDLER_H */

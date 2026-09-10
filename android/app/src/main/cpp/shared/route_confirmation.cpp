@@ -719,7 +719,7 @@ int prepare_next_goal(int restorer_trigger, int restorer_wall = -1)
 		        Players[Player_num].flags &
 		            (PLAYER_FLAGS_BLUE_KEY | PLAYER_FLAGS_RED_KEY |
 		             PLAYER_FLAGS_GOLD_KEY),
-		        Escort_route_goal.frontier_player_keyed_door);
+		        Escort_route_goal.frontier_player_openable_door);
 		if (State.target_seg == actor->segnum &&
 		    State.target_seg != semantic_target_seg) {
 			for (int side = 0; side < MAX_SIDES_PER_SEGMENT; ++side) {
@@ -852,7 +852,7 @@ int extend_current_goal_from_frontier(void)
 	        "semantic=%d navigation=%d keyed=%d\n",
 	        State.frontier_extension_count, actor->segnum,
 	        State.semantic_target_seg, State.target_seg,
-	        Escort_route_goal.frontier_player_keyed_door);
+	        Escort_route_goal.frontier_player_openable_door);
 #endif
 	if (State.target_seg < 0 || State.target_seg >= Num_segments) {
 		fail(ROUTE_CONFIRMATION_FAILED,
@@ -903,7 +903,7 @@ int actor_reached_target(const object *actor)
 		return 0;
 	if (actor->segnum != State.target_seg) {
 		if (State.target_seg == State.semantic_target_seg ||
-		    !Escort_route_goal.frontier_player_keyed_door ||
+		    !Escort_route_goal.frontier_player_openable_door ||
 		    actor->segnum < 0 || actor->segnum >= Num_segments ||
 		    State.target_seg < 0 || State.target_seg >= Num_segments ||
 		    find_connect_side(&Segments[State.target_seg],
@@ -1462,21 +1462,27 @@ int find_route_flare_target(object *actor, int *segnum, int *sidenum,
 	}
 	if (State.target_seg != State.semantic_target_seg &&
 	    actor_reached_target(actor)) {
-		for (int side = 0; side < MAX_SIDES_PER_SEGMENT; ++side) {
-			const int candidate_wall =
-			    Segments[State.target_seg].sides[side].wall_num;
-			if (Escort_route_goal.frontier_player_keyed_door &&
-			    candidate_wall >= 0 && candidate_wall < Num_walls &&
-			    Walls[candidate_wall].keys == KEY_NONE)
-				continue;
-			if (wall_accepts_route_flare(candidate_wall) &&
-			    set_visible_flare_target(actor, State.target_seg, side,
-			                             direction)) {
-				*segnum = State.target_seg;
-				*sidenum = side;
-				*wall_num = candidate_wall;
-				State.frontier_wall_num = candidate_wall;
-				return 1;
+		/* Prefer doors requiring player assistance, but a segment-wide hint
+		 * must not hide another usable door on the route */
+		for (int priority = 0; priority < (Escort_route_goal.frontier_player_openable_door ? 2 : 1); ++priority) {
+			for (int side = 0; side < MAX_SIDES_PER_SEGMENT; ++side) {
+				const int candidate_wall =
+				    Segments[State.target_seg].sides[side].wall_num;
+				const bool player_door = candidate_wall >= 0 && candidate_wall < Num_walls &&
+				                         (Walls[candidate_wall].keys != KEY_NONE ||
+				                          (Walls[candidate_wall].flags & WALL_BUDDY_PROOF));
+				if (Escort_route_goal.frontier_player_openable_door &&
+				    (priority == 0) != player_door)
+					continue;
+				if (wall_accepts_route_flare(candidate_wall) &&
+				    set_visible_flare_target(actor, State.target_seg, side,
+				                             direction)) {
+					*segnum = State.target_seg;
+					*sidenum = side;
+					*wall_num = candidate_wall;
+					State.frontier_wall_num = candidate_wall;
+					return 1;
+				}
 			}
 		}
 	}
@@ -1599,10 +1605,12 @@ void apply_objective_action(object *actor)
 				vms_vector contact = Objects[State.target_objnum].pos;
 				collide_player_and_powerup(ConsoleObject,
 				                           &Objects[State.target_objnum], &contact);
-				if (Players[Player_num].flags &
-				    key_player_flag(State.step.key_index))
-					record_objective_and_replan();
 			}
+			/* Native player contact can collect and remove the key before the
+			 * verification actor is updated, especially at the authored start */
+			if (Players[Player_num].flags &
+			    key_player_flag(State.step.key_index))
+				record_objective_and_replan();
 			break;
 
 		case LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH:

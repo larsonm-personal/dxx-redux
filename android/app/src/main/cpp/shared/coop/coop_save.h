@@ -43,6 +43,8 @@
 #define COOP_AUTOSAVE_CALLSIGN      "coopsave" /* stable 8-char filename prefix */
 
 /* --- per-player record stored in the trailer --- */
+/* Android's v9 disk ABI, independent of legacy desktop header packing */
+#pragma pack(push, 4)
 typedef struct coop_player_record {
 	char callsign[COOP_CALLSIGN_LEN + 1];
 	char client_id[COOP_CLIENT_ID_LEN + 1]; /* UUID string or empty */
@@ -95,6 +97,7 @@ typedef struct coop_save_metadata {
 	int32_t robot_score_earned[8];
 	int32_t total_robot_score;
 } coop_save_metadata;
+#pragma pack(pop)
 
 /* --- helpers (implemented in coop_save.c) --- */
 

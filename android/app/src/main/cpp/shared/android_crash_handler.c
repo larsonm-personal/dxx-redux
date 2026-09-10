@@ -11,6 +11,8 @@
 #include <stdarg.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <time.h>
+#include "android_log.h"
 #include <pthread.h>
 #include <android/log.h>
 
@@ -159,6 +161,146 @@ static void format_breadcrumbs(char *buf, size_t buflen)
 		int idx = i % CRUMB_COUNT;
 		cursor = append_line(cursor, &remaining, i, s_crumbs[idx]);
 	}
+}
+
+/* Written from normal engine context, never from a signal handler */
+static char s_session_key[80], s_session_marker[640], s_expected_exit[80];
+static char s_restore_context[1024], s_restore_phase[80], s_restore_details[4096];
+static unsigned s_restore_number, s_restore_discarded;
+static long long s_session_start_ms;
+static int s_restore_active;
+
+static int write_diagnostic(const char *path, const char *kind, int visible)
+{
+	char temporary[680], summary[512], breadcrumbs[SNAPSHOT_BUF_LEN];
+	if (!s_initialized || !s_session_key[0]) return 0;
+	snprintf(temporary, sizeof(temporary), "%s.tmp", path);
+	FILE *file = fopen(temporary, "wb");
+	if (!file) return 0;
+	snprintf(summary, sizeof(summary),
+	         "pid=%d\nstarted_ms=%lld\nexpected_exit=%s\nReport: %s\nPhase: %s\nRestore active: %d\nVisible window: %d\nGear recovery warnings: %u\n",
+	         (int) getpid(), s_session_start_ms, s_expected_exit, kind,
+	         s_restore_phase, s_restore_active, visible, s_restore_discarded);
+	format_breadcrumbs(breadcrumbs, sizeof(breadcrumbs));
+	int ok = fprintf(file, "%s\nNative stack trace: unavailable (normal-context diagnostic)\n\n%s\n%s\n%s\n%s", summary, s_install_header,
+	                 s_restore_context, s_restore_details, breadcrumbs) >= 0;
+	if (fflush(file) || fsync(fileno(file))) ok = 0;
+	if (fclose(file)) ok = 0;
+	if (ok && rename(temporary, path) == 0) {
+		int dirfd = open(s_crash_dir, O_RDONLY | O_DIRECTORY);
+		if (dirfd >= 0) {
+			fsync(dirfd);
+			close(dirfd);
+		}
+		return 1;
+	}
+	unlink(temporary);
+	return 0;
+}
+
+void android_engine_session_begin(void)
+{
+	struct timespec now;
+	clock_gettime(CLOCK_REALTIME, &now);
+	s_session_start_ms = (long long) now.tv_sec * 1000 + now.tv_nsec / 1000000;
+	snprintf(s_session_key, sizeof(s_session_key), "%lld_%d", s_session_start_ms, (int) getpid());
+	snprintf(s_session_marker, sizeof(s_session_marker), "%s/engine_pending_%s.txt", s_crash_dir, s_session_key);
+	s_expected_exit[0] = s_restore_context[0] = s_restore_details[0] = 0;
+	s_restore_number = s_restore_discarded = 0;
+	s_restore_active = 0;
+	strcpy(s_restore_phase, "engine startup");
+	write_diagnostic(s_session_marker, "Engine session in progress", -1);
+}
+
+void android_engine_expected_exit(const char *reason)
+{
+	snprintf(s_expected_exit, sizeof(s_expected_exit), "%s", reason);
+	write_diagnostic(s_session_marker, "Expected engine exit", -1);
+}
+
+void android_engine_session_returned(void)
+{
+	if (!s_session_key[0]) return;
+	if (!s_expected_exit[0]) {
+		char path[640];
+		snprintf(path, sizeof(path), "%s/crash_error_exit_%s.txt", s_crash_dir, s_session_key);
+		/* Leave the marker for launcher fallback if durable publication fails */
+		if (!write_diagnostic(path, "Unexpected engine exit (no native crash dump)", 0)) return;
+	}
+	unlink(s_session_marker);
+}
+
+void android_restore_begin(const char *game, const char *filename, int level, int host, int visible)
+{
+	s_restore_number++;
+	s_restore_active = 1;
+	s_restore_discarded = 0;
+	s_restore_details[0] = 0;
+	snprintf(s_restore_context, sizeof(s_restore_context), "Game: %s\nSave: %s\nLevel: %d\nHost: %d\nRestore: %u\n", game, filename, level, host, s_restore_number);
+	strcpy(s_restore_phase, "restore preflight");
+	write_diagnostic(s_session_marker, "Restore in progress", visible);
+}
+
+void android_restore_phase(const char *phase)
+{
+	snprintf(s_restore_phase, sizeof(s_restore_phase), "%s", phase);
+	if (s_restore_active) write_diagnostic(s_session_marker, "Restore in progress", -1);
+}
+
+void android_restore_discard(const char *section, const char *reason,
+                             unsigned int id, int signature, int object_index, int powerup)
+{
+	char line[256];
+	snprintf(line, sizeof(line), "%s: %s; id=%u signature=%d object=%d powerup=%d\n",
+	         section, reason, id, signature, object_index, powerup);
+	if (s_restore_active) {
+		/* Metadata can be inspected several times during a single restore */
+		if (strstr(s_restore_details, line)) return;
+		s_restore_discarded++;
+		if (s_restore_discarded <= 16) {
+			size_t used = strlen(s_restore_details);
+			snprintf(s_restore_details + used, sizeof(s_restore_details) - used, "%s", line);
+		}
+	}
+	if (!s_restore_active || s_restore_discarded <= 16) debug_log_force(DLOG_GAME, "Save restore recovery: %s", line);
+}
+
+void android_restore_metadata(const char *mission, int level, unsigned int checksum)
+{
+	if (!s_restore_active) return;
+	size_t used = strlen(s_restore_context);
+	if (!strstr(s_restore_context, "Metadata checksum:"))
+		snprintf(s_restore_context + used, sizeof(s_restore_context) - used,
+		         "Mission: %.8s\nSaved level: %d\nMetadata checksum: %08x\n", mission, level, checksum);
+}
+
+void android_restore_gear_summary(unsigned int pickups_kept, unsigned int pickups_discarded,
+                                  unsigned int recovery_kept, unsigned int recovery_discarded)
+{
+	if (!s_restore_active) return;
+	size_t used = strlen(s_restore_context);
+	snprintf(s_restore_context + used, sizeof(s_restore_context) - used,
+	         "Pickup records: accepted=%u discarded=%u\nRecovery records: accepted=%u discarded=%u\n",
+	         pickups_kept, pickups_discarded, recovery_kept, recovery_discarded);
+}
+
+void android_restore_finished(int success, int visible)
+{
+	char path[640];
+	if (!s_restore_active) return;
+	s_restore_active = 0;
+	if (!success) {
+		size_t used = strlen(s_restore_context);
+		snprintf(s_restore_context + used, sizeof(s_restore_context) - used,
+		         "Failure phase: %s\n", s_restore_phase);
+	}
+	strcpy(s_restore_phase, success ? "restore complete" : "restore failed");
+	if (!success || s_restore_discarded) {
+		snprintf(path, sizeof(path), "%s/crash_error_restore_%s_%u.txt", s_crash_dir, s_session_key, s_restore_number);
+		write_diagnostic(path, success ? "Save restore recovered (inconsistent gear discarded)" : "Save restore failure", visible);
+		debug_log_force(DLOG_GAME, "Save restore result: success=%d discarded=%u", success, s_restore_discarded);
+	}
+	write_diagnostic(s_session_marker, "Engine session in progress", visible);
 }
 
 static void rewrite_breadcrumb_snapshot_locked(void)

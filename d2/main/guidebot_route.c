@@ -584,7 +584,7 @@ static void escort_route_goal_initialize(escort_route_goal *goal)
 	goal->objective_key_index = -1;
 	goal->guidance_mode = ESCORT_ROUTE_GUIDANCE_NONE;
 	goal->guidance_seg = -1;
-	goal->frontier_player_keyed_door = 0;
+	goal->frontier_player_openable_door = 0;
 }
 
 static void escort_route_consume_cache_improvement(void)
@@ -610,13 +610,16 @@ const char *escort_route_goal_label(void)
 
 const char *escort_get_route_goal_instruction(void)
 {
+	if (Escort_route_goal.guidance_mode == ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT &&
+	    Escort_route_goal.frontier_player_openable_door)
+		return "follow me, then open the door";
 	if (Escort_route_goal.requires_guided_missile)
 		return "shoot using guided missile";
 	if (Escort_route_goal.objective_kind == ESCORT_ROUTE_OBJECTIVE_UNEXPLORED)
 		return "unexplored";
 	if (Escort_route_goal.guidance_mode ==
 	        ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT &&
-	    !Escort_route_goal.frontier_player_keyed_door)
+	    !Escort_route_goal.frontier_player_openable_door)
 		return "can't reach it yet; follow me as close as possible";
 	switch (Escort_route_goal.activation_kind) {
 		case LEVEL_METADATA_ROUTE_ACTIVATION_SHOOT_SWITCH:
@@ -734,10 +737,10 @@ int escort_get_route_goal_guidance_side(void)
 	return Escort_route_goal.objective_side;
 }
 
-int escort_get_route_goal_frontier_player_keyed_door(void)
+int escort_get_route_goal_frontier_player_openable_door(void)
 {
 	return Escort_route_goal.active ?
-	           Escort_route_goal.frontier_player_keyed_door :
+	           Escort_route_goal.frontier_player_openable_door :
 	           0;
 }
 
@@ -2064,7 +2067,7 @@ int escort_route_physical_target(object *objp, int goal_seg, int max_depth)
 {
 	int frontier;
 
-	Escort_route_goal.frontier_player_keyed_door = 0;
+	Escort_route_goal.frontier_player_openable_door = 0;
 	if (!objp || !level_metadata_prepare_guidebot_path_view(objp - Objects))
 		return goal_seg;
 	if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT)
@@ -2088,14 +2091,14 @@ int escort_route_physical_target(object *objp, int goal_seg, int max_depth)
 		Escort_route_goal.guidance_mode =
 		    ESCORT_ROUTE_GUIDANCE_NEAREST_PROGRESS_POINT;
 		Escort_route_goal.guidance_seg = frontier;
-		Escort_route_goal.frontier_player_keyed_door =
-		    level_metadata_guidebot_segment_has_player_openable_keyed_door_current(
+		Escort_route_goal.frontier_player_openable_door =
+		    level_metadata_guidebot_segment_has_player_openable_door_current(
 		        frontier);
 		debug_log(
 		    DLOG_GUIDEBOT,
 		    "route_frontier start=%d objective=%d frontier=%d player_keyed_door=%d avoid=%d>%d avoid2=%d>%d",
 		    objp->segnum, goal_seg, frontier,
-		    Escort_route_goal.frontier_player_keyed_door,
+		    Escort_route_goal.frontier_player_openable_door,
 		    Escort_route_avoid_from_seg, Escort_route_avoid_seg,
 		    Escort_route_avoid_from_seg2, Escort_route_avoid_seg2);
 	} else {

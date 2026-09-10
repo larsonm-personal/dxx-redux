@@ -1561,7 +1561,7 @@ private fun CrashReportsSection(initialCrashFiles: List<File>) {
     Text("Crash Reports", fontWeight = FontWeight.Bold, fontSize = 14.sp)
     Spacer(modifier = Modifier.height(4.dp))
     Text(
-        "Crash reports are captured automatically when the launcher or game crashes",
+        "Reports include crashes, unexpected game exits, and save recoveries that discarded inconsistent gear",
         fontSize = 12.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )

@@ -18,7 +18,7 @@ $RepoRoot = [System.IO.Path]::GetFullPath((Split-Path $ScriptDir))
 $OutFile = Join-Path $ScriptDir "game_data_index.txt"
 . (Join-Path $RepoRoot "android/helpers/powershell_compat.ps1")
 
-$GameExtensions = @(".hog", ".pig", ".ham", ".mvl", ".s11", ".s22", ".mn2", ".zip", ".7z", ".gog", ".inst", ".exe", ".pkg", ".dxa")
+$GameExtensions = @(".hog", ".pig", ".ham", ".mvl", ".s11", ".s22", ".mn2", ".zip", ".7z", ".rar", ".gog", ".inst", ".exe", ".pkg", ".dxa")
 
 function Join-RepoPath {
     param(

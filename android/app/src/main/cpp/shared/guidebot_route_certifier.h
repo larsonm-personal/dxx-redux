@@ -137,7 +137,7 @@ int guidebot_route_side_progress_reachable_current(
     const level_metadata_scan_view *view,
     int segment,
     int side);
-int guidebot_route_segment_has_player_openable_keyed_door(
+int guidebot_route_segment_has_player_openable_door(
     const level_metadata_scan_view *view,
     int segment);
 int guidebot_route_best_physical_frontier(
