@@ -209,6 +209,12 @@ function ConvertTo-GuidebotLevelSimulationResult {
         [Parameter(Mandatory)][object]$Level,
         [Parameter(Mandatory)][object]$EngineResult
     )
+    if ($null -ne (Get-GuidebotPropertyValue $EngineResult 'start_state')) {
+        throw 'Saved-world verification cannot be published as an authored-start regression'
+    }
+    if ($null -ne (Get-GuidebotPropertyValue $EngineResult 'verification_goal')) {
+        throw 'Objective-only verification cannot be published as a completed-mine regression'
+    }
 
     $engineStatus = [string](Get-GuidebotPropertyValue $EngineResult 'status' 'failed')
     $actualObjectives = @(Get-GuidebotPropertyValue $EngineResult 'objectives' @())

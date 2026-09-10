@@ -65,6 +65,11 @@
       "rng_end": {
         "state": 1425954287,
         "calls": 3322
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 2.016678,
+        "difficulty": 2
       }
     },
     {
@@ -87,41 +92,46 @@
         },
         {
           "n": "switch 7",
-          "s": 44
+          "s": 42
         },
         {
           "n": "blastable wall",
-          "s": 51
+          "s": 49
         },
         {
           "n": "switch 2",
-          "s": 53
+          "s": 51
         },
         {
           "n": "gold key",
-          "s": 61
+          "s": 58
         },
         {
           "n": "switch 5",
-          "s": 84
+          "s": 81
         },
         {
           "n": "red key",
-          "s": 88
+          "s": 86
         },
         {
           "n": "reactor",
-          "s": 96
+          "s": 94
         },
         {
           "n": "exit",
-          "s": 98
+          "s": 95
         }
       ],
-      "total_frames": 5855,
+      "total_frames": 5711,
       "rng_end": {
         "state": 4283489942,
         "calls": 7121
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 1.266663,
+        "difficulty": 2
       }
     },
     {
@@ -171,6 +181,11 @@
       "rng_end": {
         "state": 3669748063,
         "calls": 13450
+      },
+      "reactor_escape": {
+        "countdown_seconds": 72.0,
+        "simulated_seconds": 7.066666,
+        "difficulty": 2
       }
     },
     {
@@ -197,7 +212,7 @@
         },
         {
           "n": "gold key",
-          "s": 54
+          "s": 55
         },
         {
           "n": "switch 6",
@@ -224,16 +239,21 @@
           "s": 111
         }
       ],
-      "total_frames": 6646,
+      "total_frames": 6647,
       "rng_end": {
         "state": 1007928939,
         "calls": 10398
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 1.033325,
+        "difficulty": 2
       }
     },
     {
       "level_num": 5,
       "level_file": "hyperion.rl2",
-      "route_input_sha256": "FF31AB19045F52FCF3344D88DC5853A2AC38705F759732D89F705FE57BA122B2",
+      "route_input_sha256": "59183E67C58EC7B276E4E491EE751E254F331D7248A2B01021B39DA5736A2FA0",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -278,49 +298,54 @@
         },
         {
           "n": "hidden door",
-          "s": 38
+          "s": 36
         },
         {
           "n": "switch 15",
-          "s": 38
+          "s": 37
         },
         {
           "n": "gold key",
-          "s": 41
+          "s": 39
         },
         {
           "n": "fly-through 3",
-          "s": 74
+          "s": 72
         },
         {
           "n": "switch 7",
-          "s": 75
+          "s": 73
         },
         {
           "n": "fly-through 5",
-          "s": 85
+          "s": 84
         },
         {
           "n": "switch 8",
-          "s": 87
+          "s": 85
         },
         {
           "n": "red key",
-          "s": 93
+          "s": 92
         },
         {
           "n": "boss",
-          "s": 115
+          "s": 114
         },
         {
           "n": "exit",
-          "s": 124
+          "s": 122
         }
       ],
-      "total_frames": 7412,
+      "total_frames": 7337,
       "rng_end": {
-        "state": 2036664933,
-        "calls": 13084
+        "state": 1329723520,
+        "calls": 13191
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 8.566666,
+        "difficulty": 2
       }
     }
   ]

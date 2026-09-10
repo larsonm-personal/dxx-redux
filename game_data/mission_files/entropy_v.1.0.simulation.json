@@ -7,9 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 10,
-    "timeout": 1,
-    "unsupported": 1
+    "ok": 11,
+    "timeout": 1
   },
   "levels": [
     {
@@ -47,10 +46,15 @@
           "s": 80
         }
       ],
-      "total_frames": 4795,
+      "total_frames": 4799,
       "rng_end": {
         "state": 1061725192,
         "calls": 10591
+      },
+      "reactor_escape": {
+        "countdown_seconds": 56.0,
+        "simulated_seconds": 10.583328,
+        "difficulty": 2
       }
     },
     {
@@ -90,7 +94,7 @@
     {
       "level_num": 3,
       "level_file": "level3.rl2",
-      "route_input_sha256": "E957117BC96E6CD0E4A01229FA48C55D309EA79FE62D401FA9E1EB5E1B5700C7",
+      "route_input_sha256": "A0BD155BB3EB582AF9F2A060D89ED6A963B0D39BDD0A30C2F658AFF34CF553DE",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -103,61 +107,66 @@
         },
         {
           "n": "open door",
-          "s": 32
+          "s": 31
         },
         {
           "n": "switch 1",
-          "s": 32
+          "s": 31
         },
         {
           "n": "gold key",
-          "s": 51
+          "s": 48
         },
         {
           "n": "blastable wall",
-          "s": 61
+          "s": 59
         },
         {
           "n": "blastable wall",
-          "s": 62
+          "s": 60
         },
         {
           "n": "red key",
-          "s": 77
+          "s": 76
         },
         {
           "n": "switch 12",
-          "s": 117
+          "s": 116
         },
         {
           "n": "switch 15",
-          "s": 120
+          "s": 119
         },
         {
           "n": "switch 13",
-          "s": 127
+          "s": 125
         },
         {
           "n": "fly-through 21",
-          "s": 133
+          "s": 132
         },
         {
           "n": "switch 22",
-          "s": 137
+          "s": 136
         },
         {
           "n": "reactor",
-          "s": 141
+          "s": 139
         },
         {
           "n": "exit",
-          "s": 160
+          "s": 153
         }
       ],
-      "total_frames": 9593,
+      "total_frames": 9201,
       "rng_end": {
-        "state": 1490190008,
-        "calls": 15343
+        "state": 3028135791,
+        "calls": 15226
+      },
+      "reactor_escape": {
+        "countdown_seconds": 50.0,
+        "simulated_seconds": 14.566666,
+        "difficulty": 2
       }
     },
     {
@@ -199,13 +208,18 @@
       "rng_end": {
         "state": 1796059471,
         "calls": 7066
+      },
+      "reactor_escape": {
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 9.21666,
+        "difficulty": 2
       }
     },
     {
       "level_num": 5,
       "level_file": "csparto.rl2",
-      "route_input_sha256": "D279527829F96F2EBE4D922BECA552DE118EFC5E9086D4A2A016908D51783BFB",
-      "status": "unsupported",
+      "route_input_sha256": "13E9A6B17443818A7E42E152CB48122C55B615DB361ACB988EF1B8FDBED52312",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -217,31 +231,39 @@
         },
         {
           "n": "reactor",
-          "s": 33
-        },
-        {
-          "n": "fly-through 4",
-          "s": 35
+          "s": 32
         },
         {
           "n": "switch 6",
           "s": 35
         },
         {
-          "n": "fly-through 5",
-          "s": 35
-        },
-        {
           "n": "switch 1",
           "s": 36
+        },
+        {
+          "n": "switch 0",
+          "s": 37
+        },
+        {
+          "n": "switch 2",
+          "s": 42
+        },
+        {
+          "n": "exit",
+          "s": 52
         }
       ],
-      "total_frames": 2352,
+      "total_frames": 3114,
       "rng_end": {
-        "state": 814727458,
-        "calls": 1237
+        "state": 3246255662,
+        "calls": 1817
       },
-      "problem": "route objective activation is not supported"
+      "reactor_escape": {
+        "countdown_seconds": 48.0,
+        "simulated_seconds": 19.466675,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 6,
@@ -259,29 +281,34 @@
         },
         {
           "n": "gold key",
-          "s": 50
+          "s": 41
         },
         {
           "n": "red key",
-          "s": 86
+          "s": 77
         },
         {
           "n": "fly-through 6",
-          "s": 125
+          "s": 117
         },
         {
           "n": "boss",
-          "s": 139
+          "s": 131
         },
         {
           "n": "exit",
-          "s": 142
+          "s": 134
         }
       ],
-      "total_frames": 8526,
+      "total_frames": 8031,
       "rng_end": {
         "state": 548304943,
         "calls": 5818
+      },
+      "reactor_escape": {
+        "countdown_seconds": 50.0,
+        "simulated_seconds": 3.233337,
+        "difficulty": 2
       }
     },
     {
@@ -347,6 +374,11 @@
       "rng_end": {
         "state": 741214722,
         "calls": 16757
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 8.883331,
+        "difficulty": 2
       }
     },
     {
@@ -397,7 +429,7 @@
         },
         {
           "n": "gold key",
-          "s": 50
+          "s": 48
         },
         {
           "n": "blastable wall",
@@ -421,17 +453,22 @@
         },
         {
           "n": "reactor",
-          "s": 109
+          "s": 110
         },
         {
           "n": "exit",
-          "s": 112
+          "s": 113
         }
       ],
-      "total_frames": 6733,
+      "total_frames": 6767,
       "rng_end": {
-        "state": 1773002895,
-        "calls": 10330
+        "state": 2760815421,
+        "calls": 10244
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 3.016663,
+        "difficulty": 2
       }
     },
     {
@@ -485,6 +522,11 @@
       "rng_end": {
         "state": 1210657932,
         "calls": 4651
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 3.050003,
+        "difficulty": 2
       }
     },
     {
@@ -538,6 +580,11 @@
       "rng_end": {
         "state": 3387460488,
         "calls": 13279
+      },
+      "reactor_escape": {
+        "countdown_seconds": 32.0,
+        "simulated_seconds": 3.616653,
+        "difficulty": 2
       }
     },
     {
@@ -587,6 +634,11 @@
       "rng_end": {
         "state": 1585237089,
         "calls": 8864
+      },
+      "reactor_escape": {
+        "countdown_seconds": 64.0,
+        "simulated_seconds": 44.449997,
+        "difficulty": 2
       }
     },
     {
@@ -601,41 +653,46 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 15
+          "s": 14
         },
         {
           "n": "gold key",
-          "s": 50
+          "s": 48
         },
         {
           "n": "switch 5",
-          "s": 50
+          "s": 49
         },
         {
           "n": "switch 1",
-          "s": 64
+          "s": 63
         },
         {
           "n": "blastable wall",
-          "s": 89
+          "s": 88
         },
         {
           "n": "red key",
-          "s": 95
+          "s": 94
         },
         {
           "n": "boss",
-          "s": 148
+          "s": 147
         },
         {
           "n": "exit",
-          "s": 180
+          "s": 179
         }
       ],
-      "total_frames": 10785,
+      "total_frames": 10735,
       "rng_end": {
-        "state": 2113664212,
-        "calls": 15043
+        "state": 3904026577,
+        "calls": 15024
+      },
+      "reactor_escape": {
+        "countdown_seconds": 90.0,
+        "simulated_seconds": 31.599991,
+        "difficulty": 2
       }
     }
   ]

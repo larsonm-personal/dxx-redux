@@ -40,9 +40,9 @@
     "status": "partial",
     "level_counts": {
       "ok": 5,
-      "failed": 2,
+      "failed": 1,
       "timeout": 1,
-      "unsupported": 1
+      "unsupported": 2
     },
     "levels": [
       {
@@ -80,6 +80,11 @@
         "rng_end": {
           "state": 3674684925,
           "calls": 1860
+        },
+        "reactor_escape": {
+          "countdown_seconds": 45.0,
+          "simulated_seconds": 2.066666,
+          "difficulty": 2
         }
       },
       {
@@ -175,6 +180,11 @@
         "rng_end": {
           "state": 4054776844,
           "calls": 7339
+        },
+        "reactor_escape": {
+          "countdown_seconds": 45.0,
+          "simulated_seconds": 21.833328,
+          "difficulty": 2
         }
       },
       {
@@ -197,19 +207,36 @@
       {
         "level_num": 5,
         "level_file": "shi5.rl2",
-        "route_input_sha256": "F2F3CF53DFDA163877BAD2836281D32B6F241C47E61C5D1C78BABE18510CEBCB",
-        "status": "failed",
+        "route_input_sha256": "B8E0E835471612DC97FA4DAEF846BB54A6E085B80BEC9206E0B6D82F6C83ACA2",
+        "status": "unsupported",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 0,
+        "objectives": [
+          {
+            "n": "blastable wall",
+            "s": 6
+          },
+          {
+            "n": "pass-through 0",
+            "s": 41
+          },
+          {
+            "n": "switch 1",
+            "s": 45
+          },
+          {
+            "n": "pass-through 2",
+            "s": 120
+          }
+        ],
+        "total_frames": 7206,
         "rng_end": {
-          "state": 1,
-          "calls": 0
+          "state": 2920974234,
+          "calls": 1597
         },
-        "problem": "live Guide-Bot route has no actionable goal"
+        "problem": "guided missile objective requires equipment and flight verification"
       },
       {
         "level_num": 6,
@@ -276,17 +303,22 @@
           },
           {
             "n": "boss",
-            "s": 175
+            "s": 174
           },
           {
             "n": "exit",
-            "s": 180
+            "s": 181
           }
         ],
-        "total_frames": 10801,
+        "total_frames": 10847,
         "rng_end": {
-          "state": 1323635370,
-          "calls": 6765
+          "state": 869904246,
+          "calls": 6769
+        },
+        "reactor_escape": {
+          "countdown_seconds": 45.0,
+          "simulated_seconds": 6.46666,
+          "difficulty": 2
         }
       },
       {
@@ -312,6 +344,11 @@
         "rng_end": {
           "state": 2429993800,
           "calls": 1311
+        },
+        "reactor_escape": {
+          "countdown_seconds": 10.0,
+          "simulated_seconds": 20.600006,
+          "difficulty": 2
         }
       },
       {
@@ -337,6 +374,11 @@
         "rng_end": {
           "state": 770427433,
           "calls": 408
+        },
+        "reactor_escape": {
+          "countdown_seconds": 45.0,
+          "simulated_seconds": 3.833328,
+          "difficulty": 2
         }
       }
     ]

@@ -981,7 +981,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open door",
             "seg": 317,
-            "side": 0,
             "wall": 42,
             "label_pos": {
               "x": -165.5,
@@ -4500,9 +4499,9 @@
         "mine_volume": 22628900.0,
         "mine_volume_normalized": 4.94847,
         "mine_volume_text": "4.9x",
-        "travel_distance": 6611.0,
-        "travel_time_seconds": 132,
-        "travel_time_text": "2M:12S",
+        "travel_distance": 9376.1,
+        "travel_time_seconds": 188,
+        "travel_time_text": "3M:08S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -4634,7 +4633,7 @@
               "y": -115.0,
               "z": -305.5
             },
-            "distance": 540.4,
+            "distance": 812.5,
             "opens": [
               {
                 "seg": 360,
@@ -4804,7 +4803,7 @@
               "y": 20.0,
               "z": 0.0
             },
-            "distance": 282.4,
+            "distance": 2775.4,
             "opens": [
               {
                 "seg": 428,

@@ -5,16 +5,16 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "ok",
   "level_counts": {
-    "timeout": 1
+    "ok": 1
   },
   "levels": [
     {
       "level_num": 0,
       "level_file": "sammy.rl2",
-      "route_input_sha256": "A464A867082C45F90B818BEF00172C2671A7828C3BC6B963DDF37CD4D3E09B1F",
-      "status": "timeout",
+      "route_input_sha256": "A2FA19FC8DAF375D6E2685B23B68549BB85B7A021E38262A90627947F154DED3",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -41,16 +41,44 @@
           "s": 34
         },
         {
+          "n": "fly-through 12",
+          "s": 40
+        },
+        {
           "n": "gold key",
-          "s": 69
+          "s": 68
+        },
+        {
+          "n": "fly-through 17",
+          "s": 93
+        },
+        {
+          "n": "red key",
+          "s": 113
+        },
+        {
+          "n": "hidden door",
+          "s": 150
+        },
+        {
+          "n": "reactor",
+          "s": 157
+        },
+        {
+          "n": "exit",
+          "s": 182
         }
       ],
-      "total_frames": 7712,
+      "total_frames": 10920,
       "rng_end": {
-        "state": 3954677940,
-        "calls": 2403
+        "state": 4165535993,
+        "calls": 6984
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "reactor_escape": {
+        "countdown_seconds": 80.0,
+        "simulated_seconds": 25.233337,
+        "difficulty": 2
+      }
     }
   ]
 }

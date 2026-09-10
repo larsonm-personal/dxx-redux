@@ -10,7 +10,7 @@
   "level_counts": {
     "ok": 1,
     "failed": 2,
-    "timeout": 1,
+    "unsupported": 1,
     "route_mismatch": 1
   },
   "levels": [
@@ -42,7 +42,7 @@
         },
         {
           "n": "blastable wall",
-          "s": 28
+          "s": 27
         },
         {
           "n": "fly-through 8",
@@ -57,10 +57,15 @@
           "s": 43
         }
       ],
-      "total_frames": 2604,
+      "total_frames": 2600,
       "rng_end": {
         "state": 648760710,
         "calls": 161
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 8.75,
+        "difficulty": 2
       }
     },
     {
@@ -84,18 +89,43 @@
       "level_num": 3,
       "level_file": "level03.rdl",
       "route_input_sha256": "77671214FC600E066653B55E221DF5EC8EB71E0308CBC7422051C38DA50CD77C",
-      "status": "timeout",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4460,
+      "objectives": [
+        {
+          "n": "open door",
+          "s": 15
+        },
+        {
+          "n": "gold key",
+          "s": 41
+        },
+        {
+          "n": "open door",
+          "s": 78
+        },
+        {
+          "n": "blue key",
+          "s": 110
+        },
+        {
+          "n": "hidden door",
+          "s": 128
+        },
+        {
+          "n": "red key",
+          "s": 131
+        }
+      ],
+      "total_frames": 7859,
       "rng_end": {
-        "state": 2675232640,
-        "calls": 135
+        "state": 268521427,
+        "calls": 6326
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "guided missile objective requires equipment and flight verification"
     },
     {
       "level_num": 4,

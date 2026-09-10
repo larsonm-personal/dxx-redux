@@ -42,6 +42,11 @@
       "rng_end": {
         "state": 699929610,
         "calls": 11405
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 18.183334,
+        "difficulty": 2
       }
     },
     {
@@ -87,6 +92,11 @@
       "rng_end": {
         "state": 1103117543,
         "calls": 13314
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 42.583328,
+        "difficulty": 2
       }
     },
     {
@@ -148,6 +158,11 @@
       "rng_end": {
         "state": 678014304,
         "calls": 8999
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 26.649994,
+        "difficulty": 2
       }
     },
     {
@@ -215,6 +230,11 @@
       "rng_end": {
         "state": 3132008066,
         "calls": 12021
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 16.683334,
+        "difficulty": 2
       }
     },
     {
@@ -272,12 +292,17 @@
       "rng_end": {
         "state": 2109098579,
         "calls": 11830
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 22.016663,
+        "difficulty": 2
       }
     },
     {
       "level_num": 7,
       "level_file": "lvn-ion.rl2",
-      "route_input_sha256": "613AFC0D0BDEAD2A67A263BF8A6D76070E9BD64A108870EF35B0DAA502EB72A6",
+      "route_input_sha256": "B79F8E8CDDFD216184CC73FAE67E97AFCFB8BBCB095975D348F2A895EA5AB4BA",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -290,15 +315,15 @@
         },
         {
           "n": "open door",
-          "s": 21
+          "s": 20
         },
         {
           "n": "switch 1",
-          "s": 21
+          "s": 20
         },
         {
           "n": "gold key",
-          "s": 26
+          "s": 25
         },
         {
           "n": "red key",
@@ -306,17 +331,22 @@
         },
         {
           "n": "reactor",
-          "s": 46
+          "s": 45
         },
         {
           "n": "exit",
-          "s": 56
+          "s": 55
         }
       ],
-      "total_frames": 3350,
+      "total_frames": 3327,
       "rng_end": {
-        "state": 3984168054,
-        "calls": 10609
+        "state": 857406777,
+        "calls": 10504
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 10.383331,
+        "difficulty": 2
       }
     },
     {
@@ -351,21 +381,26 @@
         },
         {
           "n": "fly-through 5",
-          "s": 163
+          "s": 160
         },
         {
           "n": "reactor",
-          "s": 164
+          "s": 161
         },
         {
           "n": "exit",
-          "s": 187
+          "s": 183
         }
       ],
-      "total_frames": 11222,
+      "total_frames": 11000,
       "rng_end": {
         "state": 2483196487,
         "calls": 13474
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 22.216675,
+        "difficulty": 2
       }
     },
     {
@@ -423,6 +458,11 @@
       "rng_end": {
         "state": 3243165886,
         "calls": 13513
+      },
+      "reactor_escape": {
+        "countdown_seconds": 300.0,
+        "simulated_seconds": 68.200012,
+        "difficulty": 2
       }
     }
   ]

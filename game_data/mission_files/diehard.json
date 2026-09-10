@@ -767,7 +767,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open door",
             "seg": 82,
-            "side": 5,
             "wall": 28,
             "label_pos": {
               "x": 140.0,
@@ -1797,9 +1796,9 @@
         "mine_volume": 36192200.0,
         "mine_volume_normalized": 7.9145,
         "mine_volume_text": "7.9x",
-        "travel_distance": 7269.2,
-        "travel_time_seconds": 145,
-        "travel_time_text": "2M:25S",
+        "travel_distance": 7322.1,
+        "travel_time_seconds": 146,
+        "travel_time_text": "2M:26S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1948,25 +1947,24 @@
             "kind": "hidden_door",
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
-            "seg": 202,
-            "side": 1,
-            "wall": 41,
+            "seg": 203,
+            "wall": 40,
             "label_pos": {
               "x": -180.0,
               "y": -110.0,
               "z": 260.0
             },
-            "distance": 812.4,
+            "distance": 832.0,
             "opens": [
-              {
-                "seg": 202,
-                "side": 1,
-                "wall": 41
-              },
               {
                 "seg": 162,
                 "side": 3,
                 "wall": 40
+              },
+              {
+                "seg": 202,
+                "side": 1,
+                "wall": 41
               }
             ]
           },
@@ -1981,7 +1979,7 @@
               "y": -100.0,
               "z": 260.0
             },
-            "distance": 20.0,
+            "distance": 53.3,
             "key": "blue"
           },
           {
@@ -2661,7 +2659,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
             "seg": 145,
-            "side": 0,
             "wall": 14,
             "label_pos": {
               "x": -10.0,
@@ -2883,7 +2880,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
             "seg": 179,
-            "side": 4,
             "wall": 77,
             "label_pos": {
               "x": 0.0,
@@ -2938,7 +2934,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
             "seg": 193,
-            "side": 0,
             "wall": 65,
             "label_pos": {
               "x": -140.0,
@@ -2988,7 +2983,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
             "seg": 189,
-            "side": 2,
             "wall": 59,
             "label_pos": {
               "x": 140.0,

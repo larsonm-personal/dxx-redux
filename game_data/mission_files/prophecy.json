@@ -1155,7 +1155,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
             "seg": 91,
-            "side": 4,
             "wall": 6,
             "label_pos": {
               "x": 94.5,
@@ -1205,7 +1204,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
             "seg": 111,
-            "side": 0,
             "wall": 4,
             "label_pos": {
               "x": 94.5,
@@ -1255,7 +1253,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
             "seg": 81,
-            "side": 4,
             "wall": 8,
             "label_pos": {
               "x": -94.1,
@@ -1348,7 +1345,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
             "seg": 295,
-            "side": 2,
             "wall": 70,
             "label_pos": {
               "x": -111.3,

@@ -29,7 +29,7 @@
         },
         {
           "n": "open door",
-          "s": 11
+          "s": 10
         },
         {
           "n": "open door",
@@ -37,13 +37,13 @@
         },
         {
           "n": "open door",
-          "s": 36
+          "s": 35
         }
       ],
       "total_frames": 9061,
       "rng_end": {
-        "state": 361230461,
-        "calls": 196
+        "state": 3424728103,
+        "calls": 194
       },
       "problem": "route confirmation exceeded 151-second simulation budget"
     },
@@ -74,6 +74,11 @@
       "rng_end": {
         "state": 3834121963,
         "calls": 30
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 1.349991,
+        "difficulty": 2
       }
     },
     {
@@ -103,6 +108,11 @@
       "rng_end": {
         "state": 3397090333,
         "calls": 36
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 1.366653,
+        "difficulty": 2
       }
     },
     {
@@ -160,6 +170,11 @@
       "rng_end": {
         "state": 4247911497,
         "calls": 120
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 1.350006,
+        "difficulty": 2
       }
     },
     {
@@ -201,6 +216,11 @@
       "rng_end": {
         "state": 500965035,
         "calls": 94
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 1.349991,
+        "difficulty": 2
       }
     },
     {
@@ -288,6 +308,11 @@
       "rng_end": {
         "state": 3758492830,
         "calls": 105
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 1.350006,
+        "difficulty": 2
       }
     },
     {
@@ -325,6 +350,11 @@
       "rng_end": {
         "state": 2274957893,
         "calls": 60
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 1.350006,
+        "difficulty": 2
       },
       "problem": "live objective sequence differs from route input"
     },

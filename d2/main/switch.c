@@ -707,6 +707,9 @@ void check_trigger(segment *seg, short side, short objnum,int shot)
 		}
 
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+		if ((Triggers[trigger_num].type == TT_EXIT || Triggers[trigger_num].type == TT_SECRET_EXIT) &&
+		    route_confirmation_handle_requested_exit_trigger(objnum, trigger_num))
+			return;
 		if (Triggers[trigger_num].type == TT_EXIT &&
 		    route_confirmation_handle_exit_trigger(objnum))
 			return;

@@ -61,14 +61,14 @@
         "objectives": [
           {
             "n": "blue key",
-            "s": 17
+            "s": 19
           },
           {
             "n": "red key",
-            "s": 40
+            "s": 42
           }
         ],
-        "total_frames": 6372,
+        "total_frames": 6478,
         "rng_end": {
           "state": 1627576247,
           "calls": 50
@@ -162,6 +162,11 @@
         "rng_end": {
           "state": 1223573862,
           "calls": 65
+        },
+        "reactor_escape": {
+          "countdown_seconds": 45.0,
+          "simulated_seconds": 15.233337,
+          "difficulty": 2
         }
       }
     ]
@@ -246,6 +251,11 @@
         "rng_end": {
           "state": 54769392,
           "calls": 6487
+        },
+        "reactor_escape": {
+          "countdown_seconds": 45.0,
+          "simulated_seconds": 13.0,
+          "difficulty": 2
         }
       }
     ]
@@ -323,6 +333,11 @@
         "rng_end": {
           "state": 1848832019,
           "calls": 118
+        },
+        "reactor_escape": {
+          "countdown_seconds": 45.0,
+          "simulated_seconds": 0.53334,
+          "difficulty": 2
         }
       }
     ]
@@ -423,6 +438,11 @@
         "rng_end": {
           "state": 2356040460,
           "calls": 6571
+        },
+        "reactor_escape": {
+          "countdown_seconds": 45.0,
+          "simulated_seconds": 12.649994,
+          "difficulty": 2
         }
       }
     ]
@@ -460,21 +480,26 @@
           },
           {
             "n": "red key",
-            "s": 30
+            "s": 29
           },
           {
             "n": "boss",
-            "s": 38
+            "s": 37
           },
           {
             "n": "exit",
             "s": 50
           }
         ],
-        "total_frames": 3026,
+        "total_frames": 2990,
         "rng_end": {
-          "state": 195279476,
-          "calls": 5283
+          "state": 3190063444,
+          "calls": 5187
+        },
+        "reactor_escape": {
+          "countdown_seconds": 45.0,
+          "simulated_seconds": 0.583328,
+          "difficulty": 2
         }
       }
     ]

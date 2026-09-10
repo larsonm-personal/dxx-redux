@@ -24,29 +24,34 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 10
+          "s": 9
         },
         {
           "n": "gold key",
-          "s": 39
+          "s": 35
         },
         {
           "n": "red key",
-          "s": 71
+          "s": 67
         },
         {
           "n": "reactor",
-          "s": 88
+          "s": 84
         },
         {
           "n": "exit",
-          "s": 96
+          "s": 92
         }
       ],
-      "total_frames": 5732,
+      "total_frames": 5509,
       "rng_end": {
-        "state": 812349326,
-        "calls": 6969
+        "state": 1075496472,
+        "calls": 6927
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 7.816666,
+        "difficulty": 2
       }
     },
     {
@@ -77,13 +82,18 @@
         },
         {
           "n": "exit",
-          "s": 97
+          "s": 98
         }
       ],
-      "total_frames": 5798,
+      "total_frames": 5850,
       "rng_end": {
-        "state": 3570941650,
-        "calls": 7397
+        "state": 1806898824,
+        "calls": 7391
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 5.150009,
+        "difficulty": 2
       }
     },
     {
@@ -106,7 +116,7 @@
         },
         {
           "n": "red key",
-          "s": 66
+          "s": 65
         },
         {
           "n": "reactor",
@@ -117,10 +127,15 @@
           "s": 112
         }
       ],
-      "total_frames": 6706,
+      "total_frames": 6699,
       "rng_end": {
         "state": 4052745200,
         "calls": 87
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 15.050003,
+        "difficulty": 2
       }
     },
     {
@@ -154,10 +169,15 @@
           "s": 148
         }
       ],
-      "total_frames": 8868,
+      "total_frames": 8876,
       "rng_end": {
         "state": 2302309953,
         "calls": 5056
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 6.649994,
+        "difficulty": 2
       }
     },
     {
@@ -195,6 +215,11 @@
       "rng_end": {
         "state": 3854841872,
         "calls": 5047
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 7.383347,
+        "difficulty": 2
       }
     },
     {
@@ -217,7 +242,7 @@
         },
         {
           "n": "red key",
-          "s": 70
+          "s": 69
         },
         {
           "n": "reactor",
@@ -228,10 +253,15 @@
           "s": 110
         }
       ],
-      "total_frames": 6605,
+      "total_frames": 6623,
       "rng_end": {
         "state": 1075496472,
         "calls": 6927
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 16.066666,
+        "difficulty": 2
       }
     },
     {
@@ -243,13 +273,18 @@
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 4053,
+      "objectives": [
+        {
+          "n": "open door",
+          "s": 8
+        }
+      ],
+      "total_frames": 9121,
       "rng_end": {
-        "state": 327681027,
-        "calls": 134
+        "state": 1023081650,
+        "calls": 133
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "route confirmation exceeded 152-second simulation budget"
     },
     {
       "level_num": 8,
@@ -282,10 +317,15 @@
           "s": 131
         }
       ],
-      "total_frames": 7870,
+      "total_frames": 7862,
       "rng_end": {
-        "state": 2857335690,
-        "calls": 6925
+        "state": 814078778,
+        "calls": 6941
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 18.316666,
+        "difficulty": 2
       }
     },
     {
@@ -323,6 +363,11 @@
       "rng_end": {
         "state": 368913805,
         "calls": 308
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 4.716675,
+        "difficulty": 2
       }
     }
   ]

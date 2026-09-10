@@ -51,10 +51,15 @@
           "s": 92
         }
       ],
-      "total_frames": 5548,
+      "total_frames": 5538,
       "rng_end": {
         "state": 71833247,
         "calls": 4938
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 16.033325,
+        "difficulty": 2
       }
     },
     {
@@ -89,17 +94,22 @@
         },
         {
           "n": "boss",
-          "s": 170
+          "s": 169
         },
         {
           "n": "exit",
-          "s": 192
+          "s": 191
         }
       ],
-      "total_frames": 11502,
+      "total_frames": 11448,
       "rng_end": {
-        "state": 2738634161,
-        "calls": 10192
+        "state": 1664613581,
+        "calls": 10228
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 21.333328,
+        "difficulty": 2
       }
     },
     {
@@ -122,25 +132,30 @@
         },
         {
           "n": "gold key",
-          "s": 83
+          "s": 79
         },
         {
           "n": "red key",
-          "s": 109
+          "s": 106
         },
         {
           "n": "reactor",
-          "s": 127
+          "s": 123
         },
         {
           "n": "exit",
-          "s": 141
+          "s": 137
         }
       ],
-      "total_frames": 8449,
+      "total_frames": 8230,
       "rng_end": {
         "state": 1750188052,
         "calls": 7811
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 13.816666,
+        "difficulty": 2
       }
     },
     {
@@ -163,7 +178,7 @@
         },
         {
           "n": "gold key",
-          "s": 69
+          "s": 68
         },
         {
           "n": "switch 24",
@@ -178,7 +193,7 @@
           "s": 170
         }
       ],
-      "total_frames": 13905,
+      "total_frames": 13897,
       "rng_end": {
         "state": 281105877,
         "calls": 7212
@@ -247,15 +262,15 @@
         },
         {
           "n": "hidden door",
-          "s": 102
+          "s": 101
         },
         {
           "n": "gold key",
-          "s": 102
+          "s": 101
         },
         {
           "n": "switch 3",
-          "s": 138
+          "s": 137
         },
         {
           "n": "red key",
@@ -267,21 +282,26 @@
         },
         {
           "n": "hidden door",
-          "s": 182
+          "s": 181
         },
         {
           "n": "reactor",
-          "s": 185
+          "s": 184
         },
         {
           "n": "exit",
-          "s": 209
+          "s": 207
         }
       ],
-      "total_frames": 12549,
+      "total_frames": 12411,
       "rng_end": {
-        "state": 1404874622,
-        "calls": 6409
+        "state": 3678545556,
+        "calls": 5635
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 22.933334,
+        "difficulty": 2
       }
     },
     {

@@ -23,7 +23,7 @@
       "objectives": [
         {
           "n": "fly-through 1",
-          "s": 39
+          "s": 40
         },
         {
           "n": "blastable wall",
@@ -34,7 +34,7 @@
           "s": 52
         }
       ],
-      "total_frames": 3094,
+      "total_frames": 3095,
       "rng_end": {
         "state": 1491536401,
         "calls": 624
@@ -52,41 +52,46 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 39
+          "s": 34
         },
         {
           "n": "fly-through 1",
-          "s": 56
+          "s": 53
         },
         {
           "n": "blastable wall",
-          "s": 70
+          "s": 66
         },
         {
           "n": "fly-through 3",
-          "s": 72
+          "s": 68
         },
         {
           "n": "switch 5",
-          "s": 91
+          "s": 87
         },
         {
           "n": "switch 7",
-          "s": 92
+          "s": 88
         },
         {
           "n": "reactor",
-          "s": 116
+          "s": 112
         },
         {
           "n": "exit",
-          "s": 123
+          "s": 119
         }
       ],
-      "total_frames": 7402,
+      "total_frames": 7165,
       "rng_end": {
-        "state": 3332410724,
-        "calls": 4339
+        "state": 1906485874,
+        "calls": 3525
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 7.566666,
+        "difficulty": 2
       }
     },
     {
@@ -117,29 +122,34 @@
         },
         {
           "n": "reactor",
-          "s": 78
+          "s": 79
         },
         {
           "n": "fly-through 6",
-          "s": 92
+          "s": 93
         },
         {
           "n": "switch 8",
-          "s": 108
+          "s": 109
         },
         {
           "n": "red key",
-          "s": 137
+          "s": 133
         },
         {
           "n": "exit",
-          "s": 154
+          "s": 149
         }
       ],
-      "total_frames": 9240,
+      "total_frames": 8938,
       "rng_end": {
-        "state": 1938677395,
-        "calls": 8694
+        "state": 1913502954,
+        "calls": 7469
+      },
+      "reactor_escape": {
+        "countdown_seconds": 208.0,
+        "simulated_seconds": 70.050003,
+        "difficulty": 2
       }
     },
     {
@@ -185,6 +195,11 @@
       "rng_end": {
         "state": 4158516541,
         "calls": 7684
+      },
+      "reactor_escape": {
+        "countdown_seconds": 80.0,
+        "simulated_seconds": 13.283325,
+        "difficulty": 2
       }
     },
     {
@@ -199,7 +214,7 @@
       "objectives": [
         {
           "n": "blastable wall",
-          "s": 40
+          "s": 41
         },
         {
           "n": "blastable wall",
@@ -211,7 +226,7 @@
         },
         {
           "n": "hidden door",
-          "s": 121
+          "s": 122
         },
         {
           "n": "switch 0",
@@ -223,10 +238,10 @@
         },
         {
           "n": "switch 2",
-          "s": 140
+          "s": 141
         }
       ],
-      "total_frames": 9937,
+      "total_frames": 9955,
       "rng_end": {
         "state": 2816826211,
         "calls": 13606

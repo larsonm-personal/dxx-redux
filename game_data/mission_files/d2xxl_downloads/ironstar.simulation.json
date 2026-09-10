@@ -48,6 +48,11 @@
       "rng_end": {
         "state": 559510963,
         "calls": 5846
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 6.600006,
+        "difficulty": 2
       }
     },
     {
@@ -85,6 +90,11 @@
       "rng_end": {
         "state": 2455359789,
         "calls": 148
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 6.683334,
+        "difficulty": 2
       }
     },
     {
@@ -173,6 +183,11 @@
       "rng_end": {
         "state": 3040535893,
         "calls": 172
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 11.699997,
+        "difficulty": 2
       }
     },
     {
@@ -218,6 +233,11 @@
       "rng_end": {
         "state": 4043710265,
         "calls": 5896
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 8.699997,
+        "difficulty": 2
       }
     },
     {
@@ -267,6 +287,11 @@
       "rng_end": {
         "state": 3178100118,
         "calls": 209
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 8.0,
+        "difficulty": 2
       }
     },
     {
@@ -312,6 +337,11 @@
       "rng_end": {
         "state": 762780427,
         "calls": 5118
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 16.133331,
+        "difficulty": 2
       }
     },
     {
@@ -374,6 +404,11 @@
         "state": 2592008955,
         "calls": 1550
       },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 8.5,
+        "difficulty": 2
+      },
       "problem": "live objective sequence differs from route input"
     },
     {
@@ -411,6 +446,11 @@
       "rng_end": {
         "state": 3052628328,
         "calls": 6783
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 2.733322,
+        "difficulty": 2
       }
     },
     {
@@ -445,13 +485,18 @@
         },
         {
           "n": "exit",
-          "s": 111
+          "s": 112
         }
       ],
-      "total_frames": 6688,
+      "total_frames": 6698,
       "rng_end": {
         "state": 338329566,
         "calls": 2601
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 2.800003,
+        "difficulty": 2
       }
     }
   ]

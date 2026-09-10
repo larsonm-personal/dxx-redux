@@ -57,6 +57,11 @@
       "rng_end": {
         "state": 485824762,
         "calls": 8285
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 10.083328,
+        "difficulty": 2
       }
     },
     {
@@ -75,7 +80,7 @@
         },
         {
           "n": "gold key",
-          "s": 41
+          "s": 40
         },
         {
           "n": "switch 14",
@@ -99,21 +104,26 @@
         },
         {
           "n": "boss",
-          "s": 77
+          "s": 76
         },
         {
           "n": "switch 10",
-          "s": 79
+          "s": 78
         },
         {
           "n": "exit",
           "s": 80
         }
       ],
-      "total_frames": 4824,
+      "total_frames": 4783,
       "rng_end": {
-        "state": 1133683505,
-        "calls": 7760
+        "state": 3284311892,
+        "calls": 7747
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 3.333328,
+        "difficulty": 2
       }
     }
   ]

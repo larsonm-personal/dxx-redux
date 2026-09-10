@@ -52,43 +52,48 @@
         },
         {
           "n": "fly-through 7",
-          "s": 83
+          "s": 80
         },
         {
           "n": "destroy robot carrying red key",
-          "s": 93
+          "s": 89
         },
         {
           "n": "reactor",
-          "s": 116
+          "s": 112
         },
         {
           "n": "fly-through 9",
-          "s": 117
+          "s": 113
         },
         {
           "n": "switch 12",
-          "s": 117
+          "s": 113
         },
         {
           "n": "switch 11",
-          "s": 124
+          "s": 119
         },
         {
           "n": "exit",
-          "s": 130
+          "s": 126
         }
       ],
-      "total_frames": 7816,
+      "total_frames": 7538,
       "rng_end": {
-        "state": 2802285162,
-        "calls": 11693
+        "state": 1221316413,
+        "calls": 11268
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 13.833344,
+        "difficulty": 2
       }
     },
     {
       "level_num": 2,
       "level_file": "reactorc.rl2",
-      "route_input_sha256": "45F78CBE37A3E6FFC6625EDC571CFFABFBA837916927121D21BD24B7EEAEA0AB",
+      "route_input_sha256": "D65D02BACC461C0490D098CC15798CAA1B90ED5B2058238DA8EC129FE6B3CF17",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -129,7 +134,7 @@
         },
         {
           "n": "switch 0",
-          "s": 111
+          "s": 112
         },
         {
           "n": "hidden door",
@@ -145,19 +150,19 @@
         },
         {
           "n": "hidden door",
-          "s": 135
+          "s": 136
         },
         {
           "n": "switch 10",
-          "s": 135
+          "s": 136
         },
         {
           "n": "hidden door",
-          "s": 147
+          "s": 148
         },
         {
           "n": "switch 26",
-          "s": 149
+          "s": 150
         },
         {
           "n": "hidden door",
@@ -165,7 +170,7 @@
         },
         {
           "n": "switch 22",
-          "s": 159
+          "s": 160
         },
         {
           "n": "switch 24",
@@ -173,25 +178,30 @@
         },
         {
           "n": "red key",
-          "s": 173
+          "s": 169
         },
         {
           "n": "reactor",
-          "s": 199
+          "s": 196
         },
         {
           "n": "switch 3",
-          "s": 203
+          "s": 199
         },
         {
           "n": "exit",
-          "s": 222
+          "s": 218
         }
       ],
-      "total_frames": 13312,
+      "total_frames": 13081,
       "rng_end": {
-        "state": 1193882006,
-        "calls": 13521
+        "state": 1185791702,
+        "calls": 13457
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 22.366669,
+        "difficulty": 2
       }
     },
     {
@@ -206,7 +216,7 @@
       "objectives": [
         {
           "n": "switch 2",
-          "s": 12
+          "s": 11
         },
         {
           "n": "switch 1",
@@ -218,14 +228,14 @@
         },
         {
           "n": "switch 5",
-          "s": 49
+          "s": 48
         },
         {
           "n": "blue key",
           "s": 50
         }
       ],
-      "total_frames": 3010,
+      "total_frames": 2990,
       "rng_end": {
         "state": 1946939785,
         "calls": 1336

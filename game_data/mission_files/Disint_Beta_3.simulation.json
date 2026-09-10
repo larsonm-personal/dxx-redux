@@ -7,8 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 11,
+    "ok": 10,
     "failed": 3,
+    "timeout": 1,
     "unsupported": 3
   },
   "levels": [
@@ -63,13 +64,18 @@
       "rng_end": {
         "state": 3952730275,
         "calls": 2022
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 8.75,
+        "difficulty": 2
       }
     },
     {
       "level_num": 2,
       "level_file": "02egre.rl2",
       "route_input_sha256": "DDC883EF8D6DD2303F2664FFA52A7469AFF3B64A46AE7A2B2B9DEF10FD833697",
-      "status": "ok",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -93,18 +99,15 @@
         },
         {
           "n": "reactor",
-          "s": 41
-        },
-        {
-          "n": "exit",
-          "s": 133
+          "s": 52
         }
       ],
-      "total_frames": 7952,
+      "total_frames": 8048,
       "rng_end": {
-        "state": 3096600093,
-        "calls": 3620
-      }
+        "state": 1803392592,
+        "calls": 3191
+      },
+      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
     {
       "level_num": 3,
@@ -153,6 +156,11 @@
       "rng_end": {
         "state": 570149541,
         "calls": 2268
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 11.516663,
+        "difficulty": 2
       }
     },
     {
@@ -369,13 +377,18 @@
         },
         {
           "n": "exit",
-          "s": 78
+          "s": 79
         }
       ],
-      "total_frames": 4695,
+      "total_frames": 4713,
       "rng_end": {
         "state": 3185666294,
         "calls": 5873
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 10.46666,
+        "difficulty": 2
       }
     },
     {
@@ -433,6 +446,11 @@
       "rng_end": {
         "state": 1368168286,
         "calls": 12457
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 16.083328,
+        "difficulty": 2
       }
     },
     {
@@ -482,6 +500,11 @@
       "rng_end": {
         "state": 1493199978,
         "calls": 9133
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 18.166672,
+        "difficulty": 2
       }
     },
     {
@@ -511,6 +534,11 @@
       "rng_end": {
         "state": 1823798819,
         "calls": 614
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 4.28334,
+        "difficulty": 2
       }
     },
     {

@@ -1321,7 +1321,8 @@ void do_screen_message(char *fmt, ...)
 	grs_bitmap background;
 	char msg[1024];
 	
-	if (Game_mode & GM_MULTI)
+	// Headless native transitions must not open a modal presentation screen
+	if ((Game_mode & GM_MULTI) || GameArg.SysInputDemoNoRender)
 		return;
 	
 	gr_init_bitmap_data(&background);

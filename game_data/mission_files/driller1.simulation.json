@@ -8,9 +8,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 7,
+    "ok": 8,
     "failed": 1,
-    "timeout": 2
+    "timeout": 1
   },
   "levels": [
     {
@@ -52,6 +52,11 @@
       "rng_end": {
         "state": 2754807367,
         "calls": 162
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 5.050003,
+        "difficulty": 2
       }
     },
     {
@@ -89,6 +94,11 @@
       "rng_end": {
         "state": 470157467,
         "calls": 110
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 0.866669,
+        "difficulty": 2
       }
     },
     {
@@ -126,6 +136,11 @@
       "rng_end": {
         "state": 4022231744,
         "calls": 71
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 1.066666,
+        "difficulty": 2
       }
     },
     {
@@ -159,10 +174,15 @@
           "s": 60
         }
       ],
-      "total_frames": 3585,
+      "total_frames": 3582,
       "rng_end": {
         "state": 745569348,
         "calls": 147
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 8.866669,
+        "difficulty": 2
       }
     },
     {
@@ -181,40 +201,45 @@
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 40
+          "s": 39
         },
         {
           "n": "fly-through 2",
-          "s": 49
+          "s": 48
         },
         {
           "n": "fly-through 3",
-          "s": 52
+          "s": 51
         },
         {
           "n": "red key",
-          "s": 61
+          "s": 60
         },
         {
           "n": "reactor",
-          "s": 81
+          "s": 80
         },
         {
           "n": "exit",
-          "s": 89
+          "s": 88
         }
       ],
-      "total_frames": 5320,
+      "total_frames": 5268,
       "rng_end": {
         "state": 3178040984,
         "calls": 143
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 7.566666,
+        "difficulty": 2
       }
     },
     {
       "level_num": 6,
       "level_file": "mimu.rdl",
       "route_input_sha256": "05ED69DF621842B46916D509EDD6B439DAF5E864F8BAF76E156439772DB1B5BF",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -226,23 +251,31 @@
         },
         {
           "n": "gold key",
-          "s": 11
+          "s": 10
         },
         {
           "n": "red key",
-          "s": 23
+          "s": 22
         },
         {
           "n": "reactor",
           "s": 43
+        },
+        {
+          "n": "exit",
+          "s": 97
         }
       ],
-      "total_frames": 6982,
+      "total_frames": 5828,
       "rng_end": {
-        "state": 208521688,
-        "calls": 79
+        "state": 510737498,
+        "calls": 125
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 54.550003,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 7,
@@ -283,6 +316,11 @@
       "rng_end": {
         "state": 3468668463,
         "calls": 186
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 7.616669,
+        "difficulty": 2
       }
     },
     {
@@ -320,6 +358,11 @@
       "rng_end": {
         "state": 2316746429,
         "calls": 132
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 2.699997,
+        "difficulty": 2
       }
     },
     {
@@ -338,18 +381,18 @@
         },
         {
           "n": "gold key",
-          "s": 17
+          "s": 16
         },
         {
           "n": "red key",
-          "s": 30
+          "s": 29
         },
         {
           "n": "reactor",
-          "s": 49
+          "s": 48
         }
       ],
-      "total_frames": 2921,
+      "total_frames": 2872,
       "rng_end": {
         "state": 820312479,
         "calls": 74

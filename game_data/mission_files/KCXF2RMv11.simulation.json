@@ -47,11 +47,11 @@
       "objectives": [
         {
           "n": "blue key",
-          "s": 36
+          "s": 35
         },
         {
           "n": "fly-through 4",
-          "s": 62
+          "s": 61
         },
         {
           "n": "switch 7",
@@ -67,25 +67,25 @@
         },
         {
           "n": "switch 19",
-          "s": 141
+          "s": 140
         },
         {
           "n": "switch 18",
-          "s": 142
+          "s": 141
         },
         {
           "n": "switch 17",
-          "s": 143
+          "s": 142
         },
         {
           "n": "exit",
-          "s": 152
+          "s": 151
         }
       ],
-      "total_frames": 9091,
+      "total_frames": 9078,
       "rng_end": {
-        "state": 2981431152,
-        "calls": 9943
+        "state": 432798957,
+        "calls": 9940
       }
     },
     {
@@ -144,6 +144,11 @@
       "rng_end": {
         "state": 991474089,
         "calls": 13848
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 8.083328,
+        "difficulty": 2
       }
     },
     {
@@ -174,13 +179,13 @@
         },
         {
           "n": "fly-through 10",
-          "s": 105
+          "s": 104
         }
       ],
-      "total_frames": 10678,
+      "total_frames": 10769,
       "rng_end": {
-        "state": 3662873548,
-        "calls": 8683
+        "state": 994575823,
+        "calls": 7962
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },

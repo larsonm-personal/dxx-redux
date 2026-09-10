@@ -291,4 +291,26 @@ foreach ($case in @(
     Assert-True ($incompleteEscape.notes.Count -eq 1) 'incomplete navigation must not be treated as a proven escape duration'
 }
 
+$savedEngine = $engine.PSObject.Copy()
+$savedEngine | Add-Member -NotePropertyName start_state -NotePropertyValue ([pscustomobject]@{ kind = 'saved_world' })
+$rejected = $false
+try {
+    ConvertTo-GuidebotLevelSimulationResult -Mission $mission -Level $mission.levels[0] -EngineResult $savedEngine | Out-Null
+} catch {
+    if ($_.Exception.Message -ne 'Saved-world verification cannot be published as an authored-start regression') { throw }
+    $rejected = $true
+}
+Assert-True $rejected 'saved-world result was accepted as a canonical regression'
+
+$objectiveEngine = $engine.PSObject.Copy()
+$objectiveEngine | Add-Member -NotePropertyName verification_goal -NotePropertyValue ([pscustomobject]@{ kind = 'key_pickup'; key = 'blue' })
+$rejected = $false
+try {
+    ConvertTo-GuidebotLevelSimulationResult -Mission $mission -Level $mission.levels[0] -EngineResult $objectiveEngine | Out-Null
+} catch {
+    if ($_.Exception.Message -ne 'Objective-only verification cannot be published as a completed-mine regression') { throw }
+    $rejected = $true
+}
+Assert-True $rejected 'key-only result was accepted as a completed mine'
+
 Write-Host 'GuideBot simulation schema tests passed'

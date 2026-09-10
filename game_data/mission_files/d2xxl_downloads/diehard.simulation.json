@@ -71,6 +71,11 @@
       "rng_end": {
         "state": 3779979548,
         "calls": 5723
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 6.016663,
+        "difficulty": 2
       }
     },
     {
@@ -118,7 +123,7 @@
     {
       "level_num": 4,
       "level_file": "DH04.RL2",
-      "route_input_sha256": "885C88E296963426631CACF6FA164C87390B1B343F42ABDE16260845D5AFB9E1",
+      "route_input_sha256": "DCB505A909841CE4E6528C152FA779C044DED131E34C577886C67F45CAF38BE2",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -167,14 +172,14 @@
         },
         {
           "n": "switch 9",
-          "s": 125
+          "s": 126
         },
         {
           "n": "switch 11",
           "s": 128
         }
       ],
-      "total_frames": 8565,
+      "total_frames": 8588,
       "rng_end": {
         "state": 1675774670,
         "calls": 5369
@@ -212,6 +217,11 @@
       "rng_end": {
         "state": 2026383973,
         "calls": 4892
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 1.449997,
+        "difficulty": 2
       }
     },
     {
@@ -335,7 +345,7 @@
     {
       "level_num": 10,
       "level_file": "DH10.RL2",
-      "route_input_sha256": "8EF87C37B00BA3DA1B8E82D4DC4CD9D763D3F7142341F2C6998D6E52966B5AC1",
+      "route_input_sha256": "25D1C8486DAF8A44D0AEC41DE14A14401A66576A4881D1AA349AD11EE14916AE",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -457,7 +467,7 @@
     {
       "level_num": 13,
       "level_file": "DH13.RL2",
-      "route_input_sha256": "827BFB7331CC1FC2171555026D78251146A9E8AFCB9B00E53179CF9D7144E157",
+      "route_input_sha256": "3F8A9851AF876E6A33F9C4C2BE4D43ACC723C427FAA65AE69F7F4DF943F3D8BE",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -474,27 +484,32 @@
         },
         {
           "n": "hidden door",
-          "s": 44
+          "s": 43
         },
         {
           "n": "switch 1",
-          "s": 44
+          "s": 45
         },
         {
           "n": "exit",
           "s": 63
         }
       ],
-      "total_frames": 3773,
+      "total_frames": 3808,
       "rng_end": {
-        "state": 727351043,
-        "calls": 9606
+        "state": 868726942,
+        "calls": 1129
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 40.233337,
+        "difficulty": 2
       }
     },
     {
       "level_num": 14,
       "level_file": "DH14.RL2",
-      "route_input_sha256": "C9FA46918756670294D812B4DF250802E85690D41BF1F271776FFDF5CDC85AB9",
+      "route_input_sha256": "40B61A3A1B00AE53804B0E1D184AEEB80DC5A0D4F5CB05C57826AF32F9D8994B",
       "status": "timeout",
       "rng_start": {
         "state": 1,
@@ -531,37 +546,33 @@
         },
         {
           "n": "hidden door",
-          "s": 60
+          "s": 59
         },
         {
           "n": "switch 5",
-          "s": 60
+          "s": 59
         },
         {
           "n": "hidden door",
-          "s": 66
+          "s": 63
         },
         {
           "n": "switch 4",
-          "s": 66
+          "s": 64
         },
         {
           "n": "hidden door",
-          "s": 68
+          "s": 66
         },
         {
           "n": "blue key",
-          "s": 68
-        },
-        {
-          "n": "switch 14",
-          "s": 69
+          "s": 66
         }
       ],
-      "total_frames": 4789,
+      "total_frames": 4594,
       "rng_end": {
-        "state": 4198708919,
-        "calls": 4402
+        "state": 118017279,
+        "calls": 3818
       },
       "problem": "physical route frontier did not open after 8 interaction attempts"
     },

@@ -1206,15 +1206,15 @@
         "mine_volume": 638504000.0,
         "mine_volume_normalized": 139.628,
         "mine_volume_text": "140x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 25035.7,
+        "travel_time_seconds": 501,
+        "travel_time_text": "8M:21S",
         "guidebot_count": 4,
         "guidebot_placed": true,
         "guidebot_accessible": true,
-        "route_status": "failed",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 4,
         "route_steps": [
           {
             "index": 0,
@@ -1222,10 +1222,207 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 165
+          },
+          {
+            "index": 1,
+            "kind": "blastable_wall",
+            "activation_kind": "destroy_blastable_wall",
+            "label": "Destroy blastable wall",
+            "seg": 27,
+            "side": 5,
+            "wall": 22,
+            "label_pos": {
+              "x": 416.5,
+              "y": 194.0,
+              "z": 1282.3
+            },
+            "distance": 477.5,
+            "opens": [
+              {
+                "seg": 27,
+                "side": 5,
+                "wall": 22
+              },
+              {
+                "seg": 175,
+                "side": 4,
+                "wall": 23
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 0",
+            "seg": 300,
+            "side": 0,
+            "wall": 67,
+            "label_pos": {
+              "x": -161.5,
+              "y": 204.9,
+              "z": -144.9
+            },
+            "distance": 3030.9,
+            "trigger": 0,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 231,
+                "side": 5,
+                "wall": 66
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 1",
+            "seg": 332,
+            "side": 5,
+            "wall": 68,
+            "label_pos": {
+              "x": 173.7,
+              "y": 258.1,
+              "z": -714.1
+            },
+            "distance": 787.0,
+            "trigger": 1,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 217,
+                "side": 2,
+                "wall": 48
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 2",
+            "seg": 464,
+            "side": 4,
+            "wall": 107,
+            "label_pos": {
+              "x": -435.2,
+              "y": 508.4,
+              "z": -1489.0
+            },
+            "distance": 6214.3,
+            "trigger": 2,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 463,
+                "side": 5,
+                "wall": 105
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "required_weapon": "guided_missile",
+            "label": "Shoot using guided missile",
+            "seg": 482,
+            "wall": 110,
+            "label_pos": {
+              "x": -260.2,
+              "y": 760.4,
+              "z": -2400.1
+            },
+            "distance": 370.8,
+            "trigger": 5,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 510,
+                "side": 2,
+                "wall": 120
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 3",
+            "seg": 540,
+            "side": 5,
+            "wall": 118,
+            "label_pos": {
+              "x": -760.2,
+              "y": 441.2,
+              "z": -602.5
+            },
+            "distance": 5844.2,
+            "trigger": 3,
+            "trigger_type_id": 0,
+            "trigger_type": "open_door",
+            "opens": [
+              {
+                "seg": 539,
+                "side": 0,
+                "wall": 117
+              }
+            ]
+          },
+          {
+            "index": 7,
+            "kind": "key",
+            "activation_kind": "destroy_key_carrier",
+            "label": "Destroy robot carrying red key",
+            "seg": 565,
+            "label_pos": {
+              "x": -1036.9,
+              "y": 493.7,
+              "z": -549.2
+            },
+            "distance": 332.7,
+            "key": "red",
+            "key_carrier_objnum": 78
+          },
+          {
+            "index": 8,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 584,
+            "label_pos": {
+              "x": -618.9,
+              "y": 656.1,
+              "z": -1804.9
+            },
+            "distance": 5639.1
+          },
+          {
+            "index": 9,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 373,
+            "side": 1,
+            "wall": 77,
+            "label_pos": {
+              "x": 467.0,
+              "y": 307.9,
+              "z": -882.0
+            },
+            "distance": 2339.4,
+            "trigger": 6,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "guidebot or guidebot start cage placed in this level",
-        "route_problem": "route target unreachable",
         "notes": [
           "guidebot or guidebot start cage placed in this level"
         ]

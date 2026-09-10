@@ -36,6 +36,7 @@ extern "C" {
 #include "playsave.h"
 #include "screens.h"
 #include "songs.h"
+#include "state.h"
 #include "texmerge.h"
 #include "text.h"
 #include "u_mem.h"
@@ -210,16 +211,38 @@ int main(int argc, char *argv[])
 	const char *mission = find_arg_value(argc, argv, "-mission");
 	const char *extra_dir = find_arg_value(argc, argv, "-extra-dir");
 	const char *level_text = find_arg_value(argc, argv, "-level");
+	const char *checkpoint = find_arg_value(argc, argv, "-route-confirm-checkpoint");
+	const char *key_goal = find_arg_value(argc, argv, "-route-confirm-key");
+	const char *checkpoint_out = find_arg_value(argc, argv, "-route-confirm-checkpoint-out");
+	const char *exit_goal = find_arg_value(argc, argv, "-route-confirm-exit-trigger");
+	bool native_transition = false;
+	for (int index = 1; index < argc; ++index)
+		if (!strcmp(argv[index], "-route-confirm-native-transition")) native_transition = true;
+	for (int index = 1; index < argc; ++index)
+		if ((!strcmp(argv[index], "-route-confirm-checkpoint") && (!checkpoint || !*checkpoint)) ||
+		    (!strcmp(argv[index], "-route-confirm-checkpoint-out") && (!checkpoint_out || !*checkpoint_out)) ||
+		    (!strcmp(argv[index], "-route-confirm-key") && (!key_goal || !*key_goal)) ||
+		    (!strcmp(argv[index], "-route-confirm-exit-trigger") && (!exit_goal || !*exit_goal))) {
+			fprintf(stderr, "ROUTE-CONFIRM FAIL value required for %s\n", argv[index]);
+			return 1;
+		}
 	const char *time_limit_text =
 	    find_arg_value(argc, argv, "-route-confirm-timeout-seconds");
 	int level = 0;
 	if (!output || !parse_level(level_text, &level) ||
+	    (key_goal && exit_goal) || (native_transition && !exit_goal) ||
+	    !route_confirmation_configure_key_goal(key_goal) ||
+	    !route_confirmation_configure_exit_goal(exit_goal) ||
 	    !route_confirmation_configure_speed(find_arg_value(argc, argv, "-route-confirm-speed-percent")) ||
 	    (time_limit_text && !configure_time_limit(time_limit_text))) {
 		fprintf(stderr,
 		        "usage: %s -route-confirm-json-out <path> -level <number> "
 		        "[-mission <name>] [-hogdir <dir>] "
 		        "[-route-confirm-timeout-seconds <1..3600>] "
+		        "[-route-confirm-checkpoint <mounted save path>] "
+		        "[-route-confirm-key <blue|red|gold>] "
+		        "[-route-confirm-checkpoint-out <mounted save path>] "
+		        "[-route-confirm-exit-trigger <number>] [-route-confirm-native-transition] "
 		        "[-route-confirm-speed-percent <100..200>]\n",
 		        argc > 0 ? argv[0] : "dxx-redux-d2-headless-route");
 		return 1;
@@ -262,8 +285,19 @@ int main(int argc, char *argv[])
 	StartNewGame(level);
 	if (level < 0)
 		Newdemo_state = ND_STATE_NORMAL;
+	if (checkpoint) {
+		const std::string expected_mission = Current_mission_filename;
+		fprintf(stderr, "ROUTE-CONFIRM phase=checkpoint-restore\n");
+		if (!PHYSFS_exists(checkpoint) ||
+		    !state_restore_all_sub(const_cast<char *>(checkpoint), 0) ||
+		    Current_level_num != level || expected_mission != Current_mission_filename ||
+		    Game_mode != GM_NORMAL) {
+			fprintf(stderr, "ROUTE-CONFIRM FAIL checkpoint restore or mission/level mismatch\n");
+			return 1;
+		}
+	}
 	fprintf(stderr, "ROUTE-CONFIRM phase=route-start\n");
-	if (!route_confirmation_start()) {
+	if (!(checkpoint ? route_confirmation_start_from_current_state() : route_confirmation_start())) {
 		fprintf(stderr, "ROUTE-CONFIRM FAIL start %s\n",
 		        route_confirmation_get_summary()->problem);
 	}
@@ -277,6 +311,11 @@ int main(int argc, char *argv[])
 		const route_confirmation_summary *summary =
 		    route_confirmation_get_summary();
 		fprintf(stderr, "ROUTE-CONFIRM phase=result frames=%u\n", summary->frame_count);
+		if (native_transition && summary->status == ROUTE_CONFIRMATION_CONFIRMED &&
+		    !route_confirmation_run_exit_transition()) {
+			fprintf(stderr, "ROUTE-CONFIRM FAIL requested native exit transition did not change level\n");
+			return 1;
+		}
 		if (!route_confirmation_write_json(output, mission, level, error,
 		                                   sizeof(error))) {
 			fprintf(stderr, "ROUTE-CONFIRM FAIL %s\n", error);
@@ -286,6 +325,18 @@ int main(int argc, char *argv[])
 		       summary->status == ROUTE_CONFIRMATION_CONFIRMED ? "OK" : "FAIL",
 		       mission && *mission ? mission : "d2", level,
 		       summary->frame_count, output);
+		if (checkpoint_out && summary->status == ROUTE_CONFIRMATION_CONFIRMED) {
+			char description[] = "Route verification checkpoint";
+			if (!summary->transitioned_level && !route_confirmation_commit_player_position()) {
+				fprintf(stderr, "ROUTE-CONFIRM FAIL could not commit verified player position\n");
+				return 1;
+			}
+			stop_time();
+			if (!state_save_all_sub(const_cast<char *>(checkpoint_out), description)) {
+				fprintf(stderr, "ROUTE-CONFIRM FAIL could not save verified world\n");
+				return 1;
+			}
+		}
 		fprintf(stderr, "ROUTE-CONFIRM phase=shutdown\n");
 		args_exit();
 		return summary->status == ROUTE_CONFIRMATION_CONFIRMED ? 0 : 2;

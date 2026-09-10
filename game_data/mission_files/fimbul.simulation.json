@@ -35,7 +35,7 @@
         },
         {
           "n": "red key",
-          "s": 75
+          "s": 74
         },
         {
           "n": "reactor",
@@ -43,13 +43,18 @@
         },
         {
           "n": "exit",
-          "s": 106
+          "s": 105
         }
       ],
-      "total_frames": 6335,
+      "total_frames": 6327,
       "rng_end": {
         "state": 794565647,
         "calls": 5338
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 4.683334,
+        "difficulty": 2
       }
     },
     {
@@ -84,7 +89,7 @@
         },
         {
           "n": "gold key",
-          "s": 74
+          "s": 73
         },
         {
           "n": "switch 13",
@@ -96,17 +101,22 @@
         },
         {
           "n": "reactor",
-          "s": 132
+          "s": 131
         },
         {
           "n": "exit",
           "s": 144
         }
       ],
-      "total_frames": 8622,
+      "total_frames": 8616,
       "rng_end": {
         "state": 1686525773,
         "calls": 6516
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 12.116669,
+        "difficulty": 2
       }
     },
     {

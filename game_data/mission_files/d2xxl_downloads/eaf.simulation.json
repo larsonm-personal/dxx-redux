@@ -8,7 +8,8 @@
   "status": "partial",
   "level_counts": {
     "ok": 3,
-    "failed": 2
+    "failed": 1,
+    "unsupported": 1
   },
   "levels": [
     {
@@ -58,13 +59,18 @@
       "rng_end": {
         "state": 2824233801,
         "calls": 4472
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 25.800003,
+        "difficulty": 2
       }
     },
     {
       "level_num": 2,
       "level_file": "encoun2.rl2",
-      "route_input_sha256": "CC4A3ED99E947970DE29041A315F37AD8291EAD2782AC230D995E781314DBAE7",
-      "status": "failed",
+      "route_input_sha256": "0120A5585AB4FBD98B975418C2DC877EAC95DD60631708C4FDCE42543AD04424",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -75,7 +81,7 @@
         "state": 2058258651,
         "calls": 46
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "problem": "guided missile objective requires equipment and flight verification"
     },
     {
       "level_num": 3,
@@ -93,37 +99,42 @@
         },
         {
           "n": "red key",
-          "s": 51
+          "s": 49
         },
         {
           "n": "switch 0",
-          "s": 63
+          "s": 61
         },
         {
           "n": "switch 2",
-          "s": 67
+          "s": 65
         },
         {
           "n": "switch 1",
-          "s": 74
+          "s": 71
         },
         {
           "n": "switch 3",
-          "s": 78
+          "s": 75
         },
         {
           "n": "reactor",
-          "s": 84
+          "s": 81
         },
         {
           "n": "exit",
-          "s": 104
+          "s": 102
         }
       ],
-      "total_frames": 6248,
+      "total_frames": 6115,
       "rng_end": {
         "state": 664957054,
         "calls": 7177
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 20.483337,
+        "difficulty": 2
       }
     },
     {
@@ -165,6 +176,11 @@
       "rng_end": {
         "state": 2262560154,
         "calls": 6205
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 12.899994,
+        "difficulty": 2
       }
     },
     {

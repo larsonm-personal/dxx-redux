@@ -83,17 +83,17 @@
         },
         {
           "n": "blue key",
-          "s": 27
+          "s": 25
         },
         {
           "n": "gold key",
-          "s": 59
+          "s": 56
         }
       ],
       "total_frames": 12481,
       "rng_end": {
-        "state": 4076335175,
-        "calls": 145058
+        "state": 679016531,
+        "calls": 147510
       },
       "problem": "route confirmation exceeded 208-second simulation budget"
     },
@@ -213,10 +213,15 @@
           "s": 127
         }
       ],
-      "total_frames": 7637,
+      "total_frames": 7607,
       "rng_end": {
         "state": 544445334,
         "calls": 6865
+      },
+      "reactor_escape": {
+        "countdown_seconds": 1000.0,
+        "simulated_seconds": 117.033325,
+        "difficulty": 2
       }
     }
   ]

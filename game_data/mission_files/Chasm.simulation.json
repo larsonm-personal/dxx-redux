@@ -46,6 +46,11 @@
       "rng_end": {
         "state": 2142186641,
         "calls": 1008
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 5.03334,
+        "difficulty": 2
       }
     },
     {
@@ -96,17 +101,22 @@
         },
         {
           "n": "reactor",
-          "s": 271
+          "s": 270
         },
         {
           "n": "exit",
           "s": 274
         }
       ],
-      "total_frames": 16448,
+      "total_frames": 16440,
       "rng_end": {
         "state": 3687396368,
         "calls": 10167
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 3.53334,
+        "difficulty": 2
       }
     },
     {
@@ -129,21 +139,21 @@
         },
         {
           "n": "switch 0",
-          "s": 92
+          "s": 90
         },
         {
           "n": "red key",
-          "s": 111
+          "s": 108
         },
         {
           "n": "reactor",
-          "s": 172
+          "s": 168
         }
       ],
       "total_frames": 18001,
       "rng_end": {
-        "state": 3079502286,
-        "calls": 8697
+        "state": 722820461,
+        "calls": 8788
       },
       "problem": "route confirmation exceeded 300-second simulation budget"
     },
@@ -204,6 +214,11 @@
       "rng_end": {
         "state": 4069223089,
         "calls": 720
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 7.699997,
+        "difficulty": 2
       }
     },
     {
@@ -229,7 +244,7 @@
           "s": 47
         }
       ],
-      "total_frames": 3778,
+      "total_frames": 3809,
       "rng_end": {
         "state": 1379390971,
         "calls": 6926
@@ -259,6 +274,11 @@
       "rng_end": {
         "state": 898405676,
         "calls": 267
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 5.399994,
+        "difficulty": 2
       }
     }
   ]

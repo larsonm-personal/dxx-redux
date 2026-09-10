@@ -65,11 +65,26 @@ typedef struct route_confirmation_summary {
 	int player_radius;
 	int guidebot_radius;
 	int effective_radius;
+	int starts_from_current_state;
+	/* -1 verifies the whole level; 0/1/2 verify only blue/red/gold pickup */
+	int requested_key;
+	int requested_exit_trigger;
+	int transitioned_level;
+	int transitioned_key_flags;
+	int start_segment;
+	int start_key_flags;
+	int start_position[3];
 	char problem[256];
 	route_confirmation_objective_result objectives[ROUTE_CONFIRMATION_MAX_OBJECTIVES];
 } route_confirmation_summary;
 
 int route_confirmation_start(void);
+int route_confirmation_start_from_current_state(void);
+int route_confirmation_configure_key_goal(const char *key);
+int route_confirmation_commit_player_position(void);
+int route_confirmation_configure_exit_goal(const char *trigger);
+int route_confirmation_handle_requested_exit_trigger(int objnum, int trigger);
+int route_confirmation_run_exit_transition(void);
 int route_confirmation_set_time_limit_seconds(unsigned int seconds);
 /* Test-only speed variation; null selects the canonical 160 percent */
 int route_confirmation_configure_speed(const char *percent);

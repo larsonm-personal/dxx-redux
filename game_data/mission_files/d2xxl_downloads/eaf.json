@@ -384,15 +384,15 @@
         "mine_volume": 43576200.0,
         "mine_volume_normalized": 9.52923,
         "mine_volume_text": "9.5x",
-        "travel_distance": 0.0,
-        "travel_time_seconds": 0,
-        "travel_time_text": "0M:00S",
+        "travel_distance": 8364.4,
+        "travel_time_seconds": 167,
+        "travel_time_text": "2M:47S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "failed",
+        "route_status": "ok",
         "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_completing_key_mask_set": 1,
         "route_steps": [
           {
             "index": 0,
@@ -400,10 +400,245 @@
             "activation_kind": "none",
             "label": "Start",
             "seg": 41
+          },
+          {
+            "index": 1,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "required_weapon": "guided_missile",
+            "label": "Shoot using guided missile",
+            "seg": 455,
+            "wall": 54,
+            "label_pos": {
+              "x": 17.0,
+              "y": -343.8,
+              "z": 58.2
+            },
+            "distance": 1528.6,
+            "trigger": 0,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 196,
+                "side": 0,
+                "wall": 48
+              },
+              {
+                "seg": 205,
+                "side": 0,
+                "wall": 46
+              }
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "required_weapon": "guided_missile",
+            "label": "Shoot using guided missile",
+            "seg": 454,
+            "wall": 55,
+            "label_pos": {
+              "x": 14.9,
+              "y": 352.6,
+              "z": 38.3
+            },
+            "distance": 254.9,
+            "trigger": 1,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 252,
+                "side": 5,
+                "wall": 63
+              },
+              {
+                "seg": 249,
+                "side": 5,
+                "wall": 61
+              },
+              {
+                "seg": 291,
+                "side": 5,
+                "wall": 59
+              },
+              {
+                "seg": 294,
+                "side": 5,
+                "wall": 57
+              }
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "required_weapon": "guided_missile",
+            "label": "Shoot using guided missile",
+            "seg": 295,
+            "wall": 65,
+            "label_pos": {
+              "x": -1221.4,
+              "y": -2.7,
+              "z": 60.8
+            },
+            "distance": 1666.8,
+            "trigger": 2,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 296,
+                "side": 3,
+                "wall": 33
+              },
+              {
+                "seg": 297,
+                "side": 3,
+                "wall": 30
+              },
+              {
+                "seg": 255,
+                "side": 3,
+                "wall": 39
+              },
+              {
+                "seg": 254,
+                "side": 3,
+                "wall": 37
+              }
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "required_weapon": "guided_missile",
+            "label": "Shoot using guided missile",
+            "seg": 253,
+            "wall": 64,
+            "label_pos": {
+              "x": 1221.4,
+              "y": -0.8,
+              "z": -247.3
+            },
+            "distance": 1380.5,
+            "trigger": 3,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 352,
+                "side": 1,
+                "wall": 52
+              },
+              {
+                "seg": 353,
+                "side": 1,
+                "wall": 50
+              }
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "required_weapon": "guided_missile",
+            "label": "Shoot using guided missile",
+            "seg": 370,
+            "wall": 77,
+            "label_pos": {
+              "x": -27.2,
+              "y": -41.3,
+              "z": -281.1
+            },
+            "distance": 955.7,
+            "trigger": 4,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 453,
+                "side": 4,
+                "wall": 71
+              },
+              {
+                "seg": 454,
+                "side": 2,
+                "wall": 67
+              },
+              {
+                "seg": 452,
+                "side": 4,
+                "wall": 69
+              },
+              {
+                "seg": 455,
+                "side": 2,
+                "wall": 73
+              }
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "required_weapon": "guided_missile",
+            "label": "Shoot using guided missile",
+            "seg": 370,
+            "wall": 76,
+            "label_pos": {
+              "x": -27.7,
+              "y": 41.6,
+              "z": -280.9
+            },
+            "distance": 34.3,
+            "trigger": 5,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 478,
+                "side": 1,
+                "wall": 74
+              }
+            ]
+          },
+          {
+            "index": 7,
+            "kind": "reactor",
+            "activation_kind": "destroy_reactor",
+            "label": "Reactor",
+            "seg": 479,
+            "label_pos": {
+              "x": 42.1,
+              "y": 4.4,
+              "z": 287.0
+            },
+            "distance": 2423.0
+          },
+          {
+            "index": 8,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 514,
+            "side": 3,
+            "wall": 86,
+            "label_pos": {
+              "x": 30.8,
+              "y": 4.4,
+              "z": 165.4
+            },
+            "distance": 120.5,
+            "trigger": 7,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "route target unreachable",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]

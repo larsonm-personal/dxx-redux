@@ -256,7 +256,7 @@
         "mine_volume": 5482420.0,
         "mine_volume_normalized": 1.19889,
         "mine_volume_text": "1.2x",
-        "travel_distance": 3648.4,
+        "travel_distance": 3665.7,
         "travel_time_seconds": 73,
         "travel_time_text": "1M:13S",
         "guidebot_count": 0,
@@ -352,6 +352,33 @@
           },
           {
             "index": 5,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "required_weapon": "guided_missile",
+            "label": "Shoot using guided missile",
+            "seg": 303,
+            "wall": 107,
+            "label_pos": {
+              "x": 190.0,
+              "y": -60.0,
+              "z": -114.0
+            },
+            "distance": 8.7,
+            "opens": [
+              {
+                "seg": 302,
+                "side": 0,
+                "wall": 107
+              },
+              {
+                "seg": 303,
+                "side": 2,
+                "wall": 108
+              }
+            ]
+          },
+          {
+            "index": 6,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -361,10 +388,10 @@
               "y": -91.0,
               "z": 340.0
             },
-            "distance": 954.9
+            "distance": 963.5
           },
           {
-            "index": 6,
+            "index": 7,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

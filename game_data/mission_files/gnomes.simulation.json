@@ -35,17 +35,22 @@
         },
         {
           "n": "reactor",
-          "s": 63
+          "s": 62
         },
         {
           "n": "exit",
           "s": 71
         }
       ],
-      "total_frames": 4272,
+      "total_frames": 4251,
       "rng_end": {
         "state": 500965035,
         "calls": 94
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 8.383331,
+        "difficulty": 2
       }
     },
     {
@@ -72,17 +77,22 @@
         },
         {
           "n": "reactor",
-          "s": 60
+          "s": 59
         },
         {
           "n": "exit",
-          "s": 68
+          "s": 73
         }
       ],
-      "total_frames": 4058,
+      "total_frames": 4394,
       "rng_end": {
-        "state": 1621937922,
-        "calls": 117
+        "state": 1848832019,
+        "calls": 118
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 13.75,
+        "difficulty": 2
       }
     },
     {
@@ -105,29 +115,34 @@
         },
         {
           "n": "gold key",
-          "s": 22
+          "s": 23
         },
         {
           "n": "red key",
-          "s": 46
+          "s": 47
         },
         {
           "n": "fly-through 5",
-          "s": 76
-        },
-        {
-          "n": "reactor",
           "s": 78
         },
         {
+          "n": "reactor",
+          "s": 79
+        },
+        {
           "n": "exit",
-          "s": 104
+          "s": 105
         }
       ],
-      "total_frames": 6217,
+      "total_frames": 6305,
       "rng_end": {
         "state": 2581092098,
         "calls": 6261
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 25.900009,
+        "difficulty": 2
       }
     },
     {
@@ -161,10 +176,15 @@
           "s": 111
         }
       ],
-      "total_frames": 6667,
+      "total_frames": 6664,
       "rng_end": {
         "state": 2675232640,
         "calls": 135
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 2.050003,
+        "difficulty": 2
       }
     }
   ]

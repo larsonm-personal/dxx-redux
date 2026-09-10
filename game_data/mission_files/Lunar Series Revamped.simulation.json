@@ -6,16 +6,17 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
-    "timeout": 3
+    "ok": 1,
+    "timeout": 2
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "lo.rdl",
       "route_input_sha256": "3C0BEF257E38C201AD88CBFF8D46333A4FA4DD685486F7AD6C303017EE831B0D",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -24,14 +25,26 @@
         {
           "n": "red key",
           "s": 11
+        },
+        {
+          "n": "reactor",
+          "s": 28
+        },
+        {
+          "n": "exit",
+          "s": 30
         }
       ],
-      "total_frames": 2093,
+      "total_frames": 1822,
       "rng_end": {
-        "state": 3535774167,
-        "calls": 18
+        "state": 2102736524,
+        "calls": 43
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 2.783325,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 2,

@@ -1882,9 +1882,9 @@
         "mine_volume": 30756700.0,
         "mine_volume_normalized": 6.72585,
         "mine_volume_text": "6.7x",
-        "travel_distance": 7710.1,
-        "travel_time_seconds": 154,
-        "travel_time_text": "2M:34S",
+        "travel_distance": 7733.1,
+        "travel_time_seconds": 155,
+        "travel_time_text": "2M:35S",
         "guidebot_count": 1,
         "guidebot_placed": true,
         "guidebot_accessible": true,
@@ -1965,6 +1965,31 @@
           },
           {
             "index": 4,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 6",
+            "seg": 229,
+            "side": 5,
+            "wall": 70,
+            "label_pos": {
+              "x": -140.0,
+              "y": 20.0,
+              "z": 447.0
+            },
+            "distance": 444.6,
+            "trigger": 6,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 231,
+                "side": 4,
+                "wall": 69
+              }
+            ]
+          },
+          {
+            "index": 5,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "gold key",
@@ -1974,11 +1999,11 @@
               "y": -40.0,
               "z": 335.0
             },
-            "distance": 781.1,
+            "distance": 359.5,
             "key": "gold"
           },
           {
-            "index": 5,
+            "index": 6,
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 4",
@@ -2003,7 +2028,7 @@
             ]
           },
           {
-            "index": 6,
+            "index": 7,
             "kind": "key",
             "activation_kind": "pickup_key",
             "label": "red key",
@@ -2017,7 +2042,7 @@
             "key": "red"
           },
           {
-            "index": 7,
+            "index": 8,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -2030,7 +2055,7 @@
             "distance": 711.9
           },
           {
-            "index": 8,
+            "index": 9,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",

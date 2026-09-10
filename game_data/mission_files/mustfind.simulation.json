@@ -83,6 +83,11 @@
       "rng_end": {
         "state": 3902390859,
         "calls": 15550
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 5.583328,
+        "difficulty": 2
       }
     }
   ]

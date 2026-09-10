@@ -87,6 +87,8 @@ struct controller_state {
 };
 
 controller_state State = {};
+int Configured_key_goal = -1;
+int Configured_exit_goal = -1;
 unsigned int Configured_time_limit_seconds =
     ROUTE_CONFIRMATION_DEFAULT_TIME_LIMIT_SECONDS;
 
@@ -176,6 +178,30 @@ int robot_carries_key(const object *objp)
 	       objp->contains_type == OBJ_POWERUP &&
 	       objp->contains_id >= POW_KEY_BLUE &&
 	       objp->contains_id <= POW_KEY_GOLD;
+}
+
+int find_requested_key_source(int key)
+{
+	const int powerup = find_key_object(key);
+	if (powerup >= 0)
+		return powerup;
+	for (int objnum = 0; objnum <= Highest_object_index; ++objnum)
+		if (valid_object(objnum) && robot_carries_key(&Objects[objnum]) &&
+		    Objects[objnum].contains_id == key_powerup_id(key))
+			return objnum;
+	return -1;
+}
+
+int requested_exit_wall(void)
+{
+	const int trigger = State.summary.requested_exit_trigger;
+	if (trigger < 0 || trigger >= Num_triggers ||
+	    (Triggers[trigger].type != TT_EXIT && Triggers[trigger].type != TT_SECRET_EXIT))
+		return -1;
+	for (int wall = 0; wall < Num_walls; ++wall)
+		if (Walls[wall].trigger == trigger)
+			return wall;
+	return -1;
 }
 
 void remove_ordinary_robots(void)
@@ -474,7 +500,29 @@ int prepare_next_goal(int restorer_trigger, int restorer_wall = -1)
 		return 0;
 	}
 	actor = &Objects[State.actor_objnum];
-	level_metadata_rescan_route_from_object(State.actor_objnum);
+	if (State.summary.requested_key >= 0) {
+		if (Players[Player_num].flags & key_player_flag(State.summary.requested_key)) {
+			capture_rng_boundary(&State.summary.rng_end);
+			State.summary.status = ROUTE_CONFIRMATION_CONFIRMED;
+			State.phase = PHASE_IDLE;
+			restore_player_sandbox();
+			return 1;
+		}
+		const int source = find_requested_key_source(State.summary.requested_key);
+		if (source < 0) {
+			fail(ROUTE_CONFIRMATION_FAILED, "requested key is not present in this world");
+			return 0;
+		}
+		level_metadata_rescan_route_to_segment_from_object(State.actor_objnum, Objects[source].segnum);
+	} else if (State.summary.requested_exit_trigger >= 0) {
+		const int wall = requested_exit_wall();
+		if (wall < 0) {
+			fail(ROUTE_CONFIRMATION_FAILED, "requested exit trigger has no valid source");
+			return 0;
+		}
+		level_metadata_rescan_route_to_segment_from_object(State.actor_objnum, Walls[wall].segnum);
+	} else
+		level_metadata_rescan_route_from_object(State.actor_objnum);
 	if (level_metadata_live_route_work_pending()) {
 		State.phase = PHASE_WAIT_FOR_REPLAN;
 		State.pending_restorer_trigger = restorer_trigger;
@@ -562,6 +610,39 @@ int prepare_next_goal(int restorer_trigger, int restorer_wall = -1)
 	        selected_index))
 		return 0;
 	State.step = metadata->route_steps[selected_index];
+	if (State.summary.requested_exit_trigger >= 0 && State.step.kind == LEVEL_METADATA_ROUTE_UNEXPLORED) {
+		const int wall = requested_exit_wall();
+		if (wall < 0) {
+			fail(ROUTE_CONFIRMATION_FAILED, "requested exit source disappeared");
+			return 0;
+		}
+		State.step.kind = LEVEL_METADATA_ROUTE_EXIT;
+		State.step.activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT;
+		State.step.seg = Walls[wall].segnum;
+		State.step.side = Walls[wall].sidenum;
+		State.step.wall_num = wall;
+		State.step.trigger_num = State.summary.requested_exit_trigger;
+		State.step.trigger_type = Triggers[State.step.trigger_num].type;
+		snprintf(State.step.label, sizeof(State.step.label), "%s", "Exit trigger");
+		route_goal = escort_route_build_goal_for_step(&State.step, &State.goal);
+	}
+	if (State.summary.requested_key >= 0 && State.step.kind == LEVEL_METADATA_ROUTE_UNEXPLORED) {
+		const int source = find_requested_key_source(State.summary.requested_key);
+		if (source < 0) {
+			fail(ROUTE_CONFIRMATION_FAILED, "requested key source disappeared");
+			return 0;
+		}
+		State.step.kind = LEVEL_METADATA_ROUTE_KEY;
+		State.step.key_index = State.summary.requested_key;
+		State.step.activation_kind = robot_carries_key(&Objects[source])
+		                                 ? LEVEL_METADATA_ROUTE_ACTIVATION_DESTROY_KEY_CARRIER
+		                                 : LEVEL_METADATA_ROUTE_ACTIVATION_PICKUP_KEY;
+		const char *color = State.step.key_index == 0 ? "blue" : State.step.key_index == 1 ? "red"
+		                                                                                   : "gold";
+		snprintf(State.step.label, sizeof(State.step.label), "%s%s key",
+		         robot_carries_key(&Objects[source]) ? "Destroy robot carrying " : "", color);
+		route_goal = escort_route_build_goal_for_step(&State.step, &State.goal);
+	}
 
 	if (reopen_unfired_trigger)
 		State.step.is_switch_restorer = LEVEL_METADATA_ROUTE_RECOVERY_ACCESS;
@@ -1767,11 +1848,14 @@ void apply_objective_action(object *actor)
 }
 } // namespace
 
-extern "C" int route_confirmation_start(void)
+static int start_confirmation(int from_current_state)
 {
 	const game_d_tick_state tick_state = { 0, 0, 0 };
 	object *actor;
 	memset(&State, 0, sizeof(State));
+	State.summary.starts_from_current_state = from_current_state;
+	State.summary.requested_key = Configured_key_goal;
+	State.summary.requested_exit_trigger = Configured_exit_goal;
 	State.summary.status = ROUTE_CONFIRMATION_RUNNING;
 	State.summary.seed = ROUTE_CONFIRMATION_CANONICAL_SEED;
 	State.summary.fixed_hz = ROUTE_CONFIRMATION_FIXED_HZ;
@@ -1788,10 +1872,15 @@ extern "C" int route_confirmation_start(void)
 	capture_rng_boundary(&State.summary.rng_start);
 	State.summary.rng_end = State.summary.rng_start;
 	game_set_d_tick_state(&tick_state);
-	Difficulty_level = 2;
+	if (!from_current_state)
+		Difficulty_level = 2;
 	if (Game_mode != GM_NORMAL) {
 		fail(ROUTE_CONFIRMATION_UNSUPPORTED,
 		     "canonical route confirmation requires a local single-player game");
+		return 0;
+	}
+	if (from_current_state && !ConsoleObject) {
+		fail(ROUTE_CONFIRMATION_UNSUPPORTED, "saved-state confirmation requires a restored player");
 		return 0;
 	}
 	escort_spawn_at_player();
@@ -1807,19 +1896,26 @@ extern "C" int route_confirmation_start(void)
 	 * visible game follows the route instead of remaining at player start. */
 	Viewer = actor;
 #endif
-	/* Headed automation can start several presentation frames after level load.
-	 * Always begin from the authored player start, not the player's incidental
-	 * gravity-adjusted position at the instant the command was dispatched. */
-	actor->pos = Player_init[Player_num].pos;
+	/* Authored-start runs ignore incidental presentation-frame movement.
+	 * Explicit saved-state runs begin at the restored player's actual pose. */
+	const vms_vector start_pos = from_current_state && ConsoleObject ? ConsoleObject->pos : Player_init[Player_num].pos;
+	const vms_matrix start_orient = from_current_state && ConsoleObject ? ConsoleObject->orient : Player_init[Player_num].orient;
+	const int start_seg = from_current_state && ConsoleObject ? ConsoleObject->segnum : Player_init[Player_num].segnum;
+	State.summary.start_segment = start_seg;
+	State.summary.start_key_flags = Players[Player_num].flags & (KEY_BLUE | KEY_RED | KEY_GOLD);
+	State.summary.start_position[0] = start_pos.x;
+	State.summary.start_position[1] = start_pos.y;
+	State.summary.start_position[2] = start_pos.z;
+	actor->pos = start_pos;
 	actor->last_pos = actor->pos;
-	actor->orient = Player_init[Player_num].orient;
-	obj_relink(State.actor_objnum, Player_init[Player_num].segnum);
+	actor->orient = start_orient;
+	obj_relink(State.actor_objnum, start_seg);
 	if (ConsoleObject) {
-		ConsoleObject->pos = Player_init[Player_num].pos;
+		ConsoleObject->pos = start_pos;
 		ConsoleObject->last_pos = ConsoleObject->pos;
-		ConsoleObject->orient = Player_init[Player_num].orient;
+		ConsoleObject->orient = start_orient;
 		obj_relink((int) (ConsoleObject - Objects),
-		           Player_init[Player_num].segnum);
+		           start_seg);
 		sandbox_player(ConsoleObject);
 	}
 	vm_vec_zero(&actor->mtype.phys_info.velocity);
@@ -1840,6 +1936,47 @@ extern "C" int route_confirmation_start(void)
 	remove_ordinary_robots();
 	memset(&Controls, 0, sizeof(Controls));
 	return prepare_next_goal(-1);
+}
+
+extern "C" int route_confirmation_start(void)
+{
+	return start_confirmation(0);
+}
+
+extern "C" int route_confirmation_start_from_current_state(void)
+{
+	return start_confirmation(1);
+}
+
+extern "C" int route_confirmation_commit_player_position(void)
+{
+	if (State.summary.status != ROUTE_CONFIRMATION_CONFIRMED ||
+	    !valid_object(State.actor_objnum) || !ConsoleObject)
+		return 0;
+	const object *actor = &Objects[State.actor_objnum];
+	ConsoleObject->pos = actor->pos;
+	ConsoleObject->last_pos = actor->pos;
+	ConsoleObject->orient = actor->orient;
+	obj_relink(static_cast<int>(ConsoleObject - Objects), actor->segnum);
+	vm_vec_zero(&ConsoleObject->mtype.phys_info.velocity);
+	vm_vec_zero(&ConsoleObject->mtype.phys_info.rotvel);
+	return 1;
+}
+
+extern "C" int route_confirmation_run_exit_transition(void)
+{
+	const int wall = requested_exit_wall();
+	if (wall < 0 || !route_confirmation_commit_player_position() ||
+	    (Current_level_num >= 0 && Triggers[State.summary.requested_exit_trigger].type != TT_SECRET_EXIT))
+		return 0;
+	const int previous_level = Current_level_num;
+	check_trigger(&Segments[Walls[wall].segnum], static_cast<short>(Walls[wall].sidenum),
+	              static_cast<short>(ConsoleObject - Objects), 0);
+	if (Current_level_num == previous_level)
+		return 0;
+	State.summary.transitioned_level = Current_level_num;
+	State.summary.transitioned_key_flags = Players[Player_num].flags & (KEY_BLUE | KEY_RED | KEY_GOLD);
+	return 1;
 }
 
 extern "C" void route_confirmation_prepare_frame_time(void)
@@ -2071,6 +2208,29 @@ extern "C" int route_confirmation_set_time_limit_seconds(
 	return 1;
 }
 
+extern "C" int route_confirmation_configure_key_goal(const char *key)
+{
+	if (State.summary.status == ROUTE_CONFIRMATION_RUNNING)
+		return 0;
+	if (!key) Configured_key_goal = -1;
+	else if (!strcmp(key, "blue")) Configured_key_goal = 0;
+	else if (!strcmp(key, "red")) Configured_key_goal = 1;
+	else if (!strcmp(key, "gold")) Configured_key_goal = 2;
+	else return 0;
+	return 1;
+}
+
+extern "C" int route_confirmation_configure_exit_goal(const char *trigger)
+{
+	char *end = NULL;
+	const long value = trigger ? strtol(trigger, &end, 10) : -1;
+	if (State.summary.status == ROUTE_CONFIRMATION_RUNNING ||
+	    (trigger && (!*trigger || !end || *end || value < 0 || value >= MAX_TRIGGERS)))
+		return 0;
+	Configured_exit_goal = static_cast<int>(value);
+	return 1;
+}
+
 extern "C" int route_confirmation_configure_speed(const char *percent)
 {
 	char *end = NULL;
@@ -2188,6 +2348,27 @@ extern "C" int route_confirmation_handle_exit_trigger(int objnum)
 	return 1;
 }
 
+extern "C" int route_confirmation_handle_requested_exit_trigger(int objnum, int trigger)
+{
+	if (State.summary.requested_exit_trigger < 0 || objnum != State.actor_objnum ||
+	    (State.summary.status != ROUTE_CONFIRMATION_RUNNING && State.summary.status != ROUTE_CONFIRMATION_CONFIRMED))
+		return 0;
+	if (State.summary.status == ROUTE_CONFIRMATION_RUNNING) {
+		if (trigger != State.summary.requested_exit_trigger) {
+			fail(ROUTE_CONFIRMATION_FAILED, "encountered a different exit during requested scenario");
+			return 1;
+		}
+		State.step.kind = LEVEL_METADATA_ROUTE_EXIT;
+		State.step.activation_kind = LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT;
+		State.step.trigger_num = trigger;
+		snprintf(State.step.label, sizeof(State.step.label), "%s", "Exit trigger");
+		State.summary.current_kind = State.step.kind;
+		State.summary.current_activation_kind = State.step.activation_kind;
+		record_objective_and_replan();
+	}
+	return 1;
+}
+
 extern "C" int route_confirmation_handle_final_boss_endlevel(void)
 {
 	if (State.summary.status != ROUTE_CONFIRMATION_RUNNING ||
@@ -2206,7 +2387,32 @@ extern "C" const route_confirmation_summary *route_confirmation_get_summary(void
 
 #else
 
+extern "C" int route_confirmation_configure_exit_goal(const char *)
+{
+	return 0;
+}
+extern "C" int route_confirmation_handle_requested_exit_trigger(int, int)
+{
+	return 0;
+}
+extern "C" int route_confirmation_run_exit_transition(void)
+{
+	return 0;
+}
+
 extern "C" int route_confirmation_start(void)
+{
+	return 0;
+}
+extern "C" int route_confirmation_start_from_current_state(void)
+{
+	return 0;
+}
+extern "C" int route_confirmation_configure_key_goal(const char *)
+{
+	return 0;
+}
+extern "C" int route_confirmation_commit_player_position(void)
 {
 	return 0;
 }

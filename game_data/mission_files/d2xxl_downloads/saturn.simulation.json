@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
+    "ok": 3,
     "failed": 1,
-    "timeout": 2
+    "timeout": 3
   },
   "levels": [
     {
@@ -43,6 +43,11 @@
       "rng_end": {
         "state": 3093135043,
         "calls": 3526
+      },
+      "reactor_escape": {
+        "countdown_seconds": 80.0,
+        "simulated_seconds": 25.333328,
+        "difficulty": 2
       }
     },
     {
@@ -65,8 +70,8 @@
     {
       "level_num": 3,
       "level_file": "TUNNEL.RL2",
-      "route_input_sha256": "059A24592FDA3F5676CE031BAAD7B81F48ED41CDE61B84948DD10976B15F8768",
-      "status": "ok",
+      "route_input_sha256": "7DBCE0207A9C5D77F4ACE5DF4F02CF8D7E2D74D4AEF237405C2571C2F10AEB5E",
+      "status": "timeout",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -90,46 +95,27 @@
         },
         {
           "n": "hidden door",
-          "s": 67
+          "s": 65
         },
         {
           "n": "switch 17",
-          "s": 67
+          "s": 65
         },
         {
           "n": "switch 2",
-          "s": 71
+          "s": 69
         },
         {
           "n": "switch 6",
-          "s": 73
-        },
-        {
-          "n": "pass-through 23",
-          "s": 86
-        },
-        {
-          "n": "pass-through 4",
-          "s": 93
-        },
-        {
-          "n": "switch 7",
-          "s": 99
-        },
-        {
-          "n": "switch 24",
-          "s": 107
-        },
-        {
-          "n": "exit",
-          "s": 140
+          "s": 72
         }
       ],
-      "total_frames": 8397,
+      "total_frames": 5530,
       "rng_end": {
-        "state": 835828633,
-        "calls": 13736
-      }
+        "state": 2561765455,
+        "calls": 11418
+      },
+      "problem": "physical route frontier did not open after 8 interaction attempts"
     },
     {
       "level_num": 4,
@@ -231,6 +217,11 @@
       "rng_end": {
         "state": 1195529845,
         "calls": 652
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 1.283325,
+        "difficulty": 2
       }
     }
   ]

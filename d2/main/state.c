@@ -2356,7 +2356,8 @@ int state_save_all_sub(char *filename, char *desc)
 	PHYSFS_write(fp, desc, sizeof(char) * DESC_LENGTH, 1);
 
 // Save the current screen shot...
-	if (g_android_save_blank_thumbnail) {
+	// Headless verification saves native world state without a render context
+	if (g_android_save_blank_thumbnail || GameArg.SysInputDemoNoRender) {
 		state_write_blank_thumbnail(fp);
 	} else {
 	cnv = gr_create_canvas( THUMBNAIL_W, THUMBNAIL_H );

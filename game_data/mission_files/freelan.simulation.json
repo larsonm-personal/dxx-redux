@@ -27,17 +27,22 @@
         },
         {
           "n": "reactor",
-          "s": 9
+          "s": 8
         },
         {
           "n": "exit",
           "s": 11
         }
       ],
-      "total_frames": 656,
+      "total_frames": 653,
       "rng_end": {
         "state": 2577478752,
         "calls": 39
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 2.416672,
+        "difficulty": 2
       }
     },
     {
@@ -60,21 +65,26 @@
         },
         {
           "n": "red key",
-          "s": 37
+          "s": 35
         },
         {
           "n": "reactor",
-          "s": 53
+          "s": 51
         },
         {
           "n": "exit",
-          "s": 71
+          "s": 69
         }
       ],
-      "total_frames": 4273,
+      "total_frames": 4160,
       "rng_end": {
         "state": 2077067425,
         "calls": 96
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 17.866669,
+        "difficulty": 2
       }
     },
     {
@@ -112,6 +122,11 @@
       "rng_end": {
         "state": 3269224778,
         "calls": 77
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 6.966675,
+        "difficulty": 2
       }
     },
     {
@@ -145,10 +160,15 @@
           "s": 69
         }
       ],
-      "total_frames": 4165,
+      "total_frames": 4127,
       "rng_end": {
         "state": 500965035,
         "calls": 94
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 9.033325,
+        "difficulty": 2
       }
     },
     {
@@ -167,29 +187,34 @@
         },
         {
           "n": "destroy robot carrying gold key",
-          "s": 22
+          "s": 23
         },
         {
           "n": "red key",
-          "s": 46
+          "s": 48
         },
         {
           "n": "fly-through 0",
-          "s": 72
+          "s": 74
         },
         {
           "n": "reactor",
-          "s": 72
+          "s": 74
         },
         {
           "n": "exit",
-          "s": 80
+          "s": 82
         }
       ],
-      "total_frames": 4770,
+      "total_frames": 4921,
       "rng_end": {
-        "state": 2316746429,
-        "calls": 132
+        "state": 2675232640,
+        "calls": 135
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 7.53334,
+        "difficulty": 2
       }
     },
     {
@@ -212,7 +237,7 @@
         },
         {
           "n": "fly-through 1",
-          "s": 42
+          "s": 41
         },
         {
           "n": "fly-through 2",
@@ -228,13 +253,18 @@
         },
         {
           "n": "exit",
-          "s": 95
+          "s": 93
         }
       ],
-      "total_frames": 5678,
+      "total_frames": 5561,
       "rng_end": {
-        "state": 745569348,
-        "calls": 147
+        "state": 1598124042,
+        "calls": 141
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 11.933319,
+        "difficulty": 2
       }
     },
     {
@@ -272,6 +302,11 @@
       "rng_end": {
         "state": 3737188581,
         "calls": 156
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 5.133331,
+        "difficulty": 2
       }
     }
   ]

@@ -874,7 +874,7 @@
         "guidebot_accessible": false,
         "route_status": "ok",
         "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 11,
+        "route_completing_key_mask_set": 3,
         "route_steps": [
           {
             "index": 0,
@@ -2014,7 +2014,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open hidden door",
             "seg": 26,
-            "side": 4,
             "wall": 7,
             "label_pos": {
               "x": 21.1,

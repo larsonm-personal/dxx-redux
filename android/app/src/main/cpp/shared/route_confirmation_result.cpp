@@ -34,6 +34,26 @@ nlohmann::ordered_json serialize_result(const route_confirmation_summary &summar
 	result["mission"] = mission && *mission ? mission : "d2";
 	result["level"] = level;
 	result["status"] = route_confirmation_status_name(summary.status);
+	if (summary.requested_key >= 0) {
+		result["verification_goal"] = {
+			{ "kind", "key_pickup" },
+			{ "key", summary.requested_key == 0 ? "blue" : summary.requested_key == 1 ? "red"
+			                                                                          : "gold" },
+			{ "initial_key_flags", summary.start_key_flags }
+		};
+	}
+	if (summary.requested_exit_trigger >= 0)
+		result["verification_goal"] = { { "kind", "exit_trigger" }, { "trigger", summary.requested_exit_trigger } };
+	if (summary.transitioned_level)
+		result["native_transition"] = { { "from_level", level }, { "to_level", summary.transitioned_level }, { "key_flags", summary.transitioned_key_flags } };
+	if (summary.starts_from_current_state) {
+		result["start_state"] = {
+			{ "kind", "saved_world" },
+			{ "segment", summary.start_segment },
+			{ "key_flags", summary.start_key_flags },
+			{ "position_fixed", { summary.start_position[0], summary.start_position[1], summary.start_position[2] } }
+		};
+	}
 	const auto texture_notes = level_texture_diagnostic_notes();
 	if (!texture_notes.empty())
 		result["notes"] = texture_notes;
@@ -97,7 +117,7 @@ nlohmann::ordered_json serialize_result(const route_confirmation_summary &summar
 		objective_seconds.push_back(fixed_seconds(objective.completed_ticks));
 	}
 	result["objectives"] = objectives;
-	if (summary.status == ROUTE_CONFIRMATION_CONFIRMED) {
+	if (summary.status == ROUTE_CONFIRMATION_CONFIRMED && !summary.starts_from_current_state && summary.requested_key < 0 && summary.requested_exit_trigger < 0) {
 		result["route_confirmation"] = {
 			{ "status", "confirmed" },
 			{ "generation", 1 },

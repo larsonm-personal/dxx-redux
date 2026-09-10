@@ -191,7 +191,6 @@
             "activation_kind": "open_hidden_door",
             "label": "Open door",
             "seg": 45,
-            "side": 4,
             "wall": 16,
             "label_pos": {
               "x": 0.3,

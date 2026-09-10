@@ -5,10 +5,9 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 8,
-    "timeout": 1
+    "ok": 9
   },
   "levels": [
     {
@@ -43,17 +42,22 @@
         },
         {
           "n": "reactor",
-          "s": 104
+          "s": 100
         },
         {
           "n": "exit",
-          "s": 119
+          "s": 116
         }
       ],
-      "total_frames": 7161,
+      "total_frames": 6958,
       "rng_end": {
-        "state": 3767401855,
-        "calls": 5738
+        "state": 2768218955,
+        "calls": 5054
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 15.583328,
+        "difficulty": 2
       }
     },
     {
@@ -84,17 +88,22 @@
         },
         {
           "n": "reactor",
-          "s": 107
+          "s": 108
         },
         {
           "n": "exit",
           "s": 125
         }
       ],
-      "total_frames": 7489,
+      "total_frames": 7501,
       "rng_end": {
-        "state": 841718948,
-        "calls": 4275
+        "state": 4057456400,
+        "calls": 4279
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 17.100006,
+        "difficulty": 2
       }
     },
     {
@@ -132,6 +141,11 @@
       "rng_end": {
         "state": 4247328912,
         "calls": 4407
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 6.933334,
+        "difficulty": 2
       }
     },
     {
@@ -173,6 +187,11 @@
       "rng_end": {
         "state": 1595650343,
         "calls": 5058
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 15.483322,
+        "difficulty": 2
       }
     },
     {
@@ -191,15 +210,15 @@
         },
         {
           "n": "switch 1",
-          "s": 37
+          "s": 36
         },
         {
           "n": "gold key",
-          "s": 44
+          "s": 43
         },
         {
           "n": "switch 2",
-          "s": 82
+          "s": 81
         },
         {
           "n": "hidden door",
@@ -211,17 +230,22 @@
         },
         {
           "n": "reactor",
-          "s": 100
+          "s": 99
         },
         {
           "n": "exit",
-          "s": 106
+          "s": 105
         }
       ],
-      "total_frames": 6340,
+      "total_frames": 6305,
       "rng_end": {
         "state": 3633383364,
         "calls": 3859
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 5.75,
+        "difficulty": 2
       }
     },
     {
@@ -244,36 +268,41 @@
         },
         {
           "n": "switch 4",
-          "s": 31
+          "s": 30
         },
         {
           "n": "gold key",
-          "s": 39
+          "s": 38
         },
         {
           "n": "red key",
-          "s": 58
+          "s": 57
         },
         {
           "n": "reactor",
-          "s": 87
+          "s": 86
         },
         {
           "n": "exit",
-          "s": 100
+          "s": 99
         }
       ],
-      "total_frames": 6028,
+      "total_frames": 5962,
       "rng_end": {
         "state": 2734573263,
         "calls": 3610
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 13.116653,
+        "difficulty": 2
       }
     },
     {
       "level_num": 7,
       "level_file": "hotspot.rl2",
       "route_input_sha256": "8DD50D182C31CFFC5E2274743428930FF29FAFCE3ACC0A947447785F87DADA36",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -298,14 +327,26 @@
         {
           "n": "red key",
           "s": 56
+        },
+        {
+          "n": "reactor",
+          "s": 82
+        },
+        {
+          "n": "exit",
+          "s": 91
         }
       ],
-      "total_frames": 7054,
+      "total_frames": 5457,
       "rng_end": {
-        "state": 3594376121,
-        "calls": 1672
+        "state": 919002371,
+        "calls": 1926
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 9.0,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 8,
@@ -342,6 +383,11 @@
       "rng_end": {
         "state": 782268359,
         "calls": 1826
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 2.183319,
+        "difficulty": 2
       }
     },
     {
@@ -360,15 +406,15 @@
         },
         {
           "n": "switch 1",
-          "s": 37
+          "s": 36
         },
         {
           "n": "gold key",
-          "s": 44
+          "s": 43
         },
         {
           "n": "switch 2",
-          "s": 82
+          "s": 81
         },
         {
           "n": "hidden door",
@@ -380,17 +426,22 @@
         },
         {
           "n": "reactor",
-          "s": 100
+          "s": 99
         },
         {
           "n": "exit",
-          "s": 106
+          "s": 105
         }
       ],
-      "total_frames": 6340,
+      "total_frames": 6305,
       "rng_end": {
         "state": 3633383364,
         "calls": 3859
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 5.75,
+        "difficulty": 2
       }
     }
   ]

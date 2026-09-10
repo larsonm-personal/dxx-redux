@@ -8,8 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 6,
-    "timeout": 2
+    "ok": 7,
+    "timeout": 1
   },
   "levels": [
     {
@@ -32,17 +32,22 @@
         },
         {
           "n": "reactor",
-          "s": 22
+          "s": 21
         },
         {
           "n": "exit",
           "s": 24
         }
       ],
-      "total_frames": 1466,
+      "total_frames": 1432,
       "rng_end": {
         "state": 4200531631,
         "calls": 58
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 2.899994,
+        "difficulty": 2
       }
     },
     {
@@ -68,17 +73,22 @@
           "s": 28
         }
       ],
-      "total_frames": 1690,
+      "total_frames": 1696,
       "rng_end": {
-        "state": 304110280,
-        "calls": 8095
+        "state": 1477089574,
+        "calls": 8065
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 5.416672,
+        "difficulty": 2
       }
     },
     {
       "level_num": 3,
       "level_file": "THEHIVE3.RDL",
       "route_input_sha256": "15AB9B5A0A67A56D757F9CD8571864FE0B2FBB77BD7A240F73B6F736D39837FB",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -87,14 +97,34 @@
         {
           "n": "blue key",
           "s": 14
+        },
+        {
+          "n": "red key",
+          "s": 33
+        },
+        {
+          "n": "fly-through 2",
+          "s": 34
+        },
+        {
+          "n": "reactor",
+          "s": 43
+        },
+        {
+          "n": "exit",
+          "s": 50
         }
       ],
-      "total_frames": 2173,
+      "total_frames": 2980,
       "rng_end": {
-        "state": 4146364565,
-        "calls": 4972
+        "state": 1464926476,
+        "calls": 5035
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 6.733337,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 4,
@@ -183,6 +213,11 @@
       "rng_end": {
         "state": 2035161149,
         "calls": 6916
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 21.983322,
+        "difficulty": 2
       }
     },
     {
@@ -220,6 +255,11 @@
       "rng_end": {
         "state": 841974512,
         "calls": 7511
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 9.016663,
+        "difficulty": 2
       }
     },
     {
@@ -250,13 +290,18 @@
         },
         {
           "n": "exit",
-          "s": 107
+          "s": 106
         }
       ],
-      "total_frames": 6398,
+      "total_frames": 6386,
       "rng_end": {
         "state": 856000655,
         "calls": 90
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 16.649994,
+        "difficulty": 2
       }
     },
     {
@@ -294,6 +339,11 @@
       "rng_end": {
         "state": 2784727109,
         "calls": 6716
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 15.183334,
+        "difficulty": 2
       }
     },
     {

@@ -54,6 +54,11 @@
       "rng_end": {
         "state": 1149812319,
         "calls": 3978
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 12.933319,
+        "difficulty": 2
       }
     },
     {
@@ -91,6 +96,11 @@
       "rng_end": {
         "state": 3863488330,
         "calls": 6733
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 5.25,
+        "difficulty": 2
       }
     },
     {
@@ -136,6 +146,11 @@
       "rng_end": {
         "state": 2698671303,
         "calls": 6690
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 24.399994,
+        "difficulty": 2
       }
     },
     {
@@ -153,10 +168,10 @@
           "s": 16
         }
       ],
-      "total_frames": 6368,
+      "total_frames": 6186,
       "rng_end": {
-        "state": 2972414875,
-        "calls": 5486
+        "state": 2604237436,
+        "calls": 5499
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },
@@ -183,6 +198,11 @@
       "rng_end": {
         "state": 1522838962,
         "calls": 901
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 22.783325,
+        "difficulty": 2
       }
     },
     {
@@ -208,6 +228,11 @@
       "rng_end": {
         "state": 3320089730,
         "calls": 245
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 3.649994,
+        "difficulty": 2
       }
     }
   ]

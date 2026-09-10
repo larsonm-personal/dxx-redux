@@ -86,6 +86,11 @@
       "rng_end": {
         "state": 2243486443,
         "calls": 11294
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 6.616653,
+        "difficulty": 2
       }
     },
     {
@@ -191,6 +196,11 @@
       "rng_end": {
         "state": 352727154,
         "calls": 16325
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 7.0,
+        "difficulty": 2
       }
     },
     {
@@ -242,7 +252,7 @@
     {
       "level_num": 4,
       "level_file": "harqyj04.rl2",
-      "route_input_sha256": "5A52E2DB3A8025ACDEB05050999EE3B782087842A3D0DC883199C6A2D29442BF",
+      "route_input_sha256": "12D3D938E02315ADA8E40039548FDEB161593356CEB63564F876BA88A53CC6EC",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -266,34 +276,39 @@
           "s": 51
         },
         {
+          "n": "switch 18",
+          "s": 58
+        },
+        {
           "n": "gold key",
           "s": 59
         },
         {
-          "n": "switch 18",
-          "s": 65
-        },
-        {
           "n": "switch 1",
-          "s": 106
+          "s": 102
         },
         {
           "n": "red key",
-          "s": 145
+          "s": 140
         },
         {
           "n": "boss",
-          "s": 171
+          "s": 166
         },
         {
           "n": "exit",
-          "s": 176
+          "s": 171
         }
       ],
-      "total_frames": 10545,
+      "total_frames": 10237,
       "rng_end": {
-        "state": 4028167740,
-        "calls": 11963
+        "state": 1766199037,
+        "calls": 11844
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 4.649994,
+        "difficulty": 2
       }
     },
     {
@@ -323,6 +338,11 @@
       "rng_end": {
         "state": 1810366979,
         "calls": 17030
+      },
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 2.833328,
+        "difficulty": 2
       }
     }
   ]
