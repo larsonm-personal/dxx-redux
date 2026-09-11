@@ -1,5 +1,6 @@
 #!/usr/bin/env pwsh
 
+Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $runner = Join-Path $repoRoot 'android\helpers\regenerate_all_guidebot_simulations.ps1'
@@ -80,7 +81,7 @@ try {
     }
     $routingSet = @(Invoke-DryRun -Name routing_set -RoutingDevelopmentSet)
     $routingFiles = @($routingSet.identity | ForEach-Object { $_.Split('|')[0] } | Select-Object -Unique)
-    if (($routingFiles -join ',') -cne 'af_d1_beta.json,Bahagad.json,bitesize.json,castaway_redux.json,CD - Descent II - The Vertigo Series (USA).json,Counterstrike.json,descent_maximum_fixed.json,EAF.json,EAF2.json,Entropy2.json,FirstStrike.json,Lostlvls.json,Mandrill.json,Obsidian.json,plutonia.json,TEW.json,Vignettes.json') {
+    if (($routingFiles -join ',') -cne 'af_d1_beta.json,Bahagad.json,bitesize.json,castaway_redux.json,CD - Descent II - The Vertigo Series (USA).json,Counterstrike.json,descent_maximum_fixed.json,diehard.json,EAF.json,EAF2.json,Entropy2.json,FirstStrike.json,Lostlvls.json,Mandrill.json,Obsidian.json,plutonia.json,TEW.json,Vignettes.json') {
         throw "Routing development set selected unexpected mission files: $($routingFiles -join ', ')"
     }
     $tew = @($routingSet | Where-Object { $_.identity -like 'TEW.json|*' })
@@ -96,10 +97,10 @@ try {
     if ($maximum.Count -ne 36 -or $af.Count -ne 10 -or $mandrill.Count -ne 7) {
         throw 'The expanded set must include both Descent Maximum variants, ten AF levels, and seven Mandrill levels'
     }
-    if ($routingSet.Count -ne 343 -or $tew.Count -ne 32 -or $plutonia.Count -ne 32 -or $vertigo.Count -ne 24 -or $vignettes.Count -ne 27 -or $entropy2.Count -ne 6) {
-        throw 'The seventeen-mission set must include 343 total levels'
+    if ($routingSet.Count -ne 362 -or $tew.Count -ne 32 -or $plutonia.Count -ne 32 -or $vertigo.Count -ne 24 -or $vignettes.Count -ne 27 -or $entropy2.Count -ne 6) {
+        throw 'The eighteen-mission set must include 362 total levels'
     }
-    foreach ($entry in @(@{ Name = 'Lostlvls'; Count = 25 }, @{ Name = 'EAF2'; Count = 10 }, @{ Name = 'EAF'; Count = 5 }, @{ Name = 'Bahagad'; Count = 10 })) {
+    foreach ($entry in @(@{ Name = 'Lostlvls'; Count = 25 }, @{ Name = 'EAF2'; Count = 10 }, @{ Name = 'EAF'; Count = 5 }, @{ Name = 'Bahagad'; Count = 10 }, @{ Name = 'diehard'; Count = 19 })) {
         if (@($routingSet | Where-Object { $_.identity -like "$($entry.Name).json|*" }).Count -ne $entry.Count) {
             throw "Expanded set omitted levels from $($entry.Name)"
         }
@@ -144,6 +145,22 @@ try {
     if ($failedLevel.Count -ne 1 -or $failedLevel[0].status -ne 'infrastructure_error' -or
         -not [string]$failedLevel[0].problem) {
         throw 'Infrastructure failure was not published in the level regression result'
+    }
+    $unsupportedMetadata = Join-Path $tempRoot 'unsupported_metadata'
+    New-Item -ItemType Directory -Path $unsupportedMetadata -Force | Out-Null
+    foreach ($problem in @('unsupported level version 23 (maximum 8)', 'invalid level header')) {
+        $mission = Get-Content -LiteralPath (Join-Path $repoRoot 'game_data/mission_files/Counterstrike.json') -Raw | ConvertFrom-Json
+        $mission.levels = @($mission.levels[0])
+        $mission.levels[0] | Add-Member -NotePropertyName route_problem -NotePropertyValue $problem -Force
+        $mission.levels[0] | Add-Member -NotePropertyName status -NotePropertyValue failed -Force
+        [IO.File]::WriteAllText((Join-Path $unsupportedMetadata 'unsupported.json'), ($mission | ConvertTo-Json -Depth 100))
+        $unsupportedRoot = Join-Path $tempRoot ('unsupported-' + [guid]::NewGuid().ToString('N'))
+        & $runner -NoBuild -MissionMetadataRoot $unsupportedMetadata -OutputRoot $unsupportedRoot -HeadlessExecutable $pwsh | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw 'Known unreadable level launched the route engine' }
+        $unsupported = Get-Content -LiteralPath (Join-Path $unsupportedRoot 'results/unsupported.simulation.json') -Raw | ConvertFrom-Json
+        if ($unsupported.levels[0].status -ne 'unsupported' -or $unsupported.levels[0].problem -ne $problem) {
+            throw 'Unsupported level diagnostic was not retained in simulation output'
+        }
     }
     Write-Host 'GuideBot simulation runner discovery and sampling passed'
 } finally {

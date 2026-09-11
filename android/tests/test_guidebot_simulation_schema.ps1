@@ -245,6 +245,33 @@ foreach ($arrayRoot in @($false, $true)) {
     }
 }
 
+# Collection publication must preserve other missions and refresh its snapshot on the next write
+$collectionMissions = @(foreach ($index in @(0, 1)) {
+        $entry = $mission.PSObject.Copy()
+        $entry.target_index = $index
+        $entry | Add-Member -NotePropertyName game -NotePropertyValue d2 -Force
+        $entry
+    })
+$collectionMetadata = Join-Path $missionRoot 'collection.json'
+$collectionOutput = Join-Path $missionRoot 'collection.simulation.json'
+Write-GuidebotSimulationJson -Path $collectionMetadata -Value $collectionMissions
+$collectionRecords = @(foreach ($entry in $collectionMissions) {
+        $result = ConvertTo-GuidebotLevelSimulationResult -Mission $entry -Level $entry.levels[0] -EngineResult $engine
+        New-GuidebotMissionSimulationRecord -Mission $entry -Levels @($result)
+    })
+Write-GuidebotSimulationJson -Path $collectionOutput -Value $collectionRecords
+$untouched = ConvertTo-GuidebotNormalizedJsonText $collectionRecords[1]
+$updated = $collectionRecords[0].levels[0].PSObject.Copy()
+$updated.status = 'timeout'
+Write-GuidebotSimulationFile -MetadataFile (Get-Item $collectionMetadata) -Destination $collectionOutput `
+    -ResultsByIdentity @{ 'collection.json|0|1|fixture-1.rl2' = $updated }
+Write-GuidebotSimulationFile -MetadataFile (Get-Item $collectionMetadata) -Destination $collectionOutput -ResultsByIdentity @{}
+$published = @(Get-Content $collectionOutput -Raw | ConvertFrom-Json)
+Assert-True ($published.Count -eq 2 -and $published[0].levels[0].status -eq 'timeout') `
+    'Repeated publication did not retain the latest collection result'
+Assert-True ((ConvertTo-GuidebotNormalizedJsonText $published[1]) -ceq $untouched) `
+    'Publishing one mission changed another mission in the collection'
+
 $failureCases = @(
     @{ Text = 'Route engine infrastructure failure for fixture, exit -1073741819, log={0}'; Problem = 'Route engine infrastructure failure'; Exit = -1073741819 },
     @{ Text = 'Desktop route infrastructure failure for fixture, exit 1, log={0}'; Problem = 'Route engine infrastructure failure'; Exit = 1 },

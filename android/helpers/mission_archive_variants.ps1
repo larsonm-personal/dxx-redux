@@ -20,7 +20,8 @@ function Get-PreferredMissionChildArchive {
     param([string[]]$Names)
 
     if (-not $Names) { return '' }
-    if (-not $script:missionArchiveVariantCli) {
+    if (-not (Get-Variable -Name missionArchiveVariantCli -Scope Script -ErrorAction SilentlyContinue) -or
+        -not $script:missionArchiveVariantCli) {
         $script:missionArchiveVariantCli = Initialize-MetadataKotlinCli
     }
     $output = @(& $script:missionArchiveVariantCli --select-archive-variant @Names)

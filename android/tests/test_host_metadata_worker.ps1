@@ -1,4 +1,5 @@
 #!/usr/bin/env pwsh
+Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 $androidRoot = Split-Path -Parent $PSScriptRoot
 . (Join-Path $androidRoot 'helpers/normalized_json_text.ps1')

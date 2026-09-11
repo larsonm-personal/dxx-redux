@@ -14,6 +14,7 @@ param(
     [switch]$MissingOnly
 )
 
+Set-StrictMode -Version 3.0
 $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $PSCommandPath
@@ -77,7 +78,10 @@ if ($Engine -eq 'Windows') {
     if ($NoBuild) { $hostArgs.NoBuild = $true }
     if ($routingArchivePaths.Count -gt 0) {
         $hostArgs.ArchivePaths = $routingArchivePaths
-        $routingCdSourceIds = @($routingMissions.CdSourceId | Where-Object { $_ })
+        $routingCdSourceIds = @($routingMissions | ForEach-Object {
+                $property = $_.PSObject.Properties['CdSourceId']
+                if ($null -ne $property) { $property.Value }
+            } | Where-Object { $_ })
         $hostArgs.CdSourceIds = if ($routingCdSourceIds.Count) { $routingCdSourceIds } else { @('__none__') }
     } elseif ($ArchiveNames) {
         $hostArgs.ArchiveNames = @($ArchiveNames)
@@ -165,6 +169,7 @@ foreach ($source in $archiveSources) {
     } else {
         @("*.zip", "*.7z", "*.rar")
     }
+    $patterns = @($patterns)
     if ($patterns.Count -eq 0) {
         $reason = if ($MissingOnly) { "no missing regression JSON files" } else { "empty metadata sample" }
         Write-Status "Skipping $($source.Directory): $reason" "Yellow"

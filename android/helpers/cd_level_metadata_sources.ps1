@@ -21,15 +21,22 @@ function Resolve-CdLevelMetadataSources {
     $ids = @{}
     $outputs = @{}
 
-    foreach ($source in @($manifest.sources)) {
-        $id = [string]$source.id
-        $sourceDirValue = [string]$source.source_dir
-        $descriptorValue = [string]$source.descriptor
-        $outputValue = [string]$source.output
-        $discover = [bool]$source.discover
-        $files = @($source.files | Where-Object { $_ } | ForEach-Object { [string]$_ })
+    $sourceProperty = $manifest.PSObject.Properties['sources']
+    if ($null -eq $sourceProperty -or $null -eq $sourceProperty.Value) {
+        throw "CD level metadata manifest requires sources: $ManifestPath"
+    }
+    foreach ($sourceRecord in @($sourceProperty.Value)) {
+        # Missing optional fields have null values without relying on non-strict property access
+        $source = @{}
+        foreach ($property in $sourceRecord.PSObject.Properties) { $source[$property.Name] = $property.Value }
+        $id = [string]$source['id']
+        $sourceDirValue = [string]$source['source_dir']
+        $descriptorValue = [string]$source['descriptor']
+        $outputValue = [string]$source['output']
+        $discover = [bool]$source['discover']
+        $files = @($source['files'] | Where-Object { $_ } | ForEach-Object { [string]$_ })
         $excludeDescriptors = @(
-            $source.exclude_descriptors |
+            $source['exclude_descriptors'] |
                 Where-Object { $_ } |
                 ForEach-Object { ([string]$_).ToLowerInvariant() }
         )

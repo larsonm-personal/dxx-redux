@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 7,
-    "timeout": 3
+    "ok": 8,
+    "timeout": 2
   },
   "levels": [
     {
@@ -263,7 +263,7 @@
       "level_num": 7,
       "level_file": "titi.rl2",
       "route_input_sha256": "48EE1089231A090F3DCF50DB6BBF075B4ACF65F4F3C0C6145BD70D94D36CC4C2",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -274,20 +274,48 @@
           "s": 11
         },
         {
-          "n": "switch 2",
-          "s": 15
+          "n": "blastable wall",
+          "s": 34
+        },
+        {
+          "n": "gold key",
+          "s": 38
         },
         {
           "n": "switch 1",
-          "s": 15
+          "s": 47
+        },
+        {
+          "n": "switch 2",
+          "s": 56
+        },
+        {
+          "n": "hidden door",
+          "s": 65
+        },
+        {
+          "n": "red key",
+          "s": 66
+        },
+        {
+          "n": "reactor",
+          "s": 73
+        },
+        {
+          "n": "exit",
+          "s": 80
         }
       ],
-      "total_frames": 1466,
+      "total_frames": 4783,
       "rng_end": {
-        "state": 3663127001,
-        "calls": 360
+        "state": 2895563420,
+        "calls": 1755
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 6.46666,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 8,

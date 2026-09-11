@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
+    "ok": 4,
     "failed": 1,
-    "timeout": 3
+    "timeout": 2
   },
   "levels": [
     {
@@ -121,7 +121,7 @@
       "level_num": 4,
       "level_file": "PROM-SW.RL2",
       "route_input_sha256": "FB49DCA592D3AD6C74ECE14C74895F5C4F4ED470A11A057262D41A49D5A964EB",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -142,14 +142,86 @@
         {
           "n": "switch 26",
           "s": 14
+        },
+        {
+          "n": "fly-through 44",
+          "s": 26
+        },
+        {
+          "n": "switch 42",
+          "s": 26
+        },
+        {
+          "n": "switch 40",
+          "s": 33
+        },
+        {
+          "n": "fly-through 39",
+          "s": 34
+        },
+        {
+          "n": "switch 43",
+          "s": 36
+        },
+        {
+          "n": "switch 54",
+          "s": 48
+        },
+        {
+          "n": "switch 19",
+          "s": 55
+        },
+        {
+          "n": "switch 0",
+          "s": 56
+        },
+        {
+          "n": "fly-through 20",
+          "s": 65
+        },
+        {
+          "n": "switch 57",
+          "s": 74
+        },
+        {
+          "n": "blue key",
+          "s": 88
+        },
+        {
+          "n": "switch 59",
+          "s": 113
+        },
+        {
+          "n": "gold key",
+          "s": 131
+        },
+        {
+          "n": "switch 16",
+          "s": 177
+        },
+        {
+          "n": "red key",
+          "s": 179
+        },
+        {
+          "n": "reactor",
+          "s": 225
+        },
+        {
+          "n": "exit",
+          "s": 240
         }
       ],
-      "total_frames": 4633,
+      "total_frames": 14408,
       "rng_end": {
-        "state": 630431844,
-        "calls": 499
+        "state": 3606653273,
+        "calls": 13800
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 15.016678,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 5,

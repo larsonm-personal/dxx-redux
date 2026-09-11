@@ -1,5 +1,6 @@
 #!/usr/bin/env pwsh
 
+Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $tempRoot = Join-Path $repoRoot 'android\temp\cd_level_metadata_sources_test'
@@ -67,6 +68,19 @@ try {
     Add-CdLevelMetadataSourceDescriptorHashes -Source $sources[0] -SeenHashes $seenHashes
     Assert-True $seenHashes.ContainsKey((Get-CdLevelMetadataDescriptorHash -Descriptor $duplicateDescriptor)) `
         'An earlier unselected source should seed duplicate detection for a later sampled source'
+
+    foreach ($required in @('id', 'source_dir', 'output')) {
+        $incomplete = $manifest | ConvertFrom-Json
+        $incomplete.sources[0].PSObject.Properties.Remove($required)
+        [IO.File]::WriteAllText($manifestPath, ($incomplete | ConvertTo-Json -Depth 5))
+        $rejected = $false
+        try {
+            Resolve-CdLevelMetadataSources -RepoRoot $tempRoot -ManifestPath $manifestPath -OutputDir $outputDir | Out-Null
+        } catch {
+            $rejected = $_.Exception.Message -like '*require id, source_dir, and output*'
+        }
+        Assert-True $rejected "Missing $required should produce a manifest validation error"
+    }
 
     $badManifest = $manifest | ConvertFrom-Json
     $badManifest.sources[0].output = '..\escaped.json'

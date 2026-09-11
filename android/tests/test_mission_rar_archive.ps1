@@ -3,7 +3,15 @@ param([string]$ArchivePath)
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 $helpers = Join-Path $repoRoot 'android/helpers'
+Set-StrictMode -Off
 . (Join-Path $helpers 'mission_rar_archive.ps1')
+function Assert-CallerOptionalProperties {
+    $source = [pscustomobject]@{ discover = $true }
+    if ($null -ne $source.descriptor) { throw 'An absent optional descriptor must remain null' }
+    $missingFiles = @('present') | Where-Object { $_ -eq 'missing' }
+    if ($missingFiles.Count -ne 0) { throw 'An empty missing-file result must have count zero' }
+}
+Assert-CallerOptionalProperties
 if (-not $ArchivePath) { $ArchivePath = Join-Path $repoRoot 'game_data/mission_files/FFYL.rar' }
 $archive = Get-Item -LiteralPath $ArchivePath
 $OutDir = Join-Path $repoRoot 'android/temp/test-mission-rar'
@@ -36,4 +44,5 @@ foreach ($runner in @(
     $hog = [IO.File]::ReadAllBytes((Join-Path $destination 'ffyl.HOG'))
     if ([Text.Encoding]::ASCII.GetString($hog, 0, 3) -ne 'DHF') { throw 'Invalid extracted HOG' }
 }
-Write-Host 'RAR regression listing, game detection, and both extraction paths passed'
+Assert-CallerOptionalProperties
+Write-Host 'RAR regression listing, game detection, both extraction paths, and caller scope passed'

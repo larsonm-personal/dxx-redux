@@ -1,5 +1,6 @@
 #!/usr/bin/env pwsh
 
+Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $runnerPath = Join-Path $repoRoot 'android\regenerate_all_regression_data.ps1'
@@ -53,9 +54,9 @@ Assert-True (($missingMetadataStage[0].Arguments -join ',') -eq '-MissingOnly') 
 $routingStages = @(Get-RegressionDataStages -RepoRoot $repoRoot -Category RoutingSet)
 $routingMissions = @(Get-RoutingDevelopmentMissions)
 Assert-True (($routingMissions.Json -join ',') -eq `
-        'castaway_redux.json,Counterstrike.json,FirstStrike.json,Obsidian.json,TEW.json,plutonia.json,CD - Descent II - The Vertigo Series (USA).json,Vignettes.json,Entropy2.json,descent_maximum_fixed.json,af_d1_beta.json,Mandrill.json,bitesize.json,Lostlvls.json,EAF2.json,EAF.json,Bahagad.json') `
+        'castaway_redux.json,Counterstrike.json,FirstStrike.json,Obsidian.json,TEW.json,plutonia.json,CD - Descent II - The Vertigo Series (USA).json,Vignettes.json,Entropy2.json,descent_maximum_fixed.json,af_d1_beta.json,Mandrill.json,bitesize.json,Lostlvls.json,EAF2.json,EAF.json,Bahagad.json,diehard.json') `
     'Routing development mission order should remain stable'
-Assert-True (($routingMissions.CdSourceId -join '') -eq 'descent-ii-vertigo-usa') `
+Assert-True ((($routingMissions | Where-Object { $_.PSObject.Properties['CdSourceId'] } | ForEach-Object { $_.CdSourceId }) -join '') -eq 'descent-ii-vertigo-usa') `
     'Routing development metadata must include the requested Vertigo CD source'
 Assert-True ($routingStages.Count -eq 2) `
     'Routing development selection should contain metadata and simulation stages'
@@ -130,6 +131,7 @@ exit $($definition.ExitCode)
     }
 
     $reportDir = Join-Path $tempRoot 'reports'
+    New-Item -ItemType Directory -Path $reportDir -Force | Out-Null
     $results = @(Invoke-RegressionDataStages -Stages $testStages -ReportDir $reportDir -Category All -RecordTiming)
     Assert-True ($results.Count -eq 3) `
         "Master regeneration should return every stage result, got $($results.Count): $($results.GetType().FullName)"
@@ -165,12 +167,43 @@ exit $($definition.ExitCode)
         'Targeted regeneration estimates should ignore shortened failed runs'
 
     $partialReportDir = Join-Path $tempRoot 'partial_reports'
+    New-Item -ItemType Directory -Path $partialReportDir -Force | Out-Null
     $partial = @($testStages | Select-Object -First 1)
     $partialResults = @(Invoke-RegressionDataStages -Stages $partial -ReportDir $partialReportDir -Category Cd)
     Assert-True ($partialResults.Count -eq 1 -and $partialResults[0].Status -eq 'PASS') `
         'Partial regeneration should run its selected stage'
     Assert-True (@(Get-ChildItem -LiteralPath $partialReportDir -File -Filter 'report_*.md').Count -eq 0) `
         'Partial regeneration should not write timing history'
+
+    # Exercise the actual command-line completion block with a small real child stage
+    $runnerAst = [Management.Automation.Language.Parser]::ParseFile($runnerPath, [ref]$null, [ref]$null)
+    $entrypoint = $runnerAst.EndBlock.Statements | Where-Object {
+        $_ -is [Management.Automation.Language.IfStatementAst] -and
+        $_.Clauses[0].Item1.Extent.Text -eq '$MyInvocation.InvocationName -ne ''.'''
+    }
+    $entrypointText = $entrypoint.Clauses[0].Item2.Extent.Text
+    $entrypointText = $entrypointText.Substring(1, $entrypointText.Length - 2)
+    $entrypointPath = Join-Path $tempRoot 'entrypoint.ps1'
+    $entrypointReportDir = Join-Path $tempRoot 'entrypoint_reports'
+    $entrypointContent = @"
+. '$($runnerPath.Replace("'", "''"))' -Category Simulation -ReportDir '$($entrypointReportDir.Replace("'", "''"))'
+function Get-RegressionDataStages {
+    [pscustomobject]@{
+        Name = 'fixture'
+        DefaultEstimatedRuntime = 1
+        Script = '$($testStages[0].Script.Replace("'", "''"))'
+        Arguments = @('$($logPath.Replace("'", "''"))')
+    }
+}
+$entrypointText
+"@
+    [IO.File]::WriteAllText($entrypointPath, $entrypointContent, [Text.UTF8Encoding]::new($false))
+    $entrypointLog = Join-Path $tempRoot 'entrypoint.log'
+    $entrypointExitCode = Invoke-RegressionDataStageProcess -PowerShellPath (Get-Process -Id $PID).Path `
+        -ScriptPath $entrypointPath -Arguments @() -LogPath $entrypointLog
+    Assert-True ($entrypointExitCode -eq 0) 'Command-line completion should exit successfully after cleanup and one passing stage'
+    Assert-True ((Get-Content -LiteralPath $entrypointLog -Raw) -match 'Selected regression data regenerated successfully') `
+        'Command-line completion should print its final success summary under strict mode'
 
     $backgroundPidPath = Join-Path $tempRoot 'background.pid'
     $inheritedHandleScript = Join-Path $tempRoot 'inherited_handle.ps1'

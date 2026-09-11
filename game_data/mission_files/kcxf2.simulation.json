@@ -5,10 +5,9 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 4,
-    "timeout": 1
+    "ok": 5
   },
   "levels": [
     {
@@ -206,7 +205,7 @@
       "level_num": 5,
       "level_file": "kcxf205.rl2",
       "route_input_sha256": "0B88E9FA11BDB930DC922A148186CABAE5FD258849DC045AEEA3EB8CC1571FB9",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -239,14 +238,34 @@
         {
           "n": "switch 2",
           "s": 141
+        },
+        {
+          "n": "fly-through 28",
+          "s": 162
+        },
+        {
+          "n": "fly-through 27",
+          "s": 162
+        },
+        {
+          "n": "reactor",
+          "s": 163
+        },
+        {
+          "n": "exit",
+          "s": 167
         }
       ],
-      "total_frames": 9955,
+      "total_frames": 10018,
       "rng_end": {
-        "state": 2816826211,
-        "calls": 13606
+        "state": 621455776,
+        "calls": 13799
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "reactor_escape": {
+        "countdown_seconds": 32.0,
+        "simulated_seconds": 3.71666,
+        "difficulty": 2
+      }
     }
   ]
 }

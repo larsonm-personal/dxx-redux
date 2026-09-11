@@ -1,10 +1,10 @@
 package com.dxxredux.app
 
-import java.util.Locale
 import java.nio.ByteBuffer
 import java.nio.charset.CharacterCodingException
-import java.nio.charset.CodingErrorAction
 import java.nio.charset.Charset
+import java.nio.charset.CodingErrorAction
+import java.util.Locale
 
 data class ParsedMissionDescriptor(
     val path: String,
@@ -30,15 +30,20 @@ data class ParsedMissionDescriptor(
 object MissionDescriptorPolicy {
     fun decode(bytes: ByteArray): String =
         try {
-            Charsets.UTF_8.newDecoder()
+            Charsets.UTF_8
+                .newDecoder()
                 .onMalformedInput(CodingErrorAction.REPORT)
                 .onUnmappableCharacter(CodingErrorAction.REPORT)
-                .decode(ByteBuffer.wrap(bytes)).toString()
+                .decode(ByteBuffer.wrap(bytes))
+                .toString()
         } catch (_: CharacterCodingException) {
             bytes.toString(Charset.forName("windows-1252"))
         }
 
-    fun parse(path: String, text: String): ParsedMissionDescriptor {
+    fun parse(
+        path: String,
+        text: String,
+    ): ParsedMissionDescriptor {
         val values = linkedMapOf<String, String>()
         val assetReferences = linkedMapOf<String, String>()
         val levels = mutableListOf<String>()
@@ -56,7 +61,11 @@ object MissionDescriptorPolicy {
                 val level = cleanListLine(line).substringBefore(',').trim()
                 if (line.isBlank() || line.startsWith(";") || line.startsWith("#") ||
                     '=' in line || level.isBlank() || level.length > 12
-                ) problem = problem ?: "Invalid ordinary level list" else levels += level
+                ) {
+                    problem = problem ?: "Invalid ordinary level list"
+                } else {
+                    levels += level
+                }
                 continue
             }
             if (remainingSecrets > 0) {
@@ -84,16 +93,27 @@ object MissionDescriptorPolicy {
             when (key) {
                 "num_levels" -> {
                     declaredLevelCount = value.toIntOrNull()
-                    if (declaredLevelCount == null || declaredLevelCount !in 1..127) problem = problem ?: "Invalid ordinary level count"
+                    if (declaredLevelCount == null ||
+                        declaredLevelCount !in 1..127
+                    ) {
+                        problem = problem ?: "Invalid ordinary level count"
+                    }
                     remainingLevels = declaredLevelCount ?: 0
                 }
+
                 "num_secrets" -> {
                     declaredSecretLevelCount = value.toIntOrNull()
-                    if (declaredSecretLevelCount == null || declaredSecretLevelCount !in 0..127) problem = problem ?: "Invalid secret level count"
+                    if (declaredSecretLevelCount == null ||
+                        declaredSecretLevelCount !in 0..127
+                    ) {
+                        problem = problem ?: "Invalid secret level count"
+                    }
                     remainingSecrets = declaredSecretLevelCount ?: 0
                 }
-                "briefing", "ending", "!ham", "ham", "hxm", "pig", "hog" ->
+
+                "briefing", "ending", "!ham", "ham", "hxm", "pig", "hog" -> {
                     if (value.isNotBlank()) assetReferences[assetReferenceLabel(key)] = value
+                }
             }
         }
         val name = preferredName(path, values)
@@ -106,33 +126,77 @@ object MissionDescriptorPolicy {
             problem = problem ?: "Secret level list is incomplete"
         }
         return ParsedMissionDescriptor(
-            path.replace('\\', '/').trim('/'), name, values["type"], values["author"], values["editor"],
-            levels, secrets, secretOrigins, declaredLevelCount, declaredSecretLevelCount, assetReferences,
+            path.replace('\\', '/').trim('/'),
+            name,
+            values["type"],
+            values["author"],
+            values["editor"],
+            levels,
+            secrets,
+            secretOrigins,
+            declaredLevelCount,
+            declaredSecretLevelCount,
+            assetReferences,
             detectGame(path, levels),
             setOf("normal", "coop", "anarchy", "robo_anarchy", "capture_flag", "hoard")
                 .filterTo(linkedSetOf()) { values[it]?.lowercase(Locale.US) in setOf("yes", "true", "1") },
-            problem == null, problem,
+            problem == null,
+            problem,
         )
     }
 
-    private fun preferredName(path: String, values: Map<String, String>): String? {
+    private fun preferredName(
+        path: String,
+        values: Map<String, String>,
+    ): String? {
         val name = values["name"]?.takeIf { it.isNotBlank() }
-        val enhanced = listOf("xname", "zname", "!name").firstNotNullOfOrNull { values[it]?.takeIf(String::isNotBlank) }
+        val enhanced =
+            listOf("xname", "zname", "!name", "d2x-name").firstNotNullOfOrNull {
+                values[it]?.takeIf(String::isNotBlank)
+            }
         val stem = path.replace('\\', '/').substringAfterLast('/').substringBeforeLast('.')
         return if (enhanced != null && name.equals(stem, ignoreCase = true)) enhanced else name ?: enhanced
     }
 
-    private fun detectGame(path: String, levels: List<String>): String {
-        when (extension(path)) { "mn2" -> return "d2"; "msn" -> return "d1" }
-        val hints = levels.mapNotNull { when (extension(it)) { "rl2", "sl2" -> "d2"; "rdl", "sdl" -> "d1"; else -> null } }.distinct()
+    private fun detectGame(
+        path: String,
+        levels: List<String>,
+    ): String {
+        when (extension(path)) {
+            "mn2" -> return "d2"
+            "msn" -> return "d1"
+        }
+        val hints =
+            levels
+                .mapNotNull {
+                    when (extension(it)) {
+                        "rl2", "sl2" -> "d2"
+                        "rdl", "sdl" -> "d1"
+                        else -> null
+                    }
+                }.distinct()
         return hints.singleOrNull() ?: "both"
     }
 
-    private fun extension(path: String) = path.substringAfterLast('/').substringAfterLast('\\').substringAfterLast('.', "").lowercase(Locale.US)
+    private fun extension(path: String) =
+        path
+            .substringAfterLast('/')
+            .substringAfterLast('\\')
+            .substringAfterLast('.', "")
+            .lowercase(Locale.US)
+
     private fun cleanValue(value: String) = value.substringBefore(';').trim()
+
     private fun cleanListLine(value: String) = value.substringBefore(';').trim()
-    private fun assetReferenceLabel(key: String) = when (key) {
-        "briefing" -> "Briefing"; "ending" -> "Ending"; "!ham", "ham" -> "HAM"
-        "hxm" -> "HXM"; "pig" -> "PIG"; "hog" -> "HOG"; else -> key.uppercase(Locale.US)
-    }
+
+    private fun assetReferenceLabel(key: String) =
+        when (key) {
+            "briefing" -> "Briefing"
+            "ending" -> "Ending"
+            "!ham", "ham" -> "HAM"
+            "hxm" -> "HXM"
+            "pig" -> "PIG"
+            "hog" -> "HOG"
+            else -> key.uppercase(Locale.US)
+        }
 }

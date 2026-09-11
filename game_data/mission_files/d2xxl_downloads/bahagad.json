@@ -78,28 +78,28 @@
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 220
+        "length_s": 157
       },
       {
         "track": 6,
-        "name": "Drum Tracks",
+        "name": "MIDI Track 2",
         "filename": "game02.hmp",
         "format": "hmp",
-        "length_s": 215
+        "length_s": 282
       },
       {
         "track": 7,
-        "name": "King Diamond (Metallica)",
+        "name": "MIDI Track 3",
         "filename": "game03.hmp",
         "format": "hmp",
-        "length_s": 430
+        "length_s": 278
       },
       {
         "track": 8,
-        "name": "Untitled (Chris Tilton)",
+        "name": "MIDI Track 4",
         "filename": "game04.hmp",
         "format": "hmp",
-        "length_s": 371
+        "length_s": 188
       }
     ],
     "level_count": 8,

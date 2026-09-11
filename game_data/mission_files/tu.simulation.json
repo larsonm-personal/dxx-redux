@@ -279,10 +279,6 @@
           "s": 20
         },
         {
-          "n": "switch 0",
-          "s": 20
-        },
-        {
           "n": "reactor",
           "s": 30
         },
@@ -293,8 +289,8 @@
       ],
       "total_frames": 1896,
       "rng_end": {
-        "state": 3339064652,
-        "calls": 619
+        "state": 649973183,
+        "calls": 554
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,

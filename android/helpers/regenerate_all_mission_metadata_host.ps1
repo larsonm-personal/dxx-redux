@@ -16,6 +16,7 @@ param(
     [switch]$InternalWorker
 )
 
+Set-StrictMode -Version 3.0
 $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $PSCommandPath
@@ -829,7 +830,7 @@ function Invoke-HeadlessScan {
     $mission = [IO.Path]::GetFileNameWithoutExtension($Descriptor.Name)
     $descriptorInfo = Get-MissionDescriptorInfo -Descriptor $Descriptor
     $dataDir = $DataDirs[$game]
-    # CD collections contain unrelated and sometimes malformed HOGs
+    # Mission collections contain unrelated and sometimes malformed HOGs
     # Let the engine resolve the descriptor's HOG and any declared override
     $missionHogs = if ($DescriptorHogOnly) { @() } else {
         @(Get-ChildItem -LiteralPath $StageDir -File -Filter '*.hog' | ForEach-Object { $_.FullName })
@@ -1045,7 +1046,8 @@ if (-not $CdSourcesOnly) {
                 ForEach-Object { [pscustomobject]@{ Archive = $_; Source = $source } }
             }
         ) | Sort-Object @{ Expression = { $_.Source.Id } }, @{ Expression = { $_.Archive.Name } }
-        $requestedArchiveNames = if ($ArchiveNames) { @($ArchiveNames) } elseif ($ArchiveName) { @($ArchiveName) } else { @() }
+        $archives = @($archives)
+        $requestedArchiveNames = @(if ($ArchiveNames) { $ArchiveNames } elseif ($ArchiveName) { $ArchiveName })
         if ($requestedArchiveNames.Count -gt 0) {
             $requestedArchiveSet = [Collections.Generic.HashSet[string]]::new([string[]]$requestedArchiveNames, [StringComparer]::OrdinalIgnoreCase)
             $archives = @(
@@ -1104,6 +1106,7 @@ if (-not $CdSourcesOnly) {
                     (Test-Path -LiteralPath $summaryPath -PathType Leaf)) {
                     @(Get-Content -LiteralPath $summaryPath -Raw | ConvertFrom-Json -NoEnumerate)
                 } else { @() }
+                $workerResults = @($workerResults)
                 if ($workerResults.Count -eq 0) {
                     $reason = if ($processResult.StartError) {
                         $processResult.StartError
@@ -1122,7 +1125,8 @@ if (-not $CdSourcesOnly) {
                         })
                 }
                 foreach ($record in $workerResults) {
-                    if ($record.metadata_json -and (Test-Path -LiteralPath $record.metadata_json -PathType Leaf)) {
+                    $recordMetadataPath = Get-Prop $record 'metadata_json' ''
+                    if ($recordMetadataPath -and (Test-Path -LiteralPath $recordMetadataPath -PathType Leaf)) {
                         $combinedMetadataPath = Join-Path $metadataDir ([IO.Path]::GetFileName([string]$record.metadata_json))
                         Write-Utf8NoBomTextAtomically -Path $combinedMetadataPath -Text ([IO.File]::ReadAllText([string]$record.metadata_json))
                         $record.metadata_json = $combinedMetadataPath
@@ -1135,7 +1139,8 @@ if (-not $CdSourcesOnly) {
                 $primary = $workerResults[0]
                 $color = if ($primary.status -eq 'passed') { 'Green' } elseif ($primary.status -like 'skipped*') { 'Yellow' } else { 'Red' }
                 Write-Status "[$($parallelProgress.Retired)/$($archives.Count)] $($primary.status.ToUpperInvariant()): $($task.ArchiveRecord.Archive.Name)" $color
-                if ($primary.reason) { Write-Status "  reason: $($primary.reason)" $color }
+                $primaryReason = Get-Prop $primary 'reason' ''
+                if ($primaryReason) { Write-Status "  reason: $primaryReason" $color }
             }
             $results += @($parallelResults)
         } else {
@@ -1196,7 +1201,7 @@ if (-not $CdSourcesOnly) {
                         $logPath = Join-Path $logsDir "$label.$($descriptor.BaseName).log"
                         $descriptorInfo = Get-MissionDescriptorInfo -Descriptor $descriptor
                         $missionPath = Get-RawMissionDescriptorPath -RawDirPath $rawArchiveDir -StagedDescriptor $descriptor -VariantSelection $variantSelection
-                        $raw = Invoke-HeadlessScan -Descriptor $descriptor -StageDir $stageDir -Executables $executables -DataDirs $dataDirs -RawOutputPath $rawOutputPath -LogPath $logPath -TimeoutSeconds $ArchiveTimeoutSeconds
+                        $raw = Invoke-HeadlessScan -Descriptor $descriptor -StageDir $stageDir -Executables $executables -DataDirs $dataDirs -RawOutputPath $rawOutputPath -LogPath $logPath -TimeoutSeconds $ArchiveTimeoutSeconds -DescriptorHogOnly:($descriptors.Count -gt 1)
                         $missions += Get-CheckedInMissionJson -RawPath $rawOutputPath -TargetIndex $targetIndex -SourceName $descriptorInfo.DisplayName -MissionFilename $descriptorInfo.Filename -MissionPath $missionPath
                         $targetIndex++
                     }

@@ -8,9 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
-    "failed": 1,
-    "timeout": 1
+    "ok": 3,
+    "failed": 1
   },
   "levels": [
     {
@@ -79,18 +78,62 @@
       "level_num": 3,
       "level_file": "YELLOW.RDL",
       "route_input_sha256": "2739DC191F742880D0C4C868D3461D07AAA210B6B8DC41C16069B044D7BF6469",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 3601,
+      "objectives": [
+        {
+          "n": "gold key",
+          "s": 0
+        },
+        {
+          "n": "pass-through 31",
+          "s": 5
+        },
+        {
+          "n": "pass-through 6",
+          "s": 25
+        },
+        {
+          "n": "pass-through 8",
+          "s": 32
+        },
+        {
+          "n": "pass-through 10",
+          "s": 38
+        },
+        {
+          "n": "pass-through 12",
+          "s": 46
+        },
+        {
+          "n": "pass-through 14",
+          "s": 55
+        },
+        {
+          "n": "pass-through 16",
+          "s": 65
+        },
+        {
+          "n": "pass-through 19",
+          "s": 73
+        },
+        {
+          "n": "red key",
+          "s": 79
+        },
+        {
+          "n": "exit",
+          "s": 84
+        }
+      ],
+      "total_frames": 5016,
       "rng_end": {
-        "state": 836760821,
-        "calls": 12
-      },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "state": 2903093813,
+        "calls": 204
+      }
     },
     {
       "level_num": 4,

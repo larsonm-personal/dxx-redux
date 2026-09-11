@@ -71,14 +71,14 @@
         "name": "MIDI Track 4",
         "filename": "credits.hmp",
         "format": "hmp",
-        "length_s": 116
+        "length_s": 145
       },
       {
         "track": 5,
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 249
+        "length_s": 157
       },
       {
         "track": 6,
@@ -89,10 +89,10 @@
       },
       {
         "track": 7,
-        "name": "Troy Martin",
+        "name": "MIDI Track 3",
         "filename": "game03.hmp",
         "format": "hmp",
-        "length_s": 174
+        "length_s": 278
       },
       {
         "track": 8,
@@ -106,7 +106,8 @@
         "name": "MIDI Track 5",
         "filename": "game05.hmp",
         "format": "hmp",
-        "length_s": 163
+        "length_s": 0,
+        "parse_status": "invalid_midi"
       },
       {
         "track": 10,
@@ -114,21 +115,23 @@
         "filename": "game06.hmp",
         "format": "hmp",
         "length_s": 0,
-        "parse_status": "duration_unavailable"
+        "parse_status": "invalid_midi"
       },
       {
         "track": 11,
         "name": "MIDI Track 7",
         "filename": "game07.hmp",
         "format": "hmp",
-        "length_s": 399
+        "length_s": 0,
+        "parse_status": "invalid_midi"
       },
       {
         "track": 12,
         "name": "MIDI Track 8",
         "filename": "game08.hmp",
         "format": "hmp",
-        "length_s": 116
+        "length_s": 0,
+        "parse_status": "invalid_midi"
       }
     ],
     "level_count": 1,
@@ -1980,14 +1983,14 @@
         "name": "MIDI Track 4",
         "filename": "credits.hmp",
         "format": "hmp",
-        "length_s": 116
+        "length_s": 145
       },
       {
         "track": 5,
         "name": "MIDI Track 1",
         "filename": "game01.hmp",
         "format": "hmp",
-        "length_s": 249
+        "length_s": 157
       },
       {
         "track": 6,
@@ -1998,10 +2001,10 @@
       },
       {
         "track": 7,
-        "name": "Troy Martin",
+        "name": "MIDI Track 3",
         "filename": "game03.hmp",
         "format": "hmp",
-        "length_s": 174
+        "length_s": 278
       },
       {
         "track": 8,
@@ -2015,7 +2018,8 @@
         "name": "MIDI Track 5",
         "filename": "game05.hmp",
         "format": "hmp",
-        "length_s": 163
+        "length_s": 0,
+        "parse_status": "invalid_midi"
       },
       {
         "track": 10,
@@ -2023,21 +2027,23 @@
         "filename": "game06.hmp",
         "format": "hmp",
         "length_s": 0,
-        "parse_status": "duration_unavailable"
+        "parse_status": "invalid_midi"
       },
       {
         "track": 11,
         "name": "MIDI Track 7",
         "filename": "game07.hmp",
         "format": "hmp",
-        "length_s": 399
+        "length_s": 0,
+        "parse_status": "invalid_midi"
       },
       {
         "track": 12,
         "name": "MIDI Track 8",
         "filename": "game08.hmp",
         "format": "hmp",
-        "length_s": 116
+        "length_s": 0,
+        "parse_status": "invalid_midi"
       }
     ],
     "level_count": 1,

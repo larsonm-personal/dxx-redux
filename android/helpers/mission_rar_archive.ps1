@@ -1,11 +1,12 @@
-. (Join-Path $PSScriptRoot 'bounded_extraction.ps1')
-
 function Invoke-MissionRarArchive {
     param(
         [Parameter(Mandatory)][string]$ArchivePath,
         [Parameter(Mandatory)][string]$Destination,
         [switch]$List
     )
+
+    # Keep the bounded extractor's strict mode local to this operation
+    . (Join-Path $PSScriptRoot 'bounded_extraction.ps1')
 
     $tar = Get-Command bsdtar, tar -ErrorAction SilentlyContinue | Select-Object -First 1
     if (-not $tar) { throw 'RAR support requires bsdtar/libarchive on PATH' }

@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 3,
+    "ok": 4,
     "failed": 1,
-    "timeout": 2,
+    "timeout": 1,
     "unsupported": 2
   },
   "levels": [
@@ -92,18 +92,74 @@
       "level_num": 3,
       "level_file": "kcxf2_n3.rl2",
       "route_input_sha256": "441394D8E53576547924EFE5DA0F81D6D2FDE7EDD7C12F501F5D5238A91083EF",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 538,
+      "objectives": [
+        {
+          "n": "switch 6",
+          "s": 36
+        },
+        {
+          "n": "switch 14",
+          "s": 57
+        },
+        {
+          "n": "switch 15",
+          "s": 73
+        },
+        {
+          "n": "fly-through 9",
+          "s": 87
+        },
+        {
+          "n": "destroy robot carrying gold key",
+          "s": 90
+        },
+        {
+          "n": "switch 17",
+          "s": 98
+        },
+        {
+          "n": "red key",
+          "s": 138
+        },
+        {
+          "n": "switch 19",
+          "s": 151
+        },
+        {
+          "n": "pass-through 4",
+          "s": 169
+        },
+        {
+          "n": "fly-through 26",
+          "s": 172
+        },
+        {
+          "n": "switch 2",
+          "s": 182
+        },
+        {
+          "n": "switch 22",
+          "s": 188
+        },
+        {
+          "n": "switch 21",
+          "s": 188
+        },
+        {
+          "n": "exit",
+          "s": 194
+        }
+      ],
+      "total_frames": 11629,
       "rng_end": {
-        "state": 1047820095,
-        "calls": 170
-      },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+        "state": 2179209090,
+        "calls": 12789
+      }
     },
     {
       "level_num": 4,

@@ -7,7 +7,9 @@ function Get-RuntimeSampleValue {
     if ($Item -is [System.Collections.IDictionary]) {
         return $Item[$Name]
     }
-    return $Item.$Name
+    $property = $Item.PSObject.Properties[$Name]
+    if ($null -eq $property) { return $null }
+    return $property.Value
 }
 
 function Join-RuntimeSampleMembers {
@@ -29,7 +31,7 @@ function Get-RuntimeSampleHash {
 
 function Get-RuntimeHashOrder {
     param(
-        [Parameter(Mandatory)][object[]]$Items,
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Items,
         [string[]]$GroupProperties = @(),
         [string]$NameProperty = 'Name'
     )
@@ -91,7 +93,7 @@ function Set-RuntimeSampleCursor {
 
 function Select-RuntimeHashRingItems {
     param(
-        [Parameter(Mandatory)][object[]]$Items,
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Items,
         [Parameter(Mandatory)][ValidateRange(1, [int]::MaxValue)][int]$TargetSeconds,
         [string[]]$GroupProperties = @(),
         [string]$NameProperty = 'Name',
@@ -140,7 +142,7 @@ function Select-RuntimeHashRingItems {
 
 function Select-RuntimeHashRingFractionItems {
     param(
-        [Parameter(Mandatory)][object[]]$Items,
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Items,
         [Parameter(Mandatory)][ValidateRange(0.000001, 1.0)][double]$Fraction,
         [string]$NameProperty = 'Name',
         [string]$StatePath,
@@ -163,7 +165,7 @@ function Select-RuntimeHashRingFractionItems {
 
 function Select-RuntimeTargetedItems {
     param(
-        [Parameter(Mandatory)][object[]]$Items,
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Items,
         [Parameter(Mandatory)][ValidateRange(1, [int]::MaxValue)][int]$TargetSeconds,
         [string[]]$GroupProperties = @(),
         [int]$Seed = 0
@@ -246,7 +248,7 @@ function Select-RuntimeTargetedItems {
 
 function Select-RuntimeProportionalItems {
     param(
-        [Parameter(Mandatory)][object[]]$Items,
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Items,
         [Parameter(Mandatory)][ValidateRange(1, [int]::MaxValue)][int]$TargetSeconds,
         [Parameter(Mandatory)][string[]]$GroupProperties,
         [int]$Seed = 0
@@ -332,7 +334,7 @@ function Select-RuntimeProportionalItems {
 
 function Select-RuntimeFractionItems {
     param(
-        [Parameter(Mandatory)][object[]]$Items,
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Items,
         [Parameter(Mandatory)][ValidateRange(0.000001, 1.0)][double]$Fraction,
         [int]$Seed = 0,
         [string]$NameProperty = 'Name'

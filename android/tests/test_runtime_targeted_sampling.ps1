@@ -1,5 +1,6 @@
 #!/usr/bin/env pwsh
 
+Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 . (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers\runtime_targeted_sampling.ps1')
 . (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers\run_all_tests_profile_menu.ps1')
@@ -7,6 +8,14 @@ $ErrorActionPreference = 'Stop'
 function Assert-True {
     param([bool]$Condition, [string]$Message)
     if (-not $Condition) { throw $Message }
+}
+
+Assert-True ($null -eq (Get-RuntimeSampleValue ([pscustomobject]@{ Name = 'optional' }) 'Requires')) `
+    'Missing optional sample properties should return null under strict mode'
+foreach ($count in @(0, 1, 3)) {
+    $sampleItems = @(for ($i = 0; $i -lt $count; $i++) { [pscustomobject]@{ Name = "item-$i" } })
+    $sample = @(Select-RuntimeHashRingFractionItems -Items $sampleItems -Fraction 1 -Seed 42)
+    Assert-True ($sample.Count -eq $count) "Sampling should preserve $count input items"
 }
 
 $items = @(

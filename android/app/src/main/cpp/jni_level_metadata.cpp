@@ -1131,6 +1131,33 @@ static LevelScanStatus scan_level(const json &request, json &levels,
 		    level_num, level_file, "level file is missing", "missing"));
 		return LEVEL_SCAN_MISSING;
 	}
+	// Metadata inputs include newer D2X-XL levels that the legacy loader cannot parse
+	// Keep these limits synchronized with LEVEL_FILE_VERSION in d1/d2 gamesave.c
+#ifdef DXX_BUILD_DESCENT_II
+	constexpr int maximum_level_version = 8;
+#else
+	constexpr int maximum_level_version = 1;
+#endif
+	PHYSFS_sint32 signature = 0, version = 0;
+	PHYSFS_file *header = PHYSFSX_openReadBuffered(level_file);
+	const int valid_header = header && PHYSFS_readSLE32(header, &signature) &&
+	                         PHYSFS_readSLE32(header, &version) &&
+	                         signature == MAKE_SIG('P', 'L', 'V', 'L');
+	if (header)
+		PHYSFS_close(header);
+	if (!valid_header || version < 1 || version > maximum_level_version) {
+		char problem[128];
+		if (valid_header && version > maximum_level_version)
+			snprintf(problem, sizeof(problem), "unsupported level version %d (maximum %d)",
+			         static_cast<int>(version), maximum_level_version);
+		else
+			snprintf(problem, sizeof(problem), "%s", "invalid level header");
+		levels.push_back(failed_level_row(level_num, level_file, problem,
+		                                  valid_header && version > maximum_level_version
+		                                      ? "unsupported_format"
+		                                      : "invalid_input"));
+		return LEVEL_SCAN_FAILED;
+	}
 #ifdef DXX_BUILD_DESCENT_II
 	level_metadata_set_switch_projectile_radius_override(0);
 	reset_level_robots_file();

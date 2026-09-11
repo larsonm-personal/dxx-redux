@@ -5,6 +5,7 @@ param(
     [string]$VertigoDir = '',
     [string]$Worker = ''
 )
+Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 if (-not $DataDir) { $DataDir = Join-Path $repoRoot 'game_data_to_copy_to_emulator/temp' }
@@ -14,6 +15,12 @@ $fixture = Join-Path $repoRoot 'android/temp/vertigo_metadata_fixture'
 New-Item -ItemType Directory -Path $fixture -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $VertigoDir 'd2x.mn2') -Destination $fixture -Force
 [IO.File]::WriteAllBytes((Join-Path $fixture 'd2x.hog'), [Text.Encoding]::ASCII.GetBytes('DHF'))
+$collection = Join-Path $fixture 'collection'
+New-Item -ItemType Directory -Path $collection -Force | Out-Null
+foreach ($name in @('d2x.mn2', 'd2x.hog')) {
+    Copy-Item -LiteralPath (Join-Path $VertigoDir $name) -Destination $collection -Force
+}
+[IO.File]::WriteAllText((Join-Path $collection 'unrelated.hog'), 'Unsupported unrelated archive')
 $start = [Diagnostics.ProcessStartInfo]::new($Worker)
 $start.UseShellExecute = $false
 $start.CreateNoWindow = $true
@@ -23,7 +30,7 @@ $start.RedirectStandardError = $true
 $process = [Diagnostics.Process]::Start($start)
 $stderr = $process.StandardError.ReadToEndAsync()
 try {
-    foreach ($stage in @($fixture, $VertigoDir, $fixture, $VertigoDir)) {
+    foreach ($stage in @($fixture, $VertigoDir, $collection, $fixture, $VertigoDir)) {
         $request = @{
             schema = 'dxx-level-metadata-request-v1'; request_id = [guid]::NewGuid().ToString('N')
             game = 'd2'; source_type = 'mission_files'; source_name = 'Vertigo regression'
@@ -50,7 +57,7 @@ try {
     }
     $process.StandardInput.Close()
     if (-not $process.WaitForExit(10000) -or $process.ExitCode -ne 0) { throw 'Worker did not exit cleanly' }
-    Write-Output 'PASS: Vertigo descriptor-only loading, missing HAM rejection, and worker mount cleanup'
+    Write-Output 'PASS: Vertigo descriptor-only loading, unrelated HOG isolation, missing HAM rejection, and worker mount cleanup'
 } finally {
     if (-not $process.HasExited) { $process.Kill(); $process.WaitForExit() }
     $process.Dispose()

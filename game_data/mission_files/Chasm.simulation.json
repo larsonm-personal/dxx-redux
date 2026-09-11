@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
-    "timeout": 3
+    "ok": 6,
+    "timeout": 1
   },
   "levels": [
     {
@@ -161,7 +161,7 @@
       "level_num": 4,
       "level_file": "icechsm.rl2",
       "route_input_sha256": "6E388AD9A0A5C7B890382823CC49A3159CE69FCACCBE4138F5EE86EFFC94CCBD",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -177,19 +177,31 @@
         },
         {
           "n": "switch 8",
-          "s": 46
+          "s": 75
         },
         {
-          "n": "switch 9",
-          "s": 56
+          "n": "red key",
+          "s": 81
+        },
+        {
+          "n": "boss",
+          "s": 146
+        },
+        {
+          "n": "exit",
+          "s": 162
         }
       ],
-      "total_frames": 5150,
+      "total_frames": 9696,
       "rng_end": {
-        "state": 1575254495,
-        "calls": 7178
+        "state": 4089477294,
+        "calls": 9881
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 15.550003,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 5,
@@ -225,7 +237,7 @@
       "level_num": -1,
       "level_file": "secret1a.rl2",
       "route_input_sha256": "7B9F055AD78BFEA73EDA434A5D9ED2A9876B25E72A9A93C93B251C94FF9B685D",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -241,15 +253,35 @@
         },
         {
           "n": "switch 0",
-          "s": 47
+          "s": 71
+        },
+        {
+          "n": "red key",
+          "s": 79
+        },
+        {
+          "n": "switch 1",
+          "s": 112
+        },
+        {
+          "n": "reactor",
+          "s": 136
+        },
+        {
+          "n": "exit",
+          "s": 141
         }
       ],
-      "total_frames": 3809,
+      "total_frames": 8478,
       "rng_end": {
-        "state": 1379390971,
-        "calls": 6926
+        "state": 3088115623,
+        "calls": 9538
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 5.649994,
+        "difficulty": 2
+      }
     },
     {
       "level_num": -2,

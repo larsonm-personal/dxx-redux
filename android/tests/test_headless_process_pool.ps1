@@ -1,5 +1,6 @@
 #!/usr/bin/env pwsh
 
+Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 . (Join-Path $repoRoot 'android\helpers\headless_process_pool.ps1')

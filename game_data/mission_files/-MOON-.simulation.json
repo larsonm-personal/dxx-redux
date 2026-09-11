@@ -70,16 +70,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "MOON02.RL2",
         "route_input_sha256": "8FF83FD1C981C0268D0B5C77331B4A768460476DE0A5CC20F26BF675A7110428",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -123,27 +123,55 @@
           },
           {
             "n": "switch 23",
-            "s": 144
+            "s": 159
           },
           {
-            "n": "switch 31",
-            "s": 154
+            "n": "switch 22",
+            "s": 161
           },
           {
-            "n": "fly-through 4",
+            "n": "switch 21",
             "s": 162
           },
           {
-            "n": "switch 2",
+            "n": "switch 20",
+            "s": 163
+          },
+          {
+            "n": "switch 19",
+            "s": 165
+          },
+          {
+            "n": "switch 18",
             "s": 166
+          },
+          {
+            "n": "switch 16",
+            "s": 167
+          },
+          {
+            "n": "switch 15",
+            "s": 168
+          },
+          {
+            "n": "reactor",
+            "s": 169
+          },
+          {
+            "n": "exit",
+            "s": 175
           }
         ],
-        "total_frames": 14757,
+        "total_frames": 10475,
         "rng_end": {
-          "state": 100889497,
-          "calls": 15784
+          "state": 1234629505,
+          "calls": 14464
         },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "reactor_escape": {
+          "countdown_seconds": 45.0,
+          "simulated_seconds": 5.25,
+          "difficulty": 2
+        }
       }
     ]
   },
@@ -413,26 +441,22 @@
             "s": 121
           },
           {
-            "n": "fly-through 19",
-            "s": 134
-          },
-          {
             "n": "reactor",
-            "s": 165
+            "s": 158
           },
           {
             "n": "exit",
-            "s": 168
+            "s": 161
           }
         ],
-        "total_frames": 10091,
+        "total_frames": 9634,
         "rng_end": {
-          "state": 593665684,
-          "calls": 15875
+          "state": 4222539589,
+          "calls": 15164
         },
         "reactor_escape": {
           "countdown_seconds": 45.0,
-          "simulated_seconds": 2.949997,
+          "simulated_seconds": 2.950012,
           "difficulty": 2
         }
       }
@@ -482,41 +506,41 @@
           },
           {
             "n": "switch 11",
-            "s": 74
+            "s": 75
           },
           {
             "n": "switch 25",
-            "s": 102
+            "s": 103
           },
           {
             "n": "red key",
-            "s": 119
+            "s": 120
           },
           {
             "n": "switch 32",
-            "s": 127
+            "s": 128
           },
           {
             "n": "switch 24",
-            "s": 149
+            "s": 150
           },
           {
             "n": "boss",
-            "s": 155
+            "s": 156
           },
           {
             "n": "exit",
             "s": 171
           }
         ],
-        "total_frames": 10246,
+        "total_frames": 10287,
         "rng_end": {
-          "state": 1808718933,
-          "calls": 12716
+          "state": 1183713214,
+          "calls": 12745
         },
         "reactor_escape": {
           "countdown_seconds": 45.0,
-          "simulated_seconds": 15.616669,
+          "simulated_seconds": 15.03334,
           "difficulty": 2
         }
       }
@@ -569,16 +593,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "-moon09-.rl2",
         "route_input_sha256": "6E6FDFF38D0A1975EB4AB257F5E074C758250B0B8CBE00D6DE5A365AC67E49EF",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -651,14 +675,30 @@
           {
             "n": "red key",
             "s": 99
+          },
+          {
+            "n": "switch 25",
+            "s": 127
+          },
+          {
+            "n": "boss",
+            "s": 155
+          },
+          {
+            "n": "exit",
+            "s": 173
           }
         ],
-        "total_frames": 6665,
+        "total_frames": 10363,
         "rng_end": {
-          "state": 2688281283,
-          "calls": 8646
+          "state": 1277360499,
+          "calls": 11030
         },
-        "problem": "physical route frontier did not open after 8 interaction attempts"
+        "reactor_escape": {
+          "countdown_seconds": 45.0,
+          "simulated_seconds": 17.71666,
+          "difficulty": 2
+        }
       }
     ]
   },

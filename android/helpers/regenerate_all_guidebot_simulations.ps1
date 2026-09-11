@@ -26,6 +26,7 @@ param(
     [switch]$LeaveHeadedRunning
 )
 
+Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 if ($TestSpeedPercent -ne 160 -and ($WriteRegression -or $Mode -eq 'Headed')) {
     throw 'Noncanonical test speed requires native Headless/Desktop mode without WriteRegression'
@@ -78,7 +79,7 @@ function Get-GuidebotMissionEntries {
 
     $text = [IO.File]::ReadAllText($Path, [Text.Encoding]::UTF8)
     $value = $text | ConvertFrom-Json -NoEnumerate
-    $entries = if ($text.TrimStart().StartsWith('[')) { @($value) } else { @($value) }
+    $entries = @($value)
     if ($entries.Count -eq 0 -or @($entries | Where-Object {
                 $null -eq $_.PSObject.Properties['levels'] -or
                 $null -eq $_.PSObject.Properties['mission_filename']
@@ -263,7 +264,7 @@ function Test-GuidebotLevelAssetUnavailable {
 
     $problem = [string](Get-GuidebotPropertyValue $LevelRecord 'route_problem' '')
     if (-not $problem) { $problem = [string](Get-GuidebotPropertyValue $LevelRecord 'problems' '') }
-    return $problem -match '(?i)level file is missing'
+    return $problem -match '(?i)level file is missing|unsupported level version [0-9]+|invalid level header'
 }
 
 function New-GuidebotUnsupportedResult {
@@ -539,16 +540,12 @@ function Invoke-GuidebotHeadedLevel {
 
 function Get-ExistingGuidebotLevelMap {
     param(
-        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Records,
         [Parameter(Mandatory)][int]$TargetIndex
     )
 
     $map = @{}
     $map['__contract_current'] = $false
-    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $map }
-    $text = [IO.File]::ReadAllText($Path)
-    $value = $text | ConvertFrom-Json -NoEnumerate
-    $records = if ($text.TrimStart().StartsWith('[')) { @($value) } else { @($value) }
     $record = @($records | Where-Object { [int]$_.target_index -eq $TargetIndex } | Select-Object -First 1)
     if ($record.Count -eq 0) { return $map }
     $map['__contract_current'] =
@@ -573,10 +570,17 @@ function Write-GuidebotSimulationFile {
     $entries = @(Get-GuidebotMissionEntries -Path $MetadataFile.FullName)
     $simulationPath = Join-Path $MetadataFile.DirectoryName ($MetadataFile.BaseName + '.simulation.json')
     $relative = $MetadataFile.FullName.Substring($missionRoot.Length).TrimStart('\', '/').Replace('\', '/')
+    # A collection has many missions sharing one simulation file
+    # Take one fresh snapshot per publication instead of reparsing it for every mission
+    $existingRecords = @()
+    if (Test-Path -LiteralPath $simulationPath -PathType Leaf) {
+        $existingValue = [IO.File]::ReadAllText($simulationPath) | ConvertFrom-Json -NoEnumerate
+        $existingRecords = @($existingValue)
+    }
     $simulationEntries = foreach ($mission in $entries) {
         if ([string](Get-GuidebotPropertyValue $mission 'game' '') -notin @('d1', 'd2')) { continue }
         $targetIndex = [int](Get-GuidebotPropertyValue $mission 'target_index' 0)
-        $existing = Get-ExistingGuidebotLevelMap -Path $simulationPath -TargetIndex $targetIndex
+        $existing = Get-ExistingGuidebotLevelMap -Records $existingRecords -TargetIndex $targetIndex
         $levels = foreach ($levelRecord in @($mission.levels)) {
             $levelNumber = [int]$levelRecord.level_num
             $levelFile = [string]$levelRecord.level_file
@@ -662,8 +666,8 @@ if ($Mode -in @('Headless', 'Desktop') -and -not (Test-Path -LiteralPath $resolv
 }
 $d1InD2Selected = @($selectedItems | Where-Object D1InD2).Count -gt 0
 if ($Mode -in @('Headless', 'Desktop') -and $d1InD2Selected) {
-    $missingD1InD2Files = @('descent2.hog', 'descent2.ham', 'groupa.pig', 'descent.hog', 'descent.pig') |
-        Where-Object { -not (Test-Path -LiteralPath (Join-Path $resolvedD1InD2HogDir $_) -PathType Leaf) }
+    $missingD1InD2Files = @(@('descent2.hog', 'descent2.ham', 'groupa.pig', 'descent.hog', 'descent.pig') |
+            Where-Object { -not (Test-Path -LiteralPath (Join-Path $resolvedD1InD2HogDir $_) -PathType Leaf) })
     if ($missingD1InD2Files.Count -gt 0) {
         throw "D1-in-D2 data directory is missing $($missingD1InD2Files -join ', '): $resolvedD1InD2HogDir"
     }
