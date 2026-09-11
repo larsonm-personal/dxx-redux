@@ -5,10 +5,9 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 6,
-    "timeout": 1
+    "ok": 7
   },
   "levels": [
     {
@@ -122,8 +121,8 @@
     {
       "level_num": 3,
       "level_file": "lavachsm.rl2",
-      "route_input_sha256": "B6FAB2B579370B25FE8E72D0CA38ABC3350C1030073BFB4A458764311D39FB51",
-      "status": "timeout",
+      "route_input_sha256": "CCA109D54856555FF5A97A2AE42A036AB8573C9C801676C537D6F53C42D1801E",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -148,14 +147,22 @@
         {
           "n": "reactor",
           "s": 168
+        },
+        {
+          "n": "exit",
+          "s": 179
         }
       ],
-      "total_frames": 18001,
+      "total_frames": 10748,
       "rng_end": {
-        "state": 722820461,
-        "calls": 8788
+        "state": 1144109847,
+        "calls": 6866
       },
-      "problem": "route confirmation exceeded 300-second simulation budget"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 11.150009,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 4,

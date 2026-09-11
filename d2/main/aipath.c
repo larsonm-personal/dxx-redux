@@ -516,7 +516,8 @@ static int create_path_points_avoiding(object *objp, int start_seg, int end_seg,
 	validate_all_paths();
 #endif
 
-if ((objp->type == OBJ_ROBOT) && (objp->ctype.ai_info.behavior == AIB_RUN_FROM)) {
+/* Explicit Guide-Bot guidance must not inherit a robot's player-avoidance route */
+if (!guidebot_route && (objp->type == OBJ_ROBOT) && (objp->ctype.ai_info.behavior == AIB_RUN_FROM)) {
 	random_flag = 1;
 	avoid_seg = ConsoleObject->segnum;
 	avoid_seg2 = -1;

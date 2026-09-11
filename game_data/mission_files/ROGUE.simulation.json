@@ -118,12 +118,16 @@
         {
           "n": "red key",
           "s": 131
+        },
+        {
+          "n": "reactor",
+          "s": 151
         }
       ],
-      "total_frames": 7859,
+      "total_frames": 9051,
       "rng_end": {
-        "state": 268521427,
-        "calls": 6326
+        "state": 194861621,
+        "calls": 6348
       },
       "problem": "guided missile objective requires equipment and flight verification"
     },

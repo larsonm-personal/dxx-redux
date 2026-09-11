@@ -135,7 +135,7 @@ struct route_visibility_query {
 	    void *user,
 	    int segment,
 	    const route_position &from,
-	    int wall) = nullptr;
+	    int wall, int control_center_destroyed) = nullptr;
 	int (*wall_first_shot_blocker)(
 	    void *user,
 	    int segment,
@@ -146,6 +146,8 @@ struct route_visibility_query {
 	    const route_position &from,
 	    int wall) = nullptr;
 	bool approximate_shots = false;
+	bool conditional_shots = false;
+	bool control_center_destroyed = false;
 	void *progress_user = nullptr;
 	level_metadata_progress_callback progress = nullptr;
 	void *sample_cache = nullptr;

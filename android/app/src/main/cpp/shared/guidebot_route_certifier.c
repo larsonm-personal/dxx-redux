@@ -146,14 +146,20 @@ static int guidebot_route_side_passable(
 		wall = reverse_wall;
 	if (wall < 0 || wall >= view->num_walls)
 		return !hard_blocked;
+	type = view->wall_type ? view->wall_type(view->user, wall) : -1;
+	flags = view->wall_flags ? view->wall_flags(view->user, wall) : 0;
+	/* A trigger can open a locked Buddy-proof door. Its old access flags
+	 * must not hide that pending passage from the strategic search */
+	if (type == view->wall_type_door &&
+	    ((flags & view->wall_flag_door_opened) ||
+	     (view->wall_is_opening && view->wall_is_opening(view->user, wall))))
+		return 1;
 	if (hard_blocked && !view->wall_keys)
 		return 0;
 	key = view->wall_keys ? view->wall_keys(view->user, wall)
 	                      : view->wall_key_none;
 	if (hard_blocked && !guidebot_key_allowed(view, key))
 		return 0;
-	type = view->wall_type ? view->wall_type(view->user, wall) : -1;
-	flags = view->wall_flags ? view->wall_flags(view->user, wall) : 0;
 	/* Buddy-proof blocks companion access, but an unlocked door can still
 	 * supply a player-assisted frontier even when it needs no key */
 	if (hard_blocked && key == view->wall_key_none &&
@@ -1236,9 +1242,10 @@ int guidebot_route_prepare_compiled_step_current(
 			return 1;
 	}
 	if (guidebot_valid_segment(view, step->path_terminal_segment) &&
-	    distance[step->path_terminal_segment] < 0 && view->initial_key_mask) {
+	    distance[step->path_terminal_segment] < 0) {
 		/* Keep the planned firing pose when the player can reach it through
-		 * owned-key doors. An unrelated approach waypoint is not a firing pose */
+		 * player-assisted doors, including keyless doors already opening.
+		 * An unrelated approach waypoint is not a firing pose */
 		head = tail = 0;
 		queue[tail++] = view->start_segment;
 		player_distance[view->start_segment] = 0;

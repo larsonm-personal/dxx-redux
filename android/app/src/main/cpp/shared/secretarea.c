@@ -530,10 +530,11 @@ enum level_metadata_visibility_target_kind {
 	LEVEL_METADATA_VISIBILITY_POSITION_OCCUPIABLE = 4,
 	LEVEL_METADATA_VISIBILITY_TARGET_WALL_POTENTIAL = 5,
 	LEVEL_METADATA_VISIBILITY_TARGET_WALL_CONDITIONAL = 6,
-	LEVEL_METADATA_VISIBILITY_DOOR_AIM_REJECTED = 7
+	LEVEL_METADATA_VISIBILITY_DOOR_AIM_REJECTED = 7,
+	LEVEL_METADATA_VISIBILITY_TARGET_WALL_CONDITIONAL_COUNTDOWN = 8
 };
 
-#define LEVEL_METADATA_SWITCH_SHOT_MODEL_VERSION 2
+#define LEVEL_METADATA_SWITCH_SHOT_MODEL_VERSION 3
 
 typedef struct level_metadata_visibility_key {
 	int kind;
@@ -2034,6 +2035,7 @@ typedef struct level_metadata_route_shot_context {
 	int conditional_wall;
 	int conditional_multiple;
 	int first_blocker;
+	int control_center_destroyed;
 } level_metadata_route_shot_context;
 
 static int secret_area_side_opener_source_wall_at(int seg, int side, int wanted_index, int allow_keyed_target);
@@ -2059,6 +2061,8 @@ static int level_metadata_route_shot_wall_is_passable(
 		/* Locked hidden doors need an opening trigger before a shot can pass */
 		const int actionable =
 		    Walls[wall_num].type == WALL_BLASTABLE ||
+		    (context->control_center_destroyed && Walls[wall_num].type == WALL_DOOR &&
+		     secret_area_side_is_control_center_link(NULL, seg, side)) ||
 		    (Walls[wall_num].type == WALL_DOOR && Walls[wall_num].keys != KEY_NONE && !(Walls[wall_num].flags & WALL_DOOR_LOCKED) && wall_num == context->first_blocker) ||
 		    (Walls[wall_num].type == WALL_CLOSED && wall_num == context->first_blocker &&
 		     secret_area_side_opener_source_wall_at(seg, side, 0, 1) >= 0) ||
@@ -2255,7 +2259,8 @@ static int level_metadata_wall_shootable_from_position_impl(
     int seg,
     const int from_pos[3],
     int wall_num,
-    int allow_transparency)
+    int allow_transparency,
+    int control_center_destroyed)
 {
 	level_metadata_visibility_key key;
 	fvi_info hit_data;
@@ -2289,7 +2294,9 @@ static int level_metadata_wall_shootable_from_position_impl(
 		return 0;
 	}
 	memset(&key, 0, sizeof(key));
-	key.kind = allow_transparency == 3
+	key.kind = allow_transparency == 3 && control_center_destroyed
+	               ? LEVEL_METADATA_VISIBILITY_TARGET_WALL_CONDITIONAL_COUNTDOWN
+	           : allow_transparency == 3
 	               ? LEVEL_METADATA_VISIBILITY_TARGET_WALL_CONDITIONAL
 	           : allow_transparency == 2
 	               ? LEVEL_METADATA_VISIBILITY_TARGET_WALL_POTENTIAL
@@ -2340,6 +2347,7 @@ static int level_metadata_wall_shootable_from_position_impl(
 	memset(&route_shot_context, 0, sizeof(route_shot_context));
 	route_shot_context.target_wall = wall_num;
 	route_shot_context.allow_transparency = allow_transparency;
+	route_shot_context.control_center_destroyed = control_center_destroyed;
 	route_shot_context.conditional_wall = -1;
 	// Closed walls only need a prerequisite when the ray actually hits them
 	route_shot_context.first_blocker = allow_transparency == 3
@@ -2440,21 +2448,21 @@ int level_metadata_wall_shootable_from_position(
     int seg, const int from_pos[3], int wall_num)
 {
 	return level_metadata_wall_shootable_from_position_impl(
-	    seg, from_pos, wall_num, 1);
+	    seg, from_pos, wall_num, 1, 0);
 }
 
 int level_metadata_wall_potentially_shootable_from_position(
     int seg, const int from_pos[3], int wall_num)
 {
 	return level_metadata_wall_shootable_from_position_impl(
-	    seg, from_pos, wall_num, 2);
+	    seg, from_pos, wall_num, 2, 0);
 }
 
 int level_metadata_wall_conditionally_shootable_from_position(
-    int seg, const int from_pos[3], int wall_num)
+    int seg, const int from_pos[3], int wall_num, int control_center_destroyed)
 {
 	return level_metadata_wall_shootable_from_position_impl(
-	    seg, from_pos, wall_num, 3);
+	    seg, from_pos, wall_num, 3, control_center_destroyed);
 }
 
 int level_metadata_wall_first_shot_blocker_from_position(
@@ -2527,11 +2535,11 @@ static int secret_area_wall_potentially_shootable_from_position(
 }
 
 static int secret_area_wall_conditionally_shootable_from_position(
-    void *user, int seg, const int from_pos[3], int wall_num)
+    void *user, int seg, const int from_pos[3], int wall_num, int control_center_destroyed)
 {
 	(void) user;
 	return level_metadata_wall_conditionally_shootable_from_position(
-	    seg, from_pos, wall_num);
+	    seg, from_pos, wall_num, control_center_destroyed);
 }
 
 static int secret_area_wall_first_shot_blocker_from_position(
@@ -2583,7 +2591,7 @@ static int secret_area_wall_shootable_without_transparency_from_position(
 {
 	(void) user;
 	return level_metadata_wall_shootable_from_position_impl(
-	    seg, from_pos, wall_num, 0);
+	    seg, from_pos, wall_num, 0, 0);
 }
 
 static int secret_area_trigger_opens_links(int trigger_num)

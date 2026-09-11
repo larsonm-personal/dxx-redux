@@ -2999,9 +2999,9 @@
         "mine_volume": 520224000.0,
         "mine_volume_normalized": 113.762,
         "mine_volume_text": "110x",
-        "travel_distance": 285.0,
-        "travel_time_seconds": 6,
-        "travel_time_text": "0M:06S",
+        "travel_distance": 1551.6,
+        "travel_time_seconds": 31,
+        "travel_time_text": "0M:31S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -3018,19 +3018,44 @@
           },
           {
             "index": 1,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 4",
+            "seg": 63,
+            "side": 3,
+            "wall": 32,
+            "label_pos": {
+              "x": -20.0,
+              "y": 38.0,
+              "z": 540.0
+            },
+            "distance": 604.0,
+            "trigger": 4,
+            "trigger_type_id": 7,
+            "trigger_type": "unlock_door",
+            "opens": [
+              {
+                "seg": 40,
+                "side": 0,
+                "wall": 78
+              }
+            ]
+          },
+          {
+            "index": 2,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
-            "seg": 13,
-            "side": 1,
-            "wall": 2,
+            "seg": 105,
+            "side": 0,
+            "wall": 80,
             "label_pos": {
-              "x": 0.0,
-              "y": 190.0,
-              "z": 100.0
+              "x": -56.8,
+              "y": 0.0,
+              "z": 1038.9
             },
-            "distance": 285.0,
-            "trigger": 2,
+            "distance": 947.6,
+            "trigger": 5,
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }
@@ -3064,9 +3089,9 @@
         "mine_volume": 525591000.0,
         "mine_volume_normalized": 114.936,
         "mine_volume_text": "110x",
-        "travel_distance": 6873.3,
-        "travel_time_seconds": 137,
-        "travel_time_text": "2M:17S",
+        "travel_distance": 8200.6,
+        "travel_time_seconds": 164,
+        "travel_time_text": "2M:44S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -3255,16 +3280,16 @@
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
-            "seg": 129,
-            "side": 1,
-            "wall": 66,
+            "seg": 429,
+            "side": 4,
+            "wall": 244,
             "label_pos": {
-              "x": 0.0,
-              "y": 310.0,
-              "z": 730.0
+              "x": -61.5,
+              "y": 241.5,
+              "z": 1070.0
             },
-            "distance": 456.0,
-            "trigger": 5,
+            "distance": 1783.3,
+            "trigger": 18,
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }

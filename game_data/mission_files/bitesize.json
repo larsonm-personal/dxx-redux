@@ -3745,9 +3745,9 @@
         "mine_volume": 1547120.0,
         "mine_volume_normalized": 0.338324,
         "mine_volume_text": "0.34x",
-        "travel_distance": 1688.9,
-        "travel_time_seconds": 34,
-        "travel_time_text": "0M:34S",
+        "travel_distance": 976.6,
+        "travel_time_seconds": 20,
+        "travel_time_text": "0M:20S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -3793,109 +3793,6 @@
           },
           {
             "index": 2,
-            "kind": "trigger",
-            "activation_kind": "shoot_switch",
-            "label": "Shoot switch trigger 3",
-            "seg": 53,
-            "wall": 45,
-            "label_pos": {
-              "x": 0.0,
-              "y": 10.0,
-              "z": 255.0
-            },
-            "distance": 505.0,
-            "trigger": 3,
-            "trigger_type_id": 9,
-            "trigger_type": "open_wall",
-            "opens": [
-              {
-                "seg": 91,
-                "side": 0,
-                "wall": 39
-              },
-              {
-                "seg": 91,
-                "side": 2,
-                "wall": 41
-              },
-              {
-                "seg": 91,
-                "side": 4,
-                "wall": 43
-              },
-              {
-                "seg": 41,
-                "side": 0,
-                "wall": 37
-              },
-              {
-                "seg": 41,
-                "side": 2,
-                "wall": 36
-              },
-              {
-                "seg": 41,
-                "side": 4,
-                "wall": 33
-              }
-            ]
-          },
-          {
-            "index": 3,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "required_weapon": "guided_missile",
-            "label": "Shoot using guided missile",
-            "seg": 56,
-            "wall": 18,
-            "label_pos": {
-              "x": 85.0,
-              "y": 10.0,
-              "z": 270.0
-            },
-            "distance": 85.1,
-            "opens": [
-              {
-                "seg": 67,
-                "side": 5,
-                "wall": 18
-              },
-              {
-                "seg": 56,
-                "side": 4,
-                "wall": 15
-              }
-            ]
-          },
-          {
-            "index": 4,
-            "kind": "hidden_door",
-            "activation_kind": "open_hidden_door",
-            "required_weapon": "guided_missile",
-            "label": "Shoot using guided missile",
-            "seg": 69,
-            "wall": 23,
-            "label_pos": {
-              "x": 85.0,
-              "y": 10.0,
-              "z": 170.0
-            },
-            "distance": 117.3,
-            "opens": [
-              {
-                "seg": 83,
-                "side": 5,
-                "wall": 23
-              },
-              {
-                "seg": 69,
-                "side": 4,
-                "wall": 19
-              }
-            ]
-          },
-          {
-            "index": 5,
             "kind": "reactor",
             "activation_kind": "destroy_reactor",
             "label": "Reactor",
@@ -3905,10 +3802,10 @@
               "y": 10.0,
               "z": 80.0
             },
-            "distance": 171.0
+            "distance": 100.3
           },
           {
-            "index": 6,
+            "index": 3,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -3920,7 +3817,7 @@
               "y": 10.0,
               "z": 375.0
             },
-            "distance": 419.8,
+            "distance": 485.7,
             "trigger": 1,
             "trigger_type_id": 3,
             "trigger_type": "exit"

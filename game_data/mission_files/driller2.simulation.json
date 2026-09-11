@@ -5,10 +5,9 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 8,
-    "timeout": 2
+    "ok": 10
   },
   "levels": [
     {
@@ -149,7 +148,7 @@
       "level_num": 4,
       "level_file": "marin.rl2",
       "route_input_sha256": "067632A68FF6E7857472ECB0583438AD2FE423547E7E9D25BAE48E94722BC1D7",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -166,14 +165,34 @@
         {
           "n": "destroy robot carrying gold key",
           "s": 22
+        },
+        {
+          "n": "switch 2",
+          "s": 43
+        },
+        {
+          "n": "red key",
+          "s": 46
+        },
+        {
+          "n": "reactor",
+          "s": 69
+        },
+        {
+          "n": "exit",
+          "s": 78
         }
       ],
-      "total_frames": 4992,
+      "total_frames": 4692,
       "rng_end": {
-        "state": 3356196678,
-        "calls": 3553
+        "state": 3564915959,
+        "calls": 7922
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 8.900009,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 5,
@@ -229,7 +248,7 @@
       "level_num": 6,
       "level_file": "mimu.rl2",
       "route_input_sha256": "7D97851DDF50976F5103A9C0B63B29F5A8015A8EB720EB5D480BE6B434CD3FCD",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -250,14 +269,22 @@
         {
           "n": "reactor",
           "s": 40
+        },
+        {
+          "n": "exit",
+          "s": 65
         }
       ],
-      "total_frames": 6492,
+      "total_frames": 3878,
       "rng_end": {
-        "state": 2893168165,
-        "calls": 2396
+        "state": 3460419822,
+        "calls": 3929
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "reactor_escape": {
+        "countdown_seconds": 30.0,
+        "simulated_seconds": 24.650009,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 7,
@@ -275,45 +302,45 @@
         },
         {
           "n": "blastable wall",
-          "s": 34
+          "s": 25
         },
         {
           "n": "gold key",
-          "s": 38
+          "s": 28
         },
         {
           "n": "switch 1",
-          "s": 47
+          "s": 37
         },
         {
           "n": "switch 2",
-          "s": 56
+          "s": 47
         },
         {
           "n": "hidden door",
-          "s": 65
+          "s": 55
         },
         {
           "n": "red key",
-          "s": 66
+          "s": 56
         },
         {
           "n": "reactor",
-          "s": 73
+          "s": 64
         },
         {
           "n": "exit",
-          "s": 80
+          "s": 70
         }
       ],
-      "total_frames": 4783,
+      "total_frames": 4186,
       "rng_end": {
-        "state": 2895563420,
-        "calls": 1755
+        "state": 3866917681,
+        "calls": 1616
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 6.46666,
+        "simulated_seconds": 6.266663,
         "difficulty": 2
       }
     },
@@ -433,21 +460,21 @@
         },
         {
           "n": "switch 6",
-          "s": 44
+          "s": 41
         },
         {
           "n": "reactor",
-          "s": 53
+          "s": 51
         },
         {
           "n": "exit",
-          "s": 55
+          "s": 53
         }
       ],
-      "total_frames": 3308,
+      "total_frames": 3160,
       "rng_end": {
-        "state": 4264298637,
-        "calls": 3636
+        "state": 3516484508,
+        "calls": 4571
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,

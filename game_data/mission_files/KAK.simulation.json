@@ -5,10 +5,10 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "failed",
+  "status": "partial",
   "level_counts": {
+    "ok": 1,
     "failed": 2,
-    "timeout": 1,
     "unsupported": 1
   },
   "levels": [
@@ -87,8 +87,8 @@
     {
       "level_num": 4,
       "level_file": "main_gen.rl2",
-      "route_input_sha256": "DEB69EA5856635D673600D3867E79953A70048CD3F090CAEC3E228A41F49CEE5",
-      "status": "timeout",
+      "route_input_sha256": "4E7E0A20E452FA4C1711946465A4B0EEED28568D78A8342F040C6278E815E1CF",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -97,14 +97,26 @@
         {
           "n": "boss",
           "s": 29
+        },
+        {
+          "n": "pass-through 5",
+          "s": 33
+        },
+        {
+          "n": "exit",
+          "s": 43
         }
       ],
-      "total_frames": 7968,
+      "total_frames": 2604,
       "rng_end": {
-        "state": 1935767572,
-        "calls": 1667
+        "state": 729003353,
+        "calls": 2536
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "reactor_escape": {
+        "countdown_seconds": 30.0,
+        "simulated_seconds": 13.916672,
+        "difficulty": 2
+      }
     }
   ]
 }

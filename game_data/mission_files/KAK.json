@@ -372,7 +372,7 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "route target unreachable",
+        "route_problem": "shared route planning reached its work budget",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]
@@ -483,9 +483,9 @@
         "mine_volume": 12519300.0,
         "mine_volume_normalized": 2.73771,
         "mine_volume_text": "2.7x",
-        "travel_distance": 3611.4,
-        "travel_time_seconds": 72,
-        "travel_time_text": "1M:12S",
+        "travel_distance": 3508.5,
+        "travel_time_seconds": 70,
+        "travel_time_text": "1M:10S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -515,6 +515,66 @@
           },
           {
             "index": 2,
+            "kind": "trigger",
+            "activation_kind": "pass_through_trigger",
+            "label": "Pass through trigger 5",
+            "seg": 113,
+            "side": 5,
+            "wall": 52,
+            "label_pos": {
+              "x": -87.2,
+              "y": -267.0,
+              "z": 680.5
+            },
+            "distance": 128.6,
+            "trigger": 5,
+            "trigger_type_id": 9,
+            "trigger_type": "open_wall",
+            "opens": [
+              {
+                "seg": 279,
+                "side": 1,
+                "wall": 120
+              },
+              {
+                "seg": 280,
+                "side": 1,
+                "wall": 122
+              },
+              {
+                "seg": 278,
+                "side": 1,
+                "wall": 118
+              },
+              {
+                "seg": 358,
+                "side": 1,
+                "wall": 114
+              },
+              {
+                "seg": 356,
+                "side": 1,
+                "wall": 110
+              },
+              {
+                "seg": 357,
+                "side": 1,
+                "wall": 112
+              },
+              {
+                "seg": 308,
+                "side": 1,
+                "wall": 117
+              },
+              {
+                "seg": 396,
+                "side": 1,
+                "wall": 125
+              }
+            ]
+          },
+          {
+            "index": 3,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -526,7 +586,7 @@
               "y": 161.0,
               "z": 661.2
             },
-            "distance": 1696.3,
+            "distance": 1464.8,
             "trigger": 1,
             "trigger_type_id": 3,
             "trigger_type": "exit"

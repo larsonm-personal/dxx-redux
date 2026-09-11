@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 18,
+    "ok": 20,
     "failed": 2,
-    "timeout": 3
+    "timeout": 1
   },
   "levels": [
     {
@@ -786,25 +786,33 @@
     {
       "level_num": 17,
       "level_file": "Level17.rl2",
-      "route_input_sha256": "1B1BC7DBB08280B226685305E2B4BD9210969B94F00D623154BECA514A51FA29",
-      "status": "timeout",
+      "route_input_sha256": "BA920A96348C11E00F1D539047F43687AAC6D1CEA3BDDD31961D7FC687B26950",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 2401,
+      "objectives": [
+        {
+          "n": "switch 4",
+          "s": 6
+        },
+        {
+          "n": "exit",
+          "s": 17
+        }
+      ],
+      "total_frames": 1010,
       "rng_end": {
-        "state": 1869663702,
-        "calls": 401
-      },
-      "problem": "route confirmation exceeded 40-second simulation budget"
+        "state": 4006364855,
+        "calls": 306
+      }
     },
     {
       "level_num": 18,
       "level_file": "Level18.rl2",
-      "route_input_sha256": "913B364E44A04DFCA46D48A3CBA2F04FBE2DF59DEB5B2C63BAFDE405D25E1BE9",
-      "status": "timeout",
+      "route_input_sha256": "988561E02E2F9A419089AD25EA13C3459F0A56C05FBAC7662DD801D491C8275E",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -837,14 +845,22 @@
         {
           "n": "reactor",
           "s": 80
+        },
+        {
+          "n": "exit",
+          "s": 105
         }
       ],
-      "total_frames": 15601,
+      "total_frames": 6329,
       "rng_end": {
-        "state": 3949885492,
-        "calls": 5091
+        "state": 3939789436,
+        "calls": 3451
       },
-      "problem": "route confirmation exceeded 260-second simulation budget"
+      "reactor_escape": {
+        "countdown_seconds": 100.0,
+        "simulated_seconds": 25.033325,
+        "difficulty": 2
+      }
     },
     {
       "level_num": -1,

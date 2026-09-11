@@ -6,17 +6,16 @@
   "generation": 4,
   "fixed_hz": 60,
   "seed": 1,
-  "status": "partial",
+  "status": "ok",
   "level_counts": {
-    "ok": 3,
-    "timeout": 1
+    "ok": 4
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "Uridim.rdl",
       "route_input_sha256": "ECCD0C1FC4989C7462D879855A687CA7345E010781B90482FAD139C1C607E68F",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -41,14 +40,22 @@
         {
           "n": "reactor",
           "s": 65
+        },
+        {
+          "n": "exit",
+          "s": 73
         }
       ],
-      "total_frames": 7740,
+      "total_frames": 4360,
       "rng_end": {
-        "state": 3331395548,
-        "calls": 155
+        "state": 2224273656,
+        "calls": 175
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 7.533325,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 2,

@@ -519,6 +519,14 @@ bool source_visible_from_position(
     int segment,
     const route_position &position)
 {
+	if (valid_wall(snapshot, source.source_wall) && visibility.conditional_shots &&
+	    visibility.wall_conditionally_shootable) {
+		if (!consume_analysis_work(visibility))
+			return false;
+		return visibility.wall_conditionally_shootable(
+		    visibility.user, segment, position, source.source_wall,
+		    visibility.control_center_destroyed);
+	}
 	if (valid_wall(snapshot, source.source_wall) && visibility.wall_shootable) {
 		if (!consume_analysis_work(visibility))
 			return false;
@@ -590,7 +598,8 @@ visibility_sample_key make_visibility_sample_key(
 	key.sample_kind = sample_kind;
 	key.segment = segment;
 	key.target_wall =
-	    valid_wall(snapshot, source.source_wall) && visibility.wall_shootable
+	    valid_wall(snapshot, source.source_wall) &&
+	            (visibility.wall_shootable || (visibility.conditional_shots && visibility.wall_conditionally_shootable))
 	        ? source.source_wall
 	        : -1;
 	key.target_segment = key.target_wall >= 0 ? -1 : source.source_segment;
@@ -2367,7 +2376,8 @@ class dependency_planner
 	      semantic_key_mask_(semantic_key_mask),
 	      semantic_key_order_(semantic_key_order),
 	      transition_aware_paths_(transition_aware_paths),
-	      expand_firing_search_(expand_firing_search)
+	      expand_firing_search_(expand_firing_search),
+	      allow_guided_shots_(expand_firing_search)
 	{
 		state_.progress = progress;
 		state_.progress.remote_door_shots = visibility.wall_shootable != nullptr;
@@ -2425,13 +2435,38 @@ class dependency_planner
 		bool progressed = false;
 		if (!progress_primary(progressed))
 			return finish_partial("route incomplete");
-		const auto selected = select_route_target(
-		    snapshot_, query_, state_.progress, targets_.exits);
-		if (!selected.found) {
-			set_problem("exit unreachable");
-			return finish_partial("route incomplete");
+		const auto before_exit = state_;
+		auto remaining_exits = targets_.exits;
+		route_plan_result first_partial;
+		bool have_partial = false;
+		while (!remaining_exits.empty()) {
+			state_ = before_exit;
+			const auto selected = select_route_target(
+			    snapshot_, query_, state_.progress, remaining_exits);
+			if (!selected.found)
+				break;
+			auto result = plan_exit_target(remaining_exits[selected.selected_index]);
+			if (result.status == route_plan_status::ok)
+				return result;
+			if (!have_partial) {
+				first_partial = std::move(result);
+				have_partial = true;
+			}
+			/* A nearby exit portal can be permanently sealed. Try the remaining
+			 * authored exits before discarding a usable primary-objective route */
+			remaining_exits.erase(remaining_exits.begin() + selected.selected_index);
+			if (visibility_.analysis_budget && visibility_.analysis_budget->exhausted)
+				break;
 		}
-		const auto &target = targets_.exits[selected.selected_index];
+		if (have_partial)
+			return first_partial;
+		state_ = before_exit;
+		set_problem("exit unreachable");
+		return finish_partial("route incomplete");
+	}
+
+	route_plan_result plan_exit_target(const route_target &target)
+	{
 		const auto activation = exit_activation_position(snapshot_, target);
 		const auto exit_prefix = state_;
 		auto post_primary_key_steps = [&](const dependency_state &candidate) {
@@ -2443,7 +2478,7 @@ class dependency_planner
 		};
 
 		const bool conventional_ok =
-		    acquire_exit_key(target) &&
+		    prepare_exit_access(target) &&
 		    move_to_target(target.segment, activation, 0) &&
 		    append_target_step(
 		        route_semantic_step_kind::exit, target, "Exit");
@@ -2467,7 +2502,7 @@ class dependency_planner
 		state_.problem.clear();
 		const bool discovered_ok =
 		    move_to_target(target.segment, activation, 0) &&
-		    acquire_exit_key(target) &&
+		    prepare_exit_access(target) &&
 		    move_to_target(target.segment, activation, 0) &&
 		    append_target_step(
 		        route_semantic_step_kind::exit, target, "Exit");
@@ -3137,7 +3172,7 @@ class dependency_planner
 
 	bool find_guided_shot(int wall, const route_search_result &search, guided_missile_route &result)
 	{
-		if (!expand_firing_search_ || !visibility_.guided_route || search.visit_order.empty() || !consume_analysis_work(visibility_)) return false;
+		if (!allow_guided_shots_ || !visibility_.guided_route || search.visit_order.empty() || !consume_analysis_work(visibility_)) return false;
 		return visibility_.guided_route(visibility_.user, wall, search.visit_order.data(), (int) search.visit_order.size(), &result) != 0;
 	}
 
@@ -3241,6 +3276,10 @@ class dependency_planner
 			return false;
 		}
 		const auto &wall_state = snapshot_.state.walls[wall];
+		/* A predicted reactor opening can clear a shot before the native
+		 * snapshot has played the door animation. No extra door action is needed */
+		if (route_progress_wall_opened(snapshot_, state_.progress, wall))
+			return move_to_target(firing_segment, firing_position, depth + 1);
 		if (wall_state.kind == route_wall_kind::closed) {
 			if (!fire_trigger(topology.segment, topology.side, depth + 1))
 				return false;
@@ -3479,7 +3518,7 @@ class dependency_planner
 		return true;
 	}
 
-	bool acquire_exit_key(const route_target &target)
+	bool prepare_exit_access(const route_target &target)
 	{
 		if (!valid_segment(snapshot_, target.segment) || target.side < 0 ||
 		    target.side >= LEVEL_METADATA_MAX_SIDES)
@@ -3489,6 +3528,16 @@ class dependency_planner
 		                     .wall;
 		if (!valid_wall(snapshot_, wall))
 			return true;
+		/* Reaching the exit room does not cross its final wall
+		 * Resolve an opener before committing to a solid exit barrier */
+		if (route_progress_wall_kind(snapshot_, state_.progress, wall) == route_wall_kind::closed) {
+			if (!fire_trigger(target.segment, target.side, 0))
+				return false;
+			if (route_progress_wall_kind(snapshot_, state_.progress, wall) == route_wall_kind::closed) {
+				set_problem("exit wall remains closed after its prerequisite");
+				return false;
+			}
+		}
 		const auto &exit_wall = snapshot_.state.walls[wall];
 		if (exit_wall.opened || exit_wall.kind != route_wall_kind::door)
 			return true;
@@ -3553,6 +3602,22 @@ class dependency_planner
 	}
 
 	bool move_primary_with_key_recovery(const route_target &target)
+	{
+		if (!allow_guided_shots_)
+			return move_primary_with_key_recovery_impl(target);
+		/* A guided door shot must not preempt an ordinary firing pose outside
+		 * the reactor or boss room. Try the complete primary approach first */
+		const auto initial = state_;
+		allow_guided_shots_ = false;
+		const bool ordinary = move_primary_with_key_recovery_impl(target);
+		allow_guided_shots_ = true;
+		if (ordinary)
+			return true;
+		state_ = initial;
+		return move_primary_with_key_recovery_impl(target);
+	}
+
+	bool move_primary_with_key_recovery_impl(const route_target &target)
 	{
 		const auto initial = state_;
 		std::string last_problem;
@@ -4083,9 +4148,10 @@ class dependency_planner
 		    visibility_.wall_conditionally_shootable &&
 		    visibility_.wall_first_shot_blocker) {
 			auto conditional_visibility = visibility_;
-			conditional_visibility.wall_shootable =
-			    visibility_.wall_conditionally_shootable;
-			conditional_visibility.sample_cache_namespace ^= 0x40000000u;
+			conditional_visibility.conditional_shots = true;
+			conditional_visibility.control_center_destroyed = state_.progress.control_center_destroyed;
+			/* Cache witnesses separately before and after predicted reactor destruction */
+			conditional_visibility.sample_cache_namespace ^= state_.progress.control_center_destroyed ? 0x60000000u : 0x40000000u;
 			selected_firing = select_trigger_firing_path_internal(
 			    snapshot_, query_, state_.progress, firing_sources,
 			    conditional_visibility, &switch_guidance_graph_);
@@ -4094,8 +4160,9 @@ class dependency_planner
 		if (!selected_firing.found && visibility_.wall_conditionally_shootable &&
 		    visibility_.wall_first_shot_blocker) {
 			auto conditional_visibility = visibility_;
-			conditional_visibility.wall_shootable = visibility_.wall_conditionally_shootable;
-			conditional_visibility.sample_cache_namespace ^= 0x40000000u;
+			conditional_visibility.conditional_shots = true;
+			conditional_visibility.control_center_destroyed = state_.progress.control_center_destroyed;
+			conditional_visibility.sample_cache_namespace ^= state_.progress.control_center_destroyed ? 0x60000000u : 0x40000000u;
 			// A switch recess may be inaccessible while an outside firing pose
 			// is reachable after another switch; never depend on this switch itself
 			auto firing_progress = state_.progress;
@@ -4115,7 +4182,7 @@ class dependency_planner
 		}
 		guided_missile_route guided = {};
 		bool guided_approach = false;
-		if (!selected_firing.found && expand_firing_search_ && visibility_.guided_route) {
+		if (!selected_firing.found && allow_guided_shots_ && visibility_.guided_route) {
 			// A verified projectile path may start beyond another switch. Resolve
 			// access to that launch pose without allowing the shot to unlock itself
 			for (int pass = 0; pass < 2 && !selected_firing.found; ++pass) {
@@ -4564,6 +4631,7 @@ class dependency_planner
 	std::array<int, 3> semantic_key_order_;
 	bool transition_aware_paths_;
 	bool expand_firing_search_;
+	bool allow_guided_shots_;
 	dependency_state state_;
 };
 
@@ -4902,11 +4970,11 @@ int view_wall_conditionally_shootable(
     void *user,
     int segment,
     const dxx_route::route_position &from,
-    int wall)
+    int wall, int control_center_destroyed)
 {
 	const auto *context = static_cast<view_visibility_context *>(user);
 	return context->view->wall_conditionally_shootable_from_position(
-	           context->view->user, segment, from.value.data(), wall) != 0;
+	           context->view->user, segment, from.value.data(), wall, control_center_destroyed) != 0;
 }
 
 int view_wall_first_shot_blocker(

@@ -1175,9 +1175,9 @@
         "mine_volume": 31608700.0,
         "mine_volume_normalized": 6.91217,
         "mine_volume_text": "6.9x",
-        "travel_distance": 3526.3,
-        "travel_time_seconds": 71,
-        "travel_time_text": "1M:11S",
+        "travel_distance": 5696.5,
+        "travel_time_seconds": 114,
+        "travel_time_text": "1M:54S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -1329,6 +1329,58 @@
           },
           {
             "index": 7,
+            "kind": "hidden_door",
+            "activation_kind": "open_hidden_door",
+            "label": "Open hidden door",
+            "seg": 434,
+            "side": 0,
+            "wall": 71,
+            "label_pos": {
+              "x": -550.0,
+              "y": 20.0,
+              "z": 100.0
+            },
+            "distance": 991.1,
+            "opens": [
+              {
+                "seg": 434,
+                "side": 0,
+                "wall": 71
+              },
+              {
+                "seg": 566,
+                "side": 2,
+                "wall": 72
+              }
+            ]
+          },
+          {
+            "index": 8,
+            "kind": "trigger",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 9",
+            "seg": 568,
+            "side": 0,
+            "wall": 70,
+            "label_pos": {
+              "x": -614.0,
+              "y": 20.0,
+              "z": 100.0
+            },
+            "distance": 94.0,
+            "trigger": 9,
+            "trigger_type_id": 11,
+            "trigger_type": "illusory_wall",
+            "opens": [
+              {
+                "seg": 558,
+                "side": 0,
+                "wall": 64
+              }
+            ]
+          },
+          {
+            "index": 9,
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
@@ -1340,7 +1392,7 @@
               "y": -200.0,
               "z": 100.0
             },
-            "distance": 86.0,
+            "distance": 1171.1,
             "trigger": 8,
             "trigger_type_id": 3,
             "trigger_type": "exit"
@@ -3539,15 +3591,15 @@
         "mine_volume": 33180800.0,
         "mine_volume_normalized": 7.25596,
         "mine_volume_text": "7.3x",
-        "travel_distance": 2912.4,
-        "travel_time_seconds": 58,
-        "travel_time_text": "0M:58S",
+        "travel_distance": 3514.9,
+        "travel_time_seconds": 70,
+        "travel_time_text": "1M:10S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
-        "route_status": "partial",
-        "route_required_key_mask": 0,
-        "route_completing_key_mask_set": 0,
+        "route_status": "ok",
+        "route_required_key_mask": 2,
+        "route_completing_key_mask_set": 4,
         "route_steps": [
           {
             "index": 0,
@@ -3616,9 +3668,8 @@
           {
             "index": 4,
             "kind": "trigger",
-            "activation_kind": "unresolved_trigger",
-            "calculated": false,
-            "label": "Locate and activate switch trigger 28",
+            "activation_kind": "shoot_switch",
+            "label": "Shoot switch trigger 28",
             "seg": 664,
             "wall": 152,
             "label_pos": {
@@ -3626,6 +3677,7 @@
               "y": -188.0,
               "z": 580.0
             },
+            "distance": 583.5,
             "trigger": 28,
             "trigger_type_id": 0,
             "trigger_type": "open_door",
@@ -3636,10 +3688,27 @@
                 "wall": 150
               }
             ]
+          },
+          {
+            "index": 5,
+            "kind": "exit",
+            "activation_kind": "enter_exit",
+            "label": "Exit",
+            "seg": 667,
+            "side": 1,
+            "wall": 156,
+            "label_pos": {
+              "x": 0.0,
+              "y": -228.0,
+              "z": 580.0
+            },
+            "distance": 19.0,
+            "trigger": 29,
+            "trigger_type_id": 3,
+            "trigger_type": "exit"
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "route target unreachable",
         "route_note": "no reactor, exit exists",
         "notes": [
           "no reactor, exit exists",

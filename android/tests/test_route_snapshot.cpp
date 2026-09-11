@@ -358,7 +358,7 @@ int wall_conditionally_shootable(
     void *user,
     int segment,
     const dxx_route::route_position &position,
-    int wall)
+	int wall, int)
 {
 	const auto &visible = *static_cast<test_visibility *>(user);
 	return wall == visible.conditional_wall &&

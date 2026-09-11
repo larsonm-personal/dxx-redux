@@ -8,9 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 8,
-    "failed": 1,
-    "timeout": 1
+    "ok": 9,
+    "failed": 1
   },
   "levels": [
     {
@@ -263,17 +262,17 @@
         },
         {
           "n": "exit",
-          "s": 97
+          "s": 66
         }
       ],
-      "total_frames": 5828,
+      "total_frames": 3968,
       "rng_end": {
-        "state": 510737498,
-        "calls": 125
+        "state": 1621937922,
+        "calls": 117
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 54.550003,
+        "simulated_seconds": 23.550003,
         "difficulty": 2
       }
     },
@@ -403,7 +402,7 @@
       "level_num": -1,
       "level_file": "veswo.rdl",
       "route_input_sha256": "AB4C981EAC6440EC06A95621B8F94BB5CC84194068EA912E06AC84555A62487A",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -424,14 +423,30 @@
         {
           "n": "hidden door",
           "s": 21
+        },
+        {
+          "n": "red key",
+          "s": 47
+        },
+        {
+          "n": "reactor",
+          "s": 61
+        },
+        {
+          "n": "exit",
+          "s": 64
         }
       ],
-      "total_frames": 5120,
+      "total_frames": 3832,
       "rng_end": {
-        "state": 948921754,
-        "calls": 61
+        "state": 2675232640,
+        "calls": 135
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 2.5,
+        "difficulty": 2
+      }
     }
   ]
 }

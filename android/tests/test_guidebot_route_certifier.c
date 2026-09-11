@@ -1797,6 +1797,12 @@ static void test_reverse_side_keyed_buddy_proof_door_is_player_reachable(void)
 	fixture.wall_extra_flags[1] |= view.wall_flag_door_locked;
 	assert(!guidebot_route_side_progress_reachable_current(&view, 0, 0));
 	assert(!guidebot_route_segment_has_player_openable_door(&view, 0));
+	/* A trigger has already started opening this locked, keyless door */
+	fixture.wall_opening[0] = fixture.wall_opening[1] = 1;
+	assert(guidebot_route_side_progress_reachable_current(&view, 0, 0));
+	assert(!guidebot_route_side_passable_current(&view, 0, 0));
+	fixture.wall_opening[0] = fixture.wall_opening[1] = 0;
+	assert(!guidebot_route_side_progress_reachable_current(&view, 0, 0));
 	fixture.wall_extra_flags[1] = view.wall_flag_buddy_proof;
 	fixture.wall_key[1] = view.wall_key_blue;
 	assert(!guidebot_route_side_progress_reachable_current(&view, 0, 0));

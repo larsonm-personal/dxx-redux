@@ -8,8 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 24,
-    "timeout": 4,
+    "ok": 27,
+    "timeout": 1,
     "route_mismatch": 2
   },
   "levels": [
@@ -189,7 +189,7 @@
       "level_num": 5,
       "level_file": "drav05.rdl",
       "route_input_sha256": "5F248C647A7EC3A28CC4F0A7D13AD916D4B6D4BE7383E285A54A1FC5C13E89BC",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -202,14 +202,34 @@
         {
           "n": "gold key",
           "s": 25
+        },
+        {
+          "n": "fly-through 1",
+          "s": 47
+        },
+        {
+          "n": "red key",
+          "s": 52
+        },
+        {
+          "n": "reactor",
+          "s": 74
+        },
+        {
+          "n": "exit",
+          "s": 79
         }
       ],
-      "total_frames": 5454,
+      "total_frames": 4735,
       "rng_end": {
-        "state": 1448521415,
-        "calls": 34
+        "state": 601077795,
+        "calls": 102
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 4.533325,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 6,
@@ -580,7 +600,7 @@
       "level_num": 14,
       "level_file": "drav14.rdl",
       "route_input_sha256": "862DA04D49D6E344885AAD331DFACF6B55C760D623D45032F041792C85F87588",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -589,14 +609,38 @@
         {
           "n": "blue key",
           "s": 12
+        },
+        {
+          "n": "fly-through 0",
+          "s": 39
+        },
+        {
+          "n": "gold key",
+          "s": 40
+        },
+        {
+          "n": "red key",
+          "s": 63
+        },
+        {
+          "n": "reactor",
+          "s": 82
+        },
+        {
+          "n": "exit",
+          "s": 100
         }
       ],
-      "total_frames": 4524,
+      "total_frames": 6022,
       "rng_end": {
-        "state": 2473755763,
-        "calls": 22
+        "state": 3837315926,
+        "calls": 2577
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 17.916656,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 15,
@@ -686,7 +730,7 @@
       "level_num": 17,
       "level_file": "drav17.rdl",
       "route_input_sha256": "30A03CF40A317DB0B198ACD30A980356F31D12735A5A4F3981CF98B5EE9A0486",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -699,14 +743,30 @@
         {
           "n": "gold key",
           "s": 44
+        },
+        {
+          "n": "red key",
+          "s": 89
+        },
+        {
+          "n": "reactor",
+          "s": 122
+        },
+        {
+          "n": "exit",
+          "s": 126
         }
       ],
-      "total_frames": 6672,
+      "total_frames": 7567,
       "rng_end": {
-        "state": 4008331270,
-        "calls": 33
+        "state": 3545811950,
+        "calls": 89
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 4.333328,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 18,

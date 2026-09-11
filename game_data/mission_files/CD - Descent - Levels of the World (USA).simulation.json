@@ -5719,16 +5719,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "TEAMDETH.RDL",
         "route_input_sha256": "250672FC48E2060C9907940D69B1AC09D8836BEE0AED77021FFF52EA410B8728",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -5745,14 +5745,54 @@
           {
             "n": "hidden door",
             "s": 18
+          },
+          {
+            "n": "fly-through 9",
+            "s": 25
+          },
+          {
+            "n": "fly-through 1",
+            "s": 30
+          },
+          {
+            "n": "pass-through 30",
+            "s": 41
+          },
+          {
+            "n": "fly-through 9",
+            "s": 52
+          },
+          {
+            "n": "fly-through 1",
+            "s": 56
+          },
+          {
+            "n": "pass-through 31",
+            "s": 63
+          },
+          {
+            "n": "pass-through 25",
+            "s": 66
+          },
+          {
+            "n": "reactor",
+            "s": 80
+          },
+          {
+            "n": "exit",
+            "s": 83
           }
         ],
-        "total_frames": 5171,
+        "total_frames": 4955,
         "rng_end": {
-          "state": 1500213341,
-          "calls": 2532
+          "state": 3308115182,
+          "calls": 7001
         },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "reactor_escape": {
+          "countdown_seconds": 45.0,
+          "simulated_seconds": 2.650009,
+          "difficulty": 2
+        }
       }
     ]
   },
@@ -5808,10 +5848,10 @@
             "s": 46
           }
         ],
-        "total_frames": 6398,
+        "total_frames": 7062,
         "rng_end": {
-          "state": 341715030,
-          "calls": 273
+          "state": 2791929672,
+          "calls": 287
         },
         "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       }
@@ -6635,12 +6675,12 @@
             "s": 83
           }
         ],
-        "total_frames": 9374,
+        "total_frames": 13381,
         "rng_end": {
-          "state": 3040535893,
-          "calls": 172
+          "state": 3209632375,
+          "calls": 92530
         },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "problem": "route confirmation exceeded 223-second simulation budget"
       }
     ]
   }

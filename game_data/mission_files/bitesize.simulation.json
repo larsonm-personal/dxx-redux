@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 29,
-    "unsupported": 2
+    "ok": 30,
+    "unsupported": 1
   },
   "levels": [
     {
@@ -1068,8 +1068,8 @@
     {
       "level_num": -1,
       "level_file": "level1-s.rl2",
-      "route_input_sha256": "63A28C5F440229600CEF504A9B4E4032CACDF6B167190FA9E812E90FF60F5B0A",
-      "status": "unsupported",
+      "route_input_sha256": "A36084AFDB719382FF2FF373BC915E67A928B744A6B7179B241D8094A7DBC2D1",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -1080,24 +1080,24 @@
           "s": 5
         },
         {
-          "n": "switch 3",
-          "s": 14
+          "n": "reactor",
+          "s": 7
         },
         {
-          "n": "shoot using guided missile",
-          "s": 14
-        },
-        {
-          "n": "shoot using guided missile",
-          "s": 14
+          "n": "exit",
+          "s": 15
         }
       ],
-      "total_frames": 1003,
+      "total_frames": 893,
       "rng_end": {
-        "state": 3386287052,
-        "calls": 491
+        "state": 3931081813,
+        "calls": 428
       },
-      "problem": "guided missile objective requires equipment and flight verification"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 7.700012,
+        "difficulty": 2
+      }
     },
     {
       "level_num": -2,

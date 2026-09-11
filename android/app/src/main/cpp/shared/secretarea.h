@@ -61,7 +61,7 @@ int level_metadata_rescan_unexplored_route_from_object(int objnum, level_metadat
 int level_metadata_wall_shootable_from_position(int seg, const int from_pos[3], int wall_num);
 int level_metadata_door_shot_aim_from_position(int seg, const int from_pos[3], int wall_num, int aim_pos[3]);
 int level_metadata_wall_potentially_shootable_from_position(int seg, const int from_pos[3], int wall_num);
-int level_metadata_wall_conditionally_shootable_from_position(int seg, const int from_pos[3], int wall_num);
+int level_metadata_wall_conditionally_shootable_from_position(int seg, const int from_pos[3], int wall_num, int control_center_destroyed);
 int level_metadata_wall_first_shot_blocker_from_position(int seg, const int from_pos[3], int wall_num);
 int level_metadata_target_visible_from_position(int seg, const int from_pos[3], int target_seg, const int target_pos[3]);
 int level_metadata_player_radius_current(void);

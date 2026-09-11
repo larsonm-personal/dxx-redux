@@ -87,7 +87,7 @@
     {
       "level_num": 3,
       "level_file": "rembasin.rl2",
-      "route_input_sha256": "224D9B87EDADDF95788780EC9A2FAF00923706856F855D7F4792C5AF10AA9346",
+      "route_input_sha256": "35F5E0943899D5D5F778ABBF3D8592A4C2908C6A1D6ACC52927D5BB57B3BC57D",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -123,18 +123,22 @@
           "s": 184
         },
         {
+          "n": "fly-through 6",
+          "s": 189
+        },
+        {
           "n": "exit",
           "s": 233
         }
       ],
-      "total_frames": 14003,
+      "total_frames": 13962,
       "rng_end": {
-        "state": 3345824544,
-        "calls": 7783
+        "state": 2572306584,
+        "calls": 7823
       },
       "reactor_escape": {
         "countdown_seconds": 130.0,
-        "simulated_seconds": 49.850006,
+        "simulated_seconds": 49.166672,
         "difficulty": 2
       }
     },

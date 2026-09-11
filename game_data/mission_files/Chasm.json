@@ -560,9 +560,9 @@
         "mine_volume": 37232200.0,
         "mine_volume_normalized": 8.14192,
         "mine_volume_text": "8.1x",
-        "travel_distance": 12251.6,
-        "travel_time_seconds": 245,
-        "travel_time_text": "4M:05S",
+        "travel_distance": 13030.2,
+        "travel_time_seconds": 261,
+        "travel_time_text": "4M:21S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -667,16 +667,16 @@
             "kind": "exit",
             "activation_kind": "enter_exit",
             "label": "Exit",
-            "seg": 463,
-            "side": 3,
-            "wall": 103,
+            "seg": 373,
+            "side": 1,
+            "wall": 101,
             "label_pos": {
-              "x": 748.0,
-              "y": -77.5,
-              "z": 338.5
+              "x": 628.0,
+              "y": 50.0,
+              "z": 535.0
             },
-            "distance": 35.8,
-            "trigger": 3,
+            "distance": 814.4,
+            "trigger": 2,
             "trigger_type_id": 3,
             "trigger_type": "exit"
           }

@@ -274,21 +274,21 @@
           },
           {
             "n": "reactor",
-            "s": 163
+            "s": 164
           },
           {
             "n": "exit",
-            "s": 177
+            "s": 178
           }
         ],
-        "total_frames": 10605,
+        "total_frames": 10667,
         "rng_end": {
-          "state": 2937056939,
-          "calls": 12382
+          "state": 1524482640,
+          "calls": 12407
         },
         "reactor_escape": {
           "countdown_seconds": 45.0,
-          "simulated_seconds": 13.883347,
+          "simulated_seconds": 13.866669,
           "difficulty": 2
         }
       }

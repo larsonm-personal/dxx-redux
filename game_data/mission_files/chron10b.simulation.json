@@ -7,9 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 2,
-    "failed": 1,
-    "unsupported": 1
+    "ok": 3,
+    "failed": 1
   },
   "levels": [
     {
@@ -245,8 +244,8 @@
     {
       "level_num": -1,
       "level_file": "secret1a.rl2",
-      "route_input_sha256": "EA2D3156EE925F88A2090F832C5CC017C23115605F8DA68DA38FBF23B467AC57",
-      "status": "unsupported",
+      "route_input_sha256": "D57F7AE3923E5BBFF76DF7166FF526C5382A26FCBD58B94DC86DA82C48CDC039",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -255,14 +254,26 @@
         {
           "n": "boss",
           "s": 7
+        },
+        {
+          "n": "switch 0",
+          "s": 8
+        },
+        {
+          "n": "exit",
+          "s": 10
         }
       ],
-      "total_frames": 515,
+      "total_frames": 593,
       "rng_end": {
-        "state": 3423541591,
-        "calls": 146
+        "state": 2442399803,
+        "calls": 206
       },
-      "problem": "route objective activation is not supported"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 2.633331,
+        "difficulty": 2
+      }
     }
   ]
 }

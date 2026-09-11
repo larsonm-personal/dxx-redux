@@ -1273,9 +1273,12 @@ void recover_path_door(object *actor)
 			}
 		}
 	}
+	/* Authored open flags can make a door flyable despite a closed animation
+	 * state; recovery must agree with native collision before replanning */
 	if (Walls[wall_num].type == WALL_DOOR &&
 	    Walls[wall_num].state == WALL_DOOR_CLOSED &&
 	    (Walls[wall_num].flags & WALL_DOOR_LOCKED) &&
+	    !(WALL_IS_DOORWAY(&Segments[actor->segnum], side) & WID_FLY_FLAG) &&
 	    actor_is_close_to_side(actor, actor->segnum, side)) {
 		if (controlling_trigger >= 0) {
 #if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
@@ -2208,11 +2211,19 @@ extern "C" void route_confirmation_after_frame(void)
 	if (State.summary.status == ROUTE_CONFIRMATION_RUNNING &&
 	    ((actor_reached_target(actor) && State.target_seg != State.semantic_target_seg) ||
 	     reached_partial_path)) {
-		if ((State.step.activation_kind ==
-		         LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT &&
-		     actor->segnum == State.step.seg) ||
-		    (frontier_door_is_opening() &&
-		     State.frontier_extension_count == 0))
+		const bool opening = frontier_door_is_opening();
+		const wall *frontier = opening ? &Walls[State.frontier_wall_num] : nullptr;
+		/* A player-assisted door can still reject the companion during its
+		 * opening animation. Wait for real passage before choosing a new frontier */
+		if (frontier && !level_metadata_guidebot_side_passable_current(frontier->segnum, frontier->sidenum)) {
+			vm_vec_zero(&actor->mtype.phys_info.velocity);
+			vm_vec_zero(&actor->mtype.phys_info.thrust);
+			State.wait_frames = 0;
+		} else if ((State.step.activation_kind ==
+		                LEVEL_METADATA_ROUTE_ACTIVATION_ENTER_EXIT &&
+		            actor->segnum == State.step.seg) ||
+		           (opening &&
+		            State.frontier_extension_count == 0))
 			extend_current_goal_from_frontier();
 		else {
 			vm_vec_zero(&actor->mtype.phys_info.velocity);

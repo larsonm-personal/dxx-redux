@@ -543,7 +543,7 @@
     {
       "level_num": 12,
       "level_file": "level_12.rdl",
-      "route_input_sha256": "D5673F15AD5369A6774D6BB185610A3A336914C3016CFDA2A28C86C5B5E9A53E",
+      "route_input_sha256": "2FEB8ED38CB4B7F8C1C4193F8139A24EFC3FB9DCF6CE78AA287A43CD7CFEAB16",
       "status": "failed",
       "rng_start": {
         "state": 1,

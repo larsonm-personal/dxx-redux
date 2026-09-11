@@ -3987,9 +3987,9 @@
         "mine_volume": 50973600.0,
         "mine_volume_normalized": 11.1469,
         "mine_volume_text": "11x",
-        "travel_distance": 26523.7,
-        "travel_time_seconds": 530,
-        "travel_time_text": "8M:50S",
+        "travel_distance": 26718.2,
+        "travel_time_seconds": 534,
+        "travel_time_text": "8M:54S",
         "guidebot_count": 0,
         "guidebot_placed": false,
         "guidebot_accessible": false,
@@ -4258,14 +4258,14 @@
             "kind": "trigger",
             "activation_kind": "shoot_switch",
             "label": "Shoot switch trigger 9",
-            "seg": 508,
+            "seg": 509,
             "wall": 150,
             "label_pos": {
               "x": 207.0,
               "y": -308.9,
               "z": 767.5
             },
-            "distance": 2844.9,
+            "distance": 2942.2,
             "trigger": 9,
             "trigger_type_id": 9,
             "trigger_type": "open_wall",
@@ -4293,7 +4293,7 @@
               "y": 77.1,
               "z": -611.1
             },
-            "distance": 2970.8,
+            "distance": 3068.0,
             "key": "gold"
           },
           {
@@ -4402,7 +4402,9 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
+        "route_note": "key-route optimization reached its work budget",
         "notes": [
+          "key-route optimization reached its work budget",
           "no guidebot or guidebot start cage placed in this level"
         ]
       }

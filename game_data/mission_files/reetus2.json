@@ -2278,16 +2278,8 @@
         "route_status": "failed",
         "route_required_key_mask": 0,
         "route_completing_key_mask_set": 0,
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "activation_kind": "none",
-            "label": "Start",
-            "seg": 1
-          }
-        ],
-        "route_problem": "gold key unreachable"
+        "route_steps": [],
+        "route_problem": "shared route planning exceeded its work budget"
       },
       {
         "level_num": 13,
@@ -2846,7 +2838,7 @@
             "key": "red"
           }
         ],
-        "route_problem": "blue key excluded from prerequisite trial"
+        "route_problem": "shared route planning reached its work budget"
       },
       {
         "level_num": -1,

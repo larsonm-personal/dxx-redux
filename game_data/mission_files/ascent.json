@@ -3370,9 +3370,9 @@
           }
         ],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_note": "no reactor, exit exists",
+        "route_note": "no reactor, exit exists; key-route optimization reached its work budget",
         "notes": [
-          "no reactor, exit exists",
+          "no reactor, exit exists; key-route optimization reached its work budget",
           "no guidebot or guidebot start cage placed in this level"
         ]
       },
@@ -4043,17 +4043,9 @@
         "route_status": "failed",
         "route_required_key_mask": 0,
         "route_completing_key_mask_set": 0,
-        "route_steps": [
-          {
-            "index": 0,
-            "kind": "start",
-            "activation_kind": "none",
-            "label": "Start",
-            "seg": 0
-          }
-        ],
+        "route_steps": [],
         "guidebot_placement_note": "no guidebot or guidebot start cage placed in this level",
-        "route_problem": "gold key unreachable",
+        "route_problem": "metadata analysis exceeded its collision-work budget",
         "notes": [
           "no guidebot or guidebot start cage placed in this level"
         ]

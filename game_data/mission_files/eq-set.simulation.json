@@ -7,8 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
-    "timeout": 8
+    "ok": 5,
+    "timeout": 7
   },
   "levels": [
     {
@@ -249,7 +249,7 @@
       "level_num": 6,
       "level_file": "evs.rl2",
       "route_input_sha256": "757F813013DC84F6BFC7A2AF3653F0610F0ADDA72EB165F21400521C12038875",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -286,14 +286,22 @@
         {
           "n": "switch 13",
           "s": 181
+        },
+        {
+          "n": "exit",
+          "s": 195
         }
       ],
-      "total_frames": 18001,
+      "total_frames": 11672,
       "rng_end": {
-        "state": 2337018036,
-        "calls": 12643
+        "state": 535193817,
+        "calls": 12904
       },
-      "problem": "route confirmation exceeded 300-second simulation budget"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 37.566666,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 7,
@@ -515,7 +523,7 @@
     {
       "level_num": 12,
       "level_file": "ecypher2.rl2",
-      "route_input_sha256": "A908F12CD316FE543029E6E60C0CA6669F7E019C4EAC6ECD74BB8AF02CB4A423",
+      "route_input_sha256": "FAEFCF42981C037DF98DEA28BE56A12C90FDA25AA3B493E282BDDDB3F6299EAB",
       "status": "timeout",
       "rng_start": {
         "state": 1,

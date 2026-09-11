@@ -10,7 +10,8 @@ param(
     [string[]]$CdSourceIds,
     [switch]$IncludeBuiltInCounterstrike,
     [switch]$IncludeBuiltInFirstStrike,
-    [ValidateRange(1, [int]::MaxValue)][int]$ArchiveTimeoutSeconds = 120,
+    # Wall-clock watchdog includes CPU contention across parallel workers
+    [ValidateRange(1, [int]::MaxValue)][int]$ArchiveTimeoutSeconds = 360,
     [ValidateRange(0, 128)][int]$MaxParallel = 0,
     [string]$OutputRoot,
     [switch]$InternalWorker

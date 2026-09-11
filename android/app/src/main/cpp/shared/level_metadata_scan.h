@@ -246,7 +246,7 @@ typedef struct level_metadata_scan_view {
 	int (*guided_route)(void *user, int wall, const int *segments, int count, guided_missile_route *result);
 	int (*wall_potentially_shootable_from_position)(void *user, int seg, const int from_pos[3], int wall_num);
 	int (*wall_shootable_without_transparency_from_position)(void *user, int seg, const int from_pos[3], int wall_num);
-	int (*wall_conditionally_shootable_from_position)(void *user, int seg, const int from_pos[3], int wall_num);
+	int (*wall_conditionally_shootable_from_position)(void *user, int seg, const int from_pos[3], int wall_num, int control_center_destroyed);
 	int (*wall_first_shot_blocker_from_position)(void *user, int seg, const int from_pos[3], int wall_num);
 	int (*wall_shot_incidence_cosine)(void *user, const int from_pos[3], int wall_num);
 	int (*wall_is_shootable_trigger)(void *user, int wall_num);

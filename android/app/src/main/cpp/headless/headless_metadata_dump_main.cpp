@@ -462,6 +462,17 @@ static void trace_wall_inventory(int level_num, const char *level_file)
 		wall_type_counts[type]++;
 		if (dump_wall_clip_flags(wall_num) & WCF_HIDDEN)
 			hidden_clip_by_type[type]++;
+#ifdef DXX_BUILD_DESCENT_II
+		const int source_trigger = Walls[wall_num].trigger;
+		const int source_seg = Walls[wall_num].segnum;
+		const int source_side = Walls[wall_num].sidenum;
+		if (source_trigger >= 0 && source_trigger < Num_triggers &&
+		    (Triggers[source_trigger].type == TT_EXIT || Triggers[source_trigger].type == TT_SECRET_EXIT) &&
+		    source_seg >= 0 && source_seg < Num_segments && source_side >= 0 && source_side < MAX_SIDES_PER_SEGMENT)
+			fprintf(stderr, "SECRET-AREA-DUMP EXIT level=%d trigger=%d type=%d wall=%d wall_type=%d seg=%d side=%d child=%d\n",
+			        level_num, source_trigger, Triggers[source_trigger].type, wall_num, Walls[wall_num].type,
+			        source_seg, source_side, Segments[source_seg].children[source_side]);
+#endif
 	}
 	for (objnum = 0; objnum <= Highest_object_index; ++objnum) {
 		const object *obj = &Objects[objnum];

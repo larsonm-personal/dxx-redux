@@ -228,38 +228,26 @@
           "s": 122
         },
         {
-          "n": "switch 0",
-          "s": 124
-        },
-        {
-          "n": "switch 1",
+          "n": "fly-through 28",
           "s": 133
         },
         {
-          "n": "switch 2",
-          "s": 141
-        },
-        {
-          "n": "fly-through 28",
-          "s": 162
-        },
-        {
           "n": "fly-through 27",
-          "s": 162
+          "s": 133
         },
         {
           "n": "reactor",
-          "s": 163
+          "s": 134
         },
         {
           "n": "exit",
-          "s": 167
+          "s": 138
         }
       ],
-      "total_frames": 10018,
+      "total_frames": 8257,
       "rng_end": {
-        "state": 621455776,
-        "calls": 13799
+        "state": 3223612309,
+        "calls": 12396
       },
       "reactor_escape": {
         "countdown_seconds": 32.0,
