@@ -7,16 +7,46 @@
   "seed": 1,
   "status": "failed",
   "level_counts": {
-    "infrastructure_error": 1
+    "failed": 1
   },
   "levels": [
     {
       "level_num": 0,
       "level_file": "Uneasy4.rl2",
       "route_input_sha256": "E3C54737AF9A6EA840C038FAA751031AEAA3DA562D52EC1515CFF82A7D5DD8EC",
-      "status": "infrastructure_error",
-      "problem": "Route engine process timeout",
-      "timeout_seconds": 360
+      "status": "failed",
+      "rng_start": {
+        "state": 1,
+        "calls": 0
+      },
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 33
+        },
+        {
+          "n": "blastable wall",
+          "s": 56
+        },
+        {
+          "n": "blastable wall",
+          "s": 62
+        },
+        {
+          "n": "switch 1",
+          "s": 65
+        },
+        {
+          "n": "red key",
+          "s": 96
+        }
+      ],
+      "total_frames": 5768,
+      "rng_end": {
+        "state": 1292258463,
+        "calls": 32074
+      },
+      "problem": "live Guide-Bot route has no actionable goal"
     }
   ]
 }

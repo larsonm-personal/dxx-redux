@@ -201,6 +201,13 @@ int load_requested_mission(const char *requested, char *error,
 
 } // namespace
 
+static void route_start_progress(void *, const char *stage, int completed, int total)
+{
+	if ((completed == 0 || completed == total) &&
+	    (!strcmp(stage, "secret_areas") || !strcmp(stage, "level_summary") || !strcmp(stage, "route_planning")))
+		fprintf(stderr, "ROUTE-CONFIRM preparation=%s completed=%d total=%d\n", stage, completed, total);
+}
+
 int main(int argc, char *argv[])
 {
 	/* Preserve the last completed startup phase even if the process crashes */
@@ -281,6 +288,7 @@ int main(int argc, char *argv[])
 	 * the existing noninteractive branch, then restore normal simulation. */
 	if (level < 0)
 		Newdemo_state = ND_STATE_PLAYBACK;
+	level_metadata_set_progress_callback(route_start_progress, nullptr);
 	fprintf(stderr, "ROUTE-CONFIRM phase=level-load level=%d\n", level);
 	StartNewGame(level);
 	if (level < 0)
@@ -301,6 +309,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "ROUTE-CONFIRM FAIL start %s\n",
 		        route_confirmation_get_summary()->problem);
 	}
+	level_metadata_set_progress_callback(nullptr, nullptr);
 	fprintf(stderr, "ROUTE-CONFIRM phase=simulation\n");
 	while (!route_confirmation_is_terminal()) {
 		route_confirmation_prepare_frame_time();

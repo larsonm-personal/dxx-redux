@@ -584,6 +584,7 @@ static json serialize_secret_areas()
 	}
 	result["enabled"] = (bool) state->enabled;
 	result["disabled_reason"] = secret_area_disabled_reason_name(state->disabled_reason);
+	result["secret_areas_complete"] = secret_area_liquid_metadata_complete() != 0;
 	result["raw_candidate_count"] = state->raw_candidate_count;
 	result["final_candidate_count"] = state->final_candidate_count;
 	result["energy_center_count"] = metadata ? metadata->energy_center_count : 0;
@@ -607,6 +608,8 @@ static json serialize_secret_areas()
 			json item;
 			item["id"] = std::string("S") + std::to_string(entry->display_index);
 			item["display_index"] = entry->display_index;
+			item["identity"] = std::to_string(entry->identity);
+			item["liquid_only"] = entry->liquid_only != 0;
 			item["found"] = state->found[i] != 0;
 			item["drawable"] = drawable;
 			item["entry_distance"] = entry->entry_distance;

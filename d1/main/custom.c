@@ -3,6 +3,7 @@
  */
 
 #include <string.h>
+#include <limits.h>
 #include "gr.h"
 #include "pstypes.h"
 #include "piggy.h"
@@ -89,7 +90,7 @@ static void change_ext(char *filename, const char *newext, int filename_size)
 
 int load_pig1(PHYSFS_file *f, int num_bitmaps, int num_sounds, int *num_custom, struct custom_info **ci)
 {
-	int data_ofs;
+	PHYSFS_sint64 data_ofs;
 	int i;
 	struct custom_info *cip;
 	DiskBitmapHeader bmh;
@@ -106,7 +107,7 @@ int load_pig1(PHYSFS_file *f, int num_bitmaps, int num_sounds, int *num_custom, 
 	else if (num_bitmaps > 0 && num_bitmaps < PHYSFS_fileLength(f)) // >=v1.4 pig?
 	{
 		PHYSFSX_fseek(f, num_bitmaps, SEEK_SET);
-		data_ofs = num_bitmaps + 8;
+		data_ofs = (PHYSFS_sint64) num_bitmaps + 8;
 		num_bitmaps = PHYSFSX_readInt(f);
 		num_sounds = PHYSFSX_readInt(f);
 	}
@@ -136,7 +137,12 @@ int load_pig1(PHYSFS_file *f, int num_bitmaps, int num_sounds, int *num_custom, 
 		if (bmh.dflags & DBM_FLAG_ABM)
 			sprintf(strchr(name, 0), "#%d", bmh.dflags & 63);
 
-		cip->offset = bmh.offset + data_ofs;
+		if (bmh.offset < 0 || data_ofs + bmh.offset >= PHYSFS_fileLength(f) ||
+		    data_ofs + bmh.offset > INT_MAX) {
+			d_free(*ci);
+			return -1;
+		}
+		cip->offset = (int) (bmh.offset + data_ofs);
 		cip->repl_idx = hashtable_search(&AllBitmapsNames, name);
 		cip->flags = bmh.flags & (BM_FLAG_TRANSPARENT | BM_FLAG_SUPER_TRANSPARENT | BM_FLAG_NO_LIGHTING | BM_FLAG_RLE);
 		cip->width = bmh.width + ((bmh.dflags & DBM_FLAG_LARGE) ? 256 : 0);
@@ -156,7 +162,12 @@ int load_pig1(PHYSFS_file *f, int num_bitmaps, int num_sounds, int *num_custom, 
 
 		memcpy(name, sndh.name, 8);
 		name[8] = 0;
-		cip->offset = sndh.offset + data_ofs;
+		if (sndh.offset < 0 || data_ofs + sndh.offset >= PHYSFS_fileLength(f) ||
+		    data_ofs + sndh.offset > INT_MAX) {
+			d_free(*ci);
+			return -1;
+		}
+		cip->offset = (int) (sndh.offset + data_ofs);
 		cip->repl_idx = hashtable_search(&AllDigiSndNames, name) | 0x80000000;
 		cip->width = sndh.length;
 		cip++;
@@ -169,7 +180,7 @@ int load_pig1(PHYSFS_file *f, int num_bitmaps, int num_sounds, int *num_custom, 
 
 int load_pog(PHYSFS_file *f, int pog_sig, int pog_ver, int *num_custom, struct custom_info **ci)
 {
-	int data_ofs;
+	PHYSFS_sint64 data_ofs;
 	int num_bitmaps;
 	int no_repl = 0;
 	int i;
@@ -241,7 +252,12 @@ int load_pog(PHYSFS_file *f, int pog_sig, int pog_ver, int *num_custom, struct c
 			return -1;
 		}
 
-		cip->offset = bmh.offset + data_ofs;
+		if (bmh.offset < 0 || data_ofs + bmh.offset >= PHYSFS_fileLength(f) ||
+		    data_ofs + bmh.offset > INT_MAX) {
+			d_free(*ci);
+			return -1;
+		}
+		cip->offset = (int) (bmh.offset + data_ofs);
 		cip->flags = bmh.flags & (BM_FLAG_TRANSPARENT | BM_FLAG_SUPER_TRANSPARENT | BM_FLAG_NO_LIGHTING | BM_FLAG_RLE);
 		cip->width = bmh.width + ((bmh.hi_wh & 15) << 8);
 		cip->height = bmh.height + ((bmh.hi_wh >> 4) << 8);
@@ -251,6 +267,71 @@ int load_pog(PHYSFS_file *f, int pog_sig, int pog_ver, int *num_custom, struct c
 	*num_custom = num_bitmaps;
 
 	return 0;
+}
+
+/* Reuse the custom header readers without loading pixels or replacing globals */
+int piggy_read_level_bitmap_flags(const char *level_name, int *flags, int capacity)
+{
+	const char *extensions[] = { "pg1", "dtx" };
+	char name[64];
+	int i, extension;
+	if (!flags || !level_name || strlen(level_name) >= sizeof(name) || capacity < MAX_BITMAP_FILES)
+		return 0;
+	for (i = 0; i < capacity; ++i)
+		flags[i] = i > 0 && i < Num_bitmap_files ? GameBitmapFlags[i] : -1;
+	for (extension = 0; extension < 2; ++extension) {
+		PHYSFS_file *file;
+		struct custom_info *info = NULL;
+		int count = 0, signature, version, result;
+		strcpy(name, level_name);
+		change_ext(name, extensions[extension], sizeof(name));
+		file = PHYSFSX_openReadBuffered(name);
+		if (!file) {
+			if (PHYSFSX_exists(name, 1))
+				return 0;
+			continue;
+		}
+		if (PHYSFS_fileLength(file) < 8) {
+			PHYSFS_close(file);
+			return 0;
+		}
+		signature = PHYSFSX_readInt(file);
+		version = PHYSFSX_readInt(file);
+		if (signature == 0x474f5044 && version == 1) {
+			/* Bound allocation before using the renderer's existing POG reader */
+			int bitmap_count = PHYSFSX_readInt(file);
+			if (bitmap_count <= 0 || bitmap_count >= MAX_BITMAP_FILES ||
+			    12 + (PHYSFS_sint64) bitmap_count * (2 + sizeof(DiskBitmapHeader2)) > PHYSFS_fileLength(file)) {
+				PHYSFS_close(file);
+				return 0;
+			}
+			PHYSFS_seek(file, 8);
+			result = load_pog(file, signature, version, &count, &info);
+		} else if (signature == 0x47495050) {
+			/* PPIG custom name remapping is not supported by load_pog */
+			PHYSFS_close(file);
+			return 0;
+		} else
+			result = load_pig1(file, signature, version, &count, &info);
+		if (result) {
+			PHYSFS_close(file);
+			return 0;
+		}
+		for (i = 0; i < count; ++i) {
+			int index = info[i].repl_idx;
+			if (index < 0)
+				continue;
+			if (index >= MAX_BITMAP_FILES || info[i].offset < 0 || info[i].offset >= PHYSFS_fileLength(file)) {
+				d_free(info);
+				PHYSFS_close(file);
+				return 0;
+			}
+			flags[index] = info[i].flags;
+		}
+		d_free(info);
+		PHYSFS_close(file);
+	}
+	return 1;
 }
 
 // load custom textures/sounds from pog/pig file

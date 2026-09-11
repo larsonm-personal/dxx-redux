@@ -6,7 +6,7 @@ import java.io.File
 import java.security.MessageDigest
 import java.util.Locale
 
-private const val LEVEL_METADATA_RESULT_CACHE_SCHEMA = "dxx-level-metadata-result-cache-v3"
+private const val LEVEL_METADATA_RESULT_CACHE_SCHEMA = "dxx-level-metadata-result-cache-v4"
 private const val LEVEL_METADATA_RESULT_CACHE_MAX_FILES = 512
 private const val LEVEL_METADATA_RESULT_CACHE_MAX_BYTES = 256L * 1024L * 1024L
 private const val LEVEL_METADATA_RESULT_CACHE_FILE_MAX_BYTES = 32L * 1024L * 1024L
@@ -19,6 +19,8 @@ internal object LevelMetadataResultCache {
     )
 
     fun identify(target: LevelMetadataTarget): Identity? {
+        // Loose sidecars and mount precedence are not represented by this cache key
+        if (target.archivePath.isNullOrBlank() || target.sourcePath?.let { File(it).isDirectory } == true) return null
         val files = sourceFiles(target)
         if (files.none { it.first.startsWith("source:") }) return null
         val fileIdentities = JSONArray()
@@ -119,7 +121,8 @@ internal object LevelMetadataResultCache {
             result.game == target.game &&
             result.levels.size == expectedLevelCount &&
             result.levels.all {
-                it.status == "ok" && (it.routeReadiness.isBlank() || it.routeReadiness == "complete")
+                it.status == "ok" && it.secretAreasComplete &&
+                    (it.routeReadiness.isBlank() || it.routeReadiness == "complete")
             }
 
     private fun sourceFiles(target: LevelMetadataTarget): List<Pair<String, File>> {
@@ -129,25 +132,26 @@ internal object LevelMetadataResultCache {
             val source = File(path)
             if (source.isFile) {
                 files += "source:file" to source
-            } else if (source.isDirectory) {
-                val names =
-                    listOfNotNull(target.missionFilename, target.hogFile) +
-                        target.hogFiles + target.normalLevelFiles + target.secretLevelFiles
-                names.distinctBy { it.lowercase(Locale.US) }.forEach { name ->
-                    val file = File(source, name.replace('/', File.separatorChar))
-                    if (file.isFile) files += "source:${name.lowercase(Locale.US)}" to file
-                }
             }
         }
-        val baseNames =
-            if (target.game == GameFileFormats.GAME_D1) {
-                listOf("descent.hog", "descent.pig")
-            } else {
-                listOf("descent2.hog", "descent2.ham", "groupa.pig")
+
+        // Include all installed semantic assets, including non-groupa palettes/PIGs
+        val semanticExtensions =
+            setOf("hog", "ham", "pig", "pog", "pg1", "dtx", "256", "bin", "tbl", "rl2", "rdl", "mn2", "msn", "hxm")
+        listOfNotNull(target.dataDir, target.extraDataDir).distinct().forEachIndexed { index, path ->
+            val dataDir = File(path)
+            val entries = dataDir.listFiles() ?: return emptyList()
+            val semanticFiles =
+                entries.filter {
+                    it.isFile && it.extension.lowercase(Locale.US) in semanticExtensions
+                }
+            if (semanticFiles.map { it.name.lowercase(Locale.US) }.distinct().size !=
+                semanticFiles.size
+            ) {
+                return emptyList()
             }
-        target.dataDir?.let(::File)?.takeIf(File::isDirectory)?.let { dataDir ->
-            baseNames.forEach { name ->
-                File(dataDir, name).takeIf(File::isFile)?.let { files += "base:$name" to it }
+            semanticFiles.forEach { file ->
+                files += "base$index:${file.name.lowercase(Locale.US)}" to file
             }
         }
         return files

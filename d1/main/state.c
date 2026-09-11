@@ -89,7 +89,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 
-#define STATE_VERSION 15
+#define STATE_VERSION 16
 #define STATE_COMPATIBLE_VERSION 6
 #define STATE_RUNTIME_VERSION 8
 #define STATE_FIDELITY_VERSION 8
@@ -98,6 +98,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define STATE_OBJECT_SIGNATURE_RUNTIME_VERSION 11
 #define STATE_FX_RNG_RUNTIME_VERSION 12
 #define STATE_SECRET_AREA_RUNTIME_VERSION 14
+#define STATE_SECRET_AREA_IDENTITY_VERSION 16
 #define STATE_AI_PATH_FREE_PTR_VERSION 15
 // 0 - Put DGSS (Descent Game State Save) id at tof.
 // 1 - Added Difficulty level save
@@ -831,7 +832,10 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 		goto done;
 	if (!state_validate_effect_runtime_state(fp, swap, version))
 		goto done;
-	if (version >= STATE_SECRET_AREA_RUNTIME_VERSION &&
+	if (version >= STATE_SECRET_AREA_IDENTITY_VERSION) {
+		if (!secret_area_validate_runtime_state(fp))
+			goto done;
+	} else if (version >= STATE_SECRET_AREA_RUNTIME_VERSION &&
 	    !state_runtime_skip(fp, sizeof(int) + SECRET_AREA_MAX_GENERATED))
 		goto done;
 	valid = 1;
@@ -938,7 +942,7 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int version)
 		ai_path_set_runtime_state(&ai_path_state);
 	laser_set_runtime_state(&laser_state);
 	if (version >= STATE_SECRET_AREA_RUNTIME_VERSION)
-		secret_area_read_runtime_state(fp, swap);
+		secret_area_read_runtime_state(fp, swap, version >= STATE_SECRET_AREA_IDENTITY_VERSION);
 }
 
 static int state_thumbnail_has_palette(int version)

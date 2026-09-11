@@ -854,6 +854,8 @@ static nlohmann::ordered_json serialize_secret(
 	snprintf(label, sizeof(label), "S%d", secret.display_index);
 	result["id"] = label;
 	result["display_index"] = secret.display_index;
+	result["identity"] = std::to_string(secret.identity);
+	result["liquid_only"] = secret.liquid_only != 0;
 	result["entry_distance"] = secret.entry_distance;
 	result["entry_seg"] = secret.entry_seg;
 	result["entry_side"] = secret.entry_side;
@@ -1057,6 +1059,7 @@ static nlohmann::ordered_json serialize_current_level(
 	result["raw_candidate_count"] = state->raw_candidate_count;
 	result["final_candidate_count"] = state->final_candidate_count;
 	result["secret_count"] = total;
+	result["secret_areas_complete"] = secret_area_liquid_metadata_complete() != 0;
 	result["energy_center_count"] = metadata ? metadata->energy_center_count : 0;
 	result["energy_center_raw_count"] = metadata ? metadata->energy_center_raw_count : 0;
 	result["energy_center_segment_count"] = metadata ? metadata->energy_center_segment_count : 0;

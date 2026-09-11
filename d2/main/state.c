@@ -92,7 +92,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "config.h"
 #endif
 
-#define STATE_VERSION 29
+#define STATE_VERSION 30
 #define STATE_COMPATIBLE_VERSION 20
 #define STATE_RUNTIME_VERSION 23
 #define STATE_FIDELITY_VERSION 23
@@ -101,6 +101,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define STATE_OBJECT_SIGNATURE_RUNTIME_VERSION 26
 #define STATE_FX_RNG_RUNTIME_VERSION 27
 #define STATE_SECRET_AREA_RUNTIME_VERSION 29
+#define STATE_SECRET_AREA_IDENTITY_VERSION 30
 // 0 - Put DGSS (Descent Game State Save) id at tof.
 // 1 - Added Difficulty level save
 // 2 - Added cheats.enabled flag
@@ -1060,7 +1061,10 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 		goto done;
 	if (!state_validate_effect_runtime_state(fp, swap, version))
 		goto done;
-	if (version >= STATE_SECRET_AREA_RUNTIME_VERSION &&
+	if (version >= STATE_SECRET_AREA_IDENTITY_VERSION) {
+		if (!secret_area_validate_runtime_state(fp))
+			goto done;
+	} else if (version >= STATE_SECRET_AREA_RUNTIME_VERSION &&
 	    !state_runtime_skip(fp, sizeof(int) + SECRET_AREA_MAX_GENERATED))
 		goto done;
 	valid = 1;
@@ -1142,7 +1146,7 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 	}
 	state_read_effect_runtime_state(fp, swap, apply_runtime_state, version, GameTime64);
 	if (version >= STATE_SECRET_AREA_RUNTIME_VERSION)
-		secret_area_read_runtime_state(fp, swap);
+		secret_area_read_runtime_state(fp, swap, version >= STATE_SECRET_AREA_IDENTITY_VERSION);
 
 	if (secret_restore)
 		return;

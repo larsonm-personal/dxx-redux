@@ -25,8 +25,9 @@
 #include "weapon.h"
 #include "vclip.h"
 
-#define D1_SAVE_VERSION 15
-#define D1_SAVE_COMPATIBLE_VERSION D1_SAVE_VERSION
+#define D1_SAVE_VERSION 16
+#define D1_SAVE_COMPATIBLE_VERSION 15
+#define D1_SAVE_SECRET_IDENTITY_VERSION 16
 #define D1_SAVE_DESC_LENGTH 20
 #define D1_SAVE_THUMBNAIL_W 100
 #define D1_SAVE_THUMBNAIL_H 50
@@ -1491,7 +1492,7 @@ static int d1_save_translate_skip_morph_state(d1_save_translate_reader *reader)
 
 static int d1_save_translate_read_runtime_state(
 	d1_save_translate_reader *reader, const object *objects, int object_count,
-	d1_save_translate_runtime_state *state)
+	d1_save_translate_runtime_state *state, int version)
 {
 	int i;
 	int active_effects;
@@ -1573,8 +1574,15 @@ static int d1_save_translate_read_runtime_state(
 		    !d1_save_translate_skip(reader, sizeof(int) * 5))
 			return 0;
 	}
-	if (!d1_save_translate_skip(reader,
-	                            sizeof(int) + SECRET_AREA_MAX_GENERATED))
+	if (version >= D1_SAVE_SECRET_IDENTITY_VERSION) {
+		secret_area_saved_state saved;
+		size_t offset = reader->pos;
+		if (!d1_save_translate_skip(reader, SECRET_AREA_IDENTITY_SAVE_SIZE) ||
+		    !secret_area_decode_saved_state(reader->data + offset, SECRET_AREA_IDENTITY_SAVE_SIZE, &saved))
+			return 0;
+		/* Region identities are scoped to the native game interpretation */
+	} else if (!d1_save_translate_skip(reader,
+	                                   sizeof(int) + SECRET_AREA_MAX_GENERATED))
 		return 0;
 	if (!d1_save_translate_validate_runtime_allocator(
 	        &state->object_state, objects, object_count))
@@ -1769,7 +1777,7 @@ int d1_save_translate_apply_checkpoint_objects(
 		goto fail;
 	failure = "runtime state";
 	if (!d1_save_translate_read_runtime_state(
-	        &reader, translated_objects, start->object_count, runtime))
+	        &reader, translated_objects, start->object_count, runtime, start->version))
 		goto fail;
 	if (!d1_save_translate_validate_runtime_ai_path(runtime, ai))
 		goto fail;

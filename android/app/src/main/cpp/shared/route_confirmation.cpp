@@ -1958,10 +1958,15 @@ static int start_confirmation(int from_current_state)
 	if (State.summary.player_radius > actor->size)
 		actor->size = State.summary.player_radius;
 	State.summary.effective_radius = actor->size;
-	/* Build the canonical level plan once.  Subsequent objective selection must
-	 * refresh only the live view from the verification actor; rebuilding the
-	 * canonical scan clears the live plan that the Guide-Bot consumes. */
-	secret_area_rescan_current_level();
+	/* Level loading already prepares the authored canonical plan. Creating the
+	 * verification actor changes snapshot identity, so rescanning here would
+	 * repeat the full visibility search before selecting any live objective.
+	 * Restored worlds and missing metadata still need canonical preparation. A
+	 * partial canonical plan is useful: the live certifier validates each goal */
+	route_planner_plan_summary canonical_summary = {};
+	const int canonical_available = level_metadata_get_canonical_route_plan_summary(&canonical_summary);
+	if (from_current_state || !canonical_available)
+		secret_area_rescan_current_level();
 	/* Sandbox normalization is deliberately after the authored canonical scan.
 	 * The live view below represents the world the actor actually traverses. */
 	remove_ordinary_robots();

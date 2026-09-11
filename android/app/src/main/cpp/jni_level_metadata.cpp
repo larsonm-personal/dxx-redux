@@ -904,6 +904,7 @@ static json serialize_current_level_row(int level_num, const char *level_file,
 	row["powerups"] = object_counts.powerups;
 	row["reactors"] = object_counts.reactors;
 	row["secrets"] = secret_area_total(secret_state);
+	row["secret_areas_complete"] = secret_area_liquid_metadata_complete() != 0;
 	row["matcens"] = metadata ? metadata->matcen_count : 0;
 	row["energy_centers"] = metadata ? metadata->energy_center_count : 0;
 	row["mine_volume"] = metadata ? metadata->mine_volume : 0.0;

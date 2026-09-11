@@ -61,6 +61,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "multi.h"
 #include "makesig.h"
 #include "level_section_io.h"
+#include "secretarea.h"
 
 #ifndef NDEBUG
 void dump_mine_info(void);
@@ -1312,6 +1313,7 @@ int load_level(const char * filename_passed)
 				"details, and contact Matt or Mike." );
 	#endif
 
+	secret_area_level_loaded(filename);
 	return 0;
 }
 

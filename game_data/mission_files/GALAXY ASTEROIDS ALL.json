@@ -120,7 +120,7 @@
         "reactors": 1,
         "robots": 44,
         "hostages": 3,
-        "secrets": 0,
+        "secrets": 1,
         "matcens": 1,
         "energy_centers": 1,
         "mine_volume": 11581500.0,

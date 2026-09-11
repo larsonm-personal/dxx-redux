@@ -28,6 +28,7 @@ class LevelMetadataResultCacheTest {
                 game = "d2",
                 sourceType = "hog",
                 sourcePath = mission.absolutePath,
+                archivePath = mission.absolutePath,
                 dataDir = data.absolutePath,
                 normalLevelFiles = listOf("uneasy4.rl2"),
             )
@@ -67,6 +68,7 @@ class LevelMetadataResultCacheTest {
                 game = "d2",
                 sourceType = "hog",
                 sourcePath = source.absolutePath,
+                archivePath = source.absolutePath,
                 normalLevelFiles = listOf("level.rl2"),
             )
         val identity = checkNotNull(LevelMetadataResultCache.identify(target))
@@ -106,6 +108,7 @@ class LevelMetadataResultCacheTest {
                 game = "d2",
                 sourceType = "hog",
                 sourcePath = source.absolutePath,
+                archivePath = source.absolutePath,
                 normalLevelFiles = listOf("legacy.rl2"),
             )
         val identity = checkNotNull(LevelMetadataResultCache.identify(target))
@@ -124,6 +127,40 @@ class LevelMetadataResultCacheTest {
         assertEquals(false, cacheFile.exists())
     }
 
+    @Test
+    fun `loose sources bypass cache and all palette assets affect identity`() {
+        val data = temporaryFolder.newFolder("liquid-assets")
+        val archive = File(data, "mission.zip").apply { writeText("mission") }
+        val loose = LevelMetadataTarget(
+            displayName = "Loose", game = "d2", sourceType = "directory",
+            sourcePath = data.absolutePath, dataDir = data.absolutePath,
+        )
+        assertNull(LevelMetadataResultCache.identify(loose))
+        val target = loose.copy(archivePath = archive.absolutePath, sourcePath = null)
+        val before = checkNotNull(LevelMetadataResultCache.identify(target))
+        val pig = File(data, "WATER.PIG").apply { writeText("opaque") }
+        val added = checkNotNull(LevelMetadataResultCache.identify(target))
+        assertNotEquals(before.key, added.key)
+        pig.writeText("transparent")
+        assertNotEquals(added.key, checkNotNull(LevelMetadataResultCache.identify(target)).key)
+        pig.delete()
+        assertEquals(before.key, checkNotNull(LevelMetadataResultCache.identify(target)).key)
+    }
+
+    @Test
+    fun `unknown liquid texture metadata is never published`() {
+        val root = temporaryFolder.newFolder("incomplete-cache")
+        val archive = temporaryFolder.newFile("unknown.zip").apply { writeText("mission") }
+        val target = LevelMetadataTarget(
+            displayName = "Unknown", game = "d2", sourceType = "zip", archivePath = archive.absolutePath,
+        )
+        val identity = checkNotNull(LevelMetadataResultCache.identify(target))
+        val text = resultJson("d2").replace("\"secret_areas_complete\":true", "\"secret_areas_complete\":false")
+        assertEquals(false, LevelMetadataResultCache.publish(
+            root, identity, target, 1, text, LevelMetadataResult.fromJson(text),
+        ))
+    }
+
     private fun resultJson(game: String): String =
-        """{"status":"ok","source":"Level","game":"$game","levels":[{"status":"ok","route_readiness":"complete","route_cache_file":"route-cache/g6/test.bin"}]}"""
+        """{"status":"ok","source":"Level","game":"$game","levels":[{"status":"ok","route_readiness":"complete","secret_areas_complete":true,"route_cache_file":"route-cache/g6/test.bin"}]}"""
 }

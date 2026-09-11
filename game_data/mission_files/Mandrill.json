@@ -1319,7 +1319,7 @@
         "reactors": 1,
         "robots": 39,
         "hostages": 0,
-        "secrets": 0,
+        "secrets": 1,
         "matcens": 0,
         "energy_centers": 1,
         "mine_volume": 17852800.0,

@@ -48,6 +48,8 @@ typedef struct level_metadata_live_work_summary {
 } level_metadata_live_work_summary;
 
 void secret_area_rescan_current_level(void);
+void secret_area_level_loaded(const char *filename);
+int secret_area_liquid_metadata_complete(void);
 void secret_area_prepare_current_level(void);
 int level_metadata_try_load_pending_cache(void);
 void level_metadata_note_background_result(int success);
@@ -124,7 +126,8 @@ int secret_area_note_segment_entered(int segnum);
 void secret_area_restore_saved_found(int saved_total, const unsigned char *found, int found_capacity, const unsigned char *visited, int visited_count);
 void secret_area_restore_found_from_automap(const unsigned char *visited, int visited_count);
 void secret_area_write_runtime_state(rewind_file *fp);
-void secret_area_read_runtime_state(rewind_file *fp, int swap);
+void secret_area_read_runtime_state(rewind_file *fp, int swap, int has_identities);
+int secret_area_validate_runtime_state(rewind_file *fp);
 int secret_area_get_reveal_unfound(void);
 void secret_area_set_reveal_unfound(int reveal);
 int level_metadata_get_objective_mode(void);

@@ -102,7 +102,7 @@ class StatePersistenceContractsTest(unittest.TestCase):
 
     def test_d1_translation_accepts_only_its_decoded_layout(self) -> None:
         source = (ROOT / "d2/main/d1_save_translate.c").read_text(encoding="utf-8")
-        self.assertEqual("D1_SAVE_VERSION", re.search(r"#define D1_SAVE_COMPATIBLE_VERSION\s+(\S+)", source).group(1))
+        self.assertEqual("15", re.search(r"#define D1_SAVE_COMPATIBLE_VERSION\s+(\S+)", source).group(1))
         self.assertIn("version < D1_SAVE_COMPATIBLE_VERSION || version > D1_SAVE_VERSION", source)
         for token in (
             "obj->ctype.ai_info.danger_laser_num = -1",

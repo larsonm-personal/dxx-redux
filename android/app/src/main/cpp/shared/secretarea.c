@@ -26,6 +26,7 @@
 #include "route_analysis_cache.h"
 #include "route_confirmation.h"
 #include "secret_area_item_names.h"
+#include "textures.h"
 #include "segment.h"
 #include "automap.h"
 #include "switch.h"
@@ -42,12 +43,20 @@
 #ifdef DXX_BUILD_DESCENT_II
 #include "ai.h"
 #include "escort.h"
+#include "mission.h"
 #endif
 #ifdef NETWORK
 #include "multi.h"
 #endif
 
 static secret_area_state Secret_area_state;
+static int Secret_area_inventory_valid;
+static int Secret_area_texture_complete;
+static char Secret_area_level_file[PATH_MAX];
+static unsigned long long Secret_area_level_identity;
+static int Secret_area_bitmap_flags[MAX_BITMAP_FILES];
+static int Secret_area_texture_flags[MAX_TEXTURES];
+static unsigned char Secret_area_trigger_side[SECRET_AREA_MAX_SEGMENTS][SECRET_AREA_MAX_SIDES];
 static level_metadata_state Level_metadata_canonical_state;
 static route_planner_plan_summary Level_metadata_canonical_plan_summary;
 static int Level_metadata_canonical_plan_summary_valid;
@@ -676,7 +685,7 @@ static unsigned long long level_metadata_visibility_hash_int(
 static unsigned long long level_metadata_visibility_hash_key(
     const level_metadata_visibility_key *key)
 {
-	unsigned long long hash = 1469598103934665603ULL;
+	unsigned long long hash = 14695981039346656037ULL;
 	int coordinate;
 
 	hash = level_metadata_visibility_hash_int(hash, key->kind);
@@ -4586,6 +4595,320 @@ void level_metadata_set_live_work_pending_event_mask(
 	Level_metadata_live_work_summary.pending_event_mask = event_mask;
 }
 
+void secret_area_level_loaded(const char *filename)
+{
+	PHYSFS_file *file;
+	unsigned char buffer[4096];
+	PHYSFS_sint64 remaining;
+	unsigned long long hash = 1469598103934665603ULL;
+	Secret_area_inventory_valid = 0;
+	Secret_area_texture_complete = 0;
+	Secret_area_level_identity = 0;
+	secret_area_state_clear(&Secret_area_state);
+	snprintf(Secret_area_level_file, sizeof(Secret_area_level_file), "%s", filename ? filename : "");
+	file = PHYSFSX_openReadBuffered(Secret_area_level_file);
+	if (!file)
+		return;
+	remaining = PHYSFS_fileLength(file);
+	if (remaining <= 0) {
+		PHYSFS_close(file);
+		return;
+	}
+	while (remaining > 0) {
+		PHYSFS_uint32 count = remaining > (PHYSFS_sint64) sizeof(buffer) ? sizeof(buffer) : (PHYSFS_uint32) remaining;
+		PHYSFS_uint32 i;
+		if (PHYSFS_read(file, buffer, 1, count) != count) {
+			PHYSFS_close(file);
+			return;
+		}
+		for (i = 0; i < count; ++i)
+			hash = (hash ^ buffer[i]) * 1099511628211ULL;
+		remaining -= count;
+	}
+	PHYSFS_close(file);
+#ifdef DXX_BUILD_DESCENT_II
+	hash = (hash ^ ((Current_mission && EMULATING_D1) ? 3u : 2u)) * 1099511628211ULL;
+#else
+	hash = (hash ^ 1u) * 1099511628211ULL;
+#endif
+	Secret_area_level_identity = hash ? hash : 1;
+}
+
+int secret_area_liquid_metadata_complete(void)
+{
+	return Secret_area_texture_complete;
+}
+
+static int secret_area_animation_flags(int texture)
+{
+	int i, effect = -1, flags = 0;
+	if (texture < 0 || texture >= NumTextures || texture >= MAX_TEXTURES)
+		return -1;
+	if (Secret_area_texture_flags[texture] != -2)
+		return Secret_area_texture_flags[texture];
+	Secret_area_texture_flags[texture] = -1;
+	if (Num_effects < 0 || Num_effects > MAX_EFFECTS)
+		return -1;
+	for (i = 0; i < Num_effects; ++i)
+		if (Effects[i].changing_wall_texture == texture) {
+			if (effect >= 0)
+				return -1;
+			effect = i;
+		}
+	if (effect >= 0) {
+		const eclip *clip = &Effects[effect];
+		if (clip->crit_clip != -1 || clip->dest_bm_num > 0 ||
+		    clip->vc.num_frames <= 0 ||
+		    clip->vc.num_frames > (int) (sizeof(clip->vc.frames) / sizeof(clip->vc.frames[0])))
+			return -1;
+		for (i = 0; i < clip->vc.num_frames; ++i) {
+			int bitmap = clip->vc.frames[i].index;
+			if (bitmap <= 0 || bitmap >= MAX_BITMAP_FILES || Secret_area_bitmap_flags[bitmap] < 0)
+				return -1;
+			flags |= Secret_area_bitmap_flags[bitmap];
+		}
+	} else {
+		int bitmap = Textures[texture].index;
+		if (TmapInfo[texture].eclip_num >= 0 || bitmap <= 0 || bitmap >= MAX_BITMAP_FILES)
+			return -1;
+		flags = Secret_area_bitmap_flags[bitmap];
+	}
+	Secret_area_texture_flags[texture] = flags;
+	return flags;
+}
+
+static int secret_area_side_is_concealed_liquid(void *user, int seg, int side)
+{
+	int wall, base, overlay, flags, material;
+	(void) user;
+	wall = Segments[seg].sides[side].wall_num;
+	if (!secret_area_wall_index_valid(wall) || Walls[wall].type != WALL_ILLUSION ||
+	    (Walls[wall].flags & WALL_ILLUSION_OFF))
+		return 0;
+	base = Segments[seg].sides[side].tmap_num;
+	overlay = Segments[seg].sides[side].tmap_num2 & 0x3fff;
+	if (base < 0 || base >= NumTextures || base >= MAX_TEXTURES ||
+	    overlay >= NumTextures || overlay >= MAX_TEXTURES)
+		return 0;
+	material = TmapInfo[base].flags;
+	if (overlay)
+		material |= TmapInfo[overlay].flags;
+#ifdef DXX_BUILD_DESCENT_II
+	if (!(material & (TMI_WATER | TMI_VOLATILE)))
+#else
+	if (!(material & TMI_VOLATILE))
+#endif
+		return 0;
+	if (!Secret_area_texture_complete)
+		return 0;
+	flags = secret_area_animation_flags(overlay ? overlay : base);
+	if (flags < 0)
+		return 0;
+	/* Ordinary overlay holes reveal the base; reject when that base may
+	 * itself be transparent, even if doorway flag logic treats it as opaque */
+	if (overlay && (flags & BM_FLAG_TRANSPARENT)) {
+		int base_flags = secret_area_animation_flags(base);
+		if (base_flags < 0 || (base_flags & BM_FLAG_TRANSPARENT))
+			return 0;
+	}
+	return !(flags & (overlay ? BM_FLAG_SUPER_TRANSPARENT : BM_FLAG_TRANSPARENT));
+}
+
+static int secret_area_liquid_side_has_trigger(void *user, int seg, int side)
+{
+	(void) user;
+	return Secret_area_trigger_side[seg][side];
+}
+
+static int secret_area_liquid_side_passable(void *user, int seg, int side)
+{
+	return secret_area_side_is_flyable(user, seg, side) &&
+	       Level_metadata_side_clearance[seg][side] >= secret_area_player_radius();
+}
+
+#ifdef DXX_BUILD_DESCENT_II
+/* A switch may reveal a separate reward pocket without being progression.
+ * Accept only a sealed, physically connected leaf with one controlled entry */
+static int secret_area_open_target_is_reward_leaf(int entry, int entry_side, const int *outside_distance, int segment_count)
+{
+	static unsigned char seen[SECRET_AREA_MAX_SEGMENTS];
+	static int pending[SECRET_AREA_MAX_SEGMENTS];
+	int head = 0, tail = 0, objnum, reward = 0;
+	int child = Segments[entry].children[entry_side];
+	int back = secret_area_reverse_side(NULL, entry, child);
+	if (back < 0 || segment_count > SECRET_AREA_MAX_SEGMENTS)
+		return 0;
+	memset(seen, 0, sizeof(seen));
+	seen[child] = 1;
+	pending[tail++] = child;
+	while (head < tail) {
+		int seg = pending[head++], side;
+		if (secret_area_segment_special(NULL, seg) != 0)
+			return 0;
+		for (side = 0; side < MAX_SIDES_PER_SEGMENT; ++side) {
+			int next = Segments[seg].children[side], reverse;
+			if (seg == child && side == back)
+				continue;
+			if (Secret_area_trigger_side[seg][side] || secret_area_side_has_exit_trigger(NULL, seg, side))
+				return 0;
+			if (next == -1)
+				continue;
+			if (next < 0 || next >= segment_count || outside_distance[next] >= 0 ||
+			    !secret_area_liquid_side_passable(NULL, seg, side))
+				return 0;
+			reverse = secret_area_reverse_side(NULL, seg, next);
+			if (reverse < 0 || Segments[next].children[reverse] != seg ||
+			    !secret_area_liquid_side_passable(NULL, next, reverse))
+				return 0;
+			if (!seen[next]) {
+				seen[next] = 1;
+				pending[tail++] = next;
+			}
+		}
+	}
+	for (objnum = 0; objnum <= Highest_object_index; ++objnum) {
+		const object *obj = &Objects[objnum];
+		int id;
+		if (obj->type == OBJ_NONE || (obj->flags & OF_SHOULD_BE_DEAD) ||
+		    obj->segnum < 0 || obj->segnum >= segment_count || !seen[obj->segnum])
+			continue;
+		if (obj->type == OBJ_HOSTAGE || obj->type == OBJ_CNTRLCEN)
+			return 0;
+		if (obj->type == OBJ_POWERUP) {
+			id = obj->id;
+			if (id == POW_KEY_BLUE || id == POW_KEY_RED || id == POW_KEY_GOLD)
+				return 0;
+			reward = 1;
+		}
+		if (obj->contains_type == OBJ_POWERUP && obj->contains_count > 0) {
+			id = obj->contains_id;
+			if (id == POW_KEY_BLUE || id == POW_KEY_RED || id == POW_KEY_GOLD)
+				return 0;
+			reward = 1;
+		}
+	}
+	return reward;
+}
+#endif
+
+static int secret_area_optional_open_trigger(void *user, int seg, int side, const int *outside_distance, int segment_count)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	int wall = Segments[seg].sides[side].wall_num;
+	int trigger_num, link, links;
+	(void) user;
+	/* Do not exempt a switch that is itself controlled by another trigger */
+	if (Secret_area_trigger_side[seg][side] != 1 || !secret_area_wall_index_valid(wall))
+		return 0;
+	trigger_num = Walls[wall].trigger;
+	if (trigger_num < 0 || trigger_num >= Num_triggers || Triggers[trigger_num].type != TT_OPEN_WALL)
+		return 0;
+	links = secret_area_bounded_trigger_link_count(trigger_num);
+	if (links != 1 || links != Triggers[trigger_num].num_links)
+		return 0;
+	for (link = 0; link < links; ++link) {
+		int target = Triggers[trigger_num].seg[link];
+		int target_side = Triggers[trigger_num].side[link];
+		int child, reverse;
+		if (target < 0 || target >= segment_count || target_side < 0 || target_side >= MAX_SIDES_PER_SEGMENT)
+			return 0;
+		child = Segments[target].children[target_side];
+		if (getenv("DXX_SECRET_LIQUID_TRACE"))
+			fprintf(stderr, "SECRET-LIQUID optional_switch source=%d/%d target=%d/%d child=%d distances=%d/%d\n", seg, side, target, target_side, child, outside_distance[target], child >= 0 && child < segment_count ? outside_distance[child] : -999);
+		if (child < 0 || child >= segment_count || outside_distance[target] < 0 || outside_distance[child] >= 0)
+			return 0;
+		if (!secret_area_open_target_is_reward_leaf(target, target_side, outside_distance, segment_count))
+			return 0;
+		reverse = secret_area_reverse_side(NULL, target, child);
+		if (reverse < 0 || Segments[child].children[reverse] != target ||
+		    secret_area_side_has_exit_trigger(NULL, target, target_side) ||
+		    secret_area_side_has_exit_trigger(NULL, child, reverse))
+			return 0;
+	}
+	return 1;
+#else
+	(void) user;
+	(void) seg;
+	(void) side;
+	(void) outside_distance;
+	(void) segment_count;
+	return 0;
+#endif
+}
+
+static void secret_area_prepare_texture_facts(void)
+{
+	int i, seg, side;
+	Secret_area_texture_complete = piggy_read_level_bitmap_flags(
+	    Secret_area_level_file, Secret_area_bitmap_flags, MAX_BITMAP_FILES);
+	for (i = 0; i < MAX_TEXTURES; ++i)
+		Secret_area_texture_flags[i] = -2;
+	/* Resolve every relevant frame before scanning so failure cannot depend on
+	 * side traversal order. No liquid surfaces means no texture dependency */
+	{
+		int has_liquid = 0, complete = Secret_area_texture_complete;
+		for (seg = 0; seg < Num_segments && seg < SECRET_AREA_MAX_SEGMENTS; ++seg)
+			for (side = 0; side < MAX_SIDES_PER_SEGMENT; ++side) {
+				int wall = Segments[seg].sides[side].wall_num;
+				int base = Segments[seg].sides[side].tmap_num;
+				int overlay = Segments[seg].sides[side].tmap_num2 & 0x3fff;
+				int material;
+				if (!secret_area_wall_index_valid(wall) || Walls[wall].type != WALL_ILLUSION ||
+				    (Walls[wall].flags & WALL_ILLUSION_OFF))
+					continue;
+				if (base < 0 || base >= NumTextures || base >= MAX_TEXTURES ||
+				    overlay >= NumTextures || overlay >= MAX_TEXTURES) {
+					has_liquid = 1;
+					complete = 0;
+					continue;
+				}
+				material = TmapInfo[base].flags | (overlay ? TmapInfo[overlay].flags : 0);
+#ifdef DXX_BUILD_DESCENT_II
+				if (!(material & (TMI_WATER | TMI_VOLATILE)))
+#else
+				if (!(material & TMI_VOLATILE))
+#endif
+					continue;
+				has_liquid = 1;
+				if (getenv("DXX_SECRET_LIQUID_TRACE"))
+					fprintf(stderr, "SECRET-LIQUID seg=%d side=%d child=%d wall=%d base=%d overlay=%d flags=%d clearance=%d radius=%d fly=%d\n",
+					        seg, side, Segments[seg].children[side], wall, base, overlay,
+					        Secret_area_texture_complete ? secret_area_animation_flags(overlay ? overlay : base) : -1,
+					        Level_metadata_side_clearance[seg][side], secret_area_player_radius(), secret_area_side_is_flyable(NULL, seg, side));
+				if (!Secret_area_texture_complete || secret_area_animation_flags(overlay ? overlay : base) < 0 ||
+				    (overlay && (secret_area_animation_flags(overlay) & BM_FLAG_TRANSPARENT) &&
+				     secret_area_animation_flags(base) < 0))
+					complete = 0;
+			}
+		Secret_area_texture_complete = !has_liquid || complete;
+	}
+	memset(Secret_area_trigger_side, 0, sizeof(Secret_area_trigger_side));
+	for (seg = 0; seg < Num_segments && seg < SECRET_AREA_MAX_SEGMENTS; ++seg)
+		for (side = 0; side < MAX_SIDES_PER_SEGMENT; ++side) {
+			int wall = Segments[seg].sides[side].wall_num;
+			if (secret_area_wall_index_valid(wall) && Walls[wall].trigger != -1) {
+				Secret_area_trigger_side[seg][side] |= 1;
+#ifdef DXX_BUILD_DESCENT_II
+				if (getenv("DXX_SECRET_LIQUID_TRACE") && Walls[wall].trigger >= 0 && Walls[wall].trigger < Num_triggers)
+					fprintf(stderr, "SECRET-LIQUID source=%d/%d trigger=%d type=%d\n", seg, side, Walls[wall].trigger, Triggers[Walls[wall].trigger].type);
+#endif
+			}
+		}
+	for (i = 0; i < Num_triggers && i < MAX_TRIGGERS; ++i) {
+		int link;
+		for (link = 0; link < secret_area_bounded_trigger_link_count(i); ++link) {
+			seg = Triggers[i].seg[link];
+			side = Triggers[i].side[link];
+#ifdef DXX_BUILD_DESCENT_II
+			if (getenv("DXX_SECRET_LIQUID_TRACE"))
+				fprintf(stderr, "SECRET-LIQUID target trigger=%d type=%d seg=%d side=%d\n", i, Triggers[i].type, seg, side);
+#endif
+			if (seg >= 0 && seg < Num_segments && seg < SECRET_AREA_MAX_SEGMENTS && side >= 0 && side < MAX_SIDES_PER_SEGMENT)
+				Secret_area_trigger_side[seg][side] |= 2;
+		}
+	}
+}
+
 static void secret_area_scan_current_level(int allow_expensive_planning)
 {
 	secret_area_scan_view view;
@@ -4656,7 +4979,15 @@ static void secret_area_scan_current_level(int allow_expensive_planning)
 	view.triggered_side_opener_side = secret_area_triggered_side_opener_side;
 	view.triggered_side_opener_wall_num = secret_area_triggered_side_opener_wall_num;
 	level_metadata_report_progress("secret_areas", 0, 1);
-	secret_area_scan_level(&view, &Secret_area_state);
+	if (!Secret_area_inventory_valid) {
+		secret_area_prepare_texture_facts();
+		view.side_is_concealed_liquid = secret_area_side_is_concealed_liquid;
+		view.side_has_trigger = secret_area_liquid_side_has_trigger;
+		view.side_is_physically_passable = secret_area_liquid_side_passable;
+		view.side_has_optional_open_trigger = secret_area_optional_open_trigger;
+		secret_area_scan_level(&view, &Secret_area_state);
+		Secret_area_inventory_valid = 1;
+	}
 	level_metadata_report_progress("secret_areas", 1, 1);
 #ifdef __ANDROID__
 	secret_scan_finished_us = android_profile_monotonic_us();
@@ -4983,10 +5314,11 @@ int secret_area_note_segment_entered(int segnum)
 
 void secret_area_restore_saved_found(int saved_total, const unsigned char *found, int found_capacity, const unsigned char *visited, int visited_count)
 {
-	if (saved_total == secret_area_total(&Secret_area_state))
-		secret_area_restore_found(&Secret_area_state, saved_total, found, found_capacity);
-	else
-		secret_area_restore_found_from_visited(&Secret_area_state, visited, visited_count);
+	/* Legacy positional bits cannot identify regions after scanner changes */
+	(void) saved_total;
+	(void) found;
+	(void) found_capacity;
+	secret_area_restore_found_from_visited(&Secret_area_state, visited, visited_count);
 }
 
 void secret_area_restore_found_from_automap(const unsigned char *visited, int visited_count)
@@ -5025,19 +5357,36 @@ static int secret_area_runtime_read_sxe32(rewind_file *fp, int swap)
 
 void secret_area_write_runtime_state(rewind_file *fp)
 {
-	unsigned char empty_found[SECRET_AREA_MAX_GENERATED] = { 0 };
-	int total = secret_area_total(&Secret_area_state);
-
-	secret_area_runtime_write(fp, &total, sizeof(total), 1);
-	secret_area_runtime_write(fp,
-	                          total > 0 ? Secret_area_state.found : empty_found,
-	                          sizeof(empty_found[0]), SECRET_AREA_MAX_GENERATED);
+	unsigned char data[SECRET_AREA_IDENTITY_SAVE_SIZE];
+	secret_area_encode_saved_state(&Secret_area_state, Secret_area_level_identity, data);
+	secret_area_runtime_write(fp, data, 1, sizeof(data));
 }
 
-void secret_area_read_runtime_state(rewind_file *fp, int swap)
+int secret_area_validate_runtime_state(rewind_file *fp)
+{
+	unsigned char data[SECRET_AREA_IDENTITY_SAVE_SIZE];
+	secret_area_saved_state saved;
+	return secret_area_runtime_read(fp, data, 1, sizeof(data)) == sizeof(data) &&
+	       secret_area_decode_saved_state(data, sizeof(data), &saved);
+}
+
+void secret_area_read_runtime_state(rewind_file *fp, int swap, int has_identities)
 {
 	unsigned char found[SECRET_AREA_MAX_GENERATED] = { 0 };
-	int saved_total = secret_area_runtime_read_sxe32(fp, swap);
+	int saved_total;
+	if (has_identities) {
+		unsigned char data[SECRET_AREA_IDENTITY_SAVE_SIZE];
+		secret_area_saved_state saved;
+		if (secret_area_runtime_read(fp, data, 1, sizeof(data)) != sizeof(data) ||
+		    !secret_area_decode_saved_state(data, sizeof(data), &saved))
+			return;
+		/* Identity records are explicitly little-endian, independent of swap */
+		if (saved.level_identity != Secret_area_level_identity)
+			saved.count = 0;
+		secret_area_restore_identities(&Secret_area_state, saved.count, saved.identities, saved.found);
+		return;
+	}
+	saved_total = secret_area_runtime_read_sxe32(fp, swap);
 
 	secret_area_runtime_read(fp, found, sizeof(found[0]),
 	                         SECRET_AREA_MAX_GENERATED);

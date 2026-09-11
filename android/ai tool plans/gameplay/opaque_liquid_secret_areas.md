@@ -13,10 +13,12 @@ This document consolidates the initial conversation proposal and investigates it
 - [x] Trace gameplay, metadata-worker, preview, replacement, animation, cache, and save paths
 - [x] Define proposed changes and deferred validation below
 - [x] Start implementation with A1 effective bitmap flag ownership in both games
-- [ ] Complete A2-A4 and B1-B4 before enabling liquid secret candidates
+- [x] Implement conservative liquid detection, semantic snapshots, inventory retention, and identity saves
+- [x] Add native regression cases and cache completeness/dependency handling
+- [ ] Validate native behavior and extend unsupported D1-in-D2 texture mappings
 - [ ] Compile and run host/device validation in a separately authorized implementation task
 
-The 2026-09-07 follow-up changed only this plan. The 2026-09-10 request authorizes starting implementation; the earlier no-compilation and no-emulator constraints remain in effect
+The 2026-09-07 follow-up changed only this plan. Initial implementation retained the no-compilation/no-emulator constraints. During the subsequent regression investigation, the user explicitly authorized all necessary work; see the validated follow-up below
 
 ### Implementation progress, 2026-09-10
 
@@ -24,11 +26,37 @@ The 2026-09-07 follow-up changed only this plan. The 2026-09-10 request authoriz
 - Audited the callers in both games' wall transparency checks, OpenGL paths, and shared merged-wall diagnostics. They request effective flags, so the correction belongs in the accessor rather than a separate secret-scanner workaround
 - Audited D2 POG loading and native D1 PG1/DTX loading: both clear the bitmap file offset and assign resident replacement flags. D1 custom removal restores the original file offset; D2 PIG reload restores base offsets and stored flags. The accessor now follows these ownership transitions without changing the loaders or raw file-state accessor
 - Base PIG flags remain available during page-out. Resident overrides can now differ from their original PIG entry in either direction, including transparency and super-transparency
-- Liquid secret detection, asset-preparation changes, cache invalidation, and save-format changes remain pending. This prerequisite changes effective flag lookup used by rendering/doorway checks; it does not yet change the secret scanner's boundary rules
-- Native runtime validation remains deferred under the user's no-compilation/no-emulator restriction. Do not treat source inspection or formatting checks as confirmation of renderer behavior
-- Validation performed: scoped `run-code-quality.ps1 -Fix` completed successfully and `git diff --check` passed. The quality runner excludes these inherited C files from clang-format, so no C formatting or compilation result is claimed
+- Continued implementation after the request for broader scope: added the conservative liquid-pocket pass, texture header snapshots, animation-frame union, load-boundary retention, identity saves, cache invalidation, and regression coverage
+- A2/A3 adjustment: the secret classifier reads immutable bitmap header metadata through the native loaders' existing parsers instead of loading pixels or altering renderer state in every worker. Native D1 overlays PG1 then DTX onto base file flags; native D2 reads the selected palette PIG then the level POG. This removes dependence on paging, previous-level replacement buffers, and skipped presentation for supported mappings. General gameplay asset-loading changes are outside this implementation
+- D1 header readers now bound bitmap/sound offsets before narrowing them to their existing integer representation; the metadata adapter rejects incomplete sources
+- B1: inspect all eclip frames, not the current frame; reject ambiguous/dynamic effect mappings. Apply base transparency and overlay super-transparency rules, additionally rejecting ordinary overlay holes when the underlying base may be transparent. Resolve relevant facts before scanning so uncertain data cannot produce traversal-order-dependent results
+- Detection: both faces must be active, opaque liquid illusion walls and physically passable. Preserve the door/trigger pass, then add reward-bearing pockets with no progression. Reject triggers, special segments, narrow/blocked connections, malformed edges, onward walls, ordinary alternate access, and overlap with existing secrets. Merge successive internal sheets, retain multiple external entrances, and keep the 30-secret overflow policy
+- B2: successful native `load_level()` calls clear the canonical inventory and hash authored level bytes. The first scan captures membership; route refreshes retain membership and found state. Actual reloads of the same filename rebuild
+- B3/B4: D1 version 16 and D2 version 30 use a fixed 282-byte little-endian section: 4-byte count, 8-byte game-scoped level identity, then 30 slots of 8-byte region identity plus 1-byte found status. Region identities use sorted segment membership. Validate before applying; match identities and clear unmatched entries. Old positional sections remain readable through the legacy automap approximation, with liquid pockets unfound. D2's D1-save importer accepts versions 15 and 16, validates the new section, and does not transfer identities between interpretations
+- A4: `secret_areas_complete` prevents incomplete results entering the Kotlin result cache. Result schema v4 and synchronized route generation 39 invalidate prior results. Archive cache keys include installed top-level semantic assets from both data directories, including non-groupa PIGs. Loose/directory sources bypass this cache until their dependency closure is represented
+- Introspection and headless dumps include `liquid_only` and string region identities for membership/discovery review
+- Added `test_secret_area_liquids` to extract CMake/CTest. It calls the real scanner and save codec for positives, transparent/asymmetric/blocked negatives, progression/trigger exclusions, alternate access, nested sheets, multiple entrances, legacy overlap, candidate limits, identity reordering/membership changes, legacy seen-vs-entered behavior, byte ordering, truncation, and malformed records. Kotlin cases cover PIG changes and incomplete-cache rejection
+- Source-only validation: 28 serialization, save-validation, and persistence contract checks passed after formatting. Scoped `run-code-quality.ps1 -Fix` and `git diff --check` passed; inherited-file exclusions in the quality runner still apply. Native C/CTest and Kotlin tests are authored but unrun; no compilation, emulator, headless game execution, metadata regeneration, or baseline acceptance was performed
+
+Remaining limits before declaring the bug fixed:
+
+- D1-in-D2 replacement mapping and D1 PPIG custom mapping are deliberately unsupported by the snapshot reader. Relevant liquid levels fail closed and report incomplete metadata; native D1 PG1/DTX and native D2 PIG/POG are implemented
+- Unknown/dynamic liquid texture facts disable the additional liquid pass for that level. Existing hidden-door/trigger secrets remain available
+- Native compilation, runtime parity, disk/rewind save round trips, and Obsidian 13 membership/visual checks below remain necessary. No expected totals or mission baselines were regenerated
 
 Related background: [original secret-area study](../mixed%20batch,%20umbrella/study_secret_area_autolabel_20260606.md). The existing review finding `BR-0213` already owns index-only secret discovery persistence; this plan develops that prerequisite rather than creating another finding
+
+## Regression follow-up, 2026-09-10
+
+The user subsequently authorized compilation and native execution. The earlier no-build restriction and deferred-validation notes above describe the previous implementation pass.
+
+- Fixed signed trigger sentinel handling (`sbyte` uses -1, not 255); the previous guard rejected ordinary liquid walls
+- Added an explicit MSVC packing guard around shared secret structures. Engine headers leave byte packing active; the new 64-bit identities otherwise produced different layouts in pure C and engine callers, crashing detailed secret dumps
+- Refined the blanket switch exclusion for a single `TT_OPEN_WALL` target proven to be a sealed reward-only leaf. It must contain no progression items, special segments, further triggers, or onward connections. Other controls and boundary triggers remain rejected
+- Native Obsidian 13 now yields six secrets: unchanged four existing secrets plus segment 154 (Mega missile/Phoenix cannon) and 282 (Cloak). Transparent 58/71 and 334/347 water is excluded. The switch in 154 opens the separate optional reward room 153; it is not a required route switch
+- Added a native integration runner `android/tests/test_secret_area_liquid_obsidian.py` and a packing regression to the real scanner/codec test; registered that test in both native game CTest suites
+- Cache generation 40 invalidates results produced by the broken trigger check
+- See [Uneasy4 regression investigation](uneasy4_timeout_and_liquid_regression_20260910.md) for the related startup timeout, baseline comparison, and final validation
 
 ## Proposed detection policy
 
@@ -190,13 +218,13 @@ Validate the complete section before applying it; reject truncation, out-of-rang
 
 ## Deferred validation and implementation order
 
-All work in this section remains unperformed
+Implementation above is present; build/runtime checks in this section remain unperformed
 
-1. Implement A1 flag ownership and A2/A3 asset-preparation parity first, with the new secret category still disabled
-2. Implement A4 completeness/dependency handling and B1 stable surface classification
-3. Implement B2 canonical inventory lifecycle and B3/B4 identity-based restoration
-4. Add the conservative liquid-boundary rule, including ordinary alternate-route, progression, and nested-region handling
-5. Build and validate both games; only then review baseline changes and regenerate metadata
+1. Compile both games; run extract `secret_area_liquid_tests` and existing `secret_area_scan_budget_tests`
+2. Run Kotlin result-cache tests and paired native disk/rewind save checks
+3. Validate exact gameplay assets and headless/JNI/preview parity, including repeated loads and frame changes
+4. Inspect Obsidian 13 membership, entrances, rewards, and transparent negatives; run the D1/D2 baseline harness
+5. Extend unsupported mappings using validated native facts; review baseline changes before regenerating metadata
 
 | Future check | Required result |
 | --- | --- |
@@ -217,6 +245,6 @@ All work in this section remains unperformed
 | Obsidian 13 positive pockets and transparent negatives | Expected membership, contents, and one count per pocket |
 | Empty liquid scenery, ordinary underwater loot, required switches/exits, nested sheets | No false secret inflation or reward fragmentation |
 
-Extend meaningful native scanner/serialization coverage and the existing D1/D2 baseline harness. `test_secret_area_serialization_contracts.py` currently encodes the exact old byte layout, so update it for explicit versioned layouts rather than merely loosening assertions. Review full region membership, entrances, and display ordering, not only totals
+Extend meaningful native scanner/serialization coverage and the existing D1/D2 baseline harness. `test_secret_area_serialization_contracts.py` now checks explicit versioned layouts; native byte-level execution remains required. Review full region membership, entrances, and display ordering, not only totals
 
 Keep future diagnostics concise and normalized: segment/side pair, texture source and frame set, effective opacity/material classification, rejection reason, region identity, and matched/unmatched restore result. Do not automatically accept regenerated baselines or raise the 30-secret cap to hide unexpected growth

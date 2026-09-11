@@ -42,6 +42,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "screens.h"
 #include "piggy.h"
 #include "gamemine.h"
+#include "mission.h"
 #include "textures.h"
 #include "texmerge.h"
 #include "paging.h"
@@ -1735,6 +1736,77 @@ void free_bitmap_replacements()
 		Bitmap_replacement_next = NULL;
 		Bitmap_replacement_end = NULL;
 	}
+}
+
+/* Read semantic flags without changing the renderer, paging, or POG ownership */
+int piggy_read_level_bitmap_flags(const char *level_name, int *flags, int capacity)
+{
+	PHYSFS_file *file;
+	char name[FILENAME_LEN];
+	int count, i, indices[MAX_BITMAP_FILES];
+	PHYSFS_sint64 length, data_start;
+	DiskBitmapHeader header;
+	if (!flags || !level_name || strlen(level_name) >= sizeof(name) || capacity < MAX_BITMAP_FILES)
+		return 0;
+	for (i = 0; i < capacity; ++i)
+		flags[i] = -1;
+	/* D1-in-D2 uses a different replacement mapping, not the D2 PIG ordering */
+	if ((Current_mission && EMULATING_D1) ||
+	    d_stricmp(Current_level_palette, D1_DEFAULT_PALETTE) == 0)
+		return 0;
+	d_splitpath(Current_level_palette, NULL, NULL, name, NULL);
+	if (strlen(name) + 4 >= sizeof(name))
+		return 0;
+	strcat(name, ".pig");
+	file = PHYSFSX_openReadBuffered(name);
+	if (!file) {
+		if (PHYSFSX_exists(name, 1))
+			return 0;
+		file = PHYSFSX_openReadBuffered(DEFAULT_PIGFILE_SHAREWARE);
+	}
+	if (!file)
+		return 0;
+	length = PHYSFS_fileLength(file);
+	if (length < 12 || PHYSFSX_readInt(file) != PIGFILE_ID || PHYSFSX_readInt(file) != PIGFILE_VERSION)
+		goto invalid_flags;
+	count = PHYSFSX_readInt(file);
+	data_start = 12 + (PHYSFS_sint64) count * sizeof(DiskBitmapHeader);
+	if (count <= 0 || count >= MAX_BITMAP_FILES || data_start > length)
+		goto invalid_flags;
+	for (i = 1; i <= count; ++i) {
+		DiskBitmapHeader_read(&header, file);
+		if (header.offset < 0 || data_start + header.offset >= length)
+			goto invalid_flags;
+		flags[i] = header.flags & BM_FLAGS_TO_COPY;
+	}
+	PHYSFS_close(file);
+	change_filename_extension(name, level_name, ".POG");
+	file = PHYSFSX_openReadBuffered(name);
+	if (!file)
+		return !PHYSFSX_exists(name, 1);
+	length = PHYSFS_fileLength(file);
+	if (length < 12 || PHYSFSX_readInt(file) != MAKE_SIG('G','O','P','D') || PHYSFSX_readInt(file) != 1)
+		goto invalid_flags;
+	count = PHYSFSX_readInt(file);
+	data_start = 12 + (PHYSFS_sint64) count * (2 + sizeof(DiskBitmapHeader));
+	if (count < 0 || count > MAX_BITMAP_FILES || data_start > length)
+		goto invalid_flags;
+	for (i = 0; i < count; ++i) {
+		indices[i] = (ushort) PHYSFSX_readShort(file);
+		if (indices[i] <= 0 || indices[i] >= MAX_BITMAP_FILES)
+			goto invalid_flags;
+	}
+	for (i = 0; i < count; ++i) {
+		DiskBitmapHeader_read(&header, file);
+		if (header.offset < 0 || data_start + header.offset >= length)
+			goto invalid_flags;
+		flags[indices[i]] = header.flags & BM_FLAGS_TO_COPY;
+	}
+	PHYSFS_close(file);
+	return 1;
+invalid_flags:
+	PHYSFS_close(file);
+	return 0;
 }
 
 void load_bitmap_replacements(char *level_name)

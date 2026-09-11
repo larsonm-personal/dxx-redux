@@ -2,6 +2,8 @@
 
 #include <limits.h>
 #include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 typedef struct candidate_secret {
@@ -54,6 +56,9 @@ static route_side route_key_doors[3][SECRET_AREA_MAX_SEGMENTS];
 static candidate_summary candidate_summaries[SECRET_AREA_MAX_SEGMENTS];
 static int selected_candidate[SECRET_AREA_MAX_SEGMENTS];
 static candidate_secret candidates[SECRET_AREA_MAX_GENERATED + 1];
+static unsigned char liquid_boundary[SECRET_AREA_MAX_SEGMENTS][SECRET_AREA_MAX_SIDES];
+static int liquid_distance[SECRET_AREA_MAX_SEGMENTS];
+static int liquid_component_mode;
 
 void secret_area_state_clear(secret_area_state *state)
 {
@@ -341,6 +346,9 @@ static int is_ordinary_edge(const secret_area_scan_view *view, int seg, int side
 		return 0;
 	if (is_secret_boundary_edge(view, seg, side, child))
 		return (flags & SECRET_AREA_EDGE_ALLOW_HIDDEN) != 0;
+	if (liquid_component_mode && liquid_boundary[seg][side] &&
+	    (liquid_component_mode == 1 || liquid_distance[seg] >= 0 || liquid_distance[child] >= 0))
+		return 0;
 	wall_num = side_wall_num(view, seg, side);
 	if (!valid_wall(view, wall_num))
 		return !side_has_exit_trigger(view, seg, side);
@@ -350,7 +358,7 @@ static int is_ordinary_edge(const secret_area_scan_view *view, int seg, int side
 	if (wall_type == view->wall_type_open || wall_type == view->wall_type_blastable)
 		return !side_has_exit_trigger(view, seg, side);
 	if (wall_type == view->wall_type_illusion)
-		return !(wall_flags & view->wall_flag_illusion_off) && !side_has_exit_trigger(view, seg, side);
+		return !side_has_exit_trigger(view, seg, side);
 	if (wall_type == view->wall_type_door) {
 		if (flags & SECRET_AREA_EDGE_ALLOW_PROGRESSION)
 			return !side_has_exit_trigger(view, seg, side);
@@ -442,7 +450,7 @@ static int is_required_route_edge(const secret_area_scan_view *view, int seg, in
 	if (wall_type == view->wall_type_open || wall_type == view->wall_type_blastable)
 		return 1;
 	if (wall_type == view->wall_type_illusion)
-		return (wall_flags & view->wall_flag_illusion_off) == 0;
+		return 1;
 	if (wall_type == view->wall_type_door) {
 		if (wall_keys == view->wall_key_none)
 			return (wall_flags & view->wall_flag_door_locked) == 0;
@@ -1018,6 +1026,171 @@ static int view_is_valid(const secret_area_scan_view *view)
 	       view->object_id;
 }
 
+/* Preserve the door/trigger inventory, then add optional liquid cul-de-sacs.
+ * A pocket may not contain a switch or lead onward through another wall */
+static void append_liquid_secrets(const secret_area_scan_view *view, secret_area_state *state, int max_generated)
+{
+	int seg, side, component, component_total, count = 0;
+	int first = state->final_candidate_count;
+	int boundary_count = 0;
+	int offset = 0;
+	if (!view->side_is_concealed_liquid || !view->side_has_trigger ||
+	    !view->side_is_physically_passable || !view->segment_special)
+		return;
+	memset(liquid_boundary, 0, sizeof(liquid_boundary));
+	for (seg = 0; seg < view->num_segments; ++seg)
+		for (side = 0; side < SECRET_AREA_MAX_SIDES; ++side) {
+			int child = view->segment_child(view->user, seg, side);
+			int reverse;
+			if (!edge_has_valid_reverse(view, seg, side, child))
+				continue;
+			reverse = view->reverse_side(view->user, seg, child);
+			liquid_boundary[seg][side] =
+			    view->side_is_concealed_liquid(view->user, seg, side) &&
+			    view->side_is_concealed_liquid(view->user, child, reverse) &&
+			    view->side_is_physically_passable(view->user, seg, side) &&
+			    view->side_is_physically_passable(view->user, child, reverse) &&
+			    !view->side_has_trigger(view->user, seg, side) &&
+			    !view->side_has_trigger(view->user, child, reverse);
+			boundary_count += liquid_boundary[seg][side] != 0;
+		}
+	if (!boundary_count)
+		return;
+	liquid_component_mode = 1;
+	bfs_distances(view, liquid_distance, SECRET_AREA_EDGE_ALLOW_PROGRESSION);
+	/* Merge successive sheets inside the same hidden pocket */
+	liquid_component_mode = 2;
+	component_total = build_components(view);
+	liquid_component_mode = 0;
+	initialize_candidate_summaries(component_total);
+	classify_component_contents(view);
+	for (seg = 0; seg < view->num_segments; ++seg) {
+		candidate_summary *summary = &candidate_summaries[component_id[seg]];
+		if (getenv("DXX_SECRET_LIQUID_TRACE") && liquid_distance[seg] < 0) {
+			fprintf(stderr, "SECRET-LIQUID member=%d special=%d overlap=%d", seg, view->segment_special(view->user, seg), state->segment_to_secret[seg]);
+			for (side = 0; side < SECRET_AREA_MAX_SIDES; ++side)
+				fprintf(stderr, " side%d=%d/%d/%d", side, view->segment_child(view->user, seg, side), view->side_has_trigger(view->user, seg, side), view->side_is_physically_passable(view->user, seg, side));
+			fprintf(stderr, "\n");
+		}
+		if (liquid_distance[seg] >= 0 || state->segment_to_secret[seg] ||
+		    view->segment_special(view->user, seg) != 0)
+			summary->contains_progress_item = 1;
+		for (side = 0; side < SECRET_AREA_MAX_SIDES; ++side) {
+			int child = view->segment_child(view->user, seg, side);
+			int reverse;
+			if ((view->side_has_trigger(view->user, seg, side) &&
+			     !(view->side_has_optional_open_trigger &&
+			       view->side_has_optional_open_trigger(view->user, seg, side, liquid_distance, view->num_segments))) ||
+			    side_has_exit_trigger(view, seg, side))
+				summary->contains_progress_item = 1;
+			if (child == -1)
+				continue;
+			if (!edge_has_valid_reverse(view, seg, side, child) ||
+			    !view->side_is_physically_passable(view->user, seg, side)) {
+				summary->contains_progress_item = 1;
+				continue;
+			}
+			reverse = view->reverse_side(view->user, seg, child);
+			if (!view->side_is_physically_passable(view->user, child, reverse) ||
+			    view->side_has_trigger(view->user, child, reverse))
+				summary->contains_progress_item = 1;
+			if (component_id[child] == component_id[seg])
+				continue;
+			if (!liquid_boundary[seg][side] || liquid_distance[child] < 0) {
+				summary->contains_progress_item = 1;
+				continue;
+			}
+			summary->present = 1;
+			maybe_update_summary_entry(summary, liquid_distance[child], child, reverse);
+		}
+	}
+	for (component = 0; component < component_total; ++component) {
+		candidate_summary *summary = &candidate_summaries[component];
+		candidate_secret *candidate;
+		if (getenv("DXX_SECRET_LIQUID_TRACE") && summary->has_item && liquid_distance[component_lowest_segment[component]] < 0)
+			fprintf(stderr, "SECRET-LIQUID component=%d lowest=%d members=%d entrance=%d rejected=%d reachable=%d\n",
+			        component, component_lowest_segment[component], component_count[component], summary->present, summary->contains_progress_item, summary->hidden_reachable);
+		if (!summary->present)
+			continue;
+		state->raw_candidate_count++;
+		if (summary->contains_progress_item || !summary->has_item || !summary->hidden_reachable)
+			continue;
+		if (first + count >= max_generated) {
+			state->enabled = 0;
+			state->final_candidate_count = max_generated + 1;
+			state->disabled_reason = SECRET_AREA_DISABLED_TOO_MANY_CANDIDATES;
+			return;
+		}
+		candidate = &candidates[count];
+		memset(candidate, 0, sizeof(*candidate));
+		candidate->component = component;
+		candidate->entry_distance = summary->entry_distance;
+		candidate->entry_seg = summary->entry_seg;
+		candidate->entry_side = summary->entry_side;
+		candidate->lowest_segment = component_lowest_segment[component];
+		selected_candidate[component] = count++;
+	}
+	collect_selected_candidate_details(view);
+	for (seg = 0; seg < view->num_segments; ++seg) {
+		int index = selected_candidate[component_id[seg]];
+		if (index < 0)
+			continue;
+		for (side = 0; side < SECRET_AREA_MAX_SIDES; ++side) {
+			int child = view->segment_child(view->user, seg, side);
+			if (valid_segment(view, child) && liquid_boundary[seg][side] && liquid_distance[child] >= 0) {
+				int reverse = view->reverse_side(view->user, seg, child);
+				append_entrance(&candidates[index], child, reverse, seg, side_wall_num(view, child, reverse));
+			}
+		}
+	}
+	for (component = 0; component < first; ++component)
+		offset += state->secrets[component].segment_count;
+	for (component = 0; component < count; ++component) {
+		secret_area_entry *entry = &state->secrets[first + component];
+		finalize_candidate_details(&candidates[component]);
+		copy_candidate_to_state(state, first + component, &candidates[component]);
+		entry->liquid_only = 1;
+		entry->segment_offset = offset;
+		for (seg = 0; seg < view->num_segments; ++seg)
+			if (component_id[seg] == candidates[component].component)
+				state->segments[offset++] = seg;
+	}
+	state->final_candidate_count += count;
+}
+
+static void finalize_inventory(secret_area_state *state)
+{
+	int i, j;
+	for (i = 1; i < state->final_candidate_count; ++i) {
+		secret_area_entry entry = state->secrets[i];
+		j = i;
+		while (j > 0) {
+			const secret_area_entry *previous = &state->secrets[j - 1];
+			if (previous->entry_distance < entry.entry_distance ||
+			    (previous->entry_distance == entry.entry_distance &&
+			     (previous->entry_seg < entry.entry_seg ||
+			      (previous->entry_seg == entry.entry_seg && previous->entry_side <= entry.entry_side))))
+				break;
+			state->secrets[j] = *previous;
+			--j;
+		}
+		state->secrets[j] = entry;
+	}
+	memset(state->segment_to_secret, 0, sizeof(state->segment_to_secret));
+	for (i = 0; i < state->final_candidate_count; ++i) {
+		secret_area_entry *entry = &state->secrets[i];
+		unsigned long long hash = 14695981039346656037ULL;
+		entry->display_index = i + 1;
+		/* Members are written in ascending segment order, independent of labels */
+		for (j = 0; j < entry->segment_count; ++j) {
+			int seg = state->segments[entry->segment_offset + j];
+			hash = (hash ^ (unsigned int) seg) * 1099511628211ULL;
+			state->segment_to_secret[seg] = i + 1;
+		}
+		entry->identity = hash ? hash : 1;
+	}
+}
+
 int secret_area_scan_level(const secret_area_scan_view *view, secret_area_state *state)
 {
 	int component_total;
@@ -1030,6 +1203,7 @@ int secret_area_scan_level(const secret_area_scan_view *view, secret_area_state 
 	int segment_write_index[SECRET_AREA_MAX_GENERATED] = { 0 };
 
 	secret_area_state_clear(state);
+	liquid_component_mode = 0;
 	if (!state || !view_is_valid(view)) {
 		if (state)
 			state->disabled_reason = SECRET_AREA_DISABLED_INVALID_VIEW;
@@ -1094,7 +1268,11 @@ int secret_area_scan_level(const secret_area_scan_view *view, secret_area_state 
 		state->segments[segment_write_index[index]++] = i;
 		state->segment_to_secret[i] = entry->display_index;
 	}
-	return final_count;
+	append_liquid_secrets(view, state, max_generated);
+	if (!state->enabled)
+		return 0;
+	finalize_inventory(state);
+	return state->final_candidate_count;
 }
 
 int secret_area_mark_segment_entered(secret_area_state *state, int seg)
@@ -1121,24 +1299,6 @@ static void clear_found_bits(secret_area_state *state)
 	state->found_count = 0;
 }
 
-void secret_area_restore_found(secret_area_state *state, int saved_total, const unsigned char *found, int found_capacity)
-{
-	int i;
-	int total = secret_area_total(state);
-
-	clear_found_bits(state);
-	if (!state || !state->enabled || !found || found_capacity <= 0 || saved_total != total)
-		return;
-	if (found_capacity > total)
-		found_capacity = total;
-	for (i = 0; i < found_capacity; ++i) {
-		if (!found[i])
-			continue;
-		state->found[i] = 1;
-		state->found_count++;
-	}
-}
-
 void secret_area_restore_found_from_visited(secret_area_state *state, const unsigned char *visited, int visited_count)
 {
 	int i;
@@ -1150,6 +1310,8 @@ void secret_area_restore_found_from_visited(secret_area_state *state, const unsi
 	for (i = 0; i < total; ++i) {
 		const secret_area_entry *secret = &state->secrets[i];
 		int j;
+		if (secret->liquid_only)
+			continue;
 		for (j = 0; j < secret->segment_count; ++j) {
 			int seg = state->segments[secret->segment_offset + j];
 			if (seg >= 0 && seg < visited_count && visited[seg]) {
@@ -1159,6 +1321,96 @@ void secret_area_restore_found_from_visited(secret_area_state *state, const unsi
 			}
 		}
 	}
+}
+
+int secret_area_restore_identities(secret_area_state *state, int count, const unsigned long long *identities, const unsigned char *found)
+{
+	int i, j, total = secret_area_total(state);
+	if (!state || count < 0 || count > SECRET_AREA_MAX_GENERATED || !identities || !found)
+		return 0;
+	for (i = 0; i < count; ++i) {
+		if (!identities[i] || found[i] > 1)
+			return 0;
+		for (j = 0; j < i; ++j)
+			if (identities[i] == identities[j])
+				return 0;
+	}
+	for (i = 0; i < total; ++i)
+		for (j = 0; j < i; ++j)
+			if (state->secrets[i].identity == state->secrets[j].identity)
+				return 0;
+	clear_found_bits(state);
+	for (i = 0; i < total; ++i)
+		for (j = 0; j < count; ++j)
+			if (found[j] && state->secrets[i].identity == identities[j]) {
+				state->found[i] = 1;
+				state->found_count++;
+				break;
+			}
+	return 1;
+}
+
+static void save_unsigned(unsigned char *data, unsigned long long value, int bytes)
+{
+	int i;
+	for (i = 0; i < bytes; ++i) {
+		data[i] = (unsigned char) value;
+		value >>= 8;
+	}
+}
+
+static unsigned long long load_unsigned(const unsigned char *data, int bytes)
+{
+	unsigned long long value = 0;
+	int i;
+	for (i = bytes - 1; i >= 0; --i)
+		value = (value << 8) | data[i];
+	return value;
+}
+
+void secret_area_encode_saved_state(const secret_area_state *state, unsigned long long level_identity, unsigned char data[SECRET_AREA_IDENTITY_SAVE_SIZE])
+{
+	int i, count = level_identity ? secret_area_total(state) : 0;
+	memset(data, 0, SECRET_AREA_IDENTITY_SAVE_SIZE);
+	save_unsigned(data, (unsigned int) count, 4);
+	save_unsigned(data + 4, level_identity, 8);
+	for (i = 0; i < count; ++i) {
+		save_unsigned(data + 12 + 9 * i, state->secrets[i].identity, 8);
+		data[20 + 9 * i] = state->found[i] != 0;
+	}
+}
+
+int secret_area_decode_saved_state(const unsigned char *data, int size, secret_area_saved_state *saved)
+{
+	secret_area_saved_state result;
+	unsigned long long count;
+	int i, j;
+	if (!data || !saved || size != SECRET_AREA_IDENTITY_SAVE_SIZE)
+		return 0;
+	count = load_unsigned(data, 4);
+	if (count > SECRET_AREA_MAX_GENERATED)
+		return 0;
+	memset(&result, 0, sizeof(result));
+	result.count = (int) count;
+	result.level_identity = load_unsigned(data + 4, 8);
+	if (count && !result.level_identity)
+		return 0;
+	for (i = 0; i < SECRET_AREA_MAX_GENERATED; ++i) {
+		result.identities[i] = load_unsigned(data + 12 + 9 * i, 8);
+		result.found[i] = data[20 + 9 * i];
+		if (i >= result.count) {
+			if (result.identities[i] || result.found[i])
+				return 0;
+			continue;
+		}
+		if (!result.identities[i] || result.found[i] > 1)
+			return 0;
+		for (j = 0; j < i; ++j)
+			if (result.identities[i] == result.identities[j])
+				return 0;
+	}
+	*saved = result;
+	return 1;
 }
 
 int secret_area_total(const secret_area_state *state)

@@ -410,3 +410,8 @@ endforeach()
 add_test(NAME test_guidebot_calculation_benchmark COMMAND test_guidebot_route_certifier --benchmark)
 set_tests_properties(test_guidebot_calculation_benchmark PROPERTIES WORKING_DIRECTORY
                                                                     "${CMAKE_CURRENT_BINARY_DIR}")
+
+add_executable(test_secret_area_liquids "${DXX_TEST_SHARED_SOURCE_DIR}/test_secret_area_liquids.c"
+                                        "${DXX_TEST_SHARED_SOURCE_DIR}/secret_area_scan.c")
+target_include_directories(test_secret_area_liquids PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
+add_test(NAME secret_area_liquids COMMAND test_secret_area_liquids)

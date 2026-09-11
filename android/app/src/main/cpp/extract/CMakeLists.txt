@@ -502,6 +502,12 @@ add_executable(
 target_include_directories(test_secret_area_scan_budget
                            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
 add_test(NAME secret_area_scan_budget_tests COMMAND test_secret_area_scan_budget)
+add_executable(
+    test_secret_area_liquids ${CMAKE_CURRENT_SOURCE_DIR}/../shared/test_secret_area_liquids.c
+                             ${CMAKE_CURRENT_SOURCE_DIR}/../shared/secret_area_scan.c)
+target_include_directories(test_secret_area_liquids PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../shared)
+add_test(NAME secret_area_liquid_tests COMMAND test_secret_area_liquids)
+
 add_executable(test_hmp_android_shared ${CMAKE_CURRENT_SOURCE_DIR}/test_hmp_android_shared.c
                                        ${CMAKE_CURRENT_SOURCE_DIR}/../shared/hmp_android_shared.c)
 target_include_directories(

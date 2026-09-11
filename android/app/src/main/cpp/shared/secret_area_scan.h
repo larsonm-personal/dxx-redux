@@ -5,12 +5,25 @@
 extern "C" {
 #endif
 
-#define SECRET_AREA_MAX_SEGMENTS  9000
-#define SECRET_AREA_MAX_GENERATED 30
-#define SECRET_AREA_MAX_ENTRANCES 16
-#define SECRET_AREA_MAX_SIDES     6
-#define SECRET_AREA_MAX_ITEMS     64
-#define SECRET_AREA_ITEM_NAME_LEN 32
+#ifdef _MSC_VER
+/* Engine headers leave byte packing active; keep this shared C ABI stable */
+#pragma pack(push, 8)
+#endif
+
+#define SECRET_AREA_MAX_SEGMENTS       9000
+#define SECRET_AREA_MAX_GENERATED      30
+#define SECRET_AREA_MAX_ENTRANCES      16
+#define SECRET_AREA_MAX_SIDES          6
+#define SECRET_AREA_MAX_ITEMS          64
+#define SECRET_AREA_ITEM_NAME_LEN      32
+#define SECRET_AREA_IDENTITY_SAVE_SIZE (12 + 9 * SECRET_AREA_MAX_GENERATED)
+
+typedef struct secret_area_saved_state {
+	unsigned long long level_identity;
+	int count;
+	unsigned long long identities[SECRET_AREA_MAX_GENERATED];
+	unsigned char found[SECRET_AREA_MAX_GENERATED];
+} secret_area_saved_state;
 
 enum secret_area_disabled_reason {
 	SECRET_AREA_DISABLED_NONE = 0,
@@ -69,6 +82,12 @@ typedef struct secret_area_scan_view {
 	int (*triggered_side_opener_segment)(void *user, int seg, int side, int index);
 	int (*triggered_side_opener_side)(void *user, int seg, int side, int index);
 	int (*triggered_side_opener_wall_num)(void *user, int seg, int side, int index);
+	/* Optional, complete facts for the conservative liquid-pocket pass */
+	int (*side_is_concealed_liquid)(void *user, int seg, int side);
+	int (*side_has_trigger)(void *user, int seg, int side);
+	int (*side_is_physically_passable)(void *user, int seg, int side);
+	/* Optional source-only opening switch with proven non-progression targets */
+	int (*side_has_optional_open_trigger)(void *user, int seg, int side, const int *outside_distance, int segment_count);
 } secret_area_scan_view;
 
 typedef struct secret_area_entrance {
@@ -88,6 +107,8 @@ typedef struct secret_area_item {
 
 typedef struct secret_area_entry {
 	int display_index;
+	int liquid_only;
+	unsigned long long identity;
 	int entry_distance;
 	int entry_seg;
 	int entry_side;
@@ -118,11 +139,17 @@ typedef struct secret_area_state {
 void secret_area_state_clear(secret_area_state *state);
 int secret_area_scan_level(const secret_area_scan_view *view, secret_area_state *state);
 int secret_area_mark_segment_entered(secret_area_state *state, int seg);
-void secret_area_restore_found(secret_area_state *state, int saved_total, const unsigned char *found, int found_capacity);
 void secret_area_restore_found_from_visited(secret_area_state *state, const unsigned char *visited, int visited_count);
+int secret_area_restore_identities(secret_area_state *state, int count, const unsigned long long *identities, const unsigned char *found);
+void secret_area_encode_saved_state(const secret_area_state *state, unsigned long long level_identity, unsigned char data[SECRET_AREA_IDENTITY_SAVE_SIZE]);
+int secret_area_decode_saved_state(const unsigned char *data, int size, secret_area_saved_state *saved);
 int secret_area_total(const secret_area_state *state);
 int secret_area_found_count(const secret_area_state *state);
 const char *secret_area_disabled_reason_name(int reason);
+
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
 
 #ifdef __cplusplus
 }

@@ -10,8 +10,8 @@
   "level_counts": {
     "ok": 7,
     "failed": 2,
-    "timeout": 6,
-    "unsupported": 1,
+    "timeout": 5,
+    "unsupported": 2,
     "route_mismatch": 2
   },
   "levels": [
@@ -513,7 +513,7 @@
       "level_num": 12,
       "level_file": "tindre.rdl",
       "route_input_sha256": "69BF2F6EBD11A82B6A041D0418490BCABE0241C48AEA8445EC61479B868A9F2E",
-      "status": "timeout",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -570,18 +570,14 @@
         {
           "n": "fly-through 18",
           "s": 79
-        },
-        {
-          "n": "open door",
-          "s": 97
         }
       ],
-      "total_frames": 9822,
+      "total_frames": 4730,
       "rng_end": {
-        "state": 1750011070,
-        "calls": 201
+        "state": 1243475898,
+        "calls": 157
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "guided missile objective requires equipment and flight verification"
     },
     {
       "level_num": 13,
