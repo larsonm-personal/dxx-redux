@@ -8,14 +8,14 @@
   "status": "partial",
   "level_counts": {
     "ok": 1,
-    "unsupported": 1
+    "route_mismatch": 1
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "lagrange.rl2",
       "route_input_sha256": "6C55D930847BC8310CA66F9D01C3CAD9E13E6A8C94B2162F6DDD430D82A9369F",
-      "status": "unsupported",
+      "status": "route_mismatch",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -38,24 +38,41 @@
           "s": 35
         },
         {
-          "n": "switch 10",
-          "s": 60
-        },
-        {
-          "n": "blue key",
-          "s": 63
-        },
-        {
           "n": "destroy robot carrying red key",
-          "s": 83
+          "s": 72
+        },
+        {
+          "n": "open door",
+          "s": 98
+        },
+        {
+          "n": "switch 8",
+          "s": 100
+        },
+        {
+          "n": "reactor",
+          "s": 102
+        },
+        {
+          "n": "switch 3",
+          "s": 111
+        },
+        {
+          "n": "exit",
+          "s": 112
         }
       ],
-      "total_frames": 6518,
+      "total_frames": 6743,
       "rng_end": {
-        "state": 176516722,
-        "calls": 6597
+        "state": 1575254495,
+        "calls": 7178
       },
-      "problem": "route objective activation is not supported"
+      "reactor_escape": {
+        "countdown_seconds": 120.0,
+        "simulated_seconds": 10.166672,
+        "difficulty": 2
+      },
+      "problem": "live objective sequence differs from route input"
     },
     {
       "level_num": 2,

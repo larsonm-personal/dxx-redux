@@ -1355,25 +1355,43 @@
     "seed": 1,
     "status": "failed",
     "level_counts": {
-      "failed": 1
+      "route_mismatch": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "aquar_2.rl2",
         "route_input_sha256": "353D4CB4F38B713635A46A87E5184AA0F3F76A2B3CEC3E4E10B12A7B90C90C39",
-        "status": "failed",
+        "status": "route_mismatch",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 0,
+        "objectives": [
+          {
+            "n": "blastable wall",
+            "s": 1
+          },
+          {
+            "n": "reactor",
+            "s": 11
+          },
+          {
+            "n": "exit",
+            "s": 25
+          }
+        ],
+        "total_frames": 1514,
         "rng_end": {
-          "state": 3105560752,
-          "calls": 151
+          "state": 2733936318,
+          "calls": 1737
         },
-        "problem": "live Guide-Bot route has no actionable goal"
+        "reactor_escape": {
+          "countdown_seconds": 80.0,
+          "simulated_seconds": 14.283325,
+          "difficulty": 2
+        },
+        "problem": "live objective sequence differs from route input"
       }
     ]
   },
@@ -5242,25 +5260,58 @@
     "seed": 1,
     "status": "failed",
     "level_counts": {
-      "failed": 1
+      "route_mismatch": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "crucible.rl2",
         "route_input_sha256": "DED193E69379A120689277C3FCE28899801CA6958C59EA444F7F806F0A4206E3",
-        "status": "failed",
+        "status": "route_mismatch",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 0,
+        "objectives": [
+          {
+            "n": "switch 10",
+            "s": 10
+          },
+          {
+            "n": "hidden door",
+            "s": 11
+          },
+          {
+            "n": "hidden door",
+            "s": 12
+          },
+          {
+            "n": "hidden door",
+            "s": 15
+          },
+          {
+            "n": "hidden door",
+            "s": 16
+          },
+          {
+            "n": "switch 9",
+            "s": 20
+          },
+          {
+            "n": "hidden door",
+            "s": 25
+          },
+          {
+            "n": "blue key",
+            "s": 25
+          }
+        ],
+        "total_frames": 1801,
         "rng_end": {
-          "state": 4070573798,
-          "calls": 193
+          "state": 3898608909,
+          "calls": 1460
         },
-        "problem": "live Guide-Bot route has no actionable goal"
+        "problem": "live objective sequence differs from route input"
       }
     ]
   },
@@ -8727,7 +8778,7 @@
           },
           {
             "n": "hidden door",
-            "s": 80
+            "s": 82
           },
           {
             "n": "blastable wall",
@@ -8739,33 +8790,33 @@
           },
           {
             "n": "red key",
-            "s": 109
+            "s": 111
           },
           {
             "n": "fly-through 28",
-            "s": 109
+            "s": 111
           },
           {
             "n": "blastable wall",
-            "s": 131
+            "s": 132
           },
           {
             "n": "boss",
-            "s": 137
+            "s": 139
           },
           {
             "n": "exit",
-            "s": 155
+            "s": 156
           }
         ],
-        "total_frames": 9304,
+        "total_frames": 9389,
         "rng_end": {
-          "state": 1158759250,
-          "calls": 8805
+          "state": 611567126,
+          "calls": 8785
         },
         "reactor_escape": {
           "countdown_seconds": 45.0,
-          "simulated_seconds": 17.850006,
+          "simulated_seconds": 17.71666,
           "difficulty": 2
         }
       }
@@ -8853,9 +8904,10 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "ok",
+    "status": "partial",
     "level_counts": {
-      "ok": 3
+      "ok": 2,
+      "route_mismatch": 1
     },
     "levels": [
       {
@@ -8892,35 +8944,32 @@
         "level_num": 2,
         "level_file": "dun2.rl2",
         "route_input_sha256": "30A07087D498D2596D2543FF3E35FB89434F75D9DE4580D5AC57491D37E617A7",
-        "status": "ok",
+        "status": "route_mismatch",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
         "objectives": [
           {
-            "n": "hidden door",
-            "s": 14
-          },
-          {
             "n": "reactor",
             "s": 14
           },
           {
             "n": "exit",
-            "s": 33
+            "s": 32
           }
         ],
-        "total_frames": 1997,
+        "total_frames": 1935,
         "rng_end": {
-          "state": 3866917681,
-          "calls": 1616
+          "state": 1942061238,
+          "calls": 1585
         },
         "reactor_escape": {
           "countdown_seconds": 45.0,
-          "simulated_seconds": 18.866669,
+          "simulated_seconds": 18.400009,
           "difficulty": 2
-        }
+        },
+        "problem": "live objective sequence differs from route input"
       },
       {
         "level_num": 3,
@@ -15894,16 +15943,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "ok",
+    "status": "failed",
     "level_counts": {
-      "ok": 1
+      "timeout": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "jailbrkN.rl2",
         "route_input_sha256": "B8454C630FFEE2DEA02BDC96DB3534EA03993EE39E8B88057939CDC7727FF334",
-        "status": "ok",
+        "status": "timeout",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -15920,34 +15969,14 @@
           {
             "n": "red key",
             "s": 10
-          },
-          {
-            "n": "blue key",
-            "s": 31
-          },
-          {
-            "n": "hidden door",
-            "s": 31
-          },
-          {
-            "n": "reactor",
-            "s": 40
-          },
-          {
-            "n": "exit",
-            "s": 44
           }
         ],
-        "total_frames": 2657,
+        "total_frames": 2233,
         "rng_end": {
-          "state": 1319438686,
-          "calls": 1705
+          "state": 1311912705,
+          "calls": 1280
         },
-        "reactor_escape": {
-          "countdown_seconds": 45.0,
-          "simulated_seconds": 4.550003,
-          "difficulty": 2
-        }
+        "problem": "physical route frontier did not open after 8 interaction attempts"
       }
     ]
   },
@@ -16338,8 +16367,7 @@
     "status": "partial",
     "level_counts": {
       "ok": 3,
-      "failed": 1,
-      "timeout": 1
+      "timeout": 2
     },
     "levels": [
       {
@@ -16376,18 +16404,18 @@
         "level_num": 2,
         "level_file": "nk2.rl2",
         "route_input_sha256": "87E1C615202538B240F780B25645F887A7D7CA40927365FE81F23A19B638C440",
-        "status": "failed",
+        "status": "timeout",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
         "objectives": [],
-        "total_frames": 0,
+        "total_frames": 1801,
         "rng_end": {
-          "state": 924723277,
-          "calls": 116
+          "state": 1835933489,
+          "calls": 592
         },
-        "problem": "live Guide-Bot route has no actionable goal"
+        "problem": "route confirmation exceeded 30-second simulation budget"
       },
       {
         "level_num": 3,
@@ -18001,14 +18029,14 @@
     "status": "partial",
     "level_counts": {
       "ok": 1,
-      "unsupported": 1
+      "route_mismatch": 1
     },
     "levels": [
       {
         "level_num": 1,
         "level_file": "lagrange.rl2",
         "route_input_sha256": "EF609B1C83CCE94969EB461E22E51A0E4BD17184A6543F42831051E3DE47EC6A",
-        "status": "unsupported",
+        "status": "route_mismatch",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -18031,24 +18059,41 @@
             "s": 35
           },
           {
-            "n": "switch 10",
-            "s": 60
-          },
-          {
-            "n": "blue key",
-            "s": 63
-          },
-          {
             "n": "destroy robot carrying red key",
-            "s": 83
+            "s": 72
+          },
+          {
+            "n": "open door",
+            "s": 98
+          },
+          {
+            "n": "switch 8",
+            "s": 100
+          },
+          {
+            "n": "reactor",
+            "s": 102
+          },
+          {
+            "n": "switch 3",
+            "s": 111
+          },
+          {
+            "n": "exit",
+            "s": 112
           }
         ],
-        "total_frames": 6518,
+        "total_frames": 6743,
         "rng_end": {
-          "state": 176516722,
-          "calls": 6597
+          "state": 1575254495,
+          "calls": 7178
         },
-        "problem": "route objective activation is not supported"
+        "reactor_escape": {
+          "countdown_seconds": 120.0,
+          "simulated_seconds": 10.166672,
+          "difficulty": 2
+        },
+        "problem": "live objective sequence differs from route input"
       },
       {
         "level_num": 2,
@@ -24475,25 +24520,39 @@
     "seed": 1,
     "status": "failed",
     "level_counts": {
-      "failed": 1
+      "route_mismatch": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "padlock.rl2",
         "route_input_sha256": "DA79C648520523664BCC209579404CD7B28FE7E9441FFBB2CA561C12FDD5A144",
-        "status": "failed",
+        "status": "route_mismatch",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 0,
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 1
+          },
+          {
+            "n": "exit",
+            "s": 13
+          }
+        ],
+        "total_frames": 769,
         "rng_end": {
-          "state": 2058258651,
-          "calls": 46
+          "state": 770427433,
+          "calls": 408
         },
-        "problem": "live Guide-Bot route has no actionable goal"
+        "reactor_escape": {
+          "countdown_seconds": 45.0,
+          "simulated_seconds": 11.550003,
+          "difficulty": 2
+        },
+        "problem": "live objective sequence differs from route input"
       }
     ]
   },
@@ -26507,25 +26566,50 @@
     "seed": 1,
     "status": "failed",
     "level_counts": {
-      "failed": 1
+      "route_mismatch": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "redout2.rl2",
         "route_input_sha256": "04DDF07422CF1AEF1F4D45907E5E85ABD9C10AAEF5F50CE36C1815FEF321A11D",
-        "status": "failed",
+        "status": "route_mismatch",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 0,
+        "objectives": [
+          {
+            "n": "hidden door",
+            "s": 2
+          },
+          {
+            "n": "pass-through 8",
+            "s": 4
+          },
+          {
+            "n": "pass-through 5",
+            "s": 5
+          },
+          {
+            "n": "hidden door",
+            "s": 22
+          },
+          {
+            "n": "hidden door",
+            "s": 24
+          },
+          {
+            "n": "hidden door",
+            "s": 27
+          }
+        ],
+        "total_frames": 1801,
         "rng_end": {
-          "state": 1448521415,
-          "calls": 34
+          "state": 104601973,
+          "calls": 1932
         },
-        "problem": "live Guide-Bot route has no actionable goal"
+        "problem": "live objective sequence differs from route input"
       }
     ]
   },
@@ -28913,25 +28997,39 @@
     "seed": 1,
     "status": "failed",
     "level_counts": {
-      "failed": 1
+      "route_mismatch": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "vader2.rl2",
         "route_input_sha256": "4107B4CD0D4FBB7A669E5393E8F8D741436E924A10CB235F8FAC6B3D44077E04",
-        "status": "failed",
+        "status": "route_mismatch",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 0,
+        "objectives": [
+          {
+            "n": "reactor",
+            "s": 6
+          },
+          {
+            "n": "exit",
+            "s": 9
+          }
+        ],
+        "total_frames": 522,
         "rng_end": {
-          "state": 1848832019,
-          "calls": 118
+          "state": 3908501168,
+          "calls": 663
         },
-        "problem": "live Guide-Bot route has no actionable goal"
+        "reactor_escape": {
+          "countdown_seconds": 45.0,
+          "simulated_seconds": 2.866669,
+          "difficulty": 2
+        },
+        "problem": "live objective sequence differs from route input"
       }
     ]
   },
