@@ -1068,13 +1068,14 @@ if (-not $CdSourcesOnly) {
         }
 
         $archiveWorkerCount = Get-HeadlessProcessWorkerCount -Requested $MaxParallel `
-            -ItemCount $archives.Count -AutomaticLimit 4
+            -ItemCount $archives.Count -AutomaticLimit 8
         if (-not $InternalWorker -and $archiveWorkerCount -gt 1) {
             Write-Status "Host metadata workers: $archiveWorkerCount for $($archives.Count) archives on $([Environment]::ProcessorCount) logical processors"
             $powershell = Get-PowerShellPath
             $workerTasks = [Collections.Generic.List[object]]::new()
             $workerIndex = 0
-            foreach ($archiveRecord in $archives) {
+            # Start larger archives first so collection scans overlap the smaller jobs
+            foreach ($archiveRecord in ($archives | Sort-Object { $_.Archive.Length } -Descending)) {
                 $workerIndex++
                 $workerRoot = Join-Path $outDir "workers\$('{0:d4}' -f $workerIndex)"
                 $arguments = @(

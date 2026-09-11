@@ -12,7 +12,8 @@ param(
     [string]$SampleStatePath,
     [ValidateRange(1, 20)][int]$Repeat = 1,
     [ValidateRange(100, 200)][int]$TestSpeedPercent = 160,
-    [ValidateRange(10, 7200)][int]$LevelTimeoutSeconds = 180,
+    # Wall-clock watchdog includes CPU contention across parallel workers
+    [ValidateRange(10, 7200)][int]$LevelTimeoutSeconds = 360,
     [ValidateRange(0, 128)][int]$MaxParallel = 0,
     [string]$HogDir = 'game_data/CD images/Descent II (USA) (v1.1)/data_tracks/d2data',
     [string]$D1InD2HogDir = 'game_data_to_copy_to_emulator/temp',
@@ -696,10 +697,27 @@ $infrastructureFailures = [Collections.Generic.List[object]]::new()
 $changedFiles = [Collections.Generic.List[string]]::new()
 $headedComparisons = [Collections.Generic.List[object]]::new()
 $stageByMetadata = @{}
+$publicationState = @{}
+foreach ($item in $selectedItems) {
+    $publicationKey = $item.MetadataFile.FullName
+    if (-not $publicationState.ContainsKey($publicationKey)) {
+        $publicationState[$publicationKey] = @{ Remaining = 0; Pending = 0; LastWrite = [DateTime]::UtcNow }
+    }
+    $publicationState[$publicationKey].Remaining++
+}
 $installHeaded = $Mode -eq 'Headed' -and -not $NoBuild
 
 function Publish-GuidebotResult {
     param([Parameter(Mandatory)]$Item)
+
+    # Engine results are durable individually; checkpoint shared collection JSON in batches
+    # Headed comparisons still run for every result against the canonical snapshot
+    $publication = $publicationState[$Item.MetadataFile.FullName]
+    $publication.Remaining--
+    $publication.Pending++
+    if ($Mode -eq 'Headless' -and $publication.Remaining -gt 0 -and
+        $publication.Pending -lt 32 -and
+        ([DateTime]::UtcNow - $publication.LastWrite).TotalSeconds -lt 30) { return }
 
     $simulationPath = Join-Path $Item.MetadataFile.DirectoryName ($Item.MetadataFile.BaseName + '.simulation.json')
     $incrementalPath = if ($WriteRegression) {
@@ -711,6 +729,8 @@ function Publish-GuidebotResult {
         -ResultsByIdentity $resultsByIdentity -Destination $incrementalPath `
         -HeadedComparisons $headedComparisons -ComparisonIdentity $Item.Identity
     if ($WriteRegression -and -not $changedFiles.Contains($simulationPath)) { $changedFiles.Add($simulationPath) }
+    $publication.Pending = 0
+    $publication.LastWrite = [DateTime]::UtcNow
 }
 
 if ($Mode -eq 'Headless') {
@@ -806,7 +826,9 @@ if ($Mode -eq 'Headless') {
         }
         $workerCount = Get-HeadlessProcessWorkerCount -Requested $MaxParallel -ItemCount $processTasks.Count
         Write-GuidebotStatus "Headless workers: $workerCount for $($processTasks.Count) engine runs on $([Environment]::ProcessorCount) logical processors"
-        Invoke-HeadlessProcessPool -Tasks @($processTasks) -MaxParallel $workerCount -OnCompleted {
+        # Long budgets first keep slow levels from becoming a single-worker tail
+        $scheduledTasks = @($processTasks | Sort-Object { $_.Item.SimulationTimeLimitSeconds } -Descending)
+        Invoke-HeadlessProcessPool -Tasks $scheduledTasks -MaxParallel $workerCount -OnCompleted {
             param($task, $processResult)
 
             [IO.File]::WriteAllText(($task.Output + '.process.json'), ([ordered]@{

@@ -6,13 +6,13 @@ function Get-HeadlessProcessWorkerCount {
         # Queue length is independent of the bounded number of active workers
         [ValidateRange(1, [int]::MaxValue)][int]$ItemCount = [int]::MaxValue,
         [ValidateRange(1, 1024)][int]$LogicalProcessorCount = [Environment]::ProcessorCount,
-        [ValidateRange(1, 128)][int]$AutomaticLimit = 8
+        [ValidateRange(1, 128)][int]$AutomaticLimit = 16
     )
 
     $workers = if ($Requested -gt 0) {
         $Requested
     } else {
-        [Math]::Min($AutomaticLimit, [Math]::Max(1, [Math]::Ceiling($LogicalProcessorCount / 2)))
+        [Math]::Min($AutomaticLimit, [Math]::Max(1, [Math]::Floor($LogicalProcessorCount * 0.75)))
     }
     return [Math]::Max(1, [Math]::Min($workers, $ItemCount))
 }

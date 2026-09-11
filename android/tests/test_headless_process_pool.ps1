@@ -11,11 +11,12 @@ function Assert-Equal {
 }
 
 Assert-Equal 1 (Get-HeadlessProcessWorkerCount -ItemCount 10 -LogicalProcessorCount 1) 'single core'
-Assert-Equal 4 (Get-HeadlessProcessWorkerCount -ItemCount 10 -LogicalProcessorCount 8) 'automatic half cores'
-Assert-Equal 8 (Get-HeadlessProcessWorkerCount -ItemCount 20 -LogicalProcessorCount 64) 'automatic cap'
+Assert-Equal 6 (Get-HeadlessProcessWorkerCount -ItemCount 10 -LogicalProcessorCount 8) 'automatic core reserve'
+Assert-Equal 12 (Get-HeadlessProcessWorkerCount -ItemCount 20 -LogicalProcessorCount 16) 'sixteen core host'
+Assert-Equal 16 (Get-HeadlessProcessWorkerCount -ItemCount 20 -LogicalProcessorCount 64) 'automatic cap'
 Assert-Equal 3 (Get-HeadlessProcessWorkerCount -Requested 7 -ItemCount 3) 'item cap'
 foreach ($count in @(1024, 1025, 1761, [int]::MaxValue)) {
-    Assert-Equal 8 (Get-HeadlessProcessWorkerCount -ItemCount $count -LogicalProcessorCount 64) "large queue $count automatic cap"
+    Assert-Equal 16 (Get-HeadlessProcessWorkerCount -ItemCount $count -LogicalProcessorCount 64) "large queue $count automatic cap"
     Assert-Equal 3 (Get-HeadlessProcessWorkerCount -Requested 3 -ItemCount $count) "large queue $count explicit cap"
 }
 
