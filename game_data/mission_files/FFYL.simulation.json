@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 23,
+    "ok": 25,
     "failed": 1,
-    "timeout": 3
+    "timeout": 1
   },
   "levels": [
     {
@@ -94,65 +94,65 @@
         },
         {
           "n": "pass-through 11",
-          "s": 43
+          "s": 40
         },
         {
           "n": "switch 13",
-          "s": 44
+          "s": 40
         },
         {
           "n": "gold key",
-          "s": 54
+          "s": 50
         },
         {
           "n": "fly-through 14",
-          "s": 54
+          "s": 51
         },
         {
           "n": "fly-through 14",
-          "s": 55
+          "s": 51
         },
         {
           "n": "pass-through 21",
-          "s": 68
+          "s": 64
         },
         {
           "n": "switch 22",
-          "s": 68
+          "s": 64
         },
         {
           "n": "red key",
-          "s": 71
+          "s": 67
         },
         {
           "n": "fly-through 18",
-          "s": 73
+          "s": 69
         },
         {
           "n": "blastable wall",
-          "s": 95
+          "s": 88
         },
         {
           "n": "boss",
-          "s": 103
+          "s": 96
         },
         {
           "n": "pass-through 26",
-          "s": 108
+          "s": 102
         },
         {
           "n": "exit",
-          "s": 112
+          "s": 105
         }
       ],
-      "total_frames": 6709,
+      "total_frames": 6320,
       "rng_end": {
-        "state": 3691557005,
-        "calls": 9780
+        "state": 3856245193,
+        "calls": 9976
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 8.883347,
+        "simulated_seconds": 9.483337,
         "difficulty": 2
       }
     },
@@ -216,7 +216,7 @@
       "level_num": 5,
       "level_file": "PDL12.RL2",
       "route_input_sha256": "907CCF5020CCC214B4A1495688E1EA4FCB8B61B3B72868FB4187AACD1D9819EF",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -233,14 +233,70 @@
         {
           "n": "switch 33",
           "s": 14
+        },
+        {
+          "n": "blue key",
+          "s": 24
+        },
+        {
+          "n": "switch 33",
+          "s": 24
+        },
+        {
+          "n": "pass-through 7",
+          "s": 44
+        },
+        {
+          "n": "switch 8",
+          "s": 45
+        },
+        {
+          "n": "switch 9",
+          "s": 46
+        },
+        {
+          "n": "gold key",
+          "s": 54
+        },
+        {
+          "n": "pass-through 12",
+          "s": 65
+        },
+        {
+          "n": "switch 18",
+          "s": 69
+        },
+        {
+          "n": "switch 23",
+          "s": 72
+        },
+        {
+          "n": "red key",
+          "s": 77
+        },
+        {
+          "n": "switch 21",
+          "s": 77
+        },
+        {
+          "n": "boss",
+          "s": 95
+        },
+        {
+          "n": "exit",
+          "s": 108
         }
       ],
-      "total_frames": 1713,
+      "total_frames": 6490,
       "rng_end": {
-        "state": 2723416671,
-        "calls": 906
+        "state": 2090809332,
+        "calls": 10531
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 12.833328,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 6,
@@ -1095,7 +1151,7 @@
       "level_num": 25,
       "level_file": "PDL30.RL2",
       "route_input_sha256": "1E43FA7CEB6296CB389BDCE33209EEFAE6736EA84FC0543D3478200F3282C445",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -1152,14 +1208,34 @@
         {
           "n": "gold key",
           "s": 90
+        },
+        {
+          "n": "red key",
+          "s": 124
+        },
+        {
+          "n": "switch 17",
+          "s": 157
+        },
+        {
+          "n": "boss",
+          "s": 203
+        },
+        {
+          "n": "exit",
+          "s": 211
         }
       ],
-      "total_frames": 12451,
+      "total_frames": 12647,
       "rng_end": {
-        "state": 628224770,
-        "calls": 11381
+        "state": 3143601409,
+        "calls": 15104
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "reactor_escape": {
+        "countdown_seconds": 40.0,
+        "simulated_seconds": 1.866669,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 26,

@@ -31,6 +31,7 @@ typedef struct certifier_fixture {
 	int wall_type[TEST_WALLS];
 	int wall_restoring[TEST_WALLS];
 	int wall_open[TEST_WALLS];
+	int wall_opening[TEST_WALLS];
 	int wall_extra_flags[TEST_WALLS];
 	int wall_clip[TEST_WALLS];
 	int wall_key[TEST_WALLS];
@@ -148,6 +149,12 @@ static int wall_flags(void *user, int wall)
 	certifier_fixture *fixture = (certifier_fixture *) user;
 	return (fixture->wall_open[wall] ? 2 : 0) |
 	       fixture->wall_extra_flags[wall];
+}
+
+static int wall_is_opening(void *user, int wall)
+{
+	certifier_fixture *fixture = (certifier_fixture *) user;
+	return fixture->wall_opening[wall];
 }
 
 static int wall_keys(void *user, int wall)
@@ -386,6 +393,7 @@ static level_metadata_scan_view make_view(certifier_fixture *fixture)
 	view.wall_side = wall_side;
 	view.wall_type = wall_type;
 	view.wall_flags = wall_flags;
+	view.wall_is_opening = wall_is_opening;
 	view.wall_keys = wall_keys;
 	view.wall_clip_flags = wall_clip_flags;
 	view.wall_is_shootable_trigger = wall_is_shootable_trigger;
@@ -1766,6 +1774,16 @@ static void test_reverse_side_keyed_buddy_proof_door_is_player_reachable(void)
 	assert(!guidebot_route_side_passable_current(&view, 0, 0));
 	assert(guidebot_route_side_progress_reachable_current(&view, 0, 0));
 	assert(guidebot_route_segment_has_player_openable_door(&view, 0));
+	/* Reverse-face permissions do not unlock the approached face */
+	fixture.wall_extra_flags[0] = view.wall_flag_door_locked;
+	assert(!guidebot_route_side_progress_reachable_current(&view, 0, 0));
+	assert(!guidebot_route_segment_has_player_openable_door(&view, 0));
+	/* Opening the shared door from the reverse face is already in progress */
+	fixture.wall_opening[0] = fixture.wall_opening[1] = 1;
+	assert(guidebot_route_side_progress_reachable_current(&view, 0, 0));
+	fixture.wall_opening[0] = fixture.wall_opening[1] = 0;
+	assert(!guidebot_route_side_progress_reachable_current(&view, 0, 0));
+	fixture.wall_extra_flags[0] = 0;
 	/* An unkeyed Buddy-proof door still needs player assistance */
 	fixture.wall_key[1] = view.wall_key_none;
 	fixture.wall_extra_flags[1] = view.wall_flag_buddy_proof;

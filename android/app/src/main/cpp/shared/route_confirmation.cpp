@@ -29,6 +29,7 @@ extern "C" {
 #include "secretarea.h"
 #include "segment.h"
 #include "switch.h"
+#include "textures.h"
 #include "wall.h"
 }
 
@@ -1275,7 +1276,6 @@ void recover_path_door(object *actor)
 	if (Walls[wall_num].type == WALL_DOOR &&
 	    Walls[wall_num].state == WALL_DOOR_CLOSED &&
 	    (Walls[wall_num].flags & WALL_DOOR_LOCKED) &&
-	    (controlling_trigger >= 0 || remote_reopener) &&
 	    actor_is_close_to_side(actor, actor->segnum, side)) {
 		if (controlling_trigger >= 0) {
 #if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
@@ -1286,16 +1286,36 @@ void recover_path_door(object *actor)
 			        actor->segnum);
 #endif
 			prepare_next_goal(controlling_trigger);
-		} else {
+		} else if (remote_reopener) {
 #if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 			fprintf(stderr, "ROUTE-CONFIRM replan closed remote door wall=%d remote=%d actor_seg=%d\n", wall_num, opposite_wall, actor->segnum);
 #endif
 			prepare_next_goal(-1, opposite_wall);
+		} else {
+			/* An incidental opening can expire after entering from the other
+			 * face; rebuild from the actual world even without a planned opener */
+#if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+			fprintf(stderr, "ROUTE-CONFIRM replan closed path door wall=%d actor_seg=%d\n", wall_num, actor->segnum);
+#endif
+			prepare_next_goal(-1);
 		}
 		return;
 	}
 	if (Walls[wall_num].type == WALL_DOOR)
 		apply_flare_fallback(actor, actor->segnum, side, wall_num);
+}
+
+int route_door_projectile(int wall_num)
+{
+	/* Native force fields bounce energy shots before door interaction
+	 * Use a ballistic shot for the simulated player's door assistance */
+	if (wall_num >= 0 && wall_num < Num_walls) {
+		const wall *wallp = &Walls[wall_num];
+		if (wallp->type == WALL_DOOR &&
+		    (TmapInfo[Segments[wallp->segnum].sides[wallp->sidenum].tmap_num].flags & TMI_FORCE_FIELD))
+			return VULCAN_ID;
+	}
+	return FLARE_ID;
 }
 
 int wall_accepts_route_flare(int wall_num)
@@ -1340,7 +1360,7 @@ int set_visible_flare_target(const object *actor, int segnum, int sidenum,
 	query.startseg = actor->segnum;
 	query.thisobjnum = (short) (actor - Objects);
 	// Match projectile physics: a transparent texel is not a wall impact
-	query.rad = level_metadata_get_weapon_projectile_radius(FLARE_ID);
+	query.rad = level_metadata_get_weapon_projectile_radius(route_door_projectile(Segments[segnum].sides[sidenum].wall_num));
 	query.flags = FQ_IGNORE_POWERUPS | FQ_TRANSPOINT;
 	auto hits_face = [&](const vms_vector &point) {
 		vm_vec_sub(direction, &point, &actor->pos);
@@ -1506,7 +1526,7 @@ void fire_path_flare(object *actor)
 	                             &direction))
 		return;
 	weapon_objnum = Laser_create_new_easy(
-	    &direction, &actor->pos, (int) (actor - Objects), FLARE_ID, 1);
+	    &direction, &actor->pos, (int) (actor - Objects), route_door_projectile(wall_num), 1);
 	if (weapon_objnum < 0)
 		return;
 	if (Walls[wall_num].type == WALL_BLASTABLE) {
@@ -1534,8 +1554,8 @@ void fire_path_flare(object *actor)
 	State.next_flare_ticks = State.summary.elapsed_ticks + F1_0 / 2;
 #if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	fprintf(stderr,
-	        "ROUTE-CONFIRM flare wall=%d seg=%d side=%d actor_seg=%d\n",
-	        wall_num, segnum, sidenum, actor->segnum);
+	        "ROUTE-CONFIRM flare wall=%d seg=%d side=%d actor_seg=%d weapon=%d\n",
+	        wall_num, segnum, sidenum, actor->segnum, route_door_projectile(wall_num));
 #endif
 }
 

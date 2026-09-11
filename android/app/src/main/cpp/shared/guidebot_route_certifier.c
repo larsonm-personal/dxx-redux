@@ -127,6 +127,14 @@ static int guidebot_route_side_passable(
 		return 0;
 	wall = view->wall_num ? view->wall_num(view->user, segment, side) : -1;
 	reverse_wall = view->wall_num && reverse >= 0 ? view->wall_num(view->user, child, reverse) : -1;
+	/* Reverse-face Buddy-proof properties cannot unlock a closed approached
+	 * face; an opening animation already initiated from either face may finish */
+	if (wall >= 0 && wall < view->num_walls && view->wall_type && view->wall_flags &&
+	    view->wall_type(view->user, wall) == view->wall_type_door &&
+	    (view->wall_flags(view->user, wall) & view->wall_flag_door_locked) &&
+	    !(view->wall_flags(view->user, wall) & view->wall_flag_door_opened) &&
+	    (!view->wall_is_opening || !view->wall_is_opening(view->user, wall)))
+		return 0;
 	/* A portal may carry the Buddy-proof keyed door only on its reverse side.
 	 * Once that side supplied the hard block, use the same side for the key and
 	 * door properties instead of incorrectly inspecting an unrelated forward
@@ -242,6 +250,10 @@ int guidebot_route_segment_has_player_openable_door(
 		const int child = view->segment_child(view->user, segment, side);
 		const int wall = view->wall_num(view->user, segment, side);
 
+		if (wall >= 0 && wall < view->num_walls && view->wall_type && view->wall_flags &&
+		    view->wall_type(view->user, wall) == view->wall_type_door &&
+		    (view->wall_flags(view->user, wall) & view->wall_flag_door_locked))
+			continue;
 		if (guidebot_wall_is_player_openable_door(view, wall))
 			return 1;
 		if (guidebot_valid_segment(view, child) && view->reverse_side) {

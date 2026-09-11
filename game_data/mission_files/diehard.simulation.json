@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 11,
+    "ok": 12,
     "failed": 1,
-    "timeout": 6,
+    "timeout": 5,
     "unsupported": 1
   },
   "levels": [
@@ -767,7 +767,7 @@
       "level_num": 16,
       "level_file": "DH16.RL2",
       "route_input_sha256": "AF15FA8925C638D90A93F34166CCB483E738379CCE0458A20C2B93ADD943CFC1",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -788,14 +788,30 @@
         {
           "n": "blue key",
           "s": 41
+        },
+        {
+          "n": "red key",
+          "s": 68
+        },
+        {
+          "n": "reactor",
+          "s": 79
+        },
+        {
+          "n": "exit",
+          "s": 83
         }
       ],
-      "total_frames": 4050,
+      "total_frames": 5000,
       "rng_end": {
-        "state": 890859284,
-        "calls": 899
+        "state": 2000473572,
+        "calls": 1651
       },
-      "problem": "physical route frontier did not open after 8 interaction attempts"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 4.016663,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 17,
