@@ -2,7 +2,7 @@
 
 ## Scope and status
 
-Planning survey updated 2026-09-07
+Planning survey completed 2026-09-07; implementation started 2026-09-10
 
 User request: recognize optional secret pockets behind opaque fly-through lava/water, including the floor pocket near the start of Obsidian level 13, while excluding see-through liquids and ordinary level geometry
 
@@ -12,10 +12,21 @@ This document consolidates the initial conversation proposal and investigates it
 - [x] Inspect Obsidian 13 geometry, objects, and local texture headers read-only
 - [x] Trace gameplay, metadata-worker, preview, replacement, animation, cache, and save paths
 - [x] Define proposed changes and deferred validation below
-- [ ] Implement after the other active work permits it
+- [x] Start implementation with A1 effective bitmap flag ownership in both games
+- [ ] Complete A2-A4 and B1-B4 before enabling liquid secret candidates
 - [ ] Compile and run host/device validation in a separately authorized implementation task
 
-Only this plan was written for the follow-up request. No engine code, metadata, save files, or bug checklist were changed. No compilation, tests, metadata regeneration, emulator, or device operations were performed
+The 2026-09-07 follow-up changed only this plan. The 2026-09-10 request authorizes starting implementation; the earlier no-compilation and no-emulator constraints remain in effect
+
+### Implementation progress, 2026-09-10
+
+- Implemented A1 in paired `d1/main/piggy.c` and `d2/main/piggy.c`: `piggy_bitmap_get_flags()` uses stored file flags only for PIG-backed entries with a nonzero file offset, and resident bitmap flags otherwise
+- Audited the callers in both games' wall transparency checks, OpenGL paths, and shared merged-wall diagnostics. They request effective flags, so the correction belongs in the accessor rather than a separate secret-scanner workaround
+- Audited D2 POG loading and native D1 PG1/DTX loading: both clear the bitmap file offset and assign resident replacement flags. D1 custom removal restores the original file offset; D2 PIG reload restores base offsets and stored flags. The accessor now follows these ownership transitions without changing the loaders or raw file-state accessor
+- Base PIG flags remain available during page-out. Resident overrides can now differ from their original PIG entry in either direction, including transparency and super-transparency
+- Liquid secret detection, asset-preparation changes, cache invalidation, and save-format changes remain pending. This prerequisite changes effective flag lookup used by rendering/doorway checks; it does not yet change the secret scanner's boundary rules
+- Native runtime validation remains deferred under the user's no-compilation/no-emulator restriction. Do not treat source inspection or formatting checks as confirmation of renderer behavior
+- Validation performed: scoped `run-code-quality.ps1 -Fix` completed successfully and `git diff --check` passed. The quality runner excludes these inherited C files from clang-format, so no C formatting or compilation result is claimed
 
 Related background: [original secret-area study](../mixed%20batch,%20umbrella/study_secret_area_autolabel_20260606.md). The existing review finding `BR-0213` already owns index-only secret discovery persistence; this plan develops that prerequisite rather than creating another finding
 

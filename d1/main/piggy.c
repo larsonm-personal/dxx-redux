@@ -1134,9 +1134,12 @@ char* piggy_game_bitmap_name(grs_bitmap *bmp)
 	return NULL;
 }
 
+/* PIG-backed bitmaps keep their flags while paged out; resident replacements
+ * own their flags and can differ from the original PIG entry */
 int piggy_bitmap_get_flags(grs_bitmap *bmp)
 {
-	if (bmp >= GameBitmaps && bmp < &GameBitmaps[MAX_BITMAP_FILES])
+	if (bmp >= GameBitmaps && bmp < &GameBitmaps[MAX_BITMAP_FILES] &&
+	    GameBitmapOffset[bmp - GameBitmaps] != 0)
 		return GameBitmapFlags[bmp - GameBitmaps];
 	return bmp->bm_flags;
 }
