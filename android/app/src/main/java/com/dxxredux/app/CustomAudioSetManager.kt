@@ -205,7 +205,7 @@ class CustomAudioSetManager(
         referenceStager: ((String, File, String) -> Unit)?,
         embeddedNameReader: (File, String) -> String?,
     ): String? {
-        val enabled = getEnabledSets()
+        val enabled = getLevelMusicSets()
         val allFiles = mutableListOf<Pair<String, String>>() // (sortKey, absolutePath)
         val embeddedNameUpdates = mutableMapOf<Pair<String, String>, String>()
         val stageDir = File(filesDir, "custom_music_stage")
@@ -289,9 +289,15 @@ class CustomAudioSetManager(
         val trackNum: Int? = null,
     )
 
+    // Descent Maximum's Zophar archive prefixes movie soundtracks with "(mov)"
+    private fun getLevelMusicSets(): List<AudioSet> =
+        getEnabledSets().map { set ->
+            set.copy(files = set.files.filterNot { it.startsWith("(mov)", ignoreCase = true) })
+        }
+
     /** Get detailed track list including fingerprint-matched names */
     fun getDetailedTrackList(): List<TrackDetail> {
-        val enabled = getEnabledSets()
+        val enabled = getLevelMusicSets()
         val tracks = mutableListOf<TrackDetail>()
         for (set in enabled) {
             for (f in set.files.sorted()) {

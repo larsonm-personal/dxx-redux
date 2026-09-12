@@ -117,3 +117,21 @@ Final scoped PowerShell quality and separate pinned ktlint formatting of DiscCon
 Final network recheck passed all three tests: direct LAN gameplay (both peers report two players), UDP broadcast, and lobby discovery. Report: temp/test_reports/report_20260912_124403.md; test time 2:29, zero failures/timeouts. The corrected PowerShell 5.1 parser, process/workspace helpers and automation catalog also pass after final formatting (temp/suite_cleanup_powershell_compat_final.log, suite_cleanup_helpers_final.log, suite_cleanup_catalog_final.log). Both failures in the preserved full-run report therefore have passing focused rechecks
 
 Validation is complete for the selected normal portfolio, all 83 physical route cases, and the original failures retained or consolidated into maintained owners. The 60 rotating scenarios omitted by seed 254 were not all rerun in this default pass; reports distinguish them from passes. No full all-green 129-owner rerun was claimed after the two small harness fixes. Runtime remains 1:46:21 measured, not a demonstrated 60-90 minutes. Further runtime work should target repeated headed-render setup and cold import/metadata preparation without weakening completion or error assertions
+
+## Follow-up: prevent extended coverage from becoming dormant
+
+User requested normal-run sampling for otherwise archived coverage. Audit: 190 policy entries comprise 112 fixed owners, 70 rotating scenarios (12 selected), one explicitly gated graphics probe, and seven manual/utility entries. Physical routing already samples 22/83 with complete rotation. The 60 scenario omissions in the measured run are rotating coverage, not archives
+
+Close the explicit-only variant gap by sampling full graphics replay coverage plus the two-pass probe on 5% of normal daily seeds, and the 90-second multiplayer soak on a separate 5%. Keep explicit overrides. Extraction sampling now follows the suite seed rather than a fixed commit hash. Daily seeds remain reproducible; repeated same-day runs select the same coverage. Extend the existing catalog test with cadence and reproducibility checks and run scoped quality plus catalog validation
+
+Follow-up validation passed: scoped quality, catalog sampling/cadence checks, and Windows PowerShell 5.1 compatibility. Counts above refer to 190 policy entries; runtime reports expand some entries by game/variant, so their denominators differ. No full device-suite rerun was needed for this selection-only change
+
+## Follow-up: keep only broad integration owners and fast checks fixed
+
+Use the measured 20260912_105354 report to move specialized slow checks out of core. Keep four broad emulator owners fixed: D1/D2 launch-to-automap, SDK lifecycle, save/load dispatch, and matchmaking multiplayer. Keep full headless demos and graphics canaries, JVM/native unit owners, and the already-sampled physical route owner. Other fixed checks should be roughly 30 seconds or less in the measured run
+
+Move slow specialist coverage into existing families wherever possible; add one storage/import family so normal runs exercise one external storage path instead of all of them. Keep complete rotation, rare extended coverage, direct filters and exhaustive mode. Validate catalog coverage and required integration anchors; estimate savings from the prior report without claiming a newly measured suite time
+
+Implemented: 19 slow specialized owners moved from fixed coverage to existing scenario families or a seven-case storage/import family. The fixed count is now 93: eight broad owners plus 85 checks measured at <=30 seconds each. Their expanded test executions sum to 25:55 in the previous report, before build/provisioning and sampled scenarios. There are now 89 rotating policy entries in 13 families; the largest family has 16 cases. No tests were removed, and all retained cases remain reachable in normal rotation. Catalog checks explicitly preserve the eight integration anchors in addition to verifying full rotation
+
+Smaller-core validation passed: scoped formatting/lint, automation catalog (required anchors, complete rotation, exhaustive coverage), and PowerShell 5.1 compatibility. Evidence: temp/suite_smaller_core_quality.log, temp/suite_smaller_core_catalog.log, temp/suite_smaller_core_compat.log. Selection changed only; no new full emulator run or end-to-end runtime claim

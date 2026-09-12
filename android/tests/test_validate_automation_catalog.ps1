@@ -192,6 +192,23 @@ $coverageTests = @(
 )
 try {
     $policy = Get-TestSuiteCoveragePolicy
+    foreach ($anchor in @(
+            'test_input_demo_regressions', 'test_gradle_unit_tests', 'test_native_host_unit_tests',
+            'test_guidebot_route_regressions', 'test_launch_to_automap',
+            'test_android_sdk_lifecycle', 'test_android_saveload_dispatch_unified', 'test_mp'
+        )) {
+        if ($anchor -notin $policy.core) { $failures.Add("Fixed integration coverage missing: $anchor") }
+    }
+    $extendedSamples = @(1..40 | ForEach-Object { Get-TestSuiteExtendedSample -Seed $_ })
+    if (@($extendedSamples | Where-Object Graphics).Count -ne 2 -or
+        @($extendedSamples | Where-Object Multiplayer).Count -ne 2 -or
+        @($extendedSamples | Where-Object { $_.Graphics -and $_.Multiplayer }).Count) {
+        $failures.Add('Extended variants must each run on 5% of seeds without coinciding')
+    }
+    if (-not (Get-TestSuiteExtendedSample -Seed 20).Graphics -or
+        -not (Get-TestSuiteExtendedSample -Seed 30).Multiplayer) {
+        $failures.Add('Extended sampling must be reproducible from the suite seed')
+    }
     $allCoverage = @(Select-TestSuiteCoverage -Tests $coverageTests -Seed 1 -AllScenarios)
     $policyNames = @($policy.Values | ForEach-Object { $_ })
     foreach ($name in $policyNames) {

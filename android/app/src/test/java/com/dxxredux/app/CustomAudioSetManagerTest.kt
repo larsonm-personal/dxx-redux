@@ -9,6 +9,42 @@ import java.io.File
 
 class CustomAudioSetManagerTest {
     @Test
+    fun movieTracksStayImportedButAreExcludedFromPlayback() {
+        val filesDir = File("build/test-custom-audio-movies").absoluteFile
+        filesDir.deleteRecursively()
+        val manager = CustomAudioSetManager(filesDir)
+        val filenames = listOf("(mov) INTRO.mp3", "(MOV) END.mp3", "level (mov).mp3")
+        manager.setDir("album").mkdirs()
+        filenames.forEach { File(manager.setDir("album"), it).writeText("fixture") }
+        manager.addSet(
+            CustomAudioSetManager.AudioSet(
+                id = "album",
+                label = "Album",
+                files = filenames,
+                trackNames = filenames.associateWith { it },
+                referencedUris = mapOf("(MOV) END.mp3" to "content://movie"),
+            ),
+        )
+
+        val playlist = manager.writeM3UWith(
+            referenceStager = { _, _, _ -> error("Movie should not be staged") },
+            embeddedNameReader = { _, _ -> null },
+        )!!
+        assertEquals(listOf(File(manager.setDir("album"), "level (mov).mp3").absolutePath),
+            File(playlist).readLines().filterNot { it.startsWith("#") })
+        assertEquals(listOf("level (mov).mp3"), manager.getDetailedTrackList().map { it.filename })
+        val records = JSONObject(File(filesDir, CustomAudioSetManager.NAMES_FILE).readText()).getJSONArray("records")
+        assertEquals(1, records.length())
+        assertEquals("level (mov).mp3", records.getJSONObject(0).getString("name"))
+        assertEquals(filenames, CustomAudioSetManager(filesDir).getSets().single().files)
+
+        manager.removeSet("album")
+        manager.addSet(CustomAudioSetManager.AudioSet("movies", "Movies", listOf("(mov) INTRO.mp3")))
+        assertNull(manager.writeM3U())
+        assertTrue(manager.getDetailedTrackList().isEmpty())
+    }
+
+    @Test
     fun fileSetScopedCustomMusicStateAndPayloadsAreIsolated() {
         val filesDir = File("build/test-custom-audio-file-set-isolation").absoluteFile
         filesDir.deleteRecursively()

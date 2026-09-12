@@ -40,7 +40,7 @@
     Skip Docker NAT tests even if Docker is available.
 
 .PARAMETER FullExtracts
-    Run every CD extraction regression spec. By default, run_all_tests samples one spec using a git-commit seed.
+    Run every CD extraction regression spec. By default, sample one spec using the suite seed.
 
 .PARAMETER FullRouteCorpus
     Run all physical route regression cases. Normally run fixed canaries and one
@@ -131,6 +131,13 @@ if (Test-RunAllTestsProfileMenuEnabled -ExplicitParameterCount $explicitParamete
 }
 
 if ($FullSuite) { $FullRouteCorpus = $true }
+
+if (-not $Filter -and -not $Target45Minutes -and -not $IncludeManual -and -not $FullSuite) {
+    $extendedSample = Get-TestSuiteExtendedSample -Seed $routeSampleSeed
+    if ($extendedSample.Graphics) { $ExtendedGraphics = $true }
+    if ($extendedSample.Multiplayer) { $ExtendedMultiplayer = $true }
+    Write-Host "Extended sampling: graphics=$ExtendedGraphics multiplayer-soak=$ExtendedMultiplayer (5% each; seed $routeSampleSeed)"
+}
 
 # -- Report directory --
 
@@ -316,19 +323,7 @@ function Test-MatchesRequestedFilter {
     return ($Test.Name -like $RequestedFilter -or $Test.BaseName -like $RequestedFilter)
 }
 
-function Get-GitCommitSeed {
-    try {
-        $commit = git -C $repoRoot rev-parse --verify HEAD 2>$null
-        if ($LASTEXITCODE -eq 0 -and $commit) {
-            $commitText = ($commit | Select-Object -First 1).Trim()
-            $prefix = $commitText.Substring(0, [Math]::Min(8, $commitText.Length))
-            return [int]([Convert]::ToUInt32($prefix, 16) -band 0x7fffffff)
-        }
-    } catch {}
-    return 1
-}
-
-$extractSampleSeed = Get-GitCommitSeed
+$extractSampleSeed = $routeSampleSeed
 if (-not $FullExtracts -and $ExtractSampleCount -lt 1) {
     Write-Host "FAIL: -ExtractSampleCount must be at least 1 unless -FullExtracts is set" -ForegroundColor Red
     exit 1
@@ -743,7 +738,7 @@ if (-not $ExtendedGraphics) {
             if ($_.Name -in $extendedGraphicsTests) {
                 $profileSkipped += @{
                     Name = $_.Name
-                    Reason = "requires -ExtendedGraphics"
+                    Reason = "extended graphics rotation (5%); use -ExtendedGraphics"
                     Type = $_.Type
                 }
                 return $false
