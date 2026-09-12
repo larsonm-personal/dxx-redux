@@ -37,6 +37,30 @@ $dryRun = @(Get-Content -LiteralPath $dryRunPath -Raw | ConvertFrom-Json)
 Assert-Equal 1 $dryRun.Count 'Focused dry run count changed'
 Assert-Equal 107 $dryRun[0].simulation_time_limit_seconds 'Runner did not use the distance-scaled budget'
 
+# Exercise the generated Android script with a slow-emulator wall-clock budget
+$runnerAst = [Management.Automation.Language.Parser]::ParseFile($runner, [ref]$null, [ref]$null)
+$headedFunction = $runnerAst.Find({
+        param($node)
+        $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'New-GuidebotHeadedScript'
+    }, $true)
+. ([scriptblock]::Create($headedFunction.Extent.Text))
+$workItem = [pscustomobject]@{
+    Mission = [pscustomobject]@{ mission_filename = 'd2' }
+    Level = [pscustomobject]@{ level_num = 1 }
+    D1InD2 = $false
+    EngineLevelNumber = 1
+    SimulationTimeLimitSeconds = 107
+}
+$headedScriptPath = Join-Path $outputRoot 'headed.jsonc'
+foreach ($wallBudget in @(600, 10)) {
+    $LevelTimeoutSeconds = $wallBudget
+    New-GuidebotHeadedScript -WorkItem $workItem -Path $headedScriptPath
+    $steps = Get-Content -LiteralPath $headedScriptPath -Raw | ConvertFrom-Json
+    Assert-Equal '107' ($steps | Where-Object field -eq 'start_route_confirmation').value 'Wall-clock budget changed the simulation budget'
+    $expectedWait = if ($wallBudget -eq 600) { 600000 } else { 122000 }
+    Assert-Equal $expectedWait ($steps | Where-Object field -eq 'route_confirmation_terminal').timeout_ms 'Headed wait ignores the wall-clock or simulation budget'
+}
+
 if (-not $NoBuild) {
     & (Join-Path $repoRoot 'run-windows-build.ps1') -Target d2
     if ($LASTEXITCODE -ne 0) { throw "D2 build failed with exit code $LASTEXITCODE" }

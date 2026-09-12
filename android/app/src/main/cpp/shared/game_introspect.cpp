@@ -11,6 +11,7 @@
 
 #ifdef INTROSPECT_ON
 
+#include <atomic>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -106,6 +107,9 @@ extern "C" unsigned long long ogl_get_egl_window_generation(void);
 #endif
 extern "C" int androidaud_get_play_count(void);
 
+static std::atomic<unsigned int> Introspect_request_generation{ 0 };
+static unsigned int Introspect_dump_generation;
+static unsigned int Framebuffer_probe_generation;
 static int Framebuffer_probe_width;
 static int Framebuffer_probe_height;
 static unsigned long long Framebuffer_probe_nonblack_pixels;
@@ -126,6 +130,7 @@ extern "C" void game_introspect_sample_framebuffer(int width, int height)
 #ifdef OGL
 	if (width <= 0 || height <= 0)
 		return;
+	const unsigned int generation = Introspect_request_generation.load();
 	std::vector<unsigned char> pixels((size_t) width * (size_t) height * 4u);
 	glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
 	Framebuffer_probe_gl_error = glGetError();
@@ -178,6 +183,7 @@ extern "C" void game_introspect_sample_framebuffer(int width, int height)
 				Framebuffer_probe_max_y = y;
 		}
 	}
+	Framebuffer_probe_generation = generation;
 #else
 	(void) width;
 	(void) height;
@@ -2819,7 +2825,6 @@ extern "C" char *game_introspect_get_state(void)
 /* -- On-demand dump infrastructure ------------------------------------ */
 
 static char introspect_path[512] = "";
-static volatile int introspect_requested = 0;
 
 extern "C" void game_introspect_set_path(const char *path)
 {
@@ -2831,19 +2836,27 @@ extern "C" void game_introspect_set_path(const char *path)
 
 extern "C" void game_introspect_request(void)
 {
-	introspect_requested = 1;
+	Introspect_request_generation.fetch_add(1);
 }
 
 extern "C" int game_introspect_dump_requested(void)
 {
-	return introspect_requested;
+	return Introspect_request_generation.load() != Introspect_dump_generation;
 }
 
 extern "C" void game_introspect_check_and_dump(void)
 {
-	if (!introspect_requested || !introspect_path[0])
+	unsigned int generation = Introspect_request_generation.load();
+	if (generation == Introspect_dump_generation || !introspect_path[0])
 		return;
-	introspect_requested = 0;
+#if defined(ANDROID) && defined(OGL)
+	/* A request arriving during swap must wait for the next framebuffer sample */
+	if (Framebuffer_probe_generation == Introspect_dump_generation)
+		return;
+	/* Publish completed work while preserving newer requests arriving during sampling */
+	generation = Framebuffer_probe_generation;
+#endif
+	Introspect_dump_generation = generation;
 
 	char *json_str = game_introspect_get_state();
 	if (!json_str)

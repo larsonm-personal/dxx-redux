@@ -17,6 +17,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 . "$PSScriptRoot\..\helpers\test_helpers.ps1"
+. "$PSScriptRoot\extract_regression_spec_helpers.ps1"
 
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 $defaultMediaDir = Join-Path $repoRoot "game_data\CD images\Descent - Mac macplay"
@@ -30,7 +31,8 @@ $testSet = "mac-saf-extract-test"
 $deviceCue = "$providerDir/macplay.cue"
 $deviceBin = "$providerDir/macplay.bin"
 $tmpCue = Join-Path $repoRoot "android\temp\mac_extract_saf.cue"
-$expectedFiles = @("CHAOS.HOG", "CHAOS.MSN", "demo1.dem", "descent.hog", "descent.pig", "watchme.dem", "yep9.dem")
+# Disc publication retains runtime assets and manages the mission bundle separately
+$expectedFiles = @("CHAOS.HOG", "CHAOS.MSN", "descent.hog", "descent.pig")
 
 function Invoke-SetupCommand {
     param([Parameter(Mandatory)][string]$Command, [string]$Name = "")
@@ -86,11 +88,8 @@ function Tap-UiText {
 
 function Test-ExpectedSetFiles {
     param($State)
-    $actual = @($State.set_files)
-    foreach ($name in $expectedFiles) {
-        if ($actual -notcontains $name) { return $false }
-    }
-    return $true
+    $actual = @(Get-ExtractRegressionLogicalSetFiles $State)
+    return @(Get-ExtractRegressionMissingExpectedFiles $expectedFiles $actual).Count -eq 0
 }
 
 function Invoke-SafMode {
@@ -112,7 +111,10 @@ function Invoke-SafMode {
         throw "$Mode content URI extraction did not publish the expected Mac files"
     }
 
-    $stageLine = Adb -AdbArgs @("logcat", "-d", "-v", "brief", "DXX-SAF-Stage:I", "*:S")
+    $stageLine = Adb -AdbArgs @("logcat", "-d", "-v", "brief", "DXX-SAF-Stage:I", "DXX-DiscImport:I", "*:S")
+    if ($stageLine -notmatch "Mac import extracted 7 files from HFS volume 'Descent'") {
+        throw "Mac extraction did not report all seven source files before runtime filtering"
+    }
     if ($Mode -eq "pipe" -and $stageLine -notmatch 'Staged nonseekable SAF source macplay.bin \(718912320 bytes\)') {
         throw "Pipe extraction succeeded without the expected descriptor staging evidence"
     }

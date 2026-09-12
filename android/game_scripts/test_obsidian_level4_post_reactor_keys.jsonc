@@ -41,10 +41,11 @@
     {"action": "assert", "expect": {"current_level_num": "4"}},
     {"action": "wait_for", "timeout_ms": 30000, "expect": {
         "level_metadata_route.status": "ok",
-        "level_metadata_route.step_count": "11",
-        "level_metadata_route.steps[7].key": "blue",
-        "level_metadata_route.steps[9].key": "red",
-        "level_metadata_route.steps[10].kind": "exit"
+        "level_metadata_route.step_count": "12",
+        "level_metadata_route.steps[6].key": "blue",
+        "level_metadata_route.steps[7].kind": "reactor",
+        "level_metadata_route.steps[10].key": "red",
+        "level_metadata_route.steps[11].kind": "exit"
     }},
 
     {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
@@ -55,20 +56,15 @@
     }},
     {"action": "set_debug", "field": "fire_trigger", "value": "1"},
     {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "guidebot.route_goal_objective_trigger": "6"
+    }},
+    {"action": "set_debug", "field": "fire_trigger", "value": "6"},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
         "guidebot.route_goal_label": {"contains": "gold key"}
     }},
     {"action": "set_debug", "field": "complete_route_objective", "value": "true"},
     {"action": "wait_for", "timeout_ms": 10000, "expect": {
         "player.has_gold_key": "true",
-        "guidebot.route_goal_activation_kind_name": "destroy_reactor"
-    }},
-    {"action": "set_debug", "field": "complete_route_objective", "value": "true"},
-    {"action": "wait_for", "timeout_ms": 10000, "expect": {
-        "guidebot.route_goal_objective_trigger": "3",
-        "guidebot.route_goal_objective_wall": "55"
-    }},
-    {"action": "set_debug", "field": "fire_trigger", "value": "3"},
-    {"action": "wait_for", "timeout_ms": 10000, "expect": {
         "guidebot.route_goal_objective_trigger": "22",
         "guidebot.route_goal_objective_wall": "79"
     }},
@@ -84,6 +80,15 @@
     {"action": "set_debug", "field": "complete_route_objective", "value": "true"},
     {"action": "wait_for", "timeout_ms": 10000, "expect": {
         "player.has_blue_key": "true",
+        "guidebot.route_goal_activation_kind_name": "destroy_reactor"
+    }},
+    {"action": "set_debug", "field": "complete_route_objective", "value": "true"},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "guidebot.route_goal_objective_trigger": "3",
+        "guidebot.route_goal_objective_wall": "55"
+    }},
+    {"action": "set_debug", "field": "fire_trigger", "value": "3"},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
         "guidebot.route_goal_objective_trigger": "12",
         "guidebot.route_goal_objective_wall": "105"
     }},

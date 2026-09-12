@@ -967,6 +967,14 @@ int	Num_stuck_objects=0;
 
 stuckobj	Stuck_objects[MAX_STUCK_OBJECTS];
 
+void init_stuck_objects(void)
+{
+	int i;
+	for (i = 0; i < MAX_STUCK_OBJECTS; i++)
+		Stuck_objects[i].wallnum = -1;
+	Num_stuck_objects = 0;
+}
+
 //	An object got stuck in a door (like a flare).
 //	Add global entry.
 void add_stuck_object(object *objp, int segnum, int sidenum)

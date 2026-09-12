@@ -18,7 +18,7 @@ if ($results.Count -ne 2) { throw "Expected two results, found $($results.Count)
 $expected = @(
     'Shoot switch trigger 5', 'Shoot switch trigger 6', 'blue key',
     'Fly-through trigger 10', 'Shoot switch trigger 7', 'Shoot switch trigger 8',
-    'Shoot switch trigger 9', 'gold key', 'Shoot switch trigger 17',
+    'Shoot switch trigger 9', 'gold key', 'Open door', 'Shoot switch trigger 17',
     'Shoot switch trigger 16', 'Pass through trigger 14', 'Shoot switch trigger 15',
     'red key', 'Shoot switch trigger 2', 'Shoot switch trigger 3',
     'Shoot switch trigger 4', 'Shoot switch trigger 1', 'Reactor', 'Exit'

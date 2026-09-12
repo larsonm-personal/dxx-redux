@@ -471,7 +471,8 @@ function New-GuidebotHeadedScript {
             action = 'wait_for'
             field = 'route_confirmation_terminal'
             value = 'true'
-            timeout_ms = ($WorkItem.SimulationTimeLimitSeconds + 15) * 1000
+            # Fixed simulation time can advance slower than wall time on an emulator
+            timeout_ms = [Math]::Max($LevelTimeoutSeconds, $WorkItem.SimulationTimeLimitSeconds + 15) * 1000
         })
     $steps.Add([ordered]@{ action = 'introspect' })
     [IO.File]::WriteAllText(
@@ -505,8 +506,8 @@ function Invoke-GuidebotHeadedLevel {
         New-GuidebotHeadedScript -WorkItem $WorkItem -DeviceArchiveName $deviceArchive -Path $scriptPath
         $automationTimeoutSeconds = [Math]::Max(
             $LevelTimeoutSeconds,
-            $WorkItem.SimulationTimeLimitSeconds + 120
-        )
+            $WorkItem.SimulationTimeLimitSeconds + 15
+        ) + 120
         $arguments = @(
             $scriptPath,
             '-Game', 'd2',

@@ -81,7 +81,7 @@ try {
     }
     $routingSet = @(Invoke-DryRun -Name routing_set -RoutingDevelopmentSet)
     $routingFiles = @($routingSet.identity | ForEach-Object { $_.Split('|')[0] } | Select-Object -Unique)
-    if (($routingFiles -join ',') -cne 'af_d1_beta.json,Bahagad.json,bitesize.json,castaway_redux.json,CD - Descent II - The Vertigo Series (USA).json,Counterstrike.json,descent_maximum_fixed.json,diehard.json,EAF.json,EAF2.json,Entropy2.json,FirstStrike.json,Lostlvls.json,Mandrill.json,Obsidian.json,plutonia.json,TEW.json,Vignettes.json') {
+    if (($routingFiles -join ',') -cne 'af_d1_beta.json,Bahagad.json,bitesize.json,castaway_redux.json,CD - Descent II - The Vertigo Series (USA).json,Counterstrike.json,descent_maximum_fixed.json,diehard.json,EAF.json,EAF2.json,Entropy2.json,FFYL.json,FirstStrike.json,Lostlvls.json,Mandrill.json,Obsidian.json,plutonia.json,TEW.json,Vignettes.json') {
         throw "Routing development set selected unexpected mission files: $($routingFiles -join ', ')"
     }
     $tew = @($routingSet | Where-Object { $_.identity -like 'TEW.json|*' })
@@ -97,10 +97,10 @@ try {
     if ($maximum.Count -ne 36 -or $af.Count -ne 10 -or $mandrill.Count -ne 7) {
         throw 'The expanded set must include both Descent Maximum variants, ten AF levels, and seven Mandrill levels'
     }
-    if ($routingSet.Count -ne 362 -or $tew.Count -ne 32 -or $plutonia.Count -ne 32 -or $vertigo.Count -ne 24 -or $vignettes.Count -ne 27 -or $entropy2.Count -ne 6) {
-        throw 'The eighteen-mission set must include 362 total levels'
+    if ($routingSet.Count -ne 389 -or $tew.Count -ne 32 -or $plutonia.Count -ne 32 -or $vertigo.Count -ne 24 -or $vignettes.Count -ne 27 -or $entropy2.Count -ne 6) {
+        throw 'The nineteen-mission set must include 389 total levels'
     }
-    foreach ($entry in @(@{ Name = 'Lostlvls'; Count = 25 }, @{ Name = 'EAF2'; Count = 10 }, @{ Name = 'EAF'; Count = 5 }, @{ Name = 'Bahagad'; Count = 10 }, @{ Name = 'diehard'; Count = 19 })) {
+    foreach ($entry in @(@{ Name = 'Lostlvls'; Count = 25 }, @{ Name = 'EAF2'; Count = 10 }, @{ Name = 'EAF'; Count = 5 }, @{ Name = 'Bahagad'; Count = 10 }, @{ Name = 'diehard'; Count = 19 }, @{ Name = 'FFYL'; Count = 27 })) {
         if (@($routingSet | Where-Object { $_.identity -like "$($entry.Name).json|*" }).Count -ne $entry.Count) {
             throw "Expanded set omitted levels from $($entry.Name)"
         }

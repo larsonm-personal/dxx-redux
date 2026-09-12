@@ -6,7 +6,7 @@ $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 $helper = Join-Path $repoRoot 'android/clean-workspace.ps1'
 $fixture = Join-Path $repoRoot "temp/cleanup-fixture-$([guid]::NewGuid().ToString('N'))"
 $old = [DateTime]::UtcNow.AddDays(-90)
-$state = [pscustomobject]@{ Answers = [Collections.Generic.Queue[string]]::new(); Prompts = 0; Busy = $false; OnAnswer = $null; OnIdle = $null; IdleChecks = 0 }
+$state = [pscustomobject]@{ Answers = [Collections.Generic.Queue[string]]::new(); Prompts = 0; Busy = $false; BusyName = 'ninja.exe'; OnAnswer = $null; OnIdle = $null; IdleChecks = 0 }
 $heldLock = $null
 
 ${function:Read-Host} = {
@@ -23,7 +23,7 @@ ${function:Get-CimInstance} = {
     $state.IdleChecks++
     if ($state.OnIdle) { & $state.OnIdle }
     if ($state.Busy) {
-        [pscustomobject]@{ ProcessId = -10; Name = 'ninja.exe'; CommandLine = 'synthetic active build' }
+        [pscustomobject]@{ ProcessId = -10; Name = $state.BusyName; CommandLine = 'synthetic active build' }
     }
 }.GetNewClosure()
 
@@ -225,7 +225,16 @@ try {
     foreach ($item in Get-ChildItem -LiteralPath (Join-Path $fixture 'android/app/.cxx/Debug') -Recurse -Force) {
         $item.LastWriteTimeUtc = $sameTime
     }
-    & $helper -RepositoryRoot $fixture -BuildsOnly -Producer -BuildRoots (Join-Path $fixture 'android/app/.cxx') -KeepBuildGenerations 3
+    $state.Busy = $true
+    $state.BusyName = 'qemu-system-x86_64.exe'
+    $blocked = $false
+    try { & $helper -RepositoryRoot $fixture -BuildsOnly -BusyWaitSeconds 0 } catch {
+        $blocked = $_.Exception.Message -match 'processes are active'
+    }
+    if (-not $blocked) { throw 'General cleanup must still protect running emulators' }
+    & $helper -RepositoryRoot $fixture -BuildsOnly -Producer -BuildRoots (Join-Path $fixture 'android/app/.cxx') -KeepBuildGenerations 3 -BusyWaitSeconds 0
+    $state.Busy = $false
+    $state.BusyName = 'ninja.exe'
     if (@(Get-ChildItem -LiteralPath (Join-Path $fixture 'android/app/.cxx/Debug') -Directory).Count -ne 3) {
         throw 'Native producer startup must retain exactly three prior hashes, even with timestamp ties'
     }

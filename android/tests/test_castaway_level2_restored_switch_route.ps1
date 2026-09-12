@@ -11,7 +11,8 @@ $output = Join-Path $repoRoot `
     -NoBuild -OutputRoot $output
 
 $results = @(Get-ChildItem -LiteralPath (Join-Path $output 'results') `
-        -Filter 'castaway_redux.json_0_2_*_run_*.json' | Sort-Object Name)
+        -Filter 'castaway_redux.json_0_2_*_run_*.json' -File |
+        Where-Object { $_.Name -match '_run_\d+\.json$' } | Sort-Object Name)
 if ($results.Count -ne 2) {
     throw "Expected two Castaway level 2 results, found $($results.Count)"
 }

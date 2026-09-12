@@ -5,6 +5,7 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $metadataRoot = Join-Path $repoRoot "game_data\mission_files"
 $missionCount = 0
+$unloadedCount = 0
 
 foreach ($file in Get-ChildItem -LiteralPath $metadataRoot -Filter "*.json" -File -Recurse |
         Where-Object { $_.Name -notlike "*.simulation.json" }) {
@@ -15,6 +16,13 @@ foreach ($file in Get-ChildItem -LiteralPath $metadataRoot -Filter "*.json" -Fil
     }
     foreach ($mission in $items) {
         if (-not $mission.mission_filename) { continue }
+        # A mission that could not load has no structural evidence to classify
+        if ($mission.status -eq 'failed' -and $mission.level_count -eq 0 -and
+            @($mission.levels).Count -eq 0 -and @($mission.problems | Where-Object { $_ }).Count -gt 0 -and
+            $null -eq $mission.mission_intent) {
+            $unloadedCount++
+            continue
+        }
         $missionCount++
         $propertyNames = @($mission.PSObject.Properties.Name)
         $filenameIndex = [Array]::IndexOf($propertyNames, "mission_filename")
@@ -45,4 +53,4 @@ foreach ($file in Get-ChildItem -LiteralPath $metadataRoot -Filter "*.json" -Fil
 }
 if ($missionCount -eq 0) { throw "No checked mission metadata entries were found" }
 
-Write-Host "PASS: $missionCount checked missions use canonically ordered structured mission_intent output"
+Write-Host "PASS: $missionCount checked missions use canonically ordered structured mission_intent output; $unloadedCount unloaded missions retain failure diagnostics"

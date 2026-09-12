@@ -536,6 +536,9 @@ int main(int argc, char *argv[])
 	}
 
 
+	/* Startup restore can close a game window before the event loop begins */
+	if (setjmp(LeaveEvents))
+		goto game_event_loop;
 		{
 			int replay_result = input_demo_maybe_start_replay_from_cmdline();
 
@@ -549,7 +552,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-	setjmp(LeaveEvents);
+game_event_loop:
 	while (window_get_front())
 		// Send events to windows and the default handler
 		event_process();

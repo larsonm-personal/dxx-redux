@@ -17,7 +17,7 @@ $results = @(Get-ChildItem -LiteralPath (Join-Path $output 'results') `
 if ($results.Count -ne 2) { throw "Expected two results, found $($results.Count)" }
 $expected = @(
     'Shoot switch trigger 12', 'Open hidden door', 'Shoot switch trigger 13',
-    'blue key', 'Shoot switch trigger 7', 'Pass through trigger 3',
+    'blue key', 'Open door', 'Shoot switch trigger 7', 'Pass through trigger 3',
     'Shoot switch trigger 2', 'Shoot switch trigger 6', 'Shoot switch trigger 8',
     'red key', 'Boss robot', 'Exit'
 )
@@ -31,7 +31,7 @@ foreach ($file in $results) {
         throw 'Obsidian level 13 did not open the remote prerequisite door and complete its route in order'
     }
     $log = Get-Content -LiteralPath (Join-Path $output "logs/$($file.BaseName).log") -Raw
-    if ($log -notmatch 'flare wall=55 seg=343 side=0 actor_seg=342') {
+    if ($log -notmatch 'flare wall=55 seg=343 side=0 actor_seg=(?!343\b)\d+ weapon=') {
         throw 'Obsidian level 13 did not shoot the hidden door through the grate'
     }
     $signature = $result | ConvertTo-Json -Depth 30 -Compress

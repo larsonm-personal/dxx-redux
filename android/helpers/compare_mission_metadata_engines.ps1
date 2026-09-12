@@ -32,7 +32,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "Emulator metadata runner failed with exit code $LASTEXITCODE" }
     $emulator = [IO.File]::ReadAllBytes($regressionPath)
     [IO.File]::WriteAllBytes((Join-Path $tempRoot 'emulator.json'), $emulator)
-    if (-not [Linq.Enumerable]::SequenceEqual[byte]($windows, $emulator)) {
+    if (-not [Collections.StructuralComparisons]::StructuralEqualityComparer.Equals($windows, $emulator)) {
         throw "Windows and emulator metadata differ for $ArchiveName"
     }
     Write-Host "Windows/emulator metadata parity passed: $ArchiveName" -ForegroundColor Green

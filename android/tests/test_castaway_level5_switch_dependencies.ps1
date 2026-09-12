@@ -32,6 +32,7 @@ $expected = @(
     'Fly-through trigger 17',
     'Fly-through trigger 19',
     'Shoot switch trigger 16',
+    'Fly-through trigger 7',
     'red key',
     'Reactor',
     'Exit'

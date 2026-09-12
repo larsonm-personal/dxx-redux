@@ -19,8 +19,15 @@ internal object LevelMetadataResultCache {
     )
 
     fun identify(target: LevelMetadataTarget): Identity? {
-        // Loose sidecars and mount precedence are not represented by this cache key
-        if (target.archivePath.isNullOrBlank() || target.sourcePath?.let { File(it).isDirectory } == true) return null
+        // Explicit mission bundles include their complete source tree and ordered HOG mounts
+        // Generic loose-file targets still lack a complete description of their mount scope
+        val sourceDirectory = target.sourcePath?.let(::File)?.takeIf(File::isDirectory)
+        val missionDirectory = sourceDirectory != null && target.sourceType == "mission_files"
+        if ((target.archivePath.isNullOrBlank() && !missionDirectory) ||
+            (sourceDirectory != null && !missionDirectory)
+        ) {
+            return null
+        }
         val files = sourceFiles(target)
         if (files.none { it.first.startsWith("source:") }) return null
         val fileIdentities = JSONArray()
@@ -121,8 +128,11 @@ internal object LevelMetadataResultCache {
             result.game == target.game &&
             result.levels.size == expectedLevelCount &&
             result.levels.all {
+                // A finished scan can contain a partial route, such as an unreachable key
+                // Route readiness describes navigation, not whether the scan has finished
                 it.status == "ok" && it.secretAreasComplete &&
-                    (it.routeReadiness.isBlank() || it.routeReadiness == "complete")
+                    it.failureKind.isBlank() &&
+                    it.routeReadiness in setOf("", "complete", "next_ready", "partial")
             }
 
     private fun sourceFiles(target: LevelMetadataTarget): List<Pair<String, File>> {
@@ -132,6 +142,11 @@ internal object LevelMetadataResultCache {
             val source = File(path)
             if (source.isFile) {
                 files += "source:file" to source
+            } else if (source.isDirectory && target.sourceType == "mission_files") {
+                val entries = source.walkTopDown().filter(File::isFile).toList()
+                val names = entries.map { it.relativeTo(source).invariantSeparatorsPath.lowercase(Locale.US) }
+                if (names.distinct().size != names.size) return emptyList()
+                entries.zip(names).forEach { (file, name) -> files += "source:mission:$name" to file }
             }
         }
 

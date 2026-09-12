@@ -15,7 +15,7 @@ if (Test-Path -LiteralPath $outputRoot) {
     -OutputRoot $outputRoot -NoBuild:$NoBuild
 
 $resultFiles = @(Get-ChildItem -LiteralPath (Join-Path $outputRoot 'results') `
-        -Filter '*_run_*.json' -File | Sort-Object Name)
+        -Filter '*_run_*.json' -File | Where-Object Name -Match '_run_[0-9]+\.json$' | Sort-Object Name)
 if ($resultFiles.Count -ne 2) {
     throw "Expected two Counterstrike level 11 artifacts, found $($resultFiles.Count)"
 }
@@ -33,6 +33,7 @@ $expectedLabels = @(
     'Shoot switch trigger 14',
     'Shoot switch trigger 13',
     'Reactor',
+    'Fly-through trigger 24',
     'Exit'
 )
 foreach ($result in $results) {

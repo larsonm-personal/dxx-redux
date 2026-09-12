@@ -74,12 +74,10 @@ $expected = @(
     'key'
     'trigger:9'
     'trigger:10'
-    'trigger:32'
     'trigger:18'
     'trigger:17'
     'trigger:19'
     'trigger:24'
-    'trigger:16'
     'trigger:21'
     'trigger:20'
     'reactor'
@@ -99,17 +97,21 @@ if (($keys -join ',') -ne ($expectedKeys -join ',')) {
     throw "Castaway level 2 key route is $($keys -join ','), expected $($expectedKeys -join ',')"
 }
 
-if ($level5[0].route_status -ne 'partial' -or
-    $level5[0].route_problem -ne 'switch activation route unresolved') {
-    throw "Castaway level 5 should expose its unresolved switches, got $($level5[0].route_status): $($level5[0].route_problem)"
+if ($level5[0].route_status -ne 'ok' -or
+    -not [string]::IsNullOrEmpty([string]$level5[0].route_problem)) {
+    throw "Castaway level 5 route is $($level5[0].route_status): $($level5[0].route_problem)"
 }
 $unresolvedLevel5Triggers = @(
     $level5[0].route_steps |
         Where-Object { $_.activation_kind -eq 'unresolved_trigger' } |
         ForEach-Object { [int]$_.trigger }
 )
-if (($unresolvedLevel5Triggers -join ',') -ne '13,20') {
-    throw "Castaway level 5 unresolved triggers are $($unresolvedLevel5Triggers -join ','), expected 13,20"
+if ($unresolvedLevel5Triggers.Count -ne 0) {
+    throw "Castaway level 5 still has unresolved triggers: $($unresolvedLevel5Triggers -join ',')"
+}
+$level5Trigger13 = @($level5[0].route_steps | Where-Object { $_.kind -eq 'trigger' -and $_.trigger -eq 13 })
+if ($level5Trigger13.Count -ne 1 -or $level5Trigger13[0].activation_kind -ne 'shoot_switch') {
+    throw 'Castaway level 5 must resolve switch 13 as a shootable objective'
 }
 
 if ($level9[0].route_status -ne 'ok' -or
@@ -139,7 +141,7 @@ $expectedLevel9Objectives = @(
     'trigger:14'
     'key:red'
     'trigger:26'
-    'reactor'
+    'boss'
     'exit'
 )
 if (($level9Objectives -join ',') -ne ($expectedLevel9Objectives -join ',')) {

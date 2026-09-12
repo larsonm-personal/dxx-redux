@@ -969,7 +969,13 @@ function Invoke-RestoreReportScenario {
     if ($marker.Count -ne 1) { throw "No unique session marker before report test" }
     $sessionKey = $marker[0].Replace("engine_pending_", "").Replace(".txt", "")
     $reportPath = "files/tombstones/crash_error_exit_$sessionKey.txt"
-    if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName "test_restore_report_$RestoreReportCase.jsonc")) { return $false }
+    $reportScripts = @{
+        unexpected_exit = "test_restore_report_unexpected_exit.jsonc"
+        interrupted_restore = "test_restore_report_interrupted_restore.jsonc"
+        normal_quit = "test_restore_report_normal_quit.jsonc"
+        fail_after_hide = "test_restore_report_fail_after_hide.jsonc"
+    }
+    if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName $reportScripts[$RestoreReportCase])) { return $false }
     if ($RestoreReportCase -eq "interrupted_restore") {
         if (-not (Wait-ForCondition -Description "durable interrupted-restore evidence" -TimeoutSec 15 -PollMs 500 -Condition {
                     $body = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/tombstones/$($marker[0])") -Seconds 5

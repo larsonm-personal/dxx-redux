@@ -1562,13 +1562,6 @@ void fire_path_flare(object *actor)
 #endif
 }
 
-void speed_up_actor(object *actor)
-{
-	if (actor)
-		vm_vec_scale(&actor->mtype.phys_info.velocity,
-		             Configured_speed_percent * F1_0 / 100);
-}
-
 void shoot_frontier_door(object *actor)
 {
 	int frontier_seg;
@@ -2292,6 +2285,15 @@ extern "C" int route_confirmation_speed_percent(void)
 	return Configured_speed_percent;
 }
 
+extern "C" void route_confirmation_scale_path_velocity(const object *objp, vms_vector *velocity)
+{
+	/* Scale the steering target before velocity smoothing. Scaling the blended
+	 * result also scales last frame's velocity again on Android */
+	if (State.summary.status == ROUTE_CONFIRMATION_RUNNING &&
+	    valid_object(State.actor_objnum) && objp == &Objects[State.actor_objnum])
+		vm_vec_scale(velocity, Configured_speed_percent * F1_0 / 100);
+}
+
 extern "C" void route_confirmation_stop(void)
 {
 	if (State.summary.status == ROUTE_CONFIRMATION_RUNNING)
@@ -2358,7 +2360,6 @@ extern "C" int route_confirmation_drive_companion(object *objp)
 		 * the interaction by steering toward the actual key; native full-radius
 		 * physics still decides how far the actor can move */
 		ai_path_set_orient_and_vel(objp, &Objects[State.target_objnum].pos, 2, NULL);
-		speed_up_actor(objp);
 		return 1;
 	}
 	if (State.target_pos_valid && objp->ctype.ai_info.PATH_DIR > 0 &&
@@ -2368,13 +2369,11 @@ extern "C" int route_confirmation_drive_companion(object *objp)
 	    guidebot_route_waypoint_leg_clear(objp, &objp->pos, objp->segnum,
 	                                      &State.target_pos)) {
 		ai_path_set_orient_and_vel(objp, &State.target_pos, 2, NULL);
-		speed_up_actor(objp);
 		return 1;
 	}
 	objp->ctype.ai_info.SKIP_AI_COUNT = 0;
 	Ai_local_info[State.actor_objnum].mode = AIM_GOTO_OBJECT;
 	ai_follow_path(objp, 2, 2, NULL);
-	speed_up_actor(objp);
 	return 1;
 }
 
@@ -2472,6 +2471,7 @@ extern "C" int route_confirmation_speed_percent(void)
 {
 	return 160;
 }
+extern "C" void route_confirmation_scale_path_velocity(const object *, vms_vector *) {}
 extern "C" void route_confirmation_prepare_frame_time(void) {}
 extern "C" void route_confirmation_before_frame(void) {}
 extern "C" void route_confirmation_after_frame(void) {}

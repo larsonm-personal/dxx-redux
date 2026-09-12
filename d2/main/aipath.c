@@ -48,6 +48,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "escort_goal_policy.h"
 #include "guidebot_route_internal.h"
 #include "guidebot_path_recovery.h"
+#include "route_confirmation.h"
 #include "secretarea.h"
 #include "switch.h"
 #endif
@@ -1930,6 +1931,9 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 
 	speed_scale = fixmul(max_speed, dot);
 	vm_vec_scale(&norm_cur_vel, speed_scale);
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	route_confirmation_scale_path_velocity(objp, &norm_cur_vel);
+#endif
 	/* Match Android guidebot motion during input-demo record/replay so
 	 * checkpoint-backed replays stay deterministic on desktop. */
 	if (robptr->companion && input_demo_should_match_android_companion_velocity()) {

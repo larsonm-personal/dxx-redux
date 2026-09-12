@@ -44,16 +44,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "megaloma.rdl",
         "route_input_sha256": "8A3F7D8A9DEDD9A8D4A41C41C52221C543CCB3061FEAF6F54296056B16834AD6",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -66,14 +66,26 @@
           {
             "n": "red key",
             "s": 42
+          },
+          {
+            "n": "reactor",
+            "s": 67
+          },
+          {
+            "n": "exit",
+            "s": 81
           }
         ],
-        "total_frames": 6478,
+        "total_frames": 4875,
         "rng_end": {
-          "state": 1627576247,
-          "calls": 50
+          "state": 493907821,
+          "calls": 84
         },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "reactor_escape": {
+          "countdown_seconds": 45.0,
+          "simulated_seconds": 14.133347,
+          "difficulty": 2
+        }
       }
     ]
   },
@@ -85,16 +97,16 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "megaloma.rdl",
         "route_input_sha256": "38DA46B66DFD9FDFD112CEA7676F57B3573429A740658F8A79211EA8CB653385",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -115,14 +127,22 @@
           {
             "n": "reactor",
             "s": 115
+          },
+          {
+            "n": "exit",
+            "s": 133
           }
         ],
-        "total_frames": 11841,
+        "total_frames": 7952,
         "rng_end": {
-          "state": 833753756,
-          "calls": 7899
+          "state": 3799049761,
+          "calls": 7904
         },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "reactor_escape": {
+          "countdown_seconds": 45.0,
+          "simulated_seconds": 17.46666,
+          "difficulty": 2
+        }
       }
     ]
   },
@@ -179,27 +199,52 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "failed",
+    "status": "ok",
     "level_counts": {
-      "timeout": 1
+      "ok": 1
     },
     "levels": [
       {
         "level_num": 0,
         "level_file": "megaloma.rdl",
         "route_input_sha256": "6CA85DC29C9B38F7F3B85AF86718E4251C4FF1C0825EED9DD1AE77AC8F791563",
-        "status": "timeout",
+        "status": "ok",
         "rng_start": {
           "state": 1,
           "calls": 0
         },
-        "objectives": [],
-        "total_frames": 4078,
+        "objectives": [
+          {
+            "n": "blue key",
+            "s": 14
+          },
+          {
+            "n": "gold key",
+            "s": 33
+          },
+          {
+            "n": "red key",
+            "s": 53
+          },
+          {
+            "n": "reactor",
+            "s": 66
+          },
+          {
+            "n": "exit",
+            "s": 76
+          }
+        ],
+        "total_frames": 4581,
         "rng_end": {
-          "state": 1969681615,
-          "calls": 26
+          "state": 1589280190,
+          "calls": 5065
         },
-        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+        "reactor_escape": {
+          "countdown_seconds": 45.0,
+          "simulated_seconds": 10.033325,
+          "difficulty": 2
+        }
       }
     ]
   },

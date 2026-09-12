@@ -17,10 +17,10 @@ function Invoke-ParityRun {
     $started = [DateTime]::Now
     $pwsh = (Get-Process -Id $PID).Path
     if ($Build) {
-        & $pwsh -NoProfile -File $runner -Mode $Mode -MissionJson Counterstrike.json -Level 1 -Repeat 2 |
+        & $pwsh -NoProfile -File $runner -Mode $Mode -MissionJson Counterstrike.json -Level 1 -Repeat 2 -LevelTimeoutSeconds 600 |
             ForEach-Object { Write-Host $_ }
     } else {
-        & $pwsh -NoProfile -File $runner -Mode $Mode -MissionJson Counterstrike.json -Level 1 -Repeat 2 -NoBuild |
+        & $pwsh -NoProfile -File $runner -Mode $Mode -MissionJson Counterstrike.json -Level 1 -Repeat 2 -LevelTimeoutSeconds 600 -NoBuild |
             ForEach-Object { Write-Host $_ }
     }
     if ($LASTEXITCODE -ne 0) { throw "$Mode parity run failed" }

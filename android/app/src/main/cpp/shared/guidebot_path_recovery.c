@@ -8,6 +8,7 @@
 #include "ai.h"
 #include "game.h"
 #include "gameseg.h"
+#include "fvi.h"
 #include "wall.h"
 #include "maths.h"
 #include "guidebot_route_internal.h"
@@ -39,6 +40,31 @@ static int recovery_leg_clear(const object *objp, const vms_vector *from,
 }
 
 /* Find an occupiable interior waypoint with a verified incoming and outgoing leg */
+static vms_vector recovery_sample(int segnum, const vms_vector *center, int sample)
+{
+	vms_vector point = *center;
+	if (sample) {
+		vms_vector offset, surface;
+		if (sample <= 18)
+			compute_center_point_on_side(&surface, &Segments[segnum], (sample - 1) / 3);
+		else
+			surface = Vertices[Segments[segnum].verts[(sample - 19) / 3]];
+		vm_vec_sub(&offset, &surface, center);
+		vm_vec_scale_add(&point, center, &offset, ((sample - 1) % 3 + 1) * (F1_0 / 4));
+	}
+	return point;
+}
+
+static int recovery_point_fits(const object *objp, int segnum, const vms_vector *point)
+{
+	object probe = *objp;
+	probe.pos = *point;
+	probe.segnum = (short) segnum;
+	if (ConsoleObject && ConsoleObject->size > probe.size)
+		probe.size = ConsoleObject->size;
+	return find_point_seg(point, segnum) == segnum && !object_intersects_wall(&probe);
+}
+
 static int find_recovery_waypoint(const object *objp, int segnum,
                                   const vms_vector *to, vms_vector *result)
 {
@@ -47,22 +73,45 @@ static int find_recovery_waypoint(const object *objp, int segnum,
 		return 0;
 	compute_segment_center(&center, &Segments[segnum]);
 	for (int sample = 0; sample < 43; ++sample) {
-		vms_vector point = center;
-		if (sample) {
-			vms_vector offset, surface;
-			if (sample <= 18)
-				compute_center_point_on_side(&surface, &Segments[segnum], (sample - 1) / 3);
-			else
-				surface = Vertices[Segments[segnum].verts[(sample - 19) / 3]];
-			vm_vec_sub(&offset, &surface, &center);
-			vm_vec_scale_add(&point, &center, &offset, ((sample - 1) % 3 + 1) * (F1_0 / 4));
-		}
-		if (find_point_seg(&point, segnum) != segnum ||
+		vms_vector point = recovery_sample(segnum, &center, sample);
+		if (!recovery_point_fits(objp, segnum, &point) ||
 		    vm_vec_dist(&objp->pos, &point) <= F1_0 ||
 		    !recovery_leg_clear(objp, &objp->pos, objp->segnum, &point) ||
 		    !recovery_leg_clear(objp, &point, segnum, to))
 			continue;
 		*result = point;
+		return 1;
+	}
+	return 0;
+}
+
+/* A thin tapered connector can have an unoccupiable center. Replace only an
+ * invalid intermediate point, proving the approach and unchanged continuation */
+static int repair_recovery_waypoint(object *objp, vms_vector *goal_point,
+                                    vms_vector *approach)
+{
+	ai_static *aip = &objp->ctype.ai_info;
+	const int next = aip->cur_path_index + aip->PATH_DIR;
+	if (next < 0 || next >= aip->path_length)
+		return 0;
+	point_seg *waypoint = &Point_segs[aip->hide_index + aip->cur_path_index];
+	const int segnum = waypoint->segnum;
+	if (segnum < 0 || segnum > Highest_segment_index ||
+	    recovery_point_fits(objp, segnum, &waypoint->point))
+		return 0;
+	vms_vector center;
+	compute_segment_center(&center, &Segments[segnum]);
+	for (int sample = 0; sample < 43; ++sample) {
+		vms_vector point = recovery_sample(segnum, &center, sample);
+		if (!recovery_point_fits(objp, segnum, &point) ||
+		    !recovery_leg_clear(objp, &point, segnum, &Point_segs[aip->hide_index + next].point) ||
+		    !find_recovery_waypoint(objp, objp->segnum, &point, approach))
+			continue;
+		waypoint->point = *goal_point = point;
+#if defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+		fprintf(stderr, "ROUTE-CONFIRM repair tapered waypoint actor_seg=%d waypoint_seg=%d path_index=%d\n",
+		        objp->segnum, segnum, aip->cur_path_index);
+#endif
 		return 1;
 	}
 	return 0;
@@ -217,6 +266,11 @@ void guidebot_route_recover_approach(object *objp, vms_vector *goal_point)
 		if (recover_alternate_path(objp, goal_point)) {
 			precise_recovery = 0;
 			return;
+		}
+		if (repair_recovery_waypoint(objp, goal_point, &recovery_point)) {
+			precise_recovery_point = recovery_point;
+			precise_recovery = recovering = 1;
+			vm_vec_zero(&objp->mtype.phys_info.velocity);
 		}
 	}
 	if (recovering) {

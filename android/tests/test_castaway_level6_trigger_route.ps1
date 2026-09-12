@@ -17,10 +17,10 @@ $results = @(Get-ChildItem -LiteralPath (Join-Path $output 'results') `
 if ($results.Count -ne 2) { throw "Expected two results, found $($results.Count)" }
 $expected = @(
     'Shoot switch trigger 3', 'blue key', 'Fly-through trigger 1',
-    'Shoot switch trigger 2', 'gold key', 'Fly-through trigger 18',
-    'Shoot switch trigger 19', 'Fly-through trigger 38', 'Fly-through trigger 9',
+    'Shoot switch trigger 2', 'gold key', 'Shoot switch trigger 13', 'Fly-through trigger 18',
+    'Shoot switch trigger 19', 'Fly-through trigger 38', 'red key', 'Fly-through trigger 9',
     'Shoot switch trigger 10', 'Fly-through trigger 12', 'Shoot switch trigger 11',
-    'red key', 'Shoot switch trigger 21', 'Boss robot', 'Exit'
+    'Shoot switch trigger 21', 'Boss robot', 'Exit'
 )
 $first = $null
 foreach ($file in $results) {

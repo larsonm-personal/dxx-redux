@@ -72,6 +72,9 @@ try {
     if (-not (Test-DeviceOnline -Serial $Serial)) {
         throw "Android device $Serial is not online"
     }
+    if (-not (Ensure-StandardGameDataOnDevice -Serial $Serial)) {
+        throw "Could not provision the base game data required by the selected mission"
+    }
     Reset-DeviceGameState -Serial $Serial
     $deviceTemporaryZip = "/data/local/tmp/$deviceZip"
     $push = Adb -AdbArgs @("push", $selectedPack.Zip.FullName, $deviceTemporaryZip)
@@ -132,7 +135,10 @@ try {
         -not [string]::IsNullOrWhiteSpace([string]$script:initial.level_preview.palette_name) -and
         $script:initial.automap_active -and $script:initial.automap -and
         $script:presentedProbe -and $script:compositeProbe
-        if (-not $previewReady) { return $false }
+        if (-not $previewReady) {
+            $script:initial = $null
+            return $false
+        }
 
         $renderReady = [int]$script:initial.framebuffer_probe.gl_error -eq 0 -and
         [long]$script:initial.framebuffer_probe.map_visible_pixels -gt 100 -and

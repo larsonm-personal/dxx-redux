@@ -80,20 +80,27 @@
     {"action": "wait_for", "timeout_ms": 60000, "expect": {
         "current_level_num": "2",
         "guidebot.route_goal_active": "true",
-        "guidebot.route_goal_activation_kind_name": "pickup_key",
-        "guidebot.route_goal_label": {"contains": "blue key"},
+        "guidebot.route_goal_activation_kind_name": "shoot_switch",
+        "guidebot.route_goal_label": "Shoot switch trigger 23",
         "guidebot.route_goal_objective_trigger": {"ne": 17}
     }},
-    {"action": "set_debug", "field": "player_keys", "value": "blue", "post_delay_ms": 500},
-    // Movement fields stop at the useful physical frontier while the semantic
-    // objective remains the switch in segment 24.
+    {"action": "set_debug", "field": "fire_trigger", "value": "23", "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "guidebot.route_goal_activation_kind_name": "open_hidden_door",
+        "guidebot.route_goal_objective_wall": "118"
+    }},
+    {"action": "pose_route_guidance", "post_delay_ms": 100},
+    {"action": "meta_action", "id": 1042, "post_delay_ms": 500},
+    {"action": "key", "key": "f", "post_delay_ms": 500},
+    // Target the switch wall 184, not the separate linked wall 84 it opens
+    // The live firing pose may differ from the canonical scan's pose
     {"action": "wait_for", "timeout_ms": 30000, "expect": {
         "guidebot.route_goal_active": "true",
         "guidebot.route_goal_objective_trigger": "21",
         "guidebot.route_goal_activation_kind_name": "shoot_switch",
-        "guidebot.route_goal_seg": "47",
-        "guidebot.route_goal_guidance_seg": "47",
-        "guidebot.route_goal_objective_seg": "24"
+        "guidebot.route_goal_objective_wall": "184",
+        "guidebot.route_goal_activation_matches_aim": "false",
+        "guidebot.route_goal_guidance_seg": {"gte": 0}
     }},
     {"action": "set_debug", "field": "fire_trigger", "value": "21", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 30000, "expect": {

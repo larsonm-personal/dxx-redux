@@ -33,7 +33,10 @@
     }},
     {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
     {"action": "set_debug", "field": "player_keys", "value": "all", "post_delay_ms": 100},
-    {"action": "set_debug", "field": "fire_trigger", "value": "31", "post_delay_ms": 100},
+    {"action": "set_debug", "field": "fire_trigger", "value": "18", "post_delay_ms": 100},
+    {"action": "set_debug", "field": "fire_trigger", "value": "12", "post_delay_ms": 100},
+    {"action": "set_debug", "field": "fire_trigger", "value": "35", "post_delay_ms": 100},
+    {"action": "set_debug", "field": "fire_trigger", "value": "34", "post_delay_ms": 100},
     {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
         "guidebot.route_goal_active": "true",

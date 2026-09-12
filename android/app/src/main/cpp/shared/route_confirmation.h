@@ -13,6 +13,7 @@ extern "C" {
 #define ROUTE_CONFIRMATION_DEFAULT_TIME_LIMIT_SECONDS 180u
 
 struct object;
+struct vms_vector;
 
 enum route_confirmation_status {
 	ROUTE_CONFIRMATION_IDLE = 0,
@@ -89,6 +90,7 @@ int route_confirmation_set_time_limit_seconds(unsigned int seconds);
 /* Test-only speed variation; null selects the canonical 160 percent */
 int route_confirmation_configure_speed(const char *percent);
 int route_confirmation_speed_percent(void);
+void route_confirmation_scale_path_velocity(const struct object *objp, struct vms_vector *velocity);
 void route_confirmation_prepare_frame_time(void);
 void route_confirmation_before_frame(void);
 void route_confirmation_after_frame(void);

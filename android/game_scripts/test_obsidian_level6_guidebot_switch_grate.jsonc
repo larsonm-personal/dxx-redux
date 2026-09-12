@@ -51,18 +51,19 @@
         "guidebot.route_goal_active": "true",
         "guidebot.route_goal_activation_kind_name": "shoot_switch",
         "guidebot.route_goal_trigger": "15",
-        "guidebot.route_goal_seg": "96",
+        "guidebot.route_goal_objective_seg": "317",
         "guidebot.route_live_work.full_plan_calls": "0",
         "guidebot.route_live_work.tick_overruns": "0",
         "guidebot.route_live_work.max_tick_us": {"lte": 4000},
         "guidebot.route_live_work.pending": "false"
     }},
-    {"action": "pose_route_guidance", "post_delay_ms": 250},
-    {"action": "meta_action", "id": 1042, "post_delay_ms": 500},
+    // Keep the player in the adjoining room so it does not occupy the switch endpoint
+    {"action": "face_view", "segment": 314, "side": 1, "distance": 10},
+    {"action": "set_debug", "field": "guidebot_segment", "value": "317", "post_delay_ms": 500},
     {"action": "wait_ms", "ms": 12000},
     {"action": "assert", "expect": {
         "guidebot.route_goal_trigger": "15",
-        "guidebot.segment": "96",
+        "guidebot.segment": "317",
         "guidebot.path_length": "1"
     }},
 
@@ -70,7 +71,7 @@
     {"action": "set_debug", "field": "fire_trigger", "value": "16", "post_delay_ms": 100},
     {"action": "wait_for", "timeout_ms": 20000, "expect": {
         "guidebot.route_goal_trigger": "14",
-        "guidebot.route_goal_seg": "506"
+        "guidebot.route_goal_objective_seg": "506"
     }},
     {"action": "pose_route_guidance", "post_delay_ms": 250},
     {"action": "meta_action", "id": 1042, "post_delay_ms": 500},

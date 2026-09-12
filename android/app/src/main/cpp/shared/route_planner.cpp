@@ -4325,6 +4325,18 @@ class dependency_planner
 				    snapshot_.topology.segments[source.source_segment].center;
 		} else if (!move_to_target(
 		               source.source_segment, source.source_position, depth + 1)) {
+			// A completed prerequisite can expose a remote shot even when the
+			// switch room itself remains inaccessible. Keep only verified progress
+			if (shootable && state_.steps.size() > activation_start.steps.size()) {
+				state_.progress.trigger_in_progress[source.trigger] = 0;
+				const auto retry_firing = select_trigger_firing_path_internal(
+				    snapshot_, query_, state_.progress, firing_sources, visibility_,
+				    &switch_guidance_graph_);
+				if (retry_firing.found) {
+					state_.problem.clear();
+					return fire_trigger(segment, side, depth + 1, forced_sources);
+				}
+			}
 			const std::string activation_problem = state_.problem;
 			state_ = activation_start;
 			state_.problem.clear();

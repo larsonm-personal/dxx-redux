@@ -339,12 +339,22 @@ $tierServerManagedDualEmuTests = @()
 
 # Per-test timeout overrides (seconds) for multi-phase tests
 $testTimeouts = @{
+    "test_acoustid_config_packaging"      = 600
     "test_autoselect_crash_unified"       = 240
     "test_keyboard_defaults"              = 240
     "test_engine_prefs_unified"           = 240
     "test_gog_installer_d1_unified"       = 420
     "test_gog_installer_redbook_unified"  = 420
     "test_gradle_unit_tests"              = 600
+    "test_guidebot_simulation_headed_headless_parity" = 1800
+    "test_guided_shot_annotations"        = 600
+    "test_lostlvls_directional_unlock"    = 600
+    "test_plutonia_level5_reactor_grate"  = 600
+    "test_primary_target_grates"         = 600
+    "test_random_level_preview"          = 600
+    "test_robot_preview"                 = 600
+    "test_route_regeneration_audit"       = 600
+    "test_vertigo_metadata_checkpoints"   = 600
     "test_input_demo_determinism_matrix"  = 600
     "test_input_demo_regressions"         = 1200
     "test_input_demo_regressions_graphics" = 900
@@ -408,6 +418,14 @@ $extractTests = @(
     "test_gog_installer_redbook_unified"
 )  # single emulator + game data, run before the dual-emulator tier
 $noInfraTests = @(
+    "test_acoustid_config_packaging",
+    "test_guided_shot_annotations",
+    "test_lostlvls_directional_unlock",
+    "test_plutonia_level5_reactor_grate",
+    "test_primary_target_grates",
+    "test_route_regeneration_audit",
+    "test_vertigo_metadata_checkpoints",
+    "test_test_runner_result",
     "test_cue_iso",
     "test_fpcalc_and_acoustid",
     "test_game_data_asset_manifest_writer",
@@ -1452,10 +1470,15 @@ if ($runnableTests.Count -gt 0 -and $needsApk) {
 
     Write-Host "== Building debug APK ==" -ForegroundColor Cyan
     $gradleWrapper = Resolve-RegressionGradleWrapper -AndroidDir $scriptDir
+    $buildLog = Join-Path $ReportDir "apk_build_$timestamp.log"
+    & (Join-Path $helpersDir "retain-recent-artifacts.ps1") -Artifacts $buildLog | Out-Host
     & $gradleWrapper -p $scriptDir assembleDebug --console=plain 2>&1 |
+        Tee-Object -FilePath $buildLog |
         Where-Object { $_ -match "^(> Task|BUILD |FAIL|error:|Execution failed|What went wrong|Exception)" } |
         ForEach-Object { Write-Host "  $_" }
     if ($LASTEXITCODE -ne 0) {
+        Get-Content -LiteralPath $buildLog -Tail 80 | ForEach-Object { Write-Host "  $_" }
+        Write-Host "  Build log: $buildLog"
         Write-Host "FAIL: APK build failed" -ForegroundColor Red
         exit 1
     }
@@ -1489,7 +1512,7 @@ function Invoke-SingleTest {
     param([hashtable]$Test)
     $name = $Test.Name
     $logFile = Join-Path $ReportDir "${name}_${timestamp}.log"
-    & (Join-Path $helpersDir "retain-recent-artifacts.ps1") -Artifacts $logFile
+    & (Join-Path $helpersDir "retain-recent-artifacts.ps1") -Artifacts $logFile | Out-Host
 
     # Per-test timeout override for multi-phase tests that need more time
     $testTimeout = $TestTimeoutSeconds

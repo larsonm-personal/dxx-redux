@@ -15,7 +15,7 @@ foreach ($speed in @(100, 120, 140, 160)) {
     & (Get-Process -Id $PID).Path -NoProfile -File $runner -MissionJson Obsidian.json `
         -Level 9 -Repeat 2 -TestSpeedPercent $speed -NoBuild -OutputRoot $run
     if ($LASTEXITCODE -ne 0) { throw "Runner failed at speed $speed" }
-    $results = @(Get-ChildItem (Join-Path $run 'results') -Filter 'Obsidian.json_0_9_*_run_*.json' | Sort-Object Name)
+    $results = @(Get-ChildItem (Join-Path $run 'results') -Filter 'Obsidian.json_0_9_*_run_*.json' | Where-Object Name -Match '_run_[0-9]+\.json$' | Sort-Object Name)
     if ($results.Count -ne 2) { throw "Missing repeats at speed $speed" }
     $first = $null
     foreach ($file in $results) {

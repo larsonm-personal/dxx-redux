@@ -27,7 +27,6 @@ $objectives = @($steps | Where-Object { $_.kind -ne 'start' })
 $expected = @(
     @{ Kind = 'key'; Key = 'blue'; Trigger = $null },
     @{ Kind = 'trigger'; Key = $null; Trigger = 4 },
-    @{ Kind = 'trigger'; Key = $null; Trigger = 5 },
     @{ Kind = 'trigger'; Key = $null; Trigger = 10 },
     @{ Kind = 'reactor'; Key = $null; Trigger = $null },
     @{ Kind = 'trigger'; Key = $null; Trigger = 11 },
@@ -45,14 +44,13 @@ for ($index = 0; $index -lt $expected.Count; $index++) {
         throw "Objective $($index + 1) is $($actual.kind) key=$($actual.key) trigger=$($actual.trigger)"
     }
 }
-if ($objectives[0].can_be_bypassed -ne $true) {
-    throw 'Blue key is not marked can_be_bypassed'
-}
-if ($level[0].route_note -notlike '*blue key can be skipped*transparent wall*') {
-    throw "Unexpected route note: $($level[0].route_note)"
+if ($objectives[0].can_be_bypassed -eq $true -or
+    $level[0].route_required_key_mask -ne 1 -or
+    $level[0].route_completing_key_mask_set -ne 2) {
+    throw 'Obsidian level 2 must retain its required blue key'
 }
 if (@($level[0].notes | Where-Object { $_ -eq 'blue key not necessary' }).Count -ne 0) {
     throw 'Obsidian level 2 incorrectly marks its preferred blue key unnecessary'
 }
 
-Write-Host 'PASS Obsidian level 2 prefers and annotates the blue-key route'
+Write-Host 'PASS Obsidian level 2 retains the required blue-key route'

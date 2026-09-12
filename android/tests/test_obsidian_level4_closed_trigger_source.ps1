@@ -24,7 +24,7 @@ if ($trigger6 -lt 0 -or $trigger22 -lt 0 -or $trigger6 -ge $trigger22) {
     -NoBuild -OutputRoot $output
 
 $results = @(Get-ChildItem -LiteralPath (Join-Path $output 'results') `
-        -Filter 'Obsidian.json_0_4_*_run_*.json' | Sort-Object Name)
+        -Filter 'Obsidian.json_0_4_*_run_*.json' | Where-Object Name -Match '_run_[0-9]+\.json$' | Sort-Object Name)
 if ($results.Count -ne 2) {
     throw "Expected two Obsidian level 4 results, found $($results.Count)"
 }

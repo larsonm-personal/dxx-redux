@@ -148,6 +148,39 @@ class LevelMetadataResultCacheTest {
     }
 
     @Test
+    fun `extracted mission results are reused and nested sidecars invalidate them`() {
+        val root = temporaryFolder.newFolder("extracted-cache")
+        val bundle = temporaryFolder.newFolder("extracted-mission")
+        File(bundle, "mission.mn2").writeText("name = Extracted\nnum_levels = 1\nlevel.rl2\n")
+        File(bundle, "mission.hog").writeText("level geometry")
+        val sidecar = File(bundle, "nested/level.hxm").apply {
+            checkNotNull(parentFile).mkdirs()
+            writeText("robot definitions")
+        }
+        val target = LevelMetadataTarget(
+            displayName = "Extracted", game = "d2", sourceType = "mission_files",
+            sourcePath = bundle.absolutePath, missionFilename = "mission.mn2",
+            hogFiles = listOf("mission.hog"), normalLevelFiles = listOf("level.rl2"),
+        )
+        val identity = checkNotNull(LevelMetadataResultCache.identify(target))
+        val text = resultJson("d2")
+        File(checkNotNull(root.parentFile), "d2x-redux/route-cache/g6/test.bin").apply {
+            checkNotNull(parentFile).mkdirs()
+            writeText("route")
+        }
+        assertEquals(true, LevelMetadataResultCache.publish(root, identity, target, 1, text, LevelMetadataResult.fromJson(text)))
+        assertNotNull(LevelMetadataResultCache.read(root, checkNotNull(LevelMetadataResultCache.identify(target)), target, 1))
+        sidecar.writeText("different robots")
+        val changed = checkNotNull(LevelMetadataResultCache.identify(target))
+        assertNotEquals(identity.key, changed.key)
+        assertNull(LevelMetadataResultCache.read(root, changed, target, 1))
+        val added = File(bundle, "level.pog").apply { writeText("replacement textures") }
+        assertNotEquals(changed.key, checkNotNull(LevelMetadataResultCache.identify(target)).key)
+        added.delete()
+        assertEquals(changed.key, checkNotNull(LevelMetadataResultCache.identify(target)).key)
+    }
+
+    @Test
     fun `unknown liquid texture metadata is never published`() {
         val root = temporaryFolder.newFolder("incomplete-cache")
         val archive = temporaryFolder.newFile("unknown.zip").apply { writeText("mission") }
@@ -159,6 +192,52 @@ class LevelMetadataResultCacheTest {
         assertEquals(false, LevelMetadataResultCache.publish(
             root, identity, target, 1, text, LevelMetadataResult.fromJson(text),
         ))
+    }
+
+    @Test
+    fun `completed scans preserve partial routes in the result cache`() {
+        val root = temporaryFolder.newFolder("partial-route-cache")
+        val source = temporaryFolder.newFile("partial.hog").apply { writeText("mission") }
+        val target = LevelMetadataTarget(
+            displayName = "Partial route", game = "d2", sourceType = "hog",
+            sourcePath = source.absolutePath, archivePath = source.absolutePath,
+            normalLevelFiles = listOf("level.rl2"),
+        )
+        val identity = checkNotNull(LevelMetadataResultCache.identify(target))
+        for (readiness in listOf("next_ready", "partial")) {
+            val document = JSONObject(resultJson("d2"))
+            document.getJSONArray("levels").getJSONObject(0)
+                .put("route_status", "partial")
+                .put("route_problem", "gold key unreachable")
+                .put("route_readiness", readiness)
+                .put("route_cache_file", "")
+            val text = document.toString()
+            assertEquals(true, LevelMetadataResultCache.publish(root, identity, target, 1, text, LevelMetadataResult.fromJson(text)))
+            val cached = checkNotNull(LevelMetadataResultCache.read(root, identity, target, 1))
+            assertEquals("partial", cached.levels.single().routeStatus)
+            assertEquals("gold key unreachable", cached.levels.single().routeProblem)
+            assertEquals(readiness, cached.levels.single().routeReadiness)
+        }
+    }
+
+    @Test
+    fun `unfinished and interrupted route scans are not cached`() {
+        val root = temporaryFolder.newFolder("unfinished-route-cache")
+        val source = temporaryFolder.newFile("unfinished.hog").apply { writeText("mission") }
+        val target = LevelMetadataTarget(
+            displayName = "Unfinished route", game = "d2", sourceType = "hog",
+            archivePath = source.absolutePath, normalLevelFiles = listOf("level.rl2"),
+        )
+        val identity = checkNotNull(LevelMetadataResultCache.identify(target))
+        for ((readiness, failure) in listOf("calculating" to "", "failed" to "", "next_ready" to "preempted", "partial" to "budget_exhausted")) {
+            val document = JSONObject(resultJson("d2"))
+            document.getJSONArray("levels").getJSONObject(0)
+                .put("route_readiness", readiness)
+                .put("failure_kind", failure)
+            val text = document.toString()
+            assertEquals(false, LevelMetadataResultCache.publish(root, identity, target, 1, text, LevelMetadataResult.fromJson(text)))
+            assertNull(LevelMetadataResultCache.read(root, identity, target, 1))
+        }
     }
 
     private fun resultJson(game: String): String =

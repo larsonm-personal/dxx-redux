@@ -70,18 +70,17 @@ if ($step[0].activation_kind -ne 'shoot_switch') {
 if ($step[0].calculated -eq $false) {
     throw 'Trigger 21 route step is still marked not calculated'
 }
-if ($step[0].seg -eq $step[0].opens[0].seg) {
-    throw 'Trigger 21 still routes to its opened wall instead of a firing waypoint'
+if ($step[0].wall -ne 184 -or $step[0].wall -in @($step[0].opens.wall)) {
+    throw 'Trigger 21 must target its switch wall rather than an affected wall'
 }
 
 # These firing positions require crossing ordinary, visible doors which are
 # unlocked, require no key, and therefore open when hit by a player weapon.
-Assert-ShootSwitchSegment -Metadata $metadata -LevelNumber 2 -Trigger 17 -Segment 176
+Assert-ShootSwitchSegment -Metadata $metadata -LevelNumber 2 -Trigger 17 -Segment 84
 Assert-ShootSwitchSegment -Metadata $metadata -LevelNumber 11 -Trigger 10 -Segment 476
 
-# Preferring keys over a transparent shortcut must not replace a calculated
-# objective with the planner's unresolved-trigger fallback
-Assert-ShootSwitchSegment -Metadata $metadata -LevelNumber 3 -Trigger 8 -Segment 297
+# Transparent switch access must remain a calculated objective
+Assert-ShootSwitchSegment -Metadata $metadata -LevelNumber 3 -Trigger 8 -Segment 116
 
 $keyProgressionLevel = @($metadata.levels | Where-Object { $_.level_num -eq 14 })
 if ($keyProgressionLevel.Count -ne 1) {
@@ -92,14 +91,15 @@ $level14Keys = @(
         Where-Object { $_.kind -eq 'key' } |
         ForEach-Object { $_.key }
 )
-if (($level14Keys -join ',') -ne 'blue,gold,red') {
-    throw "Counterstrike level 14 key route is $($level14Keys -join ','), expected blue,gold,red"
+if (($level14Keys -join ',') -ne 'gold,red') {
+    throw "Counterstrike level 14 key route is $($level14Keys -join ','), expected gold,red"
 }
-if ('blue key not necessary' -in @($keyProgressionLevel[0].notes)) {
-    throw 'Counterstrike level 14 still identifies its preferred blue key as unnecessary'
+if ('blue key not necessary' -notin @($keyProgressionLevel[0].notes) -or
+    $keyProgressionLevel[0].route_required_key_mask -ne 6) {
+    throw 'Counterstrike level 14 must identify the blue key as optional'
 }
-if (@($keyProgressionLevel[0].route_steps | Where-Object { $_.trigger -eq 5 }).Count -ne 0) {
-    throw 'Counterstrike level 14 still prefers the trigger 5 yellow-key shortcut'
+if (@($keyProgressionLevel[0].route_steps | Where-Object { $_.trigger -eq 5 }).Count -ne 1) {
+    throw 'Counterstrike level 14 must use trigger 5 to reach the gold key'
 }
 
 $mixedKeyLevel = @($metadata.levels | Where-Object { $_.level_num -eq 20 })
@@ -113,11 +113,12 @@ $level20Objectives = @(
             if ($_.kind -eq 'key') { $_.key } elseif ($_.kind -eq 'trigger') { "trigger:$($_.trigger)" } else { $_.kind }
         }
 )
-if (($level20Objectives -join ',') -ne 'blue,trigger:31,gold,red,boss,exit') {
-    throw "Counterstrike level 20 route is $($level20Objectives -join ','), expected grated trigger 31 before the gold key"
+if (($level20Objectives -join ',') -ne 'blue,trigger:18,trigger:12,trigger:35,trigger:34,red,boss,exit') {
+    throw "Counterstrike level 20 route is $($level20Objectives -join ','), expected switch prerequisites before the red key"
 }
-if ('gold key not necessary' -in @($mixedKeyLevel[0].notes)) {
-    throw 'Counterstrike level 20 still identifies its routed gold key as unnecessary'
+if ('gold key not necessary' -notin @($mixedKeyLevel[0].notes) -or
+    $mixedKeyLevel[0].route_required_key_mask -ne 3) {
+    throw 'Counterstrike level 20 must identify the gold key as optional'
 }
 
 Write-Host "PASS Counterstrike transparent and shoot-open door firing waypoints"

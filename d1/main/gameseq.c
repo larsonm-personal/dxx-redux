@@ -490,6 +490,7 @@ void editor_reset_stuff_on_level()
 	init_robots_for_level();
 	init_ai_objects();
 	init_morphs();
+	init_stuck_objects();
 	init_all_matcens();
 	init_player_stats_new_ship(Player_num);
 	if (!Game_wind)
@@ -1479,6 +1480,7 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 	init_robots_for_level();
 	init_ai_objects();
 	init_morphs();
+	init_stuck_objects();
 	init_all_matcens();
 	reset_palette_add();
 
@@ -1858,5 +1860,4 @@ void StartLevel(int random)
 
 	}
 }
-
 

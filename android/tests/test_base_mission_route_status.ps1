@@ -35,6 +35,7 @@ $expectedLevel10Steps = @(
     "key:destroy_key_carrier:gold"
     "key:destroy_key_carrier:red"
     "trigger:shoot_switch:18"
+    "hidden_door:open_hidden_door"
     "trigger:shoot_switch:25"
     "reactor:destroy_reactor"
     "exit:enter_exit:0"

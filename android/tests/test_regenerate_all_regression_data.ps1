@@ -54,7 +54,7 @@ Assert-True (($missingMetadataStage[0].Arguments -join ',') -eq '-MissingOnly') 
 $routingStages = @(Get-RegressionDataStages -RepoRoot $repoRoot -Category RoutingSet)
 $routingMissions = @(Get-RoutingDevelopmentMissions)
 Assert-True (($routingMissions.Json -join ',') -eq `
-        'castaway_redux.json,Counterstrike.json,FirstStrike.json,Obsidian.json,TEW.json,plutonia.json,CD - Descent II - The Vertigo Series (USA).json,Vignettes.json,Entropy2.json,descent_maximum_fixed.json,af_d1_beta.json,Mandrill.json,bitesize.json,Lostlvls.json,EAF2.json,EAF.json,Bahagad.json,diehard.json') `
+        'castaway_redux.json,Counterstrike.json,FirstStrike.json,Obsidian.json,TEW.json,plutonia.json,CD - Descent II - The Vertigo Series (USA).json,Vignettes.json,Entropy2.json,descent_maximum_fixed.json,af_d1_beta.json,Mandrill.json,bitesize.json,Lostlvls.json,EAF2.json,EAF.json,Bahagad.json,diehard.json,FFYL.json') `
     'Routing development mission order should remain stable'
 Assert-True ((($routingMissions | Where-Object { $_.PSObject.Properties['CdSourceId'] } | ForEach-Object { $_.CdSourceId }) -join '') -eq 'descent-ii-vertigo-usa') `
     'Routing development metadata must include the requested Vertigo CD source'

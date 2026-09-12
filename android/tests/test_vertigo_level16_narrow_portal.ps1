@@ -8,7 +8,7 @@ $output = Join-Path $repoRoot "android/temp/test_vertigo_level16_narrow_portal/r
 $cases = @(
     @{
         Mission = 'CD - Descent II - The Vertigo Series (USA).json'; Level = 16; File = 'd2xlvl16.rl2'
-        Sequence = 'Shoot switch trigger 5|blue key|gold key|Pass through trigger 18|Shoot switch trigger 8|Reactor|Exit'
+        Sequence = 'Shoot switch trigger 5|blue key|gold key|Pass through trigger 18|Shoot switch trigger 8|Shoot switch trigger 7|Fly-through trigger 6|Reactor|Exit'
     },
     @{
         Mission = 'plutonia.json'; Level = 28; File = 'map28.rl2'

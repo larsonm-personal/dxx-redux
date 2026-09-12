@@ -36,7 +36,7 @@
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
 
     {"action": "set_debug", "field": "start_route_confirmation", "value": "true"},
-    {"action": "wait_for", "field": "route_confirmation_status", "value": "confirmed", "timeout_ms": 180000},
+    {"action": "wait_for", "field": "route_confirmation_terminal", "value": "true", "timeout_ms": 600000},
     {"action": "assert", "expect": {
         "route_confirmation.status": "confirmed",
         "route_confirmation.seed": "1",

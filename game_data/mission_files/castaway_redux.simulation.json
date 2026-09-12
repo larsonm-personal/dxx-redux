@@ -473,7 +473,7 @@
     {
       "level_num": 7,
       "level_file": "swallow.rl2",
-      "route_input_sha256": "A29B3BD008B4EDEDC50CD596C9210C0FC748E28103B141A2E42809D7E38A8317",
+      "route_input_sha256": "09F02869B58665B99DE0F0FB5DDDA58ABD8C8EB62F56D68BA57741D9A87E3D0A",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -513,6 +513,10 @@
           "s": 76
         },
         {
+          "n": "fly-through 41",
+          "s": 78
+        },
+        {
           "n": "red key",
           "s": 79
         },
@@ -522,17 +526,17 @@
         },
         {
           "n": "exit",
-          "s": 108
+          "s": 107
         }
       ],
-      "total_frames": 6461,
+      "total_frames": 6421,
       "rng_end": {
-        "state": 1006072628,
-        "calls": 15587
+        "state": 1684854279,
+        "calls": 15586
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 11.083328,
+        "simulated_seconds": 10.516663,
         "difficulty": 2
       }
     },

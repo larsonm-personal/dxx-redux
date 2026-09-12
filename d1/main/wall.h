@@ -278,6 +278,7 @@ void wall_read_n_swap(wall *w, int n, int swap, rewind_file *fp);
 
 extern void wall_write(wall *w, short version, rewind_file *fp);
 void wall_close_door_num(int door_num);
+void init_stuck_objects(void);
 
 #endif
 

@@ -627,6 +627,9 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	/* Startup restore can close a game window before the event loop begins */
+	if (setjmp(LeaveEvents))
+		goto game_event_loop;
 #ifdef EDITOR
 	if (GameArg.EdiAutoLoad) {
 		strcpy((char *)&Level_names[0], Auto_file);
@@ -657,7 +660,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	setjmp(LeaveEvents);
+game_event_loop:
 	while (window_get_front()
 #ifdef DXX_GUIDEBOT_ROUTE_DESKTOP
 	       && !route_confirmation_desktop_should_exit()

@@ -1871,6 +1871,35 @@ int main()
 	assert(nested_dependency.steps[1].path.segments[0] == 0);
 	assert(nested_dependency.steps[1].path.segments[1] == 1);
 	assert(nested_dependency.steps[1].path.segments[2] == 2);
+	// Opening the approach exposes a remote shot without entering the switch room
+	auto remote_after_open = nested_snapshot;
+	remote_after_open.topology.segments[2].sides[2].wall = -1;
+	remote_after_open.topology.segments[3].sides[2].wall = 2;
+	remote_after_open.topology.walls[2].segment = 3;
+	remote_after_open.topology.walls[2].target = remote_after_open.topology.segments[3].center;
+	dxx_route::route_visibility_query remote_after_open_visibility;
+	remote_after_open_visibility.wall_shootable = [](
+	    void *, int segment, const dxx_route::route_position &, int wall) -> int {
+		return (wall == 0 && segment == 0) || (wall == 2 && segment == 2);
+	};
+	const auto remote_after_open_dependency = dxx_route::resolve_trigger_dependency(
+	    remote_after_open, nested_query,
+	    dxx_route::initial_route_progress_state(remote_after_open, nested_query),
+	    2, 1, remote_after_open_visibility);
+	assert(remote_after_open_dependency.resolved);
+	assert(remote_after_open_dependency.problem.empty());
+	assert(remote_after_open_dependency.steps.size() == 2);
+	assert(remote_after_open_dependency.steps[0].trigger == 1);
+	assert(remote_after_open_dependency.steps[1].trigger == 0);
+	assert(remote_after_open_dependency.steps[1].segment == 2);
+	remote_after_open_visibility.wall_shootable = [](
+	    void *, int segment, const dxx_route::route_position &, int wall) -> int {
+		return wall == 0 && segment == 0;
+	};
+	assert(!dxx_route::resolve_trigger_dependency(
+	            remote_after_open, nested_query,
+	            dxx_route::initial_route_progress_state(remote_after_open, nested_query),
+	            2, 1, remote_after_open_visibility).resolved);
 	const auto restored_switch_snapshot = make_restored_switch_snapshot();
 	dxx_route::route_query restored_switch_query;
 	restored_switch_query.start = restored_switch_snapshot.state.start_position;

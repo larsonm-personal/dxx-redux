@@ -11,7 +11,7 @@ $output = Join-Path $repoRoot `
     -NoBuild -OutputRoot $output
 
 $results = @(Get-ChildItem -LiteralPath (Join-Path $output 'results') `
-        -Filter 'Obsidian.json_0_7_*_run_*.json' | Sort-Object Name)
+        -Filter 'Obsidian.json_0_7_*_run_*.json' | Where-Object Name -Match '_run_[0-9]+\.json$' | Sort-Object Name)
 if ($results.Count -ne 2) {
     throw "Expected two Obsidian level 7 results, found $($results.Count)"
 }

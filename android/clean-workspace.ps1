@@ -122,6 +122,8 @@ function Assert-CleanupIdle {
             }
             $busy = @($processes | Where-Object {
                     $_.ProcessId -notin $producerAncestors -and
+                    # Emulators use installed APKs, not the producer's scoped native build generations
+                    -not ($Producer -and $_.Name -match '^(emulator|qemu-system-.*)\.exe$') -and
                     (
                         $_.Name -match '^(cl|clang|clang\+\+|ninja|cmake|ctest|cargo|rustc|dxx-redux.*|d[12]x-redux|emulator|qemu-system-.*)\.exe$' -or
                         ($_.CommandLine -and $_.CommandLine.Contains($RepositoryRoot) -and

@@ -41,6 +41,10 @@
         "current_level_num": "1"
     }},
 
+    // Keep combat object deletions from adding unrelated route notifications
+    // during the exact automap-event coalescing checks below.
+    {"action": "set_debug", "field": "clear_robots", "value": "true", "post_delay_ms": 500},
+
     {"action": "log", "message": "=== TEST: guidebot cage release ==="},
     {"action": "wait_for", "timeout_ms": 10000, "expect": {
         "in_game": "true",
