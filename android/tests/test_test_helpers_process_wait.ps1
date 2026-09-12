@@ -215,4 +215,42 @@ foreach ($requiredArtifact in @(
     }
 }
 
+# Exercise the replay exit/file race without running a game or relying on timing
+& {
+    $replayAst = [Management.Automation.Language.Parser]::ParseFile(
+        (Join-Path $PSScriptRoot 'run_input_demo_replay.ps1'), [ref]$null, [ref]$null)
+    $waitFunction = $replayAst.Find({ param($node)
+            $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
+            $node.Name -eq 'Wait-ForReplayResult'
+        }, $true)
+    . ([scriptblock]::Create($waitFunction.Extent.Text))
+    $startInfo = [Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = (Get-Process -Id $PID).Path
+    $startInfo.Arguments = '-NoProfile -Command "Start-Sleep -Seconds 30"'
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+    $replayProcess = [Diagnostics.Process]::Start($startInfo)
+    $script:ReplayFileChecks = 0
+    function Test-Path {
+        param([string]$LiteralPath)
+        $script:ReplayFileChecks++
+        if ($script:ReplayFileChecks -eq 1) {
+            # File was absent at probe time; publication and exit occur before it returns
+            $replayProcess.Kill()
+            $replayProcess.WaitForExit()
+            return $false
+        }
+        return $true
+    }
+    try {
+        $result = Wait-ForReplayResult -Process $replayProcess -ActualResultPath 'fixture-result' -TimeoutSeconds 5
+        if (-not $result.ResultReady -or -not $result.Exited) {
+            throw 'Replay result published during the exit probe was rejected'
+        }
+    } finally {
+        if (-not $replayProcess.HasExited) { $replayProcess.Kill(); $replayProcess.WaitForExit() }
+        $replayProcess.Dispose()
+    }
+}
+
 Write-Host 'PASS'

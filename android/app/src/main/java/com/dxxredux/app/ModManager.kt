@@ -281,16 +281,21 @@ class ModManager(
 
     private val modsDir
         get() =
-            File(setDir?.let { File(it, ".content") } ?: filesDir, "mods").also {
-                if (setDir == null || setDir.isDirectory) it.mkdirs()
+            FileSetContentManager.withContentLock {
+                File(setDir?.let { File(it, ".content") } ?: filesDir, "mods").also {
+                    // A launcher refresh must not recreate directories during set deletion
+                    if (setDir == null || setDir.isDirectory) it.mkdirs()
+                }
             }
     private val supportDir
         get() =
-            setDir?.let { root ->
-                File(root, ".content/mod_support").also {
-                    if (root.isDirectory) it.mkdirs()
-                }
-            } ?: filesDir
+            FileSetContentManager.withContentLock {
+                setDir?.let { root ->
+                    File(root, ".content/mod_support").also {
+                        if (root.isDirectory) it.mkdirs()
+                    }
+                } ?: filesDir
+            }
     private val manifestFile get() = File(modsDir, MANIFEST_FILE)
 
     private var mods: MutableList<ModInfo> = mutableListOf()
@@ -1983,9 +1988,11 @@ class ModManager(
     }
 
     private fun <T> updateManifest(block: () -> T): T =
-        AtomicFilePublication.transaction {
-            load()
-            block()
+        FileSetContentManager.withContentLock {
+            AtomicFilePublication.transaction {
+                load()
+                block()
+            }
         }
 
     private fun logInfo(message: String) {

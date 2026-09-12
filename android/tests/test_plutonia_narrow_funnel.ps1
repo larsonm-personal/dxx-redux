@@ -1,13 +1,10 @@
 #!/usr/bin/env pwsh
+# TEST-SUPPORT: owner=test_guidebot_route_regressions
 param([switch]$NoBuild)
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
-# Funnel recovery must preserve ordinary D1 and D2 collision behavior
-# These recorded inputs caught the earlier global swept-edge correction
-& (Join-Path $PSScriptRoot 'run_input_demo_regressions.ps1') -RunMode headless -Mode accelerated `
-    -DemoFileName @('d1_descent_level16_20260618_201843.dximdemo', 'd2_descent2_level9_20260511_215654.dximdemo')
-if ($LASTEXITCODE -ne 0) { throw 'Funnel recovery changed base-game demo results' }
+# Ordinary D1/D2 collision compatibility is owned by the full input-demo corpus
 $runner = Join-Path $repoRoot 'android/helpers/regenerate_all_guidebot_simulations.ps1'
 $output = Join-Path $repoRoot "android/temp/test_plutonia_narrow_funnel/run_$(Get-Date -Format 'yyyyMMdd_HHmmss_fff')"
 & (Get-Process -Id $PID).Path -NoProfile -File $runner -MissionJson plutonia.json `

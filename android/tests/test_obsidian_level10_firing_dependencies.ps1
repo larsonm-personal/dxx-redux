@@ -1,4 +1,5 @@
 #!/usr/bin/env pwsh
+# TEST-SUPPORT: owner=test_guidebot_route_regressions
 param([switch]$NoBuild)
 
 $ErrorActionPreference = 'Stop'
@@ -12,7 +13,7 @@ if ($plannedLevel.Count -ne 1 -or $plannedLevel[0].route_status -ne 'ok') {
     throw 'Obsidian level 10 metadata must include a complete route through the firing prerequisites'
 }
 & $runner -Mode Headless `
-    -MissionJson Obsidian.json -Level 10,14 -Repeat 2 -MaxParallel 1 `
+    -MissionJson Obsidian.json -Level 10, 14 -Repeat 2 -MaxParallel 1 `
     -NoBuild:$NoBuild -OutputRoot $output
 if ($LASTEXITCODE -ne 0) { throw 'Obsidian level 10 runner failed' }
 
@@ -61,7 +62,7 @@ foreach ($file in $recoveryResults) {
     elseif ($signature -cne $recoverySignature) { throw 'Obsidian level 14 recovery is not deterministic' }
 }
 $normalized = Get-Content (Join-Path $output 'results/Obsidian.simulation.json') -Raw | ConvertFrom-Json
-$level = @($normalized.levels | Where-Object { $_.level_num -in @(10,14) })
+$level = @($normalized.levels | Where-Object { $_.level_num -in @(10, 14) })
 if ($level.Count -ne 2 -or @($level | Where-Object status -ne 'ok').Count) {
     throw 'Obsidian level 10 physical objectives disagree with its metadata route'
 }

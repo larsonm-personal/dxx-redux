@@ -81,10 +81,8 @@ try {
     }
 
     # Check wlan0 IPs
-    $emu1Ip = (Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "ip", "addr", "show", "wlan0") -Seconds 5 |
-            Select-String 'inet (\d+\.\d+\.\d+\.\d+)').Matches[0].Groups[1].Value
-    $emu2Ip = (Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @("shell", "ip", "addr", "show", "wlan0") -Seconds 5 |
-            Select-String 'inet (\d+\.\d+\.\d+\.\d+)').Matches[0].Groups[1].Value
+    $emu1Ip = Get-DeviceWlanIp -Serial $EMU1
+    $emu2Ip = Get-DeviceWlanIp -Serial $EMU2
     Write-Status "EMU1 wlan0: $emu1Ip, EMU2 wlan0: $emu2Ip"
 
     if (-not $emu1Ip -or -not $emu2Ip) {

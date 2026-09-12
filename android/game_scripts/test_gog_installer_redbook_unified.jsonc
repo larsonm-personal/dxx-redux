@@ -59,14 +59,16 @@
     {"action": "log", "message": "=== GOG Installer + Redbook: Launcher Phase ==="},
 
     {"action": "reset_state"},
+    {"action": "setup_command", "command": "create_set", "args": {"name": "gog_redbook_test"}},
+    {"action": "setup_command", "command": "switch_set", "args": {"name": "gog_redbook_test"}},
 
     // Persisted audio registration and playlist state survive reset_state and
     // clear_set, so clear them explicitly before removing the set artifacts
     {"action": "setup_command", "command": "clear_audio_sources", "post_delay_ms": 1000},
 
-    // Clear any existing game data set
+    // Clear the test-owned import set
     {"action": "setup_command", "command": "clear_set",
-     "args": {"name": "default"}, "post_delay_ms": 1000},
+     "args": {"name": "gog_redbook_test"}, "post_delay_ms": 1000},
 
     // Prove this run cannot inherit a prior registration, playlist, preview,
     // or same-path GOG pair before importing the current installer
@@ -105,8 +107,8 @@
         "has_legacy_gog_audio": "true",
         "audio_sources[0].id": "d2-gog-v1.2",
         "audio_sources[0].disc_id": "d2-gog-v1.2",
-        "audio_sources[0].cue_path": "imported/sets/default/DESCENT_II.inst",
-        "audio_sources[0].bin_paths[0]": "imported/sets/default/DESCENT_II.gog",
+        "audio_sources[0].cue_path": "imported/sets/gog_redbook_test/DESCENT_II.inst",
+        "audio_sources[0].bin_paths[0]": "imported/sets/gog_redbook_test/DESCENT_II.gog",
         "audio_sources[0].track_count": "9",
         "audio_sources[0].audio_track_count": "8"
     }},
@@ -160,9 +162,9 @@
 
     {"action": "log", "message": "Launcher checks passed -- switching to game"},
 
-    // Ensure default set is active before launch
+    // Ensure the test-owned import set is active before launch
     {"action": "setup_command", "command": "switch_set",
-     "args": {"name": "default"}, "post_delay_ms": 500},
+     "args": {"name": "gog_redbook_test"}, "post_delay_ms": 500},
     {"action": "setup_command", "command": "write_bool_pref",
      "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
     {"action": "setup_command", "command": "write_bool_pref",

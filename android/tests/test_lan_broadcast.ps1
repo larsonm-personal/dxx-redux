@@ -4,7 +4,7 @@
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
-. (Join-Path (Join-Path (Join-Path $repoRoot "android") "helpers") "test_host_platform.ps1")
+. (Join-Path (Join-Path (Join-Path $repoRoot "android") "helpers") "test_helpers.ps1")
 $depBase = (Get-Content (Join-Path $repoRoot "dependency_base.txt") -First 1).Trim()
 $adb = Resolve-RegressionAndroidSdkTool -DepBase $depBase -Subdir "platform-tools" -ToolName "adb" -EnvironmentVariable "ADB"
 $outDir = Join-Path $repoRoot "temp"
@@ -141,21 +141,12 @@ $EMU1 = "emulator-$($emus[0].Groups[1].Value)"
 $EMU2 = "emulator-$($emus[1].Groups[1].Value)"
 Write-Host "EMU1=$EMU1  EMU2=$EMU2"
 
-# Show IPs
-$ip1 = & $adb -s $EMU1 shell "ip -4 addr show wlan0 | grep inet" 2>&1 | Out-String
-$ip2 = & $adb -s $EMU2 shell "ip -4 addr show wlan0 | grep inet" 2>&1 | Out-String
-Write-Host "EMU1 wlan0: $($ip1.Trim())"
-Write-Host "EMU2 wlan0: $($ip2.Trim())"
-
-# Extract IPs
-$m1 = [regex]::Match($ip1, "inet (\d+\.\d+\.\d+\.\d+)")
-$m2 = [regex]::Match($ip2, "inet (\d+\.\d+\.\d+\.\d+)")
-if (-not $m1.Success -or -not $m2.Success) {
+$IP_EMU1 = Get-DeviceWlanIp -Serial $EMU1
+$IP_EMU2 = Get-DeviceWlanIp -Serial $EMU2
+if (-not $IP_EMU1 -or -not $IP_EMU2) {
     Write-Host "FAIL: Could not parse wlan0 IPs"
     exit 1
 }
-$IP_EMU1 = $m1.Groups[1].Value
-$IP_EMU2 = $m2.Groups[1].Value
 Write-Host "Parsed: EMU1=$IP_EMU1  EMU2=$IP_EMU2"
 
 # Test 1: Unicast ping

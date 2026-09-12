@@ -1,4 +1,39 @@
 # Release reproducible payloads while retaining metadata JSON and diagnostic logs
+function Remove-GuidebotTestPayloads {
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [Parameter(Mandatory)][string]$OutputText
+    )
+    $tempRoot = [IO.Path]::GetFullPath((Join-Path $RepoRoot 'android/temp')).TrimEnd('\', '/')
+    $separator = [IO.Path]::DirectorySeparatorChar
+    $comparison = if ($separator -eq '\') { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
+    $plainText = $OutputText -replace '\x1b\[[0-9;]*m', ''
+    foreach ($match in [regex]::Matches($plainText, '(?m)^\[\d{2}:\d{2}:\d{2}\] Output: ([^\r\n]+)')) {
+        $runRoot = [IO.Path]::GetFullPath($match.Groups[1].Value.Trim()).TrimEnd('\', '/')
+        if (-not $runRoot.StartsWith($tempRoot + $separator, $comparison) -or
+            -not (Test-Path -LiteralPath (Join-Path $runRoot 'summary.json') -PathType Leaf)) {
+            throw "Refusing to release an unrecognized route test workspace: $runRoot"
+        }
+        $ancestor = $runRoot
+        while ($ancestor.Length -ge $tempRoot.Length) {
+            if ((Get-Item -LiteralPath $ancestor -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) {
+                throw "Refusing to release a linked route workspace: $ancestor"
+            }
+            $ancestor = [IO.Path]::GetDirectoryName($ancestor)
+        }
+        Remove-HostMetadataPayloads -RunRoot $runRoot
+        $engine = Join-Path $runRoot 'engine'
+        if (Test-Path -LiteralPath $engine -PathType Container) {
+            if ((Get-Item -LiteralPath $engine -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) {
+                throw "Refusing to release a linked route engine: $engine"
+            }
+            # Keep engine hashes and settings; only successful tests release executable copies
+            Get-ChildItem -LiteralPath $engine -File | Where-Object Extension -in @('.exe', '.dll', '.pdb') |
+                ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force }
+        }
+    }
+}
+
 function Remove-HostMetadataPayloads {
     param(
         [Parameter(Mandatory)][string]$RunRoot,

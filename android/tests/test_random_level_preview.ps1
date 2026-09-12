@@ -223,6 +223,9 @@ try {
         ) | Out-Null
     }
 
+    # A pre-input snapshot can already have a newer heartbeat than $initial
+    # Require the snapshot requested after the axis commands, not that stale file
+    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", $introspectionFile) | Out-Null
     Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.LEVEL_PREVIEW_INTROSPECT", "-p", $script:PACKAGE) | Out-Null
     $after = $null
     $refreshed = Wait-ForCondition -Description "post-input preview introspection" -TimeoutSec 20 -PollMs 500 -Condition {

@@ -1,4 +1,5 @@
 #!/usr/bin/env pwsh
+# TEST-SUPPORT: owner=test_guidebot_route_regressions
 param([switch]$NoBuild, [string]$HeadlessExecutable)
 
 $ErrorActionPreference = 'Stop'

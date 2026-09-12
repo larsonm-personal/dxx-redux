@@ -8,6 +8,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.attribute.BasicFileAttributes
 
 class DiscContentImportTest {
     @get:Rule val temporaryFolder = TemporaryFolder()
@@ -104,7 +106,11 @@ class DiscContentImportTest {
     fun preservesMissionDirectoriesAndCompanionsInOneMixedGameBundle() {
         val setDir = temporaryFolder.newFolder("set")
         val staging = temporaryFolder.newFolder("staging")
-        fun write(path: String, text: String) = File(staging, path).apply {
+
+        fun write(
+            path: String,
+            text: String,
+        ) = File(staging, path).apply {
             checkNotNull(parentFile).mkdirs()
             writeText(text)
         }
@@ -150,10 +156,16 @@ class DiscContentImportTest {
         File(staging, "descent2.hog").writeText("Base")
         File(staging, "bonus.mn2").writeText("name = Bonus\nnum_levels = 1\nbonus.rl2\n")
         File(staging, "bonus.rl2").writeText("Level")
-        File(staging, "custom.gog").writeText("Audio")
+        val stagedAudio = File(staging, "custom.gog").apply { writeText("Audio") }
+        val audioFileKey = Files.readAttributes(stagedAudio.toPath(), BasicFileAttributes::class.java).fileKey()
         File(staging, "custom.inst").writeText("FILE \"custom.gog\" BINARY\n  TRACK 02 AUDIO\n    INDEX 01 00:00:00\n")
         val manager = FileSetContentManager(setDir)
         manager.publishDiscImport(staging, "Installer.exe")
+        assertFalse(stagedAudio.exists())
+        assertEquals(
+            audioFileKey,
+            Files.readAttributes(File(setDir, "custom.gog").toPath(), BasicFileAttributes::class.java).fileKey(),
+        )
         val audio = checkNotNull(buildGogAudioSource(filesDir, setDir))
         assertEquals(listOf("sets/default/custom.gog"), audio.binPaths.map { it.replace('\\', '/') })
         File(setDir, ".content/audio/audio_sources.json").apply {
@@ -176,9 +188,21 @@ class DiscContentImportTest {
         assertTrue(fixture.isDirectory)
         val staging = temporaryFolder.newFolder("anniversary")
         fixture.copyRecursively(staging, overwrite = true)
-        val descriptors = staging.walkTopDown().filter { it.isFile && GameFileFormats.isMissionDescriptor(it.name) }.toList()
+        val descriptors =
+            staging
+                .walkTopDown()
+                .filter {
+                    it.isFile &&
+                        GameFileFormats.isMissionDescriptor(
+                            it.name,
+                        )
+                }.toList()
         assertTrue(descriptors.size >= 19)
-        val expected = descriptors.associate { "missions/${it.relativeTo(staging).invariantSeparatorsPath}" to it.readBytes().toList() }
+        val expected =
+            descriptors.associate {
+                "missions/${it.relativeTo(staging).invariantSeparatorsPath}" to
+                    it.readBytes().toList()
+            }
         val setDir = temporaryFolder.newFolder("anniversary-set")
         val manager = FileSetContentManager(setDir)
         manager.publishDiscImport(staging, "Descent Anniversary.iso")
@@ -187,13 +211,23 @@ class DiscContentImportTest {
         expected.forEach { (path, bytes) -> assertEquals(path, bytes, File(projection, path).readBytes().toList()) }
         for (stem in listOf("mad", "newest", "retrib10", "retrib11")) {
             assertTrue(File(projection, "missions/newlevel/$stem.msn").isFile)
-            assertEquals(File(fixture, "newlevel/$stem.rdl").readBytes().toList(), File(projection, "missions/newlevel/$stem.rdl").readBytes().toList())
+            assertEquals(
+                File(fixture, "newlevel/$stem.rdl").readBytes().toList(),
+                File(projection, "missions/newlevel/$stem.rdl").readBytes().toList(),
+            )
         }
         manager.setEnabled(entry.id, false)
         val repeat = temporaryFolder.newFolder("repeat")
         fixture.copyRecursively(repeat, overwrite = true)
         manager.publishDiscImport(repeat, "Descent Anniversary.iso")
-        assertEquals(entry.id, manager.reconcile().entries.single().id)
+        assertEquals(
+            entry.id,
+            manager
+                .reconcile()
+                .entries
+                .single()
+                .id,
+        )
         assertFalse(manager.listEntries().single().enabled)
     }
 

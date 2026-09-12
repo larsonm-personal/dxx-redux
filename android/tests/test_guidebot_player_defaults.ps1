@@ -1,8 +1,9 @@
+# TEST-SUPPORT: owner=test_guidebot_route_regressions
 param([switch]$NoBuild)
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$outputRoot = Join-Path $repoRoot 'android\temp\guidebot_player_defaults_test'
+$outputRoot = Join-Path $repoRoot ('android/temp/guidebot_player_defaults_test/run_' + (Get-Date -Format 'yyyyMMdd_HHmmss_fff'))
 & (Join-Path $repoRoot 'android\helpers\regenerate_all_guidebot_simulations.ps1') `
     -Mode Headless -MissionJson 'dontpnic.json', 'Descent 1 to Descent 2 Conversion.json' `
     -Level -1, 9 -Repeat 2 -OutputRoot $outputRoot -NoBuild:$NoBuild

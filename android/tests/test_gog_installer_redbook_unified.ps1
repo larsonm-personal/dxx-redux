@@ -134,5 +134,26 @@ try {
     if (-not $SkipPush) {
         try { Adb -AdbArgs @('shell', "rm -f '$($installer.DevicePath)'") | Out-Null } catch {}
     }
+    # Close native audio handles before releasing this test's large imported image
+    if (Start-SetupActivity -Serial $env:ANDROID_SERIAL) {
+        foreach ($command in @(
+                @('switch_set', 'gog_redbook_test'),
+                @('clear_audio_sources', ''),
+                @('switch_set', 'default'),
+                @('delete_set', 'gog_redbook_test')
+            )) {
+            $commandArgs = @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
+                '-p', $script:PACKAGE, '--es', 'command', $command[0])
+            if ($command[1]) { $commandArgs += @('--es', 'name', $command[1]) }
+            $commandResult = Adb -AdbArgs $commandArgs
+            if ($commandResult -notmatch 'Broadcast completed: result=0') {
+                Write-Status "FAIL: GOG cleanup command $($command[0]): $commandResult" 'Red'
+                $testExitCode = 1
+            }
+        }
+    } else {
+        Write-Status 'FAIL: Could not release the GOG test content' 'Red'
+        $testExitCode = 1
+    }
 }
 exit $testExitCode

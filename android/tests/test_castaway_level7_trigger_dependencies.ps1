@@ -1,4 +1,5 @@
 #!/usr/bin/env pwsh
+# TEST-SUPPORT: owner=test_guidebot_route_regressions
 param([switch]$NoBuild)
 
 $ErrorActionPreference = 'Stop'
@@ -30,6 +31,7 @@ $expected = @(
     'Shoot switch trigger 3',
     'Fly-through trigger 4',
     'Shoot switch trigger 5',
+    'Fly-through trigger 41',
     'red key',
     'Reactor',
     'Exit'

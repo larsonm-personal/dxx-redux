@@ -42,6 +42,14 @@
 .PARAMETER FullExtracts
     Run every CD extraction regression spec. By default, run_all_tests samples one spec using a git-commit seed.
 
+.PARAMETER FullRouteCorpus
+    Run all physical route regression cases. Normally run fixed canaries and one
+    rotating case per mission family; SampleSeed reproduces the selection.
+
+.PARAMETER FullSuite
+    Run every retained unattended scenario and every physical route case.
+    FullExtracts, ExtendedGraphics and ExtendedMultiplayer remain separate options.
+
 .PARAMETER ExtractSampleCount
     Number of CD extraction specs to sample when -FullExtracts is not set.
 
@@ -81,6 +89,8 @@ param(
     [int]$TestTimeoutSeconds = 120,
     [switch]$SkipDocker,
     [switch]$FullExtracts,
+    [switch]$FullRouteCorpus,
+    [switch]$FullSuite,
     [int]$ExtractSampleCount = 1,
     [switch]$ExtendedGraphics,
     [switch]$ExtendedMultiplayer,
@@ -94,12 +104,14 @@ $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $PSCommandPath
 $helpersDir = Join-Path $scriptDir "helpers"
 $repoRoot = Split-Path $scriptDir
+$routeSampleSeed = if ($SampleSeed -gt 0) { $SampleSeed } else { [int]([DateTime]::UtcNow.Date - [DateTime]'2026-01-01').TotalDays }
 
 . "$helpersDir\run_all_tests_profile_menu.ps1"
 . "$helpersDir\test_helpers.ps1"
 . "$helpersDir\test_process_output.ps1"
 . "$helpersDir\test_suite_progress.ps1"
 . "$helpersDir\runtime_targeted_sampling.ps1"
+. "$helpersDir\test_suite_coverage.ps1"
 . (Join-Path (Join-Path $scriptDir "tests") "extract_regression_spec_helpers.ps1")
 . (Join-Path (Join-Path $scriptDir "tests") "input_demo_host_build_guard.ps1")
 . (Join-Path (Join-Path $scriptDir "tests") "input_demo_graphics_canary_helpers.ps1")
@@ -109,6 +121,7 @@ if (Test-RunAllTestsProfileMenuEnabled -ExplicitParameterCount $explicitParamete
         -UserInteractive ([Environment]::UserInteractive) -InputRedirected $inputRedirected) {
     switch (Select-RunAllTestsProfile) {
         'Target45' { $Target45Minutes = $true }
+        'Exhaustive' { $FullSuite = $true }
         'LevelMetadataBenchmark' { $Filter = 'test_level_metadata_benchmark' }
         'Cancel' {
             Write-Host 'Test suite cancelled' -ForegroundColor Yellow
@@ -116,6 +129,8 @@ if (Test-RunAllTestsProfileMenuEnabled -ExplicitParameterCount $explicitParamete
         }
     }
 }
+
+if ($FullSuite) { $FullRouteCorpus = $true }
 
 # -- Report directory --
 
@@ -345,12 +360,10 @@ $testTimeouts = @{
     "test_engine_prefs_unified"           = 240
     "test_gog_installer_d1_unified"       = 420
     "test_gog_installer_redbook_unified"  = 420
+    "test_disc_content_import"           = 420
     "test_gradle_unit_tests"              = 600
     "test_guidebot_simulation_headed_headless_parity" = 1800
     "test_guided_shot_annotations"        = 600
-    "test_guidebot_precision_recovery"    = 600
-    "test_lostlvls_directional_unlock"    = 600
-    "test_plutonia_level5_reactor_grate"  = 600
     "test_primary_target_grates"         = 600
     "test_random_level_preview"          = 600
     "test_robot_preview"                 = 600
@@ -419,11 +432,9 @@ $extractTests = @(
     "test_gog_installer_redbook_unified"
 )  # single emulator + game data, run before the dual-emulator tier
 $noInfraTests = @(
+    "test_guidebot_route_regressions",
     "test_acoustid_config_packaging",
     "test_guided_shot_annotations",
-    "test_guidebot_precision_recovery",
-    "test_lostlvls_directional_unlock",
-    "test_plutonia_level5_reactor_grate",
     "test_primary_target_grates",
     "test_route_regeneration_audit",
     "test_vertigo_metadata_checkpoints",
@@ -563,7 +574,11 @@ foreach ($t in $ps1Files) {
             ""
         }
     }
-    if ($name -eq "test_all_extracts") {
+    if ($name -eq "test_guidebot_route_regressions") {
+        $entry.TimeoutSeconds = if ($FullRouteCorpus) { 7200 } else { 1800 }
+        $entry.Arguments = @('-Seed', $routeSampleSeed.ToString())
+        if ($FullRouteCorpus) { $entry.Arguments += '-AllCases' }
+    } elseif ($name -eq "test_all_extracts") {
         if ($FullExtracts) {
             $entry.Arguments = @("-All")
         } else {
@@ -707,7 +722,18 @@ foreach ($definition in $inputDemoRegressionMatrix) {
 
 # Apply filter
 if ($Filter) {
-    $allTests = @($allTests | Where-Object { Test-MatchesRequestedFilter -Test $_ -RequestedFilter $Filter })
+    . (Join-Path $testsDir 'guidebot_route_regression_cases.ps1')
+    $matchingRouteCases = @(Get-GuidebotRouteRegressionCases | Where-Object {
+            [IO.Path]::GetFileNameWithoutExtension($_.File) -like $Filter
+        })
+    $allTests = @($allTests | Where-Object {
+            if (Test-MatchesRequestedFilter -Test $_ -RequestedFilter $Filter) { return $true }
+            if ($_.Name -eq 'test_guidebot_route_regressions' -and $matchingRouteCases.Count) {
+                $_.Arguments += @('-CaseFilter', $Filter)
+                return $true
+            }
+            return $false
+        })
 }
 
 $extendedGraphicsTests = @("test_merged_wall_two_pass_probe")
@@ -761,6 +787,18 @@ $runnableTests = @($runnableTests | Where-Object {
         }
         $keep
     })
+
+$suiteCoverageProfile = 'all requested scenarios'
+if (-not $Filter -and -not $Target45Minutes -and -not $IncludeManual) {
+    $coverageSelection = @(Select-TestSuiteCoverage -Tests $runnableTests -Seed $routeSampleSeed -AllScenarios:$FullSuite)
+    foreach ($test in $runnableTests) {
+        if ($test.Name -notin $coverageSelection.Name) {
+            $profileSkipped += @{ Name = $test.Name; Reason = "scenario rotation seed $routeSampleSeed; use -Filter or -FullSuite"; Type = $test.Type }
+        }
+    }
+    $runnableTests = $coverageSelection
+    if (-not $FullSuite) { $suiteCoverageProfile = "fixed integration owners + rotating scenario families; seed $routeSampleSeed" }
+}
 
 function Sort-TestsForExecution {
     param([object[]]$Tests)
@@ -1427,6 +1465,7 @@ Write-Host "  DXX-Redux Unattended Test Suite" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Tests found: $($allTests.Count) selected, $($runnableTests.Count) runnable, $($manualSkipped.Count) manual-skipped, $($profileSkipped.Count) profile-skipped, $($supportScripts.Count) support-owned" -ForegroundColor White
+Write-Host "  Suite profile:         $suiteCoverageProfile"
 Write-Host "  Tier 0 (no infra):       $($tierNone.Count)"
 Write-Host "  Tier 1 (server only):    $($tierServer.Count)"
 Write-Host "  Tier 2 (single emu):     $($tierSingleEmu.Count)"
@@ -1445,6 +1484,10 @@ if ($historicalReportPath) {
     Write-Host "  Historical timings:      unavailable; using equal test weights"
 }
 $demoGraphicsProfile = if ($ExtendedGraphics) { "full graphics" } else { "graphics canaries" }
+$routeProfile = if ($FullRouteCorpus) { 'all physical route cases' } else { "fixed canaries + rotating mission families (seed $routeSampleSeed)" }
+if (@($executionTests | Where-Object Name -eq 'test_guidebot_route_regressions').Count) {
+    Write-Host "  Route profile:         $routeProfile"
+}
 if ($selectedRegressionDemoSections.Count -gt 0) {
     Write-Host "  Demo regressions:      d1=$($regressionDemoCounts['d1']) d2=$($regressionDemoCounts['d2']) demo(s), sections: $($selectedRegressionDemoSections -join ', '), replay runs: $selectedRegressionDemoReplayCount"
     Write-Host "  Demo profile:          full headless corpus + $demoGraphicsProfile"
@@ -2001,6 +2044,7 @@ $md += "- Skipped: $totalSkipped"
 $md += "- Not run: $($notRun.Count)"
 $md += "- Total time: $totalElapsed"
 $md += "- Per-test timeout: ${TestTimeoutSeconds}s"
+$md += "- Suite profile: $suiteCoverageProfile"
 if ($runtimeSample) {
     $md += "- 45-minute hash ring: $($executionTests.Count) tests, estimated $(Format-RunnerDurationEstimate -Seconds $runtimeSample.EstimatedSeconds)"
     $md += "  - Start target: $($runtimeSample.StartTarget)"
@@ -2009,6 +2053,9 @@ if ($runtimeSample) {
 $md += "- Auto-provisioned: emu1=$($script:startedEmu1) emu2=$($script:startedEmu2) server=$(($null -ne $script:autoServerProc)) docker=$($script:startedDocker)"
 if ($selectedRegressionDemoSections.Count -gt 0) {
     $md += "- Demo profile: full headless corpus + $demoGraphicsProfile; $selectedRegressionDemoReplayCount replay runs; graphics results compared with their primary headless result"
+}
+if (@($executionTests | Where-Object Name -eq 'test_guidebot_route_regressions').Count) {
+    $md += "- Route profile: $routeProfile; selected cases and individual results are in the route owner log"
 }
 $md += ""
 $md += "## Results"

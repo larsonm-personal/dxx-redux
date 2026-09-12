@@ -835,7 +835,11 @@ class LauncherScriptExecutor(
                     receiverContext: Context?,
                     receiverIntent: Intent?,
                 ) {
-                    completed.complete(Unit)
+                    if (resultCode == SETUP_COMMAND_RESULT_FAILED) {
+                        completed.completeExceptionally(IllegalStateException(resultData ?: "Setup command failed"))
+                    } else {
+                        completed.complete(Unit)
+                    }
                 }
             }
         context.sendOrderedBroadcast(intent, null, resultReceiver, null, 0, null, null)

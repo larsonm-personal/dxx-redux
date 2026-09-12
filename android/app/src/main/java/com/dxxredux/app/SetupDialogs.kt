@@ -335,7 +335,8 @@ internal fun publishStagedArchiveFiles(
                     }
                     backups += backup to destination
                 }
-                LauncherFileCopy.copyFileToFile(source, destination)
+                // Staging shares the set volume; avoid allocating a second disc image
+                if (!source.renameTo(destination)) LauncherFileCopy.copyFileToFile(source, destination)
                 published += destination
             }
     } catch (error: Exception) {

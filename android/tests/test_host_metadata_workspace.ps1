@@ -34,6 +34,25 @@ foreach ($path in @($root, (Join-Path $root 'raw'), (Join-Path $root 'metadata')
     if (-not $rejected) { throw "Unsafe cleanup accepted: $path" }
 }
 
+# Successful route cases keep evidence but release their copied engines and assets
+$engine = Join-Path $root 'engine'
+New-Item -ItemType Directory -Path $engine -Force | Out-Null
+foreach ($name in @('worker.exe', 'runtime.dll', 'files.json', 'settings.json')) {
+    [IO.File]::WriteAllText((Join-Path $engine $name), 'fixture')
+}
+Remove-GuidebotTestPayloads -RepoRoot (Split-Path $androidRoot) -OutputText "[12:00:00] Output: $root"
+foreach ($name in @('worker.exe', 'runtime.dll')) {
+    if (Test-Path -LiteralPath (Join-Path $engine $name)) { throw "Route executable copy survived: $name" }
+}
+foreach ($path in @('engine/files.json', 'engine/settings.json', 'logs/mission.log', 'summary.json')) {
+    if (-not (Test-Path -LiteralPath (Join-Path $root $path))) { throw "Route evidence lost: $path" }
+}
+$rejected = $false
+try {
+    Remove-GuidebotTestPayloads -RepoRoot (Split-Path $androidRoot) -OutputText "[12:00:00] Output: $PSScriptRoot"
+} catch { $rejected = $true }
+if (-not $rejected) { throw 'Route cleanup accepted a source directory' }
+
 # Inject the failure reported by the user without filling the real disk
 function Write-Utf8NoBomTextAtomically {
     param($Path, $Text)

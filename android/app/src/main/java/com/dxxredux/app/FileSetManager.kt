@@ -151,8 +151,13 @@ class FileSetManager(
                     if (config.optString("active") == name) config.put("active", DEFAULT_SET)
                     saveConfig(config)
                     val dir = File(setsDir, name)
-                    check(!dir.exists() || dir.deleteRecursively()) {
-                        "Could not delete file set '$name'"
+                    if (dir.exists() && !dir.deleteRecursively()) {
+                        Log.e(
+                            TAG,
+                            "File-set deletion left paths: " +
+                                dir.walkTopDown().take(20).joinToString { it.relativeTo(dir).path },
+                        )
+                        error("Could not delete file set '$name'")
                     }
                     NativeTextureLookupCache.clear()
                     removed to retained

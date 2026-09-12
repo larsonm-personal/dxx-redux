@@ -1,8 +1,9 @@
+# TEST-SUPPORT: owner=test_guidebot_route_regressions
 param([switch]$NoBuild)
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$outputRoot = Join-Path $repoRoot 'android\temp\saturn_level15_simulation_test'
+$outputRoot = Join-Path $repoRoot ('android/temp/saturn_level15_simulation_test/run_' + (Get-Date -Format 'yyyyMMdd_HHmmss_fff'))
 $missionFile = 'CD - Descent - Destination Saturn (USA).json'
 & (Join-Path $repoRoot 'android\helpers\regenerate_all_guidebot_simulations.ps1') `
     -MissionJson $missionFile -Level 15 -Repeat 2 -NoBuild:$NoBuild -OutputRoot $outputRoot

@@ -703,10 +703,20 @@ class SetupActivity : ComponentActivity() {
     private val commandReceiver =
         object : BroadcastReceiver() {
             private fun runIo(block: () -> Unit) {
+                val ordered = isOrderedBroadcast
                 val pendingResult = goAsync()
                 this@SetupActivity.lifecycleScope.launch(Dispatchers.IO) {
                     try {
                         block()
+                    } catch (error: kotlinx.coroutines.CancellationException) {
+                        throw error
+                    } catch (error: Exception) {
+                        Log.e("DXX-Setup", "Setup command failed", error)
+                        if (ordered) {
+                            pendingResult.resultCode = SETUP_COMMAND_RESULT_FAILED
+                            pendingResult.resultData = error.message ?: error.javaClass.simpleName
+                        }
+                        requestSetupRefresh()
                     } finally {
                         pendingResult.finish()
                     }
@@ -1042,6 +1052,7 @@ class SetupActivity : ComponentActivity() {
                             val fsm = FileSetManager(filesDir)
                             val setDir = fsm.getSetDir(fsm.getActive())
                             val count = importGogContentFromPath(setDir, path, audio)
+                            check(count >= 0) { "GOG import failed: ${File(path).name}" }
                             val srcManager = AudioSourceManager(filesDir, setDir)
                             if (audio && count > 0 &&
                                 registerGogAudioSource(

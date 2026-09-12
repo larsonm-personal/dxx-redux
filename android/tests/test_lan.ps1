@@ -168,17 +168,6 @@ function Get-IntroPdataSequence {
     return [int]$prop.Value[$PlayerSlot]
 }
 
-function Get-DeviceWlanIp {
-    param([string]$Serial)
-
-    $ipRaw = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
-        "shell", "ip", "addr", "show", "wlan0"
-    ) -Seconds 5
-    return ($ipRaw | Select-String -Pattern 'inet (\d+\.\d+\.\d+\.\d+)' | ForEach-Object {
-            $_.Matches[0].Groups[1].Value
-        } | Select-Object -First 1)
-}
-
 function Start-DeviceGameAutomation {
     param([string]$Serial, [string]$ScriptName)
 
@@ -1124,12 +1113,7 @@ function Invoke-GuidebotSlotRemapRestoreScenario {
         return $false
     }
 
-    $newHostIpRaw = Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @(
-        "shell", "ip", "addr", "show", "wlan0"
-    ) -Seconds 5
-    $newHostIp = ($newHostIpRaw | Select-String -Pattern 'inet (\d+\.\d+\.\d+\.\d+)' | ForEach-Object {
-            $_.Matches[0].Groups[1].Value
-        })
+    $newHostIp = Get-DeviceWlanIp -Serial $EMU2
     if (-not $newHostIp) {
         Write-Status "FAIL: could not get the swapped host wlan0 IP" "Red"
         return $false
@@ -1359,10 +1343,7 @@ try {
     } else {
         Write-Status "--- Phase 2: Direct LAN (emulator 36.5+ shared Wi-Fi) ---" "White"
         # Get host emulator's wlan0 IP for direct connection
-        $hostIpRaw = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @(
-            "shell", "ip", "addr", "show", "wlan0"
-        ) -Seconds 5
-        $script:DirectHostIp = ($hostIpRaw | Select-String -Pattern 'inet (\d+\.\d+\.\d+\.\d+)' | ForEach-Object { $_.Matches[0].Groups[1].Value })
+        $script:DirectHostIp = Get-DeviceWlanIp -Serial $EMU1
         if (-not $script:DirectHostIp) {
             Write-Status "FAIL: Could not get wlan0 IP from $EMU1 -- is emulator 36.5+?" "Red"
             exit 1

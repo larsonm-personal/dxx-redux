@@ -1354,16 +1354,19 @@ function Wait-ForReplayResult {
 
     $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
     while ([DateTime]::UtcNow -lt $deadline) {
+        # Observe exit before checking the file: the final write can race this poll
+        $exited = $Process.HasExited
         if (Test-Path -LiteralPath $ActualResultPath) {
-            return @{ ResultReady = $true; Exited = $Process.HasExited; ExitCode = if ($Process.HasExited) { $Process.ExitCode } else { $null } }
+            return @{ ResultReady = $true; Exited = $exited; ExitCode = if ($exited) { $Process.ExitCode } else { $null } }
         }
-        if ($Process.HasExited) {
+        if ($exited) {
             return @{ ResultReady = $false; Exited = $true; ExitCode = $Process.ExitCode }
         }
         Start-Sleep -Milliseconds 100
     }
 
-    return @{ ResultReady = $false; Exited = $Process.HasExited; ExitCode = if ($Process.HasExited) { $Process.ExitCode } else { $null } }
+    $exited = $Process.HasExited
+    return @{ ResultReady = (Test-Path -LiteralPath $ActualResultPath); Exited = $exited; ExitCode = if ($exited) { $Process.ExitCode } else { $null } }
 }
 
 if (-not (Test-Path -LiteralPath $outRoot)) {

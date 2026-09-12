@@ -43,7 +43,8 @@ function Test-CompatibilityHelpers {
 }
 
 function Test-WindowsPowerShellParser {
-    $relativeFiles = @(& git -C $repoRoot ls-files --cached --others --exclude-standard -- '*.ps1' '*.psm1' '*.psd1')
+    $relativeFiles = @(& git -C $repoRoot ls-files --cached --others --exclude-standard -- '*.ps1' '*.psm1' '*.psd1' |
+            Where-Object { Test-Path -LiteralPath (Join-Path $repoRoot $_) -PathType Leaf })
     $failures = New-Object System.Collections.Generic.List[string]
     foreach ($relativePath in $relativeFiles) {
         $tokens = $null

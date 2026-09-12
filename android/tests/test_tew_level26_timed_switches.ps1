@@ -1,4 +1,5 @@
 #!/usr/bin/env pwsh
+# TEST-SUPPORT: owner=test_guidebot_route_regressions
 param([switch]$NoBuild)
 
 $ErrorActionPreference = 'Stop'
@@ -29,7 +30,7 @@ foreach ($file in $results) {
         -not $log.Contains('verified switch shot actor_seg=143 target_seg=155 wall=36')) {
         throw 'Both timed switches must be shot from their trigger corridors'
     }
-    foreach ($indices in @(@(3,4), @(5,6))) {
+    foreach ($indices in @(@(3, 4), @(5, 6))) {
         if ($result.objectives[$indices[1]].frame - $result.objectives[$indices[0]].frame -gt 60) {
             throw 'The timed switch shot must occur promptly after opening its door'
         }

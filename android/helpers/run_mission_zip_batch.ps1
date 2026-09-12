@@ -167,8 +167,8 @@ function Format-MissionZipBatchDuration {
     param([Parameter(Mandatory = $true)][TimeSpan]$Elapsed)
 
     $totalSeconds = [int][Math]::Floor($Elapsed.TotalSeconds)
-    $hours = [int]($totalSeconds / 3600)
-    $minutes = [int](($totalSeconds % 3600) / 60)
+    $hours = [int][Math]::Floor($totalSeconds / 3600)
+    $minutes = [int][Math]::Floor(($totalSeconds % 3600) / 60)
     $seconds = $totalSeconds % 60
     if ($hours -gt 0) {
         return ("{0}:{1:d2}:{2:d2}" -f $hours, $minutes, $seconds)

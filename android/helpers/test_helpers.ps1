@@ -445,19 +445,22 @@ function Write-DeviceFailureDiagnostics {
 
     Write-Status "app memory" "Yellow"
     Write-BoundedLines -Text (Adb-Timeout -AdbArgs @(
-            "shell", "sh", "-c",
+            "shell",
             "dumpsys meminfo $($script:PACKAGE); dumpsys meminfo $($script:PACKAGE):game"
         ) -Seconds 10) -Last 80
 
     Write-Status "recent crash logcat" "Yellow"
     Write-BoundedLines -Text (Adb-Timeout -AdbArgs @(
-            "logcat", "-d", "-t", "400", "-s",
-            "AndroidRuntime:E", "libc:E", "DEBUG:*", "DXX:*"
+            "logcat", "-b", "crash", "-d", "-t", "100"
         ) -Seconds 10) -Last 80
+
+    Write-Status "recent app exit reasons" "Yellow"
+    $exitInfo = Adb-Timeout -AdbArgs @('shell', 'dumpsys', 'activity', 'exit-info', $script:PACKAGE) -Seconds 5
+    Write-BoundedLines -Text (($exitInfo -split "`r?`n" | Select-Object -First 40) -join "`n") -Last 40
 
     Write-Status "recent tombstones" "Yellow"
     Write-BoundedLines -Text (Adb-Timeout -AdbArgs @(
-            "shell", "sh", "-c", "ls -lt /data/tombstones 2>/dev/null | head -5"
+            "shell", "ls -lt /data/tombstones 2>/dev/null | head -5"
         ) -Seconds 5) -Last 20
 
     Write-Status "automation log tail" "Yellow"
@@ -472,6 +475,22 @@ function Adb-Dev {
     # Run adb targeting a specific device serial.
     param([string]$Serial, [string[]]$AdbArgs, [int]$Seconds = 30)
     return (Adb-Dev-Timeout -Serial $Serial -AdbArgs $AdbArgs -Seconds $Seconds -IncludeStandardError)
+}
+
+function Get-DeviceWlanIp {
+    param([Parameter(Mandatory)][string]$Serial)
+
+    $ipRaw = Adb-Dev-Timeout -Serial $Serial -AdbArgs @('shell', 'ip', '-4', 'addr', 'show', 'wlan0') -Seconds 5
+    $address = [regex]::Match(($ipRaw -join "`n"), '\binet (\d+\.\d+\.\d+\.\d+)')
+    if ($address.Success) { return $address.Groups[1].Value }
+
+    # Android can deny shell netlink access while Wi-Fi is connected
+    $wifiStatus = Adb-Dev-Timeout -Serial $Serial -AdbArgs @('shell', 'cmd', 'wifi', 'status') -Seconds 5
+    $address = [regex]::Match(($wifiStatus -join "`n"), '\bIP: /(\d+\.\d+\.\d+\.\d+)\b')
+    if ($address.Success -and $address.Groups[1].Value -ne '0.0.0.0') {
+        return $address.Groups[1].Value
+    }
+    return $null
 }
 
 function Adb-Dev-Timeout {

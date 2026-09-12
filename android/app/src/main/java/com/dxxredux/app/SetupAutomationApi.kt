@@ -17,6 +17,9 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 
+// Ordered setup broadcasts carry command failures back to launcher automation
+internal const val SETUP_COMMAND_RESULT_FAILED = 1
+
 /**
  * Walk the Compose accessibility node provider to discover all interactive
  * elements (buttons, chips, checkboxes) with their text, enabled state, and

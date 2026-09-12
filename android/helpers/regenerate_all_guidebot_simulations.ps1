@@ -422,6 +422,7 @@ function New-GuidebotHeadedScript {
     $dependencies.Add([ordered]@{ file = 'descent2.hog'; sha256 = 'f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703' })
     $dependencies.Add([ordered]@{ file = 'descent2.ham'; sha256 = '5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d' })
     $dependencies.Add([ordered]@{ file = 'groupa.pig'; sha256 = 'facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b' })
+    $dependencies.Add([ordered]@{ file = 'descent2.s22'; sha256 = '4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728' })
     if ($WorkItem.D1InD2) {
         $dependencies.Add([ordered]@{ file = 'descent.hog'; sha256 = '83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052' })
         $dependencies.Add([ordered]@{ file = 'descent.pig'; sha256 = '093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe' })
