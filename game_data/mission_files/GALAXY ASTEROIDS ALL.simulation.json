@@ -7,9 +7,9 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
+    "ok": 5,
     "failed": 1,
-    "timeout": 2
+    "timeout": 1
   },
   "levels": [
     {
@@ -162,7 +162,7 @@
       "level_num": 4,
       "level_file": "VESTA04.RL2",
       "route_input_sha256": "319513900C4CA30C1BFC586269BAD8E923972A4C1E467696D39941C2EF1E7F5C",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -191,14 +191,22 @@
         {
           "n": "reactor",
           "s": 170
+        },
+        {
+          "n": "exit",
+          "s": 196
         }
       ],
-      "total_frames": 13897,
+      "total_frames": 11737,
       "rng_end": {
-        "state": 281105877,
-        "calls": 7212
+        "state": 2955174371,
+        "calls": 7846
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 26.0,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 5,

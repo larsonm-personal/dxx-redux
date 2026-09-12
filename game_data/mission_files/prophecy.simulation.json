@@ -38,7 +38,7 @@
         },
         {
           "n": "gold key",
-          "s": 59
+          "s": 60
         },
         {
           "n": "hidden door",
@@ -46,11 +46,11 @@
         },
         {
           "n": "switch 2",
-          "s": 80
+          "s": 81
         },
         {
           "n": "red key",
-          "s": 84
+          "s": 85
         },
         {
           "n": "reactor",
@@ -61,14 +61,14 @@
           "s": 105
         }
       ],
-      "total_frames": 6285,
+      "total_frames": 6301,
       "rng_end": {
         "state": 1425954287,
         "calls": 3322
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 2.016678,
+        "simulated_seconds": 2.016663,
         "difficulty": 2
       }
     },

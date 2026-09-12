@@ -7,8 +7,7 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 4,
-    "failed": 1,
+    "ok": 5,
     "timeout": 1,
     "unsupported": 2
   },
@@ -248,19 +247,60 @@
     {
       "level_num": 6,
       "level_file": "kcxf2_n6.rl2",
-      "route_input_sha256": "BF184ABFFABFA73DE8F5FFE8F3BC1E525A1381244808B40A0877618D91394521",
-      "status": "failed",
+      "route_input_sha256": "341C3047FF21EA45139BBAE41E0609EA6F00833AEDF88D03BC02864049F844DE",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 0,
+      "objectives": [
+        {
+          "n": "fly-through 15",
+          "s": 9
+        },
+        {
+          "n": "switch 17",
+          "s": 14
+        },
+        {
+          "n": "fly-through 16",
+          "s": 14
+        },
+        {
+          "n": "switch 19",
+          "s": 28
+        },
+        {
+          "n": "destroy robot carrying blue key",
+          "s": 32
+        },
+        {
+          "n": "boss",
+          "s": 44
+        },
+        {
+          "n": "blastable wall",
+          "s": 62
+        },
+        {
+          "n": "red key",
+          "s": 63
+        },
+        {
+          "n": "exit",
+          "s": 81
+        }
+      ],
+      "total_frames": 4846,
       "rng_end": {
-        "state": 4008331270,
-        "calls": 33
+        "state": 3527236413,
+        "calls": 16388
       },
-      "problem": "live Guide-Bot route has no actionable goal"
+      "reactor_escape": {
+        "countdown_seconds": 220.0,
+        "simulated_seconds": 30.483337,
+        "difficulty": 2
+      }
     },
     {
       "level_num": -1,

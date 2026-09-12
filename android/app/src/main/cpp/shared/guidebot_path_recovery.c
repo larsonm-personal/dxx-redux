@@ -287,15 +287,20 @@ void guidebot_route_recover_approach(object *objp, vms_vector *goal_point)
 }
 /* Approach recovery needs accurate arrival instead of blended momentum
  * Bound travel to half the remaining distance, including the 2x sim speed cap */
-void guidebot_route_steer_approach(object *objp)
+int guidebot_route_steer_approach(const object *objp, const vms_vector *goal_point,
+                                  vms_vector *velocity)
 {
 	vms_vector direction;
 	fix distance, speed;
 	if (!precise_recovery || FrameTime <= 0 ||
+	    goal_point->x != precise_recovery_point.x ||
+	    goal_point->y != precise_recovery_point.y ||
+	    goal_point->z != precise_recovery_point.z ||
 	    !guidebot_route_waypoint_leg_clear(objp, &objp->pos, objp->segnum, &precise_recovery_point))
-		return;
+		return 0;
 	distance = vm_vec_normalized_dir(&direction, &precise_recovery_point, &objp->pos);
-	speed = min(vm_vec_mag(&objp->mtype.phys_info.velocity), fixdiv(distance, FrameTime * 2));
-	vm_vec_copy_scale(&objp->mtype.phys_info.velocity, &direction, speed);
+	speed = min(vm_vec_mag(velocity), fixdiv(distance, FrameTime * 2));
+	vm_vec_copy_scale(velocity, &direction, speed);
+	return 1;
 }
 #endif

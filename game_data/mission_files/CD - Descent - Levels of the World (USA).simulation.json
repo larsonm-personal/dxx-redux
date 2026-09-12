@@ -2521,45 +2521,45 @@
           },
           {
             "n": "pass-through 8",
-            "s": 17
+            "s": 66
           },
           {
             "n": "blue key",
-            "s": 18
+            "s": 67
           },
           {
             "n": "gold key",
-            "s": 39
+            "s": 87
           },
           {
             "n": "fly-through 2",
-            "s": 51
+            "s": 100
           },
           {
             "n": "fly-through 3",
-            "s": 82
+            "s": 130
           },
           {
             "n": "red key",
-            "s": 133
+            "s": 181
           },
           {
             "n": "reactor",
-            "s": 179
+            "s": 187
           },
           {
             "n": "exit",
-            "s": 193
+            "s": 214
           }
         ],
-        "total_frames": 11591,
+        "total_frames": 12867,
         "rng_end": {
-          "state": 2647048836,
-          "calls": 7507
+          "state": 3582579863,
+          "calls": 6482
         },
         "reactor_escape": {
           "countdown_seconds": 45.0,
-          "simulated_seconds": 14.399994,
+          "simulated_seconds": 27.516678,
           "difficulty": 2
         }
       }
@@ -4235,18 +4235,18 @@
           },
           {
             "n": "fly-through 22",
-            "s": 56
+            "s": 55
           },
           {
             "n": "reactor",
-            "s": 56
+            "s": 55
           },
           {
             "n": "exit",
-            "s": 58
+            "s": 57
           }
         ],
-        "total_frames": 3489,
+        "total_frames": 3436,
         "rng_end": {
           "state": 259061104,
           "calls": 215
@@ -4878,23 +4878,23 @@
           },
           {
             "n": "fly-through 7",
-            "s": 73
+            "s": 71
           },
           {
             "n": "gold key",
-            "s": 86
+            "s": 85
           },
           {
             "n": "red key",
-            "s": 125
+            "s": 122
           },
           {
             "n": "fly-through 9",
-            "s": 164
+            "s": 163
           },
           {
             "n": "fly-through 8",
-            "s": 171
+            "s": 170
           },
           {
             "n": "reactor",
@@ -4902,17 +4902,17 @@
           },
           {
             "n": "exit",
-            "s": 185
+            "s": 184
           }
         ],
-        "total_frames": 11078,
+        "total_frames": 11041,
         "rng_end": {
-          "state": 3220821195,
-          "calls": 2622
+          "state": 2237537455,
+          "calls": 2618
         },
         "reactor_escape": {
           "countdown_seconds": 45.0,
-          "simulated_seconds": 9.300003,
+          "simulated_seconds": 9.483337,
           "difficulty": 2
         }
       }
@@ -5622,45 +5622,45 @@
           },
           {
             "n": "pass-through 8",
-            "s": 17
+            "s": 66
           },
           {
             "n": "blue key",
-            "s": 18
+            "s": 67
           },
           {
             "n": "gold key",
-            "s": 39
+            "s": 87
           },
           {
             "n": "fly-through 2",
-            "s": 51
+            "s": 100
           },
           {
             "n": "fly-through 3",
-            "s": 82
+            "s": 130
           },
           {
             "n": "red key",
-            "s": 133
+            "s": 181
           },
           {
             "n": "reactor",
-            "s": 179
+            "s": 187
           },
           {
             "n": "exit",
-            "s": 195
+            "s": 215
           }
         ],
-        "total_frames": 11711,
+        "total_frames": 12908,
         "rng_end": {
-          "state": 3002940013,
-          "calls": 7508
+          "state": 2923411076,
+          "calls": 6483
         },
         "reactor_escape": {
           "countdown_seconds": 45.0,
-          "simulated_seconds": 16.399994,
+          "simulated_seconds": 28.200012,
           "difficulty": 2
         }
       }

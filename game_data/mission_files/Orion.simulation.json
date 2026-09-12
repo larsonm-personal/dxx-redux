@@ -8,9 +8,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 6,
-    "failed": 1,
-    "timeout": 1
+    "ok": 7,
+    "failed": 1
   },
   "levels": [
     {
@@ -123,18 +122,43 @@
       "level_num": 4,
       "level_file": "level04.rdl",
       "route_input_sha256": "44CBF772C8FDE2A61C88C902E20F4DD48C9C863CD9BA3E8909C3A283A66C1152",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
       },
-      "objectives": [],
-      "total_frames": 3705,
+      "objectives": [
+        {
+          "n": "blue key",
+          "s": 17
+        },
+        {
+          "n": "gold key",
+          "s": 39
+        },
+        {
+          "n": "red key",
+          "s": 58
+        },
+        {
+          "n": "reactor",
+          "s": 89
+        },
+        {
+          "n": "exit",
+          "s": 98
+        }
+      ],
+      "total_frames": 5899,
       "rng_end": {
-        "state": 2111915288,
-        "calls": 15
+        "state": 2673245591,
+        "calls": 82
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 8.866669,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 5,

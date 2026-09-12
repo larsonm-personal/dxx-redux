@@ -136,37 +136,37 @@
       "objectives": [
         {
           "n": "fly-through 8",
-          "s": 62
+          "s": 24
         },
         {
           "n": "blue key",
-          "s": 63
+          "s": 25
         },
         {
           "n": "gold key",
-          "s": 88
+          "s": 51
         },
         {
           "n": "red key",
-          "s": 109
+          "s": 72
         },
         {
           "n": "boss",
-          "s": 136
+          "s": 101
         },
         {
           "n": "exit",
-          "s": 146
+          "s": 112
         }
       ],
-      "total_frames": 8741,
+      "total_frames": 6703,
       "rng_end": {
         "state": 2914119032,
         "calls": 2607
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 10.049988,
+        "simulated_seconds": 10.649994,
         "difficulty": 2
       }
     },
@@ -264,21 +264,21 @@
         },
         {
           "n": "fly-through 14",
-          "s": 61
+          "s": 60
         },
         {
           "n": "reactor",
-          "s": 61
+          "s": 60
         },
         {
           "n": "exit",
-          "s": 63
+          "s": 62
         }
       ],
-      "total_frames": 3782,
+      "total_frames": 3710,
       "rng_end": {
-        "state": 3989394595,
-        "calls": 5094
+        "state": 2466428837,
+        "calls": 5084
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,

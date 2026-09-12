@@ -9,14 +9,15 @@
   "level_counts": {
     "ok": 2,
     "failed": 1,
-    "timeout": 2
+    "timeout": 1,
+    "unsupported": 1
   },
   "levels": [
     {
       "level_num": 1,
       "level_file": "drmtower.rl2",
       "route_input_sha256": "720EAEEFB1D0787E1C4B568BC6F8F04C3EF6F595622767D97942D7ED7247C948",
-      "status": "timeout",
+      "status": "unsupported",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -29,14 +30,26 @@
         {
           "n": "blue key",
           "s": 27
+        },
+        {
+          "n": "gold key",
+          "s": 52
+        },
+        {
+          "n": "red key",
+          "s": 75
+        },
+        {
+          "n": "reactor",
+          "s": 85
         }
       ],
-      "total_frames": 6158,
+      "total_frames": 5127,
       "rng_end": {
-        "state": 1912213429,
-        "calls": 10060
+        "state": 1254939555,
+        "calls": 11494
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "problem": "guided missile objective requires equipment and flight verification"
     },
     {
       "level_num": 2,
@@ -54,17 +67,17 @@
         },
         {
           "n": "blue key",
-          "s": 18
+          "s": 34
         },
         {
           "n": "fly-through 6",
-          "s": 19
+          "s": 35
         }
       ],
-      "total_frames": 5729,
+      "total_frames": 6521,
       "rng_end": {
-        "state": 3952391097,
-        "calls": 9864
+        "state": 3426333753,
+        "calls": 10760
       },
       "problem": "Guide-Bot made no route progress for 60 simulation seconds"
     },

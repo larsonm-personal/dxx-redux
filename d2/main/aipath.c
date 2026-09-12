@@ -1730,10 +1730,6 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 		guidebot_route_recover_approach(objp, &goal_point);
 #endif
 	ai_path_set_orient_and_vel(objp, &goal_point, player_visibility, vec_to_player);
-#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
-	if (robptr->companion && Escort_route_goal.active)
-		guidebot_route_steer_approach(objp);
-#endif
 	//--Int3_if(((aip->cur_path_index >= 0) && (aip->cur_path_index < aip->path_length)));
 
 }
@@ -1931,12 +1927,17 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 
 	speed_scale = fixmul(max_speed, dot);
 	vm_vec_scale(&norm_cur_vel, speed_scale);
+	int precise_approach = 0;
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+	/* Bound the new precision command before test-speed scaling. Capping an
+	 * already scaled command changes portal recovery; smoothing defeats arrival */
+	if (robptr->companion && Escort_route_goal.active)
+		precise_approach = guidebot_route_steer_approach(objp, goal_point, &norm_cur_vel);
 	route_confirmation_scale_path_velocity(objp, &norm_cur_vel);
 #endif
 	/* Match Android guidebot motion during input-demo record/replay so
 	 * checkpoint-backed replays stay deterministic on desktop. */
-	if (robptr->companion && input_demo_should_match_android_companion_velocity()) {
+	if (robptr->companion && !precise_approach && input_demo_should_match_android_companion_velocity()) {
 		objp->mtype.phys_info.velocity.x = (objp->mtype.phys_info.velocity.x + norm_cur_vel.x) / 2;
 		objp->mtype.phys_info.velocity.y = (objp->mtype.phys_info.velocity.y + norm_cur_vel.y) / 2;
 		objp->mtype.phys_info.velocity.z = (objp->mtype.phys_info.velocity.z + norm_cur_vel.z) / 2;

@@ -759,97 +759,97 @@
           },
           {
             "n": "blastable wall",
-            "s": 5
+            "s": 27
           },
           {
             "n": "blastable wall",
-            "s": 6
+            "s": 27
           },
           {
             "n": "blastable wall",
-            "s": 7
+            "s": 29
           },
           {
             "n": "blastable wall",
-            "s": 7
+            "s": 29
           },
           {
             "n": "blastable wall",
-            "s": 9
+            "s": 34
           },
           {
             "n": "blastable wall",
-            "s": 9
+            "s": 34
           },
           {
             "n": "blastable wall",
-            "s": 10
+            "s": 35
           },
           {
             "n": "pass-through 29",
-            "s": 12
+            "s": 37
           },
           {
             "n": "pass-through 16",
-            "s": 21
+            "s": 46
           },
           {
             "n": "hidden door",
-            "s": 39
+            "s": 63
           },
           {
             "n": "blue key",
-            "s": 42
-          },
-          {
-            "n": "gold key",
-            "s": 62
-          },
-          {
-            "n": "blastable wall",
-            "s": 64
-          },
-          {
-            "n": "blastable wall",
             "s": 66
           },
           {
-            "n": "blastable wall",
-            "s": 67
+            "n": "gold key",
+            "s": 86
           },
           {
             "n": "blastable wall",
-            "s": 68
+            "s": 89
           },
           {
             "n": "blastable wall",
-            "s": 85
+            "s": 91
           },
           {
-            "n": "fly-through 5",
+            "n": "blastable wall",
             "s": 92
           },
           {
-            "n": "red key",
+            "n": "blastable wall",
             "s": 93
           },
           {
+            "n": "blastable wall",
+            "s": 110
+          },
+          {
+            "n": "fly-through 5",
+            "s": 117
+          },
+          {
+            "n": "red key",
+            "s": 119
+          },
+          {
             "n": "reactor",
-            "s": 116
+            "s": 140
           },
           {
             "n": "exit",
-            "s": 130
+            "s": 154
           }
         ],
-        "total_frames": 7828,
+        "total_frames": 9230,
         "rng_end": {
-          "state": 1350427762,
-          "calls": 7109
+          "state": 2265931072,
+          "calls": 7111
         },
         "reactor_escape": {
           "countdown_seconds": 45.0,
-          "simulated_seconds": 14.633331,
+          "simulated_seconds": 14.166672,
           "difficulty": 2
         }
       }

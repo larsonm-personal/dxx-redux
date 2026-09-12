@@ -7,9 +7,8 @@
   "seed": 1,
   "status": "partial",
   "level_counts": {
-    "ok": 10,
-    "failed": 1,
-    "timeout": 1
+    "ok": 11,
+    "failed": 1
   },
   "levels": [
     {
@@ -326,7 +325,7 @@
       "level_num": 6,
       "level_file": "CALYPS24.RL2",
       "route_input_sha256": "8CD192536862309BB3E880DEDFF8E0028AFA4957FBA301EBCADF21ED282B5962",
-      "status": "timeout",
+      "status": "ok",
       "rng_start": {
         "state": 1,
         "calls": 0
@@ -343,14 +342,38 @@
         {
           "n": "blue key",
           "s": 27
+        },
+        {
+          "n": "gold key",
+          "s": 57
+        },
+        {
+          "n": "hidden door",
+          "s": 90
+        },
+        {
+          "n": "red key",
+          "s": 90
+        },
+        {
+          "n": "boss",
+          "s": 138
+        },
+        {
+          "n": "exit",
+          "s": 145
         }
       ],
-      "total_frames": 6766,
+      "total_frames": 8691,
       "rng_end": {
-        "state": 3927295834,
-        "calls": 4477
+        "state": 2274221474,
+        "calls": 12885
       },
-      "problem": "Guide-Bot made no route progress for 60 simulation seconds"
+      "reactor_escape": {
+        "countdown_seconds": 45.0,
+        "simulated_seconds": 6.983337,
+        "difficulty": 2
+      }
     },
     {
       "level_num": 7,

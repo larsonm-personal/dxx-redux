@@ -10,7 +10,7 @@ param(
     [string[]]$CdSourceIds,
     [switch]$IncludeBuiltInCounterstrike,
     [switch]$IncludeBuiltInFirstStrike,
-    # Wall-clock watchdog includes CPU contention across parallel workers
+    # Idle watchdog permits long parallel scans while native checkpoints advance
     [ValidateRange(1, [int]::MaxValue)][int]$ArchiveTimeoutSeconds = 360,
     [ValidateRange(0, 128)][int]$MaxParallel = 0,
     [string]$OutputRoot,

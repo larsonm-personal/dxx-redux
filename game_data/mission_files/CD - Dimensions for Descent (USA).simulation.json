@@ -1867,21 +1867,21 @@
           },
           {
             "n": "reactor",
-            "s": 53
+            "s": 52
           },
           {
             "n": "exit",
-            "s": 54
+            "s": 53
           }
         ],
-        "total_frames": 3236,
+        "total_frames": 3182,
         "rng_end": {
           "state": 361230461,
           "calls": 196
         },
         "reactor_escape": {
           "countdown_seconds": 45.0,
-          "simulated_seconds": 0.733322,
+          "simulated_seconds": 0.75,
           "difficulty": 2
         }
       }
@@ -2448,9 +2448,10 @@
     "generation": 4,
     "fixed_hz": 60,
     "seed": 1,
-    "status": "ok",
+    "status": "partial",
     "level_counts": {
-      "ok": 3
+      "ok": 2,
+      "timeout": 1
     },
     "levels": [
       {
@@ -2503,7 +2504,7 @@
         "level_num": 2,
         "level_file": "slayer02.rdl",
         "route_input_sha256": "46A0063AF0B005B02415340CFC3EC5FCF90AE5DA662A18B884EA4D24B7C73AC9",
-        "status": "ok",
+        "status": "timeout",
         "rng_start": {
           "state": 1,
           "calls": 0
@@ -2516,30 +2517,14 @@
           {
             "n": "red key",
             "s": 96
-          },
-          {
-            "n": "reactor",
-            "s": 249
-          },
-          {
-            "n": "hidden door",
-            "s": 254
-          },
-          {
-            "n": "exit",
-            "s": 255
           }
         ],
-        "total_frames": 15280,
+        "total_frames": 16811,
         "rng_end": {
-          "state": 1815737708,
-          "calls": 5067
+          "state": 1659549019,
+          "calls": 5038
         },
-        "reactor_escape": {
-          "countdown_seconds": 45.0,
-          "simulated_seconds": 5.300003,
-          "difficulty": 2
-        }
+        "problem": "Guide-Bot made no route progress for 60 simulation seconds"
       },
       {
         "level_num": 3,

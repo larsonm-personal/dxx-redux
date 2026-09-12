@@ -8,7 +8,9 @@ struct vms_vector;
 extern "C" {
 #endif
 
-void guidebot_route_steer_approach(struct object *objp);
+/* Adjust an unscaled steering command; true means precision must bypass smoothing */
+int guidebot_route_steer_approach(const struct object *objp, const struct vms_vector *goal_point,
+                                struct vms_vector *velocity);
 void guidebot_route_recover_approach(struct object *objp, struct vms_vector *goal_point);
 
 #ifdef __cplusplus

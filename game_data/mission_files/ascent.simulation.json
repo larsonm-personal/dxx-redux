@@ -29,29 +29,29 @@
         },
         {
           "n": "blue key",
-          "s": 44
+          "s": 42
         },
         {
           "n": "switch 3",
-          "s": 64
+          "s": 61
         },
         {
           "n": "reactor",
-          "s": 75
+          "s": 72
         },
         {
           "n": "exit",
-          "s": 87
+          "s": 84
         }
       ],
-      "total_frames": 5210,
+      "total_frames": 5053,
       "rng_end": {
-        "state": 354753758,
-        "calls": 8489
+        "state": 1677224252,
+        "calls": 8123
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 11.616669,
+        "simulated_seconds": 11.800003,
         "difficulty": 2
       }
     },

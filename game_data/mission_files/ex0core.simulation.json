@@ -55,7 +55,7 @@
     {
       "level_num": 2,
       "level_file": "pharioka.rl2",
-      "route_input_sha256": "9B1780ABCCC7893B19114ABAFC324A7EF8E31308D934DD53B2009DB0630BCDF2",
+      "route_input_sha256": "BD6EAAC94F32D62FBC10B96F89ABEDFBC52792749B916F8D665FF5BD09D7A860",
       "status": "ok",
       "rng_start": {
         "state": 1,
@@ -71,34 +71,42 @@
           "s": 10
         },
         {
+          "n": "switch 7",
+          "s": 21
+        },
+        {
+          "n": "switch 5",
+          "s": 28
+        },
+        {
           "n": "switch 6",
-          "s": 22
+          "s": 36
         },
         {
           "n": "fly-through 13",
-          "s": 34
+          "s": 47
         },
         {
           "n": "red key",
-          "s": 35
+          "s": 49
         },
         {
           "n": "boss",
-          "s": 56
+          "s": 70
         },
         {
           "n": "exit",
-          "s": 68
+          "s": 82
         }
       ],
-      "total_frames": 4079,
+      "total_frames": 4918,
       "rng_end": {
-        "state": 4013978309,
-        "calls": 5052
+        "state": 3657463003,
+        "calls": 5166
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 11.916656,
+        "simulated_seconds": 11.916672,
         "difficulty": 2
       }
     },

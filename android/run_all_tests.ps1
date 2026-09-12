@@ -348,6 +348,7 @@ $testTimeouts = @{
     "test_gradle_unit_tests"              = 600
     "test_guidebot_simulation_headed_headless_parity" = 1800
     "test_guided_shot_annotations"        = 600
+    "test_guidebot_precision_recovery"    = 600
     "test_lostlvls_directional_unlock"    = 600
     "test_plutonia_level5_reactor_grate"  = 600
     "test_primary_target_grates"         = 600
@@ -420,6 +421,7 @@ $extractTests = @(
 $noInfraTests = @(
     "test_acoustid_config_packaging",
     "test_guided_shot_annotations",
+    "test_guidebot_precision_recovery",
     "test_lostlvls_directional_unlock",
     "test_plutonia_level5_reactor_grate",
     "test_primary_target_grates",
