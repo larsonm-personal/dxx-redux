@@ -16,6 +16,8 @@ void coop_briefing_run(void (*present)(int), int level);
 int coop_briefing_active(void);
 int coop_briefing_suppressed_for_restore(void);
 unsigned coop_briefing_presentations_started(void);
+int coop_briefing_palette_changed(void);
+int coop_briefing_palette_restored(void);
 unsigned coop_briefing_release_acknowledged(void);
 /* Local automation fault injection; never set by a network peer */
 int coop_briefing_test_delay_release(unsigned milliseconds);

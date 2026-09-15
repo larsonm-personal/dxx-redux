@@ -40,6 +40,7 @@
 #   .\test_lan.ps1 -Game d1 -BriefingFailure host -BriefingFailureRelease
 #   .\test_lan.ps1 -Game d1 -Briefings -BriefingCase reading
 #   .\test_lan.ps1 -Game d1 -Briefings -BriefingCase partial_skip
+#   .\test_lan.ps1 -Game d2 -MissionFile max_f -InitialLevel 13 -BriefingPalette  # Requires Descent Maximum (fixed)
 #   .\test_lan.ps1 -Game d2 -BriefingCase missing_movie  # No pla.mve/other-h.mvl installed
 #   .\test_lan.ps1 -Game d1 -BriefingCase observer_host
 #   .\test_lan.ps1 -Game d1 -BriefingCase rejoin
@@ -81,6 +82,7 @@ param(
     [switch]$SpewPickup,
     [switch]$SpewPartialPickup,
     [switch]$Briefings,
+    [switch]$BriefingPalette,
     [ValidateSet("force", "host_deadline", "overall_deadline", "release_delay", "overlay_touch", "paused_force", "paused_deadline", "paused_overall", "reading", "partial_skip", "missing_movie", "observer_host", "rejoin", "first_join")]
     [string]$BriefingCase = "force",
     [switch]$BriefingRestore,
@@ -137,6 +139,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
+if ($BriefingPalette) { $Briefings = $true }
 if ($EndgameClientFirst -or $EndgameBoss -or $EndgameObserverHost -or $EndgameContent -ne "builtin") { $Endgame = $true }
 if ($EndgameBoss -and ($Game -ne "d2" -or $EndgameClientFirst -or $EndgameObserverHost -or $EndgameContent -ne "builtin")) {
     throw "EndgameBoss uses the D2 built-in final boss with the playing host finishing first"
@@ -3087,6 +3090,17 @@ try {
         $testPassed = Invoke-PairedGameAutomation -PrimarySerial $fastSerial -PrimaryScript $fastScript `
             -SecondarySerial $slowSerial -SecondaryScript $slowScript `
             -Description "Independent campaign ending with $fastSerial returning first" -TimeoutSec 90 -IndependentEndgame
+    }
+
+    if ($testPassed -and $BriefingPalette) {
+        foreach ($serial in @($EMU1, $EMU2)) {
+            $intro = Get-GameIntrospection -Serial $serial
+            if (-not $intro.in_game -or -not $intro.coop_briefing.palette_changed -or
+                -not $intro.coop_briefing.palette_restored) {
+                throw "Expected a changed briefing palette restored to gameplay on $serial"
+            }
+            Write-Status "Verified changed briefing palette restored on $serial" 'Green'
+        }
     }
 
     # Stop logcat capture

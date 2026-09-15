@@ -2,6 +2,7 @@
 #include "coop_gameplay_runtime.h"
 #include "coop_transition_policy.h"
 #include "coop_save.h"
+#include "android_log.h"
 
 #include <pthread.h>
 #include <stdio.h>
@@ -11,6 +12,13 @@
 #include "game.h"
 #include "gameseq.h"
 #include "gr.h"
+#include "palette.h"
+#ifdef DXX_BUILD_DESCENT_II
+#include "gamepal.h"
+#endif
+#ifdef OGL
+#include "ogl_init.h"
+#endif
 #include "key.h"
 #include "multi.h"
 #include "newmenu.h"
@@ -38,6 +46,8 @@ static int destination, host, have_state, presentation_closed, pumping;
 static int suppress_for_restore;
 static const char *failure_reason;
 static unsigned presentations_started;
+static uint32_t gameplay_palette_hash;
+static int palette_changed, palette_restored;
 static unsigned release_acknowledged;
 static unsigned test_release_delay_ms, test_release_packets_dropped;
 static uint64_t test_release_delay_until;
@@ -45,6 +55,47 @@ static uint32_t game_id, snapshot_revision;
 static uint64_t last_generation, last_send, last_ack, last_host_packet, release_since;
 static coop_transition_phase observed_phase;
 static uint64_t peer_seen[COOP_TRANSITION_PLAYERS];
+
+static uint32_t palette_hash(void)
+{
+	uint32_t hash = 2166136261u;
+	for (size_t i = 0; i < sizeof(gr_palette); ++i) hash = (hash ^ gr_palette[i]) * 16777619u;
+	for (size_t i = 0; i < sizeof(gr_fade_table); ++i) hash = (hash ^ gr_fade_table[i]) * 16777619u;
+	return hash;
+}
+
+int coop_briefing_palette_changed(void)
+{
+	return palette_changed;
+}
+
+int coop_briefing_palette_restored(void)
+{
+	return palette_restored && palette_hash() == gameplay_palette_hash &&
+	       !memcmp(gr_current_pal, gr_palette, sizeof(gr_palette));
+}
+
+static void restore_game_palette(void)
+{
+	palette_changed = palette_hash() != gameplay_palette_hash ||
+	                  memcmp(gr_current_pal, gr_palette, sizeof(gr_palette));
+#ifdef DXX_BUILD_DESCENT_II
+	/* PCX briefings overwrite gr_palette without changing this filename cache */
+	last_palette_loaded[0] = 0;
+	load_palette(Current_level_palette, 0, 1);
+#else
+	gr_use_palette_table("palette.256");
+#endif
+	gr_palette_load(gr_palette);
+#ifdef OGL
+	/* Indexed bitmaps may have been uploaded while a briefing palette was active */
+	ogl_invalidate_game_palette_textures();
+#endif
+	palette_restored = palette_hash() == gameplay_palette_hash &&
+	                   !memcmp(gr_current_pal, gr_palette, sizeof(gr_palette));
+	debug_log_force(DLOG_TEXTURE, "[coop-briefing] palette restored: level=%d changed=%d matches=%d",
+	                Current_level_num, palette_changed, palette_restored);
+}
 static pthread_mutex_t ui_lock = PTHREAD_MUTEX_INITIALIZER;
 static struct {
 	char text[1024];
@@ -389,6 +440,7 @@ void coop_briefing_arm(int level)
 	destination = level;
 	suppress_for_restore = 0;
 	presentations_started = 0;
+	palette_changed = palette_restored = 0;
 	release_acknowledged = 0;
 	test_release_delay_ms = test_release_packets_dropped = 0;
 	test_release_delay_until = 0;
@@ -538,6 +590,7 @@ void coop_briefing_run(void (*present)(int), int level)
 		return;
 	}
 	running = 1;
+	gameplay_palette_hash = palette_hash();
 	last_host_packet = now_ms();
 	window_set_visible(Game_wind, 0);
 	stop_time();
@@ -601,6 +654,7 @@ void coop_briefing_run(void (*present)(int), int level)
 		if (Game_wind) window_close(Game_wind);
 	} else if (Game_wind) {
 		coop_gameplay_restore_player_life();
+		restore_game_palette();
 		set_screen_mode(SCREEN_GAME);
 		songs_play_level_song(Current_level_num, 0);
 		window_set_visible(Game_wind, 1);

@@ -22,6 +22,6 @@
     {"action": "wait_for", "timeout_ms": 15000, "expect": {
         "coop_briefing.active": false, "coop_briefing.phase": 0,
         "coop_briefing.launch_reason": 2, "in_game": true, "time_paused": false,
-        "multiplayer.num_connected": 2
+        "multiplayer.num_connected": 2, "coop_briefing.palette_restored": true
     }}
 ]

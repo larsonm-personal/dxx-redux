@@ -1692,6 +1692,8 @@ extern "C" char *game_introspect_get_state(void)
 			{ "plan_ready", (bool) coop_briefing_plan_ready() },
 			{ "suppressed_for_restore", (bool) coop_briefing_suppressed_for_restore() },
 			{ "presentations_started", coop_briefing_presentations_started() },
+			{ "palette_changed", (bool) coop_briefing_palette_changed() },
+			{ "palette_restored", (bool) coop_briefing_palette_restored() },
 			{ "active", (bool) coop_briefing_active() },
 			{ "presenting", (bool) coop_briefing_presenting() },
 			{ "phase", state.phase },
