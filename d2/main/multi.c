@@ -69,6 +69,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "coop/coop_powerup_duplication.h"
 #include "coop/coop_recovery.h"
 #include "coop/coop_briefing.h"
+#include "coop/coop_endgame.h"
 #include "coop/coop_travel.h"
 #include "coop/coop_gameplay_runtime.h"
 #include "coop_save.h"
@@ -2652,6 +2653,9 @@ multi_do_player_explode(const ubyte *buf)
 
 void multi_obs_check_all_escaped()
 {
+#ifdef __ANDROID__
+	if (coop_endgame_active()) return;
+#endif
 	for (int i = 0; i < MAX_PLAYERS; i++)
 	{
 		if (Players[i].connected == CONNECT_PLAYING)
@@ -8009,6 +8013,8 @@ static void multi_process_data_scoped(const ubyte *buf, int len, int authenticat
 			coop_warp_do_packet(buf); break;
 		case MULTI_COOP_PEER_STATUS:
 			coop_do_peer_status(buf); break;
+		case MULTI_COOP_ENDGAME:
+			coop_endgame_receive(buf, authenticated_sender); break;
 		case MULTI_COOP_BRIEFING:
 			coop_briefing_receive(buf, authenticated_sender); break;
 		case MULTI_COOP_TRAVEL:

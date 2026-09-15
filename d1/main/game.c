@@ -93,6 +93,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_rewind.h"
 #include "coop_save.h"
 #include "coop/coop_briefing.h"
+#include "coop/coop_endgame.h"
 #ifdef OGL
 extern int g_swap_time_us;
 extern int g_msaa_resolve_time_us;
@@ -1130,7 +1131,7 @@ window *Game_wind = NULL;
 int game_handler(window *wind, d_event *event, void *data)
 {
 #ifdef __ANDROID__
-	if (coop_briefing_active() && event->type != EVENT_WINDOW_CLOSE &&
+	if ((coop_briefing_active() || coop_endgame_active()) && event->type != EVENT_WINDOW_CLOSE &&
 	    event->type != EVENT_WINDOW_CLOSED && event->type != EVENT_WINDOW_ACTIVATED &&
 	    event->type != EVENT_WINDOW_DEACTIVATED)
 		return 1;
@@ -1319,6 +1320,9 @@ int game_handler(window *wind, d_event *event, void *data)
 			break;
 
 		case EVENT_WINDOW_CLOSED:
+#ifdef __ANDROID__
+			coop_endgame_reset();
+#endif
 			longjmp(LeaveEvents, 0);
 			break;
 

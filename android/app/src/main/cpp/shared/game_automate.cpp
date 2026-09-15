@@ -1321,6 +1321,9 @@ static bool select_can_confirm_current_input_as_ok(const auto_step &s,
 	       strcasecmp(s.select_text.c_str(), "ok") == 0;
 }
 
+extern "C" int scores_handler(window *wind, d_event *event, void *data);
+extern "C" int credits_handler(window *wind, d_event *event, void *data);
+
 static bool select_dispatch_front_menu_key(int keycode, const char *key_name)
 {
 	window *front = window_get_front();
@@ -1356,6 +1359,10 @@ static bool select_dispatch_front_menu_key(int keycode, const char *key_name)
 			return false;
 		LOGI("KEY: dispatching kconfig key %s (key=%d)", key_name, keycode);
 		kconfig_handler(front, (d_event *) &key_event, (kc_menu *) data);
+		return true;
+	}
+	if (cb == scores_handler || cb == credits_handler) {
+		cb(front, (d_event *) &key_event, data);
 		return true;
 	}
 	if (cb == (int (*)(window *, d_event *, void *)) game_handler) {
@@ -1414,6 +1421,8 @@ static bool can_direct_dispatch_front_key_command(void)
 	if (cb == (int (*)(window *, d_event *, void *)) listbox_handler)
 		return data != NULL;
 	if (cb == (int (*)(window *, d_event *, void *)) kconfig_handler)
+		return data != NULL;
+	if (cb == scores_handler || cb == credits_handler)
 		return data != NULL;
 	if (cb == (int (*)(window *, d_event *, void *)) game_handler)
 		return true;

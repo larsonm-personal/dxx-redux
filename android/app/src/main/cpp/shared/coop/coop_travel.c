@@ -4,6 +4,7 @@
 #include "coop_save.h"
 #include "coop_recovery.h"
 #include "coop_briefing.h"
+#include "coop_endgame.h"
 #include "coop_world_visit.h"
 #include "android_log.h"
 #include "game.h"
@@ -297,7 +298,7 @@ int coop_travel_active(void)
 
 int coop_travel_blocks_gameplay(void)
 {
-	return coop_travel_ending_campaign() || (coop_travel_active() && policy.phase != COOP_PHASE_NORMAL_WAIT);
+	return coop_endgame_active() || coop_travel_ending_campaign() || (coop_travel_active() && policy.phase != COOP_PHASE_NORMAL_WAIT);
 }
 
 int coop_travel_ending_campaign(void)
@@ -313,7 +314,7 @@ int coop_travel_blocks_world_updates(void)
 
 int coop_travel_blocks_state_actions(void)
 {
-	return coop_travel_ending_campaign() || coop_travel_active() || coop_travel_waiting_after_death() ||
+	return coop_endgame_active() || coop_travel_ending_campaign() || coop_travel_active() || coop_travel_waiting_after_death() ||
 	       (armed && (physical_pending >= 0 || requested != COOP_OP_NONE));
 }
 

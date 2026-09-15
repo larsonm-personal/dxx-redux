@@ -120,6 +120,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef __ANDROID__
 #include "coop/coop_level_restart.h"
 #include "coop/coop_briefing.h"
+#include "coop/coop_endgame.h"
 #include "coop/coop_powerup_duplication.h"
 #include "coop/coop_recovery.h"
 #include "coop_save.h"
@@ -1159,6 +1160,9 @@ int AdvanceLevel(int secret_flag)
 		if ((Newdemo_state == ND_STATE_RECORDING) || (Newdemo_state == ND_STATE_PAUSED))
 			newdemo_stop_recording(0);
 
+		#ifdef __ANDROID__
+		coop_endgame_begin();
+		#endif
 		do_end_briefing_screens(Ending_text_filename);
 
 		return 1;

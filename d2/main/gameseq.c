@@ -108,6 +108,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef ANDROID
 #include "coop/coop_level_restart.h"
 #include "coop/coop_briefing.h"
+#include "coop/coop_endgame.h"
 #include "coop/coop_powerup_duplication.h"
 #include "coop/coop_recovery.h"
 #include "coop/coop_travel.h"
@@ -1622,6 +1623,9 @@ void show_order_form();
 //called when the player has finished the last level
 void DoEndGame(void)
 {
+#ifdef __ANDROID__
+	coop_endgame_begin();
+#endif
 	if ((Newdemo_state == ND_STATE_RECORDING) || (Newdemo_state == ND_STATE_PAUSED))
 		newdemo_stop_recording(0);
 
@@ -1631,8 +1635,12 @@ void DoEndGame(void)
 
 	key_flush();
 
-	if (PLAYING_BUILTIN_MISSION && !(Game_mode & GM_MULTI))
-	{ //only built-in mission, & not multi
+	if (PLAYING_BUILTIN_MISSION && (!(Game_mode & GM_MULTI)
+#ifdef __ANDROID__
+	    || coop_endgame_released()
+#endif
+	    ))
+	{ // Built-in campaign ending
 		int played=MOVIE_NOT_PLAYED;	//default is not played
 
 		init_subtitles(ENDMOVIE ".tex");	//ingore errors
@@ -1643,7 +1651,11 @@ void DoEndGame(void)
 			do_end_briefing_screens(Ending_text_filename);
 		}
    }
-   else if (!(Game_mode & GM_MULTI))    //not multi
+   else if (!(Game_mode & GM_MULTI)
+#ifdef __ANDROID__
+	    || coop_endgame_released()
+#endif
+	    )
    {
 		char tname[FILENAME_LEN];
 

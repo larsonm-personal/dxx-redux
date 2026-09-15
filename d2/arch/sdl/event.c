@@ -17,6 +17,7 @@
 #include "input_demo_hooks.h"
 #ifdef ANDROID
 #include "android_axis_mailbox.h"
+#include "coop/coop_endgame.h"
 #include "android_lifecycle_actions.h"
 #include "android_lifecycle_diagnostics.h"
 #include "digi_mixer_music.h"
@@ -232,6 +233,9 @@ void event_process(void)
 	android_overlay_game_tick();
 #endif
 	timer_update();
+#ifdef __ANDROID__
+	coop_endgame_pump();
+#endif
 
 #ifdef INTROSPECT_ON
 	game_automate_tick();

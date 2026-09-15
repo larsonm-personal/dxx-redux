@@ -166,6 +166,7 @@ extern int multi_protocol; // set and determinate used protocol
 	VALUE(MULTI_COOP_RECOVERY       , 160)   \
 	VALUE(MULTI_COOP_BRIEFING       , 128)   \
 	VALUE(MULTI_COOP_TRAVEL         , 228)    \
+	VALUE(MULTI_COOP_ENDGAME        , 160)    \
 	AFTER
 for_each_multiplayer_command(enum {, define_multiplayer_command, });
 

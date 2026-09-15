@@ -18,6 +18,11 @@
 # Usage:
 #   .\test_lan.ps1
 #   .\test_lan.ps1 -Game d1
+#   .\test_lan.ps1 -Game d2 -EndgameBoss
+#   .\test_lan.ps1 -Game d1 -Endgame -EndgameClientFirst
+#   .\test_lan.ps1 -Game d2 -EndgameObserverHost
+#   .\test_lan.ps1 -Game d2 -EndgameContent custom
+#   .\test_lan.ps1 -Game d2 -EndgameContent missing -EndgameClientFirst
 #   .\test_lan.ps1 -GuidebotOwnership
 #   .\test_lan.ps1 -GuidebotHostObserver
 #   .\test_lan.ps1 -GuidebotSlotRemapRestore
@@ -116,6 +121,13 @@ param(
     [switch]$SecretExitRace,
     [switch]$SecretAdvance,
     [switch]$SecretEndgame,
+    [switch]$Endgame,
+    [switch]$EndgameClientFirst,
+    [switch]$EndgameBoss,
+    [switch]$EndgameObserverHost,
+    [ValidateSet("builtin", "custom", "missing")]
+    [string]$EndgameContent = "builtin",
+    [string]$EndgameMovieLibrary,
     [switch]$SecretEndgameModal,
     [switch]$SecretEndgameHostLeaves,
     [switch]$VerifyAutomationFailure,
@@ -125,6 +137,21 @@ param(
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
+if ($EndgameClientFirst -or $EndgameBoss -or $EndgameObserverHost -or $EndgameContent -ne "builtin") { $Endgame = $true }
+if ($EndgameBoss -and ($Game -ne "d2" -or $EndgameClientFirst -or $EndgameObserverHost -or $EndgameContent -ne "builtin")) {
+    throw "EndgameBoss uses the D2 built-in final boss with the playing host finishing first"
+}
+if ($EndgameObserverHost -and ($EndgameClientFirst -or $EndgameContent -ne "builtin")) {
+    throw "EndgameObserverHost uses the built-in ending with the observing host finishing first"
+}
+if ($Endgame -and $EndgameContent -ne "builtin") {
+    if ($Game -ne "d2") { throw "Custom ending fixtures use D2" }
+    $MissionFile = "coopend"
+    $InitialLevel = 1
+}
+if ($Endgame -and -not $MissionFile -and $InitialLevel -eq 1) {
+    $InitialLevel = if ($Game -eq "d1") { 27 } else { 24 }
+}
 if ($ClientRewind) { $CoopRewind = $true }
 if ($RestoreLossResume -and -not $RestoreFailure) { throw "RestoreLossResume requires RestoreFailure" }
 if ($RestoreFailure -and ($MissionFile -or $InitialLevel -ne 1 -or $CountdownSave -or $CoopRewind -or
@@ -226,6 +253,7 @@ $MODE = "coop"
 
 $relayProc = $null
 $testPassed = $false
+$script:EndgameFiles = @()
 
 $script:LogFile = Join-Path $REPO_ROOT "temp\lan_test_log.txt"
 try { if (Test-Path $script:LogFile) { Remove-Item $script:LogFile -Force -ErrorAction SilentlyContinue } } catch { }
@@ -242,6 +270,16 @@ function Cleanup {
             ) -Seconds 5 | Out-Null
         } catch {}
     }
+    foreach ($file in $script:EndgameFiles) {
+        Adb-Dev-Timeout -Serial $file.Serial -AdbArgs @("shell", "run-as", $PACKAGE, "rm", "-f", $file.Path) -Seconds 5 | Out-Null
+    }
+    $script:EndgameFiles = @()
+    if ($Endgame -and $EndgameContent -ne 'builtin') {
+        foreach ($serial in @($EMU1, $EMU2)) {
+            Remove-EndgameMissionContent -Serial $serial
+            Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) -Seconds 5 | Out-Null
+        }
+    }
     $relayLog = Join-Path $REPO_ROOT "temp\udp_relay.log"
     if ($UseRelay -and (Test-Path $relayLog)) {
         $lines = Get-Content $relayLog -ErrorAction SilentlyContinue
@@ -255,6 +293,68 @@ function Cleanup {
     if ($script:relayProc -and -not $script:relayProc.HasExited) {
         Write-Status "Stopping UDP relay (PID $($script:relayProc.Id))..."
         try { $script:relayProc.Kill() } catch {}
+    }
+}
+
+function Stage-EndgameFile {
+    param([string]$Serial, [string]$LocalPath, [string]$DevicePath)
+    $existing = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "run-as", $PACKAGE, "ls", $DevicePath) -Seconds 5
+    if ($existing -and $existing.Trim() -eq $DevicePath) { return }
+    $temporary = "/data/local/tmp/coop_endgame_" + [IO.Path]::GetFileName($LocalPath)
+    Adb-Dev -Serial $Serial -AdbArgs @("push", $LocalPath, $temporary) | Out-Null
+    $directory = $DevicePath.Substring(0, $DevicePath.LastIndexOf('/'))
+    Adb-Dev -Serial $Serial -AdbArgs @("shell", "run-as", $PACKAGE, "mkdir", "-p", $directory) | Out-Null
+    Adb-Dev -Serial $Serial -AdbArgs @("shell", "run-as", $PACKAGE, "cp", $temporary, $DevicePath) | Out-Null
+    Adb-Dev -Serial $Serial -AdbArgs @("shell", "rm", "-f", $temporary) | Out-Null
+    $script:EndgameFiles += @{ Serial = $Serial; Path = $DevicePath }
+}
+
+function Remove-EndgameMissionContent {
+    param([string]$Serial)
+    # The launcher adopts loose missions into managed content; remove the generated
+    # fixture through its API so a previous run cannot supply supposedly missing assets
+    $paths = Adb-Dev-Timeout -Serial $Serial -AdbArgs @('shell', 'run-as', $PACKAGE, 'find',
+        'files/imported/sets/default/.content/entries', '-path', '*/payload/missions/coopend.mn2') -Seconds 5
+    foreach ($rawPath in @($paths -split "`n")) {
+        $path = $rawPath.Trim()
+        if ($path -notmatch '/entries/([a-f0-9]+)/payload/missions/coopend.mn2$') { continue }
+        $id = $Matches[1]
+        $contents = Adb-Dev-Timeout -Serial $Serial -AdbArgs @('shell', 'run-as', $PACKAGE, 'cat', $path.Trim()) -Seconds 5
+        if ($contents -notmatch 'name = Co-op ending fixture') { throw 'Existing coopend mission is not the generated fixture' }
+        if (-not (Start-SetupActivity -Serial $Serial -TimeoutSec 60)) { throw 'Could not open launcher to remove ending fixture' }
+        Adb-Dev-Timeout -Serial $Serial -AdbArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
+            '--es', 'command', 'delete_content', '--es', 'id', $id) -Seconds 5 | Out-Null
+        if (-not (Wait-ForCondition -Description 'Remove managed ending fixture' -TimeoutSec 15 -PollMs 500 -Condition {
+                    $remaining = Adb-Dev-Timeout -Serial $Serial -AdbArgs @('shell', 'run-as', $PACKAGE, 'ls', $path.Trim()) -Seconds 5 -IncludeStandardError
+                    return $remaining -match 'No such file'
+                })) { throw 'Managed ending fixture was not removed' }
+    }
+}
+
+function Initialize-EndgameContent {
+    if ((-not $Endgame -and -not $SecretEndgame) -or $Game -ne "d2") { return }
+    $output = Join-Path $REPO_ROOT "temp/coop-endgame-fixture"
+    & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $output | Out-Null
+    $arguments = @("$PSScriptRoot/prepare_coop_endgame_fixture.py", "--output", $output)
+    if ($EndgameContent -eq "builtin" -and -not $MissionFile) {
+        $library = $EndgameMovieLibrary
+        if (-not $library) { $library = Join-Path $REPO_ROOT "game_data/CD images/Descent II (USA)/data_tracks/d2data/intro-h.mvl" }
+        if (-not (Test-Path -LiteralPath $library)) { throw "Pass -EndgameMovieLibrary with an owned intro-h.mvl or intro-l.mvl containing end.mve" }
+        $arguments += @("--movie-library", $library)
+    }
+    & python @arguments
+    if ($LASTEXITCODE) { throw "Could not prepare ending fixtures" }
+    foreach ($serial in @($EMU1, $EMU2)) {
+        if ($EndgameContent -eq "builtin") {
+            Stage-EndgameFile -Serial $serial -LocalPath "$output/end.mve" -DevicePath "files/d2x-redux/end.mve"
+        } else {
+            Remove-EndgameMissionContent -Serial $serial
+            Stage-EndgameFile -Serial $serial -LocalPath "$output/coopend.mn2" -DevicePath "files/imported/sets/default/missions/coopend.mn2"
+            $fastSerial = if ($EndgameClientFirst) { $EMU2 } else { $EMU1 }
+            if ($EndgameContent -ne "missing" -or $serial -ne $fastSerial) {
+                Stage-EndgameFile -Serial $serial -LocalPath "$output/coopend.hog" -DevicePath "files/imported/sets/default/missions/coopend.hog"
+            }
+        }
     }
 }
 
@@ -1288,7 +1388,8 @@ function Invoke-PairedGameAutomation {
         [string]$SecondarySerial,
         [string]$SecondaryScript,
         [string]$Description,
-        [int]$TimeoutSec = 60
+        [int]$TimeoutSec = 60,
+        [switch]$IndependentEndgame
     )
 
     if (-not (Start-DeviceGameAutomation -Serial $SecondarySerial -ScriptName $SecondaryScript)) {
@@ -1299,6 +1400,7 @@ function Invoke-PairedGameAutomation {
         return $false
     }
 
+    $script:independentEndgameSeen = $false
     $script:primaryAutomationResult = $null
     $script:secondaryAutomationResult = $null
     $finished = Wait-ForCondition -Description $Description -TimeoutSec $TimeoutSec -PollMs 1000 -Condition {
@@ -1308,6 +1410,20 @@ function Invoke-PairedGameAutomation {
         $script:primaryAutomationResult.result -in @("PASS", "FAIL")
         $secondaryDone = $script:secondaryAutomationResult -and
         $script:secondaryAutomationResult.result -in @("PASS", "FAIL")
+        if ($IndependentEndgame -and $primaryDone -and -not $secondaryDone -and -not $script:independentEndgameSeen) {
+            $viewer = Get-GameIntrospection -Serial $SecondarySerial
+            if ($viewer -and $viewer.coop_endgame.active -and $viewer.coop_endgame.released -and
+                ($viewer.screen_advance_kind -in @('movie', 'briefing') -or $viewer.menu.type -eq 'credits') -and
+                -not $viewer.coop_briefing.active -and
+                @($viewer.multiplayer.players | Where-Object { -not $_.is_me -and $_.connected -eq 0 }).Count -gt 0) {
+                $script:independentEndgameSeen = $true
+                $evidence = @{ viewer = $SecondarySerial; departed = $PrimarySerial; ending = $viewer.coop_endgame;
+                    screen = $viewer.screen_advance_kind; players = $viewer.multiplayer.players; paused = $viewer.time_paused
+                }
+                $evidence | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 -LiteralPath (Join-Path $REPO_ROOT "temp/coop-endgame-independent-$Game-$PrimarySerial.json")
+                Write-Status "Verified $SecondarySerial still viewing after $PrimarySerial left" "Green"
+            }
+        }
         return $primaryDone -and $secondaryDone
     }
     if (-not $finished -or
@@ -1316,6 +1432,10 @@ function Invoke-PairedGameAutomation {
         Write-Status "FAIL: $Description did not pass" "Red"
         Write-DeviceAutomationDiagnostics -Serial $PrimarySerial
         Write-DeviceAutomationDiagnostics -Serial $SecondarySerial
+        return $false
+    }
+    if ($IndependentEndgame -and -not $script:independentEndgameSeen) {
+        Write-Status "FAIL: did not observe local ending content after the other participant left" "Red"
         return $false
     }
     return $true
@@ -1834,6 +1954,7 @@ try {
         }
     }
     Write-Status "Game data verified on both emulators" "Green"
+    Initialize-EndgameContent
 
     foreach ($emu in @($EMU1, $EMU2)) {
         Reset-DeviceGameState -Serial $emu
@@ -2016,7 +2137,7 @@ try {
     if ($NoCoopQol) {
         $hostExtras += @("--ez", "coop_qol", "false")
     }
-    if ($GuidebotHostObserver -or $BriefingCase -eq 'observer_host') {
+    if ($GuidebotHostObserver -or $EndgameObserverHost -or $BriefingCase -eq 'observer_host') {
         $hostExtras += @("--ez", "host_observer", "true")
     }
     Send-MpCommand -Serial $EMU1 -Command "lan_launch" -Extras $hostExtras
@@ -2952,6 +3073,20 @@ try {
 
     if ($testPassed -and $SpewRecovery) {
         $testPassed = Invoke-SpewRecoveryScenario
+    }
+
+    if ($testPassed -and $Endgame) {
+        $fastSerial = if ($EndgameClientFirst) { $EMU2 } else { $EMU1 }
+        $slowSerial = if ($EndgameClientFirst) { $EMU1 } else { $EMU2 }
+        $fastContent = if ($EndgameContent -eq "builtin") { $Game } else { $EndgameContent }
+        $slowContent = if ($EndgameContent -eq "builtin") { $Game } else { "custom" }
+        $fastScript = "test_coop_endgame_${fastContent}_fast.jsonc"
+        $slowScript = "test_coop_endgame_${slowContent}_slow.jsonc"
+        if ($EndgameBoss) { $fastScript = "test_coop_endgame_boss_host.jsonc"; $slowScript = "test_coop_endgame_boss_client.jsonc" }
+        if ($EndgameObserverHost) { $fastScript = "test_coop_endgame_${Game}_observer_host.jsonc"; $slowScript = "test_coop_endgame_${Game}_slow.jsonc" }
+        $testPassed = Invoke-PairedGameAutomation -PrimarySerial $fastSerial -PrimaryScript $fastScript `
+            -SecondarySerial $slowSerial -SecondaryScript $slowScript `
+            -Description "Independent campaign ending with $fastSerial returning first" -TimeoutSec 90 -IndependentEndgame
     }
 
     # Stop logcat capture

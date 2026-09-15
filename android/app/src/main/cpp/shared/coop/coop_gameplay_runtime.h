@@ -7,6 +7,7 @@
 #include "coop_world_visit.h"
 #include "coop_travel.h"
 #include "coop_briefing.h"
+#include "coop_endgame.h"
 
 /* Completed loads publish life bookkeeping directly, without REAPPEAR traffic */
 void coop_gameplay_restore_player_life(void);
@@ -18,7 +19,7 @@ static inline coop_gameplay_stamp coop_gameplay_current_stamp(void)
 	if ((Game_mode & GM_MULTI_COOP) && Current_level_num) {
 		stamp.visit = coop_world_visit_current();
 		stamp.level = Current_level_num;
-		stamp.frozen = coop_travel_blocks_world_updates() ||
+		stamp.frozen = coop_endgame_active() || coop_travel_blocks_world_updates() ||
 		               multi_save_transfer_restoring() || multi_save_transfer_paused() || coop_briefing_active();
 	}
 	return stamp;
@@ -29,6 +30,7 @@ static inline coop_gameplay_stamp coop_gameplay_current_stamp(void)
 static inline int coop_gameplay_endlevel_packet_allowed(const unsigned char *data, int size, int expected)
 {
 	coop_gameplay_stamp sent, current = coop_gameplay_current_stamp();
+	if (coop_endgame_active()) return 0;
 	if (size != expected || size < COOP_GAMEPLAY_STAMP_BYTES ||
 	    !coop_gameplay_stamp_read(&sent, data + size - COOP_GAMEPLAY_STAMP_BYTES,
 	                              COOP_GAMEPLAY_STAMP_BYTES)) return 0;

@@ -219,10 +219,24 @@ function Invoke-ReplaySmoke {
         throw "Failed to start $GameName replay smoke process"
     }
 
+    # The replay result precedes RNG trace publication during replay teardown
+    # Wait for all declared RNG events before terminating the menu process
+    $outputsReady = $false
     $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
     while ([DateTime]::UtcNow -lt $deadline) {
-        if (Test-Path -LiteralPath $actualResultPath) {
-            break
+        if ((Test-Path -LiteralPath $actualResultPath) -and
+            (Test-Path -LiteralPath $actualStatePath) -and
+            (Test-Path -LiteralPath $actualRngTracePath)) {
+            try {
+                $null = Get-JsonFile $actualResultPath
+                $records = @([IO.File]::ReadAllLines($actualRngTracePath) | ForEach-Object { $_ | ConvertFrom-Json })
+                $outputsReady = $records.Count -gt 0 -and $records[0].type -eq 'meta' -and
+                $records.Count -eq (1 + $records[0].events)
+            } catch {
+                # A writer may still hold the file or be partway through a JSON record
+                $outputsReady = $false
+            }
+            if ($outputsReady) { break }
         }
         if ($process.HasExited) {
             break
@@ -230,7 +244,7 @@ function Invoke-ReplaySmoke {
         Start-Sleep -Milliseconds 100
     }
 
-    if (-not (Test-Path -LiteralPath $actualResultPath)) {
+    if (-not $outputsReady) {
         if (-not $process.HasExited) {
             try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
         }
@@ -239,7 +253,7 @@ function Invoke-ReplaySmoke {
             throw "$GameName replay smoke exited with code $($process.ExitCode)`nRepro: $sandboxExe $argText"
         }
         try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
-        throw "Timed out waiting for $GameName replay smoke result after $TimeoutSeconds seconds"
+        throw "Incomplete $GameName replay smoke outputs after waiting up to $TimeoutSeconds seconds (result, state trace and complete RNG trace required)"
     }
 
     if (-not $process.HasExited) {

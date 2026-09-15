@@ -52,6 +52,7 @@ extern "C" {
 #endif
 #include "coop/coop_level_restart.h"
 #include "coop/coop_briefing.h"
+#include "coop/coop_endgame.h"
 #include "coop/coop_travel.h"
 #include "coop/coop_world_visit.h"
 #include "coop/coop_campaign.h"
@@ -306,6 +307,8 @@ int androidaud_get_initial_queued_buffers(void);
 extern "C" int newmenu_handler(window *wind, d_event *event, void *data);
 extern "C" int listbox_handler(window *wind, d_event *event, void *data);
 extern "C" int kconfig_handler(window *wind, d_event *event, void *data);
+extern "C" int scores_handler(window *wind, d_event *event, void *data);
+extern "C" int credits_handler(window *wind, d_event *event, void *data);
 
 /* -- Joystick binding introspection helpers (defined in kconfig.c) -- */
 extern "C" int kconfig_get_joystick_count(void);
@@ -1680,6 +1683,10 @@ extern "C" char *game_introspect_get_state(void)
 			{ "dormant_worlds", campaign->world_count },
 			{ "worlds", campaign_worlds }
 		};
+		j["coop_endgame"] = {
+			{ "active", (bool) coop_endgame_active() },
+			{ "released", (bool) coop_endgame_released() }
+		};
 		j["coop_briefing"] = {
 			{ "enabled", (bool) Netgame.CoopBriefings },
 			{ "plan_ready", (bool) coop_briefing_plan_ready() },
@@ -2162,6 +2169,10 @@ extern "C" char *game_introspect_get_state(void)
 				j["menu"] = serialize_listbox_data(data);
 			} else if (cb == (int (*)(window *, d_event *, void *)) kconfig_handler) {
 				j["menu"] = { { "type", "kconfig" } };
+			} else if (cb == scores_handler) {
+				j["menu"] = { { "type", "scores" } };
+			} else if (cb == credits_handler) {
+				j["menu"] = { { "type", "credits" } };
 			} else {
 				j["menu"] = { { "type", "unknown_window" } };
 			}

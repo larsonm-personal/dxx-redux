@@ -1,5 +1,6 @@
 #include "coop_host_migration.h"
 #include "coop_briefing.h"
+#include "coop_endgame.h"
 #include "coop_travel.h"
 
 #include <stdint.h>
@@ -72,6 +73,7 @@ int coop_host_migration_handle_disconnect(int disconnected_player)
 	int player_count = N_players;
 	int player;
 
+	if (coop_endgame_host_disconnected(disconnected_player)) return 1;
 	if (multi_save_transfer_host_disconnected(disconnected_player)) return 1;
 	if (coop_briefing_host_disconnected(disconnected_player)) return 1;
 	if (coop_travel_host_disconnected(disconnected_player)) return 1;

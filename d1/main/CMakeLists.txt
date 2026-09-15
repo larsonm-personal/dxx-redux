@@ -115,6 +115,7 @@ if(ANDROID)
         ../../android/app/src/main/cpp/shared/coop/coop_recovery.c
         ../../android/app/src/main/cpp/shared/coop/coop_transition_policy.c
         ../../android/app/src/main/cpp/shared/coop/coop_briefing.c
+        ../../android/app/src/main/cpp/shared/coop/coop_endgame.c
         ../../android/app/src/main/cpp/shared/coop/coop_travel.c
         ../../android/app/src/main/cpp/shared/coop/coop_campaign.c
         ../../android/app/src/main/cpp/shared/coop/coop_world_visit.c

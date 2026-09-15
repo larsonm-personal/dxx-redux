@@ -73,6 +73,7 @@ static inline int coop_gameplay_session_control(unsigned type)
 		case MULTI_COOP_RESTORE_STATUS:
 		case MULTI_COOP_BRIEFING:
 		case MULTI_COOP_TRAVEL:
+		case MULTI_COOP_ENDGAME:
 		case MULTI_REWIND_RESULT:
 		case MULTI_REWIND_SAVE_BEGIN:
 		case MULTI_REWIND_SAVE_CHUNK:

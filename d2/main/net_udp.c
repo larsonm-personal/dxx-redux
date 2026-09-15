@@ -72,6 +72,7 @@
 #include "coop/coop_powerup_duplication.h"
 #include "coop/coop_recovery.h"
 #include "coop/coop_briefing.h"
+#include "coop/coop_endgame.h"
 #include "coop/coop_travel.h"
 #include "coop/coop_world_visit.h"
 #include "coop/coop_gameplay_runtime.h"
@@ -7334,6 +7335,7 @@ void net_udp_do_frame(int force, int listen)
 #ifdef __ANDROID__
 	coop_briefing_network_frame();
 	coop_travel_network_frame();
+	coop_endgame_network_frame();
 #endif
 	udp_traffic_stat();
 }
@@ -7866,7 +7868,7 @@ void net_udp_send_mdata_direct(ubyte *data, int data_len, int pnum, int needack)
 	if (pnum == Player_num && multi_i_am_master()) {
 #ifdef __ANDROID__
 		/* Briefing deadlines are session control, outside spectator gameplay delay */
-		if (data[0] == MULTI_COOP_BRIEFING || data[0] == MULTI_COOP_TRAVEL)
+		if (data[0] == MULTI_COOP_BRIEFING || data[0] == MULTI_COOP_TRAVEL || data[0] == MULTI_COOP_ENDGAME)
 			forward_to_observers_nodelay(buf, len, needack);
 		else
 #endif

@@ -30,6 +30,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "key.h"
 #include "palette.h"
 #include "game.h"
+#ifdef __ANDROID__
+#include "coop/coop_endgame.h"
+#endif
 #include "window.h"
 #include "gamefont.h"
 #include "u_mem.h"
@@ -203,6 +206,7 @@ typedef struct kmatrix_screen
 {
 	grs_bitmap background;
 	int network;
+	int terminal;
 	fix64 end_time;
 	int playing;
 } kmatrix_screen;
@@ -302,6 +306,10 @@ int kmatrix_handler(window *wind, d_event *event, kmatrix_screen *km)
 	{
 		case EVENT_KEY_COMMAND:
 			k = event_key_get(event);
+			if (km->terminal && (k == KEY_ENTER || k == KEY_SPACEBAR || k == KEY_ESC)) {
+				window_close(wind);
+				return 1;
+			}
 			switch( k )
 			{
 				case KEY_ESC:
@@ -355,6 +363,17 @@ int kmatrix_handler(window *wind, d_event *event, kmatrix_screen *km)
 		case EVENT_WINDOW_DRAW:
 			timer_delay2(50);
 
+			if (km->terminal) {
+				if (km->end_time != -1) {
+					window_close(wind);
+					return 1;
+				}
+				kmatrix_redraw(km);
+				grd_curcanv->cv_font = GAME_FONT;
+				gr_set_fontcolor(BM_XRGB(63,63,63), -1);
+				gr_string(0x8000, SHEIGHT-LINE_SPACING, "Mission complete. Press Enter or Esc to continue");
+				break;
+			}
 			if (km->network)
 				multi_do_protocol_frame(0, 1);
 			
@@ -449,6 +468,10 @@ void kmatrix_view(int network)
 	strcpy(last_palette_loaded,"");		//force palette load next time
 	
 	km->network = network;
+	km->terminal = 0;
+#ifdef __ANDROID__
+	km->terminal = coop_endgame_released();
+#endif
 	km->end_time = -1;
 	km->playing = 0;
 	
@@ -465,7 +488,7 @@ void kmatrix_view(int network)
 		return;
 	}
 #ifdef __ANDROID__
-	android_screen_advance_begin(ANDROID_SCREEN_ADVANCE_POSTLEVEL, 0);
+	android_screen_advance_begin(ANDROID_SCREEN_ADVANCE_POSTLEVEL, km->terminal);
 #endif
 	while (window_exists(wind))
 		event_process();
