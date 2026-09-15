@@ -10,7 +10,11 @@ extern "C" {
 #endif
 
 /* Level entry arms before synchronization identifies a possible rejoin */
-void coop_briefing_arm(int level);
+void coop_briefing_arm(void (*present)(int), int level);
+unsigned coop_briefing_count_intro(void (*present)(int), int level);
+/* Bit 0 is the session preference; bit 1 skips this level in host SYNC */
+unsigned coop_briefing_sync_flags(int level);
+void coop_briefing_apply_sync_flags(unsigned flags, int level);
 void coop_briefing_disarm_for_rejoin(void);
 void coop_briefing_run(void (*present)(int), int level);
 int coop_briefing_active(void);

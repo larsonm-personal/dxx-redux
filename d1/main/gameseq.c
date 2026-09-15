@@ -1613,7 +1613,7 @@ void StartNewLevel(int level_num)
 		do_briefing_screens(Briefing_text_filename, level_num);
 	}
 	#ifdef __ANDROID__
-	coop_briefing_arm(level_num);
+	coop_briefing_arm(coop_show_level_intro, level_num);
 	#endif
 	StartNewLevelSub(level_num, 1, 0 );
 #ifdef __ANDROID__

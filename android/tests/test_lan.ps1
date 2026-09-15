@@ -41,6 +41,7 @@
 #   .\test_lan.ps1 -Game d1 -Briefings -BriefingCase reading
 #   .\test_lan.ps1 -Game d1 -Briefings -BriefingCase partial_skip
 #   .\test_lan.ps1 -Game d2 -MissionFile max_f -InitialLevel 13 -BriefingPalette  # Requires Descent Maximum (fixed)
+#   .\test_lan.ps1 -Game d2 -MissionFile max_f -InitialLevel 14 -EmptyBriefing
 #   .\test_lan.ps1 -Game d2 -BriefingCase missing_movie  # No pla.mve/other-h.mvl installed
 #   .\test_lan.ps1 -Game d1 -BriefingCase observer_host
 #   .\test_lan.ps1 -Game d1 -BriefingCase rejoin
@@ -83,6 +84,7 @@ param(
     [switch]$SpewPartialPickup,
     [switch]$Briefings,
     [switch]$BriefingPalette,
+    [switch]$EmptyBriefing,
     [ValidateSet("force", "host_deadline", "overall_deadline", "release_delay", "overlay_touch", "paused_force", "paused_deadline", "paused_overall", "reading", "partial_skip", "missing_movie", "observer_host", "rejoin", "first_join")]
     [string]$BriefingCase = "force",
     [switch]$BriefingRestore,
@@ -139,7 +141,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
-if ($BriefingPalette) { $Briefings = $true }
+if ($BriefingPalette -or $EmptyBriefing) { $Briefings = $true }
 if ($EndgameClientFirst -or $EndgameBoss -or $EndgameObserverHost -or $EndgameContent -ne "builtin") { $Endgame = $true }
 if ($EndgameBoss -and ($Game -ne "d2" -or $EndgameClientFirst -or $EndgameObserverHost -or $EndgameContent -ne "builtin")) {
     throw "EndgameBoss uses the D2 built-in final boss with the playing host finishing first"
@@ -2206,14 +2208,15 @@ try {
 
     # -- Step 4: Verify multiplayer launch --
     # Counterstrike level 8 has no authored pages, regardless of the travel fixture
-    if ($Briefings -and $Game -eq "d2" -and $InitialLevel -eq 8 -and -not $MissionFile) {
-        if (-not (Wait-ForCondition -Description "Level 8 empty briefings release both peers" -TimeoutSec 60 -PollMs 500 -Condition {
+    if ($EmptyBriefing -or ($Briefings -and $Game -eq "d2" -and $InitialLevel -eq 8 -and -not $MissionFile)) {
+        if (-not (Wait-ForCondition -Description "Empty briefing uses normal level sync on both peers" -TimeoutSec 60 -PollMs 500 -Condition {
                     foreach ($serial in @($EMU1, $EMU2)) {
                         $intro = Get-GameIntrospection -Serial $serial
                         if (-not $intro -or -not $intro.in_game -or $intro.time_paused -or
                             (Get-IntroNumConnected -Intro $intro) -ne 2 -or $intro.coop_briefing.active) { return $false }
                         if (-not $intro.coop_briefing.enabled -or $intro.coop_briefing.local_total -ne 0 -or
-                            $intro.coop_briefing.launch_reason -ne 1) { throw "Expected an empty authored briefing released when both peers are ready" }
+                            $intro.coop_briefing.generation -ne 0 -or $intro.coop_briefing.presentations_started -ne 0 -or
+                            $intro.coop_briefing.palette_restored) { throw "Empty briefing must not start a presentation or synchronization generation" }
                     }
                     return $true
                 })) { throw "Initial empty briefing did not release both peers" }

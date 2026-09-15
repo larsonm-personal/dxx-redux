@@ -67,6 +67,7 @@ static coop_operation requested;
 static coop_campaign_travel prepared_campaign;
 static int automatic_campaign, prepare_started, load_started, prepared_ready, prepared_destination;
 static int prepared_action, advancement_presented;
+static unsigned advancement_briefing_flags;
 static uint64_t terminal_visit;
 static uint32_t prepared_checksum;
 static coop_portable_player portable[MAX_PLAYERS];
@@ -533,7 +534,8 @@ static int frozen_roster_valid(const unsigned char *bytes, size_t size, int chec
 	    get32(bytes) != game_id || get32(bytes + 4) != recovery_epoch ||
 	    get64(bytes + 8) != policy.generation ||
 	    bytes[16] != policy.participants || bytes[17] != checkpoint) return 0;
-	for (int i = 18; i < 24; ++i)
+	if (bytes[18] & ~(checkpoint ? 0u : 2u)) return 0;
+	for (int i = 19; i < 24; ++i)
 		if (bytes[i]) return 0;
 	for (int i = 0; i < MAX_PLAYERS; ++i) {
 		coop_portable_player record;
@@ -774,6 +776,7 @@ int coop_travel_stage_campaign(const void *data, size_t size)
 	prepared_checksum = coop_save_checksum(bytes, size, 2166136261u);
 	prepared_destination = next.destination.level;
 	prepared_action = next.action;
+	advancement_briefing_flags = bytes[18];
 	terminal_visit = ending_visit;
 	if (ending_visit) coop_world_visit_observe(ending_visit);
 	prepared_ready = automatic_campaign = 1;
@@ -802,6 +805,11 @@ static int prepare_campaign_transfer(void)
 	put32(buffer.data + 4, recovery_epoch);
 	put64(buffer.data + 8, policy.generation);
 	buffer.data[16] = policy.participants;
+#ifdef DXX_BUILD_DESCENT_II
+	/* Carry the host's empty-intro decision in the existing campaign transfer */
+	if (next.action == COOP_CAMPAIGN_ADVANCE && Netgame.CoopBriefings &&
+	    !coop_briefing_count_intro(ShowLevelIntro, next.destination.level)) buffer.data[18] = 2;
+#endif
 	memcpy(buffer.data + 24, portable, sizeof(portable));
 	put64(buffer.data + PREPARED_HEADER, ending_visit);
 	memcpy(buffer.data + CAMPAIGN_HEADER, encoded, size);
@@ -1467,7 +1475,8 @@ int coop_travel_frame(void)
 		/* A new normal mine gets its authored presentation before releasing play */
 		if (committed && prepared_action == COOP_CAMPAIGN_ADVANCE && !advancement_presented) {
 			advancement_presented = 1;
-			coop_briefing_arm(Current_level_num);
+			coop_briefing_arm(ShowLevelIntro, Current_level_num);
+			coop_briefing_apply_sync_flags(advancement_briefing_flags, Current_level_num);
 			coop_briefing_run(ShowLevelIntro, Current_level_num);
 		}
 #endif

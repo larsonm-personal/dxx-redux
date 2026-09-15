@@ -431,7 +431,34 @@ void coop_briefing_skip(void)
 	if (running && presenting) skipped = 1;
 }
 
-void coop_briefing_arm(int level)
+unsigned coop_briefing_count_intro(void (*present)(int), int level)
+{
+	coop_presentation_progress saved = local_progress;
+	int saved_screen_mode = Screen_mode;
+	local_progress.total = 0;
+	planning = 1;
+	present(level);
+	planning = 0;
+	unsigned total = local_progress.total;
+	local_progress = saved;
+	Screen_mode = saved_screen_mode;
+	return total;
+}
+
+unsigned coop_briefing_sync_flags(int level)
+{
+	return !!Netgame.CoopBriefings | ((level == destination && plan_ready && !local_progress.total) ? 2u : 0u);
+}
+
+void coop_briefing_apply_sync_flags(unsigned flags, int level)
+{
+	if (level == destination && (flags & 2)) {
+		armed = 0;
+		debug_log_force(DLOG_NETWORK, "CoopBriefing: no content, using normal level sync level=%d", level);
+	}
+}
+
+void coop_briefing_arm(void (*present)(int), int level)
 {
 	failure_reason = NULL;
 	if (game_id != (uint32_t) Netgame.protocol.udp.GameID) last_generation = 0;
@@ -453,6 +480,11 @@ void coop_briefing_arm(int level)
 	last_send = last_ack = release_since = 0;
 	last_host_packet = now_ms();
 	observed_phase = COOP_PHASE_SETTLED;
+	if (armed) {
+		local_progress.total = coop_briefing_count_intro(present, level);
+		plan_ready = 1;
+		if (Player_num == host) coop_briefing_apply_sync_flags(coop_briefing_sync_flags(level), level);
+	}
 	pthread_mutex_lock(&ui_lock);
 	memset(&ui, 0, sizeof(ui));
 	pthread_mutex_unlock(&ui_lock);
@@ -603,10 +635,7 @@ void coop_briefing_run(void (*present)(int), int level)
 			coop_arm_auto_restore();
 			suppress_for_restore = coop_auto_restore_pending();
 		}
-		planning = 1;
-		if (!suppress_for_restore) present(level);
-		planning = 0;
-		plan_ready = 1;
+		if (suppress_for_restore) local_progress.total = 0;
 		if (Player_num == host) {
 			unsigned participants = 0;
 			uint64_t generation = now_ms() > last_generation ? now_ms() : last_generation + 1;

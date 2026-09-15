@@ -3775,7 +3775,7 @@ void net_udp_send_game_info(struct _sockaddr sender_addr, ubyte info_upid, ubyte
 		buf[len] = Netgame.PlayerSpewNoExpire; len++;
 		buf[len] = Netgame.DuplicateEnergyShields; len++;
 #ifdef __ANDROID__
-		buf[len++] = Netgame.CoopBriefings;
+		buf[len++] = info_upid == UPID_SYNC ? coop_briefing_sync_flags(Netgame.levelnum) : !!Netgame.CoopBriefings;
 		buf[len++] = Netgame.AllowSecretWarps;
 #endif
 		buf[len] = Netgame.team_color[0];						len++;
@@ -3902,6 +3902,9 @@ void net_udp_request_resync_from_host(const char *reason)
 
 int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_addr, int lite_info, ubyte is_sync)
 {
+#ifdef __ANDROID__
+	unsigned briefing_flags = 0;
+#endif
 	int len = 0, i = 0, j = 0;
 	/* Android: reject stale or malformed metadata before any parser side effects */
 #ifdef __ANDROID__
@@ -4106,7 +4109,8 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 		Netgame.PlayerSpewNoExpire = data[len]; len++;
 		Netgame.DuplicateEnergyShields = data[len]; len++;
 #ifdef __ANDROID__
-		Netgame.CoopBriefings = data[len++] != 0;
+		briefing_flags = data[len++];
+		Netgame.CoopBriefings = (briefing_flags & 1) != 0;
 		Netgame.AllowSecretWarps = data[len++] != 0;
 #endif
 		Netgame.team_color[0] = data[len];						len++;
@@ -4183,6 +4187,9 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 			return 0;
 		}
 
+#ifdef __ANDROID__
+		if (is_sync) coop_briefing_apply_sync_flags(briefing_flags, Netgame.levelnum);
+#endif
 		Netgame.protocol.udp.valid = 1; // This game is valid! YAY!
 #if defined(__ANDROID__) && defined(INTROSPECT_ON)
 		memcpy(android_test_game_info[!!is_sync], data, data_len);
