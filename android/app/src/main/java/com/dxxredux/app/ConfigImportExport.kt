@@ -691,8 +691,8 @@ object ConfigImportExport {
                 prefs.getBoolean("host_duplicate_energy_shields", false),
             )
             put("full_death_spew", prefs.getBoolean("host_full_death_spew", true))
-            put("coop_briefings", prefs.getBoolean("host_coop_briefings", false))
-            put("allow_secret_warps", prefs.getBoolean("host_allow_secret_warps", false))
+            put("coop_briefings", prefs.getBoolean("host_coop_briefings", true))
+            put("allow_secret_warps", prefs.getBoolean("host_allow_secret_warps", true))
             put("player_spew_no_expire", prefs.getBoolean("host_player_spew_no_expire", true))
             put("clients_can_request_rewind", prefs.getBoolean("host_clients_can_request_rewind", false))
             put(

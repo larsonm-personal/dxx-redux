@@ -4,6 +4,13 @@
         "coop_briefing.phase": 6, "coop_briefing.local_state": 2,
         "movie.current": "pla.mve", "movie.frame": {"gte": 1}, "time_paused": true
     }},
+    {"action": "wait_ms", "ms": 1000},
+    {"action": "send_touch_tap"},
+    {"action": "wait_ms", "ms": 500},
+    {"action": "assert", "expect": {
+        "movie.current": "pla.mve", "movie.frame": {"gte": 1},
+        "coop_briefing.presenting": true, "coop_briefing.local_state": 2
+    }},
     {"action": "key", "key": "pause"},
     {"action": "wait_for", "timeout_ms": 5000, "expect": {
         "movie.paused": true, "movie.pause_window": true

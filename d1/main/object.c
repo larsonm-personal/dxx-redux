@@ -1668,6 +1668,10 @@ void dead_player_frame(void)
 				else
 					HUD_init_message_literal(HM_DEFAULT, TXT_SHIP_DESTROYED_0);
 				Players[Player_num].hostages_on_board = 0;
+#if defined(__ANDROID__) && defined(NETWORK)
+				if (Game_mode & GM_MULTI_COOP)
+					multi_send_ship_status();
+#endif
 
 				Player_exploded = 1;
 #ifdef __ANDROID__

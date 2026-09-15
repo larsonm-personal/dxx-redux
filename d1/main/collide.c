@@ -1114,7 +1114,12 @@ void collide_hostage_and_player( object * hostage, object * player, vms_vector *
 
 		#ifdef NETWORK
 		if (Game_mode & GM_MULTI)
+		{
 			multi_send_remobj(hostage-Objects);
+#ifdef __ANDROID__
+			multi_send_ship_status();
+#endif
+		}
 		#endif
 	}
 	return;

@@ -1,0 +1,10 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "request_screen_advance", "generation": "current"},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "movie.frame": -1, "movie.pause_window": false,
+        "coop_briefing.phase": 6, "coop_briefing.presenting": true,
+        "coop_briefing.local_state": 1, "coop_briefing.can_launch": false,
+        "screen_advance_kind": "briefing", "screen_advance_can_activate": true
+    }}
+]

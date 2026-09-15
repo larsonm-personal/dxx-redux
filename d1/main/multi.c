@@ -5276,6 +5276,7 @@ void multi_send_ship_status_for_frame()
 #ifdef __ANDROID__
 	PUT_INTEL_INT(multibuf + 45, coop_recovery_restore_serial(Player_num));
 	PUT_INTEL_INT(multibuf + 49, coop_recovery_life(Player_num));
+	multibuf[53] = Players[Player_num].hostages_on_board;
 #else
 	PUT_INTEL_INT(multibuf + 45, 0);
 	PUT_INTEL_INT(multibuf + 49, 0);
@@ -5297,6 +5298,8 @@ void multi_do_ship_status( const ubyte *buf, int authenticated_sender )
 #ifdef __ANDROID__
 	if (!coop_recovery_accept_ship_status(buf[1], (uint32_t) GET_INTEL_INT(buf + 45), (uint32_t) GET_INTEL_INT(buf + 49))) return;
 	coop_recovery_set_restore_serial(buf[1], (uint32_t) GET_INTEL_INT(buf + 45));
+	if (is_observer() || ((Game_mode & GM_MULTI_COOP) && buf[1] != Player_num))
+		Players[buf[1]].hostages_on_board = buf[53];
 #endif
 	if (is_observer())
 	{

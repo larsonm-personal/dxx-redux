@@ -1,4 +1,6 @@
 #!/usr/bin/env pwsh
+# TEST-SUPPORT: owner=test_native_host_unit_tests
+# The native owner runs this CTest target for both games
 param(
     [ValidateSet('d1', 'd2')][string]$Game = 'd2',
     [switch]$NoBuild

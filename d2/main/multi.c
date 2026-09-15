@@ -6925,6 +6925,7 @@ void multi_send_ship_status_for_frame()
 	PUT_INTEL_INT(multibuf + 70, coop_recovery_restore_serial(Player_num));
 	PUT_INTEL_INT(multibuf + 78, coop_recovery_life(Player_num));
 	multibuf[82] = Players[Player_num].secondary_weapon_flags >> 8;
+	multibuf[83] = Players[Player_num].hostages_on_board;
 #else
 	PUT_INTEL_INT(multibuf + 70, 0);
 	PUT_INTEL_INT(multibuf + 78, 0);
@@ -6962,6 +6963,8 @@ void multi_do_ship_status( const ubyte *buf, int authenticated_sender )
 	if (!coop_recovery_accept_ship_status(buf[1], (uint32_t) GET_INTEL_INT(buf + 70), (uint32_t) GET_INTEL_INT(buf + 78))) return;
 	coop_recovery_set_restore_serial(buf[1], (uint32_t) GET_INTEL_INT(buf + 70));
 	coop_recovery_set_omega(buf[1], GET_INTEL_INT(buf + 74));
+	if (is_observer() || ((Game_mode & GM_MULTI_COOP) && buf[1] != Player_num))
+		Players[buf[1]].hostages_on_board = buf[83];
 #endif
 	if (is_observer())
 	{

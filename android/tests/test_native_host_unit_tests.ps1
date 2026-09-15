@@ -38,6 +38,8 @@ function Invoke-NativeCTest {
 
     Write-Host ""
     Write-Host "Running native CTest suite for $GameName"
+    # test_coop_transition_policy.ps1 is the focused entry point for the
+    # transition-policy target included here through android/tests/CMakeLists.txt
     ctest --test-dir $buildDir -C $Configuration --output-on-failure
     if ($LASTEXITCODE -ne 0) {
         throw "CTest failed for $GameName with exit code $LASTEXITCODE"

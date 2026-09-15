@@ -5,6 +5,41 @@ The user explicitly asked to stop expanding edge-case coverage after finishing
 the cross-world save/load check. Start next session with player feedback;
 do not automatically resume every unchecked item in the longer plans.
 
+## First player feedback (2026-09-14)
+
+- Movie input correction: fullscreen movie taps must not dismiss playback.
+  The upper-right Skip dismisses only that movie and leaves subsequent robot
+  briefing pages available. Page taps keep their existing advance behavior;
+  host force-launch still closes the full presentation. Validate with the
+  paused-force LAN case, including an ordinary movie tap before pausing and
+  explicit movie Skip followed by the still-active briefing pages.
+  This case passed on two emulators at 12:29:17 on 2026-09-14 using
+  `test_lan.ps1 -Game d2 -Briefings -BriefingCase paused_force -NoCoopQol
+  -TimeoutSeconds 180 -SkipBuild`. The host's ordinary tap left the actual
+  Counterstrike movie running; movie Skip preserved briefing pages and did not
+  enable Launch now. Subsequent briefing Skip and host force-launch still
+  released both players, including a client paused in its movie. Android
+  ARM64/x86_64 assembly and both Windows builds passed. Evidence:
+  [test log](../../../temp/coop-movie-only-live.log),
+  [Android build](../../../temp/coop-movie-only-build.log),
+  [Windows builds](../../../temp/coop-movie-only-windows.log).
+  The same movie handler is used in single-player, but a separate single-player
+  device run was not performed. Temporary emulator movie libraries were removed.
+- New host preferences now default both briefings and secret warps to on.
+  Existing explicit choices remain authoritative. Creating a game saves both
+  choices through the same preference path as the other host switches; config
+  export uses the same initial defaults.
+- Investigated `Downloads/debuglog_20260914_120539.txt` (client) and
+  `Downloads/debuglog_20260914_120540.txt` (host), supplied as nested paths but
+  found under those flattened filenames. The client started synchronization at
+  12:06:43.031, received Android Back (`akey=4`, SDL Escape) down/up at
+  12:06:44.917, and cancelled at 12:06:44.940. The host completed synchronization
+  at 12:06:45.946 with one player. `net_udp_sync_poll` returns cancellation on
+  Escape, matching this sequence. These logs do not establish an options-off
+  startup defect or explain what generated the Back event. No network behavior
+  was changed based on this report. If it recurs without Back input, retain that
+  reproduction and logs for a focused follow-up.
+
 ## Where we stopped
 
 - D2 has an independent **Allow secret area warps** server option beside co-op

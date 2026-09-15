@@ -1,7 +1,8 @@
 [
     {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
     {"action": "assert", "expect": {
-        "coop_briefing.phase": 6, "movie.paused": true, "movie.pause_window": true
+        "coop_briefing.phase": 6, "coop_briefing.presenting": true,
+        "coop_briefing.local_state": 1, "movie.pause_window": false
     }},
     {"action": "set_debug", "field": "coop_briefing_action", "value": "skip"},
     {"action": "wait_for", "timeout_ms": 5000, "expect": {

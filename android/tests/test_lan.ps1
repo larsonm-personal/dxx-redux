@@ -397,8 +397,18 @@ function Invoke-CoopRewindScenario {
     param([switch]$FromClient)
 
     $rewindPhases = if ($FromClient) { @('seed', 'client_record', 'reactor', 'client_requests') } else { @('seed', 'record', 'reactor', 'mutate', 'rewind', 'verify') }
+    $phaseScripts = @{
+        seed = 'test_coop_rewind_seed.jsonc'
+        client_record = 'test_coop_rewind_client_record.jsonc'
+        record = 'test_coop_rewind_record.jsonc'
+        reactor = 'test_coop_countdown_save_seed.jsonc'
+        mutate = 'test_coop_rewind_mutate.jsonc'
+        rewind = 'test_coop_rewind_rewind.jsonc'
+        verify = 'test_coop_rewind_verify.jsonc'
+        client_requests = 'test_coop_rewind_client_host.jsonc'
+    }
     foreach ($phase in $rewindPhases) {
-        $hostScript = if ($phase -eq 'reactor') { 'test_coop_countdown_save_seed.jsonc' } else { "test_coop_rewind_$phase.jsonc" }
+        $hostScript = $phaseScripts[$phase]
         $clientScript = if ($phase -eq 'rewind') { 'test_coop_countdown_save_wait.jsonc' } else { $hostScript }
         if ($phase -eq 'client_requests') {
             $hostScript = 'test_coop_rewind_client_host.jsonc'
@@ -725,7 +735,13 @@ function Invoke-RestoreFailureScenario {
 
 function Invoke-CoopLevelRestartScenario {
     foreach ($phase in @('remember', 'seed', 'mutate', 'restart', 'verify')) {
-        $hostScript = if ($phase -eq 'seed') { 'test_coop_countdown_save_seed.jsonc' } else { "test_coop_level_restart_$phase.jsonc" }
+        $hostScript = @{
+            seed = 'test_coop_countdown_save_seed.jsonc'
+            remember = 'test_coop_level_restart_remember.jsonc'
+            mutate = 'test_coop_level_restart_mutate.jsonc'
+            restart = 'test_coop_level_restart_restart.jsonc'
+            verify = 'test_coop_level_restart_verify.jsonc'
+        }[$phase]
         $clientScript = if ($phase -eq 'restart') { 'test_coop_countdown_save_wait.jsonc' } elseif ($phase -eq 'remember') { 'test_coop_level_restart_remember_client.jsonc' } else { $hostScript }
         # Cover the 180-second restore wait plus request and verification steps
         $phaseTimeout = if ($phase -eq 'restart') { 210 } else { 180 }
@@ -2099,12 +2115,23 @@ try {
             Write-Status '=== BRIEFING PARTICIPANT LOSS TEST PASSED ===' 'Green'
             exit 0
         }
-        $briefingPrefix = if ($BriefingCase -eq "force") { "test_coop_briefing" } else { "test_coop_briefing_$BriefingCase" }
-        $briefingClientScript = if ($BriefingCase -eq "overlay_touch") { "test_coop_briefing_client.jsonc" } else { "${briefingPrefix}_client.jsonc" }
-        if ($BriefingCase -like "paused_*" -and $BriefingCase -ne "paused_overall") {
-            $briefingClientScript = "test_coop_briefing_paused_client.jsonc"
-            $briefingPrefix = if ($BriefingCase -eq "paused_force") { "test_coop_briefing_paused_force" } else { "test_coop_briefing_host_deadline" }
-        }
+        # Explicit filenames keep scenario ownership visible to catalog validation
+        $briefingScripts = @{
+            force = @('test_coop_briefing_host.jsonc', 'test_coop_briefing_client.jsonc')
+            host_deadline = @('test_coop_briefing_host_deadline_host.jsonc', 'test_coop_briefing_host_deadline_client.jsonc')
+            overall_deadline = @('test_coop_briefing_overall_deadline_host.jsonc', 'test_coop_briefing_overall_deadline_client.jsonc')
+            release_delay = @('test_coop_briefing_release_delay_host.jsonc', 'test_coop_briefing_release_delay_client.jsonc')
+            overlay_touch = @('test_coop_briefing_overlay_touch_host.jsonc', 'test_coop_briefing_client.jsonc')
+            paused_force = @('test_coop_briefing_paused_force_host.jsonc', 'test_coop_briefing_paused_client.jsonc')
+            paused_deadline = @('test_coop_briefing_host_deadline_host.jsonc', 'test_coop_briefing_paused_client.jsonc')
+            paused_overall = @('test_coop_briefing_paused_overall_host.jsonc', 'test_coop_briefing_paused_overall_client.jsonc')
+            reading = @('test_coop_briefing_reading_host.jsonc', 'test_coop_briefing_reading_client.jsonc')
+            partial_skip = @('test_coop_briefing_partial_skip_host.jsonc', 'test_coop_briefing_partial_skip_client.jsonc')
+            missing_movie = @('test_coop_briefing_missing_movie_host.jsonc', 'test_coop_briefing_missing_movie_client.jsonc')
+            observer_host = @('test_coop_briefing_observer_host_host.jsonc', 'test_coop_briefing_observer_host_client.jsonc')
+        }[$BriefingCase]
+        $briefingHostScript = $briefingScripts[0]
+        $briefingClientScript = $briefingScripts[1]
         if (-not (Start-DeviceGameAutomation -Serial $EMU2 -ScriptName $briefingClientScript)) {
             throw "Could not start client briefing verification"
         }
@@ -2130,8 +2157,15 @@ try {
             Write-Status "Paused movie frame $($paused.movie.frame) stayed fixed while the visible countdown advanced"
             $hostPause = Get-DeviceAutomationResult -Serial $EMU1
             if (-not $hostPause -or $hostPause.result -ne "PASS") { throw "Host video pause did not complete" }
+            if ($BriefingCase -ne 'paused_overall') {
+                if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_briefing_skip_movie.jsonc')) { throw 'Could not request movie Skip' }
+                if (-not (Wait-ForCondition -Description 'Skip only the host movie and retain robot briefing pages' -TimeoutSec 10 -PollMs 300 -Condition {
+                            $result = Get-DeviceAutomationResult -Serial $EMU1
+                            return $result -and $result.result -eq 'PASS'
+                        })) { throw 'Movie Skip dismissed the briefing sequence' }
+            }
         }
-        if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName "${briefingPrefix}_host.jsonc")) {
+        if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName $briefingHostScript)) {
             throw "Could not start paired briefing verification"
         }
         if ($BriefingCase -eq "overlay_touch") {
@@ -2346,7 +2380,12 @@ try {
     if ($CountdownSave -and -not $SecretSaveRestore) {
         $testPassed = $false
         foreach ($phase in @('seed', 'save', 'mutate', 'restore')) {
-            $hostScript = "test_coop_countdown_save_$phase.jsonc"
+            $hostScript = @{
+                seed = 'test_coop_countdown_save_seed.jsonc'
+                save = 'test_coop_countdown_save_save.jsonc'
+                mutate = 'test_coop_countdown_save_mutate.jsonc'
+                restore = 'test_coop_countdown_save_restore.jsonc'
+            }[$phase]
             $clientScript = if ($phase -eq 'restore') { 'test_coop_countdown_save_wait.jsonc' } elseif ($phase -eq 'save') { 'test_coop_countdown_save_idle.jsonc' } else { $hostScript }
             if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript $hostScript `
                         -SecondarySerial $EMU2 -SecondaryScript $clientScript `
@@ -2564,11 +2603,18 @@ try {
         if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_world_carry.jsonc" `
                     -SecondarySerial $EMU2 -SecondaryScript "test_coop_world_carry.jsonc" -Description "Seed both players before secret departure")) { throw "Advance inventory setup failed" }
         $departure = if ($SecretEndgameModal) { "endgame_modal" } elseif ($SecretEndgame) { "endgame" } else { "advance" }
-        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_secret_${departure}_prepare.jsonc" `
-                    -SecondarySerial $EMU2 -SecondaryScript "test_coop_secret_${departure}_prepare.jsonc" -Description "Prepare secret campaign $departure")) { throw "Departure setup failed" }
+        $departureScripts = @{
+            advance = @('test_coop_secret_advance_prepare.jsonc', 'test_coop_secret_advance_host.jsonc', 'test_coop_secret_advance_client.jsonc')
+            endgame = @('test_coop_secret_endgame_prepare.jsonc', 'test_coop_secret_endgame_host.jsonc', 'test_coop_secret_endgame_client.jsonc')
+            endgame_modal = @('test_coop_secret_endgame_modal_prepare.jsonc', 'test_coop_secret_endgame_modal_host.jsonc', 'test_coop_secret_endgame_modal_client.jsonc')
+            endgame_host_leaves = @('test_coop_secret_endgame_modal_prepare.jsonc', 'test_coop_secret_endgame_host_leaves_host.jsonc', 'test_coop_secret_endgame_host_leaves_client.jsonc')
+        }
+        $prepareScript = $departureScripts[$departure][0]
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript $prepareScript `
+                    -SecondarySerial $EMU2 -SecondaryScript $prepareScript -Description "Prepare secret campaign $departure")) { throw "Departure setup failed" }
         if ($SecretEndgameHostLeaves) { $departure = "endgame_host_leaves" }
-        $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_secret_${departure}_host.jsonc" `
-            -SecondarySerial $EMU2 -SecondaryScript "test_coop_secret_${departure}_client.jsonc" -Description "Complete coordinated secret campaign $departure" -TimeoutSec 300
+        $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript $departureScripts[$departure][1] `
+            -SecondarySerial $EMU2 -SecondaryScript $departureScripts[$departure][2] -Description "Complete coordinated secret campaign $departure" -TimeoutSec 300
     }
     if ($testPassed -and $TravelGate) {
         if ($Game -ne "d2" -or -not $AllowSecretWarps) { throw "Travel gate probe requires D2 secret warps enabled" }

@@ -187,8 +187,8 @@ int PlayMovie(const char *filename, int must_have)
 	Screen_mode = -1;		//force screen reset
 
 #ifdef __ANDROID__
-	if (ret == MOVIE_ABORTED) coop_briefing_skip();
-	else coop_briefing_step_complete(ret == MOVIE_PLAYED_FULL);
+	/* Skipping a movie leaves the following briefing pages available */
+	if (ret != MOVIE_ABORTED) coop_briefing_step_complete(ret == MOVIE_PLAYED_FULL);
 #endif
 	return ret;
 }
@@ -340,7 +340,6 @@ int MovieHandler(window *wind, d_event *event, movie *m)
 #ifdef ANDROID
 	if (event->type != EVENT_WINDOW_CLOSE && event->type != EVENT_WINDOW_CLOSED &&
 	    android_screen_advance_take_request(ANDROID_SCREEN_ADVANCE_MOVIE)) {
-		coop_briefing_skip();
 		m->result = m->aborted = 1;
 		window_close(wind);
 		return 1;
@@ -360,9 +359,10 @@ int MovieHandler(window *wind, d_event *event, movie *m)
 
 #ifdef ANDROID
 		case EVENT_MOUSE_BUTTON_DOWN:
+			/* Touch dismissal belongs to the explicit upper-right Skip button */
+			return 1;
 		case EVENT_JOYSTICK_BUTTON_DOWN:
-			if (event->type == EVENT_MOUSE_BUTTON_DOWN ||
-			    event_joystick_get_button(event) == 0) {
+			if (event_joystick_get_button(event) == 0) {
 				if (!android_screen_advance_accept_event(ANDROID_SCREEN_ADVANCE_MOVIE, event))
 					return 1;
 			}

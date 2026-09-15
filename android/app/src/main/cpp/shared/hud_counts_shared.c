@@ -81,6 +81,22 @@ static int hud_counts_remaining_hostages(void)
 	return count;
 }
 
+static int hud_counts_onboard_hostages(int pnum)
+{
+#ifdef NETWORK
+	int i, onboard = 0;
+
+	if (Game_mode & GM_MULTI_COOP) {
+		for (i = 0; i < N_players; i++)
+			if (i == pnum || Players[i].connected != CONNECT_DISCONNECTED)
+				onboard += Players[i].hostages_on_board;
+		return onboard;
+	}
+#endif
+
+	return Players[pnum].hostages_on_board;
+}
+
 static void hud_counts_draw_hostages(int y, int lost, int onboard, int total,
                                      hud_counts_right_inset_fn right_inset, hud_counts_debug_row *debug_row)
 {
@@ -138,7 +154,7 @@ void hud_counts_draw(int pnum, int score_added_active, int timer_active,
 {
 	char robot_str[32];
 	int yline = 1;
-	int remaining_hostages, lost_hostages;
+	int remaining_hostages, onboard_hostages, lost_hostages;
 
 	hud_counts_debug_reset();
 	gr_set_curfont(GAME_FONT);
@@ -160,12 +176,13 @@ void hud_counts_draw(int pnum, int score_added_active, int timer_active,
 	                           right_inset, &Hud_counts_debug.robots);
 
 	remaining_hostages = hud_counts_remaining_hostages();
+	onboard_hostages = hud_counts_onboard_hostages(pnum);
 	lost_hostages = Players[pnum].hostages_level -
-	                Players[pnum].hostages_on_board - remaining_hostages;
+	                onboard_hostages - remaining_hostages;
 	if (lost_hostages < 0)
 		lost_hostages = 0;
 	hud_counts_draw_hostages(FSPACY(1) + LINE_SPACING * (yline + 1),
-	                         lost_hostages, Players[pnum].hostages_on_board,
+	                         lost_hostages, onboard_hostages,
 	                         Players[pnum].hostages_level, right_inset, &Hud_counts_debug.hostages);
 	hud_counts_draw_secrets(FSPACY(1) + LINE_SPACING * (yline + 2), right_inset,
 	                        &Hud_counts_debug.secrets);
