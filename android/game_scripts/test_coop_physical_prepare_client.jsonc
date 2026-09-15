@@ -1,0 +1,10 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "set_debug", "field": "recovery_test_trace", "value": "true"},
+    {"action": "set_debug", "field": "coop_world_test", "value": "remember_world"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "arrival_leave"},
+    {"action": "wait_ms", "ms": 1500},
+    {"action": "assert", "expect": {"coop_travel.arrival_blocked_exits": 0}},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "physical_prepare"},
+    {"action": "wait_ms", "ms": 1500}
+]

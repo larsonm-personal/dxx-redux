@@ -1,0 +1,19 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "assert", "expect": {
+        "coop_briefing.phase": 6, "movie.paused": true, "movie.pause_window": true
+    }},
+    {"action": "set_debug", "field": "coop_briefing_action", "value": "skip"},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "coop_briefing.can_launch": true, "coop_briefing.presenting": false,
+        "movie.frame": -1, "movie.pause_window": false,
+        "coop_briefing.seconds_remaining": {"range": [1, 20]}
+    }},
+    {"action": "wait_ms", "ms": 3000},
+    {"action": "set_debug", "field": "coop_briefing_action", "value": "launch"},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {
+        "coop_briefing.active": false, "coop_briefing.phase": 0,
+        "coop_briefing.launch_reason": 2, "in_game": true, "time_paused": false,
+        "movie.frame": -1, "movie.pause_window": false, "multiplayer.num_connected": 2
+    }}
+]

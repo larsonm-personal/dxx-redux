@@ -1,0 +1,9 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "secret"},
+    {"action": "wait_for", "timeout_ms": 15000, "expect": {"coop_travel.phase": 4, "time_paused": true}},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "frozen_time"},
+    {"action": "wait_ms", "ms": 3500},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "verify_frozen"},
+    {"action": "wait_for", "timeout_ms": 15000, "expect": {"coop_travel.active": false, "time_paused": false}}
+]

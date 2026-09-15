@@ -10,6 +10,7 @@
 #include "multi.h"
 #ifdef __ANDROID__
 #include "net/net_udp_reconnect_auth.h"
+#include "coop/coop_gameplay_fence.h"
 #endif
 
 // Exported functions
@@ -36,7 +37,7 @@ int net_udp_auto_join(const char *host_addr, int host_port, int my_port);
 int net_udp_auto_host(int my_port, const char *mission, int mode,
 					  int difficulty, int max_players, int level_num,
 					  int coop_qol, int duplicate_energy_shields,
-					  int full_death_spew,
+					  int full_death_spew, int coop_briefings, int allow_secret_warps,
 					  int player_spew_no_expire);
 int net_udp_rebind_for_hosting(void);
 void net_udp_request_resync_from_host(const char *reason);
@@ -74,7 +75,12 @@ void net_udp_request_resync_from_host(const char *reason);
 #else
 #define UPID_GAME_INFO_RECONNECT_AUTH_SIZE 0
 #endif
-#define UPID_GAME_INFO_SIZE			(5 + 4*2 + 370 + (NETGAME_NAME_LEN+1) + (MISSION_NAME_LEN+1) + ((MAX_PLAYERS+4)*(CALLSIGN_LEN+1+1+37)) + 18*12 + UPID_GAME_INFO_RECONNECT_AUTH_SIZE)
+#ifdef __ANDROID__
+#define UPID_GAME_INFO_COOP_TRANSITION_SIZE 10 /* Options plus live world visit */
+#else
+#define UPID_GAME_INFO_COOP_TRANSITION_SIZE 0
+#endif
+#define UPID_GAME_INFO_SIZE			(5 + 4*2 + 370 + (NETGAME_NAME_LEN+1) + (MISSION_NAME_LEN+1) + ((MAX_PLAYERS+4)*(CALLSIGN_LEN+1+1+37)) + 18*12 + UPID_GAME_INFO_RECONNECT_AUTH_SIZE + UPID_GAME_INFO_COOP_TRANSITION_SIZE)
 #define UPID_GAME_INFO_LITE_REQ			  4 // Requesting lite info about a netgame. Used for discovering games.
 #define UPID_GAME_INFO_LITE			  5 // Packet containing lite netgame info.
 #define UPID_GAME_INFO_LITE_SIZE		 (31 + (NETGAME_NAME_LEN+1) + (MISSION_NAME_LEN+1))
@@ -96,10 +102,22 @@ void net_udp_request_resync_from_host(const char *reason);
 #define UPID_PONG_SIZE				 10
 #define UPID_ENDLEVEL_H				 14 // Packet from Host to all Clients containing connect-states and kills information about everyone in the game.
 #define UPID_ENDLEVEL_C				 15 // Packet from Client to Host containing connect-state and kills information from this Client.
+#ifdef __ANDROID__
+#define UPID_ENDLEVEL_STAMP_SIZE COOP_GAMEPLAY_STAMP_BYTES
+#else
+#define UPID_ENDLEVEL_STAMP_SIZE 0
+#endif
+#define UPID_ENDLEVEL_H_SIZE (6 + MAX_PLAYERS * 5 + MAX_PLAYERS * MAX_PLAYERS * 2 + UPID_ENDLEVEL_STAMP_SIZE)
+#define UPID_ENDLEVEL_C_SIZE (12 + MAX_PLAYERS * 2 + UPID_ENDLEVEL_STAMP_SIZE)
 #define UPID_PDATA				 16 // Packet from player containing his movement data.
-#define UPID_PDATA_S_SIZE			 (26 + 4 + 1)
-#define UPID_PDATA_Q_SIZE             (47 + 4 + 1)
-#define UPID_PDATA_U_SIZE			 (72 + 3 + 4 + 1)
+#ifdef __ANDROID__
+#define UPID_PDATA_STAMP_SIZE COOP_GAMEPLAY_STAMP_BYTES
+#else
+#define UPID_PDATA_STAMP_SIZE 0
+#endif
+#define UPID_PDATA_S_SIZE			 (26 + 4 + 1 + UPID_PDATA_STAMP_SIZE)
+#define UPID_PDATA_Q_SIZE             (47 + 4 + 1 + UPID_PDATA_STAMP_SIZE)
+#define UPID_PDATA_U_SIZE			 (72 + 3 + 4 + 1 + UPID_PDATA_STAMP_SIZE)
 #define UPID_MDATA_PNORM			 17 // Packet containing multi buffer from a player. Priority 0,1 - no ACK needed.
 #define UPID_MDATA_PNEEDACK			 18 // Packet containing multi buffer from a player. Priority 2 - ACK needed. Also contains pkt_num
 #define UPID_MDATA_ACK				 19 // ACK packet for UPID_MDATA_P1.
@@ -108,6 +126,14 @@ void net_udp_request_resync_from_host(const char *reason);
 #error UPID_MAX_SIZE must fit UPID_GAME_INFO_SIZE
 #endif
 #define UPID_MDATA_BUF_SIZE			454
+#ifdef __ANDROID__
+/* Wire header includes the session token, unlike UDP_mdata_info bookkeeping */
+#define UPID_MDATA_WIRE_BODY_SIZE (UPID_MDATA_BUF_SIZE + COOP_GAMEPLAY_STAMP_BYTES)
+#define UPID_MDATA_MAX_SIZE (10 + UPID_MDATA_WIRE_BODY_SIZE)
+#else
+#define UPID_MDATA_WIRE_BODY_SIZE UPID_MDATA_BUF_SIZE
+#define UPID_MDATA_MAX_SIZE sizeof(UDP_mdata_info)
+#endif
 #ifdef USE_TRACKER
 #  define UPID_TRACKER_VERIFY			 21 // The tracker has successfully gotten a hold of us
 #  define UPID_TRACKER_INCGAME			 22 // The tracker is sending us some game info
@@ -180,6 +206,9 @@ typedef struct UDP_mdata_info
 	uint32_t			pkt_num;
 	ushort				mbuf_size;
 	ubyte				mbuf[UPID_MDATA_BUF_SIZE];
+#ifdef __ANDROID__
+	ubyte world_stamp[COOP_GAMEPLAY_STAMP_BYTES];
+#endif
 } __pack__ UDP_mdata_info;
 
 // structure to store MDATA to maybe resend
@@ -191,7 +220,7 @@ typedef struct UDP_mdata_store
 	int				pkt_num;			// Packet number
 	ubyte				Player_num;			// sender of this packet
 	ubyte				player_ack[MAX_PLAYERS]; 	// 0 if player has not ACK'd this packet, 1 if ACK'd or not connected
-	ubyte				data[UPID_MDATA_BUF_SIZE];	// extra data of a packet - contains all multibuf data we don't want to lose
+	ubyte				data[UPID_MDATA_WIRE_BODY_SIZE];	// extra data of a packet - contains all multibuf data we don't want to lose
 	ushort				data_size;
 } __pack__ UDP_mdata_store;
 
@@ -204,7 +233,7 @@ typedef struct UDP_mdata_obs_store
 	int				pkt_num;			// Packet number
 	ubyte				Player_num;			// sender of this packet
 	ubyte				observer_ack[MAX_OBSERVERS]; 	// 0 if observer has not ACK'd this packet, 1 if ACK'd or not connected
-	ubyte				data[UPID_MDATA_BUF_SIZE];	// extra data of a packet - contains all multibuf data we don't want to lose
+	ubyte				data[UPID_MDATA_WIRE_BODY_SIZE];	// extra data of a packet - contains all multibuf data we don't want to lose
 	ushort				data_size;
 } __pack__ UDP_mdata_obs_store;
 
@@ -227,5 +256,16 @@ typedef struct connection_status {
 extern int Observer_num;
 
 void netgame_set_defaults(void);
+
+#ifdef __ANDROID__
+unsigned net_udp_reliable_pending(void);
+#ifdef INTROSPECT_ON
+int net_udp_test_reliable_boundary(int verify);
+int net_udp_test_full_mdata(int verify);
+int net_udp_test_mdata_fence(int phase);
+int net_udp_test_pdata_fence(int phase);
+int net_udp_test_level_sequence(int verify);
+#endif
+#endif
 
 #endif /* DXX_D1_MAIN_NET_UDP_H */

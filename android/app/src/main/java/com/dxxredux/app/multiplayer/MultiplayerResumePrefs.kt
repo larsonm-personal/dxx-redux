@@ -25,6 +25,8 @@ internal data class MultiplayerResumeRecord(
     val coopQol: Boolean = true,
     val duplicateEnergyShields: Boolean = false,
     val fullDeathSpew: Boolean = true,
+    val coopBriefings: Boolean = false,
+    val allowSecretWarps: Boolean = false,
     val playerSpewNoExpire: Boolean = true,
     val localCallsign: String,
     val localClientId: String? = null,
@@ -83,6 +85,8 @@ internal fun MultiplayerResumeRecord.toHostDefaults(): HostGameDefaults.Defaults
         coopQol = coopQol,
         duplicateEnergyShields = duplicateEnergyShields,
         fullDeathSpew = fullDeathSpew,
+        coopBriefings = coopBriefings,
+        allowSecretWarps = allowSecretWarps,
         playerSpewNoExpire = playerSpewNoExpire,
         clientsCanRequestRewind = clientsCanRequestRewind,
         restrictNonCoopFovToBase = restrictNonCoopFovToBase,
@@ -99,6 +103,8 @@ internal fun MultiplayerResumeRecord.toGameInfoJson(): JsonObject =
             "coop_qol" to JsonPrimitive(coopQol),
             "duplicate_energy_shields" to JsonPrimitive(duplicateEnergyShields),
             "full_death_spew" to JsonPrimitive(fullDeathSpew),
+            "coop_briefings" to JsonPrimitive(coopBriefings),
+            "allow_secret_warps" to JsonPrimitive(allowSecretWarps),
             "player_spew_no_expire" to JsonPrimitive(playerSpewNoExpire),
             "clients_can_request_rewind" to JsonPrimitive(clientsCanRequestRewind),
             "restrict_noncoop_fov_to_base" to JsonPrimitive(restrictNonCoopFovToBase),
@@ -132,6 +138,8 @@ internal fun encodeMultiplayerResumeRecord(record: MultiplayerResumeRecord): Str
         .put("coop_qol", record.coopQol)
         .put("duplicate_energy_shields", record.duplicateEnergyShields)
         .put("full_death_spew", record.fullDeathSpew)
+        .put("coop_briefings", record.coopBriefings)
+        .put("allow_secret_warps", record.allowSecretWarps)
         .put("player_spew_no_expire", record.playerSpewNoExpire)
         .put("local_callsign", record.localCallsign)
         .putNullable("local_client_id", record.localClientId)
@@ -180,6 +188,8 @@ internal fun decodeMultiplayerResumeRecord(raw: String?): MultiplayerResumeRecor
             coopQol = json.optBoolean("coop_qol", true),
             duplicateEnergyShields = json.optBoolean("duplicate_energy_shields", false),
             fullDeathSpew = json.optBoolean("full_death_spew", true),
+            coopBriefings = json.optBoolean("coop_briefings", false),
+            allowSecretWarps = json.optBoolean("allow_secret_warps", false),
             playerSpewNoExpire = json.optBoolean("player_spew_no_expire", true),
             localCallsign = callsign,
             localClientId = json.optNullableString("local_client_id"),
@@ -267,6 +277,8 @@ internal object MultiplayerResumePrefs {
                 coopQol = info.coopQol,
                 duplicateEnergyShields = info.duplicateEnergyShields,
                 fullDeathSpew = info.fullDeathSpew,
+                coopBriefings = info.coopBriefings,
+                allowSecretWarps = info.allowSecretWarps,
                 playerSpewNoExpire = info.playerSpewNoExpire,
                 clientsCanRequestRewind = info.clientsCanRequestRewind,
                 restrictNonCoopFovToBase = info.restrictNonCoopFovToBase,
@@ -302,7 +314,7 @@ internal object MultiplayerResumePrefs {
             context,
             current.copy(
                 updatedAtMs = System.currentTimeMillis(),
-                levelNum = levelNum ?: selectedSave?.level ?: current.levelNum,
+                levelNum = levelNum ?: selectedSave?.hostedLevel ?: current.levelNum,
                 coopRestoreSlot = restoreSlot,
                 coopRestoreCheckpointId = restoreCheckpointId,
                 coopRestoreSaveTime =
@@ -344,7 +356,7 @@ internal fun resolveCoopHostResumeRecord(
                 restoreWasSelected = false,
             )
     return record.copy(
-        levelNum = selected.level,
+        levelNum = selected.hostedLevel,
         coopRestoreSlot = selected.slot.takeIf { it >= 0 },
         coopRestoreCheckpointId = selected.checkpointId,
         coopRestoreSaveTime = selected.timestamp,

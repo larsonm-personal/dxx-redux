@@ -22,6 +22,7 @@
 #include "android_log.h"
 #include "android_rewind.h"
 #include "coop/coop_level_restart.h"
+#include "coop/coop_save.h"
 #include "cntrlcen.h"
 #include "android_save_meta.h"
 #include "endlevel.h"
@@ -203,7 +204,7 @@ static int android_coop_quick_action_allowed(int restoring)
 		HUD_init_message(HM_MULTI, "Can't %s with a host that is observing!", action);
 		return 0;
 	}
-	if ((Endlevel_sequence) || (Control_center_destroyed))
+	if (Endlevel_sequence || (Control_center_destroyed && !coop_save_countdown_allowed()))
 		return 0;
 	if (!multi_i_am_master()) {
 		HUD_init_message(HM_MULTI, "Only host is allowed to %s a game!", action);

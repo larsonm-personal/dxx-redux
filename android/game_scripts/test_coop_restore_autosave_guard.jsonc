@@ -1,0 +1,8 @@
+[
+    {"_info": {"games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "wait_for", "timeout_ms": 180000, "expect": {"coop_restore.transfer_busy": true}},
+    {"action": "set_debug", "field": "reliable_packet_test", "value": "seed_boundary"},
+    {"action": "set_debug", "field": "coop_autosave", "value": "reject_during_transfer"},
+    {"action": "wait_for", "timeout_ms": 180000, "expect": {"coop_restore.transfer_busy": false}},
+    {"action": "set_debug", "field": "reliable_packet_test", "value": "verify_boundary"}
+]

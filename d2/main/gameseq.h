@@ -55,6 +55,16 @@ void StartNewLevel(int level_num);
 
 // Actually does the work to start new level
 void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag);
+#ifdef __ANDROID__
+void ShowLevelIntro(int level_num);
+void coop_advance_player_stats(int pnum);
+void coop_finish_secret_campaign(void);
+/* Frozen travel preparation: 0 waiting, 1 alive, 2 death settled */
+int coop_finish_death_for_travel(void);
+int coop_hold_death_for_travel(void);
+void init_player_stats_new_ship(ubyte pnum);
+void StartLevel(int random_flag);
+#endif
 
 void InitPlayerObject();            //make sure player's object set up
 void init_player_stats_game(ubyte pnum);      //clear all stats

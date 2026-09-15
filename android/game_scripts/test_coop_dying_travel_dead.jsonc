@@ -1,0 +1,15 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "set_debug", "field": "coop_death_test", "value": "move_away"},
+    {"action": "set_debug", "field": "damage_player", "value": "500"},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {"player_dead": true}},
+    {"action": "wait_for", "timeout_ms": 90000, "expect": {"coop_travel.phase": 4, "coop_travel.prepared": true, "coop_travel.deaths_settled": 1, "player_dead": false, "time_paused": true}},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "arrival_hold"},
+    {"action": "wait_for", "timeout_ms": 180000, "expect": {"coop_travel.arrivals_placed": true, "coop_travel.phase": 8, "time_paused": true}},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "arrival_verify"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "arrival_release"},
+    {"action": "wait_for", "timeout_ms": 180000, "expect": {"coop_travel.active": false, "coop_restore.transfer_busy": false, "time_paused": false, "in_game": true, "player_dead": false}},
+    {"action": "set_debug", "field": "coop_world_test", "value": "travel_verify"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "arrival_guard_verify"},
+    {"action": "set_debug", "field": "clear_robots", "value": "true"}
+]

@@ -411,6 +411,10 @@ class MainActivity :
 
     external fun nativeRequestScreenAdvance(generation: Long): Boolean
 
+    external fun nativeGetCoopBriefingState(): String
+
+    external fun nativeLaunchCoopBriefing(generation: Long): Boolean
+
     external fun nativeIsIntroActive(): Boolean
 
     external fun nativeSetSkipIntroMovie(enabled: Boolean)
@@ -591,6 +595,8 @@ class MainActivity :
         coopQol: Boolean,
         duplicateEnergyShields: Boolean,
         fullDeathSpew: Boolean,
+        coopBriefings: Boolean,
+        allowSecretWarps: Boolean,
         playerSpewNoExpire: Boolean,
         clientsCanRequestRewind: Boolean,
         hostObserver: Boolean,
@@ -730,6 +736,7 @@ class MainActivity :
     private lateinit var skipButton: SkipButtonView
     private lateinit var menuInteractionOverlay: MenuInteractionOverlayView
     private lateinit var startGameButton: StartGameButtonView
+    private lateinit var coopBriefingOverlay: CoopBriefingOverlayView
     private lateinit var acceptJoinButton: AcceptJoinButtonView
     private lateinit var overlayContainer: LinearLayout
     private var overlayEnabled = false
@@ -874,6 +881,14 @@ class MainActivity :
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        if (BuildConfig.DEBUG) {
+            Log.i(
+                "DXX-Lifecycle",
+                "create activity=${System.identityHashCode(
+                    this,
+                )} restored=${savedInstanceState != null} config=${resources.configuration}",
+            )
+        }
         com.dxxredux.app.multiplayer.UdpReconnectIdentity
             .initialize(noBackupFilesDir)
         super.onCreate(savedInstanceState)
@@ -961,6 +976,8 @@ class MainActivity :
             val coopQol = intent.getBooleanExtra("mp_coop_qol", true)
             val duplicateEnergyShields = intent.getBooleanExtra("mp_duplicate_energy_shields", false)
             val fullDeathSpew = intent.getBooleanExtra("mp_full_death_spew", true)
+            val coopBriefings = intent.getBooleanExtra("mp_coop_briefings", false)
+            val allowSecretWarps = intent.getBooleanExtra("mp_allow_secret_warps", false)
             val playerSpewNoExpire = intent.getBooleanExtra("mp_player_spew_no_expire", true)
             val clientsCanRequestRewind = intent.getBooleanExtra("mp_clients_can_request_rewind", false)
             val hostObserver = intent.getBooleanExtra("mp_host_observer", false)
@@ -974,6 +991,8 @@ class MainActivity :
                 coopQol,
                 duplicateEnergyShields,
                 fullDeathSpew,
+                coopBriefings,
+                allowSecretWarps,
                 playerSpewNoExpire,
                 clientsCanRequestRewind,
                 hostObserver,
@@ -1637,6 +1656,11 @@ class MainActivity :
             }
 
         // "START GAME" button for host player selection screen (hidden by default)
+        coopBriefingOverlay =
+            CoopBriefingOverlayView(this).apply {
+                launchCallback = { generation -> nativeLaunchCoopBriefing(generation) }
+                visibility = View.GONE
+            }
         startGameButton =
             StartGameButtonView(this).apply {
                 startCallback = {
@@ -1733,6 +1757,10 @@ class MainActivity :
             ),
         )
         frame.addView(overlayContainer, overlayLp)
+        frame.addView(
+            coopBriefingOverlay,
+            FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT),
+        )
 
         // Network stats overlay (hidden by default, toggled via admin tray)
         val statsOverlay =
@@ -2756,6 +2784,7 @@ class MainActivity :
                             }
                             resetSinglePlayerNetStatsIfNeeded()
                             // Show "START GAME" button when host is on player selection screen
+                            coopBriefingOverlay.update(nativeGetCoopBriefingState())
                             val hostSelecting =
                                 try {
                                     nativeIsHostSelectingPlayers()
@@ -2805,6 +2834,7 @@ class MainActivity :
                             menuInteractionOverlay.resetViewport()
                             lastMenuInteractionGeneration = 0L
                             startGameButton.visibility = View.GONE
+                            coopBriefingOverlay.update("")
                             acceptJoinButton.visibility = View.GONE
                             // Still try to show net events overlay during MP connecting
                             val mpState2 = com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value
@@ -2821,6 +2851,7 @@ class MainActivity :
                         touchOverlay.updateDemoRecordingState(false)
                         skipButton.visibility = View.GONE
                         startGameButton.visibility = View.GONE
+                        coopBriefingOverlay.update("")
                         acceptJoinButton.visibility = View.GONE
                         netStatsOverlay?.hide()
                         netEventsOverlay?.hide()
@@ -2933,6 +2964,13 @@ class MainActivity :
             }
         }
 
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (BuildConfig.DEBUG) {
+            Log.i("DXX-Lifecycle", "configuration activity=${System.identityHashCode(this)} config=$newConfig")
+        }
+    }
+
     override fun onStart() {
         super.onStart()
         if (BuildConfig.DEBUG) {
@@ -2959,6 +2997,14 @@ class MainActivity :
     }
 
     override fun onDestroy() {
+        if (BuildConfig.DEBUG) {
+            Log.i(
+                "DXX-Lifecycle",
+                "destroy activity=${System.identityHashCode(
+                    this,
+                )} finishing=$isFinishing changing_config=$isChangingConfigurations started=$gameStarted",
+            )
+        }
         DebugLog.log(
             DebugLogCategory.GAME,
             "game activity onDestroy finishing=$isFinishing " +

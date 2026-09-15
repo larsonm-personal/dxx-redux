@@ -1,0 +1,10 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "assert", "expect": {
+        "coop_briefing.active": false, "coop_briefing.phase": 0,
+        "coop_briefing.presenting": false, "movie.frame": -1,
+        "movie.paused": false, "movie.pause_window": false,
+        "movie.last_result": "aborted", "in_game": true,
+        "time_paused": false, "multiplayer.num_connected": 2
+    }}
+]

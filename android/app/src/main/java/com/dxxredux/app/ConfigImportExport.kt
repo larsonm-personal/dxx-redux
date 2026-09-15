@@ -223,6 +223,8 @@ object ConfigImportExport {
                 "coop_qol",
                 "duplicate_energy_shields",
                 "full_death_spew",
+                "coop_briefings",
+                "allow_secret_warps",
                 "player_spew_no_expire",
                 "clients_can_request_rewind",
             )) {
@@ -689,6 +691,8 @@ object ConfigImportExport {
                 prefs.getBoolean("host_duplicate_energy_shields", false),
             )
             put("full_death_spew", prefs.getBoolean("host_full_death_spew", true))
+            put("coop_briefings", prefs.getBoolean("host_coop_briefings", false))
+            put("allow_secret_warps", prefs.getBoolean("host_allow_secret_warps", false))
             put("player_spew_no_expire", prefs.getBoolean("host_player_spew_no_expire", true))
             put("clients_can_request_rewind", prefs.getBoolean("host_clients_can_request_rewind", false))
             put(
@@ -741,6 +745,14 @@ object ConfigImportExport {
         }
         if (json.has("full_death_spew")) {
             editor.putBoolean("host_full_death_spew", json.getBoolean("full_death_spew"))
+            count++
+        }
+        if (json.has("coop_briefings")) {
+            editor.putBoolean("host_coop_briefings", json.getBoolean("coop_briefings"))
+            count++
+        }
+        if (json.has("allow_secret_warps")) {
+            editor.putBoolean("host_allow_secret_warps", json.getBoolean("allow_secret_warps"))
             count++
         }
         if (json.has("player_spew_no_expire")) {

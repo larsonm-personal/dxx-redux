@@ -119,6 +119,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 #ifdef __ANDROID__
 #include "coop/coop_level_restart.h"
+#include "coop/coop_briefing.h"
 #include "coop/coop_powerup_duplication.h"
 #include "coop/coop_recovery.h"
 #include "coop_save.h"
@@ -1502,6 +1503,9 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 #ifdef NETWORK
 	if (Network_rejoined == 1)
 	{
+#ifdef __ANDROID__
+		coop_briefing_disarm_for_rejoin();
+#endif
 		Network_rejoined = 0;
 		StartLevel(1);
 	}
@@ -1586,6 +1590,13 @@ void bash_to_shield (int i,char *s)
 	Objects[i].size = Powerup_info[POW_SHIELD_BOOST].size;
 }
 
+#ifdef __ANDROID__
+static void coop_show_level_intro(int level_num)
+{
+	do_briefing_screens(Briefing_text_filename, level_num);
+}
+#endif
+
 //called when the player is starting a new level for normal game model
 void StartNewLevel(int level_num)
 {
@@ -1597,8 +1608,12 @@ void StartNewLevel(int level_num)
 	if (!input_demo_consume_skip_level_intro() && !(Game_mode & GM_MULTI)) {
 		do_briefing_screens(Briefing_text_filename, level_num);
 	}
+	#ifdef __ANDROID__
+	coop_briefing_arm(level_num);
+	#endif
 	StartNewLevelSub(level_num, 1, 0 );
 #ifdef __ANDROID__
+	coop_briefing_run(coop_show_level_intro, level_num);
 	coop_level_restart_note_natural_level(level_num);
 #endif
 
@@ -1860,4 +1875,3 @@ void StartLevel(int random)
 
 	}
 }
-

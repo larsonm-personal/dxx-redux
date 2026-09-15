@@ -1,0 +1,27 @@
+[
+    {"_info": {"games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "coop_briefing.phase": 6, "coop_briefing.presenting": true,
+        "coop_briefing.local_total": {"gt": 1}, "coop_briefing.local_completed": 0,
+        "time_paused": true
+    }},
+    {"action": "read_briefing", "value": "one", "timeout_ms": 90000},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "screen_advance_kind": "briefing", "screen_advance_can_activate": true,
+        "coop_briefing.local_completed": 1, "coop_briefing.presenting": true
+    }},
+    {"action": "set_debug", "field": "coop_briefing_action", "value": "skip"},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "coop_briefing.phase": 6, "coop_briefing.local_state": 4,
+        "coop_briefing.local_completed": 1, "coop_briefing.local_total": {"gt": 1},
+        "coop_briefing.presentation_ready": 1, "coop_briefing.can_launch": true,
+        "coop_briefing.status": {"contains": "Ready - skipped"},
+        "coop_briefing.seconds_remaining": {"range": [1, 20]}, "time_paused": true
+    }},
+    {"action": "wait_for", "timeout_ms": 25000, "expect": {
+        "coop_briefing.active": false, "coop_briefing.phase": 0,
+        "coop_briefing.launch_reason": 1, "coop_briefing.progress[0].state": 4,
+        "coop_briefing.progress[0].completed": 1, "coop_briefing.progress[1].state": 3,
+        "in_game": true, "time_paused": false, "multiplayer.num_connected": 2
+    }}
+]

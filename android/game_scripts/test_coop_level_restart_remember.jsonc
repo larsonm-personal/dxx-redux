@@ -1,0 +1,24 @@
+[
+    {
+        "_info": {
+            "games": [
+                "d1",
+                "d2"
+            ],
+            "_standalone": false,
+            "_owner": "test_lan"
+        }
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 60000,
+        "expect": {
+            "coop_level_restart_state": 2
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_level_restart_test",
+        "value": "remember"
+    }
+]

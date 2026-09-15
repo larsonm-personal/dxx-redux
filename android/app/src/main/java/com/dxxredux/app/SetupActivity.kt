@@ -1490,6 +1490,8 @@ class SetupActivity : ComponentActivity() {
                         val duplicateEnergyShields =
                             intent.getBooleanExtra("duplicate_energy_shields", false)
                         val fullDeathSpew = intent.getBooleanExtra("full_death_spew", true)
+                        val coopBriefings = intent.getBooleanExtra("coop_briefings", false)
+                        val allowSecretWarps = intent.getBooleanExtra("allow_secret_warps", false)
                         val playerSpewNoExpire = intent.getBooleanExtra("player_spew_no_expire", true)
                         val clientsCanRequestRewind = intent.getBooleanExtra("clients_can_request_rewind", false)
                         val restrictNonCoopFovToBase =
@@ -1502,6 +1504,8 @@ class SetupActivity : ComponentActivity() {
                                     "coop_qol" to JsonPrimitive(coopQol),
                                     "duplicate_energy_shields" to JsonPrimitive(duplicateEnergyShields),
                                     "full_death_spew" to JsonPrimitive(fullDeathSpew),
+                                    "coop_briefings" to JsonPrimitive(coopBriefings),
+                                    "allow_secret_warps" to JsonPrimitive(allowSecretWarps),
                                     "player_spew_no_expire" to JsonPrimitive(playerSpewNoExpire),
                                     "clients_can_request_rewind" to JsonPrimitive(clientsCanRequestRewind),
                                     "restrict_noncoop_fov_to_base" to JsonPrimitive(restrictNonCoopFovToBase),
@@ -1590,6 +1594,8 @@ class SetupActivity : ComponentActivity() {
                         val duplicateEnergyShields =
                             intent.getBooleanExtra("duplicate_energy_shields", false)
                         val fullDeathSpew = intent.getBooleanExtra("full_death_spew", true)
+                        val coopBriefings = intent.getBooleanExtra("coop_briefings", false)
+                        val allowSecretWarps = intent.getBooleanExtra("allow_secret_warps", false)
                         val playerSpewNoExpire = intent.getBooleanExtra("player_spew_no_expire", true)
                         val clientsCanRequestRewind = intent.getBooleanExtra("clients_can_request_rewind", false)
                         val hostObserver = intent.getBooleanExtra("host_observer", false)
@@ -1619,6 +1625,8 @@ class SetupActivity : ComponentActivity() {
                                 coopQol = coopQol,
                                 duplicateEnergyShields = duplicateEnergyShields,
                                 fullDeathSpew = fullDeathSpew,
+                                coopBriefings = coopBriefings,
+                                allowSecretWarps = allowSecretWarps,
                                 playerSpewNoExpire = playerSpewNoExpire,
                                 clientsCanRequestRewind = clientsCanRequestRewind,
                                 restrictNonCoopFovToBase = restrictNonCoopFovToBase,
@@ -1866,6 +1874,9 @@ class SetupActivity : ComponentActivity() {
                     val duplicateEnergyShields =
                         json["duplicate_energy_shields"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() ?: false
                     val fullDeathSpew = json["full_death_spew"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() ?: true
+                    val coopBriefings = json["coop_briefings"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() ?: false
+                    val allowSecretWarps =
+                        json["allow_secret_warps"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() ?: false
                     val playerSpewNoExpire =
                         json["player_spew_no_expire"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() ?: true
                     val restrictNonCoopFovToBase =
@@ -1885,6 +1896,8 @@ class SetupActivity : ComponentActivity() {
                             coopQol = coopQol,
                             duplicateEnergyShields = duplicateEnergyShields,
                             fullDeathSpew = fullDeathSpew,
+                            coopBriefings = coopBriefings,
+                            allowSecretWarps = allowSecretWarps,
                             playerSpewNoExpire = playerSpewNoExpire,
                             clientsCanRequestRewind = false,
                             restrictNonCoopFovToBase = restrictNonCoopFovToBase,
@@ -2257,6 +2270,8 @@ class SetupActivity : ComponentActivity() {
             mpIntent.putExtra("mp_coop_qol", info.coopQol)
             mpIntent.putExtra("mp_duplicate_energy_shields", info.duplicateEnergyShields)
             mpIntent.putExtra("mp_full_death_spew", info.fullDeathSpew)
+            mpIntent.putExtra("mp_coop_briefings", info.coopBriefings)
+            mpIntent.putExtra("mp_allow_secret_warps", info.allowSecretWarps)
             mpIntent.putExtra("mp_player_spew_no_expire", info.playerSpewNoExpire)
             mpIntent.putExtra("mp_clients_can_request_rewind", info.clientsCanRequestRewind)
             mpIntent.putExtra("mp_host_observer", info.hostObserver)

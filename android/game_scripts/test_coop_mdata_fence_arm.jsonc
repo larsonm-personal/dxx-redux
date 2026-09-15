@@ -1,0 +1,6 @@
+[
+    {"_info": {"games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "set_debug", "field": "recovery_test_trace", "value": "on"},
+    {"action": "set_debug", "field": "reliable_packet_test", "value": "arm_fence"},
+    {"action": "set_debug", "field": "pdata_packet_test", "value": "arm"}
+]

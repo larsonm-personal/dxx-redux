@@ -1,0 +1,4 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "set_debug", "field": "coop_world_test", "value": "rollback_gear_tag"}
+]

@@ -55,6 +55,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef ANDROID
 #include "android_crash_handler.h"
 #include "android_screen_advance.h"
+#include "coop/coop_briefing.h"
 #endif
 
 extern unsigned RobSX,RobSY,RobDX,RobDY; // Robot movie coords
@@ -563,10 +564,16 @@ typedef struct briefing
 	sbyte	guy_bitmap_show;
 	sbyte   door_dir, door_div_count, animating_bitmap_type;
 	sbyte	prev_ch;
+#ifdef __ANDROID__
+	int coop_authored_page_done;
+#endif
 } briefing;
 
 void briefing_init(briefing *br, short level_num)
 {
+#ifdef __ANDROID__
+	br->coop_authored_page_done = 0;
+#endif
 	br->level_num = level_num;
 	if (EMULATING_D1 && (br->level_num == 1))
 		br->level_num = 0;	// for start of game stuff
@@ -906,6 +913,9 @@ int briefing_process_char(briefing *br)
 			br->guy_bitmap_show=1;
 			br->prev_ch = 10;
 		} else if (ch == 'S') {
+#ifdef __ANDROID__
+			br->coop_authored_page_done = 1;
+#endif
 			br->chattering = 0;
 			if (br->printing_channel >- 1)
 				digi_stop_sound(br->printing_channel);
@@ -913,7 +923,10 @@ int briefing_process_char(briefing *br)
 
 			br->new_screen = 1;
 			return 1;
-		} else if (ch == 'P') {		//	New page.
+		} else if (ch == 'P') {
+#ifdef __ANDROID__
+			br->coop_authored_page_done = 1;
+#endif		//	New page.
 			if (!br->got_z) {
 				Int3(); // Hey ryan!!!! You gotta load a screen before you start
 				// printing to it! You know, $Z !!!
@@ -1213,6 +1226,10 @@ void show_spinning_robot_frame(briefing *br, int robot_num)
 
 void init_new_page(briefing *br)
 {
+#ifdef __ANDROID__
+	if (br->coop_authored_page_done) coop_briefing_step_complete(1);
+	br->coop_authored_page_done = 0;
+#endif
 	br->new_page = 0;
 	br->robot_num = -1;
 
@@ -1336,6 +1353,10 @@ void free_briefing_screen(briefing *br)
 
 int new_briefing_screen(briefing *br, int first)
 {
+#ifdef __ANDROID__
+	if (!first && br->coop_authored_page_done) coop_briefing_step_complete(1);
+	br->coop_authored_page_done = 0;
+#endif
 	int i;
 
 	br->new_screen = 0;
@@ -1410,6 +1431,7 @@ int briefing_handler(window *wind, d_event *event, briefing *br)
 #ifdef ANDROID
 	if (event->type != EVENT_WINDOW_CLOSE && event->type != EVENT_WINDOW_CLOSED &&
 	    android_screen_advance_take_request(ANDROID_SCREEN_ADVANCE_BRIEFING)) {
+		coop_briefing_skip();
 		window_close(wind);
 		return 1;
 	}
@@ -1452,6 +1474,9 @@ int briefing_handler(window *wind, d_event *event, briefing *br)
 			switch (key)
 			{
 				case KEY_ESC:
+#ifdef __ANDROID__
+					coop_briefing_skip();
+#endif
 					window_close(wind);
 					return 1;
 
@@ -1488,6 +1513,7 @@ int briefing_handler(window *wind, d_event *event, briefing *br)
 			if (!android_screen_advance_can_activate(ANDROID_SCREEN_ADVANCE_BRIEFING))
 				return 1;
 			if (btn == 1) {
+				coop_briefing_skip();
 				window_close(wind);
 				return 1;
 			}
@@ -1565,6 +1591,9 @@ void do_briefing_screens(char *filename, int level_num)
 	briefing *br;
 	window *wind;
 
+	#ifdef __ANDROID__
+	if (coop_briefing_cancelled() && !coop_briefing_planning()) return;
+	#endif
 	if (!filename || !*filename)
 		return;
 
@@ -1580,6 +1609,22 @@ void do_briefing_screens(char *filename, int level_num)
 		return;
 	}
 
+#ifdef __ANDROID__
+	if (coop_briefing_planning()) {
+
+        if (EMULATING_D1) {
+            for (int i = 0; i < NUM_D1_BRIEFING_SCREENS; ++i)
+                if (D1_Briefing_screens[i].level_num == level_num ||
+                    (level_num == 1 && D1_Briefing_screens[i].level_num == 0))
+                    coop_briefing_plan_message(
+                        get_briefing_message(br, D1_Briefing_screens[i].message_num));
+        } else coop_briefing_plan_message(get_briefing_message(br, level_num));
+		d_free(br->text);
+		d_free(br);
+		return;
+	}
+	coop_briefing_step(0);
+#endif
 	wind = window_create(&grd_curscreen->sc_canvas, 0, 0, SWIDTH, SHEIGHT, (int (*)(window *, d_event *, void *))briefing_handler, br);
 	if (!wind)
 	{
@@ -1614,8 +1659,16 @@ void do_briefing_screens(char *filename, int level_num)
 	game_flush_inputs();
 	android_screen_advance_begin(ANDROID_SCREEN_ADVANCE_BRIEFING, 1);
 #endif
-	while (window_exists(wind))
+	while (window_exists(wind)) {
+#ifdef __ANDROID__
+		coop_briefing_pump();
+		if (coop_briefing_cancelled()) {
+			window_close(wind);
+			break;
+		}
+#endif
 		event_process();
+	}
 #ifdef ANDROID
 	android_screen_advance_end(ANDROID_SCREEN_ADVANCE_BRIEFING);
 #endif

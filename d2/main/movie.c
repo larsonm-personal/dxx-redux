@@ -56,6 +56,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef ANDROID
 #include "android_crash_handler.h"
 #include "android_screen_advance.h"
+#include "coop/coop_briefing.h"
 #endif
 #include "args.h"
 
@@ -134,8 +135,21 @@ int PlayMovie(const char *filename, int must_have)
 	char name[FILENAME_LEN],*p;
 	int ret;
 
-	if (GameArg.SysNoMovies)
+#ifdef __ANDROID__
+	if (coop_briefing_planning()) {
+		coop_briefing_plan_add(1);
 		return MOVIE_NOT_PLAYED;
+	}
+	if (coop_briefing_cancelled()) return MOVIE_NOT_PLAYED;
+	coop_briefing_step(1);
+#endif
+
+	if (GameArg.SysNoMovies) {
+#ifdef __ANDROID__
+		coop_briefing_step_complete(0);
+#endif
+		return MOVIE_NOT_PLAYED;
+	}
 
 	strcpy(name,filename);
 
@@ -172,6 +186,10 @@ int PlayMovie(const char *filename, int must_have)
 
 	Screen_mode = -1;		//force screen reset
 
+#ifdef __ANDROID__
+	if (ret == MOVIE_ABORTED) coop_briefing_skip();
+	else coop_briefing_step_complete(ret == MOVIE_PLAYED_FULL);
+#endif
 	return ret;
 }
 
@@ -265,9 +283,17 @@ typedef struct movie
 	int paused;
 } movie;
 
+#ifdef __ANDROID__
+static window *coop_movie_pause_window;
+#endif
+
 int show_pause_message(window *wind, d_event *event, void *userdata)
 {
 	userdata = userdata;
+#ifdef __ANDROID__
+	if (event->type == EVENT_WINDOW_CLOSE && wind == coop_movie_pause_window)
+		coop_movie_pause_window = NULL;
+#endif
 
 	switch (event->type)
 	{
@@ -314,6 +340,7 @@ int MovieHandler(window *wind, d_event *event, movie *m)
 #ifdef ANDROID
 	if (event->type != EVENT_WINDOW_CLOSE && event->type != EVENT_WINDOW_CLOSED &&
 	    android_screen_advance_take_request(ANDROID_SCREEN_ADVANCE_MOVIE)) {
+		coop_briefing_skip();
 		m->result = m->aborted = 1;
 		window_close(wind);
 		return 1;
@@ -359,7 +386,12 @@ int MovieHandler(window *wind, d_event *event, movie *m)
 			// If PAUSE pressed, then pause movie
 			if ((key == KEY_PAUSE) || (key == KEY_COMMAND + KEY_P))
 			{
+#ifdef __ANDROID__
+				coop_movie_pause_window = window_create(&grd_curscreen->sc_canvas, 0, 0, SWIDTH, SHEIGHT, show_pause_message, NULL);
+				if (coop_movie_pause_window)
+#else
 				if (window_create(&grd_curscreen->sc_canvas, 0, 0, SWIDTH, SHEIGHT, show_pause_message, NULL))
+#endif
 					MVE_rmHoldMovie();
 				return 1;
 			}
@@ -395,6 +427,26 @@ int MovieHandler(window *wind, d_event *event, movie *m)
 
 	return 0;
 }
+
+#ifdef INTROSPECT_ON
+/* Android automation reads the real movie window, including modal pause */
+void movie_get_playback_state(int *frame, int *paused, int *pause_window)
+{
+	*frame = -1;
+	*paused = 0;
+	*pause_window = 0;
+	for (window *wind = window_get_first(); wind; wind = window_get_next(wind)) {
+		if (window_get_callback(wind) == show_pause_message) *pause_window = 1;
+		if (window_get_callback(wind) == (int (*)(window *, d_event *, void *))MovieHandler) {
+			movie *m = (movie *)window_get_data(wind);
+			if (m) {
+				*frame = m->frame_num;
+				*paused = m->paused;
+			}
+		}
+	}
+}
+#endif
 
 //returns status.  see movie.h
 int RunMovie(char *filename, int hires_flag, int must_have,int dx,int dy)
@@ -498,8 +550,22 @@ int RunMovie(char *filename, int hires_flag, int must_have,int dx,int dy)
 #ifdef ANDROID
 	android_screen_advance_begin(ANDROID_SCREEN_ADVANCE_MOVIE, 1);
 #endif
-	while (window_exists(wind))
+	while (window_exists(wind)) {
+#ifdef __ANDROID__
+		coop_briefing_pump();
+		if (coop_briefing_cancelled()) {
+			if (coop_movie_pause_window) window_close(coop_movie_pause_window);
+			m->result = m->aborted = 1;
+			window_close(wind);
+			break;
+		}
+#endif
 		event_process();
+	}
+#ifdef __ANDROID__
+	/* Skip can close the movie from its draw handler while a pause is on top */
+	if (coop_movie_pause_window) window_close(coop_movie_pause_window);
+#endif
 #ifdef ANDROID
 	android_screen_advance_end(ANDROID_SCREEN_ADVANCE_MOVIE);
 #endif

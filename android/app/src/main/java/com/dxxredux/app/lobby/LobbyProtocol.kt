@@ -265,6 +265,8 @@ fun buildStart(
     coopQol: Boolean = true,
     duplicateEnergyShields: Boolean = false,
     fullDeathSpew: Boolean = true,
+    coopBriefings: Boolean = false,
+    allowSecretWarps: Boolean = false,
     playerSpewNoExpire: Boolean = true,
     clientsCanRequestRewind: Boolean = false,
     restrictNonCoopFovToBase: Boolean = false,
@@ -289,6 +291,8 @@ fun buildStart(
     json.put("coop_qol", coopQol)
     json.put("duplicate_energy_shields", duplicateEnergyShields)
     json.put("full_death_spew", fullDeathSpew)
+    json.put("coop_briefings", coopBriefings)
+    json.put("allow_secret_warps", allowSecretWarps)
     json.put("player_spew_no_expire", playerSpewNoExpire)
     json.put("clients_can_request_rewind", clientsCanRequestRewind)
     json.put("restrict_noncoop_fov_to_base", restrictNonCoopFovToBase)

@@ -96,6 +96,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_profile.h"
 #include "android_rewind.h"
 #include "coop_save.h"
+#include "coop/coop_briefing.h"
+#include "coop/coop_travel.h"
 #include "escort.h"
 #ifdef OGL
 extern int g_swap_time_us;
@@ -1300,6 +1302,12 @@ window *Game_wind = NULL;
 int game_handler(window *wind, d_event *event, void *data)
 {
 #ifdef __ANDROID__
+	if (coop_briefing_active() && event->type != EVENT_WINDOW_CLOSE &&
+	    event->type != EVENT_WINDOW_CLOSED && event->type != EVENT_WINDOW_ACTIVATED &&
+	    event->type != EVENT_WINDOW_DEACTIVATED)
+		return 1;
+#endif
+#ifdef __ANDROID__
 	if (event->type != EVENT_WINDOW_CLOSE && event->type != EVENT_WINDOW_CLOSED &&
 	    state_restore_take_menu_request()) {
 		set_screen_mode(SCREEN_MENU);
@@ -1319,7 +1327,11 @@ int game_handler(window *wind, d_event *event, void *data)
 			key_toggle_repeat(0);
 			game_flush_inputs();
 
-			if (time_paused)
+			if (time_paused
+#ifdef __ANDROID__
+			    && !coop_travel_blocks_gameplay() && !multi_save_transfer_paused()
+#endif
+			)
 				start_time();
 
 			if (!((Game_mode & GM_MULTI) && (Newdemo_state != ND_STATE_PLAYBACK)))
@@ -1353,6 +1365,9 @@ int game_handler(window *wind, d_event *event, void *data)
 		case EVENT_MOUSE_MOVED:
 		case EVENT_KEY_RELEASE:
 		case EVENT_IDLE:
+#ifdef __ANDROID__
+			if (coop_travel_blocks_gameplay() || multi_save_transfer_paused()) return 1;
+#endif
 			if (input_demo_replay_is_loaded())
 				return 1;
 			#ifdef DXX_GUIDEBOT_ROUTE_DESKTOP
@@ -1362,6 +1377,9 @@ int game_handler(window *wind, d_event *event, void *data)
 			return ReadControls(event);
 
 		case EVENT_KEY_COMMAND:
+#ifdef __ANDROID__
+			if ((coop_travel_blocks_gameplay() || multi_save_transfer_paused()) && event_key_get(event) != KEY_ESC) return 1;
+#endif
 			#ifdef DXX_GUIDEBOT_ROUTE_DESKTOP
 			if (route_confirmation_desktop_is_active())
 				return 1;
@@ -1385,6 +1403,19 @@ int game_handler(window *wind, d_event *event, void *data)
 
 		case EVENT_WINDOW_DRAW:
 		{
+			#ifdef __ANDROID__
+			int restore_pause = multi_save_transfer_pause_frame();
+			if (restore_pause < 0) { window_close(wind); return 1; }
+			if (restore_pause > 0) return 1;
+			#endif
+			#ifdef __ANDROID__
+			int travel_result = coop_travel_frame();
+			if (travel_result < 0) {
+				window_close(wind);
+				return 1;
+			}
+			if (travel_result > 0) return 1;
+			#endif
 			#ifdef __ANDROID__
 			static unsigned int android_profile_frame_id = 0;
 			android_profile_frame_begin("d2", ++android_profile_frame_id);
@@ -1504,6 +1535,9 @@ int game_handler(window *wind, d_event *event, void *data)
 			break;
 
 		case EVENT_WINDOW_CLOSED:
+			#ifdef __ANDROID__
+			coop_travel_reset();
+			#endif
 			longjmp(LeaveEvents, 0);
 			break;
 
@@ -1664,6 +1698,7 @@ void GameProcessFrame(void)
 	{
 		multi_do_frame();
 #ifdef __ANDROID__
+		if (multi_save_transfer_paused()) return;
 		if (state_restore_take_menu_request()) {
 			set_screen_mode(SCREEN_MENU);
 			if (Game_wind) window_close(Game_wind);

@@ -171,6 +171,7 @@ int net_udp_auto_host(int my_port, const char *mission, int mode,
                       int difficulty, int max_players, int level_num,
                       int coop_qol, int duplicate_energy_shields,
                       int full_death_spew,
+                      int coop_briefings, int allow_secret_warps,
                       int player_spew_no_expire)
 {
 	/* Load the requested mission */
@@ -221,6 +222,8 @@ int net_udp_auto_host(int my_port, const char *mission, int mode,
 		Netgame.game_flags &= ~NETGAME_FLAG_COOP_QOL;
 	Netgame.DuplicateEnergyShields = duplicate_energy_shields ? 1 : 0;
 	Netgame.FullDeathSpew = full_death_spew ? 1 : 0;
+	Netgame.CoopBriefings = mode == NETGAME_COOPERATIVE && coop_briefings;
+	Netgame.AllowSecretWarps = mode == NETGAME_COOPERATIVE && allow_secret_warps;
 	Netgame.PlayerSpewNoExpire = player_spew_no_expire ? 1 : 0;
 	Netgame.RefusePlayers = 1; /* android port: require host approval for mid-game joins */
 	strcpy(Netgame.mission_name, Current_mission_filename);

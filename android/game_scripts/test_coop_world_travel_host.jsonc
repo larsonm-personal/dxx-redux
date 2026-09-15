@@ -1,0 +1,14 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "wait_for", "timeout_ms": 90000, "expect": {"coop_travel.phase": 4, "coop_travel.prepared": true, "time_paused": true}},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "arrival_hold"},
+    {"action": "wait_for", "timeout_ms": 180000, "expect": {"coop_travel.arrivals_placed": true, "coop_travel.phase": 8, "time_paused": true}},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "arrival_verify"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "arrival_release"},
+    {"action": "wait_for", "timeout_ms": 180000, "expect": {"coop_travel.active": false, "coop_restore.transfer_busy": false, "time_paused": false, "in_game": true}},
+    {"action": "set_debug", "field": "coop_world_test", "value": "travel_verify"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "arrival_guard_verify"},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {"coop_level_restart_state": 2}},
+    {"action": "set_debug", "field": "coop_world_test", "value": "history_verify"},
+    {"action": "set_debug", "field": "clear_robots", "value": "true"}
+]

@@ -1,0 +1,9 @@
+[
+    {"_info": {"games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "set_debug", "field": "coop_death_test", "value": "move_away", "post_delay_ms": 1000},
+    {"action": "set_debug", "field": "damage_player", "value": "500"},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {"player_dead": true, "player_exploded": true, "screen_advance_kind": "death", "screen_advance_can_activate": true, "multiplayer.recovery.world_objects": {"gte": 1}}},
+    {"action": "send_button", "button": 0, "post_delay_ms": 50},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {"player_dead": false, "in_game": true, "screen_advance_kind": "none", "coop_travel.active": false, "time_paused": false}},
+    {"action": "set_debug", "field": "coop_death_test", "value": "verify"}
+]

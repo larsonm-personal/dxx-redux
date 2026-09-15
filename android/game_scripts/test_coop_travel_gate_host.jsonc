@@ -1,0 +1,16 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "wait_for", "timeout_ms": 15000, "expect": {"coop_travel.phase": 3, "time_paused": true}},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "frozen_time"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "capture"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "world_blocked"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "normal_blocked"},
+    {"action": "wait_ms", "ms": 3000},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "verify_frozen"},
+    {"action": "wait_for", "timeout_ms": 12000, "expect": {"coop_travel.phase": 8, "time_paused": true}},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "verify_frozen"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "abort"},
+    {"action": "wait_for", "timeout_ms": 15000, "expect": {"coop_travel.active": false, "time_paused": false}},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "history_preserved"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "world_blocked"}
+]

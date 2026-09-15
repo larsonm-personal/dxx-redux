@@ -1,0 +1,92 @@
+[
+    {
+        "_info": {
+            "games": [
+                "d2"
+            ],
+            "_standalone": false,
+            "_owner": "test_lan"
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_travel_test",
+        "value": "normal_clock_start"
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_death_test",
+        "value": "move_away"
+    },
+    {
+        "action": "set_debug",
+        "field": "damage_player",
+        "value": "500"
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 20000,
+        "expect": {
+            "player_dead": true,
+            "player_exploded": true,
+            "screen_advance_kind": "death",
+            "screen_advance_can_activate": true
+        }
+    },
+    {
+        "action": "send_button",
+        "button": 0,
+        "post_delay_ms": 50
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": {
+            "coop_travel.waiting_after_death": true,
+            "player_dead": true,
+            "time_paused": false,
+            "postlevel_active": false
+        }
+    },
+    {
+        "action": "wait_ms",
+        "ms": 3000
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "coop_travel.waiting_after_death": true,
+            "player_dead": true,
+            "time_paused": false,
+            "postlevel_active": false
+        }
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 180000,
+        "expect": {
+            "current_level_num": 9,
+            "coop_campaign.active_level": 9,
+            "postlevel_active": false,
+            "in_game": true,
+            "time_paused": false,
+            "coop_travel.active": false,
+            "player_dead": false,
+            "multiplayer.network_status": 1,
+            "multiplayer.players[0].connected": 1,
+            "multiplayer.players[1].connected": 1
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_travel_test",
+        "value": "normal_next_verify"
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "multiplayer.players[0].deaths": 0,
+            "multiplayer.players[1].deaths": 1
+        }
+    }
+]

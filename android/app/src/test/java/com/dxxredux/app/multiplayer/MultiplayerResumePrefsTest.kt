@@ -283,6 +283,38 @@ class MultiplayerResumePrefsTest {
     }
 
     @Test
+    fun secretSaveSelectionRetainsDestinationThroughNormalMineStartup() {
+        val save = CoopSaveEntry(
+            slot = 5, level = -2, timestamp = 100L, numPlayers = 2,
+            callsigns = listOf("Miner", "Wing"), game = "d2", mission = "d2",
+        )
+        assertEquals(2, save.secretAreaNumber)
+        assertEquals("1", coopLevelTextAfterSaveSelection("8", save))
+        assertEquals(save, restoreSaveForHostedLevel(save, 1))
+        assertNull(restoreSaveForHostedLevel(save, 2))
+        val resumed = resolveCoopHostResumeRecord(hostResumeRecord(level = 8), listOf(save))
+        assertEquals(1, resumed.levelNum)
+        assertEquals(-2, resumed.coopRestoreLevel)
+        assertEquals(5, resumed.coopRestoreSlot)
+        assertTrue(resumed.restoreWasSelected)
+        assertEquals(1, resumed.toGameInfoJson()["level_num"]?.jsonPrimitive?.intOrNull)
+        assertEquals(resumed, decodeMultiplayerResumeRecord(encodeMultiplayerResumeRecord(resumed)))
+        assertEquals("1", coopLevelTextAfterSaveSelection("1", null))
+    }
+
+    @Test
+    fun secretStartupMappingRequiresAnActualD2FullSave() {
+        val save = CoopSaveEntry(
+            slot = 5, level = -2, timestamp = 100L, numPlayers = 2,
+            callsigns = listOf("Miner", "Wing"), game = "d2",
+        )
+        for (invalid in listOf(save.copy(game = "d1"), save.copy(type = "checkpoint"), save.copy(slot = -1), save.copy(level = -128))) {
+            assertNull(invalid.secretAreaNumber)
+            assertNull(restoreSaveForHostedLevel(invalid, 1))
+        }
+    }
+
+    @Test
     fun invalidSchemaIsIgnored() {
         val json = """{"schema_version":999,"role":"host","transport":"lan","game":"d2"}"""
 

@@ -50,6 +50,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "powerup.h"
 #ifdef __ANDROID__
 #include "coop/coop_recovery.h"
+#include "coop/coop_travel.h"
 #endif
 #include "fuelcen.h"
 #include "endlevel.h"
@@ -1742,6 +1743,7 @@ int		Player_flags_save;
 int		Player_exploded = 0;
 int		Death_sequence_aborted=0;
 int		Player_eggs_dropped=0;
+static fix time_dead;
 fix		Camera_to_player_dist_goal=F1_0*4;
 ubyte		Control_type_save, Render_type_save;
 
@@ -1831,12 +1833,56 @@ extern void drop_player_eggs(object *objp);
 extern int get_explosion_vclip(object *obj,int stage);
 extern void multi_cap_objects();
 
-extern int previewed_spawn_point; 
+extern int previewed_spawn_point;
+
+#ifdef __ANDROID__
+void start_player_death_sequence(object *player);
+int coop_hold_death_for_travel(void)
+{
+	if (!coop_travel_defer_death_screen()) return 0;
+	/* Countdown expiry calls DoPlayerDead directly, without a kill/drop */
+	if (!Player_is_dead) {
+		Players[Player_num].shields = -F1_0;
+		Players[Player_num].killer_objnum = Players[Player_num].objnum;
+		start_player_death_sequence(ConsoleObject);
+	}
+	android_screen_advance_end(ANDROID_SCREEN_ADVANCE_DEATH);
+	return 1;
+}
+
+int coop_finish_death_for_travel(void)
+{
+	if (!(Game_mode & GM_MULTI_COOP) || !game_is_time_paused() ||
+	    !coop_travel_settling_players()) return 0;
+	if (!Player_is_dead && Players[Player_num].shields <= 0)
+		start_player_death_sequence(ConsoleObject);
+	if (!Player_is_dead) return !multi_local_death_pending();
+	if (multi_local_death_pending()) return 0;
+	if (!Dead_player_camera || Dead_player_camera == ConsoleObject) return 0;
+	con_printf(CON_NORMAL, "Android co-op travel settles death: player=%d level=%d eggs=%d deaths=%d",
+	           Player_num, Current_level_num, Player_eggs_dropped, Players[Player_num].net_killed_total);
+	/* The normal early-respawn path drops gear without waiting for the blast */
+	if (!Player_eggs_dropped) {
+		if (Game_mode & GM_NETWORK) multi_powcap_cap_objects();
+		drop_player_eggs(ConsoleObject);
+		Player_eggs_dropped = 1;
+		multi_send_player_explode(MULTI_PLAYER_EXPLODE);
+	}
+	Players[Player_num].hostages_on_board = 0;
+	/* DoPlayerDead can advance a destroyed mine and reset the caller's pause */
+	init_player_stats_new_ship(Player_num);
+	Players[Player_num].connected = Netgame.players[Player_num].connected = CONNECT_PLAYING;
+	StartLevel(1);
+	time_dead = 0;
+	Death_sequence_aborted = 0;
+	game_flush_inputs();
+	return 2;
+}
+#endif
 
 //	------------------------------------------------------------------------------------------------------------------
 void dead_player_frame(void)
 {
-	static fix	time_dead = 0;
 	vms_vector	fvec;
 
 	int turn_camera = 1;

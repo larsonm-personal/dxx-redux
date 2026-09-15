@@ -1103,6 +1103,16 @@ object MatchmakingService {
                                     ?.jsonPrimitive
                                     ?.content
                                     ?.toBooleanStrictOrNull() ?: true,
+                            coopBriefings =
+                                gs.gameInfo["coop_briefings"]
+                                    ?.jsonPrimitive
+                                    ?.content
+                                    ?.toBooleanStrictOrNull() ?: false,
+                            allowSecretWarps =
+                                gs.gameInfo["allow_secret_warps"]
+                                    ?.jsonPrimitive
+                                    ?.content
+                                    ?.toBooleanStrictOrNull() ?: false,
                             playerSpewNoExpire =
                                 gs.gameInfo["player_spew_no_expire"]
                                     ?.jsonPrimitive

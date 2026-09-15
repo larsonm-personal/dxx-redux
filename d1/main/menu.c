@@ -76,6 +76,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef __ANDROID__
 #include "auto_net.h"
 #include "android_crash_handler.h"
+#include "coop/coop_briefing.h"
 #endif
 #ifdef EDITOR
 #include "editor/editor.h"
@@ -500,6 +501,10 @@ int main_menu_handler(newmenu *menu, d_event *event, int *menu_choice )
 			break;
 
 		case EVENT_IDLE:
+#ifdef __ANDROID__
+			if (multi_save_transfer_show_failure()) return 1;
+			if (coop_briefing_show_failure()) return 1;
+#endif
 			if ( /*keyd_time_when_last_pressed+i2f(45) < timer_query() || */ GameArg.SysAutoDemo  )
 			{
 				keyd_time_when_last_pressed = timer_query();			// Reset timer so that disk won't thrash if no demos.

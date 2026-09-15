@@ -1,0 +1,9 @@
+[
+    {"_info": {"games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "select", "text": "Ok", "timeout_ms": 10000},
+    {"action": "wait_for", "timeout_ms": 45000, "expect": {
+        "coop_briefing.phase": 6, "coop_briefing.participants": 1,
+        "coop_briefing.presenting": true, "multiplayer.num_connected": 1,
+        "time_paused": true
+    }}
+]

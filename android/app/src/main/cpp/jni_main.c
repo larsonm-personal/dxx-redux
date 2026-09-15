@@ -1069,6 +1069,8 @@ extern int auto_host_difficulty;
 extern int auto_host_coop_qol;
 extern int auto_host_duplicate_energy_shields;
 extern int auto_host_full_death_spew;
+extern int auto_host_coop_briefings;
+extern int auto_host_allow_secret_warps;
 extern int auto_host_player_spew_no_expire;
 extern int auto_host_clients_can_request_rewind;
 extern int auto_host_observer;
@@ -1120,6 +1122,8 @@ Java_com_dxxredux_app_MainActivity_nativeSetAutoHost(JNIEnv *env, jobject thiz,
                                                      jboolean coopQol,
                                                      jboolean duplicateEnergyShields,
                                                      jboolean fullDeathSpew,
+                                                     jboolean coopBriefings,
+                                                     jboolean allowSecretWarps,
                                                      jboolean playerSpewNoExpire,
                                                      jboolean clientsCanRequestRewind,
                                                      jboolean hostObserver)
@@ -1137,6 +1141,8 @@ Java_com_dxxredux_app_MainActivity_nativeSetAutoHost(JNIEnv *env, jobject thiz,
 	auto_host_coop_qol = coopQol ? 1 : 0;
 	auto_host_duplicate_energy_shields = duplicateEnergyShields ? 1 : 0;
 	auto_host_full_death_spew = fullDeathSpew ? 1 : 0;
+	auto_host_coop_briefings = coopBriefings ? 1 : 0;
+	auto_host_allow_secret_warps = allowSecretWarps ? 1 : 0;
 	auto_host_player_spew_no_expire = playerSpewNoExpire ? 1 : 0;
 	auto_host_clients_can_request_rewind = clientsCanRequestRewind ? 1 : 0;
 	auto_host_observer = hostObserver ? 1 : 0;

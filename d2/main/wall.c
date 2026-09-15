@@ -25,6 +25,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "pstypes.h"
 #include "gr.h"
 #include "wall.h"
+#ifdef __ANDROID__
+#include "coop/coop_travel.h"
+#endif
 #include "switch.h"
 #include "inferno.h"
 #include "segment.h"
@@ -137,6 +140,13 @@ int wall_is_doorway ( segment * seg, int side )
 {
 	int flags, type;
 	int state;
+#ifdef __ANDROID__
+	/* Android routes the macro's early returns here so exit locks cover exterior sides */
+	if (coop_travel_exit_side_blocked(seg - Segments, side)) return WID_WALL;
+	if (seg->children[side] == -1) return WID_RENDER_FLAG;
+	if (seg->children[side] == -2) return WID_EXTERNAL_FLAG;
+	if (seg->sides[side].wall_num == -1) return WID_FLY_FLAG | WID_RENDPAST_FLAG;
+#endif
 //--Covered by macro	// No child.
 //--Covered by macro	if (seg->children[side] == -1)
 //--Covered by macro		return WID_WALL;

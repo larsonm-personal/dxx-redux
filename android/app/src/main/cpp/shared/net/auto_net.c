@@ -38,6 +38,8 @@ int auto_host_difficulty = 1;
 int auto_host_coop_qol = 1;
 int auto_host_duplicate_energy_shields = 0;
 int auto_host_full_death_spew = 1;
+int auto_host_coop_briefings = 0;
+int auto_host_allow_secret_warps = 0;
 int auto_host_player_spew_no_expire = 1;
 int auto_host_clients_can_request_rewind = 0;
 int auto_host_observer = 0;
@@ -200,6 +202,7 @@ int check_auto_net(void)
 		                  auto_host_max_players, auto_host_level_num,
 		                  auto_host_coop_qol, auto_host_duplicate_energy_shields,
 		                  auto_host_full_death_spew,
+		                  auto_host_coop_briefings, auto_host_allow_secret_warps,
 		                  auto_host_player_spew_no_expire);
 		return 1;
 	}

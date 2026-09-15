@@ -45,6 +45,12 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "strutil.h"
 #include "rbaudio.h"
 #include "input_demo_replay.h"
+#include <limits.h>
+
+#ifdef __ANDROID__
+#include "multi.h"
+#include "coop/coop_travel.h"
+#endif
 
 #ifdef OGL
 #include "ogl_init.h"
@@ -125,6 +131,18 @@ void scores_read(all_scores *scores)
 		return;
 	}
 }
+
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+int scores_next_test_score(void)
+{
+	all_scores scores;
+	int highest = 0;
+	scores_read(&scores);
+	for (int i = 0; i < MAX_HIGH_SCORES; ++i)
+		if (scores.stats[i].score > highest) highest = scores.stats[i].score;
+	return highest < INT_MAX ? highest + 1 : 0;
+}
+#endif
 
 void scores_write(all_scores *scores)
 {
@@ -219,6 +237,13 @@ void scores_maybe_add_player(int abort_flag)
 	int i,position;
 	all_scores scores;
 	stats_info last_game;
+	int (*poll)(newmenu *, d_event *, void *) = NULL;
+
+#ifdef __ANDROID__
+	/* Keep terminal status flowing while teammates finish their score screens */
+	if ((Game_mode & GM_NETWORK) && coop_travel_ending_campaign())
+		poll = multi_endlevel_poll1;
+#endif
 
 	if ((Game_mode & GM_MULTI) && !(Game_mode & GM_MULTI_COOP))
 		return;
@@ -246,12 +271,12 @@ void scores_maybe_add_player(int abort_flag)
 			m[0].type = NM_TYPE_TEXT; m[0].text = TXT_COOL_SAYING;
 			m[1].type = NM_TYPE_INPUT; m[1].text = text1; m[1].text_len = COOL_MESSAGE_LEN-5;
 			m[2].type = NM_TYPE_MENU; m[2].text = TXT_OK;
-			newmenu_do( TXT_HIGH_SCORE, TXT_YOU_PLACED_1ST, 3, m, NULL, NULL );
+			newmenu_do( TXT_HIGH_SCORE, TXT_YOU_PLACED_1ST, 3, m, poll, NULL );
 			strncpy( scores.cool_saying, text1, COOL_MESSAGE_LEN );
 			if (strlen(scores.cool_saying)<1)
 				sprintf( scores.cool_saying, "No Comment" );
 		} else {
-			nm_messagebox( TXT_HIGH_SCORE, 1, TXT_OK, "%s %s!", TXT_YOU_PLACED, get_placement_slot_string(position));
+			nm_messagebox1( TXT_HIGH_SCORE, poll, NULL, 1, TXT_OK, "%s %s!", TXT_YOU_PLACED, get_placement_slot_string(position));
 		}
 	
 		// move everyone down...

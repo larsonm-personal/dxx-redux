@@ -1563,6 +1563,8 @@ object LobbyService {
         coopQol: Boolean = true,
         duplicateEnergyShields: Boolean = false,
         fullDeathSpew: Boolean = true,
+        coopBriefings: Boolean = false,
+        allowSecretWarps: Boolean = false,
         playerSpewNoExpire: Boolean = true,
         clientsCanRequestRewind: Boolean = false,
         restrictNonCoopFovToBase: Boolean = false,
@@ -1613,6 +1615,8 @@ object LobbyService {
                 coopQol = coopQol,
                 duplicateEnergyShields = duplicateEnergyShields,
                 fullDeathSpew = fullDeathSpew,
+                coopBriefings = coopBriefings,
+                allowSecretWarps = allowSecretWarps,
                 playerSpewNoExpire = playerSpewNoExpire,
                 clientsCanRequestRewind = clientsCanRequestRewind,
                 restrictNonCoopFovToBase = restrictNonCoopFovToBase,
@@ -1653,6 +1657,8 @@ object LobbyService {
                 coopQol = coopQol,
                 duplicateEnergyShields = duplicateEnergyShields,
                 fullDeathSpew = fullDeathSpew,
+                coopBriefings = coopBriefings,
+                allowSecretWarps = allowSecretWarps,
                 playerSpewNoExpire = playerSpewNoExpire,
                 clientsCanRequestRewind = clientsCanRequestRewind,
                 restrictNonCoopFovToBase = restrictNonCoopFovToBase,
@@ -1713,6 +1719,8 @@ object LobbyService {
         val coopQol = json.optBoolean("coop_qol", true)
         val duplicateEnergyShields = json.optBoolean("duplicate_energy_shields", false)
         val fullDeathSpew = json.optBoolean("full_death_spew", true)
+        val coopBriefings = json.optBoolean("coop_briefings", false)
+        val allowSecretWarps = json.optBoolean("allow_secret_warps", false)
         val playerSpewNoExpire = json.optBoolean("player_spew_no_expire", true)
         val clientsCanRequestRewind = json.optBoolean("clients_can_request_rewind", false)
         val restrictNonCoopFovToBase = json.optBoolean("restrict_noncoop_fov_to_base", false)
@@ -1761,6 +1769,8 @@ object LobbyService {
                 coopQol = coopQol,
                 duplicateEnergyShields = duplicateEnergyShields,
                 fullDeathSpew = fullDeathSpew,
+                coopBriefings = coopBriefings,
+                allowSecretWarps = allowSecretWarps,
                 playerSpewNoExpire = playerSpewNoExpire,
                 clientsCanRequestRewind = clientsCanRequestRewind,
                 restrictNonCoopFovToBase = restrictNonCoopFovToBase,

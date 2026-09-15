@@ -1,0 +1,5 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    // This is intentionally invalid before any normal exit clock has been started
+    {"action": "set_debug", "field": "coop_travel_test", "value": "normal_next_verify"}
+]

@@ -44,6 +44,9 @@ extern int auto_host_coop_qol;
 extern int auto_host_duplicate_energy_shields;
 /* Host-side full death spew default (0/1) */
 extern int auto_host_full_death_spew;
+/* Independent host options, synchronized with the launcher and netgame */
+extern int auto_host_coop_briefings;
+extern int auto_host_allow_secret_warps;
 /* Host-side player spew persistence default (0/1) */
 extern int auto_host_player_spew_no_expire;
 /* Host-side client rewind request permission default (0/1). */

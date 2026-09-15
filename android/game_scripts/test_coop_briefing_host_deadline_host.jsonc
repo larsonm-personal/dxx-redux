@@ -1,0 +1,69 @@
+[
+    {
+        "_info": {
+            "games": [
+                "d1",
+                "d2"
+            ],
+            "_standalone": false,
+            "_owner": "test_lan"
+        }
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 30000,
+        "expect": {
+            "coop_briefing.active": true,
+            "coop_briefing.phase": 6,
+            "coop_briefing.presenting": true,
+            "time_paused": true,
+            "coop_briefing.seconds_remaining": {
+                "range": [100, 120]
+            }
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_briefing_action",
+        "value": "skip"
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 10000,
+        "expect": {
+            "coop_briefing.phase": 6,
+            "coop_briefing.presentation_ready": 1,
+            "coop_briefing.seconds_remaining": {
+                "range": [1, 20]
+            },
+            "time_paused": true
+        }
+    },
+    {
+        "action": "wait_ms",
+        "ms": 10000
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "coop_briefing.active": true,
+            "coop_briefing.phase": 6,
+            "time_paused": true,
+            "coop_briefing.seconds_remaining": {
+                "range": [1, 10]
+            }
+        }
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 40000,
+        "expect": {
+            "coop_briefing.active": false,
+            "coop_briefing.phase": 0,
+            "coop_briefing.launch_reason": 3,
+            "in_game": true,
+            "time_paused": false,
+            "multiplayer.num_connected": 2
+        }
+    }
+]

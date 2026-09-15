@@ -1,0 +1,9 @@
+[
+    {"_info": {"games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "wait_for", "timeout_ms": 65000, "expect": {
+        "in_game": true, "time_paused": false, "multiplayer.num_connected": 2,
+        "coop_briefing.enabled": true, "coop_briefing.active": false,
+        "coop_briefing.presentations_started": 0, "coop_briefing.presenting": false,
+        "current_level_num": 1
+    }}
+]

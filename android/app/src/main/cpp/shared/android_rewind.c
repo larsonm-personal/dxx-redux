@@ -1,4 +1,8 @@
 #include "android_rewind.h"
+#include "coop/coop_briefing.h"
+#include "coop/coop_travel.h"
+#include "coop/coop_save.h"
+#include "coop/coop_campaign.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,6 +58,7 @@ typedef struct android_rewind_session {
 	int64_t restore_collision_delay_last_play_time;
 	android_rewind_snapshot snapshots[ANDROID_REWIND_SNAPSHOT_LIMIT];
 	int snapshot_count;
+	uint64_t campaign_generation;
 } android_rewind_session;
 
 static android_rewind_session g_android_rewind_session = {
@@ -69,6 +74,7 @@ static android_rewind_session g_android_rewind_session = {
 	0,
 	0,
 	{ { 0 } },
+	0,
 	0,
 };
 
@@ -132,6 +138,9 @@ static int android_rewind_current_level_matches_session(void)
 		return 0;
 	if (g_android_rewind_session.level_num != Current_level_num)
 		return 0;
+	if ((Game_mode & GM_MULTI_COOP) &&
+	    g_android_rewind_session.campaign_generation != coop_campaign_current()->generation)
+		return 0;
 	if (!g_android_rewind_session.mission)
 		return 0;
 	return strcmp(g_android_rewind_session.mission, Current_mission_filename) == 0;
@@ -149,6 +158,7 @@ static void android_rewind_reset_history(void)
 {
 	g_android_rewind_session.has_level_identity = 0;
 	g_android_rewind_session.level_num = 0;
+	g_android_rewind_session.campaign_generation = 0;
 	free(g_android_rewind_session.mission);
 	g_android_rewind_session.mission = NULL;
 	g_android_rewind_session.next_capture_game_time64 = 0;
@@ -171,6 +181,7 @@ static int android_rewind_begin_level_history(void)
 	g_android_rewind_session.mission = mission;
 	g_android_rewind_session.has_level_identity = 1;
 	g_android_rewind_session.level_num = Current_level_num;
+	g_android_rewind_session.campaign_generation = (Game_mode & GM_MULTI_COOP) ? coop_campaign_current()->generation : 0;
 	g_android_rewind_session.next_capture_game_time64 = 0;
 	g_android_rewind_session.snapshot_count = 0;
 	return 1;
@@ -333,12 +344,23 @@ void android_rewind_reset_level(void)
 	android_rewind_reset_history();
 }
 
+void android_rewind_get_history(int *count, int *level, uint64_t *generation)
+{
+	if (count) *count = g_android_rewind_session.snapshot_count;
+	if (level) *level = g_android_rewind_session.level_num;
+	if (generation) *generation = g_android_rewind_session.campaign_generation;
+}
+
 void android_rewind_maybe_capture_frame(void)
 {
 	android_rewind_snapshot rotated_snapshot;
 	int captured = 0;
 
 	if (!android_rewind_is_enabled())
+		return;
+	/* A source-side cancellation keeps its history; no intermediate world may
+	 * replace it while a transition or presentation owns the game */
+	if (coop_briefing_active() || coop_travel_blocks_state_actions() || multi_save_transfer_busy())
 		return;
 	if (!android_rewind_capture_context_allowed() || Newdemo_state == ND_STATE_PLAYBACK || Current_level_num == 0) {
 		android_rewind_reset_history();
@@ -385,6 +407,10 @@ int android_rewind_select_restore(android_rewind_authoritative_restore *restore)
 
 	if (restore)
 		memset(restore, 0, sizeof(*restore));
+	if (coop_briefing_active() || coop_travel_blocks_state_actions() || multi_save_transfer_busy()) {
+		android_rewind_record_overlay_text("Wait for co-op transition");
+		return ANDROID_REWIND_STATUS_BLOCKED_MULTIPLAYER;
+	}
 	if (!android_rewind_is_enabled())
 		return ANDROID_REWIND_STATUS_DISABLED;
 	request_access = android_rewind_request_context();

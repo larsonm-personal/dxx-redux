@@ -15,6 +15,7 @@
 
 object Objects[MAX_OBJECTS];
 int Highest_object_index, Game_mode, Player_num, Difficulty_level, N_players;
+int Current_level_num;
 struct netgame_info Netgame;
 #ifdef DXX_BUILD_DESCENT_II
 player Players[MAX_PLAYERS + 4];
@@ -113,6 +114,7 @@ static void reset(void)
     memset(Players, 0, sizeof(Players));
     memset(&Netgame, 0, sizeof(Netgame));
     Game_mode = GM_MULTI_COOP;
+    Current_level_num = 1;
     Netgame.game_flags = NETGAME_FLAG_COOP_QOL;
     Player_num = 0;
     master = 1;
@@ -563,6 +565,7 @@ static void test_restore_discards_missing_gear(void)
     CHECK(coop_recovery_apply_pending());
     CHECK(coop_recovery_count() == 1);
     CHECK(coop_recovery_restore_result().discarded == 1);
+    CHECK(!coop_gear_restore_complete(coop_recovery_restore_result(), 1));
     CHECK(coop_recovery_data()[0].id == saved[0].id);
     CHECK(coop_recovery_set_pending(coop_recovery_data(), coop_recovery_count()));
     CHECK(coop_recovery_apply_pending());
@@ -595,14 +598,292 @@ static void test_restore_discards_conflicts_without_inventory_credit(void)
         CHECK(coop_recovery_set_pending(saved, 3));
         CHECK(coop_recovery_apply_pending());
         CHECK(coop_recovery_restore_result().discarded == (conflict == 2 ? 1 : 2));
+        CHECK(!coop_gear_restore_complete(coop_recovery_restore_result(), 2));
         CHECK(coop_recovery_count() == (conflict == 2 ? 2 : 1));
         CHECK(!(Objects[10].flags & OF_SHOULD_BE_DEAD));
         CHECK(Players[1].secondary_ammo[HOMING_INDEX] == 4);
     }
 }
 
+static void test_dormant_reclaim_and_two_world_roundtrip(void)
+{
+    coop_recovery_item base_ledger[8], secret_ledger[8];
+    coop_player_record returning;
+    reset();
+    Players[1].secondary_ammo[HOMING_INDEX] = 4;
+    egg(10, POW_HOMING_AMMO_4);
+    coop_recovery_drop(1, 0);
+    object base_object = Objects[10];
+    CHECK(coop_recovery_suspend_world());
+    CHECK(coop_recovery_data()[0].state == COOP_RECOVERY_DORMANT);
+    CHECK(coop_recovery_pickup_blocked(&Objects[10]));
+    size_t base_count = coop_recovery_count();
+    CHECK(base_count <= 8);
+    memcpy(base_ledger, coop_recovery_data(), base_count * sizeof(*base_ledger));
+    coop_recovery_level_leave();
+    CHECK(coop_recovery_data()[0].state == COOP_RECOVERY_DORMANT);
+
+    /* A secret mine reuses the very same index, signature and powerup type */
+    Current_level_num = -1;
+    Net_create_loc = 0;
+    Players[2].secondary_ammo[HOMING_INDEX] = 4;
+    egg(10, POW_HOMING_AMMO_4);
+    coop_recovery_drop(2, 0);
+    object secret_object = Objects[10];
+    CHECK(coop_recovery_data()[2].world_level == -1);
+    CHECK(!coop_recovery_pickup_blocked(&Objects[10]));
+    coop_recovery_prepare_save();
+    CHECK(coop_recovery_count() == 4);
+    /* A settled secret save retains the base's ledger without binding its slots */
+    CHECK(coop_recovery_set_pending(coop_recovery_data(), coop_recovery_count()));
+    CHECK(coop_recovery_apply_pending());
+    CHECK(coop_recovery_restore_result().discarded == 0);
+    CHECK(coop_recovery_data()[0].state == COOP_RECOVERY_DORMANT);
+    CHECK(coop_recovery_data()[0].object_index == -1);
+    coop_recovery_alive(1);
+    coop_snapshot_player(1, &returning);
+    returning.secondary_ammo[HOMING_INDEX] = 8;
+    CHECK(coop_recovery_prepare_rejoin(1, &returning) == 1);
+    CHECK(returning.secondary_ammo[HOMING_INDEX] == 10);
+    CHECK(coop_recovery_data()[0].state == COOP_RECOVERY_CREDIT);
+    CHECK(coop_recovery_data()[0].gear.missiles[HOMING_INDEX] == 2);
+    CHECK(!(Objects[10].flags & OF_SHOULD_BE_DEAD));
+    uint32_t serial = coop_recovery_restore_serial(1), life = coop_recovery_life(1);
+    CHECK(coop_recovery_suspend_world());
+    size_t secret_count = coop_recovery_count();
+    CHECK(secret_count <= 8);
+    memcpy(secret_ledger, coop_recovery_data(), secret_count * sizeof(*secret_ledger));
+
+    /* Returning loads old base objects but keeps newer campaign consumption */
+    Current_level_num = 1;
+    Objects[10] = base_object;
+    CHECK(coop_recovery_set_pending(base_ledger, base_count));
+    CHECK(coop_recovery_apply_world_pending());
+    CHECK(Objects[10].flags & OF_SHOULD_BE_DEAD);
+    CHECK(coop_recovery_count() == secret_count);
+    CHECK(coop_recovery_restore_serial(1) == serial && coop_recovery_life(1) == life);
+    CHECK(coop_recovery_prepare_rejoin(1, &returning) == 0);
+    CHECK(returning.secondary_ammo[HOMING_INDEX] == 10);
+    returning.secondary_ammo[HOMING_INDEX] = 0;
+    CHECK(coop_recovery_prepare_rejoin(1, &returning) == 1);
+    CHECK(returning.secondary_ammo[HOMING_INDEX] == 2);
+    CHECK(coop_recovery_prepare_rejoin(1, &returning) == 0);
+    CHECK(coop_recovery_data()[2].state == COOP_RECOVERY_DORMANT);
+
+    Current_level_num = -1;
+    Objects[10] = secret_object;
+    CHECK(coop_recovery_set_pending(secret_ledger, secret_count));
+    CHECK(coop_recovery_apply_world_pending());
+    CHECK(!coop_recovery_pickup_blocked(&Objects[10]));
+    request(10, 0);
+    CHECK(Players[0].secondary_ammo[HOMING_INDEX] == 4);
+    CHECK(coop_recovery_data()[0].state == COOP_RECOVERY_TAKEN);
+}
+
+static void test_dormant_return_remaps_and_fences_old_receipts(void)
+{
+    coop_recovery_item saved[8];
+    reset();
+    Players[1].secondary_ammo[HOMING_INDEX] = 4;
+    egg(10, POW_HOMING_AMMO_4);
+    coop_recovery_drop(1, 0);
+    CHECK(coop_recovery_suspend_world());
+    size_t size = coop_recovery_count();
+    CHECK(size <= 8);
+    memcpy(saved, coop_recovery_data(), size * sizeof(*saved));
+    Objects[20] = Objects[10];
+    Objects[10].type = OBJ_NONE;
+    mapping_offset = 100;
+    coop_recovery_set_life(1, 17);
+    coop_recovery_set_restore_serial(1, 19);
+    coop_recovery_begin_restore(777);
+    CHECK(coop_recovery_set_pending(saved, size));
+    CHECK(coop_recovery_apply_world_pending());
+    coop_recovery_end_restore();
+    CHECK(coop_recovery_data()[0].object_index == 20 && coop_recovery_data()[0].remote_index == 120);
+    CHECK(coop_recovery_restore_result().accepted == 1 && coop_recovery_restore_result().discarded == 0);
+    CHECK(coop_gear_restore_complete(coop_recovery_restore_result(), 1));
+    CHECK(!coop_gear_restore_complete(coop_recovery_restore_result(), 2));
+    CHECK(coop_recovery_life(1) == 17 && coop_recovery_restore_serial(1) == 19);
+    CHECK(coop_recovery_epoch() == 777);
+    ubyte delayed[160] = {0};
+    delayed[1] = 2;
+    PUT_INTEL_INT(delayed + 4, 777);
+    saved[0].state = COOP_RECOVERY_TAKEN;
+    memset(&saved[0].gear, 0, sizeof(saved[0].gear));
+    memcpy(delayed + 16, &saved[0], sizeof(saved[0]));
+    coop_recovery_receive(delayed, 2);
+    CHECK(!(Objects[20].flags & OF_SHOULD_BE_DEAD));
+    request(20, 2);
+    CHECK(Players[2].secondary_ammo[HOMING_INDEX] == 4);
+}
+
+static void test_incomplete_world_restore_is_atomic(void)
+{
+    coop_recovery_item saved[8], current[8];
+    coop_player_record returning;
+    reset();
+    Players[1].secondary_ammo[HOMING_INDEX] = 5;
+    egg(10, POW_HOMING_AMMO_4);
+    egg(11, POW_HOMING_AMMO_1);
+    coop_recovery_drop(1, 0);
+    CHECK(coop_recovery_suspend_world());
+    size_t size = coop_recovery_count();
+    CHECK(size <= 8);
+    memcpy(saved, coop_recovery_data(), size * sizeof(*saved));
+    Current_level_num = -1;
+    coop_snapshot_player(1, &returning);
+    coop_recovery_departure_record(1, &returning);
+    CHECK(coop_recovery_prepare_rejoin(1, &returning) == 2);
+    CHECK(returning.secondary_ammo[HOMING_INDEX] == 5);
+    memcpy(current, coop_recovery_data(), size * sizeof(*current));
+    Current_level_num = 1;
+    Objects[11].type = OBJ_NONE;
+    CHECK(coop_recovery_set_pending(saved, size));
+    CHECK(!coop_recovery_apply_world_pending());
+    CHECK(!(Objects[10].flags & OF_SHOULD_BE_DEAD));
+    CHECK(!memcmp(current, coop_recovery_data(), size * sizeof(*current)));
+    /* A missing campaign ID also rejects the return before the first removal */
+    CHECK(coop_recovery_restore_result().accepted == 0 && coop_recovery_restore_result().discarded == size);
+    saved[0].id = 999;
+    CHECK(coop_recovery_set_pending(saved, size));
+    CHECK(!coop_recovery_apply_world_pending());
+    CHECK(!(Objects[10].flags & OF_SHOULD_BE_DEAD));
+    /* A physical pickup with no captured provenance must not reappear */
+    saved[0].id = current[0].id;
+    Objects[11].type = OBJ_POWERUP;
+    Objects[12] = Objects[10];
+    Objects[12].signature = 777;
+    Highest_object_index = 12;
+    CHECK(coop_recovery_set_pending(saved, size));
+    CHECK(!coop_recovery_apply_world_pending());
+    CHECK(!(Objects[10].flags & OF_SHOULD_BE_DEAD));
+    CHECK(!memcmp(current, coop_recovery_data(), size * sizeof(*current)));
+}
+
+static void test_other_mine_packets_cannot_bind_reused_slots(void)
+{
+    reset();
+    Players[1].secondary_ammo[HOMING_INDEX] = 4;
+    egg(10, POW_HOMING_AMMO_4);
+    coop_recovery_drop(1, 0);
+    CHECK(coop_recovery_suspend_world());
+    coop_recovery_item record = coop_recovery_data()[0];
+    Current_level_num = -1;
+    /* Deliberately retain a matching slot/signature to stress world isolation */
+    ubyte packet[160] = {0};
+    packet[1] = 2;
+    PUT_INTEL_INT(packet + 4, coop_recovery_epoch());
+    record.state = COOP_RECOVERY_TAKEN;
+    memset(&record.gear, 0, sizeof(record.gear));
+    memcpy(packet + 16, &record, sizeof(record));
+    coop_recovery_receive(packet, 2);
+    CHECK(coop_recovery_data()[0].state == COOP_RECOVERY_DORMANT);
+    master = 0;
+    Player_num = 2;
+    packet[1] = 1;
+    ++record.revision;
+    record.world_level = -1;
+    memcpy(packet + 16, &record, sizeof(record));
+    coop_recovery_receive(packet, 0);
+    CHECK(coop_recovery_data()[0].world_level == 1);
+    record.world_level = 1;
+    memcpy(packet + 16, &record, sizeof(record));
+    coop_recovery_receive(packet, 0);
+    coop_recovery_frame();
+    CHECK(!(Objects[10].flags & OF_SHOULD_BE_DEAD));
+}
+
+static void test_retired_world_credit_survives_restore_and_reclaim(void)
+{
+    for (int source = -1; source <= 1; source += 2) {
+        reset();
+        Current_level_num = source;
+        Players[1].secondary_ammo[HOMING_INDEX] = 6;
+        egg(10, POW_HOMING_AMMO_4);
+        egg(11, POW_HOMING_AMMO_1);
+        coop_recovery_drop(1, 0);
+        CHECK(coop_recovery_suspend_world());
+        size_t old_count = coop_recovery_count();
+        Current_level_num = -source;
+        Net_create_loc = 0;
+        Players[2].secondary_ammo[HOMING_INDEX] = 4;
+        egg(10, POW_HOMING_AMMO_4);
+        coop_recovery_drop(2, 0);
+        object destination = Objects[10];
+        size_t total = coop_recovery_count();
+        coop_recovery_item before[16], retired[16];
+        CHECK(total <= 16);
+        memcpy(before, coop_recovery_data(), total * sizeof(*before));
+        CHECK(!coop_recovery_retire_world(Current_level_num));
+        CHECK(!coop_recovery_retire_world(0));
+        CHECK(!memcmp(before, coop_recovery_data(), total * sizeof(*before)));
+        CHECK(coop_recovery_retire_world(source));
+        unsigned homing = 0;
+        for (size_t i = 0; i < total; ++i) {
+            const coop_recovery_item *item = &coop_recovery_data()[i];
+            CHECK(item->id == before[i].id && item->life == before[i].life);
+            CHECK(!memcmp(&item->gear, &before[i].gear, sizeof(item->gear)));
+            if (i < old_count) {
+                CHECK(item->world_level == source);
+                homing += item->gear.missiles[HOMING_INDEX];
+                if (before[i].state == COOP_RECOVERY_DORMANT) {
+                    CHECK(item->state == COOP_RECOVERY_CREDIT && item->revision == before[i].revision + 1);
+                    CHECK(item->object_index == -1 && item->remote_index == -1 && item->network_owner == -1 && !item->signature);
+                } else CHECK(!memcmp(item, &before[i], sizeof(*item)));
+            } else CHECK(!memcmp(item, &before[i], sizeof(*item)));
+        }
+        CHECK(homing == 6 && !memcmp(&destination, &Objects[10], sizeof(destination)));
+        memcpy(retired, coop_recovery_data(), total * sizeof(*retired));
+        CHECK(coop_recovery_retire_world(source));
+        CHECK(!memcmp(retired, coop_recovery_data(), total * sizeof(*retired)));
+        CHECK(coop_recovery_set_pending(retired, total));
+        CHECK(coop_recovery_apply_pending() && !coop_recovery_restore_result().discarded);
+        coop_recovery_alive(1);
+        coop_player_record returning;
+        coop_snapshot_player(1, &returning);
+        returning.secondary_ammo[HOMING_INDEX] = 8;
+        CHECK(coop_recovery_prepare_rejoin(1, &returning) > 0);
+        CHECK(returning.secondary_ammo[HOMING_INDEX] == 10);
+        CHECK(coop_recovery_prepare_rejoin(1, &returning) == 0);
+        returning.secondary_ammo[HOMING_INDEX] = 0;
+        CHECK(coop_recovery_prepare_rejoin(1, &returning) > 0);
+        CHECK(returning.secondary_ammo[HOMING_INDEX] == 4);
+        CHECK(coop_recovery_prepare_rejoin(1, &returning) == 0);
+        CHECK(!memcmp(&destination, &Objects[10], sizeof(destination)));
+        CHECK(coop_recovery_data()[old_count].state == COOP_RECOVERY_LIVE);
+    }
+}
+
+static void test_retired_world_revision_failure_is_atomic(void)
+{
+    reset();
+    Players[1].secondary_ammo[HOMING_INDEX] = 8;
+    egg(10, POW_HOMING_AMMO_4);
+    egg(11, POW_HOMING_AMMO_4);
+    coop_recovery_drop(1, 0);
+    CHECK(coop_recovery_suspend_world());
+    coop_recovery_item saved[8];
+    size_t total = coop_recovery_count();
+    CHECK(total <= 8 && total >= 2);
+    memcpy(saved, coop_recovery_data(), total * sizeof(*saved));
+    saved[1].revision = UINT32_MAX;
+    Current_level_num = -1;
+    CHECK(coop_recovery_set_pending(saved, total));
+    CHECK(coop_recovery_apply_pending());
+    memcpy(saved, coop_recovery_data(), total * sizeof(*saved));
+    CHECK(!coop_recovery_retire_world(1));
+    CHECK(!memcmp(saved, coop_recovery_data(), total * sizeof(*saved)));
+}
+
 int main(void)
 {
+    test_retired_world_credit_survives_restore_and_reclaim();
+    test_retired_world_revision_failure_is_atomic();
+    test_dormant_reclaim_and_two_world_roundtrip();
+    test_dormant_return_remaps_and_fences_old_receipts();
+    test_incomplete_world_restore_is_atomic();
+    test_other_mine_packets_cannot_bind_reused_slots();
     test_delayed_freeze_cannot_rebind_consumed_gear();
     test_terminal_receipt_preserves_known_partial_pickup_credit();
     test_replayed_live_tag_cannot_rebind_a_lost_generation();

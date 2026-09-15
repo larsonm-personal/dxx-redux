@@ -9,4 +9,10 @@ typedef struct coop_gear_restore_result {
 	size_t discarded;
 } coop_gear_restore_result;
 
+/* Transaction rollback must preserve every record, including unallocated sections */
+static inline int coop_gear_restore_complete(coop_gear_restore_result result, size_t expected)
+{
+	return !result.discarded && result.accepted == expected;
+}
+
 #endif

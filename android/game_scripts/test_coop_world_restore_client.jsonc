@@ -1,0 +1,6 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {"coop_restore.transfer_busy": true}},
+    {"action": "wait_for", "timeout_ms": 180000, "expect": {"coop_restore.transfer_busy": false, "in_game": true}},
+    {"action": "set_debug", "field": "coop_world_test", "value": "verify"}
+]

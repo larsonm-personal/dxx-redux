@@ -380,6 +380,8 @@ private fun LanDiscoveryView(
     var hostedCoopQol by remember { mutableStateOf(hostDefaults.coopQol) }
     var hostedDuplicateEnergyShields by remember { mutableStateOf(hostDefaults.duplicateEnergyShields) }
     var hostedFullDeathSpew by remember { mutableStateOf(hostDefaults.fullDeathSpew) }
+    var hostedCoopBriefings by remember { mutableStateOf(hostDefaults.coopBriefings) }
+    var hostedAllowSecretWarps by remember { mutableStateOf(hostDefaults.allowSecretWarps) }
     var hostedPlayerSpewNoExpire by remember { mutableStateOf(hostDefaults.playerSpewNoExpire) }
     var hostedClientsCanRequestRewind by remember { mutableStateOf(hostDefaults.clientsCanRequestRewind) }
     var hostedRestrictNonCoopFovToBase by remember { mutableStateOf(hostDefaults.restrictNonCoopFovToBase) }
@@ -446,6 +448,8 @@ private fun LanDiscoveryView(
             hostedCoopQol = record.coopQol
             hostedDuplicateEnergyShields = record.duplicateEnergyShields
             hostedFullDeathSpew = record.fullDeathSpew
+            hostedCoopBriefings = record.coopBriefings
+            hostedAllowSecretWarps = record.allowSecretWarps
             hostedPlayerSpewNoExpire = record.playerSpewNoExpire
             hostedClientsCanRequestRewind = record.clientsCanRequestRewind
             hostedRestrictNonCoopFovToBase = record.restrictNonCoopFovToBase
@@ -879,6 +883,8 @@ private fun LanDiscoveryView(
                             coopQol = hostedCoopQol,
                             duplicateEnergyShields = hostedDuplicateEnergyShields,
                             fullDeathSpew = hostedFullDeathSpew,
+                            coopBriefings = hostedCoopBriefings,
+                            allowSecretWarps = hostedAllowSecretWarps,
                             playerSpewNoExpire = hostedPlayerSpewNoExpire,
                             clientsCanRequestRewind = hostedClientsCanRequestRewind,
                             restrictNonCoopFovToBase = hostedRestrictNonCoopFovToBase,
@@ -954,6 +960,8 @@ private fun LanDiscoveryView(
                 coopQol,
                 duplicateEnergyShields,
                 fullDeathSpew,
+                coopBriefings,
+                allowSecretWarps,
                 playerSpewNoExpire,
                 clientsCanRequestRewind,
                 restrictNonCoopFovToBase,
@@ -967,6 +975,8 @@ private fun LanDiscoveryView(
                 hostedCoopQol = coopQol
                 hostedDuplicateEnergyShields = duplicateEnergyShields
                 hostedFullDeathSpew = fullDeathSpew
+                hostedCoopBriefings = coopBriefings
+                hostedAllowSecretWarps = allowSecretWarps
                 hostedPlayerSpewNoExpire = playerSpewNoExpire
                 hostedClientsCanRequestRewind = clientsCanRequestRewind
                 hostedRestrictNonCoopFovToBase = restrictNonCoopFovToBase

@@ -67,6 +67,8 @@ internal fun CreateGameDialog(
         coopQol: Boolean,
         duplicateEnergyShields: Boolean,
         fullDeathSpew: Boolean,
+        coopBriefings: Boolean,
+        allowSecretWarps: Boolean,
         playerSpewNoExpire: Boolean,
         clientsCanRequestRewind: Boolean,
         restrictNonCoopFovToBase: Boolean,
@@ -86,6 +88,8 @@ internal fun CreateGameDialog(
     var coopQol by remember { mutableStateOf(defaults.coopQol) }
     var duplicateEnergyShields by remember { mutableStateOf(defaults.duplicateEnergyShields) }
     var fullDeathSpew by remember { mutableStateOf(defaults.fullDeathSpew) }
+    var coopBriefings by remember { mutableStateOf(defaults.coopBriefings) }
+    var allowSecretWarps by remember { mutableStateOf(defaults.allowSecretWarps) }
     var playerSpewNoExpire by remember { mutableStateOf(defaults.playerSpewNoExpire) }
     var clientsCanRequestRewind by remember { mutableStateOf(defaults.clientsCanRequestRewind) }
     var restrictNonCoopFovToBase by remember { mutableStateOf(defaults.restrictNonCoopFovToBase) }
@@ -272,9 +276,10 @@ internal fun CreateGameDialog(
                     // Level number + Max players on same row
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedTextField(
-                            value = levelNumText,
+                            value = selectedSave?.secretAreaNumber?.toString() ?: levelNumText,
                             onValueChange = { levelNumText = it.filter { c -> c.isDigit() } },
-                            label = { Text("Level") },
+                            label = { Text(if (selectedSave?.secretAreaNumber != null) "Secret area" else "Level") },
+                            readOnly = selectedSave?.secretAreaNumber != null,
                             singleLine = true,
                             modifier =
                                 Modifier
@@ -316,7 +321,7 @@ internal fun CreateGameDialog(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error,
                         )
-                    } else {
+                    } else if (selectedSave?.secretAreaNumber == null) {
                         Text(
                             "Available levels: 1-${selectedMissionInfo.levelCount}",
                             style = MaterialTheme.typography.bodySmall,
@@ -399,6 +404,46 @@ internal fun CreateGameDialog(
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
+                            }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Switch(
+                                checked = coopBriefings,
+                                onCheckedChange = { coopBriefings = it },
+                                modifier = Modifier.tvFocusBorder(),
+                            )
+                            Column {
+                                Text("Show co-op briefings and videos", style = MaterialTheme.typography.labelMedium)
+                                Text(
+                                    "Two minutes maximum; host can launch everyone sooner",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                        if (game == "d2") {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Switch(
+                                    checked = allowSecretWarps,
+                                    onCheckedChange = { allowSecretWarps = it },
+                                    modifier = Modifier.tvFocusBorder(),
+                                )
+                                Column {
+                                    Text("Allow secret area warps", style = MaterialTheme.typography.labelMedium)
+                                    Text(
+                                        "Moves the team; unavailable after anyone exits normally",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                             }
                         }
                         Row(
@@ -558,6 +603,8 @@ internal fun CreateGameDialog(
                             coopQol = coopQol,
                             duplicateEnergyShields = duplicateEnergyShields,
                             fullDeathSpew = fullDeathSpew,
+                            coopBriefings = coopBriefings,
+                            allowSecretWarps = allowSecretWarps,
                             playerSpewNoExpire = playerSpewNoExpire,
                             clientsCanRequestRewind = clientsCanRequestRewind,
                             restrictNonCoopFovToBase = restrictNonCoopFovToBase,
@@ -599,6 +646,8 @@ internal fun CreateGameDialog(
                         coopQol,
                         duplicateEnergyShields,
                         fullDeathSpew,
+                        coopBriefings,
+                        allowSecretWarps,
                         playerSpewNoExpire,
                         clientsCanRequestRewind,
                         restrictNonCoopFovToBase,
@@ -618,7 +667,7 @@ internal fun CreateGameDialog(
 internal fun coopLevelTextAfterSaveSelection(
     currentLevelText: String,
     selectedSave: CoopSaveEntry?,
-): String = selectedSave?.level?.takeIf { it > 0 }?.toString() ?: currentLevelText
+): String = selectedSave?.hostedLevel?.takeIf { it > 0 }?.toString() ?: currentLevelText
 
 @Composable
 private fun BoxScope.ScrollArrows(scrollState: ScrollState) {

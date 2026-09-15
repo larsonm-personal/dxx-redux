@@ -1,0 +1,13 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "wait_for", "timeout_ms": 15000, "expect": {"coop_travel.phase": 1, "time_paused": false, "postlevel_active": false}},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "normal_clock_start"},
+    {"action": "wait_ms", "ms": 3000},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "normal_clock_verify"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "physical_secret_blocked"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "physical_normal_prepare"},
+    {"action": "wait_ms", "ms": 1500},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "physical_normal_exit"},
+    {"action": "wait_for", "timeout_ms": 180000, "expect": {"current_level_num": 9, "postlevel_active": false, "in_game": true, "time_paused": false, "multiplayer.network_status": 1, "multiplayer.players[0].connected": 1, "multiplayer.players[1].connected": 1, "coop_campaign.active_level": 9, "coop_travel.active": false}},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "normal_next_verify"}
+]

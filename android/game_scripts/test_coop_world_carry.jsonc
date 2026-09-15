@@ -1,0 +1,7 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "set_debug", "field": "clear_robots", "value": "true"},
+    {"action": "set_debug", "field": "recovery_test_inventory", "value": "true"},
+    {"action": "set_debug", "field": "coop_world_test", "value": "carry"},
+    {"action": "wait_ms", "ms": 3000}
+]

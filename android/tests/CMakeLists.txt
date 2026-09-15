@@ -104,6 +104,21 @@ target_include_directories(test_android_save_set PRIVATE "${DXX_TEST_SHARED_SOUR
 add_executable(test_coop_save_format test_coop_save_format.c)
 target_include_directories(test_coop_save_format PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
 
+add_executable(test_coop_campaign test_coop_campaign.c
+                                  "${DXX_TEST_SHARED_SOURCE_DIR}/coop/coop_campaign.c")
+target_include_directories(test_coop_campaign PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}/coop")
+
+add_executable(test_coop_gameplay_fence test_coop_gameplay_fence.c)
+add_executable(test_coop_world_visit test_coop_world_visit.c
+                                     "${DXX_TEST_SHARED_SOURCE_DIR}/coop/coop_world_visit.c")
+target_include_directories(test_coop_world_visit PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}/coop")
+target_include_directories(
+    test_coop_gameplay_fence PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}/coop" ${PHYSFS_INCLUDE_DIR}
+                                     ${SDL_INCLUDE_DIR})
+if(DXX_TEST_GAME STREQUAL "d2")
+    target_compile_definitions(test_coop_gameplay_fence PRIVATE DXX_BUILD_DESCENT_II=1)
+endif()
+
 add_executable(
     test_android_file_pair_transaction
     test_android_file_pair_transaction.c
@@ -167,6 +182,10 @@ target_include_directories(test_coop_host_migration_policy
                            PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}/coop")
 
 add_executable(test_coop_player_session test_coop_player_session.c)
+add_executable(
+    test_coop_transition_policy test_coop_transition_policy.c
+                                "${DXX_TEST_SHARED_SOURCE_DIR}/coop/coop_transition_policy.c")
+target_include_directories(test_coop_transition_policy PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}/coop")
 if(DXX_TEST_GAME STREQUAL "d2")
     target_compile_definitions(test_coop_player_session PRIVATE DXX_BUILD_DESCENT_II=1)
 endif()
@@ -359,6 +378,9 @@ set(DXX_HOST_TEST_TARGETS
     test_android_save_meta
     test_android_save_set
     test_coop_save_format
+    test_coop_campaign
+    test_coop_gameplay_fence
+    test_coop_world_visit
     test_android_file_pair_transaction
     test_playsave_transaction
     test_playsave_layout
@@ -371,6 +393,7 @@ set(DXX_HOST_TEST_TARGETS
     test_net_udp_initial_sync_retry
     test_coop_host_migration_policy
     test_coop_player_session
+    test_coop_transition_policy
     test_multi_save_transfer_policy
     test_input_demo_rng_mode
     test_android_axis_mailbox

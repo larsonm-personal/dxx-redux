@@ -1,0 +1,42 @@
+[
+    {
+        "_info": {
+            "games": [
+                "d1",
+                "d2"
+            ],
+            "_standalone": false,
+            "_owner": "test_lan"
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_rewind_test",
+        "value": "rewind"
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 15000,
+        "expect": {
+            "coop_restore.transfer_busy": true
+        }
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 180000,
+        "expect": {
+            "coop_restore.transfer_busy": false,
+            "in_game": true,
+            "time_paused": false
+        }
+    },
+    {
+        "action": "wait_ms",
+        "ms": 1500
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_countdown_save_test",
+        "value": "verify_pause"
+    }
+]

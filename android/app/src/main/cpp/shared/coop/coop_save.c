@@ -13,6 +13,10 @@
 
 #include "coop_save.h"
 #include "coop_level_restart.h"
+#include "coop_briefing.h"
+#include "coop_travel.h"
+#include "coop_campaign.h"
+#include "coop_portable.h"
 #include "coop_player_session.h"
 #include "coop_powerup_duplication.h"
 #include "coop_recovery.h"
@@ -24,6 +28,7 @@
 #include "config.h"
 #include "console.h"
 #include "../android_log.h"
+#include "../android_rewind.h"
 #include "../state_android_shared.h"
 #include "weapon.h"
 #include "state.h"
@@ -37,6 +42,7 @@
 #include "mission.h"
 #include "physfsx.h"
 #include "timer.h"
+#include "window.h"
 
 #ifdef DXX_BUILD_DESCENT_II
 #include "escort.h"
@@ -44,9 +50,543 @@
 
 #ifdef DXX_BUILD_DESCENT_II
 extern sbyte PKilledFlags[MAX_PLAYERS];
+extern int Entered_from_level, First_secret_visit;
 #endif
 
 extern fix ThisLevelTime;
+
+static coop_campaign campaign_live;
+static coop_campaign campaign_pending;
+static int saving_raw_world;
+static int restoring_world;
+static int restoring_source, source_metadata_read, source_metadata_failed, source_gear_restored;
+static size_t source_pickup_count, source_recovery_count;
+static unsigned char world_player_matched[MAX_PLAYERS];
+
+int coop_world_restore_active(void)
+{
+	return restoring_world;
+}
+
+int coop_source_restore_validate_gear(void)
+{
+	coop_gear_restore_result pickups, recovery;
+	if (!restoring_source) return 1;
+	pickups = coop_powerup_duplication_restore_result();
+	recovery = coop_recovery_restore_result();
+	source_gear_restored = source_metadata_read && !source_metadata_failed &&
+	                       coop_gear_restore_complete(pickups, source_pickup_count) &&
+	                       coop_gear_restore_complete(recovery, source_recovery_count);
+	if (!source_gear_restored)
+		COOPLOG("source rollback rejected incomplete gear: pickups=%u/%u discarded=%u recovery=%u/%u discarded=%u",
+		        (unsigned) pickups.accepted, (unsigned) source_pickup_count, (unsigned) pickups.discarded,
+		        (unsigned) recovery.accepted, (unsigned) source_recovery_count, (unsigned) recovery.discarded);
+	return source_gear_restored;
+}
+
+const coop_campaign *coop_campaign_current(void)
+{
+	return &campaign_live;
+}
+
+void coop_campaign_reset_runtime(void)
+{
+	coop_travel_reset();
+	coop_campaign_clear(&campaign_live);
+	coop_campaign_clear(&campaign_pending);
+	saving_raw_world = 0;
+}
+
+void coop_campaign_note_normal_level(int level)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	unsigned i;
+	if (!(Game_mode & GM_MULTI_COOP) || level < 1 || level > 127) return;
+	coop_travel_reset();
+	if (strncmp(campaign_live.mission, Current_mission_filename, 9))
+		coop_campaign_clear(&campaign_live);
+	for (i = campaign_live.world_count; i > 0; --i)
+		if (campaign_live.worlds[i - 1].level > 0)
+			coop_campaign_remove_world(&campaign_live, campaign_live.worlds[i - 1].level);
+	snprintf(campaign_live.mission, sizeof(campaign_live.mission), "%.8s", Current_mission_filename);
+	campaign_live.active_level = (int16_t) level;
+	campaign_live.entered_from = 0;
+	campaign_live.base_returnable = 0;
+	++campaign_live.generation;
+#else
+	(void) level;
+#endif
+}
+
+void coop_campaign_apply_pending(void)
+{
+	coop_campaign_clear(&campaign_live);
+	campaign_live = campaign_pending;
+	memset(&campaign_pending, 0, sizeof(campaign_pending));
+#ifdef DXX_BUILD_DESCENT_II
+	/* The legacy save body does not store the secret mine's return level */
+	Entered_from_level = campaign_live.entered_from;
+#endif
+}
+
+int coop_save_world_to_memory(rewind_memory_buffer *buffer)
+{
+	int result;
+	if (!buffer || !(Game_mode & GM_MULTI_COOP) || saving_raw_world ||
+	    !coop_recovery_save_ready()) return 0;
+	saving_raw_world = 1;
+	/* The serializer balances this pause; retain the caller's transition pause */
+	stop_time();
+	result = state_save_to_memory(buffer, "Co-op dormant world", ANDROID_SAVE_META_KIND_MANUAL, 1);
+	saving_raw_world = 0;
+	return result;
+}
+
+int coop_capture_portable(coop_portable_player *record)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	player *p = &Players[Player_num];
+	if (!record || !(Game_mode & GM_MULTI_COOP) || !game_is_time_paused() ||
+	    Player_is_dead || p->shields <= 0 || !coop_recovery_save_ready()) return 0;
+	memset(record, 0, sizeof(*record));
+	record->flags = p->flags;
+	record->energy = p->energy;
+	record->shields = p->shields;
+	record->score = p->score;
+	record->last_score = p->last_score;
+	record->time_level = p->time_level;
+	record->time_total = p->time_total;
+	record->primary_weapon_flags = p->primary_weapon_flags;
+	record->secondary_weapon_flags = p->secondary_weapon_flags;
+	record->net_killed_total = p->net_killed_total;
+	record->net_kills_total = p->net_kills_total;
+	record->num_kills_level = p->num_kills_level;
+	record->num_kills_total = p->num_kills_total;
+	record->num_robots_level = p->num_robots_level;
+	record->num_robots_total = p->num_robots_total;
+	record->KillGoalCount = p->KillGoalCount;
+	record->hostages_rescued_total = p->hostages_rescued_total;
+	record->hostages_total = p->hostages_total;
+	record->laser_level = p->laser_level;
+	record->lives = p->lives;
+	record->starting_level = p->starting_level;
+	record->primary_weapon = p->primary_weapon;
+	record->secondary_weapon = p->secondary_weapon;
+	record->hostages_on_board = p->hostages_on_board;
+	record->hostages_level = p->hostages_level;
+	record->hours_level = p->hours_level;
+	record->hours_total = p->hours_total;
+	record->afterburner_charge = p->afterburner_charge;
+	memcpy(record->primary_ammo, p->primary_ammo, sizeof(record->primary_ammo));
+	memcpy(record->secondary_ammo, p->secondary_ammo, sizeof(record->secondary_ammo));
+	record->restore_serial = coop_recovery_restore_serial(Player_num);
+	record->life = coop_recovery_life(Player_num);
+	record->omega = coop_recovery_omega(Player_num);
+	record->respawning_concussions = RespawningConcussions[Player_num];
+	record->vulcan_boxes = VulcanAmmoBoxesOnBoard[Player_num];
+	record->vulcan_box_ammo = VulcanBoxAmmo[Player_num];
+	record->cloak_age = (p->flags & PLAYER_FLAGS_CLOAKED) ? GameTime64 - p->cloak_time : 0;
+	record->invulnerable_age = (p->flags & PLAYER_FLAGS_INVULNERABLE) ? GameTime64 - p->invulnerable_time : 0;
+	record->laser_wait = Next_laser_fire_time > GameTime64 ? Next_laser_fire_time - GameTime64 : 0;
+	record->missile_wait = Next_missile_fire_time > GameTime64 ? Next_missile_fire_time - GameTime64 : 0;
+	record->fusion = Fusion_charge;
+	record->fusion_armed = Auto_fire_fusion_cannon_time != 0;
+	record->fusion_wait = Auto_fire_fusion_cannon_time > GameTime64 ? Auto_fire_fusion_cannon_time - GameTime64 : 0;
+	return coop_portable_valid(record);
+#else
+	(void) record;
+	return 0;
+#endif
+}
+
+int coop_apply_portable(int player_num, const coop_portable_player *record)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	player *p;
+	if (player_num < 0 || player_num >= N_players || !(Game_mode & GM_MULTI_COOP) ||
+	    !game_is_time_paused() || !coop_portable_valid(record)) return 0;
+	p = &Players[player_num];
+	if (p->connected != CONNECT_PLAYING || p->objnum < 0 || p->objnum > Highest_object_index ||
+	    Objects[p->objnum].type != OBJ_PLAYER) return 0;
+	p->flags = record->flags;
+	p->energy = record->energy;
+	p->shields = record->shields;
+	p->score = record->score;
+	p->last_score = record->last_score;
+	p->time_level = record->time_level;
+	p->time_total = record->time_total;
+	p->primary_weapon_flags = record->primary_weapon_flags;
+	p->secondary_weapon_flags = record->secondary_weapon_flags;
+	p->net_killed_total = record->net_killed_total;
+	p->net_kills_total = record->net_kills_total;
+	p->num_kills_level = record->num_kills_level;
+	p->num_kills_total = record->num_kills_total;
+	p->num_robots_level = record->num_robots_level;
+	p->num_robots_total = record->num_robots_total;
+	p->KillGoalCount = record->KillGoalCount;
+	p->hostages_rescued_total = record->hostages_rescued_total;
+	p->hostages_total = record->hostages_total;
+	p->laser_level = record->laser_level;
+	p->lives = record->lives;
+	p->starting_level = record->starting_level;
+	p->primary_weapon = record->primary_weapon;
+	p->secondary_weapon = record->secondary_weapon;
+	p->hostages_on_board = record->hostages_on_board;
+	p->hostages_level = record->hostages_level;
+	p->hours_level = record->hours_level;
+	p->hours_total = record->hours_total;
+	p->afterburner_charge = record->afterburner_charge;
+	memcpy(p->primary_ammo, record->primary_ammo, sizeof(record->primary_ammo));
+	memcpy(p->secondary_ammo, record->secondary_ammo, sizeof(record->secondary_ammo));
+	p->cloak_time = GameTime64 - record->cloak_age;
+	p->invulnerable_time = GameTime64 - record->invulnerable_age;
+	Objects[p->objnum].shields = p->shields;
+	coop_recovery_set_life(player_num, record->life);
+	coop_recovery_set_restore_serial(player_num, record->restore_serial);
+	coop_recovery_set_omega(player_num, record->omega);
+	RespawningConcussions[player_num] = record->respawning_concussions;
+	VulcanAmmoBoxesOnBoard[player_num] = record->vulcan_boxes;
+	VulcanBoxAmmo[player_num] = record->vulcan_box_ammo;
+	if (player_num == Player_num) {
+		Next_laser_fire_time = GameTime64 + record->laser_wait;
+		Next_missile_fire_time = GameTime64 + record->missile_wait;
+		Fusion_charge = record->fusion;
+		Auto_fire_fusion_cannon_time = record->fusion_armed ? GameTime64 + (record->fusion_wait ? record->fusion_wait : 1) : 0;
+	}
+	return 1;
+#else
+	(void) player_num;
+	(void) record;
+	return 0;
+#endif
+}
+
+static int coop_load_world(const rewind_memory_buffer *buffer, int fresh_level)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	player carried[MAX_PLAYERS];
+	fix omega[MAX_PLAYERS];
+	int concussion[MAX_PLAYERS], boxes[MAX_PLAYERS], box_ammo[MAX_PLAYERS];
+	coop_save_metadata meta;
+	rewind_file file;
+	fix64 source_time = GameTime64;
+	fix64 laser_wait, missile_wait, fusion_wait;
+	fix fusion;
+	int fusion_armed;
+	int result, i;
+
+	if (restoring_world || !(Game_mode & GM_MULTI_COOP) ||
+	    !coop_recovery_save_ready()) return 0;
+	if (!coop_travel_apply_portable()) return 0;
+	laser_wait = Next_laser_fire_time - source_time;
+	missile_wait = Next_missile_fire_time - source_time;
+	fusion_wait = Auto_fire_fusion_cannon_time - source_time;
+	fusion = Fusion_charge;
+	fusion_armed = Auto_fire_fusion_cannon_time != 0;
+	/* A world must not roll back the campaign archive containing it */
+	if (buffer) {
+		if (!buffer->data || !buffer->size || buffer->error || fresh_level) return 0;
+		rewind_file_init_memory_read(&file, buffer->data, buffer->size);
+		if (!state_android_read_coop_metadata_trailer(&file, &meta) ||
+		    meta.campaign_size || strncmp(meta.mission_name, Current_mission_filename, 9)) return 0;
+	} else if (!fresh_level || fresh_level < Last_secret_level || fresh_level > Last_level || EMULATING_D1 ||
+	           !Netgame.AllowSecretWarps || !coop_travel_fresh_destination_allowed(fresh_level)) return 0;
+	for (i = 0; i < MAX_PLAYERS; ++i) {
+		if (Players[i].connected == CONNECT_PLAYING && Players[i].shields <= 0) return 0;
+		carried[i] = Players[i];
+		omega[i] = coop_recovery_omega(i);
+		concussion[i] = RespawningConcussions[i];
+		boxes[i] = VulcanAmmoBoxesOnBoard[i];
+		box_ammo[i] = VulcanBoxAmmo[i];
+	}
+	if (!coop_recovery_suspend_world()) return 0;
+	memset(world_player_matched, 0, sizeof(world_player_matched));
+	restoring_world = 1;
+	if (buffer) {
+		result = state_restore_coop_from_memory(buffer);
+	} else {
+		/* Keep the campaign uncommitted while the ordinary network load runs */
+		if (Game_wind) window_set_visible(Game_wind, 0);
+		GameTime64 = 0;
+		ThisLevelTime = 0;
+		StartNewLevelSub(fresh_level, 1, fresh_level < 0);
+		result = Current_level_num == fresh_level && Game_wind &&
+		         Network_status == NETSTAT_PLAYING && !multi_quit_game;
+	}
+	if (result) {
+		int fresh_robots = Players[Player_num].num_robots_level;
+		int fresh_hostages = Players[Player_num].hostages_level;
+		for (i = 0; i < MAX_PLAYERS; ++i) {
+			player world = Players[i];
+			if (carried[i].connected != CONNECT_PLAYING && carried[i].connected != CONNECT_WAITING) continue;
+			/* A changed roster needs transaction recovery, not a cross-player merge */
+			if (strcmp(world.callsign, carried[i].callsign) || world.objnum < 0 ||
+			    world.objnum > Highest_object_index || Objects[world.objnum].type != OBJ_PLAYER) {
+				result = 0;
+				break;
+			}
+			Players[i] = carried[i];
+			Players[i].objnum = world.objnum;
+			Players[i].connected = world.connected;
+			Players[i].level = (sbyte) Current_level_num;
+			Players[i].killer_objnum = -1;
+			Players[i].homing_object_dist = -1;
+			/* Exploration and per-mine counters belong to the restored world */
+			Players[i].last_score = world_player_matched[i] ? world.last_score : carried[i].score;
+			Players[i].time_level = world_player_matched[i] ? world.time_level : 0;
+			Players[i].hours_level = world_player_matched[i] ? world.hours_level : 0;
+			Players[i].num_kills_level = world_player_matched[i] ? world.num_kills_level : 0;
+			Players[i].num_robots_level = buffer ? world.num_robots_level : fresh_robots;
+			Players[i].hostages_level = buffer ? world.hostages_level : fresh_hostages;
+			if (!buffer) {
+				Players[i].num_robots_total += fresh_robots;
+				Players[i].hostages_total += fresh_hostages;
+			}
+			Players[i].flags = (carried[i].flags & ~PLAYER_FLAGS_MAP_ALL) |
+			                   (world_player_matched[i] ? world.flags & PLAYER_FLAGS_MAP_ALL : 0);
+			if (Players[i].flags & PLAYER_FLAGS_CLOAKED)
+				Players[i].cloak_time = GameTime64 - (source_time - carried[i].cloak_time);
+			if (Players[i].flags & PLAYER_FLAGS_INVULNERABLE)
+				Players[i].invulnerable_time = GameTime64 - (source_time - carried[i].invulnerable_time);
+			Objects[world.objnum].shields = carried[i].shields;
+			coop_recovery_set_omega(i, omega[i]);
+			RespawningConcussions[i] = concussion[i];
+			VulcanAmmoBoxesOnBoard[i] = boxes[i];
+			VulcanBoxAmmo[i] = box_ammo[i];
+			Netgame.killed[i] = Players[i].net_killed_total;
+			Netgame.player_score[i] = Players[i].score;
+			Netgame.player_flags[i] = Players[i].flags;
+			COOPLOG("travel portable merged: local=%d player=%d level=%d onboard=%u secondary=%x",
+			        Player_num, i, Current_level_num, Players[i].hostages_on_board, Players[i].secondary_weapon_flags);
+		}
+		Next_laser_fire_time = GameTime64 + (laser_wait > 0 ? laser_wait : 0);
+		Next_missile_fire_time = GameTime64 + (missile_wait > 0 ? missile_wait : 0);
+		Fusion_charge = fusion;
+		Auto_fire_fusion_cannon_time = fusion_armed ? GameTime64 + (fusion_wait > 0 ? fusion_wait : 1) : 0;
+	}
+	restoring_world = 0;
+	if (!buffer && result && Game_wind) window_set_visible(Game_wind, 1);
+	COOPLOG("coop world load: level=%d fresh=%d result=%d", Current_level_num, !buffer, result);
+	return result;
+#else
+	(void) buffer;
+	(void) fresh_level;
+	return 0;
+#endif
+}
+
+int coop_restore_world_from_memory(const rewind_memory_buffer *buffer)
+{
+	return buffer && coop_load_world(buffer, 0);
+}
+
+int coop_initialize_travel_world(int level)
+{
+	return coop_load_world(NULL, level);
+}
+
+#ifdef DXX_BUILD_DESCENT_II
+static int coop_secret_destination(void)
+{
+	/* Match the engine's grouping of several normal exits into one secret */
+	for (int i = 0; i < -Last_secret_level; ++i) {
+		if (Secret_level_table[i] == Current_level_num) return -(i + 1);
+		if (Secret_level_table[i] > Current_level_num) return -i;
+	}
+	return Last_secret_level;
+}
+#endif
+
+int coop_secret_entry_available(void)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	const coop_campaign_world *world;
+	int destination;
+	if (!(Game_mode & GM_MULTI_COOP) || EMULATING_D1 || Current_level_num <= 0 ||
+	    !Netgame.AllowSecretWarps || !Last_secret_level || is_SHAREWARE || is_MAC_SHARE ||
+	    !coop_campaign_valid(&campaign_live) || campaign_live.active_level != Current_level_num) return 0;
+	destination = coop_secret_destination();
+	if (destination >= 0) return 0;
+	world = coop_campaign_find_world(&campaign_live, destination);
+	return !world || world->state != COOP_CAMPAIGN_DESTROYED;
+#else
+	return 0;
+#endif
+}
+
+int coop_prepare_secret_travel(coop_campaign_travel *travel)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	rewind_memory_buffer world = { 0 };
+	int result = 0, destination = Last_secret_level;
+	if (!travel || !(Game_mode & GM_MULTI_COOP) || EMULATING_D1 ||
+	    !game_is_time_paused() || !coop_campaign_valid(&campaign_live) ||
+	    campaign_live.active_level != Current_level_num ||
+	    strncmp(campaign_live.mission, Current_mission_filename, 9) ||
+	    !coop_recovery_save_ready()) return 0;
+	if (Current_level_num > 0) {
+		if (!coop_secret_entry_available()) return 0;
+		destination = coop_secret_destination();
+	}
+	if (!Control_center_destroyed && !coop_save_world_to_memory(&world)) goto done;
+	result = Current_level_num > 0
+	             ? coop_campaign_prepare_enter(&campaign_live, destination, !!Control_center_destroyed,
+	                                           world.data, world.size, travel)
+	             : coop_campaign_prepare_return(&campaign_live, Last_level, !!Control_center_destroyed,
+	                                            world.data, world.size, travel);
+done:
+	rewind_memory_buffer_discard(&world);
+	return result;
+#else
+	(void) travel;
+	return 0;
+#endif
+}
+
+int coop_commit_secret_travel(coop_campaign_travel *travel)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	const int advancing = travel && travel->action == COOP_CAMPAIGN_ADVANCE;
+	const int ending = travel && travel->action == COOP_CAMPAIGN_ENDGAME;
+	if (!travel || !game_is_time_paused() || !(Game_mode & GM_MULTI_COOP) ||
+	    strncmp(travel->mission, Current_mission_filename, 9) ||
+	    (ending ? !coop_validate_secret_travel(travel) : Current_level_num != travel->destination.level) ||
+	    !coop_campaign_commit_travel(&campaign_live, travel)) return 0;
+	Entered_from_level = campaign_live.entered_from;
+	First_secret_visit = 0;
+	if (advancing) {
+		for (int i = 0; i < N_players; ++i)
+			if (Players[i].connected == CONNECT_PLAYING) coop_advance_player_stats(i);
+	}
+	/* Commit creates a new visit even when returning to the same mine. Keep
+	 * source history until this point so a pre-load abort leaves it usable */
+	android_rewind_reset_level();
+	coop_level_restart_clear();
+	if (!ending) coop_level_restart_note_natural_level(Current_level_num);
+	return 1;
+#else
+	(void) travel;
+	return 0;
+#endif
+}
+
+/* Validate embedded saves without staging their old player/recovery data or
+ * recursively reading campaign archives. The active save alone owns those */
+static int coop_campaign_worlds_valid(const coop_campaign *campaign)
+{
+	unsigned i;
+	for (i = 0; i < campaign->world_count; ++i) {
+		const coop_campaign_world *world = &campaign->worlds[i];
+		rewind_file file;
+		android_save_meta_disk android_meta;
+		coop_save_footer footer;
+		coop_save_metadata meta;
+		size_t end, start;
+		if (!world->size) continue;
+		end = world->size;
+		rewind_file_init_memory_read(&file, world->data, end);
+		if (state_android_read_android_metadata_trailer(&file, &android_meta)) end -= sizeof(android_meta);
+		if (end < sizeof(footer)) return 0;
+		memcpy(&footer, world->data + end - sizeof(footer), sizeof(footer));
+		if (footer.tag != COOP_SAVE_FOOTER_TAG || footer.version != COOP_SAVE_META_VER ||
+		    footer.campaign_size || footer.payload_size < sizeof(meta) ||
+		    footer.payload_size > end - sizeof(footer)) return 0;
+		start = end - sizeof(footer) - footer.payload_size;
+		memcpy(&meta, world->data + start, sizeof(meta));
+		if (meta.tag != COOP_SAVE_META_TAG || meta.version != COOP_SAVE_META_VER ||
+		    meta.campaign_size ||
+		    meta.level_num != world->level || strncmp(meta.mission_name, campaign->mission, 9) ||
+		    coop_save_checksum(world->data + start, footer.payload_size, 2166136261u) != footer.checksum)
+			return 0;
+	}
+	return 1;
+}
+
+int coop_validate_secret_travel(const coop_campaign_travel *travel)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	coop_campaign destination = { 0 };
+	if (!travel || !(Game_mode & GM_MULTI_COOP) || EMULATING_D1 ||
+	    travel->source_level != Current_level_num || travel->source_generation != campaign_live.generation ||
+	    strcmp(travel->mission, Current_mission_filename)) return 0;
+	if (travel->action == COOP_CAMPAIGN_ENDGAME)
+		return coop_campaign_valid(&campaign_live) && Current_level_num < 0 &&
+		       !campaign_live.base_returnable && campaign_live.entered_from == Last_level &&
+		       !travel->destination.level && !travel->destination.state && !travel->destination.size && !travel->destination.data &&
+		       !travel->next.active_level && !travel->next.world_count;
+	if (!coop_campaign_valid(&travel->next) || !coop_campaign_worlds_valid(&travel->next)) return 0;
+	if (travel->action == COOP_CAMPAIGN_ENTER) {
+		if (!Netgame.AllowSecretWarps || travel->destination.level >= 0 || travel->destination.level < Last_secret_level) return 0;
+	} else if (travel->action == COOP_CAMPAIGN_RETURN) {
+		if (!campaign_live.base_returnable || travel->destination.level != campaign_live.entered_from) return 0;
+	} else if (travel->action == COOP_CAMPAIGN_ADVANCE) {
+		if (campaign_live.base_returnable || campaign_live.entered_from >= Last_level ||
+		    travel->destination.level != campaign_live.entered_from + 1 || travel->destination.size) return 0;
+	} else return 0;
+	/* Validate the detached destination with the same nonrecursive raw-save
+	 * checks as dormant worlds, before acknowledging the prepared campaign */
+	memcpy(destination.mission, travel->mission, sizeof(destination.mission));
+	destination.world_count = 1;
+	destination.worlds[0] = travel->destination;
+	return coop_campaign_worlds_valid(&destination);
+#else
+	(void) travel;
+	return 0;
+#endif
+}
+
+int coop_source_checkpoint_metadata(const rewind_memory_buffer *buffer, int level,
+                                    uint64_t generation, coop_save_metadata *meta)
+{
+	rewind_file file;
+	android_save_meta_disk android_meta;
+	coop_save_footer footer;
+	coop_campaign candidate = { 0 };
+	size_t end, start, gear_bytes;
+	int valid;
+	if (!buffer || !buffer->data || buffer->error || !meta) return 0;
+	end = buffer->size;
+	rewind_file_init_memory_read(&file, buffer->data, end);
+	if (state_android_read_android_metadata_trailer(&file, &android_meta)) end -= sizeof(android_meta);
+	if (end < sizeof(footer)) return 0;
+	memcpy(&footer, buffer->data + end - sizeof(footer), sizeof(footer));
+	if (footer.tag != COOP_SAVE_FOOTER_TAG || footer.version != COOP_SAVE_META_VER ||
+	    footer.payload_size < sizeof(*meta) || footer.payload_size > end - sizeof(footer) ||
+	    !footer.campaign_size || footer.campaign_size > footer.payload_size - sizeof(*meta)) return 0;
+	start = end - sizeof(footer) - footer.payload_size;
+	memcpy(meta, buffer->data + start, sizeof(*meta));
+	if (meta->tag != COOP_SAVE_META_TAG || meta->version != COOP_SAVE_META_VER ||
+	    meta->campaign_size != footer.campaign_size || meta->level_num != level ||
+	    strncmp(meta->mission_name, Current_mission_filename, 9) ||
+	    meta->num_active_players > MAX_PLAYERS || meta->num_absent_players > COOP_MAX_REMEMBERED_PLAYERS ||
+	    coop_save_checksum(buffer->data + start, footer.payload_size, 2166136261u) != footer.checksum) return 0;
+	gear_bytes = footer.payload_size - sizeof(*meta) - footer.campaign_size;
+	if (footer.collection_count > gear_bytes / sizeof(coop_powerup_collection)) return 0;
+	gear_bytes -= footer.collection_count * sizeof(coop_powerup_collection);
+	if (meta->recovery_count > gear_bytes / sizeof(coop_recovery_item) ||
+	    gear_bytes != meta->recovery_count * sizeof(coop_recovery_item)) return 0;
+	valid = coop_campaign_decode(&candidate, buffer->data + end - sizeof(footer) - footer.campaign_size,
+	                             footer.campaign_size) &&
+	        candidate.active_level == level &&
+	        candidate.generation == generation && !strncmp(candidate.mission, meta->mission_name, 9) &&
+	        coop_campaign_worlds_valid(&candidate);
+	coop_campaign_clear(&candidate);
+	return valid;
+}
+
+int coop_source_checkpoint_restore(const rewind_memory_buffer *buffer, int level, uint64_t generation)
+{
+	coop_save_metadata meta;
+	int result;
+	if (restoring_source || restoring_world || !coop_source_checkpoint_metadata(buffer, level, generation, &meta)) return 0;
+	source_metadata_read = source_metadata_failed = source_gear_restored = 0;
+	source_pickup_count = source_recovery_count = 0;
+	restoring_source = 1;
+	result = state_restore_coop_from_memory(buffer);
+	restoring_source = 0;
+	return result && source_gear_restored && !source_metadata_failed &&
+	       Current_level_num == level && campaign_live.generation == generation;
+}
 
 static void coop_apply_record_runtime_state(int pnum,
                                             const coop_player_record *rec);
@@ -112,6 +652,7 @@ int coop_remap_restored_players(rewind_file *file,
 		if (saved_record)
 			coop_apply_record_runtime_state(i, saved_record);
 		coop_player_got[i] = 1;
+		if (restoring_world) world_player_matched[i] = 1;
 		got_players++;
 		COOPLOG("mapped P%d '%s' <- save slot %d '%s', objnum=%d", i,
 		        Players[i].callsign, saved_slot,
@@ -252,6 +793,15 @@ void coop_restore_status_failed(void)
 
 const char *coop_restore_status_message(int *is_error)
 {
+	if (multi_save_transfer_paused()) {
+		if (is_error) *is_error = 0;
+		return "Waiting for players to finish restoring";
+	}
+	const char *travel = coop_travel_status_message();
+	if (travel) {
+		if (is_error) *is_error = 0;
+		return travel;
+	}
 	if (coop_restore_status == 2 && timer_query() >= coop_restore_status_expires_at)
 		coop_restore_status_complete();
 	if (is_error)
@@ -271,6 +821,24 @@ static void coop_write_metadata_extra(coop_save_metadata *meta)
 #else
 	(void) meta;
 #endif
+}
+
+int coop_save_countdown_allowed(void)
+{
+	if (!(Game_mode & GM_MULTI_COOP) || Countdown_timer <= 0 || Player_is_dead ||
+	    Players[Player_num].shields <= 0 || !multi_all_players_alive()) return 0;
+	for (int i = Netgame.host_is_obs ? 1 : 0; i < N_players; ++i)
+		if (Players[i].connected != CONNECT_DISCONNECTED && Players[i].connected != CONNECT_PLAYING) return 0;
+	return 1;
+}
+
+void coop_restore_reactor_metadata(const coop_save_metadata *meta)
+{
+	Control_center_destroyed = meta->reactor_destroyed;
+	Countdown_timer = meta->reactor_remaining;
+	Countdown_seconds_left = meta->reactor_seconds_left;
+	Total_countdown_time = meta->reactor_total_seconds;
+	Reactor_countdown_paused = meta->reactor_paused;
 }
 
 static void coop_auto_restore_trace(const char *fmt, ...)
@@ -412,6 +980,13 @@ static int coop_build_save_metadata(coop_save_metadata *meta)
 	meta->difficulty_max = (uint8_t) Difficulty_level_max_seen;
 	meta->duplicate_energy_shields =
 	    Netgame.DuplicateEnergyShields ? 1 : 0;
+	meta->coop_briefings = Netgame.CoopBriefings ? 1 : 0;
+	meta->allow_secret_warps = Netgame.AllowSecretWarps ? 1 : 0;
+	meta->reactor_destroyed = !!Control_center_destroyed;
+	meta->reactor_remaining = Countdown_timer;
+	meta->reactor_seconds_left = Countdown_seconds_left;
+	meta->reactor_total_seconds = Total_countdown_time;
+	meta->reactor_paused = !!Reactor_countdown_paused;
 	coop_write_metadata_extra(meta);
 	meta->recovery_count = (uint32_t) coop_recovery_count();
 	for (i = 0; i < MAX_PLAYERS; i++) {
@@ -453,6 +1028,9 @@ static int coop_write_save_payload(rewind_file *file)
 	coop_save_metadata meta;
 	coop_save_footer footer;
 	uint32_t checksum = 2166136261u;
+	unsigned char *campaign_data = NULL;
+	size_t campaign_size = 0;
+	int result = 0;
 
 	if (!file || !coop_recovery_save_ready() || !coop_build_save_metadata(&meta) ||
 	    count > UINT32_MAX ||
@@ -463,27 +1041,41 @@ static int coop_write_save_payload(rewind_file *file)
 	if (!meta.duplicate_energy_shields && count)
 		return 0;
 	items_size = count * sizeof(*items);
+	if (!saving_raw_world && campaign_live.active_level) {
+		if (campaign_live.active_level != Current_level_num ||
+		    strncmp(campaign_live.mission, Current_mission_filename, 9) ||
+		    !coop_campaign_worlds_valid(&campaign_live) ||
+		    !coop_campaign_encode(&campaign_live, &campaign_data, &campaign_size)) return 0;
+	}
+	if (campaign_size > UINT32_MAX - (sizeof(meta) + items_size + recovery_size)) goto done;
 	memset(&footer, 0, sizeof(footer));
 	footer.tag = COOP_SAVE_FOOTER_TAG;
 	footer.version = COOP_SAVE_META_VER;
-	footer.payload_size = (uint32_t) (sizeof(meta) + items_size + recovery_size);
+	footer.payload_size = (uint32_t) (sizeof(meta) + items_size + recovery_size + campaign_size);
 	footer.collection_count = (uint32_t) count;
+	footer.campaign_size = (uint32_t) campaign_size;
+	meta.campaign_size = footer.campaign_size;
 	checksum = coop_save_checksum(&meta, sizeof(meta), checksum);
 	if (items_size)
 		checksum = coop_save_checksum(items, items_size, checksum);
 	if (recovery_size) checksum = coop_save_checksum(recovery, recovery_size, checksum);
+	if (campaign_size) checksum = coop_save_checksum(campaign_data, campaign_size, checksum);
 	footer.checksum = checksum;
 	if (rewind_file_write(file, &meta, sizeof(meta), 1) != 1 ||
 	    (items_size &&
 	     rewind_file_write(file, items, items_size, 1) != 1) ||
 	    (recovery_size && rewind_file_write(file, recovery, recovery_size, 1) != 1) ||
+	    (campaign_size && rewind_file_write(file, campaign_data, campaign_size, 1) != 1) ||
 	    rewind_file_write(file, &footer, sizeof(footer), 1) != 1)
-		return 0;
+		goto done;
 	COOP_SAVE_LOG(CON_DEBUG,
-	              "coop_save: wrote metadata trailer (%d active, %d absent, %u pickups)\n",
+	              "coop_save: wrote metadata trailer (%d active, %d absent, %u pickups, %u campaign bytes)\n",
 	              meta.num_active_players, meta.num_absent_players,
-	              footer.collection_count);
-	return 1;
+	              footer.collection_count, footer.campaign_size);
+	result = 1;
+done:
+	free(campaign_data);
+	return result;
 }
 
 int coop_write_save_metadata(void *fp)
@@ -511,6 +1103,8 @@ int coop_read_save_metadata_rewind(rewind_file *file,
 	coop_save_footer footer;
 	coop_powerup_collection *items = NULL;
 	coop_recovery_item *recovery = NULL;
+	unsigned char *campaign_data = NULL;
+	coop_campaign candidate = { 0 };
 	size_t recovery_size;
 	size_t items_size;
 	uint32_t checksum = 2166136261u;
@@ -519,6 +1113,7 @@ int coop_read_save_metadata_rewind(rewind_file *file,
 	/* A failed preflight must not leave gear from a previous save pending */
 	coop_powerup_duplication_set_pending(NULL, 0);
 	coop_recovery_set_pending(NULL, 0);
+	coop_campaign_clear(&campaign_pending);
 	if (!file || !meta ||
 	    trailer_end < (PHYSFS_sint64) sizeof(footer))
 		return 0;
@@ -528,7 +1123,9 @@ int coop_read_save_metadata_rewind(rewind_file *file,
 	    rewind_file_read(file, &footer, sizeof(footer), 1) != 1 ||
 	    footer.tag != COOP_SAVE_FOOTER_TAG ||
 	    footer.version != COOP_SAVE_META_VER ||
-	    footer.payload_size < sizeof(*meta))
+	    footer.payload_size < sizeof(*meta) ||
+	    footer.campaign_size > footer.payload_size - sizeof(*meta) ||
+	    footer.campaign_size > COOP_CAMPAIGN_MAX_BYTES)
 		goto done;
 	payload_start = trailer_end - (PHYSFS_sint64) sizeof(footer) -
 	                footer.payload_size;
@@ -551,9 +1148,14 @@ int coop_read_save_metadata_rewind(rewind_file *file,
 	if (checksum != footer.checksum ||
 	    meta->tag != COOP_SAVE_META_TAG ||
 	    meta->version != COOP_SAVE_META_VER ||
+	    meta->campaign_size != footer.campaign_size ||
 	    meta->num_active_players > 8 ||
 	    meta->num_absent_players > COOP_MAX_REMEMBERED_PLAYERS ||
-	    meta->duplicate_energy_shields > 1) {
+	    meta->duplicate_energy_shields > 1 || meta->coop_briefings > 1 ||
+	    meta->allow_secret_warps > 1 ||
+	    (unsigned) meta->reactor_destroyed > 1 || (unsigned) meta->reactor_paused > 1 ||
+	    meta->reactor_total_seconds < 0 ||
+	    (meta->reactor_paused && (!meta->reactor_destroyed || meta->reactor_remaining <= 0))) {
 		con_printf(CON_URGENT, "coop_save: invalid metadata (ver=%d, active=%d, absent=%d)\n",
 		           meta->version, meta->num_active_players, meta->num_absent_players);
 		goto done;
@@ -566,10 +1168,22 @@ int coop_read_save_metadata_rewind(rewind_file *file,
 		           meta->difficulty_min, meta->difficulty_max);
 		goto done;
 	}
-	if (footer.collection_count > (footer.payload_size - sizeof(*meta)) / sizeof(*items))
+	/* Campaign data is required state, so corruption cannot use the optional
+	 * gear-discard path. Decode separately and only publish it on success */
+	if (footer.campaign_size) {
+		campaign_data = (unsigned char *) malloc(footer.campaign_size);
+		if (!campaign_data ||
+		    !rewind_file_seek(file, payload_start + footer.payload_size - footer.campaign_size) ||
+		    rewind_file_read(file, campaign_data, footer.campaign_size, 1) != 1 ||
+		    !coop_campaign_decode(&candidate, campaign_data, footer.campaign_size) ||
+		    candidate.active_level != meta->level_num ||
+		    strncmp(candidate.mission, meta->mission_name, 9) ||
+		    !coop_campaign_worlds_valid(&candidate)) goto done;
+	}
+	if (footer.collection_count > (footer.payload_size - sizeof(*meta) - footer.campaign_size) / sizeof(*items))
 		goto discard_gear;
 	items_size = (size_t) footer.collection_count * sizeof(*items);
-	recovery_size = footer.payload_size - sizeof(*meta) - items_size;
+	recovery_size = footer.payload_size - sizeof(*meta) - items_size - footer.campaign_size;
 	if (meta->recovery_count > recovery_size / sizeof(*recovery) ||
 	    recovery_size != (size_t) meta->recovery_count * sizeof(*recovery)) goto discard_gear;
 	if (!rewind_file_seek(file, payload_start + sizeof(*meta))) goto discard_gear;
@@ -585,6 +1199,8 @@ int coop_read_save_metadata_rewind(rewind_file *file,
 	    !coop_recovery_set_pending(recovery, meta->recovery_count)) goto discard_gear;
 	goto gear_ready;
 discard_gear:
+	/* Travel must reconcile ownership; a partial ledger cannot restore a world */
+	if (restoring_world || restoring_source) goto done;
 	coop_powerup_duplication_set_pending(NULL, 0);
 	coop_recovery_set_pending(NULL, 0);
 	android_restore_discard("gear", "unreadable optional section; discarded all gear records", 0, 0, -1, -1);
@@ -593,13 +1209,23 @@ gear_ready:
 	android_restore_metadata(meta->mission_name, meta->level_num, footer.checksum);
 #endif
 	COOP_SAVE_LOG(CON_DEBUG,
-	              "coop_save: read metadata trailer (ver=%d, %d active, %d absent, %u pickups)\n",
+	              "coop_save: read metadata trailer (ver=%d, %d active, %d absent, %u pickups, %u campaign bytes)\n",
 	              meta->version, meta->num_active_players,
-	              meta->num_absent_players, footer.collection_count);
+	              meta->num_absent_players, footer.collection_count, footer.campaign_size);
 	result = 1;
+	if (restoring_source) {
+		source_metadata_read = 1;
+		source_pickup_count = footer.collection_count;
+		source_recovery_count = meta->recovery_count;
+	}
+	campaign_pending = candidate;
+	memset(&candidate, 0, sizeof(candidate));
 done:
 	free(items);
+	if (restoring_source && !result) source_metadata_failed = 1;
 	free(recovery);
+	free(campaign_data);
+	coop_campaign_clear(&candidate);
 	rewind_file_seek(file, saved_pos);
 	return result;
 }
@@ -893,6 +1519,10 @@ int coop_autosave(void)
 	int slot;
 	uint32_t autosave_game_id;
 
+	/* Keep the last settled save intact while a replacement world is pending */
+	if (coop_briefing_active() || coop_travel_blocks_state_actions() || coop_restore_status == 1 ||
+	    multi_save_transfer_busy())
+		return 0;
 	if (!(Game_mode & GM_MULTI_COOP))
 		return 0;
 	if (!Game_wind || Current_level_num == 0) {
@@ -900,7 +1530,7 @@ int coop_autosave(void)
 		              "coop_save: auto-save skipped without an active level\n");
 		return 0;
 	}
-	if (Endlevel_sequence || Control_center_destroyed)
+	if (Endlevel_sequence || (Control_center_destroyed && !coop_save_countdown_allowed()))
 		return 0;
 
 	slot = COOP_AUTOSAVE_SLOT_FIRST +
@@ -1114,7 +1744,7 @@ static void coop_append_other_slots(char *buf, int *off, int buf_size,
 }
 
 #define COOP_PROGRESS_INV_TAG 0x43505249
-#define COOP_PROGRESS_INV_VER 4
+#define COOP_PROGRESS_INV_VER 5
 #define COOP_PROGRESS_INV_HDR 26
 
 static uint32_t coop_progress_inventory_checksum(const void *data, size_t size)
@@ -1308,7 +1938,8 @@ int coop_load_progress_inventory(void)
 	                                                               coop_progress_inventory_checksum(records, (size_t) num * sizeof(records[0])));
 	/* A progress resume creates a new mine; none of the old spew is present */
 	for (uint32_t n = 0; n < recovery_count; n++) {
-		if (recovery[n].state == COOP_RECOVERY_LIVE) recovery[n].state = COOP_RECOVERY_CREDIT;
+		if (recovery[n].state == COOP_RECOVERY_LIVE || recovery[n].state == COOP_RECOVERY_DORMANT ||
+		    recovery[n].state == COOP_RECOVERY_RECLAIMING) recovery[n].state = COOP_RECOVERY_CREDIT;
 		recovery[n].object_index = recovery[n].remote_index = -1;
 	}
 	if (valid) valid = coop_recovery_set_pending(recovery, recovery_count);
@@ -1558,6 +2189,7 @@ void coop_arm_auto_restore(void)
 
 void coop_try_auto_restore(void)
 {
+	if (coop_travel_active()) return;
 	fix64 elapsed;
 	int elapsed_seconds;
 
@@ -1578,7 +2210,7 @@ void coop_try_auto_restore(void)
 		coop_restore_status_failed();
 		goto disarm;
 	}
-	if (Endlevel_sequence || Control_center_destroyed) {
+	if (Endlevel_sequence || (Control_center_destroyed && !coop_save_countdown_allowed())) {
 		coop_auto_restore_trace("auto-restore disarm: endlevel=%d CC=%d",
 		                        Endlevel_sequence, Control_center_destroyed);
 		coop_restore_status_failed();
@@ -1621,8 +2253,14 @@ disarm:
 	coop_auto_restore_armed = 0;
 }
 
+int coop_auto_restore_pending(void)
+{
+	return coop_auto_restore_armed;
+}
+
 void coop_disarm_auto_restore(void)
 {
+	multi_save_transfer_barrier_reset();
 	coop_auto_restore_armed = 0;
 	coop_auto_restore_attempted = 0;
 	coop_auto_restore_armed_at = 0;

@@ -13,6 +13,7 @@
 
 #include "coop_save.h"
 #include "coop_recovery.h"
+#include "coop_gameplay_runtime.h"
 #endif
 
 // -- Coop kill stats (android port: coop QoL overlay) --
@@ -95,7 +96,8 @@ void coop_send_restore_inventory(int pnum)
 		return;
 	if (!multi_i_am_master())
 		return;
-	if (!(Netgame.game_flags & NETGAME_FLAG_COOP_QOL))
+	/* Secret travel enables recovery independently of the general QoL switch */
+	if (!coop_recovery_active())
 		return;
 
 	if (!coop_take_absent_player_with_level(Players[pnum].callsign,
@@ -147,27 +149,69 @@ void coop_send_restore_inventory(int pnum)
 
 static ubyte pending_restore[102];
 static int have_pending_restore;
+static coop_gameplay_stamp pending_restore_stamp;
+#ifdef INTROSPECT_ON
+static unsigned rejected_restore_inventory;
+unsigned coop_test_rejected_restore_inventory(void)
+{
+	return rejected_restore_inventory;
+}
+
+int coop_test_restore_inventory_packet(ubyte *buf, unsigned size, int pnum)
+{
+	if (!buf || size != sizeof(pending_restore) || pnum < 0 || pnum >= MAX_PLAYERS) return 0;
+	memset(buf, 0, size);
+	buf[0] = MULTI_COOP_RESTORE_INV;
+	buf[1] = (ubyte) pnum;
+	PUT_INTEL_INT(buf + 2, F1_0);
+	PUT_INTEL_INT(buf + 6, F1_0);
+	PUT_INTEL_INT(buf + 86, coop_recovery_epoch());
+	PUT_INTEL_INT(buf + 90, UINT32_MAX);
+	PUT_INTEL_INT(buf + 98, UINT32_MAX);
+	return 1;
+}
+#endif
 
 void coop_clear_pending_restore_inventory(void)
 {
 	have_pending_restore = 0;
 }
 
-void coop_do_restore_inventory(const ubyte *buf, int authenticated_sender)
+void coop_do_restore_inventory(const ubyte *buf, int authenticated_sender, const coop_gameplay_stamp *sent)
 {
 	if (!(Game_mode & GM_MULTI_COOP) || authenticated_sender != multi_who_is_master()) return;
-	if (have_pending_restore && GET_INTEL_INT(buf + 86) == GET_INTEL_INT(pending_restore + 86) &&
+	if (!coop_gameplay_stamp_valid(sent) || !sent->visit || sent->visit < coop_world_visit_current()) {
+#ifdef INTROSPECT_ON
+		++rejected_restore_inventory;
+#endif
+		con_printf(CON_NORMAL, "coop_restore: rejected inventory from an obsolete or missing world visit");
+		return;
+	}
+	if (have_pending_restore && sent->visit < pending_restore_stamp.visit) return;
+	if (have_pending_restore && sent->visit == pending_restore_stamp.visit &&
+	    GET_INTEL_INT(buf + 86) == GET_INTEL_INT(pending_restore + 86) &&
 	    (uint32_t) GET_INTEL_INT(buf + 90) < (uint32_t) GET_INTEL_INT(pending_restore + 90)) return;
 	memcpy(pending_restore, buf, sizeof(pending_restore));
+	pending_restore_stamp = *sent;
 	have_pending_restore = 1;
 }
 
 void coop_apply_pending_restore_inventory(void)
 {
 	const ubyte *buf = pending_restore;
-	if (!have_pending_restore || !Game_wind || Player_num != buf[1] ||
-	    Players[Player_num].connected != CONNECT_PLAYING) return;
+	if (!have_pending_restore) return;
+	coop_gameplay_stamp current = coop_gameplay_current_stamp();
+	int action = coop_gameplay_inventory_action(&pending_restore_stamp, &current,
+	                                            Game_wind && Player_num == buf[1] &&
+	                                                Players[Player_num].connected == CONNECT_PLAYING);
+	if (action == COOP_INVENTORY_WAIT) return;
 	have_pending_restore = 0;
+	if (action == COOP_INVENTORY_DISCARD) {
+		con_printf(CON_NORMAL, "coop_restore: discarded pending inventory visit=%llu/%llu level=%d/%d",
+		           (unsigned long long) pending_restore_stamp.visit, (unsigned long long) current.visit,
+		           pending_restore_stamp.level, current.level);
+		return;
+	}
 	int pnum = buf[1];
 	int i;
 	coop_player_record rec;

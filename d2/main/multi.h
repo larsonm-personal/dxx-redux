@@ -62,9 +62,9 @@ extern int multi_protocol; // set and determinate used protocol
 
 // What version of the multiplayer protocol is this? Increment each time something drastic changes in Multiplayer without the version number changes. Can be reset to 0 each time the version of the game changes
 #ifdef __ANDROID__
-#define MULTI_PROTO_VERSION 30022 // Redux normal-pickup drop tracking protocol
+#define MULTI_PROTO_VERSION 30067 // Redux briefings report per-player counts and independent readiness
 #define MULTI_PLAYER_DROP_LENGTH 114
-#define MULTI_SHIP_STATUS_LENGTH 82
+#define MULTI_SHIP_STATUS_LENGTH 83
 #define MULTI_COOP_RESTORE_LENGTH 102
 #else
 #define MULTI_PROTO_VERSION 30018
@@ -79,12 +79,12 @@ extern int multi_protocol; // set and determinate used protocol
 #define MAX_MESSAGE_LEN 35
 #ifdef __ANDROID__
 // Android save transfers include the host recovery timeline at byte 32
-#define MULTI_REWIND_SAVE_BEGIN_LEN     36
+#define MULTI_REWIND_SAVE_BEGIN_LEN     44
 #else
 #define MULTI_REWIND_SAVE_BEGIN_LEN     32
 #endif
 #define MULTI_REWIND_SAVE_APPLY_LEN     4
-#define MULTI_REWIND_SAVE_READY_LEN     4
+#define MULTI_REWIND_SAVE_READY_LEN     12
 #define MULTI_REWIND_SAVE_CHUNK_PAYLOAD 432
 #define MULTI_REWIND_SAVE_CHUNK_LEN     (8 + MULTI_REWIND_SAVE_CHUNK_PAYLOAD)
 
@@ -186,6 +186,8 @@ extern int multi_protocol; // set and determinate used protocol
 	VALUE(MULTI_REACTOR_PAUSE       , 7)   \
 	VALUE(MULTI_MATCEN_MODE         , 3 + MATCEN_MODE_MAX_CENTERS)   \
 	VALUE(MULTI_COOP_RECOVERY       , 160)   \
+	VALUE(MULTI_COOP_BRIEFING       , 128)   \
+	VALUE(MULTI_COOP_TRAVEL         , 228)    \
 	AFTER
 for_each_multiplayer_command(enum {, define_multiplayer_command, });
 
@@ -361,10 +363,20 @@ void multi_leave_game(void);
 void multi_process_data(const ubyte *dat, int len);
 void multi_process_bigdata(const ubyte *buf, unsigned len);
 void multi_process_bigdata_from_player(const ubyte *buf, unsigned len, int authenticated_sender);
+#ifdef __ANDROID__
+void multi_process_stamped_bigdata(const ubyte *buf, unsigned len, int authenticated_sender);
+#ifdef INTROSPECT_ON
+unsigned multi_test_rejected_world_scores(void);
+unsigned multi_test_rejected_world_recovery(void);
+#endif
+#endif
 void multi_request_reactor_pause_toggle(void);
 void multi_request_matcen_mode(int mode);
 void multi_send_matcen_mode_state_to_player(int pnum);
 void multi_do_death(int objnum);
+#ifdef __ANDROID__
+int multi_local_death_pending(void);
+#endif
 void multi_send_message_dialog(void);
 int multi_delete_extra_objects(void);
 void multi_make_ghost_player(int objnum);
@@ -502,12 +514,35 @@ int multi_perform_rewind_request(int requester, int *rewound_seconds);
 int multi_send_coop_restore_save_transfer(const char *filename, ubyte slot, uint id);
 int multi_coop_restore_transfer_pending(void);
 int multi_save_transfer_timeout_suspended(void);
+int multi_save_transfer_restoring(void);
+int multi_save_transfer_sync_poll(int sync_failed);
 int multi_save_transfer_busy(void);
+int multi_save_transfer_paused(void);
+void multi_save_transfer_test_pause_arm(void);
+void multi_save_transfer_test_loss_arm(void);
+void multi_save_transfer_test_sync_stall_arm(void);
+const char *multi_save_transfer_barrier_status(int *local_loaded, uint64_t *visit);
+int multi_save_transfer_host_disconnected(int player);
+int multi_save_transfer_show_failure(void);
+int multi_save_transfer_test_pause_verified(void);
+int64_t multi_save_transfer_test_loaded_game_time(void);
+int multi_save_transfer_pause_frame(void);
+void multi_save_transfer_barrier_reset(void);
+int multi_save_transfer_waiting_peer(const ubyte *data, int len, int pnum);
+int multi_save_transfer_test_rollback_waiting(int verify);
+void multi_save_transfer_test_delay_world_apply(void);
+int multi_save_transfer_test_drop_packet(const ubyte *data, int len, int pnum);
 int multi_send_level_restart_transfer(const struct rewind_memory_buffer *buffer);
-void multi_do_rewind_request(const ubyte *buf);
+int multi_send_coop_world_restore_transfer(const struct rewind_memory_buffer *buffer);
+int multi_send_coop_world_initialize_transfer(int level);
+int multi_send_coop_campaign_transfer(const struct rewind_memory_buffer *buffer);
+int multi_send_coop_checkpoint_transfer(const struct rewind_memory_buffer *buffer);
+int multi_send_coop_rollback_transfer(const struct rewind_memory_buffer *buffer);
+void multi_cancel_coop_travel_transfer(void);
+void multi_do_rewind_request(const ubyte *buf, int authenticated_sender);
 void multi_do_rewind_result(const ubyte *buf);
 void multi_do_rewind_save_begin(const ubyte *buf);
-void multi_do_rewind_save_ready(const ubyte *buf);
+void multi_do_rewind_save_ready(const ubyte *buf, int authenticated_sender);
 void multi_do_rewind_save_chunk(const ubyte *buf);
 void multi_do_rewind_save_apply(const ubyte *buf);
 void multi_send_coop_restore_status(int status);
@@ -665,6 +700,10 @@ typedef struct netgame_info
 	ubyte						FullDeathSpew;
 	ubyte						PlayerSpewNoExpire;
 	ubyte						DuplicateEnergyShields;
+#ifdef __ANDROID__
+	ubyte CoopBriefings;
+	ubyte AllowSecretWarps;
+#endif
 	ubyte						team_color[2];
 	ubyte						RebalancedWeapons;
 	ubyte						NewSpawnAlgorithm;

@@ -68,6 +68,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "coop/coop_level_restart.h"
 #include "coop/coop_powerup_duplication.h"
 #include "coop/coop_recovery.h"
+#include "coop/coop_briefing.h"
+#include "coop/coop_travel.h"
+#include "coop/coop_gameplay_runtime.h"
 #include "coop_save.h"
 #include "coop/coop_host_migration.h"
 #include "coop_warp.h"
@@ -199,6 +202,10 @@ fix Show_kill_list_timer = 0;
 
 char Multi_is_guided=0;
 sbyte PKilledFlags[MAX_PLAYERS];
+#ifdef __ANDROID__
+static int local_death_pending;
+int multi_local_death_pending(void) { return local_death_pending; }
+#endif
 int Bounty_target = 0;
 
 
@@ -279,6 +286,9 @@ static const int message_length[] = {
 };
 
 static void multi_process_data_from_player(const ubyte *buf, int len, int authenticated_sender);
+#ifdef __ANDROID__
+static void multi_process_data_scoped(const ubyte *buf, int len, int authenticated_sender, const coop_gameplay_stamp *sent);
+#endif
 
 char PowerupsInMine[MAX_POWERUP_TYPES],MaxPowerupsAllowed[MAX_POWERUP_TYPES];
 extern fix ThisLevelTime;
@@ -877,7 +887,11 @@ void multi_endlevel_score(void)
 
 	// Restore connect state
 
-	if (Game_mode & GM_NETWORK)
+	if ((Game_mode & GM_NETWORK)
+#ifdef __ANDROID__
+	    && !coop_travel_ending_campaign()
+#endif
+	    )
 		Players[Player_num].connected = old_connect;
 
 	if (Game_mode & GM_MULTI_COOP)
@@ -935,6 +949,7 @@ multi_new_game(void)
 {
 #ifdef __ANDROID__
 	coop_recovery_reset();
+	coop_campaign_reset_runtime();
 	coop_clear_pending_restore_inventory();
 #endif
 	int i;
@@ -986,6 +1001,7 @@ multi_new_game(void)
 #ifdef __ANDROID__
 	/* android port: reset auto-restore state for new game */
 	coop_disarm_auto_restore();
+	local_death_pending = 0;
 #endif
 
 	// The observatory stats reset
@@ -1105,6 +1121,14 @@ multi_make_ghost_player(int playernum)
 	obj->type = OBJ_PLAYER;
 	obj->movement_type = MT_PHYSICS;
 	multi_reset_player_object(obj);
+#ifdef __ANDROID__
+	/* A peer finishing the destination load can activate its ship after our
+	 * portable merge. It is still the same living ship, not a respawn */
+	if (coop_travel_blocks_gameplay()) {
+		COOPLOG("travel player activated without resetting inventory: player=%d", playernum);
+		return;
+	}
+#endif
 	if (playernum != Player_num)
 		init_player_stats_new_ship(playernum);
 }
@@ -1226,7 +1250,14 @@ void multi_compute_kill(int killer, int killed)
 
 	digi_play_sample( SOUND_HUD_KILL, F3_0 );
 
-	if (Control_center_destroyed)
+#ifdef __ANDROID__
+	const int defer_death = coop_travel_defer_player_death(killed_pnum);
+#endif
+	if (Control_center_destroyed
+#ifdef __ANDROID__
+	    && !defer_death
+#endif
+	)
 		Players[killed_pnum].connected=CONNECT_DIED_IN_MINE;
 
 	if (killer_type == OBJ_CNTRLCEN)
@@ -1302,6 +1333,10 @@ void multi_compute_kill(int killer, int killed)
 				Netgame.TeamKillGoalCount[get_team(killed_pnum)] -= 1; 
 			}
 
+#ifdef __ANDROID__
+			/* A remote suicide must not charge the local survivor */
+			if (killed_pnum == Player_num)
+#endif
 			robo_anarchy_suicide_penalty();
 
 			Players[killed_pnum].net_killed_total += 1;
@@ -1566,7 +1601,7 @@ void multi_do_frame(void)
 		}
 		/* Periodic autosave every 30 seconds (host only, coop only) */
 		if ((Game_mode & GM_MULTI_COOP) && multi_i_am_master() &&
-		    !Endlevel_sequence && !Control_center_destroyed &&
+		    !Endlevel_sequence && (!Control_center_destroyed || coop_save_countdown_allowed()) &&
 		    timer_query() >= last_coop_autosave_time + F1_0 * 30) {
 			coop_autosave();
 			last_coop_autosave_time = timer_query();
@@ -2442,6 +2477,14 @@ multi_do_position(const ubyte *buf)
 
 	pnum = buf[1];
 
+#ifdef __ANDROID__
+	/* Position messages share the travel freeze with ordinary PDATA packets */
+	if (coop_travel_blocks_gameplay()) {
+		COOPLOG("travel ignored MULTI_POSITION: player=%u level=%d", pnum, Current_level_num);
+		return;
+	}
+#endif
+
 #ifndef WORDS_BIGENDIAN
 	extract_shortpos(&Objects[Players[pnum].objnum], (shortpos *)(buf + 2),0);
 #else
@@ -2465,6 +2508,9 @@ multi_do_reappear(const ubyte *buf)
 	Assert(objnum >= 0);
 	if (pnum != Objects[objnum].id)
 		return;
+#ifdef __ANDROID__
+	coop_travel_player_reappeared(pnum);
+#endif
 
 	if (PKilledFlags[pnum]<=0) // player was not reported dead, so do not accept this packet
 	{
@@ -2660,11 +2706,18 @@ multi_do_kill(const ubyte *buf)
 	}
 
 	multi_compute_kill(killer, killed);
+#ifdef __ANDROID__
+	if (pnum == Player_num) local_death_pending = 0;
+#endif
 
 	if (Game_mode & GM_BOUNTY && multi_i_am_master()) // update in case if needed... we could attach this to this packet but... meh...
 		multi_send_bounty();
 
-	if (Control_center_destroyed) {
+	if (Control_center_destroyed
+#ifdef __ANDROID__
+	    && !coop_travel_defer_player_death(pnum)
+#endif
+	) {
 		reset_obs();
 		Players[pnum].connected = CONNECT_DIED_IN_MINE;
 
@@ -3216,6 +3269,14 @@ multi_do_play_sound(const ubyte *buf)
 void
 multi_do_score(const ubyte *buf)
 {
+#ifdef __ANDROID__
+	/* The source checkpoint owns scores while frozen; a load may advertise zero */
+	if (coop_travel_blocks_world_updates()) {
+		COOPLOG("travel score ignored while frozen: player=%u score=%d level=%d",
+		        (unsigned) buf[1], GET_INTEL_INT(buf + 2), Current_level_num);
+		return;
+	}
+#endif
 	int pnum = (int)(buf[1]);
 
 	if ((pnum < 0) || (pnum >= N_players))
@@ -3233,6 +3294,11 @@ multi_do_score(const ubyte *buf)
 	add_observatory_stat(pnum, OBSEV_NONE);
 
 	Players[pnum].score = GET_INTEL_INT(buf + 2);
+#ifdef __ANDROID__
+	if ((Game_mode & GM_MULTI_COOP) && Netgame.AllowSecretWarps)
+		COOPLOG("travel score received: player=%d score=%d level=%d frozen=%d", pnum,
+		        Players[pnum].score, Current_level_num, coop_travel_blocks_gameplay());
+#endif
 
 	multi_sort_kill_list();
 }
@@ -3464,8 +3530,36 @@ multi_process_bigdata(const ubyte *buf, unsigned len)
 	multi_process_bigdata_from_player(buf, len, -1);
 }
 
-void
-multi_process_bigdata_from_player(const ubyte *buf, unsigned len, int authenticated_sender)
+#ifdef __ANDROID__
+#ifdef INTROSPECT_ON
+static unsigned android_rejected_world_scores;
+unsigned multi_test_rejected_world_scores(void) { return android_rejected_world_scores; }
+static unsigned android_rejected_world_recovery;
+unsigned multi_test_rejected_world_recovery(void) { return android_rejected_world_recovery; }
+#endif
+
+static void multi_process_bigdata_scoped(const ubyte *buf, unsigned len, int authenticated_sender,
+                                        const coop_gameplay_stamp *sent);
+
+void multi_process_stamped_bigdata(const ubyte *buf, unsigned len, int authenticated_sender)
+{
+	coop_gameplay_stamp stamp;
+	if (!buf || len <= COOP_GAMEPLAY_STAMP_BYTES ||
+	    !coop_gameplay_stamp_read(&stamp, buf + len - COOP_GAMEPLAY_STAMP_BYTES, COOP_GAMEPLAY_STAMP_BYTES)) return;
+	multi_process_bigdata_scoped(buf, len - COOP_GAMEPLAY_STAMP_BYTES, authenticated_sender, &stamp);
+}
+
+void multi_process_bigdata_from_player(const ubyte *buf, unsigned len, int authenticated_sender)
+{
+	/* Local engine/automation calls have no transport envelope */
+	multi_process_bigdata_scoped(buf, len, authenticated_sender, NULL);
+}
+
+static void multi_process_bigdata_scoped(const ubyte *buf, unsigned len, int authenticated_sender,
+                                        const coop_gameplay_stamp *sent)
+#else
+void multi_process_bigdata_from_player(const ubyte *buf, unsigned len, int authenticated_sender)
+#endif
 {
 	// Takes a bunch of messages, check them for validity,
 	// and pass them to multi_process_data.
@@ -3490,7 +3584,28 @@ multi_process_bigdata_from_player(const ubyte *buf, unsigned len, int authentica
 			return;
 		}
 
+#ifdef __ANDROID__
+		if (sent && (Game_mode & GM_MULTI_COOP)) {
+			/* Re-read after each handler: a control message may replace the world */
+			coop_gameplay_stamp current = coop_gameplay_current_stamp();
+			if (!coop_gameplay_message_allowed(type, sent, &current, current.frozen)) {
+#ifdef INTROSPECT_ON
+				if (type == MULTI_SCORE) ++android_rejected_world_scores;
+				if (type == MULTI_COOP_RECOVERY) ++android_rejected_world_recovery;
+#endif
+				COOPLOG("world packet rejected: type=%u sender=%d visit=%llu/%llu level=%d/%d frozen=%u/%u",
+				        type, authenticated_sender, (unsigned long long) sent->visit,
+				        (unsigned long long) current.visit, sent->level, current.level, sent->frozen, current.frozen);
+				bytes_processed += sub_len;
+				continue;
+			}
+		}
+#endif
+#ifdef __ANDROID__
+		multi_process_data_scoped(&buf[bytes_processed], sub_len, authenticated_sender, sent);
+#else
 		multi_process_data_from_player(&buf[bytes_processed], sub_len, authenticated_sender);
+#endif
 		bytes_processed += sub_len;
 	}
 }
@@ -4221,6 +4336,9 @@ void
 multi_send_kill(int objnum)
 {
 	if (is_observer()) { return; }
+#ifdef __ANDROID__
+	local_death_pending = 1;
+#endif
 
 	// I died, tell the world.
 
@@ -4259,6 +4377,9 @@ multi_send_kill(int objnum)
 	{
 		multi_send_data(multibuf, count, 2);
 		multi_compute_kill(killer_objnum, objnum); // THIS TRASHES THE MULTIBUF!!!
+#ifdef __ANDROID__
+		local_death_pending = 0;
+#endif
 	}
 	else
 		multi_send_data_direct((ubyte*)multibuf, count, multi_who_is_master(), 2); // I am just a client so I'll only send my kill but not compute it, yet. I'll get response from host so I can compute it correctly
@@ -4597,6 +4718,13 @@ multi_send_audio_taunt(int taunt_num)
 void
 multi_send_score(void)
 {
+#ifdef __ANDROID__
+	if (coop_travel_blocks_world_updates()) {
+		COOPLOG("travel score send suppressed while frozen: player=%d score=%d level=%d",
+		        Player_num, Players[Player_num].score, Current_level_num);
+		return;
+	}
+#endif
 	if (is_observer()) { return; }
 
 	// Send my current score to all other players so it will remain
@@ -6796,6 +6924,7 @@ void multi_send_ship_status_for_frame()
 #ifdef __ANDROID__
 	PUT_INTEL_INT(multibuf + 70, coop_recovery_restore_serial(Player_num));
 	PUT_INTEL_INT(multibuf + 78, coop_recovery_life(Player_num));
+	multibuf[82] = Players[Player_num].secondary_weapon_flags >> 8;
 #else
 	PUT_INTEL_INT(multibuf + 70, 0);
 	PUT_INTEL_INT(multibuf + 78, 0);
@@ -6814,8 +6943,16 @@ void multi_send_ship_status_for_frame()
 
 void multi_do_ship_status( const ubyte *buf, int authenticated_sender )
 {
+#ifdef __ANDROID__
+	/* Travel carries immutable player snapshots while the mine is frozen */
+	if (coop_travel_blocks_gameplay()) return;
+#endif
 
 	fix afterburner_charge = GET_INTEL_INT(buf + 39);
+	ushort secondary_weapon_flags = buf[29];
+#ifdef __ANDROID__
+	secondary_weapon_flags |= (ushort)buf[82] << 8;
+#endif
 	if (buf[1] >= MAX_PLAYERS || buf[8] >= MAX_PRIMARY_WEAPONS ||
 	    buf[30] >= MAX_SECONDARY_WEAPONS || afterburner_charge < 0 ||
 	    afterburner_charge > F1_0 ||
@@ -6843,7 +6980,7 @@ void multi_do_ship_status( const ubyte *buf, int authenticated_sender )
 		Players[buf[1]].secondary_ammo[7] = GET_INTEL_SHORT(buf + 23);
 		Players[buf[1]].secondary_ammo[8] = GET_INTEL_SHORT(buf + 25);
 		Players[buf[1]].secondary_ammo[9] = GET_INTEL_SHORT(buf + 27);
-		Players[buf[1]].secondary_weapon_flags = buf[29];
+		Players[buf[1]].secondary_weapon_flags = secondary_weapon_flags;
 		Players[buf[1]].secondary_weapon = (sbyte)buf[30];
 		Players[buf[1]].energy = GET_INTEL_INT(buf + 31);
 		Players[buf[1]].homing_object_dist = GET_INTEL_INT(buf + 35);
@@ -6871,7 +7008,7 @@ void multi_do_ship_status( const ubyte *buf, int authenticated_sender )
 		Players[pnum].primary_ammo[1] = GET_INTEL_SHORT(buf + 5);
 		Players[pnum].primary_weapon_flags = buf[7];
 		Players[pnum].primary_weapon = (sbyte)buf[8];
-		Players[pnum].secondary_weapon_flags = buf[29];
+		Players[pnum].secondary_weapon_flags = secondary_weapon_flags;
 		Players[pnum].secondary_weapon = (sbyte)buf[30];
 		Players[pnum].energy = GET_INTEL_INT(buf + 31);
 		Players[pnum].afterburner_charge = afterburner_charge;
@@ -7137,6 +7274,12 @@ void multi_send_restore_game(ubyte slot, uint id)
 
 void multi_initiate_save_game()
 {
+#ifdef __ANDROID__
+	if (coop_briefing_active() || coop_travel_blocks_state_actions() || multi_save_transfer_busy()) {
+		HUD_init_message_literal(HM_MULTI, "Wait until the co-op transition finishes");
+		return;
+	}
+#endif
 	if (Netgame.host_is_obs) {
 		HUD_init_message_literal(HM_MULTI, "Can't save with a host that is observing!");
 		return;
@@ -7147,7 +7290,11 @@ void multi_initiate_save_game()
 	char filename[PATH_MAX];
 	char desc[24];
 
-	if ((Endlevel_sequence) || (Control_center_destroyed))
+	if (Endlevel_sequence || (Control_center_destroyed
+#ifdef __ANDROID__
+	    && !coop_save_countdown_allowed()
+#endif
+	    ))
 		return;
 
 	if (!multi_i_am_master())
@@ -7198,6 +7345,12 @@ void multi_initiate_save_game()
 
 void multi_initiate_restore_game()
 {
+#ifdef __ANDROID__
+	if (coop_briefing_active() || coop_travel_blocks_state_actions() || multi_save_transfer_busy()) {
+		HUD_init_message_literal(HM_MULTI, "Wait until the co-op transition finishes");
+		return;
+	}
+#endif
 	if (Netgame.host_is_obs) {
 		HUD_init_message_literal(HM_MULTI, "Can't load with a host that is observing!");
 		return;
@@ -7206,7 +7359,11 @@ void multi_initiate_restore_game()
 	int i, j, slot;
 	char filename[PATH_MAX];
 
-	if ((Endlevel_sequence) || (Control_center_destroyed))
+	if (Endlevel_sequence || (Control_center_destroyed
+#ifdef __ANDROID__
+	    && !coop_save_countdown_allowed()
+#endif
+	    ))
 		return;
 
 	if (!multi_i_am_master())
@@ -7247,9 +7404,19 @@ void multi_initiate_restore_game()
 
 void multi_save_game(ubyte slot, uint id, char *desc)
 {
+#ifdef __ANDROID__
+	if (coop_briefing_active() || coop_travel_blocks_state_actions() || multi_save_transfer_busy()) {
+		HUD_init_message_literal(HM_MULTI, "Wait until the co-op transition finishes");
+		return;
+	}
+#endif
 	char filename[PATH_MAX];
 
-	if ((Endlevel_sequence) || (Control_center_destroyed))
+	if (Endlevel_sequence || (Control_center_destroyed
+#ifdef __ANDROID__
+	    && !coop_save_countdown_allowed()
+#endif
+	    ))
 		return;
 
 #ifdef __ANDROID__
@@ -7290,10 +7457,20 @@ void multi_prepare_restore_sync(void)
 
 void multi_restore_game(ubyte slot, uint id)
 {
+#ifdef __ANDROID__
+	if (coop_briefing_active() || coop_travel_blocks_state_actions() || multi_save_transfer_busy()) {
+		HUD_init_message_literal(HM_MULTI, "Wait until the co-op transition finishes");
+		return;
+	}
+#endif
 	char filename[PATH_MAX];
 	int thisid;
 
-	if ((Endlevel_sequence) || (Control_center_destroyed)) {
+	if (Endlevel_sequence || (Control_center_destroyed
+#ifdef __ANDROID__
+	    && !coop_save_countdown_allowed()
+#endif
+	    )) {
 #ifdef __ANDROID__
 		if (Game_mode & GM_MULTI_COOP)
 			coop_restore_status_failed();
@@ -7661,6 +7838,13 @@ multi_process_data(const ubyte *buf, int len)
 
 static void
 multi_process_data_from_player(const ubyte *buf, int len, int authenticated_sender)
+#ifdef __ANDROID__
+{
+	multi_process_data_scoped(buf, len, authenticated_sender, NULL);
+}
+
+static void multi_process_data_scoped(const ubyte *buf, int len, int authenticated_sender, const coop_gameplay_stamp *sent)
+#endif
 {
 	// Take an entire message (that has already been checked for validity,
 	// if necessary) and act on it.
@@ -7822,12 +8006,16 @@ multi_process_data_from_player(const ubyte *buf, int len, int authenticated_send
 			coop_warp_do_packet(buf); break;
 		case MULTI_COOP_PEER_STATUS:
 			coop_do_peer_status(buf); break;
+		case MULTI_COOP_BRIEFING:
+			coop_briefing_receive(buf, authenticated_sender); break;
+		case MULTI_COOP_TRAVEL:
+			coop_travel_receive(buf, authenticated_sender); break;
 		case MULTI_COOP_RECOVERY:
 			coop_recovery_receive(buf, authenticated_sender); break;
 		case MULTI_COOP_RESTORE_INV:
-			coop_do_restore_inventory(buf, authenticated_sender); break;
+			coop_do_restore_inventory(buf, authenticated_sender, sent); break;
 		case MULTI_REWIND_REQUEST:
-			multi_do_rewind_request(buf); break;
+			multi_do_rewind_request(buf, authenticated_sender); break;
 		case MULTI_REWIND_RESULT:
 			multi_do_rewind_result(buf); break;
 		case MULTI_REWIND_SAVE_BEGIN:
@@ -7837,7 +8025,7 @@ multi_process_data_from_player(const ubyte *buf, int len, int authenticated_send
 		case MULTI_REWIND_SAVE_APPLY:
 			multi_do_rewind_save_apply(buf); break;
 		case MULTI_REWIND_SAVE_READY:
-			multi_do_rewind_save_ready(buf); break;
+			multi_do_rewind_save_ready(buf, authenticated_sender); break;
 		case MULTI_COOP_RESTORE_STATUS:
 			multi_do_coop_restore_status(buf, authenticated_sender); break;
 		case MULTI_COOP_POWERUP_COLLECTED:

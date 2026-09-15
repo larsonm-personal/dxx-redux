@@ -8,9 +8,9 @@
 #include "powerup.h"
 #include "weapon.h"
 
-_Static_assert(sizeof(coop_save_metadata) == 3624, "Coop v9 metadata ABI changed");
+_Static_assert(sizeof(coop_save_metadata) == 3652, "Coop v13 metadata ABI changed");
 _Static_assert(sizeof(coop_powerup_collection) == 56, "Coop pickup ABI changed");
-_Static_assert(sizeof(coop_recovery_item) == 105, "Coop recovery ABI changed");
+_Static_assert(sizeof(coop_recovery_item) == 107, "Coop recovery ABI changed");
 
 int main(int argc, char **argv)
 {
@@ -42,7 +42,7 @@ int main(int argc, char **argv)
         memcpy(&meta, data + start, sizeof(meta));
         if (!meta.num_active_players || meta.num_active_players > 8 ||
             sizeof(meta) + (size_t) footer.collection_count * sizeof(coop_powerup_collection) +
-                (size_t) meta.recovery_count * sizeof(coop_recovery_item) != footer.payload_size) continue;
+                (size_t) meta.recovery_count * sizeof(coop_recovery_item) + footer.campaign_size != footer.payload_size) continue;
         if (!strcmp(argv[2], "--inspect")) {
             printf("mission=%.*s level=%d pickups=%u recovery=%u checksum=%08x\n",
                    8, meta.mission_name, meta.level_num, footer.collection_count, meta.recovery_count, footer.checksum);
@@ -70,21 +70,25 @@ int main(int argc, char **argv)
         missing.network_owner = 0;
         missing.powerup = POW_HOMING_AMMO_4;
         missing.state = COOP_RECOVERY_LIVE;
+        missing.world_level = meta.level_num;
         missing.gear.missiles[1] = 4;
         memcpy(missing.client_id, meta.active_players[0].client_id, sizeof(missing.client_id));
         memcpy(missing.callsign, meta.active_players[0].callsign, sizeof(missing.callsign));
         meta.recovery_count++;
         memcpy(data + start, &meta, sizeof(meta));
-        footer.checksum = coop_save_checksum(data + start, footer.payload_size, 2166136261u);
+        size_t gear_end = (size_t) end - sizeof(footer) - footer.campaign_size;
+        footer.checksum = coop_save_checksum(data + start, gear_end - start, 2166136261u);
         if (!bad_counts) {
             footer.checksum = coop_save_checksum(&missing, sizeof(missing), footer.checksum);
             footer.payload_size += sizeof(missing);
         }
+        footer.checksum = coop_save_checksum(data + gear_end, footer.campaign_size, footer.checksum);
         file = fopen(argv[2], "wb");
         if (!file) { free(data); return 1; }
-        size_t prefix = (size_t) end - sizeof(footer);
+        size_t prefix = gear_end;
         ok = fwrite(data, 1, prefix, file) == prefix &&
              (bad_counts || fwrite(&missing, sizeof(missing), 1, file) == 1) &&
+             fwrite(data + gear_end, 1, footer.campaign_size, file) == footer.campaign_size &&
              fwrite(&footer, sizeof(footer), 1, file) == 1 &&
              fwrite(data + end, 1, (size_t) length - end, file) == (size_t) length - end;
         if (fclose(file)) ok = 0;

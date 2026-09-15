@@ -1,0 +1,8 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "set_debug", "field": "recovery_test_trace", "value": "true"},
+    {"action": "set_debug", "field": "reliable_packet_test", "value": "remember_level_sequence"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "physical_prepare"},
+    {"action": "wait_ms", "ms": 1500},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "reactor"}
+]

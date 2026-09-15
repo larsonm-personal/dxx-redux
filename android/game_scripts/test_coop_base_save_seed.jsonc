@@ -1,0 +1,25 @@
+[
+    {
+        "_info": {
+            "games": [
+                "d2"
+            ],
+            "_standalone": false,
+            "_owner": "test_lan"
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "recovery_test_trace",
+        "value": "true"
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_base_save_test",
+        "value": "seed"
+    },
+    {
+        "action": "wait_ms",
+        "ms": 2000
+    }
+]

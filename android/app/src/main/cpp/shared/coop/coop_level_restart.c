@@ -1,7 +1,10 @@
 #ifdef __ANDROID__
 
 #include "coop_level_restart.h"
+#include "coop_briefing.h"
+#include "coop_travel.h"
 #include "coop_save.h"
+#include "coop_campaign.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,6 +17,7 @@
 #include "game.h"
 #include "mission.h"
 #include "multi.h"
+#include "multi_save_transfer_policy.h"
 #include "physfsx.h"
 #include "player.h"
 #include "state_android_shared.h"
@@ -26,6 +30,7 @@ typedef struct coop_level_restart_session {
 	int busy;
 	int restore_suppressed;
 	int level_num;
+	uint64_t campaign_generation;
 	char mission[COOP_LEVEL_RESTART_MISSION_LEN];
 	rewind_memory_buffer buffer;
 } coop_level_restart_session;
@@ -49,6 +54,7 @@ static int coop_level_restart_identity_matches(void)
 {
 	return g_level_restart.valid &&
 	       g_level_restart.level_num == Current_level_num &&
+	       g_level_restart.campaign_generation == coop_campaign_current()->generation &&
 	       !strcmp(g_level_restart.mission, Current_mission_filename);
 }
 
@@ -225,8 +231,7 @@ void coop_level_restart_note_natural_level(int level_num)
 {
 	if (!(Game_mode & GM_MULTI_COOP))
 		return;
-	if (g_level_restart.valid && level_num == g_level_restart.level_num &&
-	    !strcmp(g_level_restart.mission, Current_mission_filename))
+	if (level_num == Current_level_num && coop_level_restart_identity_matches())
 		return;
 	g_level_restart.pending_capture = 1;
 	g_level_restart.restore_suppressed = 0;
@@ -237,7 +242,7 @@ void coop_level_restart_maybe_capture_ready(void)
 	rewind_memory_buffer next = { NULL, 0, 0 };
 	unsigned char *old_data;
 
-	if (!g_level_restart.pending_capture || g_level_restart.restore_suppressed ||
+	if (coop_briefing_active() || coop_travel_blocks_state_actions() || !g_level_restart.pending_capture || g_level_restart.restore_suppressed ||
 	    !(Game_mode & GM_MULTI_COOP) || !multi_i_am_master() || is_observer() ||
 	    Current_level_num == 0 || !multi_all_players_alive() ||
 	    coop_level_restart_has_duplicate_callsigns() || multi_save_transfer_busy())
@@ -250,6 +255,7 @@ void coop_level_restart_maybe_capture_ready(void)
 	old_data = g_level_restart.buffer.data;
 	g_level_restart.buffer = next;
 	g_level_restart.level_num = Current_level_num;
+	g_level_restart.campaign_generation = coop_campaign_current()->generation;
 	snprintf(g_level_restart.mission, sizeof(g_level_restart.mission), "%s",
 	         Current_mission_filename);
 	g_level_restart.valid = 1;
@@ -279,7 +285,7 @@ int coop_level_restart_get_state(void)
 {
 	if (!(Game_mode & GM_MULTI_COOP) || !multi_i_am_master())
 		return COOP_LEVEL_RESTART_HIDDEN;
-	if (g_level_restart.busy)
+	if (g_level_restart.busy || coop_briefing_active() || coop_travel_blocks_state_actions() || multi_save_transfer_busy())
 		return COOP_LEVEL_RESTART_BUSY;
 	if (coop_level_restart_identity_matches())
 		return COOP_LEVEL_RESTART_READY;
@@ -308,7 +314,8 @@ int coop_level_restart_load_retained_and_request(void)
 	unsigned char *data;
 	unsigned char *old_data;
 
-	if (!(Game_mode & GM_MULTI_COOP) || !multi_i_am_master() ||
+	if (!(Game_mode & GM_MULTI_COOP) || !multi_i_am_master() || multi_save_transfer_busy() ||
+	    coop_briefing_active() || coop_travel_blocks_state_actions() ||
 	    !state_android_build_coop_sidecar_filename(
 	        filename, sizeof(filename), "level_start_highest.sav"))
 		return 0;
@@ -316,7 +323,7 @@ int coop_level_restart_load_retained_and_request(void)
 	if (!fp)
 		return 0;
 	size = PHYSFS_fileLength(fp);
-	if (size <= 0 || size > 2 * 1024 * 1024) {
+	if (size <= 0 || (uint64_t) size > MULTI_SAVE_TRANSFER_MAX_BYTES) {
 		PHYSFS_close(fp);
 		return 0;
 	}
@@ -332,6 +339,7 @@ int coop_level_restart_load_retained_and_request(void)
 	g_level_restart.buffer.size = (size_t) size;
 	g_level_restart.buffer.capacity = (size_t) size;
 	g_level_restart.level_num = Current_level_num;
+	g_level_restart.campaign_generation = coop_campaign_current()->generation;
 	snprintf(g_level_restart.mission, sizeof(g_level_restart.mission), "%s",
 	         Current_mission_filename);
 	g_level_restart.valid = 1;

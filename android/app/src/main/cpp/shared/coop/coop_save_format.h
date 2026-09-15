@@ -6,8 +6,8 @@
 #include <string.h>
 
 #define COOP_SAVE_META_TAG   0x434F4F50 /* "COOP" */
-#define COOP_SAVE_META_VER   9
-#define COOP_SAVE_FOOTER_TAG 0x39504643 /* "CFP9" */
+#define COOP_SAVE_META_VER   13
+#define COOP_SAVE_FOOTER_TAG 0x41504643 /* "CFPA" */
 
 typedef struct coop_save_footer {
 	uint32_t tag;
@@ -15,6 +15,7 @@ typedef struct coop_save_footer {
 	uint16_t reserved;
 	uint32_t payload_size;
 	uint32_t collection_count;
+	uint32_t campaign_size;
 	uint32_t checksum;
 } coop_save_footer;
 
@@ -43,6 +44,7 @@ static inline int coop_save_format_supported(FILE *file, long trailer_end)
 	    fread(&footer, sizeof(footer), 1, file) != 1 ||
 	    footer.tag != COOP_SAVE_FOOTER_TAG ||
 	    footer.version != COOP_SAVE_META_VER || footer.payload_size < 6 ||
+	    footer.campaign_size > footer.payload_size - 6 ||
 	    footer.payload_size > (unsigned long) trailer_end - sizeof(footer) ||
 	    fseek(file, trailer_end - (long) sizeof(footer) - footer.payload_size, SEEK_SET))
 		return 0;

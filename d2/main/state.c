@@ -992,6 +992,7 @@ static int state_validate_effect_runtime_state(PHYSFS_file *fp, int swap, int ve
 static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 {
 	PHYSFS_sint64 start = PHYSFS_tell(fp);
+	const char *validation_stage = "header";
 	game_d_tick_state d_tick_state;
 	object_runtime_state object_state;
 	laser_runtime_state laser_state;
@@ -1017,6 +1018,7 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 	if (!game_d_tick_state_is_valid(&d_tick_state)) {
 		goto done;
 	}
+	validation_stage = "objects";
 	if (!state_runtime_read_s32(fp, swap, &object_state.num_objects) ||
 	    !state_runtime_read_s32(fp, swap, &object_state.highest_object_index))
 		goto done;
@@ -1034,6 +1036,7 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 		goto done;
 	if (!object_validate_runtime_state(&object_state))
 		goto done;
+	validation_stage = "laser";
 	if (!state_runtime_read_s32(fp, swap, &laser_state.fusion_charge) ||
 	    !state_runtime_read_s32(fp, swap, &laser_state.spreadfire_toggle) ||
 	    !state_runtime_read_s32(fp, swap, &laser_state.missile_gun) ||
@@ -1045,12 +1048,15 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 	if (!laser_runtime_state_is_valid(&laser_state))
 		goto done;
 	if (version >= STATE_FIDELITY_VERSION) {
+		validation_stage = "weapon fidelity";
 		for (i = 0; i <= Highest_object_index; i++)
 			if (Objects[i].type != OBJ_NONE && Objects[i].control_type == CT_WEAPON &&
 			    !state_runtime_skip(fp, sizeof(int) + MAX_OBJECTS))
 				goto done;
+		validation_stage = "morph";
 		if (!state_validate_morph_runtime_state(fp, swap))
 			goto done;
+		validation_stage = "stuck objects";
 		if (!state_validate_stuck_runtime_state(fp, swap))
 			goto done;
 		if (!state_runtime_skip(fp, 2 * sizeof(int) + (size_t)MAX_OBJECTS * sizeof(int)))
@@ -1059,8 +1065,10 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 	if (version >= STATE_AI_PATH_RUNTIME_VERSION &&
 	    !state_runtime_skip(fp, 6 * sizeof(int) + sizeof(short)))
 		goto done;
+	validation_stage = "effects";
 	if (!state_validate_effect_runtime_state(fp, swap, version))
 		goto done;
+	validation_stage = "secret area identities";
 	if (version >= STATE_SECRET_AREA_IDENTITY_VERSION) {
 		if (!secret_area_validate_runtime_state(fp))
 			goto done;
@@ -1069,6 +1077,16 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 		goto done;
 	valid = 1;
 done:
+#ifdef __ANDROID__
+	if (!valid)
+		debug_log_force(DLOG_GAME,
+			"Android runtime restore validation failed: stage=%s level=%d player=%d saved_objects=%d saved_highest=%d live_highest=%d offset=%lld start=%lld",
+			validation_stage, Current_level_num, Player_num, object_state.num_objects,
+			object_state.highest_object_index, Highest_object_index,
+			(long long)PHYSFS_tell(fp), (long long)start);
+#else
+	(void)validation_stage;
+#endif
 	if (start >= 0)
 		PHYSFS_seek(fp, start);
 	return valid;
@@ -2221,7 +2239,11 @@ int state_save_all(int secret_save, char *filename_override, int blind_save)
 	int	rval, filenum = -1;
 	char	filename[PATH_MAX], desc[DESC_LENGTH+1];
 
-	if ((Current_level_num < 0) && (secret_save == 0)) {
+	if ((Current_level_num < 0) && (secret_save == 0)
+#ifdef __ANDROID__
+	    && !(Game_mode & GM_MULTI_COOP)
+#endif
+	) {
 		HUD_init_message_literal(HM_DEFAULT,  "Can't save in secret level!" );
 		return 0;
 	}
@@ -2714,7 +2736,11 @@ int state_restore_all(int in_game, int secret_restore, char *filename_override)
 	          Newdemo_state, Game_mode, Current_level_num,
 	          Players[Player_num].callsign);
 #endif
-	if (in_game && (Current_level_num < 0) && (secret_restore == 0)) {
+	if (in_game && (Current_level_num < 0) && (secret_restore == 0)
+#ifdef __ANDROID__
+	    && !(Game_mode & GM_MULTI_COOP)
+#endif
+	) {
 #ifdef __ANDROID__
 		debug_log(DLOG_GAME,
 		          "restore all return: game=d2 reason=secret_level_guard level=%d",
@@ -3102,7 +3128,11 @@ int state_restore_all_sub(char *filename, int secret_restore)
 	else // in coop we want to stay the player we are already.
 	{
 		strcpy( org_callsign, Players[Player_num].callsign );
-		if (!secret_restore)
+		if (!secret_restore
+#ifdef __ANDROID__
+		    && !coop_world_restore_active()
+#endif
+		)
 			init_player_stats_game(Player_num);
 	}
 
@@ -3129,6 +3159,17 @@ int state_restore_all_sub(char *filename, int secret_restore)
 #endif
 		StartNewLevelSub(current_level, 1, secret_restore);
 #ifdef __ANDROID__
+		if (multi_save_transfer_sync_poll(0)) {
+			android_restore_phase("co-op level synchronization interrupted");
+			PHYSFS_close(fp);
+			return 0;
+		}
+		if (Game_mode & GM_MULTI_COOP) {
+			/* The destination mine can assign a different local ship object */
+			COOPLOG("restore local ship index: source=%d destination=%d player=%d",
+				coop_org_objnum, Players[Player_num].objnum, Player_num);
+			coop_org_objnum = Players[Player_num].objnum;
+		}
 		restore_profile_after_level_us = android_profile_monotonic_us();
 		if (Game_mode & GM_MULTI_COOP)
 			COOPLOG("restore StartNewLevelSub done: game=d2 saved_level=%d current_after=%d net_after=%d player_num=%d",
@@ -3676,19 +3717,37 @@ int state_restore_all_sub(char *filename, int secret_restore)
 			escort_restore_route_target_mode(android_meta.guidebot_route_target_mode);
 		}
 		if (have_coop_meta) {
+			coop_restore_reactor_metadata(&coop_meta);
 			COOPLOG("coop_save: restored metadata (%d active, %d absent)",
 				coop_meta.num_active_players, coop_meta.num_absent_players);
+			if (!coop_world_restore_active()) {
 			Netgame.DuplicateEnergyShields =
 				coop_meta.duplicate_energy_shields;
+			Netgame.CoopBriefings = coop_meta.coop_briefings;
+			Netgame.AllowSecretWarps = coop_meta.allow_secret_warps;
+			}
             android_restore_phase("applying optional gear");
             coop_powerup_duplication_apply_pending();
-            coop_recovery_apply_pending();
+            if (coop_world_restore_active()) {
+                if (coop_powerup_duplication_restore_result().discarded ||
+                    !coop_recovery_apply_world_pending()) {
+                    PHYSFS_close(fp);
+                    return 0;
+                }
+            } else {
+                coop_recovery_apply_pending();
+                coop_campaign_apply_pending();
+            }
             coop_gear_restore_result pickups = coop_powerup_duplication_restore_result();
             coop_gear_restore_result recovery = coop_recovery_restore_result();
             android_restore_gear_summary((unsigned) pickups.accepted, (unsigned) pickups.discarded,
                                          (unsigned) recovery.accepted, (unsigned) recovery.discarded);
+            if (!coop_source_restore_validate_gear()) {
+                PHYSFS_close(fp);
+                return 0;
+            }
 			/* Restore inventory revisions with the saved player slot mapping */
-            for (int rp = 0; rp < MAX_PLAYERS; rp++) {
+            for (int rp = 0; !coop_world_restore_active() && rp < MAX_PLAYERS; rp++) {
                 int saved = coop_find_player_in_metadata(Players[rp].callsign,
                     Netgame.players[rp].client_id, &coop_meta);
                 if (saved >= 0 && saved < 8) {
@@ -3708,7 +3767,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
                 }
             }
             /* Repopulate the absent player list so returning players get inventory back */
-			if (Game_mode & GM_MULTI_COOP)
+			if ((Game_mode & GM_MULTI_COOP) && !coop_world_restore_active())
 				coop_load_absent_from_metadata(&coop_meta);
 			coop_restore_player_spew_lifetimes();
 			/* Restore guidebot ownership state (v2+) */

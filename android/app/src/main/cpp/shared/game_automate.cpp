@@ -60,11 +60,14 @@ extern "C" {
 #include "screens.h"
 #include "inferno.h"
 #include "key.h"
+#include "timer.h"
 #include "playsave.h"
 #include "rbaudio.h"
 #include "songs.h"
 #include "songs_android_shared.h"
 #include "state.h"
+#include "state_android_shared.h"
+void multi_save_game(ubyte slot, uint id, char *desc);
 #include "window.h"
 #include "newmenu.h"
 #include "gameseg.h"
@@ -72,6 +75,7 @@ extern "C" {
 #include "gameseq.h"
 #include "kmatrix.h"
 #include "multi.h"
+#include "net_udp.h"
 #include "multibot.h"
 #include "fireball.h"
 #include "maths.h"
@@ -82,7 +86,13 @@ extern "C" {
 #include "hudmsg.h"
 #include "robot.h"
 #include "coop/coop_save.h"
+#include "coop/coop_campaign.h"
+#include "android_rewind.h"
 #include "coop/coop_level_restart.h"
+#include "coop/coop_world_visit.h"
+#include "coop/coop_briefing.h"
+#include "coop/coop_travel.h"
+#include "coop_start_positions.h"
 #include "coop/coop_recovery.h"
 #include "secretarea.h"
 #include "switch.h"
@@ -90,12 +100,50 @@ extern "C" {
 #include "cntrlcen.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "escort.h"
+#include "gamemine.h"
 #include "route_confirmation.h"
+#include "scores.h"
+extern int Entered_from_level;
 #endif
 #ifdef ANDROID
 void android_automation_start_endlevel_sequence(void);
 #endif
 }
+
+#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II)
+static bool automation_capture_secret_campaign(std::vector<unsigned char> &archive)
+{
+	archive.clear();
+	if (Current_level_num >= 0) return true;
+	unsigned char *bytes = nullptr;
+	size_t size = 0;
+	const auto *campaign = coop_campaign_current();
+	const auto *base = coop_campaign_find_world(campaign, campaign->entered_from);
+	if (!campaign->base_returnable || !base || base->state != COOP_CAMPAIGN_AVAILABLE || !base->size ||
+	    !coop_campaign_encode(campaign, &bytes, &size)) {
+		free(bytes);
+		return false;
+	}
+	archive.assign(bytes, bytes + size);
+	free(bytes);
+	return true;
+}
+
+static bool automation_verify_secret_campaign(const std::vector<unsigned char> &archive, const char *operation)
+{
+	unsigned char *bytes = nullptr;
+	size_t size = 0;
+	const auto *campaign = coop_campaign_current();
+	bool valid = coop_campaign_encode(campaign, &bytes, &size) &&
+	             !archive.empty() && size == archive.size() && !memcmp(bytes, archive.data(), size) &&
+	             Entered_from_level == campaign->entered_from && Netgame.AllowSecretWarps;
+	LOGI("Secret %s archive: player=%d level=%d base=%d bytes=%zu checksum=%u matched=%d", operation,
+	     Player_num, Current_level_num, Entered_from_level, size,
+	     bytes ? coop_save_checksum(bytes, size, 2166136261u) : 0, valid);
+	free(bytes);
+	return valid;
+}
+#endif
 
 #ifdef ANDROID
 extern "C" void android_test_inject_touch_tap(void);
@@ -293,6 +341,7 @@ static SDLKey lookup_key(const char *name)
 }
 
 static const key_command_entry key_command_map[] = {
+	{ "pause", KEY_PAUSE },
 	{ "enter", KEY_ENTER },
 	{ "return", KEY_ENTER },
 	{ "escape", KEY_ESC },
@@ -362,6 +411,7 @@ enum step_type {
 	STEP_SELECT_RADIAL,              /* select a Kotlin radial-menu slice by text */
 	STEP_SKIP_INTRO,                 /* repeatedly dismiss launch intro with touch or button */
 	STEP_SKIP_BRIEFING,              /* escape only if a non-game window covers Game_wind */
+	STEP_READ_BRIEFING,              /* advance normal pages, allowing videos to finish */
 	STEP_ASSERT_OVERLAY,             /* check overlay ring buffer for matching entry */
 	STEP_FACE_VIEW,                  /* move player inside a segment and face a wall */
 	STEP_FACE_FIRST_MERGED,          /* move player to the first merged face on the level */
@@ -573,6 +623,7 @@ static const char *step_type_name(step_type t)
 		case STEP_SELECT_RADIAL: return "select_radial";
 		case STEP_SKIP_INTRO: return "skip_intro";
 		case STEP_SKIP_BRIEFING: return "skip_briefing";
+		case STEP_READ_BRIEFING: return "read_briefing";
 		case STEP_ASSERT_OVERLAY: return "assert_overlay";
 		case STEP_FACE_VIEW: return "face_view";
 		case STEP_FACE_FIRST_MERGED: return "face_first_merged";
@@ -2317,6 +2368,7 @@ static int parse_script(const char *json_text)
 			else if (action == "select_radial") s.type = STEP_SELECT_RADIAL;
 			else if (action == "skip_intro") s.type = STEP_SKIP_INTRO;
 			else if (action == "skip_briefing") s.type = STEP_SKIP_BRIEFING;
+			else if (action == "read_briefing") s.type = STEP_READ_BRIEFING;
 			else if (action == "assert_overlay") s.type = STEP_ASSERT_OVERLAY;
 			else if (action == "face_view") s.type = STEP_FACE_VIEW;
 			else if (action == "face_first_merged") s.type = STEP_FACE_FIRST_MERGED;
@@ -2800,6 +2852,8 @@ static void stop_script_fail(const char *reason)
 
 static void advance_step(void)
 {
+	/* A handler may finish its dispatch after recording a terminal failure */
+	if (!g_active || g_failed) return;
 	g_current_step++;
 	g_step_start = SDL_GetTicks();
 	g_key_phase = 0;
@@ -3305,6 +3359,54 @@ extern "C" void game_automate_tick(void)
 				g_key_phase = 0;
 			}
 			break;
+
+		case STEP_READ_BRIEFING: {
+			static unsigned total, initial, completed;
+			coop_transition_policy state;
+			coop_presentation_progress local;
+			coop_briefing_get_state(&state, &local);
+			if (!g_key_phase) {
+				if ((s.value != "one" && s.value != "all" && s.value != "available") || !local.total ||
+				    !coop_briefing_presenting() || state.phase != COOP_PHASE_BRIEFING) {
+					stop_script_fail("read_briefing requires a nonempty presentation and value one, all or available");
+					break;
+				}
+				total = local.total;
+				initial = completed = local.completed;
+				g_key_phase = 1;
+				g_repeat_start = now;
+				LOGI("Read briefing started: player=%d progress=%u/%u state=%d", Player_num, completed, total, local.state);
+			}
+			if (local.total != total || local.completed < completed || local.completed > total ||
+			    local.state == COOP_PRESENTATION_SKIPPED ||
+			    (local.state == COOP_PRESENTATION_UNAVAILABLE && s.value != "available")) {
+				stop_script_fail("Reading must preserve the authored total and monotonically credit viewed steps");
+				break;
+			}
+			if (local.completed != completed) {
+				completed = local.completed;
+				LOGI("Read briefing progress: player=%d progress=%u/%u state=%d", Player_num, completed, total, local.state);
+			}
+			if ((s.value == "one" && completed > initial) ||
+			    (s.value != "one" && local.state == COOP_PRESENTATION_READY && completed == total) ||
+			    (s.value == "available" && local.state == COOP_PRESENTATION_UNAVAILABLE && completed < total)) {
+				LOGI("Read briefing finished: player=%d progress=%u/%u state=%d", Player_num, completed, total, local.state);
+				advance_step();
+				break;
+			}
+			if (state.phase != COOP_PHASE_BRIEFING ||
+			    elapsed >= (Uint32) (s.timeout_ms > 0 ? s.timeout_ms : 90000)) {
+				stop_script_fail("Briefing ended or timed out before the requested pages were fully viewed");
+				break;
+			}
+			/* Enter advances rendered pages; videos must reach their normal end */
+			if (local.state == COOP_PRESENTATION_READING &&
+			    now - g_repeat_start >= (Uint32) s.post_delay_ms) {
+				inject_key_tap("enter");
+				g_repeat_start = now;
+			}
+			break;
+		}
 
 		case STEP_SKIP_BRIEFING:
 			/* Poll each frame until the game window is front, dismissing
@@ -3852,6 +3954,28 @@ extern "C" void game_automate_tick(void)
 				}
 			} else if (s.field == "recovery_test_trace") {
 				debug_log_enabled[DLOG_COOP_DESYNC] = 1;
+			} else if (s.field == "pdata_packet_test") {
+				const int phase = s.value == "arm" ? 0 : s.value == "send" ? 1
+				                                     : s.value == "verify" ? 2
+				                                                           : -1;
+				if (!net_udp_test_pdata_fence(phase)) stop_script_fail("Released-world PDATA fence failed");
+			} else if (s.field == "reliable_packet_test") {
+				if (s.value == "remember_level_sequence") {
+					if (!net_udp_test_level_sequence(0)) stop_script_fail("Could not seed a reliable level sequence");
+				} else if (s.value == "arm_fence" || s.value == "send_fence" || s.value == "verify_fence") {
+					const int phase = s.value == "arm_fence" ? 0 : s.value == "send_fence" ? 1
+					                                                                       : 2;
+					if (!net_udp_test_mdata_fence(phase)) stop_script_fail("Released-world MDATA fence failed");
+				} else if (s.value == "send_full" || s.value == "verify_full") {
+					if (!net_udp_test_full_mdata(s.value == "verify_full"))
+						stop_script_fail("Full reliable payload retry or acknowledgment failed");
+					else
+						LOGI("Full reliable payload: %s", s.value.c_str());
+				} else if ((s.value != "seed_boundary" && s.value != "verify_boundary") ||
+				           !net_udp_test_reliable_boundary(s.value == "verify_boundary"))
+					stop_script_fail("Reliable packet boundary setup or acknowledgment failed");
+				else
+					LOGI("Reliable packet boundary: %s", s.value.c_str());
 			} else if (s.field == "recovery_test_seed_credit") {
 				coop_player_record credit = {};
 				strcpy(credit.client_id, "pickup-test-absent");
@@ -3935,6 +4059,1161 @@ extern "C" void game_automate_tick(void)
 					}
 				}
 				if (!recorded) stop_script_fail("robot_drop_test: could not seed collection snapshot");
+			} else if (s.field == "coop_travel_test") {
+#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II)
+				static fix64 frozen_time;
+				static fix frozen_countdown;
+				static int frozen_history_count, frozen_history_level;
+				static uint64_t frozen_history_generation;
+				static const unsigned char *frozen_restart_data;
+				static fix64 normal_time;
+				static fix normal_countdown;
+				static int normal_level;
+				if (s.value == "arm") {
+					if (!coop_travel_arm()) stop_script_fail("Could not arm travel gate");
+				} else if (s.value == "arm_campaign") {
+					if (!coop_travel_arm_campaign()) stop_script_fail("Could not arm host campaign travel");
+				} else if (s.value == "physical_prepare" || s.value == "physical_exit" || s.value == "physical_delayed_exit" || s.value == "physical_remote_rejected" ||
+				           s.value == "physical_normal_prepare" || s.value == "physical_normal_exit" || s.value == "physical_normal_delayed_exit" ||
+				           s.value == "physical_companion_rejected" || s.value == "physical_secret_blocked" || s.value == "physical_normal_blocked") {
+					const bool normal = s.value == "physical_normal_prepare" || s.value == "physical_normal_exit" ||
+					                    s.value == "physical_normal_delayed_exit" || s.value == "physical_normal_blocked";
+					const int type = normal || Current_level_num < 0 ? TT_EXIT : TT_SECRET_EXIT;
+					int wall = -1;
+					for (int i = 0; i < Num_walls; ++i)
+						if (Walls[i].trigger < Num_triggers && Triggers[Walls[i].trigger].type == type) {
+							wall = i;
+							break;
+						}
+					if (wall < 0 || !ConsoleObject) {
+						stop_script_fail("No physical secret travel trigger in this mine");
+						break;
+					}
+					if (s.value == "physical_prepare" || s.value == "physical_normal_prepare") {
+						obj_relink(Players[Player_num].objnum, Walls[wall].segnum);
+						compute_segment_center(&ConsoleObject->pos, &Segments[Walls[wall].segnum]);
+						vm_vec_zero(&ConsoleObject->mtype.phys_info.velocity);
+						multi_send_position(Players[Player_num].objnum);
+					} else if (s.value == "physical_exit" || s.value == "physical_normal_exit" || s.value == "physical_delayed_exit" || s.value == "physical_normal_delayed_exit") {
+						check_trigger(&Segments[Walls[wall].segnum], Walls[wall].sidenum, Players[Player_num].objnum, 0);
+						if (!coop_travel_blocks_state_actions() || coop_autosave())
+							stop_script_fail("Pending exit arbitration allowed a save");
+						if ((s.value == "physical_delayed_exit" || s.value == "physical_normal_delayed_exit") && !coop_travel_test_delay_request(0))
+							stop_script_fail("Could not delay physical exit request");
+					} else if (s.value == "physical_companion_rejected") {
+						int robot = -1;
+						for (int i = 0; i <= Highest_object_index; ++i)
+							if (Objects[i].type == OBJ_ROBOT) {
+								robot = i;
+								break;
+							}
+						if (robot < 0) {
+							stop_script_fail("Companion trigger fixture requires a robot");
+							break;
+						}
+						/* Only the callback runs while this robot type is a companion */
+						int robot_type = Objects[robot].id;
+						int was_companion = Robot_info[robot_type].companion;
+						Robot_info[robot_type].companion = 1;
+						check_trigger(&Segments[Walls[wall].segnum], Walls[wall].sidenum, robot, 0);
+						Robot_info[robot_type].companion = was_companion;
+						int pending;
+						coop_travel_get_physical_state(nullptr, &pending, nullptr);
+						if (pending >= 0 || coop_travel_active()) stop_script_fail("Companion touch requested team travel");
+					} else if (s.value == "physical_normal_blocked") {
+						coop_transition_policy travel;
+						unsigned granted;
+						coop_travel_get_state(&travel, &granted, nullptr, nullptr);
+						if (travel.operation != COOP_OP_SECRET_ENTER || !coop_travel_blocks_gameplay() || granted ||
+						    !coop_travel_exit_side_blocked(Walls[wall].segnum, Walls[wall].sidenum) ||
+						    (WALL_IS_DOORWAY(&Segments[Walls[wall].segnum], Walls[wall].sidenum) & WID_FLY_FLAG))
+							stop_script_fail("Secret winner did not block the normal exit's collision side");
+						check_trigger(&Segments[Walls[wall].segnum], Walls[wall].sidenum, Players[Player_num].objnum, 0);
+						int pending;
+						coop_travel_get_physical_state(nullptr, &pending, nullptr);
+						if (pending >= 0 || coop_travel_take_normal_exit()) stop_script_fail("Normal exit bypassed the accepted secret warp");
+					} else if (s.value == "physical_secret_blocked") {
+						coop_transition_policy travel;
+						coop_travel_get_state(&travel, nullptr, nullptr, nullptr);
+						if (travel.phase != COOP_PHASE_NORMAL_WAIT ||
+						    !coop_travel_exit_side_blocked(Walls[wall].segnum, Walls[wall].sidenum) ||
+						    (WALL_IS_DOORWAY(&Segments[Walls[wall].segnum], Walls[wall].sidenum) & WID_FLY_FLAG))
+							stop_script_fail("Normal winner did not block the secret exit's collision side");
+						check_trigger(&Segments[Walls[wall].segnum], Walls[wall].sidenum, Players[Player_num].objnum, 0);
+						int pending;
+						coop_travel_get_physical_state(nullptr, &pending, nullptr);
+						if (pending >= 0 || coop_travel_blocks_gameplay()) stop_script_fail("Rejected secret exit stranded or froze its player");
+						for (int i = 0; i < Num_walls; ++i)
+							if (Walls[i].trigger < Num_triggers && Triggers[Walls[i].trigger].type == TT_EXIT &&
+							    coop_travel_exit_side_blocked(Walls[i].segnum, Walls[i].sidenum))
+								stop_script_fail("Normal winner blocked another normal exit");
+					} else {
+						/* A legacy remote trigger packet cannot bypass the request/grant path */
+						check_trigger_sub(Walls[wall].trigger, (Player_num + 1) % N_players, 0);
+						if (coop_travel_active()) stop_script_fail("Remote trigger broadcast bypassed host arbitration");
+					}
+				} else if (s.value == "physical_delayed_verify") {
+					if (!coop_travel_test_delay_request(1)) stop_script_fail("Delayed exit request did not lose to the accepted exit");
+				} else if (s.value == "arrival_hold" || s.value == "arrival_release") {
+					if (!coop_travel_test_hold_arrival(s.value == "arrival_hold")) stop_script_fail("Could not control arrival inspection barrier");
+				} else if (s.value == "arrival_verify" || s.value == "arrival_guard_verify") {
+					int placed, blocked;
+					uint32_t checksum;
+					coop_travel_get_arrival_state(&placed, &checksum, &blocked);
+					if (!placed || !checksum || (s.value == "arrival_verify" ? !game_is_time_paused() : coop_travel_active()))
+						stop_script_fail("Arrival inspection is in the wrong transition phase");
+					LOGI("Arrival verification: level=%d checksum=%u blocked_exits=%d", Current_level_num, checksum, blocked);
+					if (s.value == "arrival_guard_verify") {
+						if (blocked) {
+							for (int w = 0; w < Num_walls; ++w) {
+								if (Walls[w].trigger >= Num_triggers || Walls[w].segnum < 0 || Walls[w].segnum > Highest_segment_index) continue;
+								int type = Triggers[Walls[w].trigger].type;
+								if (type != TT_EXIT && !(type == TT_SECRET_EXIT && Current_level_num > 0)) continue;
+								if (ConsoleObject->segnum != Walls[w].segnum &&
+								    ConsoleObject->segnum != Segments[Walls[w].segnum].children[Walls[w].sidenum]) continue;
+								check_trigger(&Segments[Walls[w].segnum], Walls[w].sidenum, Players[Player_num].objnum, 0);
+							}
+							int pending;
+							coop_travel_get_physical_state(nullptr, &pending, nullptr);
+							if (pending >= 0 || coop_travel_active()) stop_script_fail("Arrival immediately retriggered an exit");
+						}
+					} else {
+						for (int i = 0; i < N_players; ++i) {
+							if (Players[i].connected != CONNECT_PLAYING) continue;
+							const object *ship = &Objects[Players[i].objnum];
+							const physics_info *physics = &ship->mtype.phys_info;
+							LOGI("Arrival ship: player=%d seg=%d mask=%d vel=%d,%d,%d thrust=%d,%d,%d rotvel=%d,%d,%d rotthrust=%d,%d,%d roll=%d",
+							     i, ship->segnum, get_seg_masks(&ship->pos, ship->segnum, ship->size, const_cast<char *>(__FILE__), __LINE__).facemask,
+							     physics->velocity.x, physics->velocity.y, physics->velocity.z,
+							     physics->thrust.x, physics->thrust.y, physics->thrust.z,
+							     physics->rotvel.x, physics->rotvel.y, physics->rotvel.z,
+							     physics->rotthrust.x, physics->rotthrust.y, physics->rotthrust.z, physics->turnroll);
+							if (get_seg_masks(&ship->pos, ship->segnum, ship->size, const_cast<char *>(__FILE__), __LINE__).facemask ||
+							    physics->velocity.x || physics->velocity.y || physics->velocity.z ||
+							    physics->thrust.x || physics->thrust.y || physics->thrust.z ||
+							    physics->rotvel.x || physics->rotvel.y || physics->rotvel.z ||
+							    physics->rotthrust.x || physics->rotthrust.y || physics->rotthrust.z || physics->turnroll)
+								stop_script_fail("Arrival ship intersects a surface or retained motion");
+							for (int j = 0; j < i; ++j) {
+								if (Players[j].connected != CONNECT_PLAYING) continue;
+								const object *other = &Objects[Players[j].objnum];
+								if (vm_vec_dist(&ship->pos, &other->pos) < ship->size + other->size)
+									stop_script_fail("Arriving players overlap");
+							}
+						}
+						/* Also exercise full-roster planning in the real loaded geometry */
+						obj_position anchor = Player_init[0], positions[MAX_PLAYERS];
+						if (Current_level_num > 0) {
+							anchor.segnum = Secret_return_segment;
+							anchor.orient = Secret_return_orient;
+							compute_segment_center(&anchor.pos, &Segments[anchor.segnum]);
+						}
+						if (!coop_find_arrival_positions(&anchor, MAX_PLAYERS, positions))
+							stop_script_fail("Authored arrival area cannot fit the full coop roster");
+					}
+				} else if (s.value == "arrival_leave") {
+					bool moved = false;
+					for (int seg = 0; ConsoleObject && seg <= Highest_segment_index; ++seg) {
+						bool exit_area = false;
+						for (int w = 0; w < Num_walls; ++w) {
+							if (Walls[w].trigger >= Num_triggers) continue;
+							int type = Triggers[Walls[w].trigger].type;
+							if (type != TT_EXIT && type != TT_SECRET_EXIT) continue;
+							if (seg == Walls[w].segnum || seg == Segments[Walls[w].segnum].children[Walls[w].sidenum]) exit_area = true;
+						}
+						if (exit_area) continue;
+						vms_vector center;
+						compute_segment_center(&center, &Segments[seg]);
+						if (get_seg_masks(&center, seg, ConsoleObject->size, const_cast<char *>(__FILE__), __LINE__).facemask) continue;
+						ConsoleObject->pos = center;
+						obj_relink(Players[Player_num].objnum, seg);
+						vm_vec_zero(&ConsoleObject->mtype.phys_info.velocity);
+						multi_send_position(Players[Player_num].objnum);
+						moved = true;
+						break;
+					}
+					if (!moved) stop_script_fail("Could not leave arrival exit volumes");
+				} else if (s.value == "normal_clock_start" || s.value == "reactor_clock_start") {
+					normal_time = GameTime64;
+					normal_countdown = Countdown_timer;
+					normal_level = Current_level_num;
+				} else if (s.value == "reactor_clock_verify") {
+					LOGI("Reactor survivor clock: level=%d game_delta=%lld countdown_delta=%d dead=%d paused=%d",
+					     Current_level_num, (long long) (GameTime64 - normal_time), Countdown_timer - normal_countdown,
+					     Player_is_dead, game_is_time_paused());
+					if (Current_level_num != normal_level || Player_is_dead || game_is_time_paused() || coop_travel_active() ||
+					    !Control_center_destroyed || GameTime64 < normal_time + i2f(5) || Countdown_timer >= normal_countdown ||
+					    Players[Player_num].connected != CONNECT_PLAYING)
+						stop_script_fail("A reactor death froze or evacuated its living teammate");
+				} else if (s.value == "normal_clock_verify") {
+					int other_waiting = 0;
+					for (int i = 0; i < N_players; ++i)
+						if (i != Player_num && Players[i].connected == CONNECT_END_MENU) other_waiting = 1;
+					LOGI("Normal exit clock: paused=%d blocked=%d level=%d/%d connected=%d game_delta=%lld countdown_delta=%d reactor=%d other_waiting=%d",
+					     game_is_time_paused(), coop_travel_blocks_gameplay(), Current_level_num, normal_level,
+					     Players[Player_num].connected, (long long) (GameTime64 - normal_time),
+					     Countdown_timer - normal_countdown, Control_center_destroyed, other_waiting);
+					if (game_is_time_paused() || coop_travel_blocks_gameplay() || Current_level_num != normal_level ||
+					    Players[Player_num].connected != CONNECT_PLAYING || GameTime64 <= normal_time ||
+					    Countdown_timer >= normal_countdown || !Control_center_destroyed || !other_waiting)
+						stop_script_fail("Normal exiter froze or evacuated the remaining player");
+				} else if (s.value == "normal_next_verify") {
+					if (!net_udp_test_level_sequence(1)) stop_script_fail("Normal level change reused reliable packet identities");
+					LOGI("Normal exit destination: level=%d source=%d active=%d campaign=%d connected=%d paused=%d",
+					     Current_level_num, normal_level, coop_travel_active(), coop_campaign_current()->active_level,
+					     Players[Player_num].connected, game_is_time_paused());
+					if (normal_level <= 0 || Current_level_num != normal_level + 1 || coop_travel_active() ||
+					    coop_campaign_current()->active_level != Current_level_num ||
+					    Players[Player_num].connected != CONNECT_PLAYING || game_is_time_paused())
+						stop_script_fail("Normal exits did not advance together to the next normal mine");
+				} else if (s.value == "frozen_score_probe") {
+					const int remote = Player_num ? 0 : 1;
+					if (!coop_travel_blocks_world_updates() || remote >= N_players || !Players[remote].score) {
+						stop_script_fail("Frozen score probe requires a captured nonzero remote score");
+						break;
+					}
+					const int saved_score = Players[remote].score;
+					ubyte score_packet[6] = { MULTI_SCORE, (ubyte) remote, 0, 0, 0, 0 };
+					multi_process_bigdata_from_player(score_packet, sizeof(score_packet), remote);
+					if (Players[remote].score != saved_score)
+						stop_script_fail("Frozen score packet overwrote captured player state");
+					else
+						LOGI("Frozen score probe preserved player=%d score=%d", remote, saved_score);
+				} else if (s.value == "fail_after_load") {
+					coop_travel_test_fail_after_load();
+				} else if (s.value == "delay_host_load") {
+					/* A paired script arms only the host's deliberate loading delay */
+					multi_save_transfer_test_delay_world_apply();
+				} else if (s.value == "rollback_waiting") {
+					if (!multi_save_transfer_test_rollback_waiting(0)) stop_script_fail("Could not arm waiting rollback delivery probe");
+				} else if (s.value == "rollback_waiting_verify") {
+					if (!multi_save_transfer_test_rollback_waiting(1)) stop_script_fail("Rollback did not exercise a waiting peer and dropped chunk");
+				} else if (s.value == "reactor" || s.value == "reactor_short") {
+					Control_center_destroyed = 1;
+					Countdown_seconds_left = s.value == "reactor_short" ? 5 : 120;
+					Countdown_timer = i2f(Countdown_seconds_left);
+				} else if (s.value == "secret") {
+					if (!coop_travel_request(Current_level_num < 0 ? COOP_OP_SECRET_RETURN : COOP_OP_SECRET_ENTER))
+						stop_script_fail("Secret exit request rejected locally");
+				} else if (s.value == "captured") {
+					if (!coop_travel_source_captured()) stop_script_fail("Prepared source could not start warning");
+				} else if (s.value == "committed") {
+					coop_travel_campaign_committed();
+				} else if (s.value == "world_blocked") {
+					if (coop_travel_world_apply_allowed()) stop_script_fail("Travel allowed world application outside loading");
+				} else if (s.value == "normal") {
+					if (!coop_travel_request(COOP_OP_NORMAL_EXIT)) stop_script_fail("Normal exit request rejected locally");
+				} else if (s.value == "normal_blocked") {
+					if (coop_travel_request(COOP_OP_NORMAL_EXIT)) stop_script_fail("Normal exit raced past secret winner");
+				} else if (s.value == "secret_blocked") {
+					if (coop_travel_request(COOP_OP_SECRET_ENTER)) stop_script_fail("Secret exit raced past normal winner");
+				} else if (s.value == "capture") {
+					rewind_memory_buffer checkpoint = {};
+					if (!game_is_time_paused() || !coop_save_world_to_memory(&checkpoint) || !coop_travel_source_captured())
+						stop_script_fail("Frozen source capture failed");
+					rewind_memory_buffer_discard(&checkpoint);
+				} else if (s.value == "frozen_time") {
+					if (!game_is_time_paused()) stop_script_fail("Travel did not pause the game");
+					frozen_time = GameTime64;
+					frozen_countdown = Countdown_timer;
+					android_rewind_get_history(&frozen_history_count, &frozen_history_level, &frozen_history_generation);
+					const auto *restart = coop_level_restart_buffer();
+					frozen_restart_data = restart ? restart->data : nullptr;
+				} else if (s.value == "verify_frozen") {
+					if (!game_is_time_paused() || GameTime64 != frozen_time || Countdown_timer != frozen_countdown || coop_autosave())
+						stop_script_fail("Travel allowed simulation or autosave before release");
+				} else if (s.value == "abort") {
+					if (!coop_travel_abort()) stop_script_fail("Host could not abort before world replacement");
+				} else if (s.value == "history_preserved") {
+					int count, level;
+					uint64_t generation;
+					android_rewind_get_history(&count, &level, &generation);
+					const auto *restart = coop_level_restart_buffer();
+					if (!multi_i_am_master() || coop_travel_active() || frozen_history_count < 1 ||
+					    count < frozen_history_count || level != frozen_history_level || generation != frozen_history_generation ||
+					    !restart || !frozen_restart_data || restart->data != frozen_restart_data ||
+					    coop_level_restart_get_state() != COOP_LEVEL_RESTART_READY)
+						stop_script_fail("Source-side travel abort discarded rewind history or the restart checkpoint");
+				} else if (s.value == "normal_granted_once") {
+					if (!coop_travel_take_normal_exit() || coop_travel_take_normal_exit() || coop_travel_blocks_gameplay())
+						stop_script_fail("Normal exit grant was missing, repeated or froze gameplay");
+				} else stop_script_fail("Unknown travel gate probe");
+#else
+				stop_script_fail("Travel gate probe requires Android D2");
+#endif
+			} else if (s.field == "coop_rewind_test") {
+#ifdef ANDROID
+				static int level, homing, score, briefings, selected_index;
+				static unsigned presentations;
+				static uint64_t visit;
+				static int64_t baseline_end, target_time;
+				static int client_round;
+				static uint64_t request_visit;
+				static int64_t request_time, last_client_restored;
+				static fix64 released_time;
+#ifdef DXX_BUILD_DESCENT_II
+				static std::vector<unsigned char> secret_campaign;
+#endif
+				auto secret_campaign_matches = []() {
+#ifdef DXX_BUILD_DESCENT_II
+					if (level >= 0) return true;
+					return automation_verify_secret_campaign(secret_campaign, "rewind");
+#else
+					return true;
+#endif
+				};
+				if (!(Game_mode & GM_MULTI_COOP) || !ConsoleObject || coop_briefing_active() ||
+				    coop_travel_blocks_state_actions() || multi_save_transfer_busy()) {
+					stop_script_fail("Rewind probe requires a settled co-op mine");
+				} else if (s.value == "seed") {
+					/* Keep idle history collection alive under authored robot fire */
+					Players[Player_num].shields = ConsoleObject->shields = i2f(2000);
+					Players[Player_num].secondary_ammo[HOMING_INDEX] = 8 + Player_num;
+					Players[Player_num].score = 4567 + Player_num;
+					multi_send_ship_status();
+					multi_send_score();
+				} else if (s.value == "record") {
+					if (Control_center_destroyed) stop_script_fail("Rewind baseline requires an intact reactor");
+					level = Current_level_num;
+					visit = coop_world_visit_current();
+#ifdef DXX_BUILD_DESCENT_II
+					if (!automation_capture_secret_campaign(secret_campaign)) {
+						stop_script_fail("Secret rewind requires a complete dormant returnable main mine");
+						break;
+					}
+#endif
+					homing = Players[Player_num].secondary_ammo[HOMING_INDEX];
+					score = Players[Player_num].score;
+					briefings = Netgame.CoopBriefings;
+					presentations = coop_briefing_presentations_started();
+					android_rewind_set_enabled(1);
+					android_rewind_set_target_seconds(20);
+					android_rewind_reset_level();
+					client_round = 0;
+					last_client_restored = 0;
+				} else if (s.value == "ready") {
+					int count;
+					android_rewind_get_history(&count, nullptr, nullptr);
+					if (multi_i_am_master() && count < 6) stop_script_fail("Rewind probe did not capture natural history");
+					baseline_end = GameTime64;
+				} else if (s.value == "mutate") {
+					Players[Player_num].secondary_ammo[HOMING_INDEX] = 18 + Player_num;
+					Players[Player_num].score = 8765 + Player_num;
+					multi_send_ship_status();
+					multi_send_score();
+				} else if (s.value == "client_prepare" || s.value == "client_request") {
+					const bool prepare = s.value == "client_prepare";
+					if (Player_is_dead || Players[Player_num].shields <= 0) {
+						stop_script_fail("Client rewind fixture requires a living participant");
+						break;
+					}
+					if (!!multi_i_am_master() != prepare) {
+						stop_script_fail("Client rewind fixture used the wrong participant role");
+						break;
+					}
+					request_visit = coop_world_visit_current();
+					request_time = GameTime64;
+					++client_round;
+					if (prepare) {
+						android_rewind_set_clients_can_request(1);
+						debug_log_enabled[DLOG_COOP_DESYNC] = 1;
+					} else {
+						Players[Player_num].secondary_ammo[HOMING_INDEX] = 18 + Player_num;
+						Players[Player_num].score = 8765 + Player_num;
+						multi_send_ship_status();
+						multi_send_score();
+						multi_send_rewind_request();
+					}
+					LOGI("Client rewind round started: player=%d round=%d visit=%llu game_time=%lld", Player_num,
+					     client_round, (unsigned long long) request_visit, (long long) request_time);
+				} else if (s.value == "client_verify") {
+					int count;
+					android_rewind_get_history(&count, nullptr, nullptr);
+					LOGI("Client rewind round restored: player=%d round=%d visit=%llu/%llu game_time=%lld/%lld history=%d ammo=%d/%d score=%d/%d presentations=%u/%u",
+					     Player_num, client_round, (unsigned long long) coop_world_visit_current(), (unsigned long long) request_visit,
+					     (long long) GameTime64, (long long) request_time, count, Players[Player_num].secondary_ammo[HOMING_INDEX], homing,
+					     Players[Player_num].score, score, coop_briefing_presentations_started(), presentations);
+					if (!client_round || coop_world_visit_current() != request_visit + 1 || Current_level_num != level ||
+					    GameTime64 >= request_time - i2f(10) || (client_round > 1 && GameTime64 >= last_client_restored) ||
+					    Control_center_destroyed || game_is_time_paused() || Players[Player_num].secondary_ammo[HOMING_INDEX] != homing ||
+					    Players[Player_num].score != score || Netgame.CoopBriefings != briefings ||
+					    coop_briefing_presentations_started() != presentations || (multi_i_am_master() && count < 1) ||
+					    !secret_campaign_matches())
+						stop_script_fail("Consecutive client rewind lost state, history or an actual backwards clock transition");
+					last_client_restored = released_time = GameTime64;
+				} else if (s.value == "rewind") {
+					android_rewind_authoritative_restore selected = {};
+					int seconds = 0;
+					if (!multi_i_am_master() || android_rewind_select_restore(&selected) != ANDROID_REWIND_STATUS_RESTORED ||
+					    selected.snapshot_index < 1 || selected.game_time64 > baseline_end) {
+						stop_script_fail("Rewind probe needs an earlier baseline snapshot with older history");
+						break;
+					}
+					selected_index = selected.snapshot_index;
+					target_time = selected.game_time64;
+					LOGI("Coop rewind selected: index=%d time=%lld baseline_end=%lld", selected_index,
+					     (long long) target_time, (long long) baseline_end);
+					if (multi_perform_rewind_request(Player_num, &seconds) != ANDROID_REWIND_STATUS_RESTORED || !multi_save_transfer_busy())
+						stop_script_fail("Actual team rewind did not start");
+				} else if (s.value == "verify") {
+					int count;
+					android_rewind_get_history(&count, nullptr, nullptr);
+					int64_t loaded = multi_save_transfer_test_loaded_game_time();
+					LOGI("Coop rewind restored: player=%d level=%d/%d visit=%llu/%llu reactor=%d ammo=%d/%d score=%d/%d history=%d loaded=%lld target=%lld presentations=%u/%u",
+					     Player_num, Current_level_num, level, (unsigned long long) coop_world_visit_current(), (unsigned long long) visit,
+					     Control_center_destroyed, Players[Player_num].secondary_ammo[HOMING_INDEX], homing, Players[Player_num].score, score,
+					     count, (long long) loaded, (long long) target_time, coop_briefing_presentations_started(), presentations);
+					if (!level || Current_level_num != level || coop_world_visit_current() <= visit || Control_center_destroyed ||
+					    Players[Player_num].secondary_ammo[HOMING_INDEX] != homing || Players[Player_num].score != score ||
+					    game_is_time_paused() || loaded > baseline_end || Netgame.CoopBriefings != briefings ||
+					    coop_briefing_presentations_started() != presentations || !secret_campaign_matches())
+						stop_script_fail("Rewind lost baseline world, private inventory, clock or presentation state");
+					if (multi_i_am_master()) {
+						android_rewind_authoritative_restore older = {};
+						if (loaded != target_time || count < selected_index + 1 ||
+						    android_rewind_select_restore(&older) != ANDROID_REWIND_STATUS_RESTORED || older.game_time64 >= target_time)
+							stop_script_fail("Team rewind lost its target time or older selectable history");
+					}
+					released_time = GameTime64;
+				} else if (s.value == "clock") {
+					if (GameTime64 <= released_time || Control_center_destroyed || game_is_time_paused())
+						stop_script_fail("Rewound mine did not resume with its intact reactor");
+				} else stop_script_fail("Unknown rewind probe action");
+#else
+				stop_script_fail("Rewind probe requires Android");
+#endif
+			} else if (s.field == "coop_level_restart_test") {
+#ifdef ANDROID
+				static int level, homing, score;
+#ifdef DXX_BUILD_DESCENT_II
+				static std::vector<unsigned char> secret_campaign;
+#endif
+				static int briefings;
+				static unsigned presentations;
+				static uint64_t visit;
+				static fix64 released_time;
+				if (!(Game_mode & GM_MULTI_COOP) || !ConsoleObject || coop_briefing_active() ||
+				    coop_travel_blocks_state_actions() || multi_save_transfer_busy()) {
+					stop_script_fail("Level restart probe requires a settled co-op mine");
+				} else if (s.value == "remember") {
+					if (Control_center_destroyed || (multi_i_am_master() && coop_level_restart_get_state() != COOP_LEVEL_RESTART_READY))
+						stop_script_fail("Level restart probe needs the natural level-entry checkpoint");
+					level = Current_level_num;
+					visit = coop_world_visit_current();
+					homing = Players[Player_num].secondary_ammo[HOMING_INDEX];
+					score = Players[Player_num].score;
+					briefings = Netgame.CoopBriefings;
+					presentations = coop_briefing_presentations_started();
+					if (briefings && !presentations) stop_script_fail("Restart briefing probe did not observe the initial presentation");
+#ifdef DXX_BUILD_DESCENT_II
+					if (!automation_capture_secret_campaign(secret_campaign))
+						stop_script_fail("Secret restart requires a complete dormant returnable main mine");
+#endif
+				} else if (s.value == "mutate") {
+					Players[Player_num].secondary_ammo[HOMING_INDEX] = 12 + Player_num;
+					Players[Player_num].score = 7654 + Player_num;
+					multi_send_ship_status();
+					multi_send_score();
+				} else if (s.value == "restart") {
+					if (!multi_i_am_master() || !coop_level_restart_request() || !multi_save_transfer_busy())
+						stop_script_fail("Natural level checkpoint restart did not start a team transfer");
+				} else if (s.value == "verify") {
+					LOGI("Level checkpoint restored: player=%d level=%d/%d visit=%llu/%llu reactor=%d homing=%d/%d score=%d/%d paused=%d",
+					     Player_num, Current_level_num, level, (unsigned long long) coop_world_visit_current(),
+					     (unsigned long long) visit, Control_center_destroyed,
+					     Players[Player_num].secondary_ammo[HOMING_INDEX], homing, Players[Player_num].score, score, game_is_time_paused());
+					LOGI("Level restart presentations: player=%d enabled=%d/%d started=%u/%u", Player_num,
+					     Netgame.CoopBriefings, briefings, coop_briefing_presentations_started(), presentations);
+					if (!level || Current_level_num != level || coop_world_visit_current() <= visit || Control_center_destroyed ||
+					    Players[Player_num].secondary_ammo[HOMING_INDEX] != homing || Players[Player_num].score != score || game_is_time_paused())
+						stop_script_fail("Level restart lost checkpoint world, inventory, score or shared release");
+					if (Netgame.CoopBriefings != briefings || coop_briefing_presentations_started() != presentations)
+						stop_script_fail("Level restart replayed a briefing or changed its server setting");
+					if (multi_i_am_master() && coop_level_restart_get_state() != COOP_LEVEL_RESTART_READY)
+						stop_script_fail("Completed restart lost its reusable entry checkpoint");
+#ifdef DXX_BUILD_DESCENT_II
+					if (level < 0) {
+						int robots = 0;
+						for (int i = 0; i <= Highest_object_index; ++i)
+							if (Objects[i].type == OBJ_ROBOT) ++robots;
+						LOGI("Secret restart world: player=%d robots=%d", Player_num, robots);
+						if (!robots || !automation_verify_secret_campaign(secret_campaign, "restart"))
+							stop_script_fail("Secret restart lost its authored world or dormant main mine");
+					}
+#endif
+					released_time = GameTime64;
+				} else if (s.value == "clock") {
+					if (GameTime64 <= released_time || Control_center_destroyed || game_is_time_paused())
+						stop_script_fail("Restarted mine did not resume with its intact reactor");
+				} else stop_script_fail("Unknown level restart probe action");
+#else
+				stop_script_fail("Level restart probe requires Android");
+#endif
+			} else if (s.field == "coop_countdown_save_test") {
+#ifdef ANDROID
+				static uint32_t save_id;
+				static fix clock_start;
+				static fix64 game_start;
+				if (!(Game_mode & GM_MULTI_COOP) || !ConsoleObject || coop_travel_blocks_state_actions() || multi_save_transfer_busy()) {
+					stop_script_fail("Countdown save probe requires a settled co-op mine");
+				} else if (s.value == "seed") {
+					for (int i = 0; i <= Highest_object_index && !Control_center_destroyed; ++i)
+						if (Objects[i].type == OBJ_CNTRLCEN)
+							apply_damage_to_controlcen(&Objects[i], Objects[i].shields + F1_0, Players[Player_num].objnum);
+					if (!Control_center_destroyed) stop_script_fail("Countdown fixture requires an authored reactor");
+					Countdown_timer = i2f(180) + F1_0 / 2;
+					Countdown_seconds_left = 181;
+					Total_countdown_time = 240;
+					Reactor_countdown_paused = 0;
+					Players[Player_num].secondary_ammo[HOMING_INDEX] = 6 + Player_num;
+					multi_send_ship_status();
+				} else if (s.value == "save") {
+					char filename[PATH_MAX], desc[20] = "Reactor save probe";
+					state_android_build_save_filename(filename, sizeof(filename), 0, 1, 0);
+					int peer = Player_num == 0 ? 1 : 0;
+					int connected = Players[peer].connected;
+					Players[peer].connected = CONNECT_END_MENU;
+					int exited_saved = coop_autosave();
+					Players[peer].connected = connected;
+					if (exited_saved) stop_script_fail("Countdown autosave accepted a player already in the normal exit menu");
+					if (!multi_i_am_master() || !coop_autosave()) stop_script_fail("Countdown autosave was rejected");
+					save_id = (uint32_t) state_get_game_id(filename) + 1u;
+					if (!save_id) save_id = 1;
+					multi_send_save_game(0, save_id, desc);
+					multi_save_game(0, save_id, desc);
+					if ((uint32_t) state_get_game_id(filename) != save_id) stop_script_fail("Countdown manual save was rejected");
+				} else if (s.value == "mutate") {
+					Countdown_timer = i2f(300);
+					Countdown_seconds_left = 300;
+					Total_countdown_time = 480;
+					Players[Player_num].secondary_ammo[HOMING_INDEX] = 0;
+					multi_send_ship_status();
+				} else if (s.value == "arm_pause") {
+					multi_save_transfer_test_pause_arm();
+				} else if (s.value == "arm_loss") {
+					multi_save_transfer_test_loss_arm();
+				} else if (s.value == "arm_sync_stall") {
+					multi_save_transfer_test_sync_stall_arm();
+				} else if (s.value == "verify_pause") {
+					if (!multi_save_transfer_test_pause_verified()) stop_script_fail("Restore pause, slower-peer wait or delivered-message retry failed");
+					else LOGI("Restore pause/retry verified: source and loaded clocks frozen through release, all discarded phases retried");
+				} else if (s.value == "restore") {
+					if (!multi_i_am_master() || !save_id || !Control_center_destroyed) stop_script_fail("Countdown restore needs a host save and active reactor");
+					multi_send_restore_game(0, save_id);
+					if (!multi_save_transfer_busy()) stop_script_fail("Countdown restore did not start a team transfer");
+				} else if (s.value == "verify") {
+					LOGI("Countdown save restored: level=%d player=%d destroyed=%d timer=%d total=%d paused=%d homing=%d",
+					     Current_level_num, Player_num, Control_center_destroyed, Countdown_timer, Total_countdown_time,
+					     Reactor_countdown_paused, Players[Player_num].secondary_ammo[HOMING_INDEX]);
+					if (!Control_center_destroyed || Countdown_timer < i2f(140) || Countdown_timer > i2f(181) ||
+					    Total_countdown_time != 240 || Reactor_countdown_paused || game_is_time_paused() ||
+					    Players[Player_num].secondary_ammo[HOMING_INDEX] != 6 + Player_num)
+						stop_script_fail("Countdown restore lost timer, original duration, running state or inventory");
+					clock_start = Countdown_timer;
+					game_start = GameTime64;
+				} else if (s.value == "clock") {
+					if (Countdown_timer >= clock_start || GameTime64 <= game_start ||
+					    llabs((long long) (clock_start - Countdown_timer) - (GameTime64 - game_start)) > F1_0 / 4)
+						stop_script_fail("Restored reactor did not advance with simulation time");
+				} else stop_script_fail("Unknown countdown save probe action");
+#else
+				stop_script_fail("Countdown save probe requires Android");
+#endif
+			} else if (s.field == "coop_secret_save_test" || s.field == "coop_retired_save_test" || s.field == "coop_base_save_test") {
+#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II)
+				static uint32_t campaign_checksums[3];
+				static uint32_t save_ids[3];
+				static std::vector<coop_recovery_item> saved_recovery;
+				const bool retired = s.field == "coop_retired_save_test";
+				const bool base = s.field == "coop_base_save_test";
+				uint32_t &campaign_checksum = campaign_checksums[base ? 2 : retired ? 1
+				                                                                    : 0];
+				uint32_t &save_id = save_ids[base ? 2 : retired ? 1
+				                                                : 0];
+				const int slot = base ? 1 : 0;
+				const int saved_ammo = (base ? 2 : 6) + Player_num;
+				const int saved_score = (base ? 1234 : 4321) + Player_num;
+				auto archive_checksum = []() {
+					unsigned char *bytes = nullptr;
+					size_t size = 0;
+					if (!coop_campaign_encode(coop_campaign_current(), &bytes, &size)) return uint32_t(0);
+					uint32_t checksum = coop_save_checksum(bytes, size, 2166136261u);
+					free(bytes);
+					return checksum;
+				};
+				if (!(Game_mode & GM_MULTI_COOP) || (s.value != "restore" && ((retired || base) ? Current_level_num <= 0 : Current_level_num >= 0)) || !ConsoleObject ||
+				    coop_travel_blocks_state_actions() || multi_save_transfer_busy()) {
+					stop_script_fail("Secret save fixture requires a settled co-op secret mine");
+				} else if (s.value == "seed") {
+					campaign_checksum = archive_checksum();
+					if (!campaign_checksum || (!retired && !base && !coop_campaign_current()->base_returnable))
+						stop_script_fail("Secret save fixture requires a dormant returnable base");
+					if (retired) {
+						saved_recovery.assign(coop_recovery_data(), coop_recovery_data() + coop_recovery_count());
+						bool credit = false;
+						for (const auto &item : saved_recovery) {
+							if (item.state != COOP_RECOVERY_CREDIT) continue;
+							const auto *world = coop_campaign_find_world(coop_campaign_current(), item.world_level);
+							if (world && world->state == COOP_CAMPAIGN_DESTROYED) credit = true;
+						}
+						if (!credit) stop_script_fail("Retired save fixture requires credit from a destroyed world");
+					}
+					Players[Player_num].secondary_ammo[HOMING_INDEX] = saved_ammo;
+					Players[Player_num].score = saved_score;
+					multi_send_ship_status();
+					multi_send_score();
+				} else if (s.value == "save") {
+					char desc[20] = "Secret save probe";
+					char filename[PATH_MAX];
+					if (!multi_i_am_master()) {
+						stop_script_fail("Secret save fixture requires the host");
+					} else {
+						state_android_build_save_filename(filename, sizeof(filename), slot, 1, 0);
+						save_id = (uint32_t) state_get_game_id(filename) + 1u;
+						if (!save_id) save_id = 1;
+						multi_send_save_game(slot, save_id, desc);
+						multi_save_game(slot, save_id, desc);
+						if ((uint32_t) state_get_game_id(filename) != save_id)
+							stop_script_fail("Secret save did not publish the selected slot");
+					}
+				} else if (s.value == "mutate") {
+					Players[Player_num].secondary_ammo[HOMING_INDEX] = 0;
+					Players[Player_num].score = 0;
+					multi_send_ship_status();
+					multi_send_score();
+				} else if (s.value == "restore") {
+					if (!multi_i_am_master() || !save_id)
+						stop_script_fail("Secret restore fixture has no host save");
+					else {
+						multi_send_restore_game(slot, save_id);
+						if (!multi_save_transfer_busy()) stop_script_fail("Secret restore did not start a team transfer");
+					}
+				} else if (s.value == "verify") {
+					if (retired && (saved_recovery.size() != coop_recovery_count() ||
+					                memcmp(saved_recovery.data(), coop_recovery_data(), saved_recovery.size() * sizeof(coop_recovery_item))))
+						stop_script_fail("Retired restore changed recovery identities, revisions or gear");
+					else if (archive_checksum() != campaign_checksum ||
+					         Players[Player_num].secondary_ammo[HOMING_INDEX] != saved_ammo ||
+					         Players[Player_num].score != saved_score || !Netgame.AllowSecretWarps)
+						stop_script_fail("Secret restore lost campaign state or saved player inventory");
+					else LOGI("Secret save restored: level=%d archive=%u player=%d homing=%d score=%d",
+						      Current_level_num, campaign_checksum, Player_num,
+						      Players[Player_num].secondary_ammo[HOMING_INDEX], Players[Player_num].score);
+				} else stop_script_fail("Unknown secret save fixture action");
+#else
+				stop_script_fail("Secret save fixture requires Android D2");
+#endif
+			} else if (s.field == "coop_world_test") {
+#if defined(ANDROID) && defined(DXX_BUILD_DESCENT_II)
+				static rewind_memory_buffer world = {};
+				static int captured_robots[255];
+				static bool captured_world[255];
+				static int source_level;
+				static uint64_t source_generation;
+				static uint64_t endgame_source_visit;
+				static fix64 endgame_clock;
+				static bool endgame_verified;
+				static int endgame_score;
+				static bool rollback_gear_expected;
+				static int rollback_gear_level;
+				static unsigned expected_dying_mask;
+				static int expected_deaths_before[MAX_PLAYERS];
+				if (!(Game_mode & GM_MULTI_COOP) || !ConsoleObject) {
+					stop_script_fail("Dormant world probe requires a running co-op mine");
+				} else if (s.value == "capture") {
+					rewind_memory_buffer_discard(&world);
+					stop_time();
+					if (!multi_i_am_master() || !coop_save_world_to_memory(&world))
+						stop_script_fail("Dormant world capture failed");
+					if (!game_is_time_paused()) stop_script_fail("World capture released the transition pause");
+					start_time();
+				} else if (s.value == "rollback_gear_tag") {
+					int host_object = Players[multi_who_is_master()].objnum;
+					if (!coop_recovery_active() || coop_recovery_count() || host_object < 0 || host_object > Highest_object_index) {
+						stop_script_fail("Rollback gear tagging requires an empty ledger and host ship");
+						break;
+					}
+					int objnum = -1;
+					for (int i = Highest_object_index; i >= 0; --i)
+						if (Objects[i].type == OBJ_POWERUP && Objects[i].id == POW_HOMING_AMMO_4 &&
+						    !(Objects[i].flags & OF_SHOULD_BE_DEAD) && Objects[i].segnum != Objects[host_object].segnum) {
+							objnum = i;
+							break;
+						}
+					if (objnum < 0) {
+						stop_script_fail("Rollback fixture could not find a remote homing pack");
+						break;
+					}
+					/* Finish tagging on both peers before sending the ledger. Autosave
+					 * must never observe the fixture's deliberately incomplete binding */
+					Objects[objnum].flags |= OF_COOP_RECOVERY;
+					LOGI("Rollback fixture tagged: object=%d signature=%d", objnum, Objects[objnum].signature);
+				} else if (s.value == "rollback_gear_seed") {
+					if (!multi_i_am_master() || !coop_recovery_active() || coop_recovery_count()) {
+						stop_script_fail("Rollback gear fixture requires an empty host ledger");
+						break;
+					}
+					int objnum = -1;
+					for (int i = Highest_object_index; i >= 0; --i)
+						if (Objects[i].type == OBJ_POWERUP && Objects[i].id == POW_HOMING_AMMO_4 &&
+						    (Objects[i].flags & OF_COOP_RECOVERY) && !(Objects[i].flags & OF_SHOULD_BE_DEAD)) {
+							objnum = i;
+							break;
+						}
+					if (objnum < 0) {
+						stop_script_fail("Rollback fixture powerup was not tagged before seeding");
+						break;
+					}
+					coop_recovery_item gear[2] = {};
+					for (int i = 0; i < 2; ++i) {
+						gear[i].id = 0x7001 + i;
+						gear[i].revision = gear[i].life = 1;
+						gear[i].world_level = Current_level_num;
+						strcpy(gear[i].client_id, "rollback-absent-gear");
+						strcpy(gear[i].callsign, "OldPilot");
+						gear[i].state = i ? COOP_RECOVERY_LIVE : COOP_RECOVERY_CREDIT;
+						gear[i].object_index = gear[i].remote_index = -1;
+						gear[i].gear.missiles[HOMING_INDEX] = 3 + i;
+					}
+					Objects[objnum].flags |= OF_COOP_RECOVERY;
+					gear[1].object_index = objnum;
+					gear[1].signature = Objects[objnum].signature;
+					gear[1].powerup = Objects[objnum].id;
+					gear[1].remote_index = objnum_local_to_remote(objnum, &gear[1].network_owner);
+					uint32_t life[MAX_PLAYERS], serial[MAX_PLAYERS];
+					fix omega[MAX_PLAYERS];
+					for (int i = 0; i < MAX_PLAYERS; ++i) {
+						life[i] = coop_recovery_life(i);
+						serial[i] = coop_recovery_restore_serial(i);
+						omega[i] = coop_recovery_omega(i);
+					}
+					if (!coop_recovery_set_pending(gear, 2) || !coop_recovery_apply_pending() ||
+					    !coop_gear_restore_complete(coop_recovery_restore_result(), 2))
+						stop_script_fail("Rollback fixture did not retain both recovery records");
+					/* Fixture restoration resets these fields; preserve the seeded ships */
+					for (int i = 0; i < MAX_PLAYERS; ++i) {
+						coop_recovery_set_life(i, life[i]);
+						coop_recovery_set_restore_serial(i, serial[i]);
+						coop_recovery_set_omega(i, omega[i]);
+					}
+					for (int i = 0; i < N_players; ++i)
+						if (i != Player_num) coop_recovery_send_snapshot(i);
+				} else if (s.value == "rollback_gear_bind") {
+					/* Receipt must bind the powerup tagged before the snapshot */
+					if (multi_i_am_master() || coop_recovery_count() != 2) {
+						stop_script_fail("Rollback binding fixture requires the client's seeded ledger");
+						break;
+					}
+					const auto &item = coop_recovery_data()[1];
+					int objnum = objnum_remote_to_local(item.remote_index, item.network_owner);
+					if (item.id != 0x7002 || item.state != COOP_RECOVERY_LIVE || item.world_level != Current_level_num ||
+					    objnum < 0 || objnum > Highest_object_index || Objects[objnum].signature != item.signature ||
+					    Objects[objnum].type != OBJ_POWERUP || Objects[objnum].id != item.powerup ||
+					    (Objects[objnum].flags & OF_SHOULD_BE_DEAD) || !(Objects[objnum].flags & OF_COOP_RECOVERY)) {
+						stop_script_fail("Rollback fixture powerup identity differs between peers");
+						break;
+					}
+					if (coop_recovery_data()[1].object_index != objnum)
+						stop_script_fail("Rollback fixture did not bind its authored powerup");
+				} else if (s.value == "restore_base_expectation") {
+					/* Test expectations survive the process restart independently of the save */
+					const coop_campaign *campaign = coop_campaign_current();
+					char path[1024], bytes[512];
+					snprintf(path, sizeof(path), "%s/coop_world_base_expected.json", g_automate_dir);
+					FILE *file = fopen(path, "r");
+					size_t size = file ? fread(bytes, 1, sizeof(bytes), file) : 0;
+					if (file) fclose(file);
+					json expected = json::parse(bytes, bytes + size, nullptr, false);
+					if (Current_level_num >= 0 || !campaign->base_returnable ||
+					    campaign->entered_from < 1 || campaign->entered_from > 127 ||
+					    Entered_from_level != campaign->entered_from ||
+					    !coop_campaign_find_world(campaign, campaign->entered_from) ||
+					    !expected.is_object() || expected.value("mission", "") != campaign->mission ||
+					    expected.value("level", 0) != campaign->entered_from ||
+					    expected.value("generation", uint64_t(0)) + 1 != campaign->generation ||
+					    expected.value("robots", -1) < 0 || expected.value("robots", -1) > MAX_OBJECTS) {
+						stop_script_fail("Cold-resume fixture has no matching pre-travel base expectation");
+					} else {
+						captured_world[campaign->entered_from + 127] = true;
+						captured_robots[campaign->entered_from + 127] = expected["robots"].get<int>();
+						LOGI("Cold base expectation: level=%d engine_return=%d robots=%d", campaign->entered_from, Entered_from_level, captured_robots[campaign->entered_from + 127]);
+					}
+				} else if (s.value == "remember_world") {
+					source_level = Current_level_num;
+					source_generation = coop_campaign_current()->generation;
+					captured_world[source_level + 127] = true;
+					captured_robots[source_level + 127] = 0;
+					for (int i = 0; i <= Highest_object_index; ++i)
+						if (Objects[i].type == OBJ_ROBOT) ++captured_robots[source_level + 127];
+					if (source_level > 0) {
+						char path[1024];
+						snprintf(path, sizeof(path), "%s/coop_world_base_expected.json", g_automate_dir);
+						json expected = { { "mission", coop_campaign_current()->mission }, { "level", source_level }, { "generation", source_generation }, { "robots", captured_robots[source_level + 127] } };
+						std::string bytes = expected.dump(2) + "\n";
+						FILE *file = fopen(path, "w");
+						bool written = file && fwrite(bytes.data(), 1, bytes.size(), file) == bytes.size();
+						if (file && fclose(file)) written = false;
+						if (!written) stop_script_fail("Could not retain pre-travel base test expectation");
+					}
+				} else if (s.value == "expect_dying_host" || s.value == "expect_dying_client" || s.value == "expect_dying_all") {
+					expected_dying_mask = s.value == "expect_dying_all" ? 3 : s.value == "expect_dying_host" ? 1
+					                                                                                         : 2;
+					for (int i = 0; i < N_players; ++i) expected_deaths_before[i] = Players[i].net_killed_total;
+				} else if (s.value == "destroyed_secret_verify") {
+					const auto *destroyed = coop_campaign_find_world(coop_campaign_current(), source_level);
+					if (source_level >= 0 || Current_level_num <= 0 || Control_center_destroyed || !destroyed ||
+					    destroyed->state != COOP_CAMPAIGN_DESTROYED || destroyed->size || coop_secret_entry_available())
+						stop_script_fail("Secret reactor departure did not retain a destroyed, unavailable secret");
+					int exits = 0;
+					for (int w = 0; w < Num_walls; ++w) {
+						if (Walls[w].trigger >= Num_triggers || Triggers[Walls[w].trigger].type != TT_SECRET_EXIT) continue;
+						++exits;
+						if (!coop_travel_exit_side_blocked(Walls[w].segnum, Walls[w].sidenum) ||
+						    (WALL_IS_DOORWAY(&Segments[Walls[w].segnum], Walls[w].sidenum) & WID_FLY_FLAG))
+							stop_script_fail("Destroyed secret entrance remains passable");
+						check_trigger(&Segments[Walls[w].segnum], Walls[w].sidenum, Players[Player_num].objnum, 0);
+					}
+					if (!exits || coop_travel_blocks_state_actions()) stop_script_fail("Destroyed secret accepted another warp request");
+					unsigned homing[MAX_PLAYERS] = {};
+					for (size_t i = 0; i < coop_recovery_count(); ++i) {
+						const auto &item = coop_recovery_data()[i];
+						if (item.world_level != source_level) continue;
+						if (item.state == COOP_RECOVERY_LIVE || item.state == COOP_RECOVERY_DORMANT || item.state == COOP_RECOVERY_RECLAIMING)
+							stop_script_fail("Destroyed secret retains world-bound recovery gear");
+						if (item.state != COOP_RECOVERY_CREDIT) continue;
+						if (item.object_index != -1 || item.remote_index != -1)
+							stop_script_fail("Destroyed secret credit retains an object binding");
+						int owner = -1;
+						for (int p = 0; p < N_players; ++p) {
+							const char *id = Netgame.players[p].client_id;
+							if (id[0] && item.client_id[0] ? !strcmp(id, item.client_id) : !d_stricmp(Players[p].callsign, item.callsign)) owner = p;
+						}
+						if (owner < 0) stop_script_fail("Destroyed secret credit has an unexpected owner");
+						else homing[owner] += item.gear.missiles[HOMING_INDEX];
+					}
+					for (int p = 0; p < N_players; ++p)
+						if (homing[p] != ((expected_dying_mask & (1u << p)) ? 6u : 0u))
+							stop_script_fail("Destroyed secret lost or duplicated dropped homing missiles");
+				} else if (s.value == "travel_verify" || s.value == "rollback_verify") {
+					const bool rollback = s.value == "rollback_verify";
+					const bool local_died = (expected_dying_mask & (1u << Player_num)) != 0;
+					if (!coop_travel_verify_checkpoint_file())
+						stop_script_fail("Travel source checkpoint was not retained intact on this peer");
+					int prepared, destination;
+					uint32_t checksum;
+					coop_travel_get_campaign_state(&prepared, &checksum, &destination);
+					if (rollback) {
+						int required, complete, failed_level;
+						coop_travel_get_rollback_state(&required, &complete, &failed_level);
+						if (!required || !complete || (!multi_i_am_master() && failed_level != destination))
+							stop_script_fail("Rollback did not restore the source after an actual destination load");
+						destination = source_level;
+						rollback_gear_expected = true;
+						rollback_gear_level = source_level;
+					}
+					if (rollback_gear_expected) {
+						const auto *gear = coop_recovery_data();
+						if (coop_recovery_count() != 2) {
+							stop_script_fail("Travel lost or duplicated the rollback gear ledger");
+							break;
+						}
+						for (int i = 0; i < 2; ++i) {
+							const int state = !i ? COOP_RECOVERY_CREDIT : Current_level_num == rollback_gear_level ? COOP_RECOVERY_LIVE
+							                                                                                       : COOP_RECOVERY_DORMANT;
+							if (gear[i].id != 0x7001u + i || gear[i].life != 1 || !gear[i].revision ||
+							    strcmp(gear[i].client_id, "rollback-absent-gear") || strcmp(gear[i].callsign, "OldPilot") ||
+							    gear[i].world_level != rollback_gear_level || gear[i].state != state ||
+							    gear[i].gear.missiles[HOMING_INDEX] != 3 + i)
+								stop_script_fail("Travel changed recovery ownership, state or inventory");
+							if (i && state == COOP_RECOVERY_LIVE) {
+								const int obj = gear[i].object_index;
+								if (obj < 0 || obj > Highest_object_index || Objects[obj].type != OBJ_POWERUP ||
+								    Objects[obj].id != POW_HOMING_AMMO_4 || Objects[obj].signature != gear[i].signature ||
+								    (Objects[obj].flags & OF_SHOULD_BE_DEAD))
+									stop_script_fail("Travel failed to bind restored gear to its source powerup");
+							}
+						}
+					}
+					int robots = 0;
+					for (int i = 0; i <= Highest_object_index; ++i)
+						if (Objects[i].type == OBJ_ROBOT) ++robots;
+					bool fresh = !captured_world[Current_level_num + 127];
+					if (!prepared || !checksum || Current_level_num != destination || (!rollback && Current_level_num == source_level) ||
+					    coop_travel_active() || game_is_time_paused() ||
+					    coop_campaign_current()->active_level != destination ||
+					    coop_campaign_current()->generation != source_generation + (rollback ? 0 : 1) ||
+					    !coop_campaign_valid(coop_campaign_current()) ||
+					    (fresh ? robots == 0 : robots != captured_robots[destination + 127]) ||
+					    Players[Player_num].score != 1234 + Player_num - (local_died ? 1000 : 0) ||
+					    Players[Player_num].hostages_on_board != (local_died ? 0 : 2 + Player_num) ||
+					    Players[Player_num].secondary_ammo[HOMING_INDEX] != (local_died ? 0 : 6) ||
+					    !(Players[Player_num].flags & KEY_BLUE) ||
+					    coop_recovery_life(Player_num) != (uint32_t) (17 + Player_num + local_died) ||
+					    coop_recovery_restore_serial(Player_num) != (uint32_t) (19 + Player_num)) {
+						LOGI("travel verify: level=%d target=%d robots=%d expected=%d score=%d hostages=%u homing=%d life=%u serial=%u",
+						     Current_level_num, destination, robots,
+						     fresh ? -1 : captured_robots[destination + 127],
+						     Players[Player_num].score, Players[Player_num].hostages_on_board,
+						     Players[Player_num].secondary_ammo[HOMING_INDEX],
+						     coop_recovery_life(Player_num), coop_recovery_restore_serial(Player_num));
+						stop_script_fail("Host campaign travel did not settle with the expected world and portable state");
+					}
+					for (int i = 0; i < N_players; ++i) {
+						if (Players[i].connected != CONNECT_PLAYING) continue;
+						const bool died = (expected_dying_mask & (1u << i)) != 0;
+						if (Players[i].hostages_on_board != (died ? 0 : 2 + i) || Players[i].hostages_rescued_total != 40 + i ||
+						    Players[i].num_kills_total != 60 + i || Players[i].lives != 7 + i ||
+						    Players[i].score != 1234 + i - (died ? 1000 : 0) || Players[i].secondary_weapon_flags != (died ? HAS_CONCUSSION_FLAG : 0x3ff) ||
+						    coop_recovery_life(i) != (uint32_t) (17 + i + died) ||
+						    (expected_dying_mask && Players[i].net_killed_total != expected_deaths_before[i] + died) ||
+						    coop_recovery_restore_serial(i) != (uint32_t) (19 + i)) {
+							char detail[320];
+							snprintf(detail, sizeof(detail), "Portable state mismatch: observer=%d player=%d onboard=%u rescued=%u kills=%d lives=%u score=%d secondary=%x life=%u revision=%u",
+							         Player_num, i, Players[i].hostages_on_board, Players[i].hostages_rescued_total,
+							         Players[i].num_kills_total, Players[i].lives, Players[i].score, Players[i].secondary_weapon_flags,
+							         coop_recovery_life(i), coop_recovery_restore_serial(i));
+							stop_script_fail(detail);
+						}
+					}
+					if (expected_dying_mask) {
+						unsigned frozen, deaths;
+						int ready;
+						coop_travel_get_freeze_state(&frozen, &ready, &deaths);
+						if (!ready || frozen != 3 || deaths != (unsigned) local_died || Player_is_dead)
+							stop_script_fail("Travel did not settle the dying peer exactly once before the frozen snapshot");
+					}
+				} else if (s.value == "history_verify") {
+					android_rewind_authoritative_restore rewind = {};
+					int count, level;
+					uint64_t generation;
+					android_rewind_get_history(&count, &level, &generation);
+					/* Inspect the actual checkpoint archives without staging restore
+					 * metadata or changing the live recovery ledger */
+					auto current_visit = [](const rewind_memory_buffer *buffer) {
+						coop_save_footer footer;
+						coop_campaign archived = {};
+						if (!buffer || buffer->size < sizeof(footer)) return false;
+						memcpy(&footer, buffer->data + buffer->size - sizeof(footer), sizeof(footer));
+						if (footer.tag != COOP_SAVE_FOOTER_TAG || footer.version != COOP_SAVE_META_VER ||
+						    footer.campaign_size > buffer->size - sizeof(footer)) return false;
+						bool valid = coop_campaign_decode(&archived,
+						                                  buffer->data + buffer->size - sizeof(footer) - footer.campaign_size, footer.campaign_size) &&
+						             archived.active_level == Current_level_num &&
+						             archived.generation == coop_campaign_current()->generation &&
+						             !strcmp(archived.mission, Current_mission_filename);
+						coop_campaign_clear(&archived);
+						return valid;
+					};
+					const int status = android_rewind_select_restore(&rewind);
+					const int restart_state = coop_level_restart_get_state();
+					const bool rewind_matches = current_visit(&rewind.buffer);
+					const bool restart_matches = current_visit(coop_level_restart_buffer());
+					LOGI("Travel history: count=%d level=%d/%d generation=%llu/%llu rewind_status=%d restart_state=%d archives=%d/%d all_alive=%d",
+					     count, level, Current_level_num, (unsigned long long) generation,
+					     (unsigned long long) coop_campaign_current()->generation, status, restart_state,
+					     rewind_matches, restart_matches, multi_all_players_alive());
+					if (!multi_i_am_master() || count < 1 || level != Current_level_num ||
+					    generation != coop_campaign_current()->generation ||
+					    status != ANDROID_REWIND_STATUS_RESTORED || restart_state != COOP_LEVEL_RESTART_READY ||
+					    !rewind_matches || !restart_matches)
+						stop_script_fail("Restart and rewind checkpoints must contain the current visit and campaign archive");
+				} else if (s.value == "advance_seed" || s.value == "endgame_seed" || s.value == "endgame_modal_seed") {
+					if (Current_level_num >= 0 || coop_campaign_current()->base_returnable)
+						stop_script_fail("Advance fixture requires a secret mine with a destroyed base");
+					/* Test removal of carried effects without granting new spawn protection */
+					Netgame.SpawnStyle = SPAWN_STYLE_NO_INVUL;
+					Players[Player_num].energy = i2f(70);
+					Players[Player_num].shields = Objects[Players[Player_num].objnum].shields = i2f(80);
+					Players[Player_num].secondary_ammo[0] = 0;
+					Players[Player_num].flags |= KEY_BLUE | KEY_RED | KEY_GOLD | PLAYER_FLAGS_CLOAKED | PLAYER_FLAGS_INVULNERABLE;
+					Players[Player_num].cloak_time = Players[Player_num].invulnerable_time = GameTime64;
+					if (s.value == "endgame_seed" || s.value == "endgame_modal_seed") {
+						/* Model a mission ending at this authored base/secret pair */
+						Last_level = coop_campaign_current()->entered_from;
+						endgame_source_visit = coop_world_visit_current();
+						endgame_verified = false;
+						if (s.value == "endgame_modal_seed") {
+							const int score = scores_next_test_score();
+							if (!score) {
+								stop_script_fail("High-score fixture exhausted the score range");
+								break;
+							}
+							Players[Player_num].score = score;
+							multi_send_score();
+						}
+						endgame_score = Players[Player_num].score;
+					}
+					multi_send_ship_status();
+				} else if (s.value == "endgame_verify" || s.value == "endgame_modal_verify") {
+					const player *p = &Players[Player_num];
+					LOGI("Endgame player: ending=%d active=%d blocked=%d paused=%d level=%d/%d visit=%llu/%llu campaign=%d/%u checkpoint=%d hostages=%u/%u score=%d energy=%d shields=%d ammo=%u/%u life=%u serial=%u clock=%lld/%lld checked=%d",
+					     coop_travel_ending_campaign(), coop_travel_active(), coop_travel_blocks_state_actions(), game_is_time_paused(),
+					     Current_level_num, source_level, (unsigned long long) coop_world_visit_current(), (unsigned long long) endgame_source_visit,
+					     coop_campaign_current()->active_level, coop_campaign_current()->world_count, coop_travel_verify_checkpoint_file(),
+					     p->hostages_on_board, p->hostages_rescued_total, p->score, p->energy, p->shields, p->secondary_ammo[0], p->secondary_ammo[HOMING_INDEX],
+					     coop_recovery_life(Player_num), coop_recovery_restore_serial(Player_num), (long long) GameTime64, (long long) endgame_clock, endgame_verified);
+					if (!coop_travel_ending_campaign() || coop_travel_active() || !coop_travel_blocks_state_actions() ||
+					    !game_is_time_paused() || Current_level_num != source_level ||
+					    coop_world_visit_current() <= endgame_source_visit || coop_campaign_current()->active_level ||
+					    coop_campaign_current()->world_count || !coop_travel_verify_checkpoint_file() ||
+					    p->hostages_on_board || p->hostages_rescued_total != 42 + 2 * Player_num ||
+					    p->score != endgame_score || p->energy != i2f(70) || p->shields != i2f(80) ||
+					    p->secondary_ammo[0] || p->secondary_ammo[HOMING_INDEX] != 6 ||
+					    coop_recovery_life(Player_num) != (uint32_t) (17 + Player_num) ||
+					    coop_recovery_restore_serial(Player_num) != (uint32_t) (19 + Player_num) ||
+					    (endgame_verified && GameTime64 != endgame_clock) || coop_autosave())
+						stop_script_fail("Secret campaign ending must preserve final player state, credit hostages once and suspend the departed mine");
+					endgame_clock = GameTime64;
+					endgame_verified = true;
+					if (s.value == "endgame_modal_verify") {
+						bool ready = true;
+						for (int i = 0; i < N_players; ++i) {
+							const fix64 age = timer_query() - Netgame.players[i].LastPacketTime;
+							LOGI("Endgame modal peer: local=%d peer=%d connected=%d age_ms=%lld",
+							     Player_num, i, Players[i].connected, (long long) (age * 1000 / F1_0));
+							if (Players[i].connected != CONNECT_END_MENU || (i != Player_num && age > F1_0 * 3)) ready = false;
+						}
+						if (!ready) stop_script_fail("Final-score modal lost teammate heartbeats or restored a finished player to gameplay");
+					}
+				} else if (s.value == "advance_verify") {
+					const coop_campaign *campaign = coop_campaign_current();
+					const coop_campaign_world *secret = coop_campaign_find_world(campaign, source_level);
+					if (source_level >= 0 || Current_level_num != 9 || campaign->active_level != 9 || Netgame.SpawnStyle != SPAWN_STYLE_NO_INVUL ||
+					    campaign->generation != source_generation + 1 || campaign->entered_from || campaign->base_returnable ||
+					    !secret || secret->state != COOP_CAMPAIGN_AVAILABLE || !secret->size ||
+					    !coop_travel_verify_checkpoint_file() || coop_travel_active() || coop_briefing_active() || game_is_time_paused())
+						stop_script_fail("Secret departure did not commit the next normal mine and retain the secret world");
+					for (int i = 0; i < N_players; ++i) {
+						const player *p = &Players[i];
+						if (p->connected != CONNECT_PLAYING || p->score != 1234 + i || p->last_score != p->score ||
+						    p->hostages_on_board || p->hostages_rescued_total != 42 + 2 * i || p->num_kills_total != 60 + i ||
+						    p->secondary_weapon_flags != 0x3ff || p->secondary_ammo[HOMING_INDEX] != 6 || p->lives != 7 + i ||
+						    p->energy < INITIAL_ENERGY || p->shields < INITIAL_SHIELDS || p->secondary_ammo[0] < 2 + NDL - Difficulty_level ||
+						    (p->flags & (KEY_BLUE | KEY_RED | KEY_GOLD | PLAYER_FLAGS_CLOAKED | PLAYER_FLAGS_INVULNERABLE | PLAYER_FLAGS_MAP_ALL)) ||
+						    coop_recovery_life(i) != (uint32_t) (17 + i) || coop_recovery_restore_serial(i) != (uint32_t) (19 + i)) {
+							LOGI("Advance player: slot=%d connected=%d score=%d last_score=%d rescued=%u aboard=%u flags=%x energy=%d shields=%d concussion=%u kills=%d weapons=%x homing=%u lives=%d life=%u serial=%u",
+							     i, p->connected, p->score, p->last_score, p->hostages_rescued_total, p->hostages_on_board, p->flags,
+							     p->energy, p->shields, p->secondary_ammo[0], p->num_kills_total, p->secondary_weapon_flags,
+							     p->secondary_ammo[HOMING_INDEX], p->lives, coop_recovery_life(i), coop_recovery_restore_serial(i));
+							stop_script_fail("Campaign advance did not preserve inventory and apply normal mine startup rules");
+						}
+					}
+				} else if (s.value == "carry") {
+					expected_dying_mask = 0;
+					for (int i = 0; i < N_players; ++i) {
+						coop_recovery_set_life(i, 17 + i);
+						coop_recovery_set_restore_serial(i, 19 + i);
+						/* Ordinary ship status omits these values; poison remote caches
+						 * so the test cannot pass by carrying their previous contents */
+						if (i != Player_num) {
+							Players[i].hostages_on_board = 99;
+							Players[i].hostages_rescued_total = 99;
+							Players[i].num_kills_total = 99;
+							Players[i].lives = 99;
+						}
+					}
+					Players[Player_num].score = 1234 + Player_num;
+					Players[Player_num].hostages_on_board = 2 + Player_num;
+					Players[Player_num].hostages_rescued_total = 40 + Player_num;
+					Players[Player_num].num_kills_total = 60 + Player_num;
+					Players[Player_num].lives = 7 + Player_num;
+					Players[Player_num].secondary_weapon_flags = 0x3ff;
+					Players[Player_num].flags |= KEY_BLUE | PLAYER_FLAGS_MAP_ALL;
+					multi_send_ship_status();
+					multi_send_score();
+				} else if (s.value == "restore") {
+					if (!multi_send_coop_world_restore_transfer(&world))
+						stop_script_fail("Dormant world transfer failed");
+					rewind_memory_buffer_discard(&world);
+				} else if (s.value == "verify") {
+					int robots = 0;
+					for (int i = 0; i <= Highest_object_index; ++i)
+						if (Objects[i].type == OBJ_ROBOT) ++robots;
+					if (!robots || Players[Player_num].score != 1234 + Player_num ||
+					    Players[Player_num].hostages_on_board != 2 + Player_num ||
+					    Players[Player_num].secondary_ammo[HOMING_INDEX] != 6 ||
+					    !(Players[Player_num].flags & KEY_BLUE) ||
+					    (Players[Player_num].flags & PLAYER_FLAGS_MAP_ALL) ||
+					    coop_recovery_life(Player_num) != (uint32_t) (17 + Player_num) ||
+					    coop_recovery_restore_serial(Player_num) != (uint32_t) (19 + Player_num))
+						stop_script_fail("Dormant world must restore robots/exploration and retain current inventory, hostages, score and recovery revisions");
+				} else stop_script_fail("Unknown dormant world probe action");
+#else
+				stop_script_fail("Dormant world probe requires Android D2");
+#endif
+			} else if (s.field == "coop_death_test") {
+				static player death_before;
+				static uint64_t death_generation;
+				static fix64 death_clock;
+				if (!(Game_mode & GM_MULTI_COOP) || !ConsoleObject) {
+					stop_script_fail("Co-op death fixture requires a running mine");
+				} else if (s.value == "prepare") {
+					if (Current_level_num == 0 || Control_center_destroyed || Player_is_dead ||
+					    coop_travel_active() || coop_briefing_active() || game_is_time_paused()) {
+						stop_script_fail("Death fixture requires a settled intact co-op mine");
+						break;
+					}
+					Players[Player_num].flags &= ~PLAYER_FLAGS_INVULNERABLE;
+					Players[Player_num].score = 5000 + Player_num;
+					death_before = Players[Player_num];
+					death_generation = coop_campaign_current()->generation;
+					death_clock = GameTime64;
+					multi_send_ship_status();
+				} else if (s.value == "move_away") {
+					/* Keep the spew clear of every respawn and of the surviving ship */
+					bool moved = false;
+					for (int seg = 0; seg <= Highest_segment_index; ++seg) {
+						vms_vector center;
+						compute_segment_center(&center, &Segments[seg]);
+						if (get_seg_masks(&center, seg, ConsoleObject->size, const_cast<char *>(__FILE__), __LINE__).facemask) continue;
+						bool occupied = false;
+						for (int i = 0; i < NumNetPlayerPositions; ++i)
+							if (vm_vec_dist(&center, &Player_init[i].pos) < i2f(100)) occupied = true;
+						for (int i = 0; i <= Highest_object_index; ++i) {
+							const object *obj = &Objects[i];
+							if (obj == ConsoleObject || obj->type == OBJ_NONE || (obj->flags & OF_SHOULD_BE_DEAD)) continue;
+							const fix clearance = obj->type == OBJ_PLAYER || obj->type == OBJ_GHOST || obj->type == OBJ_ROBOT || obj->type == OBJ_CNTRLCEN
+							                          ? i2f(100)
+							                          : i2f(20) + obj->size + ConsoleObject->size;
+							if (vm_vec_dist(&center, &obj->pos) < clearance) occupied = true;
+						}
+						if (occupied) continue;
+						ConsoleObject->pos = ConsoleObject->last_pos = center;
+						obj_relink(Players[Player_num].objnum, seg);
+						vm_vec_zero(&ConsoleObject->mtype.phys_info.velocity);
+						vm_vec_zero(&ConsoleObject->mtype.phys_info.thrust);
+						multi_send_position(Players[Player_num].objnum);
+						LOGI("Co-op death fixture moved away from spawns: player=%d segment=%d", Player_num, seg);
+						moved = true;
+						break;
+					}
+					if (!moved) stop_script_fail("Death fixture could not find space away from spawn points and objects");
+				} else if (s.value == "verify" || s.value == "survivor") {
+					const player *p = &Players[Player_num];
+					const bool died = s.value == "verify";
+					if (death_before.level == 0 || Current_level_num != death_before.level ||
+					    (death_before.level < 0 && coop_campaign_current()->active_level != death_before.level) ||
+					    coop_campaign_current()->generation != death_generation ||
+					    Control_center_destroyed || Player_is_dead || p->connected != CONNECT_PLAYING ||
+					    coop_travel_active() || coop_briefing_active() || game_is_time_paused() ||
+					    GameTime64 < death_clock + F1_0 || p->lives != death_before.lives || p->score != death_before.score - ((died && (Game_mode & GM_MULTI_ROBOTS)) ? 1000 : 0) ||
+					    p->net_killed_total != death_before.net_killed_total + (died ? 1 : 0) ||
+					    (died ? p->hostages_on_board || p->primary_weapon_flags != HAS_LASER_FLAG ||
+					                p->secondary_weapon_flags != HAS_CONCUSSION_FLAG || p->secondary_ammo[HOMING_INDEX] || p->shields <= 0
+					          : p->hostages_on_board != death_before.hostages_on_board ||
+					                p->primary_weapon_flags != death_before.primary_weapon_flags ||
+					                p->secondary_ammo[HOMING_INDEX] != death_before.secondary_ammo[HOMING_INDEX])) {
+						LOGI("Co-op death state: died=%d level=%d/%d generation=%llu/%llu dead=%d lives=%u/%u deaths=%d/%d score=%d/%d cargo=%u primary=%x secondary=%x homing=%u",
+						     died, Current_level_num, death_before.level,
+						     (unsigned long long) coop_campaign_current()->generation, (unsigned long long) death_generation,
+						     Player_is_dead, p->lives, death_before.lives, p->net_killed_total, death_before.net_killed_total,
+						     p->score, death_before.score, p->hostages_on_board, p->primary_weapon_flags,
+						     p->secondary_weapon_flags, p->secondary_ammo[HOMING_INDEX]);
+						stop_script_fail("Intact co-op death must respawn only the dead player and retain the team's mine");
+					} else LOGI("Co-op death verified: player=%d died=%d level=%d generation=%llu lives=%u deaths=%d",
+						        Player_num, died, Current_level_num, (unsigned long long) death_generation, p->lives, p->net_killed_total);
+
+				} else stop_script_fail("Unknown co-op death fixture action");
 			} else if (s.field == "recovery_test_inventory") {
 				if (!ConsoleObject || !(Game_mode & GM_MULTI_COOP)) {
 					stop_script_fail("recovery_test_inventory: coop game is not running");
@@ -4141,6 +5420,30 @@ extern "C" void game_automate_tick(void)
 					coop_restore_status_failed();
 					stop_script_fail("coop_retained_restore: retained checkpoint unavailable");
 				}
+			} else if (s.field == "coop_briefing_action") {
+				coop_transition_policy state;
+				coop_presentation_progress local;
+				coop_briefing_get_state(&state, &local);
+				if (s.value == "skip") {
+					if (!android_screen_advance_request(android_screen_advance_get_generation()))
+						stop_script_fail("Briefing Skip request rejected");
+				} else if (s.value == "launch") {
+					if (!coop_briefing_request_launch(state.generation))
+						stop_script_fail("Briefing Launch now request rejected");
+				} else if (s.value == "reject_launch") {
+					if (coop_briefing_request_launch(state.generation))
+						stop_script_fail("Unauthorized briefing launch accepted");
+				} else if (s.value == "reject_stale_launch") {
+					if (coop_briefing_request_launch(state.generation - 1))
+						stop_script_fail("Stale briefing launch accepted");
+				} else if (s.value == "delay_release" || s.value == "delay_release_loss") {
+					/* Leave time for the runner to stop a peer after both closure acks */
+					if (!coop_briefing_test_delay_release(s.value == "delay_release_loss" ? 20000 : 6000))
+						stop_script_fail("Briefing release delay requires a reading client");
+				} else if (s.value == "reject_save") {
+					if (!coop_briefing_active() || coop_autosave())
+						stop_script_fail("Save accepted before briefing release completed");
+				} else stop_script_fail("Unknown briefing test action");
 			} else if (s.field == "coop_restore_status_packet") {
 				unsigned status, revision;
 				int sender;
@@ -4153,8 +5456,11 @@ extern "C" void game_automate_tick(void)
 				for (int byte = 0; byte < 4; byte++) packet[2 + byte] = (ubyte) (revision >> (byte * 8));
 				multi_do_coop_restore_status(packet, sender);
 			} else if (s.field == "coop_autosave") {
-				if ((strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) &&
-				    !coop_autosave()) {
+				if (s.value == "reject_during_transfer") {
+					if (!multi_save_transfer_busy() || coop_autosave())
+						stop_script_fail("Autosave must be rejected during an active save transfer");
+				} else if ((strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) &&
+				           !coop_autosave()) {
 					stop_script_fail("coop_autosave: active coop game required");
 					break;
 				}

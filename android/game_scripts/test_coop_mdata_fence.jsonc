@@ -1,0 +1,9 @@
+[
+    {"_info": {"games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "wait_for", "timeout_ms": 15000, "expect": {
+        "in_game": true, "multiplayer.num_connected": 2, "coop_restore.transfer_busy": false
+    }},
+    {"action": "set_debug", "field": "reliable_packet_test", "value": "send_fence"},
+    {"action": "set_debug", "field": "pdata_packet_test", "value": "send"},
+    {"action": "wait_for", "timeout_ms": 15000, "expect": {"coop_mdata_fence_ready": true, "coop_pdata_fence_ready": true}}
+]

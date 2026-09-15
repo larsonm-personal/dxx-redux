@@ -92,6 +92,8 @@ data class GameLaunchInfo(
     val coopQol: Boolean = true,
     val duplicateEnergyShields: Boolean = false,
     val fullDeathSpew: Boolean = true,
+    val coopBriefings: Boolean = false,
+    val allowSecretWarps: Boolean = false,
     val playerSpewNoExpire: Boolean = true,
     val clientsCanRequestRewind: Boolean = false,
     val restrictNonCoopFovToBase: Boolean = false,
@@ -192,6 +194,8 @@ object HostGameDefaults {
         val coopQol: Boolean = true,
         val duplicateEnergyShields: Boolean = false,
         val fullDeathSpew: Boolean = true,
+        val coopBriefings: Boolean = false,
+        val allowSecretWarps: Boolean = false,
         val playerSpewNoExpire: Boolean = true,
         val clientsCanRequestRewind: Boolean = false,
         val restrictNonCoopFovToBase: Boolean = false,
@@ -211,6 +215,8 @@ object HostGameDefaults {
             coopQol = prefs.getBoolean("host_coop_qol", true),
             duplicateEnergyShields = prefs.getBoolean("host_duplicate_energy_shields", false),
             fullDeathSpew = prefs.getBoolean("host_full_death_spew", true),
+            coopBriefings = prefs.getBoolean("host_coop_briefings", false),
+            allowSecretWarps = prefs.getBoolean("host_allow_secret_warps", false),
             playerSpewNoExpire = prefs.getBoolean("host_player_spew_no_expire", true),
             clientsCanRequestRewind = prefs.getBoolean("host_clients_can_request_rewind", false),
             restrictNonCoopFovToBase = prefs.getBoolean("host_restrict_noncoop_fov_to_base", false),
@@ -234,6 +240,8 @@ object HostGameDefaults {
             .putBoolean("host_coop_qol", d.coopQol)
             .putBoolean("host_duplicate_energy_shields", d.duplicateEnergyShields)
             .putBoolean("host_full_death_spew", d.fullDeathSpew)
+            .putBoolean("host_coop_briefings", d.coopBriefings)
+            .putBoolean("host_allow_secret_warps", d.allowSecretWarps)
             .putBoolean("host_player_spew_no_expire", d.playerSpewNoExpire)
             .putBoolean("host_clients_can_request_rewind", d.clientsCanRequestRewind)
             .putBoolean("host_restrict_noncoop_fov_to_base", d.restrictNonCoopFovToBase)

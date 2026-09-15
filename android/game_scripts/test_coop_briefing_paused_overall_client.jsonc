@@ -1,0 +1,27 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "coop_briefing.phase": 6, "coop_briefing.local_state": 2,
+        "movie.current": "pla.mve", "movie.frame": {"gte": 1}, "time_paused": true
+    }},
+    {"action": "key", "key": "pause"},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "movie.paused": true, "movie.pause_window": true,
+        "coop_briefing.seconds_remaining": {"range": [100, 120]}
+    }},
+    {"action": "wait_for", "timeout_ms": 115000, "expect": {
+        "coop_briefing.seconds_remaining": {"range": [1, 20]}
+    }},
+    {"action": "assert", "expect": {
+        "coop_briefing.phase": 6, "coop_briefing.local_state": 2,
+        "coop_briefing.presentation_ready": 0,
+        "movie.paused": true, "movie.pause_window": true, "time_paused": true
+    }},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "coop_briefing.active": false, "coop_briefing.phase": 0,
+        "coop_briefing.launch_reason": 3, "coop_briefing.presenting": false,
+        "movie.frame": -1, "movie.paused": false, "movie.pause_window": false,
+        "movie.last_result": "aborted", "in_game": true,
+        "time_paused": false, "multiplayer.num_connected": 2
+    }}
+]

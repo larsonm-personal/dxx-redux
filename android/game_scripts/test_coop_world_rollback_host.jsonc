@@ -1,0 +1,13 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "wait_for", "timeout_ms": 90000, "expect": {"coop_travel.phase": 4, "coop_travel.checkpoint_ready": true, "time_paused": true}},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "frozen_score_probe"},
+    {"action": "set_debug", "field": "reliable_packet_test", "value": "verify_boundary"},
+    {"action": "wait_for", "timeout_ms": 120000, "expect": {"coop_travel.phase": 10, "time_paused": true}},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "world_blocked"},
+    {"action": "wait_for", "timeout_ms": 240000, "expect": {"coop_travel.active": false, "coop_travel.rollback_complete": true, "coop_restore.transfer_busy": false, "time_paused": false, "in_game": true}},
+    {"action": "set_debug", "field": "coop_world_test", "value": "rollback_verify"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "rollback_waiting_verify"},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {"coop_level_restart_state": 2}},
+    {"action": "set_debug", "field": "coop_world_test", "value": "history_verify"}
+]

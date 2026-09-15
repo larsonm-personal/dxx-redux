@@ -9,6 +9,7 @@
 #ifdef __ANDROID__
 
 #include "coop_warp.h"
+#include "coop_travel.h"
 #include "player.h"
 #include "object.h"
 #include "segment.h"
@@ -115,6 +116,7 @@ void coop_warp_cycle_target(void)
 
 int coop_warp_execute(void)
 {
+	if (coop_travel_blocks_gameplay()) return 0;
 	coop_warp_status status;
 	coop_warp_get_status(&status);
 

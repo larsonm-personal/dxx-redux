@@ -1,4 +1,6 @@
 #include "coop_host_migration.h"
+#include "coop_briefing.h"
+#include "coop_travel.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -22,7 +24,7 @@ static void coop_host_migration_write_metadata(void)
 	PHYSFS_file *mfp = PHYSFS_openWrite("host_migration.json");
 
 	if (mfp) {
-		char mbuf[512];
+		char mbuf[768];
 		int mlen = snprintf(mbuf, sizeof(mbuf),
 		                    "{\n"
 		                    "  \"callsign\": \"%s\",\n"
@@ -39,6 +41,8 @@ static void coop_host_migration_write_metadata(void)
 		                    "  \"coop_qol\": %s,\n"
 		                    "  \"duplicate_energy_shields\": %s,\n"
 		                    "  \"full_death_spew\": %s,\n"
+		                    "  \"coop_briefings\": %s,\n"
+		                    "  \"allow_secret_warps\": %s,\n"
 		                    "  \"player_spew_no_expire\": %s\n"
 		                    "}\n",
 		                    Players[Player_num].callsign,
@@ -49,6 +53,8 @@ static void coop_host_migration_write_metadata(void)
 		                    (Netgame.game_flags & NETGAME_FLAG_COOP_QOL) ? "true" : "false",
 		                    Netgame.DuplicateEnergyShields ? "true" : "false",
 		                    Netgame.FullDeathSpew ? "true" : "false",
+		                    Netgame.CoopBriefings ? "true" : "false",
+		                    Netgame.AllowSecretWarps ? "true" : "false",
 		                    Netgame.PlayerSpewNoExpire ? "true" : "false");
 
 		if (mlen >= (int) sizeof(mbuf))
@@ -66,6 +72,9 @@ int coop_host_migration_handle_disconnect(int disconnected_player)
 	int player_count = N_players;
 	int player;
 
+	if (multi_save_transfer_host_disconnected(disconnected_player)) return 1;
+	if (coop_briefing_host_disconnected(disconnected_player)) return 1;
+	if (coop_travel_host_disconnected(disconnected_player)) return 1;
 	if (!(Game_mode & GM_MULTI_COOP))
 		return 0;
 	if (player_count > MAX_PLAYERS)

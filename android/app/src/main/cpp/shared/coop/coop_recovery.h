@@ -24,11 +24,13 @@ enum { COOP_RECOVERY_LIVE = 1,
 	   COOP_RECOVERY_TAKEN,
 	   COOP_RECOVERY_DEPARTED,
 	   COOP_RECOVERY_ALIVE,
-	   COOP_RECOVERY_RECLAIMING };
+	   COOP_RECOVERY_RECLAIMING,
+	   COOP_RECOVERY_DORMANT };
 typedef struct coop_recovery_item {
 	uint32_t id;
 	uint32_t revision;
 	uint32_t life;
+	int16_t world_level; /* Persistent mine identity; object slots are mine-local */
 	char client_id[COOP_CLIENT_ID_LEN + 1];
 	char callsign[COOP_CALLSIGN_LEN + 1];
 	int32_t signature;
@@ -42,6 +44,10 @@ typedef struct coop_recovery_item {
 #pragma pack(pop)
 
 int coop_recovery_active(void);
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+/* A valid but destructive life update for the delayed-datagram rejection probe */
+int coop_recovery_test_life_packet(ubyte *buf, size_t size, int pnum);
+#endif
 void coop_recovery_reset(void);
 void coop_recovery_begin_restore(uint32_t generation);
 void coop_recovery_end_restore(void);
@@ -62,6 +68,14 @@ void coop_recovery_note_pickup(object *powerup, const coop_player_record *before
 int coop_recovery_rejoin_ready(const char *callsign, const char *client_id);
 void coop_recovery_expire(object *powerup);
 void coop_recovery_level_leave(void);
+/* Call after the travel freeze has settled all pending collections */
+int coop_recovery_suspend_world(void);
+/* Frozen destination apply: retire an unavailable source without touching
+ * destination objects. A source-checkpoint rollback restores the old ledger */
+int coop_recovery_retire_world(int level);
+/* Reconcile a restored dormant world against the current campaign ledger.
+ * Failure changes neither the ledger nor objects; it consumes pending data */
+int coop_recovery_apply_world_pending(void);
 void coop_recovery_frame(void);
 void coop_recovery_receive(const ubyte *buf, int sender);
 void coop_recovery_send_snapshot(int pnum);

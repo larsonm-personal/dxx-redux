@@ -1,0 +1,7 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "wait_for", "timeout_ms": 15000, "expect": {"coop_travel.phase": 1, "time_paused": false}},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "secret_blocked"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "normal"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "normal_granted_once"}
+]

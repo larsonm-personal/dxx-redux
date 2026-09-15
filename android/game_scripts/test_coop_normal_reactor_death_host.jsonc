@@ -1,0 +1,72 @@
+[
+    {
+        "_info": {
+            "games": [
+                "d2"
+            ],
+            "_standalone": false,
+            "_owner": "test_lan"
+        }
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 20000,
+        "expect": {
+            "multiplayer.players": {
+                "contains_object": {
+                    "is_me": false,
+                    "deaths": {
+                        "gte": 1
+                    }
+                }
+            }
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_travel_test",
+        "value": "reactor_clock_start"
+    },
+    {
+        "action": "wait_ms",
+        "ms": 10000
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_travel_test",
+        "value": "reactor_clock_verify"
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_travel_test",
+        "value": "physical_normal_exit"
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 180000,
+        "expect": {
+            "current_level_num": 9,
+            "coop_campaign.active_level": 9,
+            "postlevel_active": false,
+            "in_game": true,
+            "time_paused": false,
+            "coop_travel.active": false,
+            "player_dead": false,
+            "multiplayer.network_status": 1,
+            "multiplayer.players[0].connected": 1,
+            "multiplayer.players[1].connected": 1
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_travel_test",
+        "value": "normal_next_verify"
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "multiplayer.players[0].deaths": 0,
+            "multiplayer.players[1].deaths": 1
+        }
+    }
+]

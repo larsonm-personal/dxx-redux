@@ -92,6 +92,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_profile.h"
 #include "android_rewind.h"
 #include "coop_save.h"
+#include "coop/coop_briefing.h"
 #ifdef OGL
 extern int g_swap_time_us;
 extern int g_msaa_resolve_time_us;
@@ -1129,6 +1130,12 @@ window *Game_wind = NULL;
 int game_handler(window *wind, d_event *event, void *data)
 {
 #ifdef __ANDROID__
+	if (coop_briefing_active() && event->type != EVENT_WINDOW_CLOSE &&
+	    event->type != EVENT_WINDOW_CLOSED && event->type != EVENT_WINDOW_ACTIVATED &&
+	    event->type != EVENT_WINDOW_DEACTIVATED)
+		return 1;
+#endif
+#ifdef __ANDROID__
 	if (event->type != EVENT_WINDOW_CLOSE && event->type != EVENT_WINDOW_CLOSED &&
 	    state_restore_take_menu_request()) {
 		set_screen_mode(SCREEN_MENU);
@@ -1148,7 +1155,11 @@ int game_handler(window *wind, d_event *event, void *data)
 			key_toggle_repeat(0);
 			game_flush_inputs();
 
-			if (time_paused)
+			if (time_paused
+#ifdef __ANDROID__
+			    && !multi_save_transfer_paused()
+#endif
+			)
 				start_time();
 
 			if (!((Game_mode & GM_MULTI) && (Newdemo_state != ND_STATE_PLAYBACK)))
@@ -1183,12 +1194,21 @@ int game_handler(window *wind, d_event *event, void *data)
 		case EVENT_KEY_COMMAND:
 		case EVENT_KEY_RELEASE:
 		case EVENT_IDLE:
+#ifdef __ANDROID__
+			if (multi_save_transfer_paused() &&
+			    (event->type != EVENT_KEY_COMMAND || event_key_get(event) != KEY_ESC)) return 1;
+#endif
 			if (event->type == EVENT_IDLE && input_demo_replay_is_loaded())
 				return 1;
 			return ReadControls(event);
 
 		case EVENT_WINDOW_DRAW:
 		{
+			#ifdef __ANDROID__
+			int restore_pause = multi_save_transfer_pause_frame();
+			if (restore_pause < 0) { window_close(wind); return 1; }
+			if (restore_pause > 0) return 1;
+			#endif
 			#ifdef __ANDROID__
 			static unsigned int android_profile_frame_id = 0;
 			android_profile_frame_begin("d1", ++android_profile_frame_id);
@@ -1369,6 +1389,7 @@ void GameProcessFrame(void)
 	{
 		multi_do_frame();
 #ifdef __ANDROID__
+		if (multi_save_transfer_paused()) return;
 		if (state_restore_take_menu_request()) {
 			set_screen_mode(SCREEN_MENU);
 			if (Game_wind) window_close(Game_wind);

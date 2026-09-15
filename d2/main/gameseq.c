@@ -107,8 +107,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gamemine.h"
 #ifdef ANDROID
 #include "coop/coop_level_restart.h"
+#include "coop/coop_briefing.h"
 #include "coop/coop_powerup_duplication.h"
 #include "coop/coop_recovery.h"
+#include "coop/coop_travel.h"
 #include "track_names.h"
 #include "android_crash_handler.h"
 #include "android_screen_advance.h"
@@ -422,12 +424,12 @@ void init_player_stats_game(ubyte pnum)
 		multi_send_ship_status();
 }
 
-void init_ammo_and_energy(void)
+static void init_ammo_and_energy_for_player(player *p)
 {
-	if (Players[Player_num].energy < INITIAL_ENERGY)
-		Players[Player_num].energy = INITIAL_ENERGY;
-	if (Players[Player_num].shields < StartingShields)
-		Players[Player_num].shields = StartingShields;
+	if (p->energy < INITIAL_ENERGY)
+		p->energy = INITIAL_ENERGY;
+	if (p->shields < StartingShields)
+		p->shields = StartingShields;
 
 //	for (i=0; i<MAX_PRIMARY_WEAPONS; i++)
 //		if (Players[Player_num].primary_ammo[i] < Default_primary_ammo_level[i])
@@ -436,9 +438,44 @@ void init_ammo_and_energy(void)
 //	for (i=0; i<MAX_SECONDARY_WEAPONS; i++)
 //		if (Players[Player_num].secondary_ammo[i] < Default_secondary_ammo_level[i])
 //			Players[Player_num].secondary_ammo[i] = Default_secondary_ammo_level[i];
-	if (Players[Player_num].secondary_ammo[0] < 2 + NDL - Difficulty_level)
-		Players[Player_num].secondary_ammo[0] = 2 + NDL - Difficulty_level;
+	if (p->secondary_ammo[0] < 2 + NDL - Difficulty_level)
+		p->secondary_ammo[0] = 2 + NDL - Difficulty_level;
 }
+
+void init_ammo_and_energy(void)
+{
+	init_ammo_and_energy_for_player(&Players[Player_num]);
+}
+
+static void init_normal_level_resources(player *p)
+{
+	init_ammo_and_energy_for_player(p);
+	p->flags &= ~(KEY_BLUE | KEY_RED | KEY_GOLD | PLAYER_FLAGS_INVULNERABLE |
+	              PLAYER_FLAGS_CLOAKED | PLAYER_FLAGS_MAP_ALL);
+	p->cloak_time = 0;
+	p->invulnerable_time = 0;
+	if ((Game_mode & GM_MULTI) && !(Game_mode & GM_MULTI_COOP))
+		p->flags |= KEY_BLUE | KEY_RED | KEY_GOLD;
+}
+
+#ifdef __ANDROID__
+/* Apply only after committing travel; rollback retains the original cargo */
+void coop_advance_player_stats(int pnum)
+{
+	player *p = &Players[pnum];
+	p->hostages_rescued_total += p->hostages_on_board;
+	p->hostages_on_board = 0;
+	p->last_score = p->score;
+	init_normal_level_resources(p);
+	Objects[p->objnum].shields = p->shields;
+	Netgame.player_flags[pnum] = p->flags;
+	if (pnum == Player_num) {
+		Next_flare_fire_time = Last_laser_fired_time = Next_laser_fire_time = Next_missile_fire_time = GameTime64;
+		Fusion_charge = 0;
+		Auto_fire_fusion_cannon_time = 0;
+	}
+}
+#endif
 
 extern	ubyte	Last_afterburner_state;
 
@@ -479,21 +516,7 @@ void init_player_stats_level(int secret_flag)
 	Players[Player_num].hostages_on_board = 0;
 
 	if (!secret_flag) {
-		init_ammo_and_energy();
-
-		Players[Player_num].flags &= (~KEY_BLUE);
-		Players[Player_num].flags &= (~KEY_RED);
-		Players[Player_num].flags &= (~KEY_GOLD);
-
-		Players[Player_num].flags &=   ~(PLAYER_FLAGS_INVULNERABLE |
-													PLAYER_FLAGS_CLOAKED |
-													PLAYER_FLAGS_MAP_ALL);
-
-		Players[Player_num].cloak_time = 0;
-		Players[Player_num].invulnerable_time = 0;
-
-		if ((Game_mode & GM_MULTI) && !(Game_mode & GM_MULTI_COOP))
-			Players[Player_num].flags |= (KEY_BLUE | KEY_RED | KEY_GOLD);
+		init_normal_level_resources(&Players[Player_num]);
 	}
 
 	Player_is_dead = 0; // Added by RH
@@ -522,6 +545,12 @@ extern	void init_ai_for_ship(void);
 void init_player_stats_new_ship(ubyte pnum)
 {
 	int i;
+#ifdef __ANDROID__
+	if (Game_mode & GM_MULTI_COOP)
+		COOPLOG("new ship stats: local=%d player=%u level=%d world_restore=%d onboard=%u secondary=%x",
+		        Player_num, pnum, Current_level_num, coop_world_restore_active(),
+		        Players[pnum].hostages_on_board, Players[pnum].secondary_weapon_flags);
+#endif
 
 	if (pnum == Player_num)
 	{
@@ -543,6 +572,7 @@ void init_player_stats_new_ship(ubyte pnum)
 		Player_eggs_dropped = 0;
 #ifdef __ANDROID__
 		coop_recovery_alive(pnum);
+		coop_travel_player_reappeared(pnum);
 #endif
 
 		int delete_camera = 1; 
@@ -1645,6 +1675,19 @@ void DoEndGame(void)
 		window_close(Game_wind);		// Exit out of game loop
 }
 
+#ifdef __ANDROID__
+void coop_finish_secret_campaign(void)
+{
+	/* Travel has committed on every peer. Preserve the final ship/score values;
+	 * only credit the hostages that this player brought out, once */
+	Assert((Game_mode & GM_MULTI_COOP) && Current_level_num < 0 && game_is_time_paused());
+	Players[Player_num].hostages_rescued_total += Players[Player_num].hostages_on_board;
+	Players[Player_num].hostages_on_board = 0;
+	COOPLOG("secret campaign finished: player=%d level=%d", Player_num, Current_level_num);
+	DoEndGame();
+}
+#endif
+
 //called to go to the next level (if there is one)
 //if secret_flag is true, advance to secret level, else next normal one
 //	Return true if game over.
@@ -1734,6 +1777,9 @@ void AdvanceLevel(int secret_flag)
 
 void DoPlayerDead()
 {
+#ifdef __ANDROID__
+	if (coop_hold_death_for_travel()) return;
+#endif
 
 	int cycle_window_vis = 1;
 #ifdef NETWORK
@@ -1817,7 +1863,12 @@ void DoPlayerDead()
 			last_drawn_cockpit = -1;
 		}
 
-	} else if (Current_level_num < 0) {
+	} else if (Current_level_num < 0
+#ifdef __ANDROID__
+	           /* An intact co-op secret uses ordinary death/drop/respawn */
+	           && !(Game_mode & GM_MULTI_COOP)
+#endif
+	) {
 		if (PHYSFSX_exists(SECRETB_FILENAME,0))
 		{
 			do_screen_message(TXT_SECRET_RETURN);
@@ -2054,6 +2105,9 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 #ifdef NETWORK
 	if (Network_rejoined == 1)
 	{
+#ifdef __ANDROID__
+		coop_briefing_disarm_for_rejoin();
+#endif
 		Network_rejoined = 0;
 		StartLevel(1);
 	}
@@ -2174,11 +2228,19 @@ extern int intro_played;	//true if big intro movie played
 void ShowLevelIntro(int level_num)
 {
 	//if shareware, show a briefing?
-	if (input_demo_consume_skip_level_intro()) {
+	if (
+#ifdef __ANDROID__
+	    !coop_briefing_presenting() &&
+#endif
+	    input_demo_consume_skip_level_intro()) {
 		return;
 	}
 
-	if (!(Game_mode & GM_MULTI)) {
+	if (!(Game_mode & GM_MULTI)
+#ifdef __ANDROID__
+	    || coop_briefing_presenting()
+#endif
+	) {
 		int i;
 
 		ubyte save_pal[sizeof(gr_palette)];
@@ -2252,8 +2314,13 @@ void StartNewLevel(int level_num)
 
 	ShowLevelIntro(level_num);
 
+	#ifdef __ANDROID__
+	coop_campaign_note_normal_level(level_num);
+	coop_briefing_arm(level_num);
+	#endif
 	StartNewLevelSub(level_num, 1, 0 );
 #ifdef __ANDROID__
+	coop_briefing_run(ShowLevelIntro, level_num);
 	coop_level_restart_note_natural_level(level_num);
 #endif
 

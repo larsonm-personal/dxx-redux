@@ -47,6 +47,10 @@ extern void scores_view(struct stats_info *last_game, int citem);
 // If player has a high score, adds you to file and returns.
 // If abort_flag set, only show if player has gotten a high score.
 extern void scores_maybe_add_player(int abort_flag);
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+/* Qualify for the real score prompt without rewriting the score file */
+int scores_next_test_score(void);
+#endif
 
 void int_to_string(int number, char* dest);
 

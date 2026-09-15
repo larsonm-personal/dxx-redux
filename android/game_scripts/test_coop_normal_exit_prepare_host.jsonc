@@ -1,0 +1,11 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "set_debug", "field": "recovery_test_trace", "value": "true"},
+    {"action": "set_debug", "field": "reliable_packet_test", "value": "remember_level_sequence"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "physical_companion_rejected"},
+    {"action": "set_debug", "field": "clear_robots", "value": "true"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "reactor"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "physical_normal_prepare"},
+    {"action": "wait_ms", "ms": 1500},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "normal_clock_start"}
+]

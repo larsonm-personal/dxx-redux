@@ -34,6 +34,11 @@ void coop_do_peer_status(const ubyte *buf);
 void coop_send_restore_inventory(int pnum);
 void coop_clear_pending_restore_inventory(void);
 void coop_apply_pending_restore_inventory(void);
-void coop_do_restore_inventory(const ubyte *buf, int authenticated_sender);
+struct coop_gameplay_stamp;
+void coop_do_restore_inventory(const ubyte *buf, int authenticated_sender, const struct coop_gameplay_stamp *sent);
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+unsigned coop_test_rejected_restore_inventory(void);
+int coop_test_restore_inventory_packet(ubyte *buf, unsigned size, int pnum);
+#endif
 
 #endif /* COOP_MULTI_STATUS_H */

@@ -43,7 +43,7 @@
 #define COOP_AUTOSAVE_CALLSIGN      "coopsave" /* stable 8-char filename prefix */
 
 /* --- per-player record stored in the trailer --- */
-/* Android's v9 disk ABI, independent of legacy desktop header packing */
+/* Android's v13 disk ABI, independent of legacy desktop header packing */
 #pragma pack(push, 4)
 typedef struct coop_player_record {
 	char callsign[COOP_CALLSIGN_LEN + 1];
@@ -96,10 +96,22 @@ typedef struct coop_save_metadata {
 	int32_t robots_killed[8];
 	int32_t robot_score_earned[8];
 	int32_t total_robot_score;
+	uint8_t coop_briefings;
+	uint8_t allow_secret_warps;
+	uint32_t campaign_size; /* v11: required archive bytes covered by the checksum */
+	int32_t reactor_destroyed;
+	fix reactor_remaining;
+	int32_t reactor_seconds_left;
+	int32_t reactor_total_seconds;
+	int32_t reactor_paused;
 } coop_save_metadata;
 #pragma pack(pop)
 
 /* --- helpers (implemented in coop_save.c) --- */
+
+/* Countdown saves require a live settled team; death state has separate ownership */
+int coop_save_countdown_allowed(void);
+void coop_restore_reactor_metadata(const coop_save_metadata *meta);
 
 /* Fill a coop_player_record from the live player struct at slot pnum.
  * was_connected is set to 1. */
@@ -110,6 +122,32 @@ void coop_snapshot_player(int pnum, coop_player_record *rec);
 int coop_write_save_metadata(void *fp);
 #ifdef ANDROID
 int coop_write_save_metadata_rewind(rewind_file *file);
+/* Raw world captures deliberately exclude the campaign archive */
+int coop_save_world_to_memory(rewind_memory_buffer *buffer);
+/* Read-only source checkpoint preflight; does not stage recovery or campaign state */
+int coop_source_checkpoint_metadata(const rewind_memory_buffer *buffer, int level,
+                                    uint64_t generation, coop_save_metadata *meta);
+/* Caller owns the frozen transition, destination placement and rollback on failure */
+int coop_restore_world_from_memory(const rewind_memory_buffer *buffer);
+/* Fresh visits use multiplayer initialization and the current portable state;
+ * the destination must be authorized by the current campaign transition */
+int coop_initialize_travel_world(int level);
+int coop_world_restore_active(void);
+int coop_source_checkpoint_restore(const rewind_memory_buffer *buffer, int level, uint64_t generation);
+int coop_source_restore_validate_gear(void);
+void coop_campaign_reset_runtime(void);
+void coop_campaign_note_normal_level(int level);
+void coop_campaign_apply_pending(void);
+struct coop_campaign;
+const struct coop_campaign *coop_campaign_current(void);
+struct coop_campaign_travel;
+/* Prepare from the frozen current world; does not load or commit the destination */
+int coop_prepare_secret_travel(struct coop_campaign_travel *travel);
+/* Mission mapping and destroyed-world check, safe before freezing the mine */
+int coop_secret_entry_available(void);
+int coop_validate_secret_travel(const struct coop_campaign_travel *travel);
+/* Only the transition owner may commit after every peer has applied the mine */
+int coop_commit_secret_travel(struct coop_campaign_travel *travel);
 #endif
 
 /* Try to read the coop metadata trailer from an open save file.
@@ -200,6 +238,7 @@ int coop_load_progress_inventory(void);
 /* Check for a viable auto-save for the current mission and arm the
  * auto-restore if found. Called once when a coop game starts. */
 void coop_arm_auto_restore(void);
+int coop_auto_restore_pending(void);
 
 /* Try to trigger auto-restore. Called each frame from multi_do_frame.
  * Fires once when all players are connected, then disarms itself. */

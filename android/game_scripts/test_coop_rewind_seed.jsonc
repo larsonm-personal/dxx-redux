@@ -1,0 +1,21 @@
+[
+    {
+        "_info": {
+            "games": [
+                "d1",
+                "d2"
+            ],
+            "_standalone": false,
+            "_owner": "test_lan"
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_rewind_test",
+        "value": "seed"
+    },
+    {
+        "action": "wait_ms",
+        "ms": 3000
+    }
+]

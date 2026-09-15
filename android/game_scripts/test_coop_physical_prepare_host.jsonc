@@ -1,0 +1,6 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "set_debug", "field": "recovery_test_trace", "value": "true"},
+    {"action": "set_debug", "field": "coop_world_test", "value": "remember_world"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "physical_remote_rejected"}
+]

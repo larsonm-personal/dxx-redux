@@ -1368,6 +1368,29 @@ Java_com_dxxredux_app_MainActivity_nativeRequestScreenAdvance(JNIEnv *env, jobje
 	return android_screen_advance_request((unsigned int) generation) ? JNI_TRUE : JNI_FALSE;
 }
 
+#include "coop/coop_briefing.h"
+
+JNIEXPORT jstring JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetCoopBriefingState(JNIEnv *env, jobject thiz)
+{
+	char text[1024], result[1088];
+	uint64_t generation;
+	int launch;
+	(void) thiz;
+	coop_briefing_ui(text, sizeof(text), &generation, &launch);
+	/* Three fields shared with CoopBriefingOverlayView: generation, button, text */
+	snprintf(result, sizeof(result), "%llu\n%d\n%s", (unsigned long long) generation, launch, text);
+	return (*env)->NewStringUTF(env, result);
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeLaunchCoopBriefing(JNIEnv *env, jobject thiz, jlong generation)
+{
+	(void) env;
+	(void) thiz;
+	return coop_briefing_request_launch((uint64_t) generation) ? JNI_TRUE : JNI_FALSE;
+}
+
 extern volatile int g_intro_active;
 
 JNIEXPORT jboolean JNICALL

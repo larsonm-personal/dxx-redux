@@ -25,6 +25,32 @@
 #   .\test_lan.ps1 -SavedLateJoin -RestoreStatus -Game d2
 #   .\test_lan.ps1 -HostMigration
 #   .\test_lan.ps1 -SpewRecovery
+#   .\test_lan.ps1 -Game d1 -CoopDeath
+#   .\test_lan.ps1 -Game d2 -BriefingCase paused_force  # Requires other-h.mvl in game data
+#   .\test_lan.ps1 -Game d2 -BriefingCase paused_deadline
+#   .\test_lan.ps1 -Game d2 -BriefingCase paused_overall
+#   .\test_lan.ps1 -Game d1 -BriefingFailure host
+#   .\test_lan.ps1 -Game d2 -BriefingFailure client
+#   .\test_lan.ps1 -Game d2 -BriefingFailure host -BriefingFailurePaused  # Requires other-h.mvl
+#   .\test_lan.ps1 -Game d1 -BriefingFailure host -BriefingFailureRelease
+#   .\test_lan.ps1 -Game d1 -Briefings -BriefingCase reading
+#   .\test_lan.ps1 -Game d1 -Briefings -BriefingCase partial_skip
+#   .\test_lan.ps1 -Game d2 -BriefingCase missing_movie  # No pla.mve/other-h.mvl installed
+#   .\test_lan.ps1 -Game d1 -BriefingCase observer_host
+#   .\test_lan.ps1 -Game d1 -BriefingCase rejoin
+#   .\test_lan.ps1 -Game d1 -BriefingCase first_join
+#   .\test_lan.ps1 -Game d2 -InitialLevel 8 -SecretDeath -AllowSecretWarps -NoCoopQol
+#   .\test_lan.ps1 -Game d2 -InitialLevel 8 -SecretDying -AllowSecretWarps -NoCoopQol
+#   .\test_lan.ps1 -Game d2 -InitialLevel 8 -SecretReactorDeath -AllowSecretWarps -NoCoopQol
+#   .\test_lan.ps1 -Game d2 -InitialLevel 8 -SecretCountdown -AllowSecretWarps -NoCoopQol
+#   .\test_lan.ps1 -Game d2 -InitialLevel 8 -SecretEndgame -AllowSecretWarps -NoCoopQol
+#   .\test_lan.ps1 -Game d2 -InitialLevel 8 -SecretEndgameModal -AllowSecretWarps -NoCoopQol
+#   .\test_lan.ps1 -Game d2 -InitialLevel 8 -SecretEndgameHostLeaves -AllowSecretWarps -NoCoopQol
+#   .\test_lan.ps1 -Game d2 -InitialLevel 8 -NormalReactorDeath -AllowSecretWarps -NoCoopQol
+#   .\test_lan.ps1 -Game d2 -InitialLevel 8 -NormalCountdown -AllowSecretWarps -NoCoopQol
+#   .\test_lan.ps1 -Game d2 -InitialLevel 8 -SecretWorld -AllowSecretWarps -NoCoopQol
+#   .\test_lan.ps1 -Game d2 -InitialLevel 8 -SecretCrossRestore -AllowSecretWarps -NoCoopQol
+#   .\test_lan.ps1 -Game d2 -InitialLevel 8 -TravelGate -AllowSecretWarps -NoCoopQol
 #   .\test_lan.ps1 -UseRelay
 #   .\test_lan.ps1 -SkipBuild
 
@@ -49,11 +75,133 @@ param(
     [switch]$SpewRecovery,
     [switch]$SpewPickup,
     [switch]$SpewPartialPickup,
+    [switch]$Briefings,
+    [ValidateSet("force", "host_deadline", "overall_deadline", "release_delay", "overlay_touch", "paused_force", "paused_deadline", "paused_overall", "reading", "partial_skip", "missing_movie", "observer_host", "rejoin", "first_join")]
+    [string]$BriefingCase = "force",
+    [switch]$BriefingRestore,
+    [ValidateSet("host", "client")]
+    [string]$BriefingFailure,
+    [switch]$BriefingFailurePaused,
+    [switch]$BriefingFailureRelease,
+    [switch]$CountdownSave,
+    [Alias("RestoreParticipantLoss")]
+    [ValidateSet("client", "host", "stalled", "sync_stalled", "load_client", "load_host")]
+    [string]$RestoreFailure,
+    [switch]$RestoreLossResume,
+    [switch]$LevelRestart,
+    [switch]$CoopRewind,
+    [switch]$ClientRewind,
+    [switch]$SecretRewind,
+    [switch]$SecretRestart,
+    [switch]$AllowSecretWarps,
+    [switch]$NoCoopQol,
+    [switch]$WorldRestore,
+    [switch]$SecretWorld,
+    [switch]$SecretRevisit,
+    [switch]$SecretRollback,
+    [switch]$SecretPhysical,
+    [switch]$SecretDeath,
+    [switch]$SecretDying,
+    [switch]$SecretReactorDeath,
+    [switch]$DestroyedGearRestore,
+    [switch]$SecretCountdown,
+    [switch]$CoopDeath,
+    [switch]$SecretSaveRestore,
+    [switch]$SecretCrossRestore,
+    [switch]$SecretColdResume,
+    [switch]$NormalPhysical,
+    [switch]$NormalExitRace,
+    [switch]$NormalReactorDeath,
+    [switch]$NormalCountdown,
+    [switch]$SecretExitRace,
+    [switch]$SecretAdvance,
+    [switch]$SecretEndgame,
+    [switch]$SecretEndgameModal,
+    [switch]$SecretEndgameHostLeaves,
+    [switch]$VerifyAutomationFailure,
+    [switch]$TravelGate,
     [int]$TimeoutSeconds = 120
 )
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
+if ($ClientRewind) { $CoopRewind = $true }
+if ($RestoreLossResume -and -not $RestoreFailure) { throw "RestoreLossResume requires RestoreFailure" }
+if ($RestoreFailure -and ($MissionFile -or $InitialLevel -ne 1 -or $CountdownSave -or $CoopRewind -or
+        $LevelRestart -or $SecretWorld -or $SecretPhysical -or $SecretSaveRestore -or $SecretRewind -or $SecretRestart)) {
+    throw "Restore participant loss requires the base mission at level 1; run other save/travel scenarios separately"
+}
+if ($SecretRewind -or $SecretRestart) { $SecretPhysical = $SecretWorld = $true }
+if ($BriefingRestore) { $Briefings = $true }
+if ($BriefingFailurePaused -and (-not $BriefingFailure -or $Game -ne 'd2')) {
+    throw "BriefingFailurePaused requires D2 with BriefingFailure host or client and other-h.mvl installed"
+}
+if ($BriefingFailureRelease -and (-not $BriefingFailure -or $BriefingFailurePaused)) {
+    throw "BriefingFailureRelease requires BriefingFailure host or client; run paused-video loss separately"
+}
+if ($BriefingFailure) {
+    if ($InitialLevel -ne 1 -or $MissionFile -or $BriefingCase -ne 'force' -or $BriefingRestore -or $RestoreFailure) {
+        throw "BriefingFailure requires a fresh base-mission level 1 briefing; run other scenarios separately"
+    }
+    $Briefings = $true
+}
+if ($BriefingCase -like "paused_*") {
+    if ($Game -ne "d2" -or $InitialLevel -ne 1 -or $MissionFile) { throw "Paused-video cases require D2 Counterstrike level 1 with other-h.mvl installed" }
+    $Briefings = $true
+}
+if ($BriefingCase -eq "missing_movie") {
+    if ($Game -ne "d2" -or $InitialLevel -ne 1 -or $MissionFile) { throw "Missing-movie coverage requires D2 Counterstrike level 1 without pla.mve installed" }
+    $Briefings = $true
+}
+if ($BriefingCase -eq "observer_host") {
+    if ($InitialLevel -ne 1 -or $MissionFile -or $BriefingRestore) { throw "Observer-host coverage requires a fresh base-mission level 1 briefing" }
+    $Briefings = $true
+}
+if ($BriefingCase -in @("rejoin", "first_join")) {
+    if ($InitialLevel -ne 1 -or $MissionFile -or $BriefingRestore) { throw "Briefing rejoin requires a fresh base-mission level 1" }
+    $Briefings = $true
+}
+if ($SecretRevisit) { $SecretWorld = $true }
+if ($SecretRollback) { $SecretWorld = $true }
+if ($DestroyedGearRestore) { $SecretReactorDeath = $true }
+if ($SecretDeath -or $SecretDying -or $SecretReactorDeath -or $SecretCountdown) { $SecretPhysical = $true }
+if ($SecretPhysical) { $SecretWorld = $true }
+if ($SecretColdResume) { $SecretSaveRestore = $Briefings = $true }
+if ($SecretCrossRestore) { $SecretSaveRestore = $true }
+if ($SecretSaveRestore) { $SecretPhysical = $SecretWorld = $true }
+if ($NormalExitRace -or $NormalReactorDeath -or $NormalCountdown) { $NormalPhysical = $true }
+if ($SecretAdvance) { $SecretExitRace = $Briefings = $true }
+if ($SecretEndgameHostLeaves) { $SecretEndgameModal = $true }
+if ($SecretEndgameModal) { $SecretEndgame = $true }
+if ($SecretEndgame) { $SecretExitRace = $Briefings = $true }
+if ($SecretEndgame -and $SecretAdvance) { throw "Run secret campaign advancement and ending separately" }
+if ($Briefings -and $Game -eq "d2" -and $InitialLevel -eq 8 -and -not $MissionFile -and $BriefingCase -ne "force") {
+    throw "Counterstrike level 8 has no authored briefing; use level 1 to exercise briefing timing and input cases"
+}
+if ($SecretPhysical -and $SecretRollback) { throw "Run physical-trigger and rollback fixtures separately" }
+if (($SecretRewind -or $SecretRestart) -and ($Game -ne 'd2' -or $InitialLevel -ne 8 -or -not $AllowSecretWarps -or
+        $CoopRewind -or $LevelRestart -or $CountdownSave -or $SecretSaveRestore -or $SecretDeath -or
+        $SecretDying -or $SecretReactorDeath -or $SecretCountdown)) {
+    throw "Secret rewind/restart requires D2 level 8 with secret warps enabled; run other save, restart and death scenarios separately"
+}
+if ($SecretRewind -and $SecretRestart) { throw "Run secret rewind and secret restart separately" }
+if (($SecretReactorDeath -or $SecretCountdown) -and ($SecretRevisit -or $SecretDying -or $SecretSaveRestore -or $SecretDeath)) {
+    throw "Run destroyed-secret scenarios separately from revisit, save and other death fixtures"
+}
+if ($SecretReactorDeath -and $SecretCountdown) { throw "Run reactor teammate death and whole-team countdown expiry separately" }
+if (@(@($NormalExitRace, $NormalReactorDeath, $NormalCountdown) | Where-Object { $_ }).Count -gt 1) {
+    throw "Run normal exit races, reactor teammate death and whole-team countdown expiry separately"
+}
+if ($CoopDeath -and $NoCoopQol -and $Game -eq "d1") { throw "D1 death recovery coverage requires co-op QoL" }
+if ($SpewRecovery -and $NoCoopQol -and ($Game -ne "d2" -or -not $AllowSecretWarps)) {
+    throw "SpewRecovery requires co-op QoL or D2 secret warps to enable recovery"
+}
+if (@(@($WorldRestore, $SecretWorld, $TravelGate, $NormalPhysical, $SecretExitRace, $CoopDeath) | Where-Object { $_ }).Count -gt 1) {
+    throw "Run WorldRestore, SecretWorld, TravelGate, NormalPhysical, SecretExitRace and CoopDeath separately; each owns the mine state"
+}
+if (($NormalPhysical -or $SecretExitRace) -and ($Game -ne "d2" -or $InitialLevel -ne 8 -or -not $AllowSecretWarps)) {
+    throw "Physical exit race fixtures require D2 level 8 with secret warps enabled"
+}
 
 . "$PSScriptRoot\..\helpers\test_helpers.ps1"
 
@@ -177,6 +325,9 @@ function Start-DeviceGameAutomation {
         return $false
     }
 
+    # The shared resolver reads optional JSON properties under normal PowerShell semantics
+    $scriptPath = & { Set-StrictMode -Off; Resolve-TestScript -ScriptPath $scriptPath -GameId $Game }
+
     Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
         "push", $scriptPath, "/data/local/tmp/$ScriptName"
     ) -Seconds 30 | Out-Null
@@ -186,6 +337,12 @@ function Start-DeviceGameAutomation {
     $copied = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
         "shell", "run-as", $PACKAGE, "ls", "files/$ScriptName"
     ) -Seconds 5
+    if (-not $copied) {
+        # A slow directory read must not restage or relaunch an already copied script
+        $copied = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+            "shell", "run-as", $PACKAGE, "ls", "files/$ScriptName"
+        ) -Seconds 15
+    }
     if (-not $copied -or $copied -notmatch [regex]::Escape($ScriptName)) {
         Write-Status "FAIL: could not stage $ScriptName on $Serial" "Red"
         return $false
@@ -234,6 +391,349 @@ function Write-DeviceAutomationDiagnostics {
             Write-Status "    $_" "Gray"
         }
     }
+}
+
+function Invoke-CoopRewindScenario {
+    param([switch]$FromClient)
+
+    $rewindPhases = if ($FromClient) { @('seed', 'client_record', 'reactor', 'client_requests') } else { @('seed', 'record', 'reactor', 'mutate', 'rewind', 'verify') }
+    foreach ($phase in $rewindPhases) {
+        $hostScript = if ($phase -eq 'reactor') { 'test_coop_countdown_save_seed.jsonc' } else { "test_coop_rewind_$phase.jsonc" }
+        $clientScript = if ($phase -eq 'rewind') { 'test_coop_countdown_save_wait.jsonc' } else { $hostScript }
+        if ($phase -eq 'client_requests') {
+            $hostScript = 'test_coop_rewind_client_host.jsonc'
+            $clientScript = 'test_coop_rewind_client_peer.jsonc'
+        }
+        # Two sequential 180-second restore waits, request waits and verification
+        $phaseTimeout = if ($phase -eq 'client_requests') { 420 } else { 180 }
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript $hostScript `
+                    -SecondarySerial $EMU2 -SecondaryScript $clientScript `
+                    -Description "Natural co-op rewind: $phase" -TimeoutSec $phaseTimeout)) { throw "Co-op rewind $phase failed" }
+    }
+    return $true
+}
+
+function Invoke-BriefingRejoinScenario {
+    param([switch]$FirstJoin)
+
+    if ($FirstJoin) {
+        if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_briefing_solo_start.jsonc')) {
+            throw 'Could not start the host briefing before the first join'
+        }
+        if (-not (Wait-ForCondition -Description 'Host starts its briefing before admitting any peers' -TimeoutSec 60 -PollMs 500 -Condition {
+                    $result = Get-DeviceAutomationResult -Serial $EMU1
+                    if ($result -and $result.result -eq 'FAIL') { throw 'Solo host briefing startup failed' }
+                    return $result -and $result.result -eq 'PASS'
+                })) { throw 'Host did not begin its solo briefing' }
+    }
+    if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_briefing_rejoin_prepare.jsonc')) {
+        throw 'Could not enable briefing reconnect diagnostics'
+    }
+    if (-not (Wait-ForCondition -Description 'Briefing reconnect diagnostics enabled' -TimeoutSec 10 -PollMs 500 -Condition {
+                $result = Get-DeviceAutomationResult -Serial $EMU1
+                return $result -and $result.result -eq 'PASS'
+            })) { throw 'Briefing reconnect diagnostics did not initialize' }
+    $initial = (Get-GameIntrospection -Serial $EMU1).coop_briefing
+    $generation = $initial.generation
+    $seconds = $initial.seconds_remaining
+    if (-not $FirstJoin) {
+        Adb-Dev-Timeout -Serial $EMU2 -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) -Seconds 10 | Out-Null
+        if (-not (Wait-ForCondition -Description 'Host removes the disconnected reader without ending its briefing' -TimeoutSec 40 -PollMs 500 -Condition {
+                    $state = Get-GameIntrospection -Serial $EMU1
+                    return $state -and $state.coop_briefing.phase -eq 6 -and
+                    $state.coop_briefing.participants -eq 1 -and $state.coop_briefing.presenting -and $state.time_paused
+                })) { throw 'Host did not remain in its briefing after reader loss' }
+    }
+    $before = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('logcat', '-d', '-s', 'DXX-DLOG:D') -Seconds 10
+    $deferredBefore = @($before -split '\r?\n' | Where-Object { $_ -match 'network join deferred for coop transition' }).Count
+    if (-not $FirstJoin -and -not (Start-SetupActivity -Serial $EMU2)) { throw 'Could not restart the returning player' }
+    Send-MpCommand -Serial $EMU2 -Command 'lan_launch' -Extras $joinExtras
+    if (-not (Wait-ForCondition -Description 'Returning player is deferred while the original briefing timer continues' -TimeoutSec 50 -PollMs 1000 -Condition {
+                $state = Get-GameIntrospection -Serial $EMU1
+                if (-not $state) { return $false }
+                if ($state.coop_briefing.generation -ne $generation -or $state.coop_briefing.phase -ne 6 -or
+                    $state.coop_briefing.participants -ne 1 -or -not $state.time_paused) {
+                    throw 'A reconnect changed the active briefing generation, roster or phase'
+                }
+                $output = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('logcat', '-d', '-s', 'DXX-DLOG:D') -Seconds 10
+                $count = @($output -split '\r?\n' | Where-Object { $_ -match 'network join deferred for coop transition' }).Count
+                return $count -gt $deferredBefore -and $state.coop_briefing.seconds_remaining -lt $seconds
+            })) { throw 'The returning player did not reach the briefing join guard' }
+    if (-not (Start-DeviceGameAutomation -Serial $EMU2 -ScriptName 'test_coop_briefing_rejoin_client.jsonc') -or
+        -not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_briefing_rejoin_host.jsonc')) {
+        throw 'Could not arm briefing rejoin verification'
+    }
+    if (-not (Wait-ForCondition -Description 'Host finishes the original briefing with the returning player still deferred' -TimeoutSec 15 -PollMs 500 -Condition {
+                $result = Get-DeviceAutomationResult -Serial $EMU1
+                if ($result -and $result.result -eq 'FAIL') { throw 'Host briefing completion failed' }
+                return $result -and $result.result -eq 'PASS'
+            })) { throw 'Host did not finish its original briefing' }
+    if (-not (Wait-ForCondition -Description 'Returning player joins the settled mine without replaying briefings' -TimeoutSec 80 -PollMs 1000 -Condition {
+                $result = Get-DeviceAutomationResult -Serial $EMU2
+                if ($result -and $result.result -eq 'FAIL') {
+                    Write-DeviceAutomationDiagnostics -Serial $EMU2
+                    throw 'Returning player replayed or stalled in briefings'
+                }
+                if ($result -and $result.result -eq 'PASS') { return $true }
+                Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_late_join_accept.jsonc' | Out-Null
+                return $false
+            })) { throw 'Returning player did not enter the committed mine' }
+    $hostState = Get-GameIntrospection -Serial $EMU1
+    if (-not $hostState -or $hostState.coop_briefing.generation -ne $generation -or
+        $hostState.coop_briefing.active -or $hostState.time_paused -or (Get-IntroNumConnected -Intro $hostState) -ne 2) {
+        throw 'Rejoin changed the settled host briefing or failed to restore the team'
+    }
+    return $true
+}
+
+function Invoke-BriefingFailureScenario {
+    $lost = if ($BriefingFailure -eq 'host') { $EMU1 } else { $EMU2 }
+    $survivor = if ($BriefingFailure -eq 'host') { $EMU2 } else { $EMU1 }
+    $scriptName = if ($BriefingFailure -eq 'host') { 'test_coop_briefing_host_lost.jsonc' } else { 'test_coop_briefing_client_lost.jsonc' }
+    if ($BriefingFailurePaused) {
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_briefing_pause_host.jsonc' `
+                    -SecondarySerial $EMU2 -SecondaryScript 'test_coop_briefing_pause_host.jsonc' `
+                    -Description 'Both peers pause their authored briefing videos before participant loss' -TimeoutSec 25)) {
+            throw 'Both peers must pause a real briefing movie before interruption'
+        }
+        if ($BriefingFailure -eq 'client') { $scriptName = 'test_coop_briefing_paused_client_lost.jsonc' }
+    }
+    if ($BriefingFailureRelease) {
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_briefing_release_loss_prepare_host.jsonc' `
+                    -SecondarySerial $EMU2 -SecondaryScript 'test_coop_briefing_release_loss_prepare_client.jsonc' `
+                    -Description 'Both presentations close while the client waits for final release' -TimeoutSec 25)) {
+            throw 'Both peers must reach the final release handshake before interruption'
+        }
+        if ($BriefingFailure -eq 'client') { $scriptName = 'test_coop_briefing_release_client_lost.jsonc' }
+    }
+    $gamePid = (Adb-Dev-Timeout -Serial $survivor -AdbArgs @('shell', 'pidof', "${PACKAGE}:game") -Seconds 5).Trim()
+    if (-not $gamePid -or -not (Start-DeviceGameAutomation -Serial $survivor -ScriptName $scriptName)) {
+        throw 'Could not arm briefing participant-loss verification'
+    }
+    if ($BriefingFailureRelease) {
+        $hostState = Get-GameIntrospection -Serial $EMU1
+        $clientState = Get-GameIntrospection -Serial $EMU2
+        if (-not $hostState -or -not $clientState -or -not $hostState.time_paused -or -not $clientState.time_paused -or
+            -not $hostState.coop_briefing.active -or -not $clientState.coop_briefing.active -or
+            $hostState.coop_briefing.phase -ne 0 -or $hostState.coop_briefing.release_acknowledged -ne 1 -or
+            $clientState.coop_briefing.phase -ne 9 -or $clientState.coop_briefing.release_packets_dropped -lt 1) {
+            throw 'The final release hold expired before participant loss could be injected'
+        }
+    }
+    $lossPhase = if ($BriefingFailureRelease) { 'waiting for final release' } else { 'reading briefings' }
+    Write-Status "Force-stopping briefing $BriefingFailure while peers are $lossPhase" 'Yellow'
+    Adb-Dev-Timeout -Serial $lost -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) -Seconds 10 | Out-Null
+    if (-not (Wait-ForCondition -Description "Briefing $BriefingFailure loss has a finite, usable outcome" -TimeoutSec 90 -PollMs 500 -Condition {
+                $result = Get-DeviceAutomationResult -Serial $survivor
+                if ($result -and $result.result -eq 'FAIL') {
+                    Write-DeviceAutomationDiagnostics -Serial $survivor
+                    throw 'Briefing participant-loss automation failed'
+                }
+                return $result -and $result.result -eq 'PASS'
+            })) { throw 'Briefing participant loss did not settle' }
+    if ($BriefingFailure -eq 'host') {
+        if (-not (Start-DeviceGameAutomation -Serial $survivor -ScriptName 'test_coop_restore_load_error_new_game.jsonc')) {
+            throw 'Could not start same-process new game after briefing loss'
+        }
+        if (-not (Wait-ForCondition -Description 'survivor starts a new game without restarting the app' -TimeoutSec 180 -PollMs 1000 -Condition {
+                    $result = Get-DeviceAutomationResult -Serial $survivor
+                    if ($result -and $result.result -eq 'FAIL') {
+                        Write-DeviceAutomationDiagnostics -Serial $survivor
+                        throw 'New game after briefing loss failed'
+                    }
+                    return $result -and $result.result -eq 'PASS'
+                })) { throw 'Survivor could not start a new game' }
+    }
+    $retryPid = (Adb-Dev-Timeout -Serial $survivor -AdbArgs @('shell', 'pidof', "${PACKAGE}:game") -Seconds 5).Trim()
+    if ($retryPid -ne $gamePid) { throw 'Briefing loss unexpectedly replaced the surviving game process' }
+    return $true
+}
+
+function Invoke-RestoreFailureScenario {
+    $loadError = $RestoreFailure -like 'load_*'
+    $syncStalled = $RestoreFailure -eq 'sync_stalled'
+    $loaderFailure = $loadError -or $syncStalled
+    $failedLoader = if ($RestoreFailure -eq 'load_host') { $EMU1 } else { $EMU2 }
+    foreach ($phase in @('seed', 'save', 'mutate', 'arm')) {
+        $hostScript = if ($phase -eq 'arm') { 'test_coop_restore_loss_arm.jsonc' } else { "test_coop_countdown_save_$phase.jsonc" }
+        $clientScript = if ($phase -eq 'save') { 'test_coop_countdown_save_idle.jsonc' } else { $hostScript }
+        if ($phase -eq 'arm' -and $loadError) {
+            if ($failedLoader -eq $EMU1) { $hostScript = 'test_coop_restore_load_error_arm.jsonc' } else { $clientScript = 'test_coop_restore_load_error_arm.jsonc' }
+        }
+        if ($phase -eq 'arm' -and $syncStalled) {
+            $hostScript = $clientScript = 'test_coop_restore_sync_stall_arm.jsonc'
+        }
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript $hostScript `
+                    -SecondarySerial $EMU2 -SecondaryScript $clientScript `
+                    -Description "Restore failure: $phase" -TimeoutSec 60)) { throw "Restore failure $phase failed" }
+    }
+    $gameDir = if ($Game -eq 'd1') { 'd1x-redux' } else { 'd2x-redux' }
+    $missionKey = if ($Game -eq 'd1') { 'default' } else { 'd2' }
+    $saveName = $CALLSIGN1.ToLowerInvariant()
+    $save = "files/$gameDir/Players/save_sets/coop/$missionKey/$saveName.mg0"
+    $saveHash = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'run-as', $PACKAGE, 'sha256sum', $save) -Seconds 10
+    if (-not $saveHash -or $saveHash -notmatch '^[a-f0-9]{64} ') { throw 'Missing manual save before loss test' }
+    if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName 'test_coop_restore_loss_start.jsonc')) { throw 'Could not start restore' }
+    if (-not (Wait-ForCondition -Description 'both peers frozen before failure' -TimeoutSec 180 -PollMs 500 -Condition {
+                $script:lossHost = Get-GameIntrospection -Serial $EMU1
+                $script:lossClient = Get-GameIntrospection -Serial $EMU2
+                if (-not $script:lossHost -or -not $script:lossClient) { return $false }
+                return ($loaderFailure -or ($script:lossHost.coop_restore.local_loaded -and $script:lossClient.coop_restore.local_loaded)) -and
+                $script:lossHost.coop_restore.barrier_phase -eq 'loading' -and $script:lossClient.coop_restore.barrier_phase -eq 'loading' -and
+                $script:lossHost.coop_restore.barrier_visit -eq 2 -and $script:lossClient.coop_restore.barrier_visit -eq 2 -and
+                $script:lossHost.time_paused -and $script:lossClient.time_paused
+            })) { throw 'Restore did not reach the loaded injection point' }
+    $stalled = $RestoreFailure -eq 'stalled' -or $syncStalled
+    $lost = if ($RestoreFailure -eq 'client') { $EMU2 } else { $EMU1 }
+    $survivors = if ($stalled -or $loadError) { @($EMU1, $EMU2) } elseif ($RestoreFailure -eq 'client') { @($EMU1) } else { @($EMU2) }
+    foreach ($entry in @(@('host', $script:lossHost), @('client', $script:lossClient))) {
+        $stage = if ($loaderFailure) { 'before-error' } else { 'loaded' }
+        $entry[1] | ConvertTo-Json -Depth 30 | Set-Content -Encoding utf8 (Join-Path $REPO_ROOT "temp/coop-restore-loss-$Game-$RestoreFailure-$($entry[0])-$stage.json")
+    }
+    if ($loadError) {
+        Write-Status "Waiting for the native load failure on $failedLoader" 'Yellow'
+    } elseif ($stalled) {
+        Write-Status 'Leaving both peers connected until the restore deadline' 'Yellow'
+    } else {
+        Write-Status "Force-stopping $RestoreFailure after both peers loaded visit 2" 'Yellow'
+        Adb-Dev-Timeout -Serial $lost -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) -Seconds 10 | Out-Null
+    }
+    $script:lossFinals = @{}
+    if (-not (Wait-ForCondition -Description 'all survivors exit failed restore without resuming the mine' -TimeoutSec 90 -PollMs 1000 -Condition {
+                $ready = $true
+                foreach ($survivor in $survivors) {
+                    $intro = Get-GameIntrospection -Serial $survivor
+                    if (-not $intro) { $ready = $false; continue }
+                    if ($intro.in_game -and -not $intro.time_paused) { throw "Survivor resumed gameplay during failed restore: $survivor" }
+                    if ($intro.in_game -or $intro.coop_restore.transfer_busy -or $intro.coop_restore.barrier_phase -ne 'idle' -or
+                        -not $intro.PSObject.Properties['menu'] -or $intro.menu.title -ne 'Co-op restore interrupted') { $ready = $false; continue }
+                    $script:lossFinals[$survivor] = $intro
+                }
+                return $ready
+            })) { throw 'A survivor remained stuck after restore failure' }
+    $deadlineSeen = $false
+    foreach ($survivor in $survivors) {
+        $final = $script:lossFinals[$survivor]
+        $reason = if ($RestoreFailure -eq 'host') { 'The host disconnected during restore' } else { 'A player disconnected during restore' }
+        if ($loaderFailure) {
+            $reason = if ($survivor -eq $failedLoader) { 'This player could not load the saved mine' } else { 'Another player could not finish restoring' }
+            if ($syncStalled -and $survivor -eq $failedLoader) {
+                $reason = 'A player did not finish restoring in time'
+                $deadlineSeen = $true
+            }
+            if ($final.menu.subtitle -notlike "$reason*") { throw "Missing coordinated load-error reason on $survivor" }
+        } elseif ($stalled) {
+            $deadlineSeen = $deadlineSeen -or $final.menu.subtitle.StartsWith('A player did not finish restoring in time')
+            if ($final.menu.subtitle -notmatch '^(A player did not finish restoring in time|Another player could not finish restoring|The host disconnected during restore|A player disconnected during restore)') {
+                throw 'Unexpected connected-stall failure reason'
+            }
+        } elseif ($final.menu.subtitle -notlike "$reason*") { throw 'Missing restore failure reason' }
+        if ($final.menu.subtitle -notlike '*Host or join a saved co-op game to continue*') { throw 'Missing recovery instructions' }
+        $artifactCase = if ($stalled -or $loadError) { "$RestoreFailure-$survivor" } else { $RestoreFailure }
+        $final | ConvertTo-Json -Depth 30 | Set-Content -Encoding utf8 (Join-Path $REPO_ROOT "temp/coop-restore-loss-$Game-$artifactCase-final.json")
+        $nativeLog = Adb-Dev -Serial $survivor -AdbArgs @('logcat', '-d', '-s', 'DXX-DLOG:D', 'DXX:I', 'DXX-MP:I')
+        $nativeLog | Set-Content -Encoding utf8 (Join-Path $REPO_ROOT "temp/coop-restore-failure-$Game-$artifactCase-native.log")
+        $loadedPattern = if ($syncStalled) { '0' } elseif ($loadError) { if ($survivor -eq $failedLoader) { '0' } else { '[01]' } } else { '1' }
+        if ($nativeLog -notmatch "restore barrier failed: visit=2 phase=1 local_loaded=$loadedPattern paused=1 clock_drift=0") { throw 'Missing frozen-clock barrier failure evidence' }
+        if ($syncStalled) {
+            if ($survivor -eq $failedLoader) {
+                if ($nativeLog -notmatch 'restore test entered synchronous loader wait: visit=2 player=1' -or
+                    $nativeLog -notmatch 'restore synchronous loader deadline expired: visit=2 local_loaded=0 paused=1') { throw 'Missing real synchronous-loader deadline evidence' }
+            } elseif ($nativeLog -notmatch 'restore test holding host apply after peer acknowledgement: visit=2') { throw 'Missing delayed host application evidence' }
+        }
+        if ($nativeLog -match 'host migration: player|Host migration: notifying|Host migration: proxy') { throw 'Unfinished restore promoted a replacement host' }
+        if ($stalled -and $nativeLog -match 'MPDIAG: timeout_check: player') { throw 'Connected stall was masked by a network timeout' }
+    }
+    if ($stalled -and -not $deadlineSeen) { throw 'Connected stall did not exercise the restore deadline' }
+    if ($loaderFailure) {
+        $gamePid = (Adb-Dev-Timeout -Serial $failedLoader -AdbArgs @('shell', 'pidof', "${PACKAGE}:game") -Seconds 5).Trim()
+        if (-not $gamePid) { throw 'Failed loader process did not survive' }
+        $files = Adb-Dev-Timeout -Serial $failedLoader -AdbArgs @('shell', 'run-as', $PACKAGE, 'ls', 'files/tombstones') -Seconds 5
+        $reports = @($files -split '\r?\n' | ForEach-Object { $_.Trim() } | Where-Object { $_ -match "^crash_error_restore_.*_${gamePid}_\d+\.txt$" })
+        if ($reports.Count -ne 1) { throw 'Expected one native load-error report' }
+        $report = Adb-Dev-Timeout -Serial $failedLoader -AdbArgs @('shell', 'run-as', $PACKAGE, 'cat', "files/tombstones/$($reports[0])") -Seconds 5
+        $report | Set-Content -Encoding utf8 (Join-Path $REPO_ROOT "temp/coop-restore-$Game-$RestoreFailure-report.txt")
+        $failurePhase = if ($syncStalled) { 'co-op level synchronization interrupted' } else { 'injected core restore failure after hiding window' }
+        if ($report -notmatch 'Save restore failure' -or $report -notmatch 'Visible window: 1' -or
+            $report -notlike "*Failure phase: $failurePhase*") { throw 'Missing native load-error phase or visible recovery evidence' }
+    }
+    $afterHash = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @('shell', 'run-as', $PACKAGE, 'sha256sum', $save) -Seconds 10
+    if ($afterHash -ne $saveHash) { throw 'Failed restore changed the selected manual save' }
+    foreach ($survivor in $survivors) {
+        if (-not (Start-DeviceGameAutomation -Serial $survivor -ScriptName 'test_coop_restore_loss_dismiss.jsonc')) { throw 'Could not start failure dismissal' }
+        if (-not (Wait-ForCondition -Description 'failure message persists until acknowledged and returns to menus' -TimeoutSec 30 -PollMs 500 -Condition {
+                    $result = Get-DeviceAutomationResult -Serial $survivor
+                    if ($result -and $result.result -eq 'FAIL') { throw 'Failure dismissal automation failed' }
+                    return $result -and $result.result -eq 'PASS'
+                })) { throw 'Could not dismiss restore failure' }
+    }
+    Write-Status "Restore failure verified: $RestoreFailure, all survivors left frozen visit 2, manual save unchanged" 'Green'
+    if ($loaderFailure) {
+        if (-not (Start-DeviceGameAutomation -Serial $failedLoader -ScriptName 'test_coop_restore_load_error_new_game.jsonc')) { throw 'Could not start same-process recovery check' }
+        if (-not (Wait-ForCondition -Description 'failed loader can start a game without restarting the app' -TimeoutSec 180 -PollMs 1000 -Condition {
+                    $result = Get-DeviceAutomationResult -Serial $failedLoader
+                    if ($result -and $result.result -eq 'FAIL') { Write-DeviceAutomationDiagnostics -Serial $failedLoader; throw 'Same-process recovery failed' }
+                    return $result -and $result.result -eq 'PASS'
+                })) { throw 'Failed loader could not start a new game' }
+        $retryPid = (Adb-Dev-Timeout -Serial $failedLoader -AdbArgs @('shell', 'pidof', "${PACKAGE}:game") -Seconds 5).Trim()
+        if ($retryPid -ne $gamePid) { throw 'New game unexpectedly replaced the failed loader process' }
+        $retryIntro = Get-GameIntrospection -Serial $failedLoader
+        $retryIntro | ConvertTo-Json -Depth 30 | Set-Content -Encoding utf8 (Join-Path $REPO_ROOT "temp/coop-restore-$Game-$RestoreFailure-same-process.json")
+    }
+    if ($RestoreLossResume) {
+        foreach ($serial in @($EMU1, $EMU2)) {
+            if (-not (Start-SetupActivity -Serial $serial)) { throw 'Could not restart launcher after restore failure' }
+            Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', 'files/introspect.json') -Seconds 5 | Out-Null
+        }
+        if (-not (Set-DeviceCoopRestoreSlot -Serial $EMU1 -Slot 0)) { throw 'Could not select preserved manual save' }
+        Send-MpCommand -Serial $EMU1 -Command 'lan_launch' -Extras $hostExtras
+        if (-not (Wait-ForCondition -Description 'recovery host lobby' -TimeoutSec 60 -PollMs 500 -Condition {
+                    $intro = Get-GameIntrospection -Serial $EMU1
+                    return $intro -and $intro.is_network -and (Get-IntroNumConnected -Intro $intro) -eq 1
+                })) { throw 'Recovery host did not reach lobby' }
+        Send-MpCommand -Serial $EMU2 -Command 'lan_launch' -Extras $joinExtras
+        if (-not (Wait-ForCondition -Description 'cold recovery restores both players without briefing replay' -TimeoutSec 240 -PollMs 1000 -Condition {
+                    $ready = $true
+                    foreach ($serial in @($EMU1, $EMU2)) {
+                        $intro = Get-GameIntrospection -Serial $serial
+                        if (-not $intro -or -not $intro.in_game -or -not $intro.is_network -or (Get-IntroNumConnected -Intro $intro) -ne 2) { $ready = $false; continue }
+                        if ($intro.coop_briefing.presentations_started -ne 0) { throw 'Cold recovery replayed a briefing' }
+                        if ($intro.coop_restore.status -eq 'error') { throw 'Cold recovery restore failed' }
+                        if ($intro.coop_restore.transfer_busy -or $intro.coop_restore.status -ne 'idle' -or $intro.time_paused -or
+                            $intro.coop_restore.barrier_phase -ne 'done') { $ready = $false; continue }
+                        $slot = if ($serial -eq $EMU1) { 0 } else { 1 }
+                        if ($intro.current_level_num -ne 1 -or $intro.player.secondary_ammo[1] -ne 6 + $slot -or
+                            $intro.coop_briefing.enabled -ne [bool]$Briefings -or -not $intro.coop_briefing.suppressed_for_restore) {
+                            throw "Cold recovery lost inventory, world or presentation state on $serial"
+                        }
+                    }
+                    return $ready
+                })) { throw 'Cold recovery did not settle on both peers' }
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_countdown_save_verify.jsonc' `
+                    -SecondarySerial $EMU2 -SecondaryScript 'test_coop_countdown_save_verify.jsonc' `
+                    -Description 'Recovered reactor, inventory and simulation clocks' -TimeoutSec 30)) { throw 'Recovered countdown failed verification' }
+        if (-not (Wait-BidirectionalPdata -FirstSerial $EMU1 -FirstRemoteSlot 1 -SecondSerial $EMU2 -SecondRemoteSlot 0 `
+                    -Description 'network updates after cold recovery')) { throw 'Cold recovery did not resume networking' }
+        foreach ($serial in @($EMU1, $EMU2)) {
+            $intro = Get-GameIntrospection -Serial $serial
+            $intro | ConvertTo-Json -Depth 30 | Set-Content -Encoding utf8 (Join-Path $REPO_ROOT "temp/coop-restore-recovered-$Game-$RestoreFailure-$serial.json")
+        }
+        Write-Status 'Cold restore recovery verified on both peers' 'Green'
+    }
+    return $true
+}
+
+function Invoke-CoopLevelRestartScenario {
+    foreach ($phase in @('remember', 'seed', 'mutate', 'restart', 'verify')) {
+        $hostScript = if ($phase -eq 'seed') { 'test_coop_countdown_save_seed.jsonc' } else { "test_coop_level_restart_$phase.jsonc" }
+        $clientScript = if ($phase -eq 'restart') { 'test_coop_countdown_save_wait.jsonc' } elseif ($phase -eq 'remember') { 'test_coop_level_restart_remember_client.jsonc' } else { $hostScript }
+        # Cover the 180-second restore wait plus request and verification steps
+        $phaseTimeout = if ($phase -eq 'restart') { 210 } else { 180 }
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript $hostScript `
+                    -SecondarySerial $EMU2 -SecondaryScript $clientScript `
+                    -Description "Natural level checkpoint restart: $phase" -TimeoutSec $phaseTimeout)) { throw "Level restart $phase failed" }
+    }
+    return $true
 }
 
 function Invoke-GuidebotOwnershipScenario {
@@ -716,6 +1216,55 @@ function Invoke-HostMigrationScenario {
     return $true
 }
 
+function Assert-CoopWorldVisit {
+    param([uint64]$Expected)
+    if (-not (Wait-ForCondition -Description "Both peers use world visit $Expected" -TimeoutSec 30 -PollMs 500 -Condition {
+                foreach ($serial in @($EMU1, $EMU2)) {
+                    $intro = Get-GameIntrospection -Serial $serial
+                    if (-not $intro -or -not $intro.PSObject.Properties['coop_world_visit'] -or
+                        $intro.coop_world_visit.active -ne $Expected -or
+                        $intro.coop_world_visit.reserved -lt $Expected) { return $false }
+                }
+                return $true
+            })) { throw "World visit did not advance consistently to $Expected" }
+}
+
+function Assert-CoopGameplayFences {
+    if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_mdata_fence_arm.jsonc" `
+                -SecondarySerial $EMU2 -SecondaryScript "test_coop_mdata_fence_arm.jsonc" `
+                -Description "Arm released-world gameplay probes on both peers" -TimeoutSec 30)) {
+        throw "Could not arm gameplay probes on both peers"
+    }
+    if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_mdata_fence.jsonc" `
+                -SecondarySerial $EMU2 -SecondaryScript "test_coop_mdata_fence.jsonc" `
+                -Description "Both peers receive and reject old gameplay and end-level packets" -TimeoutSec 30)) {
+        throw "Released-world gameplay packet fences failed"
+    }
+    # Keep sending until both receivers have passed, even if one starts later
+    if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_packet_fences_verify.jsonc" `
+                -SecondarySerial $EMU2 -SecondaryScript "test_coop_packet_fences_verify.jsonc" `
+                -Description "Stop packet probes after both peers are ready" -TimeoutSec 30)) {
+        throw "Released-world packet probe verification failed"
+    }
+    # Preserve native evidence before a cold-restore phase clears logcat
+    foreach ($serial in @($EMU1, $EMU2)) {
+        $wireOutput = Adb-Dev -Serial $serial -AdbArgs @("logcat", "-d", "-s", "DXX")
+        $wireLines = if ($wireOutput) { $wireOutput -split '\r?\n' } else { @() }
+        foreach ($kind in @("MDATA", "PDATA", "ENDLEVEL")) {
+            $evidence = @($wireLines | Where-Object { $_ -match "Android $kind fence:" } | Select-Object -Last 1)
+            if ($evidence.Count -ne 1) { throw "Missing $kind fence evidence on $serial" }
+            Write-Status "  ${serial}: $($evidence[0])"
+        }
+        if ($serial -eq $EMU2) {
+            $metadataEvidence = @($wireLines | Where-Object {
+                    $_ -match 'Android game info fence: visit=\d+ rejected=10 preserved=1'
+                } | Select-Object -Last 1)
+            if ($metadataEvidence.Count -ne 1) { throw "Missing game info fence evidence on $serial" }
+            Write-Status "  ${serial}: $($metadataEvidence[0])"
+        }
+    }
+}
+
 function Invoke-PairedGameAutomation {
     param(
         [string]$PrimarySerial,
@@ -752,6 +1301,19 @@ function Invoke-PairedGameAutomation {
         Write-DeviceAutomationDiagnostics -Serial $PrimarySerial
         Write-DeviceAutomationDiagnostics -Serial $SecondarySerial
         return $false
+    }
+    return $true
+}
+
+function Invoke-CoopDeathScenario {
+    foreach ($dyingSerial in @($EMU2, $EMU1)) {
+        $survivorSerial = if ($dyingSerial -eq $EMU1) { $EMU2 } else { $EMU1 }
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_death_prepare.jsonc" `
+                    -SecondarySerial $EMU2 -SecondaryScript "test_coop_death_prepare.jsonc" `
+                    -Description "Record both ships before $dyingSerial dies")) { return $false }
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $dyingSerial -PrimaryScript "test_coop_death.jsonc" `
+                    -SecondarySerial $survivorSerial -SecondaryScript "test_coop_death_survivor.jsonc" `
+                    -Description "Respawn $dyingSerial while the other player keeps playing")) { return $false }
     }
     return $true
 }
@@ -1265,10 +1827,10 @@ try {
     Write-Status ""
     Write-Status "--- Phase 1: Launch SetupActivity on both emulators ---" "White"
 
-    if (-not (Start-SetupActivity -Serial $EMU1)) {
+    if (-not (Start-SetupActivity -Serial $EMU1 -TimeoutSec $TimeoutSeconds)) {
         Write-Status "FAIL: SetupActivity didn't start on $EMU1" "Red"; Cleanup; exit 1
     }
-    if (-not (Start-SetupActivity -Serial $EMU2)) {
+    if (-not (Start-SetupActivity -Serial $EMU2 -TimeoutSec $TimeoutSeconds)) {
         Write-Status "FAIL: SetupActivity didn't start on $EMU2" "Red"; Cleanup; exit 1
     }
     Write-Status "SetupActivity ready on both emulators" "Green"
@@ -1288,6 +1850,25 @@ try {
     }
     Start-Sleep -Seconds 1
     Write-Status "Normalized music preferences for LAN launch" "Green"
+
+    if ($Briefings -and -not $RestoreSavePath) {
+        foreach ($serial in @($EMU1, $EMU2)) {
+            Adb-Dev-Timeout -Serial $serial -AdbArgs @(
+                "shell", "run-as", $PACKAGE, "rm", "-f",
+                "files/d1x-redux/coop_restore_slot.txt", "files/d2x-redux/coop_restore_slot.txt"
+            ) -Seconds 10 | Out-Null
+        }
+    }
+
+    if ($BriefingRestore) {
+        foreach ($serial in @($EMU1, $EMU2)) {
+            Adb-Dev-Timeout -Serial $serial -AdbArgs @(
+                "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND",
+                "--es", "command", "write_bool_pref",
+                "--es", "key", "'dlog_coop desync_enabled'", "--ez", "value", "true"
+            ) -Seconds 10 | Out-Null
+        }
+    }
 
     if ($GuidebotSlotRemapRestore -or $SavedLateJoin) {
         Write-Status "Clearing prior coop saves before restore coverage"
@@ -1410,7 +1991,16 @@ try {
     if ($MISSION) {
         $hostExtras += @("--es", "mission", $MISSION)
     }
-    if ($GuidebotHostObserver) {
+    if ($Briefings) {
+        $hostExtras += @("--ez", "coop_briefings", "true")
+    }
+    if ($AllowSecretWarps) {
+        $hostExtras += @("--ez", "allow_secret_warps", "true")
+    }
+    if ($NoCoopQol) {
+        $hostExtras += @("--ez", "coop_qol", "false")
+    }
+    if ($GuidebotHostObserver -or $BriefingCase -eq 'observer_host') {
         $hostExtras += @("--ez", "host_observer", "true")
     }
     Send-MpCommand -Serial $EMU1 -Command "lan_launch" -Extras $hostExtras
@@ -1429,7 +2019,7 @@ try {
     # until the engine has actually entered its one-player network lobby before
     # starting the joiner's finite game-info request sequence.
     $script:hostReadyIntro = $null
-    $hostNetworkReady = Wait-ForCondition -Description "Host network lobby" -TimeoutSec 30 -PollMs 1000 -Condition {
+    $hostNetworkReady = Wait-ForCondition -Description "Host network lobby" -TimeoutSec $TimeoutSeconds -PollMs 1000 -Condition {
         $script:hostReadyIntro = Get-GameIntrospection -Serial $EMU1
         $connected = Get-IntroNumConnected -Intro $script:hostReadyIntro
         return (
@@ -1467,9 +2057,131 @@ try {
         $joinExtras += @("--es", "host_addr", $script:DirectHostIp, "--ei", "host_port", "42424")
         Write-Status "  Joiner target: $($script:DirectHostIp):42424 (direct LAN)"
     }
+    if ($BriefingCase -eq 'first_join') {
+        $testPassed = Invoke-BriefingRejoinScenario -FirstJoin
+        Write-Status '=== BRIEFING FIRST JOIN TEST PASSED ===' 'Green'
+        exit 0
+    }
     Send-MpCommand -Serial $EMU2 -Command "lan_launch" -Extras $joinExtras
 
     # -- Step 4: Verify multiplayer launch --
+    # Counterstrike level 8 has no authored pages, regardless of the travel fixture
+    if ($Briefings -and $Game -eq "d2" -and $InitialLevel -eq 8 -and -not $MissionFile) {
+        if (-not (Wait-ForCondition -Description "Level 8 empty briefings release both peers" -TimeoutSec 60 -PollMs 500 -Condition {
+                    foreach ($serial in @($EMU1, $EMU2)) {
+                        $intro = Get-GameIntrospection -Serial $serial
+                        if (-not $intro -or -not $intro.in_game -or $intro.time_paused -or
+                            (Get-IntroNumConnected -Intro $intro) -ne 2 -or $intro.coop_briefing.active) { return $false }
+                        if (-not $intro.coop_briefing.enabled -or $intro.coop_briefing.local_total -ne 0 -or
+                            $intro.coop_briefing.launch_reason -ne 1) { throw "Expected an empty authored briefing released when both peers are ready" }
+                    }
+                    return $true
+                })) { throw "Initial empty briefing did not release both peers" }
+    } elseif ($Briefings) {
+        $briefingReady = Wait-ForCondition -Description "Both peers reviewing briefings" -TimeoutSec $TimeoutSeconds -PollMs 500 -Condition {
+            $hostIntro = Get-GameIntrospection -Serial $EMU1
+            $clientIntro = Get-GameIntrospection -Serial $EMU2
+            if (-not $hostIntro -or -not $clientIntro -or
+                -not $hostIntro.PSObject.Properties['coop_briefing'] -or
+                -not $clientIntro.PSObject.Properties['coop_briefing']) { return $false }
+            return $hostIntro -and $clientIntro -and
+            $hostIntro.coop_briefing.phase -eq 6 -and $clientIntro.coop_briefing.phase -eq 6 -and
+            $hostIntro.coop_briefing.presenting -and $clientIntro.coop_briefing.presenting
+        }
+        if (-not $briefingReady) { throw "Both peers must enter the synchronized briefing phase" }
+        if ($BriefingCase -eq 'rejoin') {
+            $testPassed = Invoke-BriefingRejoinScenario
+            Write-Status '=== BRIEFING REJOIN TEST PASSED ===' 'Green'
+            exit 0
+        }
+        if ($BriefingFailure) {
+            $testPassed = Invoke-BriefingFailureScenario
+            Write-Status '=== BRIEFING PARTICIPANT LOSS TEST PASSED ===' 'Green'
+            exit 0
+        }
+        $briefingPrefix = if ($BriefingCase -eq "force") { "test_coop_briefing" } else { "test_coop_briefing_$BriefingCase" }
+        $briefingClientScript = if ($BriefingCase -eq "overlay_touch") { "test_coop_briefing_client.jsonc" } else { "${briefingPrefix}_client.jsonc" }
+        if ($BriefingCase -like "paused_*" -and $BriefingCase -ne "paused_overall") {
+            $briefingClientScript = "test_coop_briefing_paused_client.jsonc"
+            $briefingPrefix = if ($BriefingCase -eq "paused_force") { "test_coop_briefing_paused_force" } else { "test_coop_briefing_host_deadline" }
+        }
+        if (-not (Start-DeviceGameAutomation -Serial $EMU2 -ScriptName $briefingClientScript)) {
+            throw "Could not start client briefing verification"
+        }
+        if ($BriefingCase -like "paused_*") {
+            if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName "test_coop_briefing_pause_host.jsonc")) {
+                throw "Could not pause the host briefing video"
+            }
+            if (-not (Wait-ForCondition -Description "Client pauses the authored briefing video" -TimeoutSec 10 -PollMs 200 -Condition {
+                        $state = Get-GameIntrospection -Serial $EMU2
+                        return $state -and $state.movie.paused -and $state.movie.pause_window -and
+                        $state.coop_briefing.local_state -eq 2 -and $state.coop_briefing.phase -eq 6
+                    })) { throw "Client did not pause a real briefing video; install other-h.mvl for this case" }
+            $paused = Get-GameIntrospection -Serial $EMU2
+            if (-not (Wait-ForCondition -Description "Visible briefing timer advances while movie frames stay paused" -TimeoutSec 8 -PollMs 300 -Condition {
+                        $state = Get-GameIntrospection -Serial $EMU2
+                        if (-not $state) { return $false }
+                        if (-not $state.movie.paused -or -not $state.movie.pause_window -or $state.movie.frame -ne $paused.movie.frame) {
+                            throw "Movie resumed or advanced frames during the pause probe"
+                        }
+                        return $state.coop_briefing.seconds_remaining -le ($paused.coop_briefing.seconds_remaining - 3) -and
+                        $state.coop_briefing.status -match 'remaining'
+                    })) { throw "Briefing countdown stopped during movie pause" }
+            Write-Status "Paused movie frame $($paused.movie.frame) stayed fixed while the visible countdown advanced"
+            $hostPause = Get-DeviceAutomationResult -Serial $EMU1
+            if (-not $hostPause -or $hostPause.result -ne "PASS") { throw "Host video pause did not complete" }
+        }
+        if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName "${briefingPrefix}_host.jsonc")) {
+            throw "Could not start paired briefing verification"
+        }
+        if ($BriefingCase -eq "overlay_touch") {
+            # Use the actual fullscreen display, not the configurable render resolution
+            $touchIntro = Get-GameIntrospection -Serial $EMU1
+            $displayWidth = [int]$touchIntro.resolution.display_width
+            $displayHeight = [int]$touchIntro.resolution.display_height
+            if ($displayWidth -le 0 -or $displayHeight -le 0) { throw "Missing display dimensions for briefing touch probe" }
+            $unit = [Math]::Min($displayWidth, $displayHeight) * 0.05
+            # Centers from SkipButtonView and CoopBriefingOverlayView
+            $skipX = [int]($displayWidth - $unit * 1.4)
+            $skipY = [int]($unit * 1.4)
+            $launchX = [int]($unit * 4.5)
+            $launchY = [int]($displayHeight - $unit * 1.7)
+            Write-Status "Touch Skip twice at ($skipX, $skipY), then deliberately launch at ($launchX, $launchY)"
+            foreach ($tap in 1..2) {
+                Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "input", "tap", "$skipX", "$skipY") -Seconds 5 | Out-Null
+            }
+            $waiting = Wait-ForCondition -Description "Repeated Skip taps leave the host waiting" -TimeoutSec 5 -PollMs 200 -Condition {
+                $state = Get-GameIntrospection -Serial $EMU1
+                return $state -and $state.coop_briefing.phase -eq 6 -and $state.coop_briefing.can_launch -and
+                -not $state.coop_briefing.presenting -and $state.time_paused
+            }
+            if (-not $waiting) { throw "Skip did not enter the wait screen or its repeated tap launched the mine" }
+            # Ending a drag on Launch now must not count as a fresh press on that button
+            Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "input", "swipe", "$([int]($displayWidth / 2))", "$([int]($displayHeight / 2))", "$launchX", "$launchY", "350") -Seconds 5 | Out-Null
+            $state = Get-GameIntrospection -Serial $EMU1
+            if (-not $state.coop_briefing.can_launch -or $state.coop_briefing.phase -ne 6 -or -not $state.time_paused) {
+                throw "A drag onto Launch now incorrectly ended the briefing"
+            }
+            Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "input", "tap", "$launchX", "$launchY") -Seconds 5 | Out-Null
+        }
+        $briefingPassed = Wait-ForCondition -Description "Briefing $BriefingCase launch" -TimeoutSec 150 -PollMs 500 -Condition {
+            $hostResult = Get-DeviceAutomationResult -Serial $EMU1
+            $clientResult = Get-DeviceAutomationResult -Serial $EMU2
+            if (($hostResult -and $hostResult.result -eq "FAIL") -or
+                ($clientResult -and $clientResult.result -eq "FAIL")) {
+                throw "Briefing automation failed: host=$($hostResult | ConvertTo-Json -Compress) client=$($clientResult | ConvertTo-Json -Compress)"
+            }
+            return $hostResult -and $clientResult -and $hostResult.result -eq "PASS" -and $clientResult.result -eq "PASS"
+        }
+        if (-not $briefingPassed) { throw "Both peers must verify the briefing launch barrier" }
+        if ($BriefingCase -like "paused_*") {
+            if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_briefing_movie_closed.jsonc" `
+                        -SecondarySerial $EMU2 -SecondaryScript "test_coop_briefing_movie_closed.jsonc" `
+                        -Description "No movie or pause window survives launch on either peer" -TimeoutSec 20)) {
+                throw "Movie or modal pause window survived synchronized launch"
+            }
+        }
+    }
     #
     # Primary signal: both emulators reach in-game network state with two
     # connected players in game introspection.
@@ -1603,6 +2315,175 @@ try {
     }
 
     $testPassed = $true
+    if ($AllowSecretWarps -and $NoCoopQol) {
+        $testPassed = $false
+        if ($Game -ne "d2") { throw "Secret travel is a D2 option" }
+        foreach ($serial in @($EMU1, $EMU2)) {
+            $intro = Get-GameIntrospection -Serial $serial
+            if (-not $intro -or $intro.multiplayer.coop_qol -or -not $intro.multiplayer.allow_secret_warps -or
+                -not $intro.multiplayer.recovery.active) {
+                throw "Secret-world recovery must be active independently of the QoL switch"
+            }
+        }
+        $testPassed = $true
+    }
+
+    if ($CoopRewind) {
+        $testPassed = $false
+        $testPassed = Invoke-CoopRewindScenario -FromClient:$ClientRewind
+    }
+
+    if ($RestoreFailure) {
+        $testPassed = $false
+        $testPassed = Invoke-RestoreFailureScenario
+    }
+
+    if ($LevelRestart) {
+        $testPassed = $false
+        $testPassed = Invoke-CoopLevelRestartScenario
+    }
+
+    if ($CountdownSave -and -not $SecretSaveRestore) {
+        $testPassed = $false
+        foreach ($phase in @('seed', 'save', 'mutate', 'restore')) {
+            $hostScript = "test_coop_countdown_save_$phase.jsonc"
+            $clientScript = if ($phase -eq 'restore') { 'test_coop_countdown_save_wait.jsonc' } elseif ($phase -eq 'save') { 'test_coop_countdown_save_idle.jsonc' } else { $hostScript }
+            if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript $hostScript `
+                        -SecondarySerial $EMU2 -SecondaryScript $clientScript `
+                        -Description "Countdown save: $phase" -TimeoutSec 180)) { throw "Countdown save $phase failed" }
+        }
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_countdown_save_verify.jsonc' `
+                    -SecondarySerial $EMU2 -SecondaryScript 'test_coop_countdown_save_verify.jsonc' `
+                    -Description 'Restored countdown and inventory on both peers' -TimeoutSec 30)) { throw 'Countdown save verification failed' }
+        $testPassed = $true
+    }
+
+    if ($BriefingRestore -or $SecretRollback) {
+        $testPassed = $false
+        Assert-CoopWorldVisit -Expected 1
+        Assert-CoopGameplayFences
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_mdata_capacity.jsonc" `
+                    -SecondarySerial $EMU2 -SecondaryScript "test_coop_mdata_capacity.jsonc" `
+                    -Description "Maximum reliable payload retry and acknowledgment" -TimeoutSec 30)) {
+            throw "Maximum reliable payload did not survive a dropped initial send"
+        }
+        # Launcher restarts clear logcat; retain the native wire evidence first
+        foreach ($serial in @($EMU1, $EMU2)) {
+            $capacityOutput = Adb-Dev -Serial $serial -AdbArgs @('logcat', '-d', '-s', 'DXX:I')
+            $capacityLines = if ($capacityOutput) { $capacityOutput -split '\r?\n' } else { @() }
+            $capacityEvidence = @($capacityLines | Where-Object {
+                    $_ -match 'Android full MDATA: packet=\d+ bytes=476 dropped=1 acknowledged=1'
+                })
+            if ($capacityEvidence.Count -eq 0) { throw "Missing full-payload retry evidence on $serial" }
+            foreach ($line in $capacityEvidence) { Write-Status "  ${serial}: $line" }
+        }
+        $testPassed = $true
+    }
+
+    if ($BriefingRestore) {
+        $testPassed = $false
+        $beforeSave = Get-GameIntrospection -Serial $EMU1
+        if (-not $beforeSave -or -not $beforeSave.PSObject.Properties['coop_campaign']) {
+            throw "Missing campaign introspection before save"
+        }
+        $savedCampaign = $beforeSave.coop_campaign
+        if ($Game -eq "d2" -and ($savedCampaign.active_level -ne $InitialLevel -or $savedCampaign.generation -lt 1)) {
+            throw "D2 did not initialize its campaign context"
+        }
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_restore_resilience_seed.jsonc" `
+                    -SecondarySerial $EMU2 -SecondaryScript "test_coop_restore_resilience_seed.jsonc" `
+                    -Description "Inventory before briefing-enabled save" -TimeoutSec 30)) { throw "Could not seed restore inventory" }
+        if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName "test_coop_late_join_save.jsonc")) { throw "Could not start save" }
+        if (-not (Wait-ForCondition -Description "Briefing-enabled save completes" -TimeoutSec 30 -PollMs 500 -Condition {
+                    $result = Get-DeviceAutomationResult -Serial $EMU1
+                    return $result -and $result.result -eq "PASS"
+                })) { throw "Save failed" }
+        $slot = Get-DeviceLatestCoopAutosaveSlot -Serial $EMU1
+        if ($slot -lt 0) { throw "Missing saved campaign" }
+        foreach ($serial in @($EMU1, $EMU2)) {
+            if (-not (Start-SetupActivity -Serial $serial)) { throw "Could not restart launcher" }
+            Adb-Dev-Timeout -Serial $serial -AdbArgs @("shell", "run-as", $PACKAGE, "rm", "-f", "files/introspect.json") -Seconds 5 | Out-Null
+        }
+        if (-not (Set-DeviceCoopRestoreSlot -Serial $EMU1 -Slot $slot)) { throw "Could not select resume save" }
+        Send-MpCommand -Serial $EMU1 -Command "lan_launch" -Extras $hostExtras
+        if (-not (Wait-ForCondition -Description "Resume host lobby" -TimeoutSec 40 -PollMs 500 -Condition {
+                    $intro = Get-GameIntrospection -Serial $EMU1
+                    return $intro -and $intro.is_network -and (Get-IntroNumConnected -Intro $intro) -eq 1
+                })) { throw "Resume host did not reach lobby" }
+        $lifecycleOutput = Adb-Dev -Serial $EMU1 -AdbArgs @("logcat", "-d", "-s", "DXX-Lifecycle", "ActivityThread")
+        $lifecycleLines = if ($lifecycleOutput) { $lifecycleOutput -split '\r?\n' } else { @() }
+        $creations = @($lifecycleLines | Where-Object { $_ -match 'DXX-Lifecycle.*create activity=' })
+        if ($creations.Count -ne 1 -or ($lifecycleOutput -match 'ServiceConnectionLeaked|DXX-Lifecycle.*destroy activity=')) {
+            throw "Cold resume recreated its game activity or leaked its service connection"
+        }
+        foreach ($line in $lifecycleLines | Where-Object { $_ -match 'DXX-Lifecycle' }) { Write-Status "  Resume lifecycle: $line" }
+        if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName "test_coop_restore_autosave_guard.jsonc")) {
+            throw "Could not arm autosave rejection check"
+        }
+        Send-MpCommand -Serial $EMU2 -Command "lan_launch" -Extras $joinExtras
+        $script:briefingRestorePoll = 0
+        # Initial startup and save application each load the mine. Give them
+        # separate test budgets; neither is the briefing reading allowance
+        if (-not (Wait-ForCondition -Description "Resume engines finish initial mine load" -TimeoutSec 120 -PollMs 1000 -Condition {
+                    $h = Get-GameIntrospection -Serial $EMU1
+                    $c = Get-GameIntrospection -Serial $EMU2
+                    if (-not $h -or -not $c -or -not $h.in_game -or -not $c.in_game) { return $false }
+                    return $h.coop_briefing.suppressed_for_restore -and $c.coop_briefing.suppressed_for_restore
+                })) { throw "Resume did not complete initial mine loading" }
+        if (-not (Wait-ForCondition -Description "Restore without briefing replay" -TimeoutSec 180 -PollMs 1000 -Condition {
+                    ++$script:briefingRestorePoll
+                    $complete = $true
+                    foreach ($serial in @($EMU1, $EMU2)) {
+                        $intro = Get-GameIntrospection -Serial $serial
+                        if (-not $intro -or -not $intro.PSObject.Properties['coop_briefing']) {
+                            $complete = $false
+                            continue
+                        }
+                        if ($intro.coop_restore.status -eq "error") { throw "Native save restore failed on $serial" }
+                        $localPlayers = @($intro.multiplayer.players | Where-Object { $_.is_me })
+                        if (-not $localPlayers.Count) {
+                            $complete = $false
+                            continue
+                        }
+                        $localPlayer = $localPlayers[0]
+                        if ($script:briefingRestorePoll % 5 -eq 1) {
+                            Write-Status "  Resume $serial : in_game=$($intro.in_game) phase=$($intro.coop_briefing.phase) restore=$($intro.coop_restore.status) homing=$($localPlayer.homing_ammo)" "Gray"
+                        }
+                        if ($intro.coop_briefing.presentations_started -ne 0) { throw "Save resume replayed briefing content" }
+                        if (-not $intro.in_game -or (Get-IntroNumConnected -Intro $intro) -ne 2 -or
+                            $intro.coop_restore.status -ne "idle" -or $intro.coop_briefing.active -or $localPlayer.homing_ammo -ne 6) {
+                            $complete = $false
+                            continue
+                        }
+                        if (-not $intro.coop_briefing.enabled -or -not $intro.coop_briefing.suppressed_for_restore) {
+                            throw "Resume lost the briefing setting or suppression decision"
+                        }
+                        if (-not $intro.PSObject.Properties['coop_campaign'] -or
+                            $intro.coop_campaign.active_level -ne $savedCampaign.active_level -or
+                            $intro.coop_campaign.mission -ne $savedCampaign.mission -or
+                            $intro.coop_campaign.generation -ne $savedCampaign.generation -or
+                            $intro.coop_campaign.entered_from -ne $savedCampaign.entered_from -or
+                            $intro.coop_campaign.base_returnable -ne $savedCampaign.base_returnable -or
+                            $intro.coop_campaign.dormant_worlds -ne $savedCampaign.dormant_worlds) {
+                            throw "Resume did not restore the saved campaign context"
+                        }
+                    }
+                    return $complete
+                })) { throw "Both peers must restore inventory and skip presentation" }
+        if (-not (Wait-ForCondition -Description "Restore transfer guard and full-width ACK verification" -TimeoutSec 30 -PollMs 500 -Condition {
+                    $result = Get-DeviceAutomationResult -Serial $EMU1
+                    return $result -and $result.result -in @("PASS", "FAIL")
+                })) { throw "Restore transfer guard did not finish" }
+        $autosaveGuard = Get-DeviceAutomationResult -Serial $EMU1
+        if (-not $autosaveGuard -or $autosaveGuard.result -ne "PASS") {
+            throw "Autosave rejection or full-width packet acknowledgment during restore was not verified"
+        }
+        Assert-CoopWorldVisit -Expected 2
+        Assert-CoopGameplayFences
+        $script:lastGi1 = Get-GameIntrospection -Serial $EMU1
+        $script:lastGi2 = Get-GameIntrospection -Serial $EMU2
+        $testPassed = $true
+    }
 
     if ($UseRelay -and ($emu1ToEmu2 -eq 0 -or $emu2ToEmu1 -eq 0)) {
         Write-Status "FAIL: Relay did not forward traffic in both directions" "Red"
@@ -1615,14 +2496,14 @@ try {
     if ($gi1) {
         $hostPlayers = Get-IntroNumConnected -Intro $gi1
         if ($null -eq $hostPlayers) { $hostPlayers = "?" }
-        Write-Status "EMU1: screen=$($gi1.screen_mode) in_game=$($gi1.in_game) net=$($gi1.is_network) players=$hostPlayers game_mode=$($gi1.game_mode)"
+        Write-Status "Initial sync EMU1: screen=$($gi1.screen_mode) in_game=$($gi1.in_game) net=$($gi1.is_network) players=$hostPlayers game_mode=$($gi1.game_mode)"
     } else {
         Write-Status "EMU1: introspection unavailable (emulator may have crashed during level load)" "Yellow"
     }
     if ($gi2) {
         $joinPlayers = Get-IntroNumConnected -Intro $gi2
         if ($null -eq $joinPlayers) { $joinPlayers = "?" }
-        Write-Status "EMU2: screen=$($gi2.screen_mode) in_game=$($gi2.in_game) net=$($gi2.is_network) players=$joinPlayers game_mode=$($gi2.game_mode)"
+        Write-Status "Initial sync EMU2: screen=$($gi2.screen_mode) in_game=$($gi2.in_game) net=$($gi2.is_network) players=$joinPlayers game_mode=$($gi2.game_mode)"
     } else {
         Write-Status "EMU2: introspection unavailable (emulator may have crashed during level load)" "Yellow"
     }
@@ -1642,6 +2523,318 @@ try {
     }
     if ($testPassed -and $SavedLateJoin) {
         $testPassed = Invoke-SavedLateJoinScenario
+    }
+    if ($testPassed -and $VerifyAutomationFailure) {
+        if ($Game -ne "d2") { throw "Terminal automation failure fixture requires D2" }
+        foreach ($serial in @($EMU1, $EMU2)) {
+            if (-not (Start-DeviceGameAutomation -Serial $serial -ScriptName "test_coop_terminal_failure.jsonc")) { throw "Could not start terminal failure probe" }
+        }
+        if (-not (Wait-ForCondition -Description "Final-step failures remain failed on both peers" -TimeoutSec 30 -PollMs 500 -Condition {
+                    foreach ($serial in @($EMU1, $EMU2)) {
+                        $result = Get-DeviceAutomationResult -Serial $serial
+                        if (-not $result -or $result.result -ne "FAIL" -or
+                            $result.reason -ne "Normal exits did not advance together to the next normal mine") { return $false }
+                    }
+                    return $true
+                })) { throw "A final-step failure was lost or overwritten" }
+    }
+    if ($testPassed -and $NormalPhysical) {
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_normal_exit_prepare_host.jsonc" `
+                    -SecondarySerial $EMU2 -SecondaryScript "test_coop_normal_exit_prepare_client.jsonc" -Description "Prepare authored normal/secret exits and reject companion touch")) { throw "Normal exit setup failed" }
+        $hostExitScript = if ($NormalExitRace) { "test_coop_normal_exit_race_host.jsonc" } else { "test_coop_normal_exit_host.jsonc" }
+        $clientExitScript = if ($NormalExitRace) { "test_coop_normal_exit_race_client.jsonc" } else { "test_coop_normal_exit_client.jsonc" }
+        if ($NormalReactorDeath) {
+            $hostExitScript = "test_coop_normal_reactor_death_host.jsonc"
+            $clientExitScript = "test_coop_normal_reactor_death_client.jsonc"
+        } elseif ($NormalCountdown) {
+            $hostExitScript = $clientExitScript = "test_coop_normal_countdown.jsonc"
+        }
+        $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript $hostExitScript `
+            -SecondarySerial $EMU2 -SecondaryScript $clientExitScript -Description "Normal mine exit/death completion and shared advancement" -TimeoutSec 240
+    }
+    if ($testPassed -and $SecretExitRace) {
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_world_carry.jsonc" `
+                    -SecondarySerial $EMU2 -SecondaryScript "test_coop_world_carry.jsonc" -Description "Seed portable state before secret-winning exit race")) { throw "Secret exit race inventory setup failed" }
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_secret_exit_race_prepare_host.jsonc" `
+                    -SecondarySerial $EMU2 -SecondaryScript "test_coop_secret_exit_race_prepare_client.jsonc" -Description "Prepare competing exits with the base reactor destroyed")) { throw "Secret exit race setup failed" }
+        $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_secret_exit_race_host.jsonc" `
+            -SecondarySerial $EMU2 -SecondaryScript "test_coop_secret_exit_race_client.jsonc" -Description "Secret winner rejects an in-flight normal exit and brings both players into the secret mine" -TimeoutSec 270
+    }
+    if ($testPassed -and ($SecretAdvance -or $SecretEndgame)) {
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_world_carry.jsonc" `
+                    -SecondarySerial $EMU2 -SecondaryScript "test_coop_world_carry.jsonc" -Description "Seed both players before secret departure")) { throw "Advance inventory setup failed" }
+        $departure = if ($SecretEndgameModal) { "endgame_modal" } elseif ($SecretEndgame) { "endgame" } else { "advance" }
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_secret_${departure}_prepare.jsonc" `
+                    -SecondarySerial $EMU2 -SecondaryScript "test_coop_secret_${departure}_prepare.jsonc" -Description "Prepare secret campaign $departure")) { throw "Departure setup failed" }
+        if ($SecretEndgameHostLeaves) { $departure = "endgame_host_leaves" }
+        $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_secret_${departure}_host.jsonc" `
+            -SecondarySerial $EMU2 -SecondaryScript "test_coop_secret_${departure}_client.jsonc" -Description "Complete coordinated secret campaign $departure" -TimeoutSec 300
+    }
+    if ($testPassed -and $TravelGate) {
+        if ($Game -ne "d2" -or -not $AllowSecretWarps) { throw "Travel gate probe requires D2 secret warps enabled" }
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_travel_gate_arm.jsonc" `
+                    -SecondarySerial $EMU2 -SecondaryScript "test_coop_travel_gate_arm.jsonc" -Description "Arm host travel gate on both peers")) { throw "Could not arm travel gate" }
+        $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_travel_gate_host.jsonc" `
+            -SecondarySerial $EMU2 -SecondaryScript "test_coop_travel_gate_client.jsonc" -Description "Arbitrate exits, freeze reactor, warn and abort without changing mines" -TimeoutSec 90
+        if ($testPassed) {
+            $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_travel_normal_host.jsonc" `
+                -SecondarySerial $EMU2 -SecondaryScript "test_coop_travel_normal_client.jsonc" -Description "Normal winner blocks secrets and grants individual exits without freezing" -TimeoutSec 60
+        }
+    }
+    if ($testPassed -and $WorldRestore) {
+        if ($Game -ne "d2" -or $BriefingRestore) { throw "World restore probe needs a fresh D2 mine" }
+        $testPassed = $false
+        $worldCampaign = (Get-GameIntrospection -Serial $EMU1).coop_campaign
+        if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName "test_coop_world_capture.jsonc")) { throw "Could not capture world" }
+        if (-not (Wait-ForCondition -Description "Raw world captured" -TimeoutSec 30 -PollMs 500 -Condition {
+                    $r = Get-DeviceAutomationResult -Serial $EMU1
+                    return $r -and $r.result -eq "PASS"
+                })) { throw "World capture failed" }
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_world_carry.jsonc" `
+                    -SecondarySerial $EMU2 -SecondaryScript "test_coop_world_carry.jsonc" -Description "Change world and portable state")) { throw "World probe setup failed" }
+        $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_world_restore_host.jsonc" `
+            -SecondarySerial $EMU2 -SecondaryScript "test_coop_world_restore_client.jsonc" -Description "Restore world while retaining current players" -TimeoutSec 200
+        if ($testPassed) {
+            foreach ($serial in @($EMU1, $EMU2)) {
+                $afterWorld = Get-GameIntrospection -Serial $serial
+                if ($afterWorld.coop_campaign.active_level -ne $worldCampaign.active_level -or
+                    $afterWorld.coop_campaign.generation -ne $worldCampaign.generation) { throw "World restore rolled back campaign context" }
+            }
+        }
+    }
+    if ($testPassed -and $CoopDeath) {
+        $testPassed = Invoke-CoopDeathScenario
+    }
+    if ($testPassed -and $SecretWorld) {
+        if ($Game -ne "d2" -or -not $AllowSecretWarps -or $BriefingRestore) {
+            throw "Secret world probe requires a fresh D2 co-op game with secret warps enabled"
+        }
+        $sourceCampaign = (Get-GameIntrospection -Serial $EMU1).coop_campaign
+        if ($SecretCrossRestore) {
+            if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_base_save_seed.jsonc' `
+                        -SecondarySerial $EMU2 -SecondaryScript 'test_coop_base_save_seed.jsonc' `
+                        -Description 'Seed distinct normal-save inventories')) { throw 'Base save seed failed' }
+            if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_base_save_host.jsonc' `
+                        -SecondarySerial $EMU2 -SecondaryScript 'test_coop_secret_save_idle.jsonc' `
+                        -Description 'Save the normal mine before secret entry')) { throw 'Base save failed' }
+        }
+        if ($SecretRollback) {
+            if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_world_carry.jsonc" `
+                        -SecondarySerial $EMU2 -SecondaryScript "test_coop_world_carry.jsonc" -Description "Seed player state before failed secret travel")) { throw "Rollback fixture setup failed" }
+            if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_world_rollback_tag.jsonc" `
+                        -SecondarySerial $EMU2 -SecondaryScript "test_coop_world_rollback_tag.jsonc" -Description "Bind rollback fixture powerup on both peers before publishing its ledger")) { throw "Rollback object tagging failed" }
+            if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_world_rollback_prepare_host.jsonc" `
+                        -SecondarySerial $EMU2 -SecondaryScript "test_coop_world_travel_prepare.jsonc" -Description "Arm travel and waiting-peer packet loss before destination failure")) { throw "Rollback gate setup failed" }
+            if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_world_rollback_host.jsonc" `
+                        -SecondarySerial $EMU2 -SecondaryScript "test_coop_world_rollback_client.jsonc" -Description "Fail client after destination load, restore the source on both peers" -TimeoutSec 360)) { throw "Source checkpoint rollback failed" }
+            $expectedVisit = [uint64]3 # Initial mine, failed destination, then rollback
+            Assert-CoopWorldVisit -Expected $expectedVisit
+            Assert-CoopGameplayFences
+        }
+        $travelLegs = if ($SecretRevisit) { @("enter", "return", "revisit", "return") } else { @("enter", "return") }
+        $expectedGeneration = $sourceCampaign.generation
+        foreach ($leg in $travelLegs) {
+            ++$expectedGeneration
+            $testPassed = $false
+            if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_world_carry.jsonc" `
+                        -SecondarySerial $EMU2 -SecondaryScript "test_coop_world_carry.jsonc" -Description "Seed portable state for secret $leg")) { throw "Secret portable-state setup failed" }
+            $hostPrepare = if ($SecretPhysical) { "test_coop_physical_prepare_host.jsonc" } else { "test_coop_world_travel_prepare.jsonc" }
+            $clientPrepare = if ($SecretPhysical) { "test_coop_physical_prepare_client.jsonc" } else { "test_coop_world_travel_prepare.jsonc" }
+            $clientTravel = if ($SecretPhysical) { "test_coop_physical_travel_client.jsonc" } else { "test_coop_world_travel_client.jsonc" }
+            $hostTravel = "test_coop_world_travel_host.jsonc"
+            if ($SecretDying) {
+                $hostDies = $leg -ne "return"
+                $expectScript = if ($hostDies) { "test_coop_dying_expect_host.jsonc" } else { "test_coop_dying_expect_client.jsonc" }
+                if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript $expectScript `
+                            -SecondarySerial $EMU2 -SecondaryScript $expectScript -Description "Record expected dying player before secret $leg")) { throw "Dying travel setup failed" }
+                if (-not $hostDies) {
+                    $hostPrepare = "test_coop_physical_prepare_client.jsonc"
+                    $clientPrepare = "test_coop_physical_prepare_host.jsonc"
+                }
+                $hostTravel = if ($hostDies) { "test_coop_dying_travel_dead.jsonc" } else { "test_coop_dying_travel_alive.jsonc" }
+                $clientTravel = if ($hostDies) { "test_coop_dying_travel_alive.jsonc" } else { "test_coop_dying_travel_dead.jsonc" }
+            }
+            if (($SecretReactorDeath -or $SecretCountdown) -and $leg -eq "return") {
+                # Countdown expiry must not park a living player at an exit
+                $hostPrepare = if ($SecretCountdown) { "test_coop_world_travel_prepare.jsonc" } else { "test_coop_physical_prepare_client.jsonc" }
+                $clientPrepare = if ($SecretCountdown) { "test_coop_world_travel_prepare.jsonc" } else { "test_coop_physical_prepare_host.jsonc" }
+                $hostTravel = if ($SecretCountdown) { "test_coop_reactor_countdown.jsonc" } else { "test_coop_reactor_death_host.jsonc" }
+                $clientTravel = if ($SecretCountdown) { "test_coop_reactor_countdown.jsonc" } else { "test_coop_reactor_death_client.jsonc" }
+            }
+            if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript $hostPrepare `
+                        -SecondarySerial $EMU2 -SecondaryScript $clientPrepare -Description "Prepare secret $leg")) { throw "Secret gate setup failed" }
+            if (($SecretReactorDeath -or $SecretCountdown) -and $leg -eq "return") {
+                $reactorPrepare = if ($SecretCountdown) { "test_coop_reactor_countdown_prepare.jsonc" } else { "test_coop_reactor_death_prepare.jsonc" }
+                if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript $reactorPrepare `
+                            -SecondarySerial $EMU2 -SecondaryScript $reactorPrepare -Description "Prepare secret reactor deaths before $leg")) { throw "Secret reactor setup failed" }
+            }
+            if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript $hostTravel `
+                        -SecondarySerial $EMU2 -SecondaryScript $clientTravel -Description "Host prepares, transfers and commits secret $leg" -TimeoutSec 270)) { throw "Secret world $leg failed" }
+            # Introspection is serviced on an engine frame; a slow frame can
+            # leave the previous visit's JSON in place after automation finishes
+            if ($SecretRollback) {
+                ++$expectedVisit
+                Assert-CoopWorldVisit -Expected $expectedVisit
+                Assert-CoopGameplayFences
+            }
+            if (-not (Wait-ForCondition -Description "Both committed campaigns visible after $leg" -TimeoutSec 30 -PollMs 1000 -Condition {
+                        $preparedChecksum = 0
+                        $checkpointChecksum = 0
+                        $arrivalChecksum = 0
+                        foreach ($serial in @($EMU1, $EMU2)) {
+                            $state = Get-GameIntrospection -Serial $serial
+                            if (-not $state) { return $false }
+                            $campaign = $state.coop_campaign
+                            if ($leg -ne "return") {
+                                if ($campaign.active_level -ge 0 -or $campaign.entered_from -ne $sourceCampaign.active_level -or
+                                    -not $campaign.base_returnable -or $campaign.generation -ne $expectedGeneration) { return $false }
+                            } elseif ($campaign.active_level -ne $sourceCampaign.active_level -or $campaign.base_returnable -or
+                                $campaign.generation -ne $expectedGeneration) { return $false }
+                            if (-not $state.multiplayer.allow_secret_warps -or $state.coop_briefing.enabled -ne [bool]$Briefings) {
+                                throw "Secret travel changed the independent server settings"
+                            }
+                            if (-not $Briefings -and ($state.coop_briefing.presentations_started -ne 0 -or $state.coop_briefing.active)) {
+                                throw "Secret travel opened a briefing while the setting was disabled"
+                            }
+                            if (-not $state.coop_travel.prepared -or -not $state.coop_travel.prepared_checksum) { return $false }
+                            if (-not $state.coop_travel.checkpoint_ready -or -not $state.coop_travel.checkpoint_checksum -or
+                                $state.coop_travel.checkpoint_size -le 1408) { return $false }
+                            if ($checkpointChecksum -and $checkpointChecksum -ne $state.coop_travel.checkpoint_checksum) {
+                                throw "Peers retained different source checkpoints"
+                            }
+                            $checkpointChecksum = $state.coop_travel.checkpoint_checksum
+                            if (-not $state.coop_travel.arrivals_placed -or -not $state.coop_travel.arrival_checksum) { return $false }
+                            if ($arrivalChecksum -and $arrivalChecksum -ne $state.coop_travel.arrival_checksum) {
+                                throw "Peers planned different team arrival positions"
+                            }
+                            $arrivalChecksum = $state.coop_travel.arrival_checksum
+                            if ($state.coop_travel.portable_received -ne 3 -or -not $state.coop_travel.portable_checksum) { return $false }
+                            if ($preparedChecksum -and $preparedChecksum -ne $state.coop_travel.prepared_checksum) {
+                                throw "Peers committed different prepared campaigns"
+                            }
+                            $preparedChecksum = $state.coop_travel.prepared_checksum
+                        }
+                        return $true
+                    })) { throw "Invalid committed campaigns after secret $leg" }
+            if ($SecretRewind -and $leg -eq "enter") {
+                if (-not (Invoke-CoopRewindScenario -FromClient)) { throw "Secret client rewind failed" }
+            }
+            if ($SecretRestart -and $leg -eq "enter") {
+                if (-not (Invoke-CoopLevelRestartScenario)) { throw "Secret level restart failed" }
+            }
+            if ($SecretDeath -and $leg -eq "enter") {
+                if (-not (Invoke-CoopDeathScenario)) { throw "Secret death or survivor verification failed" }
+            }
+            if ($SecretSaveRestore -and $leg -eq "enter") {
+                if ($CountdownSave -and -not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_countdown_save_seed.jsonc' `
+                            -SecondarySerial $EMU2 -SecondaryScript 'test_coop_countdown_save_seed.jsonc' `
+                            -Description 'Destroy the secret reactor before saving')) { throw 'Secret countdown seed failed' }
+                if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_secret_save_seed.jsonc" `
+                            -SecondarySerial $EMU2 -SecondaryScript "test_coop_secret_save_seed.jsonc" `
+                            -Description "Seed distinct inventories before settled secret save")) { throw "Secret save seed failed" }
+                if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_secret_save_host.jsonc" `
+                            -SecondarySerial $EMU2 -SecondaryScript "test_coop_secret_save_idle.jsonc" `
+                            -Description "Open save/load menus and save the settled secret mine")) { throw "Secret save or menu access failed" }
+                if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_secret_save_mutate.jsonc" `
+                            -SecondarySerial $EMU2 -SecondaryScript "test_coop_secret_save_mutate.jsonc" `
+                            -Description "Change both inventories after secret save")) { throw "Secret save mutation failed" }
+                if ($CountdownSave -and -not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_countdown_save_mutate.jsonc' `
+                            -SecondarySerial $EMU2 -SecondaryScript 'test_coop_countdown_save_mutate.jsonc' `
+                            -Description 'Change the secret countdown after saving')) { throw 'Secret countdown mutation failed' }
+                if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_secret_load_host.jsonc" `
+                            -SecondarySerial $EMU2 -SecondaryScript "test_coop_secret_load_client.jsonc" `
+                            -Description "Restore both players and dormant base from the secret save" -TimeoutSec 210)) { throw "Secret save restore failed" }
+                if ($CountdownSave -and -not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_countdown_save_verify.jsonc' `
+                            -SecondarySerial $EMU2 -SecondaryScript 'test_coop_countdown_save_verify.jsonc' `
+                            -Description 'Verify the restored secret reactor timer and both inventories')) { throw 'Secret countdown verification failed' }
+                if ($SecretCrossRestore) {
+                    if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_base_load_host.jsonc' `
+                                -SecondarySerial $EMU2 -SecondaryScript 'test_coop_base_load_client.jsonc' `
+                                -Description 'Load the normal save from the secret mine' -TimeoutSec 210)) { throw 'Secret-to-normal save load failed' }
+                    if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_secret_load_host.jsonc' `
+                                -SecondarySerial $EMU2 -SecondaryScript 'test_coop_secret_load_client.jsonc' `
+                                -Description 'Load the secret save from the normal mine' -TimeoutSec 210)) { throw 'Normal-to-secret save load failed' }
+                }
+                if ($SecretColdResume) {
+                    $secretBeforeRestart = Get-GameIntrospection -Serial $EMU1
+                    $savedSecretCampaign = $secretBeforeRestart.coop_campaign | ConvertTo-Json -Depth 10 -Compress
+                    if ($secretBeforeRestart.coop_campaign.active_level -ge 0 -or
+                        $secretBeforeRestart.coop_campaign.worlds.Count -lt 1) { throw "Missing dormant base before cold resume" }
+                    foreach ($serial in @($EMU1, $EMU2)) {
+                        if (-not (Start-SetupActivity -Serial $serial)) { throw "Could not restart secret-save launcher" }
+                        Adb-Dev-Timeout -Serial $serial -AdbArgs @("shell", "run-as", $PACKAGE, "rm", "-f", "files/introspect.json") -Seconds 5 | Out-Null
+                        Adb-Dev-Timeout -Serial $serial -AdbArgs @(
+                            "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND",
+                            "--es", "command", "write_bool_pref", "--es", "key", "'dlog_coop desync_enabled'", "--ez", "value", "true"
+                        ) -Seconds 10 | Out-Null
+                    }
+                    if (-not (Set-DeviceCoopRestoreSlot -Serial $EMU1 -Slot 0)) { throw "Could not select the manual secret save" }
+                    # Secret save selection uses normal level 1 for network startup
+                    $coldHostExtras = @($hostExtras)
+                    $coldHostExtras[[Array]::IndexOf($coldHostExtras, "level_num") + 1] = "1"
+                    $coldJoinExtras = @($joinExtras)
+                    $coldJoinExtras[[Array]::IndexOf($coldJoinExtras, "level_num") + 1] = "1"
+                    Send-MpCommand -Serial $EMU1 -Command "lan_launch" -Extras $coldHostExtras
+                    if (-not (Wait-ForCondition -Description "Cold secret resume host lobby" -TimeoutSec 60 -PollMs 500 -Condition {
+                                $intro = Get-GameIntrospection -Serial $EMU1
+                                return $intro -and $intro.is_network -and (Get-IntroNumConnected -Intro $intro) -eq 1
+                            })) { throw "Cold secret resume host did not reach its lobby" }
+                    Send-MpCommand -Serial $EMU2 -Command "lan_launch" -Extras $coldJoinExtras
+                    if (-not (Wait-ForCondition -Description "Cold resume restores secret inventory and dormant base without briefings" -TimeoutSec 240 -PollMs 1000 -Condition {
+                                $ready = $true
+                                foreach ($serial in @($EMU1, $EMU2)) {
+                                    $intro = Get-GameIntrospection -Serial $serial
+                                    if ($intro -and $intro.current_level_num -lt 0 -and -not $intro.is_network) {
+                                        throw "Peer left the network while cold-restoring the secret mine: $serial"
+                                    }
+                                    if (-not $intro -or -not $intro.in_game -or -not $intro.is_network -or
+                                        (Get-IntroNumConnected -Intro $intro) -ne 2) { $ready = $false; continue }
+                                    if ($intro.coop_restore.status -eq "error") { throw "Cold secret restore failed on $serial" }
+                                    if ($intro.coop_briefing.presentations_started -ne 0) { throw "Cold secret resume replayed a briefing" }
+                                    if ($intro.coop_restore.status -ne "idle" -or $intro.coop_restore.transfer_busy -or
+                                        $intro.time_paused -or $intro.coop_travel.active -or $intro.coop_campaign.active_level -ge 0) { $ready = $false; continue }
+                                    if (-not $intro.coop_briefing.enabled -or -not $intro.coop_briefing.suppressed_for_restore -or
+                                        -not $intro.multiplayer.allow_secret_warps) { throw "Cold secret resume lost its server options" }
+                                    if (($intro.coop_campaign | ConvertTo-Json -Depth 10 -Compress) -ne $savedSecretCampaign) {
+                                        throw "Cold secret resume changed campaign metadata or dormant world bytes"
+                                    }
+                                    $slotIndex = if ($serial -eq $EMU1) { 0 } else { 1 }
+                                    if ($intro.player.score -ne 4321 + $slotIndex -or
+                                        $intro.player.secondary_ammo[1] -ne 6 + $slotIndex) { throw "Cold secret resume lost saved local inventory on $serial" }
+                                }
+                                return $ready
+                            })) { throw "Both peers must cold-resume the saved secret mine" }
+                    if ($CountdownSave -and -not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_countdown_save_verify.jsonc' `
+                                -SecondarySerial $EMU2 -SecondaryScript 'test_coop_countdown_save_verify.jsonc' `
+                                -Description 'Cold resume preserves the secret countdown and resumes its clock')) { throw 'Cold secret countdown restore failed' }
+                    if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_secret_cold_resume.jsonc" `
+                                -SecondarySerial $EMU2 -SecondaryScript "test_coop_secret_cold_resume.jsonc" `
+                                -Description "Restore measured pre-travel expectations for the dormant base")) { throw "Cold secret return setup failed" }
+                }
+            }
+            if ($SecretCountdown -and $leg -eq "return") {
+                $hostSyncLog = (Adb-Dev -Serial $EMU1 -AdbArgs @('logcat', '-d', '-s', 'DXX-DLOG')) -join "`n"
+                if ($hostSyncLog -notmatch 'test delaying host world apply:' -or
+                    $hostSyncLog -notmatch 'network join deferred for coop transition: player=-?\d+ source=-\d+ requested=[1-9]\d*') {
+                    throw "Countdown return did not exercise an early sync request against the destroyed source"
+                }
+            }
+            if ($DestroyedGearRestore -and $leg -eq "return") {
+                if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_retired_save_seed.jsonc" `
+                            -SecondarySerial $EMU2 -SecondaryScript "test_coop_retired_save_seed.jsonc" `
+                            -Description "Record destroyed-world recovery credit before saving")) { throw "Retired gear save seed failed" }
+                if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_retired_save_host.jsonc" `
+                            -SecondarySerial $EMU2 -SecondaryScript "test_coop_secret_save_idle.jsonc" `
+                            -Description "Save the settled base with retired secret gear")) { throw "Retired gear save failed" }
+                if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_retired_save_mutate.jsonc" `
+                            -SecondarySerial $EMU2 -SecondaryScript "test_coop_retired_save_mutate.jsonc" `
+                            -Description "Change both inventories after the retired gear save")) { throw "Retired gear mutation failed" }
+                if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_retired_load_host.jsonc" `
+                            -SecondarySerial $EMU2 -SecondaryScript "test_coop_retired_load_client.jsonc" `
+                            -Description "Restore exact recovery records and both player inventories" -TimeoutSec 210)) { throw "Retired gear restore failed" }
+            }
+            $testPassed = $true
+        }
     }
     if ($testPassed -and $RestoreResilience) {
         $testPassed = Invoke-RestoreResilienceScenario

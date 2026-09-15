@@ -253,13 +253,14 @@ object RuntimeGameStateBridge {
         onBackgroundTimeout: () -> Unit,
     ) {
         disconnect()
-        appContext = context.applicationContext
+        val bindingContext = context.applicationContext
+        appContext = bindingContext
         isHost = host
         nativeStateProvider = stateProvider
         backgroundTimeoutHandler = onBackgroundTimeout
         bound =
-            context.bindService(
-                Intent(context, MultiplayerForegroundService::class.java),
+            bindingContext.bindService(
+                Intent(bindingContext, MultiplayerForegroundService::class.java),
                 connection,
                 Context.BIND_AUTO_CREATE,
             )

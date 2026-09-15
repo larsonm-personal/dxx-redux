@@ -1,0 +1,26 @@
+[
+    {
+        "_info": {
+            "games": [
+                "d1",
+                "d2"
+            ],
+            "_standalone": false,
+            "_owner": "test_lan"
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_rewind_test",
+        "value": "mutate"
+    },
+    {
+        "action": "wait_ms",
+        "ms": 2000
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_countdown_save_test",
+        "value": "arm_pause"
+    }
+]

@@ -154,6 +154,7 @@ static int test_restore_discards_tracking_when_duplication_disabled(void)
 	CHECK(coop_powerup_duplication_apply_pending());
 	CHECK(coop_powerup_duplication_count() == 0);
 	CHECK(coop_powerup_duplication_restore_result().discarded == 1);
+	CHECK(!coop_gear_restore_complete(coop_powerup_duplication_restore_result(), 1));
 	CHECK(Objects[2].type == OBJ_POWERUP);
 	CHECK(!(Objects[2].flags & OF_SHOULD_BE_DEAD));
 	return 1;

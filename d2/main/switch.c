@@ -54,6 +54,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_log.h"
 #include "android_profile.h"
 #include "escort.h"
+#include "coop/coop_travel.h"
 #endif
 
 #ifdef EDITOR
@@ -496,13 +497,19 @@ int wall_is_forcefield(trigger *trig)
 
 int check_trigger_sub(int trigger_num, int pnum,int shot)
 {
+	if (trigger_num < 0 || trigger_num >= Num_triggers)
+		return 1;
 	trigger *trig = &Triggers[trigger_num];
 
-	if (pnum < 0 || pnum > MAX_PLAYERS)
+	if (pnum < 0 || pnum >= MAX_PLAYERS)
 		return 1;
 	if ((Game_mode & GM_MULTI) && (Players[pnum].connected != CONNECT_PLAYING)) // as a host we may want to handle triggers for our clients. to do that properly we must check wether we (host) or client is actually playing.
 		return 1;
 
+#ifdef __ANDROID__
+	if (coop_travel_handle_exit_trigger(trigger_num, pnum, shot))
+		return 1;
+#endif
 	if (trig->flags & TF_DISABLED)
 		return 1;		//1 means don't send trigger hit to other players
 
@@ -716,6 +723,11 @@ void check_trigger(segment *seg, short side, short objnum,int shot)
 #endif
 
 		input_demo_log_trigger_probe("before_sub", seg, side, objnum, shot, trigger_num);
+		#ifdef __ANDROID__
+		/* Keep a companion touch from being relabeled as the local player's exit */
+		if (objnum != Players[Player_num].objnum && coop_travel_handle_exit_trigger(trigger_num, -1, shot))
+			return;
+		#endif
 
 		if (check_trigger_sub(trigger_num, Player_num,shot)) {
 			input_demo_log_trigger_probe("sub_returned_skip", seg, side, objnum, shot, trigger_num);

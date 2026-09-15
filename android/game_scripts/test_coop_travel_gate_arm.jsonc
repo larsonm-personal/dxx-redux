@@ -1,0 +1,7 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "set_debug", "field": "clear_robots", "value": "true"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "reactor"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "arm"},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {"coop_travel.known": true}}
+]

@@ -71,6 +71,10 @@
 #include "coop_indicator_lines.h"
 #include "coop/coop_powerup_duplication.h"
 #include "coop/coop_recovery.h"
+#include "coop/coop_briefing.h"
+#include "coop/coop_travel.h"
+#include "coop/coop_world_visit.h"
+#include "coop/coop_gameplay_runtime.h"
 #include "coop/coop_player_session.h"
 #include "net_udp_initial_sync_retry.h"
 #include <android/log.h>
@@ -201,7 +205,7 @@ void resetProxy(int pnum);
 void update_address_for_player(int pnum, struct _sockaddr new_addr); 
 void net_udp_send_p2p_reattempt_direct (int to_player, int connect_to_player);
 void net_udp_process_p2p_reattempt_direct (ubyte *data, struct _sockaddr sender_addr, int data_len);
-void drop_rx_packet(ubyte  *data, char* reason); 
+void drop_rx_packet(ubyte  *data, const char* reason);
 char* ip_from_sockaddr(struct _sockaddr addr);
 ushort port_from_sockaddr(struct _sockaddr addr);
 #ifdef __ANDROID__
@@ -234,6 +238,188 @@ int UDP_num_sendto = 0, UDP_len_sendto = 0, UDP_num_recvfrom = 0, UDP_len_recvfr
 UDP_mdata_info		UDP_MData;
 UDP_sequence_packet UDP_Seq;
 UDP_mdata_store UDP_mdata_queue[UDP_MDATA_STOR_QUEUE_SIZE];
+#ifdef __ANDROID__
+/* Bulk co-op transfers must not starve older packets when low slots are reused */
+static unsigned android_mdata_retry_cursor;
+#ifdef INTROSPECT_ON
+static uint32_t android_test_boundary_acked;
+static int android_test_boundary_seeded;
+static uint32_t android_test_full_packet;
+static int android_test_full_drop, android_test_full_acked;
+
+static uint32_t android_test_fence_packets[2];
+static unsigned android_test_fence_acked, android_test_fence_rejected;
+static unsigned android_test_fence_recovery_rejected;
+static unsigned android_test_fence_inventory_rejected;
+static uint32_t android_test_fence_epoch, android_test_fence_life[MAX_PLAYERS];
+static int android_test_fence_score, android_test_fence_peer;
+static ubyte android_test_game_info[2][UPID_MAX_SIZE];
+static int android_test_game_info_size[2];
+static int net_udp_test_game_info_fence(void);
+
+/* Android paired automation: stale same-level and frozen-origin bodies are first
+ * delivered by the retry queue after release, with live control in each body */
+int net_udp_test_mdata_fence(int phase)
+{
+	coop_gameplay_stamp current = coop_gameplay_current_stamp();
+	if (!(Game_mode & GM_MULTI_COOP) || current.frozen || !current.visit ||
+	    N_players != 2 || !Netgame.PacketLossPrevention) return 0;
+	if (phase == 0) {
+		android_test_fence_peer = Player_num ? 0 : 1;
+		android_test_fence_score = Players[android_test_fence_peer].score;
+		android_test_fence_rejected = multi_test_rejected_world_scores();
+		android_test_fence_recovery_rejected = multi_test_rejected_world_recovery();
+		android_test_fence_inventory_rejected = coop_test_rejected_restore_inventory();
+		android_test_fence_epoch = coop_recovery_epoch();
+		for (int i = 0; i < MAX_PLAYERS; ++i) android_test_fence_life[i] = coop_recovery_life(i);
+		android_test_fence_acked = 0;
+		memset(android_test_fence_packets, 0, sizeof(android_test_fence_packets));
+		multi_sending_message[android_test_fence_peer] = 0;
+		return 1;
+	}
+	if (phase == 2 || phase == 3) {
+		unsigned rejected = multi_test_rejected_world_scores() - android_test_fence_rejected;
+		unsigned recovery_rejected = multi_test_rejected_world_recovery() - android_test_fence_recovery_rejected;
+		unsigned inventory_rejected = coop_test_rejected_restore_inventory() - android_test_fence_inventory_rejected;
+		int life_preserved = coop_recovery_epoch() == android_test_fence_epoch;
+		for (int i = 0; i < MAX_PLAYERS; ++i)
+			if (android_test_fence_life[i] != coop_recovery_life(i)) life_preserved = 0;
+		int control = multi_sending_message[android_test_fence_peer] == 1;
+		int preserved = Players[android_test_fence_peer].score == android_test_fence_score;
+		int passed = android_test_fence_acked == 3 && rejected >= 2 && recovery_rejected >= 1 &&
+		             (multi_i_am_master() || inventory_rejected >= 1) && control && preserved && life_preserved;
+		if (phase == 3) return passed;
+		con_printf(CON_NORMAL, "Android MDATA fence: visit=%llu acknowledged=%u rejected=%u control=%d preserved=%d frozen=%u recovery_rejected=%u life_preserved=%d inventory_rejected=%u",
+		           (unsigned long long) current.visit, android_test_fence_acked, rejected, control, preserved, current.frozen, recovery_rejected, life_preserved, inventory_rejected);
+		multi_sending_message[android_test_fence_peer] = 0;
+		return passed;
+	}
+	if (phase != 1 || Players[android_test_fence_peer].connected != CONNECT_PLAYING) return 0;
+	if (!multi_i_am_master() && !net_udp_test_game_info_fence()) return 0;
+	for (unsigned i = 0; i < 2; ++i) {
+		ubyte body[271 + COOP_GAMEPLAY_STAMP_BYTES] = { MULTI_SCORE, (ubyte) Player_num,
+		    0, 0, 0, 0, MULTI_TYPING_STATE, (ubyte) Player_num, 1 };
+		ubyte pack[MAX_PLAYERS];
+		PUT_INTEL_INT(body + 2, -12345678);
+		coop_gameplay_stamp sent = current;
+		if (i) sent.frozen = 1;
+		else --sent.visit;
+		unsigned body_size = 9;
+		if (!i) {
+			/* Stale recovery must not adopt an epoch or replace a player's life */
+			if (!coop_recovery_test_life_packet(body + body_size, 160, android_test_fence_peer)) return 0;
+			body_size += 160;
+			if (!coop_test_restore_inventory_packet(body + body_size, 102, android_test_fence_peer)) return 0;
+			body_size += 102;
+		}
+		if (!coop_gameplay_stamp_write(body + body_size, COOP_GAMEPLAY_STAMP_BYTES, &sent)) return 0;
+		body_size += COOP_GAMEPLAY_STAMP_BYTES;
+		if (!++UDP_MData.pkt_num) ++UDP_MData.pkt_num;
+		android_test_fence_packets[i] = UDP_MData.pkt_num;
+		memset(pack, 1, sizeof(pack));
+		pack[android_test_fence_peer] = 0;
+		net_udp_noloss_add_queue_pkt(UDP_MData.pkt_num, timer_query(), body, body_size, Player_num, pack);
+	}
+	return 1;
+}
+
+int net_udp_test_level_sequence(int verify)
+{
+	static uint32_t previous;
+	static int level;
+	static uint64_t visit;
+	if (!verify) {
+		if (!net_udp_test_reliable_boundary(0)) return 0;
+		previous = UDP_MData.pkt_num;
+		level = Current_level_num;
+		visit = coop_world_visit_current();
+		return 1;
+	}
+	con_printf(CON_NORMAL, "Android level packet sequence: before=%u after=%u level=%d/%d visit=%llu/%llu",
+	           previous, UDP_MData.pkt_num, level, Current_level_num,
+	           (unsigned long long) visit, (unsigned long long) coop_world_visit_current());
+	return previous >= 149999 && UDP_MData.pkt_num > previous && level != Current_level_num &&
+	       coop_world_visit_current() > visit;
+}
+
+int net_udp_test_full_mdata(int verify)
+{
+	extern fix ThisLevelTime;
+	if (verify)
+	{
+		con_printf(CON_NORMAL, "Android full MDATA: packet=%u bytes=%u dropped=%d acknowledged=%d",
+		           android_test_full_packet, (unsigned) UPID_MDATA_MAX_SIZE,
+		           !android_test_full_drop, android_test_full_acked);
+		return android_test_full_packet && !android_test_full_drop && android_test_full_acked;
+	}
+	if (!(Game_mode & GM_MULTI_COOP) || !Netgame.PacketLossPrevention || N_players < 2)
+		return 0;
+	int target = multi_who_is_master();
+	if (target == Player_num)
+		for (target = 0; target < MAX_PLAYERS; ++target)
+			if (target != Player_num && Players[target].connected == CONNECT_PLAYING) break;
+	if (target >= MAX_PLAYERS || Players[target].connected != CONNECT_PLAYING)
+		return 0;
+	/* Valid no-typing updates and current level time fill all 454 payload bytes */
+	ubyte payload[UPID_MDATA_BUF_SIZE];
+	unsigned offset = 0;
+	for (; offset + 10 < sizeof(payload); offset += 3)
+	{
+		payload[offset] = MULTI_TYPING_STATE;
+		payload[offset + 1] = Player_num;
+		payload[offset + 2] = 0;
+	}
+	for (; offset < sizeof(payload); offset += 5)
+	{
+		payload[offset] = MULTI_HEARTBEAT;
+		PUT_INTEL_INT(payload + offset + 1, ThisLevelTime);
+	}
+	Assert(offset == sizeof(payload));
+	android_test_full_packet = UDP_MData.pkt_num + 1u;
+	if (!android_test_full_packet) android_test_full_packet = 1;
+	android_test_full_drop = 1;
+	android_test_full_acked = 0;
+	net_udp_send_mdata_direct(payload, sizeof(payload), target, 1);
+	return UDP_MData.pkt_num == android_test_full_packet;
+}
+
+static int net_udp_test_drop_full_mdata(int needack)
+{
+	if (!needack || !android_test_full_drop || UDP_MData.pkt_num != android_test_full_packet) return 0;
+	android_test_full_drop = 0;
+	con_printf(CON_NORMAL, "Android full MDATA: dropping initial packet=%u bytes=%u",
+	           android_test_full_packet, (unsigned) UPID_MDATA_MAX_SIZE);
+	return 1;
+}
+
+int net_udp_test_reliable_boundary(int verify)
+{
+	if (verify)
+	{
+		con_printf(CON_NORMAL, "Android reliable boundary: sent=%u acknowledged=%u", UDP_MData.pkt_num, android_test_boundary_acked);
+		return android_test_boundary_seeded && android_test_boundary_acked > UDP_MDATA_STOR_QUEUE_SIZE * 100u;
+	}
+	if (!(Game_mode & GM_MULTI) || !Netgame.PacketLossPrevention || N_players < 2 ||
+	    UDP_MData.pkt_num >= UDP_MDATA_STOR_QUEUE_SIZE * 100u - 1u)
+		return 0;
+	/* Cross the old direct-send rollover as well as the 16-bit ACK boundary */
+	UDP_MData.pkt_num = UDP_MDATA_STOR_QUEUE_SIZE * 100u - 1u;
+	android_test_boundary_acked = 0;
+	android_test_boundary_seeded = 1;
+	return 1;
+}
+#endif
+#endif
+#ifdef __ANDROID__
+unsigned net_udp_reliable_pending(void)
+{
+	unsigned pending = 0;
+	if (!Netgame.PacketLossPrevention) return 0;
+	for (int i = 0; i < UDP_MDATA_STOR_QUEUE_SIZE; ++i)
+		if (UDP_mdata_queue[i].used) ++pending;
+	return pending;
+}
+#endif
 UDP_mdata_obs_store UDP_mdata_obs_queue[UDP_MDATA_STOR_QUEUE_SIZE];
 UDP_mdata_recv UDP_mdata_got[MAX_PLAYERS];
 UDP_sequence_packet UDP_sync_player; // For rejoin object syncing
@@ -301,6 +487,71 @@ void clean_pdata(fix64 now);
 #define GAME_PARAM_CHOICE_SHOW_AGAIN -3
 int load_preset(newmenu *menu_settings);
 void save_preset(void);
+
+#ifdef __ANDROID__
+static int net_udp_pdata_world_allowed(const ubyte *data, int len)
+{
+	coop_gameplay_stamp sent, current = coop_gameplay_current_stamp();
+	int expected = Netgame.RetroProtocol ? UPID_PDATA_U_SIZE : Netgame.ShortPackets ? UPID_PDATA_S_SIZE : UPID_PDATA_Q_SIZE;
+	if (len != expected || !coop_gameplay_stamp_read(&sent, data + len - COOP_GAMEPLAY_STAMP_BYTES,
+	                                               COOP_GAMEPLAY_STAMP_BYTES)) return 0;
+	return !(Game_mode & GM_MULTI_COOP) || coop_gameplay_message_allowed(MULTI_POSITION, &sent, &current, current.frozen);
+}
+
+#ifdef INTROSPECT_ON
+static unsigned android_pdata_probe_rejected, android_pdata_probe_applied, android_pdata_current_received;
+#include "net_udp_endlevel_probe.h"
+static net_udp_endlevel_probe android_endlevel_probe;
+static int android_pdata_probe_sending;
+static fix64 android_pdata_probe_next_send;
+
+int net_udp_test_pdata_fence(int phase)
+{
+	coop_gameplay_stamp current = coop_gameplay_current_stamp();
+	if (!(Game_mode & GM_MULTI_COOP) || current.frozen || !current.visit || N_players != 2) return 0;
+	if (phase == 0) {
+		android_pdata_probe_sending = 0;
+		android_pdata_probe_rejected = android_pdata_probe_applied = android_pdata_current_received = 0;
+		net_udp_endlevel_probe_arm(&android_endlevel_probe);
+		return 1;
+	}
+	if (phase == 1) {
+		android_pdata_probe_sending = 1;
+		android_pdata_probe_next_send = 0;
+		android_endlevel_probe.sending = 1;
+		android_endlevel_probe.next_send = 0;
+		return 1;
+	}
+	int ready = android_pdata_probe_rejected == 3 && !android_pdata_probe_applied && android_pdata_current_received > 0;
+	ready = ready && net_udp_endlevel_probe_ready(&android_endlevel_probe);
+	if (phase == 3 && !ready && android_endlevel_probe.sending) {
+		static fix64 next_report;
+		if (timer_query() >= next_report) {
+			next_report = timer_query() + F1_0;
+			con_printf(CON_NORMAL, "Android packet probe pending: pdata=%u/%u/%u endlevel=%u/%u/%u preserved=%d countdown=%d/%d",
+			           android_pdata_probe_rejected, android_pdata_probe_applied, android_pdata_current_received,
+			           android_endlevel_probe.rejected, android_endlevel_probe.applied, android_endlevel_probe.current,
+			           net_udp_endlevel_probe_preserved(&android_endlevel_probe),
+			           Countdown_seconds_left, android_endlevel_probe.countdown);
+		}
+	}
+	if (phase == 2) {
+		android_pdata_probe_sending = 0;
+		android_endlevel_probe.sending = 0;
+		con_printf(CON_NORMAL, "Android ENDLEVEL fence: visit=%llu rejected=%u applied=%u current=%u preserved=%d",
+		           (unsigned long long) current.visit, android_endlevel_probe.rejected,
+		           android_endlevel_probe.applied, android_endlevel_probe.current,
+		           net_udp_endlevel_probe_preserved(&android_endlevel_probe));
+		con_printf(CON_NORMAL, "Android PDATA fence: visit=%llu rejected=%u applied=%u current=%u codec=%s frozen=%u",
+		           (unsigned long long) current.visit, android_pdata_probe_rejected, android_pdata_probe_applied,
+		           android_pdata_current_received, Netgame.RetroProtocol ? "uncompressed" : Netgame.ShortPackets ? "short" : "quaternion", current.frozen);
+	}
+	return (phase == 2 || phase == 3) && ready;
+}
+
+
+#endif
+#endif
 
 char* msg_name(int type)
 {
@@ -944,7 +1195,7 @@ int generate_token() {
 
 }
 
-void drop_rx_packet(ubyte  *data, char* reason) {
+void drop_rx_packet(ubyte  *data, const char* reason) {
 	char comment[200];
 	snprintf(comment, 199, "Dropped %s: %s\n", msg_name(data[0]), reason); 
 	net_log_comment(comment);
@@ -1080,8 +1331,24 @@ int valid_size(ubyte *data, int data_len, struct _sockaddr sender_addr) {
 		case UPID_P2P_PONG: 			if(data_len != UPID_P2P_PONG_SIZE          )  { rv = 0; }  break;
 		case UPID_REATTEMPT_DIRECT: 	if(data_len != UPID_REATTEMPT_DIRECT_SIZE  )  { rv = 0; }  break;
 #ifdef __ANDROID__
+		case UPID_PDATA:
+			rv = data_len == (Netgame.RetroProtocol ? UPID_PDATA_U_SIZE : Netgame.ShortPackets ? UPID_PDATA_S_SIZE : UPID_PDATA_Q_SIZE);
+			break;
+		case UPID_ENDLEVEL_H:
+			rv = data_len == UPID_ENDLEVEL_H_SIZE;
+			break;
+		case UPID_ENDLEVEL_C:
+			rv = data_len == UPID_ENDLEVEL_C_SIZE;
+			break;
 		case UPID_RECONNECT_CHALLENGE: if(data_len != ANDROID_NET_UDP_RECONNECT_CHALLENGE_PACKET_SIZE) { rv = 0; } break;
 		case UPID_RECONNECT_PROOF: if(data_len != ANDROID_NET_UDP_RECONNECT_PROOF_PACKET_SIZE) { rv = 0; } break;
+		case UPID_MDATA_PNORM:
+		case UPID_OBSDATA:
+			rv = data_len > 6 + COOP_GAMEPLAY_STAMP_BYTES && data_len <= 6 + UPID_MDATA_WIRE_BODY_SIZE;
+			break;
+		case UPID_MDATA_PNEEDACK:
+			rv = data_len > 10 + COOP_GAMEPLAY_STAMP_BYTES && data_len <= UPID_MDATA_MAX_SIZE;
+			break;
 #endif
 
 		// Special cases
@@ -2160,6 +2427,17 @@ static void net_udp_begin_reconnect_proof(
 }
 #endif
 
+#ifdef __ANDROID__
+static int net_udp_defer_join(const UDP_sequence_packet *their, int authenticated_player_num)
+{
+	if (!coop_travel_active() && !coop_briefing_active() && !multi_save_transfer_busy())
+		return 0;
+	COOPLOG("network join deferred for coop transition: player=%d source=%d requested=%d",
+	        authenticated_player_num, Current_level_num, their->player.connected);
+	return 1;
+}
+#endif
+
 void net_udp_welcome_player(UDP_sequence_packet *their,
                             int authenticated_player_num,
                             int reconnect_proven, int is_proxy)
@@ -2176,6 +2454,13 @@ void net_udp_welcome_player(UDP_sequence_packet *their,
 #endif
 
 	WaitForRefuseAnswer=0;
+
+	#ifdef __ANDROID__
+	/* A frozen peer can request destination sync before the host loads it.
+	 * Defer joins before checking the still-destroyed source or its level */
+	if (net_udp_defer_join(their, authenticated_player_num))
+		return;
+	#endif
 
 	// Don't accept new players if we're ending this level.  Its safe to
 	// ignore since they'll request again later
@@ -3067,6 +3352,9 @@ void net_udp_remove_player(UDP_sequence_packet *p)
 void net_udp_dump_player(struct _sockaddr dump_addr, int their_token, int why)
 {
 	// Inform player that he was not chosen for the netgame
+	#ifdef __ANDROID__
+	COOPLOG("network dump: reason=%d level=%d travel=%d", why, Current_level_num, coop_travel_active());
+	#endif
 
 	ubyte buf[UPID_DUMP_SIZE];
 	int i;
@@ -3143,10 +3431,26 @@ void net_udp_update_netgame(void)
 	Netgame.levelnum = Current_level_num;
 }
 
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+static void net_udp_test_send_endlevel_probes(const ubyte *data, int len)
+{
+	if (!android_endlevel_probe.sending) return;
+	int peer = Player_num ? 0 : 1;
+	for (int i = 0; i < 2; ++i) {
+		ubyte copy[UPID_ENDLEVEL_H_SIZE];
+		if (!net_udp_endlevel_probe_clone(copy, data, len, i)) return;
+		dxx_sendto(UDP_Socket[0], copy, len, 0, (struct sockaddr *) &Netgame.players[peer].protocol.udp.addr, sizeof(struct _sockaddr));
+	}
+}
+#endif
+
 /* Send an updated endlevel status to everyone (if we are host) or host (if we are client)  */
 void net_udp_send_endlevel_packet(void)
 {
 	int i = 0, j = 0, len = 0;
+#ifdef __ANDROID__
+	coop_gameplay_stamp stamp = coop_gameplay_current_stamp();
+#endif
 
 	if (is_observer()) {
 		// Don't send this packet as observer.
@@ -3178,6 +3482,14 @@ void net_udp_send_endlevel_packet(void)
 			}
 		}
 
+#ifdef __ANDROID__
+		if (!coop_gameplay_stamp_write(buf + len, sizeof(buf) - len, &stamp)) return;
+		len += COOP_GAMEPLAY_STAMP_BYTES;
+#ifdef INTROSPECT_ON
+		net_udp_test_send_endlevel_probes(buf, len);
+#endif
+#endif
+
 		for (i = 0; i < MAX_PLAYERS; i++)
 			if (i != Player_num && Players[i].connected != CONNECT_DISCONNECTED)
 				dxx_sendto (UDP_Socket[0], buf, len, 0, (struct sockaddr *)&Netgame.players[i].protocol.udp.addr, sizeof(struct _sockaddr));
@@ -3202,6 +3514,14 @@ void net_udp_send_endlevel_packet(void)
 		{
 			PUT_INTEL_SHORT(buf + len, kill_matrix[Player_num][i]);			len += 2;
 		}
+
+#ifdef __ANDROID__
+		if (!coop_gameplay_stamp_write(buf + len, sizeof(buf) - len, &stamp)) return;
+		len += COOP_GAMEPLAY_STAMP_BYTES;
+#ifdef INTROSPECT_ON
+		net_udp_test_send_endlevel_probes(buf, len);
+#endif
+#endif
 
 		dxx_sendto (UDP_Socket[0], buf, len, 0, (struct sockaddr *)&Netgame.players[multi_who_is_master()].protocol.udp.addr, sizeof(struct _sockaddr));
 	}
@@ -3453,6 +3773,10 @@ void net_udp_send_game_info(struct _sockaddr sender_addr, ubyte info_upid, ubyte
 		buf[len] = Netgame.FullDeathSpew; len++;
 		buf[len] = Netgame.PlayerSpewNoExpire; len++;
 		buf[len] = Netgame.DuplicateEnergyShields; len++;
+#ifdef __ANDROID__
+		buf[len++] = Netgame.CoopBriefings;
+		buf[len++] = Netgame.AllowSecretWarps;
+#endif
 		buf[len] = Netgame.team_color[0];						len++;
 		buf[len] = Netgame.team_color[1];						len++;
 		buf[len] = Netgame.RebalancedWeapons; len++;
@@ -3480,6 +3804,9 @@ void net_udp_send_game_info(struct _sockaddr sender_addr, ubyte info_upid, ubyte
 				return;
 			len += generation_size;
 		}
+		coop_world_visit_session(netgame_token);
+		coop_world_visit_write(buf + len, coop_world_visit_current());
+		len += 8;
 #endif
 
 		Assert(len <= sizeof(buf));
@@ -3575,6 +3902,19 @@ void net_udp_request_resync_from_host(const char *reason)
 int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_addr, int lite_info, ubyte is_sync)
 {
 	int len = 0, i = 0, j = 0;
+	/* Android: reject stale or malformed metadata before any parser side effects */
+#ifdef __ANDROID__
+	if (!lite_info) {
+		const char *reason = !is_master_ip(game_addr) ? "full game info sender is not host" :
+		    android_net_udp_game_info_preflight(data, data_len, is_sync,
+		        is_sync || Netgame.protocol.udp.valid == 1, netgame_token, my_player_token,
+		        multi_who_is_master(), is_observer(), coop_world_visit_current());
+		if (reason) {
+			drop_rx_packet(data, reason);
+			return 0;
+		}
+	}
+#endif
 	
 	if (lite_info)
 	{
@@ -3764,6 +4104,10 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 		Netgame.FullDeathSpew = data[len]; len++;
 		Netgame.PlayerSpewNoExpire = data[len]; len++;
 		Netgame.DuplicateEnergyShields = data[len]; len++;
+#ifdef __ANDROID__
+		Netgame.CoopBriefings = data[len++] != 0;
+		Netgame.AllowSecretWarps = data[len++] != 0;
+#endif
 		Netgame.team_color[0] = data[len];						len++;
 		Netgame.team_color[1] = data[len];						len++;
 		Netgame.RebalancedWeapons = data[len]; len++;
@@ -3814,6 +4158,21 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 				return 0;
 			len += generation_size;
 		}
+		if (data_len - len < 8) return 0;
+		{
+			uint64_t visit = coop_world_visit_read(data + len);
+			coop_world_visit_session(netgame_token);
+			if (Netgame.gamemode == NETGAME_COOPERATIVE) {
+				if (is_sync || Network_status == NETSTAT_MENU || Network_status == NETSTAT_STARTING) {
+					if (!coop_world_visit_sync(visit)) {
+						COOPLOG("world visit rejected stale sync: received=%llu active=%llu",
+						        (unsigned long long) visit, (unsigned long long) coop_world_visit_current());
+						return 0;
+					}
+				} else coop_world_visit_observe(visit);
+			}
+			len += 8;
+		}
 #endif
 
 		if (len > data_len) {
@@ -3824,10 +4183,68 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 		}
 
 		Netgame.protocol.udp.valid = 1; // This game is valid! YAY!
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+		memcpy(android_test_game_info[!!is_sync], data, data_len);
+		android_test_game_info_size[!!is_sync] = data_len;
+#endif
 	}
 
 	return 1; 
 }
+
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+/* Exercise the actual parser with host-authored layouts after every tested visit */
+static int net_udp_test_game_info_fence(void)
+{
+	netgame_info before = Netgame;
+	const uint32_t session = netgame_token, player = my_player_token;
+	const int master = multi_who_is_master();
+	const uint64_t visit = coop_world_visit_current(), high_water = coop_world_visit_high_water();
+	ubyte identities[MAX_PLAYERS + 4][ANDROID_NET_UDP_RECONNECT_PLAYER_AUTH_SIZE];
+	ubyte generation[ANDROID_NET_UDP_RECONNECT_GENERATION_SIZE];
+	unsigned checked = 0;
+	if (!visit || !android_net_udp_auth_write_generation(generation, sizeof(generation))) return 0;
+	for (int i = 0; i < MAX_PLAYERS + 4; ++i)
+		if (!android_net_udp_auth_write_player(identities[i], i)) return 0;
+	for (int sync = 0; sync < 2; ++sync) {
+		const int size = android_test_game_info_size[sync];
+		if (size < 64 || size > UPID_MAX_SIZE) return 0;
+		for (int mutation = 0; mutation < 5; ++mutation) {
+			ubyte packet[UPID_MAX_SIZE], identity[ANDROID_NET_UDP_RECONNECT_PLAYER_AUTH_SIZE];
+			const int token_offset = size - 8 - ANDROID_NET_UDP_RECONNECT_GENERATION_SIZE - 4;
+			memcpy(packet, android_test_game_info[sync], size);
+			/* Bring authority fields current so each probe isolates its rejection */
+			packet[token_offset - 1 - (sync ? 4 : 0)] = master;
+			PUT_INTEL_INT(packet + token_offset, session);
+			if (sync) PUT_INTEL_INT(packet + token_offset - 4, player);
+			memcpy(packet + token_offset + 4, generation, sizeof(generation));
+			coop_world_visit_write(packet + size - 8, visit);
+			packet[1] ^= 1; /* First parser write must also remain unapplied */
+			if (mutation == 0) coop_world_visit_write(packet + size - 8, visit - 1);
+			if (mutation == 1) PUT_INTEL_INT(packet + token_offset, session ^ 1);
+			if (mutation == 2) packet[token_offset + 4] ^= 1;
+			int received_size = mutation == 3 ? size - 1 : mutation == 4 ? 7 : size;
+			if (net_udp_process_game_info(packet, received_size,
+			        before.players[master].protocol.udp.addr, 0, sync) ||
+			    memcmp(&Netgame, &before, sizeof(before)) ||
+			    netgame_token != session || my_player_token != player ||
+			    multi_who_is_master() != master || coop_world_visit_current() != visit ||
+			    coop_world_visit_high_water() != high_water) return 0;
+			for (int i = 0; i < MAX_PLAYERS + 4; ++i) {
+				if (!android_net_udp_auth_write_player(identity, i) ||
+				    memcmp(identity, identities[i], sizeof(identity))) return 0;
+			}
+			ubyte current_generation[ANDROID_NET_UDP_RECONNECT_GENERATION_SIZE];
+			if (!android_net_udp_auth_write_generation(current_generation, sizeof(current_generation)) ||
+			    memcmp(current_generation, generation, sizeof(generation))) return 0;
+			++checked;
+		}
+	}
+	con_printf(CON_NORMAL, "Android game info fence: visit=%llu rejected=%u preserved=1",
+	           (unsigned long long) visit, checked);
+	return checked == 10;
+}
+#endif
 
 void net_udp_process_dump(ubyte *data, int len, struct _sockaddr sender_addr)
 {
@@ -3948,6 +4365,9 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 		switch (data[0])
 		{
 			case UPID_PDATA:
+#ifdef __ANDROID__
+				if (!net_udp_pdata_world_allowed(data, length)) break;
+#endif
 			case UPID_MDATA_PNORM:
 				forward_to_observers(data, length, 0);
 				break;
@@ -4257,6 +4677,21 @@ void net_udp_read_endlevel_packet( ubyte *data, int data_len, struct _sockaddr s
 {
 	int len = 0, i = 0, j = 0;
 	ubyte tmpvar = 0;
+#ifdef __ANDROID__
+	/* Validate before indexing players, disconnecting them or changing clocks */
+	int host = multi_i_am_master();
+	int expected = host ? UPID_ENDLEVEL_C_SIZE : UPID_ENDLEVEL_H_SIZE;
+	if (data_len != expected || data[0] != (host ? UPID_ENDLEVEL_C : UPID_ENDLEVEL_H) ||
+	    (uint32_t) GET_INTEL_INT(data + 1) != netgame_token) return;
+	if (host) {
+		if (data[5] >= MAX_PLAYERS || data[5] == Player_num || !is_player_ip(sender_addr, data[5])) return;
+	} else if (!is_master_ip(sender_addr)) return;
+	int allowed = coop_gameplay_endlevel_packet_allowed(data, data_len, expected);
+#ifdef INTROSPECT_ON
+	net_udp_endlevel_probe_receive(&android_endlevel_probe, data, data_len, allowed);
+#endif
+	if (!allowed) return;
+#endif
 	
 	if (multi_i_am_master())
 	{
@@ -4370,6 +4805,12 @@ int net_udp_sync_poll( newmenu *menu, d_event *event, void *userdata )
 	net_udp_listen();
 
 	// Leave if Host disconnects
+#ifdef __ANDROID__
+	if (multi_save_transfer_restoring()) {
+		net_udp_noloss_process_queue(timer_query());
+		if (multi_save_transfer_sync_poll(0)) return -2;
+	}
+#endif
 	if (Netgame.players[multi_who_is_master()].connected == CONNECT_DISCONNECTED)
 	{
 #ifdef __ANDROID__
@@ -5172,6 +5613,10 @@ void netgame_set_defaults()
 	Netgame.FullDeathSpew = 0;
 	Netgame.PlayerSpewNoExpire = 0;
 	Netgame.DuplicateEnergyShields = 0;
+#ifdef __ANDROID__
+	Netgame.CoopBriefings = 0;
+	Netgame.AllowSecretWarps = 0;
+#endif
 	Netgame.RebalancedWeapons = 0;
 	Netgame.NewSpawnAlgorithm = 0;
 
@@ -6210,6 +6655,11 @@ int net_udp_wait_for_sync(void)
 	}
 
 	con_printf(CON_DEBUG, "wait_for_sync: exited loop, Network_status=%d\n", Network_status);
+#ifdef __ANDROID__
+	/* Let the restore wrapper unwind before closing the game window */
+	if (multi_save_transfer_restoring() &&
+	    (multi_save_transfer_sync_poll(0) || Network_status != NETSTAT_PLAYING)) return -1;
+#endif
 	if (Network_status != NETSTAT_PLAYING)
 	{
 		UDP_sequence_packet me;
@@ -6257,6 +6707,12 @@ int net_udp_request_poll( newmenu *menu, d_event *event, void *userdata )
 	
 	net_udp_listen();
 	net_udp_timeout_check(timer_query());
+#ifdef __ANDROID__
+	if (multi_save_transfer_restoring()) {
+		net_udp_noloss_process_queue(timer_query());
+		if (multi_save_transfer_sync_poll(0)) return -2;
+	}
+#endif
 
 	for (i = 0; i < N_players; i++)
 	{
@@ -6310,7 +6766,10 @@ int net_udp_wait_for_requests(void)
 #endif
 
 menu:
-	choice = newmenu_do2(NULL, TXT_WAIT, 1, m, net_udp_request_poll, NULL, 0, Menu_pcx_name);	
+	choice = newmenu_do2(NULL, TXT_WAIT, 1, m, net_udp_request_poll, NULL, 0, Menu_pcx_name);
+#ifdef __ANDROID__
+	if (multi_save_transfer_sync_poll(0)) return -1;
+#endif
 
 	if (choice == -1)
 	{
@@ -6346,10 +6805,27 @@ net_udp_level_sync(void)
 	char logbuf[256];
 #endif
 
+#ifdef __ANDROID__
+	/* ACKs use session packet identities: a level change must not reuse them */
+	uint32_t packet_sequence = UDP_MData.pkt_num;
+#endif
 	memset(&UDP_MData, 0, sizeof(UDP_mdata_info));
+#ifdef __ANDROID__
+	UDP_MData.pkt_num = packet_sequence;
+#endif
+	/* Keep in-flight restore control messages and their duplicate history */
+#ifdef __ANDROID__
+	if (!multi_save_transfer_restoring())
+#endif
 	net_udp_noloss_init_mdata_queue();
 
 #ifdef __ANDROID__
+	coop_world_visit_session(netgame_token);
+	if ((Game_mode & GM_MULTI_COOP) && N_players > 0 && multi_i_am_master() && !multi_save_transfer_restoring()) {
+		if (!coop_world_visit_activate(coop_world_visit_reserve())) return -1;
+		COOPLOG("world visit new level: visit=%llu level=%d",
+		        (unsigned long long) coop_world_visit_current(), Current_level_num);
+	}
 	if (Game_mode & GM_MULTI_COOP) {
 		COOPLOG("level_sync begin: game=d2 level=%d player=%d players=%d master=%d status=%d",
 		        Current_level_num, Player_num, N_players, multi_i_am_master(),
@@ -6378,6 +6854,8 @@ net_udp_level_sync(void)
 
 	con_printf(CON_DEBUG, "level_sync: result=%d\n", result);
 #ifdef __ANDROID__
+	/* Closing Game_wind here longjmps past the active save reader */
+	if (multi_save_transfer_sync_poll(result)) return -1;
 	if (Game_mode & GM_MULTI_COOP) {
 		COOPLOG("level_sync result: game=d2 level=%d result=%d player=%d players=%d status=%d",
 		        Current_level_num, result, Player_num, N_players, Network_status);
@@ -6543,6 +7021,10 @@ void net_udp_leave_game()
 
 void net_udp_flush()
 {
+#ifdef __ANDROID__
+	/* Queued restore errors are current session control, not old gameplay */
+	if (multi_save_transfer_restoring()) return;
+#endif
 	ubyte packet[UPID_MAX_SIZE];
 	struct _sockaddr sender_addr; 
 
@@ -6638,11 +7120,26 @@ void net_udp_listen()
 
 void net_udp_send_data(const ubyte * ptr, int len, int priority )
 {
+#ifdef __ANDROID__
+	if (!ptr || len <= 0 || len > UPID_MDATA_BUF_SIZE)
+		return;
+#endif
 	char check;
 
 	if (Endlevel_sequence)
 		return;
 
+#ifdef __ANDROID__
+	ubyte stamp_bytes[COOP_GAMEPLAY_STAMP_BYTES];
+	coop_gameplay_stamp stamp = coop_gameplay_current_stamp();
+	if (!coop_gameplay_stamp_write(stamp_bytes, sizeof(stamp_bytes), &stamp)) return;
+	/* A batch cannot mix world visits or cross the freeze boundary */
+	if (UDP_MData.mbuf_size && memcmp(UDP_MData.world_stamp, stamp_bytes, sizeof(stamp_bytes))) {
+		net_udp_send_mdata(0, timer_query());
+		if (UDP_MData.mbuf_size) return;
+	}
+	memcpy(UDP_MData.world_stamp, stamp_bytes, sizeof(stamp_bytes));
+#endif
 	if ((UDP_MData.mbuf_size+len) > UPID_MDATA_BUF_SIZE )
 	{
 		check = ptr[0];
@@ -6694,6 +7191,10 @@ void net_udp_timeout_check(fix64 time)
 				else if ((time - Netgame.players[i].LastPacketTime) > UDP_TIMEOUT)
 				{
 					MPDIAG("timeout_check: player %d timed out (%.1fs ago)\n", i, (float)(time - Netgame.players[i].LastPacketTime) / F1_0);
+					#ifdef __ANDROID__
+					COOPLOG("network liveness timeout: player=%d level=%d age_ms=%lld travel=%d", i, Current_level_num,
+					        (long long) ((time - Netgame.players[i].LastPacketTime) * 1000 / F1_0), coop_travel_active());
+					#endif
 					if((! Netgame.RetroProtocol) || multi_i_am_master() || i == multi_who_is_master()) {
 						multi_disconnect_player(i);
 					} else if ((time - Netgame.players[i].LastPacketTime) > UDP_TIMEOUT*2) {
@@ -6755,7 +7256,11 @@ void net_udp_do_frame(int force, int listen)
 		net_udp_resend_sync_due_to_packet_loss(); // This will resend to UDP_sync_player
 	}
 
-	if ((time>=last_endlevel_time+F1_0) && Control_center_destroyed)
+	if ((time>=last_endlevel_time+F1_0) && (Control_center_destroyed
+#ifdef __ANDROID__
+	    || coop_travel_ending_campaign()
+#endif
+	    ))
 	{
 		last_endlevel_time = time;
 		net_udp_send_endlevel_packet();
@@ -6826,6 +7331,10 @@ void net_udp_do_frame(int force, int listen)
 			net_udp_send_extras();
 	}
 
+#ifdef __ANDROID__
+	coop_briefing_network_frame();
+	coop_travel_network_frame();
+#endif
 	udp_traffic_stat();
 }
 
@@ -6836,6 +7345,10 @@ void net_udp_do_frame(int force, int listen)
  */
 void net_udp_noloss_add_queue_pkt(uint32_t pkt_num, fix64 time, ubyte *data, ushort data_size, ubyte pnum, ubyte player_ack[MAX_PLAYERS])
 {
+#ifdef __ANDROID__
+	if (!data || data_size <= COOP_GAMEPLAY_STAMP_BYTES || data_size > UPID_MDATA_WIRE_BODY_SIZE)
+		return;
+#endif
 	int i, found = 0;
 
 	if (!(Game_mode&GM_NETWORK) || UDP_Socket[0] == -1)
@@ -6860,6 +7373,10 @@ void net_udp_noloss_add_queue_pkt(uint32_t pkt_num, fix64 time, ubyte *data, ush
 
 	if (UDP_mdata_queue[found].used) // seems the slot we found is used (list is full) so screw  those who still need ack's.
 	{
+		#ifdef __ANDROID__
+		COOPLOG("network reliable queue full: level=%d packet=%u type=%u bytes=%d travel=%d", Current_level_num,
+		        UDP_mdata_queue[found].pkt_num, (unsigned) UDP_mdata_queue[found].data[0], UDP_mdata_queue[found].data_size, coop_travel_active());
+		#endif
 		con_printf(CON_VERBOSE, "P#%i: MData store list is full!\n", Player_num);
 		if (multi_i_am_master())
 		{
@@ -6897,6 +7414,10 @@ void net_udp_noloss_add_queue_pkt(uint32_t pkt_num, fix64 time, ubyte *data, ush
 
 void net_udp_noloss_obs_add_queue_pkt(uint32_t pkt_num, fix64 time, ubyte* data, ushort data_size, ubyte pnum, ubyte observer_ack[MAX_OBSERVERS])
 {
+#ifdef __ANDROID__
+	if (!data || data_size <= COOP_GAMEPLAY_STAMP_BYTES || data_size > UPID_MDATA_WIRE_BODY_SIZE)
+		return;
+#endif
 	int i, found = 0;
 
 	if (!(Game_mode & GM_NETWORK) || UDP_Socket[0] == -1)
@@ -6989,7 +7510,13 @@ int net_udp_noloss_validate_mdata(uint32_t pkt_num, ubyte sender_pnum, struct _s
 	for (i = 0; i < UDP_MDATA_STOR_QUEUE_SIZE; i++)
 	{
 		if (pkt_num == UDP_mdata_got[sender_pnum].pkt_num[i])
+		{
+#ifdef __ANDROID__
+			if (coop_travel_active())
+				COOPLOG("network duplicate acknowledged: packet=%u owner=%u player=%d", pkt_num, sender_pnum, Player_num);
+#endif
 			return 0; // we got this packet already
+		}
 	}
 	UDP_mdata_got[sender_pnum].cur_slot++;
 	if (UDP_mdata_got[sender_pnum].cur_slot >= UDP_MDATA_STOR_QUEUE_SIZE)
@@ -7040,8 +7567,25 @@ void net_udp_noloss_got_ack(ubyte *data, int data_len, struct _sockaddr sender_a
 		{
 			if ((pkt_num == UDP_mdata_queue[i].pkt_num) && (dest_pnum == UDP_mdata_queue[i].Player_num))
 			{
+#ifdef __ANDROID__
+				if (coop_travel_active() && (!UDP_mdata_queue[i].used || timer_query() - UDP_mdata_queue[i].pkt_initial_timestamp > 2 * F1_0))
+					COOPLOG("network delayed ACK matched: packet=%u owner=%u sender=%u slot=%d used=%d age_ms=%lld",
+					        pkt_num, dest_pnum, sender_pnum, i, UDP_mdata_queue[i].used,
+					        (long long) ((timer_query() - UDP_mdata_queue[i].pkt_initial_timestamp) * 1000 / F1_0));
+#endif
 				con_printf(CON_VERBOSE, "P#%i: Got MData ACK for pkt_num %i from pnum %i for pnum %i\n", Player_num, pkt_num, sender_pnum, dest_pnum);
 				UDP_mdata_queue[i].player_ack[sender_pnum] = 1;
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+				if (UDP_mdata_queue[i].used && dest_pnum == Player_num && sender_pnum == android_test_fence_peer)
+					for (unsigned probe = 0; probe < 2; ++probe)
+						if (pkt_num == android_test_fence_packets[probe]) android_test_fence_acked |= 1u << probe;
+				if (UDP_mdata_queue[i].used && dest_pnum == Player_num && sender_pnum != Player_num &&
+				    pkt_num == android_test_full_packet)
+					android_test_full_acked = 1;
+				if (android_test_boundary_seeded && UDP_mdata_queue[i].used &&
+				    dest_pnum == Player_num && sender_pnum != Player_num && pkt_num > android_test_boundary_acked)
+					android_test_boundary_acked = pkt_num;
+#endif
 				break;
 			}
 		}
@@ -7051,6 +7595,9 @@ void net_udp_noloss_got_ack(ubyte *data, int data_len, struct _sockaddr sender_a
 /* Init/Free the queue. Call at start and end of a game or level. */
 void net_udp_noloss_init_mdata_queue(void)
 {
+#ifdef __ANDROID__
+	android_mdata_retry_cursor = 0;
+#endif
 	con_printf(CON_VERBOSE, "P#%i: Clearing MData store/GOT list\n",Player_num);
 	memset(&UDP_mdata_queue,0,sizeof(UDP_mdata_store)*UDP_MDATA_STOR_QUEUE_SIZE);
 	memset(&UDP_mdata_obs_queue, 0, sizeof(UDP_mdata_obs_store) * UDP_MDATA_STOR_QUEUE_SIZE);
@@ -7079,9 +7626,17 @@ void net_udp_noloss_process_queue(fix64 time)
 	if (!Netgame.PacketLossPrevention)
 		return;
 
+#ifdef __ANDROID__
+	for (unsigned scanned = 0; scanned < UDP_MDATA_STOR_QUEUE_SIZE; ++scanned)
+#else
 	for (queuec = 0; queuec < UDP_MDATA_STOR_QUEUE_SIZE; queuec++)
+#endif
 	{
 		int needack = 0;
+#ifdef __ANDROID__
+		queuec = android_mdata_retry_cursor;
+		android_mdata_retry_cursor = (android_mdata_retry_cursor + 1) % UDP_MDATA_STOR_QUEUE_SIZE;
+#endif
 		
 		if (!UDP_mdata_queue[queuec].used)
 			continue;
@@ -7090,7 +7645,11 @@ void net_udp_noloss_process_queue(fix64 time)
 		for (plc = 0; plc < MAX_PLAYERS; plc++)
 		{
 			// If player is not playing anymore, we can remove him from list. Also remove *me* (even if that should have been done already). Also make sure Clients do not send to anyone else than Host
-			if ((Players[plc].connected != CONNECT_PLAYING || plc == Player_num) || (!multi_i_am_master() && plc != multi_who_is_master()))
+			if (((Players[plc].connected != CONNECT_PLAYING
+#ifdef __ANDROID__
+			      && !multi_save_transfer_waiting_peer(UDP_mdata_queue[queuec].data, UDP_mdata_queue[queuec].data_size - COOP_GAMEPLAY_STAMP_BYTES, plc)
+#endif
+			      ) || plc == Player_num) || (!multi_i_am_master() && plc != multi_who_is_master()))
 				UDP_mdata_queue[queuec].player_ack[plc] = 1;
 
 			if (!UDP_mdata_queue[queuec].player_ack[plc])
@@ -7098,13 +7657,21 @@ void net_udp_noloss_process_queue(fix64 time)
 				// Resend if enough time has passed.
 				if (UDP_mdata_queue[queuec].pkt_timestamp[plc] + (F1_0/3) <= time)
 				{
-					ubyte buf[sizeof(UDP_mdata_info)];
+					ubyte buf[UPID_MDATA_MAX_SIZE];
 					int len = 0;
 					
+#ifdef __ANDROID__
+					if (coop_travel_active() && time >= UDP_mdata_queue[queuec].pkt_initial_timestamp + 2 * F1_0 &&
+					    UDP_mdata_queue[queuec].pkt_timestamp[plc] < UDP_mdata_queue[queuec].pkt_initial_timestamp + 2 * F1_0)
+						COOPLOG("network overdue retry: packet=%u owner=%u target=%d type=%u bytes=%d age_ms=%lld",
+						        UDP_mdata_queue[queuec].pkt_num, UDP_mdata_queue[queuec].Player_num, plc,
+						        (unsigned) UDP_mdata_queue[queuec].data[0], UDP_mdata_queue[queuec].data_size,
+						        (long long) ((time - UDP_mdata_queue[queuec].pkt_initial_timestamp) * 1000 / F1_0));
+#endif
 					con_printf(CON_VERBOSE, "P#%i: Resending pkt_num %i from pnum %i to pnum %i\n",Player_num, UDP_mdata_queue[queuec].pkt_num, UDP_mdata_queue[queuec].Player_num, plc);
 					
 					UDP_mdata_queue[queuec].pkt_timestamp[plc] = time;
-					memset(&buf, 0, sizeof(UDP_mdata_info));
+					memset(&buf, 0, sizeof(buf));
 					
 					// Prepare the packet and send it
 					buf[len] = UPID_MDATA_PNEEDACK;													len++;
@@ -7125,6 +7692,11 @@ void net_udp_noloss_process_queue(fix64 time)
 		{
 			if (needack) // packet timed out but still not all have ack'd. SCREW THEM NOW!
 			{
+				#ifdef __ANDROID__
+				COOPLOG("network reliable timeout: level=%d packet=%u type=%u bytes=%d needack=%d travel=%d", Current_level_num,
+				        UDP_mdata_queue[queuec].pkt_num, (unsigned) UDP_mdata_queue[queuec].data[0],
+				        UDP_mdata_queue[queuec].data_size, needack, coop_travel_active());
+				#endif
 				if (multi_i_am_master())
 				{
 					for ( plc=0; plc<N_players; plc++ )
@@ -7174,13 +7746,13 @@ void net_udp_noloss_process_queue(fix64 time)
 				// Resend if enough time has passed.
 				if (UDP_mdata_obs_queue[queuec].pkt_timestamp[plc] + (F1_0 / 3) <= time)
 				{
-					ubyte buf[sizeof(UDP_mdata_info)];
+					ubyte buf[UPID_MDATA_MAX_SIZE];
 					int len = 0;
 
 					con_printf(CON_VERBOSE, "P#%i: Resending pkt_num %i from pnum %i to observer %i\n", Player_num, UDP_mdata_queue[queuec].pkt_num, UDP_mdata_queue[queuec].Player_num, plc);
 
 					UDP_mdata_obs_queue[queuec].pkt_timestamp[plc] = time;
-					memset(&buf, 0, sizeof(UDP_mdata_info));
+					memset(&buf, 0, sizeof(buf));
 
 					// Prepare the packet and send it
 					buf[len] = UPID_MDATA_PNEEDACK;													len++;
@@ -7235,7 +7807,11 @@ void net_udp_noloss_process_queue(fix64 time)
 
 void net_udp_send_mdata_direct(ubyte *data, int data_len, int pnum, int needack)
 {
-	ubyte buf[sizeof(UDP_mdata_info)];
+#ifdef __ANDROID__
+	if (!data || data_len <= 0 || data_len > UPID_MDATA_BUF_SIZE)
+		return;
+#endif
+	ubyte buf[UPID_MDATA_MAX_SIZE];
 	ubyte pack[MAX_PLAYERS];
 	int len = 0;
 	
@@ -7251,7 +7827,7 @@ void net_udp_send_mdata_direct(ubyte *data, int data_len, int pnum, int needack)
 	if (!Netgame.PacketLossPrevention)
 		needack = 0;
 
-	memset(&buf, 0, sizeof(UDP_mdata_info));
+	memset(&buf, 0, sizeof(buf));
 	memset(&pack, 1, sizeof(ubyte)*MAX_PLAYERS);
 
 	pack[pnum] = 0;
@@ -7268,25 +7844,55 @@ void net_udp_send_mdata_direct(ubyte *data, int data_len, int pnum, int needack)
 	if (needack)
 	{
 		UDP_MData.pkt_num++;
+#ifdef __ANDROID__
+		/* Zero is the empty receive-history sentinel, never a packet identity */
+		if (!UDP_MData.pkt_num)
+			++UDP_MData.pkt_num;
+#else
 		Assert(UDP_MDATA_STOR_QUEUE_SIZE*100 < INT_MAX);
 		if (UDP_MData.pkt_num > UDP_MDATA_STOR_QUEUE_SIZE*100) // roll over at some point
 			UDP_MData.pkt_num = 0;
+#endif
 		PUT_INTEL_INT(buf + len, UDP_MData.pkt_num);							len += 4;
 	}
 	memcpy(&buf[len], data, sizeof(char)*data_len);								len += data_len;
 
-	if (pnum == Player_num && multi_i_am_master())
-		forward_to_observers(buf, len, needack); 
+#ifdef __ANDROID__
+	coop_gameplay_stamp stamp = coop_gameplay_current_stamp();
+	if (!coop_gameplay_stamp_write(buf + len, sizeof(buf) - len, &stamp)) return;
+	len += COOP_GAMEPLAY_STAMP_BYTES;
+#endif
+
+	if (pnum == Player_num && multi_i_am_master()) {
+#ifdef __ANDROID__
+		/* Briefing deadlines are session control, outside spectator gameplay delay */
+		if (data[0] == MULTI_COOP_BRIEFING || data[0] == MULTI_COOP_TRAVEL)
+			forward_to_observers_nodelay(buf, len, needack);
+		else
+#endif
+			forward_to_observers(buf, len, needack);
+	}
 	else
-		dxx_sendto (UDP_Socket[0], buf, len, 0, (struct sockaddr *)&Netgame.players[pnum].protocol.udp.addr, sizeof(struct _sockaddr));
+#ifdef __ANDROID__
+		if ((!needack || !multi_save_transfer_test_drop_packet(data, data_len, pnum))
+#ifdef INTROSPECT_ON
+		    && !net_udp_test_drop_full_mdata(needack)
+#endif
+		    )
+#endif
+			dxx_sendto (UDP_Socket[0], buf, len, 0, (struct sockaddr *)&Netgame.players[pnum].protocol.udp.addr, sizeof(struct _sockaddr));
 
 	if (needack)
+#ifdef __ANDROID__
+		net_udp_noloss_add_queue_pkt(UDP_MData.pkt_num, timer_query(), buf + 10, len - 10, Player_num, pack);
+#else
 		net_udp_noloss_add_queue_pkt(UDP_MData.pkt_num, timer_query(), data, data_len, Player_num, pack);
+#endif
 }
 
 void net_udp_send_mdata(int needack, fix64 time)
 {
-	ubyte buf[sizeof(UDP_mdata_info)];
+	ubyte buf[UPID_MDATA_MAX_SIZE];
 	ubyte pack[MAX_PLAYERS];
 	int len = 0, i = 0;
 	
@@ -7299,7 +7905,7 @@ void net_udp_send_mdata(int needack, fix64 time)
 	if (!Netgame.PacketLossPrevention)
 		needack = 0;
 
-	memset(&buf, 0, sizeof(UDP_mdata_info));
+	memset(&buf, 0, sizeof(buf));
 	memset(&pack, 1, sizeof(ubyte)*MAX_PLAYERS);
 
 	if (needack)
@@ -7312,9 +7918,18 @@ void net_udp_send_mdata(int needack, fix64 time)
 	if (needack)
 	{
 		UDP_MData.pkt_num++;
+#ifdef __ANDROID__
+		if (!UDP_MData.pkt_num)
+			++UDP_MData.pkt_num;
+#endif
 		PUT_INTEL_INT(buf + len, UDP_MData.pkt_num);							len += 4;
 	}
 	memcpy(buf + len, UDP_MData.mbuf, sizeof(char)*UDP_MData.mbuf_size);		len += UDP_MData.mbuf_size;
+
+#ifdef __ANDROID__
+	memcpy(buf + len, UDP_MData.world_stamp, COOP_GAMEPLAY_STAMP_BYTES);
+	len += COOP_GAMEPLAY_STAMP_BYTES;
+#endif
 
 	if(Netgame.RetroProtocol && ! needack) {
 		for (i = 0; i < MAX_PLAYERS; i++) {
@@ -7353,7 +7968,11 @@ void net_udp_send_mdata(int needack, fix64 time)
 	}
 
 	if (needack)
+#ifdef __ANDROID__
+		net_udp_noloss_add_queue_pkt(UDP_MData.pkt_num, time, buf + 10, len - 10, Player_num, pack);
+#else
 		net_udp_noloss_add_queue_pkt(UDP_MData.pkt_num, time, UDP_MData.mbuf, UDP_MData.mbuf_size, Player_num, pack);
+#endif
 
 	// Clear UDP_MData except pkt_num. That one must not be deleted so we can clearly keep track of important packets.
 	UDP_MData.type = 0;
@@ -7368,7 +7987,7 @@ void net_udp_process_mdata (ubyte *data, int data_len, struct _sockaddr sender_a
 	int authenticated_sender = player_num_for_address(sender_addr);
 
 	// Check if packet might be bogus
-	if ((pnum < 0) || (data_len > sizeof(UDP_mdata_info)))
+	if ((pnum < 0) || (data_len > UPID_MDATA_MAX_SIZE))
 		return;
 
 	// Check if it came from valid IP
@@ -7402,10 +8021,17 @@ void net_udp_process_mdata (ubyte *data, int data_len, struct _sockaddr sender_a
 		}
 	}
 
+#ifdef __ANDROID__
+	coop_gameplay_stamp stamp;
+	if (data_len <= dataoffset + COOP_GAMEPLAY_STAMP_BYTES ||
+	    !coop_gameplay_stamp_read(&stamp, data + data_len - COOP_GAMEPLAY_STAMP_BYTES, COOP_GAMEPLAY_STAMP_BYTES)) return;
+#endif
+
 	// Add needack packet and check for possible redundancy
 	if (needack)
 	{
-		if (!net_udp_noloss_validate_mdata(GET_INTEL_SHORT(&data[6]), pnum, sender_addr))
+		/* Packet numbers occupy four bytes on the wire, including in ACKs */
+		if (!net_udp_noloss_validate_mdata(GET_INTEL_INT(&data[6]), pnum, sender_addr))
 			return;
 	}
 
@@ -7430,13 +8056,17 @@ void net_udp_process_mdata (ubyte *data, int data_len, struct _sockaddr sender_a
 
 			if (needack && N_players > 2)
 			{
-				net_udp_noloss_add_queue_pkt(GET_INTEL_SHORT(&data[6]), timer_query(), data+dataoffset, data_len-dataoffset, pnum, pack);
+				net_udp_noloss_add_queue_pkt(GET_INTEL_INT(&data[6]), timer_query(), data+dataoffset, data_len-dataoffset, pnum, pack);
 			}
 		}
 	}
 
 	// Check if we are in correct state to process the packet
-	if (!((Network_status == NETSTAT_PLAYING)||(Network_status == NETSTAT_ENDLEVEL)))
+	if (!((Network_status == NETSTAT_PLAYING)||(Network_status == NETSTAT_ENDLEVEL)
+#ifdef __ANDROID__
+	      || (Network_status == NETSTAT_WAITING && multi_save_transfer_restoring())
+#endif
+	      ))
 		return;
 
 	// Process
@@ -7444,12 +8074,20 @@ void net_udp_process_mdata (ubyte *data, int data_len, struct _sockaddr sender_a
 	{
 		int old_Endlevel_sequence = Endlevel_sequence;
 		Endlevel_sequence = 1;
+		#ifdef __ANDROID__
+		multi_process_stamped_bigdata(data+dataoffset, data_len-dataoffset, authenticated_sender);
+#else
 		multi_process_bigdata_from_player(data+dataoffset, data_len-dataoffset, authenticated_sender);
+#endif
 		Endlevel_sequence = old_Endlevel_sequence;
 		return;
 	}
 
-	multi_process_bigdata_from_player(data+dataoffset, data_len-dataoffset, authenticated_sender);
+	#ifdef __ANDROID__
+		multi_process_stamped_bigdata(data+dataoffset, data_len-dataoffset, authenticated_sender);
+#else
+		multi_process_bigdata_from_player(data+dataoffset, data_len-dataoffset, authenticated_sender);
+#endif
 }
 
 void net_udp_process_obs_data(ubyte* data, int data_len, struct _sockaddr sender_addr)
@@ -7461,7 +8099,7 @@ void net_udp_process_obs_data(ubyte* data, int data_len, struct _sockaddr sender
 	int pnum = data[5], dataoffset = 6;
 
 	// Check if packet might be bogus
-	if ((pnum < 0) || (data_len > sizeof(UDP_mdata_info)))
+	if ((pnum < 0) || (data_len > UPID_MDATA_MAX_SIZE))
 		return;
 
 	// If we are a non-master player, this is a bad packet
@@ -7485,12 +8123,20 @@ void net_udp_process_obs_data(ubyte* data, int data_len, struct _sockaddr sender
 	{
 		int old_Endlevel_sequence = Endlevel_sequence;
 		Endlevel_sequence = 1;
+		#ifdef __ANDROID__
+		multi_process_stamped_bigdata(data + dataoffset, data_len - dataoffset, player_num_for_address(sender_addr));
+#else
 		multi_process_bigdata(data + dataoffset, data_len - dataoffset);
+#endif
 		Endlevel_sequence = old_Endlevel_sequence;
 		return;
 	}
 
-	multi_process_bigdata(data + dataoffset, data_len - dataoffset);
+	#ifdef __ANDROID__
+		multi_process_stamped_bigdata(data + dataoffset, data_len - dataoffset, player_num_for_address(sender_addr));
+#else
+		multi_process_bigdata(data + dataoffset, data_len - dataoffset);
+#endif
 }
 
 // Would like observer info packets to avoid delay, but as mdata they're indistinguishable from things
@@ -7578,6 +8224,11 @@ void check_obs_buffer(fix64 now) {
 }
 
 void forward_to_observers_nodelay(ubyte* data, int data_len, int needack) {
+#ifdef __ANDROID__
+	/* Delayed observer messages retain their original visit */
+	if (data[0] == UPID_ENDLEVEL_H &&
+	    !coop_gameplay_endlevel_packet_allowed(data, data_len, UPID_ENDLEVEL_H_SIZE)) return;
+#endif
 	if (multi_i_am_master()) {
 		ubyte pack[MAX_OBSERVERS];
 		for (int i = 0; i < Netgame.max_numobservers; i++) {
@@ -7588,6 +8239,29 @@ void forward_to_observers_nodelay(ubyte* data, int data_len, int needack) {
 		}
 	}
 }
+
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+/* Send stamped stale/frozen clones through the real UDP path. WAITING marks
+ * diagnostic clones; ordinary PDATA is emitted only by PLAYING ships */
+static void net_udp_test_send_pdata_probes(const ubyte *data, int len)
+{
+	if (!android_pdata_probe_sending || timer_query() < android_pdata_probe_next_send) return;
+	coop_gameplay_stamp current = coop_gameplay_current_stamp();
+	if (!current.visit || current.frozen) return;
+	android_pdata_probe_next_send = timer_query() + F1_0 / 2;
+	int peer = Player_num ? 0 : 1;
+	for (unsigned i = 0; i < 2; ++i) {
+		ubyte copy[UPID_PDATA_U_SIZE];
+		memcpy(copy, data, len);
+		copy[6] = CONNECT_WAITING;
+		coop_gameplay_stamp sent = current;
+		if (i) sent.frozen = 1;
+		else --sent.visit;
+		coop_gameplay_stamp_write(copy + len - COOP_GAMEPLAY_STAMP_BYTES, COOP_GAMEPLAY_STAMP_BYTES, &sent);
+		dxx_sendto(UDP_Socket[0], copy, len, 0, (struct sockaddr *) &Netgame.players[peer].protocol.udp.addr, sizeof(struct _sockaddr));
+	}
+}
+#endif
 
 void net_udp_send_pdata()
 {
@@ -7600,6 +8274,14 @@ void net_udp_send_pdata()
 		return;
 	if (Players[Player_num].connected != CONNECT_PLAYING)
 		return;
+
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+	if (android_endlevel_probe.sending && timer_query() >= android_endlevel_probe.next_send &&
+	    !coop_gameplay_current_stamp().frozen) {
+		android_endlevel_probe.next_send = timer_query() + F1_0 / 2;
+		net_udp_send_endlevel_packet();
+	}
+#endif
 
 	current_pdata = (current_pdata + 1) % MAX_LOSS_BUFFER; 
 
@@ -7669,6 +8351,15 @@ void net_udp_send_pdata()
 		PUT_INTEL_INT(buf+len, qpp.rotvel.z);							len += 4; // 44 + 3 = 47
 		buf[len] = current_pdata; len++;
 	}
+
+#ifdef __ANDROID__
+	coop_gameplay_stamp stamp = coop_gameplay_current_stamp();
+	if (!coop_gameplay_stamp_write(buf + len, sizeof(buf) - len, &stamp)) return;
+	len += COOP_GAMEPLAY_STAMP_BYTES;
+#ifdef INTROSPECT_ON
+	net_udp_test_send_pdata_probes(buf, len);
+#endif
+#endif
 
 	if(Netgame.RetroProtocol) {
 		for (i = 0; i < MAX_PLAYERS; i++) {
@@ -7806,6 +8497,35 @@ void net_udp_process_pdata ( ubyte *data, int data_len, struct _sockaddr sender_
 		return;
 	}
 
+#ifdef __ANDROID__
+	/* Validate shape and source before indexing players or changing any history */
+	int expected = Netgame.RetroProtocol ? UPID_PDATA_U_SIZE : Netgame.ShortPackets ? UPID_PDATA_S_SIZE : UPID_PDATA_Q_SIZE;
+	if (data_len != expected || data[5] >= MAX_PLAYERS || data[5] == Player_num) return;
+	if (!is_player_ip(sender_addr, data[5]) && (multi_i_am_master() || !is_master_ip(sender_addr))) return;
+	coop_gameplay_stamp sent, current = coop_gameplay_current_stamp();
+	if (!coop_gameplay_stamp_read(&sent, data + data_len - COOP_GAMEPLAY_STAMP_BYTES, COOP_GAMEPLAY_STAMP_BYTES)) return;
+	if (!net_udp_pdata_world_allowed(data, data_len)) {
+		/* Same-world frozen PDATA may prove liveness, but cannot reconnect a
+		 * player, affect loss/order history or change a ship's position */
+		int peer = data[5];
+		if (current.visit && sent.visit == current.visit && sent.level == current.level &&
+		    Players[peer].connected == CONNECT_PLAYING) {
+			Netgame.players[peer].LastPacketTime = timer_query();
+			if (multi_i_am_master()) {
+				android_net_udp_initial_sync_retry_confirm(&android_initial_sync_retry, peer);
+				if (VerifyPlayerJoined == peer) VerifyPlayerJoined = -1;
+			}
+		}
+#ifdef INTROSPECT_ON
+		if (data[6] == CONNECT_WAITING && !current.frozen) {
+			if (!sent.frozen && sent.visit < current.visit && sent.visit + 1 == current.visit) android_pdata_probe_rejected |= 1;
+			if (sent.frozen && sent.visit == current.visit) android_pdata_probe_rejected |= 2;
+		}
+#endif
+		return;
+	}
+#endif
+
 	len++;
 	len += 4; // token 
 
@@ -7940,6 +8660,10 @@ void net_udp_process_pdata ( ubyte *data, int data_len, struct _sockaddr sender_
 		}
 	}
 
+#if defined(__ANDROID__) && defined(INTROSPECT_ON)
+	if (data[6] == CONNECT_WAITING) ++android_pdata_probe_applied;
+	else ++android_pdata_current_received;
+#endif
 	net_udp_read_pdata_packet (&pd);
 }
 
@@ -8010,6 +8734,11 @@ void net_udp_read_pdata_packet(UDP_frame_info *pd)
 
 	TheirObj = &Objects[TheirObjnum];
 	Netgame.players[TheirPlayernum].LastPacketTime = timer_query();
+#ifdef __ANDROID__
+	/* Keep liveness while travel owns the frozen ships and their arrival positions */
+	if (coop_travel_blocks_gameplay())
+		return;
+#endif
 
 	//------------ Read the player's ship's object info ----------------------
 
@@ -8274,7 +9003,14 @@ void net_udp_do_refuse_stuff(UDP_sequence_packet *their,
 {
 	int i,new_player_num;
 	int identity_match;
-	
+
+#ifdef __ANDROID__
+	/* Do not spend the host's approval interval inside a presentation or load
+	 * The client's next retry can ask for approval after the mine settles */
+	if (net_udp_defer_join(their, authenticated_player_num))
+		return;
+#endif
+
 	ClipRank (&their->player.rank);
 
 #ifdef __ANDROID__

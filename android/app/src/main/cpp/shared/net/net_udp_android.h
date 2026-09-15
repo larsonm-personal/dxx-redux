@@ -32,6 +32,11 @@ int android_net_udp_auth_write_generation(unsigned char *destination,
                                           int destination_size);
 int android_net_udp_auth_read_generation(const unsigned char *source,
                                          int source_size);
+/* Read-only validation before the engine's full-info parser changes globals */
+const char *android_net_udp_game_info_preflight(
+    const unsigned char *data, int size, int is_sync, int known_session,
+    unsigned int session_token, unsigned int player_token,
+    int master_slot, int observer, uint64_t active_visit);
 int android_net_udp_auth_prepare_request(UDP_sequence_packet *request,
                                          unsigned int game_token);
 int android_net_udp_auth_validate_request(

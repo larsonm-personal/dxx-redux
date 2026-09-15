@@ -210,6 +210,66 @@ int android_net_udp_auth_read_generation(const unsigned char *source,
 	return ANDROID_NET_UDP_RECONNECT_GENERATION_SIZE;
 }
 
+const char *android_net_udp_game_info_preflight(
+    const unsigned char *data, int size, int is_sync, int known_session,
+    unsigned int session_token, unsigned int player_token,
+    int master_slot, int observer, uint64_t active_visit)
+{
+	/* Mirrors net_udp_send_game_info in both engines. These are serialized
+	 * field widths, not sizeof(netgame_info), which includes local state */
+	const int player_bytes = CALLSIGN_LEN + 1 + 4 + 37 +
+	                         ANDROID_NET_UDP_RECONNECT_PLAYER_AUTH_SIZE + 1 +
+	                         (is_sync && Netgame.RetroProtocol ? sizeof(struct _sockaddr) : 0);
+	const int level_offset = 7 + (MAX_PLAYERS + 4) * player_bytes +
+	                         NETGAME_NAME_LEN + 1 + MISSION_NAME_LEN + 1 + 9;
+	const int settings_offset = level_offset + 4 + 9 + 4 + 10 +
+	                            2 * (CALLSIGN_LEN + 1) +
+	                            MAX_PLAYERS * (4 + MAX_PLAYERS * 2 + 2 + 2 + 4 + 1) +
+	                            6 + 20 + 2;
+	const int settings_bytes = android_net_udp_local_identity.game_kind ==
+	                                   ANDROID_NET_UDP_RECONNECT_GAME_D2
+	                               ? 35
+	                               : 31;
+	const int master_offset = settings_offset + settings_bytes;
+	const int token_offset = master_offset + 1 + (is_sync ? 4 : 0);
+	const int generation_offset = token_offset + 4;
+	const int visit_offset = generation_offset + ANDROID_NET_UDP_RECONNECT_GENERATION_SIZE;
+	android_net_udp_reconnect_identity identity = android_net_udp_local_identity;
+	uint32_t received_session;
+	uint64_t received_visit;
+
+	if (!data || size != visit_offset + 8)
+		return "full game info size incorrect";
+	if (data[0] != (is_sync ? UPID_SYNC : UPID_GAME_INFO))
+		return "full game info type incorrect";
+	if (data[master_offset] >= MAX_PLAYERS ||
+	    (known_session && data[master_offset] != master_slot))
+		return "full game info master slot incorrect";
+	if (data[level_offset + 8] > MAX_PLAYERS ||
+	    !data[level_offset + 9] || data[level_offset + 9] > MAX_PLAYERS ||
+	    data[level_offset + 10] > MAX_PLAYERS)
+		return "full game info player count incorrect";
+	if (is_sync && !!data[settings_offset + 3] != !!Netgame.RetroProtocol)
+		return "full game info sync layout changed";
+	if (is_sync && !observer && (uint32_t) GET_INTEL_INT(data + master_offset + 1) != player_token)
+		return "full game info player token incorrect";
+	received_session = (uint32_t) GET_INTEL_INT(data + token_offset);
+	if (!received_session || (known_session && received_session != session_token))
+		return "full game info session token incorrect";
+	memcpy(identity.generation_nonce, data + generation_offset, sizeof(identity.generation_nonce));
+	if (!android_net_udp_reconnect_context_valid(&identity) ||
+	    (known_session && memcmp(identity.generation_nonce,
+	                             android_net_udp_local_identity.generation_nonce,
+	                             sizeof(identity.generation_nonce))))
+		return "full game info generation incorrect";
+	received_visit = android_net_udp_read_u64_le(data + visit_offset);
+	/* Check the existing mode too: an old packet must not disable its own fence */
+	if (known_session && (Netgame.gamemode == NETGAME_COOPERATIVE || data[level_offset + 4] == NETGAME_COOPERATIVE) &&
+	    received_visit < active_visit)
+		return "full game info world visit stale";
+	return NULL;
+}
+
 int android_net_udp_auth_prepare_request(UDP_sequence_packet *request,
                                          unsigned int game_token)
 {

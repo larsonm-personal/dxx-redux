@@ -51,6 +51,11 @@ extern "C" {
 #include "coop/coop_recovery.h"
 #endif
 #include "coop/coop_level_restart.h"
+#include "coop/coop_briefing.h"
+#include "coop/coop_travel.h"
+#include "coop/coop_world_visit.h"
+#include "coop/coop_campaign.h"
+#include "android_rewind.h"
 #include "automap.h"
 #include "automap_metadata_overlay.h"
 #include "segment.h"
@@ -62,6 +67,7 @@ extern "C" {
 #include "hud_counts_shared.h"
 #include "hudmsg.h"
 #include "multi.h"
+#include "net_udp.h"
 #include "multibot.h"
 #include "matcen_mode.h"
 #include "songs.h"
@@ -239,6 +245,7 @@ extern "C" {
 extern char g_current_movie_name[];
 extern int g_last_movie_result;
 extern char g_last_movie_name[];
+void movie_get_playback_state(int *frame, int *paused, int *pause_window);
 }
 #endif /* DXX_BUILD_DESCENT_II movie globals */
 
@@ -1584,12 +1591,131 @@ extern "C" char *game_introspect_get_state(void)
 	j["screen_mode"] = screen_mode_name(Screen_mode);
 	j["game_mode"] = Game_mode;
 	j["time_paused"] = game_is_time_paused() != 0;
+	{
+		coop_transition_policy travel;
+		unsigned granted, released;
+		int known, prepared, destination;
+		uint32_t checksum;
+		coop_travel_get_state(&travel, &granted, &released, &known);
+		coop_travel_get_campaign_state(&prepared, &checksum, &destination);
+		j["coop_travel"] = {
+			{ "known", (bool) known }, { "active", (bool) coop_travel_active() }, { "frozen", (bool) coop_travel_blocks_gameplay() }, { "phase", travel.phase }, { "operation", travel.operation }, { "generation", travel.generation }, { "participants", travel.participants }, { "acknowledged", travel.acknowledged }, { "normal_granted", granted }, { "release_acknowledged", released }, { "seconds_remaining", coop_transition_seconds_remaining(&travel) }
+		};
+		j["coop_travel"]["prepared"] = (bool) prepared;
+		j["coop_travel"]["ending_campaign"] = (bool) coop_travel_ending_campaign();
+		j["coop_travel"]["prepared_checksum"] = checksum;
+		j["coop_travel"]["destination"] = destination;
+		unsigned portable_received;
+		uint32_t portable_checksum;
+		coop_travel_get_portable_state(&portable_received, &portable_checksum);
+		j["coop_travel"]["portable_received"] = portable_received;
+		j["coop_travel"]["portable_checksum"] = portable_checksum;
+		unsigned frozen_received, deaths_settled;
+		int freeze_ready;
+		coop_travel_get_freeze_state(&frozen_received, &freeze_ready, &deaths_settled);
+		j["coop_travel"]["frozen_received"] = frozen_received;
+		j["coop_travel"]["freeze_ready"] = (bool) freeze_ready;
+		j["coop_travel"]["deaths_settled"] = deaths_settled;
+		j["coop_travel"]["waiting_after_death"] = (bool) coop_travel_waiting_after_death();
+		int checkpoint_ready;
+		uint32_t checkpoint_checksum;
+		size_t checkpoint_size;
+		coop_travel_get_checkpoint_state(&checkpoint_ready, &checkpoint_checksum, &checkpoint_size);
+		j["coop_travel"]["checkpoint_ready"] = (bool) checkpoint_ready;
+		j["coop_travel"]["checkpoint_checksum"] = checkpoint_checksum;
+		j["coop_travel"]["checkpoint_size"] = checkpoint_size;
+		int rollback_required, rollback_complete, failed_level;
+		coop_travel_get_rollback_state(&rollback_required, &rollback_complete, &failed_level);
+		j["coop_travel"]["rollback_required"] = (bool) rollback_required;
+		j["coop_travel"]["rollback_complete"] = (bool) rollback_complete;
+		j["coop_travel"]["failed_destination"] = failed_level;
+		int physical_mode, physical_pending, physical_accepted;
+		coop_travel_get_physical_state(&physical_mode, &physical_pending, &physical_accepted);
+		j["coop_travel"]["physical"] = (bool) physical_mode;
+		j["coop_travel"]["pending_trigger"] = physical_pending;
+		j["coop_travel"]["accepted_trigger"] = physical_accepted;
+		int arrivals_placed, arrival_blocked;
+		uint32_t arrival_checksum;
+		coop_travel_get_arrival_state(&arrivals_placed, &arrival_checksum, &arrival_blocked);
+		j["coop_travel"]["arrivals_placed"] = (bool) arrivals_placed;
+		j["coop_travel"]["arrival_checksum"] = arrival_checksum;
+		j["coop_travel"]["arrival_blocked_exits"] = arrival_blocked;
+	}
 	j["coop_level_restart_state"] = coop_level_restart_get_state();
+	j["coop_pdata_fence_ready"] = net_udp_test_pdata_fence(3) != 0;
+	j["coop_mdata_fence_ready"] = net_udp_test_mdata_fence(3) != 0;
+	j["coop_world_visit"] = { { "active", coop_world_visit_current() }, { "reserved", coop_world_visit_high_water() } };
+	{
+		int count, level;
+		uint64_t generation;
+		android_rewind_get_history(&count, &level, &generation);
+		j["rewind_history"] = { { "count", count }, { "level", level }, { "campaign_generation", generation } };
+	}
+	{
+		coop_transition_policy state;
+		coop_presentation_progress local;
+		char status[1024];
+		uint64_t generation;
+		int can_launch;
+		coop_briefing_get_state(&state, &local);
+		coop_briefing_ui(status, sizeof(status), &generation, &can_launch);
+		json progress = json::array();
+		for (int i = 0; i < COOP_TRANSITION_PLAYERS; ++i) {
+			if (!(state.participants & (1u << i))) continue;
+			const auto &p = state.progress[i];
+			progress.push_back({ { "player", i }, { "completed", p.completed }, { "total", p.total }, { "state", p.state }, { "revision", p.revision } });
+		}
+		const coop_campaign *campaign = coop_campaign_current();
+		json campaign_worlds = json::array();
+		for (unsigned i = 0; i < campaign->world_count; ++i) {
+			const coop_campaign_world *world = &campaign->worlds[i];
+			campaign_worlds.push_back({ { "level", world->level }, { "state", world->state }, { "bytes", world->size }, { "checksum", coop_save_checksum(world->data, world->size, 2166136261u) } });
+		}
+		j["coop_campaign"] = {
+			{ "mission", campaign->mission },
+			{ "active_level", campaign->active_level },
+			{ "entered_from", campaign->entered_from },
+			{ "base_returnable", (bool) campaign->base_returnable },
+			{ "generation", campaign->generation },
+			{ "dormant_worlds", campaign->world_count },
+			{ "worlds", campaign_worlds }
+		};
+		j["coop_briefing"] = {
+			{ "enabled", (bool) Netgame.CoopBriefings },
+			{ "plan_ready", (bool) coop_briefing_plan_ready() },
+			{ "suppressed_for_restore", (bool) coop_briefing_suppressed_for_restore() },
+			{ "presentations_started", coop_briefing_presentations_started() },
+			{ "active", (bool) coop_briefing_active() },
+			{ "presenting", (bool) coop_briefing_presenting() },
+			{ "phase", state.phase },
+			{ "generation", state.generation },
+			{ "participants", state.participants },
+			{ "acknowledged", state.acknowledged },
+			{ "release_acknowledged", coop_briefing_release_acknowledged() },
+			{ "release_packets_dropped", coop_briefing_test_release_packets_dropped() },
+			{ "presentation_ready", state.presentation_ready },
+			{ "seconds_remaining", coop_transition_seconds_remaining(&state) },
+			{ "launch_reason", state.launch_reason },
+			{ "can_launch", (bool) can_launch },
+			{ "status", status },
+			{ "progress", progress },
+			{ "local_completed", local.completed },
+			{ "local_total", local.total },
+			{ "local_state", local.state }
+		};
+	}
 	{
 		int is_error = 0;
 		const char *message = coop_restore_status_message(&is_error);
+		int local_loaded;
+		uint64_t barrier_visit;
+		const char *barrier_phase = multi_save_transfer_barrier_status(&local_loaded, &barrier_visit);
 		j["coop_restore"] = {
 			{ "status", message ? (is_error ? "error" : "waiting") : "idle" },
+			{ "transfer_busy", (bool) multi_save_transfer_busy() },
+			{ "barrier_phase", barrier_phase },
+			{ "barrier_visit", barrier_visit },
+			{ "local_loaded", (bool) local_loaded },
 			{ "message", message ? message : "" }
 		};
 	}
@@ -1629,6 +1755,7 @@ extern "C" char *game_introspect_get_state(void)
 		{ "paused", Reactor_countdown_paused != 0 },
 		{ "timer", Countdown_timer },
 		{ "seconds_left", Countdown_seconds_left },
+		{ "total_seconds", Total_countdown_time },
 		{ "map_cheats_accessible", PlayerCfg.MapCheatsAccessible != 0 }
 	};
 	j["current_level_num"] = Current_level_num;
@@ -1785,6 +1912,10 @@ extern "C" char *game_introspect_get_state(void)
 			mp["mission_name"] = std::string(Netgame.mission_name);
 			mp["level_num"] = (int) Netgame.levelnum;
 			mp["gamemode"] = (int) Netgame.gamemode;
+#ifdef __ANDROID__
+			mp["coop_qol"] = (bool) (Netgame.game_flags & NETGAME_FLAG_COOP_QOL);
+			mp["allow_secret_warps"] = (bool) Netgame.AllowSecretWarps;
+#endif
 			const char *mode_name;
 			switch (Netgame.gamemode) {
 				case NETGAME_ANARCHY: mode_name = "anarchy"; break;
@@ -1887,10 +2018,11 @@ extern "C" char *game_introspect_get_state(void)
 			recovery["epoch"] = coop_recovery_epoch();
 			recovery["rows"] = coop_recovery_count();
 			recovery["ready_to_save"] = (bool) coop_recovery_save_ready();
-			int live = 0, credit = 0, world = 0, credit_homing = 0;
+			int live = 0, dormant = 0, credit = 0, world = 0, credit_homing = 0;
 			const coop_recovery_item *rows = coop_recovery_data();
 			for (size_t n = 0; n < coop_recovery_count(); n++) {
 				if (rows[n].state == COOP_RECOVERY_LIVE) live++;
+				if (rows[n].state == COOP_RECOVERY_DORMANT) dormant++;
 				if (rows[n].state == COOP_RECOVERY_CREDIT) {
 					credit++;
 					credit_homing += rows[n].gear.missiles[HOMING_INDEX];
@@ -1900,6 +2032,7 @@ extern "C" char *game_introspect_get_state(void)
 				if (Objects[n].type == OBJ_POWERUP && (Objects[n].flags & OF_COOP_RECOVERY) &&
 				    !(Objects[n].flags & OF_SHOULD_BE_DEAD)) world++;
 			recovery["live"] = live;
+			recovery["dormant"] = dormant;
 			recovery["credit"] = credit;
 			recovery["credit_homing"] = credit_homing;
 			recovery["world_objects"] = world;
@@ -2336,6 +2469,11 @@ extern "C" char *game_introspect_get_state(void)
 #ifdef DXX_BUILD_DESCENT_II
 	{
 		json mv;
+		int frame, paused, pause_window;
+		movie_get_playback_state(&frame, &paused, &pause_window);
+		mv["frame"] = frame;
+		mv["paused"] = (bool) paused;
+		mv["pause_window"] = (bool) pause_window;
 		if (g_current_movie_name[0])
 			mv["current"] = std::string(g_current_movie_name);
 		if (g_last_movie_name[0])

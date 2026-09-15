@@ -1,0 +1,9 @@
+[
+    {"_info": {"games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "assert", "expect": {"menu.title": "Co-op restore interrupted", "in_game": false}},
+    {"action": "wait_ms", "ms": 2000},
+    {"action": "assert", "expect": {"menu.title": "Co-op restore interrupted", "in_game": false}},
+    {"action": "key", "key": "enter", "post_delay_ms": 300},
+    {"action": "wait_ms", "ms": 1000},
+    {"action": "assert", "expect": {"menu.items[0].text": "New game", "in_game": false, "time_paused": false}}
+]

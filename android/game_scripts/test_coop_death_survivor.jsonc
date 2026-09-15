@@ -1,0 +1,5 @@
+[
+    {"_info": {"games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "wait_ms", "ms": 10000},
+    {"action": "set_debug", "field": "coop_death_test", "value": "survivor"}
+]

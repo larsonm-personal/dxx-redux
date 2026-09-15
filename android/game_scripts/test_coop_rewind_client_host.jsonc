@@ -1,0 +1,73 @@
+[
+    {
+        "_info": {
+            "games": [
+                "d1",
+                "d2"
+            ],
+            "_standalone": false,
+            "_owner": "test_lan"
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_rewind_test",
+        "value": "client_prepare"
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 15000,
+        "expect": {
+            "coop_restore.transfer_busy": true
+        }
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 180000,
+        "expect": {
+            "coop_restore.transfer_busy": false,
+            "in_game": true,
+            "time_paused": false
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_rewind_test",
+        "value": "client_verify"
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_rewind_test",
+        "value": "client_prepare"
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 15000,
+        "expect": {
+            "coop_restore.transfer_busy": true
+        }
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 180000,
+        "expect": {
+            "coop_restore.transfer_busy": false,
+            "in_game": true,
+            "time_paused": false
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_rewind_test",
+        "value": "client_verify"
+    },
+    {
+        "action": "wait_ms",
+        "ms": 3000
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_rewind_test",
+        "value": "clock"
+    }
+]

@@ -33,6 +33,7 @@ void android_rewind_set_clients_can_request(int enabled);
 int android_rewind_is_enabled(void);
 int android_rewind_clients_can_request(void);
 void android_rewind_reset_level(void);
+void android_rewind_get_history(int *count, int *level, uint64_t *generation);
 void android_rewind_maybe_capture_frame(void);
 int android_rewind_request(int *rewound_seconds);
 int android_rewind_select_restore(android_rewind_authoritative_restore *restore);

@@ -64,6 +64,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef __ANDROID__
 #include "coop/coop_powerup_duplication.h"
 #include "coop/coop_recovery.h"
+#include "coop/coop_travel.h"
 #endif
 #endif
 #include "cntrlcen.h"
@@ -2526,6 +2527,10 @@ extern fix64 Buddy_sorry_time;
 
 void apply_damage_to_player(object *playerobj, object *killer, fix damage, ubyte possibly_friendly)
 {
+#ifdef __ANDROID__
+	/* Each ship's accepted damage stops at its transition freeze boundary */
+	if (coop_travel_blocks_gameplay()) return;
+#endif
 	if (Player_is_dead)
 		return;
 

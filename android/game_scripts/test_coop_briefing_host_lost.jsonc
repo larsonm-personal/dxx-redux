@@ -1,0 +1,17 @@
+[
+    {"_info": {"games": ["d1", "d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "wait_for", "timeout_ms": 45000, "expect": {
+        "menu.title": "Co-op briefing interrupted", "in_game": false,
+        "time_paused": false, "coop_briefing.active": false
+    }},
+    {"action": "assert", "when": "d2", "expect": {
+        "movie.frame": -1, "movie.paused": false, "movie.pause_window": false
+    }},
+    {"action": "wait_ms", "ms": 2000},
+    {"action": "assert", "expect": {"menu.title": "Co-op briefing interrupted", "in_game": false}},
+    {"action": "key", "key": "enter", "post_delay_ms": 300},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {
+        "menu.items[0].text": "New game", "in_game": false, "time_paused": false,
+        "coop_briefing.active": false, "coop_restore.transfer_busy": false
+    }}
+]

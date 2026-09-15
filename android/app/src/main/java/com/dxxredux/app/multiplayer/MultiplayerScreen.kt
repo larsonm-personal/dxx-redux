@@ -640,7 +640,7 @@ private fun ServerBrowserContent(
                         game = entry.game,
                         mission = entry.mission,
                         mode = "coop",
-                        levelNum = entry.level,
+                        levelNum = entry.hostedLevel,
                     ),
                 )
                 if (entry.slot >= 0) {
@@ -719,6 +719,8 @@ private fun ServerBrowserContent(
                 coopQol,
                 duplicateEnergyShields,
                 fullDeathSpew,
+                coopBriefings,
+                allowSecretWarps,
                 playerSpewNoExpire,
                 clientsCanRequestRewind,
                 restrictNonCoopFovToBase,
@@ -736,6 +738,8 @@ private fun ServerBrowserContent(
                             "coop_qol" to JsonPrimitive(coopQol),
                             "duplicate_energy_shields" to JsonPrimitive(duplicateEnergyShields),
                             "full_death_spew" to JsonPrimitive(fullDeathSpew),
+                            "coop_briefings" to JsonPrimitive(coopBriefings),
+                            "allow_secret_warps" to JsonPrimitive(allowSecretWarps),
                             "player_spew_no_expire" to JsonPrimitive(playerSpewNoExpire),
                             "clients_can_request_rewind" to JsonPrimitive(clientsCanRequestRewind),
                             "restrict_noncoop_fov_to_base" to JsonPrimitive(restrictNonCoopFovToBase),
@@ -973,7 +977,14 @@ internal data class CoopSaveEntry(
     val mission: String = "",
     val game: String = "", // "d1" or "d2", used for recent games display
     val checkpointId: String? = null,
-)
+) {
+    val secretAreaNumber: Int?
+        get() = if (game == "d2" && type == "full_save" && slot in 0..9 && level in -127..-1) -level else null
+
+    // Network startup loads a normal mine before applying the selected full save
+    val hostedLevel: Int
+        get() = if (secretAreaNumber != null) 1 else level
+}
 
 /** Format a unix timestamp as a relative time string like "5 min ago". */
 internal fun formatTimeAgo(timestampSec: Long): String {
@@ -1164,7 +1175,7 @@ internal fun CoopRestoreSelectionSummary(
     val selection = remember(game, levelNum) { readCoopRestoreSelection(context.filesDir, game) } ?: return
     val label =
         when {
-            selection.slot != null -> "Restore selected: save slot ${selection.slot}, level $levelNum"
+            selection.slot != null -> "Restore selected: save slot ${selection.slot}"
             selection.checkpointId != null -> "Restore selected: level-start checkpoint, level $levelNum"
             else -> "Start fresh at level $levelNum"
         }
@@ -1183,7 +1194,7 @@ internal fun restoreSaveForHostedLevel(
     levelNum: Int,
 ): CoopSaveEntry? =
     selectedSave?.takeIf {
-        (it.slot >= 0 || it.checkpointId != null) && it.level == levelNum
+        (it.slot >= 0 || it.checkpointId != null) && it.hostedLevel == levelNum
     }
 
 internal fun readCoopLevelStartCheckpoints(
