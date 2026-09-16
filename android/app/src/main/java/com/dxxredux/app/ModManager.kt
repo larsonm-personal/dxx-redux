@@ -841,6 +841,30 @@ class ModManager(
         NativeTextureLookupCache.clear()
     }
 
+    /**
+     * Build owner-preserving mission inventory without changing the running search path
+     * Native activation will consume this after its cache teardown boundary is implemented
+     */
+    internal fun buildMissionLaunchCatalog(
+        game: String,
+        includeD1MissionZipsForD2: Boolean = true,
+    ): MissionLaunchCatalog {
+        require(game == "d1" || game == "d2")
+        val store = extractionStore()
+        val packages =
+            mods
+                .filter { it.isLevel && it.enabledForLaunch(game, includeD1MissionZipsForD2) }
+                .sortedBy { it.order }
+                .mapNotNull { mod ->
+                    val archive = modFile(mod.filename)
+                    val scan =
+                        requireNotNull(MissionZip.inspect(archive)) { "Cannot inventory level pack: ${mod.filename}" }
+                    val record = store.ensureExtracted(mod.filename, archive, scan)
+                    missionLaunchPackage("mod/${mod.filename}", scan, record, game, includeD1MissionZipsForD2)
+                }
+        return MissionLaunchCatalog(packages)
+    }
+
     private fun activeModPathLines(
         mod: ModInfo,
         modFile: File,

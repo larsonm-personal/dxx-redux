@@ -1,3 +1,7 @@
+#ifdef __ANDROID__
+#include "android_sound_trace.h"
+#endif
+
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
@@ -211,6 +215,9 @@ bool read_physfs_text(const char *path, std::string &text)
 		text.assign(static_cast<size_t>(length), '\0');
 		if (length && PHYSFS_readBytes(file, &text[0], length) != length)
 			throw std::runtime_error("could not read patch file");
+#ifdef __ANDROID__
+		android_sound_trace_asset_open("ham_patch", path);
+#endif
 		PHYSFS_close(file);
 		return true;
 	} catch (...) {

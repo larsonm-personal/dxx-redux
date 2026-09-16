@@ -31,6 +31,8 @@ target_include_directories(test_level_section_io PRIVATE "${DXX_TEST_SHARED_SOUR
 target_link_libraries(test_level_section_io PRIVATE ${PHYSFS_LIBRARY})
 
 add_executable(test_rng_seed_resume test_rng_seed_resume.c)
+add_executable(test_sound_trace_fingerprint test_sound_trace_fingerprint.c)
+target_include_directories(test_sound_trace_fingerprint PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
 add_executable(test_headless_diagnostics test_headless_diagnostics.cpp)
 target_link_libraries(test_rng_seed_resume PRIVATE ${DXX_TARGET_PREFIX}maths)
 
@@ -404,6 +406,7 @@ set(DXX_HOST_TEST_TARGETS
     test_coop_host_migration_policy
     test_coop_player_session
     test_coop_transition_policy
+    test_sound_trace_fingerprint
     test_multi_save_transfer_policy
     test_input_demo_rng_mode
     test_android_axis_mailbox

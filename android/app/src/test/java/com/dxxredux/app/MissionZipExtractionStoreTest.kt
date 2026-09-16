@@ -186,10 +186,11 @@ class MissionZipExtractionStoreTest {
         val scan = requireNotNull(MissionZip.inspect(archive))
         val target = File(filesDir, "target")
 
-        extractZipToRoot(archive, target, scan)
+        val extracted = extractZipToRoot(archive, target, scan)
 
         assertEquals("level01.ogg", File(target, "descent.sng").readText())
         assertEquals("existing.ogg", File(target, "missions/descent.sng").readText())
+        assertEquals("custom.sng", extracted.single { it.relativePath == "descent.sng" }.sourceEntryPath)
     }
 
     @Test
@@ -202,6 +203,7 @@ class MissionZipExtractionStoreTest {
             for (variant in listOf("D2X", "DOS", "REBIRTH")) {
                 zip.writeEntry("$variant/ULTERIOR.mn2", missionDescriptor("Ulterior"))
                 zip.writeEntry("$variant/ULTERIOR.hog", missionHog())
+                zip.writeEntry("$variant/descent2.s22", "$variant sound bank")
             }
             zip.writeEntry("BONUS.mn2", missionDescriptor("Bonus mission"))
             zip.writeEntry("BONUS.hog", missionHog())
@@ -223,6 +225,17 @@ class MissionZipExtractionStoreTest {
         assertTrue(File(target, "D2X/ULTERIOR.mn2").isFile)
         assertTrue(File(target, "DOS/ULTERIOR.mn2").isFile)
         assertTrue(File(target, "TEST/EXITD2V.mn2").isFile)
+
+        val store = MissionZipExtractionStore(filesDir)
+        val record = store.ensureExtracted(archive.name, archive, scan)
+        val pack = requireNotNull(missionLaunchPackage("variants", scan, record, "d2", false))
+        val catalog = MissionLaunchCatalog(listOf(pack))
+        val rebirth = requireNotNull(catalog.resolveLegacy("ULTERIOR", "d2"))
+        val bonus = requireNotNull(catalog.resolveLegacy("BONUS", "d2"))
+        assertEquals(2, catalog.missions.size)
+        assertTrue(catalog.resourcesFor(rebirth).any { it.virtualPath == "REBIRTH/descent2.s22" })
+        assertFalse(catalog.resourcesFor(rebirth).any { it.virtualPath.startsWith("DOS/") || it.virtualPath.startsWith("D2X/") })
+        assertFalse(catalog.resourcesFor(bonus).any { it.virtualPath.endsWith("descent2.s22") })
     }
 
     private fun file(

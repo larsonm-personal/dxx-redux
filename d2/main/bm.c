@@ -17,6 +17,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
  *
  */
 
+#ifdef __ANDROID__
+#include "android_sound_trace.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -291,6 +295,9 @@ void bm_read_extra_robots(const char *fname,int type)
 		return;
 	}
 
+#ifdef __ANDROID__
+	android_sound_trace_asset_open("extra_ham", fname);
+#endif
 	if (type == 2) {
 		int sig;
 
@@ -371,6 +378,9 @@ void load_robot_replacements(char *level_name)
 	if (!fp)		//no robot replacement file
 		return;
 
+#ifdef __ANDROID__
+	android_sound_trace_asset_open("hxm", ifile_name);
+#endif
 	t = PHYSFSX_readInt(fp);			//read id "HXM!"
 	if (t!= 0x21584d48)
 		Error("ID of HXM! file incorrect");

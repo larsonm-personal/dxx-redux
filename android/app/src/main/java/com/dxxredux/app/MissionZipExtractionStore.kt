@@ -12,7 +12,7 @@ internal const val MISSION_ZIP_EXTRACTED_DIR = ".extracted_mission_zips"
 internal const val MISSION_ZIP_GENERATED_MISSION_DIR = "missions"
 
 private const val MANIFEST_FILE = "manifest.json"
-private const val MANIFEST_SCHEMA = "dxx-mission-zip-extractions-v4"
+private const val MANIFEST_SCHEMA = "dxx-mission-zip-extractions-v5"
 private val MISSION_ZIP_SONG_LIST_FILES = setOf("descent.sng", "dxx-r.sng")
 
 internal data class MissionZipExtractedFile(
@@ -21,6 +21,7 @@ internal data class MissionZipExtractedFile(
     val sizeBytes: Long,
     val contentSha256: String = "",
     val lastModifiedMs: Long = 0L,
+    val sourceEntryPath: String = entryPath,
 )
 
 internal data class MissionZipExtractionRecord(
@@ -380,6 +381,7 @@ internal class MissionZipExtractionStore(
                                         sizeBytes = file.optLong("size_bytes"),
                                         contentSha256 = file.optString("sha256"),
                                         lastModifiedMs = file.getLong("last_modified_ms"),
+                                        sourceEntryPath = file.getString("source_entry_path"),
                                     ),
                                 )
                             }
@@ -430,6 +432,7 @@ internal class MissionZipExtractionStore(
                                 files.put(
                                     JSONObject()
                                         .put("entry_path", file.entryPath)
+                                        .put("source_entry_path", file.sourceEntryPath)
                                         .put("relative_path", file.relativePath)
                                         .put("size_bytes", file.sizeBytes)
                                         .put("sha256", file.contentSha256)
@@ -723,6 +726,7 @@ internal fun extractZipToRoot(
                     entryPath = "",
                     relativePath = relativePath,
                     sizeBytes = target.length(),
+                    sourceEntryPath = generatedSource.entryPath,
                 )
         }
     }

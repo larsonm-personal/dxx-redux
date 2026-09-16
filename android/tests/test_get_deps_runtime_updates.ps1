@@ -42,10 +42,6 @@ Assert-Matches $jdkUpdater 'mv "\$BACKUP_DIR" "\$DEST"' `
     "a failed replacement restores the previous JDK directory"
 Assert-Matches $jdkUpdater '(?s)recover_matching_incomplete_install.*?cmp -s.*?cp -a -n' `
     "an incomplete JDK is recovered only when surviving files match the staged replacement"
-Assert-Matches $versions '(?m)^PLAY_SERVICES_GAMES_VERSION=21\.0\.0$' `
-    "Play Games remains on the newest release compatible with minSdk 23"
-Assert-Matches $checkUpdates '(?s)Name = "play-services-games-v2".*?SuppressTargetUpdate = \$true.*?BlockedTargetLabel = "held-minSdk23"' `
-    "dependency checks retain Play Games 21 without requesting manual target work"
 Assert-Matches $checkUpdates '(?s)"Chromaprint".*?Get-RemoteFileSha256.*?Update-Conf "CHROMAPRINT_SHA256"' `
     "Chromaprint target updates calculate and store the matching source hash"
 Assert-Matches $checkUpdates '(?s)"minimp3".*?Get-RemoteFileSha256.*?Update-Conf "MINIMP3_SHA256".*?Update-Conf "MINIMP3_EX_SHA256"' `

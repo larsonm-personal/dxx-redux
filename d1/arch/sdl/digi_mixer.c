@@ -8,6 +8,10 @@
  *  -- MD2211 (2006-10-12)
  */
 
+#ifdef __ANDROID__
+#include "android_sound_trace.h"
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -187,6 +191,9 @@ void mixdigi_convert_sound(int i)
 		SoundChunks[i].alen = cvt.len_cvt;
 		SoundChunks[i].allocated = 1;
 		SoundChunks[i].volume = 128; // Max volume = 128
+#ifdef __ANDROID__
+		android_sound_trace_converted(i, cvt.buf, cvt.len_cvt, src_rate, out_freq, out_format, out_channels);
+#endif
 	}
 }
 
@@ -220,6 +227,10 @@ int digi_mixer_start_sound(short soundnum, fix volume, int pan, int looping, int
 		return -1;
 
 	Mix_PlayChannel(channel, &(SoundChunks[soundnum]), mix_loop);
+#ifdef __ANDROID__
+	android_sound_trace_play(soundnum, SoundChunks[soundnum].abuf, SoundChunks[soundnum].alen,
+	                         GameSounds[soundnum].freq > 0 ? GameSounds[soundnum].freq : SAMPLE_RATE_11K, channel);
+#endif
 	Mix_SetPanning(channel, 255-mix_pan, mix_pan);
 	if (volume > F1_0)
 		Mix_SetDistance(channel, 0);

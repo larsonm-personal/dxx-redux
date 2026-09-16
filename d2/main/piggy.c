@@ -18,6 +18,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
  */
 
 
+#ifdef __ANDROID__
+#include "android_sound_trace.h"
+#endif
+
 #include <stdio.h>
 #include <string.h>
 
@@ -904,6 +908,9 @@ int read_hamfile()
 		return 0;
 	}
 
+#ifdef __ANDROID__
+	android_sound_trace_asset_open("ham", shareware ? DEFAULT_HAMFILE_SHAREWARE : DEFAULT_HAMFILE_REGISTERED);
+#endif
 	//make sure ham is valid type file & is up-to-date
 	ham_id = PHYSFSX_readInt(ham_fp);
 	Piggy_hamfile_version = PHYSFSX_readInt(ham_fp);
@@ -1038,6 +1045,9 @@ int read_sndfile()
 	if (snd_fp == NULL)
 		return 0;
 
+#ifdef __ANDROID__
+	android_sound_trace_asset_open("sound_headers", DEFAULT_SNDFILE);
+#endif
 	//make sure soundfile is valid type file & is up-to-date
 	snd_id = PHYSFSX_readInt(snd_fp);
 	snd_version = PHYSFSX_readInt(snd_fp);
@@ -1154,6 +1164,9 @@ void piggy_read_sounds(void)
 
 	if (fp == NULL)
 		return;
+#ifdef __ANDROID__
+	android_sound_trace_bank_open(DEFAULT_SNDFILE);
+#endif
 
 	for (i=0; i<Num_sound_files; i++ )      {
 		digi_sound *snd = &GameSounds[i];
@@ -1166,7 +1179,12 @@ void piggy_read_sounds(void)
 				snd->data = ptr;
 				ptr += snd->length;
 				sbytes += snd->length;
+#ifdef __ANDROID__
+				int read_ok = PHYSFS_read(fp, snd->data, snd->length, 1) == 1;
+				android_sound_trace_loaded(i, AllSounds[i].name, SoundOffset[i], read_ok);
+#else
 				PHYSFS_read( fp, snd->data, snd->length, 1 );
+#endif
 			}
 			else
 				snd->data = (ubyte *) -1;

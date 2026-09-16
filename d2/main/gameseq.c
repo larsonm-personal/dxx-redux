@@ -18,6 +18,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
  */
 
 
+#ifdef __ANDROID__
+#include "android_sound_trace.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1069,6 +1073,9 @@ void LoadLevel(int level_num,int page_in_textures)
 
 	Players[Player_num] = save_player;
 
+#ifdef __ANDROID__
+	android_sound_trace_level();
+#endif
 	set_sound_sources();
 #ifdef __ANDROID__
 	load_profile.sound_us = android_profile_take_elapsed_us(&load_profile_phase_us);

@@ -17,6 +17,10 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
  */
 
 
+#ifdef __ANDROID__
+#include "android_sound_trace.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -378,6 +382,9 @@ int properties_init()
 		return 1;	// need to run gamedata_read_tbl
 	}
 
+#ifdef __ANDROID__
+	android_sound_trace_bank_open(DEFAULT_PIGFILE_REGISTERED);
+#endif
 	pigsize = PHYSFS_fileLength(Piggy_fp);
 	switch (pigsize) {
 		case D1_SHARE_BIG_PIGSIZE:
@@ -596,20 +603,34 @@ void piggy_read_sounds(int pc_shareware)
 				sbytes += snd->length;
 #endif
 		//Arne's decompress for shareware on all soundcards - Tim@Rikers.org
+#ifdef __ANDROID__
+				int trace_read_ok;
+#endif
 				if (pc_shareware)
 				{
 					if (lastsize < SoundCompressed[i]) {
 						if (lastbuf) d_free(lastbuf);
 						lastbuf = d_malloc(SoundCompressed[i]);
 					}
+#ifdef __ANDROID__
+					trace_read_ok = PHYSFS_read(Piggy_fp, lastbuf, SoundCompressed[i], 1) == 1;
+#else
 					PHYSFS_read( Piggy_fp, lastbuf, SoundCompressed[i], 1 );
+#endif
 					sound_decompress( lastbuf, SoundCompressed[i], snd->data );
 				}
 				else
 #ifdef ALLEGRO
 					PHYSFS_read( Piggy_fp, snd->data, snd->len, 1 );
 #else
+#ifdef __ANDROID__
+					trace_read_ok = PHYSFS_read(Piggy_fp, snd->data, snd->length, 1) == 1;
+#else
 					PHYSFS_read( Piggy_fp, snd->data, snd->length, 1 );
+#endif
+#endif
+#ifdef __ANDROID__
+				android_sound_trace_loaded(i, AllSounds[i].name, SoundOffset[i], trace_read_ok);
 #endif
 			}
 		}

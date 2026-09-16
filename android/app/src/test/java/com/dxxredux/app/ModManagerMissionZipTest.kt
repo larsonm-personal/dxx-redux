@@ -20,6 +20,83 @@ import java.util.zip.ZipOutputStream
 
 class ModManagerMissionZipTest {
     @Test
+    fun localEnemyWithinAndMaximumKeepRealReplacementBankOwned() {
+        val repository = generateSequence(File(".").canonicalFile) { it.parentFile }.first { File(it, "game_data").isDirectory }
+        val enemyArchive = File(repository, "game_data/mission_files/ewithin-versions.zip")
+        val maximumArchive = File(repository, "game_data/mission_files/descent_maximum_fixed.zip")
+        assumeTrue("Local campaign fixtures are available", enemyArchive.isFile && maximumArchive.isFile)
+        val filesDir = File("build/test-mission-launch-catalog-real-packs").absoluteFile
+        filesDir.deleteRecursively()
+        val manager = ModManager(filesDir)
+        val enemy = requireNotNull(manager.importMissionZipFile(enemyArchive, enemyArchive.name))
+        val maximum = requireNotNull(manager.importMissionZipFile(maximumArchive, maximumArchive.name))
+        val catalog = manager.buildMissionLaunchCatalog("d2")
+        val enemyMissions = catalog.missions.filter { it.key.owner == "mod/${enemy.filename}" }
+        val maximumMissions = catalog.missions.filter { it.key.owner == "mod/${maximum.filename}" }
+        assertTrue(enemyMissions.isNotEmpty())
+        assertTrue(maximumMissions.isNotEmpty())
+        val nestedDxa = catalog.resourcesFor(enemyMissions.first().key).single { it.virtualPath.equals("ewithin.dxa", true) }
+        java.util.zip.ZipFile(nestedDxa.source).use { archive ->
+            val names = archive.entries().asSequence().map { it.name.lowercase() }.toSet()
+            assertTrue("descent2.ham" in names)
+            assertTrue("descent2.s22" in names)
+        }
+        for (mission in maximumMissions) {
+            assertTrue(catalog.resourcesFor(mission.key).none { it.source == nestedDxa.source })
+        }
+        assertTrue(catalog.resourcesFor(null).isEmpty())
+    }
+
+    @Test
+    fun missionCatalogKeepsNestedOverridesWithSelectedPackAndBaseEmpty() {
+        val filesDir = File("build/test-mission-launch-catalog").absoluteFile
+        filesDir.deleteRecursively()
+        val manager = ModManager(filesDir)
+        val enemy = requireNotNull(manager.importMissionZipFile(createEnemyWithinStyleMissionZip(), "ewithin-rebirth.zip"))
+        val other = requireNotNull(manager.importMissionZipFile(createMissionZip(), "other.zip"))
+        val catalog = manager.buildMissionLaunchCatalog("d2")
+        assertEquals(2, catalog.missions.size)
+        assertTrue(catalog.resourcesFor(null).isEmpty())
+        val enemyKey = requireNotNull(catalog.resolveLegacy("ewithin", "d2"))
+        val otherKey = catalog.missions.single { it.key.owner == "mod/${other.filename}" }.key
+        val enemyResources = catalog.resourcesFor(enemyKey)
+        val nestedDxa = enemyResources.single { it.virtualPath == "ewithin.dxa" }
+        java.util.zip.ZipFile(nestedDxa.source).use { archive ->
+            assertNotNull(archive.getEntry("descent2.ham"))
+        }
+        assertEquals("mod/${enemy.filename}", enemyKey.owner)
+        assertTrue(catalog.resourcesFor(otherKey).none { it.source == nestedDxa.source })
+        assertTrue(catalog.resourcesFor(null).isEmpty())
+        assertEquals(enemyResources, catalog.resourcesFor(enemyKey))
+        assertEquals(64, catalog.revisionFor(enemyKey).length)
+
+        // Disabling affects the next catalog; an existing selection snapshot stays stable
+        manager.setEnabled(enemy.filename, false)
+        val next = ModManager(filesDir).buildMissionLaunchCatalog("d2")
+        assertEquals(listOf(otherKey), next.missions.map { it.key })
+        assertEquals(enemyResources, catalog.resourcesFor(enemyKey))
+        assertThrows(IllegalArgumentException::class.java) { next.resourcesFor(enemyKey) }
+        // Catalog construction never publishes an incomplete native activation contract
+        assertFalse(File(filesDir, "d2x-redux/.active_mod_paths").exists())
+    }
+
+    @Test
+    fun missionCatalogPreservesDuplicateShortNamesAndRejectsAmbiguousLegacyLookup() {
+        val filesDir = File("build/test-mission-launch-catalog-duplicates").absoluteFile
+        filesDir.deleteRecursively()
+        val manager = ModManager(filesDir)
+        requireNotNull(manager.importMissionZipFile(createMissionZip(), "first.zip"))
+        requireNotNull(manager.importMissionZipFile(createMissionZip(), "second.zip"))
+        val catalog = manager.buildMissionLaunchCatalog("d2")
+        assertEquals(2, catalog.missions.size)
+        assertEquals(2, catalog.missions.map { it.key }.distinct().size)
+        assertThrows(IllegalArgumentException::class.java) { catalog.resolveLegacy("Uneasy4", "d2") }
+        val first = catalog.resourcesFor(catalog.missions[0].key).map { it.source }.toSet()
+        val second = catalog.resourcesFor(catalog.missions[1].key).map { it.source }.toSet()
+        assertTrue(first.intersect(second).isEmpty())
+    }
+
+    @Test
     fun smallPackLaunchCacheSurvivesReloadAndTracksOwnership() {
         val filesDir = File("build/test-mod-manager-lazy-launch-cache").absoluteFile
         filesDir.deleteRecursively()
@@ -426,6 +503,15 @@ class ModManagerMissionZipTest {
         assertEquals("game01.hmp\n", File(extractedRoot, "mods/pluton2/descent.sng").readText())
         assertTrue(File(extractedRoot, "mods/pluton2/pluton2.s22").isFile)
         assertEquals(originalSize, archive.length())
+
+        val reloadedStore = ModManager(filesDir).extractionStore()
+        val record = requireNotNull(reloadedStore.reusableRecord(imported!!.filename, manager.modFile(imported.filename)))
+        assertEquals("mods/pluton2/descent.sng", record.files.single { it.relativePath == "descent.sng" }.sourceEntryPath)
+        val catalog = manager.buildMissionLaunchCatalog("d2")
+        val mission = catalog.missions.single().key
+        val songList = catalog.resourcesFor(mission).single { it.virtualPath == "descent.sng" }
+        assertEquals(setOf(mission), songList.missions)
+        assertTrue(catalog.resourcesFor(null).isEmpty())
     }
 
     @Test
