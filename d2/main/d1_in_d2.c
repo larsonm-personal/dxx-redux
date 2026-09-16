@@ -2237,3 +2237,39 @@ void d1_in_d2_apply_robot_assets(int active)
 	Last_stats.robot_assets_active = D1_robot_assets_active;
 	free_d1_robot_asset_generation(generation);
 }
+
+#ifdef __ANDROID__
+/* Android mission transitions discard backups before replacing their source tables */
+void d1_in_d2_reset_asset_context(void)
+{
+	int i, hires;
+	free_d1_robot_asset_generation(Pending_d1_robot_assets);
+	Pending_d1_robot_assets = NULL;
+	remove_spawnable_guidebot_assets();
+	release_guidebot_live_bitmap_copies();
+	d1_in_d2_apply_cockpit(0);
+	for (i = 0; i < N_COCKPIT_BITMAPS; ++i)
+		if (D2_cockpit_bitmap_valid[i]) d_free(D2_cockpit_bitmaps[i].bm_data);
+	for (hires = 0; hires < 2; ++hires)
+		for (i = 0; i < MAX_GAUGE_BMS; ++i)
+			if (D2_gauge_bitmap_valid[hires][i]) d_free(D2_gauge_bitmaps[hires][i].bm_data);
+	for (i = 0; i < MAX_POLYOBJ_TEXTURES; ++i)
+		if (D2_guidebot_bitmap_valid[i]) d_free(D2_guidebot_bitmaps[i].bm_data);
+	if (D2_guidebot_model.model_data) d_free(D2_guidebot_model.model_data);
+	memset(D1_original_cockpit_valid, 0, sizeof(D1_original_cockpit_valid));
+	memset(D2_cockpit_bitmap_valid, 0, sizeof(D2_cockpit_bitmap_valid));
+	memset(D1_original_gauge_valid, 0, sizeof(D1_original_gauge_valid));
+	memset(D2_gauge_bitmap_valid, 0, sizeof(D2_gauge_bitmap_valid));
+	memset(D2_guidebot_bitmap_valid, 0, sizeof(D2_guidebot_bitmap_valid));
+	D1_effects_saved = D1_effects_loaded = D1_num_effects = 0;
+	D1_powerup_vclips_saved = D1_powerup_vclips_loaded = D1_num_vclips = 0;
+	D1_wall_anims_saved = D1_wall_anims_loaded = D1_num_wall_anims = 0;
+	D1_robot_bitmap_slots_registered = D1_robot_polygon_models_loaded = 0;
+	D1_player_ship_saved = D1_cockpit_saved = 0;
+	D2_guidebot_assets_saved = D2_guidebot_joint_count = 0;
+	D2_d1_robot_tuning_saved = D2_d1_robot_tuning_count = 0;
+	D1_robot_assets_active = D1_wall_anims_active = D1_powerup_vclips_active = 0;
+	D1_effects_active = D1_sounds_active = D1_player_ship_active = 0;
+	memset(&Last_stats, 0, sizeof(Last_stats));
+}
+#endif

@@ -1072,6 +1072,20 @@ void piggy_close()
 	hashtable_free( &AllDigiSndNames );
 }
 
+#ifdef __ANDROID__
+void piggy_android_reset_tables(void)
+{
+	Num_bitmap_files = Num_sound_files = 0;
+	Num_bitmap_files_new = Num_sound_files_new = 0;
+	bogus_bitmap_initialized = 0;
+	MacPig = PCSharePig = 0;
+	Piggy_bitmap_cache_data = NULL;
+	Piggy_bitmap_cache_next = 0;
+	memset(GameBitmaps, 0, sizeof(GameBitmaps));
+	memset(GameSounds, 0, sizeof(GameSounds));
+}
+#endif
+
 int piggy_does_bitmap_exist_slow( char * name )
 {
 	int i;

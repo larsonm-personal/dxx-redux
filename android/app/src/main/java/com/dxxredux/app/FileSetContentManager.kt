@@ -244,13 +244,17 @@ internal class FileSetContentManager(
     fun buildProjection(
         game: String,
         includeD1ForD2: Boolean = true,
+        globalOnly: Boolean = false,
     ): File =
         synchronized(CONTENT_LOCK) {
             require(game == GameFileFormats.GAME_D1 || game == GameFileFormats.GAME_D2)
             val entries =
-                listEntries().filter { entry -> entry.enabled && entry.appliesToGame(game, includeD1ForD2) }
+                listEntries().filter { entry ->
+                    entry.enabled && entry.appliesToGame(game, includeD1ForD2) &&
+                        (!globalOnly || !entry.hasMissions())
+                }
             projectionDir.mkdirs()
-            val target = File(projectionDir, game)
+            val target = File(projectionDir, if (globalOnly) "$game-global" else game)
             val temporary = AtomicFilePublication.uniqueSibling(target, "tmp")
             check(temporary.mkdirs()) { "Could not create content projection" }
             try {
@@ -311,14 +315,75 @@ internal class FileSetContentManager(
     ): List<String> =
         synchronized(CONTENT_LOCK) {
             val entries =
-                listEntries().filter { entry -> entry.enabled && entry.appliesToGame(game, includeD1ForD2) }
-            val projection = buildProjection(game, includeD1ForD2)
+                listEntries().filter { entry ->
+                    entry.enabled && entry.appliesToGame(game, includeD1ForD2) &&
+                        !entry.hasMissions()
+                }
+            val projection = buildProjection(game, includeD1ForD2, globalOnly = true)
             buildList {
                 entries.sortedBy { it.order }.forEach { entry ->
                     entry.files.filter { GameFileFormats.isDxa(it.name) }.forEach { add(it.absolutePath) }
                 }
                 if (projection.walkTopDown().any { it.isFile }) add(projection.absolutePath)
             }
+        }
+
+    private val archiveMissionScans = mutableMapOf<File, MissionZip.ScanResult?>()
+
+    private fun archiveMissionScan(file: File): MissionZip.ScanResult? {
+        if (!GameFileFormats.isDxa(file.name)) return null
+        if (!archiveMissionScans.containsKey(file)) {
+            archiveMissionScans[file] = runCatching { MissionZip.inspect(file) }.getOrNull()
+        }
+        return archiveMissionScans[file]?.takeIf { it.effectiveMissionSets.isNotEmpty() }
+    }
+
+    private fun FileSetContentEntry.hasMissions(): Boolean =
+        files.any { GameFileFormats.isMissionDescriptor(it.name) || archiveMissionScan(it) != null }
+
+    fun buildMissionLaunchCatalog(
+        game: String,
+        includeD1ForD2: Boolean = true,
+    ): MissionLaunchCatalog =
+        synchronized(CONTENT_LOCK) {
+            val packages =
+                listEntries()
+                    .filter {
+                        it.enabled && it.appliesToGame(game, includeD1ForD2) &&
+                            it.hasMissions()
+                    }.flatMap { entry ->
+                        if (entry.files.none { GameFileFormats.isMissionDescriptor(it.name) }) {
+                            val store = MissionZipExtractionStore(File(entryDirectory(entry.id), "mission_support"))
+                            return@flatMap entry.files.mapNotNull { archive ->
+                                val scan = archiveMissionScan(archive) ?: return@mapNotNull null
+                                val record = store.ensureExtracted(archive.name, archive, scan)
+                                missionLaunchPackage(
+                                    "content/${entry.id}/${archive.name}",
+                                    scan,
+                                    record,
+                                    game,
+                                    includeD1ForD2,
+                                )
+                            }
+                        }
+                        val root = File(entryDirectory(entry.id), "payload")
+                        val files =
+                            entry.files.mapIndexed { index, file ->
+                                val path = entry.virtualPaths[index]
+                                MissionZipExtractedFile(path, path, file.length(), sha256(file), file.lastModified())
+                            }
+                        val revision =
+                            missionLaunchHash(
+                                files.joinToString("\n") { "${it.relativePath}\u0000${it.contentSha256}" },
+                            )
+                        val record = MissionZipExtractionRecord(entry.id, entry.totalBytes, 0, revision, root, files)
+                        val scan =
+                            requireNotNull(
+                                MissionZip.inspectExtracted(record),
+                            ) { "Cannot inventory mission content: ${entry.displayName}" }
+                        listOfNotNull(missionLaunchPackage("content/${entry.id}", scan, record, game, includeD1ForD2))
+                    }
+            MissionLaunchCatalog(packages)
         }
 
     private fun FileSetContentEntry.appliesToGame(

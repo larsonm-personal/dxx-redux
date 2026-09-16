@@ -14,6 +14,47 @@ class FileSetContentManagerTest {
     @get:Rule val temporaryFolder = TemporaryFolder()
 
     @Test
+    fun looseMissionIsDiscoverableWithoutPublishingItsAssetsGlobally() {
+        val setDir = temporaryFolder.newFolder("scoped-loose")
+        File(setDir, "panic.mn2").writeText("name = Panic\nbriefing = panic.tex\nnum_levels = 1\npanic01.rl2\n")
+        File(setDir, "panic01.rl2").writeText("level")
+        File(setDir, "panic.tex").writeText("briefing")
+        val manager = FileSetContentManager(setDir)
+        val entry = manager.reconcile().entries.single()
+        assertTrue(manager.buildLaunchPaths("d2").isEmpty())
+        val catalog = manager.buildMissionLaunchCatalog("d2")
+        val mission = catalog.missions.single()
+        assertEquals("content/${entry.id}", mission.key.owner)
+        assertTrue(catalog.resourcesFor(mission.key).any { it.virtualPath.endsWith("panic01.rl2") })
+        assertTrue(catalog.resourcesFor(null).isEmpty())
+        manager.setEnabled(entry.id, false)
+        assertTrue(manager.buildMissionLaunchCatalog("d2").missions.isEmpty())
+    }
+
+    @Test
+    fun dxaContainingMissionsIsScopedEvenWithoutAnExternalDescriptor() {
+        val setDir = temporaryFolder.newFolder("embedded-mission")
+        java.util.zip.ZipOutputStream(File(setDir, "campaign.dxa").outputStream()).use { zip ->
+            for ((path, text) in mapOf(
+                "missions/campaign.mn2" to "name = Campaign\nnum_levels = 1\nfirst.rl2\n",
+                "missions/first.rl2" to "level",
+                "descent2.s22" to "campaign sound bank",
+            )) {
+                zip.putNextEntry(java.util.zip.ZipEntry(path))
+                zip.write(text.toByteArray())
+                zip.closeEntry()
+            }
+        }
+        val manager = FileSetContentManager(setDir)
+        val entry = manager.reconcile().entries.single()
+        assertTrue(manager.buildLaunchPaths("d2").isEmpty())
+        val catalog = manager.buildMissionLaunchCatalog("d2")
+        val key = catalog.missions.single().key
+        assertEquals("content/${entry.id}/campaign.dxa", key.owner)
+        assertTrue(catalog.resourcesFor(key).any { it.virtualPath == "descent2.s22" })
+    }
+
+    @Test
     fun vertigoDescriptorAndHogStayTogetherInLaunchProjection() {
         val setDir = temporaryFolder.newFolder("vertigo")
         File(setDir, "descent2.hog").writeText("base")

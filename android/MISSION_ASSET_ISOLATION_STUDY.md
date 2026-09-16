@@ -2,6 +2,12 @@
 
 Date: 2026-09-15
 
+Implementation update: descriptor-only discovery and native mission-owned asset
+activation now replace the global level-pack mounts described in this study.
+The original analysis below records the failing design. See the
+[runtime implementation and validation report](ai%20tool%20plans/2026-09-15-mission-asset-isolation-study.md#runtime-implementation-and-validation-2026-09-15)
+for the changes, tested sample hashes and remaining broader coverage
+
 ## Conclusion
 
 Enabled level packages currently participate in the global asset search path

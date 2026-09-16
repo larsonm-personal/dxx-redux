@@ -23,6 +23,7 @@
 extern "C" {
 #ifdef __ANDROID__
 #include "android_crash_handler.h"
+#include "android_mission_assets.h"
 #include "jni_string.h"
 #endif
 #include "args.h"
@@ -444,6 +445,10 @@ static int init_levelmeta_runtime(levelmeta_env env, levelmeta_context context, 
 	error_init(msgbox_error);
 	set_warn_func(msgbox_warning);
 	PHYSFSX_init((int) argv.size(), argv.data());
+#ifdef __ANDROID__
+	/* Metadata requests manage their own isolated mounts and asset lifetimes */
+	android_mission_assets_shutdown();
+#endif
 	if (GameArg.SysShowCmdHelp) {
 		snprintf(error, error_size, "%s", "help requested");
 		return 0;

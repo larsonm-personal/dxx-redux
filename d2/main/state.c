@@ -3070,7 +3070,11 @@ int state_restore_all_sub(char *filename, int secret_restore)
 			memmove(mission, p + 1, strlen(p + 1) + 1);
 	}
 
+#ifdef __ANDROID__
+	if (!state_android_load_saved_mission(fp, mission)) {
+#else
 	if (!load_mission_by_name( mission ))   {
+#endif
 		con_printf(CON_URGENT, "restore: unable to load mission '%s' from '%s'\n", mission, filename);
 #ifdef __ANDROID__
 		debug_log(DLOG_GAME, "restore unable to load mission: game=d2 file='%s' mission='%s'",

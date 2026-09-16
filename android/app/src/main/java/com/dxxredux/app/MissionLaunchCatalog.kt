@@ -49,6 +49,8 @@ internal class MissionLaunchCatalog(
         }
     val missions: List<MissionLaunchEntry> get() = packages.flatMap { it.missions }
 
+    fun plus(other: MissionLaunchCatalog): MissionLaunchCatalog = MissionLaunchCatalog(packages + other.packages)
+
     init {
         require(
             this.packages

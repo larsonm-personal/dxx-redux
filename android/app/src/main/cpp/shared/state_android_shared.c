@@ -23,6 +23,9 @@
 #include "android_file_pair_transaction.h"
 #include "android_rewind.h"
 #include "android_save_meta.h"
+#ifdef __ANDROID__
+#include "android_mission_assets.h"
+#endif
 #include "fuelcen.h"
 #include "matcen_mode.h"
 #include "android_save_set.h"
@@ -649,6 +652,27 @@ int state_android_read_android_metadata_trailer(rewind_file *file,
 	return have_meta;
 }
 
+int state_android_load_saved_mission(rewind_file *file, char *legacy_name)
+{
+#ifdef __ANDROID__
+	android_save_meta_disk meta;
+	char mission_path[PATH_MAX];
+	const char *key = NULL;
+	if (rewind_file_is_memory(file))
+		key = android_mission_assets_key();
+	else if (state_android_read_android_metadata_trailer(file, &meta))
+		key = meta.mission_asset_key;
+	if (key && *key) {
+		if (!android_mission_assets_resolve_key(key, mission_path, sizeof(mission_path))) {
+			con_printf(CON_URGENT, "Saved mission package is unavailable; enable its level pack\n");
+			return 0;
+		}
+		return load_mission_by_name(mission_path);
+	}
+#endif
+	return load_mission_by_name(legacy_name);
+}
+
 /* Reject incompatible co-op data before either engine replaces its live level */
 int state_android_preflight_coop_restore(rewind_file *file, const char *filename)
 {
@@ -738,6 +762,9 @@ int state_android_write_save_metadata(rewind_file *fp, const char *desc,
 	android_params.callsign = Players[Player_num].callsign;
 	android_params.description = android_desc;
 	android_params.mission_name = mission_filename;
+#ifdef __ANDROID__
+	android_params.mission_asset_key = android_mission_assets_key();
+#endif
 	android_params.level_num = Current_level_num;
 	android_params.level_name = Current_level_name;
 	android_params.level_seconds = state_time_to_seconds(

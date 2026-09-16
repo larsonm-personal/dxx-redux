@@ -38,6 +38,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "ignorecase.h"
 #ifdef __ANDROID__
 #include "physfsx_android_shared.h"
+#include "android_mission_assets.h"
 #endif
 #include "piggy.h"
 
@@ -354,7 +355,7 @@ int ml_sort_func(mle *e0,mle *e1)
 //returns 1 if file read ok, else 0
 int read_mission_file(mle *mission, char *filename, int location)
 {
-	char filename2[100];
+	char filename2[PATH_MAX];
 	PHYSFS_file *mfile;
 
 	switch (location) {
@@ -369,7 +370,12 @@ int read_mission_file(mle *mission, char *filename, int location)
 			strcpy(filename2,"");
 			break;
 	}
+	if (strlen(filename2) + strlen(filename) >= sizeof(filename2)) return 0;
 	strcat(filename2,filename);
+
+#ifdef __ANDROID__
+	if (!android_mission_assets_discover(filename2)) return 0;
+#endif
 
 	mfile = PHYSFSX_openReadBuffered(filename2);
 
@@ -597,6 +603,7 @@ void promote (mle *mission_list, char * mission_name, int * top_place)
 void free_mission(void)
 {
 #ifdef __ANDROID__
+	if (Current_mission) android_mission_assets_free_begin();
 	physfsx_android_unmount_mission_directory();
 #endif
     // May become more complex with the editor
@@ -623,6 +630,9 @@ void free_mission(void)
 			d_free(Current_mission->alternate_ham_file);
 		
         d_free(Current_mission);
+#ifdef __ANDROID__
+		android_mission_assets_free_end();
+#endif
     }
 }
 
@@ -750,11 +760,34 @@ int load_mission(mle *mission)
 {
 	PHYSFS_file *mfile;
 	char buf[PATH_MAX], *v;
+#ifdef __ANDROID__
+	mle selected = *mission;
+	char requested[PATH_MAX], resolved[PATH_MAX];
+	const char *extension = mission->descent_version == 2 ? ".mn2" : ".msn";
+	int length = snprintf(requested, sizeof(requested), "%s%s%s", mission->location == ML_MISSIONDIR ? MISSION_DIR : "", mission->path, extension);
+	if (length < 0 || (size_t)length >= sizeof(requested) ||
+	    !android_mission_assets_prepare(requested, resolved, sizeof(resolved))) return 0;
+	resolved[strlen(resolved) - 4] = 0;
+	selected.location = !strncmp(resolved, MISSION_DIR, strlen(MISSION_DIR)) ? ML_MISSIONDIR : ML_CURDIR;
+	selected.path = resolved + (selected.location == ML_MISSIONDIR ? strlen(MISSION_DIR) : 0);
+	selected.filename = strrchr(selected.path, '/');
+	selected.filename = selected.filename ? selected.filename + 1 : selected.path;
+	mission = &selected;
+#endif
 
 	if (Current_mission)
 		free_mission();
+#ifdef __ANDROID__
+	if (!android_mission_assets_activate()) return 0;
+#endif
 	MALLOC(Current_mission, Mission, 1);
-	if (!Current_mission) return 0;
+	if (!Current_mission) {
+#ifdef __ANDROID__
+		android_mission_assets_free_begin();
+		android_mission_assets_free_end();
+#endif
+		return 0;
+	}
 	*(mle *) Current_mission = *mission;
 	Current_mission->path = d_strdup(mission->path);
 	Current_mission->filename = Current_mission->path + (mission->filename - mission->path);
@@ -1045,9 +1078,20 @@ int load_mission_by_name(char *mission_name)
 	mle *mission_list = build_mission_list(1);
 	bool found = 0;
 
+#ifdef __ANDROID__
+	int match = -1, ambiguous = 0;
+	for (i = 0; i < num_missions; i++)
+		if (!d_stricmp(mission_name, mission_list[i].filename) || !d_stricmp(mission_name, mission_list[i].path)) {
+			if (match >= 0) ambiguous = 1;
+			match = i;
+		}
+	if (ambiguous) Warning("Mission name '%s' is ambiguous; select its package in the mission menu", mission_name);
+	else if (match >= 0) found = load_mission(mission_list + match);
+#else
 	for (i = 0; i < num_missions; i++)
 		if (!d_stricmp(mission_name, mission_list[i].filename))
 			found = load_mission(mission_list + i);
+#endif
 
 	free_mission_list(mission_list);
 	return found;
@@ -1102,7 +1146,15 @@ int mission_menu_handler(listbox *lb, d_event *event, mission_menu *mm)
 					return 1;	// stay in listbox so user can select another one
 				}
 			}
+#ifdef __ANDROID__
+			{
+				int started = (*mm->when_selected)();
+				if (!started) free_mission();
+				return !started;
+			}
+#else
 			return !(*mm->when_selected)();
+#endif
 			break;
 
 		case EVENT_WINDOW_CLOSE:
@@ -1128,7 +1180,11 @@ int select_mission(int anarchy_mode, char *message, int (*when_selected)(void))
 	{
         new_mission_num = load_mission(mission_list) ? 0 : -1;
 		free_mission_list(mission_list);
+#ifdef __ANDROID__
+		if (new_mission_num >= 0 && !(*when_selected)()) free_mission();
+#else
 		(*when_selected)();
+#endif
 		
 		return (new_mission_num >= 0);
     }

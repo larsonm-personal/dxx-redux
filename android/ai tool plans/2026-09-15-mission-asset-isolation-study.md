@@ -21,8 +21,8 @@ owning the mission in use supplies campaign assets
 ## Scope
 
 Implementation started at the user's request. Preserve the user's outstanding
-bug edits. Native activation remains pending until scoped mounting and cache
-teardown can be connected together
+bug edits. Native activation and teardown are now connected; validation results
+are recorded below
 
 ## Result
 
@@ -134,7 +134,7 @@ teardown ship together. A startup-only filter, S22-only fix, filename blacklist,
 or special case for ewithin does not satisfy this plan. Optimize cache retention
 only after the complete switching matrix passes
 
-## Implementation checkpoint: package ownership catalog
+## Historical checkpoint: package ownership catalog
 
 - Added `MissionLaunchCatalog.kt` with owner/descriptor/game-qualified identities,
   package revisions, resource fingerprints, selected-mission resource filtering,
@@ -184,3 +184,48 @@ claiming a verified byte-for-byte match of the complete phone package
   repeated pure catalog selection. These do not constitute engine switching tests
 - No native code changed in this checkpoint; native builds and emulator mission
   switching remain required for the integration checkpoint
+
+## Runtime implementation and validation (2026-09-15)
+
+- Launcher publication now separates descriptor-only discovery from immutable
+  per-mission payload directories. Checked packs remain in the in-engine picker
+- Native D1/D2 mission loading preflights the selected owner, stops music/audio,
+  releases converted sounds, bitmap/model/texture caches and engine data, removes
+  the previous owner, mounts the selected payload and reloads data
+- Exit and canceled mission setup restore base/global assets. Pause retains the
+  current mission. Failed unmounts stop rather than continuing with mixed owners
+- Loose file-set missions and DXAs containing mission descriptors use the same
+  catalog. Nested DXAs and generated patches stay with their selected owner
+- Per-selection compatibility diagnostics avoid conflicts between inactive packs
+- Saves carry the stable owner/descriptor/game key in Android metadata version 7.
+  Restore resolves that key before loading. Legacy ambiguous short names fail
+  instead of choosing an arbitrary package; classic demo/network names retain
+  that same conservative ambiguity behavior
+- Metadata workers keep their separate request-scoped mount lifecycle
+- Staging repairs missing payloads and retains at most three complete generations
+
+Verified so far:
+
+- Android debug build for arm64-v8a, armeabi-v7a and x86_64
+- Windows D1/D2 builds; native save-metadata tests for both engines
+- Full JVM suite: 1,044 tests, zero failures, one skipped
+- Stock sound playback smoke test
+- Real ewithin + Maximum, one engine process: Counterstrike -> ewithin ->
+  Counterstrike -> Maximum -> ewithin -> Counterstrike -> restored ewithin save
+- Exact resident sample 53 checks for all seven loads: stock hash
+  `9a629f9713cdff17`, 24,098 bytes; ewithin hash `446c95505b42af56`, 16,367 bytes
+- Shared save/load dispatch: 57 D2 steps and 56 D1 steps passed
+- Trine 2 D1-in-D2 custom assets and metadata analysis passed, including return
+  to Counterstrike and Trine reactivation: 49 steps. Compatibility backups are
+  discarded before complete data reload, including retained guidebot/cockpit data
+
+Reusable reproduction: `android/tests/test_mission_asset_isolation.ps1 -Install`.
+The runner requires the disposable emulator and local copyrighted game fixtures;
+no campaign payload is checked in with the regression script
+
+The broader study matrix remains useful for follow-up coverage: long-duration
+resource measurements, rare shareware/Mac/OEM combinations, live multiplayer
+transitions, and cross-format global-mod versus authored-asset precedence.
+This implementation preserves existing standalone-global-mod behavior. A
+confirming phone run with the original enabled collection remains external
+validation

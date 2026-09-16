@@ -684,6 +684,10 @@ game_event_loop:
 	con_printf( CON_DEBUG, "\nCleanup...\n" );
 	close_game();
 	texmerge_close();
+#ifdef __ANDROID__
+	extern void android_mission_assets_shutdown(void);
+	android_mission_assets_shutdown();
+#endif
 	gamedata_close();
 	gamefont_close();
 	free_text();

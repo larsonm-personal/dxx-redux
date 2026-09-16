@@ -66,6 +66,7 @@ static void android_save_meta_sanitize(android_save_meta_disk *meta)
 	meta->callsign[ANDROID_SAVE_META_CALLSIGN_LEN] = '\0';
 	meta->description[ANDROID_SAVE_META_DESC_LEN] = '\0';
 	meta->mission_name[ANDROID_SAVE_META_MISSION_LEN] = '\0';
+	meta->mission_asset_key[64] = '\0';
 	meta->level_name[ANDROID_SAVE_META_LEVEL_NAME_LEN - 1] = '\0';
 }
 
@@ -135,6 +136,7 @@ int android_save_meta_build(android_save_meta_disk *out,
 	android_save_meta_copy_string(out->callsign, sizeof(out->callsign), params->callsign);
 	android_save_meta_copy_string(out->description, sizeof(out->description), params->description);
 	android_save_meta_copy_string(out->mission_name, sizeof(out->mission_name), params->mission_name);
+	android_save_meta_copy_string(out->mission_asset_key, sizeof(out->mission_asset_key), params->mission_asset_key);
 	android_save_meta_copy_string(out->level_name, sizeof(out->level_name), params->level_name);
 	out->level_num = params->level_num;
 	out->level_seconds = params->level_seconds;

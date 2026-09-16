@@ -89,5 +89,33 @@
         "console.lines": {"contains": "D1 custom textures:"}
     }},
     {"action": "introspect"},
+    {"action": "log", "message": "Checking D1-in-D2 asset teardown and reactivation"},
+    {"action": "key", "key": "esc", "post_delay_ms": 100},
+    {"action": "select", "text": "Abort Game", "timeout_ms": 5000},
+    {"action": "wait_for", "field": "current_level_num", "value": "0", "timeout_ms": 10000},
+    {"action": "assert", "expect": {"mission_asset_owner": "base", "asset_trace.d1_compat.sounds_active": "false"}},
+    {"action": "select", "text": "New game", "timeout_ms": 10000},
+    {"action": "select_mission", "text": "Counterstrike", "timeout_ms": 10000},
+    {"action": "select", "text": "Ok", "timeout_ms": 5000},
+    {"action": "select", "text": "Trainee", "timeout_ms": 10000},
+    {"action": "skip_briefing", "timeout_ms": 60000},
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000},
+    {"action": "assert", "expect": {
+        "mission_asset_owner": "base", "asset_trace.mode": "d2",
+        "asset_trace.d1_compat.sounds_active": "false", "asset_trace.d1_compat.robot_assets_active": "false"
+    }},
+    {"action": "key", "key": "esc", "post_delay_ms": 100},
+    {"action": "select", "text": "Abort Game", "timeout_ms": 5000},
+    {"action": "wait_for", "field": "current_level_num", "value": "0", "timeout_ms": 10000},
+    {"action": "select", "text": "New game", "timeout_ms": 10000},
+    {"action": "select_mission", "text": "Trine - Episode 2", "timeout_ms": 10000},
+    {"action": "select", "text": "Ok", "timeout_ms": 5000},
+    {"action": "select", "text": "Trainee", "timeout_ms": 10000},
+    {"action": "skip_briefing", "timeout_ms": 60000},
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000},
+    {"action": "assert", "expect": {
+        "asset_trace.mode": "d1-in-d2", "asset_trace.d1_compat.sounds_active": "true",
+        "asset_trace.d1_custom.bitmap_applied": {"gt": 0}, "asset_trace.d1_compat.robot_assets_active": "true"
+    }},
     {"action": "log", "message": "=== TEST: Trine 2 D1-in-D2 custom textures -- PASS ==="}
 ]

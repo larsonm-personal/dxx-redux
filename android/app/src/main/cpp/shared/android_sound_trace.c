@@ -97,8 +97,17 @@ void android_sound_trace_level(void)
 	int i;
 	++level_generation;
 	context_logged = 0;
-	for (i = 0; i < MAX_SOUND_FILES; ++i)
+	for (i = 0; i < MAX_SOUND_FILES; ++i) {
 		samples[i].reports = 0;
+		/* Verify resident bytes even when a robot has not emitted this sample yet */
+		if (debug_log_enabled[DLOG_GAME] && samples[i].bank == bank_generation && samples[i].loaded.valid) {
+			const sound_trace_fingerprint resident = current_sample(i);
+			debug_log(DLOG_GAME,
+			          "[SFX] context=%u resident_sample=%d bank=%u loaded_hash=%016llx loaded_bytes=%zu bank_match=%d",
+			          level_generation, i, bank_generation, (unsigned long long) samples[i].loaded.hash,
+			          samples[i].loaded.length, sound_trace_fingerprint_match(resident, samples[i].loaded));
+		}
+	}
 }
 
 static void log_context(void)

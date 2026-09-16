@@ -116,6 +116,16 @@ int digi_mixer_init()
 	return 0;
 }
 
+#ifdef __ANDROID__
+void digi_mixer_free_cached_sounds(void)
+{
+	for (int i = 0; i < MAX_SOUNDS; ++i) {
+		if (SoundChunks[i].allocated) free(SoundChunks[i].abuf);
+		memset(&SoundChunks[i], 0, sizeof(SoundChunks[i]));
+	}
+}
+#endif
+
 /* Shut down audio */
 void digi_mixer_close() {
 	if (MIX_DIGI_DEBUG) con_printf(CON_DEBUG,"digi_close (SDL_Mixer)\n");

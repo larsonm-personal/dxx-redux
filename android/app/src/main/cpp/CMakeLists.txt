@@ -546,6 +546,8 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_rewind.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_log.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_sound_trace.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_mission_assets.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_mission_asset_reset.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_slowdown_detector.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_profile.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_render_fov.c
@@ -721,6 +723,8 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_rewind.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_log.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_sound_trace.c
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_mission_assets.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_mission_asset_reset.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_slowdown_detector.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_profile.c
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_render_fov.c

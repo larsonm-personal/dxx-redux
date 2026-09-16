@@ -665,6 +665,9 @@ class SetupActivity : ComponentActivity() {
             Log.e("DXX-Setup", "Launch mod-path preflight failed for $game", e)
             LauncherDebugLog.log("mod-path-capacity-block game=$game message=${e.message ?: ""}")
             return complete(e.message ?: "Too many enabled mod paths")
+        } catch (e: Exception) {
+            Log.e("DXX-Setup", "Launch asset preparation failed for $game", e)
+            return complete("Could not prepare game assets: ${e.message ?: e.javaClass.simpleName}")
         }
         return complete(null)
     }

@@ -27,6 +27,7 @@ extern "C" {
 #include "game_introspect.h"
 #include "game_automate.h"
 #include "android_axis_mailbox.h"
+#include "android_mission_assets.h"
 #include "android_log.h"
 #include "android_lifecycle_diagnostics.h"
 #include "android_level_preview.h"
@@ -2858,6 +2859,8 @@ extern "C" char *game_introspect_get_state(void)
 		physfs["search_path"] = std::move(search_path);
 		j["physfs"] = std::move(physfs);
 		j["mounted_mods"] = std::move(mods);
+		j["mission_asset_owner"] = android_mission_assets_owner();
+		j["mission_asset_generation"] = android_mission_assets_generation();
 	}
 
 	/* -- Input demo recorder state ------------------------------------ */

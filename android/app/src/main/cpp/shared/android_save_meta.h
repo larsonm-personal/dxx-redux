@@ -8,7 +8,7 @@
 #include "matcen_mode.h"
 
 #define ANDROID_SAVE_META_TAG     0x44584153u /* "DXAS" */
-#define ANDROID_SAVE_META_VERSION 6
+#define ANDROID_SAVE_META_VERSION 7
 
 /* Values 0-3 match MUSIC_TYPE_*; 4 distinguishes mission MIDI from base MIDI. */
 #define ANDROID_SAVE_META_MUSIC_MISSION 4
@@ -68,6 +68,7 @@ typedef struct android_save_meta_write_params {
 	const char *callsign;
 	const char *description;
 	const char *mission_name;
+	const char *mission_asset_key;
 	int level_num;
 	const char *level_name;
 	uint32_t level_seconds;
@@ -101,6 +102,8 @@ typedef struct android_save_meta_disk {
 	char callsign[ANDROID_SAVE_META_CALLSIGN_LEN + 1];
 	char description[ANDROID_SAVE_META_DESC_LEN + 1];
 	char mission_name[ANDROID_SAVE_META_MISSION_LEN + 1];
+	/* Stable owner/descriptor/game digest; independent of package revision */
+	char mission_asset_key[65];
 	int32_t level_num;
 	char level_name[ANDROID_SAVE_META_LEVEL_NAME_LEN];
 	uint32_t level_seconds;

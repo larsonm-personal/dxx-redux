@@ -1518,6 +1518,9 @@ int game_handler(window *wind, d_event *event, void *data)
 			if ( Newdemo_state == ND_STATE_PLAYBACK )
 				newdemo_stop_playback();
 
+#ifdef __ANDROID__
+			free_mission();
+#endif
 			songs_play_song( SONG_TITLE, 1 );
 
 			game_disable_cheats();

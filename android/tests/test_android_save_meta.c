@@ -83,6 +83,7 @@ int main(void)
 	params.callsign = "ace";
 	params.description = ANDROID_SAVE_DESC_AUTO_MINIMIZE;
 	params.mission_name = "descent";
+	params.mission_asset_key = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 	params.level_num = 3;
 	params.level_name = "Lunar Outpost";
 	params.level_seconds = 123;
@@ -94,6 +95,7 @@ int main(void)
 	params.thumbnail_height = ANDROID_SAVE_META_THUMB_H;
 	if (!android_save_meta_build(&d1_meta, &params))
 		return report_failure("failed to build D1 metadata");
+	failures += expect_string("mission package identity", params.mission_asset_key, d1_meta.mission_asset_key);
 	params.thumbnail_width = ANDROID_SAVE_META_THUMB_W / 2;
 	params.thumbnail_height = ANDROID_SAVE_META_THUMB_H / 2;
 	if (!android_save_meta_build(&wrong_thumb_meta, &params))

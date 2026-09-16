@@ -8,6 +8,7 @@
 
 #include "physfsx_android_shared.h"
 #include "physfsx_android_setup.h"
+#include "android_mission_assets.h"
 
 extern const PHYSFS_Archiver SAF_Archiver;
 
@@ -15,7 +16,8 @@ static char mission_directory[PATH_MAX];
 
 void physfsx_android_unmount_mission_directory(void)
 {
-	if (mission_directory[0]) PHYSFS_unmount(mission_directory);
+	if (mission_directory[0] && !PHYSFS_unmount(mission_directory))
+		Error("Cannot release mission directory %s: %s", mission_directory, PHYSFS_getLastError());
 	mission_directory[0] = 0;
 }
 
@@ -61,4 +63,5 @@ void physfsx_android_init(int argc, char *argv[], const char *game_dir)
 		Error("Android content setup failed during %s for %s: %s",
 		      result.operation, result.path, result.detail);
 	InitArgsAndroid(argc, argv);
+	android_mission_assets_init();
 }

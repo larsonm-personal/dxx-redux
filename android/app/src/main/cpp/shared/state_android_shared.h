@@ -16,6 +16,7 @@ rewind_file *state_android_open_write_buffered(const char *filename);
 int state_android_close_file(rewind_file *file);
 int state_android_read_android_metadata_trailer(rewind_file *file,
                                                 android_save_meta_disk *meta);
+int state_android_load_saved_mission(rewind_file *file, char *legacy_name);
 int state_android_read_coop_metadata_trailer(rewind_file *file,
                                              coop_save_metadata *meta);
 int state_android_preflight_coop_restore(rewind_file *file, const char *filename);

@@ -236,13 +236,8 @@ class ModManagerMissionZipTest {
 
         val pathFile = File(filesDir, "d2x-redux/.active_mod_paths")
         val lines = pathFile.readLines()
-        assertEquals(2, lines.size)
-        assertTrue(lines[0].endsWith(".extracted_mission_zips${File.separator}Uneasy4.zip"))
-        assertTrue(
-            lines[1].endsWith(
-                ".extracted_mission_zips${File.separator}Uneasy4.zip${File.separator}missions${File.separator}Uneasy4.dxa",
-            ),
-        )
+        assertDescriptorOnlySession(lines)
+        assertTrue(contextMounts(filesDir, "d2").any { it.endsWith("missions/Uneasy4.dxa") })
 
         val stageDir = File(filesDir, "mods/.extracted_mission_zips/Uneasy4.zip/missions")
         assertTrue(File(stageDir, "Uneasy4.mn2").isFile)
@@ -269,13 +264,8 @@ class ModManagerMissionZipTest {
 
         val pathFile = File(filesDir, "d2x-redux/.active_mod_paths")
         val lines = pathFile.readLines()
-        assertEquals(2, lines.size)
-        assertTrue(lines[0].endsWith("mods${File.separator}.extracted_mission_zips${File.separator}SevenPack.7z"))
-        assertTrue(
-            lines[1].endsWith(
-                "mods${File.separator}.extracted_mission_zips${File.separator}SevenPack.7z${File.separator}missions${File.separator}Seven.dxa",
-            ),
-        )
+        assertDescriptorOnlySession(lines)
+        assertTrue(contextMounts(filesDir, "d2").any { it.endsWith("missions/Seven.dxa") })
 
         val stageDir = File(filesDir, "mods/.extracted_mission_zips/SevenPack.7z/missions")
         assertTrue(File(stageDir, "Seven.mn2").isFile)
@@ -347,7 +337,7 @@ class ModManagerMissionZipTest {
 
         val pathFile = File(filesDir, "d1x-redux/.active_mod_paths")
         val lines = pathFile.readLines()
-        assertEquals(listOf(File(filesDir, "mods/.extracted_mission_zips/reetus.rar").absolutePath), lines)
+        assertDescriptorOnlySession(lines)
 
         val stageDir = File(filesDir, "mods/.extracted_mission_zips/reetus.rar/missions")
         assertTrue(File(stageDir, "reetus.MSN").isFile)
@@ -380,7 +370,7 @@ class ModManagerMissionZipTest {
         val d2PathFile = File(filesDir, "d2x-redux/.active_mod_paths")
         val d2Lines = d2PathFile.readLines()
         assertEquals(1, d2Lines.size)
-        assertTrue(d2Lines[0].endsWith(".extracted_mission_zips${File.separator}trine2.zip"))
+        assertDescriptorOnlySession(d2Lines)
 
         val d2StageDir = File(filesDir, "mods/.extracted_mission_zips/trine2.zip/missions")
         assertTrue(File(d2StageDir, "trine2.msn").isFile)
@@ -394,7 +384,7 @@ class ModManagerMissionZipTest {
         val d1PathFile = File(filesDir, "d1x-redux/.active_mod_paths")
         val d1Lines = d1PathFile.readLines()
         assertEquals(1, d1Lines.size)
-        assertTrue(d1Lines[0].endsWith(".extracted_mission_zips${File.separator}trine2.zip"))
+        assertDescriptorOnlySession(d1Lines)
 
         val d1StageDir = File(filesDir, "mods/.extracted_mission_zips/trine2.zip/missions")
         assertTrue(File(d1StageDir, "trine2.msn").isFile)
@@ -426,7 +416,7 @@ class ModManagerMissionZipTest {
         val d1PathFile = File(filesDir, "d1x-redux/.active_mod_paths")
         val d1Lines = d1PathFile.readLines()
         assertEquals(1, d1Lines.size)
-        assertTrue(d1Lines[0].endsWith(".extracted_mission_zips${File.separator}trine2.zip"))
+        assertDescriptorOnlySession(d1Lines)
     }
 
     @Test
@@ -528,13 +518,8 @@ class ModManagerMissionZipTest {
 
         val pathFile = File(filesDir, "d2x-redux/.active_mod_paths")
         val lines = pathFile.readLines()
-        assertEquals(2, lines.size)
-        assertTrue(lines[0].endsWith(".extracted_mission_zips${File.separator}ewithin-rebirth.zip"))
-        assertTrue(
-            lines[1].endsWith(
-                ".extracted_mission_zips${File.separator}ewithin-rebirth.zip${File.separator}ewithin.dxa",
-            ),
-        )
+        assertDescriptorOnlySession(lines)
+        assertTrue(contextMounts(filesDir, "d2").any { it.endsWith("/ewithin.dxa") })
 
         val stageRoot = File(filesDir, "mods/.extracted_mission_zips/ewithin-rebirth.zip")
         assertTrue(File(stageRoot, "ewithin.dxa").isFile)
@@ -638,13 +623,8 @@ class ModManagerMissionZipTest {
 
         manager.writeEnabledModPaths("d2")
         val lines = File(filesDir, "d2x-redux/.active_mod_paths").readLines()
-        assertEquals(
-            listOf(
-                extractedRoot.absolutePath,
-                File(extractedRoot, "ewithin.dxa").absolutePath,
-            ),
-            lines,
-        )
+        assertDescriptorOnlySession(lines)
+        assertTrue(contextMounts(filesDir, "d2").any { it.endsWith("/ewithin.dxa") })
     }
 
     @Test
@@ -705,7 +685,7 @@ class ModManagerMissionZipTest {
 
         manager.writeEnabledModPaths("d2")
         val lines = File(filesDir, "d2x-redux/.active_mod_paths").readLines()
-        assertEquals(listOf(extractedRoot.absolutePath), lines)
+        assertDescriptorOnlySession(lines)
 
         manager.deleteMod(imported.filename)
         assertFalse(File(filesDir, "mods/LargeMission.zip").exists())
@@ -821,6 +801,23 @@ class ModManagerMissionZipTest {
         imported!!
         assertEquals("extracted_bundle", imported.importMode)
         assertTrue(File(filesDir, "mods/.extracted_mission_zips/LargeInnerHog.zip/missions/Uneasy4.hog").isFile)
+    }
+
+    private fun assertDescriptorOnlySession(paths: List<String>) {
+        assertEquals(1, paths.size)
+        assertEquals("discovery", File(paths.single()).name)
+        val files = File(paths.single()).walkTopDown().filter { it.isFile }.toList()
+        assertTrue(files.isNotEmpty())
+        assertTrue(files.all { GameFileFormats.isMissionDescriptor(it.name) })
+    }
+
+    private fun contextMounts(filesDir: File, game: String): List<String> {
+        val gameDir = if (game == "d1") "d1x-redux" else "d2x-redux"
+        val entries = org.json.JSONObject(File(filesDir, "$gameDir/.mission_assets.json").readText()).getJSONArray("entries")
+        return (0 until entries.length()).flatMap { index ->
+            val paths = entries.getJSONObject(index).getJSONArray("mounts")
+            (0 until paths.length()).map { paths.getString(it).replace('\\', '/') }
+        }
     }
 
     private fun createMissionZip(): File {

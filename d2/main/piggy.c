@@ -45,6 +45,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "rle.h"
 #include "screens.h"
 #include "piggy.h"
+#ifdef __ANDROID__
+#include "polyobj.h"
+#endif
 #include "gamemine.h"
 #include "mission.h"
 #include "textures.h"
@@ -877,6 +880,8 @@ digi_sound bogus_sound;
 
 int piggy_is_needed(int soundnum);
 
+static int ham_sound_headers_once = 1;
+
 int read_hamfile()
 {
 	PHYSFS_file * ham_fp = NULL;
@@ -940,6 +945,12 @@ int read_hamfile()
 	{
 		int i;
 
+#ifdef __ANDROID__
+		/* Re-reading mission HAM must release the previous model allocations */
+		for (i = 0; i < N_polygon_models; ++i)
+			if (Polygon_models[i].model_data) free_model(&Polygon_models[i]);
+		init_polygon_models();
+#endif
 		bm_read_all(ham_fp);
 		//PHYSFS_read( ham_fp, GameBitmapXlat, sizeof(ushort)*MAX_BITMAP_FILES, 1 );
 		for (i = 0; i < MAX_BITMAP_FILES; i++)
@@ -960,14 +971,13 @@ int read_hamfile()
 		digi_sound temp_sound;
 		char temp_name_read[16];
 		int sbytes = 0;
-		static int justonce = 1;
 
-		if (!justonce)
+		if (!ham_sound_headers_once)
 		{
 			PHYSFS_close(ham_fp);
 			return 1;
 		}
-		justonce = 0;
+		ham_sound_headers_once = 0;
 
 		PHYSFSX_fseek(ham_fp, sound_offset, SEEK_SET);
 		N_sounds = PHYSFSX_readInt(ham_fp);
@@ -1671,6 +1681,22 @@ void piggy_close()
 	free_bitmap_replacements();
 	free_d1_tmap_nums();
 }
+
+#ifdef __ANDROID__
+void piggy_android_reset_tables(void)
+{
+	Num_bitmap_files = Num_sound_files = 0;
+	Num_bitmap_files_new = Num_sound_files_new = 0;
+	bogus_bitmap_initialized = 0;
+	Pigfile_initialized = 0;
+	ham_sound_headers_once = 1;
+	LastSndfileDir[0] = Current_pigfile[0] = 0;
+	Piggy_bitmap_cache_data = NULL;
+	Piggy_bitmap_cache_next = 0;
+	memset(GameBitmaps, 0, sizeof(GameBitmaps));
+	memset(GameSounds, 0, sizeof(GameSounds));
+}
+#endif
 
 int piggy_does_bitmap_exist_slow( char * name )
 {

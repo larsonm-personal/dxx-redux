@@ -803,17 +803,44 @@ class ModManager(
                 .sortedBy { it.order }
         val gameDir = if (game == "d1") "d1x-redux" else "d2x-redux"
         val pathFile = File(File(filesDir, gameDir), ".active_mod_paths")
+        var catalog = buildMissionLaunchCatalog(game, includeD1MissionZipsForD2)
+        setDir?.let {
+            catalog =
+                catalog.plus(FileSetContentManager(it).buildMissionLaunchCatalog(game, includeD1MissionZipsForD2))
+        }
+        val globalMods = enabled.filterNot { it.isLevel }
+        val globalRevision = globalMods.joinToString("\n") { "${it.filename}:${computeSha256(modFile(it.filename))}" }
+        val activationErrors =
+            catalog.missions.associate { mission ->
+                val selected = enabled.filter { mission.key.owner == "mod/${it.filename}" }
+                mission.key to
+                    (
+                        setDir
+                            ?.let {
+                                checkModSetCompatibility(
+                                    game,
+                                    it,
+                                    globalMods + selected,
+                                ).toUserMessage()
+                            }.orEmpty()
+                    )
+            }
+        val publication =
+            catalog.publish(File(filesDir, gameDir), globalRevision, activationErrors) { selection, root ->
+                val selected = enabled.filter { selection.owner == "mod/${it.filename}" }
+                writeGeneratedPatchOverrides(game, globalMods + selected, root)
+            }
         val generatedPatchDir = generatedPatchDir(game)
         val generatedMissionZipDir = generatedMissionZipDir(game)
         generatedPatchDir.deleteRecursively()
         generatedMissionZipDir.deleteRecursively()
         pathFile.parentFile?.mkdirs()
-        if (enabled.isEmpty() && contentPaths.isEmpty()) {
-            pathFile.delete()
-        } else {
+        AtomicFilePublication.writeUtf8(File(pathFile.parentFile, ".mission_assets.json"), publication.manifest)
+        run {
             val validPaths = mutableListOf<String>()
-            writeGeneratedPatchOverrides(game, enabled)?.let { validPaths += it.absolutePath }
-            for (mod in enabled) {
+            if (catalog.missions.isNotEmpty()) validPaths += publication.discoveryDir.absolutePath
+            writeGeneratedPatchOverrides(game, globalMods)?.let { validPaths += it.absolutePath }
+            for (mod in globalMods) {
                 val modFile = File(modsDir, mod.filename)
                 if (modFile.exists() && modFile.length() > 0) {
                     validPaths.addAll(activeModPathLines(mod, modFile))
@@ -824,7 +851,7 @@ class ModManager(
             validPaths += contentPaths.filter { File(it).exists() }
             if (validPaths.isEmpty()) {
                 pathFile.delete()
-                Log.w(TAG, "All enabled mods missing on disk, removed .active_mod_paths")
+                logInfo("No global mod paths to publish")
             } else {
                 try {
                     requireActiveModPathCapacity(validPaths)
@@ -832,7 +859,12 @@ class ModManager(
                     pathFile.delete()
                     throw failure
                 }
-                AtomicFilePublication.writeUtf8(pathFile, validPaths.joinToString("\n"))
+                AtomicFilePublication.writeUtf8Batch(
+                    listOf(
+                        File(pathFile.parentFile, ".mission_assets.json") to publication.manifest,
+                        pathFile to validPaths.joinToString("\n"),
+                    ),
+                )
             }
         }
         logInfo(
@@ -903,8 +935,16 @@ class ModManager(
     ): ModCompatibilityReport {
         val enabled =
             mods
-                .filter { it.enabledForLaunch(game, includeD1MissionZipsForD2) }
+                .filter { !it.isLevel && it.enabledForLaunch(game, includeD1MissionZipsForD2) }
                 .sortedBy { it.order }
+        return checkModSetCompatibility(game, setDir, enabled)
+    }
+
+    private fun checkModSetCompatibility(
+        game: String,
+        setDir: File,
+        enabled: List<ModInfo>,
+    ): ModCompatibilityReport {
         val assetEntries = AssetManifest(setDir).load().associateBy { it.filename.lowercase(Locale.US) }
         val failures = mutableListOf<ModCompatibilityFailure>()
         val patchDocuments = mutableListOf<ModPatchDocument>()
@@ -1521,6 +1561,7 @@ class ModManager(
     private fun writeGeneratedPatchOverrides(
         game: String,
         enabled: List<ModInfo>,
+        root: File = generatedPatchDir(game),
     ): File? {
         val documents = mutableListOf<ModPatchDocument>()
         for (mod in enabled) {
@@ -1528,7 +1569,6 @@ class ModManager(
             if (modFile.isFile) documents += collectModPatchDocuments(mod, modFile, game)
         }
         if (collectPatchConflicts(documents).isNotEmpty()) return null
-        val root = generatedPatchDir(game)
         var wrotePatch = false
         for ((patchPath, patchDocuments) in documents.filter { it.operations != null }.groupBy { it.owner.patchPath }) {
             if (patchDocuments.map { it.owner.modFilename }.distinct().size <= 1) continue
@@ -1539,7 +1579,7 @@ class ModManager(
             }
             val output = File(root, patchPath.replace('/', File.separatorChar))
             output.parentFile?.mkdirs()
-            output.writeText(merged.toString(2))
+            AtomicFilePublication.writeUtf8(output, merged.toString(2))
             wrotePatch = true
         }
         return if (wrotePatch) root else null
