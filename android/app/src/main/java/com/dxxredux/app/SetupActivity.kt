@@ -610,6 +610,16 @@ class SetupActivity : ComponentActivity() {
                 return complete("Could not prepare file-set content: ${e.message ?: "unknown error"}")
             }
         recordStep("content_reconcile")
+        if (LauncherDebugLog.isEnabled(this)) {
+            for (entry in contentResult.entries) {
+                LauncherDebugLog.log(
+                    "launch-content owner=${entry.id} enabled=${entry.enabled} title=${entry.displayName} " +
+                        "files=${entry.files.mapIndexed { index, file ->
+                            "${entry.virtualPaths[index]}:${file.length()}"
+                        }.joinToString(",")}",
+                )
+            }
+        }
         if (contentResult.conflicts.isNotEmpty()) {
             val details = contentResult.conflicts.take(3).joinToString("\n")
             LauncherDebugLog.log(
@@ -667,6 +677,7 @@ class SetupActivity : ComponentActivity() {
             return complete(e.message ?: "Too many enabled mod paths")
         } catch (e: Exception) {
             Log.e("DXX-Setup", "Launch asset preparation failed for $game", e)
+            LauncherDebugLog.log("launch-assets-block game=$game ${e.stackTraceToString()}")
             return complete("Could not prepare game assets: ${e.message ?: e.javaClass.simpleName}")
         }
         return complete(null)

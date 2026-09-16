@@ -377,10 +377,19 @@ internal class FileSetContentManager(
                                 files.joinToString("\n") { "${it.relativePath}\u0000${it.contentSha256}" },
                             )
                         val record = MissionZipExtractionRecord(entry.id, entry.totalBytes, 0, revision, root, files)
+                        val rejectedMissions = mutableListOf<String>()
                         val scan =
                             requireNotNull(
-                                MissionZip.inspectExtracted(record),
-                            ) { "Cannot inventory mission content: ${entry.displayName}" }
+                                MissionZip.inspectExtracted(
+                                    record,
+                                    rejectedMissions::add,
+                                    includeIncompleteMissions = true,
+                                ),
+                            ) {
+                                "Cannot inventory mission content: ${entry.displayName} " +
+                                    "[${entry.id}]: ${rejectedMissions.joinToString("; ")}; " +
+                                    "files: ${files.joinToString { "${it.relativePath} (${it.sizeBytes} bytes)" }}"
+                            }
                         listOfNotNull(missionLaunchPackage("content/${entry.id}", scan, record, game, includeD1ForD2))
                     }
             MissionLaunchCatalog(packages)

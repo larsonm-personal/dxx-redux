@@ -14,6 +14,9 @@
 #ifdef OGL
 #include "internal.h"
 #include "xmodel.h"
+#ifdef OGL_MERGE
+extern void ogl_init_prog(void);
+#endif
 #endif
 #ifdef DXX_BUILD_DESCENT_II
 #include "d1_custom.h"
@@ -53,6 +56,10 @@ void android_mission_asset_reset_before(void)
 	newmenu_free_background();
 #ifdef OGL
 	ogl_smash_texture_list_internal();
+#ifdef OGL_MERGE
+	/* Texture teardown also deletes merge shaders; restore them before rendering */
+	if (gl_initialized) ogl_init_prog();
+#endif
 	xmodel_free_all();
 #endif
 	clear_texture_lookup_cache();

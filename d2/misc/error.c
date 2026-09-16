@@ -71,7 +71,7 @@ void Error(const char *fmt,...)
 	va_list arglist;
 
 	va_start(arglist,fmt);
-	vsprintf(exit_message+strlen(exit_message),fmt,arglist);
+	vsnprintf(exit_message+strlen(exit_message),sizeof(exit_message)-strlen(exit_message),fmt,arglist);
 	va_end(arglist);
 
 	Int3();
@@ -96,7 +96,7 @@ void Warning(char *fmt,...)
 	strcpy(warn_message,"Warning: ");
 
 	va_start(arglist,fmt);
-	vsprintf(warn_message+strlen(warn_message),fmt,arglist);
+	vsnprintf(warn_message+strlen(warn_message),sizeof(warn_message)-strlen(warn_message),fmt,arglist);
 	va_end(arglist);
 
 	(*warn_func)(warn_message);

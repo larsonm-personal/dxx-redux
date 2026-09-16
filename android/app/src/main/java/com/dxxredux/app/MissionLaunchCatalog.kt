@@ -13,6 +13,7 @@ internal data class MissionLaunchKey(
 internal data class MissionLaunchEntry(
     val key: MissionLaunchKey,
     val title: String,
+    val activationError: String = "",
 )
 
 /** An extracted file retains its owner even if it is a DXA or generated song list */
@@ -85,7 +86,23 @@ internal class MissionLaunchCatalog(
         require(pack != null && pack.missions.any { it.key == selection }) { "Unknown mission selection: $selection" }
         val resources = pack.resources.filter { it.missions.isEmpty() || selection in it.missions }
         require(resources.map { it.virtualPath.lowercase(Locale.US) }.distinct().size == resources.size) {
-            "Conflicting resource paths for $selection"
+            buildString {
+                append("Conflicting resource paths for $selection")
+                resources
+                    .groupBy { it.virtualPath.lowercase(Locale.US) }
+                    .filterValues { it.size > 1 }
+                    .toSortedMap()
+                    .forEach { (path, candidates) ->
+                        val identical = candidates.map { it.sha256.lowercase(Locale.US) }.distinct().size == 1
+                        append("\nresource-path-conflict path='$path' identical_sha256=$identical")
+                        candidates.sortedBy { it.virtualPath }.forEach { resource ->
+                            append("\n  virtual='${resource.virtualPath}' source='${resource.source.absolutePath}'")
+                            append(" exists=${resource.source.isFile} bytes=${resource.source.length()}")
+                            append(" sha256=${resource.sha256}")
+                            append(" scope=${if (resource.missions.isEmpty()) "package-shared" else "mission-owned"}")
+                        }
+                    }
+            }
         }
         return resources
     }
@@ -150,7 +167,7 @@ internal fun missionLaunchPackage(
     return MissionLaunchPackage(
         owner,
         record.ownerSha256,
-        missionSets.map { MissionLaunchEntry(key(it), it.mission.displayName) },
+        missionSets.map { MissionLaunchEntry(key(it), it.mission.displayName, it.activationError) },
         resources,
     )
 }

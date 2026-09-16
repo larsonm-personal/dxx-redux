@@ -35,6 +35,8 @@ struct merged_wall_cached_texmerge_entry {
 	int width;
 	int height;
 	fix64 last_time_used;
+	unsigned int probe_serial, probe_hash;
+	int probe_frame, probe_zero_alpha, probe_valid;
 };
 
 struct merged_wall_tmap2_submit_context {
@@ -126,7 +128,8 @@ int android_merged_wall_cached_texmerge_render_to_texture(
     struct _ogl_texture *output_tex, grs_bitmap *bottom_bmp,
     grs_bitmap *overlay_bmp, int orient, int width, int height,
     int texfilt_level, int aniso_level, float max_anisotropy,
-    const struct android_ogl_texture_runtime_state *runtime_state);
+    const struct android_ogl_texture_runtime_state *runtime_state,
+    struct merged_wall_cached_texmerge_entry *probe_entry);
 int android_merged_wall_cached_texmerge_finalize_entry(
     struct merged_wall_cached_texmerge_entry *entry,
     grs_bitmap *bottom_bmp, grs_bitmap *overlay_bmp, int orient,

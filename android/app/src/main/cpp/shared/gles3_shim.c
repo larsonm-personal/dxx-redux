@@ -689,6 +689,15 @@ GLuint gles3_shim_get_stream_vbo(void)
 	return shim_vbo;
 }
 
+void gles3_shim_log_merge_probe(unsigned int serial, const char *stage)
+{
+	debug_log_force(DLOG_TEXTURE,
+	                "[mwall_create] serial=%u stage=%s shim_program=%u external=%u stream=%u vertex=%p/%u/%d/%d color=%p/%u/%d/%d uv=%p/%u/%d/%d uv2=%p/%u/%d/%d mvp_dirty=%d",
+	                serial, stage, current_prog, external_prog, shim_vbo,
+	                va_ptr, va_buffer, va_size, va_stride, ca_ptr, ca_buffer, ca_size, ca_stride,
+	                ta_ptr, ta_buffer, ta_size, ta_stride, ta2_ptr, ta2_buffer, ta2_size, ta2_stride, mvp_dirty);
+}
+
 int gles3_shim_probe_vbo_arrays(void)
 {
 	static const float vertices[][5] = {

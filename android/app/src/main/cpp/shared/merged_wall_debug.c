@@ -25,6 +25,7 @@
 #include "wall.h"
 
 #include "android_log.h"
+#include "android_mission_assets.h"
 #include "android_texture_debug.h"
 #include "merged_wall_debug.h"
 #include "merged_wall_geometry_hit.h"
@@ -491,6 +492,8 @@ void android_merged_wall_cached_texmerge_clear(
 	if (!entries || count <= 0)
 		return;
 	for (i = 0; i < count; ++i) {
+		if (entries[i].probe_serial)
+			debug_log_force(DLOG_TEXTURE, "[mwall_create] serial=%u event=clear frame=%d", entries[i].probe_serial, g_merged_wall_frame_id);
 		if (entries[i].texture && free_texture)
 			free_texture(entries[i].texture);
 		android_merged_wall_cached_texmerge_reset_entry(&entries[i]);
@@ -586,6 +589,8 @@ void android_merged_wall_cached_texmerge_reset_entry(
 	entry->width = 0;
 	entry->height = 0;
 	entry->last_time_used = -1;
+	entry->probe_serial = entry->probe_hash = 0;
+	entry->probe_frame = entry->probe_zero_alpha = entry->probe_valid = 0;
 }
 
 static void android_merged_wall_cached_texmerge_wrap_texture(
@@ -769,11 +774,135 @@ void android_merged_wall_cached_texmerge_setup_output_texture(
 	             tex->format, GL_UNSIGNED_BYTE, NULL);
 }
 
+/* Opt-in through TEXTURE logging, restricted to the reported Vertigo pair */
+static unsigned int merged_wall_creation_serial;
+static unsigned int merged_wall_bitmap_hash(grs_bitmap *bm, int *bytes, int *idx254, int *idx255);
+
+static void merged_wall_creation_errors(unsigned int serial, const char *stage)
+{
+	GLenum error;
+	int count = 0;
+	while ((error = glGetError()) != GL_NO_ERROR && count++ < 16)
+		debug_log_force(DLOG_TEXTURE, "[mwall_create] serial=%u stage=%s gl_error=0x%x", serial, stage, error);
+}
+
+static void merged_wall_creation_state(unsigned int serial, const char *stage)
+{
+	GLint fbo, viewport[4], scissor[4], program, buffer, vao, active;
+	GLboolean mask[4];
+	glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &fbo);
+	glGetIntegerv(GL_VIEWPORT, viewport);
+	glGetIntegerv(GL_SCISSOR_BOX, scissor);
+	glGetIntegerv(GL_CURRENT_PROGRAM, &program);
+	glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &buffer);
+	glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &vao);
+	glGetIntegerv(GL_ACTIVE_TEXTURE, &active);
+	glGetBooleanv(GL_COLOR_WRITEMASK, mask);
+	debug_log_force(DLOG_TEXTURE, "[mwall_create] serial=%u stage=%s requested_merge_program=%u requested_is_program=%d",
+	                serial, stage, ogl_prog_tex2, glIsProgram(ogl_prog_tex2));
+	debug_log_force(DLOG_TEXTURE,
+	                "[mwall_create] serial=%u stage=%s fbo=%d viewport=%d/%d/%d/%d scissor=%d box=%d/%d/%d/%d stencil=%d discard=%d depth=%d blend=%d cull=%d color=%d%d%d%d program=%d buffer=%d vao=%d active=0x%x",
+	                serial, stage, fbo, viewport[0], viewport[1], viewport[2], viewport[3], glIsEnabled(GL_SCISSOR_TEST),
+	                scissor[0], scissor[1], scissor[2], scissor[3], glIsEnabled(GL_STENCIL_TEST), glIsEnabled(GL_RASTERIZER_DISCARD),
+	                glIsEnabled(GL_DEPTH_TEST), glIsEnabled(GL_BLEND), glIsEnabled(GL_CULL_FACE),
+	                mask[0], mask[1], mask[2], mask[3], program, buffer, vao, active);
+	for (int unit = 0; unit < 2; ++unit) {
+		GLint texture, sampler, min_filter, mag_filter, base, max;
+		glActiveTexture(GL_TEXTURE0 + unit);
+		glGetIntegerv(GL_TEXTURE_BINDING_2D, &texture);
+		glGetIntegerv(GL_SAMPLER_BINDING, &sampler);
+		glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, &min_filter);
+		glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, &mag_filter);
+		glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, &base);
+		glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, &max);
+		debug_log_force(DLOG_TEXTURE, "[mwall_create] serial=%u stage=%s unit=%d texture=%d sampler=%d filter=0x%x/0x%x levels=%d/%d",
+		                serial, stage, unit, texture, sampler, min_filter, mag_filter, base, max);
+	}
+	glActiveTexture(active);
+	if (program) {
+		const char *names[] = { "utex", "utex2", "utex2_debug" };
+		for (int i = 0; i < 3; ++i) {
+			GLint location = glGetUniformLocation(program, names[i]), value = -1;
+			if (location >= 0) glGetUniformiv(program, location, &value);
+			debug_log_force(DLOG_TEXTURE, "[mwall_create] serial=%u stage=%s uniform=%s location=%d value=%d", serial, stage, names[i], location, value);
+		}
+		GLint location = glGetUniformLocation(program, "umat");
+		GLfloat matrix[16] = { 0 }, cutoff = -1;
+		if (location >= 0) glGetUniformfv(program, location, matrix);
+		location = glGetUniformLocation(program, "utex2alpha_cutoff");
+		if (location >= 0) glGetUniformfv(program, location, &cutoff);
+		debug_log_force(DLOG_TEXTURE, "[mwall_create] serial=%u stage=%s cutoff=%g matrix=%g/%g/%g/%g,%g/%g/%g/%g,%g/%g/%g/%g,%g/%g/%g/%g",
+		                serial, stage, cutoff, matrix[0], matrix[1], matrix[2], matrix[3], matrix[4], matrix[5], matrix[6], matrix[7],
+		                matrix[8], matrix[9], matrix[10], matrix[11], matrix[12], matrix[13], matrix[14], matrix[15]);
+	}
+	gles3_shim_log_merge_probe(serial, stage);
+	merged_wall_creation_errors(serial, "state_query");
+}
+
+/* Direct level-zero readback: does not draw with the possibly failing merge shader */
+static void merged_wall_creation_pixels(struct merged_wall_cached_texmerge_entry *entry, const char *stage, int remember)
+{
+	unsigned char pixels[64 * 64 * 4];
+	GLint old_read, pack_buffer, alignment, row_length, skip_rows, skip_pixels;
+	GLuint fbo;
+	unsigned int hash = MERGED_WALL_FNV1A_OFFSET;
+	int zero = 0, min_alpha = 255, max_alpha = 0;
+	if (!entry || !entry->probe_serial || !entry->texture || entry->texture->w != 64 || entry->texture->h != 64)
+		return;
+	glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &old_read);
+	glGetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING, &pack_buffer);
+	glGetIntegerv(GL_PACK_ALIGNMENT, &alignment);
+	glGetIntegerv(GL_PACK_ROW_LENGTH, &row_length);
+	glGetIntegerv(GL_PACK_SKIP_ROWS, &skip_rows);
+	glGetIntegerv(GL_PACK_SKIP_PIXELS, &skip_pixels);
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+	glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, entry->texture->handle, 0);
+	glReadBuffer(GL_COLOR_ATTACHMENT0);
+	glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	glPixelStorei(GL_PACK_ROW_LENGTH, 0);
+	glPixelStorei(GL_PACK_SKIP_ROWS, 0);
+	glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
+	GLenum status = glCheckFramebufferStatus(GL_READ_FRAMEBUFFER);
+	merged_wall_creation_errors(entry->probe_serial, "before_readback");
+	if (status == GL_FRAMEBUFFER_COMPLETE) {
+		glReadPixels(0, 0, 64, 64, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+		GLenum error = glGetError();
+		if (error == GL_NO_ERROR) {
+			for (int i = 0; i < (int) sizeof(pixels); ++i) hash = (hash ^ pixels[i]) * 16777619u;
+			for (int i = 3; i < (int) sizeof(pixels); i += 4) {
+				int a = pixels[i];
+				zero += a == 0;
+				if (a < min_alpha) min_alpha = a;
+				if (a > max_alpha) max_alpha = a;
+			}
+			debug_log_force(DLOG_TEXTURE,
+			                "[mwall_create] serial=%u stage=%s frame=%d created_frame=%d handle=%u hash=0x%08x zero_alpha=%d alpha=%d/%d creation_valid=%d creation_hash=0x%08x creation_zero_alpha=%d",
+			                entry->probe_serial, stage, g_merged_wall_frame_id, entry->probe_frame, entry->texture->handle,
+			                hash, zero, min_alpha, max_alpha, entry->probe_valid, entry->probe_hash, entry->probe_zero_alpha);
+			if (remember) {
+				entry->probe_hash = hash;
+				entry->probe_zero_alpha = zero;
+				entry->probe_valid = 1;
+			}
+		} else debug_log_force(DLOG_TEXTURE, "[mwall_create] serial=%u stage=%s read_error=0x%x", entry->probe_serial, stage, error);
+	} else debug_log_force(DLOG_TEXTURE, "[mwall_create] serial=%u stage=%s incomplete_fbo=0x%x", entry->probe_serial, stage, status);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, old_read);
+	glDeleteFramebuffers(1, &fbo);
+	glBindBuffer(GL_PIXEL_PACK_BUFFER, pack_buffer);
+	glPixelStorei(GL_PACK_ALIGNMENT, alignment);
+	glPixelStorei(GL_PACK_ROW_LENGTH, row_length);
+	glPixelStorei(GL_PACK_SKIP_ROWS, skip_rows);
+	glPixelStorei(GL_PACK_SKIP_PIXELS, skip_pixels);
+}
+
 int android_merged_wall_cached_texmerge_render_to_texture(
     struct _ogl_texture *output_tex, grs_bitmap *bottom_bmp,
     grs_bitmap *overlay_bmp, int orient, int width, int height,
     int texfilt_level, int aniso_level, float max_anisotropy,
-    const struct android_ogl_texture_runtime_state *runtime_state)
+    const struct android_ogl_texture_runtime_state *runtime_state,
+    struct merged_wall_cached_texmerge_entry *probe_entry)
 {
 	static const GLfloat identity[16] = {
 		1.0f, 0.0f, 0.0f, 0.0f,
@@ -803,6 +932,10 @@ int android_merged_wall_cached_texmerge_render_to_texture(
 
 	if (!output_tex || !bottom_bmp || !overlay_bmp || !bottom_bmp->gltexture || !overlay_bmp->gltexture)
 		return 0;
+	if (probe_entry && probe_entry->probe_serial) {
+		merged_wall_creation_errors(probe_entry->probe_serial, "entry_preexisting");
+		merged_wall_creation_state(probe_entry->probe_serial, "entry");
+	}
 
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &old_fbo);
 	glGetIntegerv(GL_VIEWPORT, old_viewport);
@@ -870,7 +1003,15 @@ int android_merged_wall_cached_texmerge_render_to_texture(
 	glColorPointer(4, GL_FLOAT, 0, color_array);
 	glTexCoordPointer(2, GL_FLOAT, 0, bottom_uv);
 	gles3_shim_external_texcoord2_pointer(2, GL_FLOAT, 0, overlay_uv);
+	if (probe_entry && probe_entry->probe_serial) {
+		merged_wall_creation_errors(probe_entry->probe_serial, "setup");
+		merged_wall_creation_state(probe_entry->probe_serial, "before_draw");
+	}
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+	if (probe_entry && probe_entry->probe_serial) {
+		merged_wall_creation_errors(probe_entry->probe_serial, "draw");
+		merged_wall_creation_pixels(probe_entry, "created", 1);
+	}
 	gles3_shim_external_texcoord2_pointer(0, GL_FLOAT, 0, NULL);
 	gles3_shim_use_external(0);
 	glDisableClientState(GL_VERTEX_ARRAY);
@@ -888,6 +1029,10 @@ int android_merged_wall_cached_texmerge_render_to_texture(
 	                            output_tex->handle);
 	android_merged_wall_cached_texmerge_finalize_filters(output_tex,
 	                                                     texfilt_level, aniso_level, max_anisotropy);
+	if (probe_entry && probe_entry->probe_serial) {
+		merged_wall_creation_errors(probe_entry->probe_serial, "mipmap");
+		merged_wall_creation_pixels(probe_entry, "after_mipmap", 0);
+	}
 	glColorMask(old_color_mask[0], old_color_mask[1], old_color_mask[2],
 	            old_color_mask[3]);
 	glDepthMask(old_depth_mask);
@@ -914,10 +1059,34 @@ int android_merged_wall_cached_texmerge_finalize_entry(
 {
 	if (!entry || !entry->texture)
 		return 0;
+	const char *bottom_name = piggy_game_bitmap_name(bottom_bmp);
+	const char *overlay_name = piggy_game_bitmap_name(overlay_bmp);
+	if (debug_log_enabled[DLOG_TEXTURE] && bottom_name && overlay_name &&
+	    !strcmp(bottom_name, "rock349") && !strcmp(overlay_name, "misc063")) {
+		entry->probe_serial = ++merged_wall_creation_serial;
+		entry->probe_frame = g_merged_wall_frame_id;
+		int bottom_bytes, overlay_bytes, b254, b255, o254, o255;
+		unsigned int bottom_hash = merged_wall_bitmap_hash(bottom_bmp, &bottom_bytes, &b254, &b255);
+		unsigned int overlay_hash = merged_wall_bitmap_hash(overlay_bmp, &overlay_bytes, &o254, &o255);
+		debug_log_force(DLOG_TEXTURE,
+		                "[mwall_create] serial=%u owner=%s asset_generation=%u bottom=%s hash=0x%08x bytes=%d transparent=%d/%d overlay=%s hash=0x%08x bytes=%d transparent=%d/%d",
+		                entry->probe_serial, android_mission_assets_owner(), android_mission_assets_generation(),
+		                bottom_name, bottom_hash, bottom_bytes, b254, b255, overlay_name, overlay_hash, overlay_bytes, o254, o255);
+#ifdef DXX_BUILD_DESCENT_II
+		debug_log_force(DLOG_TEXTURE, "[mwall_create] serial=%u palette=%s", entry->probe_serial, last_palette_loaded);
+#endif
+		debug_log_force(DLOG_TEXTURE,
+		                "[mwall_create] serial=%u event=begin frame=%d level=%d seg=%d side=%d face=%d orient=%d slot=%d size=%dx%d source=%u/%u output=%u flags=0x%x/0x%x driver=%s renderer=%s",
+		                entry->probe_serial, entry->probe_frame, Current_level_num,
+		                g_android_draw_face_ctx.seg, g_android_draw_face_ctx.side, g_android_draw_face_ctx.face,
+		                orient, entry->slot, width, height, bottom_bmp->gltexture->handle, overlay_bmp->gltexture->handle,
+		                entry->texture->handle, bottom_bmp->bm_flags, overlay_bmp->bm_flags,
+		                (const char *) glGetString(GL_VERSION), (const char *) glGetString(GL_RENDERER));
+	}
 
 	if (!android_merged_wall_cached_texmerge_render_to_texture(entry->texture,
 	                                                           bottom_bmp, overlay_bmp, orient, width, height, texfilt_level,
-	                                                           aniso_level, max_anisotropy, runtime_state)) {
+	                                                           aniso_level, max_anisotropy, runtime_state, entry)) {
 		if (free_texture)
 			free_texture(entry->texture);
 		android_merged_wall_cached_texmerge_reset_entry(entry);
@@ -946,6 +1115,8 @@ android_merged_wall_cached_texmerge_reserve_entry(
 		return NULL;
 
 	entry = &entries[slot];
+	if (entry->probe_serial)
+		debug_log_force(DLOG_TEXTURE, "[mwall_create] serial=%u event=evict frame=%d slot=%d", entry->probe_serial, g_merged_wall_frame_id, slot);
 	if (entry->texture) {
 		if (!free_texture)
 			return NULL;
@@ -6597,6 +6768,13 @@ static void merged_wall_probe_log_merged_bitmap(const struct merged_wall_tracked
 		                                track->draw_ctx.tmap2,
 		                                source_bot, source_ovl, bitmap,
 		                                track->merged_slot, track->orient);
+	for (int i = 0; i < MERGED_WALL_CACHED_TEXMERGE_COUNT; ++i) {
+		struct merged_wall_cached_texmerge_entry *entry = &g_merged_wall_cached_texmerge[i];
+		if (&entry->bitmap == bitmap && entry->probe_serial) {
+			merged_wall_creation_errors(entry->probe_serial, "tap_preexisting");
+			merged_wall_creation_pixels(entry, "tap_direct", 0);
+		}
+	}
 	merged_wall_log_texture_gpu_readback("tap_merged", bitmap, 1);
 }
 

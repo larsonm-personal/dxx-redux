@@ -52,6 +52,15 @@ class MissionLaunchCatalogTest {
         assertEquals("d", catalog.resourcesFor(second).last().sha256)
         val conflict = resources.last().copy(missions = emptySet())
         val invalid = MissionLaunchCatalog(listOf(pack.copy(resources = resources.dropLast(1) + conflict)))
-        assertThrows(IllegalArgumentException::class.java) { invalid.resourcesFor(first) }
+        val failure = assertThrows(IllegalArgumentException::class.java) { invalid.resourcesFor(first) }
+        val diagnostic = failure.message.orEmpty()
+        assertTrue(diagnostic.contains("resource-path-conflict path='descent2.s22' identical_sha256=false"))
+        assertTrue(diagnostic.contains("virtual='descent2.s22' source='${File("first-bank").absolutePath}'"))
+        assertTrue(diagnostic.contains("virtual='DESCENT2.S22' source='${File("second-bank").absolutePath}'"))
+        assertTrue(diagnostic.contains("sha256=c scope=mission-owned"))
+        assertTrue(diagnostic.contains("sha256=d scope=package-shared"))
+        val identical = MissionLaunchCatalog(listOf(pack.copy(resources = resources.dropLast(1) + conflict.copy(sha256 = "c"))))
+        val duplicate = assertThrows(IllegalArgumentException::class.java) { identical.resourcesFor(first) }
+        assertTrue(duplicate.message.orEmpty().contains("identical_sha256=true"))
     }
 }

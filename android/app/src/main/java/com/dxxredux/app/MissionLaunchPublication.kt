@@ -24,6 +24,11 @@ internal fun MissionLaunchCatalog.publish(
     activationErrors: Map<MissionLaunchKey, String> = emptyMap(),
     generateOverrides: (MissionLaunchKey, File) -> Unit = { _, _ -> },
 ): MissionLaunchPublication {
+    fun activationError(mission: MissionLaunchEntry): String =
+        listOf(mission.activationError, activationErrors[mission.key].orEmpty())
+            .filter { it.isNotBlank() }
+            .joinToString("\n")
+
     val identity = JSONArray()
     for (mission in missions) {
         identity.put(
@@ -34,7 +39,7 @@ internal fun MissionLaunchCatalog.publish(
                 ).put(
                     "revision",
                     revisionFor(mission.key),
-                ).put("activation_error", activationErrors[mission.key].orEmpty())
+                ).put("activation_error", activationError(mission))
                 .put(
                     "resources",
                     JSONArray(resourcesFor(mission.key).map { "${it.virtualPath}\u0000${it.sha256}" }),
@@ -66,7 +71,7 @@ internal fun MissionLaunchCatalog.publish(
                 .put(
                     "game",
                     mission.key.game,
-                ).put("activation_error", activationErrors[mission.key].orEmpty())
+                ).put("activation_error", activationError(mission))
                 .put("mounts", JSONArray(mounts)),
         )
     }

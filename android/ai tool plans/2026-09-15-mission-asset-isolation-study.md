@@ -229,3 +229,36 @@ transitions, and cross-format global-mod versus authored-asset precedence.
 This implementation preserves existing standalone-global-mod behavior. A
 confirming phone run with the original enabled collection remains external
 validation
+
+## Descriptor-only Vertigo launch regression
+
+Phone export `debuglog_20260915_145454.txt` identifies owner
+`311ff29742c7765a389de414` as containing only `missions/d2x.mn2` (408 bytes).
+Its inventory contains no archives and none of the 20 ordinary levels. This
+confirms an incomplete owner, not a failure to parse the retail HOG. The export
+does not establish whether the HOG exists under another owner.
+
+Correction: retain valid installed descriptors with incomplete payloads in the
+mission catalog, with a per-mission activation error. Publish that error through
+the existing native selection preflight, before mounting resources or resetting
+the active campaign. Continue to exclude all mission-owned resources from global
+search paths. Keep new archive-import admission strict. Log managed owner paths
+at launch so a separate HOG owner can be identified without guessing ownership.
+
+Validation: descriptor-only and unreadable-HOG unit regressions, publication of
+the selection error even when compatibility reports no error, retail Vertigo
+inventory, and Counterstrike launch on the emulator with the exact 408-byte
+retail descriptor installed without its HOG.
+
+The in-engine rejection test also exposed a native warning-buffer overflow:
+`Warning` used `vsprintf` into a fixed buffer in both engines. The long list of
+missing levels overwrote mission-directory state, causing the next Counterstrike
+selection to fail with a garbage unmount path. Both warning and fatal-error
+formatters now use bounded `vsnprintf`; repeat the rejection-then-Counterstrike
+sequence with the full 20-level error to exercise this failure path.
+
+Final Android verification: 88 focused JVM tests passed; the descriptor-only
+Counterstrike launch passed 22 automation steps; rejection of incomplete Vertigo
+followed by Counterstrike in the same process passed 27 steps after the buffer
+fix. Sample 53 remained 24098 bytes with FNV64 `9a629f9713cdff17`. Logs are in
+`temp/vertigo-selection-fixed-logcat.txt` and `temp/vertigo-fix-build.log`.

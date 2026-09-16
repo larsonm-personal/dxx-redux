@@ -14,6 +14,53 @@ class FileSetContentManagerTest {
     @get:Rule val temporaryFolder = TemporaryFolder()
 
     @Test
+    fun realVertigoInventory() {
+        val setDir = temporaryFolder.newFolder("real-vertigo")
+        val source = File("../../game_data/extracted/VERTIGO/MISSIONS")
+        org.junit.Assume.assumeTrue("Local retail Vertigo fixture is unavailable", source.isDirectory)
+        for (name in listOf("D2X.HOG", "D2X.MN2")) source.resolve(name).copyTo(File(setDir, name))
+        val manager = FileSetContentManager(setDir)
+        manager.reconcile()
+        assertEquals(1, manager.buildMissionLaunchCatalog("d2").missions.size)
+        assertTrue(manager.buildLaunchPaths("d2").isEmpty())
+    }
+
+    @Test
+    fun descriptorOnlyVertigoDoesNotBlockOtherMissionsOrPublishAssetsGlobally() {
+        val setDir = temporaryFolder.newFolder("incomplete-vertigo")
+        File(setDir, "d2x.mn2").writeText("zname = Descent 2: Vertigo\nnum_levels = 1\nd2xlvl01.rl2\n")
+        File(setDir, "playable.mn2").writeText("name = Playable\nnum_levels = 1\nfirst.rl2\n")
+        File(setDir, "first.rl2").writeText("level")
+        val manager = FileSetContentManager(setDir)
+        manager.reconcile()
+        val catalog = manager.buildMissionLaunchCatalog("d2")
+        val vertigo = catalog.missions.single { it.title.contains("Vertigo") }
+        val playable = catalog.missions.single { it.title == "Playable" }
+        assertTrue(vertigo.activationError.contains("Missing levels: d2xlvl01.rl2"))
+        assertEquals("", playable.activationError)
+        assertTrue(manager.buildLaunchPaths("d2").isEmpty())
+        assertTrue(catalog.resourcesFor(null).isEmpty())
+        val publication = catalog.publish(temporaryFolder.newFolder("incomplete-game"), "global",
+            mapOf(vertigo.key to ""))
+        val entries = org.json.JSONObject(publication.manifest).getJSONArray("entries")
+        val error = (0 until entries.length()).map { entries.getJSONObject(it) }
+            .single { it.getString("descriptor").endsWith("d2x.mn2") }
+        assertEquals(vertigo.activationError, error.getString("activation_error"))
+        assertTrue(File(publication.discoveryDir, error.getString("alias")).isFile)
+    }
+
+    @Test
+    fun unreadableMissionHogRemainsScopedAndBlocksOnlyItsMission() {
+        val setDir = temporaryFolder.newFolder("unreadable-vertigo")
+        File(setDir, "d2x.mn2").writeText("zname = Descent 2: Vertigo\nnum_levels = 1\nd2xlvl01.rl2\n")
+        File(setDir, "D2X.HOG").writeText("unreadable archive")
+        val manager = FileSetContentManager(setDir)
+        manager.reconcile()
+        assertTrue(manager.buildMissionLaunchCatalog("d2").missions.single().activationError.isNotEmpty())
+        assertTrue(manager.buildLaunchPaths("d2").isEmpty())
+    }
+
+    @Test
     fun looseMissionIsDiscoverableWithoutPublishingItsAssetsGlobally() {
         val setDir = temporaryFolder.newFolder("scoped-loose")
         File(setDir, "panic.mn2").writeText("name = Panic\nbriefing = panic.tex\nnum_levels = 1\npanic01.rl2\n")

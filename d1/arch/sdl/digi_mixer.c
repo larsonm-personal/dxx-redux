@@ -236,11 +236,12 @@ int digi_mixer_start_sound(short soundnum, fix volume, int pan, int looping, int
 	if (channel == -1)
 		return -1;
 
-	Mix_PlayChannel(channel, &(SoundChunks[soundnum]), mix_loop);
 #ifdef __ANDROID__
+	/* Hashing/logging must not delay volume setup after playback starts */
 	android_sound_trace_play(soundnum, SoundChunks[soundnum].abuf, SoundChunks[soundnum].alen,
 	                         GameSounds[soundnum].freq > 0 ? GameSounds[soundnum].freq : SAMPLE_RATE_11K, channel);
 #endif
+	Mix_PlayChannel(channel, &(SoundChunks[soundnum]), mix_loop);
 	Mix_SetPanning(channel, 255-mix_pan, mix_pan);
 	if (volume > F1_0)
 		Mix_SetDistance(channel, 0);

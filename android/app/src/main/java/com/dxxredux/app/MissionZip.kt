@@ -64,6 +64,7 @@ object MissionZip {
     data class MissionSet(
         val mission: GameFileFormats.MissionDescriptor,
         val constituents: List<Constituent>,
+        val activationError: String = "",
     )
 
     data class MissionVariant(
@@ -193,7 +194,11 @@ object MissionZip {
         )
     }
 
-    internal fun inspectExtracted(record: MissionZipExtractionRecord): ScanResult? {
+    internal fun inspectExtracted(
+        record: MissionZipExtractionRecord,
+        onRejectedMission: (String) -> Unit = {},
+        includeIncompleteMissions: Boolean = false,
+    ): ScanResult? {
         val budget = ExtractionBudget()
         val metadataBudget = descriptorBudget()
         val constituents = mutableListOf<Constituent>()
@@ -243,6 +248,8 @@ object MissionZip {
             record.ownerSizeBytes,
             record.ownerFilename.substringBeforeLast('.'),
             record.archiveFormat.ifBlank { "zip" },
+            onRejectedMission,
+            includeIncompleteMissions,
         )?.copy(importMode = record.importMode.ifBlank { "extracted_bundle" })
     }
 
@@ -432,7 +439,8 @@ object MissionZip {
     internal fun parseMissionDescriptor(
         path: String,
         bytes: ByteArray,
-    ): GameFileFormats.MissionDescriptor = GameFileFormats.parseMissionDescriptor(path, MissionDescriptorPolicy.decode(bytes))
+    ): GameFileFormats.MissionDescriptor =
+        GameFileFormats.parseMissionDescriptor(path, MissionDescriptorPolicy.decode(bytes))
 
     private fun buildResult(
         constituents: List<Constituent>,
@@ -440,9 +448,12 @@ object MissionZip {
         totalSizeBytes: Long,
         zipStem: String?,
         archiveFormat: String,
+        onRejectedMission: (String) -> Unit = {},
+        includeIncompleteMissions: Boolean = false,
     ): ScanResult? {
         val sortedConstituents = sortedConstituents(constituents)
-        val missionSets = playableMissionSets(sortedConstituents, missions)
+        val missionSets =
+            playableMissionSets(sortedConstituents, missions, onRejectedMission, includeIncompleteMissions)
         if (missionSets.isEmpty()) return null
         val variantSelection = selectMissionVariant(missionSets)
         val mission =
@@ -502,10 +513,14 @@ object MissionZip {
     private fun playableMissionSets(
         constituents: List<Constituent>,
         missions: List<GameFileFormats.MissionDescriptor>,
+        onRejectedMission: (String) -> Unit = {},
+        includeIncompleteMissions: Boolean = false,
     ): List<MissionSet> =
         missions
-            .filter { it.valid }
-            .sortedWith(
+            .filter {
+                if (!it.valid) onRejectedMission("${it.path}: ${it.problem}")
+                it.valid
+            }.sortedWith(
                 compareBy<GameFileFormats.MissionDescriptor> { it.path.lowercase(Locale.US) }
                     .thenBy { it.path },
             ).mapNotNull { mission ->
@@ -541,7 +556,30 @@ object MissionZip {
                 // level and report the failure only if that secret is selected.
                 // Every ordinary level must still be present before the launcher
                 // advertises the set as playable.
-                if (!(directLevels + archivedLevels).containsAll(requiredLevelNames)) return@mapNotNull null
+                val missing = requiredLevelNames - (directLevels + archivedLevels)
+                if (missing.isNotEmpty()) {
+                    val archives =
+                        constituents
+                            .filter { isMissionArchiveRole(it.role) }
+                            .joinToString {
+                                "${it.path} (${it.archiveEntries?.size?.toString() ?: "unreadable"} entries)"
+                            }
+                    onRejectedMission(
+                        "${mission.path}: missing levels ${missing.joinToString()}; " +
+                            "archives: ${archives.ifEmpty { "none" }}",
+                    )
+                    // An installed descriptor may outlive its payload. Keep it discoverable,
+                    // but reject selection rather than blocking unrelated campaigns at launch
+                    if (includeIncompleteMissions) {
+                        return@mapNotNull MissionSet(
+                            mission,
+                            inMissionDirectory,
+                            "${mission.displayName}: mission files are incomplete. " +
+                                "Reimport this level pack. Missing levels: ${missing.joinToString()}",
+                        )
+                    }
+                    return@mapNotNull null
+                }
                 MissionSet(mission, inMissionDirectory)
             }
 
