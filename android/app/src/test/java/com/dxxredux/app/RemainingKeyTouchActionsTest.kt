@@ -6,6 +6,20 @@ import org.junit.Test
 
 class RemainingKeyTouchActionsTest {
     @Test
+    fun disabledRewindIsHiddenWithoutChangingConfiguredBindings() {
+        for (game in listOf("d1", "d2")) {
+            val layout = TouchLayout(name = "Empty")
+            val enabled = remainingKeyTouchActions(layout, game, rewindEnabled = true)
+            val disabled = remainingKeyTouchActions(layout, game, rewindEnabled = false)
+            assertEquals(enabled.filter { it.binding != TouchBindings.META_REWIND }, disabled)
+            assertEquals(enabled, remainingKeyTouchActions(layout, game, rewindEnabled = true))
+            assertTrue(!touchBindingEnabled(TouchBindings.META_REWIND, false))
+            assertTrue(touchBindingEnabled(TouchBindings.META_REWIND, true))
+            for (action in disabled) assertTrue(touchBindingEnabled(action.binding, false))
+        }
+    }
+
+    @Test
     fun d2LayoutWithoutBindingsGetsOverflowActions() {
         val actions = remainingKeyTouchActions(TouchLayout(name = "Empty"), gameVariant = "d2")
         val bindings = actions.map { it.binding }

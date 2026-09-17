@@ -177,6 +177,7 @@ object CallsignPrefs {
 
 /** Persistent host game defaults per game (d1/d2), stored in SharedPreferences. */
 object HostGameDefaults {
+    const val COOP_QOL_PREF = "host_coop_qol"
     private const val PREFS_NAME = "dxx_prefs"
 
     // Default missions: d2="d2" (Counterstrike!), d1="" (First Strike)
@@ -212,7 +213,7 @@ object HostGameDefaults {
             difficulty = prefs.getInt("host_difficulty", 1),
             levelNum = prefs.getInt("host_level_num", 1),
             maxPlayers = prefs.getInt("host_max_players", 4),
-            coopQol = prefs.getBoolean("host_coop_qol", true),
+            coopQol = prefs.getBoolean(COOP_QOL_PREF, true),
             duplicateEnergyShields = prefs.getBoolean("host_duplicate_energy_shields", false),
             fullDeathSpew = prefs.getBoolean("host_full_death_spew", true),
             coopBriefings = prefs.getBoolean("host_coop_briefings", true),
@@ -237,7 +238,7 @@ object HostGameDefaults {
             .putInt("host_difficulty", d.difficulty)
             .putInt("host_level_num", d.levelNum)
             .putInt("host_max_players", d.maxPlayers)
-            .putBoolean("host_coop_qol", d.coopQol)
+            .putBoolean(COOP_QOL_PREF, d.coopQol)
             .putBoolean("host_duplicate_energy_shields", d.duplicateEnergyShields)
             .putBoolean("host_full_death_spew", d.fullDeathSpew)
             .putBoolean("host_coop_briefings", d.coopBriefings)

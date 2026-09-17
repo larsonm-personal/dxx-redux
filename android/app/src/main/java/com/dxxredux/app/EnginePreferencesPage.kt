@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +39,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dxxredux.app.multiplayer.HostGameDefaults
 import java.io.File
 
 internal const val PREF_GUIDEBOT_HELPER_LINE = "guidebot_helper_line_enabled"
@@ -101,15 +103,36 @@ fun EnginePreferencesPage(
     var showGuidebotLine by remember {
         mutableStateOf(prefs.getBoolean(PREF_GUIDEBOT_HELPER_LINE, true))
     }
+    var savedShowGuidebotLine by remember { mutableStateOf(showGuidebotLine) }
+    var mainViewFov by remember {
+        mutableIntStateOf(
+            (readConfigValue(filesDir, "MainViewFov") ?: "0").toIntOrNull() ?: 0,
+        )
+    }
+    var savedMainViewFov by remember { mutableIntStateOf(mainViewFov) }
+    var presetNeedsSave by remember { mutableStateOf(false) }
+    var pendingPreset by remember { mutableStateOf<GameSettingsPreset?>(null) }
     var showNearestPlayerLine by remember {
         mutableStateOf(prefs.getBoolean(PREF_NEAREST_PLAYER_LINE, true))
     }
     var skipIntroMovie by remember {
         mutableStateOf(prefs.getBoolean(PREF_SKIP_INTRO_MOVIE, false))
     }
+    var savedSkipIntroMovie by remember { mutableStateOf(skipIntroMovie) }
     var rewindSupportEnabled by remember {
         mutableStateOf(prefs.getBoolean(PREF_REWIND_SUPPORT_ENABLED, true))
     }
+    var savedRewindSupportEnabled by remember { mutableStateOf(rewindSupportEnabled) }
+    var serverCoopQol by remember { mutableStateOf(HostGameDefaults.load(context).coopQol) }
+    var savedServerCoopQol by remember { mutableStateOf(serverCoopQol) }
+    var textureFilter by remember {
+        mutableIntStateOf(
+            (readConfigValue(filesDir, "TexFilt") ?: "0").toIntOrNull() ?: 0,
+        )
+    }
+    var savedTextureFilter by remember { mutableIntStateOf(textureFilter) }
+    var hudFiltering by remember { mutableStateOf((readConfigValue(filesDir, "HudTexFilt") ?: "1") != "0") }
+    var savedHudFiltering by remember { mutableStateOf(hudFiltering) }
     var rewindTargetSeconds by remember {
         mutableIntStateOf(
             sanitizeRewindTargetSeconds(
@@ -124,12 +147,20 @@ fun EnginePreferencesPage(
         mutableStateOf(prefs.getBoolean(PREF_SHOW_DEMO_INSTALLER_OFFER, true))
     }
     val hasChanges =
-        cockpitMode != savedCockpitMode ||
+        presetNeedsSave ||
+            cockpitMode != savedCockpitMode ||
             autoLeveling != savedAutoLeveling ||
             showRobotHostageCounts != savedShowRobotHostageCounts ||
             showBossHealthBar != savedShowBossHealthBar ||
             mapCheatsAccessible != savedMapCheatsAccessible ||
-            originalHoming != savedOriginalHoming
+            originalHoming != savedOriginalHoming ||
+            showGuidebotLine != savedShowGuidebotLine ||
+            mainViewFov != savedMainViewFov ||
+            skipIntroMovie != savedSkipIntroMovie ||
+            rewindSupportEnabled != savedRewindSupportEnabled ||
+            serverCoopQol != savedServerCoopQol ||
+            textureFilter != savedTextureFilter ||
+            hudFiltering != savedHudFiltering
 
     fun loadPrefs() {
         val data = NativePilotPreferences.readEnginePrefsForAll(gameVariant, filesDir.absolutePath)
@@ -165,6 +196,49 @@ fun EnginePreferencesPage(
 
     RequestLauncherControllerFocus(initialFocus, controllerFocusActive)
     LaunchedEffect(Unit) { loadPrefs() }
+
+    pendingPreset?.let { preset ->
+        AlertDialog(
+            onDismissRequest = { pendingPreset = null },
+            title = { Text(preset.title) },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Text("Set these preferences for both games and all existing pilots:")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    preset.confirmationLines.forEach { Text("- $it") }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "Confirm to edit these values, then press Save to apply. You can change each setting individually.",
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRobotHostageCounts = preset.helpersEnabled
+                    showBossHealthBar = preset.helpersEnabled
+                    mapCheatsAccessible = preset.helpersEnabled
+                    showGuidebotLine = preset.helpersEnabled
+                    mainViewFov = preset.mainViewFov
+                    serverCoopQol = preset.serverCoopQol
+                    rewindSupportEnabled = preset.rewindEnabled
+                    skipIntroMovie = preset.skipIntroMovie
+                    textureFilter = preset.textureFilter
+                    hudFiltering = preset.hudFiltering
+                    if (preset == GameSettingsPreset.DEFAULTS) {
+                        cockpitMode = CM_FULL_COCKPIT
+                        autoLeveling = true
+                        originalHoming = false
+                    }
+                    presetNeedsSave = true
+                    pendingPreset = null
+                    statusMessage = "${preset.title} selected - customize settings or press Save"
+                }) { Text("Confirm") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingPreset = null }) { Text("Cancel") }
+            },
+        )
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -245,7 +319,7 @@ fun EnginePreferencesPage(
                 Text("Pilot-backed Preferences", fontWeight = FontWeight.Bold, fontSize = 11.sp)
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    "These settings apply to every pilot file found for Descent 1 and Descent 2",
+                    "These settings apply to every pilot file found for Descent 1 and Descent 2. Press Save to apply changes",
                     fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -320,9 +394,9 @@ fun EnginePreferencesPage(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
-                        Text("Robot and hostage counts", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                        Text("Robot / hostage / secret counts", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                         Text(
-                            "Shows level robot progress and hostage status below the score line",
+                            "Shows robot progress, hostage status, and secrets below the score line",
                             fontSize = 9.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -376,19 +450,40 @@ fun EnginePreferencesPage(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    OutlinedButton(
-                        onClick = {
-                            cockpitMode = CM_FULL_COCKPIT
-                            autoLeveling = true
-                            showRobotHostageCounts = false
-                            showBossHealthBar = true
-                            mapCheatsAccessible = true
-                            originalHoming = false
-                        },
-                        modifier = Modifier.weight(1f).height(32.dp).tvFocusBorder(),
-                    ) {
-                        Text("Reset to Defaults", fontSize = 12.sp)
+                    GameSettingsPreset.entries.forEach { preset ->
+                        OutlinedButton(
+                            onClick = { pendingPreset = preset },
+                            modifier = Modifier.weight(1f).tvFocusBorder(),
+                        ) {
+                            Text(preset.title, fontSize = 12.sp)
+                        }
                     }
+                }
+                MainViewFovControl(value = mainViewFov, onValueChange = { mainViewFov = it })
+                TextureFilterControl(value = textureFilter, onValueChange = { textureFilter = it })
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Switch(
+                        checked = hudFiltering,
+                        onCheckedChange = { hudFiltering = it },
+                        modifier = Modifier.tvFocusBorder(),
+                    )
+                    Text("HUD filtering", fontSize = 10.sp)
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Switch(
+                        checked = serverCoopQol,
+                        onCheckedChange = { serverCoopQol = it },
+                        modifier = Modifier.tvFocusBorder(),
+                    )
+                    Column {
+                        Text("New-server Coop QoL", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Default for teammate arrows, Guidebot and warp when creating a server. Existing sessions are unchanged",
+                            fontSize = 9.sp,
+                        )
+                    }
+                }
+                Row(modifier = Modifier.fillMaxWidth()) {
                     Button(
                         onClick = {
                             val count =
@@ -405,12 +500,44 @@ fun EnginePreferencesPage(
                             if (count < 0) {
                                 statusMessage = "Could not save pilot preferences; original files were restored"
                             } else if (count > 0) {
+                                try {
+                                    updateAllConfigFiles(
+                                        filesDir,
+                                        listOf(
+                                            "MainViewFov" to mainViewFov.toString(),
+                                            "TexFilt" to textureFilter.toString(),
+                                            "HudTexFilt" to if (hudFiltering) "1" else "0",
+                                        ),
+                                    )
+                                    prefs
+                                        .edit()
+                                        .putBoolean(PREF_GUIDEBOT_HELPER_LINE, showGuidebotLine)
+                                        .putBoolean(PREF_REWIND_SUPPORT_ENABLED, rewindSupportEnabled)
+                                        .putBoolean(PREF_SKIP_INTRO_MOVIE, skipIntroMovie)
+                                        .putBoolean(HostGameDefaults.COOP_QOL_PREF, serverCoopQol)
+                                        .putLong(
+                                            PREF_GRAPHICS_SETTINGS_GENERATION,
+                                            prefs.getLong(PREF_GRAPHICS_SETTINGS_GENERATION, 0L) + 1L,
+                                        ).apply()
+                                    savedServerCoopQol = serverCoopQol
+                                    savedRewindSupportEnabled = rewindSupportEnabled
+                                    savedSkipIntroMovie = skipIntroMovie
+                                    savedTextureFilter = textureFilter
+                                    savedHudFiltering = hudFiltering
+                                    savedMainViewFov = mainViewFov
+                                    savedShowGuidebotLine = showGuidebotLine
+                                } catch (_: Exception) {
+                                    statusMessage =
+                                        "Pilot preferences saved, but graphics settings could not be saved. Press Save to retry"
+                                    return@Button
+                                }
                                 savedCockpitMode = cockpitMode
                                 savedAutoLeveling = autoLeveling
                                 savedShowRobotHostageCounts = showRobotHostageCounts
                                 savedShowBossHealthBar = showBossHealthBar
                                 savedMapCheatsAccessible = mapCheatsAccessible
                                 savedOriginalHoming = originalHoming
+                                presetNeedsSave = false
                                 hasPilotFile = true
                                 statusMessage = "Saved to $count pilot file(s) across both games"
                             } else {
@@ -463,7 +590,7 @@ fun EnginePreferencesPage(
                         checked = skipIntroMovie,
                         onCheckedChange = { checked ->
                             skipIntroMovie = checked
-                            prefs.edit().putBoolean(PREF_SKIP_INTRO_MOVIE, checked).commit()
+                            statusMessage = "Skip intro movie changed - press Save to apply"
                         },
                         modifier = Modifier.tvFocusBorder(),
                     )
@@ -471,7 +598,7 @@ fun EnginePreferencesPage(
                     Column {
                         Text("Skip intro movie on launch", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                         Text(
-                            "Skips the D1/D2 startup intro sequence, but leaves other movies skippable by tap",
+                            "Skips the D1/D2 startup intro sequence, but leaves other movies skippable by tap. Press Save above to apply",
                             fontSize = 9.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -523,7 +650,7 @@ fun EnginePreferencesPage(
                         checked = rewindSupportEnabled,
                         onCheckedChange = { checked ->
                             rewindSupportEnabled = checked
-                            prefs.edit().putBoolean(PREF_REWIND_SUPPORT_ENABLED, checked).apply()
+                            statusMessage = "Rewind support changed - press Save to apply"
                         },
                         modifier = Modifier.tvFocusBorder(),
                     )
@@ -531,7 +658,7 @@ fun EnginePreferencesPage(
                     Column {
                         Text("Enable rewind support", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                         Text(
-                            "Keeps rewind points available for the Rewind binding in single-player",
+                            "Keeps rewind points available. When off, rewind overlay controls are hidden. Press Save above to apply",
                             fontSize = 9.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -586,7 +713,7 @@ fun EnginePreferencesPage(
                         checked = showGuidebotLine,
                         onCheckedChange = { checked ->
                             showGuidebotLine = checked
-                            prefs.edit().putBoolean(PREF_GUIDEBOT_HELPER_LINE, checked).apply()
+                            statusMessage = "Guidebot helper line changed - press Save to apply"
                         },
                         modifier = Modifier.tvFocusBorder(),
                     )
@@ -594,7 +721,7 @@ fun EnginePreferencesPage(
                     Column {
                         Text("Guidebot helper line", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                         Text(
-                            "Shows the guidebot path line in D2 when that helper is available",
+                            "Shows the guidebot path line in D2 when that helper is available. Press Save above to apply",
                             fontSize = 9.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

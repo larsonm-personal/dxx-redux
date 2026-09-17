@@ -173,7 +173,7 @@ private fun bumpGraphicsSettingsGeneration(prefs: SharedPreferences) {
 
 private val MAIN_VIEW_FOV_OPTIONS =
     listOf(
-        "Base" to 0,
+        "90 deg (Base)" to 0,
         "100 deg" to 100,
         "110 deg" to 110,
         "120 deg" to 120,
@@ -183,10 +183,22 @@ private val MAIN_VIEW_FOV_OPTIONS =
 private fun MainViewFovSection(filesDir: File) {
     val ctx = LocalContext.current
     val prefs = ctx.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE)
-    var selectedIndex by remember {
-        val cur = (readConfigValue(filesDir, "MainViewFov") ?: "0").toIntOrNull() ?: 0
-        mutableIntStateOf(MAIN_VIEW_FOV_OPTIONS.indexOfFirst { it.second == cur }.takeIf { it >= 0 } ?: 0)
+    var value by remember {
+        mutableIntStateOf((readConfigValue(filesDir, "MainViewFov") ?: "0").toIntOrNull() ?: 0)
     }
+    MainViewFovControl(value = value, onValueChange = {
+        updateAllConfigFiles(filesDir, listOf("MainViewFov" to it.toString()))
+        value = it
+        bumpGraphicsSettingsGeneration(prefs)
+    })
+}
+
+@Composable
+internal fun MainViewFovControl(
+    value: Int,
+    onValueChange: (Int) -> Unit,
+) {
+    val selectedIndex = MAIN_VIEW_FOV_OPTIONS.indexOfFirst { it.second == value }.takeIf { it >= 0 } ?: 0
     val selected = MAIN_VIEW_FOV_OPTIONS[selectedIndex]
 
     Text("In-Game FOV", fontWeight = FontWeight.Bold, fontSize = 11.sp)
@@ -200,12 +212,7 @@ private fun MainViewFovSection(filesDir: File) {
             onValueChange = { value ->
                 val nextIndex = value.roundToInt().coerceIn(0, MAIN_VIEW_FOV_OPTIONS.lastIndex)
                 if (nextIndex != selectedIndex) {
-                    selectedIndex = nextIndex
-                    updateAllConfigFiles(
-                        filesDir,
-                        listOf("MainViewFov" to MAIN_VIEW_FOV_OPTIONS[nextIndex].second.toString()),
-                    )
-                    bumpGraphicsSettingsGeneration(prefs)
+                    onValueChange(MAIN_VIEW_FOV_OPTIONS[nextIndex].second)
                 }
             },
             valueRange = 0f..MAIN_VIEW_FOV_OPTIONS.lastIndex.toFloat(),
@@ -260,26 +267,32 @@ private fun ResolutionSection(
 private fun TexFilterSection(filesDir: File) {
     val ctx = LocalContext.current
     val prefs = ctx.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE)
-    val texFilterOptions = listOf("None (nearest)" to "0", "Bilinear" to "1", "Trilinear" to "2")
     var texFilter by remember {
-        val cur = readConfigValue(filesDir, "TexFilt") ?: "0"
-        mutableStateOf(if (texFilterOptions.any { it.second == cur }) cur else "0")
+        mutableIntStateOf((readConfigValue(filesDir, "TexFilt") ?: "0").toIntOrNull() ?: 0)
     }
+    TextureFilterControl(value = texFilter, onValueChange = {
+        updateAllConfigFiles(filesDir, listOf("TexFilt" to it.toString()))
+        texFilter = it
+        bumpGraphicsSettingsGeneration(prefs)
+    })
+}
 
+@Composable
+internal fun TextureFilterControl(
+    value: Int,
+    onValueChange: (Int) -> Unit,
+) {
+    val texFilterOptions = listOf("None (nearest)" to 0, "Bilinear" to 1, "Trilinear" to 2)
     Text("Texture Filtering", fontWeight = FontWeight.Bold, fontSize = 11.sp)
     Spacer(modifier = Modifier.height(1.dp))
-    texFilterOptions.forEach { (label, value) ->
+    texFilterOptions.forEach { (label, option) ->
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth().padding(vertical = 0.dp),
         ) {
             RadioButton(
-                selected = texFilter == value,
-                onClick = {
-                    texFilter = value
-                    updateAllConfigFiles(filesDir, listOf("TexFilt" to value))
-                    bumpGraphicsSettingsGeneration(prefs)
-                },
+                selected = value == option,
+                onClick = { onValueChange(option) },
                 modifier = Modifier.tvFocusBorder(),
             )
             Text(text = label, fontSize = 10.sp, modifier = Modifier.padding(start = 4.dp))
@@ -447,8 +460,8 @@ private fun CornerTextInsetSection(filesDir: File) {
     val options =
         listOf(
             "Off" to CORNER_TEXT_INSET_OFF,
-            "Avoid rounded corners (half)" to CORNER_TEXT_INSET_HALF,
-            "Avoid rounded corners (full)" to CORNER_TEXT_INSET_FULL,
+            "Avoid rounded corners (half distance)" to CORNER_TEXT_INSET_HALF,
+            "Avoid rounded corners (full distance)" to CORNER_TEXT_INSET_FULL,
         )
     var cornerTextInsetMode by remember {
         val cur = (readConfigValue(filesDir, "CornerTextInset") ?: "1").toIntOrNull() ?: CORNER_TEXT_INSET_HALF

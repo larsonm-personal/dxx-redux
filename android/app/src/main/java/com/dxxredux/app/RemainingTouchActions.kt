@@ -1,5 +1,10 @@
 package com.dxxredux.app
 
+internal fun touchBindingEnabled(
+    binding: Int,
+    rewindEnabled: Boolean,
+): Boolean = rewindEnabled || binding != TouchBindings.META_REWIND
+
 internal data class RemainingTouchAction(
     val label: String,
     val binding: Int = -1,
@@ -163,6 +168,7 @@ internal fun remainingKeyTouchActions(
     controllerBoundBindings: Set<Int> = emptySet(),
     workingControllerInUse: Boolean = false,
     extraBoundBindings: Set<Int> = emptySet(),
+    rewindEnabled: Boolean = true,
 ): List<RemainingTouchAction> {
     val boundBindings =
         touchLayoutBoundActionBindings(layout) +
@@ -198,7 +204,8 @@ internal fun remainingKeyTouchActions(
         .filter { binding ->
             gameVariant != "d1" ||
                 (binding !in TouchBindings.D2_ONLY_BUTTONS && binding !in TouchBindings.D2_ONLY_META_ACTIONS)
-        }.filter { it !in boundBindings }
+        }.filter { touchBindingEnabled(it, rewindEnabled) }
+        .filter { it !in boundBindings }
         .distinct()
         .map { RemainingTouchAction(remainingActionLabel(it, gameVariant, weaponState), binding = it) }
 }

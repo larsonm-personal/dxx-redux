@@ -9,6 +9,31 @@ import org.junit.rules.TemporaryFolder
 import java.io.File
 
 class GraphicsConfigHelpersTest {
+    @Test
+    fun presetFiltersReachBothGamesAndRemainIndividuallyEditable() {
+        val filesDir = filesDirWithConfigs()
+        updateAllConfigFiles(filesDir, listOf("MenuTexFilt" to "1", "GammaLevel" to "4"))
+        for (preset in GameSettingsPreset.entries) {
+            updateAllConfigFiles(filesDir, listOf(
+                "TexFilt" to preset.textureFilter.toString(),
+                "HudTexFilt" to if (preset.hudFiltering) "1" else "0",
+            ))
+            for (game in listOf("d1", "d2")) {
+                val snapshot = readGraphicsConfigSnapshot(filesDir, game).toMap()
+                assertEquals(0, snapshot["tex_filt"])
+                assertEquals(if (preset == GameSettingsPreset.ORIGINAL) 0 else 1, snapshot["hud_tex_filt"])
+                assertEquals(1, snapshot["menu_tex_filt"])
+                assertEquals(4, snapshot["gamma_level"])
+            }
+            updateAllConfigFiles(filesDir, listOf("TexFilt" to "2", "HudTexFilt" to "1"))
+            for (game in listOf("d1", "d2")) {
+                val snapshot = readGraphicsConfigSnapshot(filesDir, game).toMap()
+                assertEquals(2, snapshot["tex_filt"])
+                assertEquals(1, snapshot["hud_tex_filt"])
+            }
+        }
+    }
+
     @get:Rule
     val tmp = TemporaryFolder()
 
@@ -26,6 +51,24 @@ class GraphicsConfigHelpersTest {
         filesDir: File,
         relative: String,
     ): String = File(filesDir, relative).readText()
+
+    @Test
+    fun presetFovSurvivesBothGameConfigSnapshotsAndManualOverride() {
+        val filesDir = filesDirWithConfigs()
+        for (preset in GameSettingsPreset.entries) {
+            updateAllConfigFiles(filesDir, listOf("MainViewFov" to "120"))
+            updateAllConfigFiles(filesDir, listOf("MainViewFov" to preset.mainViewFov.toString()))
+            for (game in listOf("d1", "d2")) {
+                assertEquals(0, readGraphicsConfigSnapshot(filesDir, game).toMap()["main_view_fov"])
+            }
+            assertEquals("1", readConfigValueForGame(filesDir, "d1", "TexFilt"))
+            assertEquals("2", readConfigValueForGame(filesDir, "d2", "TexFilt"))
+            updateAllConfigFiles(filesDir, listOf("MainViewFov" to "110"))
+            for (game in listOf("d1", "d2")) {
+                assertEquals(110, readGraphicsConfigSnapshot(filesDir, game).toMap()["main_view_fov"])
+            }
+        }
+    }
 
     @Test
     fun readConfigValueForGame_usesRequestedGameBeforeRoot() {

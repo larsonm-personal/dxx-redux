@@ -199,6 +199,18 @@ class TouchOverlayView
             if (diagnosticStates.isNotEmpty()) postInvalidate()
         }
 
+        var rewindSupportEnabled: Boolean = true
+            set(value) {
+                if (field == value) return
+                releaseAllButtons()
+                resetAllSticks()
+                releaseAllRadialMenus(false)
+                closeRemainingActions()
+                field = value
+                recomputeRemainingActionGeometry()
+                invalidate()
+            }
+
         /** Whether the overlay should be visible and active. */
         var isActive: Boolean = false
             set(value) {
@@ -391,6 +403,7 @@ class TouchOverlayView
             pressed: Boolean,
             sourceTag: String = "touch",
         ) {
+            if (pressed && !touchBindingEnabled(binding, rewindSupportEnabled)) return
             if (TouchBindings.isMetaAction(binding)) {
                 metaActionCallback?.invoke(binding, pressed)
                 return
@@ -1126,6 +1139,7 @@ class TouchOverlayView
                         weaponState = weaponState,
                         controllerBoundBindings = controllerBoundActionBindingsProvider?.invoke() ?: emptySet(),
                         workingControllerInUse = workingControllerInUseProvider?.invoke() == true,
+                        rewindEnabled = rewindSupportEnabled,
                     ),
                 gamepadOnlyMode = gamepadOnlyMode,
                 controllerAdminActions = remainingAdminActionsProvider?.invoke() ?: emptyList(),
@@ -1636,6 +1650,7 @@ class TouchOverlayView
             )
 
         private fun buttonVisibleInCurrentMode(b: ButtonState): Boolean {
+            if (!touchBindingEnabled(b.control.binding, rewindSupportEnabled)) return false
             if (gameVariant == "d1" && b.control.binding in TouchBindings.D2_ONLY_BUTTONS) return false
             return !automapActive || automapTouchButtonVisible(b.control.binding)
         }
@@ -1662,7 +1677,7 @@ class TouchOverlayView
         }
 
         private fun stickBindingVisibleInCurrentMode(binding: Int): Boolean =
-            !automapActive || automapTouchButtonVisible(binding)
+            touchBindingEnabled(binding, rewindSupportEnabled) && (!automapActive || automapTouchButtonVisible(binding))
 
         private fun touchBindingAllowedInCurrentMode(binding: Int): Boolean {
             if (gameVariant == "d1" &&
@@ -3850,6 +3865,7 @@ class TouchOverlayView
             seg: RadialSegment?,
             binding: Int,
         ) {
+            if (!touchBindingEnabled(binding, rewindSupportEnabled)) return
             val isAction = seg?.bindingType == "action"
             if (binding >= 0) {
                 if (TouchBindings.isMetaAction(binding)) {
@@ -3907,11 +3923,24 @@ class TouchOverlayView
         }
 
         private fun visibleRadialSegments(rm: RadialMenuState): List<RadialSegment> {
-            if (rm.isWeaponWheel) return rm.filteredSegments
-            if (rm.control.id != "Guide") {
-                return rm.control.segments
-            }
-            return guideWheelVisibleSegments(rm.control.segments, secretAreaRevealProvider?.invoke() == true)
+            val segments =
+                when {
+                    rm.isWeaponWheel -> {
+                        rm.filteredSegments
+                    }
+
+                    rm.control.id == "Guide" -> {
+                        guideWheelVisibleSegments(
+                            rm.control.segments,
+                            secretAreaRevealProvider?.invoke() == true,
+                        )
+                    }
+
+                    else -> {
+                        rm.control.segments
+                    }
+                }
+            return segments.filter { touchBindingEnabled(it.binding, rewindSupportEnabled) }
         }
 
         private fun keycodeToUnicode(keycode: Int): Int =

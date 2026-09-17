@@ -377,6 +377,10 @@ class MainActivity :
 
     external fun nativeSetHeadlightOffByDefaultQol(enabled: Boolean)
 
+    external fun nativeSetRewindEnabled(enabled: Boolean)
+
+    external fun nativeSetRewindTargetSeconds(seconds: Int)
+
     external fun nativeSetDebugLogEnabled(
         category: Int,
         on: Boolean,
@@ -1095,6 +1099,7 @@ class MainActivity :
 
         // Touch overlay
         touchOverlay = TouchOverlayView(this)
+        applyRewindPrefs(prefs)
         activeTouchLayout = TouchLayoutRepository.load(this)
         gyroRuntimeState = gyroRuntimeStateFromConfig(activeTouchLayout.gyro)
         touchOverlay.setLayout(activeTouchLayout)
@@ -2217,6 +2222,7 @@ class MainActivity :
         applySkipIntroPref(prefs)
         applyCoopIndicatorPrefs(prefs)
         applyHeadlightDefaultPrefs(prefs)
+        applyRewindPrefs(prefs)
         applyDemoRecordingPref()
         applyGraphicsDebugPrefs(prefs)
         applyGraphicsSettingsPrefs(prefs)
@@ -2348,6 +2354,15 @@ class MainActivity :
         } catch (_: Exception) {
             // JNI may not be ready yet when the activity is first coming up
         }
+    }
+
+    private fun applyRewindPrefs(prefs: android.content.SharedPreferences) {
+        val enabled = prefs.getBoolean(PREF_REWIND_SUPPORT_ENABLED, true)
+        if (::touchOverlay.isInitialized) touchOverlay.rewindSupportEnabled = enabled
+        nativeSetRewindEnabled(enabled)
+        nativeSetRewindTargetSeconds(
+            sanitizeRewindTargetSeconds(prefs.getInt(PREF_REWIND_TARGET_SECONDS, DEFAULT_REWIND_TARGET_SECONDS)),
+        )
     }
 
     private fun applyHeadlightDefaultPrefs(prefs: android.content.SharedPreferences) {
