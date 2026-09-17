@@ -276,6 +276,34 @@ fun EnginePreferencesPage(
                         .fillMaxSize()
                         .verticalScroll(scrollState),
             ) {
+                Text("Presets", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    GameSettingsPreset.entries.forEach { preset ->
+                        OutlinedButton(
+                            onClick = { pendingPreset = preset },
+                            modifier = Modifier.weight(1f).tvFocusBorder(),
+                        ) {
+                            Text(
+                                if (preset ==
+                                    GameSettingsPreset.ORIGINAL
+                                ) {
+                                    "Set preset: Original Descent"
+                                } else {
+                                    "Restore defaults"
+                                },
+                                fontSize = 12.sp,
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(8.dp))
+
                 Text("Launcher", fontWeight = FontWeight.Bold, fontSize = 11.sp)
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
@@ -446,19 +474,6 @@ fun EnginePreferencesPage(
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    GameSettingsPreset.entries.forEach { preset ->
-                        OutlinedButton(
-                            onClick = { pendingPreset = preset },
-                            modifier = Modifier.weight(1f).tvFocusBorder(),
-                        ) {
-                            Text(preset.title, fontSize = 12.sp)
-                        }
-                    }
-                }
                 MainViewFovControl(value = mainViewFov, onValueChange = { mainViewFov = it })
                 TextureFilterControl(value = textureFilter, onValueChange = { textureFilter = it })
                 Row(verticalAlignment = Alignment.CenterVertically) {
