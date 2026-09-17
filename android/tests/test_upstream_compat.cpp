@@ -2,10 +2,16 @@
 #include <cstdlib>
 #include <cstring>
 #include <vector>
+#include <SDL.h>
+#undef main
+#ifdef HAVE_LIBPNG
+#include <png.h>
+#endif
 
 extern "C" {
 #include "args.h"
 #include "bm.h"
+#include "config.h"
 #include "console.h"
 #include "dxxerror.h"
 #include "game.h"
@@ -16,15 +22,24 @@ extern "C" {
 #include "mission.h"
 #include "multi.h"
 #include "newdemo.h"
+#include "newmenu.h"
 #include "object.h"
 #include "palette.h"
 #include "physfsx.h"
 #include "piggy.h"
 #include "polyobj.h"
 #include "powerup.h"
+#include "pcx.h"
+#include "pngfile.h"
 #include "robot.h"
 #include "text.h"
 #include "u_mem.h"
+#ifdef OGL
+#include "ogl_init.h"
+extern grs_bitmap nm_background;
+void newmenu_free_background(void);
+void ogl_smash_texture_list_internal(void);
+#endif
 #ifdef DXX_BUILD_DESCENT_II
 extern int Robot_replacements_loaded;
 extern int Gamesave_num_players;
@@ -107,6 +122,177 @@ static void test_seek()
 	require(file.Seek(-1, SEEK_END) == 0, "end-relative seek");
 	require(file.Seek(0, -99) == -1, "invalid seek method returns error");
 }
+
+#ifdef HAVE_LIBPNG
+static const unsigned char png_colors[4][3] = { { 17, 93, 201 }, { 230, 41, 7 }, { 120, 88, 128 }, { 6, 182, 79 } };
+
+static void write_png_fixture(const char *name, int depth, int color_type, bool transparent, bool interlaced)
+{
+	FILE *file = std::fopen(name, "wb");
+	require(file != nullptr, "create PNG fixture");
+	png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
+	png_infop info = png_create_info_struct(png);
+	require(png && info, "allocate PNG encoder");
+	if (setjmp(png_jmpbuf(png))) require(false, "encode PNG fixture");
+	png_init_io(png, file);
+	png_set_IHDR(png, info, 5, 3, depth, color_type, interlaced ? PNG_INTERLACE_ADAM7 : PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+	png_color palette[4];
+	std::memcpy(palette, png_colors, sizeof(palette));
+	const bool indexed = color_type == PNG_COLOR_TYPE_PALETTE;
+	const int colors = depth == 1 ? 2 : 4;
+	if (indexed) {
+		png_set_PLTE(png, info, palette, colors);
+		if (transparent) {
+			png_byte alpha[3] = { 255, 0, 128 };
+			png_set_tRNS(png, info, alpha, colors == 2 ? 2 : 3, nullptr);
+		}
+	}
+	png_write_info(png, info);
+	unsigned char pixels[3][20] = {};
+	png_bytep rows[3] = { pixels[0], pixels[1], pixels[2] };
+	for (int y = 0; y < 3; ++y) {
+		for (int x = 0; x < 5; ++x) {
+			const int index = (x + y) % colors;
+			if (indexed)
+				pixels[y][x * depth / 8] |= index << (8 - depth - (x * depth % 8));
+			else {
+				const int channels = color_type == PNG_COLOR_TYPE_RGBA ? 4 : 3;
+				std::memcpy(&pixels[y][x * channels], png_colors[index], 3);
+				if (channels == 4) pixels[y][x * channels + 3] = index == 1 ? 0 : index == 2 ? 128
+					                                                                         : 255;
+			}
+		}
+	}
+	png_write_image(png, rows);
+	png_write_end(png, info);
+	png_destroy_write_struct(&png, &info);
+	std::fclose(file);
+}
+
+static void test_png_decode()
+{
+	for (int depth : { 1, 2, 4, 8 }) {
+		for (bool alpha : { false, true }) {
+			for (bool interlaced : { false, true }) {
+				write_png_fixture("palette.png", depth, PNG_COLOR_TYPE_PALETTE, alpha, interlaced);
+				png_data decoded = {};
+				require(read_png("palette.png", &decoded) != 0, "read indexed PNG");
+				require(decoded.width == 5 && decoded.height == 3 && decoded.depth == 8, "expanded PNG dimensions and depth");
+				require(!decoded.paletted && decoded.color && decoded.alpha == alpha && decoded.channels == (alpha ? 4u : 3u), "expanded PNG channel metadata");
+				require(!decoded.palette && decoded.num_palette == 0, "expanded pixels need no palette lookup");
+				for (int y = 0; y < 3; ++y) {
+					for (int x = 0; x < 5; ++x) {
+						const int index = (x + y) % (depth == 1 ? 2 : 4);
+						const unsigned char *pixel = decoded.data + (y * 5 + x) * decoded.channels;
+						require(std::memcmp(pixel, png_colors[index], 3) == 0, "PNG palette colors including supertransparent marker");
+						if (alpha) require(pixel[3] == (index == 1 ? 0 : index == 2 ? 128
+							                                                        : 255),
+							               "tRNS preserves transparent, partial, and implicit opaque alpha");
+					}
+				}
+				std::free(decoded.data);
+			}
+		}
+	}
+	for (int type : { PNG_COLOR_TYPE_RGB, PNG_COLOR_TYPE_RGBA }) {
+		write_png_fixture("truecolor.png", 8, type, false, false);
+		png_data decoded = {};
+		require(read_png("truecolor.png", &decoded) != 0 && !decoded.paletted, "existing truecolor PNG path");
+		require(decoded.channels == (type == PNG_COLOR_TYPE_RGBA ? 4u : 3u), "truecolor channels preserved");
+		require(std::memcmp(decoded.data, png_colors[0], 3) == 0, "truecolor pixels preserved");
+		std::free(decoded.data);
+	}
+	write_fixture("broken.png", { 137, 80, 78, 71, 13, 10, 26, 10 });
+	png_data decoded = {};
+	require(!read_png("broken.png", &decoded) && !decoded.data && !decoded.palette, "truncated PNG fails cleanly");
+	require(!read_png("no-such-texture.png", &decoded), "missing PNG permits stock fallback");
+}
+
+#ifdef OGL
+static void check_menu_png()
+{
+	nm_draw_background(10, 10, 200, 150);
+	const ogl_texture *texture = nm_background.gltexture;
+	require(texture && texture->handle && texture->is_png && texture->w == 5 && texture->h == 3, "menu uses explicit scores PNG");
+	bytes pixels(texture->tw * texture->th * 4);
+	glBindTexture(GL_TEXTURE_2D, texture->handle);
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+	require(std::memcmp(pixels.data(), png_colors[0], 3) == 0, "menu uploads PNG palette colors instead of game palette");
+	require(pixels[7] == 0 && pixels[11] == 128 && pixels[15] == 255, "menu upload preserves PNG alpha");
+	require(glGetError() == GL_NO_ERROR, "menu rendering has no GL errors");
+}
+
+static void test_menu_png()
+{
+	require(SDL_Init(SDL_INIT_VIDEO) == 0, "initialize SDL video for menu integration");
+	Game_mode = 0;
+	GameArg.SysWindow = 1;
+	GameCfg.WindowMode = 1;
+	GameCfg.AspectX = 4;
+	GameCfg.AspectY = 3;
+	GameCfg.TexFilt = 0;
+	require(gr_init(SM(320, 200)) == 0, "initialize menu renderer");
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	grs_bitmap *stock = gr_create_bitmap(320, 200);
+	std::memset(stock->bm_data, 1, 320 * 200);
+	unsigned char palette[768] = {};
+	palette[3] = 63;
+	std::memcpy(gr_palette, palette, sizeof(palette));
+	char filename[] = "scores.pcx";
+	require(pcx_write_bitmap(filename, stock, palette) == PCX_ERROR_NONE, "write stock menu fallback");
+	gr_free_bitmap(stock);
+	write_png_fixture("scores.png", 2, PNG_COLOR_TYPE_PALETTE, true, true);
+	check_menu_png();
+	const GLuint cached = nm_background.gltexture->handle;
+	check_menu_png();
+	require(nm_background.gltexture->handle == cached, "cached menu draw reuses uploaded texture");
+	ogl_smash_texture_list_internal();
+	check_menu_png();
+	newmenu_free_background();
+	GameCfg.TexFilt = 2;
+	check_menu_png();
+	GLint filter = 0;
+	glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, &filter);
+	require(filter == GL_LINEAR_MIPMAP_LINEAR, "menu keeps requested texture filtering");
+	newmenu_free_background();
+	Game_mode = GM_MULTI;
+	Netgame.AllowCustomModelsTextures = 0;
+	nm_draw_background(10, 10, 200, 150);
+	require(nm_background.gltexture && !nm_background.gltexture->is_png && nm_background.gltexture->w == 320, "replacement permission retains stock menu");
+	newmenu_free_background();
+	Game_mode = 0;
+	check_menu_png();
+	require(PHYSFS_delete("scores.png") != 0, "remove menu replacement fixture");
+	ogl_smash_texture_list_internal();
+	nm_draw_background(10, 10, 200, 150);
+	require(nm_background.gltexture && !nm_background.gltexture->is_png && nm_background.gltexture->w == 320, "removed replacement restores stock dimensions after cache reset");
+	newmenu_free_background();
+	write_fixture("scores.png", { 137, 80, 78, 71, 13, 10, 26, 10 });
+	nm_draw_background(10, 10, 200, 150);
+	require(nm_background.gltexture && !nm_background.gltexture->is_png, "invalid replacement retains stock menu");
+	newmenu_free_background();
+	write_png_fixture("opaque.png", 4, PNG_COLOR_TYPE_PALETTE, false, false);
+	grs_bitmap *wall = gr_create_bitmap(5, 3);
+	wall->bm_flags = BM_FLAG_TRANSPARENT | BM_FLAG_SUPER_TRANSPARENT;
+	ogl_loadbmtexture_f(wall, 0, "opaque");
+	require(wall->gltexture && wall->gltexture->is_png && wall->gltexture->format == GL_RGB, "opaque palette replacement uses RGB despite stock transparency flags");
+	bytes pixels(wall->gltexture->tw * wall->gltexture->th * 4);
+	glBindTexture(GL_TEXTURE_2D, wall->gltexture->handle);
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+	require(std::memcmp(pixels.data() + 4, png_colors[1], 3) == 0 && pixels[7] == 255, "opaque replacement upload keeps RGB stride and alpha");
+#ifdef OGL_MERGE
+	require(wall->gltexture_mask && wall->gltexture_mask->handle, "palette replacement generates supertransparency mask");
+	glBindTexture(GL_TEXTURE_2D, wall->gltexture_mask->handle);
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+	require(pixels[3] == 255 && pixels[11] == 0, "supertransparency mask follows decoded marker color");
+#endif
+	require(glGetError() == GL_NO_ERROR, "replacement and mask upload have no GL errors");
+	gr_free_bitmap(wall);
+	gr_close();
+	SDL_Quit();
+}
+#endif
+#endif
 
 static void test_lives()
 {
@@ -301,6 +487,16 @@ int main(int argc, char **argv)
 	require(PHYSFS_setWriteDir(".") != 0 && PHYSFS_mount(".", nullptr, 1) != 0, "mount isolated fixture directory");
 	std::fprintf(stderr, "Testing model texture seek\n");
 	test_seek();
+#ifdef HAVE_LIBPNG
+	std::fprintf(stderr, "Testing indexed PNG replacement decoding\n");
+	test_png_decode();
+#ifdef OGL
+	if (argc > 1 && std::strcmp(argv[1], "--graphics") == 0) {
+		std::fprintf(stderr, "Testing PNG menu rendering and cache reload\n");
+		test_menu_png();
+	}
+#endif
+#endif
 	std::fprintf(stderr, "Testing life limits\n");
 	test_lives();
 #ifdef DXX_BUILD_DESCENT_II

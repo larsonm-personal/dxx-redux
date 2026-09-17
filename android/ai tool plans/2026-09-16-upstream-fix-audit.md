@@ -1,5 +1,7 @@
 # Upstream fix audit and Vertigo robot loading
 
+Follow-up: the deferred PNG/menu change `ceba2c7a` is now implemented and validated in [the PNG/menu backport](2026-09-16-png-menu-backport.md). Cumulative coverage is 21 implemented, two already covered, and two remaining deferrals. The original batch findings below are retained as its audit record
+
 ## Scope and plan
 
 Research the mission 2305 warning, trace the matching upstream fixes, and compare every upstream commit absent from this branch with the current implementation

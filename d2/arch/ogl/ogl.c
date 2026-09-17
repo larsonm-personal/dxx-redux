@@ -3065,10 +3065,11 @@ static int ogl_make_d2_texture_name(char *out, const char *bitmapname)
 #endif /* ANDROID */
 #endif /* OGL_MERGE */
 
-void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
+void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt, const char *bitmapname)
 {
 	unsigned char *buf;
-	const char *bitmapname = piggy_game_bitmap_name(bm);
+	if (!bitmapname)
+		bitmapname = piggy_game_bitmap_name(bm);
 
 #ifdef ANDROID
 	struct timespec stage_start, stage_end;
@@ -3415,7 +3416,9 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 						df >= 4 ? "png-rgba" : "png-rgb");
 				#endif
 				if (bm->gltexture == NULL)
-					ogl_init_texture(bm->gltexture = ogl_get_free_texture(), pdata.width, pdata.height, ((pdata.alpha || bm->bm_flags & BM_FLAG_TRANSPARENT) ? OGL_FLAG_ALPHA : 0));
+					bm->gltexture = ogl_get_free_texture();
+				// Match the decoded channels, including after texture cache invalidation
+				ogl_init_texture(bm->gltexture, pdata.width, pdata.height, pdata.alpha ? OGL_FLAG_ALPHA : 0);
 				{
 					int upload_failed;
 				#ifdef ANDROID
@@ -3671,7 +3674,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 
 void ogl_loadbmtexture(grs_bitmap *bm)
 {
-ogl_loadbmtexture_f(bm, GameCfg.TexFilt);
+ogl_loadbmtexture_f(bm, GameCfg.TexFilt, NULL);
 }
 
 void ogl_freetexture(ogl_texture *gltexture)

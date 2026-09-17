@@ -20,7 +20,7 @@ int read_png(const char *filename, png_data *pdata)
 	//ubyte header[8];
 	png_structp png_ptr = NULL;
 	png_infop info_ptr = NULL;
-	png_bytepp row_pointers = NULL;
+	png_bytepp volatile row_pointers = NULL;
 	png_uint_32 width, height;
 	int depth, color_type;
 	int i;
@@ -54,7 +54,14 @@ int read_png(const char *filename, png_data *pdata)
 	//SDL_RWseek(rw, 8, RW_SEEK_SET);
 
 	png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-	info_ptr = png_create_info_struct(png_ptr);
+	info_ptr = png_ptr ? png_create_info_struct(png_ptr) : NULL;
+	if (!info_ptr) {
+		if (png_ptr)
+			png_destroy_read_struct(&png_ptr, NULL, NULL);
+		SDL_RWclose(rw);
+		free(fbuf);
+		return 0;
+	}
 
 	pdata->data = pdata->palette = NULL;
 	pdata->num_palette = 0;
@@ -65,6 +72,7 @@ int read_png(const char *filename, png_data *pdata)
 			free(pdata->data);
 		if (pdata->palette)
 			free(pdata->palette);
+		pdata->data = pdata->palette = NULL;
 		if (row_pointers)
 			free(row_pointers);
 		SDL_RWclose(rw);
@@ -78,12 +86,26 @@ int read_png(const char *filename, png_data *pdata)
 	png_read_info(png_ptr, info_ptr);
 	png_get_IHDR(png_ptr, info_ptr, &width, &height, &depth, &color_type, NULL, NULL, NULL);
 
+	// Expand the PNG palette itself, including packed indices and tRNS alpha
+	if (color_type == PNG_COLOR_TYPE_PALETTE)
+		png_set_palette_to_rgb(png_ptr);
+	if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS))
+		png_set_tRNS_to_alpha(png_ptr);
+	png_set_interlace_handling(png_ptr);
+	png_read_update_info(png_ptr, info_ptr);
+	png_get_IHDR(png_ptr, info_ptr, &width, &height, &depth, &color_type, NULL, NULL, NULL);
+
 	pdata->width = width;
 	pdata->height = height;
 	pdata->depth = depth;
 
+	if (height > (size_t)-1 / png_get_rowbytes(png_ptr, info_ptr) ||
+		height > (size_t)-1 / sizeof(png_bytep))
+		png_error(png_ptr, "PNG image too large");
 	pdata->data = (ubyte*)malloc(png_get_rowbytes(png_ptr, info_ptr) * height);
 	row_pointers = (png_bytep *)malloc(sizeof(png_bytep) * height);
+	if (!pdata->data || !row_pointers)
+		png_error(png_ptr, "PNG allocation failed");
 	for (i = 0; i < height; i++)
 		row_pointers[i] = &pdata->data[png_get_rowbytes(png_ptr, info_ptr) * i];
 
@@ -91,17 +113,6 @@ int read_png(const char *filename, png_data *pdata)
 	free(row_pointers);
 	row_pointers=NULL;
 	png_read_end(png_ptr, info_ptr);
-
-	if (color_type == PNG_COLOR_TYPE_PALETTE)
-	{
-		png_colorp palette;
-
-		if (png_get_PLTE(png_ptr, info_ptr, &palette, &pdata->num_palette))
-		{
-			pdata->palette = (ubyte*)malloc(pdata->num_palette * 3);
-			memcpy(pdata->palette, palette, pdata->num_palette * 3);
-		}
-	}
 
 	pdata->paletted = (color_type & PNG_COLOR_MASK_PALETTE) > 0;
 	pdata->color = (color_type & PNG_COLOR_MASK_COLOR) > 0;

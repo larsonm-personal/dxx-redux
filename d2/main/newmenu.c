@@ -370,6 +370,12 @@ void nm_draw_background(int x1, int y1, int x2, int y2 )
 	gr_set_current_canvas(tmp);
 	gr_palette_load( gr_palette );
 
+#ifdef OGL
+	// Keep the replacement name and dimensions correct after cache invalidation
+	if (nm_background.gltexture && !nm_background.gltexture->handle)
+		ogl_freebmtexture(&nm_background);
+	ogl_loadbmtexture_f(&nm_background, GameCfg.TexFilt, "scores");
+#endif
 	show_fullscr( &nm_background ); // show so we load all necessary data for the sub-bitmap
 	if (!init_sub && ((nm_background_sub->bm_w != w*(((float) nm_background.bm_w)/SWIDTH)) || (nm_background_sub->bm_h != h*(((float) nm_background.bm_h)/SHEIGHT))))
 	{
