@@ -207,10 +207,9 @@ extern object * create_morph_robot( segment *segp, vms_vector *object_pos, int o
 //	Create a Buddy bot.
 //	This automatically happens when you bring up the Buddy menu in a debug version.
 //	It is available as a cheat in a non-debug (release) version.
-void create_buddy_bot(void)
+static object *create_buddy_bot_at_position(int segnum, vms_vector *pos)
 {
 	int	buddy_id;
-	vms_vector	object_pos;
 
 	d1_in_d2_ensure_spawnable_guidebot();
 	for (buddy_id=0; buddy_id<N_robot_types; buddy_id++)
@@ -218,12 +217,37 @@ void create_buddy_bot(void)
 			break;
 
 	if (buddy_id == N_robot_types) {
-		return;
+		return NULL;
 	}
 
-	compute_segment_center(&object_pos, &Segments[ConsoleObject->segnum]);
+	return create_morph_robot(&Segments[segnum], pos, buddy_id);
+}
 
-	create_morph_robot( &Segments[ConsoleObject->segnum], &object_pos, buddy_id);
+int create_buddy_bot_at_player(int pnum)
+{
+	object *ship, *buddy;
+	int objnum;
+
+	if (pnum < 0 || pnum >= MAX_PLAYERS)
+		return -1;
+	objnum = Players[pnum].objnum;
+	if (objnum < 0 || objnum > Highest_object_index)
+		return -1;
+	ship = &Objects[objnum];
+	if (ship->segnum < 0 || ship->segnum > Highest_segment_index)
+		return -1;
+	buddy = create_buddy_bot_at_position(ship->segnum, &ship->pos);
+	if (!buddy)
+		return -1;
+	buddy->orient = ship->orient;
+	return buddy - Objects;
+}
+
+void create_buddy_bot(void)
+{
+	vms_vector object_pos;
+	compute_segment_center(&object_pos, &Segments[ConsoleObject->segnum]);
+	create_buddy_bot_at_position(ConsoleObject->segnum, &object_pos);
 }
 
 #define	QUEUE_SIZE	256

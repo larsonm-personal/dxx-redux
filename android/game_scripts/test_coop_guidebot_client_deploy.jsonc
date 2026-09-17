@@ -1,0 +1,15 @@
+// TEST HELPER: Release the placed Guide-Bot with the client's Deploy action
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "assert", "expect": {"guidebot.released": false, "guidebot.owner_player": -1}},
+    {"action": "wait_ms", "ms": 1500},
+    {"action": "meta_action", "id": 1037},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {
+        "guidebot.released": true, "guidebot.owner_player": 1, "guidebot.remote_owner": 1,
+        "guidebot.owner_is_local": true, "guidebot.local_control_slot_matches": true
+    }},
+    {"action": "wait_ms", "ms": 4000},
+    {"action": "assert", "expect": {
+        "guidebot.owner_player": 1, "guidebot.remote_owner": 1, "guidebot.companion_count": 1
+    }}
+]

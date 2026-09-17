@@ -237,6 +237,7 @@ extern fix64   Escort_last_path_created;
 extern int   Escort_goal_object, Escort_special_goal, Escort_goal_index;
 
 extern void  create_buddy_bot(void);
+extern int create_buddy_bot_at_player(int pnum);
 
 extern int   Max_escort_length;
 

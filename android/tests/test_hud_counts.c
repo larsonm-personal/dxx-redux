@@ -28,8 +28,9 @@ float FNTScaleX = 1, FNTScaleY = 1;
 grs_font *Gamefonts[MAX_FONTS];
 grs_canvas *grd_curcanv;
 
-static char hostage_text[80], red_text[24];
+static char hostage_text[80], red_text[24], robot_text[32];
 static int current_color, hostage_y;
+static int secret_total;
 
 void gr_set_curfont(grs_font *font) { grd_curcanv->cv_font = font; }
 void gr_set_fontcolor(int fg, int bg) { (void)bg; current_color = fg; }
@@ -42,6 +43,8 @@ void gr_get_string_drawn_size(const char *text, int *w, int *h)
 int gr_string(int x, int y, const char *text)
 {
 	(void)x;
+	if (strncmp(text, "robots: ", 8) == 0)
+		snprintf(robot_text, sizeof(robot_text), "%s", text);
 	if (strncmp(text, "hostages: ", 10) == 0)
 		hostage_y = y;
 	if (y == hostage_y) {
@@ -60,7 +63,7 @@ int HUD_message_area_intersects(int x, int y, int w, int h)
 	return 0;
 }
 const secret_area_state *secret_area_get_state(void) { return NULL; }
-int secret_area_total(const secret_area_state *state) { (void)state; return 0; }
+int secret_area_total(const secret_area_state *state) { (void)state; return secret_total; }
 int secret_area_found_count(const secret_area_state *state) { (void)state; return 0; }
 static int right_inset(int y, int h) { (void)y; (void)h; return 0; }
 
@@ -72,6 +75,21 @@ static void check_hostages(int pnum, const char *text, const char *red)
 	CHECK(strcmp(hostage_text, text) == 0);
 	CHECK(strcmp(red_text, red) == 0);
 	CHECK(hud_counts_get_debug_state()->hostages.drawn);
+}
+
+static void check_secret_robots(const char *text)
+{
+	const hud_counts_debug_state *counts;
+	robot_text[0] = 0;
+	hostage_y = -1;
+	hud_counts_draw(0, 0, 0, 1, right_inset);
+	counts = hud_counts_get_debug_state();
+	CHECK(strcmp(robot_text, text) == 0);
+	CHECK(counts->robots.drawn);
+	CHECK(!counts->hostages.present);
+	CHECK(counts->secrets.drawn == (secret_total > 0));
+	if (secret_total > 0)
+		CHECK(counts->secrets.y >= counts->robots.y + counts->robots.h);
 }
 
 int main(void)
@@ -121,6 +139,20 @@ int main(void)
 	check_hostages(0, "hostages: 1/1/3", "1");
 	Players[0].hostages_on_board = 0;
 	check_hostages(0, "hostages: 2/0/3", "2");
-	puts("Hostage HUD counts passed");
+	/* Secret levels show robot progress even without any secret-area row */
+	Players[0].num_robots_level = 10;
+	Players[0].num_kills_level = 3;
+	check_secret_robots("robots: 3/10");
+	secret_total = 2;
+	check_secret_robots("robots: 3/10");
+
+	/* Co-op secret levels use team kills, just like ordinary mines */
+	Game_mode = GM_MULTI | GM_MULTI_COOP;
+	Coop_kill_stats[0].robots_killed = 2;
+	Coop_kill_stats[1].robots_killed = 5;
+	check_secret_robots("robots: 7/10");
+	secret_total = 0;
+	check_secret_robots("robots: 7/10");
+	puts("Robot and hostage HUD counts passed");
 	return 0;
 }

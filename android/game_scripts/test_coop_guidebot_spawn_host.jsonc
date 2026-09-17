@@ -1,0 +1,24 @@
+// TEST HELPER: Enter a mine without a placed companion (Counterstrike secret 2)
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "arm_campaign"},
+    {"action": "wait_for", "timeout_ms": 180000, "expect": {
+        "current_level_num": "-2", "coop_travel.active": false,
+        "coop_restore.transfer_busy": false, "time_paused": false, "in_game": true
+    }},
+    {"action": "assert", "expect": {"guidebot.companion_count": "0", "guidebot.owner_player": "-1"}},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {
+        "guidebot.companion_count": "1", "guidebot.released": "true",
+        "guidebot.owner_player": "1", "guidebot.remote_owner": "1", "guidebot.owner_generation": {"gte": 1}
+    }},
+    {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
+    {"action": "assert", "expect": {"guidebot.companion_count": "1", "guidebot.owner_player": "1"}},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "guidebot.docked": "true", "guidebot.companion_count": "1"
+    }},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {
+        "guidebot.docked": "false", "guidebot.released": "true", "guidebot.companion_count": "1",
+        "guidebot.owner_player": "1", "guidebot.remote_owner": "1"
+    }},
+    {"action": "log", "message": "Missing Guide-Bot deployment: host PASS"}
+]

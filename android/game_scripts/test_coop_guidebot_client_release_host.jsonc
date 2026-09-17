@@ -1,0 +1,13 @@
+// TEST HELPER: Observe a client freeing the placed Guide-Bot in Counterstrike 1
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "assert", "expect": {"guidebot.released": false, "guidebot.owner_player": -1}},
+    {"action": "wait_for", "timeout_ms": 20000, "expect": {
+        "guidebot.released": true, "guidebot.owner_player": 1, "guidebot.remote_owner": 1,
+        "guidebot.owner_is_local": false, "guidebot.local_control_slot_matches": false
+    }},
+    {"action": "wait_ms", "ms": 4000},
+    {"action": "assert", "expect": {
+        "guidebot.owner_player": 1, "guidebot.remote_owner": 1, "guidebot.companion_count": 1
+    }}
+]

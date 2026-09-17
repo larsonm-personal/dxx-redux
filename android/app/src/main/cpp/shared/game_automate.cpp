@@ -1913,7 +1913,7 @@ static int release_guidebot_cage(char *reason, size_t reason_size)
 					processed[connected_wall] = 1;
 			}
 		}
-		wall_destroy(&Segments[segnum], side);
+		wall_damage_from_player(&Segments[segnum], side, WALL_HPS, Player_num);
 		destroyed++;
 	};
 	for (int i = 0; i < segment_count; ++i) {

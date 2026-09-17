@@ -209,6 +209,7 @@ extern int wall_is_doorway ( segment *seg, int side );
 
 // Deteriorate appearance of wall. (Changes bitmap (paste-ons))
 extern void wall_damage(segment *seg, int side, fix damage);
+extern void wall_damage_from_player(segment *seg, int side, fix damage, int playernum);
 
 // Destroys a blastable wall. (So it is an opening afterwards)
 extern void wall_destroy(segment *seg, int side);

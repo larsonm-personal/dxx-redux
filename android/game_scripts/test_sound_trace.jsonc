@@ -2,6 +2,8 @@
 // Run through android/tests/test_sound_trace.ps1 to also verify the emitted trace
 [
     {"_info": {
+        "_standalone": false,
+        "_owner": "test_sound_trace",
         "games": ["d2"],
         "_deps": [
             {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},

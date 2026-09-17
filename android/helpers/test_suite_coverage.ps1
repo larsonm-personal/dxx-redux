@@ -25,11 +25,13 @@ function Get-TestSuiteCoveragePolicy {
             'test_coop_save_compatibility'
         )
         audio_preferences = @(
+            'test_sound_trace'
             'test_music_track_controls_unified'
             'test_music_save_source_restore_d2'
             'test_title_music_skip_pref_unified'
         )
         content_browser = @(
+            'test_mission_asset_isolation'
             'test_mission_zip_batch'
             'test_unified_file_set_content'
             'test_disc_content_import'
@@ -154,6 +156,8 @@ function Get-TestSuiteCoveragePolicy {
             'test_merged_wall_two_pass_probe'
         )
         gameplay_scenarios = @(
+            'test_endgame_singleplayer_d1'
+            'test_endgame_singleplayer_d2'
             'test_double_launch'
             'test_autosave_resume_missing_pilot_unified'
             'test_abort_game_to_main_menu_d2'
@@ -166,6 +170,7 @@ function Get-TestSuiteCoveragePolicy {
             'test_quick_record_classic_sidecar'
         )
         graphics_scenarios = @(
+            'test_vertigo_merge_creation'
             'test_ogl_runtime_texture_options_unified'
             'test_trine2_d1_in_d2_custom_textures'
             'test_newmenu_render_paths_unified'

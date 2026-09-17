@@ -157,10 +157,14 @@ int	Last_buddy_key;
 #ifdef NETWORK
 int	Escort_owner_player = -1;
 static unsigned int Escort_owner_generation;
+static unsigned int Escort_spawn_generation;
+static int Escort_pending_docked;
+static int Escort_cage_releaser = -1;
 static int Escort_network_target_mode;
 static void escort_apply_multiplayer_owner(int new_owner, int target_mode);
 static int escort_owner_candidate_eligible(int pnum);
 static void escort_request_docked_state(int docked);
+static void escort_request_spawn(void);
 #endif
 
 fix64	Last_buddy_message_time;
@@ -480,6 +484,9 @@ void init_buddy_for_level(void)
 #ifdef NETWORK
 	Escort_owner_player = -1;
 	Escort_owner_generation = 0;
+	Escort_spawn_generation = 0;
+	Escort_pending_docked = 0;
+	Escort_cage_releaser = -1;
 	Escort_network_target_mode = 0;
 #endif
 
@@ -613,7 +620,7 @@ void escort_spawn_at_player(void)
 	if (!escort_refresh_buddy_objnum()) {
 #ifdef NETWORK
 		if (Game_mode & GM_MULTI_COOP) {
-			HUD_init_message_literal(HM_DEFAULT, "No Guide-Bot present in mine!");
+			escort_request_spawn();
 			return;
 		}
 #endif
@@ -942,6 +949,33 @@ void create_bfs_list(int start_seg, short bfs_list[], int *length, int max_segs)
 	
 }
 
+#ifdef NETWORK
+void escort_note_cage_wall_destroyed(int segnum, int side, int playernum)
+{
+	int buddy_seg, other_seg, i;
+	if (!(Game_mode & GM_MULTI_COOP) || Escort_owner_player != -1 ||
+	    Buddy_allowed_to_talk || !escort_owner_candidate_eligible(playernum) ||
+	    segnum < 0 || segnum > Highest_segment_index || side < 0 || side >= MAX_SIDES_PER_SEGMENT ||
+	    !escort_refresh_buddy_objnum())
+		return;
+	buddy_seg = Objects[Buddy_objnum].segnum;
+	other_seg = Segments[segnum].children[side];
+	if (buddy_seg < 0 || buddy_seg > Highest_segment_index)
+		return;
+	/* Match the same cage and adjacent segments checked by ok_for_buddy_to_talk */
+	for (i = -1; i < MAX_SIDES_PER_SEGMENT; ++i) {
+		int cage_seg = i < 0 ? buddy_seg : Segments[buddy_seg].children[i];
+		if (IS_CHILD(cage_seg) && (cage_seg == segnum || cage_seg == other_seg)) {
+			Escort_cage_releaser = playernum;
+#ifdef __ANDROID__
+			debug_log(DLOG_GUIDEBOT, "cage wall destroyed: segment=%d side=%d releaser=%d", segnum, side, playernum);
+#endif
+			return;
+		}
+	}
+}
+#endif
+
 //	-----------------------------------------------------------------------------
 //	Return true if ok for buddy to talk, else return false.
 //	Buddy is allowed to talk if the segment he is in does not contain a blastable wall that has not been blasted
@@ -997,13 +1031,16 @@ int ok_for_buddy_to_talk(void)
 	/* android port: only the master simulates passive cage release while the
 	 * guidebot is unowned, so initial assignment cannot race across peers. */
 	if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player == -1 && multi_i_am_master()) {
-		int owner_pnum;
-		for (owner_pnum = 0; owner_pnum < N_players; owner_pnum++)
-			if (escort_owner_candidate_eligible(owner_pnum)) {
-				multi_send_escort_owner(owner_pnum);
-				ESCORT_DIAG("initial ownership assigned to player %d", owner_pnum);
-				break;
-			}
+		int owner_pnum = Escort_cage_releaser;
+		if (!escort_owner_candidate_eligible(owner_pnum)) {
+			for (owner_pnum = 0; owner_pnum < N_players; owner_pnum++)
+				if (escort_owner_candidate_eligible(owner_pnum))
+					break;
+		}
+		if (escort_owner_candidate_eligible(owner_pnum)) {
+			multi_send_escort_owner(owner_pnum);
+			ESCORT_DIAG("initial ownership assigned to player %d (releaser=%d)", owner_pnum, Escort_cage_releaser);
+		}
 	}
 #endif
 
@@ -4056,7 +4093,8 @@ enum {
 	ESCORT_DOCK_PACKET_REQUEST = 2,
 	ESCORT_DOCK_PACKET_STATE = 3,
 	ESCORT_DEPLOY_PACKET_REQUEST = 4,
-	ESCORT_DEPLOY_PACKET_STATE = 5
+	ESCORT_DEPLOY_PACKET_STATE = 5,
+	ESCORT_SPAWN_PACKET_REQUEST = 6
 };
 
 static int escort_route_target_mode_for_network(void)
@@ -4195,6 +4233,98 @@ static unsigned int escort_next_owner_generation(void)
 	return Escort_owner_generation;
 }
 
+static void escort_spawn_for_owner(int owner)
+{
+	ubyte packet[11 + sizeof(shortpos)];
+	shortpos position;
+	unsigned int generation;
+	int target_mode = ESCORT_ROUTE_TARGET_END_OF_LEVEL;
+
+	if (!multi_i_am_master() || !escort_owner_candidate_eligible(owner) ||
+	    Escort_owner_player != -1 || escort_refresh_buddy_objnum() || escort_buddy_is_docked())
+		return;
+	Buddy_objnum = create_buddy_bot_at_player(owner);
+	if (Buddy_objnum < 0) {
+		ESCORT_DIAG("deploy failed: owner=%d no companion could be created", owner);
+		HUD_init_message_literal(HM_DEFAULT, "Could not create Guide-Bot");
+		return;
+	}
+	map_objnum_local_to_local((short)Buddy_objnum);
+	generation = escort_next_owner_generation();
+	Escort_spawn_generation = generation;
+	packet[0] = MULTI_ESCORT_SPAWN;
+	packet[1] = (ubyte)Player_num;
+	packet[2] = (ubyte)owner;
+	packet[3] = Objects[Buddy_objnum].id;
+	packet[4] = (ubyte)target_mode;
+	PUT_INTEL_INT(packet + 5, generation);
+	PUT_INTEL_SHORT(packet + 9, Buddy_objnum);
+	create_shortpos(&position, &Objects[Buddy_objnum], 1);
+	memcpy(packet + 11, &position, sizeof(position));
+	/* Queue creation before ownership can queue position or navigation updates */
+	multi_send_data(packet, sizeof(packet), 2);
+	escort_apply_multiplayer_owner(owner, target_mode);
+	ESCORT_DIAG("deploy created: owner=%d object=%d generation=%u", owner, Buddy_objnum, generation);
+}
+
+static void escort_request_spawn(void)
+{
+	if (!escort_owner_candidate_eligible(Player_num))
+		return;
+	ESCORT_DIAG("deploy requested: player=%d generation=%u", Player_num, Escort_owner_generation);
+	if (multi_i_am_master())
+		escort_spawn_for_owner(Player_num);
+	else
+		escort_send_owner_packet(ESCORT_SPAWN_PACKET_REQUEST, Player_num,
+		                         ESCORT_ROUTE_TARGET_END_OF_LEVEL, Escort_owner_generation);
+}
+
+void multi_do_escort_spawn(const ubyte *buf, int authenticated_sender)
+{
+	int owner = buf[2];
+	int robot_id = buf[3];
+	int target_mode = buf[4];
+	unsigned int generation = (unsigned int)GET_INTEL_INT(buf + 5);
+	int remote_objnum = GET_INTEL_SHORT(buf + 9);
+	int segment = GET_INTEL_SHORT(buf + 11 + offsetof(shortpos, segment));
+	shortpos position;
+
+	if (!(Game_mode & GM_MULTI_COOP) || authenticated_sender != multi_who_is_master() ||
+	    !escort_owner_packet_sender_valid(buf[1], authenticated_sender) ||
+	    owner < 0 || owner >= N_players || !escort_route_target_mode_valid(target_mode) ||
+	    !escort_owner_generation_is_newer(generation, Escort_spawn_generation) ||
+	    remote_objnum < 0 || remote_objnum >= MAX_OBJECTS ||
+	    segment < 0 || segment > Highest_segment_index ||
+	    escort_refresh_buddy_objnum() || escort_buddy_is_docked())
+		return;
+
+	Buddy_objnum = create_buddy_bot_at_player(Player_num);
+	if (Buddy_objnum < 0)
+		return;
+	if (Objects[Buddy_objnum].id != robot_id) {
+		obj_delete(Buddy_objnum);
+		Buddy_objnum = -1;
+		return;
+	}
+	memcpy(&position, buf + 11, sizeof(position));
+	extract_shortpos(&Objects[Buddy_objnum], &position, 1);
+	Objects[Buddy_objnum].last_pos = Objects[Buddy_objnum].pos;
+	map_objnum_local_to_remote((short)Buddy_objnum, (short)remote_objnum, (sbyte)authenticated_sender);
+	Escort_spawn_generation = generation;
+	/* Reliable packets may be reordered: creation must survive newer owner state */
+	if (escort_owner_generation_is_newer(generation, Escort_owner_generation)) {
+		Escort_owner_generation = generation;
+		escort_apply_multiplayer_owner(owner, target_mode);
+	} else {
+		escort_apply_multiplayer_owner(Escort_owner_player, Escort_network_target_mode);
+		escort_reset_navigation_for_owner(Escort_owner_player);
+		if (Escort_pending_docked)
+			escort_apply_docked_state(1);
+	}
+	ESCORT_DIAG("deploy received: owner=%d object=%d remote=%d generation=%u",
+	            owner, Buddy_objnum, remote_objnum, generation);
+}
+
 static void escort_request_docked_state(int docked)
 {
 	int request_kind = docked ? ESCORT_DOCK_PACKET_REQUEST : ESCORT_DEPLOY_PACKET_REQUEST;
@@ -4263,6 +4393,14 @@ void multi_do_escort_owner(const ubyte *buf, int authenticated_sender)
 	if (!escort_route_target_mode_valid(target_mode))
 		return;
 
+	if (packet_kind == ESCORT_SPAWN_PACKET_REQUEST) {
+		if (!(Game_mode & GM_MULTI_COOP) || !multi_i_am_master() || sender != new_owner ||
+		    generation != Escort_owner_generation)
+			return;
+		escort_spawn_for_owner(sender);
+		return;
+	}
+
 	if (packet_kind == ESCORT_DOCK_PACKET_REQUEST ||
 	    packet_kind == ESCORT_DEPLOY_PACKET_REQUEST) {
 		int docked = packet_kind == ESCORT_DOCK_PACKET_REQUEST;
@@ -4280,10 +4418,12 @@ void multi_do_escort_owner(const ubyte *buf, int authenticated_sender)
 	    packet_kind == ESCORT_DEPLOY_PACKET_STATE) {
 		int docked = packet_kind == ESCORT_DOCK_PACKET_STATE;
 
-		if (sender != multi_who_is_master() || new_owner != Escort_owner_player ||
+		if (sender != multi_who_is_master() ||
 		    !escort_owner_generation_is_newer(generation, Escort_owner_generation))
 			return;
 		Escort_owner_generation = generation;
+		Escort_pending_docked = docked;
+		escort_apply_multiplayer_owner(new_owner, target_mode);
 		escort_apply_docked_state(docked);
 		if (Escort_owner_player == Player_num)
 			HUD_init_message(HM_DEFAULT, "%s %s", PlayerCfg.GuidebotName,

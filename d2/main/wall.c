@@ -53,7 +53,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "args.h"
 #include "d1_in_d2.h"
 #include "input_demo_replay.h"
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(NETWORK)
 #include "escort.h"
 #endif
 
@@ -338,7 +338,15 @@ void wall_destroy(segment *seg, int side)
 // Deteriorate appearance of wall. (Changes bitmap (paste-ons))
 void wall_damage(segment *seg, int side, fix damage)
 {
+	wall_damage_from_player(seg, side, damage, -1);
+}
+
+void wall_damage_from_player(segment *seg, int side, fix damage, int playernum)
+{
 	int a, i, n, cwall_num;
+#ifndef NETWORK
+	(void)playernum;
+#endif
 
 	if (seg->sides[side].wall_num == -1) {
 		return;
@@ -364,10 +372,13 @@ void wall_damage(segment *seg, int side, fix damage)
 		n = WallAnims[a].num_frames;
 		
 		if (Walls[seg->sides[side].wall_num].hps < WALL_HPS*1/n) {
-			blast_blastable_wall( seg, side );			
+#ifdef NETWORK
+			escort_note_cage_wall_destroyed(seg-Segments, side, playernum);
+#endif
+			blast_blastable_wall( seg, side );
 			#ifdef NETWORK
 			if (Game_mode & GM_MULTI)
-				multi_send_door_open(seg-Segments, side,Walls[seg->sides[side].wall_num].flags);
+				multi_send_door_open_from_player(seg-Segments, side, Walls[seg->sides[side].wall_num].flags, playernum);
 			#endif
 		}
 		else
@@ -1138,7 +1149,7 @@ int wall_hit_process(segment *seg, int side, fix damage, int playernum, object *
 
 	if (w->type == WALL_BLASTABLE) {
 		if (obj->ctype.laser_info.parent_type == OBJ_PLAYER)
-			wall_damage(seg, side, damage);
+			wall_damage_from_player(seg, side, damage, playernum);
 		return WHP_BLASTABLE;
 	}
 

@@ -24,6 +24,9 @@
 #   .\test_lan.ps1 -Game d2 -EndgameContent custom
 #   .\test_lan.ps1 -Game d2 -EndgameContent missing -EndgameClientFirst
 #   .\test_lan.ps1 -GuidebotOwnership
+#   .\test_lan.ps1 -GuidebotClientRelease cage
+#   .\test_lan.ps1 -GuidebotClientRelease deploy
+#   .\test_lan.ps1 -GuidebotSpawn -InitialLevel 8 -AllowSecretWarps
 #   .\test_lan.ps1 -GuidebotHostObserver
 #   .\test_lan.ps1 -GuidebotSlotRemapRestore
 #   .\test_lan.ps1 -SavedLateJoin -Game d2
@@ -71,6 +74,9 @@ param(
     [switch]$SkipBuild,
     [switch]$UseRelay,
     [switch]$GuidebotOwnership,
+    [ValidateSet('cage', 'deploy')]
+    [string]$GuidebotClientRelease,
+    [switch]$GuidebotSpawn,
     [switch]$GuidebotHostObserver,
     [switch]$GuidebotSlotRemapRestore,
     [switch]$SavedLateJoin,
@@ -1930,6 +1936,16 @@ try {
         Write-Status "FAIL: Guide-Bot LAN scenarios currently require D2" "Red"
         exit 1
     }
+    if ($GuidebotSpawn -and ($Game -ne 'd2' -or $GuidebotOwnership -or $GuidebotHostObserver -or $GuidebotSlotRemapRestore -or $HostMigration)) {
+        throw 'GuidebotSpawn requires D2 and must run separately from other Guide-Bot scenarios'
+    }
+    if ($GuidebotSpawn -and ($InitialLevel -ne 8 -or $MissionFile -or -not $AllowSecretWarps)) {
+        throw 'GuidebotSpawn requires Counterstrike level 8 with secret warps enabled'
+    }
+    if ($GuidebotClientRelease -and ($Game -ne 'd2' -or $InitialLevel -ne 1 -or $MissionFile -or
+            $GuidebotOwnership -or $GuidebotSpawn -or $GuidebotHostObserver -or $GuidebotSlotRemapRestore -or $HostMigration)) {
+        throw 'GuidebotClientRelease requires a separate Counterstrike level 1 scenario'
+    }
     if (($GuidebotOwnership -and $GuidebotHostObserver) -or
         ($GuidebotOwnership -and $GuidebotSlotRemapRestore) -or
         ($GuidebotHostObserver -and $GuidebotSlotRemapRestore)) {
@@ -2687,6 +2703,20 @@ try {
     if ($testPassed -and $GuidebotOwnership) {
         $testPassed = Invoke-GuidebotOwnershipScenario
     }
+    if ($testPassed -and $GuidebotSpawn) {
+        $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_guidebot_spawn_host.jsonc' `
+            -SecondarySerial $EMU2 -SecondaryScript 'test_coop_guidebot_spawn_client.jsonc' `
+            -Description 'Enter secret mine, deploy missing Guide-Bot from client, repeat, dock and redeploy' -TimeoutSec 240
+    }
+    if ($testPassed -and $GuidebotClientRelease) {
+        $releaseScripts = @{
+            cage = 'test_coop_guidebot_client_cage.jsonc'
+            deploy = 'test_coop_guidebot_client_deploy.jsonc'
+        }
+        $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_guidebot_client_release_host.jsonc' `
+            -SecondarySerial $EMU2 -SecondaryScript $releaseScripts[$GuidebotClientRelease] `
+            -Description "Client Guide-Bot release via $GuidebotClientRelease retains client ownership" -TimeoutSec 45
+    }
     if ($testPassed -and $SavedLateJoin) {
         $testPassed = Invoke-SavedLateJoinScenario
     }
@@ -3086,10 +3116,25 @@ try {
         $slowSerial = if ($EndgameClientFirst) { $EMU1 } else { $EMU2 }
         $fastContent = if ($EndgameContent -eq "builtin") { $Game } else { $EndgameContent }
         $slowContent = if ($EndgameContent -eq "builtin") { $Game } else { "custom" }
-        $fastScript = "test_coop_endgame_${fastContent}_fast.jsonc"
-        $slowScript = "test_coop_endgame_${slowContent}_slow.jsonc"
+        $fastScripts = @{
+            d1 = 'test_coop_endgame_d1_fast.jsonc'
+            d2 = 'test_coop_endgame_d2_fast.jsonc'
+            custom = 'test_coop_endgame_custom_fast.jsonc'
+            missing = 'test_coop_endgame_missing_fast.jsonc'
+        }
+        $slowScripts = @{
+            d1 = 'test_coop_endgame_d1_slow.jsonc'
+            d2 = 'test_coop_endgame_d2_slow.jsonc'
+            custom = 'test_coop_endgame_custom_slow.jsonc'
+        }
+        $observerHostScripts = @{
+            d1 = 'test_coop_endgame_d1_observer_host.jsonc'
+            d2 = 'test_coop_endgame_d2_observer_host.jsonc'
+        }
+        $fastScript = $fastScripts[$fastContent]
+        $slowScript = $slowScripts[$slowContent]
         if ($EndgameBoss) { $fastScript = "test_coop_endgame_boss_host.jsonc"; $slowScript = "test_coop_endgame_boss_client.jsonc" }
-        if ($EndgameObserverHost) { $fastScript = "test_coop_endgame_${Game}_observer_host.jsonc"; $slowScript = "test_coop_endgame_${Game}_slow.jsonc" }
+        if ($EndgameObserverHost) { $fastScript = $observerHostScripts[$Game]; $slowScript = $slowScripts[$Game] }
         $testPassed = Invoke-PairedGameAutomation -PrimarySerial $fastSerial -PrimaryScript $fastScript `
             -SecondarySerial $slowSerial -SecondaryScript $slowScript `
             -Description "Independent campaign ending with $fastSerial returning first" -TimeoutSec 90 -IndependentEndgame

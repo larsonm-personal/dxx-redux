@@ -3,6 +3,8 @@
 [
     {
         "_info": {
+            "_standalone": false,
+            "_owner": "test_mission_asset_isolation",
             "games": [
                 "d2"
             ],

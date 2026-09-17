@@ -1,5 +1,5 @@
 // Auto-generated regression spec for: setup_descent_1.4a_(16596).exe
-// Generated: 2026-05-24 17:34:46
+// Generated: 2026-09-15 22:00:34
 {
   "source_type": "gog",
   "source_files": {
@@ -15,7 +15,7 @@
     "DESCENT.PIG"
   ],
   "audio_tracks": 0,
-  "total_extracted": 7,
+  "total_extracted": 9,
   "last_test_result": {
     "status": "pass",
     "failure_step": "",

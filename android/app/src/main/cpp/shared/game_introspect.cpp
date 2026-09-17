@@ -912,6 +912,14 @@ static json serialize_guidebot()
 	json result;
 
 	result["buddy_objnum"] = Buddy_objnum;
+	int companion_count = 0;
+	for (int i = 0; i <= Highest_object_index; ++i)
+		if ((Objects[i].type == OBJ_ROBOT ||
+		     (Objects[i].type == OBJ_GHOST && Objects[i].control_type == CT_NONE &&
+		      Objects[i].movement_type == MT_NONE && Objects[i].render_type == RT_NONE)) &&
+		    Objects[i].id < N_robot_types && Robot_info[Objects[i].id].companion)
+			++companion_count;
+	result["companion_count"] = companion_count;
 	result["released"] = (bool) Buddy_allowed_to_talk;
 	result["docked"] = (bool) escort_buddy_is_docked();
 	result["recalling"] = Escort_special_goal == ESCORT_GOAL_RECALL;

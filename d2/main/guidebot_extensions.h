@@ -146,6 +146,8 @@ extern int Escort_owner_player;
 unsigned int escort_get_owner_generation(void);
 void multi_send_escort_owner(int owner_pnum);
 void multi_do_escort_owner(const ubyte *buf, int authenticated_sender);
+void multi_do_escort_spawn(const ubyte *buf, int authenticated_sender);
+void escort_note_cage_wall_destroyed(int segnum, int side, int playernum);
 void escort_transfer_ownership_on_disconnect(int gone_pnum);
 void escort_release_control(void);
 #endif

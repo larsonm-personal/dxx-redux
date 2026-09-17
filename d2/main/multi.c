@@ -3124,6 +3124,8 @@ multi_do_door_open(const ubyte *buf)
 	{
 		if (!(w->flags & WALL_BLASTED))
 		{
+			if (w->hps >= 0)
+				escort_note_cage_wall_destroyed(segnum, side, (sbyte)buf[5]);
 			wall_destroy(seg, side);
 		}
 #ifdef __ANDROID__
@@ -4538,6 +4540,11 @@ multi_send_invuln(void)
 void
 multi_send_door_open(int segnum, int side,ubyte flag)
 {
+	multi_send_door_open_from_player(segnum, side, flag, Player_num);
+}
+
+void multi_send_door_open_from_player(int segnum, int side, ubyte flag, int playernum)
+{
 	// When we open a door make sure everyone else opens that door
 	if (is_observer()) { return; }
 
@@ -4545,14 +4552,15 @@ multi_send_door_open(int segnum, int side,ubyte flag)
 	PUT_INTEL_SHORT(multibuf+1, segnum );
 	multibuf[3] = (sbyte)side;
 	multibuf[4] = flag;
+	multibuf[5] = (ubyte)(sbyte)playernum;
 
 #ifdef __ANDROID__
 	multi_log_hidden_door_state("send_broadcast", segnum, side, flag);
 #endif
 	if(Netgame.RetroProtocol) {
-		multi_send_data(multibuf, 5, 1);
+		multi_send_data(multibuf, 6, 1);
 	} else {
-		multi_send_data(multibuf, 5, 2);
+		multi_send_data(multibuf, 6, 2);
 	}
 }
 
@@ -4568,11 +4576,12 @@ void multi_send_door_open_specific(int pnum,int segnum, int side,ubyte flag)
 	PUT_INTEL_SHORT(multibuf+1, segnum);
 	multibuf[3] = (sbyte)side;
 	multibuf[4] = flag;
+	multibuf[5] = (ubyte)(sbyte)-1;
 
 #ifdef __ANDROID__
 	multi_log_hidden_door_state("send_specific", segnum, side, flag);
 #endif
-	multi_send_data_direct((ubyte *)multibuf, 5, pnum, 2);
+	multi_send_data_direct((ubyte *)multibuf, 6, pnum, 2);
 }
 
 //
@@ -8050,6 +8059,8 @@ static void multi_process_data_scoped(const ubyte *buf, int len, int authenticat
 			if (!Endlevel_sequence) multi_do_difficulty(buf); break;
 		case MULTI_ESCORT_OWNER:
 			if (!Endlevel_sequence) multi_do_escort_owner(buf, authenticated_sender); break;
+		case MULTI_ESCORT_SPAWN:
+			if (!Endlevel_sequence) multi_do_escort_spawn(buf, authenticated_sender); break;
 		case MULTI_REACTOR_PAUSE:
 			if (!Endlevel_sequence) multi_do_reactor_pause(buf, authenticated_sender); break;
 		case MULTI_MATCEN_MODE:
