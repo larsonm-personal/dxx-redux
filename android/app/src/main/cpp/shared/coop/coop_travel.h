@@ -20,6 +20,9 @@ void coop_travel_get_physical_state(int *mode, int *pending, int *accepted);
 void coop_travel_get_arrival_state(int *placed, uint32_t *checksum, int *blocked);
 /* Automation holds the existing load acknowledgment for frozen-state inspection */
 int coop_travel_test_hold_arrival(int hold);
+/* Explicit automation window for prepared-source inspection, reset when rearmed */
+int coop_travel_test_warning_delay(void);
+int coop_travel_test_disconnect_at(int phase);
 /* Automation fault: delay a pending physical request across a competing exit decision */
 int coop_travel_test_delay_request(int verify);
 int coop_travel_campaign_stage_allowed(void);

@@ -112,6 +112,8 @@ param(
     [switch]$NoCoopQol,
     [switch]$WorldRestore,
     [switch]$SecretWorld,
+    [ValidateSet("freezing", "capturing", "loading", "committed", "release")]
+    [string]$SecretDisconnectPhase,
     [switch]$SecretRevisit,
     [switch]$SecretRollback,
     [switch]$SecretPhysical,
@@ -2807,6 +2809,25 @@ try {
     }
     if ($testPassed -and $CoopDeath) {
         $testPassed = Invoke-CoopDeathScenario
+    }
+    if ($testPassed -and $SecretDisconnectPhase) {
+        if ($Game -ne 'd2' -or $InitialLevel -ne 8 -or -not $AllowSecretWarps) { throw 'Secret disconnect requires D2 level 8 and secret warps' }
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_world_travel_prepare.jsonc' `
+                    -SecondarySerial $EMU2 -SecondaryScript 'test_coop_world_travel_prepare.jsonc' -Description 'Prepare client disconnect during secret travel')) { throw 'Disconnect setup failed' }
+        $disconnectScripts = @{
+            freezing = 'test_coop_disconnect_freezing.jsonc'
+            capturing = 'test_coop_disconnect_capturing.jsonc'
+            loading = 'test_coop_disconnect_loading.jsonc'
+            committed = 'test_coop_disconnect_committed.jsonc'
+            release = 'test_coop_disconnect_release.jsonc'
+        }
+        if (-not (Start-DeviceGameAutomation -Serial $EMU1 -ScriptName $disconnectScripts[$SecretDisconnectPhase])) { throw 'Could not start disconnect scenario' }
+        $testPassed = Wait-ForCondition -Description "Host finishes secret travel after client disconnect in $SecretDisconnectPhase" -TimeoutSec 240 -Condition {
+            $result = Get-DeviceAutomationResult -Serial $EMU1
+            if ($result -and $result.result -eq 'FAIL') { throw "Disconnect scenario failed: $($result.reason)" }
+            return $result -and $result.result -eq 'PASS'
+        }
+        Write-DeviceAutomationDiagnostics -Serial $EMU1
     }
     if ($testPassed -and $SecretWorld) {
         if ($Game -ne "d2" -or -not $AllowSecretWarps -or $BriefingRestore) {

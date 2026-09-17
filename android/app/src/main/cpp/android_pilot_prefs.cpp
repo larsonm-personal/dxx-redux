@@ -226,7 +226,7 @@ static void read_original_homing_prefs(const char *files_dir,
                                        int *original_homing)
 {
 	*has_pilot = 0;
-	*original_homing = 0;
+	*original_homing = 1;
 
 	char pilot_path[512];
 #ifdef DXX_BUILD_DESCENT_II
@@ -448,7 +448,7 @@ JNI_FUNC(nativeReadOriginalHomingPrefs)(JNIEnv *env, jclass, jstring jfilesDir)
 {
 	const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
 	int has_pilot = 0;
-	int original_homing = 0;
+	int original_homing = 1;
 	jint raw[2];
 	jintArray result;
 

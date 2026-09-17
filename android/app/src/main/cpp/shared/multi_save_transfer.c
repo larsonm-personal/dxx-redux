@@ -798,6 +798,12 @@ void multi_save_transfer_frame(void)
 		multi_save_send_reset();
 		return;
 	}
+	/* Travel keeps an immutable payload, but a disconnected client no longer
+	 * participates in its buffer/apply acknowledgments */
+	if (Save_send_transfer.transfer_kind >= MULTI_SAVE_TRANSFER_KIND_WORLD)
+		for (int i = 0; i < MAX_PLAYERS; ++i)
+			if (Players[i].connected == CONNECT_DISCONNECTED)
+				Save_send_transfer.required_players[i] = 0;
 	if (!Save_send_transfer.begin_sent) {
 		multi_save_transfer_send_begin();
 		Save_send_transfer.begin_sent = 1;

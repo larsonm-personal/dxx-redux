@@ -231,7 +231,11 @@ int new_player_config()
 	PlayerCfg.ShowRobotHostageCounts = 0;
 	PlayerCfg.ShowBossHealthBar = 1;
 	PlayerCfg.MapCheatsAccessible = 1;
+#ifdef __ANDROID__
+	PlayerCfg.OriginalHoming = 1;
+#else
 	PlayerCfg.OriginalHoming = 0;
+#endif
 
 	// Default taunt macros
 	#ifdef NETWORK

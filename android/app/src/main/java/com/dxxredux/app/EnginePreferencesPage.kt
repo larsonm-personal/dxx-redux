@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -35,8 +36,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dxxredux.app.multiplayer.HostGameDefaults
@@ -96,8 +100,9 @@ fun EnginePreferencesPage(
     var savedShowBossHealthBar by remember { mutableStateOf(true) }
     var mapCheatsAccessible by remember { mutableStateOf(true) }
     var savedMapCheatsAccessible by remember { mutableStateOf(true) }
-    var originalHoming by remember { mutableStateOf(false) }
-    var savedOriginalHoming by remember { mutableStateOf(false) }
+    var originalHoming by remember { mutableStateOf(true) }
+    var savedOriginalHoming by remember { mutableStateOf(true) }
+    var presetError by remember { mutableStateOf("") }
     var statusMessage by remember { mutableStateOf("") }
     var hasPilotFile by remember { mutableStateOf(false) }
     var showGuidebotLine by remember {
@@ -194,26 +199,98 @@ fun EnginePreferencesPage(
             }
     }
 
+    fun savePreferences(): Boolean {
+        val count =
+            NativePilotPreferences.writeEngineAndHomingPrefsToAll(
+                filesDir.absolutePath,
+                cockpitMode,
+                autoLeveling,
+                showRobotHostageCounts,
+                showBossHealthBar,
+                mapCheatsAccessible,
+                !headlightOffByDefault,
+                originalHoming,
+                resetAutoselectOnlyOnce = presetNeedsSave,
+            )
+        if (count < 0) {
+            statusMessage = "Could not save pilot preferences; original files were restored"
+        } else if (count > 0) {
+            try {
+                updateAllConfigFiles(
+                    filesDir,
+                    listOf(
+                        "MainViewFov" to mainViewFov.toString(),
+                        "TexFilt" to textureFilter.toString(),
+                        "HudTexFilt" to if (hudFiltering) "1" else "0",
+                    ),
+                )
+                prefs
+                    .edit()
+                    .putBoolean(PREF_GUIDEBOT_HELPER_LINE, showGuidebotLine)
+                    .putBoolean(PREF_REWIND_SUPPORT_ENABLED, rewindSupportEnabled)
+                    .putBoolean(PREF_SKIP_INTRO_MOVIE, skipIntroMovie)
+                    .putBoolean(HostGameDefaults.COOP_QOL_PREF, serverCoopQol)
+                    .putLong(
+                        PREF_GRAPHICS_SETTINGS_GENERATION,
+                        prefs.getLong(PREF_GRAPHICS_SETTINGS_GENERATION, 0L) + 1L,
+                    ).apply()
+                savedServerCoopQol = serverCoopQol
+                savedRewindSupportEnabled = rewindSupportEnabled
+                savedSkipIntroMovie = skipIntroMovie
+                savedTextureFilter = textureFilter
+                savedHudFiltering = hudFiltering
+                savedMainViewFov = mainViewFov
+                savedShowGuidebotLine = showGuidebotLine
+            } catch (_: Exception) {
+                statusMessage =
+                    "Pilot preferences saved, but graphics settings could not be saved. Please retry"
+                return false
+            }
+            savedCockpitMode = cockpitMode
+            savedAutoLeveling = autoLeveling
+            savedShowRobotHostageCounts = showRobotHostageCounts
+            savedShowBossHealthBar = showBossHealthBar
+            savedMapCheatsAccessible = mapCheatsAccessible
+            savedOriginalHoming = originalHoming
+            presetNeedsSave = false
+            hasPilotFile = true
+            statusMessage = "Saved to $count pilot file(s) across both games"
+        } else {
+            statusMessage = "No pilot files found to save"
+        }
+        return count > 0
+    }
+
     RequestLauncherControllerFocus(initialFocus, controllerFocusActive)
     LaunchedEffect(Unit) { loadPrefs() }
 
     pendingPreset?.let { preset ->
         AlertDialog(
             onDismissRequest = { pendingPreset = null },
-            title = { Text(preset.title) },
+            title = { Text(preset.title, fontSize = 16.sp) },
             text = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    Text("Set these preferences for both games and all existing pilots:")
+                    Text(preset.description, fontSize = 12.sp, lineHeight = 16.sp)
                     Spacer(modifier = Modifier.height(8.dp))
-                    preset.confirmationLines.forEach { Text("- $it") }
+                    preset.settings.forEach { PresetSettingRow(it) }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "Confirm to edit these values, then press Save to apply. You can change each setting individually.",
+                        "Confirm applies these settings to both games and all existing pilots.",
+                        fontSize = 11.sp,
+                        lineHeight = 14.sp,
                     )
+                    if (presetError.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(presetError, color = MaterialTheme.colorScheme.error, fontSize = 11.sp)
+                    }
                 }
             },
             confirmButton = {
                 TextButton(onClick = {
+                    if (!hasPilotFile) {
+                        presetError = "Create or select a pilot before applying a preset"
+                        return@TextButton
+                    }
                     showRobotHostageCounts = preset.helpersEnabled
                     showBossHealthBar = preset.helpersEnabled
                     mapCheatsAccessible = preset.helpersEnabled
@@ -224,14 +301,18 @@ fun EnginePreferencesPage(
                     skipIntroMovie = preset.skipIntroMovie
                     textureFilter = preset.textureFilter
                     hudFiltering = preset.hudFiltering
+                    originalHoming = preset.originalHoming
                     if (preset == GameSettingsPreset.DEFAULTS) {
                         cockpitMode = CM_FULL_COCKPIT
                         autoLeveling = true
-                        originalHoming = false
                     }
                     presetNeedsSave = true
-                    pendingPreset = null
-                    statusMessage = "${preset.title} selected - customize settings or press Save"
+                    if (savePreferences()) {
+                        pendingPreset = null
+                        statusMessage = "${preset.title} applied"
+                    } else {
+                        presetError = statusMessage
+                    }
                 }) { Text("Confirm") }
             },
             dismissButton = {
@@ -284,7 +365,10 @@ fun EnginePreferencesPage(
                 ) {
                     GameSettingsPreset.entries.forEach { preset ->
                         OutlinedButton(
-                            onClick = { pendingPreset = preset },
+                            onClick = {
+                                presetError = ""
+                                pendingPreset = preset
+                            },
                             modifier = Modifier.weight(1f).tvFocusBorder(),
                         ) {
                             Text(
@@ -501,64 +585,7 @@ fun EnginePreferencesPage(
                 Row(modifier = Modifier.fillMaxWidth()) {
                     Button(
                         onClick = {
-                            val count =
-                                NativePilotPreferences.writeEngineAndHomingPrefsToAll(
-                                    filesDir.absolutePath,
-                                    cockpitMode,
-                                    autoLeveling,
-                                    showRobotHostageCounts,
-                                    showBossHealthBar,
-                                    mapCheatsAccessible,
-                                    !headlightOffByDefault,
-                                    originalHoming,
-                                    resetAutoselectOnlyOnce = presetNeedsSave,
-                                )
-                            if (count < 0) {
-                                statusMessage = "Could not save pilot preferences; original files were restored"
-                            } else if (count > 0) {
-                                try {
-                                    updateAllConfigFiles(
-                                        filesDir,
-                                        listOf(
-                                            "MainViewFov" to mainViewFov.toString(),
-                                            "TexFilt" to textureFilter.toString(),
-                                            "HudTexFilt" to if (hudFiltering) "1" else "0",
-                                        ),
-                                    )
-                                    prefs
-                                        .edit()
-                                        .putBoolean(PREF_GUIDEBOT_HELPER_LINE, showGuidebotLine)
-                                        .putBoolean(PREF_REWIND_SUPPORT_ENABLED, rewindSupportEnabled)
-                                        .putBoolean(PREF_SKIP_INTRO_MOVIE, skipIntroMovie)
-                                        .putBoolean(HostGameDefaults.COOP_QOL_PREF, serverCoopQol)
-                                        .putLong(
-                                            PREF_GRAPHICS_SETTINGS_GENERATION,
-                                            prefs.getLong(PREF_GRAPHICS_SETTINGS_GENERATION, 0L) + 1L,
-                                        ).apply()
-                                    savedServerCoopQol = serverCoopQol
-                                    savedRewindSupportEnabled = rewindSupportEnabled
-                                    savedSkipIntroMovie = skipIntroMovie
-                                    savedTextureFilter = textureFilter
-                                    savedHudFiltering = hudFiltering
-                                    savedMainViewFov = mainViewFov
-                                    savedShowGuidebotLine = showGuidebotLine
-                                } catch (_: Exception) {
-                                    statusMessage =
-                                        "Pilot preferences saved, but graphics settings could not be saved. Press Save to retry"
-                                    return@Button
-                                }
-                                savedCockpitMode = cockpitMode
-                                savedAutoLeveling = autoLeveling
-                                savedShowRobotHostageCounts = showRobotHostageCounts
-                                savedShowBossHealthBar = showBossHealthBar
-                                savedMapCheatsAccessible = mapCheatsAccessible
-                                savedOriginalHoming = originalHoming
-                                presetNeedsSave = false
-                                hasPilotFile = true
-                                statusMessage = "Saved to $count pilot file(s) across both games"
-                            } else {
-                                statusMessage = "No pilot files found to save"
-                            }
+                            savePreferences()
                         },
                         enabled = hasChanges,
                         modifier = Modifier.weight(1f).height(32.dp).tvFocusBorder(),
@@ -770,6 +797,42 @@ fun EnginePreferencesPage(
 
                 Spacer(modifier = Modifier.height(16.dp))
             }
+        }
+    }
+}
+
+@Composable
+private fun PresetSettingRow(setting: PresetSettingPreview) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            setting.label,
+            modifier = Modifier.weight(1f),
+            fontSize = 11.sp,
+            lineHeight = 14.sp,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (setting.enabled != null) {
+            Surface(
+                color = if (setting.enabled) Color(0xFF216E39) else Color(0xFFA52A2A),
+                contentColor = Color.White,
+                shape = RoundedCornerShape(50),
+            ) {
+                Text(
+                    if (setting.enabled) "On" else "Off",
+                    modifier = Modifier.width(42.dp).padding(vertical = 2.dp),
+                    fontSize = 10.sp,
+                    lineHeight = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        } else {
+            Text(setting.value, fontSize = 11.sp, lineHeight = 14.sp, maxLines = 1)
         }
     }
 }

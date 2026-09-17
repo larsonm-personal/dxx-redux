@@ -319,7 +319,9 @@ static int coop_load_world(const rewind_memory_buffer *buffer, int fresh_level)
 		for (i = 0; i < MAX_PLAYERS; ++i) {
 			player world = Players[i];
 			if (carried[i].connected != CONNECT_PLAYING && carried[i].connected != CONNECT_WAITING) continue;
-			/* A changed roster needs transaction recovery, not a cross-player merge */
+			/* Level synchronization can remove a client while loading */
+			if (world.connected == CONNECT_DISCONNECTED) continue;
+			/* A changed identity still cannot be merged across players */
 			if (strcmp(world.callsign, carried[i].callsign) || world.objnum < 0 ||
 			    world.objnum > Highest_object_index || Objects[world.objnum].type != OBJ_PLAYER) {
 				result = 0;

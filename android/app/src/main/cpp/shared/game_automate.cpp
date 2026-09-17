@@ -4080,6 +4080,15 @@ extern "C" void game_automate_tick(void)
 				static int normal_level;
 				if (s.value == "arm") {
 					if (!coop_travel_arm()) stop_script_fail("Could not arm travel gate");
+				} else if (s.value.rfind("disconnect_", 0) == 0) {
+					const int phase = s.value == "disconnect_freezing" ? COOP_PHASE_FREEZING :
+					                  s.value == "disconnect_capturing" ? COOP_PHASE_CAPTURING :
+					                  s.value == "disconnect_loading" ? COOP_PHASE_LOADING :
+					                  s.value == "disconnect_committed" ? COOP_PHASE_COMMITTED :
+					                  s.value == "disconnect_release" ? COOP_PHASE_SETTLED : -1;
+					if (phase < 0 || !coop_travel_test_disconnect_at(phase)) stop_script_fail("Could not arm travel disconnect");
+				} else if (s.value == "warning_delay") {
+					if (!coop_travel_test_warning_delay()) stop_script_fail("Could not enable travel inspection delay");
 				} else if (s.value == "arm_campaign") {
 					if (!coop_travel_arm_campaign()) stop_script_fail("Could not arm host campaign travel");
 				} else if (s.value == "physical_prepare" || s.value == "physical_exit" || s.value == "physical_delayed_exit" || s.value == "physical_remote_rejected" ||

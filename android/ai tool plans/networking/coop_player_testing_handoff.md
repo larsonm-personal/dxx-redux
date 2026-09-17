@@ -5,6 +5,56 @@ The user explicitly asked to stop expanding edge-case coverage after finishing
 the cross-world save/load check. Start next session with player feedback;
 do not automatically resume every unchecked item in the longer plans.
 
+## Client departure during travel (2026-09-16)
+
+Remaining players now continue after a non-host client disconnects during secret
+travel. Captured rosters stay stable; live transfer/acknowledgment waits shrink.
+Host loss still ends the session. See [implementation and test notes](coop_travel_disconnects.md)
+for the five tested phases, commands, evidence, and remaining validation limits.
+
+## Faster secret travel (2026-09-16)
+
+Player feedback supersedes the original seven-second warning requirement:
+secret entry, return, and advancement after a destroyed base should start loading
+as soon as every participant acknowledges the prepared campaign. Freeze,
+checkpoint/transfer, destination application, and release barriers remain intact.
+Normal-exit evacuation and briefing deadlines are unchanged.
+
+Implementation: remove the production warning delay in `coop_transition_policy.c`.
+The retained frozen-state/fault-injection scenarios explicitly request
+`coop_travel_test=warning_delay`; that diagnostic setting resets when travel is
+rearmed. Ordinary play has no fixed warning countdown. Policy coverage checks
+immediate loading after the last preparation ACK and continued blocking until
+all load/release ACKs arrive.
+
+Removing the delay exposed packet ordering at the preparation/load boundary:
+the world-transfer BEGIN can arrive before the host's LOADING snapshot. Once
+`prepared_ready` is true, allow buffering in CAPTURING; applying still requires
+LOADING. Otherwise the client rejects BEGIN and the host times out after 60s,
+then rolls everyone back. The secret-advance LAN case exercises this path.
+
+Test setup note: the provisioning helper selects `build/outputs/apk/debug`,
+which can be stale when Gradle writes `build/intermediates/apk/debug`. Install
+the freshly built APK explicitly with `adb install -r -t` on both emulators.
+The first cold-launch attempt also exceeded the test's 60-second initial-sync
+limit while the client was still in launcher preflight.
+
+Validation completed 2026-09-16:
+- Both Windows builds and both transition-policy test executables passed
+- Android x86_64 debug assembly passed (ARM64 was not rebuilt in this check)
+- Two-emulator `test_lan.ps1 -Game d2 -InitialLevel 8 -SecretAdvance
+  -AllowSecretWarps -NoCoopQol -TimeoutSeconds 180 -SkipBuild` passed at 17:29:57
+- The host staged the next mine at 17:29:48.449 and entered LOADING at
+  17:29:48.488: 39 ms, with no seven-second warning phase
+- This exercised Counterstrike's equivalent destroyed-base progression path;
+  the exact Descent Maximum secret-4 to level-16 route remains a player retest
+
+Evidence: `temp/coop-fast-warp-lan-resumed.log`,
+`temp/coop-fast-warp-emulator-5554-passed-native.txt`,
+`temp/coop-fast-warp-emulator-5556-passed-native.txt`,
+`temp/coop-fast-warp-windows-verified.log`, and
+`temp/coop-fast-warp-android-verified.log`.
+
 ## First player feedback (2026-09-14)
 
 - Movie input correction: fullscreen movie taps must not dismiss playback.
@@ -43,8 +93,8 @@ do not automatically resume every unchecked item in the longer plans.
 ## Where we stopped
 
 - D2 has an independent **Allow secret area warps** server option beside co-op
-  QoL. Secret entry/return uses a host-controlled, seven-second yellow warning
-  and moves the team together.
+  QoL. Secret entry/return shows yellow status text while preparing/loading
+  and moves the team together as soon as everyone is ready.
 - The host resolves competing exits. A normal-exit winner blocks the secret
   exit but does **not** evacuate or freeze the team: the first exiter waits,
   while the others escape or die under the live reactor countdown.
@@ -60,7 +110,7 @@ do not automatically resume every unchecked item in the longer plans.
 
 ## What to test first
 
-- Enable secret warps, enter and return, and check the warning and team arrival.
+- Enable secret warps, enter and return, and check the loading status and team arrival.
   Also check that disabling the option prevents secret entry.
 - Try competing normal/secret exits, particularly after destroying the main
   reactor. Confirm normal-exit waiting retains the ordinary evacuation behavior.

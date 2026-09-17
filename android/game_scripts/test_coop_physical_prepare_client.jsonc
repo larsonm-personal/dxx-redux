@@ -6,5 +6,7 @@
     {"action": "wait_ms", "ms": 1500},
     {"action": "assert", "expect": {"coop_travel.arrival_blocked_exits": 0}},
     {"action": "set_debug", "field": "coop_travel_test", "value": "physical_prepare"},
-    {"action": "wait_ms", "ms": 1500}
+    {"action": "wait_ms", "ms": 1500},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "arm_campaign"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "warning_delay"}
 ]

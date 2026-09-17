@@ -13,7 +13,7 @@ enum {
 	COOP_TRANSITION_PLAYERS = 8,
 	COOP_BRIEFING_LIMIT_MS = 120000,
 	COOP_BRIEFING_HOST_WAIT_MS = 20000,
-	COOP_SECRET_WARNING_MS = 7000
+	COOP_SECRET_TEST_WARNING_MS = 7000
 };
 
 typedef enum coop_operation {
@@ -71,6 +71,8 @@ typedef struct coop_transition_policy {
 	uint64_t source_generation;
 	uint64_t deadline_ms;
 	uint64_t now_ms;
+	/* Explicit automation inspection window; zero in normal gameplay */
+	unsigned test_secret_warning_ms;
 	coop_operation operation;
 	coop_transition_phase phase;
 	coop_launch_reason launch_reason;

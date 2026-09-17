@@ -144,7 +144,7 @@ object NativePilotPreferences {
     private fun decodeOriginalHomingPrefs(raw: IntArray): OriginalHomingPrefs =
         OriginalHomingPrefs(
             hasPilotFile = raw.size >= 1 && raw[0] != 0,
-            enabled = raw.size >= 2 && raw[1] != 0,
+            enabled = raw.size < 2 || raw[1] != 0,
         )
 
     private fun musicSourceName(source: Int): String =

@@ -72,6 +72,7 @@ static uint64_t terminal_visit;
 static uint32_t prepared_checksum;
 static coop_portable_player portable[MAX_PLAYERS];
 static unsigned portable_received;
+static unsigned operation_players, snapshot_players;
 static unsigned frozen_received, deaths_settled;
 static int freeze_ready;
 static rewind_memory_buffer source_checkpoint;
@@ -87,6 +88,7 @@ static int test_request_buffered, test_request_sent;
 static int arrivals_placed;
 static uint32_t arrival_checksum;
 static int test_hold_arrival;
+static int test_disconnect_phase = -1;
 static unsigned dead_players;
 static int death_waiting;
 
@@ -186,9 +188,10 @@ static int place_arrivals(void)
 		compute_segment_center(&anchor.pos, &Segments[anchor.segnum]);
 	} else anchor = Player_init[0];
 	for (int i = 0; i < N_players; ++i)
-		if (policy.participants & bit(i)) {
+		if (snapshot_players & bit(i)) {
 			int objnum = Players[i].objnum;
-			if (objnum < 0 || objnum > Highest_object_index || Objects[objnum].type != OBJ_PLAYER) return 0;
+			if ((policy.participants & bit(i)) && Players[i].connected != CONNECT_DISCONNECTED &&
+			    (objnum < 0 || objnum > Highest_object_index || Objects[objnum].type != OBJ_PLAYER)) return 0;
 			++count;
 		}
 	if (!coop_find_arrival_positions(&anchor, count, positions)) {
@@ -200,18 +203,9 @@ static int place_arrivals(void)
 	arrival_guard_game = (uint32_t) Netgame.protocol.udp.GameID;
 	arrival_checksum = 2166136261u;
 	for (int i = 0; i < N_players; ++i) {
-		if (!(policy.participants & bit(i))) continue;
-		object *obj = &Objects[Players[i].objnum];
+		if (!(snapshot_players & bit(i))) continue;
 		const obj_position *position = &positions[slot++];
 		unsigned char encoded[56];
-		obj->pos = obj->last_pos = position->pos;
-		obj->orient = position->orient;
-		obj_relink(Players[i].objnum, position->segnum);
-		vm_vec_zero(&obj->mtype.phys_info.velocity);
-		vm_vec_zero(&obj->mtype.phys_info.thrust);
-		vm_vec_zero(&obj->mtype.phys_info.rotvel);
-		vm_vec_zero(&obj->mtype.phys_info.rotthrust);
-		obj->mtype.phys_info.turnroll = 0;
 		put32(encoded, (uint32_t) i);
 		put32(encoded + 4, (uint32_t) position->segnum);
 		const vms_vector vectors[] = { position->pos, position->orient.rvec, position->orient.uvec, position->orient.fvec };
@@ -221,6 +215,16 @@ static int place_arrivals(void)
 			put32(encoded + 16 + v * 12, (uint32_t) vectors[v].z);
 		}
 		arrival_checksum = coop_save_checksum(encoded, sizeof(encoded), arrival_checksum);
+		if (!(policy.participants & bit(i)) || Players[i].connected == CONNECT_DISCONNECTED) continue;
+		object *obj = &Objects[Players[i].objnum];
+		obj->pos = obj->last_pos = position->pos;
+		obj->orient = position->orient;
+		obj_relink(Players[i].objnum, position->segnum);
+		vm_vec_zero(&obj->mtype.phys_info.velocity);
+		vm_vec_zero(&obj->mtype.phys_info.thrust);
+		vm_vec_zero(&obj->mtype.phys_info.rotvel);
+		vm_vec_zero(&obj->mtype.phys_info.rotthrust);
+		obj->mtype.phys_info.turnroll = 0;
 		for (int t = 0; t < Num_triggers; ++t)
 			if (physical_operation(t) && player_near_trigger(i, t)) arrival_guard[t] |= bit(i);
 		COOPLOG("travel arrival: local=%d player=%d level=%d anchor=%d segment=%d pos=%d,%d,%d",
@@ -246,6 +250,20 @@ void coop_travel_get_arrival_state(int *placed, uint32_t *checksum, int *blocked
 				if ((arrival_guard[t] & bit(Player_num)) && player_near_trigger(Player_num, t)) ++*blocked;
 #endif
 	}
+}
+
+int coop_travel_test_disconnect_at(int phase)
+{
+	if (!armed || Player_num != host || policy.phase != COOP_PHASE_SETTLED) return 0;
+	test_disconnect_phase = phase;
+	return 1;
+}
+
+int coop_travel_test_warning_delay(void)
+{
+	if (!armed || policy.phase != COOP_PHASE_SETTLED) return 0;
+	policy.test_secret_warning_ms = COOP_SECRET_TEST_WARNING_MS;
+	return 1;
 }
 
 int coop_travel_test_hold_arrival(int hold)
@@ -335,6 +353,7 @@ void coop_travel_reset(void)
 	terminal_visit = 0;
 	prepared_checksum = 0;
 	portable_received = 0;
+	operation_players = snapshot_players = 0;
 	frozen_received = deaths_settled = 0;
 	freeze_ready = 0;
 	memset(portable, 0, sizeof(portable));
@@ -349,6 +368,7 @@ void coop_travel_reset(void)
 	arrivals_placed = 0;
 	arrival_checksum = 0;
 	test_hold_arrival = 0;
+	test_disconnect_phase = -1;
 	dead_players = 0;
 	death_waiting = 0;
 }
@@ -533,14 +553,15 @@ static int frozen_roster_valid(const unsigned char *bytes, size_t size, int chec
 	if (!bytes || size <= PREPARED_HEADER || !coop_travel_campaign_stage_allowed() ||
 	    get32(bytes) != game_id || get32(bytes + 4) != recovery_epoch ||
 	    get64(bytes + 8) != policy.generation ||
-	    bytes[16] != policy.participants || bytes[17] != checkpoint) return 0;
+	    !bytes[16] || (bytes[16] & ~operation_players) ||
+	    !(bytes[16] & bit(host)) || (!is_observer() && !(bytes[16] & bit(Player_num))) || bytes[17] != checkpoint) return 0;
 	if (bytes[18] & ~(checkpoint ? 0u : 2u)) return 0;
 	for (int i = 19; i < 24; ++i)
 		if (bytes[i]) return 0;
 	for (int i = 0; i < MAX_PLAYERS; ++i) {
 		coop_portable_player record;
 		memcpy(&record, bytes + 24 + i * COOP_PORTABLE_BYTES, sizeof(record));
-		if (policy.participants & bit(i)) {
+		if (bytes[16] & bit(i)) {
 			if (!coop_portable_valid(&record)) return 0;
 			/* The host must echo the player's immutable frozen snapshot */
 			if (i == Player_num && (!(portable_received & bit(i)) || memcmp(&record, &portable[i], sizeof(record)))) return 0;
@@ -638,12 +659,12 @@ int coop_travel_stage_checkpoint(const void *data, size_t size)
 	for (unsigned i = 0; i < meta.num_active_players; ++i) {
 		const coop_player_record *record = &meta.active_players[i];
 		unsigned slot = record->original_slot;
-		if (slot >= MAX_PLAYERS || !(policy.participants & bit(slot)) || (matched & bit(slot)) ||
+		if (slot >= MAX_PLAYERS || !(bytes[16] & bit(slot)) || (matched & bit(slot)) ||
 		    strncmp(record->callsign, Players[slot].callsign, sizeof(record->callsign)) ||
 		    strncmp(record->client_id, Netgame.players[slot].client_id, sizeof(record->client_id))) return 0;
 		matched |= bit(slot);
 	}
-	if (matched != policy.participants) return 0;
+	if (matched != bytes[16]) return 0;
 	copy = (unsigned char *) malloc(size);
 	if (!copy) return 0;
 	memcpy(copy, bytes, size);
@@ -657,7 +678,7 @@ int coop_travel_stage_checkpoint(const void *data, size_t size)
 	checkpoint_checksum = get32(copy + PREPARED_HEADER + 4);
 	checkpoint_ready = 1;
 	memcpy(portable, copy + 24, sizeof(portable));
-	portable_received = policy.participants;
+	snapshot_players = portable_received = bytes[16];
 	COOPLOG("travel source checkpoint retained: player=%d level=%d bytes=%u checksum=%u generation=%llu",
 	        Player_num, source_level, (unsigned) size, checkpoint_checksum, (unsigned long long) policy.generation);
 	return 1;
@@ -703,7 +724,7 @@ int coop_travel_restore_source(const void *data, size_t size)
 	/* The full restore has reinstated the source ownership ledger. Apply the
 	 * captured private fields after that restore, never over destination state */
 	for (int i = 0; i < MAX_PLAYERS; ++i) {
-		if (!(policy.participants & bit(i))) continue;
+		if (!(policy.participants & bit(i)) || Players[i].connected == CONNECT_DISCONNECTED) continue;
 		if (!coop_apply_portable(i, &portable[i])) return 0;
 		Netgame.killed[i] = Players[i].net_killed_total;
 		Netgame.player_score[i] = Players[i].score;
@@ -723,7 +744,10 @@ static int capture_source_checkpoint(void)
 {
 	rewind_memory_buffer save = { 0 }, package = { 0 };
 	int result;
-	if (portable_received != policy.participants || !coop_travel_apply_portable()) return 0;
+	if ((portable_received & policy.participants) != policy.participants || !coop_travel_apply_portable()) return 0;
+	portable_received &= policy.participants;
+	for (int i = 0; i < MAX_PLAYERS; ++i)
+		if (!(policy.participants & bit(i))) memset(&portable[i], 0, sizeof(portable[i]));
 	/* The save serializer balances this additional pause */
 	stop_time();
 	result = state_save_to_memory(&save, "Secret travel source", ANDROID_SAVE_META_KIND_MANUAL, 1);
@@ -772,7 +796,7 @@ int coop_travel_stage_campaign(const void *data, size_t size)
 	coop_campaign_travel_clear(&prepared_campaign);
 	prepared_campaign = next;
 	memcpy(portable, bytes + 24, sizeof(portable));
-	portable_received = policy.participants;
+	snapshot_players = portable_received = bytes[16];
 	prepared_checksum = coop_save_checksum(bytes, size, 2166136261u);
 	prepared_destination = next.destination.level;
 	prepared_action = next.action;
@@ -793,7 +817,7 @@ static int prepare_campaign_transfer(void)
 	rewind_memory_buffer buffer = { 0 };
 	int result = 0;
 	uint64_t ending_visit = 0;
-	if (portable_received != policy.participants || !coop_travel_apply_portable() ||
+	if ((portable_received & policy.participants) != policy.participants || !coop_travel_apply_portable() ||
 	    !coop_prepare_secret_travel(&next) ||
 	    (next.action != COOP_CAMPAIGN_ENTER && next.action != COOP_CAMPAIGN_RETURN && next.action != COOP_CAMPAIGN_ADVANCE && next.action != COOP_CAMPAIGN_ENDGAME) ||
 	    !coop_campaign_travel_encode(&next, &encoded, &size)) goto done;
@@ -804,7 +828,7 @@ static int prepare_campaign_transfer(void)
 	put32(buffer.data, game_id);
 	put32(buffer.data + 4, recovery_epoch);
 	put64(buffer.data + 8, policy.generation);
-	buffer.data[16] = policy.participants;
+	buffer.data[16] = snapshot_players;
 #ifdef DXX_BUILD_DESCENT_II
 	/* Carry the host's empty-intro decision in the existing campaign transfer */
 	if (next.action == COOP_CAMPAIGN_ADVANCE && Netgame.CoopBriefings &&
@@ -851,19 +875,19 @@ void coop_travel_get_campaign_state(int *ready, uint32_t *checksum, int *destina
 int coop_travel_apply_portable(void)
 {
 	if (!armed || !automatic_campaign) return 1;
-	if (!known || !pause_owned || portable_received != policy.participants ||
+	if (!known || !pause_owned || (portable_received & policy.participants) != policy.participants ||
 	    (policy.phase != COOP_PHASE_CAPTURING && policy.phase != COOP_PHASE_LOADING)) return 0;
 	/* Do not roll a newer death/drop or inventory repair back to the captured
 	 * life. Check the complete roster before changing any player's fields */
 	for (int i = 0; i < MAX_PLAYERS; ++i)
-		if ((policy.participants & bit(i)) &&
+		if ((policy.participants & bit(i)) && Players[i].connected != CONNECT_DISCONNECTED &&
 		    !coop_recovery_accept_ship_status(i, portable[i].restore_serial, portable[i].life)) {
 			COOPLOG("travel portable rejected revision: player=%d life=%u/%u serial=%u/%u", i,
 			        portable[i].life, coop_recovery_life(i), portable[i].restore_serial, coop_recovery_restore_serial(i));
 			return 0;
 		}
 	for (int i = 0; i < MAX_PLAYERS; ++i)
-		if ((policy.participants & bit(i)) && !coop_apply_portable(i, &portable[i])) {
+		if ((policy.participants & bit(i)) && Players[i].connected != CONNECT_DISCONNECTED && !coop_apply_portable(i, &portable[i])) {
 			COOPLOG("travel portable rejected player: player=%d connected=%d object=%d paused=%d", i,
 			        Players[i].connected, Players[i].objnum, game_is_time_paused());
 			return 0;
@@ -896,6 +920,8 @@ static int accept_request(coop_operation operation, int sender, uint64_t generat
 	if (coop_travel_active() || coop_briefing_active() || multi_save_transfer_busy() ||
 	    !coop_transition_begin(&policy, generation, operation, sender, now_ms())) return 0;
 	initiator = sender;
+	operation_players = policy.participants;
+	snapshot_players = 0;
 	normal_granted = operation == COOP_OP_NORMAL_EXIT && !team_dead ? bit(sender) : 0;
 	normal_taken = 0;
 	world_changed = applied = committed = restored = 0;
@@ -1060,9 +1086,11 @@ void coop_travel_receive(const unsigned char *packet, int sender)
 		    phase > COOP_PHASE_LOBBY || (phase >= COOP_PHASE_BRIEFING_PREPARE && phase <= COOP_PHASE_CLOSING_PRESENTATION) ||
 		    operation > COOP_OP_SECRET_RETURN || !(packet[4] & bit(host)) ||
 		    (!is_observer() && !(packet[4] & bit(Player_num))) || (packet[5] & ~packet[4]) ||
-		    (packet[7] & ~packet[4]) || !(packet[4] & bit(packet[44])) || remaining > COOP_SECRET_WARNING_MS ||
+		    (packet[7] & ~packet[4]) || packet[44] >= MAX_PLAYERS || remaining > COOP_SECRET_TEST_WARNING_MS ||
 		    (phase == COOP_PHASE_NORMAL_WAIT && operation != COOP_OP_NORMAL_EXIT)) return;
 		if (generation != policy.generation && phase == COOP_PHASE_FREEZING) {
+			operation_players = packet[4];
+			snapshot_players = 0;
 			world_changed = applied = committed = restored = prepared_ready = 0;
 			prepared_action = advancement_presented = 0;
 			prepared_checksum = 0;
@@ -1074,6 +1102,11 @@ void coop_travel_receive(const unsigned char *packet, int sender)
 			failed_destination = 0;
 			coop_campaign_travel_clear(&prepared_campaign);
 		}
+		if (known && generation == policy.generation && (packet[4] & ~policy.participants)) return;
+		/* Recovery advances the generation too; its roster is still authoritative */
+		if (known)
+			for (int i = 0; i < N_players; ++i)
+				if ((policy.participants & ~packet[4]) & bit(i)) multi_disconnect_player(i);
 		policy.phase = phase;
 		frozen_received = get32(packet + 64);
 		freeze_ready = packet[68];
@@ -1234,7 +1267,11 @@ int coop_travel_transfer_buffer_allowed(int kind)
 	switch (kind) {
 		case MULTI_SAVE_TRANSFER_KIND_WORLD:
 		case MULTI_SAVE_TRANSFER_KIND_FRESH_WORLD:
-			return !armed || (known && (policy.phase == COOP_PHASE_WARNING || policy.phase == COOP_PHASE_LOADING));
+			/* The last preparation ACK can let the host send the world before
+			 * its LOADING snapshot reaches us. Buffer it once prepared; application
+			 * still requires the authoritative LOADING phase */
+			return !armed || (known && (policy.phase == COOP_PHASE_WARNING || policy.phase == COOP_PHASE_LOADING ||
+			                            (policy.phase == COOP_PHASE_CAPTURING && prepared_ready)));
 		case MULTI_SAVE_TRANSFER_KIND_CAMPAIGN:
 		case MULTI_SAVE_TRANSFER_KIND_CHECKPOINT:
 			return armed && known && (policy.phase == COOP_PHASE_FREEZING || policy.phase == COOP_PHASE_CAPTURING);
@@ -1338,6 +1375,18 @@ int coop_travel_frame(void)
 		COOPLOG("travel phase: phase=%d generation=%llu player=%d", policy.phase,
 		        (unsigned long long) policy.generation, Player_num);
 	}
+	/* Automation fault injection: use the real disconnect path at a chosen barrier */
+	if (known && Player_num == host && coop_travel_active() && test_disconnect_phase == (int) policy.phase &&
+	    (policy.phase != COOP_PHASE_CAPTURING || (checkpoint_started && multi_save_transfer_busy())) &&
+	    (policy.phase != COOP_PHASE_LOADING || load_started)) {
+		test_disconnect_phase = -1;
+		for (int i = 0; i < N_players; ++i)
+			if (i != host && (policy.participants & bit(i))) {
+				COOPLOG("travel test disconnect: player=%d phase=%d", i, policy.phase);
+				multi_disconnect_player(i);
+				break;
+			}
+	}
 	if (known && Player_num == host && failure_pending && policy.phase != COOP_PHASE_RECOVERING)
 		if (!coop_travel_abort()) coop_travel_world_failed();
 	/* Cover departure between release and opening the local score screen too */
@@ -1353,9 +1402,17 @@ int coop_travel_frame(void)
 			          30000u;
 		if (multi_quit_game || multi_who_is_master() != host || now > phase_since + timeout ||
 		    (Player_num != host && now > last_host + timeout)) policy.phase = COOP_PHASE_LOBBY;
-		for (int i = 0; i < N_players; ++i)
-			if ((policy.participants & bit(i)) && Players[i].connected == CONNECT_DISCONNECTED)
-				policy.phase = COOP_PHASE_LOBBY;
+		if (Player_num == host)
+			for (int i = 0; i < N_players; ++i)
+				if (i != host && (policy.participants & bit(i)) && Players[i].connected == CONNECT_DISCONNECTED) {
+					coop_transition_remove_player(&policy, i, now);
+					frozen_received &= policy.participants;
+					release_acked &= policy.participants;
+					normal_granted &= policy.participants;
+					peer_nonce[i] = 0;
+					COOPLOG("travel client removed: player=%d phase=%d remaining=%u", i, policy.phase, policy.participants);
+					send_packet(STATE);
+				}
 	}
 	if (policy.phase == COOP_PHASE_LOBBY) {
 		multi_quit_game = 1;

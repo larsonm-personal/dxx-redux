@@ -129,9 +129,10 @@ int coop_transition_source_captured(coop_transition_policy *p, uint64_t generati
 	if (!p || p->generation != generation || p->phase != COOP_PHASE_CAPTURING)
 		return 0;
 	update_clock(p, now_ms);
-	if (p->operation == COOP_OP_SECRET_ENTER || p->operation == COOP_OP_SECRET_RETURN) {
+	if (p->test_secret_warning_ms &&
+	    (p->operation == COOP_OP_SECRET_ENTER || p->operation == COOP_OP_SECRET_RETURN)) {
 		set_phase(p, COOP_PHASE_WARNING);
-		p->deadline_ms = deadline_after(p, COOP_SECRET_WARNING_MS);
+		p->deadline_ms = deadline_after(p, p->test_secret_warning_ms);
 	} else {
 		/* Saving has no destination-world apply, but still requires a release */
 		set_phase(p, p->operation == COOP_OP_SAVE ? COOP_PHASE_COMMITTED : COOP_PHASE_LOADING);

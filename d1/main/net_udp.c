@@ -6650,7 +6650,16 @@ int net_udp_wait_for_requests(void)
 	 * request_poll treats DISCONNECTED as "ready" and returns immediately.
 	 * Mark non-host players CONNECT_WAITING so the poll actually waits
 	 * for each player to check in with UPID_REQUEST. */
+	coop_transition_policy travel;
+	coop_travel_get_state(&travel, NULL, NULL, NULL);
 	for (i = 0; i < N_players; i++) {
+		/* Secret travel may have removed a client since the source roster */
+		if (coop_travel_active() &&
+		    (travel.operation == COOP_OP_SECRET_ENTER || travel.operation == COOP_OP_SECRET_RETURN) &&
+		    !(travel.participants & (1u << i))) {
+			Players[i].connected = Netgame.players[i].connected = CONNECT_DISCONNECTED;
+			continue;
+		}
 		if (i != Player_num) {
 			Players[i].connected = CONNECT_WAITING;
 			Netgame.players[i].LastPacketTime = timer_query();

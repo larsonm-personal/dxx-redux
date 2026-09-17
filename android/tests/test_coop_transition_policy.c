@@ -72,13 +72,10 @@ static int test_secret_winner_waits_for_freeze_and_snapshot(void)
 	CHECK(coop_transition_ack(&p, p.generation, COOP_PHASE_FREEZING, 1, 200000));
 	CHECK(p.phase == COOP_PHASE_CAPTURING);
 	CHECK(coop_transition_source_captured(&p, p.generation, 201000));
-	CHECK(coop_transition_seconds_remaining(&p) == 7);
-	CHECK(!coop_transition_source_captured(&p, p.generation, 204000));
-	coop_transition_tick(&p, 207999);
-	CHECK(p.phase == COOP_PHASE_WARNING);
-	coop_transition_tick(&p, 208000);
+	CHECK(coop_transition_seconds_remaining(&p) == 0);
 	CHECK(p.phase == COOP_PHASE_LOADING);
-	CHECK(!coop_transition_ack(&p, p.generation, COOP_PHASE_FREEZING, 1, 208000));
+	CHECK(!coop_transition_source_captured(&p, p.generation, 201000));
+	CHECK(!coop_transition_ack(&p, p.generation, COOP_PHASE_FREEZING, 1, 201000));
 	return 1;
 }
 
@@ -112,7 +109,7 @@ static int test_briefing_deadlines(void)
 	return 1;
 }
 
-static int test_warning_waits_for_prepared_campaign_on_every_peer(void)
+static int test_load_starts_when_every_peer_is_prepared(void)
 {
 	coop_transition_policy p;
 	CHECK(coop_transition_init(&p, 10, 0, 3, 0));
@@ -123,10 +120,19 @@ static int test_warning_waits_for_prepared_campaign_on_every_peer(void)
 	CHECK(p.phase == COOP_PHASE_CAPTURING && !p.deadline_ms);
 	CHECK(!coop_transition_ack(&p, 10, COOP_PHASE_CAPTURING, 1, 10000));
 	CHECK(coop_transition_ack(&p, p.generation, COOP_PHASE_CAPTURING, 1, 10000));
-	CHECK(p.phase == COOP_PHASE_WARNING && p.deadline_ms == 17000);
+	CHECK(p.phase == COOP_PHASE_LOADING && !p.deadline_ms);
 	CHECK(!coop_transition_ack(&p, p.generation, COOP_PHASE_CAPTURING, 0, 11000));
-	coop_transition_tick(&p, 17000);
+	/* Immediate loading must still wait for destination and release acknowledgments */
+	CHECK(coop_transition_ack(&p, p.generation, COOP_PHASE_LOADING, 0, 11000));
+	coop_transition_tick(&p, 90000);
 	CHECK(p.phase == COOP_PHASE_LOADING);
+	CHECK(!coop_transition_gameplay_allowed(&p, 0));
+	CHECK(coop_transition_ack(&p, p.generation, COOP_PHASE_LOADING, 1, 90000));
+	CHECK(p.phase == COOP_PHASE_COMMITTED);
+	CHECK(coop_transition_ack(&p, p.generation, COOP_PHASE_COMMITTED, 0, 90000));
+	CHECK(!coop_transition_gameplay_allowed(&p, 0));
+	CHECK(coop_transition_ack(&p, p.generation, COOP_PHASE_COMMITTED, 1, 90000));
+	CHECK(p.phase == COOP_PHASE_SETTLED);
 	return 1;
 }
 
@@ -264,11 +270,36 @@ static int test_full_roster_duplicate_and_out_of_order_barriers(void)
 	return 1;
 }
 
+static int test_secret_disconnect_releases_each_barrier(void)
+{
+	const coop_transition_phase phases[] = { COOP_PHASE_FREEZING, COOP_PHASE_CAPTURING, COOP_PHASE_LOADING, COOP_PHASE_COMMITTED };
+	for (unsigned removed_at = 0; removed_at < sizeof(phases) / sizeof(phases[0]); ++removed_at) {
+		coop_transition_policy p;
+		CHECK(coop_transition_init(&p, 1, 0, 7, 0));
+		CHECK(coop_transition_begin(&p, 1, COOP_OP_SECRET_ENTER, 2, 1));
+		for (unsigned stage = 0; stage < sizeof(phases) / sizeof(phases[0]); ++stage) {
+			CHECK(p.phase == phases[stage]);
+			CHECK(coop_transition_ack(&p, p.generation, p.phase, 0, 10));
+			if (stage == removed_at) {
+				CHECK(!coop_transition_remove_player(&p, 0, 10));
+				CHECK(coop_transition_remove_player(&p, 2, 10));
+				CHECK(!coop_transition_ack(&p, p.generation, p.phase, 2, 10));
+			}
+			CHECK(p.phase == phases[stage]); /* Remaining client is still required */
+			if (stage < removed_at) CHECK(coop_transition_ack(&p, p.generation, p.phase, 2, 10));
+			CHECK(coop_transition_ack(&p, p.generation, p.phase, 1, 10));
+		}
+		CHECK(p.phase == COOP_PHASE_SETTLED && p.participants == 3);
+	}
+	return 1;
+}
+
 int main(void)
 {
-	if (!test_normal_exit_race_keeps_other_player_in_mine() ||
+	if (!test_secret_disconnect_releases_each_barrier() ||
+	    !test_normal_exit_race_keeps_other_player_in_mine() ||
 	    !test_secret_winner_waits_for_freeze_and_snapshot() ||
-	    !test_warning_waits_for_prepared_campaign_on_every_peer() ||
+	    !test_load_starts_when_every_peer_is_prepared() ||
 	    !test_briefing_deadlines() || !test_force_launch_does_not_bypass_loading() ||
 	    !test_progress_and_authoritative_removal() || !test_operation_gate_recovery_and_stale_ack() ||
 	    !test_page_counts_do_not_decide_readiness() ||

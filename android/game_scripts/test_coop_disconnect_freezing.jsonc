@@ -1,0 +1,47 @@
+[
+    {
+        "_info": {
+            "games": [
+                "d2"
+            ],
+            "_standalone": false,
+            "_owner": "test_lan"
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_travel_test",
+        "value": "disconnect_freezing"
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_travel_test",
+        "value": "secret"
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 180000,
+        "expect": {
+            "current_level_num": -2,
+            "in_game": true,
+            "time_paused": false,
+            "coop_travel.active": false,
+            "coop_travel.participants": 1,
+            "coop_restore.transfer_busy": false,
+            "multiplayer.num_connected": 1
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "coop_secret_save_test",
+        "value": "save"
+    },
+    {
+        "action": "assert",
+        "expect": {
+            "coop_campaign.active_level": -2,
+            "coop_campaign.base_returnable": true,
+            "coop_travel.arrivals_placed": true
+        }
+    }
+]

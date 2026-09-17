@@ -2,5 +2,7 @@
     {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
     {"action": "set_debug", "field": "recovery_test_trace", "value": "true"},
     {"action": "set_debug", "field": "coop_world_test", "value": "remember_world"},
-    {"action": "set_debug", "field": "coop_travel_test", "value": "physical_remote_rejected"}
+    {"action": "set_debug", "field": "coop_travel_test", "value": "physical_remote_rejected"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "arm_campaign"},
+    {"action": "set_debug", "field": "coop_travel_test", "value": "warning_delay"}
 ]

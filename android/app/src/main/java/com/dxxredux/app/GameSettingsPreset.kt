@@ -1,6 +1,12 @@
 package com.dxxredux.app
 
-// Presets stage ordinary editable values, never enforce a persistent mode
+internal data class PresetSettingPreview(
+    val label: String,
+    val enabled: Boolean? = null,
+    val value: String = "",
+)
+
+// Presets apply ordinary editable values, never enforce a persistent mode
 internal enum class GameSettingsPreset(
     val title: String,
     val helpersEnabled: Boolean,
@@ -8,6 +14,15 @@ internal enum class GameSettingsPreset(
     ORIGINAL("Original Descent", false),
     DEFAULTS("Restore Defaults", true),
     ;
+
+    val description: String
+        get() =
+            when (this) {
+                ORIGINAL -> "turns off most android port enhancements to get closer to the original game"
+                DEFAULTS -> "android port defaults. includes most enhancements"
+            }
+
+    val originalHoming: Boolean get() = true
 
     val mainViewFov: Int get() = 0 // Native base projection (90 degrees)
 
@@ -18,26 +33,24 @@ internal enum class GameSettingsPreset(
     val rewindEnabled: Boolean get() = helpersEnabled
     val serverCoopQol: Boolean get() = helpersEnabled
 
-    val confirmationLines: List<String>
-        get() {
-            val state = if (helpersEnabled) "On" else "Off"
-            return buildList {
-                add("Robot / hostage / secret counts: $state")
-                add("Map cheat buttons: $state")
-                add("Boss health bar: $state")
-                add("In-game FOV: 90 degrees (Base)")
-                add("Guidebot helper line: $state")
-                add("New-server Coop QoL (teammate arrows, Guidebot, warp): $state")
-                add("Rewind support and overlay controls: $state")
-                add("Texture filtering: None (nearest)")
-                add("HUD filtering: $state")
-                add("Skip intro movie on launch: Off")
-                add("Autoselect Only Once: Off")
+    val settings: List<PresetSettingPreview>
+        get() =
+            buildList {
+                add(PresetSettingPreview("Robot / hostage / secret counts", helpersEnabled))
+                add(PresetSettingPreview("Map cheat buttons", helpersEnabled))
+                add(PresetSettingPreview("Boss health bar", helpersEnabled))
+                add(PresetSettingPreview("In-game FOV", value = "90 deg (Base)"))
+                add(PresetSettingPreview("Guidebot helper line", helpersEnabled))
+                add(PresetSettingPreview("New-server Coop QoL\n(teammate arrows, Guidebot, warp)", serverCoopQol))
+                add(PresetSettingPreview("Rewind support and overlay controls", rewindEnabled))
+                add(PresetSettingPreview("Texture filtering", value = "Nearest"))
+                add(PresetSettingPreview("HUD filtering", hudFiltering))
+                add(PresetSettingPreview("Skip intro movie on launch", skipIntroMovie))
+                add(PresetSettingPreview("Autoselect Only Once", false))
+                add(PresetSettingPreview("Original homing (Single/Coop)", originalHoming))
                 if (this@GameSettingsPreset == DEFAULTS) {
-                    add("HUD size: Cockpit")
-                    add("Auto-level: On")
-                    add("Original homing (Single/Coop): Off")
+                    add(PresetSettingPreview("HUD size", value = "Cockpit"))
+                    add(PresetSettingPreview("Auto-level", true))
                 }
             }
-        }
 }
