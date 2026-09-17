@@ -48,7 +48,11 @@
 #define SOUND_BUFFER_SIZE 256
 #define DIGI_MIXER_OUTPUT_RATE (g_android_native_sample_rate > 0 ? g_android_native_sample_rate : SAMPLE_RATE_48K)
 #else
-#define SOUND_BUFFER_SIZE 512 // sample frames, so 44100/512 = 86 updates/second
+#if !((defined(__APPLE__) && defined(__MACH__)) || defined(macintosh))
+#define SOUND_BUFFER_SIZE 2048
+#else
+#define SOUND_BUFFER_SIZE 1024
+#endif
 #define DIGI_MIXER_OUTPUT_RATE SAMPLE_RATE_44K
 #endif
 #define MIN_VOLUME 10

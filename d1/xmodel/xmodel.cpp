@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stddef.h>
+#include <SDL.h>
 
 #include "xdescent.h"
 #include "carray.h"
@@ -255,15 +256,17 @@ void xmodel_show_at(void *model, vms_vector *pos, vms_matrix *orient, int mpcolo
 
 	// create 4x4 lookat matrix
 	float fm[16];
-	fix *xp = &vmat.rvec.x;
+	fix vmat_elem[] = { vmat.rvec.x, vmat.rvec.y, vmat.rvec.z,
+		vmat.uvec.x, vmat.uvec.y, vmat.uvec.z,
+		vmat.fvec.x, vmat.fvec.y, vmat.fvec.z };
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++)
-			fm[i * 4 + j] = f2fl(xp[j * 3 + i]);
+			fm[i * 4 + j] = f2fl(vmat_elem[j * 3 + i]);
 		fm[i * 4 + 3] = 0;
 	}
-	xp = &vpos.x;
+	fix vpos_elem[] = { vpos.x, vpos.y, vpos.z };
 	for (int j = 0; j < 3; j++)
-		fm[3 * 4 + j] = -f2fl(xp[j]);
+		fm[3 * 4 + j] = -f2fl(vpos_elem[j]);
 	fm[15] = 1;
 
 	// forward vec -> backward vec
@@ -307,11 +310,24 @@ void xmodel_free_gl_all() {
 			xmodel_free_gl(xmodels[i]);
 }
 
+static int xmodel_xlate(enum xmodel_type mt, int modelnum) {
+	if (mt == XM_POLYOBJ && modelnum >= 0 && modelnum < SDL_arraysize(xmodel_polyobj_xlate))
+		return xmodel_polyobj_xlate[modelnum];
+	if (mt == XM_POWERUP && modelnum >= 0 && modelnum < SDL_arraysize(xmodel_powerup_xlate))
+		return xmodel_powerup_xlate[modelnum];
+	return -1;
+}
+
 // returns 1 if drawn
-int xmodel_show_if_loaded(int modelnum, vms_vector *pos, vms_matrix *orient, int mpcolor, g3s_lrgb *light) {
-	int xmodelnum = xmodel_xlate[modelnum];
+int xmodel_show_if_loaded(enum xmodel_type mt, int modelnum, vms_vector *pos, vms_matrix *orient, int mpcolor, g3s_lrgb *light) {
+	int xmodelnum = xmodel_xlate(mt, modelnum);
 	if (xmodelnum == -1 || !xmodels[xmodelnum])
 		return 0;
-	xmodel_show_at(xmodels[xmodelnum], pos, orient, mpcolor, light);
+	xmodel_show_at(xmodels[xmodelnum], pos, orient, xmodelnum == model_pyrogl ? mpcolor : -1, light);
 	return 1;
+}
+
+int xmodel_exists(enum xmodel_type mt, int modelnum) {
+	int xmodelnum = xmodel_xlate(mt, modelnum);
+	return xmodelnum != -1 && xmodels[xmodelnum];
 }

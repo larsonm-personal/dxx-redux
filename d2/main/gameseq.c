@@ -862,6 +862,7 @@ void reset_level_robots_file(void)
 {
 	if (Robot_replacements_loaded) {
 		int load_mission_ham();
+		bm_free_extra_objbitmaps();
 		free_polygon_models();
 		if (Current_mission)
 			load_mission_ham();
@@ -879,6 +880,9 @@ int load_level_robots_file(const char *level_name)
 	base_player_ship_radius = Polygon_models[Player_ship->model_num].rad;
 	load_robot_replacements((char *) level_name);
 	Robot_replacements_loaded |= multi_change_weapon_info();
+	for (int i = 0; i <= Highest_object_index; i++)
+		if (Objects[i].type == OBJ_ROBOT)
+			verify_robot_object(&Objects[i]);
 	return base_player_ship_radius;
 }
 
@@ -945,6 +949,7 @@ void LoadLevel(int level_num,int page_in_textures)
 		gr_clear_canvas(BM_XRGB(0, 0, 0));		//so palette switching is less obvious
 	}
 
+	reset_level_robots_file(); // restore mission models before initial object verification
 	load_ret = load_level(level_name);		//actually load the data from disk!
 
 	if (load_ret)

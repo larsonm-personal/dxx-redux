@@ -542,7 +542,7 @@ void draw_polygon_model(vms_vector *pos,vms_matrix *orient,vms_angvec *anim_angl
 	allow_xmodel = !(Game_mode & GM_MULTI) || Netgame.AllowCustomModelsTextures;
 #endif
 	if (!d1_in_d2_is_spawnable_guidebot_model(model_num) && allow_xmodel)
-		if (xmodel_show_if_loaded(model_num, pos, orient, alt_textures_to_ship_color(alt_textures), &light))
+		if (xmodel_show_if_loaded(XM_POLYOBJ, model_num, pos, orient, alt_textures_to_ship_color(alt_textures), &light))
 			return;
 #endif
 

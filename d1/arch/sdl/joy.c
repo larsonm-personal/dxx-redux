@@ -292,7 +292,7 @@ int joy_axisbutton_handler(SDL_JoyAxisEvent *jae)
 void joy_init()
 {
 	int i,j,n;
-	char temp[10];
+	char temp[64];
 
 #ifdef ANDROID
 	/* On Android we never use real SDL joysticks (SDL 1.2 has no Android
@@ -385,7 +385,12 @@ void joy_init()
 
 	n = SDL_NumJoysticks();
 
-	con_printf(CON_NORMAL, "sdl-joystick: found %d joysticks\n", n);
+	if (n >= MAX_JOYSTICKS) {
+		Warning("sdl-joystick: found %d joysticks, only %d supported.\n", n, MAX_JOYSTICKS);
+		n = MAX_JOYSTICKS;
+	} else
+		con_printf(CON_NORMAL, "sdl-joystick: found %d joysticks\n", n);
+
 	for (i = 0; i < n; i++) {
 		con_printf(CON_NORMAL, "sdl-joystick %d: %s\n", i, SDL_JoystickName(i));
 		SDL_Joysticks[num_joysticks].handle = SDL_JoystickOpen(i);
@@ -395,7 +400,6 @@ void joy_init()
 				= SDL_JoystickNumAxes(SDL_Joysticks[num_joysticks].handle);
 			if(SDL_Joysticks[num_joysticks].n_axes > MAX_AXES_PER_JOYSTICK)
 			{
-				Warning("sdl-joystick: found %d axes, only %d supported.\n", SDL_Joysticks[num_joysticks].n_axes, MAX_AXES_PER_JOYSTICK);
 				Warning("sdl-joystick: found %d axes, only %d supported.\n", SDL_Joysticks[num_joysticks].n_axes, MAX_AXES_PER_JOYSTICK);
 				SDL_Joysticks[num_joysticks].n_axes = MAX_AXES_PER_JOYSTICK;
 			}

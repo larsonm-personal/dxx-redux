@@ -171,6 +171,52 @@ char Save_pof_names[MAX_POLYGON_MODELS][FILENAME_LEN];
 
 void check_and_fix_matrix(vms_matrix *m);
 
+// Refresh robot properties without repeating level-load counters or player initialization
+void verify_robot_object(object *obj)
+{
+	// Make sure valid id...
+	if ( obj->id >= N_robot_types )
+		obj->id = obj->id % N_robot_types;
+
+	// Make sure model number & size are correct...
+	if ( obj->render_type == RT_POLYOBJ ) {
+		Assert(Robot_info[obj->id].model_num != -1);
+			//if you fail this assert, it means that a robot in this level
+			//hasn't been loaded, possibly because he's marked as
+			//non-shareware.  To see what robot number, print obj->id.
+
+		Assert(Robot_info[obj->id].always_0xabcd == 0xabcd);
+			//if you fail this assert, it means that the robot_ai for
+			//a robot in this level hasn't been loaded, possibly because
+			//it's marked as non-shareware.  To see what robot number,
+			//print obj->id.
+
+		obj->rtype.pobj_info.model_num = Robot_info[obj->id].model_num;
+		obj->size = Polygon_models[obj->rtype.pobj_info.model_num].rad;
+
+		//@@Took out this ugly hack 1/12/96, because Mike has added code
+		//@@that should fix it in a better way.
+		//@@//this is a super-ugly hack.  Since the baby stripe robots have
+		//@@//their firing point on their bounding sphere, the firing points
+		//@@//can poke through a wall if the robots are very close to it. So
+		//@@//we make their radii bigger so the guns can't get too close to
+		//@@//the walls
+		//@@if (Robot_info[obj->id].flags & RIF_BIG_RADIUS)
+		//@@	obj->size = (obj->size*3)/2;
+
+		//@@if (obj->control_type==CT_AI && Robot_info[obj->id].attack_type)
+		//@@	obj->size = obj->size*3/4;
+	}
+
+	if (obj->id == 65)						//special "reactor" robots
+		obj->movement_type = MT_NONE;
+
+	if (obj->movement_type == MT_PHYSICS) {
+		obj->mtype.phys_info.mass = Robot_info[obj->id].mass;
+		obj->mtype.phys_info.drag = Robot_info[obj->id].drag;
+	}
+}
+
 void verify_object( object * obj )	{
 
 	obj->lifeleft = IMMORTAL_TIME;		//all loaded object are immortal, for now
@@ -178,47 +224,7 @@ void verify_object( object * obj )	{
 	if ( obj->type == OBJ_ROBOT )	{
 		Gamesave_num_org_robots++;
 
-		// Make sure valid id...
-		if ( obj->id >= N_robot_types )
-			obj->id = obj->id % N_robot_types;
-
-		// Make sure model number & size are correct...
-		if ( obj->render_type == RT_POLYOBJ ) {
-			Assert(Robot_info[obj->id].model_num != -1);
-				//if you fail this assert, it means that a robot in this level
-				//hasn't been loaded, possibly because he's marked as
-				//non-shareware.  To see what robot number, print obj->id.
-
-			Assert(Robot_info[obj->id].always_0xabcd == 0xabcd);
-				//if you fail this assert, it means that the robot_ai for
-				//a robot in this level hasn't been loaded, possibly because
-				//it's marked as non-shareware.  To see what robot number,
-				//print obj->id.
-
-			obj->rtype.pobj_info.model_num = Robot_info[obj->id].model_num;
-			obj->size = Polygon_models[obj->rtype.pobj_info.model_num].rad;
-
-			//@@Took out this ugly hack 1/12/96, because Mike has added code
-			//@@that should fix it in a better way.
-			//@@//this is a super-ugly hack.  Since the baby stripe robots have
-			//@@//their firing point on their bounding sphere, the firing points
-			//@@//can poke through a wall if the robots are very close to it. So
-			//@@//we make their radii bigger so the guns can't get too close to 
-			//@@//the walls
-			//@@if (Robot_info[obj->id].flags & RIF_BIG_RADIUS)
-			//@@	obj->size = (obj->size*3)/2;
-
-			//@@if (obj->control_type==CT_AI && Robot_info[obj->id].attack_type)
-			//@@	obj->size = obj->size*3/4;
-		}
-
-		if (obj->id == 65)						//special "reactor" robots
-			obj->movement_type = MT_NONE;
-
-		if (obj->movement_type == MT_PHYSICS) {
-			obj->mtype.phys_info.mass = Robot_info[obj->id].mass;
-			obj->mtype.phys_info.drag = Robot_info[obj->id].drag;
-		}
+		verify_robot_object(obj);
 	}
 	else {		//Robots taken care of above
 

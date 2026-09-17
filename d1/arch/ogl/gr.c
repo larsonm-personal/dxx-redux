@@ -356,7 +356,11 @@ int ogl_init_window(int x, int y)
 
 #ifndef ANDROID
 	SDL_WM_SetCaption(DESCENT_VERSION, "Descent");
-	SDL_WM_SetIcon( SDL_LoadBMP( "d1x-redux.bmp" ), NULL );
+	SDL_Surface *icon = SDL_LoadBMP( "d1x-redux.bmp" );
+	if (icon) {
+		SDL_WM_SetIcon( icon, NULL );
+		SDL_FreeSurface( icon );
+	}
 #endif
 
 	use_x=x;

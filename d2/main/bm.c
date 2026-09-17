@@ -518,6 +518,7 @@ int load_exit_models()
 	PHYSFS_file *exit_hamfile;
 	int start_num;
 
+	Robot_replacements_loaded = 1; // extra robots need reloading even if exit assets are missing
 	bm_free_extra_models();
 	bm_free_extra_objbitmaps();
 

@@ -55,6 +55,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "editor/editor.h"
 #endif
 #include "playsave.h"
+#include "xmodel.h"
+#ifdef ANDROID
+#include "android_visual_policy.h"
+#endif
 
 int N_powerup_types = 0;
 powerup_type_info Powerup_info[MAX_POWERUP_TYPES];
@@ -117,6 +121,43 @@ void draw_blob_outline(void)
 
 void draw_powerup(object *obj)
 {
+#ifdef OGL
+#ifdef ANDROID
+	int allow_xmodel = android_visual_replacements_allowed();
+#else
+	int allow_xmodel = !(Game_mode & GM_MULTI) || Netgame.AllowCustomModelsTextures;
+#endif
+	if (allow_xmodel &&
+		xmodel_exists(XM_POWERUP, obj->id)) {
+		vms_matrix orient;
+		vms_angvec angles;
+		fix light = F1_0;
+		g3s_lrgb lrgb = { light, light, light };
+		int vclip_num = obj->rtype.vclip_info.vclip_num;
+		fix64 animation_time = vclip_num >= 0 && vclip_num < VCLIP_MAXNUM
+			? (fix64)Vclip[vclip_num].num_frames * Vclip[vclip_num].frame_time : 0;
+
+		if (obj->id == POW_EXTRA_LIFE || obj->id == POW_ENERGY || obj->id == POW_SHIELD_BOOST ||
+			obj->id == POW_CLOAK || obj->id == POW_INVULNERABILITY) {
+			angles.p = 0;
+		} else {
+			angles.p = obj->id == POW_LASER || obj->id == POW_SUPER_LASER ||
+				(obj->id >= POW_VULCAN_WEAPON && obj->id <= POW_FUSION_WEAPON) ||
+				(obj->id >= POW_GAUSS_WEAPON && obj->id <= POW_OMEGA_WEAPON) ?
+				F1_0 / 4 - F1_0 / 20 : (fixang)(F1_0 * 7 / 8);
+		}
+		angles.b = 0;
+		angles.h = (fixang)
+			(animation_time > 0 ? (GameTime64 % animation_time) * F1_0 / animation_time : 0);
+		vm_angles_2_matrix(&orient, &angles);
+
+		//compute_object_light(obj, NULL);
+
+		if (xmodel_show_if_loaded(XM_POWERUP, obj->id, &obj->pos, &orient, -1, &lrgb))
+			return;
+	}
+#endif
+
 	#ifdef EDITOR
 	blob_vertices[0] = 0x80000;
 	#endif
@@ -337,9 +378,12 @@ int do_powerup(object *obj)
 
 	switch (obj->id) {
 		case POW_EXTRA_LIFE:
-			Players[Player_num].lives++;
-			powerup_basic(15, 15, 15, 0, "%s", TXT_EXTRA_LIFE);
-			used=1;
+			if (Players[Player_num].lives < MAX_LIVES) {
+				Players[Player_num].lives++;
+				powerup_basic(15, 15, 15, 0, "%s", TXT_EXTRA_LIFE);
+				used=1;
+			} else
+				HUD_init_message(HM_DEFAULT|HM_REDUNDANT|HM_MAYDUPL, "Your lives are maxed out!");
 			break;
 		case POW_ENERGY:
 			used = pick_up_energy();

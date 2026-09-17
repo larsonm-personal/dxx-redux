@@ -303,6 +303,32 @@ if(NOT ANDROID)
         GAME_SOURCES ${D1X_SECRET_AREA_SOURCES} ../../android/app/src/main/cpp/jni_level_metadata.cpp
         AUDIO_TAG_METADATA
         INCLUDE_GAME_DIR)
+    if(BUILD_TESTING)
+        dxx_add_headless_target(
+            test_upstream_compat
+            ../../android/tests/test_upstream_compat.cpp
+            GAME_SOURCES ${D1X_SECRET_AREA_SOURCES}
+            INCLUDE_GAME_DIR)
+        file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/upstream-compat-fixtures")
+        add_test(NAME test_upstream_compat COMMAND test_upstream_compat)
+        set_tests_properties(test_upstream_compat PROPERTIES
+            WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/upstream-compat-fixtures")
+    endif()
+
 endif()
 
 install(TARGETS dxx-redux-d1 RUNTIME DESTINATION .)
+
+if(SDLMIXER AND MSVC AND VCPKG_INSTALLED_DIR AND VCPKG_TARGET_TRIPLET)
+    set(VCPKG_PREFIX "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
+    # SDL_mixer loads these codecs dynamically, so vcpkg's import scan misses them
+    set(MUSIC_DLL_DIR "${VCPKG_PREFIX}/$<IF:$<CONFIG:Debug>,debug/bin,bin>")
+    foreach(lib mpg123 FLAC mikmod ogg vorbis vorbisfile)
+        if(EXISTS "${VCPKG_PREFIX}/bin/${lib}.dll")
+            add_custom_command(TARGET dxx-redux-d1 POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${MUSIC_DLL_DIR}/${lib}.dll" $<TARGET_FILE_DIR:dxx-redux-d1>)
+            install(FILES "${MUSIC_DLL_DIR}/${lib}.dll" DESTINATION .)
+        endif()
+    endforeach()
+endif()
