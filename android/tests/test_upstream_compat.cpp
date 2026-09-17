@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <string>
 #include <vector>
 #include <SDL.h>
 #undef main
@@ -41,6 +42,13 @@ void newmenu_free_background(void);
 void ogl_smash_texture_list_internal(void);
 #endif
 #ifdef DXX_BUILD_DESCENT_II
+#include "d1_in_d2.h"
+#include "effects.h"
+#include "hash.h"
+#include "textures.h"
+extern hashtable AllBitmapsNames;
+void free_bitmap_replacements(void);
+void free_d1_tmap_nums(void);
 extern int Robot_replacements_loaded;
 extern int Gamesave_num_players;
 int load_mission_ham(void);
@@ -323,6 +331,125 @@ static void test_lives()
 }
 
 #ifdef DXX_BUILD_DESCENT_II
+static void set_short(bytes &data, size_t offset, int value)
+{
+	data[offset] = static_cast<unsigned char>(value);
+	data[offset + 1] = static_cast<unsigned char>(static_cast<unsigned>(value) >> 8);
+}
+
+static void make_d1_monitor_fixture()
+{
+	// Registered D1 table layout: textures, tmap info, sound maps, vclips, effects
+	const size_t vclips = 8 + 800 * 2 + 800 * 26 + 250 * 2;
+	const size_t effects = vclips + 4 + 70 * 82;
+	const size_t bitmap_start = effects + 4 + 60 * 130;
+	bytes pig(bitmap_start);
+	set_int(pig, 0, static_cast<int>(bitmap_start));
+	set_int(pig, 4, 9);
+	set_short(pig, 8 + 1 * 2, 1); // D1 texture 1 -> D2 texture 0: live monitor
+	set_short(pig, 8 + 3 * 2, 2); // D1 texture 3 -> D2 texture 1: destroyed monitor
+	set_short(pig, 8 + 8 * 2, 3); // D1 texture 8 -> D2 texture 2: ordinary wall
+	set_int(pig, effects, 1);
+	const size_t clip = effects + 4;
+	set_int(pig, clip, F1_0 / 2);
+	set_int(pig, clip + 4, 2);
+	set_int(pig, clip + 8, F1_0 / 4);
+	set_short(pig, clip + 18, 4);
+	set_short(pig, clip + 20, 5);
+	set_short(pig, clip + 90, 1); // changing wall texture
+	set_short(pig, clip + 92, -1);
+	set_int(pig, clip + 102, 3); // destroyed texture
+	append_int(pig, 5);
+	append_int(pig, 0);
+	for (int i = 0; i < 5; ++i) {
+		bytes header(17);
+		header[0] = 'm';
+		header[1] = '0' + i;
+		header[9] = header[10] = 2;
+		set_int(header, 13, i * 4);
+		append(pig, header);
+	}
+	for (int i = 0; i < 5; ++i) append(pig, bytes(4, 10 + i));
+	write_fixture("descent.pig", pig);
+	bytes palette(9472);
+	for (int i = 0; i < 256; ++i) {
+		palette[i * 3] = i % 64;
+		palette[i * 3 + 1] = i / 64;
+	}
+	std::memcpy(gr_palette, palette.data(), sizeof(gr_palette));
+	write_fixture("palette.256", palette);
+}
+
+static void test_d1_monitors()
+{
+	const std::string original_write_dir = PHYSFS_getWriteDir();
+	const std::string fixture_dir = original_write_dir + "/d1-monitor-fixtures";
+	require(PHYSFS_mkdir("d1-monitor-fixtures") && PHYSFS_mount(fixture_dir.c_str(), nullptr, 0) && PHYSFS_setWriteDir(fixture_dir.c_str()), "isolate monitor PIG from exit-model fixtures");
+	make_d1_monitor_fixture();
+	hashtable_init(&AllBitmapsNames, MAX_BITMAP_FILES);
+	Num_bitmap_files = 0;
+	unsigned char stock_pixels[6][4];
+	for (int i = 0; i < 6; ++i) {
+		char name[13];
+		std::snprintf(name, sizeof(name), "monitor#%d", i);
+		std::memset(stock_pixels[i], 40 + i, sizeof(stock_pixels[i]));
+		piggy_register_bitmap(&GameBitmaps[i], name, 1);
+	}
+	NumTextures = 3;
+	Textures[0].index = 1;
+	Textures[1].index = 3;
+	Textures[2].index = 4;
+	Num_effects = 1;
+	std::memset(Effects, 0, sizeof(Effects));
+	Effects[0].vc.num_frames = 2;
+	Effects[0].vc.frame_time = F1_0 / 8;
+	Effects[0].vc.frames[0].index = 1;
+	Effects[0].vc.frames[1].index = 2;
+	Effects[0].changing_wall_texture = 0;
+	Effects[0].changing_object_texture = -1;
+	Effects[0].dest_bm_num = 1;
+	Effects[0].crit_clip = -1;
+	const eclip original_effect = Effects[0];
+	for (int pass = 0; pass < 2; ++pass) {
+		for (int i = 0; i < 6; ++i) {
+			gr_init_bitmap(&GameBitmaps[i], BM_LINEAR, 0, 0, 2, 2, 2, stock_pixels[i]);
+			piggy_bitmap_set_file_state(i, 100 + i, BM_FLAG_TRANSPARENT);
+		}
+		load_d1_bitmap_replacements();
+		for (int i : { 1, 2, 3 }) {
+			require(GameBitmaps[i].bm_data == stock_pixels[i] && GameBitmaps[i].bm_data[0] == 40 + i, "generic D1 replacement preserves monitor frames and destroyed image");
+			require(piggy_bitmap_get_offset(i) == 100 + i && piggy_bitmap_get_file_flags(i) == BM_FLAG_TRANSPARENT, "protected monitor paging state preserved");
+		}
+		require(GameBitmaps[4].bm_data[0] == 12 && GameBitmaps[5].bm_data == GameBitmaps[4].bm_data, "ordinary walls and unprotected animation clones still replaced");
+		d1_in_d2_apply_effects(1);
+		d1_in_d2_asset_stats stats = {};
+		d1_in_d2_get_stats(&stats);
+		require(stats.effect_frames_applied == 2 && stats.effect_frames_skipped == 0, "dedicated D1 effect loader still restores both frames");
+		require(GameBitmaps[1].bm_data[0] == 13 && GameBitmaps[2].bm_data[0] == 14, "D1 animation frame pixels restored");
+		require(GameBitmaps[3].bm_data == stock_pixels[3], "destroyed monitor remains protected after frame restoration");
+		init_special_effects();
+		Effects[0].frame_count = 0;
+		FrameTime = F1_0 / 4 + 1;
+		do_special_effects();
+		require(Textures[0].index == 2 && GameBitmaps[Textures[0].index].bm_data[0] == 14, "monitor animation selects restored D1 frame");
+		Effects[0].flags = EF_ONE_SHOT;
+		Effects[0].segnum = 0;
+		Effects[0].sidenum = 0;
+		Segments[0].sides[0].tmap_num2 = 0x4000 | 2;
+		do_special_effects();
+		require(Segments[0].sides[0].tmap_num2 == (0x4000 | 1) && GameBitmaps[Textures[1].index].bm_data[0] == 43, "completed monitor effect selects protected destroyed image and retains orientation");
+		d1_in_d2_apply_effects(0);
+		require(std::memcmp(&Effects[0], &original_effect, sizeof(eclip)) == 0, "leaving D1 emulation restores original D2 effect");
+		Textures[0].index = 1;
+	}
+	free_bitmap_replacements();
+	free_d1_tmap_nums();
+	hashtable_free(&AllBitmapsNames);
+	for (int i = 0; i < 6; ++i) GameBitmaps[i].bm_data = nullptr;
+	require(PHYSFS_delete("descent.pig") != 0 && PHYSFS_delete("palette.256") != 0, "remove D1 monitor fixtures");
+	require(PHYSFS_setWriteDir(original_write_dir.c_str()) && PHYSFS_unmount(fixture_dir.c_str()), "restore fixture search path");
+}
+
 static bytes robot_record(int model, fix mass, fix drag)
 {
 	bytes record(480);
@@ -502,6 +629,8 @@ int main(int argc, char **argv)
 #ifdef DXX_BUILD_DESCENT_II
 	std::fprintf(stderr, "Testing mission robot reload\n");
 	test_robot_reload();
+	std::fprintf(stderr, "Testing D1 monitor replacement and animation\n");
+	test_d1_monitors();
 #else
 	std::fprintf(stderr, "Testing HX1 model loading\n");
 	test_hx1();

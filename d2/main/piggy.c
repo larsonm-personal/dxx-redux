@@ -59,6 +59,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "byteswap.h"
 #include "makesig.h"
 #include "console.h"
+#include "effects.h"
 #include "d1_pig_validation.h"
 #include "dxa_metadata_patch.h"
 
@@ -2244,6 +2245,7 @@ void load_d1_bitmap_replacements()
 	ubyte d1_palette[256*3];
 	char *p;
 	int pigsize;
+	ubyte is_effect[MAX_BITMAP_FILES] = {0};
 
 	memset(&Last_d1_bitmap_replacement_stats, 0, sizeof(Last_d1_bitmap_replacement_stats));
 	d1_Piggy_fp = PHYSFSX_openReadBuffered( D1_PIGFILE );
@@ -2319,12 +2321,23 @@ void load_d1_bitmap_replacements()
 		return;
 	}
 
+	// Leave effect frames and destroyed monitors to their dedicated asset paths
+	for (int ei = 0; ei < Num_effects && ei < MAX_EFFECTS; ei++) {
+		eclip *e = &Effects[ei];
+		for (int i = 0; i < e->vc.num_frames && i < VCLIP_MAX_FRAMES; i++)
+			if (e->vc.frames[i].index < MAX_BITMAP_FILES)
+				is_effect[e->vc.frames[i].index] = 1;
+		if (e->dest_bm_num >= 0 && e->dest_bm_num < NumTextures && e->dest_bm_num < MAX_TEXTURES &&
+		    Textures[e->dest_bm_num].index < MAX_BITMAP_FILES)
+			is_effect[Textures[e->dest_bm_num].index] = 1;
+	}
+
 	Bitmap_replacement_next = Bitmap_replacement_data;
 	Bitmap_replacement_end = Bitmap_replacement_data + D1_BITMAPS_SIZE;
 
 	for (d1_index = 1; d1_index <= N_bitmaps; d1_index++ ) {
 		d2_index = d2_index_for_d1_index(d1_index);
-		if (d2_index != -1) {
+		if (d2_index != -1 && !is_effect[d2_index]) {
 			Last_d1_bitmap_replacement_stats.wall_entries++;
 			PHYSFSX_fseek(d1_Piggy_fp, bitmap_header_start + (d1_index-1) * DISKBITMAPHEADER_D1_SIZE, SEEK_SET);
 			DiskBitmapHeader_d1_read(&bmh, d1_Piggy_fp);
@@ -2343,7 +2356,7 @@ void load_d1_bitmap_replacements()
 			     && !(bmh.dflags & DBM_FLAG_ABM) ) { /* d1 bitmap is not animated */
 				int i, len = p - AllBitmaps[d2_index].name;
 				for (i = 0; i < Num_bitmap_files; i++)
-					if (i != d2_index && ! memcmp(AllBitmaps[d2_index].name, AllBitmaps[i].name, len))
+					if (i != d2_index && !is_effect[i] && ! memcmp(AllBitmaps[d2_index].name, AllBitmaps[i].name, len))
 					{
 						gr_set_bitmap_data(&GameBitmaps[i], NULL);	// free ogl texture
 						GameBitmaps[i] = GameBitmaps[d2_index];
