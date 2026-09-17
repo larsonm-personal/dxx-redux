@@ -2306,6 +2306,12 @@ extern "C" int route_confirmation_is_terminal(void)
 	       State.summary.status != ROUTE_CONFIRMATION_RUNNING;
 }
 
+extern "C" int route_confirmation_controls_companion(const object *objp)
+{
+	return State.summary.status == ROUTE_CONFIRMATION_RUNNING &&
+	       valid_object(State.actor_objnum) && objp == &Objects[State.actor_objnum];
+}
+
 extern "C" int route_confirmation_drive_companion(object *objp)
 {
 	if (State.summary.status != ROUTE_CONFIRMATION_RUNNING || !objp ||
@@ -2479,6 +2485,10 @@ extern "C" void route_confirmation_stop(void) {}
 extern "C" int route_confirmation_is_terminal(void)
 {
 	return 1;
+}
+extern "C" int route_confirmation_controls_companion(const object *)
+{
+	return 0;
 }
 extern "C" int route_confirmation_drive_companion(object *)
 {

@@ -1,4 +1,4 @@
-// TEST: Obsidian level 6 Guide-Bot stays at a nearby switch and routes around a blocked grate
+// TEST: Obsidian level 6 Guide-Bot retains switch guidance while moving near a blocked grate
 [
     {"_info": {
         "games": ["d2"],
@@ -57,14 +57,15 @@
         "guidebot.route_live_work.max_tick_us": {"lte": 4000},
         "guidebot.route_live_work.pending": "false"
     }},
+    // Retain the switch objective while allowing ordinary local escort movement
     // Keep the player in the adjoining room so it does not occupy the switch endpoint
     {"action": "face_view", "segment": 314, "side": 1, "distance": 10},
     {"action": "set_debug", "field": "guidebot_segment", "value": "317", "post_delay_ms": 500},
     {"action": "wait_ms", "ms": 12000},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {"guidebot.path_length": {"gt": 1}}},
     {"action": "assert", "expect": {
         "guidebot.route_goal_trigger": "15",
-        "guidebot.segment": "317",
-        "guidebot.path_length": "1"
+        "guidebot.route_goal_objective_seg": "317"
     }},
 
     {"action": "set_debug", "field": "fire_trigger", "value": "15", "post_delay_ms": 100},
@@ -76,10 +77,10 @@
     {"action": "pose_route_guidance", "post_delay_ms": 250},
     {"action": "meta_action", "id": 1042, "post_delay_ms": 500},
     {"action": "wait_ms", "ms": 12000},
+    {"action": "wait_for", "timeout_ms": 10000, "expect": {"guidebot.path_length": {"gt": 1}}},
     {"action": "assert", "expect": {
         "guidebot.route_goal_trigger": "14",
-        "guidebot.segment": "506",
-        "guidebot.path_length": "1"
+        "guidebot.route_goal_objective_seg": "506"
     }},
     {"action": "log", "message": "=== TEST: Obsidian level 6 Guide-Bot switch and grate routing -- PASS ==="}
 ]

@@ -16,6 +16,7 @@ $extraDir = Join-Path $outputRoot 'maximum'
 Expand-Archive -LiteralPath (Join-Path $repoRoot 'game_data/mission_files/descent_maximum_fixed.zip') -DestinationPath (Join-Path $extraDir 'missions') -Force
 $cases = @(
     @{ Name = 'counterstrike_grate'; Mission = 'd2'; Level = 11 },
+    @{ Name = 'counterstrike_reactor'; Mission = 'd2'; Level = 1 },
     @{ Name = 'maximum_hostages'; Mission = 'max_f'; Level = 16 }
 )
 foreach ($case in $cases) {
@@ -35,4 +36,4 @@ foreach ($case in $cases) {
         elseif ($result -cne $reference) { throw "Escort results differ across repeats: $($case.Name)" }
     }
 }
-Write-Host 'Live escort navigation passed: grate detour, return isolation, and Maximum Hostages, two identical runs each'
+Write-Host 'Live escort navigation passed: grate detour, endpoint patrol, reactor arrival, and Maximum Hostages, two identical runs each'

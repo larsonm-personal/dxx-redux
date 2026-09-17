@@ -1584,11 +1584,10 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 		//	See if next point wraps past end of path (in either direction), and if so, deal with it based on mode.
 		if ((aip->cur_path_index >= aip->path_length) || (aip->cur_path_index < 0)) {
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
-			/* An active Guide-Bot objective is a one-way route.  The legacy
-			 * follower otherwise turns an AIM_GOTO_OBJECT path into a patrol by
-			 * reversing it as soon as the final waypoint is accepted.  Hold the
-			 * endpoint so the route driver can approach and complete the target. */
-			if (escort_route_follows_objective(objp) && aip->PATH_DIR > 0) {
+			/* The scripted route driver needs an exact endpoint for player actions
+			 * Live escort paths retain the original end-of-path patrol behavior */
+			if (escort_route_follows_objective(objp) &&
+			    route_confirmation_controls_companion(objp) && aip->PATH_DIR > 0) {
 				aip->cur_path_index = aip->path_length - 1;
 				break;
 			}

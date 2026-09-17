@@ -52,9 +52,9 @@ static void endpoint_isolation(object *bot)
 	const int id = bot->id;
 	const object saved = *bot;
 	const ai_local saved_local = Ai_local_info[bot - Objects];
-	for (int companion = 0; companion <= 1; ++companion) {
+	for (int companion = 0; companion <= 2; ++companion) {
 		const int old_companion = Robot_info[id].companion;
-		Robot_info[id].companion = companion;
+		Robot_info[id].companion = companion != 0;
 		object baseline = {};
 		ai_local baseline_local = {};
 		for (int active = 0; active <= 1; ++active) {
@@ -62,7 +62,7 @@ static void endpoint_isolation(object *bot)
 			Ai_local_info[bot - Objects] = saved_local;
 			auto &ai = bot->ctype.ai_info;
 			auto &local = Ai_local_info[bot - Objects];
-			local.mode = AIM_GOTO_PLAYER;
+			local.mode = companion == 2 ? AIM_GOTO_OBJECT : AIM_GOTO_PLAYER;
 			ai.behavior = AIB_NORMAL;
 			ai.hide_index = 0;
 			ai.path_length = 3;
@@ -81,9 +81,10 @@ static void endpoint_isolation(object *bot)
 				baseline = *bot;
 				baseline_local = local;
 			} else {
-				check(companion ? "return_endpoint_matches_legacy" : "other_robot_endpoint_matches_legacy",
+				check(companion == 2 ? "objective_endpoint_resumes_legacy_patrol" :
+				      companion ? "return_endpoint_matches_legacy" : "other_robot_endpoint_matches_legacy",
 				      !std::memcmp(&baseline.ctype.ai_info, &ai, sizeof(ai)) &&
-				          !std::memcmp(&baseline.mtype.phys_info, &bot->mtype.phys_info, sizeof(bot->mtype.phys_info)) &&
+				          (companion == 2 || !std::memcmp(&baseline.mtype.phys_info, &bot->mtype.phys_info, sizeof(bot->mtype.phys_info))) &&
 				          baseline_local.mode == local.mode);
 			}
 		}
@@ -92,6 +93,50 @@ static void endpoint_isolation(object *bot)
 	*bot = saved;
 	Ai_local_info[bot - Objects] = saved_local;
 	ai_reset_all_paths();
+}
+
+static bool moves_after_arrival(object *bot)
+{
+	const vms_vector start = bot->pos;
+	fix maximum_distance = 0;
+	for (int frame = 0; frame < 12 * 60; ++frame) {
+		GameTime64 += FrameTime;
+		Believed_player_pos = ConsoleObject->pos;
+		Believed_player_seg = ConsoleObject->segnum;
+		GameProcessFrame();
+		if (frame % 3 == 0) ++d_tick_count;
+		const fix distance = vm_vec_dist(&start, &bot->pos);
+		if (distance > maximum_distance) maximum_distance = distance;
+	}
+	return maximum_distance > 20 * F1_0;
+}
+
+// Arriving at a real prerequisite must leave room for ordinary escort wandering
+static void switch_arrival(object *bot)
+{
+	const object saved_bot = *bot, saved_player = *ConsoleObject;
+	const int trigger = Escort_route_goal.objective_trigger;
+	place(bot, Escort_route_goal.target_seg);
+	place(ConsoleObject, bot->segnum);
+	Believed_player_pos = ConsoleObject->pos;
+	Believed_player_seg = ConsoleObject->segnum;
+	Ai_local_info[bot - Objects].mode = AIM_GOTO_OBJECT;
+	escort_create_path_to_goal(bot);
+	check("switch_arrival_has_short_path", bot->ctype.ai_info.path_length < 3);
+	GameTime64 += 6 * F1_0;
+	Buddy_last_seen_player = GameTime64;
+	do_escort_frame(bot, 0, 2);
+	check("switch_arrival_starts_local_patrol", bot->ctype.ai_info.path_length >= 3);
+	check("switch_arrival_keeps_moving", moves_after_arrival(bot));
+	check("switch_arrival_keeps_unfinished_objective", Escort_route_goal.active &&
+	    Escort_route_goal.objective_trigger == trigger && Escort_special_goal == ESCORT_GOAL_HOSTAGE);
+	place(bot, saved_bot.segnum);
+	bot->pos = saved_bot.pos;
+	place(ConsoleObject, saved_player.segnum);
+	ConsoleObject->pos = saved_player.pos;
+	Believed_player_pos = ConsoleObject->pos;
+	Believed_player_seg = ConsoleObject->segnum;
+	escort_create_path_to_goal(bot);
 }
 
 static void hostage_request(object *bot)
@@ -109,6 +154,7 @@ static void hostage_request(object *bot)
 	Results["hostage_objective_segment"] = Escort_route_goal.objective_seg;
 	Results["hostage_path_endpoint"] = Point_segs[bot->ctype.ai_info.hide_index + bot->ctype.ai_info.path_length - 1].segnum;
 	check("hostages_selects_prerequisite", Escort_route_goal.active && Escort_route_goal.objective_trigger >= 0);
+	switch_arrival(bot);
 	int saved_trigger_flags[MAX_TRIGGERS];
 	for (int i = 0; i < Num_triggers; ++i) {
 		saved_trigger_flags[i] = Triggers[i].flags;
@@ -267,6 +313,31 @@ static void grate_detour(object *bot, int moving_target)
 	check("return_repaths_to_moving_player", rejoined());
 }
 
+static void reactor_arrival(object *bot)
+{
+	int reactor = -1;
+	for (int i = 0; i <= Highest_object_index; ++i)
+		if (Objects[i].type == OBJ_CNTRLCEN) { reactor = i; break; }
+	check("reactor_fixture_exists", reactor >= 0);
+	if (reactor < 0) return;
+	place(bot, Objects[reactor].segnum);
+	place(ConsoleObject, bot->segnum);
+	Players[Player_num].flags |= PLAYER_FLAGS_BLUE_KEY | PLAYER_FLAGS_RED_KEY | PLAYER_FLAGS_GOLD_KEY;
+	Believed_player_pos = ConsoleObject->pos;
+	Believed_player_seg = ConsoleObject->segnum;
+	set_escort_special_goal(KEY_0);
+	GameTime64 += 6 * F1_0;
+	Buddy_last_seen_player = GameTime64;
+	Ai_local_info[bot - Objects].mode = AIM_GOTO_OBJECT;
+	do_escort_frame(bot, 0, 2);
+	check("reactor_arrival_keeps_reactor_objective", Escort_route_goal.active &&
+	    Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_REACTOR);
+	check("reactor_arrival_starts_local_patrol", bot->ctype.ai_info.path_length >= 3);
+	check("reactor_arrival_keeps_moving", moves_after_arrival(bot));
+	check("reactor_still_requires_player_action", Objects[reactor].type == OBJ_CNTRLCEN &&
+	    Escort_route_goal.active && Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_REACTOR);
+}
+
 int test_guidebot_live_navigation(const char *output, const char *return_target)
 {
 	FrameTime = F1_0 / 60;
@@ -281,9 +352,11 @@ int test_guidebot_live_navigation(const char *output, const char *return_target)
 		if (i != Buddy_objnum && Objects[i].type == OBJ_ROBOT) obj_delete(i);
 	Buddy_allowed_to_talk = 1;
 	endpoint_isolation(bot);
-	triggered_grate(bot);
+	if (Current_level_num != 1) triggered_grate(bot);
 	if (Current_level_num == 11)
 		grate_detour(bot, return_target ? std::atoi(return_target) : 35);
+	else if (Current_level_num == 1)
+		reactor_arrival(bot);
 	else
 		hostage_request(bot);
 	Results["passed"] = Passed;

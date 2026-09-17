@@ -96,6 +96,8 @@ void route_confirmation_before_frame(void);
 void route_confirmation_after_frame(void);
 void route_confirmation_stop(void);
 int route_confirmation_is_terminal(void);
+/* Only the scripted actor needs exact, one-way objective endpoints */
+int route_confirmation_controls_companion(const struct object *objp);
 int route_confirmation_drive_companion(struct object *objp);
 int route_confirmation_handle_exit_trigger(int objnum);
 int route_confirmation_handle_final_boss_endlevel(void);

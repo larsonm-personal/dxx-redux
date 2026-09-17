@@ -2865,12 +2865,8 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 			input_demo_log_escort_rng_progress("after AIM_GOTO_PLAYER escort_create_path_to_goal", &replay_rng_state, &replay_rng_call_count);
 		aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
 			input_demo_log_escort_path_state("AIM_GOTO_PLAYER final", objp);
-		/* A short objective path is valid, including waiting at its endpoint */
-		if (aip->path_length < 3
-#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
-		    && !Escort_route_goal.active
-#endif
-		) {
+		/* Retain the original local wandering when already near the goal */
+		if (aip->path_length < 3) {
 			create_n_segment_path(objp, 5, Believed_player_seg);
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 			escort_trace_path("short_path_fallback", objp, ailp, aip,
@@ -2899,11 +2895,7 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 				input_demo_log_escort_rng_progress("after unspecified escort_create_path_to_goal", &replay_rng_state, &replay_rng_call_count);
 			aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
 			input_demo_log_escort_path_state("unspecified goal final", objp);
-			if (aip->path_length < 3
-#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
-			    && !Escort_route_goal.active
-#endif
-			) {
+			if (aip->path_length < 3) {
 				create_n_segment_path(objp, 5, Believed_player_seg);
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 				escort_trace_path("short_path_fallback", objp, ailp, aip,
