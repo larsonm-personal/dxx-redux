@@ -32,6 +32,7 @@ internal enum class GameSettingsPreset(
                 add("Texture filtering: None (nearest)")
                 add("HUD filtering: $state")
                 add("Skip intro movie on launch: Off")
+                add("Autoselect Only Once: Off")
                 if (this@GameSettingsPreset == DEFAULTS) {
                     add("HUD size: Cockpit")
                     add("Auto-level: On")

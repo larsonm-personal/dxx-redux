@@ -21,6 +21,7 @@
 extern "C" {
 #include "game.h"
 #include "playsave.h"
+#include "shared/playsave_android_shared.h"
 }
 
 #define LOG_TAG   "DXX-PilotPrefs"
@@ -266,6 +267,7 @@ struct write_ctx {
 	int show_boss_health_bar;
 	int map_cheats_accessible;
 	int headlight_active_default;
+	int reset_autoselect_only_once;
 };
 
 struct visual_write_ctx {
@@ -312,7 +314,8 @@ static int write_visitor(const char *path, void *ctx)
 static int write_hud_counts_visitor(const char *path, void *ctx)
 {
 	struct write_ctx *wc = (struct write_ctx *) ctx;
-	return plx_write_hud_prefs(path, wc->show_counts, wc->show_boss_health_bar, wc->map_cheats_accessible);
+	return plx_write_hud_prefs(path, wc->show_counts, wc->show_boss_health_bar, wc->map_cheats_accessible) == 1 &&
+	       (!wc->reset_autoselect_only_once || plx_reset_autoselect_only_once(path) == 1);
 }
 #else
 static int write_cockpit_visitor(const char *path, void *ctx)
@@ -320,7 +323,8 @@ static int write_cockpit_visitor(const char *path, void *ctx)
 	struct write_ctx *wc = (struct write_ctx *) ctx;
 	int cockpit_result = plx_write_cockpit_mode(path, wc->cockpit_mode);
 	int counts_result = plx_write_hud_prefs(path, wc->show_counts, wc->show_boss_health_bar, wc->map_cheats_accessible);
-	return cockpit_result == 1 && counts_result == 1;
+	return cockpit_result == 1 && counts_result == 1 &&
+	       (!wc->reset_autoselect_only_once || plx_reset_autoselect_only_once(path) == 1);
 }
 
 static int write_autolevel_visitor(const char *path, void *ctx)
@@ -373,7 +377,8 @@ JNI_FUNC(nativeWriteEnginePrefs)(JNIEnv *env,
                                  jboolean showRobotHostageCounts,
                                  jboolean showBossHealthBar,
                                  jboolean mapCheatsAccessible,
-                                 jboolean headlightActiveDefault)
+                                 jboolean headlightActiveDefault,
+                                 jboolean resetAutoselectOnlyOnce)
 {
 	const char *files_dir;
 	struct write_ctx wc;
@@ -393,6 +398,7 @@ JNI_FUNC(nativeWriteEnginePrefs)(JNIEnv *env,
 	wc.show_boss_health_bar = showBossHealthBar ? 1 : 0;
 	wc.map_cheats_accessible = mapCheatsAccessible ? 1 : 0;
 	wc.headlight_active_default = headlightActiveDefault ? 1 : 0;
+	wc.reset_autoselect_only_once = resetAutoselectOnlyOnce ? 1 : 0;
 
 #ifdef DXX_BUILD_DESCENT_II
 	if (append_pilots(files_dir, "d2x-redux", ".plr", write_visitor, &wc, targets) < 0 ||

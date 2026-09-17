@@ -174,6 +174,7 @@ static void input_demo_apply_replay_player_cfg(const input_demo_player_cfg *play
 	PlayerCfg.CycleAutoselectOnly = player_cfg->cycle_autoselect_only;
 	PlayerCfg.SelectAfterFire = player_cfg->select_after_fire;
 	PlayerCfg.ClassicAutoselectWeapon = player_cfg->classic_autoselect_weapon;
+	PlayerCfg.AutoselectOnlyOnce = player_cfg->autoselect_only_once;
 	PlayerCfg.OriginalHoming = player_cfg->original_homing;
 	memcpy(PlayerCfg.PrimaryOrder, player_cfg->primary_order,
 	       input_demo_primary_order_copy_count());
@@ -745,11 +746,11 @@ static void input_demo_log_restored_player_diag(
 	if (!diag)
 		return;
 #ifdef DXX_BUILD_DESCENT_II
-	input_demo_debug_printf("Input demo replay player config: callsign=%s result=%d auto_level=%d debris=%d headlight_default=%d autoselect=(nofire=%d,after=%d,cycle=%d,classic=%d) order_hash=(0x%x,0x%x) player_flags=0x%x phys=(%d,%d,%d,0x%x) ship=(%d,%d,%d,%d,%d,%d)\n",
+	input_demo_debug_printf("Input demo replay player config: callsign=%s result=%d auto_level=%d debris=%d headlight_default=%d autoselect=(nofire=%d,after=%d,cycle=%d,classic=%d,once=%d) order_hash=(0x%x,0x%x) player_flags=0x%x phys=(%d,%d,%d,0x%x) ship=(%d,%d,%d,%d,%d,%d)\n",
 	                        diag->replay_callsign, diag->player_cfg_result, PlayerCfg.AutoLeveling,
 	                        PlayerCfg.PersistentDebris, PlayerCfg.HeadlightActiveDefault,
 	                        PlayerCfg.NoFireAutoselect, PlayerCfg.SelectAfterFire,
-	                        PlayerCfg.CycleAutoselectOnly, PlayerCfg.ClassicAutoselectWeapon,
+	                        PlayerCfg.CycleAutoselectOnly, PlayerCfg.ClassicAutoselectWeapon, PlayerCfg.AutoselectOnlyOnce,
 	                        diag->primary_order_hash, diag->secondary_order_hash,
 	                        Players[Player_num].flags,
 	                        diag->player_mass, diag->player_drag,
@@ -758,11 +759,11 @@ static void input_demo_log_restored_player_diag(
 	                        diag->ship_brakes, diag->ship_max_thrust,
 	                        diag->ship_max_rotthrust, diag->ship_wiggle);
 #else
-	input_demo_debug_printf("Input demo replay player config: callsign=%s result=%d auto_level=%d debris=%d autoselect=(nofire=%d,after=%d,cycle=%d,classic=%d) order_hash=(0x%x,0x%x) player_flags=0x%x phys=(%d,%d,%d,0x%x) ship=(%d,%d,%d,%d,%d,%d)\n",
+	input_demo_debug_printf("Input demo replay player config: callsign=%s result=%d auto_level=%d debris=%d autoselect=(nofire=%d,after=%d,cycle=%d,classic=%d,once=%d) order_hash=(0x%x,0x%x) player_flags=0x%x phys=(%d,%d,%d,0x%x) ship=(%d,%d,%d,%d,%d,%d)\n",
 	                        diag->replay_callsign, diag->player_cfg_result, PlayerCfg.AutoLeveling,
 	                        PlayerCfg.PersistentDebris,
 	                        PlayerCfg.NoFireAutoselect, PlayerCfg.SelectAfterFire,
-	                        PlayerCfg.CycleAutoselectOnly, PlayerCfg.ClassicAutoselectWeapon,
+	                        PlayerCfg.CycleAutoselectOnly, PlayerCfg.ClassicAutoselectWeapon, PlayerCfg.AutoselectOnlyOnce,
 	                        diag->primary_order_hash, diag->secondary_order_hash,
 	                        Players[Player_num].flags,
 	                        diag->player_mass, diag->player_drag,

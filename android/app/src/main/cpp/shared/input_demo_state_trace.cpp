@@ -286,6 +286,8 @@ static ordered_json input_demo_state_trace_build_diag_json(const input_demo_stat
 	root["weapon_proximity_dropped"] = diag.weapon_proximity_dropped;
 	root["weapon_helix_orientation"] = diag.weapon_helix_orientation;
 	root["weapon_smartmines_dropped"] = diag.weapon_smartmines_dropped;
+	root["primary_weapon_picked_up"] = diag.primary_weapon_picked_up;
+	root["secondary_weapon_picked_up"] = diag.secondary_weapon_picked_up;
 	root["player_vel_x"] = diag.player_vel_x;
 	root["player_vel_y"] = diag.player_vel_y;
 	root["player_vel_z"] = diag.player_vel_z;

@@ -68,6 +68,8 @@ int weapon_order_is_valid(const ubyte *order, int count, int secondary)
 	return 1;
 }
 extern ubyte MenuReordering;
+int PrimaryWeaponPickedUp = 0;
+int SecondaryWeaponPickedUp = 0;
 
 int player_has_weapon_lasers_not_quads(int weapon_num, int secondary_flag) {
 	if(weapon_num == 16) {
@@ -537,6 +539,9 @@ int pick_up_secondary(int weapon_index,int count)
 	int max;
 	int	num_picked_up;
 	int cutpoint;
+	const int suppress_autoselect = PlayerCfg.AutoselectOnlyOnce &&
+		SecondaryWeaponPickedUp &&
+		Players[Player_num].secondary_ammo[Players[Player_num].secondary_weapon];
 
 	max = Secondary_ammo_max[weapon_index];
 
@@ -571,7 +576,10 @@ int pick_up_secondary(int weapon_index,int count)
 		RespawningConcussions[Player_num] += num_picked_up; 
 	}
 
-	if (Players[Player_num].secondary_ammo[weapon_index] == count)	// only autoselect if player didn't have any
+	if (weapon_index != Players[Player_num].secondary_weapon)
+		SecondaryWeaponPickedUp = 1;
+
+	if (!suppress_autoselect && Players[Player_num].secondary_ammo[weapon_index] == count)	// only autoselect if player didn't have any
 	{
 		cutpoint=SOrderList (255);
 
@@ -732,6 +740,7 @@ int pick_up_primary_helper(int weapon_index, int is_quads)
 
 	int cutpoint;
 	ubyte flag = 1<<weapon_index;
+	const int suppress_autoselect = PlayerCfg.AutoselectOnlyOnce && PrimaryWeaponPickedUp;
 
 	if (weapon_index!=LASER_INDEX && Players[Player_num].primary_weapon_flags & flag) {		//already have
 		HUD_init_message(HM_DEFAULT|HM_REDUNDANT|HM_MAYDUPL, "%s %s!", TXT_ALREADY_HAVE_THE, PRIMARY_WEAPON_NAMES(weapon_index));
@@ -750,9 +759,11 @@ int pick_up_primary_helper(int weapon_index, int is_quads)
 	if(Players[Player_num].primary_weapon == LASER_INDEX && (Players[Player_num].flags & PLAYER_FLAGS_QUAD_LASERS)) {
 		primary_weapon_index = 16; 
 	}
+	if (weapon_index != primary_weapon_index)
+		PrimaryWeaponPickedUp = 1;
 
 	// Picked up something better than you have
-	if(POrderList(weapon_index)<cutpoint && POrderList(weapon_index)<POrderList(primary_weapon_index)) {
+	if(!suppress_autoselect && POrderList(weapon_index)<cutpoint && POrderList(weapon_index)<POrderList(primary_weapon_index)) {
 
 		// Are you firing? 
 		if(Controls.fire_primary_state) {

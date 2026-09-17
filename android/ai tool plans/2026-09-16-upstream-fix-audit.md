@@ -1,6 +1,6 @@
 # Upstream fix audit and Vertigo robot loading
 
-Follow-ups: the deferred PNG/menu change `ceba2c7a` is implemented and validated in [the PNG/menu backport](2026-09-16-png-menu-backport.md), and the D1 monitor fix `86dcf9ca` in [the monitor backport](2026-09-16-d1-monitor-backport.md). Cumulative coverage is 22 implemented, two already covered, and one remaining deferral (Autoselect Only Once). The original batch findings below are retained as its audit record
+Follow-ups: the deferred PNG/menu change `ceba2c7a` is implemented and validated in [the PNG/menu backport](2026-09-16-png-menu-backport.md), and the D1 monitor fix `86dcf9ca` in [the monitor backport](2026-09-16-d1-monitor-backport.md). Autoselect Only Once `8537b01e` is now implemented and validated in [the autoselection backport](2026-09-16-autoselect-once-backport.md). Cumulative coverage is 23 implemented, two already covered, and no remaining deferrals. The original batch findings below are retained as its audit record
 
 ## Scope and plan
 

@@ -606,6 +606,8 @@ static void test_hx1()
 }
 #endif
 
+void test_autoselect();
+
 int main(int argc, char **argv)
 {
 	(void) argc;
@@ -626,6 +628,7 @@ int main(int argc, char **argv)
 #endif
 	std::fprintf(stderr, "Testing life limits\n");
 	test_lives();
+	test_autoselect();
 #ifdef DXX_BUILD_DESCENT_II
 	std::fprintf(stderr, "Testing mission robot reload\n");
 	test_robot_reload();

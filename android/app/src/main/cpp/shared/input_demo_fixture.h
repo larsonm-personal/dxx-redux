@@ -47,6 +47,7 @@ typedef struct input_demo_player_cfg {
 	uint8_t cycle_autoselect_only;
 	uint8_t select_after_fire;
 	uint8_t classic_autoselect_weapon;
+	uint8_t autoselect_only_once;
 	uint8_t original_homing;
 	uint8_t primary_order_count;
 	uint8_t primary_order[INPUT_DEMO_PLAYER_CFG_PRIMARY_ORDER_MAX];

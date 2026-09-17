@@ -285,6 +285,15 @@ int plx_write_hud_prefs(const char *path, int show_counts, int show_boss_health_
 	                                    "[cockpit]", entries, 3);
 }
 
+int plx_reset_autoselect_only_once(const char *path)
+{
+	const struct playsave_text_entry entry = {
+		"autoselectonlyfirstweaponpickup=", "autoselectonlyfirstweaponpickup=0\n"
+	};
+	return playsave_text_update_section(path, playsave_android_options_header(),
+	                                    "[toggles]", &entry, 1);
+}
+
 int plx_read_original_homing(const char *path, int *original_homing)
 {
 	FILE *f = fopen(path, "r");

@@ -347,7 +347,7 @@ if(NOT ANDROID)
         dxx_add_headless_target(
             test_upstream_compat
             ../../android/tests/test_upstream_compat.cpp
-            GAME_SOURCES ${D2X_HEADLESS_SOURCES}
+            GAME_SOURCES ../../android/tests/test_autoselect.cpp ${D2X_HEADLESS_SOURCES}
             PRIVATE_DEFINITIONS DXX_BUILD_DESCENT_II
             PRIVATE_LIBRARIES ${DXX_TARGET_PREFIX}libmve
             INCLUDE_GAME_DIR)

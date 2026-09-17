@@ -89,7 +89,8 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 
-#define STATE_VERSION 16
+#define STATE_VERSION 17
+#define STATE_AUTOSELECT_RUNTIME_VERSION 17
 #define STATE_COMPATIBLE_VERSION 6
 #define STATE_RUNTIME_VERSION 8
 #define STATE_FIDELITY_VERSION 8
@@ -178,6 +179,8 @@ static int g_android_save_blank_thumbnail = 0;
 #define PHYSFSX_writeU8 rewind_file_write_u8
 #define PHYSFSX_writeVector rewind_file_write_vector
 #endif
+
+#include "autoselect_runtime.h"
 
 static fix state_time_to_delta_fix(fix64 time_value)
 {
@@ -606,6 +609,7 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	PHYSFS_write(fp, &ai_path_state.player_goal_segment, sizeof(ai_path_state.player_goal_segment), 1);
 	state_write_effect_runtime_state(fp, GameTime64);
 	secret_area_write_runtime_state(fp);
+	autoselect_write_runtime_state(fp);
 }
 
 #define STATE_PHYSICS_INFO_DISK_BYTES ((size_t)(5 * 3 * sizeof(int) + 3 * sizeof(int) + 2 * sizeof(short)))
@@ -838,6 +842,9 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 	} else if (version >= STATE_SECRET_AREA_RUNTIME_VERSION &&
 	    !state_runtime_skip(fp, sizeof(int) + SECRET_AREA_MAX_GENERATED))
 		goto done;
+	if (version >= STATE_AUTOSELECT_RUNTIME_VERSION &&
+	    !autoselect_read_runtime_state(fp, swap, 0))
+		goto done;
 	valid = 1;
 done:
 	if (start >= 0)
@@ -943,6 +950,8 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int version)
 	laser_set_runtime_state(&laser_state);
 	if (version >= STATE_SECRET_AREA_RUNTIME_VERSION)
 		secret_area_read_runtime_state(fp, swap, version >= STATE_SECRET_AREA_IDENTITY_VERSION);
+	if (version >= STATE_AUTOSELECT_RUNTIME_VERSION)
+		autoselect_read_runtime_state(fp, swap, 1);
 }
 
 static int state_thumbnail_has_palette(int version)
@@ -2825,6 +2834,13 @@ RetryObjectLoading:
 #ifdef __ANDROID__
 	state_android_restore_player_flight_state();
 #endif
+
+	/* Older saves have no pickup history; do not inherit it from another ship */
+	if (version < STATE_AUTOSELECT_RUNTIME_VERSION) {
+		PrimaryWeaponPickedUp = 0;
+		SecondaryWeaponPickedUp = 0;
+		reset_auto_select();
+	}
 
 	if (version >= STATE_RUNTIME_VERSION) {
 		if (!state_validate_runtime_state(fp, swap, version)) {

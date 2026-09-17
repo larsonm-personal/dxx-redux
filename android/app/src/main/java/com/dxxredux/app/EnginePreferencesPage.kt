@@ -511,6 +511,7 @@ fun EnginePreferencesPage(
                                     mapCheatsAccessible,
                                     !headlightOffByDefault,
                                     originalHoming,
+                                    resetAutoselectOnlyOnce = presetNeedsSave,
                                 )
                             if (count < 0) {
                                 statusMessage = "Could not save pilot preferences; original files were restored"

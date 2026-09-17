@@ -59,6 +59,7 @@ object NativePilotPreferences {
         showBossHealthBar: Boolean,
         mapCheatsAccessible: Boolean,
         headlightActiveDefault: Boolean,
+        resetAutoselectOnlyOnce: Boolean = false,
     ): Int
 
     @JvmStatic external fun nativeWriteEnginePrefsD2(
@@ -69,6 +70,7 @@ object NativePilotPreferences {
         showBossHealthBar: Boolean,
         mapCheatsAccessible: Boolean,
         headlightActiveDefault: Boolean,
+        resetAutoselectOnlyOnce: Boolean = false,
     ): Int
 
     @JvmStatic external fun nativeReadVisualPrefsD1(filesDir: String): IntArray
@@ -213,6 +215,7 @@ object NativePilotPreferences {
         showBossHealthBar: Boolean,
         mapCheatsAccessible: Boolean,
         headlightActiveDefault: Boolean = false,
+        resetAutoselectOnlyOnce: Boolean = false,
     ): Int {
         if (!validCockpitMode(cockpitMode)) return -1
         return if (game == "d1") {
@@ -224,6 +227,7 @@ object NativePilotPreferences {
                 showBossHealthBar,
                 mapCheatsAccessible,
                 headlightActiveDefault,
+                resetAutoselectOnlyOnce,
             )
         } else {
             nativeWriteEnginePrefsD2(
@@ -234,6 +238,7 @@ object NativePilotPreferences {
                 showBossHealthBar,
                 mapCheatsAccessible,
                 headlightActiveDefault,
+                resetAutoselectOnlyOnce,
             )
         }
     }
@@ -246,6 +251,7 @@ object NativePilotPreferences {
         showBossHealthBar: Boolean,
         mapCheatsAccessible: Boolean,
         headlightActiveDefault: Boolean = false,
+        resetAutoselectOnlyOnce: Boolean = false,
     ): Int {
         if (!validCockpitMode(cockpitMode)) return -1
         return writePilotPreferencesToAll(
@@ -259,6 +265,7 @@ object NativePilotPreferences {
                     showBossHealthBar,
                     mapCheatsAccessible,
                     headlightActiveDefault,
+                    resetAutoselectOnlyOnce,
                 )
             },
             writeD2 = {
@@ -270,6 +277,7 @@ object NativePilotPreferences {
                     showBossHealthBar,
                     mapCheatsAccessible,
                     headlightActiveDefault,
+                    resetAutoselectOnlyOnce,
                 )
             },
         )
@@ -284,6 +292,7 @@ object NativePilotPreferences {
         mapCheatsAccessible: Boolean,
         headlightActiveDefault: Boolean,
         originalHoming: Boolean?,
+        resetAutoselectOnlyOnce: Boolean = false,
     ): Int {
         if (!validCockpitMode(cockpitMode)) return -1
 
@@ -298,6 +307,7 @@ object NativePilotPreferences {
                     showBossHealthBar,
                     mapCheatsAccessible,
                     headlightActiveDefault,
+                    resetAutoselectOnlyOnce,
                 )
             if (engine < 0 || originalHoming == null) return engine
             val homing = writeOriginalHomingPrefs(game, filesDir, originalHoming)

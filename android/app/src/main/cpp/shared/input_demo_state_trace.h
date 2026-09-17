@@ -54,6 +54,8 @@ typedef struct input_demo_state_trace_diag {
 	int32_t weapon_proximity_dropped;
 	int32_t weapon_helix_orientation;
 	int32_t weapon_smartmines_dropped;
+	int32_t primary_weapon_picked_up;
+	int32_t secondary_weapon_picked_up;
 	int32_t player_vel_x;
 	int32_t player_vel_y;
 	int32_t player_vel_z;

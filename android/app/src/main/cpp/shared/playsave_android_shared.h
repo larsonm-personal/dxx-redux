@@ -15,6 +15,7 @@ int plx_read_hud_prefs(const char *path, int *show_counts, int *show_boss_health
 int plx_write_hud_prefs(const char *path, int show_counts, int show_boss_health_bar, int map_cheats_accessible);
 int plx_read_original_homing(const char *path, int *original_homing);
 int plx_write_original_homing(const char *path, int original_homing);
+int plx_reset_autoselect_only_once(const char *path);
 int plx_read_visual_prefs(const char *path, int *alpha_effects, int *dynlight_color);
 int plx_write_visual_prefs(const char *path, int alpha_effects, int dynlight_color);
 int plx_read_music_prefs(const char *path, int *source, int *prefer_mission, int *play_order, int *volume);

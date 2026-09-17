@@ -92,7 +92,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "config.h"
 #endif
 
-#define STATE_VERSION 30
+#define STATE_VERSION 31
+#define STATE_AUTOSELECT_RUNTIME_VERSION 31
 #define STATE_COMPATIBLE_VERSION 20
 #define STATE_RUNTIME_VERSION 23
 #define STATE_FIDELITY_VERSION 23
@@ -313,6 +314,8 @@ static int state_android_physfs_raw_close(struct PHYSFS_File *file)
 	return PHYSFS_close(file);
 }
 #endif
+
+#include "autoselect_runtime.h"
 
 static fix state_time_to_delta_fix(fix64 time_value)
 {
@@ -824,6 +827,7 @@ static void state_write_runtime_state(PHYSFS_file *fp)
 	PHYSFS_write(fp, &ai_path_state.player_goal_segment, sizeof(ai_path_state.player_goal_segment), 1);
 	state_write_effect_runtime_state(fp, GameTime64);
 	secret_area_write_runtime_state(fp);
+	autoselect_write_runtime_state(fp);
 }
 
 #define STATE_PHYSICS_INFO_DISK_BYTES ((size_t)(5 * 3 * sizeof(int) + 3 * sizeof(int) + 2 * sizeof(short)))
@@ -1075,6 +1079,9 @@ static int state_validate_runtime_state(PHYSFS_file *fp, int swap, int version)
 	} else if (version >= STATE_SECRET_AREA_RUNTIME_VERSION &&
 	    !state_runtime_skip(fp, sizeof(int) + SECRET_AREA_MAX_GENERATED))
 		goto done;
+	if (version >= STATE_AUTOSELECT_RUNTIME_VERSION &&
+	    !autoselect_read_runtime_state(fp, swap, 0))
+		goto done;
 	valid = 1;
 done:
 #ifdef __ANDROID__
@@ -1165,6 +1172,8 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 	state_read_effect_runtime_state(fp, swap, apply_runtime_state, version, GameTime64);
 	if (version >= STATE_SECRET_AREA_RUNTIME_VERSION)
 		secret_area_read_runtime_state(fp, swap, version >= STATE_SECRET_AREA_IDENTITY_VERSION);
+	if (version >= STATE_AUTOSELECT_RUNTIME_VERSION)
+		autoselect_read_runtime_state(fp, swap, !secret_restore);
 
 	if (secret_restore)
 		return;
@@ -3693,6 +3702,13 @@ int state_restore_all_sub(char *filename, int secret_restore)
 #ifdef __ANDROID__
 	state_android_restore_player_flight_state();
 #endif
+
+	/* Older saves have no pickup history; do not inherit it from another ship */
+	if (version < STATE_AUTOSELECT_RUNTIME_VERSION && !secret_restore) {
+		PrimaryWeaponPickedUp = 0;
+		SecondaryWeaponPickedUp = 0;
+		reset_auto_select();
+	}
 
 	if (version >= STATE_RUNTIME_VERSION) {
 		if (!state_validate_runtime_state(fp, swap, version)) {

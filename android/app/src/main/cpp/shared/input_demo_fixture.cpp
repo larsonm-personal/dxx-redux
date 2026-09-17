@@ -203,6 +203,9 @@ static bool parse_player_cfg(const ordered_json &value,
 		} else if (name == "classic_autoselect_weapon") {
 			if (!parse_uint8_field(it.value(), &parsed.classic_autoselect_weapon, error, "player_cfg classic_autoselect_weapon"))
 				return false;
+		} else if (name == "autoselect_only_once") {
+			if (!parse_uint8_field(it.value(), &parsed.autoselect_only_once, error, "player_cfg autoselect_only_once"))
+				return false;
 		} else if (name == "original_homing") {
 			if (!parse_uint8_field(it.value(), &parsed.original_homing, error, "player_cfg original_homing"))
 				return false;
@@ -301,6 +304,7 @@ static void player_cfg_to_json(const input_demo_player_cfg &player_cfg,
 	(*json)["cycle_autoselect_only"] = player_cfg.cycle_autoselect_only;
 	(*json)["select_after_fire"] = player_cfg.select_after_fire;
 	(*json)["classic_autoselect_weapon"] = player_cfg.classic_autoselect_weapon;
+	(*json)["autoselect_only_once"] = player_cfg.autoselect_only_once;
 	(*json)["original_homing"] = player_cfg.original_homing;
 	for (i = 0; i != player_cfg.primary_order_count; ++i)
 		primary.push_back(player_cfg.primary_order[i]);

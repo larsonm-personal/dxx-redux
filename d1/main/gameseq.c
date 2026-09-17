@@ -443,6 +443,9 @@ void init_player_stats_new_ship(ubyte pnum)
 #endif
 		if(delete_camera)
 			Dead_player_camera = 0;
+
+		PrimaryWeaponPickedUp = 0;
+		SecondaryWeaponPickedUp = 0;
 	}
 
 	Players[pnum].energy = INITIAL_ENERGY;

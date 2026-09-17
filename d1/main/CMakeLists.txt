@@ -307,7 +307,7 @@ if(NOT ANDROID)
         dxx_add_headless_target(
             test_upstream_compat
             ../../android/tests/test_upstream_compat.cpp
-            GAME_SOURCES ${D1X_SECRET_AREA_SOURCES}
+            GAME_SOURCES ../../android/tests/test_autoselect.cpp ${D1X_SECRET_AREA_SOURCES}
             INCLUDE_GAME_DIR)
         file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/upstream-compat-fixtures")
         add_test(NAME test_upstream_compat COMMAND test_upstream_compat)

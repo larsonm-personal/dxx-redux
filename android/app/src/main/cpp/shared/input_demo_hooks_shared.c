@@ -26,6 +26,7 @@
 #include "player.h"
 #include "robot.h"
 #include "timer.h"
+#include "weapon.h"
 
 #ifdef DXX_BUILD_DESCENT_II
 #include "d1_in_d2.h"
@@ -791,6 +792,8 @@ void input_demo_capture_runtime_state_diag(input_demo_state_trace_diag *diag)
 	diag->weapon_proximity_dropped = laser_state.proximity_dropped;
 	diag->weapon_helix_orientation = laser_state.helix_orientation;
 	diag->weapon_smartmines_dropped = laser_state.smartmines_dropped;
+	diag->primary_weapon_picked_up = PrimaryWeaponPickedUp;
+	diag->secondary_weapon_picked_up = SecondaryWeaponPickedUp;
 	diag->player_bump_frame = input_demo_last_player_bump.frame;
 	diag->player_bump_count = input_demo_last_player_bump.count;
 	diag->player_bump_step_hash = input_demo_last_player_bump.step_hash;
@@ -857,6 +860,8 @@ void input_demo_capture_runtime_state_diag(input_demo_state_trace_diag *diag)
 	                                                  (unsigned int) diag->weapon_helix_orientation);
 	runtime_hash = input_demo_state_trace_hash_update(runtime_hash,
 	                                                  (unsigned int) diag->weapon_smartmines_dropped);
+	runtime_hash = input_demo_state_trace_hash_update(runtime_hash, (unsigned int) diag->primary_weapon_picked_up);
+	runtime_hash = input_demo_state_trace_hash_update(runtime_hash, (unsigned int) diag->secondary_weapon_picked_up);
 	diag->runtime_state_hash = runtime_hash;
 }
 
