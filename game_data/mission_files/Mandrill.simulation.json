@@ -160,41 +160,41 @@
         },
         {
           "n": "gold key",
-          "s": 54
+          "s": 55
         },
         {
           "n": "switch 7",
-          "s": 90
+          "s": 91
         },
         {
           "n": "switch 8",
-          "s": 92
+          "s": 93
         },
         {
           "n": "switch 9",
-          "s": 95
+          "s": 96
         },
         {
           "n": "red key",
-          "s": 101
+          "s": 102
         },
         {
           "n": "reactor",
-          "s": 118
+          "s": 119
         },
         {
           "n": "exit",
           "s": 127
         }
       ],
-      "total_frames": 7594,
+      "total_frames": 7624,
       "rng_end": {
-        "state": 1210303219,
-        "calls": 4502
+        "state": 167176613,
+        "calls": 4572
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 8.133347,
+        "simulated_seconds": 8.233337,
         "difficulty": 2
       }
     },

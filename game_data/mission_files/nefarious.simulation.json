@@ -735,17 +735,17 @@
         },
         {
           "n": "exit",
-          "s": 92
+          "s": 89
         }
       ],
-      "total_frames": 5504,
+      "total_frames": 5321,
       "rng_end": {
-        "state": 3986355593,
-        "calls": 8504
+        "state": 791379610,
+        "calls": 6973
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 13.46666,
+        "simulated_seconds": 10.416656,
         "difficulty": 2
       }
     },
@@ -827,7 +827,7 @@
         },
         {
           "n": "blastable wall",
-          "s": 65
+          "s": 64
         },
         {
           "n": "fly-through 4",
@@ -839,17 +839,17 @@
         },
         {
           "n": "exit",
-          "s": 69
+          "s": 68
         }
       ],
-      "total_frames": 4110,
+      "total_frames": 4102,
       "rng_end": {
-        "state": 3211106831,
-        "calls": 14042
+        "state": 473089150,
+        "calls": 6153
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 2.616669,
+        "simulated_seconds": 2.616653,
         "difficulty": 2
       }
     }
