@@ -150,7 +150,7 @@ static void hud_counts_draw_secrets(int y,
 }
 
 void hud_counts_draw(int pnum, int score_added_active, int timer_active,
-                     int hide_hostages, hud_counts_right_inset_fn right_inset)
+                     hud_counts_right_inset_fn right_inset)
 {
 	char robot_str[32];
 	int yline = 1;
@@ -168,11 +168,6 @@ void hud_counts_draw(int pnum, int score_added_active, int timer_active,
 	         hud_counts_robot_kills(pnum), Players[pnum].num_robots_level);
 	hud_counts_draw_right_text(FSPACY(1) + LINE_SPACING * yline, robot_str,
 	                           right_inset, &Hud_counts_debug.robots);
-	if (hide_hostages) {
-		hud_counts_draw_secrets(FSPACY(1) + LINE_SPACING * (yline + 1), right_inset,
-		                        &Hud_counts_debug.secrets);
-		return;
-	}
 
 	remaining_hostages = hud_counts_remaining_hostages();
 	onboard_hostages = hud_counts_onboard_hostages(pnum);

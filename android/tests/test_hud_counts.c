@@ -71,7 +71,7 @@ static void check_hostages(int pnum, const char *text, const char *red)
 {
 	hostage_text[0] = red_text[0] = 0;
 	hostage_y = -1;
-	hud_counts_draw(pnum, 0, 0, 0, right_inset);
+	hud_counts_draw(pnum, 0, 0, right_inset);
 	CHECK(strcmp(hostage_text, text) == 0);
 	CHECK(strcmp(red_text, red) == 0);
 	CHECK(hud_counts_get_debug_state()->hostages.drawn);
@@ -80,16 +80,17 @@ static void check_hostages(int pnum, const char *text, const char *red)
 static void check_secret_robots(const char *text)
 {
 	const hud_counts_debug_state *counts;
-	robot_text[0] = 0;
+	robot_text[0] = hostage_text[0] = red_text[0] = 0;
 	hostage_y = -1;
-	hud_counts_draw(0, 0, 0, 1, right_inset);
+	hud_counts_draw(0, 0, 0, right_inset);
 	counts = hud_counts_get_debug_state();
 	CHECK(strcmp(robot_text, text) == 0);
 	CHECK(counts->robots.drawn);
-	CHECK(!counts->hostages.present);
+	CHECK(counts->hostages.drawn);
+	CHECK(counts->hostages.y >= counts->robots.y + counts->robots.h);
 	CHECK(counts->secrets.drawn == (secret_total > 0));
 	if (secret_total > 0)
-		CHECK(counts->secrets.y >= counts->robots.y + counts->robots.h);
+		CHECK(counts->secrets.y >= counts->hostages.y + counts->hostages.h);
 }
 
 int main(void)
@@ -153,6 +154,12 @@ int main(void)
 	check_secret_robots("robots: 7/10");
 	secret_total = 0;
 	check_secret_robots("robots: 7/10");
+
+	/* Mines with no hostages still show an explicit zero total */
+	Players[0].hostages_level = Players[0].hostages_on_board = 0;
+	Players[1].hostages_on_board = 0;
+	Objects[0].type = OBJ_NONE;
+	check_hostages(0, "hostages: 0/0", "");
 	puts("Robot and hostage HUD counts passed");
 	return 0;
 }

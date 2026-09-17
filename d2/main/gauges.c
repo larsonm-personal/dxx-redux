@@ -812,7 +812,7 @@ void hud_show_robot_hostage_counts()
 		!Control_center_destroyed;
 #endif
 	hud_counts_draw(pnum, hud_score_added_active(), timer_active,
-		Current_level_num < 0, hud_corner_text_right_inset);
+		hud_corner_text_right_inset);
 }
 
 void hud_show_timer_count()

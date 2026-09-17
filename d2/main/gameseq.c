@@ -1433,9 +1433,11 @@ void StartNewLevelSecret(int level_num, int page_in_textures)
 	reset_palette_add();
 
 	if (First_secret_visit || (Newdemo_state == ND_STATE_PLAYBACK)) {
-		/* Keep secret-level HUD robot counts separate from the parent mine */
+		/* Keep secret-level HUD counts separate from the saved parent mine */
 		Players[Player_num].num_kills_level = 0;
 		Players[Player_num].num_robots_level = count_number_of_robots();
+		Players[Player_num].hostages_level = count_number_of_hostages();
+		Players[Player_num].hostages_on_board = 0;
 		init_robots_for_level();
 		init_ai_objects();
 		init_smega_detonates();
