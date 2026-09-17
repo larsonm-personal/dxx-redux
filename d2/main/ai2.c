@@ -1750,6 +1750,15 @@ int ai_door_is_openable(object *objp, segment *segp, int sidenum)
 	if ((objp == NULL) || (Robot_info[objp->id].companion == 1)) {
 		int	ailp_mode;
 
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
+		/* A controlling switch does not make a solid grate an openable door
+		 * The strategic planner can guide to that switch before rebuilding */
+		if (wallp->type == WALL_CLOSED ||
+		    (wallp->type == WALL_ILLUSION &&
+		     !(WALL_IS_DOORWAY(segp, sidenum) & WID_FLY_FLAG)))
+			return 0;
+#endif
+
 		if (wallp->flags & WALL_BUDDY_PROOF) {
 			if ((wallp->type == WALL_DOOR) && (wallp->state == WALL_DOOR_CLOSED))
 				return 0;

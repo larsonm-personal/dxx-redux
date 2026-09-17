@@ -48,6 +48,9 @@ extern "C" {
 
 extern "C" void piggy_init_pigfile(char *filename);
 extern "C" void GameProcessFrame(void);
+#ifdef DXX_GUIDEBOT_LIVE_ESCORT
+extern int test_guidebot_live_navigation(const char *output, const char *return_target);
+#endif
 
 namespace
 {
@@ -304,6 +307,10 @@ int main(int argc, char *argv[])
 			return 1;
 		}
 	}
+#ifdef DXX_GUIDEBOT_LIVE_ESCORT
+	level_metadata_set_progress_callback(nullptr, nullptr);
+	return test_guidebot_live_navigation(output, find_arg_value(argc, argv, "-escort-return-target"));
+#endif
 	fprintf(stderr, "ROUTE-CONFIRM phase=route-start\n");
 	if (!(checkpoint ? route_confirmation_start_from_current_state() : route_confirmation_start())) {
 		fprintf(stderr, "ROUTE-CONFIRM FAIL start %s\n",

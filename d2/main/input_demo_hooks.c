@@ -2575,7 +2575,7 @@ void input_demo_consume_awareness_source(const char **source_tag, int *source_ob
 
 int input_demo_should_match_android_companion_velocity(void)
 {
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	return 1;
 #else
 	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();

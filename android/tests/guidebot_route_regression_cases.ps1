@@ -42,6 +42,7 @@ function Get-GuidebotRouteRegressionCases {
         [pscustomobject]@{ File = 'test_ffyl_forcefield_door.ps1'; Family = 'ffyl'; Always = $false }
         [pscustomobject]@{ File = 'test_guidebot_firststrike_live_objects.ps1'; Family = 'guidebot'; Always = $false }
         [pscustomobject]@{ File = 'test_guidebot_firststrike_long_path.ps1'; Family = 'guidebot'; Always = $true }
+        [pscustomobject]@{ File = 'test_guidebot_live_navigation.ps1'; Family = 'guidebot'; Always = $true }
         [pscustomobject]@{ File = 'test_guidebot_key_checkpoint.ps1'; Family = 'guidebot'; Always = $false }
         [pscustomobject]@{ File = 'test_guidebot_live_key_pickup.ps1'; Family = 'guidebot'; Always = $true }
         [pscustomobject]@{ File = 'test_guidebot_player_defaults.ps1'; Family = 'guidebot'; Always = $true }

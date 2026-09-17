@@ -88,6 +88,10 @@ extern fix64 Buddy_last_seen_player, Buddy_last_player_path_created;
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 escort_route_goal Escort_route_goal;
 escort_unexplored_route_target Escort_unexplored_route_target;
+static int Escort_hostage_object = -1;
+static int Escort_hostage_signature = -1;
+static fix64 Escort_hostage_next_plan;
+
 int Escort_route_target_mode = ESCORT_ROUTE_TARGET_END_OF_LEVEL;
 int Escort_route_target_mode_restore_pending;
 int Escort_route_metadata_dirty = 1;
@@ -166,6 +170,12 @@ static point_seg Escort_path_parity_ordinary[MAX_SEGMENTS * 2];
 static point_seg Escort_path_parity_route[MAX_SEGMENTS * 2];
 static int Escort_path_parity_saved_path_lengths[MAX_OBJECTS];
 #endif
+
+int escort_route_follows_objective(const object *objp)
+{
+	return objp && objp->type == OBJ_ROBOT && Robot_info[objp->id].companion &&
+	       Escort_route_goal.active && Ai_local_info[objp - Objects].mode == AIM_GOTO_OBJECT;
+}
 
 void escort_unexplored_route_target_clear(escort_unexplored_route_target *target)
 {
@@ -339,6 +349,7 @@ void escort_route_set_target_mode(int target_mode)
 
 void escort_route_note_replan(const char *reason)
 {
+	Escort_hostage_next_plan = 0;
 	Escort_route_metadata_dirty = 1;
 	Escort_route_last_replan_reason = reason && reason[0] ? reason : "unknown";
 }
@@ -598,6 +609,9 @@ static void escort_route_consume_cache_improvement(void)
 
 void escort_route_clear_goal(void)
 {
+	Escort_hostage_object = -1;
+	Escort_hostage_signature = -1;
+	Escort_hostage_next_plan = 0;
 	escort_route_consume_cache_improvement();
 	Escort_route_goal_request_pending = 0;
 	escort_route_goal_initialize(&Escort_route_goal);
@@ -1772,6 +1786,64 @@ int escort_route_adopt_exit_command(void)
 	return 1;
 }
 
+/* Explicit Hostages intent survives prerequisite guidance and player visits.
+ * Reuse the segment planner only on a slow cadence; the escort owns movement */
+int escort_route_prepare_hostage(object *objp)
+{
+	int reachable = exists_in_mine(objp->segnum, OBJ_HOSTAGE, -1, -1);
+	if (reachable != -2) {
+		escort_route_clear_goal();
+		return reachable;
+	}
+	if (Escort_hostage_object < 0 || Escort_hostage_object > Highest_object_index ||
+	    Objects[Escort_hostage_object].type != OBJ_HOSTAGE ||
+	    Objects[Escort_hostage_object].signature != Escort_hostage_signature) {
+		fix best_distance = 0;
+		Escort_hostage_object = -1;
+		for (int i = 0; i <= Highest_object_index; ++i) {
+			if (Objects[i].type != OBJ_HOSTAGE)
+				continue;
+			fix distance = vm_vec_dist_quick(&objp->pos, &Objects[i].pos);
+			if (Escort_hostage_object < 0 || distance < best_distance) {
+				Escort_hostage_object = i;
+				best_distance = distance;
+			}
+		}
+		if (Escort_hostage_object < 0)
+			return -1;
+		Escort_hostage_signature = Objects[Escort_hostage_object].signature;
+		Escort_hostage_next_plan = 0;
+	}
+	if (Escort_route_goal.active && !level_metadata_live_route_work_pending() &&
+	    GameTime64 < Escort_hostage_next_plan &&
+	    Escort_hostage_next_plan - GameTime64 <= 3 * F1_0)
+		return Escort_hostage_object;
+	Escort_hostage_next_plan = GameTime64 + 3 * F1_0;
+	const int target = Objects[Escort_hostage_object].segnum;
+	Escort_route_metadata_rescan_count++;
+	level_metadata_rescan_route_to_segment_from_object(objp - Objects, target);
+	if (level_metadata_live_route_work_pending() && Escort_route_goal.active)
+		return Escort_hostage_object;
+	escort_route_goal candidate;
+	escort_route_goal_initialize(&candidate);
+	if (!level_metadata_live_route_work_pending())
+		(void) escort_route_select_next_goal(&candidate, NULL);
+	/* A missing plan still has a useful physical frontier. Never replace the
+	 * Hostages command with SCRAM, or present the segment endpoint as an exit */
+	if (!candidate.active || candidate.objective_kind == LEVEL_METADATA_ROUTE_EXIT ||
+	    candidate.objective_kind == LEVEL_METADATA_ROUTE_UNEXPLORED) {
+		escort_route_goal_initialize(&candidate);
+		candidate.active = 1;
+		candidate.objective_kind = ESCORT_ROUTE_OBJECTIVE_HOSTAGE;
+		candidate.target_seg = candidate.objective_seg = target;
+		candidate.objective_object = Escort_hostage_object;
+		candidate.guidance_mode = ESCORT_ROUTE_GUIDANCE_REACH_OBJECTIVE;
+		snprintf(candidate.label, sizeof(candidate.label), "HOSTAGES");
+	}
+	escort_route_publish_goal(&candidate);
+	return Escort_hostage_object;
+}
+
 void escort_route_refresh_metadata(void)
 {
 #ifdef NETWORK
@@ -1866,6 +1938,14 @@ static int escort_route_goal_semantic_equal(
 
 void escort_route_monitor_completion(void)
 {
+	if (Escort_special_goal == ESCORT_GOAL_HOSTAGE) {
+		/* Continue budgeted work without replacing the live movement path */
+		if (escort_route_has_local_authority() &&
+		    escort_is_companion_object(Buddy_objnum) &&
+		    level_metadata_live_route_work_pending())
+			(void) escort_route_prepare_hostage(&Objects[Buddy_objnum]);
+		return;
+	}
 	escort_route_goal previous_goal;
 	guidebot_route_decision previous_decision;
 	guidebot_route_decision next_decision;

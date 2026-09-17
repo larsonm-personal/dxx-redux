@@ -1448,7 +1448,7 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	/* Repair the waypoint being approached, not future points behind doors
 	 * Its incoming leg must be clear from the actor's actual position */
-	if (robptr->companion && Escort_route_goal.active) {
+	if (escort_route_follows_objective(objp)) {
 		point_seg *waypoint = &Point_segs[aip->hide_index + aip->cur_path_index];
 		vms_vector adjusted = waypoint->point;
 		fvi_query query;
@@ -1553,7 +1553,7 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 	 * steer directly at the later point through the intervening wall. */
 	while (
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
-	       (Escort_route_goal.active
+	       (escort_route_follows_objective(objp)
 	            ? guidebot_route_waypoint_reached(
 	                  objp,
 	                  &Point_segs[aip->hide_index + aip->cur_path_index],
@@ -1567,10 +1567,10 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 		/* The legacy cursor is a signed byte, even though route paths may
 		 * contain hundreds of points. Retire only the consumed prefix of a
-		 * forward objective path before incrementing beyond its range. The
+		 * forward companion path before incrementing beyond its range. The
 		 * terminal point and every remaining leg stay unchanged, as do the
 		 * save/network AI layouts and ordinary robot patrol behavior */
-		if (robptr->companion && Escort_route_goal.active &&
+		if (robptr->companion &&
 		    aip->PATH_DIR > 0 && aip->cur_path_index >= 120) {
 			const int consumed = aip->cur_path_index;
 			aip->hide_index += consumed;
@@ -1588,7 +1588,7 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 			 * follower otherwise turns an AIM_GOTO_OBJECT path into a patrol by
 			 * reversing it as soon as the final waypoint is accepted.  Hold the
 			 * endpoint so the route driver can approach and complete the target. */
-			if (Escort_route_goal.active && aip->PATH_DIR > 0) {
+			if (escort_route_follows_objective(objp) && aip->PATH_DIR > 0) {
 				aip->cur_path_index = aip->path_length - 1;
 				break;
 			}
@@ -1726,7 +1726,7 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 	//	Set velocity (objp->mtype.phys_info.velocity) and orientation (objp->orient) for this object.
 	//--Int3_if(((aip->cur_path_index >= 0) && (aip->cur_path_index < aip->path_length)));
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
-	if (robptr->companion && Escort_route_goal.active)
+	if (escort_route_follows_objective(objp))
 		guidebot_route_recover_approach(objp, &goal_point);
 #endif
 	ai_path_set_orient_and_vel(objp, &goal_point, player_visibility, vec_to_player);
@@ -1769,12 +1769,12 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 	static int motion_pending;
 	static vms_vector motion_goal, motion_command;
 	int contact_reversed_motion = 0;
-	if (robptr->companion && (!Escort_route_goal.active ||
+	if (robptr->companion && (!escort_route_follows_objective(objp) ||
 	    motion_actor != objp || motion_signature != objp->signature ||
 	    memcmp(&motion_goal, goal_point, sizeof(motion_goal)) ||
 	    GameTime64 < motion_contact_time || GameTime64 - motion_contact_time > 2 * F1_0))
 		motion_pending = 0;
-	if (robptr->companion && Escort_route_goal.active &&
+	if (escort_route_follows_objective(objp) &&
 	    motion_actor == objp && motion_signature == objp->signature &&
 	    GameTime64 > motion_time && GameTime64 - motion_time <= F1_0 / 4 &&
 	    !memcmp(&motion_goal, goal_point, sizeof(motion_goal))) {
@@ -1803,7 +1803,7 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 	int portal_stalled = 0;
 	if (robptr->companion) {
 		const fix64 elapsed = GameTime64 - portal_last_time;
-		if (Escort_route_goal.active && portal_actor == objp &&
+		if (escort_route_follows_objective(objp) && portal_actor == objp &&
 		    portal_signature == objp->signature && elapsed > 0 && elapsed <= F1_0 / 4 &&
 		    vm_vec_dist(&objp->pos, &portal_last_pos) <= F1_0 / 64)
 			portal_still_time = min(F1_0, portal_still_time + (fix)elapsed);
@@ -1818,7 +1818,7 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 	/* A clear waypoint can still be approached with wall-bound momentum.
 	 * If the next motion hits a portal rim, align through its clear center
 	 * before blending steering. Keep the route cursor and full radius */
-	if (robptr->companion && Escort_route_goal.active && portal_stalled &&
+	if (escort_route_follows_objective(objp) && portal_stalled &&
 	    objp->ctype.ai_info.hide_index >= 0 &&
 	    objp->ctype.ai_info.cur_path_index >= 0 &&
 	    objp->ctype.ai_info.cur_path_index < objp->ctype.ai_info.path_length &&
@@ -1865,7 +1865,7 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 	 * an openable-door reversal, including oblique impacts, when facing the
 	 * goal but moving away from it. Brake while its full-radius approach
 	 * remains blocked, then resume ordinary steering. Never open the wall here */
-	if (robptr->companion && Escort_route_goal.active && contact_reversed_motion && dot > 0 &&
+	if (escort_route_follows_objective(objp) && contact_reversed_motion && dot > 0 &&
 	    vm_vec_dot(&norm_vec_to_goal, &norm_cur_vel) < 0) {
 		fvi_query query;
 		fvi_info hit;
@@ -1891,7 +1891,7 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 			}
 		}
 	}
-	if (robptr->companion && Escort_route_goal.active && motion_pending) {
+	if (escort_route_follows_objective(objp) && motion_pending) {
 		norm_cur_vel = norm_vec_to_goal;
 		vm_vec_zero(&objp->mtype.phys_info.velocity);
 		if (guidebot_route_waypoint_leg_clear(objp, &objp->pos, objp->segnum, goal_point))
@@ -1931,7 +1931,7 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	/* Bound the new precision command before test-speed scaling. Capping an
 	 * already scaled command changes portal recovery; smoothing defeats arrival */
-	if (robptr->companion && Escort_route_goal.active)
+	if (escort_route_follows_objective(objp))
 		precise_approach = guidebot_route_steer_approach(objp, goal_point, &norm_cur_vel);
 	route_confirmation_scale_path_velocity(objp, &norm_cur_vel);
 #endif

@@ -89,6 +89,11 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define ANDROID_DPAD_RIGHT_BUTTON 25
 #else
 #define ESCORT_DIAG(fmt, ...) ((void)0)
+#ifdef DXX_GUIDEBOT_LIVE_ESCORT
+#define DLOG_GUIDEBOT 0
+#define DLOG_GAME 0
+#define debug_log(...) ((void)0)
+#endif
 #endif
 
 #ifdef EDITOR
@@ -139,7 +144,7 @@ fix64	Escort_last_path_created = 0;
 int	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED, Escort_special_goal = -1, Escort_goal_index = -1, Buddy_messages_suppressed = 0;
 static int Escort_goal_secret_seg = -1;
 static int Escort_goal_secret_side = -1;
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 static escort_path_recalc_limiter Escort_route_path_recalc_limiter;
 static int Escort_route_path_recalc_pending;
 static fix64 Escort_route_path_recalc_requested_time;
@@ -308,7 +313,7 @@ static int thief_store_stolen_item(ubyte item)
 	return 1;
 }
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 static void escort_route_path_recalc_cancel_pending(void)
 {
 	Escort_route_path_recalc_pending = 0;
@@ -409,7 +414,7 @@ void init_buddy_for_level(void)
 	Escort_goal_index = -1;
 	Escort_goal_secret_seg = -1;
 	Escort_goal_secret_side = -1;
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	escort_route_path_recalc_reset();
 	Escort_route_path_recalc_goal_kind = -1;
 	Escort_route_path_recalc_goal_seg = -1;
@@ -542,7 +547,7 @@ static void escort_apply_docked_state(int docked)
 	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
 	Escort_goal_index = -1;
 	escort_clear_secret_goal();
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	escort_route_clear_goal();
 	escort_route_note_replan(docked ? "guidebot_docked" : "guidebot_deployed");
 #endif
@@ -651,7 +656,7 @@ void escort_spawn_at_player(void)
 	Escort_goal_index = -1;
 	Escort_goal_secret_seg = -1;
 	Escort_goal_secret_side = -1;
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	escort_route_set_target_mode(ESCORT_ROUTE_TARGET_END_OF_LEVEL);
 	escort_route_clear_goal();
 	escort_route_note_replan("guidebot_spawned");
@@ -834,7 +839,7 @@ void escort_recall_to_ship(void)
 	Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
 	Escort_goal_index = -1;
 	escort_clear_secret_goal();
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	escort_route_clear_goal();
 	escort_route_note_replan("recall_to_ship");
 #endif
@@ -1063,10 +1068,21 @@ void detect_escort_goal_accomplished(int index)
 	if (Escort_special_goal == ESCORT_GOAL_SECRET)
 		return;
 
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
+	if (Escort_special_goal == ESCORT_GOAL_HOSTAGE) {
+		if (index < 0 || index > Highest_object_index || Objects[index].type != OBJ_HOSTAGE)
+			return;
+		detected = 1;
+		escort_route_clear_goal();
+		escort_route_note_replan("hostage_rescued");
+		goto dega_ok;
+	}
+#endif
+
 //	See if goal found was a key.  Need to handle default goals differently.
 //	Note, no buddy_met_goal sound when blow up reactor or exit.  Not great, but ok
 //	since for reactor, noisy, for exit, buddy is disappearing.
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 if ((Escort_special_goal == -1) && !Escort_route_goal.active && (Escort_goal_index == index)) {
 #else
 if ((Escort_special_goal == -1) && (Escort_goal_index == index)) {
@@ -1245,14 +1261,14 @@ static void escort_report_secret_goal_failure(int goal_index);
 void set_escort_special_goal(int special_key)
 {
 	int marker_key;
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	int using_route_command = 0;
 #endif
 
 	if (!escort_goal_command_allowed())
 		return;
 	escort_clear_secret_goal();
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	escort_route_set_target_mode(ESCORT_ROUTE_TARGET_END_OF_LEVEL);
 	escort_route_clear_goal();
 	escort_route_note_replan("goal_command");
@@ -1296,7 +1312,7 @@ void set_escort_special_goal(int special_key)
 			case KEY_7:	Escort_special_goal = ESCORT_GOAL_SCRAM;			break;
 			case KEY_8:	Escort_special_goal = ESCORT_GOAL_PLAYER_SPEW;	break;
 			case KEY_9:
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 				using_route_command = escort_route_adopt_exit_command();
 				if (using_route_command) {
 					Escort_special_goal = -1;
@@ -1317,7 +1333,7 @@ void set_escort_special_goal(int special_key)
 
 	Last_buddy_message_time = GameTime64 - 2*F1_0;	//	Allow next message to come through.
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	if (using_route_command) {
 		if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT &&
 		    Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_EXIT)
@@ -1337,7 +1353,7 @@ void set_escort_special_goal(int special_key)
 
 void escort_resume_default_goal(void)
 {
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	if (!escort_goal_command_allowed())
 		return;
 #endif
@@ -1345,7 +1361,7 @@ void escort_resume_default_goal(void)
 	Last_buddy_key = -1;
 	set_escort_special_goal(KEY_0);
 	Last_buddy_key = -1;
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	escort_route_set_target_mode(ESCORT_ROUTE_TARGET_END_OF_LEVEL);
 	escort_route_clear_goal();
 	escort_route_note_replan("goal_command");
@@ -1370,7 +1386,7 @@ void escort_find_secret_goal(void)
 	if (!escort_goal_command_allowed())
 		return;
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	escort_route_set_target_mode(ESCORT_ROUTE_TARGET_END_OF_LEVEL);
 	escort_route_clear_goal();
 	escort_route_note_replan("secret_command");
@@ -1404,7 +1420,7 @@ void escort_find_secret_goal(void)
 
 void escort_find_unexplored_goal(void)
 {
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	if (!escort_goal_command_allowed())
 		return;
 
@@ -1432,7 +1448,7 @@ void escort_find_unexplored_goal(void)
 
 void input_demo_apply_recorded_guidebot_goal(int special_key, int from_menu)
 {
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	debug_log(DLOG_GUIDEBOT,
 	          "command key=%d from_menu=%d previous_goal=%d previous_special=%d "
 	          "marker=%d last_key=%d",
@@ -1601,7 +1617,7 @@ int escort_get_secret_goal_side(void)
 	return (Escort_goal_object == ESCORT_GOAL_SECRET) ? Escort_goal_secret_side : -1;
 }
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 int escort_get_looking_for_marker(void)
 {
 	return Looking_for_marker;
@@ -1876,8 +1892,9 @@ void escort_create_path_to_goal(object *objp)
 	int			objnum = objp-Objects;
 	ai_static	*aip = &objp->ctype.ai_info;
 	ai_local		*ailp = &Ai_local_info[objnum];
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	int using_route_goal = 0;
+	int hostage_index = -1;
 #endif
 
 	input_demo_log_escort_goal_probe("entry", objp, ailp, aip, -1, -1);
@@ -1885,7 +1902,7 @@ void escort_create_path_to_goal(object *objp)
 	if (Escort_special_goal != -1)
 		Escort_goal_object = Escort_special_goal;
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	if (!escort_goal_is_pathable(Escort_goal_object)) {
 		debug_log(DLOG_GAME,
 		          "Guide-Bot ignored path request without a goal readiness=%s",
@@ -1896,6 +1913,10 @@ void escort_create_path_to_goal(object *objp)
 #endif
 
 	Escort_kill_object = -1;
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
+	if (Escort_special_goal == ESCORT_GOAL_HOSTAGE)
+		hostage_index = escort_route_prepare_hostage(objp);
+#endif
 
 	if (Looking_for_marker != -1) {
 
@@ -1903,7 +1924,7 @@ void escort_create_path_to_goal(object *objp)
 		if (Escort_goal_index > -1)
 			goal_seg = Objects[Escort_goal_index].segnum;
 	} else {
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	if (Escort_route_goal.active) {
 		if (Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_BOSS &&
 		    Escort_route_goal.objective_object >= 0 &&
@@ -1916,7 +1937,8 @@ void escort_create_path_to_goal(object *objp)
 			    Escort_route_goal.target_seg;
 		}
 		goal_seg = Escort_route_goal.target_seg;
-			Escort_goal_index = goal_seg;
+			Escort_goal_index = Escort_special_goal == ESCORT_GOAL_HOSTAGE ?
+			    hostage_index : goal_seg;
 			using_route_goal = 1;
 		} else
 #endif
@@ -2006,7 +2028,7 @@ void escort_create_path_to_goal(object *objp)
 	}
 
 	path_goal_seg = goal_seg;
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	if (using_route_goal)
 		path_goal_seg = escort_route_physical_target(
 		    objp, goal_seg, Max_escort_length);
@@ -2040,7 +2062,7 @@ void escort_create_path_to_goal(object *objp)
 			aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
 			input_demo_log_escort_path_state("escort_create_path_to_goal scram", objp);
 		} else {
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 			if (using_route_goal && Escort_route_avoid_seg >= 0 &&
 			    Escort_route_avoid_trigger == Escort_route_goal.objective_trigger &&
 			    Escort_route_avoid_wall == Escort_route_goal.objective_wall) {
@@ -2073,7 +2095,7 @@ void escort_create_path_to_goal(object *objp)
 			input_demo_log_escort_path_state("escort_create_path_to_goal to_segment", objp);
 			if ((aip->path_length > 0) && (Point_segs[aip->hide_index + aip->path_length - 1].segnum != path_goal_seg)) {
 				{
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 					int partial_seg = Point_segs[aip->hide_index + aip->path_length - 1].segnum;
 
 					if (using_route_goal) {
@@ -2117,13 +2139,16 @@ void escort_create_path_to_goal(object *objp)
 		}
 
 		ailp->mode = AIM_GOTO_OBJECT;
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 		escort_trace_path("created", objp, ailp, aip, goal_seg);
 #endif
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 		if (using_route_goal) {
-			if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT &&
+			if (Escort_special_goal == ESCORT_GOAL_HOSTAGE)
+				buddy_message("Hostages: %s", Escort_route_goal.objective_kind == ESCORT_ROUTE_OBJECTIVE_HOSTAGE ?
+				    "can't reach them yet; following the closest route" : escort_route_goal_label());
+			else if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT &&
 			    path_goal_seg != goal_seg)
 				buddy_message("Can't reach EXIT yet; navigating as close as possible");
 			else if (path_goal_seg != goal_seg &&
@@ -2144,7 +2169,7 @@ void escort_create_path_to_goal(object *objp)
 
 }
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 static void escort_route_monitor_path_progress(object *objp, ai_local *ailp,
                                                ai_static *aip)
 {
@@ -2232,19 +2257,21 @@ static void escort_route_monitor_path_progress(object *objp, ai_local *ailp,
 int escort_set_goal_object(void)
 {
 	int key_flags;
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	int route_goal;
 #endif
 
 	if (Escort_special_goal != -1) {
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
+		if (Escort_special_goal == ESCORT_GOAL_HOSTAGE)
+			return ESCORT_GOAL_HOSTAGE;
 		escort_route_clear_goal();
 #endif
 		return ESCORT_GOAL_UNSPECIFIED;
 	}
 
 	key_flags = escort_owned_key_flags();
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	escort_route_refresh_metadata();
 	route_goal = escort_route_next_goal();
 	if (route_goal != ESCORT_GOAL_UNSPECIFIED)
@@ -2298,7 +2325,8 @@ int time_to_visit_player(object *objp, ai_local *ailp, ai_static *aip)
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
 	/* A nearby visible player is already following the objective route */
 	if (Escort_route_goal.active && Buddy_last_seen_player == GameTime64 &&
-	    vm_vec_dist_quick(&objp->pos, &ConsoleObject->pos) < MIN_ESCORT_DISTANCE)
+	    vm_vec_dist_quick(&objp->pos, &ConsoleObject->pos) < MIN_ESCORT_DISTANCE &&
+	    guidebot_route_waypoint_leg_clear(objp, &objp->pos, objp->segnum, &ConsoleObject->pos))
 		return 0;
 #endif
 
@@ -2391,7 +2419,7 @@ void escort_rebuild_runtime_state_after_restore(void)
 	fix64 raw_time_player_seen;
 	fix64 raw_escort_last_path_created;
 	int i;
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	int preserve_route_target_mode = Escort_route_target_mode_restore_pending;
 	Escort_route_target_mode_restore_pending = 0;
 	escort_route_note_replan("save_restore");
@@ -2510,7 +2538,7 @@ void escort_rebuild_runtime_state_after_restore(void)
 		Escort_special_goal = -1;
 		Escort_goal_index = -1;
 		escort_clear_secret_goal();
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 		if (!preserve_route_target_mode)
 			escort_route_set_target_mode(ESCORT_ROUTE_TARGET_END_OF_LEVEL);
 		escort_route_clear_goal();
@@ -2519,7 +2547,7 @@ void escort_rebuild_runtime_state_after_restore(void)
 #ifdef NETWORK
 	escort_restore_companion_robot_control();
 #endif
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	/* Publish guidance from the restored world before any consumer can reuse the
 	 * pre-restore decision.  Coop nonowners return without planning. */
 	if (!input_demo_replay_is_loaded())
@@ -2686,12 +2714,12 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 		}
 		return;
 	}
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	escort_route_monitor_path_progress(objp, ailp, aip);
 	escort_update_navigation_liveness(objp, ailp);
 	escort_trace_navigation(objp, ailp, aip, dist_to_player, player_visibility);
 	escort_route_path_recalc_sync_goal();
-	if (Escort_route_path_recalc_pending &&
+	if (Escort_route_path_recalc_pending && ailp->mode == AIM_GOTO_OBJECT &&
 	    GameTime64 >= Escort_route_path_recalc_due_time) {
 		if (!escort_goal_is_pathable(Escort_goal_object))
 			Escort_goal_object = escort_set_goal_object();
@@ -2759,7 +2787,7 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 		((Escort_special_goal == ESCORT_GOAL_SCRAM) && ((Escort_last_path_created + F1_0*15) < GameTime64))) {
 		if (replay_state_probe_active)
 			input_demo_log_escort_goal_reset();
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 		escort_trace_navigation_reset("periodic_goal_refresh", objp, ailp, aip);
 #endif
 		Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
@@ -2791,7 +2819,7 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 	if ((Escort_special_goal != ESCORT_GOAL_SCRAM) && (replay_state_probe_active ? replay_should_visit_player : time_to_visit_player(objp, ailp, aip))) {
 		int	max_len;
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 		escort_trace_navigation_reset(
 		    GameTime64 - Buddy_last_seen_player > MAX_ESCORT_TIME_AWAY &&
 		            GameTime64 - Buddy_last_player_path_created > F1_0 ?
@@ -2824,7 +2852,7 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 		(aip->cur_path_index >= aip->path_length/2) &&
 		(dist_to_player < MIN_ESCORT_DISTANCE - F1_0/4)) {
 		Escort_goal_object = escort_set_goal_object();
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 		if (!escort_goal_request_is_pathable(Escort_goal_object, Escort_special_goal))
 			return;
 		if (Escort_route_goal.active &&
@@ -2844,7 +2872,7 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 #endif
 		) {
 			create_n_segment_path(objp, 5, Believed_player_seg);
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 			escort_trace_path("short_path_fallback", objp, ailp, aip,
 			                  Escort_goal_index);
 #endif
@@ -2858,7 +2886,7 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 			((aip->cur_path_index >= aip->path_length/2) &&
 			 (dist_to_player < MIN_ESCORT_DISTANCE - F1_0/4))) {
 			Escort_goal_object = escort_set_goal_object();
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 			if (!escort_goal_request_is_pathable(Escort_goal_object, Escort_special_goal))
 				return;
 			if (Escort_route_goal.active &&
@@ -2877,7 +2905,7 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 #endif
 			) {
 				create_n_segment_path(objp, 5, Believed_player_seg);
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 				escort_trace_path("short_path_fallback", objp, ailp, aip,
 				                  Escort_goal_index);
 #endif
@@ -2903,7 +2931,7 @@ void escort_note_player_key_flags(int old_flags, int new_flags)
 
 void escort_note_player_key_flags_for_player(int pnum, int old_flags, int new_flags)
 {
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	int objective_key_flag;
 #endif
 
@@ -2911,7 +2939,7 @@ void escort_note_player_key_flags_for_player(int pnum, int old_flags, int new_fl
 #ifdef NETWORK
 		if ((Game_mode & GM_MULTI_COOP) &&
 		    !escort_owner_key_change_relevant(pnum, escort_key_owner_player())) {
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 			Escort_route_ignored_nonowner_key_change_count++;
 #endif
 			return;
@@ -2920,7 +2948,7 @@ void escort_note_player_key_flags_for_player(int pnum, int old_flags, int new_fl
 		(void) pnum;
 #endif
 		invalidate_escort_goal();
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 		objective_key_flag = 0;
 		if (Escort_route_goal.active &&
 		    Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_KEY)
@@ -2938,7 +2966,7 @@ void escort_note_player_key_flags_for_player(int pnum, int old_flags, int new_fl
 
 void escort_note_boss_teleported(int objnum)
 {
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	if (objnum < 0 || objnum > Highest_object_index ||
 	    Objects[objnum].type != OBJ_ROBOT ||
 	    !Robot_info[Objects[objnum].id].boss_flag ||
@@ -3846,7 +3874,7 @@ int escort_menu_handler(window *wind, d_event *event, escort_menu *menu)
 			break;
 			
 		case EVENT_WINDOW_CLOSE:
-		#ifdef __ANDROID__
+#ifdef __ANDROID__
 			android_menu_scale_clear();
 		#endif
 			d_free(menu);
@@ -3946,7 +3974,7 @@ void do_escort_menu(void)
 			sprintf(menu->goal_str, "boss");
 			break;
 		case ESCORT_GOAL_EXIT:
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 			if (Escort_route_goal.active) {
 				snprintf(
 				    menu->goal_str, sizeof(menu->goal_str),
@@ -4099,7 +4127,7 @@ enum {
 
 static int escort_route_target_mode_for_network(void)
 {
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	return Escort_route_target_mode;
 #else
 	return Escort_network_target_mode;
@@ -4134,7 +4162,7 @@ static void escort_reset_navigation_for_owner(int new_owner)
 	Escort_special_goal = -1;
 	Escort_goal_index = -1;
 	escort_clear_secret_goal();
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	escort_route_clear_goal();
 	escort_unexplored_route_target_clear(&Escort_unexplored_route_target);
 	escort_route_note_replan("owner_handoff");
@@ -4160,7 +4188,7 @@ static void escort_reset_navigation_for_owner(int new_owner)
 			aip->path_length = polish_path(buddy_objp, &Point_segs[aip->hide_index], aip->path_length);
 		ailp->mode = AIM_GOTO_PLAYER;
 	}
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	if (new_owner == Player_num) {
 		escort_route_refresh_metadata();
 		escort_route_next_goal();
@@ -4172,14 +4200,14 @@ static void escort_apply_multiplayer_owner(int new_owner, int target_mode)
 {
 	int old_owner = Escort_owner_player;
 	int owner_changed = old_owner != new_owner;
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	int mode_changed;
 #endif
 
 	if (!escort_route_target_mode_valid(target_mode))
 		target_mode = 0;
 	Escort_network_target_mode = target_mode;
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 	mode_changed = Escort_route_target_mode != target_mode;
 
 	escort_route_set_target_mode(target_mode);

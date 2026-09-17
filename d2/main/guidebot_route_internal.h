@@ -1,6 +1,8 @@
 #ifndef D2_GUIDEBOT_ROUTE_INTERNAL_H
 #define D2_GUIDEBOT_ROUTE_INTERNAL_H
 
+/* DXX_GUIDEBOT_LIVE_ESCORT builds the Android escort decision loop in the
+ * isolated Windows integration test, without enabling Android UI dependencies */
 enum escort_route_target_mode {
 	ESCORT_ROUTE_TARGET_END_OF_LEVEL = 0,
 	ESCORT_ROUTE_TARGET_UNEXPLORED = 1,
@@ -21,6 +23,7 @@ enum escort_route_guidance_mode {
 };
 
 #define ESCORT_ROUTE_OBJECTIVE_UNEXPLORED 1000
+#define ESCORT_ROUTE_OBJECTIVE_HOSTAGE 1001
 
 typedef struct escort_unexplored_route_target {
 	int active;
@@ -117,6 +120,9 @@ extern int Escort_route_notifications_suppressed;
 extern int Escort_route_certificate_checks_suppressed;
 #endif
 
+int exists_in_mine(int start_seg, int objtype, int objid, int special);
+int escort_route_prepare_hostage(object *objp);
+int escort_route_follows_objective(const object *objp);
 int escort_is_companion_object(int objnum);
 void escort_unexplored_route_target_clear(escort_unexplored_route_target *target);
 void escort_trace_path(const char *reason, object *objp, ai_local *ailp,

@@ -345,6 +345,15 @@ if(NOT ANDROID)
         INCLUDE_GAME_DIR)
     if(BUILD_TESTING)
         dxx_add_headless_target(
+            test_guidebot_live_navigation
+            ../../android/app/src/main/cpp/headless/route_confirmation_headless_main.cpp
+            GAME_SOURCES ../../android/tests/test_guidebot_live_navigation.cpp ${D2X_HEADLESS_SOURCES}
+            PRIVATE_DEFINITIONS DXX_BUILD_DESCENT_II DXX_GUIDEBOT_ROUTE_PLANNER DXX_GUIDEBOT_LIVE_ESCORT
+            PRIVATE_LIBRARIES ${DXX_TARGET_PREFIX}libmve
+            INCLUDE_GAME_DIR)
+    endif()
+    if(BUILD_TESTING)
+        dxx_add_headless_target(
             test_upstream_compat
             ../../android/tests/test_upstream_compat.cpp
             GAME_SOURCES ../../android/tests/test_autoselect.cpp ${D2X_HEADLESS_SOURCES}
