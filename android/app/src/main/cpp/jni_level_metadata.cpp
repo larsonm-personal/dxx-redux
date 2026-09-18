@@ -506,6 +506,7 @@ class LevelMetadataRequestMounts
 	std::vector<std::string> mounted_paths;
 	int mission_loaded = 0;
 	int finished = 0;
+	int active_assets = 0;
 
 	static int search_path_contains(const std::string &wanted)
 	{
@@ -541,11 +542,19 @@ class LevelMetadataRequestMounts
 		if (mission_loaded && Current_mission)
 			free_mission();
 		Current_mission = NULL;
+#ifdef __ANDROID__
+		if (active_assets)
+			android_mission_asset_reset_before();
+#endif
 		for (std::vector<std::string>::reverse_iterator path = mounted_paths.rbegin();
 		     path != mounted_paths.rend(); ++path)
 			if (!PHYSFS_unmount(path->c_str()) && search_path_contains(*path) != 0)
 				cleanup_ok = 0;
 		mounted_paths.clear();
+#ifdef __ANDROID__
+		if (active_assets)
+			android_mission_asset_reset_baseline();
+#endif
 		finished = 1;
 		if (!cleanup_ok && error && error_size)
 			snprintf(error, error_size, "%s", "could not release metadata request mounts");
@@ -567,6 +576,15 @@ class LevelMetadataRequestMounts
 		mission_loaded = loaded;
 		if (!loaded)
 			Current_mission = NULL;
+	}
+
+	void activate_assets()
+	{
+#ifdef __ANDROID__
+		android_mission_asset_reset_before();
+		active_assets = 1;
+		android_mission_asset_reset_baseline();
+#endif
 	}
 };
 
@@ -623,6 +641,14 @@ static int load_requested_mission(const json &request, LevelMetadataRequestMount
 	write_checkpoint(request, "mission", mission.c_str());
 	std::vector<char> mission_name(mission.begin(), mission.end());
 	mission_name.push_back('\0');
+	if (!request.value("mission_asset_context", "").empty()) {
+		const int loaded = load_mission_by_name_from_current_dir(mission_name.data());
+		mounts.set_mission_loaded(loaded);
+		if (!loaded)
+			snprintf(error, error_size, "could not load active mission %s", mission.c_str());
+		return loaded;
+	}
+
 	if (load_mission_by_name(mission_name.data()) ||
 	    load_mission_by_name_from_current_dir(mission_name.data())) {
 		mounts.set_mission_loaded(1);
@@ -1418,12 +1444,38 @@ static json analyze_request(levelmeta_env env, levelmeta_context context, const 
 		json root;
 		json levels = json::array();
 		CoopStartRange coop_start_range;
+		json mission_request = request;
+		/* The game thread snapshots the selected pack, including DXA overrides
+		 * Workers must not rediscover a same-named mission from another pack */
+		const std::string asset_context = request.value("mission_asset_context", "");
+		if (!asset_context.empty()) {
+			const json context = json::parse(asset_context);
+			const auto paths = context.at("mounts").get<std::vector<std::string>>();
+			for (auto path = paths.rbegin(); path != paths.rend(); ++path) {
+				if (!mounts.mount(*path))
+					return finish_levelmeta_request(
+					    mounts, request, failed_result(request, "could not mount active mission assets"), error, sizeof(error));
+			}
+			std::string descriptor = context.at("descriptor").get<std::string>();
+			const auto directory = descriptor.find_last_of('/');
+			if (directory != std::string::npos) {
+				if (paths.empty() || !mounts.mount(paths.front() + "/" + descriptor.substr(0, directory)))
+					return finish_levelmeta_request(
+					    mounts, request, failed_result(request, "could not mount active mission directory"), error, sizeof(error));
+				descriptor.erase(0, directory + 1);
+			}
+			const auto extension = descriptor.find_last_of('.');
+			if (extension != std::string::npos)
+				descriptor.erase(extension);
+			mission_request["mission_name"] = descriptor;
+			mounts.activate_assets();
+		}
 		const std::string level_file = request.value("level_file", "");
 		const int level_num = request.value("level_num", 1);
 		if (!mount_requested_hogs(request, mounts, 0, error, sizeof(error)))
 			return finish_levelmeta_request(
 			    mounts, request, failed_result(request, error), error, sizeof(error));
-		if (!load_requested_mission(request, mounts, error, sizeof(error)))
+		if (!load_requested_mission(mission_request, mounts, error, sizeof(error)))
 			return finish_levelmeta_request(
 			    mounts, request, failed_result(request, error), error, sizeof(error));
 		if (level_file.empty())

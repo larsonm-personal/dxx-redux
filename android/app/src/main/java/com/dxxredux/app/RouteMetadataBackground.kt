@@ -20,6 +20,7 @@ internal object RouteMetadataBackground {
         normalLevelFiles: List<String>,
         secretLevelFiles: List<String>,
         secretEntryLevels: List<Int>,
+        missionAssetContext: String,
         onCurrentReady: (Boolean) -> Unit,
         onCurrentProgress: (Int, RouteMetadataProgressState) -> Unit = { _, _ -> },
     ) {
@@ -31,6 +32,7 @@ internal object RouteMetadataBackground {
             listOf(
                 game,
                 mission,
+                missionAssetContext,
                 File(dataDir).lastModified(),
                 normalLevelFiles.joinToString("/"),
                 secretLevelFiles.joinToString("/"),
@@ -85,6 +87,7 @@ internal object RouteMetadataBackground {
                         displayName = "Active game mission",
                         game = game,
                         sourceType = "active_level",
+                        missionAssetContext = missionAssetContext,
                         dataDir = dataDir,
                         missionName = mission,
                         levelFile = level.levelFile,

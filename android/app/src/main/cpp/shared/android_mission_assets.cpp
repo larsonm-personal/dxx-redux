@@ -194,6 +194,17 @@ const char *android_mission_assets_key(void)
 	return active < 0 ? "" : catalog[active].key.c_str();
 }
 
+const char *android_mission_assets_context_json(void)
+{
+	static std::string snapshot;
+	snapshot.clear();
+	if (active >= 0) {
+		const auto &item = catalog[active];
+		snapshot = nlohmann::json({ { "key", item.key }, { "revision", item.revision }, { "descriptor", item.descriptor }, { "mounts", item.mounts } }).dump();
+	}
+	return snapshot.c_str();
+}
+
 int android_mission_assets_resolve_key(const char *key, char *mission_path, size_t capacity)
 {
 	for (const auto &candidate : catalog) {

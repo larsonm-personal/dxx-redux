@@ -555,10 +555,35 @@ class LauncherScriptExecutor(
                     }
                     val candidates = mutableListOf<Pair<LevelMetadataTarget, LevelMetadataLevelRow>>()
                     for (target in targets) {
-                        val result = LevelMetadataAnalyzer.analyze(context, target)
+                        val analysisTarget =
+                            if (step.has("level_num") && target.sourceType in setOf("mission_files", "hog")) {
+                                val number = step.getInt("level_num")
+                                val file =
+                                    if (number > 0) {
+                                        target.normalLevelFiles.getOrNull(number - 1)
+                                    } else {
+                                        target.secretLevelFiles.getOrNull(-number - 1)
+                                    }
+                                if (file == null) continue
+                                target.copy(
+                                    levelNum = number,
+                                    normalLevelFiles = if (number > 0) listOf(file) else emptyList(),
+                                    secretLevelFiles = if (number < 0) listOf(file) else emptyList(),
+                                )
+                            } else {
+                                target
+                            }
+                        val result = LevelMetadataAnalyzer.analyze(context, analysisTarget)
+                        if (result.status != "ok") {
+                            Log.w(
+                                TAG,
+                                "Preview analysis failed: ${result.problems} ${result.levels.map { it.problems }}",
+                            )
+                        }
                         if (result.status == "ok") {
                             result.levels
                                 .filter { it.status == "ok" && it.levelFile.isNotBlank() }
+                                .filter { !step.has("level_num") || it.levelNum == step.getInt("level_num") }
                                 .forEach { row -> candidates += target to row }
                         }
                     }

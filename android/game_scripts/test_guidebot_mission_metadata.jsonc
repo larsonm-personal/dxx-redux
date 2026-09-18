@@ -1,0 +1,184 @@
+// TEST: Background analysis uses the active Rebirth assets, then Next resolves the yellow-key switch
+[
+    {
+        "_info": {
+            "_standalone": false,
+            "_owner": "test_guidebot_mission_metadata",
+            "games": [
+                "d2"
+            ],
+            "_deps": [
+                {
+                    "file": "descent2.hog",
+                    "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"
+                },
+                {
+                    "file": "descent2.ham",
+                    "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"
+                },
+                {
+                    "file": "groupa.pig",
+                    "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"
+                },
+                {
+                    "file": "descent2.s22",
+                    "sha256": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728"
+                }
+            ]
+        }
+    },
+    {
+        "action": "enter_launcher"
+    },
+    {
+        "action": "setup_command",
+        "command": "switch_set",
+        "args": {
+            "name": "default"
+        }
+    },
+    {
+        "action": "reset_state"
+    },
+    {
+        "action": "setup_command",
+        "command": "write_bool_pref",
+        "args": {
+            "key": "show_resume_offer",
+            "value": false
+        }
+    },
+    {
+        "action": "setup_command",
+        "command": "write_bool_pref",
+        "args": {
+            "key": "skip_intro_movie",
+            "value": false
+        }
+    },
+    {
+        "action": "setup_command",
+        "command": "write_bool_pref",
+        "args": {
+            "key": "dlog_game logs_enabled",
+            "value": true
+        }
+    },
+    {
+        "action": "write_config",
+        "file": "imported/sets/default/.content/mods/mod_manifest.json",
+        "content": "{\"mods\": [{\"filename\": \"ewithin-rebirth.zip\", \"displayName\": \"Enemy Within\", \"enabled\": true, \"game\": \"d2\", \"kind\": \"mission_zip\", \"category\": \"levels\", \"order\": 0}]}"
+    },
+    {
+        "action": "enter_game",
+        "game": "d2"
+    },
+    {
+        "action": "wait_for",
+        "field": "intro_active",
+        "value": "true",
+        "timeout_ms": 20000
+    },
+    {
+        "action": "skip_intro",
+        "timeout_ms": 20000
+    },
+    {
+        "action": "wait_for",
+        "field": "screen_mode",
+        "value": "menu",
+        "timeout_ms": 20000
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 5000
+    },
+    {
+        "action": "select",
+        "text": "New game",
+        "timeout_ms": 10000
+    },
+    {
+        "action": "select_mission",
+        "text": "Enemy Within",
+        "timeout_ms": 10000
+    },
+    {
+        "action": "select",
+        "text": "Ok",
+        "timeout_ms": 5000
+    },
+    {
+        "action": "select",
+        "text": "Trainee",
+        "timeout_ms": 10000
+    },
+    {
+        "action": "skip_briefing",
+        "timeout_ms": 60000
+    },
+    {
+        "action": "wait_for",
+        "field": "in_game",
+        "value": "true",
+        "timeout_ms": 30000
+    },
+    {
+        "action": "set_debug",
+        "field": "clear_robots",
+        "value": "true"
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 180000,
+        "expect": {
+            "level_metadata_route.readiness": "complete",
+            "level_metadata_route.step_count": "8"
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "player_keys",
+        "value": "blue"
+    },
+    {
+        "action": "meta_action",
+        "id": 1037,
+        "post_delay_ms": 500
+    },
+    {
+        "action": "select_radial",
+        "menu": "Guide",
+        "text": "Next",
+        "post_delay_ms": 500
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 20000,
+        "expect": {
+            "guidebot.route_goal_active": "true",
+            "guidebot.route_goal_trigger": "2",
+            "guidebot.route_goal_activation_kind_name": "shoot_switch"
+        }
+    },
+    {
+        "action": "set_debug",
+        "field": "fire_trigger",
+        "value": "2"
+    },
+    {
+        "action": "wait_for",
+        "timeout_ms": 20000,
+        "expect": {
+            "guidebot.route_goal_active": "true",
+            "guidebot.route_goal_label": {
+                "contains": "gold key"
+            }
+        }
+    },
+    {
+        "action": "log",
+        "message": "Enemy Within background metadata and Next switch prerequisite passed"
+    }
+]

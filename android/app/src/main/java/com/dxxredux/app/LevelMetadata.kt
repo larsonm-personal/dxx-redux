@@ -63,6 +63,7 @@ internal data class LevelMetadataTarget(
     val secretLevelFiles: List<String> = emptyList(),
     val archivePath: String? = null,
     val archiveEntries: List<String> = emptyList(),
+    val missionAssetContext: String = "",
 )
 
 internal data class LevelMetadataCheckpointUpdate(
@@ -1788,6 +1789,7 @@ internal object LevelMetadataAnalyzer {
             .put("source_path", target.sourcePath.orEmpty())
             .put("archive_path", target.archivePath.orEmpty())
             .put("source_type", prepared.sourceType)
+            .put("mission_asset_context", target.missionAssetContext)
             .put("data_dir", prepared.dataDir)
             .put("extra_data_dir", prepared.extraDataDir)
             .put("mission_name", prepared.missionName)

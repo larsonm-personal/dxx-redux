@@ -219,8 +219,8 @@ int level_metadata_route_step_required_by_world_state(
 			// Visiting both sides does not make a guided-shot door locally reopenable
 			if (step->requires_guided_missile)
 				return !level_metadata_route_wall_passable(view, step->wall_num);
-			/* Once both sides have been visited, this is a discovered,
-			 * reopenable door rather than an unfinished route objective. */
+			/* Once both sides have been visited, a locally opened door is
+			 * discovered. A remote firing pose still needs explicit guidance */
 			if (step->wall_num >= 0 && step->wall_num < view->num_walls &&
 			    view->wall_segment && view->wall_side && view->segment_child &&
 			    view->segment_is_explored) {
@@ -233,6 +233,7 @@ int level_metadata_route_step_required_by_world_state(
 				                      : -1;
 
 				if (child >= 0 && child < view->num_segments &&
+				    (!step->activation_pos_valid || step->seg == segment || step->seg == child) &&
 				    view->segment_is_explored(view->user, segment) &&
 				    view->segment_is_explored(view->user, child))
 					return 0;

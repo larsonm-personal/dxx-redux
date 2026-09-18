@@ -35,6 +35,7 @@
 #ifdef __ANDROID__
 #include <stdatomic.h>
 #include "android_log.h"
+#include "android_level_preview.h"
 #include "android_native_build_info.h"
 #include "android_profile.h"
 #include "android_route_metadata.h"
@@ -992,6 +993,11 @@ static int secret_area_segment_child(void *user, int seg, int side)
 static int secret_area_segment_is_explored(void *user, int seg)
 {
 	(void) user;
+#ifdef __ANDROID__
+	/* Preview reveals geometry and key icons without completing door objectives */
+	if (android_level_preview_request_path())
+		return 0;
+#endif
 	return seg >= 0 && seg < Num_segments && Automap_visited[seg] != 0;
 }
 

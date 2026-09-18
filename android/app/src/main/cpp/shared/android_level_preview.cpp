@@ -321,7 +321,6 @@ static std::vector<std::string> json_strings(const json &request, const char *na
 static int mount_preview_content(const json &request)
 {
 	const std::string extra_data_dir = request.value("extra_data_dir", "");
-	const std::string mission_filename = request.value("mission_filename", "");
 	std::vector<std::string> hog_paths = json_strings(request, "hog_paths");
 	if (hog_paths.empty()) {
 		const std::string hog_path = request.value("hog_path", "");
@@ -329,12 +328,7 @@ static int mount_preview_content(const json &request)
 			hog_paths.push_back(hog_path);
 	}
 	if (!extra_data_dir.empty()) {
-		const bool flattened_mission_dir =
-		    !mission_filename.empty() && mission_filename.find('/') == std::string::npos &&
-		    mission_filename.find('\\') == std::string::npos;
-		const int mounted = flattened_mission_dir
-		                        ? PHYSFS_mount(extra_data_dir.c_str(), MISSION_DIR, 0)
-		                        : PHYSFS_addToSearchPath(extra_data_dir.c_str(), 0);
+		const int mounted = PHYSFS_addToSearchPath(extra_data_dir.c_str(), 0);
 		if (!mounted)
 			return preview_fail(std::string("Could not mount preview mission files: ") + physfs_error());
 	}
@@ -349,9 +343,22 @@ static int load_preview_mission(const json &request)
 	std::string mission = request.value("mission_name", "");
 	if (mission.empty())
 		return 0;
+	const std::string descriptor = request.value("mission_filename", "");
+	if (!descriptor.empty()) {
+		/* Load the staged descriptor directly; discovery may also find its installed copy */
+		mission = descriptor.substr(0, descriptor.find_last_of('.'));
+		const auto directory = mission.find_last_of("/\\");
+		if (directory != std::string::npos) {
+			const std::string path = request.value("extra_data_dir", "") + "/" + mission.substr(0, directory);
+			if (!PHYSFS_mount(path.c_str(), NULL, 0))
+				return preview_fail(std::string("Could not mount preview mission directory: ") + physfs_error());
+			mission.erase(0, directory + 1);
+		}
+	}
 	std::vector<char> mission_name(mission.begin(), mission.end());
 	mission_name.push_back('\0');
-	if (!load_mission_by_name(mission_name.data()))
+	if (!(descriptor.empty() ? load_mission_by_name(mission_name.data())
+	                         : load_mission_by_name_from_current_dir(mission_name.data())))
 		return preview_fail(std::string("Could not load preview mission ") + mission);
 	return 0;
 }
@@ -382,6 +389,7 @@ static int select_preview_player(void)
 static void reveal_preview_automap_segments(void)
 {
 	Players[0].flags &= ~PLAYER_FLAGS_MAP_ALL;
+	/* Display visibility is not player exploration in the metadata scan view */
 	for (int segnum = 0; segnum <= Highest_segment_index; ++segnum)
 		Automap_visited[segnum] = 1;
 }

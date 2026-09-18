@@ -1604,6 +1604,16 @@ static void test_visible_unlocked_triggered_door_is_physically_passable(void)
 	assert(guidebot_route_side_passable_current(&view, 0, 0));
 	assert(!level_metadata_route_step_required_by_world_state(&view, &step));
 
+    /* Maximum S5 opens a door from a remote firing segment */
+    step.activation_pos_valid = 1;
+    step.seg = 2;
+    assert(level_metadata_route_step_required_by_world_state(&view, &step));
+    fixture.wall_open[0] = 1;
+    assert(!level_metadata_route_step_required_by_world_state(&view, &step));
+    fixture.wall_open[0] = 0;
+    step.seg = 1;
+    assert(!level_metadata_route_step_required_by_world_state(&view, &step));
+
     /* A guided opening must be repeated when the discovered door closes */
     step.requires_guided_missile = 1;
     assert(level_metadata_route_step_required_by_world_state(&view, &step));

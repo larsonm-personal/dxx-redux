@@ -1,5 +1,6 @@
 #include "android_route_metadata.h"
 #include "android_log.h"
+#include "android_mission_assets.h"
 #include "secretarea.h"
 
 #include <jni.h>
@@ -65,6 +66,7 @@ void android_route_metadata_request(
 	jmethodID method;
 	jstring jgame;
 	jstring jmission;
+	jstring jasset_context;
 	jstring jlevel_file;
 	jstring jroute_readiness;
 	jclass string_class;
@@ -97,10 +99,12 @@ void android_route_metadata_request(
 	method = cls ? (*env)->GetMethodID(
 	                   env, cls, "onRouteMetadataNeeded",
 	                   "(Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;"
-	                   "[Ljava/lang/String;[Ljava/lang/String;[II)V")
+	                   "[Ljava/lang/String;[Ljava/lang/String;[IILjava/lang/String;)V")
 	             : NULL;
 	jgame = (*env)->NewStringUTF(env, game);
 	jmission = (*env)->NewStringUTF(env, mission ? mission : "");
+	/* Keep this snapshot argument synchronized with MainActivity */
+	jasset_context = (*env)->NewStringUTF(env, android_mission_assets_context_json());
 	jlevel_file = (*env)->NewStringUTF(env, level_file);
 	jroute_readiness = (*env)->NewStringUTF(
 	    env, level_metadata_route_readiness_name(
@@ -136,13 +140,15 @@ void android_route_metadata_request(
 		(*env)->SetIntArrayRegion(
 		    env, jsecret_entry_levels, 0, secret_level_count,
 		    (const jint *) secret_entry_levels);
-	if (method && jgame && jmission && jlevel_file && jroute_readiness &&
+	if (method && jgame && jmission && jasset_context && jlevel_file && jroute_readiness &&
 	    jnormal_level_files && jsecret_level_files && jsecret_entry_levels)
 		(*env)->CallVoidMethod(
 		    env, g_activity, method, jgame, jmission, (jint) level_num,
 		    jlevel_file, jroute_readiness, jnormal_level_files,
 		    jsecret_level_files,
-		    jsecret_entry_levels, (jint) request_generation);
+		    jsecret_entry_levels, (jint) request_generation, jasset_context);
+	if (jasset_context)
+		(*env)->DeleteLocalRef(env, jasset_context);
 	if (jsecret_entry_levels)
 		(*env)->DeleteLocalRef(env, jsecret_entry_levels);
 	if (jsecret_level_files)

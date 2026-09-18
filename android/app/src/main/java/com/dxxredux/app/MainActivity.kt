@@ -650,6 +650,7 @@ class MainActivity :
         secretLevelFiles: Array<String>,
         secretEntryLevels: IntArray,
         requestGeneration: Int,
+        missionAssetContext: String,
     ) {
         routeMetadataJob?.cancel()
         routeMetadataCurrentLevelCalculating =
@@ -667,6 +668,7 @@ class MainActivity :
                     normalLevelFiles.toList(),
                     secretLevelFiles.toList(),
                     secretEntryLevels.toList(),
+                    missionAssetContext,
                     onCurrentReady = { success ->
                         routeMetadataCurrentLevelCalculating = false
                         publishRouteMetadataCpuDuty()

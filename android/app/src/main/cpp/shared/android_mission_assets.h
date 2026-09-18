@@ -17,6 +17,8 @@ void android_mission_assets_free_end(void);
 int android_mission_assets_discover(const char *descriptor);
 const char *android_mission_assets_owner(void);
 const char *android_mission_assets_key(void);
+/* Snapshot consumed by RouteMetadataBackground and jni_level_metadata */
+const char *android_mission_assets_context_json(void);
 int android_mission_assets_resolve_key(const char *key, char *mission_path, size_t capacity);
 unsigned android_mission_assets_generation(void);
 

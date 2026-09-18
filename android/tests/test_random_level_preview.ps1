@@ -2,6 +2,10 @@
 
 param(
     [string]$MissionDir = "",
+    [string]$MissionFile = "*.zip",
+    [Nullable[int]]$LevelNum = $null,
+    [string]$ExpectedFirstObjective = "",
+    [switch]$CloseWithCommand,
     [ValidateSet("", "d1", "d2")]
     [string]$Game = "",
     [int]$Seed = 0,
@@ -42,7 +46,7 @@ function Read-AppJson {
 
 try {
     $candidates =
-    @(Get-ChildItem -LiteralPath $MissionDir -File -Filter *.zip | Where-Object {
+    @(Get-ChildItem -LiteralPath $MissionDir -File -Filter $MissionFile | Where-Object {
             $_.Length -le $MaxZipBytes -and (Test-Path -LiteralPath (Join-Path $_.DirectoryName "$($_.BaseName).json"))
         } | ForEach-Object {
             $zip = $_
@@ -91,6 +95,13 @@ try {
     $scriptBody = $scriptBody.Replace('${MISSION_ZIP}', $deviceZip)
     $scriptBody = $scriptBody.Replace('${GAME}', $selectedGame)
     $scriptBody = $scriptBody.Replace('${SEED}', $Seed.ToString([Globalization.CultureInfo]::InvariantCulture))
+    if ($null -ne $LevelNum) {
+        $steps = $scriptBody | ConvertFrom-Json
+        $steps | Where-Object action -eq 'launch_random_level_preview' | ForEach-Object {
+            $_ | Add-Member -NotePropertyName level_num -NotePropertyValue $LevelNum
+        }
+        $scriptBody = ConvertTo-Json -InputObject $steps -Depth 30
+    }
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $localScript) | Out-Null
     [IO.File]::WriteAllText($localScript, $scriptBody + "`n", [Text.UTF8Encoding]::new($false))
     $deviceTemporaryScript = "/data/local/tmp/$deviceScript"
@@ -155,6 +166,15 @@ try {
     if (-not $ready) { throw "Preview did not produce a live automap introspection snapshot" }
     $requestId = [string]$selection.request_id
     Write-Status "Selected level $($selection.level_num): $($selection.level_name) [$($selection.level_file)]"
+    if ($ExpectedFirstObjective) {
+        $pending = @($initial.guidebot.route_analysis.steps | Where-Object selected_next)
+        if ($pending.Count -ne 1 -or $pending[0].index -ne 1 -or $pending[0].label -cne $ExpectedFirstObjective) {
+            throw "Preview skipped or replaced its first objective: $($pending | ConvertTo-Json -Compress)"
+        }
+        $canonical = @($initial.level_metadata_route.steps | ForEach-Object kind)
+        $live = @($initial.guidebot.route_analysis.steps | ForEach-Object kind)
+        if (($canonical -join '|') -cne ($live -join '|')) { throw 'Preview replaced a canonical objective' }
+    }
 
     if ([int]$initial.automap.edge_count -le 0 -or [int]$initial.automap.edges_drawn_last_frame -le 0) {
         throw "Automap did not submit any level geometry"
@@ -261,8 +281,12 @@ try {
         throw "Automap camera did not respond to zoom/rotation input; diagnostics=$diagnostics"
     }
 
-    # Exercise Android Back dispatch and native cleanup, including target SDK 36
-    Adb -AdbArgs @("shell", "input", "keyevent", "KEYCODE_BACK") | Out-Null
+    # The default smoke test exercises Android Back; focused regressions can use the preview command
+    if ($CloseWithCommand) {
+        Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.LEVEL_PREVIEW_COMMAND", "-p", $script:PACKAGE, "--es", "command", "close") | Out-Null
+    } else {
+        Adb -AdbArgs @("shell", "input", "keyevent", "KEYCODE_BACK") | Out-Null
+    }
     $closed = Wait-ForCondition -Description "preview closes and request cache is removed" -TimeoutSec 30 -PollMs 500 -Condition {
         $activities = Adb-Timeout -AdbArgs @("shell", "dumpsys", "activity", "activities") -Seconds 8
         $requestState = if ($requestId -match '^[A-Za-z0-9._-]+$') {
@@ -272,15 +296,25 @@ try {
             ) -Seconds 8
         } else { "present" }
         $setupResumed = $activities -match "(?m)^\s*(?:topResumedActivity|mResumedActivity|ResumedActivity)[=:].*SetupActivity"
+        $script:previewCloseDiagnostics = [ordered]@{
+            request_id = $requestId
+            request_state = $requestState
+            setup_resumed = $setupResumed
+            resumed_activities = @($activities -split "`n" | Where-Object { $_ -match 'ResumedActivity' })
+        }
         return $setupResumed -and $requestState -notmatch [regex]::Escape($requestId)
     }
-    if (-not $closed) { throw "Preview did not close cleanly or its request cache remained" }
+    if (-not $closed) { throw "Preview did not close cleanly or its request cache remained: $($script:previewCloseDiagnostics | ConvertTo-Json -Compress)" }
     $returnLog = Adb-Timeout -AdbArgs @("logcat", "-d", "-s", "DXX-Setup:I", "*:S") -Seconds 8
     if ($returnLog -notmatch "Preserving launcher metadata state after read-only level preview") {
         throw "SetupActivity resumed without preserving metadata state after the preview"
     }
     Write-Status "PASS: seeded random preview loaded, changed camera state, stayed alive, and returned without metadata refresh" "Green"
 } finally {
+    try {
+        Adb-Timeout -AdbArgs @("logcat", "-d", "-v", "time") -Seconds 8 |
+            Set-Content -LiteralPath (Join-Path (Split-Path -Parent $localScript) "logcat.txt") -Encoding utf8
+    } catch {}
     try {
         if (Test-DeviceOnline -Serial $Serial) {
             Adb -AdbArgs @(
