@@ -224,6 +224,8 @@ function Get-TestSuiteCoveragePolicy {
             'test_xcrash_native_report'
         )
         route_guidance = @(
+            'test_guidebot_goal_message'
+            'test_guidebot_mission_metadata'
             'test_guidebot_simulation_headed_headless_parity'
             'test_obsidian_level1_objective_markers'
             'test_automap_objective_readiness_progress'
