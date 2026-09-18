@@ -387,26 +387,46 @@
           "s": 18
         },
         {
+          "n": "fly-through 11",
+          "s": 27
+        },
+        {
           "n": "fly-through 10",
           "s": 27
         },
         {
+          "n": "fly-through 4",
+          "s": 30
+        },
+        {
+          "n": "fly-through 1",
+          "s": 32
+        },
+        {
+          "n": "fly-through 8",
+          "s": 35
+        },
+        {
+          "n": "fly-through 10",
+          "s": 40
+        },
+        {
           "n": "reactor",
-          "s": 27
+          "s": 51
         },
         {
           "n": "exit",
-          "s": 35
+          "s": 58
         }
       ],
-      "total_frames": 2125,
+      "total_frames": 3451,
       "rng_end": {
-        "state": 2592008955,
-        "calls": 1550
+        "state": 2391715014,
+        "calls": 1633
       },
       "reactor_escape": {
         "countdown_seconds": 45.0,
-        "simulated_seconds": 8.5,
+        "simulated_seconds": 6.916672,
         "difficulty": 2
       },
       "problem": "live objective sequence differs from route input"
