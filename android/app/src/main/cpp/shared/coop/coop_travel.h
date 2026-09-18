@@ -14,6 +14,7 @@ int coop_travel_arm(void);
 /* Arm with host-owned campaign preparation, loading and commit */
 int coop_travel_arm_campaign(void);
 /* Returns nonzero when host arbitration consumes or blocks a physical trigger */
+int coop_travel_handle_exit_crossing(int trigger_num, int player, int shot, int segment, int side);
 int coop_travel_handle_exit_trigger(int trigger_num, int player, int shot);
 int coop_travel_exit_side_blocked(int segnum, int side);
 void coop_travel_get_physical_state(int *mode, int *pending, int *accepted);

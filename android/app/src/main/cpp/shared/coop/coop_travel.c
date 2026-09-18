@@ -80,6 +80,8 @@ static int checkpoint_started, checkpoint_ready;
 static uint32_t checkpoint_checksum;
 static int failure_pending, rollback_required, rollback_started, recovery_entered;
 static int fail_after_load, failed_destination;
+static int physical_segment = -1, physical_side = -1;
+static uint32_t physical_life, physical_restore_serial;
 static int physical_mode, physical_pending = -1, physical_accepted = -1, physical_replay = -1;
 static int physical_consumed;
 static uint64_t test_request_delay_until;
@@ -143,6 +145,26 @@ static int player_near_trigger(int player_num, int trigger_num)
 		    Objects[objnum].segnum == Segments[Walls[i].segnum].children[Walls[i].sidenum]) return 1;
 	}
 	return 0;
+}
+
+/* Android diagnostics: compare the local crossing with the host's replicated ship */
+static void log_physical_position(const char *event, int trigger_num, int player_num)
+{
+	const int objnum = Players[player_num].objnum;
+	if (objnum < 0 || objnum > Highest_object_index) return;
+	const object *obj = &Objects[objnum];
+	COOPLOG("physical exit %s: local=%d player=%d level=%d trigger=%d object=%d segment=%d pos=%d,%d,%d velocity=%d,%d,%d countdown=%d",
+	        event, Player_num, player_num, Current_level_num, trigger_num, objnum, obj->segnum,
+	        obj->pos.x, obj->pos.y, obj->pos.z,
+	        obj->mtype.phys_info.velocity.x, obj->mtype.phys_info.velocity.y, obj->mtype.phys_info.velocity.z,
+	        Countdown_seconds_left);
+	for (int i = 0; i < Num_walls; ++i) {
+		if (Walls[i].trigger != trigger_num || Walls[i].segnum < 0 || Walls[i].segnum > Highest_segment_index ||
+		    Walls[i].sidenum < 0 || Walls[i].sidenum >= 6) continue;
+		COOPLOG("physical exit source: local=%d trigger=%d wall=%d segment=%d side=%d child=%d",
+		        Player_num, trigger_num, i, Walls[i].segnum, Walls[i].sidenum,
+		        Segments[Walls[i].segnum].children[Walls[i].sidenum]);
+	}
 }
 
 static int arrival_trigger_blocked(int trigger_num, int player_num)
@@ -361,6 +383,8 @@ void coop_travel_reset(void)
 	failure_pending = rollback_required = rollback_started = recovery_entered = 0;
 	fail_after_load = failed_destination = 0;
 	physical_mode = 0;
+	physical_segment = physical_side = -1;
+	physical_life = physical_restore_serial = 0;
 	physical_pending = physical_accepted = physical_replay = -1;
 	physical_consumed = 0;
 	test_request_delay_until = 0;
@@ -444,6 +468,13 @@ static void send_packet(int kind)
 		put32(packet + 60, arrival_checksum);
 		put32(packet + 64, frozen_received);
 		packet[68] = (unsigned char) freeze_ready;
+		if (kind == REQUEST) {
+			/* Immutable crossing context; ship position packets may overtake this request */
+			put32(packet + 72, (uint32_t) (physical_segment + 1));
+			put32(packet + 76, (uint32_t) (physical_side + 1));
+			put32(packet + 80, physical_life);
+			put32(packet + 84, physical_restore_serial);
+		}
 	}
 	if (kind == REQUEST && test_request_delay_until && now < test_request_delay_until) {
 		if (!test_request_buffered) {
@@ -963,12 +994,13 @@ int coop_travel_take_normal_exit(void)
 	return 1;
 }
 
-static int accept_physical(int trigger_num, int sender, uint64_t generation)
+static int accept_physical(int trigger_num, int sender, uint64_t generation, int crossing_segment, int crossing_side, uint32_t life, uint32_t restore_serial)
 {
 #ifdef DXX_BUILD_DESCENT_II
 	coop_operation operation = physical_operation(trigger_num);
-	int nearby = 0;
+	int valid_crossing = 0;
 	if (!physical_enabled() || !operation || sender < 0 || sender >= N_players) return 0;
+	if (life != coop_recovery_life(sender) || restore_serial != coop_recovery_restore_serial(sender)) return 0;
 	if (arrival_trigger_blocked(trigger_num, sender)) return 0;
 	const int objnum = Players[sender].objnum;
 	if (objnum < 0 || objnum > Highest_object_index || Objects[objnum].type != OBJ_PLAYER) return 0;
@@ -977,27 +1009,37 @@ static int accept_physical(int trigger_num, int sender, uint64_t generation)
 	for (int i = 0; i < Num_walls; ++i) {
 		if (Walls[i].trigger != trigger_num || Walls[i].segnum < 0 || Walls[i].segnum > Highest_segment_index ||
 		    Walls[i].sidenum < 0 || Walls[i].sidenum >= 6) continue;
-		const segment *seg = &Segments[Walls[i].segnum];
-		if (Objects[objnum].segnum == Walls[i].segnum || Objects[objnum].segnum == seg->children[Walls[i].sidenum]) nearby = 1;
+		if (crossing_segment == Walls[i].segnum && crossing_side == Walls[i].sidenum) valid_crossing = 1;
 	}
-	if (!nearby || !accept_request(operation, sender, generation, 0)) {
-		COOPLOG("physical exit rejected: trigger=%d player=%d operation=%d nearby=%d phase=%d epoch=%u/%u generation=%llu/%llu",
-		        trigger_num, sender, operation, nearby, policy.phase, coop_recovery_epoch(), recovery_epoch,
-		        (unsigned long long) generation, (unsigned long long) policy.generation);
+	if (!valid_crossing || !accept_request(operation, sender, generation, 0)) {
+		COOPLOG("physical exit rejected: trigger=%d player=%d operation=%d valid_crossing=%d phase=%d epoch=%u/%u generation=%llu/%llu segment=%d pos=%d,%d,%d",
+		        trigger_num, sender, operation, valid_crossing, policy.phase, coop_recovery_epoch(), recovery_epoch,
+		        (unsigned long long) generation, (unsigned long long) policy.generation,
+		        Objects[objnum].segnum, Objects[objnum].pos.x, Objects[objnum].pos.y, Objects[objnum].pos.z);
 		return 0;
 	}
 	if (physical_accepted < 0 || operation != COOP_OP_NORMAL_EXIT) physical_accepted = trigger_num;
-	COOPLOG("physical exit granted: trigger=%d player=%d operation=%d", trigger_num, sender, operation);
+	COOPLOG("physical exit granted: trigger=%d player=%d operation=%d crossing=%d:%d current_segment=%d",
+	        trigger_num, sender, operation, crossing_segment, crossing_side, Objects[objnum].segnum);
 	return 1;
 #else
 	(void) trigger_num;
 	(void) sender;
 	(void) generation;
+	(void) crossing_segment;
+	(void) crossing_side;
+	(void) life;
+	(void) restore_serial;
 	return 0;
 #endif
 }
 
 int coop_travel_handle_exit_trigger(int trigger_num, int pnum, int shot)
+{
+	return coop_travel_handle_exit_crossing(trigger_num, pnum, shot, -1, -1);
+}
+
+int coop_travel_handle_exit_crossing(int trigger_num, int pnum, int shot, int crossing_segment, int crossing_side)
 {
 #ifdef DXX_BUILD_DESCENT_II
 	coop_operation operation = physical_operation(trigger_num);
@@ -1008,6 +1050,8 @@ int coop_travel_handle_exit_trigger(int trigger_num, int pnum, int shot)
 	}
 	/* Legacy trigger broadcasts and Guide-Bot shots cannot authorize travel */
 	if (pnum != Player_num || shot || is_observer() || Player_is_dead) return 1;
+	/* Only the physics crossing callback supplies a wall; legacy broadcasts do not */
+	if (crossing_segment < 0 || crossing_segment > Highest_segment_index || crossing_side < 0 || crossing_side >= 6) return 1;
 	if (operation == COOP_OP_SECRET_ENTER && !coop_secret_entry_available()) {
 		HUD_init_message(HM_DEFAULT, "Secret area unavailable");
 		return 1;
@@ -1024,14 +1068,21 @@ int coop_travel_handle_exit_trigger(int trigger_num, int pnum, int shot)
 	    !(operation == COOP_OP_NORMAL_EXIT && policy.phase == COOP_PHASE_NORMAL_WAIT)) return 1;
 	if (physical_pending >= 0) return 1;
 	physical_pending = trigger_num;
+	physical_segment = crossing_segment;
+	physical_side = crossing_side;
+	physical_life = coop_recovery_life(pnum);
+	physical_restore_serial = coop_recovery_restore_serial(pnum);
 	requested = operation;
 	last_request = 0;
+	log_physical_position("requested", trigger_num, pnum);
 	game_flush_inputs();
 	return 1;
 #else
 	(void) trigger_num;
 	(void) pnum;
 	(void) shot;
+	(void) crossing_segment;
+	(void) crossing_side;
 	return 0;
 #endif
 }
@@ -1153,8 +1204,11 @@ void coop_travel_receive(const unsigned char *packet, int sender)
 		} else if (packet[1] == REQUEST) {
 			if (physical_mode) {
 				int trigger_num = packet_trigger(packet);
-				if (packet[47] && physical_operation(trigger_num) == (coop_operation) packet[2])
-					accept_physical(trigger_num, sender, generation);
+				if (packet[47] && get32(packet + 72) > 0 && get32(packet + 72) <= (uint32_t) (Highest_segment_index + 1) &&
+				    get32(packet + 76) > 0 && get32(packet + 76) <= 6 &&
+				    physical_operation(trigger_num) == (coop_operation) packet[2])
+					accept_physical(trigger_num, sender, generation, (int32_t) get32(packet + 72) - 1,
+					                (int32_t) get32(packet + 76) - 1, get32(packet + 80), get32(packet + 84));
 			} else accept_request((coop_operation) packet[2], sender, generation, 0);
 			send_packet(STATE);
 		} else if (packet[1] == ACK && generation == policy.generation && packet[3] == policy.phase) {
@@ -1183,6 +1237,12 @@ void coop_travel_network_frame(void)
 			for (int p = 0; p < N_players; ++p) arrival_trigger_blocked(t, p);
 #endif
 	if (!armed) return;
+	/* A respawn or restore requires a new crossing */
+	if (physical_pending >= 0 &&
+	    (physical_life != coop_recovery_life(Player_num) || physical_restore_serial != coop_recovery_restore_serial(Player_num))) {
+		physical_pending = -1;
+		requested = COOP_OP_NONE;
+	}
 	/* Fault injection preserves the original envelope after a competing decision */
 	if (test_request_buffered && now >= test_request_delay_until) {
 		multi_send_data_direct(test_delayed_request, sizeof(test_delayed_request), host, 0);
@@ -1198,7 +1258,7 @@ void coop_travel_network_frame(void)
 		requested = COOP_OP_NONE;
 	}
 	if (Player_num == host && physical_pending >= 0 && requested && known) {
-		if (accept_physical(physical_pending, Player_num, policy.generation)) {
+		if (accept_physical(physical_pending, Player_num, policy.generation, physical_segment, physical_side, physical_life, physical_restore_serial)) {
 			requested = COOP_OP_NONE;
 			if (policy.phase != COOP_PHASE_NORMAL_WAIT) physical_pending = -1;
 		}

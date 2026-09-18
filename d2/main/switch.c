@@ -724,8 +724,8 @@ void check_trigger(segment *seg, short side, short objnum,int shot)
 
 		input_demo_log_trigger_probe("before_sub", seg, side, objnum, shot, trigger_num);
 		#ifdef __ANDROID__
-		/* Keep a companion touch from being relabeled as the local player's exit */
-		if (objnum != Players[Player_num].objnum && coop_travel_handle_exit_trigger(trigger_num, -1, shot))
+		/* Capture the crossed wall before later movement or network delivery */
+		if (coop_travel_handle_exit_crossing(trigger_num, objnum == Players[Player_num].objnum ? Player_num : -1, shot, seg - Segments, side))
 			return;
 		#endif
 

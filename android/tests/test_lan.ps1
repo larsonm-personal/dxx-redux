@@ -63,6 +63,7 @@
 #   .\test_lan.ps1 -Game d2 -InitialLevel 8 -TravelGate -AllowSecretWarps -NoCoopQol
 #   .\test_lan.ps1 -UseRelay
 #   .\test_lan.ps1 -SkipBuild
+#   .\test_lan.ps1 -Game d2 -MissionFile max_f -InitialLevel 18 -AllowSecretWarps -MaximumExitProbe
 
 param(
     [string]$Game = "d2",
@@ -127,6 +128,7 @@ param(
     [switch]$SecretCrossRestore,
     [switch]$SecretColdResume,
     [switch]$NormalPhysical,
+    [switch]$MaximumExitProbe,
     [switch]$NormalExitRace,
     [switch]$NormalReactorDeath,
     [switch]$NormalCountdown,
@@ -1978,6 +1980,25 @@ try {
     }
     Write-Status "Game data verified on both emulators" "Green"
     Initialize-EndgameContent
+    if ($MaximumExitProbe) {
+        $fixtureDirectory = Join-Path $REPO_ROOT 'temp/maximum_exit_fixture'
+        New-Item -ItemType Directory -Force -Path $fixtureDirectory | Out-Null
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        $archive = [IO.Compression.ZipFile]::OpenRead((Join-Path $REPO_ROOT 'game_data/mission_files/descent_maximum_fixed.zip'))
+        try {
+            foreach ($name in @('max_f.hog', 'max_f.mn2')) {
+                $destination = Join-Path $fixtureDirectory $name
+                [IO.Compression.ZipFileExtensions]::ExtractToFile($archive.GetEntry($name), $destination, $true)
+                foreach ($serial in @($EMU1, $EMU2)) {
+                    Adb-Dev-Timeout -Serial $serial -AdbArgs @('push', $destination, "/data/local/tmp/$name") -Seconds 30 | Out-Null
+                    Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'run-as', $PACKAGE, 'mkdir', '-p', 'files/imported/sets/default/missions') -Seconds 10 | Out-Null
+                    Adb-Dev-Timeout -Serial $serial -AdbArgs @('shell', 'run-as', $PACKAGE, 'cp', "/data/local/tmp/$name", "files/imported/sets/default/missions/$name") -Seconds 10 | Out-Null
+                }
+            }
+        } finally {
+            $archive.Dispose()
+        }
+    }
 
     foreach ($emu in @($EMU1, $EMU2)) {
         Reset-DeviceGameState -Serial $emu
@@ -2020,7 +2041,7 @@ try {
         }
     }
 
-    if ($BriefingRestore) {
+    if ($BriefingRestore -or $MaximumExitProbe) {
         foreach ($serial in @($EMU1, $EMU2)) {
             Adb-Dev-Timeout -Serial $serial -AdbArgs @(
                 "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND",
@@ -2735,6 +2756,14 @@ try {
                     }
                     return $true
                 })) { throw "A final-step failure was lost or overwritten" }
+    }
+    if ($testPassed -and $MaximumExitProbe) {
+        if ($Game -ne 'd2' -or $MissionFile -ne 'max_f' -or $InitialLevel -ne 18 -or -not $AllowSecretWarps) {
+            throw 'MaximumExitProbe requires D2 max_f level 18 with AllowSecretWarps'
+        }
+        $testPassed = Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript 'test_coop_maximum_exit_host.jsonc' `
+            -SecondarySerial $EMU2 -SecondaryScript 'test_coop_maximum_exit_client.jsonc' `
+            -Description 'Grant delayed client exit after a newer position beyond the doorway' -TimeoutSec 60
     }
     if ($testPassed -and $NormalPhysical) {
         if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript "test_coop_normal_exit_prepare_host.jsonc" `

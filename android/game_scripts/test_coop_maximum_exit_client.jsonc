@@ -1,0 +1,16 @@
+[
+    {"_info": {"games": ["d2"], "_standalone": false, "_owner": "test_lan"}},
+    {"action": "wait_ms", "ms": 10000},
+    {"action": "set_debug", "post_delay_ms": 0, "field": "coop_travel_test", "value": "maximum_exit_prepare"},
+    {"action": "pose_view", "post_delay_ms": 0, "segment": 36, "x": -223.27, "y": -90.78, "z": 240.09},
+    {"action": "wait_ms", "ms": 2000},
+    {"action": "set_debug", "post_delay_ms": 0, "field": "coop_travel_test", "value": "maximum_exit_fly"},
+    {"action": "wait_for", "post_delay_ms": 0, "timeout_ms": 3000, "expect": {"coop_travel.pending_trigger": 5}},
+    // Model a newer ship position beyond the doorway before the request reaches the host
+    {"action": "pose_view", "post_delay_ms": 0, "segment": 119, "x": -223.27, "y": -88.83, "z": 264.89},
+    {"action": "wait_for", "post_delay_ms": 0, "timeout_ms": 3000, "expect": {"position.segment": 119}},
+    {"action": "set_debug", "post_delay_ms": 0, "field": "zero_player_velocity", "value": "true"},
+    {"action": "wait_ms", "ms": 11000},
+    {"action": "set_debug", "post_delay_ms": 0, "field": "coop_travel_test", "value": "maximum_exit_verify"},
+    {"action": "wait_for", "post_delay_ms": 0, "timeout_ms": 15000, "expect": {"coop_travel.normal_granted": 2, "coop_travel.phase": 1, "postlevel_active": true}}
+]

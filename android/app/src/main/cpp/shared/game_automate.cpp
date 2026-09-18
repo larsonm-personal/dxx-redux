@@ -4078,14 +4078,67 @@ extern "C" void game_automate_tick(void)
 				static fix64 normal_time;
 				static fix normal_countdown;
 				static int normal_level;
-				if (s.value == "arm") {
+				if (s.value == "maximum_exit_prepare" || s.value == "maximum_exit_fly" || s.value == "maximum_exit_verify") {
+					/* Authored Maximum L18 fixture: fly through trigger 5 into the next shaft segment */
+					if (!ConsoleObject || Current_level_num != 18 || Num_walls != 65 ||
+					    Walls[41].trigger != 5 || Walls[41].segnum != 36 || Walls[41].sidenum != 4 ||
+					    Segments[36].children[4] != 34 || Segments[34].children[4] != 119) {
+						stop_script_fail("Maximum exit fixture geometry mismatch");
+						break;
+					}
+					if (s.value == "maximum_exit_prepare") {
+						Walls[41].type = Walls[42].type = WALL_OPEN;
+						Players[Player_num].flags |= PLAYER_FLAGS_INVULNERABLE;
+						Players[Player_num].invulnerable_time = GameTime64;
+						if (!multi_i_am_master()) {
+							obj_relink(Players[Player_num].objnum, 36);
+							compute_segment_center(&ConsoleObject->pos, &Segments[36]);
+							ConsoleObject->last_pos = ConsoleObject->pos;
+							vm_vec_zero(&ConsoleObject->mtype.phys_info.velocity);
+							multi_send_position(Players[Player_num].objnum);
+						}
+						LOGI("Maximum exit prepared: player=%d master=%d console=%d player_object=%d segment=%d", Player_num, multi_who_is_master(), (int) (ConsoleObject - Objects), Players[Player_num].objnum, ConsoleObject->segnum);
+					} else if (s.value == "maximum_exit_fly") {
+						LOGI("Maximum exit flight: player=%d master=%d console=%d player_object=%d segment=%d", Player_num, multi_who_is_master(), (int) (ConsoleObject - Objects), Players[Player_num].objnum, ConsoleObject->segnum);
+						if (multi_i_am_master() || ConsoleObject->segnum != 36) {
+							stop_script_fail("Maximum exit flight requires client at segment 36");
+							break;
+						}
+						/* Constant flight speed isolates exit timing from acceleration and drag */
+						const fix saved_frame_time = FrameTime;
+						const fix saved_drag = ConsoleObject->mtype.phys_info.drag;
+						const int saved_flags = ConsoleObject->mtype.phys_info.flags;
+						ConsoleObject->mtype.phys_info.drag = 0;
+						ConsoleObject->mtype.phys_info.flags &= ~PF_USES_THRUST;
+						ConsoleObject->mtype.phys_info.velocity.z = i2f(60);
+						FrameTime = F1_0 / 20;
+						for (int frame = 0; frame < 7; ++frame) object_move_one(ConsoleObject);
+						FrameTime = saved_frame_time;
+						ConsoleObject->mtype.phys_info.drag = saved_drag;
+						ConsoleObject->mtype.phys_info.flags = saved_flags;
+						vm_vec_zero(&ConsoleObject->mtype.phys_info.velocity);
+						LOGI("Maximum exit flight finished: segment=%d type=%d control=%d", ConsoleObject->segnum, ConsoleObject->type, ConsoleObject->control_type);
+						if (!coop_travel_test_delay_request(0)) stop_script_fail("Physical flight did not queue an exit request");
+					} else {
+						const int player = multi_i_am_master() ? 1 : Player_num;
+						coop_transition_policy state;
+						unsigned granted;
+						coop_travel_get_state(&state, &granted, nullptr, nullptr);
+						LOGI("Maximum exit observed: local=%d segment=%d granted=%u phase=%d pos=%d,%d,%d", Player_num,
+						     Objects[Players[player].objnum].segnum, granted, state.phase,
+						     Objects[Players[player].objnum].pos.x, Objects[Players[player].objnum].pos.y, Objects[Players[player].objnum].pos.z);
+						if (granted != 2 || state.phase != COOP_PHASE_NORMAL_WAIT)
+							stop_script_fail("Expected client exit grant after leaving the doorway");
+						else LOGI("Maximum exit fixed: local=%d granted=2 phase=normal_wait", Player_num);
+					}
+				} else if (s.value == "arm") {
 					if (!coop_travel_arm()) stop_script_fail("Could not arm travel gate");
 				} else if (s.value.rfind("disconnect_", 0) == 0) {
-					const int phase = s.value == "disconnect_freezing" ? COOP_PHASE_FREEZING :
-					                  s.value == "disconnect_capturing" ? COOP_PHASE_CAPTURING :
-					                  s.value == "disconnect_loading" ? COOP_PHASE_LOADING :
-					                  s.value == "disconnect_committed" ? COOP_PHASE_COMMITTED :
-					                  s.value == "disconnect_release" ? COOP_PHASE_SETTLED : -1;
+					const int phase = s.value == "disconnect_freezing" ? COOP_PHASE_FREEZING : s.value == "disconnect_capturing" ? COOP_PHASE_CAPTURING
+					                                                                       : s.value == "disconnect_loading"     ? COOP_PHASE_LOADING
+					                                                                       : s.value == "disconnect_committed"   ? COOP_PHASE_COMMITTED
+					                                                                       : s.value == "disconnect_release"     ? COOP_PHASE_SETTLED
+					                                                                                                             : -1;
 					if (phase < 0 || !coop_travel_test_disconnect_at(phase)) stop_script_fail("Could not arm travel disconnect");
 				} else if (s.value == "warning_delay") {
 					if (!coop_travel_test_warning_delay()) stop_script_fail("Could not enable travel inspection delay");
