@@ -47,6 +47,7 @@ import com.dxxredux.app.multiplayer.HostGameDefaults
 import java.io.File
 
 internal const val PREF_GUIDEBOT_HELPER_LINE = "guidebot_helper_line_enabled"
+internal const val PREF_PERSIST_GUIDEBOT_GOAL = "persist_guidebot_goal_message"
 internal const val PREF_NEAREST_PLAYER_LINE = "nearest_player_line_enabled"
 internal const val PREF_SKIP_INTRO_MOVIE = "skip_intro_movie"
 internal const val PREF_REWIND_SUPPORT_ENABLED = "rewind_support_enabled"
@@ -117,6 +118,9 @@ fun EnginePreferencesPage(
     var savedMainViewFov by remember { mutableIntStateOf(mainViewFov) }
     var presetNeedsSave by remember { mutableStateOf(false) }
     var pendingPreset by remember { mutableStateOf<GameSettingsPreset?>(null) }
+    var persistGuidebotGoal by remember {
+        mutableStateOf(prefs.getBoolean(PREF_PERSIST_GUIDEBOT_GOAL, true))
+    }
     var showNearestPlayerLine by remember {
         mutableStateOf(prefs.getBoolean(PREF_NEAREST_PLAYER_LINE, true))
     }
@@ -227,6 +231,7 @@ fun EnginePreferencesPage(
                 prefs
                     .edit()
                     .putBoolean(PREF_GUIDEBOT_HELPER_LINE, showGuidebotLine)
+                    .putBoolean(PREF_PERSIST_GUIDEBOT_GOAL, persistGuidebotGoal)
                     .putBoolean(PREF_REWIND_SUPPORT_ENABLED, rewindSupportEnabled)
                     .putBoolean(PREF_SKIP_INTRO_MOVIE, skipIntroMovie)
                     .putBoolean(HostGameDefaults.COOP_QOL_PREF, serverCoopQol)
@@ -295,6 +300,7 @@ fun EnginePreferencesPage(
                     showBossHealthBar = preset.helpersEnabled
                     mapCheatsAccessible = preset.helpersEnabled
                     showGuidebotLine = preset.helpersEnabled
+                    persistGuidebotGoal = preset.helpersEnabled
                     mainViewFov = preset.mainViewFov
                     serverCoopQol = preset.serverCoopQol
                     rewindSupportEnabled = preset.rewindEnabled
@@ -742,11 +748,34 @@ fun EnginePreferencesPage(
                 Text("Local Visual Helpers", fontWeight = FontWeight.Bold, fontSize = 11.sp)
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    "These are local launcher toggles layered on top of the host's coop QoL setting",
+                    "Local display preferences. Path lines also depend on the host's coop QoL setting",
                     fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(modifier = Modifier.height(6.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Switch(
+                        checked = persistGuidebotGoal,
+                        onCheckedChange = { checked ->
+                            persistGuidebotGoal = checked
+                            prefs.edit().putBoolean(PREF_PERSIST_GUIDEBOT_GOAL, checked).apply()
+                        },
+                        modifier = Modifier.tvFocusBorder(),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text("Persist guidebot goal message", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Keeps the current D2 guidebot goal above in-game messages, including when a co-op teammate controls it",
+                            fontSize = 9.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),

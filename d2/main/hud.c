@@ -33,6 +33,7 @@
 #include "playsave.h"
 #include "hud_layout_shared.h"
 #include "boss_hud.h"
+#include "escort.h"
 #ifdef __ANDROID__
 #include "coop_save.h"
 #endif
@@ -51,8 +52,10 @@ static int HUD_color = -1;
 static int HUD_message_start = 0;
 static int HUD_message_y = 0;
 static int HUD_nmessage_rects = 0;
-static hud_layout_rect HUD_message_rects[HUD_MAX_NUM_DISP + 2];
+static hud_layout_rect HUD_message_rects[HUD_MAX_NUM_DISP + 4];
 static int HUD_guided_message_y = -1;
+static const char *HUD_guidebot_goal;
+static int HUD_guidebot_goal_y;
 #ifdef __ANDROID__
 static const char *HUD_restore_status_message;
 static int HUD_restore_status_error;
@@ -112,7 +115,8 @@ void HUD_prepare_message_frame()
 		Guided_missile[Player_num]->id == GUIDEDMISS_ID &&
 		Guided_missile[Player_num]->signature == Guided_missile_sig[Player_num] &&
 		PlayerCfg.GuidedInBigWindow;
-	queued_capacity = boss_hud_message_capacity(HUD_MAX_NUM_DISP);
+	HUD_guidebot_goal = escort_goal_message();
+	queued_capacity = boss_hud_message_capacity(HUD_MAX_NUM_DISP) - (HUD_guidebot_goal != NULL);
 	HUD_message_start = HUD_nmessages > queued_capacity ? HUD_nmessages - queued_capacity : 0;
 	y = is_observer() ? Observer_message_y_start : FSPACY(1);
 	HUD_nmessage_rects = 0;
@@ -124,12 +128,24 @@ void HUD_prepare_message_frame()
 #endif
 	saved_font = grd_curcanv->cv_font;
 	gr_set_curfont(GAME_FONT);
+	if (HUD_guidebot_goal) {
+		const int pad_x = FSPACX(1), pad_y = FSPACY(1);
+		int w, h;
+		hud_layout_rect *rect = &HUD_message_rects[HUD_nmessage_rects++];
+		gr_get_string_drawn_size(HUD_guidebot_goal, &w, &h);
+		rect->x = (grd_curcanv->cv_bitmap.bm_w - w) / 2 - pad_x;
+		rect->y = y - pad_y;
+		rect->w = w + 2 * pad_x;
+		rect->h = h + 2 * pad_y;
+		HUD_guidebot_goal_y = y;
+		y += LINE_SPACING;
+	}
 	if (boss_hud_prepare_row(y, queued_capacity, HUD_nmessages - HUD_message_start,
 	                         &HUD_message_rects[HUD_nmessage_rects])) {
 		HUD_nmessage_rects++;
 		y += LINE_SPACING;
 	}
-	if (HUD_nmessages < 1 && !boss_visible && !guided_message_visible
+	if (HUD_nmessages < 1 && !HUD_guidebot_goal && !boss_visible && !guided_message_visible
 #ifdef __ANDROID__
 	    && !HUD_restore_status_message
 #endif
@@ -225,7 +241,7 @@ void HUD_render_message_frame()
 	int i;
 	int y = HUD_message_y;
 
-	if (HUD_nmessages < 1 && !boss_hud_row_is_prepared() && HUD_guided_message_y < 0
+	if (HUD_nmessages < 1 && !HUD_guidebot_goal && !boss_hud_row_is_prepared() && HUD_guided_message_y < 0
 #ifdef __ANDROID__
 	    && !HUD_restore_status_message
 #endif
@@ -235,6 +251,10 @@ void HUD_render_message_frame()
 		HUD_color = BM_XRGB(0,28,0);
 
 	gr_set_curfont(GAME_FONT);
+	if (HUD_guidebot_goal) {
+		gr_set_fontcolor(HUD_color, -1);
+		gr_string(0x8000, HUD_guidebot_goal_y, HUD_guidebot_goal);
+	}
 	boss_hud_render(HUD_color);
 	if (HUD_guided_message_y >= 0) {
 		gr_set_fontcolor(BM_XRGB(27,0,0), -1);

@@ -366,18 +366,23 @@ int do_change_walls(sbyte trigger_num)
 	return ret;
 }
 
-#define print_trigger_message(pnum,trig,shot,message)	\
-	((void)((__print_trigger_message(pnum,trig,shot)) &&		\
-		(HUD_init_message(HM_DEFAULT, message, "s" + ((Triggers[trig].num_links>1)?0:1)))))
+static void print_trigger_message(int pnum, int trig, int shot, const char *message)
+{
+	char text[MULTI_TRIGGER_MESSAGE_LEN];
 
-static int __print_trigger_message(int pnum,int trig,int shot)
- {
-   if (pnum!=Player_num)
-		return 0;
-    if (!(Triggers[trig].flags & TF_NO_MESSAGE) && shot)
-		return 1;
-	return 0;
- }
+	if (pnum != Player_num || !shot || (Triggers[trig].flags & TF_NO_MESSAGE))
+		return;
+
+	snprintf(text, sizeof(text), message, Triggers[trig].num_links > 1 ? "s" : "");
+	if (Game_mode & GM_MULTI_COOP) {
+		HUD_init_message(HM_DEFAULT, "%s: %s", Players[pnum].callsign, text);
+#ifdef NETWORK
+		multi_send_trigger_message(text);
+#endif
+	} else {
+		HUD_init_message_literal(HM_DEFAULT, text);
+	}
+}
 
 
 void do_matcen(sbyte trigger_num)

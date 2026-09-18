@@ -41,6 +41,7 @@ internal enum class GameSettingsPreset(
                 add(PresetSettingPreview("Boss health bar", helpersEnabled))
                 add(PresetSettingPreview("In-game FOV", value = "90 deg (Base)"))
                 add(PresetSettingPreview("Guidebot helper line", helpersEnabled))
+                add(PresetSettingPreview("Persist guidebot goal message", helpersEnabled))
                 add(PresetSettingPreview("New-server Coop QoL\n(teammate arrows, Guidebot, warp)", serverCoopQol))
                 add(PresetSettingPreview("Rewind support and overlay controls", rewindEnabled))
                 add(PresetSettingPreview("Texture filtering", value = "Nearest"))

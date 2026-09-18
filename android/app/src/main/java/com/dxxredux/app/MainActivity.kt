@@ -370,6 +370,8 @@ class MainActivity :
 
     external fun nativeGetGammaLevel(): Int
 
+    external fun nativeSetPersistGuidebotGoal(enabled: Boolean)
+
     external fun nativeSetCoopIndicatorOptions(
         showNearestPlayerLine: Boolean,
         showGuidebotLine: Boolean,
@@ -2347,6 +2349,7 @@ class MainActivity :
 
     private fun applyCoopIndicatorPrefs(prefs: android.content.SharedPreferences) {
         try {
+            nativeSetPersistGuidebotGoal(prefs.getBoolean(PREF_PERSIST_GUIDEBOT_GOAL, true))
             nativeSetCoopIndicatorOptions(
                 prefs.getBoolean(PREF_NEAREST_PLAYER_LINE, true),
                 prefs.getBoolean(PREF_GUIDEBOT_HELPER_LINE, true),

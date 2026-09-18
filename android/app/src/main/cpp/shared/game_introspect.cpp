@@ -911,6 +911,8 @@ static json serialize_guidebot()
 {
 	json result;
 
+	result["persist_goal_message"] = escort_goal_message_persistent() != 0;
+	result["persistent_goal_message"] = escort_goal_message() ? escort_goal_message() : "";
 	result["buddy_objnum"] = Buddy_objnum;
 	int companion_count = 0;
 	for (int i = 0; i <= Highest_object_index; ++i)

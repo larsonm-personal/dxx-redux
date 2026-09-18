@@ -1,0 +1,81 @@
+// TEST: Persistent Guide-Bot goal preference, lifetime and docking
+[
+    {"_info": {
+        "games": ["d2"],
+        "_deps": [
+            {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
+            {"file": "descent2.ham", "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"},
+            {"file": "groupa.pig", "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"}
+        ]
+    }},
+
+    {"action": "enter_launcher"},
+    {"action": "reset_state"},
+    {"action": "clear_mods"},
+    {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "persist_guidebot_goal_message", "value": true}, "post_delay_ms": 250},
+    {"action": "enter_game", "game": "d2"},
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "select", "text": "Ok", "optional": true},
+    {"action": "select", "text": "New game", "timeout_ms": 10000},
+    {"action": "select", "text": "Counterstrike", "optional": true, "timeout_ms": 1000},
+    {"action": "select", "text": "Ok", "timeout_ms": 5000},
+    {"action": "select", "text": "Rookie", "timeout_ms": 10000},
+    {"action": "skip_briefing", "timeout_ms": 10000},
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
+
+    {"action": "assert", "expect": {
+        "guidebot.persist_goal_message": true,
+        "guidebot.persistent_goal_message": ""
+    }},
+    {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "guidebot.released": "true",
+        "guidebot.docked": "false",
+        "guidebot.object_type": "2"
+    }},
+
+    {"action": "meta_action", "id": 1010, "post_delay_ms": 200},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "guidebot.persistent_goal_message": {"contains": "Staying away"}
+    }},
+    {"action": "wait_ms", "ms": 12000},
+    {"action": "assert", "expect": {
+        "guidebot.persistent_goal_message": {"contains": "Staying away"},
+        "hud_layout.message_rect_count": {"gte": 1}
+    }},
+    {"action": "set_debug", "field": "persist_guidebot_goal_message", "value": "false"},
+    {"action": "assert", "expect": {"guidebot.persistent_goal_message": ""}},
+    {"action": "set_debug", "field": "persist_guidebot_goal_message", "value": "true"},
+    {"action": "assert", "expect": {"guidebot.persistent_goal_message": {"contains": "Staying away"}}},
+    {"action": "set_debug", "field": "guidebot_segment", "value": "20"},
+    {"action": "meta_action", "id": 1045, "post_delay_ms": 100},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "guidebot.released": "true",
+        "guidebot.docked": "false",
+        "guidebot.recalling": "true"
+    }},
+    {"action": "wait_for", "timeout_ms": 30000, "expect": {
+        "guidebot.released": "false",
+        "guidebot.docked": "true",
+        "guidebot.recalling": "false",
+        "guidebot.object_type": "12",
+        "guidebot.persistent_goal_message": ""
+    }},
+
+    {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
+    {"action": "wait_for", "timeout_ms": 5000, "expect": {
+        "guidebot.released": "true",
+        "guidebot.docked": "false",
+        "guidebot.object_type": "2",
+        "guidebot.segment": {"gte": 0}
+    }},
+    {"action": "enter_launcher"},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "persist_guidebot_goal_message", "value": false}},
+    {"action": "log", "message": "=== TEST: persistent guidebot goal PASS ==="}
+]

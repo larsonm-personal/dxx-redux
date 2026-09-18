@@ -227,6 +227,9 @@ static int escort_refresh_buddy_objnum(void)
 	return Buddy_objnum != -1;
 }
 
+int ok_for_buddy_to_talk(void);
+#include "guidebot_goal_message_impl.h"
+
 int escort_buddy_is_docked(void)
 {
 	int docked_objnum;
@@ -405,6 +408,7 @@ static void thief_drop_stolen_mine(object *objp, int weapon_id)
 
 void init_buddy_for_level(void)
 {
+	escort_goal_message_reset();
 	input_demo_reset_escort_state_probes();
 
 	Buddy_allowed_to_talk = 0;
@@ -849,7 +853,7 @@ void escort_recall_to_ship(void)
 	ailp->mode = AIM_GOTO_PLAYER;
 	Escort_last_path_created = 0;
 	Last_buddy_message_time = 0;
-	buddy_message("Returning to your ship.");
+	buddy_goal_message("Returning to your ship.");
 }
 
 //	-----------------------------------------------------------------------------
@@ -1337,11 +1341,11 @@ void set_escort_special_goal(int special_key)
 	if (using_route_command) {
 		if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT &&
 		    Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_EXIT)
-			buddy_message("Finding EXIT");
+			buddy_goal_message("Finding EXIT");
 		else if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT)
-			buddy_message("Exit route: %s", escort_get_route_goal_instruction());
+			buddy_goal_message("Exit route: %s", escort_get_route_goal_instruction());
 		else
-			buddy_message("Finding NEXT: %s", escort_get_route_goal_instruction());
+			buddy_goal_message("Finding NEXT: %s", escort_get_route_goal_instruction());
 	}
 	else
 #endif
@@ -1715,11 +1719,11 @@ static void escort_report_secret_goal_failure(int goal_index)
 {
 	Last_buddy_message_time = 0;
 	if (goal_index == -4)
-		buddy_message("All found.");
+		buddy_goal_message("All found.");
 	else if (goal_index == -2)
-		buddy_message("Can't reach any secrets.");
+		buddy_goal_message("Can't reach any secrets.");
 	else
-		buddy_message("No secrets in mine.");
+		buddy_goal_message("No secrets in mine.");
 }
 
 static int escort_goal_command_allowed(void)
@@ -1846,25 +1850,25 @@ void say_escort_goal(int goal_num)
 		return;
 
 	switch (goal_num) {
-		case ESCORT_GOAL_BLUE_KEY:		buddy_message("Finding BLUE KEY");			break;
-		case ESCORT_GOAL_GOLD_KEY:		buddy_message("Finding YELLOW KEY");		break;
-		case ESCORT_GOAL_RED_KEY:		buddy_message("Finding RED KEY");			break;
-		case ESCORT_GOAL_CONTROLCEN:	buddy_message("Finding REACTOR");			break;
-		case ESCORT_GOAL_EXIT:			buddy_message("Finding EXIT");				break;
-		case ESCORT_GOAL_ENERGY:		buddy_message("Finding ENERGY");				break;
-		case ESCORT_GOAL_ENERGYCEN:	buddy_message("Finding ENERGY CENTER");	break;
-		case ESCORT_GOAL_SHIELD:		buddy_message("Finding a SHIELD");			break;
-		case ESCORT_GOAL_POWERUP:		buddy_message("Finding a POWERUP");			break;
-		case ESCORT_GOAL_ROBOT:			buddy_message("Finding a ROBOT");			break;
-		case ESCORT_GOAL_HOSTAGE:		buddy_message("Finding a HOSTAGE");			break;
-		case ESCORT_GOAL_SCRAM:			buddy_message("Staying away...");			break;
-		case ESCORT_GOAL_BOSS:			buddy_message("Finding BOSS robot");		break;
-		case ESCORT_GOAL_PLAYER_SPEW:	buddy_message("Finding your powerups");	break;
+		case ESCORT_GOAL_BLUE_KEY:		buddy_goal_message("Finding BLUE KEY");			break;
+		case ESCORT_GOAL_GOLD_KEY:		buddy_goal_message("Finding YELLOW KEY");		break;
+		case ESCORT_GOAL_RED_KEY:		buddy_goal_message("Finding RED KEY");			break;
+		case ESCORT_GOAL_CONTROLCEN:	buddy_goal_message("Finding REACTOR");			break;
+		case ESCORT_GOAL_EXIT:			buddy_goal_message("Finding EXIT");				break;
+		case ESCORT_GOAL_ENERGY:		buddy_goal_message("Finding ENERGY");				break;
+		case ESCORT_GOAL_ENERGYCEN:	buddy_goal_message("Finding ENERGY CENTER");	break;
+		case ESCORT_GOAL_SHIELD:		buddy_goal_message("Finding a SHIELD");			break;
+		case ESCORT_GOAL_POWERUP:		buddy_goal_message("Finding a POWERUP");			break;
+		case ESCORT_GOAL_ROBOT:			buddy_goal_message("Finding a ROBOT");			break;
+		case ESCORT_GOAL_HOSTAGE:		buddy_goal_message("Finding a HOSTAGE");			break;
+		case ESCORT_GOAL_SCRAM:			buddy_goal_message("Staying away...");			break;
+		case ESCORT_GOAL_BOSS:			buddy_goal_message("Finding BOSS robot");		break;
+		case ESCORT_GOAL_PLAYER_SPEW:	buddy_goal_message("Finding your powerups");	break;
 		case ESCORT_GOAL_SECRET:
 			if (Escort_goal_index > 0)
-				buddy_message("Finding secret %i", Escort_goal_index);
+				buddy_goal_message("Finding secret %i", Escort_goal_index);
 			else
-				buddy_message("Finding secret");
+				buddy_goal_message("Finding secret");
 			break;
 		case ESCORT_GOAL_MARKER1:
 		case ESCORT_GOAL_MARKER2:
@@ -1878,7 +1882,7 @@ void say_escort_goal(int goal_num)
 			{ char marker_text[BUDDY_MARKER_TEXT_LEN];
 			strncpy(marker_text, MarkerMessage[goal_num-ESCORT_GOAL_MARKER1], BUDDY_MARKER_TEXT_LEN-1);
 			marker_text[BUDDY_MARKER_TEXT_LEN-1] = 0;
-			buddy_message("Finding marker %i: '%s'", goal_num-ESCORT_GOAL_MARKER1+1, marker_text);
+			buddy_goal_message("Finding marker %i: '%s'", goal_num-ESCORT_GOAL_MARKER1+1, marker_text);
 			break;
 			}
 	}
@@ -2043,11 +2047,11 @@ void escort_create_path_to_goal(object *objp)
 			Looking_for_marker = -1;
 		} else if (Escort_goal_index == -1) {
 			Last_buddy_message_time = 0;	//	Force this message to get through.
-			buddy_message("No %s in mine.", Escort_goal_text[Escort_goal_object-1]);
+			buddy_goal_message("No %s in mine.", Escort_goal_text[Escort_goal_object-1]);
 			Looking_for_marker = -1;
 		} else if (Escort_goal_index == -2) {
 			Last_buddy_message_time = 0;	//	Force this message to get through.
-			buddy_message("Can't reach %s.", Escort_goal_text[Escort_goal_object-1]);
+			buddy_goal_message("Can't reach %s.", Escort_goal_text[Escort_goal_object-1]);
 			Looking_for_marker = -1;
 		} else
 			Int3();
@@ -2118,9 +2122,9 @@ void escort_create_path_to_goal(object *objp)
 						fix	dist_to_player;
 						Last_buddy_message_time = 0;	//	Force this message to get through.
 						if (Escort_goal_object == ESCORT_GOAL_SECRET)
-							buddy_message("Can't reach any secrets.");
+							buddy_goal_message("Can't reach any secrets.");
 						else
-							buddy_message("Can't reach %s.", Escort_goal_text[Escort_goal_object-1]);
+							buddy_goal_message("Can't reach %s.", Escort_goal_text[Escort_goal_object-1]);
 						Looking_for_marker = -1;
 						Escort_goal_object = ESCORT_GOAL_SCRAM;
 						escort_clear_secret_goal();
@@ -2146,21 +2150,21 @@ void escort_create_path_to_goal(object *objp)
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_LIVE_ESCORT)
 		if (using_route_goal) {
 			if (Escort_special_goal == ESCORT_GOAL_HOSTAGE)
-				buddy_message("Hostages: %s", Escort_route_goal.objective_kind == ESCORT_ROUTE_OBJECTIVE_HOSTAGE ?
+				buddy_goal_message("Hostages: %s", Escort_route_goal.objective_kind == ESCORT_ROUTE_OBJECTIVE_HOSTAGE ?
 				    "can't reach them yet; following the closest route" : escort_route_goal_label());
 			else if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT &&
 			    path_goal_seg != goal_seg)
-				buddy_message("Can't reach EXIT yet; navigating as close as possible");
+				buddy_goal_message("Can't reach EXIT yet; navigating as close as possible");
 			else if (path_goal_seg != goal_seg &&
 			         !Escort_route_goal.frontier_player_openable_door)
-				buddy_message("Can't reach next yet; navigating as close as possible");
+				buddy_goal_message("Can't reach next yet; navigating as close as possible");
 			else if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT &&
 			         Escort_route_goal.objective_kind == LEVEL_METADATA_ROUTE_EXIT)
-				buddy_message("Finding EXIT");
+				buddy_goal_message("Finding EXIT");
 			else if (Escort_route_target_mode == ESCORT_ROUTE_TARGET_EXIT)
-				buddy_message("Exit route: %s", escort_get_route_goal_instruction());
+				buddy_goal_message("Exit route: %s", escort_get_route_goal_instruction());
 			else
-				buddy_message("Finding NEXT: %s", escort_get_route_goal_instruction());
+				buddy_goal_message("Finding NEXT: %s", escort_get_route_goal_instruction());
 		}
 		else
 #endif
@@ -2410,6 +2414,7 @@ static void escort_restore_companion_robot_control(void)
 
 void escort_rebuild_runtime_state_after_restore(void)
 {
+	escort_goal_message_reset();
 	ai_local *ailp = NULL;
 	object *buddy_objp = NULL;
 	input_demo_checkpoint_escort_state checkpoint_escort_state;
@@ -2831,7 +2836,7 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 		ailp->mode = AIM_GOTO_PLAYER;
 		if (!player_visibility) {
 			if ((Last_come_back_message_time + F1_0 < GameTime64) || (Last_come_back_message_time > GameTime64)) {
-				buddy_message("Coming back to get you.");
+				buddy_goal_message("Coming back to get you.");
 				Last_come_back_message_time = GameTime64;
 			}
 		}

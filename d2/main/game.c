@@ -1718,6 +1718,7 @@ void GameProcessFrame(void)
 #endif
 
 	dead_player_frame();
+	escort_goal_message_frame();
 	if (Newdemo_state != ND_STATE_PLAYBACK)
 		do_controlcen_dead_frame();
 #ifdef __ANDROID__

@@ -3910,6 +3910,10 @@ extern "C" void game_automate_tick(void)
 				     strtol(s.value.c_str(), NULL, 10) != 0)
 				        ? 1
 				        : 0;
+			} else if (s.field == "persist_guidebot_goal_message") {
+#ifdef DXX_BUILD_DESCENT_II
+				escort_set_goal_message_persistent(s.value == "true" || s.value == "1");
+#endif
 			} else if (s.field == "show_boss_health_bar") {
 				PlayerCfg.ShowBossHealthBar =
 				    (strcasecmp(s.value.c_str(), "true") == 0 ||

@@ -62,16 +62,21 @@ extern int multi_protocol; // set and determinate used protocol
 
 // What version of the multiplayer protocol is this? Increment each time something drastic changes in Multiplayer without the version number changes. Can be reset to 0 each time the version of the game changes
 #ifdef __ANDROID__
-#define MULTI_PROTO_VERSION 30071 // Redux travel requests retain crossing context
+#define MULTI_PROTO_VERSION 30073 // Persistent Guide-Bot goal state
 #define MULTI_PLAYER_DROP_LENGTH 114
 #define MULTI_SHIP_STATUS_LENGTH 84
 #define MULTI_COOP_RESTORE_LENGTH 102
 #else
-#define MULTI_PROTO_VERSION 30020 // Blastable-wall shooter attribution
+#define MULTI_PROTO_VERSION 30022 // Persistent Guide-Bot goal state
 #define MULTI_PLAYER_DROP_LENGTH 106
 #define MULTI_SHIP_STATUS_LENGTH 70
 #define MULTI_COOP_RESTORE_LENGTH 86
 #endif
+
+#include "guidebot_goal_message.h"
+
+#define MULTI_TRIGGER_MESSAGE_LEN 64
+void multi_send_trigger_message(const char *message);
 
 // PROTOCOL VARIABLES AND DEFINES - END
 
@@ -190,6 +195,8 @@ extern int multi_protocol; // set and determinate used protocol
 	VALUE(MULTI_COOP_TRAVEL         , 228)    \
 	VALUE(MULTI_COOP_ENDGAME        , 160)    \
 	VALUE(MULTI_ESCORT_SPAWN        , 11 + sizeof(shortpos))    \
+	VALUE(MULTI_COOP_TRIGGER_MESSAGE , 2 + MULTI_TRIGGER_MESSAGE_LEN)    \
+	VALUE(MULTI_GUIDEBOT_GOAL , GUIDEBOT_GOAL_PACKET_LEN)    \
 	AFTER
 for_each_multiplayer_command(enum {, define_multiplayer_command, });
 

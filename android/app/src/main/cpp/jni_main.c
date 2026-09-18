@@ -1022,6 +1022,22 @@ Java_com_dxxredux_app_MainActivity_nativeGetGammaLevel(JNIEnv *env, jobject thiz
 	return (jint) gr_palette_get_gamma();
 }
 
+/* Launcher-local guidebot message preference, independent of host QoL */
+#ifdef DXX_BUILD_DESCENT_II
+#include "guidebot_goal_message.h"
+#endif
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetPersistGuidebotGoal(JNIEnv *env, jobject thiz, jboolean enabled)
+{
+	(void) env;
+	(void) thiz;
+#ifdef DXX_BUILD_DESCENT_II
+	escort_set_goal_message_persistent(enabled ? 1 : 0);
+#else
+	(void) enabled;
+#endif
+}
+
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetCoopIndicatorOptions(JNIEnv *env,
                                                                  jobject thiz,

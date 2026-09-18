@@ -45,6 +45,7 @@ object ConfigImportExport {
             ExportedPreference(PREF_SHOW_RESUME_OFFER, ExportedPreferenceType.BOOLEAN),
             ExportedPreference(PREF_SHOW_DEMO_INSTALLER_OFFER, ExportedPreferenceType.BOOLEAN),
             ExportedPreference(PREF_GUIDEBOT_HELPER_LINE, ExportedPreferenceType.BOOLEAN),
+            ExportedPreference(PREF_PERSIST_GUIDEBOT_GOAL, ExportedPreferenceType.BOOLEAN),
             ExportedPreference(PREF_NEAREST_PLAYER_LINE, ExportedPreferenceType.BOOLEAN),
             ExportedPreference(PREF_HEADLIGHT_OFF_BY_DEFAULT, ExportedPreferenceType.BOOLEAN),
         )
