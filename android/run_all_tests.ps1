@@ -357,6 +357,8 @@ $testTimeouts = @{
     "test_gog_installer_redbook_unified"  = 420
     "test_disc_content_import"           = 420
     "test_gradle_unit_tests"              = 600
+    # Includes 360s in-game metadata, 300s preview, staging, and cleanup
+    "test_guidebot_mission_metadata"      = 900
     "test_guidebot_simulation_headed_headless_parity" = 1800
     "test_guided_shot_annotations"        = 600
     "test_primary_target_grates"         = 600
@@ -370,6 +372,8 @@ $testTimeouts = @{
     "test_level_metadata_benchmark"       = 300
     "test_launcher_dpad"                  = 180
     "test_mission_zip_batch"              = 3600
+    # Includes the 600s child scenario, large archive staging, and cleanup
+    "test_mission_asset_isolation"        = 900
     "test_mod_loading"                    = 360
     "test_saf_archiver"                   = 360
     "test_xcrash_native_report"           = 300

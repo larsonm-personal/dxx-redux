@@ -147,6 +147,30 @@ try {
         $MaxArchiveTotalBytes = $savedMaxArchiveTotalBytes
     }
 
+    # Large mission collections legitimately contain more than 4096 members across their HOGs
+    $collection = Join-Path $testRoot 'collection.hog'
+    $collectionStream = [IO.File]::Create($collection)
+    try {
+        $magic = [Text.Encoding]::ASCII.GetBytes('DHF')
+        $collectionStream.Write($magic, 0, $magic.Length)
+        $member = New-Object byte[] 17
+        [Text.Encoding]::ASCII.GetBytes('level.rl2').CopyTo($member, 0)
+        for ($i = 0; $i -lt 5000; $i++) { $collectionStream.Write($member, 0, $member.Length) }
+    } finally { $collectionStream.Dispose() }
+    $script:ArchiveBudget = @{ Entries = 0; ActualBytes = 0L; Started = [DateTime]::UtcNow }
+    $count = Extract-HogAudio -HogPath $collection -OutputDir $outputRoot -SourcePrefix 'collection.hog' -SourceMap @{}
+    if ($count -ne 0 -or $script:ArchiveBudget.Entries -ne 5000) { throw 'Large collection was not fully inspected' }
+    $savedMaxArchiveEntries = $MaxArchiveEntries
+    try {
+        $MaxArchiveEntries = 4999
+        $script:ArchiveBudget = @{ Entries = 0; ActualBytes = 0L; Started = [DateTime]::UtcNow }
+        $rejected = $false
+        try {
+            $null = Extract-HogAudio -HogPath $collection -OutputDir $outputRoot -SourcePrefix 'collection.hog' -SourceMap @{}
+        } catch { $rejected = $_.Exception.Message -match 'exceeds 4999 entries' }
+        if (-not $rejected) { throw 'Aggregate archive entry budget was not enforced' }
+    } finally { $MaxArchiveEntries = $savedMaxArchiveEntries }
+
     foreach ($tailLength in @(1, 12, 13, 16)) {
         $hogPath = Join-Path $testRoot "truncated_$tailLength.hog"
         $hogBytes = New-Object byte[] (3 + $tailLength)

@@ -1,5 +1,5 @@
 // Auto-generated regression spec for: descent_2_enUS_1_0_51877.pkg
-// Generated: 2026-05-24 17:34:47
+// Generated: 2026-09-18 20:45:55
 {
   "source_type": "gog",
   "source_files": {
@@ -18,7 +18,7 @@
     "GROUPA.PIG"
   ],
   "audio_tracks": 8,
-  "total_extracted": 15,
+  "total_extracted": 21,
   "last_test_result": {
     "status": "pass",
     "failure_step": "",

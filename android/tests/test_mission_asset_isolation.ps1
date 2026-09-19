@@ -9,14 +9,15 @@ if (@($devices | Where-Object { $_ -match '^emulator-\d+\s+device$' }).Count -ne
     @($devices | Where-Object { $_ -match '^\S+\s+device$' }).Count -ne 1) {
     throw 'This test requires exactly one connected device, the disposable test emulator'
 }
+# Drop generated test projections before staging on the small test AVD
+& $ADB shell am force-stop com.dxxredux.app
+& $ADB shell run-as com.dxxredux.app rm -rf /data/user/0/com.dxxredux.app/files/d2x-redux/.mission_assets
 if ($Install) {
-    # Drop generated test projections before installation on the small test AVD
-    & $ADB shell am force-stop com.dxxredux.app
-    & $ADB shell run-as com.dxxredux.app rm -rf files/d2x-redux/.mission_assets
     & $ADB install -r (Join-Path $repoRoot 'android/app/build/outputs/apk/debug/app-debug.apk')
     if ($LASTEXITCODE -ne 0) { throw 'Could not install the test APK' }
 }
 $fixtures = Join-Path $repoRoot 'temp/mission-isolation-fixtures'
+& (Join-Path $PSScriptRoot '../helpers/retain-recent-artifacts.ps1') -Artifacts $fixtures
 New-Item -ItemType Directory -Force $fixtures | Out-Null
 $enemy = Join-Path $fixtures 'ewithin-rebirth.zip'
 if (!(Test-Path -LiteralPath $enemy)) {
@@ -33,44 +34,56 @@ if ((Get-FileHash -LiteralPath $enemy -Algorithm SHA256).Hash.ToLowerInvariant()
     throw 'Enemy Within fixture does not match the phone reproduction sample fixture'
 }
 $target = 'files/imported/sets/default/.content/mods'
-& $ADB shell run-as com.dxxredux.app mkdir -p $target
-foreach ($source in @($enemy, (Join-Path $repoRoot 'game_data/mission_files/descent_maximum_fixed.zip'))) {
-    $name = Split-Path -Leaf $source
-    & $ADB push $source "/data/local/tmp/$name"
-    if ($LASTEXITCODE -ne 0) { throw "Could not stage $name" }
-    & $ADB shell run-as com.dxxredux.app cp "/data/local/tmp/$name" "$target/$name"
-    if ($LASTEXITCODE -ne 0) { throw "Could not publish $name" }
-    & $ADB shell rm -f "/data/local/tmp/$name"
-}
-& $ADB logcat -c
-& (Join-Path $PSScriptRoot '../helpers/run_test.ps1') -ScriptName test_mission_asset_isolation.jsonc -Game d2 -TimeoutSeconds 600
-$testResult = $LASTEXITCODE
-$logPath = Join-Path $repoRoot 'temp/mission_isolation_logcat.txt'
-& $ADB logcat -d | Set-Content -LiteralPath $logPath -Encoding utf8
-if ($testResult -ne 0) { throw "Mission switching failed; see $logPath" }
-$lines = Get-Content -LiteralPath $logPath
-$marker = $lines | Where-Object { $_ -match 'DXX-Automate: SCRIPT: ISOLATION start Counterstrike' } | Select-Object -First 1
-if (!$marker) { throw 'Missing game process marker' }
-$gameProcess = ($marker -split '\s+')[2]
-$lines = @($lines | Where-Object { ($_ -split '\s+')[2] -eq $gameProcess })
-$activations = @($lines | Where-Object { $_ -match '\[ASSETS\] activated' })
-$owners = @($activations | ForEach-Object { if ($_ -match "owner='([^']+)'" ) { $Matches[1] } })
-$expected = @('base', 'mod/ewithin-rebirth.zip', 'base', 'mod/descent_maximum_fixed.zip', 'mod/ewithin-rebirth.zip', 'base', 'mod/ewithin-rebirth.zip')
-if (($owners -join ',') -ne ($expected -join ',')) { throw "Wrong mission owners: $owners" }
-$processes = @($activations | ForEach-Object { ($_ -split '\s+')[2] } | Select-Object -Unique)
-if ($processes.Count -ne 1) { throw 'Mission switches restarted the game process' }
-$trace = $lines -join "`n"
-if ($trace -notmatch "file='descent2.s22' loaded_from='[^']*ewithin.dxa'") {
-    throw 'Selected ewithin did not load its authored sound bank'
-}
-$samples = @($lines | Where-Object { $_ -match 'resident_sample=53 ' })
-if ($samples.Count -ne $expected.Count) { throw "Expected $($expected.Count) resident robot sample checks, found $($samples.Count)" }
-for ($index = 0; $index -lt $expected.Count; $index++) {
-    $sample = if ($expected[$index] -eq 'mod/ewithin-rebirth.zip') {
-        'loaded_hash=446c95505b42af56 loaded_bytes=16367 bank_match=1'
-    } else {
-        'loaded_hash=9a629f9713cdff17 loaded_bytes=24098 bank_match=1'
+try {
+    & $ADB shell run-as com.dxxredux.app mkdir -p $target
+    foreach ($source in @($enemy, (Join-Path $repoRoot 'game_data/mission_files/descent_maximum_fixed.zip'))) {
+        $name = Split-Path -Leaf $source
+        & $ADB push $source "/data/local/tmp/$name"
+        if ($LASTEXITCODE -ne 0) { throw "Could not stage $name" }
+        & $ADB shell run-as com.dxxredux.app cp "/data/local/tmp/$name" "$target/$name"
+        if ($LASTEXITCODE -ne 0) { throw "Could not publish $name" }
+        & $ADB shell rm -f "/data/local/tmp/$name"
     }
-    if ($samples[$index] -notmatch $sample) { throw "Wrong resident robot sound for $($expected[$index]): $($samples[$index])" }
+    & $ADB logcat -c
+    & (Join-Path $PSScriptRoot '../helpers/run_test.ps1') -ScriptName test_mission_asset_isolation.jsonc -Game d2 -TimeoutSeconds 600
+    $testResult = $LASTEXITCODE
+    $logPath = Join-Path $repoRoot 'temp/mission_isolation_logcat.txt'
+    & $ADB logcat -d | Set-Content -LiteralPath $logPath -Encoding utf8
+    if ($testResult -ne 0) { throw "Mission switching failed; see $logPath" }
+    $lines = Get-Content -LiteralPath $logPath
+    $marker = $lines | Where-Object { $_ -match 'DXX-Automate: SCRIPT: ISOLATION start Counterstrike' } | Select-Object -First 1
+    if (!$marker) { throw 'Missing game process marker' }
+    $gameProcess = ($marker -split '\s+')[2]
+    $lines = @($lines | Where-Object { ($_ -split '\s+')[2] -eq $gameProcess })
+    $activations = @($lines | Where-Object { $_ -match '\[ASSETS\] activated' })
+    $owners = @($activations | ForEach-Object { if ($_ -match "owner='([^']+)'" ) { $Matches[1] } })
+    $expected = @('base', 'mod/ewithin-rebirth.zip', 'base', 'mod/descent_maximum_fixed.zip', 'mod/ewithin-rebirth.zip', 'base', 'mod/ewithin-rebirth.zip')
+    if (($owners -join ',') -ne ($expected -join ',')) { throw "Wrong mission owners: $owners" }
+    $processes = @($activations | ForEach-Object { ($_ -split '\s+')[2] } | Select-Object -Unique)
+    if ($processes.Count -ne 1) { throw 'Mission switches restarted the game process' }
+    $trace = $lines -join "`n"
+    if ($trace -notmatch "file='descent2.s22' loaded_from='[^']*ewithin.dxa'") {
+        throw 'Selected ewithin did not load its authored sound bank'
+    }
+    $samples = @($lines | Where-Object { $_ -match 'resident_sample=53 ' })
+    if ($samples.Count -ne $expected.Count) { throw "Expected $($expected.Count) resident robot sample checks, found $($samples.Count)" }
+    for ($index = 0; $index -lt $expected.Count; $index++) {
+        $sample = if ($expected[$index] -eq 'mod/ewithin-rebirth.zip') {
+            'loaded_hash=446c95505b42af56 loaded_bytes=16367 bank_match=1'
+        } else {
+            'loaded_hash=9a629f9713cdff17 loaded_bytes=24098 bank_match=1'
+        }
+        if ($samples[$index] -notmatch $sample) { throw "Wrong resident robot sound for $($expected[$index]): $($samples[$index])" }
+    }
+    Write-Host "Mission asset isolation passed in process $($processes[0]): $logPath"
+} finally {
+    # The test replaces the default mod manifest; release its archives and generated mounts
+    & $ADB shell am force-stop com.dxxredux.app
+    & $ADB shell rm -f /data/local/tmp/ewithin-rebirth.zip /data/local/tmp/descent_maximum_fixed.zip
+    & $ADB shell run-as com.dxxredux.app rm -f "$target/ewithin-rebirth.zip" "$target/descent_maximum_fixed.zip" "$target/mod_manifest.json"
+    if ($LASTEXITCODE -ne 0) { throw 'Could not remove mission isolation test archives' }
+    & $ADB shell run-as com.dxxredux.app rm -rf /data/user/0/com.dxxredux.app/files/d2x-redux/.mission_assets
+    if ($LASTEXITCODE -ne 0) { throw 'Could not release mission isolation publications' }
+    & $ADB shell run-as com.dxxredux.app rm -f files/d2x-redux/.active_mod_paths files/d2x-redux/.mission_assets.json
+    if ($LASTEXITCODE -ne 0) { throw 'Could not clear mission isolation mounts' }
 }
-Write-Host "Mission asset isolation passed in process $($processes[0]): $logPath"

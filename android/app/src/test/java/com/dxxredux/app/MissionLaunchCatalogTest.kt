@@ -8,6 +8,23 @@ import java.io.File
 
 class MissionLaunchCatalogTest {
     @Test
+    fun identicalCaseVariantsWithTheSameOwnerPublishOnce() {
+        val key = MissionLaunchKey("disc", "missions/first.mn2", "d2")
+        fun resource(path: String, hash: String) = MissionLaunchResource(File(path), path, hash, setOf(key))
+        val descriptor = resource(key.descriptor, "descriptor")
+        val readme = resource("missions/README.TXT", "abc")
+        val resources = listOf(descriptor, descriptor.copy(virtualPath = "missions/FIRST.MN2"), readme, resource("missions/readme.txt", "ABC"))
+        fun select(files: List<MissionLaunchResource>) =
+            MissionLaunchCatalog(listOf(MissionLaunchPackage("disc", "revision", listOf(MissionLaunchEntry(key, "First")), files)))
+                .resourcesFor(key).sortedBy { it.virtualPath }
+        assertEquals(listOf(readme, descriptor), select(resources))
+        assertEquals(select(resources), select(resources.reversed()))
+        assertThrows(IllegalArgumentException::class.java) {
+            select(resources.dropLast(1) + resources.last().copy(sha256 = "different"))
+        }
+    }
+
+    @Test
     fun switchingSiblingsSelectsOnlyTheirResourcesAndPackageSharedData() {
         val first = MissionLaunchKey("collection", "missions/first.mn2", "d2")
         val second = MissionLaunchKey("collection", "missions/second.mn2", "d2")

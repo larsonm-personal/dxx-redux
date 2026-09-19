@@ -129,6 +129,26 @@ static int			num_sounds=0;
 
 
 
+#ifdef __ANDROID__
+// Mission asset teardown also invalidates the legacy BITMAPS.TBL parser state
+void gamedata_android_reset_tbl(void)
+{
+    Installed = 0;
+    N_ObjBitmaps = N_ObjBitmapPtrs = Num_robot_ais = 0;
+    tmap_count = texture_count = clip_count = clip_num = sound_num = frames = 0;
+    play_time = vlighting = 0;
+    SuperX = hit_sound = -1;
+    bm_flag = BM_NONE;
+    abm_flag = rod_flag = num_sounds = 0;
+    wall_open_sound = wall_close_sound = wall_explodes = wall_blastable = wall_hidden = 0;
+    obj_eclip = dest_vclip = dest_eclip = dest_size = crit_clip = crit_flag = tmap1_flag = 0;
+    arg = dest_bm = NULL;
+    N_robot_types = N_robot_joints = N_weapon_types = N_powerup_types = N_hostage_types = 0;
+    Num_cockpits = 0;
+    First_multi_bitmap_num = -1;
+}
+#endif
+
 //------------------- Useful macros and variables ---------------
 
 #define IFTOK(str) if (!strcmp(arg, str))

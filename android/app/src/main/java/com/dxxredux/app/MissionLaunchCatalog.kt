@@ -85,7 +85,13 @@ internal class MissionLaunchCatalog(
         val pack = packages.singleOrNull { it.owner == selection.owner }
         require(pack != null && pack.missions.any { it.key == selection }) { "Unknown mission selection: $selection" }
         val resources = pack.resources.filter { it.missions.isEmpty() || selection in it.missions }
-        require(resources.map { it.virtualPath.lowercase(Locale.US) }.distinct().size == resources.size) {
+        val paths = resources.groupBy { it.virtualPath.lowercase(Locale.US) }
+        require(
+            paths.values.all { candidates ->
+                candidates.map { it.sha256.lowercase(Locale.US) }.distinct().size == 1 &&
+                    candidates.map { it.missions }.distinct().size == 1
+            },
+        ) {
             buildString {
                 append("Conflicting resource paths for $selection")
                 resources
@@ -104,7 +110,14 @@ internal class MissionLaunchCatalog(
                     }
             }
         }
-        return resources
+        // Some discs contain identical case variants; preserve the descriptor's exact spelling
+        return paths.values.map { candidates ->
+            candidates.minWith(
+                compareBy<MissionLaunchResource> { it.virtualPath != selection.descriptor }
+                    .thenBy { it.virtualPath }
+                    .thenBy { it.source.absolutePath },
+            )
+        }
     }
 
     fun revisionFor(selection: MissionLaunchKey): String {

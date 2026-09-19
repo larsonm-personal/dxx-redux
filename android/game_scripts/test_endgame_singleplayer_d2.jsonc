@@ -15,6 +15,10 @@
             },
             "_deps": [
                 {
+                    "file": "intro-h.mvl",
+                    "sha256": "b40a60bccbb4e2eea5dad222f85fd63abd29f36a48b5bd60174e10820c174b84"
+                },
+                {
                     "file": "descent2.hog",
                     "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"
                 },

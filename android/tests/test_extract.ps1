@@ -40,6 +40,10 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) 'helpers') 'normalized_json_text.ps1')
 
 trap {
+    # A failed staging transfer must not leave a partial CD filling the next run's device
+    if (Get-Command Clear-DirectImportScratch -CommandType Function -ErrorAction SilentlyContinue) {
+        try { Clear-DirectImportScratch } catch { }
+    }
     if (Test-ExtractRegressionAdbTransportFailure -Reason $_.Exception.Message) {
         Write-Host "FAIL: Recoverable ADB transport failure: $($_.Exception.Message)" -ForegroundColor Yellow
         exit 98
@@ -1033,6 +1037,12 @@ Write-Status "Sanitizing device state..."
 # Force-stop the app first
 Adb -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
 Start-Sleep -Seconds 1
+# These disposable projections survive clearing imported sets and can occupy over a GiB
+foreach ($gameDirectory in @('d1x-redux', 'd2x-redux')) {
+    Clear-AppPrivateDirectoryContents "/data/data/$PACKAGE/files/$gameDirectory/.mission_assets"
+    Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f',
+        "files/$gameDirectory/.mission_assets.json", "files/$gameDirectory/.active_mod_paths") | Out-Null
+}
 Adb -CmdArgs @(
     'shell', 'run-as', $PACKAGE, 'rm', '-f',
     'files/mods/mod_manifest.json',

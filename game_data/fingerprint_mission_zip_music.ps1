@@ -34,7 +34,9 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $buildDir = Join-Path $repoRoot "android/tests/build"
 $fpExe = if ($FingerprintExePath) { $FingerprintExePath } else { Join-Path $buildDir "Release/fingerprint_audio.exe" }
-$MaxArchiveEntries = 4096
+# Counts all members across the collection, including members inside every HOG
+# The external extractor still limits each expanded directory to 4096 files
+$MaxArchiveEntries = 65536
 $MaxArchiveEntryBytes = 512MB
 $MaxArchiveTotalBytes = 2GB
 $MaxArchiveRatio = 1000L

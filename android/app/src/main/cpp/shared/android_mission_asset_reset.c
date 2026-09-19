@@ -27,6 +27,7 @@ extern void piggy_android_reset_tables(void);
 extern void clear_texture_lookup_cache(void);
 #ifndef DXX_BUILD_DESCENT_II
 extern void custom_remove(void);
+extern void gamedata_android_reset_tbl(void);
 #ifdef USE_SDLMIXER
 extern void digi_mixer_free_cached_sounds(void);
 #endif
@@ -65,6 +66,9 @@ void android_mission_asset_reset_before(void)
 	clear_texture_lookup_cache();
 	texmerge_flush();
 	gamedata_close();
+#ifndef DXX_BUILD_DESCENT_II
+	gamedata_android_reset_tbl();
+#endif
 	piggy_android_reset_tables();
 }
 

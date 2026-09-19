@@ -3360,7 +3360,14 @@ extern "C" void game_automate_tick(void)
 				if (s.button_id >= 0) {
 					inject_button(s.button_id, 1);
 					inject_button(s.button_id, 0);
-				} else
+				}
+#ifdef ANDROID
+				else if (android_screen_advance_get_kind() == ANDROID_SCREEN_ADVANCE_MOVIE) {
+					// Movies use the explicit Skip control rather than ordinary screen taps
+					android_screen_advance_request(android_screen_advance_get_generation());
+				}
+#endif
+				else
 					inject_mouse_tap();
 				g_key_phase = 1;
 				g_repeat_start = now;
