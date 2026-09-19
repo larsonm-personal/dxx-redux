@@ -575,6 +575,10 @@ void omega_charge_frame(void)
 	omega_debug_frame();
 #endif
 
+	// Level changes reset the game clock even when Omega is already fully charged
+	if (Last_omega_fire_time > GameTime64)
+		Last_omega_fire_time = GameTime64;
+
 	if (Omega_charge == MAX_OMEGA_CHARGE)
 		return;
 
@@ -585,8 +589,6 @@ void omega_charge_frame(void)
 		return;
 
 	//	Don't charge while firing. Wait 1/3 second after firing before recharging
-	if (Last_omega_fire_time > GameTime64)
-		Last_omega_fire_time = GameTime64;
 	if (Last_omega_fire_time + F1_0/3 > GameTime64)
 		return;
 
@@ -652,7 +654,8 @@ void do_omega_stuff(object *parent_objp, vms_vector *firing_pos, object *weapon_
 		if (Omega_charge < 0)
 			Omega_charge = 0;
 
-		if (GameTime64 - Last_omega_fire_time + OMEGA_BASE_TIME <= FrameTime) // if firing is prolonged by FrameTime overhead, let's try to fix that. Since Next_laser_firing_time is probably changed already (in do_laser_firing_player), we need to calculate the overhead slightly different. 
+		// A shot can precede omega_charge_frame after the game clock resets
+		if (Last_omega_fire_time <= GameTime64 && GameTime64 - Last_omega_fire_time + OMEGA_BASE_TIME <= FrameTime) // if firing is prolonged by FrameTime overhead, let's try to fix that. Since Next_laser_firing_time is probably changed already (in do_laser_firing_player), we need to calculate the overhead slightly different.
 			fire_frame_overhead = GameTime64 - Last_omega_fire_time + OMEGA_BASE_TIME;
 
 		Next_laser_fire_time = GameTime64+OMEGA_BASE_TIME-fire_frame_overhead;
