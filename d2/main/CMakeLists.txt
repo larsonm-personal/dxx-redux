@@ -318,7 +318,8 @@ if(NOT ANDROID)
         dxx-redux-d2-headless
         ../../android/app/src/main/cpp/headless/input_demo_headless_main.cpp
         GAME_SOURCES ${D2X_HEADLESS_SOURCES}
-        PRIVATE_DEFINITIONS DXX_BUILD_DESCENT_II
+        # Replay must use the same Guide-Bot navigation rules as the desktop game
+        PRIVATE_DEFINITIONS DXX_BUILD_DESCENT_II DXX_GUIDEBOT_ROUTE_PLANNER
         PRIVATE_LIBRARIES ${DXX_TARGET_PREFIX}libmve)
     dxx_add_headless_target(
         dxx-redux-d2-headless-metadata

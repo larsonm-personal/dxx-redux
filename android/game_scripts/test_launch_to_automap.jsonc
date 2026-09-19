@@ -124,6 +124,10 @@
 
     // Enable the numbered objective overlay and verify native rendering state.
     {"action": "set_objective_overlay", "mode": "all", "post_delay_ms": 100},
+    // A cold route cache is computed asynchronously, including while automap is open
+    {"action": "wait_for", "when": "d2", "timeout_ms": 180000, "expect": {
+        "level_metadata_route.readiness": "complete"
+    }},
     {"action": "wait_ms", "ms": 300},
     {"action": "introspect"},
     {"action": "assert", "expect": {
