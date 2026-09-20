@@ -358,6 +358,9 @@ object DebugLog {
             append(" build=${BuildInfo.GIT_COMMIT_COUNT} (${BuildInfo.GIT_SHORT_HASH})")
             append(" ${BuildInfo.BUILD_TYPE}")
             append(" built=${BuildInfo.BUILD_DATE} ${BuildInfo.BUILD_TIME}")
+            append(" manufacturer=${Build.MANUFACTURER} model=${Build.MODEL}")
+            append(" device=${Build.DEVICE} hardware=${Build.HARDWARE}")
+            append(" android=${Build.VERSION.RELEASE} sdk=${Build.VERSION.SDK_INT} os_build=${Build.DISPLAY}")
             append(" abi=$primaryAbi arch=$osArch")
             append(" categories=$enabled")
         }
