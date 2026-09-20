@@ -1,5 +1,6 @@
 /* Included by escort.c so lifecycle checks use the engine's companion identity */
 #include "guidebot_goal_message.h"
+#include "guidebot_info_overlay.h"
 #include "byteswap.h"
 
 static int Escort_persist_goal_message;
@@ -30,6 +31,9 @@ int escort_goal_message_persistent(void)
 
 void escort_goal_message_reset(void)
 {
+#ifdef __ANDROID__
+	guidebot_info_reset();
+#endif
 	Escort_goal_message_text[0] = 0;
 	Escort_goal_message_signature = -1;
 	Escort_goal_message_owner = -1;
@@ -149,6 +153,11 @@ void buddy_goal_message(char *format, ...)
 	va_start(args, format);
 	vsnprintf(text, sizeof(text), format, args);
 	va_end(args);
+#ifdef __ANDROID__
+	if (strstr(text, "Can't") || strstr(text, "can't") || strstr(text, "Cannot") ||
+	    (!strncmp(text, "No ", 3) && strstr(text, "in mine")))
+		guidebot_info_event(text, 1);
+#endif
 	if (ok_for_buddy_to_talk() && escort_goal_message_live()) {
 		snprintf(message, sizeof(message), "%c%c%s:%c%c %s", CC_COLOR, BM_XRGB(28, 0, 0),
 		         PlayerCfg.GuidebotName, CC_COLOR, BM_XRGB(0, 31, 0), text);

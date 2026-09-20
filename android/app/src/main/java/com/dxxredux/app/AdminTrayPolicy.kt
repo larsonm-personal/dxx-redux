@@ -11,6 +11,7 @@ internal fun adminTrayUsesCheckbox(actionIndex: Int): Boolean =
         TouchOverlayView.ADMIN_AUTOMAP_MATCEN_MODE,
         TouchOverlayView.ADMIN_AUTOMAP_REACTOR,
         TouchOverlayView.ADMIN_VIDEO_INFO,
+        TouchOverlayView.ADMIN_GUIDEBOT_INFO,
         -> true
 
         else -> false
@@ -128,6 +129,7 @@ internal fun adminTrayVisibleActions(
     previewMode: Boolean = false,
     mapCheatsAccessible: Boolean = true,
     reactorPauseAllowed: Boolean = true,
+    hasGuidebotInfo: Boolean = false,
 ): List<Int> {
     if (previewMode) {
         return if (automapActive) {
@@ -153,6 +155,9 @@ internal fun adminTrayVisibleActions(
             TouchOverlayView.ADMIN_FOV,
             TouchOverlayView.ADMIN_MUSIC,
         )
+    if (hasGuidebotInfo) {
+        actions.add(actions.indexOf(TouchOverlayView.ADMIN_VIDEO_INFO) + 1, TouchOverlayView.ADMIN_GUIDEBOT_INFO)
+    }
     if (hasCameraWindowCycleActions) {
         actions.add(1, TouchOverlayView.ADMIN_CYCLE_LEFT_VIEW)
         actions.add(2, TouchOverlayView.ADMIN_CYCLE_RIGHT_VIEW)

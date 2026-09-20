@@ -7,6 +7,15 @@ import org.junit.Test
 
 class AdminTrayUiTest {
     @Test
+    fun guidebotInfoIsD2SettingsCheckbox() {
+        val d2 = adminTrayVisibleActions(false, true, hasGuidebotInfo = true)
+        assertTrue(d2.contains(TouchOverlayView.ADMIN_GUIDEBOT_INFO))
+        assertFalse(adminTrayVisibleActions(false, true).contains(TouchOverlayView.ADMIN_GUIDEBOT_INFO))
+        assertTrue(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_GUIDEBOT_INFO))
+        assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_GUIDEBOT_INFO))
+    }
+
+    @Test
     fun saveAndLoadAdminItemsOpenRegularSlotMenus() {
         assertEquals(true, adminSaveLoadMenuIsSave(TouchOverlayView.ADMIN_SAVE))
         assertEquals(false, adminSaveLoadMenuIsSave(TouchOverlayView.ADMIN_LOAD))

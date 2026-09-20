@@ -760,6 +760,11 @@ class MainActivity :
     private var quickLoadDialog: Dialog? = null
     private var netStatsOverlay: com.dxxredux.app.multiplayer.MultiplayerStatsOverlay? = null
     private var netEventsOverlay: com.dxxredux.app.multiplayer.NetworkEventsOverlay? = null
+
+    external fun nativeGuidebotInfoVisible(): Boolean
+
+    external fun nativeSetGuidebotInfoVisible(visible: Boolean)
+
     private var videoInfoOverlay: VideoInfoOverlay? = null
     private var loadingProgressOverlay: LoadingProgressOverlayView? = null
     private var warpButtonOverlay: WarpButtonOverlay? = null
@@ -1257,6 +1262,10 @@ class MainActivity :
                     }
                 }
 
+                TouchOverlayView.ADMIN_GUIDEBOT_INFO -> {
+                    nativeGuidebotInfoVisible()
+                }
+
                 TouchOverlayView.ADMIN_VIDEO_INFO -> {
                     videoInfoOverlay?.visibility == View.VISIBLE
                 }
@@ -1407,6 +1416,10 @@ class MainActivity :
 
                 TouchOverlayView.ADMIN_EXIT_LAUNCHER -> {
                     NativeMetaActions.nativeMetaAction(TouchBindings.META_RETURN_TO_LAUNCHER, 1)
+                }
+
+                TouchOverlayView.ADMIN_GUIDEBOT_INFO -> {
+                    nativeSetGuidebotInfoVisible(!nativeGuidebotInfoVisible())
                 }
 
                 TouchOverlayView.ADMIN_VIDEO_INFO -> {

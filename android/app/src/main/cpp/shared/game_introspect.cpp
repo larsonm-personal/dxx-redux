@@ -87,6 +87,7 @@ extern "C" {
 #ifdef DXX_BUILD_DESCENT_II
 #include "ai.h"
 #include "escort.h"
+#include "guidebot_info_overlay.h"
 #include "route_confirmation.h"
 #include "multibot.h"
 #include "d1_custom.h"
@@ -911,6 +912,9 @@ static json serialize_guidebot()
 {
 	json result;
 
+	result["info_overlay_visible"] = guidebot_info_visible() != 0;
+	result["info_overlay_status"] = guidebot_info_status();
+	result["info_overlay_history_count"] = guidebot_info_history_count();
 	result["persist_goal_message"] = escort_goal_message_persistent() != 0;
 	result["persistent_goal_message"] = escort_goal_message() ? escort_goal_message() : "";
 	result["buddy_objnum"] = Buddy_objnum;

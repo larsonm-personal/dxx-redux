@@ -374,14 +374,11 @@ static void print_trigger_message(int pnum, int trig, int shot, const char *mess
 		return;
 
 	snprintf(text, sizeof(text), message, Triggers[trig].num_links > 1 ? "s" : "");
-	if (Game_mode & GM_MULTI_COOP) {
-		HUD_init_message(HM_DEFAULT, "%s: %s", Players[pnum].callsign, text);
+	HUD_init_message_literal(HM_DEFAULT, text);
 #ifdef NETWORK
+	if (Game_mode & GM_MULTI_COOP)
 		multi_send_trigger_message(text);
 #endif
-	} else {
-		HUD_init_message_literal(HM_DEFAULT, text);
-	}
 }
 
 

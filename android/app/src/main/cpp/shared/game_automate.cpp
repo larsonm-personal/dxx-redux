@@ -100,6 +100,7 @@ void multi_save_game(ubyte slot, uint id, char *desc);
 #include "cntrlcen.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "escort.h"
+#include "guidebot_info_overlay.h"
 #include "gamemine.h"
 #include "route_confirmation.h"
 #include "scores.h"
@@ -5350,6 +5351,13 @@ extern "C" void game_automate_tick(void)
 				vm_vec_zero(&ConsoleObject->mtype.phys_info.thrust);
 				vm_vec_zero(&ConsoleObject->mtype.phys_info.rotvel);
 				vm_vec_zero(&ConsoleObject->mtype.phys_info.rotthrust);
+			} else if (s.field == "guidebot_info_overlay") {
+#ifdef DXX_BUILD_DESCENT_II
+				guidebot_info_set_visible(strcasecmp(s.value.c_str(), "true") == 0);
+#else
+				stop_script_fail("guidebot_info_overlay: D2-only action");
+				break;
+#endif
 			} else if (s.field == "guidebot_nav_trace") {
 				debug_log_set_enabled(
 				    DLOG_GUIDEBOT,

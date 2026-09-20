@@ -1,0 +1,56 @@
+// TEST: Guide-Bot diagnostics visibility, game-thread rendering and hidden history
+[
+    {"_info": {
+        "games": ["d2"],
+        "_deps": [
+            {"file": "descent2.s22", "sha256": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728"},
+            {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
+            {"file": "descent2.ham", "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"},
+            {"file": "groupa.pig", "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"}
+        ]
+    }},
+
+    {"action": "enter_launcher"},
+    {"action": "reset_state"},
+    {"action": "clear_mods"},
+    {"action": "setup_command", "command": "clear_save_files", "post_delay_ms": 250},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "show_resume_offer", "value": false}, "post_delay_ms": 250},
+    {"action": "enter_game", "game": "d2"},
+    {"action": "skip_intro", "timeout_ms": 20000, "post_delay_ms": 200},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "select", "text": "Ok", "optional": true},
+    {"action": "select", "text": "New game", "timeout_ms": 10000},
+    {"action": "select", "text": "Counterstrike", "optional": true, "timeout_ms": 1000},
+    {"action": "select", "text": "Ok", "timeout_ms": 5000},
+    {"action": "select", "text": "Rookie", "timeout_ms": 10000},
+    {"action": "skip_briefing", "timeout_ms": 10000},
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
+
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000},
+    {"action": "wait_ms", "ms": 500},
+    {"action": "assert", "expect": {"guidebot.info_overlay_visible": false}},
+    {"action": "set_debug", "field": "guidebot_info_overlay", "value": "true", "post_delay_ms": 500},
+    {"action": "assert", "expect": {
+        "guidebot.info_overlay_visible": true,
+        "guidebot.info_overlay_status": "inactive",
+        "guidebot.info_overlay_history_count": {"gte": 1, "lte": 3}
+    }},
+    {"action": "meta_action", "id": 1037, "post_delay_ms": 500},
+    {"action": "wait_for", "expect": {"guidebot.released": true}, "timeout_ms": 5000},
+    {"action": "select_radial", "menu": "Guide", "text": "Next", "post_delay_ms": 500},
+    {"action": "wait_for", "expect": {"guidebot.info_overlay_status": "HIGH-LEVEL"}, "timeout_ms": 30000},
+    {"action": "assert", "expect": {"guidebot.info_overlay_history_count": 3}},
+    {"action": "set_debug", "field": "guidebot_info_overlay", "value": "false", "post_delay_ms": 200},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000},
+    {"action": "wait_ms", "ms": 500},
+    {"action": "assert", "expect": {"guidebot.info_overlay_visible": false}},
+    {"action": "meta_action", "id": 1004, "post_delay_ms": 500},
+    {"action": "wait_for", "expect": {"guidebot.info_overlay_status": "BASE routing"}, "timeout_ms": 10000},
+    {"action": "set_debug", "field": "guidebot_info_overlay", "value": "true", "post_delay_ms": 500},
+    {"action": "assert", "expect": {
+        "guidebot.info_overlay_visible": true,
+        "guidebot.info_overlay_history_count": 3
+    }},
+    {"action": "log", "message": "=== TEST: guidebot info overlay PASS ==="}
+]

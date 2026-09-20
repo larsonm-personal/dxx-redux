@@ -83,6 +83,7 @@ static const int Escort_route_debug_log_enabled[1] = { 0 };
 #endif
 
 #include "guidebot_route_internal.h"
+#include "guidebot_info_overlay.h"
 
 extern fix64 Buddy_last_seen_player, Buddy_last_player_path_created;
 #if defined(__ANDROID__) || defined(DXX_GUIDEBOT_ROUTE_PLANNER)
@@ -189,6 +190,10 @@ void escort_unexplored_route_target_clear(escort_unexplored_route_target *target
 void escort_trace_path(const char *reason, object *objp, ai_local *ailp,
                               ai_static *aip, int goal_seg)
 {
+#ifdef __ANDROID__
+	if (strstr(reason, "fallback") || strstr(reason, "fail"))
+		guidebot_info_event(reason, 1);
+#endif
 	char segments[512];
 	int i;
 	int offset = 0;
@@ -349,6 +354,9 @@ void escort_route_set_target_mode(int target_mode)
 
 void escort_route_note_replan(const char *reason)
 {
+#ifdef __ANDROID__
+	guidebot_info_event(reason, reason && (strstr(reason, "stall") || strstr(reason, "fail") || strstr(reason, "invalid")));
+#endif
 	Escort_hostage_next_plan = 0;
 	Escort_route_metadata_dirty = 1;
 	Escort_route_last_replan_reason = reason && reason[0] ? reason : "unknown";
@@ -2191,4 +2199,8 @@ int escort_route_physical_target(object *objp, int goal_seg, int max_depth)
 	return frontier;
 }
 
+#endif
+
+#ifdef __ANDROID__
+#include "guidebot_info_overlay_impl.h"
 #endif

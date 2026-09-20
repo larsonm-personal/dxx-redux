@@ -101,10 +101,10 @@ int main() {
             assert(hud.size() == 1 && !packet.empty());
             std::string local = hud.back();
             char expected[64]; snprintf(expected, sizeof(expected), format, links > 1 ? "s" : "");
-            assert(local == std::string("Ace%: ") + expected);
+            assert(local == expected);
             Player_num = 1;
             multi_do_trigger_message(packet.data(), 0);
-            assert(hud.size() == 2 && hud.back() == local);
+            assert(hud.size() == 2 && hud.back() == std::string("Ace%: ") + local);
             print_trigger_message(0, 0, 1, format); // Replicated execution stays silent
             assert(hud.size() == 2);
         }

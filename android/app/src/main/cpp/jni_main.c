@@ -1687,3 +1687,23 @@ Java_com_dxxredux_app_MainActivity_nativeIsBuddyReleased(JNIEnv *env, jobject th
 	return JNI_FALSE;
 #endif
 }
+
+/* The UI only changes an atomic visibility flag; diagnostics stay on the game thread */
+#include "guidebot_info_overlay.h"
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetGuidebotInfoVisible(JNIEnv *env, jobject thiz, jboolean visible)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	guidebot_info_set_visible(visible);
+#endif
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGuidebotInfoVisible(JNIEnv *env, jobject thiz)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	return guidebot_info_visible() ? JNI_TRUE : JNI_FALSE;
+#else
+	return JNI_FALSE;
+#endif
+}

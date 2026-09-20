@@ -511,6 +511,8 @@ void render_countdown_gauge()
 	}
 }
 
+#include "guidebot_info_overlay.h"
+
 void game_draw_hud_stuff()
 {
 #ifndef NDEBUG
@@ -569,6 +571,9 @@ void game_draw_hud_stuff()
 		Game_mode = Newdemo_game_mode;
 
 	draw_hud();
+#ifdef __ANDROID__
+	guidebot_info_draw();
+#endif
 
 	if (Newdemo_state == ND_STATE_PLAYBACK)
 		Game_mode = GM_NORMAL | (Game_mode & GM_OBSERVER);

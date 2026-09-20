@@ -788,6 +788,7 @@ class TouchOverlayView
             const val ADMIN_RESTART_LEVEL = 28
             const val ADMIN_AUTOMAP_REACTOR = 29
             const val ADMIN_AUTOMAP_MATCEN_MODE = 30
+            const val ADMIN_GUIDEBOT_INFO = 31
             const val ADMIN_AUTOMAP_MARKER_BASE = 100
             const val ADMIN_AUTOMAP_SET_MARKER_BASE = 200
 
@@ -4412,6 +4413,10 @@ class TouchOverlayView
                     "Net Events"
                 }
 
+                ADMIN_GUIDEBOT_INFO -> {
+                    "Guidebot Info"
+                }
+
                 ADMIN_VIDEO_INFO -> {
                     "Video Info"
                 }
@@ -4513,6 +4518,7 @@ class TouchOverlayView
                 hasPendingLaunchInfo = hasPendingMultiplayerLaunchProvider?.invoke() == true,
                 hasGuidebotAbdicateAction = gameVariant == "d2",
                 hasCameraWindowCycleActions = gameVariant == "d2",
+                hasGuidebotInfo = gameVariant == "d2",
                 automapActive = automapActive,
                 canShowDifficultyChange = adminTrayCanShowDifficultyProvider?.invoke() == true,
                 canShowCoopLevelRestart = adminTrayCanShowCoopLevelRestartProvider?.invoke() == true,
