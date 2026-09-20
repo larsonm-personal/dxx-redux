@@ -1045,19 +1045,21 @@ int read_sndfile()
 	int sbytes = 0;
 	char filename[PATH_MAX];
 	const char *sndfile_dir;
+	int sample_rate = GameArg.SndDigiSampleRate;
 
 	snprintf(filename, sizeof(filename), "%s", DEFAULT_SNDFILE);
-	PHYSFSEXT_locateCorrectCase(filename);
-	sndfile_dir = PHYSFS_getRealDir(filename);
-	snprintf(LastSndfileDir, sizeof(LastSndfileDir), "%s", sndfile_dir ? sndfile_dir : "");
-
-	snd_fp = PHYSFSX_openReadBuffered(DEFAULT_SNDFILE);
+	snd_fp = PHYSFSX_openReadBuffered(filename);
+	if (!snd_fp && Piggy_hamfile_version >= 3) {
+		sample_rate = sample_rate == SAMPLE_RATE_22K ? SAMPLE_RATE_11K : SAMPLE_RATE_22K;
+		snprintf(filename, sizeof(filename), "descent2.%s", sample_rate == SAMPLE_RATE_22K ? "s22" : "s11");
+		snd_fp = PHYSFSX_openReadBuffered(filename);
+	}
 	
 	if (snd_fp == NULL)
 		return 0;
 
 #ifdef __ANDROID__
-	android_sound_trace_asset_open("sound_headers", DEFAULT_SNDFILE);
+	android_sound_trace_asset_open("sound_headers", filename);
 #endif
 	//make sure soundfile is valid type file & is up-to-date
 	snd_id = PHYSFSX_readInt(snd_fp);
@@ -1066,6 +1068,22 @@ int read_sndfile()
 		PHYSFS_close(snd_fp);						//out of date sound file
 		return 0;
 	}
+	if (sample_rate != GameArg.SndDigiSampleRate) {
+		GameArg.SndDigiSampleRate = sample_rate;
+		con_printf(CON_NORMAL, "Sound bank fallback: %s (%d Hz)\n", filename, sample_rate);
+		// The non-mixer backend plays samples at the device rate
+		if (!GameArg.SndNoSound
+#ifdef USE_SDLMIXER
+		    && GameArg.SndDisableSdlMixer
+#endif
+		) {
+			digi_close();
+			digi_init();
+		}
+	}
+	PHYSFSEXT_locateCorrectCase(filename);
+	sndfile_dir = PHYSFS_getRealDir(filename);
+	snprintf(LastSndfileDir, sizeof(LastSndfileDir), "%s", sndfile_dir ? sndfile_dir : "");
 
 	N_sounds = PHYSFSX_readInt(snd_fp);
 

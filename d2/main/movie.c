@@ -833,17 +833,27 @@ void draw_subtitles(int frame_num)
 		}
 }
 
-void init_movie(char *movielib, int required)
+// Return the resolution actually loaded: 0 = none, 1 = low, 2 = high
+static int init_movie(char *movielib, int required)
 {
 	char filename[FILENAME_LEN+2];
+	int high_res = GameArg.GfxMovieHires;
 
-	snprintf(filename, FILENAME_LEN+2, "%s-%s.mvl", movielib, GameArg.GfxMovieHires?"h":"l");
+	snprintf(filename, sizeof(filename), "%s-%s.mvl", movielib, high_res?"h":"l");
 
 	if (!PHYSFSX_contfile_init(filename, 0))
 	{
-		if (required)
-			con_printf(CON_URGENT, "Can't open movielib <%s>: %s\n", filename, PHYSFS_getLastError());
+		high_res = !high_res;
+		snprintf(filename, sizeof(filename), "%s-%s.mvl", movielib, high_res?"h":"l");
+		if (!PHYSFSX_contfile_init(filename, 0))
+		{
+			if (required)
+				con_printf(CON_URGENT, "Can't open either resolution of movielib <%s>: %s\n", movielib, PHYSFS_getLastError());
+			return 0;
+		}
+		con_printf(CON_NORMAL, "Movie library fallback: %s\n", filename);
 	}
+	return high_res ? 2 : 1;
 }
 
 //find and initialize the movie libraries
@@ -860,29 +870,25 @@ void init_movies()
 }
 
 
+static char extra_robot_movie_file[FILENAME_LEN+2];
+
 void close_extra_robot_movie(void)
 {
-	char filename[FILENAME_LEN+2];
-
-	if (strcmp(movielib_files[EXTRA_ROBOT_LIB],"")) {
-		snprintf(filename,FILENAME_LEN+2, "%s-%s.mvl", movielib_files[EXTRA_ROBOT_LIB], GameArg.GfxMovieHires?"h":"l");
-
-		if (!PHYSFSX_contfile_close(filename))
-		{
-			con_printf(CON_URGENT, "Can't close movielib <%s>: %s\n", filename, PHYSFS_getLastError());
-			snprintf(filename, FILENAME_LEN+2, "%s-%s.mvl", movielib_files[EXTRA_ROBOT_LIB], GameArg.GfxMovieHires?"l":"h");
-
-			if (!PHYSFSX_contfile_close(filename))
-				con_printf(CON_URGENT, "Can't close movielib <%s>: %s\n", filename, PHYSFS_getLastError());
-		}
+	if (extra_robot_movie_file[0]) {
+		if (!PHYSFSX_contfile_close(extra_robot_movie_file))
+			con_printf(CON_URGENT, "Can't close movielib <%s>: %s\n", extra_robot_movie_file, PHYSFS_getLastError());
+		extra_robot_movie_file[0] = 0;
 	}
 }
 
 void init_extra_robot_movie(char *movielib)
 {
+	int resolution;
+	close_extra_robot_movie();
 	if (GameArg.SysNoMovies)
 		return;
 
-	close_extra_robot_movie();
-	init_movie(movielib, 0);
+	resolution = init_movie(movielib, 0);
+	if (resolution)
+		snprintf(extra_robot_movie_file, sizeof(extra_robot_movie_file), "%s-%s.mvl", movielib, resolution == 2 ? "h" : "l");
 }

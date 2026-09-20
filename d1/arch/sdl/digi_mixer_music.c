@@ -44,7 +44,7 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 		return 0;
 
 	// It's a .hmp!
-	if (!d_stricmp(fptr, ".hmp"))
+	if (!d_stricmp(fptr, ".hmp") || !d_stricmp(fptr, ".hmq"))
 	{
 		hmp2mid(filename, &current_music_hndlbuf, &bufsize);
 		rw = SDL_RWFromConstMem(current_music_hndlbuf,bufsize*sizeof(char));

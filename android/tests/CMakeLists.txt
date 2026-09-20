@@ -33,6 +33,14 @@ target_link_libraries(test_level_section_io PRIVATE ${PHYSFS_LIBRARY})
 add_executable(test_rng_seed_resume test_rng_seed_resume.c)
 add_executable(test_sound_trace_fingerprint test_sound_trace_fingerprint.c)
 target_include_directories(test_sound_trace_fingerprint PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}")
+
+if(SDL_FOUND)
+    add_executable(test_music_wav_decode test_music_wav_decode.c)
+    target_include_directories(test_music_wav_decode PRIVATE "${DXX_TEST_SHARED_SOURCE_DIR}"
+                                                             ${SDL_INCLUDE_DIR})
+    target_link_libraries(test_music_wav_decode PRIVATE ${SDL_LIBRARY})
+    add_test(NAME test_music_wav_decode COMMAND test_music_wav_decode)
+endif()
 add_executable(test_headless_diagnostics test_headless_diagnostics.cpp)
 target_link_libraries(test_rng_seed_resume PRIVATE ${DXX_TARGET_PREFIX}maths)
 

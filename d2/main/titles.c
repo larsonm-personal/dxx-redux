@@ -232,6 +232,14 @@ int show_title_screen( char * filename, int allow_keys, int from_hog_only )
 int intro_played = 0;
 int g_startup_title_song_requested = 0;
 
+// Prefer the requested resolution, but accept either available screen
+static char *select_screen_resolution(char *low, char *high)
+{
+	char *preferred = HIRESMODE ? high : low;
+	char *alternate = HIRESMODE ? low : high;
+	return PHYSFSX_exists(preferred, 1) || !PHYSFSX_exists(alternate, 1) ? preferred : alternate;
+}
+
 void show_titles(void)
 {
 	char filename[PATH_MAX];
@@ -268,7 +276,7 @@ void show_titles(void)
 		played = PlayMovie("pre_i.mve",0);
 
 		if (!played) {
-			strcpy(filename,HIRESMODE?"pre_i1b.pcx":"pre_i1.pcx");
+			strcpy(filename, select_screen_resolution("pre_i1.pcx", "pre_i1b.pcx"));
 
 			while (PHYSFSX_exists(filename,0))
 			{
@@ -311,7 +319,7 @@ void show_titles(void)
 #endif
 				con_printf( CON_DEBUG, "\nShowing logo screens..." );
 
-				strcpy(filename, HIRESMODE?"iplogo1b.pcx":"iplogo1.pcx"); // OEM
+				strcpy(filename, select_screen_resolution("iplogo1.pcx", "iplogo1b.pcx")); // OEM
 				if (! PHYSFSX_exists(filename,1))
 					strcpy(filename, "iplogo1.pcx"); // SHAREWARE
 				if (! PHYSFSX_exists(filename,1))
@@ -327,7 +335,7 @@ void show_titles(void)
 #endif
 				}
 
-				strcpy(filename, HIRESMODE?"logob.pcx":"logo.pcx"); // OEM
+				strcpy(filename, select_screen_resolution("logo.pcx", "logob.pcx")); // OEM
 				if (! PHYSFSX_exists(filename,1))
 					strcpy(filename, "logo.pcx"); // SHAREWARE
 				if (! PHYSFSX_exists(filename,1))
@@ -366,7 +374,7 @@ void show_titles(void)
 
 		if (!played)
 		{
-			strcpy(filename,HIRESMODE?"oem1b.pcx":"oem1.pcx");
+			strcpy(filename, select_screen_resolution("oem1.pcx", "oem1b.pcx"));
 
 			while (PHYSFSX_exists(filename,0))
 			{
@@ -390,7 +398,7 @@ void show_titles(void)
 		songs_play_song( SONG_TITLE, 1);
 	}
 	con_printf( CON_DEBUG, "\nShowing logo screen..." );
-	strcpy(filename, HIRESMODE?"descentb.pcx":"descent.pcx");
+	strcpy(filename, select_screen_resolution("descent.pcx", "descentb.pcx"));
 	if (PHYSFSX_exists(filename,1))
 	{
 #ifdef ANDROID
@@ -423,13 +431,13 @@ void show_order_form()
 
 	key_flush();
 
-	strcpy(exit_screen, HIRESMODE?"ordrd2ob.pcx":"ordrd2o.pcx"); // OEM
+	strcpy(exit_screen, select_screen_resolution("ordrd2o.pcx", "ordrd2ob.pcx")); // OEM
 	if (! PHYSFSX_exists(exit_screen,1))
-		strcpy(exit_screen, HIRESMODE?"orderd2b.pcx":"orderd2.pcx"); // SHAREWARE, prefer mac if hires
+		strcpy(exit_screen, select_screen_resolution("orderd2.pcx", "orderd2b.pcx")); // SHAREWARE, prefer mac if hires
 	if (! PHYSFSX_exists(exit_screen,1))
 		strcpy(exit_screen, HIRESMODE?"orderd2.pcx":"orderd2b.pcx"); // SHAREWARE, have to rescale
 	if (! PHYSFSX_exists(exit_screen,1))
-		strcpy(exit_screen, HIRESMODE?"warningb.pcx":"warning.pcx"); // D1
+		strcpy(exit_screen, select_screen_resolution("warning.pcx", "warningb.pcx")); // D1
 	if (! PHYSFSX_exists(exit_screen,1))
 		return; // D2 registered
 
@@ -930,7 +938,7 @@ int briefing_process_char(briefing *br)
 			if (!br->got_z) {
 				Int3(); // Hey ryan!!!! You gotta load a screen before you start
 				// printing to it! You know, $Z !!!
-				load_briefing_screen (br, HIRESMODE?"end01b.pcx":"end01.pcx");
+				load_briefing_screen (br, select_screen_resolution("end01.pcx", "end01b.pcx"));
 			}
 
 			br->chattering = 0;
@@ -980,7 +988,7 @@ int briefing_process_char(briefing *br)
 		if (!br->got_z) {
 			Int3(); // Hey ryan!!!! You gotta load a screen before you start
 			// printing to it! You know, $Z !!!
-			load_briefing_screen (br, HIRESMODE?"end01b.pcx":"end01.pcx");
+			load_briefing_screen (br, select_screen_resolution("end01.pcx", "end01b.pcx"));
 		}
 
 		put_char_delay(br, ch);

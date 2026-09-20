@@ -19,8 +19,11 @@ typedef struct bim_song_info {
 #define SONG_FIRST_LEVEL_SONG   5
 
 #define SONG_EXT_HMP            ".hmp"
+#define SONG_EXT_HMQ            ".hmq"
 #ifdef USE_SDLMIXER
 #define SONG_EXT_MID            ".mid"
+#define SONG_EXT_MIDI           ".midi"
+#define SONG_EXT_WAV            ".wav"
 #define SONG_EXT_OGG            ".ogg"
 #define SONG_EXT_FLAC           ".flac"
 #define SONG_EXT_MP3            ".mp3"

@@ -148,10 +148,13 @@ void songs_init()
 				sscanf( inputline, "%15s", BIMSongs[i].filename );
 
 				if (strrchr(BIMSongs[i].filename, '.'))
-					if (!d_stricmp(strrchr(BIMSongs[i].filename, '.'), SONG_EXT_HMP)
+					if (!d_stricmp(strrchr(BIMSongs[i].filename, '.'), SONG_EXT_HMP) ||
+						!d_stricmp(strrchr(BIMSongs[i].filename, '.'), SONG_EXT_HMQ)
 #ifdef USE_SDLMIXER
 						||
 						!d_stricmp(strrchr(BIMSongs[i].filename, '.'), SONG_EXT_MID) ||
+						!d_stricmp(strrchr(BIMSongs[i].filename, '.'), SONG_EXT_MIDI) ||
+						!d_stricmp(strrchr(BIMSongs[i].filename, '.'), SONG_EXT_WAV) ||
 						!d_stricmp(strrchr(BIMSongs[i].filename, '.'), SONG_EXT_OGG) ||
 						!d_stricmp(strrchr(BIMSongs[i].filename, '.'), SONG_EXT_FLAC) ||
 						!d_stricmp(strrchr(BIMSongs[i].filename, '.'), SONG_EXT_MP3)
@@ -333,7 +336,7 @@ int songs_play_file(char *filename, int repeat, void (*hook_finished_track)(void
 	if (fptr == NULL)
 		return 0;
 
-	if (!d_stricmp(fptr, SONG_EXT_HMP))
+	if (!d_stricmp(fptr, SONG_EXT_HMP) || !d_stricmp(fptr, SONG_EXT_HMQ))
 	{
 #if defined(_WIN32)
 		return digi_win32_play_midi_song( filename, repeat );
@@ -345,6 +348,8 @@ int songs_play_file(char *filename, int repeat, void (*hook_finished_track)(void
 	}
 #if defined(USE_SDLMIXER)
 	else if ( !d_stricmp(fptr, SONG_EXT_MID) ||
+			!d_stricmp(fptr, SONG_EXT_MIDI) ||
+			!d_stricmp(fptr, SONG_EXT_WAV) ||
 			!d_stricmp(fptr, SONG_EXT_OGG) ||
 			!d_stricmp(fptr, SONG_EXT_FLAC) ||
 			!d_stricmp(fptr, SONG_EXT_MP3) )

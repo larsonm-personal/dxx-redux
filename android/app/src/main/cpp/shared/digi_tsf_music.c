@@ -76,6 +76,7 @@ static void (*g_finished_hook)(void) = NULL; /* callback when song ends  */
 
 /* ── PCM playback state (OGG/MP3/FLAC via pcm_decoders) ─────────────── */
 #include "pcm_decoders.h"
+#include "music_wav_decode.h"
 #include "music_decode_limits.h"
 #include "bounded_music_read.h"
 static int g_is_pcm;       /* 1 = PCM playback, 0 = MIDI         */
@@ -905,7 +906,7 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 
 	/* ── PCM path: OGG / MP3 / FLAC ─────────────────────────────────── */
 	if (!d_stricmp(fptr, ".ogg") || !d_stricmp(fptr, ".mp3") ||
-	    !d_stricmp(fptr, ".flac")) {
+	    !d_stricmp(fptr, ".flac") || !d_stricmp(fptr, ".wav")) {
 		/* Load file into memory.  Try PhysFS first (game archives),
 		 * fall back to fopen for absolute paths (M3U jukebox entries). */
 		unsigned char *fbuf = NULL;
@@ -923,7 +924,9 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 
 		/* Decode to raw PCM */
 		pcm_decode_result_t pcm;
-		int decode_status = pcm_decode_memory(fbuf, fsize, fptr, &pcm);
+		int decode_status = !d_stricmp(fptr, ".wav")
+		                        ? music_decode_wav(fbuf, fsize, &pcm)
+		                        : pcm_decode_memory(fbuf, fsize, fptr, &pcm);
 		if (decode_status != PCM_DECODE_OK) {
 			con_printf(CON_CRITICAL,
 			           decode_status == PCM_DECODE_UNSUPPORTED_CHANNELS
@@ -994,7 +997,7 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 	}
 
 	/* Convert HMP -> MIDI in memory */
-	if (!d_stricmp(fptr, ".hmp")) {
+	if (!d_stricmp(fptr, ".hmp") || !d_stricmp(fptr, ".hmq")) {
 		size_t admitted_size;
 
 		hmp2mid(filename, &g_midi_buf, &bufsize);

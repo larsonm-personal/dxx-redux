@@ -1,7 +1,7 @@
 #ifndef __JUKEBOX_H__
 #define __JUKEBOX_H__
 
-extern const char *const jukebox_exts[7];
+extern const char *const jukebox_exts[];
 
 void jukebox_unload();
 void jukebox_load();
