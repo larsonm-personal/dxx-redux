@@ -3,6 +3,13 @@
 #include <limits.h>
 #include <string.h>
 
+unsigned coop_flyout_allowance_ms(unsigned remaining_ms)
+{
+	/* Five seconds of slack, with a 20-second floor and 60-second ceiling */
+	unsigned allowance = remaining_ms > 55000 ? 60000 : remaining_ms + 5000;
+	return allowance < 20000 ? 20000 : allowance;
+}
+
 static unsigned player_bit(unsigned player)
 {
 	return player < COOP_TRANSITION_PLAYERS ? 1u << player : 0;
@@ -49,7 +56,14 @@ static void complete_barrier(coop_transition_policy *p)
 			break;
 		case COOP_PHASE_BRIEFING_PREPARE:
 			set_phase(p, COOP_PHASE_BRIEFING);
-			p->deadline_ms = deadline_after(p, COOP_BRIEFING_LIMIT_MS);
+			if (p->operation == COOP_OP_FLYOUT) {
+				unsigned remaining = 0;
+				for (unsigned i = 0; i < COOP_TRANSITION_PLAYERS; ++i)
+					if ((p->participants & player_bit(i)) && !(p->presentation_ready & player_bit(i)) &&
+					    p->progress[i].remaining_ms > remaining)
+						remaining = p->progress[i].remaining_ms;
+				p->deadline_ms = deadline_after(p, coop_flyout_allowance_ms(remaining));
+			} else p->deadline_ms = deadline_after(p, COOP_BRIEFING_LIMIT_MS);
 			break;
 		case COOP_PHASE_CLOSING_PRESENTATION: set_phase(p, COOP_PHASE_LOADING); break;
 		case COOP_PHASE_LOADING: set_phase(p, COOP_PHASE_COMMITTED); break;
@@ -77,7 +91,7 @@ int coop_transition_begin(coop_transition_policy *p, uint64_t generation,
 {
 	if (!p || p->generation != generation || p->generation == UINT64_MAX ||
 	    p->phase != COOP_PHASE_SETTLED || !participating(p, requester) ||
-	    operation <= COOP_OP_NONE || operation > COOP_OP_RESTART)
+	    operation <= COOP_OP_NONE || operation > COOP_OP_FLYOUT)
 		return 0;
 	/* Save/load/rewind/restart authority is the host, even if a client asked */
 	if (operation >= COOP_OP_BRIEFING && requester != p->host)
@@ -88,8 +102,8 @@ int coop_transition_begin(coop_transition_policy *p, uint64_t generation,
 	p->launch_reason = COOP_LAUNCH_NONE;
 	p->presentation_ready = 0;
 	memset(p->progress, 0, sizeof(p->progress));
-	set_phase(p, operation == COOP_OP_NORMAL_EXIT ? COOP_PHASE_NORMAL_WAIT : operation == COOP_OP_BRIEFING ? COOP_PHASE_BRIEFING_PREPARE
-	                                                                                                       : COOP_PHASE_FREEZING);
+	set_phase(p, operation == COOP_OP_NORMAL_EXIT ? COOP_PHASE_NORMAL_WAIT : (operation == COOP_OP_BRIEFING || operation == COOP_OP_FLYOUT) ? COOP_PHASE_BRIEFING_PREPARE
+	                                                                                                                                        : COOP_PHASE_FREEZING);
 	return 1;
 }
 
@@ -153,9 +167,9 @@ int coop_transition_progress(coop_transition_policy *p, uint64_t generation,
 {
 	coop_presentation_progress *progress;
 	uint64_t shortened;
-	if (!p || generation != p->generation || p->phase != COOP_PHASE_BRIEFING ||
+	if (!p || generation != p->generation || (p->phase != COOP_PHASE_BRIEFING && !(p->operation == COOP_OP_FLYOUT && p->phase == COOP_PHASE_BRIEFING_PREPARE)) ||
 	    !participating(p, player) || !revision || completed > total || total > UINT16_MAX ||
-	    state < COOP_PRESENTATION_READING || state > COOP_PRESENTATION_UNAVAILABLE)
+	    state < COOP_PRESENTATION_READING || state > COOP_PRESENTATION_FLYOUT)
 		return 0;
 	progress = &p->progress[player];
 	if (revision <= progress->revision || presentation_done(progress->state) ||
@@ -168,7 +182,7 @@ int coop_transition_progress(coop_transition_policy *p, uint64_t generation,
 	progress->state = state;
 	if (presentation_done(state)) {
 		p->presentation_ready |= (uint8_t) player_bit(player);
-		if (player == p->host) {
+		if (player == p->host && p->operation != COOP_OP_FLYOUT) {
 			shortened = deadline_after(p, COOP_BRIEFING_HOST_WAIT_MS);
 			if (shortened < p->deadline_ms)
 				p->deadline_ms = shortened;
@@ -253,7 +267,9 @@ int coop_transition_gameplay_allowed(const coop_transition_policy *p, unsigned p
 {
 	return p && participating(p, player) &&
 	       (p->phase == COOP_PHASE_SETTLED ||
-	        (p->phase == COOP_PHASE_NORMAL_WAIT && !(p->acknowledged & player_bit(player))));
+	        ((p->phase == COOP_PHASE_NORMAL_WAIT ||
+	          (p->operation == COOP_OP_FLYOUT && p->phase == COOP_PHASE_BRIEFING_PREPARE)) &&
+	         !(p->acknowledged & player_bit(player))));
 }
 
 unsigned coop_transition_seconds_remaining(const coop_transition_policy *p)

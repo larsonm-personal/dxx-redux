@@ -312,6 +312,12 @@ static void android_prepare_endlevel_movie(void)
 }
 #endif
 
+#ifdef __ANDROID__
+#include "coop/coop_flyout_engine.h"
+#else
+#define finish_endlevel() PlayerFinishedLevel(0)
+#endif
+
 void start_endlevel_sequence()
 {
 	int	i;
@@ -321,6 +327,16 @@ void start_endlevel_sequence()
 		return;				//don't start if dead!
 	if (input_demo_finish_replay_from_level_exit())
 		return;
+
+#ifdef __ANDROID__
+	if (coop_flyout_enabled() && !coop_flyout_active() && Newdemo_state != ND_STATE_PLAYBACK) {
+		multi_send_endlevel_start(0);
+		multi_do_protocol_frame(1, 1);
+		coop_flyout_run(coop_present_flyout);
+		PlayerFinishedLevel(0);
+		return;
+	}
+#endif
 
 	reset_rear_view(); //turn off rear view if set - NOTE: make sure this happens before we pause demo recording!!
 
@@ -360,9 +376,14 @@ void start_endlevel_sequence()
 #endif
 
 	window_set_visible(Game_wind, 0);	// suspend the game, including drawing
+	endlevel_movie_played = MOVIE_NOT_PLAYED;
 	
 	if (PLAYING_BUILTIN_MISSION) // only play movie for built-in mission
-		if (!(Game_mode & GM_MULTI))
+		if (!(Game_mode & GM_MULTI)
+#ifdef __ANDROID__
+		    || coop_flyout_active()
+#endif
+		   )
 		{
 			#ifdef ANDROID
 			android_prepare_endlevel_movie();
@@ -370,9 +391,19 @@ void start_endlevel_sequence()
 			endlevel_movie_played = start_endlevel_movie();
 		}
 	
-	window_set_visible(Game_wind, 1);
+	window_set_visible(Game_wind,
+#ifdef __ANDROID__
+	                   !coop_flyout_active()
+#else
+	                   1
+#endif
+	                  );
 
-	if (!(Game_mode & GM_MULTI) && (endlevel_movie_played == MOVIE_NOT_PLAYED) && endlevel_data_loaded)
+	if ((!(Game_mode & GM_MULTI)
+#ifdef __ANDROID__
+	     || coop_flyout_active()
+#endif
+	    ) && (endlevel_movie_played == MOVIE_NOT_PLAYED) && endlevel_data_loaded)
 	{   //don't have movie.  Do rendered sequence, if available
 		int exit_models_loaded = 0;
 
@@ -389,7 +420,7 @@ void start_endlevel_sequence()
 		}
 	}
 
-	PlayerFinishedLevel(0);		//done with level
+	finish_endlevel();		//done with level
 }
 
 void start_rendered_endlevel_sequence()
@@ -417,7 +448,7 @@ void start_rendered_endlevel_sequence()
 		} while (segnum >= 0);
 
 		if (segnum != -2) {
-			PlayerFinishedLevel(0);		//don't do special sequence
+			finish_endlevel();		//don't do special sequence
 			return;
 		}
 #ifndef NDEBUG
@@ -451,6 +482,9 @@ void start_rendered_endlevel_sequence()
 #endif
 	songs_play_song( SONG_ENDLEVEL, 0 );
 
+#ifdef __ANDROID__
+	if (coop_flyout_active()) coop_flyout_remaining(coop_flyout_tunnel_ms());
+#endif
 	Endlevel_sequence = EL_FLYTHROUGH;
 #ifdef ANDROID
 	android_screen_advance_begin(ANDROID_SCREEN_ADVANCE_ENDLEVEL, 1);
@@ -565,7 +599,7 @@ void stop_endlevel_sequence()
 	android_screen_advance_end(ANDROID_SCREEN_ADVANCE_ENDLEVEL);
 #endif
 
-	PlayerFinishedLevel(0);
+	finish_endlevel();
 }
 
 #define VCLIP_BIG_PLAYER_EXPLOSION	58

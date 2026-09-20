@@ -1,0 +1,63 @@
+[
+  {
+    "_info": {
+      "games": [
+        "d2"
+      ],
+      "_standalone": false,
+      "_owner": "test_lan"
+    }
+  },
+  {
+    "action": "trigger_endlevel",
+    "value": "real"
+  },
+  {
+    "action": "wait_for",
+    "timeout_ms": 6000,
+    "expect": {
+      "coop_briefing.flyout": true,
+      "movie.current": "esa.mve",
+      "coop_briefing.local_state": 6,
+      "coop_briefing.estimated_remaining_ms": {
+        "range": [
+          10000,
+          18000
+        ]
+      }
+    }
+  },
+  {
+    "action": "assert",
+    "expect": {
+      "coop_briefing.phase": 5,
+      "coop_briefing.seconds_remaining": 0
+    }
+  },
+  {
+    "action": "wait_ms",
+    "ms": 11000
+  },
+  {
+    "action": "set_debug",
+    "field": "coop_briefing_action",
+    "value": "skip"
+  },
+  {
+    "action": "wait_for",
+    "timeout_ms": 12000,
+    "expect": {
+      "coop_briefing.phase": 6,
+      "coop_briefing.can_launch": true
+    }
+  },
+  {
+    "action": "wait_for",
+    "timeout_ms": 40000,
+    "expect": {
+      "coop_briefing.flyout": false,
+      "coop_briefing.active": false,
+      "coop_briefing.launch_reason": 3
+    }
+  }
+]

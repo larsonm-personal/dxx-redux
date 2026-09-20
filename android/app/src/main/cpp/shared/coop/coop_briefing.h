@@ -9,6 +9,13 @@
 extern "C" {
 #endif
 
+/* Fly-outs use the same controls/barrier but start locally before all exits */
+int coop_flyout_enabled(void);
+int coop_flyout_active(void);
+void coop_flyout_run(void (*present)(int));
+void coop_flyout_remaining(unsigned milliseconds);
+void coop_flyout_render(void);
+void coop_flyout_observer_frame(void);
 /* Level entry arms before synchronization identifies a possible rejoin */
 void coop_briefing_arm(void (*present)(int), int level);
 unsigned coop_briefing_count_intro(void (*present)(int), int level);

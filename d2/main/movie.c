@@ -188,6 +188,7 @@ int PlayMovie(const char *filename, int must_have)
 
 #ifdef __ANDROID__
 	/* Skipping a movie leaves the following briefing pages available */
+	if (ret == MOVIE_ABORTED && coop_flyout_active()) coop_briefing_skip();
 	if (ret != MOVIE_ABORTED) coop_briefing_step_complete(ret == MOVIE_PLAYED_FULL);
 #endif
 	return ret;
@@ -280,6 +281,9 @@ typedef struct movie
 {
 	int result, aborted;
 	int frame_num;
+#ifdef __ANDROID__
+	unsigned flyout_duration_ms, flyout_frame_us;
+#endif
 	int paused;
 } movie;
 
@@ -414,6 +418,12 @@ int MovieHandler(window *wind, d_event *event, movie *m)
 
 			if (!m->paused)
 				m->frame_num++;
+#ifdef __ANDROID__
+			if (coop_flyout_active()) {
+				uint64_t elapsed = (uint64_t) m->frame_num * m->flyout_frame_us / 1000;
+				coop_flyout_remaining(elapsed < m->flyout_duration_ms ? m->flyout_duration_ms - (unsigned) elapsed : 0);
+			}
+#endif
 			break;
 
 		case EVENT_WINDOW_CLOSE:
@@ -449,6 +459,45 @@ void movie_get_playback_state(int *frame, int *paused, int *pause_window)
 #endif
 
 //returns status.  see movie.h
+#ifdef __ANDROID__
+/* Read only chunk headers; the caller's stream is restored before decoding */
+static unsigned flyout_movie_duration(SDL_RWops *stream, unsigned *frame_us)
+{
+	unsigned char header[26], chunk[4], segment[4], timer[6];
+	int start = SDL_RWtell(stream), end = SDL_RWseek(stream, 0, RW_SEEK_END);
+	SDL_RWseek(stream, start, RW_SEEK_SET);
+	unsigned frames = 0, records = 0;
+	int valid = SDL_RWread(stream, header, 1, sizeof(header)) == sizeof(header) &&
+	            !memcmp(header, "Interplay MVE File\x1a", 18);
+	*frame_us = 0;
+	while (valid && SDL_RWtell(stream) + 4 <= end) {
+		if (SDL_RWread(stream, chunk, 1, 4) != 4) { valid = 0; break; }
+		int64_t chunk_end = SDL_RWtell(stream) + (chunk[0] | (unsigned) chunk[1] << 8);
+		if (chunk_end > end) { valid = 0; break; }
+		while (valid && SDL_RWtell(stream) < chunk_end) {
+			if (++records > 100000 || SDL_RWtell(stream) + 4 > chunk_end ||
+			    SDL_RWread(stream, segment, 1, 4) != 4) { valid = 0; break; }
+			unsigned length = segment[0] | (unsigned) segment[1] << 8;
+			int64_t next = SDL_RWtell(stream) + length;
+			if (next > chunk_end) { valid = 0; break; }
+			if (segment[2] == 2 && !*frame_us) {
+				if (length < 6 || SDL_RWread(stream, timer, 1, 6) != 6) { valid = 0; break; }
+				uint64_t interval = ((uint32_t) timer[0] | (uint32_t) timer[1] << 8 |
+				                     (uint32_t) timer[2] << 16 | (uint32_t) timer[3] << 24);
+				interval *= timer[4] | (unsigned) timer[5] << 8;
+				if (interval > 1000000) { valid = 0; break; }
+				*frame_us = (unsigned) interval;
+			}
+			if (segment[2] == 7) ++frames;
+			if (SDL_RWseek(stream, (int) next, RW_SEEK_SET) != next) valid = 0;
+		}
+	}
+	SDL_RWseek(stream, start, RW_SEEK_SET);
+	uint64_t duration = (uint64_t) frames * *frame_us / 1000;
+	return !valid ? 0 : duration > 60000 ? 60000 : (unsigned) duration;
+}
+#endif
+
 int RunMovie(char *filename, int hires_flag, int must_have,int dx,int dy)
 {
 	window *wind;
@@ -517,6 +566,12 @@ int RunMovie(char *filename, int hires_flag, int must_have,int dx,int dy)
 		return MOVIE_NOT_PLAYED;
 	}
 
+#ifdef __ANDROID__
+	if (coop_flyout_active()) {
+		m->flyout_duration_ms = flyout_movie_duration(filehndl, &m->flyout_frame_us);
+		coop_flyout_remaining(m->flyout_duration_ms);
+	}
+#endif
 	MVE_memCallbacks(MPlayAlloc, MPlayFree);
 	MVE_ioCallbacks(FileRead);
 

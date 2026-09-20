@@ -15,6 +15,7 @@ class CoopBriefingOverlayView(
     var launchCallback: ((Long) -> Boolean)? = null
     private var generation = 0L
     private var canLaunch = false
+    private var launchLabel = "Launch now"
     private var status = ""
     private var pressedGeneration = 0L
     private var pointerId = -1
@@ -26,13 +27,14 @@ class CoopBriefingOverlayView(
         // Mirrored by nativeGetCoopBriefingState in android_input.c
         val fields = nativeState.split('\n', limit = 3)
         val nextGeneration = fields.getOrNull(0)?.toLongOrNull() ?: 0L
-        val nextLaunch = fields.getOrNull(1) == "1"
+        val nextLaunch = fields.getOrNull(1) in listOf("1", "2")
+        launchLabel = if (fields.getOrNull(1) == "2") "Continue now" else "Launch now"
         if (nextGeneration != generation || !nextLaunch) cancelPress()
         generation = nextGeneration
         canLaunch = nextLaunch
         status = fields.getOrNull(2).orEmpty()
         visibility = if (status.isEmpty()) GONE else VISIBLE
-        contentDescription = if (canLaunch) "$status. Launch now" else status
+        contentDescription = if (canLaunch) "$status. $launchLabel" else status
         invalidate()
     }
 
@@ -69,7 +71,7 @@ class CoopBriefingOverlayView(
         }
         if (canLaunch) {
             canvas.drawRoundRect(launchBounds, padding, padding, background)
-            val label = "LAUNCH NOW"
+            val label = launchLabel.uppercase()
             canvas.drawText(
                 label,
                 launchBounds.centerX() - text.measureText(label) / 2,

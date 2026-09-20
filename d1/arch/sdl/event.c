@@ -18,6 +18,7 @@
 #ifdef ANDROID
 #include "android_axis_mailbox.h"
 #include "coop/coop_endgame.h"
+#include "coop/coop_briefing.h"
 #include "android_lifecycle_actions.h"
 #include "android_lifecycle_diagnostics.h"
 #include "digi_mixer_music.h"
@@ -235,6 +236,7 @@ void event_process(void)
 	timer_update();
 #ifdef __ANDROID__
 	coop_endgame_pump();
+	coop_flyout_observer_frame();
 #endif
 
 #ifdef INTROSPECT_ON

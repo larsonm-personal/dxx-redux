@@ -9,6 +9,8 @@
 #include <string.h>
 
 #include "event.h"
+#include "endlevel.h"
+#include "android_screen_advance.h"
 #include "game.h"
 #include "gameseq.h"
 #include "gr.h"
@@ -28,12 +30,14 @@
 #include "text.h"
 #include "window.h"
 
-/* MULTI_COOP_BRIEFING is a 128-byte, explicitly little-endian envelope
+/* MULTI_COOP_BRIEFING is a 136-byte, explicitly little-endian envelope
  * Header: kind/phase/reason/roster/ready/host, game ID, level, generation,
  * snapshot revision, remaining milliseconds. Eight 12-byte progress records
  * follow at offset 32, with each player's own page count and completion state
+ * Bytes 9-10 of each progress record hold estimated remaining fly-out time
+ * The final eight bytes fence fly-outs by world visit
  * Sender identity comes exclusively from UDP validation */
-enum { PACKET_SIZE = 128,
+enum { PACKET_SIZE = 136,
 	   STATE = 1,
 	   ACK = 2,
 	   PROGRESS = 3,
@@ -41,6 +45,9 @@ enum { PACKET_SIZE = 128,
 static coop_transition_policy policy;
 static coop_presentation_progress local_progress;
 static int plan_ready;
+static int flyout;
+static int flyout_finished_level;
+static uint64_t flyout_frame_time;
 static int armed, running, planning, presenting, skipped, unavailable;
 static int destination, host, have_state, presentation_closed, pumping;
 static int suppress_for_restore;
@@ -140,6 +147,13 @@ static int local_observer(void)
 	return is_observer() && Player_num != host;
 }
 
+static void note_peer(int player, uint64_t now)
+{
+	peer_seen[player] = now;
+	/* Escaped players no longer send PDATA; authenticated control is liveness */
+	Netgame.players[player].LastPacketTime = timer_query();
+}
+
 static void encode_progress(unsigned char *p, const coop_presentation_progress *v)
 {
 	put32(p, v->revision);
@@ -148,6 +162,8 @@ static void encode_progress(unsigned char *p, const coop_presentation_progress *
 	p[6] = (unsigned char) v->total;
 	p[7] = (unsigned char) (v->total >> 8);
 	p[8] = (unsigned char) v->state;
+	p[9] = (unsigned char) v->remaining_ms;
+	p[10] = (unsigned char) (v->remaining_ms >> 8);
 }
 static int decode_progress(const unsigned char *p, coop_presentation_progress *v)
 {
@@ -155,7 +171,8 @@ static int decode_progress(const unsigned char *p, coop_presentation_progress *v
 	v->completed = p[4] | (unsigned) p[5] << 8;
 	v->total = p[6] | (unsigned) p[7] << 8;
 	v->state = (coop_presentation_state) p[8];
-	return v->completed <= v->total && v->state <= COOP_PRESENTATION_UNAVAILABLE;
+	v->remaining_ms = p[9] | (unsigned) p[10] << 8;
+	return v->completed <= v->total && v->state <= COOP_PRESENTATION_FLYOUT;
 }
 
 static void send_packet(int kind)
@@ -169,10 +186,11 @@ static void send_packet(int kind)
 	packet[4] = policy.participants;
 	packet[5] = policy.presentation_ready;
 	packet[6] = (unsigned char) host;
-	packet[7] = (unsigned char) suppress_for_restore;
+	packet[7] = (unsigned char) (suppress_for_restore | (flyout << 1));
 	put32(packet + 8, game_id);
 	put32(packet + 12, (uint32_t) destination);
 	put64(packet + 16, policy.generation);
+	put64(packet + 128, flyout ? coop_world_visit_current() : 0);
 	if (kind == STATE) {
 		put32(packet + 24, ++snapshot_revision);
 		put32(packet + 28, (uint32_t) remaining);
@@ -186,7 +204,7 @@ static void send_packet(int kind)
 		if (Netgame.numobservers)
 			multi_send_data_direct(packet, sizeof(packet), host, 0);
 	} else {
-		if (kind == PROGRESS)
+		if (kind == PROGRESS || (flyout && kind == ACK))
 			encode_progress(packet + 32, &local_progress);
 		multi_send_data_direct(packet, sizeof(packet), host, 0);
 	}
@@ -197,7 +215,8 @@ void coop_briefing_receive(const unsigned char *packet, int sender)
 	uint64_t generation = get64(packet + 16), now = now_ms();
 	if (!armed || !(Game_mode & GM_MULTI_COOP) || !Netgame.CoopBriefings ||
 	    get32(packet + 8) != game_id || (int32_t) get32(packet + 12) != destination ||
-	    !bit(sender) || packet[6] != host)
+	    !bit(sender) || packet[6] != host || (packet[7] >> 1) != (unsigned) flyout ||
+	    (flyout && get64(packet + 128) != coop_world_visit_current()))
 		return;
 	if (packet[1] == STATE && sender == host && Player_num != host) {
 		coop_transition_policy next = policy;
@@ -210,8 +229,8 @@ void coop_briefing_receive(const unsigned char *packet, int sender)
 		    (have_state && phase != COOP_PHASE_SETTLED && phase < policy.phase) ||
 		    !(packet[4] & bit(host)) || (!local_observer() && !(packet[4] & bit(Player_num))) ||
 		    (packet[5] & ~packet[4]) || packet[3] > COOP_LAUNCH_DEADLINE ||
-		    remaining > COOP_BRIEFING_LIMIT_MS || packet[7] > 1 ||
-		    (have_state && packet[7] != suppress_for_restore))
+		    remaining > COOP_BRIEFING_LIMIT_MS || packet[7] > 3 ||
+		    (have_state && (packet[7] & 1) != suppress_for_restore))
 			return;
 		for (int i = 0; i < COOP_TRANSITION_PLAYERS; ++i)
 			if (!decode_progress(packet + 32 + 12 * i, &next.progress[i])) return;
@@ -225,7 +244,8 @@ void coop_briefing_receive(const unsigned char *packet, int sender)
 		}
 		next.generation = generation;
 		next.phase = phase;
-		next.operation = phase == COOP_PHASE_SETTLED ? COOP_OP_NONE : COOP_OP_BRIEFING;
+		next.operation = phase == COOP_PHASE_SETTLED ? COOP_OP_NONE : flyout ? COOP_OP_FLYOUT
+		                                                                     : COOP_OP_BRIEFING;
 		next.launch_reason = (coop_launch_reason) packet[3];
 		next.participants = packet[4];
 		next.presentation_ready = packet[5];
@@ -233,19 +253,27 @@ void coop_briefing_receive(const unsigned char *packet, int sender)
 		next.now_ms = now;
 		next.deadline_ms = phase == COOP_PHASE_BRIEFING ? now + remaining : 0;
 		policy = next;
-		suppress_for_restore = packet[7];
+		suppress_for_restore = packet[7] & 1;
 		snapshot_revision = revision;
 		last_generation = generation;
 		have_state = 1;
 		last_host_packet = now;
+		note_peer(sender, now);
 	} else if (Player_num == host && have_state && generation == policy.generation &&
 	           (policy.participants & bit(sender))) {
 		if (packet[1] == ACK) {
+			if (flyout && policy.phase == COOP_PHASE_BRIEFING_PREPARE && packet[2] == policy.phase) {
+				coop_presentation_progress progress;
+				if (!decode_progress(packet + 32, &progress) || !progress.revision) return;
+				if (coop_transition_progress(&policy, generation, sender, progress.revision,
+				                             progress.completed, progress.total, progress.state, now))
+					policy.progress[sender].remaining_ms = progress.remaining_ms;
+			}
 			if (policy.phase == COOP_PHASE_SETTLED && packet[2] == COOP_PHASE_SETTLED) {
 				release_acknowledged |= bit(sender);
-				peer_seen[sender] = now;
+				note_peer(sender, now);
 			} else if (coop_transition_ack(&policy, generation, (coop_transition_phase) packet[2], sender, now))
-				peer_seen[sender] = now;
+				note_peer(sender, now);
 			/* A peer can still be waiting for the final release */
 			if (policy.phase == COOP_PHASE_SETTLED) send_packet(STATE);
 		} else if (packet[1] == PROGRESS && packet[2] == COOP_PHASE_BRIEFING) {
@@ -254,7 +282,7 @@ void coop_briefing_receive(const unsigned char *packet, int sender)
 			if (coop_transition_progress(&policy, generation, sender, progress.revision,
 			                             progress.completed, progress.total, progress.state, now) ||
 			    (policy.phase == COOP_PHASE_BRIEFING && progress.revision == policy.progress[sender].revision))
-				peer_seen[sender] = now;
+				note_peer(sender, now);
 		}
 	}
 }
@@ -264,6 +292,7 @@ static const char *progress_name(coop_presentation_state state)
 	switch (state) {
 		case COOP_PRESENTATION_READING: return "Reading";
 		case COOP_PRESENTATION_VIDEO: return "Watching video";
+		case COOP_PRESENTATION_FLYOUT: return "In fly-out";
 		case COOP_PRESENTATION_READY: return "Ready";
 		case COOP_PRESENTATION_SKIPPED: return "Ready - skipped";
 		case COOP_PRESENTATION_UNAVAILABLE: return "Ready - media unavailable";
@@ -283,7 +312,7 @@ static void update_ui(void)
 			launch = 0;
 		} else if (have_state && policy.phase == COOP_PHASE_BRIEFING) {
 			unsigned seconds = coop_transition_seconds_remaining(&policy);
-			used = (size_t) snprintf(text, sizeof(text), "Briefings: %u:%02u remaining%s",
+			used = (size_t) snprintf(text, sizeof(text), "%s: %u:%02u remaining%s", flyout ? "Fly-outs" : "Briefings",
 			                         seconds / 60, seconds % 60,
 			                         Player_num != host && (policy.presentation_ready & bit(host)) ? "\nHost is ready and waiting for you" : "");
 			if (!presenting || Player_num == host)
@@ -293,16 +322,24 @@ static void update_ui(void)
 						used += (size_t) snprintf(text + used, sizeof(text) - used, "\n%.8s: %u/%u %s",
 						                          Players[i].callsign, p->completed, p->total, progress_name(p->state));
 					}
+		} else if (flyout && (!have_state || policy.phase == COOP_PHASE_BRIEFING_PREPARE)) {
+			used = (size_t) snprintf(text, sizeof(text), "Waiting for teammates to escape");
+			if (have_state)
+				for (int i = 0; i < COOP_TRANSITION_PLAYERS; ++i)
+					if (policy.participants & bit(i))
+						used += (size_t) snprintf(text + used, sizeof(text) - used, "\n%.8s: %s",
+						                          Players[i].callsign, policy.progress[i].revision ? progress_name(policy.progress[i].state) : "In mine");
 		} else {
 			snprintf(text, sizeof(text), "%s", !have_state ? "Waiting for host to prepare briefings" : policy.phase == COOP_PHASE_BRIEFING_PREPARE ? "Preparing briefings"
 			                                                                                       : policy.phase == COOP_PHASE_LOBBY              ? "Connection lost - returning to lobby"
+			                                                                                       : flyout                                        ? "Waiting to show results..."
 			                                                                                                                                       : "Waiting to start the mine...");
 		}
 	} else text[0] = 0;
 	pthread_mutex_lock(&ui_lock);
 	memcpy(ui.text, text, strlen(text) + 1);
 	ui.generation = running && have_state ? policy.generation : 0;
-	ui.launch = launch;
+	ui.launch = launch ? (flyout ? 2 : 1) : 0;
 	pthread_mutex_unlock(&ui_lock);
 }
 
@@ -374,7 +411,8 @@ int coop_briefing_planning(void)
 int coop_briefing_cancelled(void)
 {
 	return running && (skipped || multi_quit_game ||
-	                   (have_state && policy.phase != COOP_PHASE_BRIEFING));
+	                   (have_state && policy.phase != COOP_PHASE_BRIEFING &&
+	                    !(flyout && policy.phase == COOP_PHASE_BRIEFING_PREPARE)));
 }
 void coop_briefing_plan_add(unsigned steps)
 {
@@ -414,7 +452,8 @@ void coop_briefing_plan_message(const char *message)
 void coop_briefing_step(int video)
 {
 	if (presenting && !coop_briefing_cancelled()) {
-		local_progress.state = video ? COOP_PRESENTATION_VIDEO : COOP_PRESENTATION_READING;
+		local_progress.state = flyout ? COOP_PRESENTATION_FLYOUT : video ? COOP_PRESENTATION_VIDEO
+		                                                                 : COOP_PRESENTATION_READING;
 		++local_progress.revision;
 	}
 }
@@ -461,6 +500,8 @@ void coop_briefing_apply_sync_flags(unsigned flags, int level)
 void coop_briefing_arm(void (*present)(int), int level)
 {
 	failure_reason = NULL;
+	flyout = 0;
+	flyout_finished_level = 0;
 	if (game_id != (uint32_t) Netgame.protocol.udp.GameID) last_generation = 0;
 	armed = (Game_mode & GM_MULTI_COOP) && Netgame.CoopBriefings;
 	running = planning = presenting = skipped = unavailable = have_state = presentation_closed = 0;
@@ -480,7 +521,7 @@ void coop_briefing_arm(void (*present)(int), int level)
 	last_send = last_ack = release_since = 0;
 	last_host_packet = now_ms();
 	observed_phase = COOP_PHASE_SETTLED;
-	if (armed) {
+	if (armed && present) {
 		local_progress.total = coop_briefing_count_intro(present, level);
 		plan_ready = 1;
 		if (Player_num == host) coop_briefing_apply_sync_flags(coop_briefing_sync_flags(level), level);
@@ -507,6 +548,11 @@ static void acknowledge_local(void)
 		release_acknowledged |= bit(Player_num);
 		if (Player_num != host) send_packet(ACK);
 		return;
+	}
+	if (flyout && phase == COOP_PHASE_BRIEFING_PREPARE && plan_ready && Player_num == host) {
+		if (coop_transition_progress(&policy, policy.generation, Player_num, local_progress.revision,
+		                             local_progress.completed, local_progress.total, local_progress.state, now_ms()))
+			policy.progress[Player_num].remaining_ms = local_progress.remaining_ms;
 	}
 	int can_ack = phase == COOP_PHASE_BRIEFING_PREPARE ? plan_ready && !planning : phase == COOP_PHASE_CLOSING_PRESENTATION ? presentation_closed
 	                                                                                                                        : phase == COOP_PHASE_LOADING || phase == COOP_PHASE_COMMITTED;
@@ -541,7 +587,7 @@ void coop_briefing_network_frame(void)
 int coop_briefing_host_disconnected(int player)
 {
 	if (!coop_briefing_active() || player != host) return 0;
-	failure_reason = "The host disconnected during briefings";
+	failure_reason = flyout ? "The host disconnected during fly-outs" : "The host disconnected during briefings";
 	policy.phase = COOP_PHASE_LOBBY;
 	multi_quit_game = 1;
 	return 1;
@@ -564,7 +610,8 @@ void coop_briefing_pump(void)
 		}
 		for (int i = 0; i < COOP_TRANSITION_PLAYERS; ++i)
 			if (i != host && (policy.participants & bit(i)) &&
-			    (Players[i].connected == CONNECT_DISCONNECTED || now > peer_seen[i] + PEER_TIMEOUT_MS)) {
+			    (Players[i].connected == CONNECT_DISCONNECTED || (now > peer_seen[i] + PEER_TIMEOUT_MS &&
+			                                                      !(flyout && policy.phase == COOP_PHASE_BRIEFING_PREPARE && !policy.progress[i].revision)))) {
 				multi_disconnect_player(i);
 				coop_transition_remove_player(&policy, i, now);
 			}
@@ -574,8 +621,8 @@ void coop_briefing_pump(void)
 		pthread_mutex_unlock(&ui_lock);
 		if (requested) coop_transition_launch_now(&policy, requested, Player_num, now);
 		coop_transition_tick(&policy, now);
-	} else if (now > last_host_packet + PEER_TIMEOUT_MS) {
-		failure_reason = "The host stopped responding during briefings";
+	} else if ((!flyout || have_state) && now > last_host_packet + PEER_TIMEOUT_MS) {
+		failure_reason = flyout ? "The host stopped responding during fly-outs" : "The host stopped responding during briefings";
 		policy.phase = COOP_PHASE_LOBBY;
 		multi_quit_game = 1;
 	}
@@ -631,7 +678,7 @@ void coop_briefing_run(void (*present)(int), int level)
 	if (!waiting) {
 		multi_quit_game = 1;
 	} else {
-		if (Player_num == host) {
+		if (Player_num == host && !flyout) {
 			coop_arm_auto_restore();
 			suppress_for_restore = coop_auto_restore_pending();
 		}
@@ -640,28 +687,30 @@ void coop_briefing_run(void (*present)(int), int level)
 			unsigned participants = 0;
 			uint64_t generation = now_ms() > last_generation ? now_ms() : last_generation + 1;
 			for (int i = 0; i < N_players; ++i)
-				if (Players[i].connected == CONNECT_PLAYING) participants |= bit(i);
+				if ((flyout ? Players[i].connected != CONNECT_DISCONNECTED : Players[i].connected == CONNECT_PLAYING) &&
+				    (!Netgame.max_numobservers || i != OBSERVER_PLAYER_ID || i == host)) participants |= bit(i);
 			if (!coop_transition_init(&policy, generation, host, participants, now_ms()) ||
-			    !coop_transition_begin(&policy, generation, COOP_OP_BRIEFING, host, now_ms()))
+			    !coop_transition_begin(&policy, generation, flyout ? COOP_OP_FLYOUT : COOP_OP_BRIEFING, host, now_ms()))
 				multi_quit_game = 1;
 			else {
 				have_state = 1;
 				last_generation = policy.generation;
 			}
 		}
-		while (!multi_quit_game && (!have_state || policy.phase == COOP_PHASE_BRIEFING_PREPARE)) {
+		while (!flyout && !multi_quit_game && (!have_state || policy.phase == COOP_PHASE_BRIEFING_PREPARE)) {
 			coop_briefing_pump();
 			event_process();
 		}
-		if (!multi_quit_game && policy.phase == COOP_PHASE_BRIEFING) {
+		if (!multi_quit_game && (flyout || policy.phase == COOP_PHASE_BRIEFING)) {
 			if (suppress_for_restore) {
 				local_progress.total = local_progress.completed = 0;
 			} else {
 				presenting = 1;
 				++presentations_started;
 				coop_briefing_step(0);
-				present(level);
+				if (present) present(level);
 				presenting = 0;
+				plan_ready = 1;
 			}
 			local_progress.state = skipped ? COOP_PRESENTATION_SKIPPED : unavailable ? COOP_PRESENTATION_UNAVAILABLE
 			                                                                         : COOP_PRESENTATION_READY;
@@ -682,10 +731,92 @@ void coop_briefing_run(void (*present)(int), int level)
 		armed = 0;
 		if (Game_wind) window_close(Game_wind);
 	} else if (Game_wind) {
-		coop_gameplay_restore_player_life();
+		if (!flyout) coop_gameplay_restore_player_life();
 		restore_game_palette();
 		set_screen_mode(SCREEN_GAME);
-		songs_play_level_song(Current_level_num, 0);
+		if (!flyout) songs_play_level_song(Current_level_num, 0);
 		window_set_visible(Game_wind, 1);
+	}
+}
+
+int coop_flyout_enabled(void)
+{
+	return (Game_mode & GM_MULTI_COOP) && Netgame.CoopBriefings;
+}
+
+int coop_flyout_active(void)
+{
+	return flyout && running;
+}
+
+void coop_flyout_remaining(unsigned milliseconds)
+{
+	if (!coop_flyout_active()) return;
+	local_progress.remaining_ms = (uint16_t) (milliseconds > 60000 ? 60000 : milliseconds);
+	++local_progress.revision;
+	plan_ready = 1;
+}
+
+void coop_flyout_run(void (*present)(int))
+{
+	if (!coop_flyout_enabled() || running || flyout_finished_level == Current_level_num) return;
+	coop_briefing_arm(NULL, Current_level_num);
+	flyout = 1;
+	local_progress.total = 1;
+	coop_briefing_run(present, Current_level_num);
+	flyout_finished_level = Current_level_num;
+}
+
+extern void game_render_frame(void);
+
+static int flyout_handler(window *wind, d_event *event, void *unused)
+{
+	(void) wind;
+	(void) unused;
+	if (event->type == EVENT_WINDOW_DRAW) {
+		uint64_t now = now_ms();
+		unsigned elapsed = (unsigned) (now - flyout_frame_time);
+		FrameTime = (fix) (elapsed * (uint64_t) F1_0 / 1000);
+		coop_flyout_remaining(local_progress.remaining_ms > elapsed ? local_progress.remaining_ms - elapsed : 0);
+		flyout_frame_time = now;
+		do_endlevel_frame();
+		if (Endlevel_sequence) game_render_frame();
+		timer_delay2(60);
+	} else if (event->type != EVENT_WINDOW_CLOSE && event->type != EVENT_WINDOW_CLOSED &&
+	           (android_screen_advance_take_request(ANDROID_SCREEN_ADVANCE_ENDLEVEL) ||
+	            android_screen_advance_accept_event(ANDROID_SCREEN_ADVANCE_ENDLEVEL, event) ||
+	            (event->type == EVENT_KEY_COMMAND && event_key_get(event) == KEY_ESC)))
+		coop_briefing_skip();
+	return 1;
+}
+
+void coop_flyout_render(void)
+{
+	if (!Endlevel_sequence) return;
+	set_screen_mode(SCREEN_GAME);
+	window *viewer = window_create(&grd_curscreen->sc_canvas, 0, 0, SWIDTH, SHEIGHT, flyout_handler, NULL);
+	flyout_frame_time = now_ms();
+	while (viewer && Endlevel_sequence && !coop_briefing_cancelled()) {
+		coop_briefing_pump();
+		event_process();
+	}
+	if (Endlevel_sequence) stop_endlevel_sequence();
+	if (viewer && window_exists(viewer)) window_close(viewer);
+	coop_briefing_step_complete(viewer != NULL);
+}
+
+void coop_flyout_observer_frame(void)
+{
+	if (!coop_flyout_enabled() || !Game_wind || !is_observer() || coop_briefing_active() ||
+	    coop_endgame_active() || running || flyout_finished_level == Current_level_num) return;
+	int finished = 0;
+	for (int i = 0; i < N_players; ++i) {
+		if (i == Player_num || (Netgame.max_numobservers && i == OBSERVER_PLAYER_ID) ||
+		    Players[i].connected == CONNECT_DISCONNECTED) continue;
+		if (Players[i].connected != CONNECT_PLAYING) ++finished;
+	}
+	if (finished) {
+		coop_flyout_run(NULL);
+		PlayerFinishedLevel(0);
 	}
 }

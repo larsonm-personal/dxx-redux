@@ -1532,7 +1532,8 @@ int coop_autosave(void)
 		              "coop_save: auto-save skipped without an active level\n");
 		return 0;
 	}
-	if (Endlevel_sequence || (Control_center_destroyed && !coop_save_countdown_allowed()))
+	if (Players[Player_num].connected != CONNECT_PLAYING || Endlevel_sequence ||
+	    (Control_center_destroyed && !coop_save_countdown_allowed()))
 		return 0;
 
 	slot = COOP_AUTOSAVE_SLOT_FIRST +
@@ -1586,8 +1587,8 @@ static void coop_write_autosave_history(int slot, int n_connected)
 	int off = 0;
 	int i;
 	unsigned now = (unsigned) time(NULL);
-	char callsigns_json[512];
-	char client_ids_json[512];
+	char callsigns_json[512] = { 0 };
+	char client_ids_json[512] = { 0 };
 	int cs_off = 0, ci_off = 0;
 	int n = 0;
 

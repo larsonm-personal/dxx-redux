@@ -217,6 +217,12 @@ vms_matrix surface_orient;
 
 int endlevel_data_loaded=0;
 
+#ifdef __ANDROID__
+#include "coop/coop_flyout_engine.h"
+#else
+#define finish_endlevel() PlayerFinishedLevel(0)
+#endif
+
 void start_endlevel_sequence()
 {
 #ifndef NDEBUG
@@ -226,6 +232,16 @@ void start_endlevel_sequence()
 
 	if (Player_is_dead || ConsoleObject->flags&OF_SHOULD_BE_DEAD)
 		return;				//don't start if dead!
+
+#ifdef __ANDROID__
+	if (coop_flyout_enabled() && !coop_flyout_active() && Newdemo_state != ND_STATE_PLAYBACK) {
+		multi_send_endlevel_start(0);
+		multi_do_protocol_frame(1, 1);
+		coop_flyout_run(coop_present_flyout);
+		PlayerFinishedLevel(0);
+		return;
+	}
+#endif
 
 	reset_rear_view(); //turn off rear view if set - NOTE: make sure this happens before we pause demo recording!!
 
@@ -249,7 +265,7 @@ void start_endlevel_sequence()
 		}
 		#endif
 
-		PlayerFinishedLevel(0);		//don't do special sequence
+		finish_endlevel();		//don't do special sequence
 		return;
 	}
 
@@ -271,7 +287,7 @@ void start_endlevel_sequence()
 		} while (segnum >= 0);
 
 		if (segnum != -2) {
-			PlayerFinishedLevel(0);		//don't do special sequence
+			finish_endlevel();		//don't do special sequence
 			return;
 		}
 #ifndef NDEBUG
@@ -306,6 +322,9 @@ void start_endlevel_sequence()
 	songs_play_song( SONG_ENDLEVEL, 0 );
 	#endif
 
+#ifdef __ANDROID__
+	if (coop_flyout_active()) coop_flyout_remaining(coop_flyout_tunnel_ms());
+#endif
 	Endlevel_sequence = EL_FLYTHROUGH;
 #ifdef ANDROID
 	android_screen_advance_begin(ANDROID_SCREEN_ADVANCE_ENDLEVEL, 1);
@@ -420,7 +439,7 @@ void stop_endlevel_sequence()
 	android_screen_advance_end(ANDROID_SCREEN_ADVANCE_ENDLEVEL);
 #endif
 
-	PlayerFinishedLevel(0);
+	finish_endlevel();
 }
 
 #define VCLIP_BIG_PLAYER_EXPLOSION	58

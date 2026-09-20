@@ -1704,6 +1704,8 @@ extern "C" char *game_introspect_get_state(void)
 		};
 		j["coop_briefing"] = {
 			{ "enabled", (bool) Netgame.CoopBriefings },
+			{ "flyout", (bool) coop_flyout_active() },
+			{ "estimated_remaining_ms", local.remaining_ms },
 			{ "plan_ready", (bool) coop_briefing_plan_ready() },
 			{ "suppressed_for_restore", (bool) coop_briefing_suppressed_for_restore() },
 			{ "presentations_started", coop_briefing_presentations_started() },

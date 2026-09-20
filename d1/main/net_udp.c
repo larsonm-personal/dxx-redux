@@ -7118,7 +7118,11 @@ void net_udp_do_frame(int force, int listen)
 		net_udp_resend_sync_due_to_packet_loss(); // This will resend to UDP_sync_player
 	}
 
-	if ((time>=last_endlevel_time+F1_0) && Control_center_destroyed)
+	if ((time>=last_endlevel_time+F1_0) && (Control_center_destroyed
+#ifdef __ANDROID__
+	    || coop_flyout_active()
+#endif
+	    ))
 	{
 		last_endlevel_time = time;
 		net_udp_send_endlevel_packet();

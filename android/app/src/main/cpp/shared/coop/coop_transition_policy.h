@@ -25,7 +25,8 @@ typedef enum coop_operation {
 	COOP_OP_SAVE,
 	COOP_OP_LOAD,
 	COOP_OP_REWIND,
-	COOP_OP_RESTART
+	COOP_OP_RESTART,
+	COOP_OP_FLYOUT
 } coop_operation;
 
 typedef enum coop_transition_phase {
@@ -49,7 +50,8 @@ typedef enum coop_presentation_state {
 	COOP_PRESENTATION_VIDEO,
 	COOP_PRESENTATION_READY,
 	COOP_PRESENTATION_SKIPPED,
-	COOP_PRESENTATION_UNAVAILABLE
+	COOP_PRESENTATION_UNAVAILABLE,
+	COOP_PRESENTATION_FLYOUT
 } coop_presentation_state;
 
 typedef enum coop_launch_reason {
@@ -63,6 +65,7 @@ typedef struct coop_presentation_progress {
 	uint32_t revision;
 	uint16_t completed;
 	uint16_t total;
+	uint16_t remaining_ms;
 	coop_presentation_state state;
 } coop_presentation_progress;
 
@@ -82,6 +85,9 @@ typedef struct coop_transition_policy {
 	uint8_t presentation_ready;
 	coop_presentation_progress progress[COOP_TRANSITION_PLAYERS];
 } coop_transition_policy;
+
+/* Fly-out allowance: content remaining + 5s, between 20s and 60s */
+unsigned coop_flyout_allowance_ms(unsigned remaining_ms);
 
 int coop_transition_init(coop_transition_policy *policy, uint64_t generation,
                          unsigned host, unsigned participants, uint64_t now_ms);

@@ -1051,6 +1051,10 @@ void PlayerFinishedLevel(int secret_flag)
 	if (Game_wind)
 		window_set_visible(Game_wind, 0);
 
+#ifdef __ANDROID__
+	coop_flyout_run(NULL);
+#endif
+
 	//credit the player for hostages
 	Players[Player_num].hostages_rescued_total += Players[Player_num].hostages_on_board;
 
@@ -1281,6 +1285,9 @@ void DoPlayerDead()
 		Players[Player_num].connected = CONNECT_DIED_IN_MINE;
 #endif
 
+#ifdef __ANDROID__
+		coop_flyout_run(NULL);
+#endif
 		do_screen_message(TXT_DIED_IN_MINE); // Give them some indication of what happened
 
 		if (Current_level_num == Last_level) {

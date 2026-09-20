@@ -7278,7 +7278,7 @@ void net_udp_do_frame(int force, int listen)
 
 	if ((time>=last_endlevel_time+F1_0) && (Control_center_destroyed
 #ifdef __ANDROID__
-	    || coop_travel_ending_campaign()
+	    || coop_travel_ending_campaign() || coop_flyout_active()
 #endif
 	    ))
 	{

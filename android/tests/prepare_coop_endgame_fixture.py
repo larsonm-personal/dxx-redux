@@ -17,6 +17,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--movie-library", type=Path)
+    parser.add_argument("--movie-name", choices=["end.mve", "esa.mve"], default="end.mve")
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     (args.output / "coopend.mn2").write_text(
@@ -46,15 +47,15 @@ def main():
                 for _ in range(count)
             ]
             for name, size in entries:
-                if name == b"end.mve":
+                if name == args.movie_name.encode("ascii"):
                     data = stream.read(size)
                     if len(data) != size:
                         raise ValueError("Truncated ending movie")
-                    (args.output / "end.mve").write_bytes(data)
+                    (args.output / args.movie_name).write_bytes(data)
                     break
                 stream.seek(size, 1)
             else:
-                raise ValueError("The movie library does not contain end.mve")
+                raise ValueError(f"The movie library does not contain {args.movie_name}")
 
 
 if __name__ == "__main__":

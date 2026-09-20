@@ -62,7 +62,7 @@ extern int multi_protocol; // set and determinate used protocol
 
 // What version of the multiplayer protocol is this? Increment each time something drastic changes in Multiplayer without the version number changes. Can be reset to 0 each time the version of the game changes
 #ifdef __ANDROID__
-#define MULTI_PROTO_VERSION 30073 // Persistent Guide-Bot goal state
+#define MULTI_PROTO_VERSION 30074 // Synchronized co-op fly-outs
 #define MULTI_PLAYER_DROP_LENGTH 114
 #define MULTI_SHIP_STATUS_LENGTH 84
 #define MULTI_COOP_RESTORE_LENGTH 102
@@ -191,7 +191,7 @@ void multi_send_trigger_message(const char *message);
 	VALUE(MULTI_REACTOR_PAUSE       , 7)   \
 	VALUE(MULTI_MATCEN_MODE         , 3 + MATCEN_MODE_MAX_CENTERS)   \
 	VALUE(MULTI_COOP_RECOVERY       , 160)   \
-	VALUE(MULTI_COOP_BRIEFING       , 128)   \
+	VALUE(MULTI_COOP_BRIEFING       , 136)   \
 	VALUE(MULTI_COOP_TRAVEL         , 228)    \
 	VALUE(MULTI_COOP_ENDGAME        , 160)    \
 	VALUE(MULTI_ESCORT_SPAWN        , 11 + sizeof(shortpos))    \

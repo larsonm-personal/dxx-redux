@@ -1,7 +1,68 @@
 # Co-op fly-outs before results
 
 Date: 2026-09-19
-Status: Source investigation and implementation plan; engine changes not implemented
+Status: Implemented; D2 movie integration cases passed
+
+## Implementation notes
+
+- The calculation is centralized in `coop_transition_policy.c` in
+  `coop_flyout_allowance_ms`: remaining time plus 5 seconds, floored at 20 seconds
+  and capped at 60 seconds
+- Reuse the existing briefing prepare/view/closure/release phases with a
+  distinct `COOP_OP_FLYOUT` and `COOP_PRESENTATION_FLYOUT`, rather than adding a
+  second transport coordinator. Prepare now means waiting for escape outcomes
+  for this operation; local playback starts before that barrier completes
+- Fly-out packets carry the world visit and a separate operation flag, and
+  Android protocol versions change in both engines. Remaining estimates fit
+  into the existing per-player progress records
+- Movie timing comes from a bounded header scan of the opened MVE stream,
+  restored before decoding. No cache or second asset-opening path is needed
+  for a single scan per exit. Rendered timing uses the selected tunnel's side
+  centers and the existing 50-unit flight speed plus five seconds outside
+- Rendered sequences have a small presentation window that advances animation
+  while ordinary local gameplay remains stopped. Peers still inside the mine
+  continue using the unfrozen world packet stamp
+- Existing movie Skip, host action, pause handling, release retries and peer
+  loss handling are reused. The shared overlay labels the fly-out action
+  `Continue now`. Missing content and deaths join the same release barrier
+- Accepted control packets count as UDP liveness, and escaped peers continue
+  sending end-level status while watching. This also covers exits reached
+  before the reactor is destroyed. D2 keeps its game window hidden until the
+  presentation barrier releases
+- `test_lan.ps1 -Game d2 -Flyouts -FlyoutCase natural|deadline|force -SkipBuild`
+  stages only ESA.MVE from an owned OTHER-L.MVL (or a supplied OTHER-H.MVL)
+  and cleans up its added asset
+
+Validation: Android x86_64 APK and Windows D1/D2 builds passed, as did both
+engines' native transition-policy and gameplay-fence tests. The policy test
+covers a delayed escape, an adaptive deadline, stale traffic, closure
+acknowledgments and immediate no-media completion
+
+- Two-emulator natural completion passed, including the results handoff and
+  movie-derived remaining estimates (`temp/coop-flyout-natural-final.log`)
+- Two-emulator paused-client deadline passed, with local host Skip followed by
+  shared deadline release (`temp/coop-flyout-deadline-final.log`)
+- Explicit host override passed with the client already paused
+  (`temp/coop-flyout-force-retest.log`). The host action is staggered after the
+  client's pause assertion so the test does not race its own closure check
+- Scoped formatting/lint and `git diff --check` passed
+- Rendered D1/fallback geometry is compiled in both engines but not yet covered
+  by a live rendered-exit test. Real-device high-resolution playback performance,
+  observer hosts, disconnects and missing-media combinations were not exhaustively
+  retested; inherited behavior is reused, not claimed as newly validated
+
+The first paired runs exposed a UDP timeout because escaped players no longer
+send ordinary position packets; the control/status liveness fix above resolved
+that failure. High-resolution playback under emulator/build load exceeded its
+nominal movie duration, exercising the deadline successfully but failing the
+natural-completion assertion. Natural-playback coverage uses long automation
+wait steps to avoid collecting full introspection on every movie frame
+
+A subsequent low-resolution run finished both movies and released with
+all-ready, then exposed an existing autosave-history crash on the host after
+arrival at results. Autosave now rejects a locally escaped player even if the
+reactor was not destroyed, and history's roster strings are initialized for
+the empty-roster case
 
 ## Requested behavior
 

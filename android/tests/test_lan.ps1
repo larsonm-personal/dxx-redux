@@ -90,6 +90,10 @@ param(
     [switch]$SpewPickup,
     [switch]$SpewPartialPickup,
     [switch]$Briefings,
+    [switch]$Flyouts,
+    [ValidateSet("natural", "deadline", "force")]
+    [string]$FlyoutCase = "natural",
+    [string]$FlyoutMovieLibrary,
     [switch]$BriefingPalette,
     [switch]$EmptyBriefing,
     [ValidateSet("force", "host_deadline", "overall_deadline", "release_delay", "overlay_touch", "paused_force", "paused_deadline", "paused_overall", "reading", "partial_skip", "missing_movie", "observer_host", "rejoin", "first_join")]
@@ -185,6 +189,10 @@ if ($BriefingFailure) {
     if ($InitialLevel -ne 1 -or $MissionFile -or $BriefingCase -ne 'force' -or $BriefingRestore -or $RestoreFailure) {
         throw "BriefingFailure requires a fresh base-mission level 1 briefing; run other scenarios separately"
     }
+    $Briefings = $true
+}
+if ($Flyouts) {
+    if ($Game -ne 'd2' -or $InitialLevel -ne 1 -or $MissionFile) { throw 'Flyouts requires D2 Counterstrike level 1' }
     $Briefings = $true
 }
 if ($BriefingCase -like "paused_*") {
@@ -1980,6 +1988,18 @@ try {
     }
     Write-Status "Game data verified on both emulators" "Green"
     Initialize-EndgameContent
+    if ($Flyouts) {
+        $library = $FlyoutMovieLibrary
+        if (-not $library) { $library = Join-Path $REPO_ROOT 'game_data/d2 1.1 data tracks from cd image tool/OTHER-L.MVL' }
+        if (-not (Test-Path -LiteralPath $library)) { throw 'Pass -FlyoutMovieLibrary with an owned OTHER-L.MVL or OTHER-H.MVL' }
+        $fixture = Join-Path $REPO_ROOT 'temp/coop-flyout-fixture'
+        & "$PSScriptRoot/../helpers/retain-recent-artifacts.ps1" -Artifacts $fixture | Out-Null
+        & python "$PSScriptRoot/prepare_coop_endgame_fixture.py" --output $fixture --movie-library $library --movie-name esa.mve
+        if ($LASTEXITCODE) { throw 'Could not extract escape movie' }
+        foreach ($serial in @($EMU1, $EMU2)) {
+            Stage-EndgameFile -Serial $serial -LocalPath "$fixture/esa.mve" -DevicePath 'files/d2x-redux/esa.mve'
+        }
+    }
     if ($MaximumExitProbe) {
         $fixtureDirectory = Join-Path $REPO_ROOT 'temp/maximum_exit_fixture'
         New-Item -ItemType Directory -Force -Path $fixtureDirectory | Out-Null
@@ -2536,6 +2556,22 @@ try {
     if ($RestoreFailure) {
         $testPassed = $false
         $testPassed = Invoke-RestoreFailureScenario
+    }
+
+    if ($Flyouts) {
+        $scripts = @{
+            natural = @('test_coop_flyout_natural_host.jsonc', 'test_coop_flyout_natural_client.jsonc')
+            deadline = @('test_coop_flyout_deadline_host.jsonc', 'test_coop_flyout_deadline_client.jsonc')
+            force = @('test_coop_flyout_force_host.jsonc', 'test_coop_flyout_force_client.jsonc')
+        }[$FlyoutCase]
+        $hostScript, $clientScript = $scripts
+        if (-not (Invoke-PairedGameAutomation -PrimarySerial $EMU1 -PrimaryScript $hostScript `
+                    -SecondarySerial $EMU2 -SecondaryScript $clientScript -Description "Fly-out $FlyoutCase" -TimeoutSec 90)) {
+            throw "Fly-out $FlyoutCase failed"
+        }
+        $testPassed = $true
+        Write-Status "=== CO-OP FLY-OUT TEST PASSED ===" 'Green'
+        exit 0
     }
 
     if ($LevelRestart) {

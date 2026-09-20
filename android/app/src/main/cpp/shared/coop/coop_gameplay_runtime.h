@@ -19,8 +19,9 @@ static inline coop_gameplay_stamp coop_gameplay_current_stamp(void)
 	if ((Game_mode & GM_MULTI_COOP) && Current_level_num) {
 		stamp.visit = coop_world_visit_current();
 		stamp.level = Current_level_num;
+		/* Fly-outs are local; teammates may still be escaping this world */
 		stamp.frozen = coop_endgame_active() || coop_travel_blocks_world_updates() ||
-		               multi_save_transfer_restoring() || multi_save_transfer_paused() || coop_briefing_active();
+		               multi_save_transfer_restoring() || multi_save_transfer_paused() || (coop_briefing_active() && !coop_flyout_active());
 	}
 	return stamp;
 }

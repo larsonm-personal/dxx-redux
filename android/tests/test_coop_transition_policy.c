@@ -294,9 +294,52 @@ static int test_secret_disconnect_releases_each_barrier(void)
 	return 1;
 }
 
+/* Full exit/viewer/release lifecycle with delayed escape and stale traffic */
+static int test_flyout_lifecycle(void)
+{
+	coop_transition_policy p;
+	CHECK(coop_flyout_allowance_ms(0) == 20000);
+	CHECK(coop_flyout_allowance_ms(17349) == 22349);
+	CHECK(coop_flyout_allowance_ms(55000) == 60000);
+	CHECK(coop_flyout_allowance_ms(UINT32_MAX) == 60000);
+	CHECK(coop_transition_init(&p, 100, 0, 3, 0));
+	CHECK(coop_transition_begin(&p, 100, COOP_OP_FLYOUT, 0, 0));
+	CHECK(coop_transition_progress(&p, p.generation, 0, 1, 1, 1, COOP_PRESENTATION_READY, 1000));
+	CHECK(coop_transition_ack(&p, p.generation, COOP_PHASE_BRIEFING_PREPARE, 0, 1000));
+	coop_transition_tick(&p, 90000);
+	CHECK(p.phase == COOP_PHASE_BRIEFING_PREPARE && !p.deadline_ms);
+	CHECK(coop_transition_gameplay_allowed(&p, 1));
+	CHECK(!coop_transition_gameplay_allowed(&p, 0));
+	CHECK(!coop_transition_launch_now(&p, p.generation, 0, 90000));
+	CHECK(coop_transition_progress(&p, p.generation, 1, 1, 0, 1, COOP_PRESENTATION_FLYOUT, 90000));
+	p.progress[1].remaining_ms = 40000;
+	CHECK(coop_transition_ack(&p, p.generation, COOP_PHASE_BRIEFING_PREPARE, 1, 90000));
+	CHECK(p.deadline_ms == 135000);
+	CHECK(!coop_transition_ack(&p, p.generation - 1, COOP_PHASE_BRIEFING, 1, 90000));
+	CHECK(!coop_transition_progress(&p, p.generation, 1, 1, 0, 1, COOP_PRESENTATION_FLYOUT, 91000));
+	CHECK(p.deadline_ms == 135000);
+	coop_transition_tick(&p, 135000);
+	CHECK(p.launch_reason == COOP_LAUNCH_DEADLINE);
+	CHECK(p.phase == COOP_PHASE_CLOSING_PRESENTATION);
+	CHECK(coop_transition_ack(&p, p.generation, p.phase, 0, 135001));
+	CHECK(p.phase == COOP_PHASE_CLOSING_PRESENTATION);
+	CHECK(coop_transition_ack(&p, p.generation, p.phase, 1, 135002));
+	CHECK(acknowledge_team(&p, COOP_PHASE_LOADING, 135003));
+	CHECK(acknowledge_team(&p, COOP_PHASE_COMMITTED, 135004));
+	CHECK(p.phase == COOP_PHASE_SETTLED);
+	CHECK(coop_transition_begin(&p, p.generation, COOP_OP_FLYOUT, 0, 140000));
+	for (unsigned i = 0; i < 2; ++i) {
+		CHECK(coop_transition_progress(&p, p.generation, i, 1, 0, 1, COOP_PRESENTATION_UNAVAILABLE, 140000));
+		CHECK(coop_transition_ack(&p, p.generation, COOP_PHASE_BRIEFING_PREPARE, i, 140000));
+	}
+	coop_transition_tick(&p, 140000);
+	CHECK(p.launch_reason == COOP_LAUNCH_ALL_READY);
+	return 1;
+}
+
 int main(void)
 {
-	if (!test_secret_disconnect_releases_each_barrier() ||
+	if (!test_flyout_lifecycle() || !test_secret_disconnect_releases_each_barrier() ||
 	    !test_normal_exit_race_keeps_other_player_in_mine() ||
 	    !test_secret_winner_waits_for_freeze_and_snapshot() ||
 	    !test_load_starts_when_every_peer_is_prepared() ||

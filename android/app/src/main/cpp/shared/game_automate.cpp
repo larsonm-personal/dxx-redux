@@ -3802,7 +3802,8 @@ extern "C" void game_automate_tick(void)
 			}
 			advance_step();
 #ifdef ANDROID
-			android_automation_start_endlevel_sequence();
+			if (s.value == "real") start_endlevel_sequence();
+			else android_automation_start_endlevel_sequence();
 #else
 			start_endlevel_sequence();
 #endif
